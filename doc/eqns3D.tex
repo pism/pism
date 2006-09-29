@@ -1,0 +1,765 @@
+% Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+%
+% This file is part of Pism.
+%
+% Pism is free software; you can redistribute it and/or modify it under the
+% terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+% WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License
+% along with Pism; if not, write to the Free Software
+% Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+\documentclass{amsart}%default 10pt
+%prepared in AMSLaTeX, under LaTeX2e
+\addtolength{\topmargin}{-0.25in}
+\addtolength{\textheight}{0.9in}
+\addtolength{\oddsidemargin}{-0.7in}
+\addtolength{\evensidemargin}{-0.7in}
+\addtolength{\textwidth}{1.4in}
+
+\theoremstyle{plain}
+\newtheorem*{thm*}{Theorem}
+\newtheorem*{question}{Question}
+\newtheorem{thm}{Theorem}
+\newtheorem{lem}{Lemma}
+\newtheorem{claim}{Claim}
+% \newtheorem{lem}[thm]{Lemma}  would put lemmas and thms in same seq.
+%\newtheorem*{prop*}{Proposition}
+\newtheorem{prop}{Proposition}
+\newtheorem{cor}{Corollary}
+\newtheorem{alg}{Algorithm}
+\theoremstyle{definition}
+\newtheorem*{defn}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem{method}{Method}
+\newtheorem{ass}{Temporary Assumption}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+% inclusion/figure macros
+\usepackage[final]{graphicx}
+\newcommand{\mfigure}[1]{\includegraphics[height=3in,
+keepaspectratio=true]{eqns3Deps/#1.eps}}
+\newcommand{\bigmfigure}[1]{\includegraphics[height=4in,
+keepaspectratio=true]{eqns3Deps/#1.eps}}
+\newcommand{\regfigure}[2]{\includegraphics[height=#2in,
+keepaspectratio=true]{eqns3Deps/#1.eps}}
+\newcommand{\mtt}{\texttt}
+\usepackage{alltt}
+\usepackage{verbatim}
+\newcommand{\mfile}[1]
+{\medskip\begin{quote}\scriptsize \begin{alltt}\input{C:/MATLAB6p5/work/icecodes/#1.m}\end{alltt} \normalsize\end{quote}\medskip}
+
+% math macros
+\usepackage{amssymb}
+\def\complex{\mathbb{C}}
+\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
+\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
+\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
+\newcommand{\ddtp}[1]{\ensuremath{\frac{\partial #1}{\partial t'}}}
+\newcommand{\ddxp}[1]{\ensuremath{\frac{\partial #1}{\partial x'}}}
+\newcommand{\ddz}[1]{\ensuremath{\frac{\partial #1}{\partial z}}}
+\newcommand{\dds}[1]{\ensuremath{\frac{\partial #1}{\partial s}}}
+\newcommand{\dddxdx}[1]{\ensuremath{\frac{\partial^2 #1}{\partial x^2}}}
+\newcommand{\dddsds}[1]{\ensuremath{\frac{\partial^2 #1}{\partial s^2}}}
+\newcommand{\dddzdz}[1]{\ensuremath{\frac{\partial^2 #1}{\partial z^2}}}
+\newcommand{\diverg}{\nabla\cdot}
+\def\eps{\epsilon}
+\newcommand{\grad}{\nabla}
+\newcommand{\ihat}{\mathbf{i}}
+\def\image{\operatorname{im}}
+\def\integers{\mathbb{Z}}
+\newcommand{\ip}[2]{\ensuremath{\left<#1,#2\right>}}
+\newcommand{\jhat}{\mathbf{j}}
+\newcommand{\khat}{\mathbf{k}}
+\def\lam{\lambda}
+\def\lap{\triangle}
+\def\real{\mathbb{R}}
+\def\tr{\mathrm{tr}\,}
+\def\volume{\operatorname{vol}}
+\def\vf{\varphi}
+
+% macros for this paper only
+\newcommand{\hmin}{h_{\text{min}}}
+\newcommand{\hmax}{h_{\text{max}}}
+\newcommand{\Tpmp}{T_{\text{pmp}}}
+\newcommand{\bG}{{\mathbf{G}}}
+\newcommand{\bQ}{{\mathbf{Q}}}
+\newcommand{\bU}{{\mathbf{U}}}
+\newcommand{\bV}{{\mathbf{V}}}
+\newcommand{\ufrac}[2]{\ensuremath{\frac{\text{#1}}{\text{#2}} }}
+
+
+\begin{document}
+\title[3D thermocoupled model for ice sheets]{A 3D thermocoupled numerical model \\ for cold, shallow ice sheet flow}
+
+\author[Lingle and others]{Craig S. Lingle$^1$, Ed Bueler$^2$, Jed A. Kallen-Brown$^2$, David N. Covey$^1$}
+
+\date{\scriptsize Version 3: December 15, 2003 with small editorial modifications June 2006.   \textbf{THESE NOTES ARE SERIOUSLY OUT OF DATE EXCEPT FOR THE ABSTRACT ABOVE!}  $^1$Geophysical Institute, University of Alaska, Fairbanks AK 99775;
+$^2$Dept.~of Mathematics and Statistics, University of Alaska, Fairbanks AK 99775,
+\emph{email}: \mtt{ffelb@uaf.edu}. \normalsize}
+
+\begin{abstract}  This paper describes a thermocoupled three-dimensional continuum model for shallow ice sheets and it describes the numerical methods which approximately solve the various partial differential equation free boundary problems of the model.
+
+\medskip\noindent Significant features of the continuum model include:\begin{itemize}
+\item The inland slow ice sheet is modeled with the standard thermocoupled shallow ice approximation equations \cite{Fowler} with some basal sliding allowed.
+\item Ice shelves and ice streams are modeled by the MacAyeal equations \cite{MacAyeal,MacAyealetal}.
+\item The regions of grounded ice in which ice stream model is applied are determined, in part, from the mass balance velocities reported in \cite{BamberVaughanJoughin}.
+\item A three dimensional age field is computed.
+\item Geothermal heat flux which varies in the map-plane is used, based on the new results of Shapiro and Ritzwoller \cite{ShapiroRitzwoller}.
+\item Within the shallow ice sheet regions the model includes the constitutive relation of Goldsby and Kohlstedt \cite{GoldsbyKohlstedt,Peltieretal} with grain size computed using Vostok core data \cite{VostokCore}.
+\item The Lingle and Clark bed deformation model \cite{LingleClark} is used.  It incorporates a spherical elastic earth and viscous half-space asthenosphere/mantle.
+\item The bed deformation model is initialized by a bed uplift map computed from a spherical viscoelastic earth model \cite{JamesIvins1998}.\end{itemize}
+
+\medskip\noindent The following features are \emph{not} included in the continuum model, and would require major additions:
+\begin{itemize}
+\item a model for water--content within the ice (that is, the ice is \emph{cold} and not \emph{polythermal} (compare \cite{Greve,Hutter93});
+\item a model for basal water conservation (compare \cite{JohnsonFastook});
+\item inclusion of longitudinal stresses within the shallow ice approximation region (compare \cite{Blatter,SaitoEISMINT}).
+\end{itemize}
+
+\medskip\noindent Significant features of the numerical method include:\begin{itemize}
+\item Verification is a primary concern and is built into the code.  Nontrivial verifications are performed on isothermal flow \cite{BLKCB}, thermocoupled flow \cite{BK,BKL}, the coupling to the bed model \cite{BLKfastearth}, and the MacAyeal equations [Kallen-Brown THESIS].
+\item The code is structurally parallel because the PETSc toolkit is used at all levels \cite{petsc-web-page}.
+\item An equally-spaced vertical grid moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \cite{Jenssen} change of variables is not used.
+\item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  The local truncation error is $O(\Delta x,\Delta y,\Delta z,\Delta t)$.
+\item The equations to determine velocity in the ice shelf and ice stream regions are solved by a finite difference method which computes a nonlinear iteration of a Krylov subspace method \cite{TrefethenBau} implemented in PETSc [Kallen-Brown THESIS].
+\item The bed deformation model is implemented by a spectral method \cite{BLKfastearth}.
+\item Implementation is in C++ and is object-oriented.  For example, verification is a derived class.
+\end{itemize}
+
+\medskip\noindent In the first section the partial differential equations are laid out in the form imposed by the physics of ice sheets.  Physical derivations are skipped, but can be found in the references.  In the second section the equations are summarized and ordered for computation.  Practical issues for this type of numerical model are addressed.  In the third section, the equations are approximated by finite differences and numerical strategies are described.\end{abstract}
+
+\maketitle
+%\tableofcontents
+
+
+\section{The mathematical model}
+\label{mathmodelsect}
+\subsection{Notation}  The overall domain $\mathcal{D}$ is a rectangular region $(x,y,z)\in [-L_x,L_x]\times [-L_y,L_y]\times[\hmin,\hmax]$, $t\ge 0$.  Surfaces of constant $z$ are parallel to the geoid and $z$ increases as one goes away from the center of the geoid.
+
+The following functions are inputs to the model:
+\begin{align*}
+&b_0(x,y,t) &&\text{ice--free steady state bed elevation (m)}; \\
+&G(x,y,t) &&\text{geophysical heat flux at base of ice (J/$\text{m}^2$s)};\\
+&M(x,y,z,t) &&\text{ice--equivalent accumulation/ablation at all spatial points (m/s)};\\
+&T_s(x,y,z,t) &&\text{surface air temperature (K)}.
+\end{align*}
+
+The functions which are to be approximated by the model are:
+\begin{align*}
+&a(x,y,t) &&\text{ice--equivalent accumulation/ablation at the ice surface (m/s)};\\
+&b(x,y,t) &&\text{bed elevation (m)}; \\
+&h(x,y,t) &&\text{ice surface elevation (m)};\\
+&H(x,y,t) &&\text{ice thickness (m)};\\
+&S(x,y,t) &&\text{basal melt rate (m/s);}\\
+&T(x,y,z,t) &&\text{absolute temperature (K)};\\
+&\tau(x,y,z,t) &&\text{age of the ice (a)};\\
+&\bU=u\ihat+v\jhat &&\text{horizontal velocity (m/s);}\\
+&&& \text{[components } u,v \text{ depend on } x,y,z,t];\\
+&w(x,y,z,t) &&\text{vertical velocity (m/s);}\\
+&\bU_b=u_b\ihat+v_b\jhat &&\text{horizontal velocity at the bed (m/s);}\\
+&&& \text{[components } u_b,v_b \text{ depend on } x,y,t].
+\end{align*}
+Thickness, surface elevation and bed topography are simply related by $h=H+b$.
+
+Physical constants appear in the text below.  Their values and units are given at the end of this paper.  A more complete index of notation is also given at the end of this paper.
+
+Partial derivatives are denoted $\frac{\partial f}{\partial x}$, etc.  Subscripts are used (in particular) for directions, as in $\sigma_{xy}$ and $\sigma_{ij}$ for specific and generic components of the stress tensor, respectively.  Vector notation uses the standard unit vectors, as in $\bV=u\ihat+v\jhat+w\khat$; bold denotes vectors and plain text scalars.  Gradient and divergence notation will be used, but exclusively in the horizontal directions.  That is:
+    $$\grad f = \ddx{f} \ihat + \ddy{f} \ihat, \qquad \qquad \diverg \bV = \ddx{u} + \ddy{v}$$
+if $\bV=u\ihat+v\jhat$.
+
+
+\subsection{Equations of the shallow ice approximation}  The continuity equation for ice \cite{Paterson}, which we think of as the main flow partial differential equation, is
+\begin{equation}\label{Cfirst}
+\ddt{H} = a - \diverg \bQ
+\end{equation}
+where $a(x,y,t)=M(x,y,h(x,y,t),t)$.  If $M$ actually depends on $z$ then $a$ must be determined by the model; otherwise $a$ is known in advance.  By definition, $\bQ$ is the horizontal ice flux
+\begin{equation}\label{flux}
+\bQ = \int_{b}^h \bU\,dz = \bar \bU H.
+\end{equation}
+Evidently $\bar \bU$ is the depth--averaged horizontal velocity.  Though \eqref{Cfirst} is the main equation for flow, \emph{temperature} is the only quantity modelled by a three spatial dimension partial differential equation in this paper.  [NOTE TRUE IF AGE and/or GRAIN SIZE]  See subsection \ref{ss:temp}.
+
+In what follows we denote by $\sigma_{ij}$ the full stress tensor, $\sigma_{ij}'= \sigma_{ij}- \frac{1}{3} \delta_{ij} \sigma_{kk}$ the deviatoric stress tensor, $\sigma'= \left(\sigma_{ij}' \sigma_{ij}'\right)^{1/2}$  the effective shear stress, and $\dot \eps_{ij}$ the strain rate tensor.
+
+Now, $\bU$ is a vertical integral of the horizontal shear strain rates.  In fact,
+\begin{equation}\label{stressstrain}
+\ddz{\bU} = 2(\dot\eps_{xz}\ihat+\dot\eps_{yz}\jhat),
+\end{equation}
+so $\bU=\int \ddz{\bU} dz$, as discussed in detail in subsection \ref{ss:horvel}.
+
+It is supposed \cite{Fowler,Greve,Hutter93} that these strain rates depend through a constitutive relation on the deviatoric stress and on the temperature.  The constitutive relation is taken to have the form
+\begin{equation}\label{constitutive}
+\dot\eps_{ij}=F(T,\sigma',P)\,\sigma_{ij}'
+\end{equation}
+for a \emph{constitutive function} $F$, discussed in detail in the next section.  Here $T$ is the temperature and $P$ is the (hydrostatic) pressure.  This relation incorporates Nye's generalization \cite{Nye} even if the function $F$ is not given by Glen's power law \cite{Glen} form.  Regarding the interpretation of this law, note that if $\sigma_{ij}'=\eta \dot\eps_{ij}$ for some function $\eta$ then $\eta$ is the \emph{effective viscosity}.  Thus $F$ is an inverse viscosity \cite{Fowler}.
+
+Of course,
+\begin{equation}\label{pressure}
+P(x,y,z,t)=\rho g (h(x,y,t)-z)
+\end{equation}
+is the hydrostatic pressure at elevation $z$ if $\rho$ is the density of ice and $g$ is the acceleration of gravity.
+
+The shallow ice approximation supposes that
+\begin{equation}\label{stressatdepth}
+\sigma_{xz}' \ihat + \sigma_{yz}' \jhat = -P\grad h.
+\end{equation}
+It is furthermore assumed that these are the only nonnegligible components of the deviatoric stress tensor $\sigma_{ij}'$.  The corresponding effective shear stress is therefore
+\begin{equation}\label{effstress}
+\sigma' = |\sigma_{xz}' \ihat + \sigma_{yz}' \jhat| = P \alpha
+\end{equation}
+where $\alpha$ is the surface slope
+    $$\alpha = |\grad h| = \left(\left|\ddx{h}\right|^2 + \left|\ddy{h}\right|^2\right)^{1/2}.$$
+It follows that
+\begin{equation}\label{ss}
+\ddz{\bU}=-2 F(T,P\alpha,P) P \grad h.
+\end{equation}
+
+Equation \eqref{ss}, which combines \eqref{stressstrain}, \eqref{constitutive} and \eqref{stressatdepth}, is the essential equation of the the shallow ice approximation.  It says that ice flow is driven only by horizontal shear stresses which are completely determined by depth, surface gradient, and temperature.
+
+
+\subsection{The stress--strain constitutive relation}\label{Fsubsect}  The function $F$ appearing in the constitutive relation \eqref{constitutive} adopts several forms in the literature but the traditional form is separated:
+\begin{equation}\label{tradF}
+F(T,\sigma,P)=A(T^*) f(\sigma).
+\end{equation}
+Here $T^*$ is the homologous temperature
+    $$T^*(x,y,z,t) = T(x,y,z,t) - P(x,y,z,t) \Phi,$$
+where $\Phi$ is the constant rate of change of melting point with pressure \cite{PayneBaldwin}.  That is, $T^*$ is the absolute temperature shifted by pressure.\footnote{Recalling \eqref{pressure}, $T^*=T-\rho g (h-z) \Phi$.  If $T_0$ is the triple point of water, $\Tpmp(\Delta) = T_0 - \rho g \Delta \Phi$ is the pressure--melting--point at depth $\Delta$.}
+
+We consider this separated form first, and then reconsider $F$ in light of work by Goldsby and Kohlstedt \cite{GoldsbyKohlstedt}.  Note that in the separated form there is dependence on the pressure $P$ through equation \eqref{stressatdepth} for $\sigma$ and through the formula for homologous temperature $T^*$.
+
+The most common separated form is Glen's flow law \cite{Glen}
+    $$f(\sigma)=\sigma^{n-1}$$
+where $n=3$ is the default Glen value.  Another form for $f(\sigma)$ is a polynomial law \cite{Hutter93}.
+
+The \emph{Arrhenius} function $A(T^*)$ appears in the literature in two forms.  Hooke \cite{Hooke} says
+    $$A(T^*) = A_0 \exp\left(\frac{-Q}{R T^*} + \frac{3c}{(T_r - T^*)^\kappa}\right)$$
+and Paterson and Budd \cite{PatersonBudd} say
+\begin{equation}\label{PatBuddArr}
+A(T^*) = \begin{cases} a_1 \exp\left[-Q_1/(R T^*)\right], &T^*<263 \text{ K} \\
+a_2 \exp\left[-Q_2/(R T^*)\right], &T^*\ge 263 \text{ K} \end{cases}.
+\end{equation}
+Figure \ref{arrfig} below compares these two relations in the relevant range\footnote{I believe this corrects figure 5 of \cite{PayneBaldwin}, and actually shows the phenomenon referred to there: ``The apparent discontinuity in the Hooke relationship near 273 K is due to the sampling interval used to plot this curve.  The relationship is, in fact, continuous throughout.''}.  A further important option in any simulation is the \emph{decoupled} choice, that is $A(T^*)\equiv A_0$.  Note that the \emph{EISMINT} isothermal benchmark \cite{EISMINT96} value of $A_0=10^{-16}$ $\text{Pa}^{-3}$ $\text{a}^{-1}$ corresponds to warm ice in either of the $A(T^*)$ models just mentioned.
+\begin{figure}[ht]
+\regfigure{arrfig}{2}
+\caption{Comparison of Hooke \cite{Hooke} and Paterson--Budd \cite{PatersonBudd} Arrhenius relations.}
+\label{arrfig}
+\end{figure}
+
+Now, the separated form \eqref{tradF} for $F$ is undoubtedly a simplification.  Indeed Goldsby and Kohlstedt \cite{GoldsbyKohlstedt} have introduced an improved form based on further experiment and compilation of older data.  They propose
+\begin{equation}\label{GKF}
+F(T,\sigma,P)=F_{\text{\emph{diff}}} + \left(F_{\text{\emph{basal}}}^{-1} + F_{\text{\emph{gbs}}}^{-1}\right)^{-1} +F_{\text{\emph{disl}}}.
+\end{equation}
+Three of these terms, namely  $F_{\text{\emph{basal}}}, F_{\text{\emph{gbs}}}, \text{ and } F_{\text{\emph{disl}}}$, satisfy a rule of modified Arrhenius--Glen form (compare \eqref{tradF}):
+    $$F_{\#}=A_{\#} \frac{\sigma^{n_{\#}-1}}{d^p} \exp\left(-\frac{Q_{\#}+PV}{RT}\right).$$
+The constants $A_{\#},n_{\#},Q_{\#}$ are given values in table 5 of \cite{GoldsbyKohlstedt} and differ for the three cases.  Note $A_{\#},Q_{\#}$ in fact depend on ranges of $T$, as in the Paterson--Budd relation \eqref{PatBuddArr} above.  The constants $p, V, R$ are all actually constant.  The remaining term $F_{\text{\emph{diff}}}$ is determined by a rule of a different form given by equation (4) in \cite{GoldsbyKohlstedt} with constants determined by table 6 in \cite{GoldsbyKohlstedt}.
+
+It would seem that either the grain size $d$ must be approximated by an additional yet--to--be--determined model equation or it must be assumed constant.  The latter strategy is adopted in this paper.
+
+
+\subsection{Horizontal velocity in the shallow ice approximation}\label{ss:horvel}  Equation \eqref{ss} can be integrated to express the horizontal velocity as a vertical integral:
+    $$\bU(z) = - 2 \grad h \int_{b}^z F(T(\zeta),\sigma(\zeta),P(\zeta)) P(\zeta)\,d\zeta + \bU_b.$$
+where $F$ is the constitutive relation discussed above.  Here $\bU_b=\bU(z=b)$ is the horizontal velocity at the base of the ice sheet.
+
+Dependence on $x,y,t$ is suppressed in the majority of the remaining model description, and $\zeta$ plays the role of $z$ as a dummy variable of integration.  We have integrated from the base because we plan to use a basal sliding model which will determine $\bU_b$ as a function of the basal effective shear stress and temperature.\footnote{On the other hand, \emph{surface} velocities of real ice sheets are, with current experimental means, well--known compared to the basal velocities.}
+
+Recalling that the flux $\bQ$ is the vertical integral of $\bU$, the equation
+\begin{equation}\label{iceFourier}
+\bQ = - D\grad h + \bU_b H,
+\end{equation}
+defines a scalar ``diffusivity'' $D$ \cite{vanderVeen} as follows.  Equation \eqref{iceFourier} is essentially ``Fourier's law'' for ice flow, that is, the flux is proportional to the gradient of the height, though the proportionality depends on both thickness and surface slope.  From \eqref{flux} and the above equation for $\bU$,
+\begin{align}
+\label{diffint} D(x,y,t) &= 2 \int_{b}^h \int_{b}^z F(\zeta) P(\zeta)\,d\zeta\,dz = 2 \int_{b}^h F(z)P(z)(h-z)\,dz,\notag
+\end{align}
+where $F(z)=F(T,\sigma,P)$ at depth $z$.  The order of integration can be changed, as shown, so as to eliminate one integral.
+
+\begin{example} If one uses \eqref{diffint}, the Glen flow law $f(\sigma)=\sigma^{n-1}$, and if one supposes a constant temperature to determine $A_0=A(T^*)$, then one finds:
+    $$D=2(\rho g)^n A_0 \alpha^{n-1} \int_{b}^h (h-z)^{n+1}\,dz=\frac{2(\rho g)^n A_0}{n+2} \alpha^{n-1} H^{n+2}. \qquad [\text{isothermal, Glen}]$$
+Thus
+\begin{equation}\label{fluxiso}
+\bQ=-\frac{2(\rho g)^n A_0}{n+2} \alpha^{n-1} H^{n+2} \, \grad h + \bU_b H, \qquad [\text{isothermal, Glen}]\end{equation}
+a familiar expression from the \emph{isothermal} shallow ice approximation with Glen flow law \cite{EISMINT96,Paterson}.  Of course, we will not use equation \eqref{fluxiso} in the thermocoupled model of this paper.\end{example}
+
+With $D$ given by \eqref{diffint}, the ice continuity equation \eqref{Cfirst} becomes a nonlinear diffusion equation
+\begin{equation}\label{Cdiffform}
+\ddt{H} = a + \diverg \left(D \grad h -\bU_b H\right).
+\end{equation}
+This will be regarded as the primary equation of flow.
+
+It is convenient (and probably only that) to further simplify these expressions by introducing the ``local diffusivity rate''
+    $$\delta = 2 F(T,\sigma,P) P.$$
+Note $\delta=\delta(x,y,z,t)$.  With this $\delta$, equation \eqref{ss} becomes simply  $\ddz{\bU} = - \delta \, \grad h$.  From expressions \eqref{pressure} for $P$ and \eqref{effstress} for $\sigma$, $\delta$ is determined by temperature, depth and surface slope.  Simplified forms using $\delta$ are
+\begin{equation}\label{UDsimp}
+  \bU(z) = - \grad h \int_{b}^z \delta(\zeta) \,d\zeta + \bU_b \quad \text{ and } \quad D = \int_{b}^h \delta(z) (h-z) \,dz
+\end{equation}
+where $x,y,t$ dependence has been suppressed.
+
+Vertical integrals of the type which determine $\bU$ and $D$ are computed many times in the ice model of the current paper.  Therefore we introduce yet more simplified notation:  Let
+    $$I(z)=\int_b^z \delta(\zeta)\,d\zeta \quad \text{ and } \quad J(z)=\int_b^z \delta(\zeta)(z-\zeta)\,d\zeta.$$
+Then $\bU(z)=-I(z)\grad h + \bU_b$ and $D=J(h)$.
+
+
+\subsection{Incompressibility and the vertical velocity}\label{incompsubsect}  Next, ice is incompressible:
+    $$\diverg \bU + \ddz{w}=0.$$
+By integration we get useful expressions for the vertical velocity $w$ in terms of the essential depth--dependent quantity $\delta$, or equivalently in terms of $F$.  ``Expression\emph{s}'' because there is a choice of boundary condition, as follows.
+
+Let $w_b(x,y,t)=w\big|_{z=b}$, $w_h(x,y,t)=w\big|_{z=h}$, $\bU_h(x,y,t)=\bU\big|_{z=h}$.  On the one hand, if $S$ is the rate of basal melting then \cite{PayneDongelmans}
+\begin{equation}\label{wbasekine}
+w_b=\ddt{b}+ \bU_b\cdot\grad b - S.
+\end{equation}
+On the other hand, at the surface of the ice there is a ``surface kinematical condition''\footnote{Whichever of \eqref{wbasekine} or \eqref{wsurfkine} is used as a boundary condition for velocity integrals, it is appropriate to check the other as a diagnostic.}
+\begin{equation}\label{wsurfkine}
+w_h=\ddt{h}+ \bU_h\cdot\grad h - M.
+\end{equation}
+
+Condition \eqref{wbasekine} plus incompressibility yields:\footnote{To derive \eqref{wintbase} and \eqref{wintsurf} one uses the differentiation rule for vector--valued $\bG$
+    $$\int_{g(x,y)}^{h(x,y)} \diverg \bG(x,y,\zeta)\,d\zeta = \diverg \left(\int_{g}^{h} \bG \,d\zeta\right)- \bG(x,y,h)\cdot \grad h + \bG(x,y,g)\cdot \grad g.$$
+Recall that $\diverg$ and $\grad$ involve only $x,y$ derivatives.}
+\begin{align}\label{wintbase}
+w(z) &= -\int_{b}^z \diverg \bU(\zeta)\,d\zeta + w_b
+= - \diverg\left(\int_{b}^z\bU(\zeta)\,d\zeta\right) - \bU_b\cdot\grad b +w_b \notag\\
+&=+ \diverg\left(J(z) \grad h\right) - \diverg (\bU_b(z-b)) + \ddt{b} - S.
+\end{align}
+Equation \eqref{UDsimp} for $\bU$ has been incorporated and an integral calculation like that in \eqref{diffint} has been performed.  Condition \eqref{wsurfkine} plus incompressibility yields:
+\begin{align}
+w(z) &= +\int_{z}^h \diverg \bU(\zeta)\,d\zeta + w_h = + \diverg\left(\int_{z}^h\bU(\zeta)\,d\zeta\right) - \bU_h\cdot\grad h +w_h\notag\\
+&= - \diverg\left(\grad h \int_{z}^h \int_b^\zeta \delta(\zeta')\,d\zeta'\,d\zeta\right) + \diverg\left(\int_{z}^h\bU_b(\zeta)\,d\zeta\right) - \bU_h\cdot\grad h +w_h \notag\\
+\label{wintsurf}&= - \diverg\left(\left[(h-z)I(z) + \int_{z}^h\delta(\zeta)(h-\zeta)\,d\zeta\right] \grad h\right) + \diverg\left(\bU_b(h-z)\right) + \ddt{h} - M.\end{align}
+
+Equation \eqref{wintbase} is used in the current paper and model to determine the vertical velocity.
+
+
+\subsection{Basal sliding and basal melt rate}\label{basalsubsect}  Under those parts of the sheet where the temperature is below the pressure melting point $\Tpmp$, there is a simple basal sliding law, namely no sliding:
+    $$\bU_b(x,y,t)=0 \qquad \text{if} \qquad T^*(z=b)< \Tpmp(H).$$
+At locations where the basal temperature is at the melting point, some sliding model is needed.
+
+Supposing the ice sheet is underlain by a viscous till layer of thickness $H_t$ and viscosity $\nu_t$ \cite{LingleTroshina,MacAyeal}, the simplest model is the linear law
+    $$\bU_b(x,y,t)=+\left(\frac{H_t}{\nu_t}\right) \left(\sigma_{xz}'\ihat+\sigma_{yz}'\jhat\right) = - \left(\frac{H_t \rho g}{\nu_t}\right)  H \grad h$$
+if $T^*(z=b)=\Tpmp(H)$.
+
+Recall that boundary condition \eqref{wbasekine} for the vertical velocity in theory requires the calculation of a melt rate $S$ which has units of velocity.  [DESCRIBE BASAL MELT RATE COMPUTATION]
+This quantity contributes to the vertical velocity in equation \eqref{wbasekine}.
+
+
+\subsection{The temperature model}\label{ss:temp}   We approximate in this paper the time evolution of the temperature of the ice, but the extent of the ice changes in all three spatial dimensions.  Thus the temperature field therefore solves a \emph{free boundary} problem as shown in figure \ref{tempbdry}.
+
+\begin{figure}[ht]
+\vspace{-3mm}
+\regfigure{tempbdryfig}{3}
+\vspace{-6mm}
+\caption{Temperature solves a free boundary problem with both upper and lower moving surfaces.}
+\label{tempbdry}
+\end{figure}
+
+Within the ice the temperature field $T$ is modelled by the equation
+\begin{equation}\label{Teqn}
+\ddt{T} + \bU\cdot \grad T + w \ddz{T} = \frac{k}{\rho c_p} \dddzdz{T}+ \Sigma.
+\end{equation}
+See \cite{Fowler,Paterson,vanderVeen} for derivation of this equation.  The left side is the ``material derivative'' and includes convection (advection).  The right side includes vertical conduction (diffusion) and a heat source.  The heat source $\Sigma$ is dissipation from the horizontal strain rate.  It is given by \cite{Paterson}
+    $$\Sigma = \frac{\sigma}{\rho c_p} \left|\ddz{\bU}\right| = \frac{2}{\rho c_p} F(T,\sigma',P) \, \sigma'^{\,2}.$$
+If a Glen type constitutive relation $F$ is used then $\Sigma$ is proportional to the $n+1$ power of the effective shear stress $\sigma'$ and thus is relatively singular for numerical approximation.   (We will return to this issue in later sections.)
+
+A more complete model would, among other things,  include an accounting for the water content of that part of the ice which is at the melting point.  For ice sheets this is a small fraction of the total volume and may have only a small effect on flow \cite{Greve}.  We will not include such a model here.
+
+However, ice which has reached the pressure melting temperature cannot easily be warmed further and so we augment the temperature equation with the condition
+    $$\ddt{T^*}=0$$
+at any point in the ice where
+    $$T^*=\Tpmp \quad \text{ \emph{and} } \quad -\bU\cdot\grad T - w \ddz{T} + \frac{k}{\rho c_p} \dddzdz{T} + \Sigma - \rho g \Phi \ddt{h} \ge 0.$$
+The ugly inequality condition follows from requiring that $T^*$ not increase once $\Tpmp$ is reached and from $\ddt{T^*}=\ddt{T}-\rho g \Phi \ddt{h}$.  In this model the ice is able to cool once the heating terms are no longer producing net heating---recall that advection and conduction can cool, of course.  In practical implementation this condition will be enforced as the temperature equation is solved and thus most of the terms in the inequality condition will already be available at each grid point.
+
+
+\subsection{Age}  The scalar age equation is purely advective.  In fact, it says that the material derivative of the age is $1$:
+\begin{equation}\label{ageeqn}
+\ddt{\tau} + \bU\cdot \grad \tau + w \ddz{\tau} = 1
+\end{equation}
+The numerical techniques which apply to the advection part of the temperature equation, for example upwinding, apply equally to the age equation.
+
+
+\subsection{Boundary conditions}  This completes the list of the primary physical (field) equations.  Now for the boundary conditions, which are presumed sufficient to produce exactly one solution to the whole system.\footnote{The existence and uniqueness of solutions to the thermocoupled system has not been proven.  The corresponding result for the isothermal case is proven in \cite{CDDSV}.}
+
+The boundary condition applicable to the ice continuity equation is, I think,
+    $$H\ge 0.$$
+This requires some interpretation.  On the one hand, if $H=0$ at some point $(x,y)$ and time $t$ then the ice continuity equation \eqref{Cfirst} reduces to $\ddt{H} = \max\{a,0\}$.  On the other hand we must have some procedure for determining how the margin moves in regions where $a<0$.  That it does so is a consequence of \emph{flow}, of course.  At the level of a discretized model, there is a relatively well--known mechanism where a new, proposed value of $H$ is computed at every (horizontal) grid point, from \eqref{Cfirst}, and if the proposed value is negative $H<0$ then at the next time step the value of $H$ is set to zero.  This mechanism is alluded to in \cite{vanderVeen} and tested in \cite{BLKCB}.
+
+We expect that for a grounded margin $Q$ should be continuous across the margin (i.e.~at the $H=0$ free boundary).  The condition at calving fronts and grounding lines where the ice sheet couples to an ice shelf is more complicated, and may include discontinuous $Q$ as a first approximation.
+
+Boundary conditions for the velocities $\bU$, $w$ have already been addressed.
+
+Boundary conditions for temperature $T$ occur at the moving $z=h$ and (potentially moving) $z=b$ boundaries.  In particular, an input to the model is the upper surface temperature
+    $$T\big|_{z=h} = T_s.$$
+At the base, since we are not modelling water content, we have a purely Neumann condition \cite{Huybrechts90}
+\begin{equation}\label{tempbasecond}
+k\ddz{T}\Big|_{z=b} = -G -\bU_b\cdot(\sigma_{xz}\ihat + \sigma_{yz}\jhat) = -G+\rho g H \bU_b\cdot \grad h
+\end{equation}
+where $G$ is the geothermal heat flux and the second term is a heating rate from sliding.
+
+\newcommand{\bUb}{{\mathbf{U}_b}}
+\newcommand{\alphaav}{{\alpha_{\text{av}}}}
+\newcommand{\Dav}{{D_{\text{av}}}}
+\newcommand{\deltaav}{{\delta_{\text{av}}}}
+\newcommand{\bUav}{{\mathbf{U}_{\text{av}}}}
+\newcommand{\bUbav}{{\mathbf{U}_{b,\text{av}}}}
+\newcommand{\wav}{{w_{\text{av}}}}
+\newcommand{\hav}{{h_{\text{av}}}}
+\newcommand{\sigmaav}{{\sigma_{\text{av}}}}
+\newcommand{\alphatemp}{{\alpha_{\text{temp}}}}
+\newcommand{\wtemp}{{w_{\text{temp}}}}
+\newcommand{\deltatemp}{{\delta_{\text{temp}}}}
+\newcommand{\htemp}{{h_{\text{temp}}}}
+\newcommand{\Htemp}{{H_{\text{temp}}}}
+\newcommand{\gradhtemp}{{\grad h_{\text{temp}}}}
+\newcommand{\Itemp}{{I_{\text{temp}}}}
+\newcommand{\Jtemp}{{J_{\text{temp}}}}
+\newcommand{\Dtemp}{{D_{\text{temp}}}}
+\newcommand{\sigmatemp}{{\sigma_{\text{temp}}}}
+\newcommand{\bUbtemp}{{\mathbf{U}_{b,\text{temp}}}}
+\newcommand{\Dold}{{D_{\text{old}}}}
+
+\subsection{A change of vertical variable}  We make a change of the independent variable $z$ which simplifies the free boundary problem for temperature in case of nonflat or even moving bed.
+
+Let
+    $$s=z-b(x,y,t),$$
+and make the change of variables $(x,y,z,t)\mapsto (x,y,s,t)$.  This replaces $z=b$ by $s=0$ as the equation of the base surface of the ice.  Therefore, with the change $z\to s$, the free boundary problem for temperature changes to involve only a free upper surface as shown in figure \ref{stempbdry}.
+
+\begin{figure}[ht]
+\vspace{-2mm}
+\regfigure{stempbdryfig}{3}
+\vspace{-4mm}
+\caption{In $(x,y,s)$ space temperature solves a free boundary problem in which only the upper surface $s=H(x,y,t)$ moves.  Compare to figure \ref{tempbdry}.}
+\label{stempbdry}
+\end{figure}
+
+Note that the region $\mathcal{R}=\left\{(x,y,s)\big| -L_x\le x \le L_x, -L_y\le y \le L_y, 0\le s \le s_{max}\right\}$ will be divided into a fixed three dimensional finite difference grid.  See section \ref{numsect}.
+
+The change $z\to s$ \emph{is not} the Jenssen \cite{Jenssen} change of variable $s=\frac{z-b}{H}$ which causes the temperature equation to become singular at the boundaries of the ice sheet.  In fact, such a change replaces the vertical conduction term in the temperature equation \eqref{Teqn} by a manifestly singular term (supposing $H=0$ anywhere in the horizontal computational domain):
+    $$\frac{k}{\rho c_p} \frac{\partial^2 T}{\partial z^2} = \frac{1}{H^2} \frac{k}{\rho c_p} \frac{\partial^2 T}{\partial s^2}.$$
+A singular coefficient of this type affects the stability of all time-stepping schemes, including the putatively ``unconditionally stable'' schemes which are not actually stable for the coupled and nonlinear system.  The current change $s=z-b$ has no such singularizing effect though the change does result in added advection terms in the temperature equation.  Of course, there is still a free boundary to deal with numerically.
+
+Recall that if $f=f(x,y,z,t)$ in the old variables and if $\tilde f(x,y,s,t)=f(x,y,z(x,y,s,t),t)$ is the ``same function written in the new variables'' (an equivalent relation is $f(x,y,z,t)=\tilde f(x,y,s(x,y,z,t),t)$) then
+    $$\ddx{f} = \ddx{\tilde f}+\dds{\tilde f}\ddx{s} = \ddx{\tilde f}-\dds{\tilde f}\ddx{b}.$$
+Similar replacements apply to $\ddy{f},\ddt{f}$. Note $\ddz{f}=\dds{\tilde f} \ddz{s} = \dds{\tilde f}$.
+
+The following table records the important changes:
+$$\begin{array}{ll}
+\textbf{old} & \textbf{new} \\
+P=\rho g(h-z) \phantom{dlksaflkdjflajsddlksaflkdjflaj} & P=\rho g(H-s) \phantom{dlksaflkdjflajsddlksaflkdjflaj} \\
+I(z)=\int_b^z\delta(\zeta)\,d\zeta & I(s) = \int_0^{s} \delta(s')\,ds' \\
+J(z)=\int_b^z\delta(\zeta)(z-\zeta)\,d\zeta & J(s) = \int_0^{s} \delta(s')(s-s')\,ds' \\
+\bU(z)=-I(z)\grad h + \bU_b & \bU(s)=-I(s)\grad h+ \bU_b \\
+D=J(h) & D=J(H) \\
+%\end{array}$$
+%$$\begin{array}{ll}
+\ddt{T} & \ddt{T}-\dds{T}\ddt{b} \\
+\grad T & \grad T- \dds{T}\grad b \\
+\ddt{T}+\bU\cdot\grad T + w\ddz{T}=\frac{k}{\rho c_p} \dddzdz{T} + \Sigma & \ddt{T}+\bU\cdot\grad T + \left(w-\ddt{b}-\bU\cdot\grad b\right)\dds{T} \\
+ & \qquad =\frac{k}{\rho c_p} \dddsds{T} + \Sigma \\
+w(z)=\diverg \left(J(z)\grad h-(z-b)\bU_b\right)+\ddt{b}-S\qquad & w(s)=\diverg \left(J(s)\grad h-s\bU_b\right) \\
+ & \qquad-\left(I(s)\grad h-\bU_b\right)\cdot\grad b + \ddt{b}-S.
+\end{array}$$
+%\vfill
+
+
+%\newpage
+\section{The main table: How to advance from time $t_l$ to time $t_{l+1}$}
+
+This section is exclusively a table which summarizes the time stepping procedure.  One enters this sequence knowing the functions $h$, $T$, $b$, and $\ddt{b}$ at time $t=t_l$.  The number under ``\textbf{Time}'' indicates what time to associate with the computed quantity(ies).  The number under ``\textbf{Dim}'' indicates whether the computed quantity represents values on a $x,y$ grid (``2'' for 2D) or a $x,y,z$ grid (``3'').  Generally the $x,y$ dependence of quantities is suppressed but dependence on $s$ (formerly $z$) is given for emphasis.
+
+\renewcommand{\arraystretch}{2}
+$$\begin{array}{lcccr}
+\textbf{Stage} & \textbf{Time} & \textbf{Dim} & \textbf{Computation/Equation} & \textbf{Notes} \\
+1 & l & 2 & \grad h,\quad \alpha=|\grad h|, \quad H=h-b & \eqref{stagnote} \\
+2 & l & 3 & P(s)=\rho g (H-s), \quad \sigma'(s)=P\alpha, \quad \delta(s)=2 F(T,\sigma',P) P & \eqref{Fnote} \\
+3 & l & 3 & I(s)=\int_0^s \delta(s')\,ds', \quad J(s)=sI(s)-\int_0^s s'\delta(s')\,ds' & \eqref{vertintnote}\\
+4 & l & 2 & \bU_b \text{ computed from } H, \grad h, \text{ and } T& \eqref{basalnote} \\
+5 & l & 2 & D=J(H) & \eqref{interpnote} \\
+6 & l+1 & 2 & h_{l+1} \text{ computed from} & \eqref{hfirstnote} \\
+ &  &  & \ddt{h}= a + \ddt{b} + \diverg \left(D \grad h - (h-b)\bU_b\right) & \\
+\end{array}$$
+
+\noindent If $l$ is a temperature update step proceed to:
+$$\begin{array}{lcccr}
+7\phantom{tage} & \phantom{bob}l\phantom{bob} & \phantom{bo}3\phantom{bo} & \bU(s)=- I(s) \grad h+ \bU_b & \\
+8 & l & 2 & S \text{ computed (perhaps only diagnostically)} & \eqref{Snote} \\
+9 & l & 3 & w(s)=\diverg \left(J(s)\grad h-s\bU_b\right)-\left(I(s)\grad h-\bU_b\right)\cdot\grad b + \ddt{b}-S & \eqref{wbasenote} \\
+10 & l & 3 & \Sigma = \frac{2}{\rho c_p} F(T,\sigma',P) \sigma'^2; \quad \text{smooth if necessary} & \eqref{smoothnote}\\
+11 & l+1 & 3 & T_{l+1} \text{ computed from } & \eqref{Tnote} \\
+ &  &  & \ddt{T}+\bU\cdot\grad T + \left(w-\ddt{b}-\bU\cdot\grad b\right)\dds{T} = \frac{k}{\rho c_p} \dddsds{T} + \Sigma & \\
+\end{array}$$
+
+\medskip
+\noindent\textbf{Notes:}
+%\renewcommand{\labelenumi}{\textbf{\alph{enumi}}. }
+\begin{enumerate}
+\item\label{stagnote}  These are computed on a staggered grid in the Mahaffy \cite{Mahaffy} scheme, but could be computed on the regular grid \cite{HindmarshPayne}.
+\item\label{Fnote} A subroutine computes the constitutive function $F$ in either Glen or Goldsby-Kohlstedt form.  See subsection \ref{Fsubsect}.
+\item\label{vertintnote} Vertical integrals computed by trapezoid rule.  Could be computed on an unequally--spaced grid \cite{PayneDongelmans}.
+\item\label{basalnote} See subsection \ref{basalsubsect}.
+\item\label{interpnote} Will involve approximation of $J$ at the height $H$ based on vertical neighboring values at grid levels $s_k$.  Note $D$ is computed on a staggered grid.
+\item\label{hfirstnote} Computed explicitly and therefore $O(\Delta t)$.
+\item\label{Snote} See subsection \ref{basalsubsect}.
+\item\label{wbasenote} This is formula \eqref{wintbase} from subsection \ref{incompsubsect}.  Note that $S$ may be so small that it can be ignored here.
+\item\label{smoothnote} Smoothing used to control thermocoupled ``spoking'' instability.  Smoothing actually computed by FFT convolution with Gaussian.
+\item\label{Tnote} Done semi--implicitly (Crank--Nicolson) in each vertical column with free boundary technique (no Jenssen change of variable).  Potentially uses unequally--spaced vertical grid.  Advection is by upwinding.  Advection and source terms are computed asymmetrically in time: use data at $t=t_l$.  Thus only $O(\Delta t)$.
+\end{enumerate}
+
+
+%\newpage
+\section{Numerical approximation by finite differences}\label{numsect}
+
+This section attempts to address the details of the finite difference techniques for approximating the partial differential equations of the previous sections.  Inevitably some issues will be glossed over.
+
+Some notation is also inevitable.  Suppose $(x_i,y_j,s_k,t_l)$ is a uniformly--spaced grid on a rectangular region $R$ with spacing $\Delta x,\Delta y, \Delta s,\Delta t$.\footnote{For now we suppose $\Delta s$ is constant.  (10/2002)}  Let
+    $$T_{i,j,k,l} \approx T(x_i,y_j,s_k,t_l) \quad \text{ and }\quad h_{i,j,l}\approx h(x_i,y_j,t_l),$$
+and so on.  We will confuse the \emph{values on the grid of the actual solution} with the \emph{values we compute on the grid}  (which is the usual convention, of course).
+
+In finite difference formulas below, simplified notation ``$h$'', ``$h_{i+1}$'', ``$h_{j-1,l+1}$'', etc.~will be used.  This notation will be clear in the context: these three expressions correspond to $h_{i,j,l},h_{i+1,j,l},h_{i,j-1,l+1}$, respectively.  For computations which occur at a certain time (see the previous section), the time index $l$, $l+1/2$ or $l+1$ may be suppressed.
+
+\subsection{Staggered and regular grids and the gradient calculation}  We start from the basics, and the most basic calculation is the computation of $\grad h$ and $\alpha$ from the values of $h$ on the grid.  There are at least three well--known methods which are laid out in \cite{HindmarshPayne}.  For now we chose the one derived from Mahaffy \cite{Mahaffy}, which gives, for example
+    $$(\grad h)_{i+1/2,j} \approx \ip{\frac{h_{i+1,j}-h_{i,j}}{\Delta x}}{\frac{h_{i+1,j+1}+h_{i,j+1}-h_{i+1,j-1}-h_{i,j-1}}{4\Delta y}}.$$
+That is, the gradient is calculated on the points of the \emph{staggered grid}, which include $(x_{i+1/2},y_j)$, $(x_{i-1/2},y_j)$, $(x_i,y_{j+1/2})$, etc.  (Notation for a vector in two dimensions, $\ip{a}{b}=a\ihat+b\jhat$, is used here.)
+
+See figures \ref{regsten} and \ref{stagsten} for the regular and staggered grids, and the variables computed on each grid.  (Points on the \emph{three} dimensional grid, in this paper, may be staggered in the horizontal but there will be no need for staggering in the vertical.)
+
+\begin{figure}[ht]
+\regfigure{reggridsten}{2}
+\caption{Variables $b, \grad b, \ddt{b}, h, M, S, T, \bU_b, w$ are on the \emph{regular grid}.}
+\label{regsten}
+\end{figure}
+
+\begin{figure}[ht]
+\regfigure{staggridsten}{2}
+\vspace{-4mm}
+\caption{Variables $\alpha, b, \delta, D, h, \grad h, I, J, P, \sigma, T, \bU, \bU_b$ are on the \emph{staggered grid}.}
+\label{stagsten}
+\end{figure}
+
+It will be useful to recognize that certain nonderivative quantities, in particular $h$, $T$, $b$, and $\bU_b$ are needed on \emph{both} the regular and staggered grid.  This will be seen in the details of in the next subsections.  In particular, the averages/linear interpolants
+\begin{align}
+h_{i+1/2}&=\frac{h_{i+1}+h}{2}, \quad h_{j+1/2}=\frac{h_{j+1}+h}{2}, \\
+T_{i+1/2,k}&=\frac{T_{i+1,k}+T_k}{2}, \quad T_{j+1/2,k}=\frac{T_{j+1,k}+T_k}{2}\end{align}
+are needed at various points in the computation.  The routine \mtt{basal} might return $\bU_b$ on both regular or staggered grid, or averaging could be done as above for $h,T$.  Similarly the subroutine \mtt{beddef} could return $b$ on both grids, or an average could be computed.  There are \emph{effectively} three values of $h$, $T$, $b$, $\bU_b$ per regular grid point.  See figure \ref{molecule}.
+
+\begin{figure}[ht]
+\regfigure{molecule}{1.75}
+\vspace{-5mm}
+\caption{Variables $h$, $T$, $b$, $\bU_b$ are needed at all three locations.}
+\label{molecule}
+\end{figure}
+
+The Mahaffy style gradient calculation is then:
+\begin{align}
+(\grad h)_{i+1/2} &= \ip{\frac{h_{i+1}-h}{\Delta x}}{\frac{h_{i+1/2,j+1}-h_{i+1/2,j-1}}{2\Delta y}}, \\
+(\grad h)_{j+1/2} &= \ip{\frac{h_{i+1,j+1/2}-h_{i-1,j+1/2}}{2\Delta x}}{\frac{h_{j+1}-h}{\Delta y}}.
+\end{align}
+We suppose that these vectors are computed in this manner at every one of the staggered grid points shown in figure \ref{stagsten}.  We also compute
+\begin{equation}
+  \alpha_{i+1/2} = |(\grad h)_{i+1/2}|, \quad \alpha_{j+1/2} = |(\grad h)_{j+1/2}|
+\end{equation}
+at every staggered grid point, where $|\ip{a}{b}|=\sqrt{a^2+b^2}$.
+
+
+\subsection{Computing pressure, stresses, and velocities at depth}\label{atdepthsubsect}  We want to calculate depth--dependent quantities at points on the three dimensional grid which are \emph{in} the ice.  This comment relates to the essential fact that we suppose a fixed spatial grid in $x,y,s$ even though the upper ice surface will move.  It follows that some grid points are in the ice and some are above the ice, and that the situation is time--dependent.
+
+Though $h,H,b$ are related by $H=h-b$ and thus are not \emph{all} fundamental, it is nonetheless useful in what follows to go ahead and compute $H$ at the staggered grid points:
+\begin{equation}
+    H_{i+1/2}=h_{i+1/2}-b_{i+1/2}; \qquad H_{j+1/2}=h_{j+1/2}-b_{j+1/2}.
+\end{equation}
+
+Let $0\le s \le H_{max}$ be a predetermined range of possible ice thickness.  For $k=0,1,\dots,k_{max}$ suppose $s_0=0,s_1 ,\dots,s_k,\dots,s_{k_{max}}=H_{max}$ are the vertical levels.
+
+Given a staggered grid point $(i+1/2,j)$ or $(i,j+1/2)$, define $k_{Hi}$ as the \emph{largest} $k$ so for which $s_k\le H_{i+1/2}$.  Similarly, $k_{Hj}$ is the largest $k$ so for which $s_k\le H_{j+1/2}$.  In other words, at staggered grid point $(i+1/2,j)$ the range of $k$ values for which $s_k$ is below the ice surface is $k=0,1,\dots,k_{Hi}$ (and the range at $(i,j+1/2)$ is $k=0,1,\dots,k_{Hj}$).
+
+We compute many depth--dependent quantities at every horizontally staggered grid point but only from the base $s=0$ to the upper surface $s=H$, and thus only at grid levels $s_0$ through $s_{k_{Hi}}$ (or $s_{k_{Hj}}$) for a given horizontal location.
+
+In particular we compute the pressure $P$ and the effective shear stress $\sigma$ at every staggered grid point and at the appropriate range of levels:
+\begin{align}
+  P_{i+1/2,k}&=\rho g \left(H_{i+1/2}-s_k\right), \quad \sigma_{i+1/2,k}=P_{i+1/2,k} \alpha_{i+1/2}, \qquad (0\le k \le k_{Hi}) \\
+  P_{j+1/2,k}&=\rho g \left(H_{j+1/2}-s_k\right), \quad \sigma_{j+1/2,k}=P_{j+1/2,k} \alpha_{j+1/2}, \qquad (0\le k \le k_{Hj}).\notag
+\end{align}
+Similar restrictions on $k$ apply to $\delta,\bU$, etc.~which follow.
+
+From the values of $T$ we compute the local diffusivity $\delta$:
+\begin{align}
+\delta_{i+1/2,k}&=2 \,\mtt{F}(T_{i+1/2,k},P_{i+1/2,k}, \sigma_{i+1/2,k})\,P_{i+1/2,k}, \\
+\delta_{j+1/2,k}&=2 \,\mtt{F}(T_{j+1/2,k},P_{j+1/2,k}, \sigma_{j+1/2,k})\,P_{j+1/2,k}\notag
+\end{align}
+where \mtt{F}$(T,P,\sigma)$ is (one of) the constitutive function(s) defined in subsection 1.3 and appendix A.
+
+Again, temporarily, we suppose that the vertical grid spacing is uniform with spacing $\Delta s$.  We compute the integral $I(s)=\int_0^s \delta(s')\,ds'$ in the main table approximately by the \emph{trapezoid} rule:
+\begin{align}
+I_{i+1/2,j,0}&=0; \qquad I_{i+1/2,j,k+1}= I_{i+1/2,j,k} + \frac{\Delta s}{2}\left(\delta_{i+1/2,j,k}+\delta_{i+1/2,j,k+1}\right), \notag\\
+I_{i,j+1/2,0}&=0; \qquad I_{i,j+1/2,k+1}= I_{i,j+1/2,k} + \frac{\Delta s}{2}\left(\delta_{i,j+1/2,k}+\delta_{i,j+1/2,k+1}\right).\notag
+\end{align}
+Other integration methods than the trapezoid rule are clearly possible. [BUT I FORESEE THAT THEY ARE NOT NEEDED]   The error associated with this integral approximation is at most $\frac{1}{12} \left(\max |\delta''(s)|\right) (\Delta s)^2$.
+
+The integral $J(s)$ is also computed by the trapezoid rule, but it is easiest to first approximate
+    $$K(s)=\int_0^s s' \delta(s')\,ds',$$
+as follows:
+\begin{align}
+K_{i+1/2,j,0}&=0; \qquad K_{i+1/2,j,k+1}= K_{i+1/2,j,k} + \frac{\Delta s}{2}\left(s_k \delta_{i+1/2,j,k}+s_{k+1}\delta_{i+1/2,j,k+1}\right), \notag\\
+K_{i,j+1/2,0}&=0; \qquad K_{i,j+1/2,k+1}= K_{i,j+1/2,k} + \frac{\Delta s}{2}\left(s_k \delta_{i,j+1/2,k} + s_{k+1}\delta_{i,j+1/2,k+1}\right).\notag
+\end{align}
+Then $J(s)=sI(s)-K(s)$, that is,
+\begin{equation}
+  J_{i+1/2,j,k}=s_k I_{i+1/2,j,k} - K_{i+1/2,j,k}, \qquad J_{i,j+1/2,k}=s_k I_{i,j+1/2,k} - K_{i,j+1/2,k}.
+\end{equation}
+The error associated with the integral approximation of $K$ is at most $\frac{1}{12} \left(\max |2\delta'(s)+\delta''(s)|\right) (\Delta s)^2$ (consider the second derivative of the integrand).
+
+Given the above data $H,b,\alpha,\grad h,T$ all known at a given staggered, basal grid point $(x_{i+1/2},y_j,s_0=0)$ or $(x_i,y_{j+1/2},s_0=0)$ we determine, from the function \mtt{basal} (described in subsection 1.6), the basal sliding velocity $\bU_b$ and the basal melt rate $S$:
+\begin{equation}
+  \mtt{basal} \to (\bU_b)_{i,j}; \quad (\bU_b)_{i+1/2,j};\quad (\bU_b)_{i,j+1/2}; \quad S_{i+1/2,j}; \quad S_{i,j+1/2}.
+\end{equation}
+Recall (in what follows) that $\bU_b=\ip{u_b}{v_b}$.  Note that $\bU_b$ is needed on both the regular and staggered grids.
+
+It is now easy to determine the horizontal velocity at depth:
+\begin{align}
+\bU_{i+1/2,j,k} &= - I_{i+1/2,j,k} (\grad h)_{i+1/2,j} + (\bU_b)_{i+1/2,j}, \\
+\bU_{i,j+1/2,k} &= - I_{i,j+1/2,k} (\grad h)_{i,j+1/2} + (\bU_b)_{i,j+1/2}. \notag
+\end{align}
+Note that because $\grad h$ is most easily computed on the staggered grid it follows that $\bU$ is most easily computed there as well.
+
+To compute the vertical velocity we use the integrated form of incompressibility, namely equation \eqref{wintbase} rewritten in the $s$ variable.  First, though, we need the gradient of $b$ on the regular grid:
+\begin{equation}(\grad b)_{i,j} = \ip{(b_x)_{i,j}}{(b_y)_{i,j}} = \ip{\frac{b_{i+1}-b_{i-1}}{2\Delta x}}{\frac{b_{j+1}-b_{j-1}}{2\Delta y}}.\end{equation}
+Then
+\begin{align}
+w_{i,j,k} &= \frac{1}{\Delta x}\left[J_{i+1/2}(h_x)_{i+1/2}-J_{i-1/2} (h_x)_{i-1/2}\right] + \frac{1}{\Delta y}\left[J_{j+1/2}(h_y)_{j+1/2}-J_{j-1/2} (h_y)_{j-1/2}\right] \notag\\
+    &\quad - \frac{s_k}{\Delta x}\left[(u_b)_{i+1/2}- (u_b)_{i-1/2}\right] - \frac{s_k}{\Delta y}\left[(v_b)_{j+1/2}- (v_b)_{j-1/2}\right] \notag\\
+    &\quad -\frac{1}{2}\left[I_{i+1/2}(h_x)_{i+1/2}-(u_b)_{i+1/2} + I_{i-1/2}(h_x)_{i-1/2}-(u_b)_{i-1/2}\right](b_x)_{i,j} \notag\\
+    &\quad -\frac{1}{2}\left[I_{j+1/2}(h_y)_{j+1/2}-(v_b)_{j+1/2} + I_{j-1/2}(h_y)_{j-1/2}-(v_b)_{j-1/2}\right](b_y)_{i,j} \notag\\
+\label{wfdeqn}    &\quad + \left(\ddt{b}\right)_{i,j} - S_{i,j}.\end{align}
+
+Before moving on to use these computed velocities in the evolution of the upper surface and the temperature field, we must deal directly with the free boundary nature of the problem.  Indeed the range of $k$ for which $(x_i,y_j,s_k)$ is a point within the ice depends on $x$, $y$, $t$ (i.e.~on indices $i$, $j$, $l$).  In computing $P$, $\sigma$, $\delta$, $I$, $J$, $\bU$ this presents no difficulty.  For the vertical velocity, however, we compute a horizontal derivative for the first time.  Thus there must be a rule for dealing with the situation shown in the figure below.  In the case shown, $w_{i,j,k}$ is desired but one of the staggered horizontal grid neighbors is outside of the ice and thus has no defined $P$, $\sigma$, $J$, etc.  In particular, one of the terms on the right side of \eqref{wfdeqn} will be missing.
+
+\begin{figure}[ht]
+\vspace{-4mm}
+\regfigure{bdrywsitfig}{2.5}
+\vspace{-6mm}
+\caption{How to determine $w_{i,j,k}$ if the horizontal neighbors are not in the ice?}
+\label{bdrywsit}
+\end{figure}
+
+The authors know of no \emph{best} rule to deal with this situation [COMMENT?!] but a number of simple and reasonable rules exist.  The simplest of these is to copy the value of $w$ from the grid point below: $w_{i,j,k}=w_{i,j,k-1}$.  Other simple rules include averaging the defined neighboring values or extrapolating from values below.  More sophisticated rules would come from using the incompressibility relation $\diverg \bU+\ddz{w}=0$ in an enlightened manner.
+
+With this caveat on the computation of $w$ we claim that all of $P, \sigma, \delta, I, J, \bU,$ and $w$ can be computed quickly by starting with the bottom layer of the ice (at $s=0$) and moving up layer by layer.  In particular, this concludes our discussion of stages 2, 3, 4, 5, 6 in the main table.
+
+[FILL IN SOME COVERAGE OF MACAYEAL VELOCITIES]
+
+\subsection{Computation of diffusivity}  As described in sections 1 and 2, the diffusivity $D$ in the ice flow equation is the value of the integral $J$ at the upper surface, that is, $D=J(s=H)$.  Computing $D$ therefore involves a modest approximation because $s=H$ usually falls between the vertical grid values $s_k$.  By definition, in fact, at the horizontal staggered grid point with indices $(i+1/2,j)$ the level $s=H$ is between $s_{k_{Hi}}$ and $s_{k_{Hi}+1}$.  A similar comment applies to $(i,j+1/2)$.
+
+We will use the value of $J(s)$ and its derivatives $\dds{J}$, $\dddsds{J}$, all at $s=s_{k_{Hi}}$, to estimate $D=J(H)$.  Note that
+    $$\dds{J} = I(s) = \int_0^s \delta(s')\,ds' \quad \text{because } \quad J(s) = \int_0^s (s-s') \delta(s')\,ds'$$
+and
+    $$\dddsds{J}=\delta(s) \quad \text{because } \quad I(s) = \int_0^s \delta(s')\,ds'.$$
+
+Thus the following are second order estimates of $J(H_{i+1/2,j})$ and $J(H_{i,j+1/2})$, respectively:
+\begin{align}
+D_{i+1/2,j}&=J_{i+1/2,k_{Hi}} + (H_{i+1/2}-s_{k_{Hi}}) \left(I_{i+1/2,k_{Hi}} + \frac{1}{2} \delta_{i+1/2,k_{Hi}} (H_{i+1/2}-s_{k_{Hi}})\right), \\
+D_{i,j+1/2}&=J_{j+1/2,k_{Hj}} + (H_{j+1/2}-s_{k_{Hj}}) \left(I_{j+1/2,k_{Hj}} + \frac{1}{2} \delta_{j+1/2,k_{Hj}} (H_{j+1/2}-s_{k_{Hj}})\right).
+\end{align}
+
+These values for $D$ are based on quadratic approximation of the function $J(s)$ and thus have a maximum error $\frac{1}{6} \left(\max |\delta'(s)|\right) (\Delta s)^3$ (consider the third derivative of the function $J(s)$).  Thus this local error is smaller than the error made in approximating $J$ itself by the trapezoid rule.
+
+We have now completed stages ??? and ??? in the main table and will move on to the computation of one time step for the main nonlinear partial differential equation, that is, the ice flow equation for the shape of the upper surface.
+
+\subsection{One time step for the ice flow equation}  Recall the ice flow equation as it appears in the main table:
+\begin{equation}\label{iceagain}
+\ddt{h}= M + \ddt{b} + \left[\diverg \left(D^e \grad h - (h-b)\bU_b\right)\right]\chi_{\{h>b\}}.\end{equation}
+At this point in the computation of one time step of the whole numerical model (i.e.~one pas through the main table), the functions $M,\ddt{b},D^e,b,$ and $\bU_b$ are known.
+
+[FILL IN CURRENT DETAILS FOR EXPLICIT SCHEME, ADAPTIVE TIME STEPPING]
+
+%\bigskip
+\subsection{One time step for the temperature equation}
+
+The temperature equation \eqref{Teqn}, or rather its $z\to s$ transformed version in the main table, is the only time--dependent and three--spatial dimension partial differential equation in the model.  It is linear in $T$ \emph{if} one supposes the velocity fields and the friction--heating source to be fixed.  In fact there is nonlinear coupling of $T$ to flow, and thus back to $T$, through these quantities.  (This is the point of a coupled model!)
+
+For the duration of one time step, or at least in computing stage 10 of the main table, we nevertheless suppose $\bU$, $w$ and the source $\frac{\sigma\delta\alpha}{\rho c_p}$ to be fixed functions of space.  Let
+    $$\Sigma = \frac{\sigma\delta\alpha}{\rho c_p}, \quad \tilde w=w-\ddt{b}-\bU\cdot \grad b, \quad \text{ and } K=\frac{k}{\rho c_p}$$
+(the last is a constant, of course).  Our temperature equation becomes
+\begin{equation}\label{simpTemp}
+\ddt{T}+u\ddx{T}+v\ddy{T}+\tilde w \dds{T} = K \dddsds{T}+\Sigma.
+\end{equation}
+where, while computing this stage, $u=u(x,y,s,t_l)$, $v=v(x,y,s,t_l)$, $\Sigma=\Sigma(x,y,s,t_l)$ are known functions of space.
+
+The left side of \eqref{simpTemp} is a ``material derivative'', of course, but from the numerical aspect (in this finite difference approximation) one treats $\ddt{}$ rather differently from the spatial derivatives.  In fact, we will ``upwind'' the spatial derivatives (\cite{Pressetal,PayneDongelmans}).\footnote{An alternative would be to upwind only the \emph{horizontal} spatial derivatives and approximate the vertical spatial derivative by a second order centered difference.  That would work (be stable) if vertical diffusion dominates vertical advection.  DOES IT?}  Let
+\newcommand{\Up}{\ensuremath{\operatorname{Up}}}
+\begin{equation}\label{Updef}
+\Up(f\big|i,\vf) = \begin{cases} \vf\frac{f_i-f_{i-1}}{\Delta x}, & \vf\ge 0, \\ \vf\frac{f_{i+1}-f_i}{\Delta x}, & \vf< 0\end{cases}
+\end{equation}
+approximate the quantity $\vf \ddx{f}$ at position $i$.  That is, determine a one--sided difference approximation to $\ddx{f}$ using the sign of $\vf$ and then multiply by $\bf$ as a coefficient.  (As in \cite{PayneDongelmans}, one could substitute second--order upwinding for \eqref{Updef}.\footnote{No evidence exists that second order upwinding is more accurate \emph{globally}, in the ice models in the literature.  Such evidence would essentially require comparison to an exact time--dependent solution.  IN ANY CASE, WE CAN CHOOSE second order here if we wish.})  As an example of the use of the ``$\Up$'' notation, suppose $T_{i,j,k,l}=T(x_i,y_j,s_k,t_l)$ is known on the grid.  Then the term $v\ddy{T}$ in \eqref{simpTemp} is approximated by $\Up(T_{i,\cdot,k,l} \big| j, v_{i,j,k,l})$.
+
+Thus we propose
+\begin{align}\label{fdTemp}
+&\frac{T_{i,j,k,l+1}-T_{ijkl}}{\Delta t} + \Up(T_{\cdot,j,k,l} \big|i,u_{ijkl}) + \Up(T_{i,\cdot,k,l} \big|j,v_{ijkl}) + \Up(T_{i,j,\cdot,l} \big|k,\tilde w_{ijkl}) \\
+    &\qquad =K\frac{T_{i,j,k+1,l+1} - 2 T_{i,j,k,l+1} + T_{i,j,k-1,l+1}}{\Delta s^2} + \Sigma_{ijkl}.\notag
+\end{align}
+as our (LIKELY TO BE) stable, semi--implicit scheme.  It is ``semi--implicit'' because there is dependence on $T$ in the velocities $u,v,\tilde w$ and in the source $\Sigma$.
+
+Method \eqref{fdTemp} has (more or less, obviously) $O(\Delta t,\Delta x,\Delta y, \Delta s)$ local truncation error.  Second--order upwinding would give $O(\Delta t,\Delta x^2, \Delta y^2, \Delta s^2)$ but there is no practical way to get $O(\Delta t^2,\dots)$.  That is, one could try to set up a Crank--Nicolson type scheme for \eqref{simpTemp} to get the better accuracy in time.  Success would require a fully nonlinear solution, for all values of $T$ on the three--dimensional grid, of the equation through its coupling to the rest of the model.  Such an equation would at least require a series of linear 3D solutions and probably require differentiating the whole model to do Newton--Raphson.  Thus full Crank--Nicolson has prohibitive complexity (for a thermocoupled model, for now).
+
+In any case, \eqref{fdTemp} requires the solution of a system of linear equations in \emph{each vertical column}.  In particular, \eqref{fdTemp} can be rearranged to
+\begin{align}\label{triTemp}
+-R &T_{k+1,l+1} + (1+2R) T_{k,l+1} - R T_{k-1,l+1} \\
+    &\quad = -\Delta t \left(\Up(T_{\cdot,j,k,l} \big|i,u_{ijkl}) + \Up(T_{i,\cdot,k,l} \big|j,v_{ijkl}) + \Up(T_{i,j,\cdot,l} \big|k,\tilde w_{ijkl}) - \Sigma_{ijkl}\right)\notag
+\end{align}
+where $R=\frac{K\Delta t}{\Delta s^2}$.  This is a tridiagonal, symmetric, diagonally--dominant system which has an efficient (and accurate) solution by well--known means \cite{Pressetal}.
+
+Note that for $k \ge k_H = \max\{k\big|s_k\le H_{ijl}\}$, the grid point $(x_i,y_j,s_k)$ is outside of the ice at time $t_l$--compare section \ref{atdepthsubsect}.  We can therefore set
+\begin{equation}\label{Taboveice}
+T_{ijkl}=T_s(x_i,y_j,H_{ijl},t_l) \qquad \text{if} \qquad k\ge k_H.
+\end{equation}
+The size of the tridiagonal matrix problem \eqref{triTemp} for the vertical column at $(x_i,y_j)$, at time $t_l$, is thereby determined by $H_{i,j,l}$.
+
+We also have a lower boundary condition \eqref{tempbasecond}.  Transforming to $s$ coordinates this becomes
+\begin{equation}\label{stempbasecond}
+k\dds{T}\Big|_{s=0} = -G + \rho g H \bU_b\cdot \grad h.
+\end{equation}
+We approximated by the $O(\Delta s)$ difference quotient:\footnote{One could do this with second order differencing too.}
+\begin{equation}\label{stempbasefd}
+k\frac{T_{i,j,1,l}-T_{i,j,0,l}}{\Delta s} = -G_{i,j,l} +\rho g H_{i,j,l} (\bU_b)_{i,j,l}\cdot(\grad h)_{i,j,l}.
+\end{equation}
+
+We see that the nontrivial tridiagonal system in each column is formed from \eqref{triTemp} for $k=1,...,k_H-1$, and from \eqref{stempbasefd}, and also from \eqref{Taboveice} for $k=k_H$.  For $k_H=5$, for example, the system has the following structure:
+\newcommand{\bul}{\bullet}
+    $$\begin{pmatrix} \quad \bul \quad & \quad \bul \quad & \quad 0 \quad & \quad 0 \quad & \quad 0 \quad & \quad 0 \quad \\ \bul &\bul & \bul & 0 & 0 & 0 \\ 0 & \bul & \bul & \bul & 0 & 0 \\ 0 & 0 & \bul & \bul & \bul & 0 \\ 0 & 0 & 0 & \bul & \bul & \bul \\ 0 & 0 & 0 & 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} T_{k=0} \\ T_{k=1} \\ T_{k=2} \\ T_{k=3} \\ T_{k=4} \\ T_{k=5} \end{pmatrix}  =  \begin{pmatrix} [\text{see \eqref{stempbasefd}}] \\  \\ [\text{see} \\ \eqref{triTemp}] \\  \\ T_s \end{pmatrix}.$$
+(Note that \eqref{triTemp} generates all but the first and last rows of the matrix.)
+
+We now suppose that stage 10 of the main table can be completed efficiently.  In fact, we suppose that (FOR FIRST DRAFT PURPOSES) the computations in the main table, and thus much of the model, can be turned into a program.
+
+[A CONVERGENCE PROOF IS POSSIBLE FOR THE SCHEME DESCRIBED HERE]
+
+[FILL IN CURRENT DETAILS FOR CFL and AGE]
+
+
+\section{Constants}
+
+These values are from \cite{EISMINT96}: \scriptsize
+\begin{align*}
+\rho &= 910\, \frac{\text{kg}}{\text{m}^3} \quad(\text{density of ice}) & R &= 8.321\,  \ufrac{J}{mol K} \quad (\text{gas constant})\\
+g &= 9.81\, \frac{\text{m}}{\text{s}^2} \quad (\text{acceleration of gravity})& \kappa &= 1.17\\
+k &= 2.10\, \frac{\text{J}}{\text{m K s}} \quad (\text{thermal conductivity of ice}) & c &= 0.16612 \, \text{K}^{\kappa} \\
+C_p &= 2009\, \ufrac{J}{kg K} \quad (\text{specific heat capacity of ice})& T_r&=273.39\, \text{K} \\
+A_0 &= 2.948\times 10^{-9} \frac{1}{\text{Pa}^3 \text{s}} &  G &= .042 \frac{\text{J}}{\text{m}^2\text{s}} \quad (\text{geothermal heat flux}) \\
+Q &= 7.88\times 10^4 \ufrac{J}{mol} \quad (\text{activation energy for creep})&  \beta &=8.7\times 10^{-4} \ufrac{K}{m} \quad (\text{change of melting point with depth})
+\end{align*}
+\normalsize
+
+
+%\section{Index of notation}  % THIS WOULD BE DESIRABLE; START FROM exact thermocoupled solution INDEX OF NOTATION
+
+
+\section{Acknowledgements}
+
+We thank the NASA Cryospheric Sciences Program for supporting this research with grant NAG5-11371.
+
+\bibliography{ice_bib}
+\bibliographystyle{siam}
+
+\end{document}

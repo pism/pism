@@ -1,0 +1,721 @@
+% Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+%
+% This file is part of Pism.
+%
+% Pism is free software; you can redistribute it and/or modify it under the
+% terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+% WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License
+% along with Pism; if not, write to the Free Software
+% Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+\documentclass[final]{amsart}
+\addtolength\topmargin{-.1in}
+\addtolength\textheight{0.3in}
+\addtolength{\oddsidemargin}{-.5in}
+\addtolength{\evensidemargin}{-.5in}
+\addtolength{\textwidth}{1.0in}
+\newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
+\newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
+\normalspacing
+
+\usepackage{bm,url,xspace,verbatim}
+
+\renewcommand{\t}[1]{\texttt{#1}}
+\newcommand{\Matlab}{\textsc{Matlab}\xspace}
+\newcommand{\bU}{\mathbf{U}}
+
+% note \beginV and \Vend are a pair, but they must be used as follows:
+%   \beginV
+%      ... stuff
+%   \end{verbatim}
+%   \Vend
+% that is, "\end{verbatim}" still has to appear on a line by itself with no leading spaces
+%\newcommand{\Vend}{ \rule{4.6in}{0.1mm}\end{quote} }
+%\newcommand{\beginV}{ \begin{quote}\rule{4.6in}{0.1mm}\begin{verbatim} }
+\newcommand{\Vend}{ \rule{4.6in}{0.1mm}\end{quote}\normalsize }
+%\newcommand{\beginV}{ \small\begin{quote}\rule{4.6in}{0.1mm}\begin{verbatim} }
+\newcommand{\beginV}{ \scriptsize\begin{quote}\rule{4.6in}{0.1mm}\begin{verbatim} }
+
+\newcommand{\Vfile}[1]{ \begin{quote}\rule{4.6in}{0.1mm} \verbatiminput{#1} \rule{4.6in}{0.1mm}\end{quote} }
+
+
+\title[COMMVNISM: A User's and Developer's Manual]{A \underline{C}++ \underline{O}bject-oriented \underline{M}ulti-\underline{M}odal, \underline{V}erifiable \\ \underline{N}umerical \underline{I}ce \underline{S}heet \underline{M}odel: \\ A User's and Developer's Manual}
+
+\author{Jed Brown and Ed Bueler}
+
+\date{\today.  This manual documents a C++ implementation of a numerical ice sheet model developed by Jed Kallen-Brown, Ed Bueler, and Craig Lingle}
+
+\begin{document}
+\maketitle
+\tablespacing
+\tableofcontents
+\normalspacing
+
+\section{Getting started}
+
+\subsection{Using \t{run\underline{ }ice} for Antarctica}  [FIXME FOR \verb|~/ice-input/ant_2006/init.nc|]British Antarctica Survey supplied data [REFERENCE?] for the current state of the Antarctic ice sheet is stored in a NetCDF file \t{bas\underline{ }2004.nc} included with the release.  We start by showing how it can be loaded as the initial data of an Antarctica simulation.  We assume that the release has been built; see the \textbf{Installation} section.
+
+The command ``\t{./run\underline{ }ice -if ...}'' here wraps past the end of the line.  We will explain the options below and in later sections, but furthermore we will describe shell scripts which simplify things.
+
+\beginV
+user@host:~/ice$ ./run_ice -if ~/ice-input/bas_2004.nc -Mx 121 -My 121 -Mz 81 -Mbz 21 
+-no_mass_bal -gk -e 2 -y 1000.0 -d hcTS
+
+Setting IceModel defaults...
+initializing from file: /home/ed/ice-input/bas_2004.nc
+Max(H) =     4224.000, Max(h) =     4081.445
+PetscBag Object:  IceParamBag Contains parameters controlling
+preferences for simulation of ice sheets.
+  history =
+ed@edbueler 2006-06-12 10:07:31 AKDT : ./run_ice -if /home/ed/ice-input/bas_2004.nc -Mx 121 
+-My 121 -Mz 81 -Mbz 21 -no_mass_bal -gk -e 2 -y 1000.0 -d hcTS
+; History of commands used to generate this file.
+  Lx = 2.8e+06; Half width of the ice model grid in x-direction (m).
+  Ly = 2.8e+06; Halfwidth of the ice model grid in y-direction (m).
+  Lz = 5000; Extent of the ice model grid in z-direction (m).
+  Lbz = 1312.5; Extent of the bedrock model grid in z-direction (m).
+  Mx = 121; Number of grid points in x-direction.
+  My = 121; Number of grid points in y-direction.
+  Mz = 81; Number of ice grid points in z-direction.
+  Mbz = 21; Number of bedrock grid points in z-direction.
+  dx = 46666.7; Grid spacing in x-direction.
+  dy = 46666.7; Grid spacing in y-direction.
+  dz = 62.5; Grid spacing in z-direction.
+  year = 0; Current time in years.
+done with initialization ... running ...
+$$$$      YEAR (+   STEP):     VOL    AREA    MELTF     THICK0     TEMP0    ORIGF     MAXw
+$$$$      0.00 (+  0.000):  25.659  13.592    0.000   2827.000   226.140    0.984    <N/A>
+vt$$     45.05 (+ 45.047):  25.659  13.592    0.103   2827.000   226.140    0.951   1.3306
+vt$$     88.92 (+ 43.875):  25.659  13.592    0.103   2827.000   226.141    0.951   1.3662
+vtg$    131.75 (+ 42.825):  25.659  13.592    0.103   2827.000   226.141    0.951   1.3997
+...
+vt$$    905.06 (+ 51.106):  25.659  13.592    0.103   2827.000   226.141    0.950   1.1788
+vtg$    955.68 (+ 50.626):  25.659  13.592    0.103   2827.000   226.141    0.950   1.1899
+vt$$   1000.00 (+ 44.318):  25.659  13.592    0.103   2827.000   226.141    0.949   1.2115
+done with run ... Writing model state to file `unnamed.pb' ... done.
+\end{verbatim}
+\Vend
+
+Consider the behaviors specified at the command line.  The BAS data file \t{bas\underline{ }2004.nc} is located in a directory \t{ice-input} and is specified as the input file.  \emph{The grid is specified at the command line}, as $121\times 121 \times (81+21)$.  The vertical grid is 81 equally-spaced levels within the ice and an additional 21 within the bed below.  The next option ``\t{-no\underline{ }mass\underline{ }balance}'' turns off changes to the surface elevation.  (In this case we start from observed data which does not include a temperature field within the ice.  The run here could be the first step on computing such a field based on the default assumption that the Antarctic ice sheet is roughly in equilibrium.)  The next option chooses the Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} flow law, and the one after that chooses an enhancement factor of 2.0.  The run is run for the default time of 1000 model years; this can be specified as in the next example.  Finally, and this part of the output is not shown, four diagnostic windows are chosen, which show, respectively, a color map-plane contour views of vertically-averaged horizontal ice speed (``\t{c}''), of surface elevation (``\t{h}''), of basal temperature (``\t{T}''), and of the strain heating term in the temperature equation (``\t{S}'').
+
+The code starts by showing a ``PETSc bag'' containing all the fundamental numerical parameters and a bit more start-up information.
+
+At each time step we get a summary of the model state at the end of the step.  The format of the summary is
+\scriptsize\begin{verbatim}
+    $$$$      YEAR (+   STEP):     VOL    AREA    MELTF     THICK0     TEMP0
+\end{verbatim}
+\normalsize
+The first four columns are flags telling the user which quantities are being updated at each time step: ``\texttt{v}'' or ``\texttt{V}'' for velocity, ``\texttt{t}'' for temperature, ``\texttt{g}'' for grain size, and ``\texttt{f}'' for surface elevation (i.e.~a step of the flow equation has occurred); a placeholder ``\verb|$|'' appears if the given quantity is not updated.  (Lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that the vertically-averaged velocity, and the associated diffusivity, has been updates.)  The time and time step are in years.  The next three columns are the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the melting temperature, actually).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain, that is, the thickness at the origin in meters, and the basal absolute temperature at the origin in Kelvin.  This summary of the model state can be expanded by using the option \verb|-verbose|.
+ 
+Note that the time step is adaptively determined.  The volume and area do not change in this run because this model run has no mass balance evolution.  The values ``\t{THICK0}'' and ``\t{TEMP0}'' happen to be at the South Pole in this case.  Several times during the run the grain size was update.  Grain size is computed based upon (roughly) modeled age of the ice and on grain size data from the Vostok core [REFERENCE]; the grain size is a parameter in the Goldsby-Kohlstedt flow law.  At the end of the run the model state is saved in a PETSc binary format file ``\t{unnamed.pb}''; an output filename may be chosen at the command line, of course.
+
+
+\subsection{A \t{verify} run}  [FIXME: RERUN GIVEN VARIOUS UPDATES]  The purpose of a \t{verify} run is to establish that the code closely approximates an exact solution to the continuum equations of the model, and thus to check on the correctness of the code.  Thus \t{verify} should be used when major changes occur but also to understand the limits on reportable accuracy.  Of course the exact solutions have significantly simplified, in some cases not very physical, boundary conditions and sources.  On the other hand there are several types of exact solution based tests which verify several parts of the code, including isothermal mass balance, thermocoupling, and sliding.  The underlying ice model code executed by \t{verify} is identical to that executed by \verb|run_ice|, but the command line options are somewhat different.
+
+Here is a basic isothermal example:
+
+\beginV
+user@host:~/ice$ mpirun -np 2 verify -test B -ys 422.45 -ye 25000.0 -Mx 31 -My 31
+
+Setting IceModel defaults...
+initializing Test B..
+PetscBag Object:  IceParamBag Contains parameters controlling
+preferences for simulation of ice sheets.
+  history =
+ed@edbueler 2006-06-12 11:12:20 AKDT : /home/ed/ice/verify -test B -ys 422.45 -ye 25000.0 -Mx 31 
+-My 31 -p4pg /home/ed/ice/PI5846 -p4wd /home/ed/ice
+; History of commands used to generate this file.
+  Lx = 1.2e+06; Half width of the ice model grid in x-direction (m).
+  Ly = 1.2e+06; Halfwidth of the ice model grid in y-direction (m).
+  Lz = 4000; Extent of the ice model grid in z-direction (m).
+  Lbz = 0; Extent of the bedrock model grid in z-direction (m).
+  Mx = 31; Number of grid points in x-direction.
+  My = 31; Number of grid points in y-direction.
+  Mz = 31; Number of ice grid points in z-direction.
+  Mbz = 0; Number of bedrock grid points in z-direction.
+  dx = 80000; Grid spacing in x-direction.
+  dy = 80000; Grid spacing in y-direction.
+  dz = 133.333; Grid spacing in z-direction.
+  year = 422.45; Current time in years.
+running test B ...
+$$$      YEAR (+   STEP):     VOL    AREA MELTFabs     THICK0     TEMP0    ORIGF     MAXw
+$$$    422.45 (+  0.000):   4.006   1.773    1.000   3600.000   283.454    0.978    <N/A>
+V$f    438.36 (+ 15.908):   4.006   2.131   <same>   3587.401    <same>   <same>   <same>
+V$f    454.82 (+ 16.457):   4.006   2.131   <same>   3574.205    <same>   <same>   <same>
+...
+V$f  24830.27 (+ 60.000):   4.006   3.130   <same>   2294.816    <same>   <same>   <same>
+V$f  24890.27 (+ 60.000):   4.006   3.130   <same>   2294.200    <same>   <same>   <same>
+V$f  24950.27 (+ 60.000):   4.006   3.130   <same>   2293.586    <same>   <same>   <same>
+V$f  25000.00 (+ 49.727):   4.006   3.130   <same>   2293.078    <same>   <same>   <same>
+done with run
+Actual ERRORS (evaluated at final time):
+geometry  :  prcntVOL  prcntAREA      maxH         avH   relmaxETA    domeH
+               0.0053    11.8993  146.9380    8.265441    0.020601   5.3977
+base temps:        maxT         avT      domeT
+               0.000000    0.000000   0.000000
+Writing model state to file `verify.pb'done
+\end{verbatim}
+\Vend
+
+Several behaviors were specified at the command line.  First, the code was \emph{run in parallel} under MPI (\texttt{www-unix.mcs.anl.gov/mpi/index.htm}) on two processors.  The exact solution Test B from \cite{BLKCB}, the Halfar solution \cite{Halfar83}, was used as the initial condition.  It is a zero accumulation isothermal solution and, instead of starting at a default time and specifying the number of years to run, here the starting and ending times as recommended in \cite{BLKCB} were given by options ``\t{-ys}'' and ``\t{-ye}''.  Note that as the sheet became thinner the adaptive time-stepping scheme lengthened the steps to the (default) maximum time step of 60 years.  A grid with $31\times 31$ points in the horizontal was used, matching the EISMINT 1996 choice \cite{EISMINT96} in the horizontal.  No diagnostic viewers were requested though they are available.
+
+Errors at the final time are reported relative to the exact solution \cite{BLKCB}.  Note that the ``\t{-eo}'' flag can be given so that \t{verify} produces only the exact solution and does no numerics:
+\beginV
+    user@host:~/ice$ ./verify -test B -ys 422.45 -ye 25000.0 -Mx 31 -My 31 -eo
+\end{verbatim}
+\Vend
+
+\subsection{Running EISMINT II experiments}  For the user who wants to see the EISMINT I \cite{EISMINT96}, EISMINT II \cite{EISMINT00}, ISMIP [FIXME: NOT IMPLEMENTED! CITATION?] as performed by this numerical ice sheet model, there is a separate executable ``\verb|simplify|'' which is runs identical code to ``\verb|run_ice|'' but does not require an initialization file and automatically sets up the correct, simplified experimental conditions (i.e. initial/boundary values and sources).  For example,
+\beginV
+    user@host:~/ice$ ./simplify -eisII F -Mx 61 -My 61 -Mz 201 -y 200000 -o eisF_61_201
+\end{verbatim}
+\Vend
+runs EISMINT II experiment F for the prescribed $200$k years and saves the result in \verb|eisF_61_201.pb| for inspection.  This particular run takes a while, and also shows the infamous spokes.
+
+
+\subsection{Regridding}  \normalspacing Running ice sheet simulations on fine grids takes a long time.  One technique to reduce computational time is to do computations on a rough grid and then refine the result.  The \verb|-regrid| option does this.  For example, the following does EISMINT II experiment F starting on a very rough grid and then regriding eventually onto a fine $12.5$ km horizontal grid with 200 vertical levels:
+[FIXME: this example can be simplified: remove -y 0 runs]
+\beginV
+    user@host:~/ice$ ./simplify -eisII F -Mx 31 -My 31 -Mz 31 -y 175000 -o eisF_31_31_175k
+       [RUN OF 20 minutes]
+    user@host:~/ice$ ./simplify -eisII F -y 0 -Mx 61 -My 61 -Mz 61 -regrid eisF_31_31_175k.pb \
+    > -regrid_vars hHTe -o eisF_61_61
+    user@host:~/ice$ ./simplify -eisII F -if eisF_61_61.pb -y 20000 -o eisF_61_61_195k
+       [RUN OF 30 minutes]
+    user@host:~/ice$ ./simplify -eisII F -y 0 -Mx 121 -My 121 -Mz 201 -regrid eisF_61_61_195k.pb \
+    > -regrid_vars hHTe -o eisF_121_201
+    user@host:~/ice$ ./simplify -eisII F -if eisF_121_201.pb -y 5000 -o eisF_121_201_200k
+       [RUN OF 7 HOURS]
+\end{verbatim}
+\Vend
+Note that the runs which have the \verb|-y 0| option either create a grid or regrid data on one grid onto another grid.  In either case no evolution occurs, obviously.  Note that the option \verb|-regrid_vars|, which has no argument, though a string giving a list of variables names is allowed (see below), indicates that all of the information in the \verb|-regrid| file will be regridded onto the new grid indicated by the \verb|-if| file.
+
+
+\subsection{Visualizing the results}  There are three modes for visualizing the various quantities in this ice model.\begin{itemize}
+\item At runtime various diagnostic viewers can be specified; see the Usage subsection below.  These viewers are updated at each step.  The format is limited by the style of PETSc viewers (see below) but in fact these viewers suffice for most routine diagnostic purposes.
+\item A \Matlab output file, in particular \Matlab script, can be produced by the options \verb|-o foo -of m|.  (This produces a file \verb|foo.m| in the current directory.)  When executed in \Matlab this script produces a variety of useful figures both for diagnostic purposes and for publishable results.  The script contains large amounts of data from the model but size concerns have limited us to outputing only surface elevation, temperature, and the strain-heating term in the temperature evolution equation.  Note that only slices of the temperature and strain-heating term are saved.  The locations of these slices can be controlled by the options \verb|-id|, \verb|-jd|, \verb|-kd|; see below.  If the executable \verb|verify| is used for a thermocoupled test then an additional file \verb|foo_comp.m| will be produced which corrects the strain-heating term and reports the compensatory heating term as well \cite{BKL}.  A possibly useful additional \Matlab script \verb|icemodelfigs| is also in the distribution; it was used to produce the figures in \cite{BKL}.
+\item The state of the model can be output in NetCDF format.  [\emph{THIS OPTION IS NOT CURRENTLY IMPLEMENTED}]
+\end{itemize}
+
+
+\section{Installation}
+
+With any luck installation is not too much harder than installing PETSc itself.  We recommend that MPI [reference], XWindows [reference], NetCDF [reference], GSL [reference], FFTW [reference], and PETSc [reference] be installed first [IN WHAT ORDER?].  NetCDF, GSL, and FFTW are optional, see below.
+
+\subsection{Example: bash shell, using GNU tar and wget, with NetCDF, GSL, and FFTW already installed and with (e.g.) OpenMPI}
+
+\begin{quote}\begin{verbatim}
+mkdir safe
+cd safe
+wget http://www.dms.uaf.edu/~bueler/commvnism.tar.gz  # FIXME: where sources be?
+tar -xvvf commvnism.tar.gz
+cd ice
+export WITH_NETCDF=1
+export WITH_GSL=1
+export WITH_FFTW=1
+make   # may take a minute or two at most
+\end{verbatim}
+\end{quote}
+
+\subsection{Example: csh shell, using GNU tar and wget, with NetCDF and FFTW NOT installed and with (e.g.) OpenMPI}
+
+\begin{quote}\begin{verbatim}
+mkdir safe
+cd safe
+wget http://www.dms.uaf.edu/~bueler/commvnism.tar.gz
+tar -xvvf commvnism.tar.gz
+cd ice
+setenv WITH_NETCDF 0
+setenv WITH_FFTW 0
+setenv WITH_GSL 1
+make
+\end{verbatim}
+\end{quote}
+
+\subsection{If it builds} Some quick tests of basic functionality might be:
+\begin{quote}\begin{verbatim}
+./verify -test G -y 100 
+./run_ice -if ../ice-input/ant_2006/init.nc -Mx 91 -My 91 -Mz 101 -y 500 -d Hgf -dbig cT
+./verify -test H -y 40034 -Mx 31 -My 31 -Mz 11 -bed_def_lc
+\end{verbatim}
+\end{quote}
+The first \t{verify} run is to test the core thermcoupled shallow ice approximation code and the basic I/O to standard out.  The \verb|run_ice| run tests NetCDF and diagnosic viewers which use X windows.  The second \t{verify} run tests the bed deformation code which uses FFTW and GSL.
+
+
+\section{Usage}
+
+\newcommand{\opt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\,:\quad\normalsize}
+\newcommand{\optdef}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]:\quad\normalsize}
+\newcommand{\und}{$\underline{\,\,\,}$}
+
+\subsection{Command line options for \t{run\_ice} and \t{simplify}}  Much of the behavior of the ice model can be set at the command line.  
+
+As a PETSc program all PETSc options are available \cite{petsc-web-page,petsc-user-ref}.  The next subsection recalls some of these PETSc options, but in this subsection we list the commands which are special to our ice sheet model.  Note that all of the parameters reported as part of the ``\verb|PetscBag Object|'' at the beginning of a run may be altered by the user, but some are not recommended for user modification.  
+
+The format of the following option documentation is
+
+\centerline{``\optdef{optionname}{default value} Description.''}
+\bigskip
+
+\optdef{adapt\und ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
+
+\opt{bed\und def} Same as \verb|-bed_def_lc| below.
+
+\opt{bed\und def\und iso} Compute bed deformations by simple pointwise isostasy.  Assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.
+
+\opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.  [\emph{At present, assumes that the bed at the starting time is in equilibrium with the load.  Need uplift map to correctly initialize.}]
+
+\optdef{constant\und nu}{30.0}  If this option is used then the MacAyeal velocities (see \verb|-mv| below) are computed with a constant viscosity.  If this option is not used then the viscosities are computed by a nonlinear iteration.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
+
+\opt{d}  Specifies diagnostic (X Windows) viewers.  See subsection below on diagnostic viewers.
+
+\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See subsection below.
+
+\opt{dx}  \emph{Use of this option is not recommended.}  \verb|dx| is computed internally as \verb|2*Lx/(Mx-1)|.  The user may alter \verb|Lx| or \verb|Mx| at the command line.
+
+\opt{dy}  \emph{Use of this option is not recommended.}  \verb|dy| is computed internally as \verb|2*Ly/(My-1)|.  The user may alter \verb|Ly| or \verb|My| at the command line.
+
+\opt{dz}  \emph{Use of this option is not recommended.}  \verb|dz| is computed internally as \verb|Lz/(Mz-1)|.  The user may alter \verb|Lz| or \verb|Mz| at the command line.
+
+\optdef{e}{1.0}  Flow enhancement factor.
+
+\optdef{eisII}{A}  [\emph{Only available in } \verb|simplify|.]  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.
+
+\opt{history}  \emph{Use of this option is not recommended.}  It is usually desirable to keep the stored command history unaltered.
+
+\opt{id}
+
+\opt{if}  The model can be started from either a PETSc binary file written by the model, e.g.~\verb|foo.pb|, or certain NetCDF files with sufficient information to start, e.g.~\verb|bas_2004.nc|.
+
+\opt{isoflux}  Isothermal runs can be done by two methods.  One may simply initialize with a constant temperature field and then turn off temperature evolution (see \verb|-no_temp|); in this case the horizontal velocity and the horizontal mass flux are computed by a vertical numerical integral.  If the option \verb|-isoflux| is used then the mass flux is computed by the usual isothermal, Glen formula without reference to the temperature field or the chosen flow law.
+
+\opt{gk}  [\emph{Not available in } \verb|verify|.]  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  [\emph{Option included for backward compatibility.}  See \verb|-law| for more complete option choice of flow law.]
+
+\opt{jd}
+
+\optdef{kd}{0}
+
+\optdef{law}{0}  [\emph{Not available in } \verb|verify|.]  Allows choice of thermocoupled flow law.  Options are:\renewcommand{\labelenumi}{\arabic{enumi}:~}\begin{enumerate}\setcounter{enumi}{-1}
+\item The Paterson-Budd \cite{PatersonBudd} flow law with exponent $n=3$.  In particular there is split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where $(A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* < 263$ K and $(A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* > 263$ K and where $T^*$ is the homologous temperature.  Also $R=8.314\, \text{J}\, \text{mol}^{-1}\, \text{K}^{-1}$.
+\item Just the \emph{cold} part of the Paterson-Budd flow law above, i.e.~regardless of temperature the values for $T^*<263$ K apply.  Note this is the flow law which applies to the thermocoupled exact solutions Tests \textbf{F} and \textbf{G} run by \verb|verify|.
+\item Just the \emph{warm} part of the Paterson-Budd flow law above, i.e.~regardless of temperature the values for $T^*>263$ K apply.
+\item The Hooke flow law with $n=3$ and with $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$ where [SEE \cite{Hooke,PayneBaldwin} FOR VALUES]. 
+\item A hybrid of the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} for grounded, shallow ice approximation ice and the Paterson-Budd flow law for MacAyeal equations regions (i.e.~ice streams and ice sheets; use \verb|-d m| to see relevant mask).
+\end{enumerate}
+
+\opt{Lbz}  \emph{Use of this option is not recommended.}  The vertical thickness of the bed in which temperature is modeled is kept internally as the product \verb|Mbz*dz|.  The user may alter \verb|Mbz| at the command line.
+
+\opt{Lx}
+
+\opt{Ly}
+
+\opt{Lz}
+
+\optdef{maxdt}{60.0}
+
+\optdef{Mbz}{0}
+
+\opt{mv}  Use the MacAyeal-Morland equations for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.
+
+\optdef{mv\und eps}{1.0e15}  The numerical scheme for the MacAyeal-Morland equations computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$.
+
+\optdef{mv\und rtol}{1.0e-4}  The numerical scheme for the MacAyeal-Morland equations does a nonlinear iteration wherein velocities (and temperatures) are used to compute an effective viscosity which is used to solve the equations for velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
+
+\optdef{Mx}{61}
+
+\optdef{My}{61}
+
+\optdef{Mz}{31}
+
+\optdef{mu\und sliding}{3.17e-11}
+
+\opt{no\und mass\und bal}
+
+\optdef{no\und spokes}{0}  The strain heating term can be smoothed by averaging the neighboring horizontal neighbors (those which are within the ice).  The integer parameter controls the number of neighboring grid points over which the average is computed.  For instance, \verb|-no_spokes 0| is no smoothing while \verb|-no_spokes 3| is smoothing over the 3-neighborhood of horizontal grid points, that is, over a distance of \verb|3*dx|.
+
+\opt{no\und temp}
+
+\opt{no\und velocity}
+
+\optdef{o}{unnamed} Give name of output file: \verb|-o foo| writes an output file named \verb|foo.pb|.  See \verb|-if|; note model can be restarted from a PETSc binary file, e.g.~\verb|foo.pb|.
+
+\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used with \verb|-no_mass_bal|.
+
+\optdef{of}{p}  Format of output file(s).  Possible values are \verb|p| for the model state written to a PETSc binary file, e.g.~\verb|foo.pb|, \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|, and \verb|n| for selected variables written to a NetCDF file \verb|foo.nc|.  [\emph{NetCDF case not yet implemented.}]  By default an output file is written according to the name given by \verb|-o|.  Multiple files can be written, for instance, \verb|-o foo -of pm| writes both \verb|foo.pb| and \verb|foo.m|.
+
+\opt{regrid}  See subsection on regridding above.
+
+\optdef{regrid\und var}{mTBe}  See subsection on regridding above.
+
+\optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.
+
+\opt{verbose}   Increased verbosity.  [FOR NOW 7/06:  If set: (1) adds additional information to summary reported at each time step; (2) reports convergence info on MacAyeal iterations; (3) prints PetscBag at start]
+
+\optdef{y}{1000} Number of model years to run.
+
+\opt{ye} Model year at which to end the run.
+
+\opt{year}  Internally stored model year.  Modify this with some caution.  Certain non-physical runs (e.g.~under the executable \verb|verify|) attach modeling meaning to the year.  [FUTURE CODES MAY ALSO USE \verb|year| TO GET TIME-DEPENDENT BOUNDARY DATA.]
+
+\opt{ys} Model year at which to start the run.
+
+
+\subsection{Additional options for Petsc programs}  All Petsc programs allow command line options which control the manner in which Petsc distributes jobs among parallel processors and how it solves linear systems, for instance.
+
+\opt{da\und processors\und x}
+
+\opt{da\und processors\und y}  See \verb|-da_processors_x|.
+
+\opt{help} 
+
+\opt{info} 
+
+\optdef{ksp\und rtol}{1e-5}
+
+\optdef{ksp\und type}{gmres}  \t{bicg}, \t{cg}, \t{cgs}, \t{gmres}, \t{preonly}
+
+\opt{log\und summary} 
+
+\optdef{pc\und type}{ilu}   \t{jacobi}, \t{icc}, \t{ilu}, \t{lu}, \t{none}, \t{sor}
+
+\opt{v}   Show version number of Petsc.
+
+\noindent [BUG: Note that \verb|-ksp_monitor| complains that ``\t{Too many KSP monitors set!}'']
+
+
+\subsection{Diagnostic viewers} Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
+\begin{verbatim}
+   ./run_ice ... -d hTg -dbig c
+\end{verbatim}
+shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{g}'') and of vertically-averaged horizontal ice speed (``\t{c}'').
+
+The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.  
+
+\emph{Warning: At this point the diagnostic viewers only work with one processor.}
+
+The single character names are:
+
+\verb|a|:\quad Map-plane view of accumulation in meters per year.
+
+\verb|b|:\quad Map-plane view of bed elevation in meters above sea level.
+
+\verb|c|:\quad Map-plane view of horizontal speed, namely the absolute value of the vertically-averaged horizontal velocity.  Displayed as log base ten of speed in meters per year.
+
+\verb|D|:\quad Map-plane view of grain size, in millimeters.
+
+\verb|d|:\quad Grain size in a vertical column (sounding); in millimeters.  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|E|:\quad Map-plane view of age of the ice, in years.
+
+\verb|d|:\quad Age in a vertical column (sounding); in years.  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|f|:\quad Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
+
+\verb|G|:\quad Map-plane view of basal geothermal heat flux, in milliWatts per meters squared.
+
+\verb|g|:\quad Map-plane view of rate of change in thickness in meters per year.
+
+\verb|H|:\quad Map-plane view of thickness in meters.
+
+\verb|h|:\quad Map-plane view of ice surface elevation in meters above sea level.
+
+\verb|k|:\quad Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.
+
+\verb|l|:\quad Map-plane view of basal melt rate in meter per year.
+
+\verb|m|:\quad Map-plane view of mask for flow type:  \textbf{1} = grounded shallow ice sheet flow,  \textbf{2} = dragging ice shelf, \textbf{3} = floating ice shelf.
+
+\verb|N|:\quad
+
+\verb|n|:\quad
+
+\verb|P|:\quad \emph{ONLY AVAILABLE for }\t{verify}.  Map-plane view of comPensatory heating term $\Sigma_C$ in thermocoupled verification tests F and G.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|p|:\quad Map-plane view of bed uplift rate in meters per year.
+
+\verb|q|:\quad Map-plane view of basal sliding speed.  Displayed as log base ten of speed in meters per year.
+
+\verb|r|:\quad Map-plane view of surface temperature in Kelvin.
+
+\verb|S|:\quad Map-plane view of strain heating term $\Sigma=(\rho c_p)^{-1}\sigma |\partial \bU/\partial z|$ in temperature equation, where $\sigma$ is the effective shear stress, in Kelvin per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|s|:\quad Strain heating term $\Sigma$ in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|T|:\quad Map-plane view of basal temperature in Kelvin.
+
+\verb|t|:\quad Temperature in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|U|:\quad
+
+\verb|u|:\quad
+
+\verb|V|:\quad
+
+\verb|v|:\quad
+
+\verb|x|:\quad $x$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|X|:\quad Map plane view of x component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|y|:\quad $y$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|Y|:\quad Map plane view of y component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|z|:\quad Vertical velocity ($w$-component of velocity) in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+
+\verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\subsection{User's overview of the code}  This ice sheet model is implemented as a collection of C++ object classes [REFERENCE], the most central of which is \t{IceModel}.
+
+More elementary than \t{IceModel} are the classes\begin{itemize}
+\item \t{IceGrid}, which describes the shape of the grid and parallel
+layout. This abstraction could be used to streamline transferring model data between
+different grids.
+\item \t{MaterialType}.  Various materials are derived from the class \t{MaterialType} which merely defines a couple
+physical constants. \t{IceType} is still an abstract class which defines the interface to
+ice flow. Concrete classes derived from \t{IceType} are \t{ThermoGlenIce} (which uses the
+EISMINT constants) and \t{GKIce} as well as \t{HybridIce}.  Similarly, there is \t{BedrockType} and \t{OceanType} which merely define
+associated physical constants.\end{itemize}
+
+An example derived class of \t{IceType} is \t{HybridIce}, as mentioned.  Note that it is difficult, at least, to implement a complete Goldsby-Kohlstedt ice type \cite{GoldsbyKohlstedt} since the inverse constitutive
+relation is required for computation of MacAyeal-type ice shelf and dragging ice shelf \cite{MacAyeal} velocity fields. \t{HybridIce} is Goldsby-Kohlstedt ice in the interior of the ice sheet and Glen ice in ice streams and
+shelves.
+
+The methods for \t{IceModel} are many.  They initialize the model (from input data files or from formulas describing various exact solutions), they read user options, they allocate arrays in a distributed manner under PETSc, they compute the terms in the various continuum equations (mass balance, conservation of energy, and velocity), they control diagnostic viewers, they run the central time-stepping, and they write out the model state to files.
+
+A derived class of \t{IceModel} called \t{IceCompModel} is used for verification; see the next section.  It has additional structures which allows \t{IceModel} to have compensatory sources and compute initial conditions from, and especially to report errors relative to, known exact solutions \cite{BLKCB,BKL,BK}.
+
+There are two established drivers which call constructors and destructors for \t{IceModel}, namely \verb|run_ice| and \verb|verify|; examples appear above.  These drivers include no computation but differ in which class is constructed (\t{IceModel} vs \t{IceCompModel}) and in how certain options are handled.  They invoke the same numerical proceedures to handle the various partial differential equations of the continuum model, and this fact, along with the derived class relation for \t{IceCompModel}, is at the heart of the verification mechanism.  Driver \verb|run_ice| should be used for actual ice sheet computations, based on data files which will typically be in NetCDF form.  Driver \verb|run_ice| should also be used for simulations of symmetrical or artificial sheets for which no exact solution is known (and, obviously, for which no compensatory sources are needed) such as the EISMINT experiments \cite{EISMINT96,EISMINT00}.  Driver \verb|verify| is simply for verification and reports errors relative to exact solutions.
+
+
+
+\section{Verification}
+
+\subsection{Exact solutions and compensatory sources in a derived class}  Various exact solutions and compensatory models are implemented in a class \t{IceCompModel} which is derived from \t{IceModel}.  This derived class leaves \t{IceModel} free of non-physical exact solution information.  Thus \t{IceModel} only contains information directly appropriate for actual ice sheet simulation, while verification using \t{IceCompModel} tests exactly the same codes as are used by actual simulations but adds the necessary code to use compensatory sources and to initialize with and verify against exact solutions.
+
+\t{IceCompModel} includes a material class \t{ThermoArrGlenIce} which has a pure Arrhenius term, unlike \t{ThermoGlenIce} which has a cold and warm regime for the exponential term.  The class reimplements \t{run()} and updates the compensatory terms during the time step.
+
+Note that the melt fraction is computed using the absolute temperature not the homologous temperature as in \verb|run_ice|.
+
+\subsection{Command line options for \t{verify}}  Essentially all of the command line options for \verb|run_ice| apply to \t{verify}.  The only option not available to \t{verify} is ``\t{-circular}''.  The new options are
+
+\opt{eo}  Only exact evolution is shown; no actual numerics are performed.  This option used in company with diagnosic viewers (\verb|-d |\dots) allows the user to visualize the exact solutions themselves.
+
+\opt{noreport}  Turns off error report at final time.
+
+\opt{test}  This option currently only allow values \t{B,C,D,F,G}.  Tests \t{B,C,D} are documented in \cite{BLKCB} while tests \t{F,G} are in \cite{BKL} with more detail in \cite{BK}.  The recommended \t{verify} runs are:\begin{itemize}
+\item \verb|  ./verify -test B -ys 422.45 -y 25000|
+\item \verb|  ./verify -test C -y 15208.0|
+\item \verb|  ./verify -test D -y 25000|
+\item \verb|  ./verify -test F -y 25000|
+\item \verb|  ./verify -test G -y 25000|
+\end{itemize}
+For the thermocoupled runs it is strongly recommended that at least $100$ vertical levels are used.
+
+
+
+\section{PETSc}
+
+\subsection{PETSc Preliminaries}
+The PETSc library \cite{petsc-web-page,petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  Specifically,it is a suite of data structures and routines in the C language, primarily, for the scalable (parallel) solution of scientific applications modeled by partial differential equations.  Large parts of PETSc relate especially to finite-difference type regular, rectangular grids.
+
+Documentation for PETSc is available from the web site at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/}.
+
+PETSc employs the MPI standard for all message-passing communication.  See the next section.
+
+Most variables in a PETSc program are of newly-defined distributed types including
+\begin{verbatim}
+DA   da;
+Vec  v;
+KSP  ksp;
+\end{verbatim}
+In fact most of the PETSc types merely declare pointers but they should be regarded as objects (abstract data types).  The objects must be created with calls to functions like \t{DACreate2d()}, \t{VecCreate()}, etc.  They should be destroyed when they are not needed with calls to corresponding \t{Destroy()} functions.
+
+\subsection{Distributed arrays and vectors}
+PETSc has an abstract date type called a distributed array. Objects of type DA contain
+information about the grid and stencil. They can have information about coordinates, but
+the code does not use this feature at present. Vectors are created with
+\texttt{DAVecCreate()} and similar. These vectors will be distributed across the
+processors as indicated by the distributed array.
+
+There are two parameters of note: stencil type and stencil width. The stencil types are
+\verb|DA_STENCIL_STAR| and \verb|DA_STENCIL_BOX|. They are generalizations of the five
+point and nine point stencils typical of two dimensional discretizations respectively. In
+particular, \verb|DA_STENCIL_STAR| indicates that ghosted points (information owned by a
+different processor) will be needed only along the coordinate axes while
+\verb|DA_STENCIL_BOX| indicates that ghosted points will be needed in the box shaped
+region surrounding each point. The stencil width indicates how many points in each
+direction will be needed. We never need a stencil width greater than 1 and only need box
+style stencils when gradient terms must be evaluated on a staggered grid ($h$ in SIA
+velocity and $\bar{u},\bar{v}$ in computation of effective viscosity in Macayeal
+velocity). We could keeping all other two dimensional vectors on a start type stencil
+would reduce the necessary communication slightly, but would complicate the code. For this
+reason, all two dimensional vectors are kept on a box type distributed array.
+
+The three dimensional distributed arrays are aligned so that they have the same horizontal
+extent as the associated two dimensional distributed array, but have complete vertical
+extent. One point of confusion is the redefinition of the $x,y,z$ axes. Contrary to the
+PETSc defaut, our $z$ axis changes most rapidly through memory while the $x$ axis changes
+most slowly. That is, our C style arrays will be addressed as \texttt{u[i][j][k]} where
+$\texttt{i,j,k}$ are the coordinate indices in the directions $x,y,z$ respectively. DA
+based vectors can be accessed by \texttt{DAVecGetArray()} and restored with
+\texttt{DAVecRestoreArray()}. The resulting pointer should be addressed using normal
+multidimensional array indexing where values range over the global array.
+
+PETSc DA based vectors can be ``local'' or ``global''. Local vectors include space for the
+ghosted points. That is, when \texttt{DAVecGetArray()} is called, the resulting array can
+be indexed on all the ghosted points. However, all vector operations act only on the local
+portion. \texttt{DALocalToLocalBegin()} and then \texttt{DALocalToLocalEnd()} should be
+called to update the ghost points before they will be needed. Global vectors do not hold
+ghosted values, but array operations will act on the entire vector. Hence local vectors
+typically need to be mapped to global vectors before viewing or using in a linear system.
+This is achieved with \texttt{DALocalToGlobal()}.
+
+\subsection{Solving linear systems}
+PETSc is designed for solving large, sparse systems in a distributed environment.
+Iterative methods are the name of the game and especially Krylov subspace methods such as
+conjugate gradients and GMRES. For consistency, all methods use the Krylov subspace
+interface. For this, the user declares an object of type \texttt{KSP}. Various options can
+be set and the preconditioner context can be extracted. PETSc has an options database
+which holds command line options. To allow these options to influence the \t{KSP}, one
+should call \t{KSPSetFromOptions()} prior to solving the system. The default method is
+GMRES(30) with ILU preconditioning.
+
+To solve the system, a matrix must be attached to the \t{KSP}. The first time
+\t{KSPSolve()} is called, the matrix will be factored by the preconditioner and reused
+when the system is called for additional right hand sides. The default matrix format is
+similar to the Matlab \t{sparse} format. Each processor owns a range of rows. Elements in
+matrices and vectors can be set using \t{MatSetValues()} and \t{VecSetValues()}. These
+routines use the global indexing and can set values on any processor. The values are
+cached until one calls \t{MatAssemblyBegin()} followed by \t{MatAssemblyEnd()} to
+communicate the values.
+
+In the Macayeal velocity computation, the solution and right hand side vectors are not DA
+based. The vector (field) components are interlaced and distributed. This seemed to be the
+most straightforward method to solve the system (as opposed to using more advanced
+features intended for multiple degrees of freedom on DA based vectors). This also allows
+the matrix to have an optimal parallel layout.
+
+\subsection{PETSc utility functions}
+The \t{PetscViewer} interface allows PETSc objects to be displayed. This can be in binary
+to disk, in plain text to the terminal, in graphical form to an X server, to a running
+instance of Matlab, etc. Typically, one will want to view an entire vector, not just the
+local portion, so DA based local vectors are mapped to global vectors before viewing. When
+viewing multiprocessor jobs, the display may have to be set on the command line (ie.
+\t{-display :0} or similar).
+
+PETSc allows the programmer to access command line arguments at any time during program
+execution. This is preferable to using \t{getopt.h} for this purpose. A convenient feature
+is the \t{PetscBag} which is a serializable (can be written to disk) structure with
+default values which can be set on the command line. A \t{PetscBag} is used for describing
+the size of the grid. It is the first piece of data written to model state files so that
+the program can start from the same state. Other options such as enhancement factors, ice
+types and whether or not to use Macayeal velocity is not stored in a \t{PetscBag} at this
+time.
+
+Quite ellaborate error tracing and performance monitoring is possible with PETSc. All
+functions return \t{PetscErrorCode} which should be checked by the macro \t{CHKERRQ()}.
+Normally, runtime errors print traceback information when the program exits. If this
+information is not present, you may need to use a debugger which is accessible with the
+command line options \verb|-start_in_debugger| and \verb|-on_error_attach_debugger|. Also
+consider options such as \verb|-log_summary| to get diagnostics written to the terminal.
+
+\subsection{MPI}  MPI is a library which manages interprocessor communication for parallel computers.  One of the advantages of Petsc is that it calls MPI in a way that allows Petsc-using programs to be largely free of parallel communication details.
+
+
+\section{Source code survey}
+
+The class \t{IceModel} contains data members which are objects of type \t{IceGrid} and \t{IceType}.  This abstracts the choices of these objects to the
+user.  Since there are only reference implementations of \t{BedrockType} and \t{OceanType},
+these objects need not be passed into the \t{IceModel} at this time.  After the \t{IceGrid}
+is set (it is changed by loading a previous state file for instance),
+\t{IceModel::createVecs()} should be called. There is typically no need to explicitly call
+\t{IceModel::destroyVecs()} since it is called by the destructor\dots
+
+All ``\t{.cc}'' files in the release are C++ source files and ``\t{hh}'' files are C++ header files.  They have been compiled using the GNU compiler but should be highly portable.  Builds should be done by \t{make} in the directory \t{ice}; makefiles for this task and for \TeX-ing the manual are included in the release.
+
+Regarding reasonable entry points into the code for the developer, note that \t{iceModel.hh} is the header file describing the core of the ice flow model.  Implementations of the \t{IceModel} methods are spread through a number of source files, including files named \t{iM*.cc}.  Important numerical calculations are performed by \t{iceModel.cc}, \t{iMvelocity.cc}, \t{iMtemp.cc}, and \t{iMmacayeal.cc}.  On the other hand, the \t{.cc} files \t{run\underline{ }ice.cc} and \t{verify.cc} each contain a \t{main} subroutine and are also good to look at from the beginning.
+
+Now for modest synopses in alphabetical order:\bigskip
+\newcommand{\hfileno}[1]{\noindent\t{ice/#1.hh:}\par}
+\newcommand{\Cfile}[2]{\noindent\t{ice/#1.cc:}\par \begin{quote}#2\end{quote}\par\medskip}
+\newcommand{\hfile}[2]{\noindent\t{ice/#1.hh:}\par \begin{quote}#2\end{quote}\par\medskip}
+\newcommand{\iceinputFile}[2]{\noindent\t{ice-input/#1:}\par \begin{quote}#2\end{quote}\par\medskip}
+
+\hfileno{exactTestsBCD}
+\Cfile{exactTestsBCD}{Contains subroutines for verification tests from \cite{BLKCB}.}
+
+\hfileno{exactTestsFG}
+\Cfile{exactTestsFG}{Contains a single subroutine \t{bothexact} which implements both Test F and G.  See \cite{BK} and \cite{BKL}.}
+
+\hfileno{extrasGSL}
+\Cfile{extrasGSL}{Several procedures which use the GNU Scientific Library to compute numerical jobs for the bed deformation model.}
+
+\hfileno{grid}
+\Cfile{grid}{Defines constant \t{secpera}, structure \t{IceParam}, function \t{initIceParam}, and class \t{IceGrid}.  The latter class includes the Petsc \t{DA} for all vectors in \t{IceModel}.}
+
+\Cfile{flowtable}
+
+\hfileno{iceCompModel}
+\Cfile{iceCompModel}{}
+
+\hfileno{iceModel}
+\Cfile{iceModel}{Additional methods of the \t{iceModel} class are actually implemented in the separate files \t{iMIO.cc}, \t{iMutil.C}, \dots  This is done merely to reduce the size of \t{iceModel.cc}.}
+
+\Cfile{iMbasal}
+
+\Cfile{iMbeddef}{Parts of \t{IceModel} which compute the \cite{LingleClark} bed deformation model; see \cite{BLKfastearth} for the numerical approach and verification.}
+
+\Cfile{iMdefaults}
+
+\Cfile{iMgrainsize}
+
+\Cfile{iMIO}
+
+\Cfile{iMIOnetcdf}
+
+\Cfile{iMmacayeal}
+
+\Cfile{iMoptions}
+
+\Cfile{iMtemp}
+
+\Cfile{iMutil}
+
+\Cfile{iMvelocity}
+
+\Cfile{iMviewers}
+
+\hfileno{materials}
+\Cfile{materials}{Defines classes \t{MaterialType} and derived classes \t{IceType}, \t{GlenIce}, \t{ThermoGlenIce}, \t{GKIce}, \t{HybridIce}, \t{OceanType}, and \t{BedrockType}.  The various ice types have methods \t{flow} for the forward flow law (i.e.~find strain rate given stress) and \t{effectiveViscosityColumn} for the inverse law.  As noted, the inverse law for \t{GKIce} is not clearly implementable.  \t{HybridIce} and its \t{effectiveViscosityColumn} is just the inverse Glen law.}
+
+\Cfile{simplify}{Driver program for EISMINT II \cite{EISMINT00} and other simplified geometry experiments for which exact solutions are unknown.}
+
+\Cfile{run\underline{ }ice}{Driver program for real simulations.}
+
+\Cfile{simpleFG}{Simple program to display values of exact solutions ``Tests F'' and ``Test G'' from \cite{BKL}.}
+
+\Cfile{verify}{Driver program for verification, in particular for tests from \cite{BLKCB} and \cite{BKL}.  Exact solutions of these tests are known so errors are reportable and are reported.}
+
+\iceinputFile{ant\_2006/cdf\_init.py}{}
+
+\iceinputFile{ant\_2006/laplace.py}{}
+
+\iceinputFile{ant\_2006/showdats.m}{}
+
+\iceinputFile{ant\_2006/unproject.c}{}
+
+%         References
+\bibliography{ice_bib}
+\bibliographystyle{siam}
+
+
+\end{document}

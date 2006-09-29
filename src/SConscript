@@ -1,0 +1,16 @@
+Import('env petsc_libs')
+
+env.SharedLibrary('ice', Split("""grid.cc materials.cc iceModel.cc iMbasal.cc
+iMbeddef.cc iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMtemp.cc iMutil.cc 
+iMvelocity.cc iMviewers.cc iMdefaults.cc iMoptions.cc extrasGSL.cc cubature.c"""))
+
+
+flowTable = env.Program('flowTable.cc', LIBS = ['ice'] + petsc_libs)
+run_ice = env.Program('run_ice.cc', LIBS = ['ice'] + petsc_libs)
+simplify = env.Program('simplify.cc', LIBS = ['ice'] + petsc_libs)
+verify = env.Program('verify',
+                     Split('exactTestsBCD.cc exactTestsFG.cc iceCompModel.cc verify.cc'),
+                     LIBS = ['ice'] + petsc_libs)
+#simpleFG = env.Program('simpleFG', Split('simpleFG.cc exactTestsFG.cc'))
+shelf = env.Program('shelf', Split('shelf.cc'), LIBS = ['ice'] + petsc_libs)
+Default(run_ice, simplify, verify)

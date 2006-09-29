@@ -1,0 +1,109 @@
+SHELL= /bin/sh
+ALL : all
+
+IBM_LINKER=ar -X64 -rs
+
+# for NetCDF and FFTW to work the environment variables must be set:
+# "export WITH_NETCDF=1", "export WITH_FFTW=1"
+
+NETCDF_INC= -I$(NETCDF_DIR)/include
+NETCDF_LIB= -L$(NETCDF_DIR)/lib
+CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} 
+ifneq (WITH_NETCDF, 0)
+    CFLAGS+= $(NETCDF_INC)
+    LDFLAGS+= $(NETCDF_LIB)
+endif
+
+FFTW_INC= -I$(FFTW_DIR)/include
+FFTW_LIB= -L$(FFTW_DIR)/lib
+CFLAGS+= -DWITH_FFTW=${WITH_FFTW} 
+ifneq (WITH_FFTW, 0)
+    CFLAGS+= $(FFTW_INC)
+    LDFLAGS+= $(FFTW_LIB)
+endif
+
+# for now will not use GSL so -bed_def_lc will not work
+# (one should probably "export WITH_GSL=0" too)
+CFLAGS+= -DWITH_GSL=0
+
+
+petsc_executables= run_ice flowTable verify simplify
+executables= $(petsc_executables) simpleFG
+sources= exactTestsBCD.cc exactTestsFG.cc flowTable.cc grid.cc iMIO.cc iMIOnetcdf.cc iMbasal.cc	\
+	iMmacayeal.cc iMoptions.cc iMtemp.cc iMutil.cc iMvelocity.cc iMbeddef.cc	\
+	iMviewers.cc iceCompModel.cc iMdefaults.cc iMgrainsize.cc iceModel.cc	\
+	materials.cc run_ice.cc simpleFG.cc verify.cc simplify.cc extrasGSL.cc
+csources= cubature.c
+
+depfiles= $(sources:.cc=.d) $(csources:.c=.d)
+
+ICE_OBJS= grid.o materials.o iceModel.o iMbasal.o iMIO.o iMIOnetcdf.o	\
+	iMmacayeal.o iMtemp.o iMutil.o iMvelocity.o iMviewers.o iMdefaults.o \
+	iMoptions.o iMgrainsize.o iMbeddef.o cubature.o extrasGSL.o
+
+include ${PETSC_DIR}/bmake/common/base
+
+ICE_LIB= -L . -lice ${PETSC_LIB}
+ICE_LIB+= $(LDFLAGS)
+ifneq (${WITH_NETCDF}, 0)
+	ICE_LIB+= -lnetcdf_c++ -lnetcdf 
+endif
+ifneq (${WITH_FFTW}, 0)
+	ICE_LIB+= -lfftw3
+endif
+ifneq (${WITH_GSL}, 0)
+	ICE_LIB+= -lgsl -lgslcblas
+endif
+
+all : depend $(executables)
+$(petsc_executables) : libice.a
+
+libice.a : ${ICE_OBJS}
+	${IBM_LINKER} -o libice.a ${ICE_OBJS}
+
+# If we are using GNU Make, this is sufficient
+simpleFG : simpleFG.o exactTestsFG.o
+	${LINK.cc} $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+verify : exactTestsBCD.o exactTestsFG.o iceCompModel.o verify.o
+	${CLINKER} $^ ${ICE_LIB} -o $@
+
+# The general rule for Petsc executables
+% : %.o
+	${CLINKER} $^ ${ICE_LIB} -o $@
+
+# Cancel the implicit rules
+% : %.cc
+% : %.c
+
+# Emacs style tags
+.PHONY: tags TAGS
+tags TAGS :
+	etags *.cc *.hh
+
+# The GNU recommended proceedure for automatically generating dependencies.
+# This rule updates the `*.d' to reflect changes in `*.cc' files
+%.d : %.cc
+	@echo "Dependencies from" $< "-->" $@
+	@set -e; rm -f $@; \
+	 $(PETSC_COMPILE_SINGLE) -M $< > $@.$$$$; \
+	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	 rm -f $@.$$$$
+	
+# This rule updates the `*.d' to reflect changes in `*.c' files
+%.d : %.c
+	@echo "Dependencies from" $< "-->" $@
+	@set -e; rm -f $@; \
+	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	 rm -f $@.$$$$
+
+
+depend : $(depfiles)
+
+distclean : clean
+	rm -f libice.a $(executables) *.d *.u TAGS
+
+.PHONY: clean
+
+include $(depfiles)

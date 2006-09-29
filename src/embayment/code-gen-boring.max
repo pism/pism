@@ -1,0 +1,86 @@
+/* code-gen.max -- Produces C header files with the derivatives necessary to
+   represent an exact solution to the Macayeal equations where basal drag is
+   computed as a compensatory term. */
+
+velocity_scale : 200 / secpera;
+/* u : velocity_scale * (x + 0.1) * ((1.4 - y) * (1.4 + y)); */
+/* xx : x / L; yy : y / L; */
+xx : x; yy : y;
+u : velocity_scale * x;
+v : velocity_scale * y;
+u_x : diff(u, x);
+u_y : diff(u, y);
+v_x : diff(v, x);
+v_y : diff(v, y);
+
+u_xx : diff(u_x, x);
+u_xy : diff(u_x, y);
+u_yy : diff(u_y, y);
+
+v_xx : diff(v_x, x);
+v_xy : diff(v_x, y);
+v_yy : diff(v_y, y);
+
+alpha : (0.5 * u_x ^2 + 0.5 * v_y ^ 2 + 0.5 * (u_x + v_y) ^ 2
+           + 0.25 * (u_y + v_x) ^ 2);
+alpha_x : diff(alpha, x);
+alpha_y : diff(alpha, y);
+nu : (B / 2) * alpha ^ (-1.0 / 3);
+nu_x : diff(nu, x);
+nu_y : diff(nu, y);
+
+/* H : 1 + 0.2 * (1 / (x + 2.0)) * (1 + sin(1.0 * y) ^ 2); */
+/* H : 500 * (0.8 + 0.3 * (1 / (xx + 0.6)) * (0.7 - 0.5*yy^2) + sin(1.0 * yy) ^ 2); */
+h : 500;
+b : 0;
+H : h - b;
+h_x : diff(h, x);
+h_y : diff(h, y);
+H_x : diff(H, x);
+H_y : diff(H, y);
+
+f1 : diff(nu * H * (2 * u_x + v_y), x);
+g1 : diff(nu * H * (u_x + 2 * v_y), y);
+g2 : diff(nu * H * (u_y + v_x), x);
+f2 : diff(nu * H * (u_y + v_x), y);
+f : 2 * f1 + f2 - H * h_x;
+g : 2 * g1 + g2 - H * h_y;
+betax : f / u;
+betay : g / v;
+
+printval(var) := block([val],
+  val: var=ev(var),
+  val: subst(["^"='pow,%e=euler],val),
+  string(val));
+
+printvar(var) := (str : string(var),
+                  print(sconcat("const double ",
+                                printval(var), ";")));
+
+with_stdout("test.h", for var in ['alpha, 'alpha_x, 'alpha_y,
+                                  'u, 'u_x, 'u_y, 'u_xx, 'u_xy, 'u_yy,
+                                  'v, 'v_x, 'v_y, 'v_xx, 'v_xy, 'v_yy,
+                                  'h, 'H, 'b, 'h_x, 'h_y, 'H_x, 'H_y]
+                        do printvar(var));
+
+with_stdout("uv.h", for var in ['u, 'v] do printvar(var));
+with_stdout("H.h", for var in ['H] do printvar(var));
+with_stdout("betax.h", for var in ['betax] do printvar(var));
+with_stdout("betay.h", for var in ['betay] do printvar(var));
+system("for n in *.h; do perl -pe 's/\\\\\\n//' $n > $n.tmp && mv $n.tmp $n; done");
+/* system("for n in *.h; do perl -pe 's/\\\\\\n//' $n > $n.tmp; done"); */
+
+/*
+with_stdout("foo",
+            for var in ['nu, 'nu_x, 'nu_y, 'H, 'H_x, 'H_y,
+                        'u_x, 'u_y, 'u_xx, 'u_xy, 'u_yy,
+                        'v_x, 'v_y, 'v_xx, 'v_xy, 'v_yy,
+                        'betax, 'betay]
+              do ( str : string(var),
+                   print(sconcat("const PetscScalar ",
+                                 printval(var), ";"))));
+
+do ( str : string(var),
+       with_stdout(''str,
+                   print(sconcat("return ", printval(ev(var)), ";"))));
+    */

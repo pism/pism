@@ -1,0 +1,4 @@
+DVI('manual.tex')
+DVI('eqns3D.tex')
+PostScript('manual.tex')
+PostScript('eqns3D.tex')
