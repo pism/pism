@@ -18,7 +18,8 @@ my_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                               os.path.join(petsc_dir, 'bmake', petsc_arch),
                               os.path.join(home, 'usr/include')],
                      LIBPATH=[os.path.join(petsc_dir, 'lib', petsc_arch),
-                              '/usr/X11R6/lib', '/usr/lib/atlas/sse2'],
+                              '/usr/X11R6/lib', '/usr/lib/atlas/sse2',
+                              '/usr/lib/atlas'],
                      RPATH=[os.path.join(petsc_dir, 'lib', petsc_arch)])
 
 deb_env = Environment(ENV = {'PATH' : os.environ['PATH']},

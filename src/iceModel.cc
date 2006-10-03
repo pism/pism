@@ -605,7 +605,7 @@ PetscErrorCode IceModel::run() {
     }
     // IceModel::dt is now set correctly according to mass-balance and CFL criteria
 
-    ierr = PetscPrintf(PETSC_COMM_SELF, "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera); CHKERRQ(ierr);
+    // ierr = PetscPrintf(PETSC_COMM_SELF, "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera); CHKERRQ(ierr);
 
     dt_temp += dt;
     grid.p->year += dt / secpera;  // adopt it
