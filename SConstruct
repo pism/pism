@@ -30,10 +30,10 @@ deb_env = Environment(ENV = {'PATH' : os.environ['PATH']},
 
 env = my_env
 env.Append(CCFLAGS=ccflags)
-libice_dir = os.path.join(os.getcwd(), 'obj')
-print libice_dir
-env['LIBPATH'] += [libice_dir]
-env['RPATH'] += [libice_dir]
+libpism_dir = os.path.join(os.getcwd(), 'obj')
+print libpism_dir
+env['LIBPATH'] += [libpism_dir]
+env['RPATH'] += [libpism_dir]
 
 petsc_libs = ['petsc' + mod for mod in Split('ksp dm mat vec') + [""]]
 #petsc_libs += Split('X11 lapack blas mpi_cxx stdc++ dl netcdf_c++ netcdf fftw3 gsl gslcblas')
