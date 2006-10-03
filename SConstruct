@@ -37,7 +37,7 @@ env['RPATH'] += [libice_dir]
 
 petsc_libs = ['petsc' + mod for mod in Split('ksp dm mat vec') + [""]]
 #petsc_libs += Split('X11 lapack blas mpi_cxx stdc++ dl netcdf_c++ netcdf fftw3 gsl gslcblas')
-petsc_libs += Split('X11 lapack blas stdc++ dl netcdf_c++ netcdf fftw3 gsl')
+petsc_libs += Split('X11 lapack blas stdc++ dl netcdf fftw3 gsl')
 
 Export('env petsc_libs')
 

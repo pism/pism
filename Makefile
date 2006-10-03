@@ -1,4 +1,5 @@
-SHELL= /bin/sh
+SHELL = /bin/sh
+VPATH = src
 ALL : all
 
 WITH_NETCDF?=1

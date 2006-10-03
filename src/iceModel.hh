@@ -352,7 +352,9 @@ protected:
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode cleanInputData();
 #if (WITH_NETCDF)
-  PetscErrorCode ncVarToDAVec(const NcVar *v, DA da, Vec vecl,
+//   PetscErrorCode ncVarToDAVec(const NcVar *v, DA da, Vec vecl,
+//                               Vec vecg, Vec vindzero);
+  PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
 #endif
 
