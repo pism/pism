@@ -20,10 +20,11 @@
 #include <cstring>
 #include <petscda.h>
 
-#include "iceCompModel.hh"
-#include "exactTestsBCD.hh"
-#include "exactTestsFG.hh"
+#include "exactTestsBCD.h"
+#include "exactTestsFG.h" 
+// WHAT IS GOING ON?  WHY WON'T IT LINK IF I INCLUDE THE HEADER FILES?
 
+#include "iceCompModel.hh"
 
 // boundary conditions for tests F, G (i.e. EISMINT II Experiment F)
 PetscScalar IceCompModel::Ggeo = 0.042;
@@ -32,7 +33,6 @@ PetscScalar IceCompModel::Tmin = 223.15;  // K
 PetscScalar IceCompModel::LforFG = 750000; // m
 PetscScalar IceCompModel::ApforG = 200; // m
 PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
-
 
 IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   : IceModel(g, i), tgaIce(i) {
@@ -298,12 +298,12 @@ PetscErrorCode IceCompModel::initTestBCDH() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
       mapcoords(i,j,xx,yy,r);
-      if (testname == 'B') 
-        exactB(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+      if (testname == 'B')
+        exactB(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
       else if (testname == 'C')
-        exactC(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+        exactC(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
       else if (testname == 'D')
-        exactD(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+        exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
       else if (testname == 'H') {
         exactH(grid.p->year*secpera,r,H[i][j],accum[i][j]);
       }
@@ -349,11 +349,11 @@ PetscErrorCode IceCompModel::updateTestBCDH() {
       mapcoords(i,j,xx,yy,r);
       if (exactOnly==PETSC_TRUE) {  // update H and accumulation
         if (testname == 'B')
-          exactB(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+          exactB(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
         else if (testname == 'C')
-          exactC(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+          exactC(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
         else if (testname == 'D')
-          exactD(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+          exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
         else if (testname == 'H')
           exactH(grid.p->year*secpera,r,H[i][j],accum[i][j]);
         else SETERRQ(1,"test must be B, C, D, or H");
@@ -361,9 +361,9 @@ PetscErrorCode IceCompModel::updateTestBCDH() {
         if (testname == 'B')
           accum[i][j] = 0.0;  // no need to waste time calling exactB() for this
         else if (testname == 'C')
-          exactC(grid.p->year*secpera,r,dummy,accum[i][j]);
+          exactC(grid.p->year*secpera,r,&dummy,&accum[i][j]);
         else if (testname == 'D')
-          exactD(grid.p->year*secpera,r,dummy,accum[i][j]);
+          exactD(grid.p->year*secpera,r,&dummy,&accum[i][j]);
         else if (testname == 'H')
           exactH(grid.p->year*secpera,r,dummy,accum[i][j]);
         else SETERRQ(1,"test must be B, C, D, or H");
@@ -429,10 +429,10 @@ PetscErrorCode IceCompModel::initTestFG() {
         r=PetscMax(r,1.0); // avoid singularity at origin
         if (testname == 'F') {
            bothexact(0.0,r,z,Mz,0.0,
-                     H[i][j],accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
+                     &H[i][j],&accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
         } else {
            bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                     H[i][j],accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
+                     &H[i][j],&accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
         }
       }
     }
@@ -508,11 +508,11 @@ PetscErrorCode IceCompModel::updateTestFG() {
         if (exactOnly==PETSC_TRUE) {
           if (testname == 'F') {
             bothexact(0.0,r,z,Mz,0.0,
-                      H[i][j],accum[i][j],T[i][j],Uradial,w[i][j],
+                      &H[i][j],&accum[i][j],T[i][j],Uradial,w[i][j],
                       Sigma[i][j],SigmaC[i][j]);
           } else {
             bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      H[i][j],accum[i][j],T[i][j],Uradial,w[i][j],
+                      &H[i][j],&accum[i][j],T[i][j],Uradial,w[i][j],
                       Sigma[i][j],SigmaC[i][j]);
           }
           for (PetscInt k=0; k<Mz; k++) {
@@ -522,10 +522,10 @@ PetscErrorCode IceCompModel::updateTestFG() {
         } else { // actually do update with compensatory Sigma; not exactOnly
           if (testname == 'F') {
             bothexact(0.0,r,z,Mz,0.0,
-                      dummy0,accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC[i][j]);
+                      &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC[i][j]);
           } else {
              bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      dummy0,accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC[i][j]);
+                      &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC[i][j]);
           }
           for (PetscInt k=0; k<Mz; k++)
             Sigma[i][j][k] += SigmaC[i][j][k]; // for rest of model, Sigma is both terms
@@ -655,15 +655,15 @@ PetscErrorCode IceCompModel::reporterror() {
 
       switch (testname) {
         case 'B':
-          exactB(grid.p->year*secpera,r,Hexact,dummy);
+          exactB(grid.p->year*secpera,r,&Hexact,&dummy);
           Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'C':
-          exactC(grid.p->year*secpera,r,Hexact,dummy);
+          exactC(grid.p->year*secpera,r,&Hexact,&dummy);
           Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'D':
-          exactD(grid.p->year*secpera,r,Hexact,dummy);
+          exactD(grid.p->year*secpera,r,&Hexact,&dummy);
           Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'F':
@@ -674,7 +674,7 @@ PetscErrorCode IceCompModel::reporterror() {
             r=PetscMax(r,1.0);
             z[0]=0.0;
             bothexact(0.0,r,z,Mz,0.0,
-                      Hexact,dummy,Texact,dummy1,dummy2,dummy3,dummy4);
+                      &Hexact,&dummy,Texact,dummy1,dummy2,dummy3,dummy4);
           }
           break;
         case 'G':
@@ -685,7 +685,7 @@ PetscErrorCode IceCompModel::reporterror() {
             r=PetscMax(r,1.0);
             z[0]=0.0;
             bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      Hexact,dummy,Texact,dummy1,dummy2,dummy3,dummy4);
+                      &Hexact,&dummy,Texact,dummy1,dummy2,dummy3,dummy4);
           }
           break;
         case 'H':

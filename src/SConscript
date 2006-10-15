@@ -1,16 +1,19 @@
 Import('env petsc_libs')
 
-env.SharedLibrary('pism', Split("""grid.cc materials.cc iceModel.cc iMbasal.cc
+env.SharedLibrary('pism', Split("""grid.cc materials.cc iceModel.cc iMbasal.cc 
 iMbeddef.cc iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMtemp.cc iMutil.cc 
 iMvelocity.cc iMviewers.cc iMdefaults.cc iMoptions.cc extrasGSL.cc cubature.c"""))
 
-
-flowTable = env.Program('flowTable.cc', LIBS = ['pism'] + petsc_libs)
+flowTable = env.Program('flowTable', 'flowTable.cc', LIBS = ['pism'] + petsc_libs)
 run = env.Program('pismr', 'run.cc', LIBS = ['pism'] + petsc_libs)
 simplify = env.Program('pisms', 'simplify.cc', LIBS = ['pism'] + petsc_libs)
-verify = env.Program('pismv',
-                     Split('exactTestsBCD.cc exactTestsFG.cc iceCompModel.cc verify.cc'),
-                     LIBS = ['pism'] + petsc_libs)
-#simpleFG = env.Program('simpleFG', Split('simpleFG.cc exactTestsFG.cc'))
-shelf = env.Program('shelf', Split('shelf.cc'), LIBS = ['pism'] + petsc_libs)
-Default(run, simplify, verify)
+shelf = env.Program('shelf', 'shelf.cc', LIBS = ['pism'] + petsc_libs)
+
+env.SharedLibrary('tests', Split('exactTestsBCD.c exactTestsFG.c'))
+
+simpleBCD = env.Program('simpleBCD', 'simpleBCD.c', LIBS = ['tests', 'm'])
+simpleFG = env.Program('simpleFG', 'simpleFG.c', LIBS = ['tests', 'm'])
+
+verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'], LIBS = ['pism', 'tests'] + petsc_libs)
+
+Default(flowTable, run, simplify, verify, simpleBCD, simpleFG)
