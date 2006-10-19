@@ -488,7 +488,7 @@ PetscErrorCode IceModel::computeMaxVelocities() {
   ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
   
-  ierr = PetscGlobalMax(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMin(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
 
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
