@@ -23,7 +23,7 @@
 #include <petscksp.h>
 
 #if (WITH_NETCDF)
-#include <netcdfcpp.h>
+#include <netcdf.h>
 #endif
 
 #if (WITH_FFTW)

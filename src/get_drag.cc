@@ -57,7 +57,7 @@ IceDragModel::IceDragModel(IceGrid &g, IceType &i)
 
 
 #if (WITH_NETCDF)
-#include <netcdfcpp.h>
+#include <netcdf.h>
 
 PetscErrorCode IceDragModel::readBalvelFromFile(const char *fname) {
   PetscErrorCode  ierr;

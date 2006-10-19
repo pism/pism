@@ -22,7 +22,6 @@
 
 #include "exactTestsBCD.h"
 #include "exactTestsFG.h" 
-// WHAT IS GOING ON?  WHY WON'T IT LINK IF I INCLUDE THE HEADER FILES?
 
 #include "iceCompModel.hh"
 
