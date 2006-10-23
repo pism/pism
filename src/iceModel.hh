@@ -273,7 +273,8 @@ protected:
   PetscErrorCode destroyViewers();
 
   // see iMbasal.cc
-  PetscScalar basal(const PetscScalar H, const PetscScalar T, const PetscScalar mu) const;
+  PetscScalar basal(const PetscScalar x, const PetscScalar y, 
+       const PetscScalar H, const PetscScalar T, const PetscScalar mu);
   PetscScalar basalDrag(const PetscScalar u, const PetscScalar v) const;
 
   // This is an unfortunate kludge, but I won't rewrite the whole Macayeal code

@@ -27,9 +27,11 @@
 */
 
 /*** for SIA regions (MASK_SHEET): ***/
-PetscScalar IceModel::basal(const PetscScalar H, const PetscScalar T, const PetscScalar mu) const {
-  // This implements a pressure-melting-temperature activated linear sliding law.
-  // returns *positive* coefficient C in the law:  U_b = <u_b,v_b> = - C grad h 
+PetscScalar IceModel::basal(const PetscScalar x, const PetscScalar y,
+      const PetscScalar H, const PetscScalar T, const PetscScalar mu) {
+  // This implements location-independent pressure-melting-temperature-activated
+  // linear sliding law.  Returns *positive* coefficient C in the law
+  //                U_b = <u_b,v_b> = - C grad h 
   if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
     return mu * ice.rho * ice.grav * H;
   }

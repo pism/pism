@@ -156,8 +156,10 @@ PetscErrorCode IceModel::velocitySIAstaggered() {
             J[o][i][j][k] = k * dz * I[o][i][j][ks]; // J[o][i][j][ks];
           }
 
+          const PetscScalar myx = -grid.p->Lx + grid.p->dx * i, 
+                            myy = -grid.p->Ly + grid.p->dy * j;
           const PetscScalar basalC =
-            basal(thickness, 0.5 * (T[i][j][0] + T[i+oi][j+oj][0]), muSliding);
+            basal(myx, myy, thickness, 0.5 * (T[i][j][0] + T[i+oi][j+oj][0]), muSliding);
           ub[o][i][j] = - basalC * h_x[o][i][j];
           vb[o][i][j] = - basalC * h_y[o][i][j];
           // note (*slide) is either ub[o][i][j] or vb[o][i][j] as appropriate

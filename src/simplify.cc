@@ -40,6 +40,10 @@ protected:
     PetscTruth inFileSet;
     PetscInt   flowlawNumber;
  
+    PetscErrorCode setExperNameFromOptions();
+    PetscScalar basal(const PetscScalar x, const PetscScalar y,
+         const PetscScalar H, const PetscScalar T, const PetscScalar mu);
+    PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
 };
@@ -47,13 +51,6 @@ protected:
 
 IceEISModel::IceEISModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {
-  // Some quick defaults
-  setEnhancementFactor(1.0);
-  setThermalBedrock(PETSC_FALSE);
-  setUseMacayealVelocity(PETSC_FALSE);
-  setIsDrySimulation(PETSC_TRUE);
-  setDoGrainSize(PETSC_FALSE);
-  setExperName('A');
 }
 
 
@@ -77,28 +74,50 @@ PetscInt IceEISModel::getflowlawNumber() {
 }
 
 
+PetscErrorCode IceEISModel::setExperNameFromOptions() {
+  PetscErrorCode      ierr;
+  char                temp, eisIIexpername[20], ismipexpername[20];
+  PetscTruth          EISIIchosen, ISMIPchosen;
+
+  /* This option determines the single character name of EISMINT II experiment:
+  "-eisII F", for example. */
+  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen); CHKERRQ(ierr);
+  /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO */
+  ierr = PetscOptionsGetString(PETSC_NULL, "-ismip", ismipexpername, 1, &ISMIPchosen); CHKERRQ(ierr);
+  
+  if (EISIIchosen == PETSC_TRUE) {
+    temp = eisIIexpername[0];
+    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
+    setExperName(temp);
+  } else if (ISMIPchosen == PETSC_TRUE) {
+    temp = ismipexpername[0];
+    if ((temp == 'H') || (temp == 'h')) // ISMIP-HEINO
+        setExperName('0');
+    else if ((temp == 'O') || (temp == 'o')) // ISMIP-HOM
+        setExperName('1');
+    else if ((temp == 'P') || (temp == 'p')) // ISMIP-POLICE
+        setExperName('2');
+  } else { // set a default: EISMINT II experiment A
+    setExperName('A');
+  }
+  
+  return 0;
+}
+
+
 PetscErrorCode IceEISModel::initFromOptions() {
   PetscErrorCode      ierr;
-  char                temp, tempexpername[20], inFile[PETSC_MAX_PATH_LEN];
-  PetscTruth          experchosen;
+  char                inFile[PETSC_MAX_PATH_LEN];
   const PetscScalar   G_geothermal   = 0.042;             // J/m^2 s; geo. heat flux
   const PetscScalar   L              = 750e3;             // Horizontal extent of grid
 
-  /* This option determines the single character name of EISMINT II experiment:
-  "-exper B", for example. */
-  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", tempexpername, 1, &experchosen); CHKERRQ(ierr);
-  if (experchosen == PETSC_TRUE) {
-    temp = tempexpername[0];
-    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    setExperName(temp);
-  } else
-    setExperName('A');
+  ierr = setExperNameFromOptions(); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
-  } else {
+  } else { 
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
     grid.p->Mbz = 0;
     ierr = grid.createDA(); CHKERRQ(ierr);
@@ -116,7 +135,8 @@ PetscErrorCode IceEISModel::initFromOptions() {
     // all have no uplift at start
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
 
-    // height of grid must be great enough to handle max thickness
+    // next block checks if experiment is implemented
+    // note height of grid must be great enough to handle max thickness
     switch (getExperName()) {
       case 'A':
         ierr = grid.rescale(L, L, 4500); CHKERRQ(ierr);
@@ -143,10 +163,14 @@ PetscErrorCode IceEISModel::initFromOptions() {
           default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
         }
         break;
-      default:  SETERRQ(1,"ERROR: desired EISMINT II experiment NOT IMPLEMENTED\n");
+      case '0': // ISMIP-HEINO
+        ierr = grid.rescale(2000e3, 2000e3, 5000); CHKERRQ(ierr);
+        break;
+      default:  SETERRQ(1,"ERROR: desired simplified geometry experiment NOT IMPLEMENTED\n");
     }
   }
 
+  ierr = applyDefaultsForExperiment(); CHKERRQ(ierr);
   ierr = initAccumTs(); CHKERRQ(ierr);
   
   if (inFileSet == PETSC_FALSE) {
@@ -158,14 +182,41 @@ PetscErrorCode IceEISModel::initFromOptions() {
 }
 
 
+PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
+      const PetscScalar H, const PetscScalar T, const PetscScalar mu) {
+  
+  if (getExperName() == '0') { // ISMIP-HEINO
+    SETERRQ(1,"ISMIP-HEINO NOT IMPLEMENTED\n");
+    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
+      return mu * ice.rho * ice.grav * H;
+    } else
+      return 0.0;  
+  } else
+    return 0.0;  // zero sliding for other tests
+}
+
+
+PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
+
+  setThermalBedrock(PETSC_FALSE);
+  setUseMacayealVelocity(PETSC_FALSE);
+  setIsDrySimulation(PETSC_TRUE);
+  setDoGrainSize(PETSC_FALSE);
+
+  if (getExperName() == '0') { // ISMIP-HEINO
+    setEnhancementFactor(3.0);
+  } else   setEnhancementFactor(1.0);
+
+  return 0;
+}
+
+
 PetscErrorCode IceEISModel::initAccumTs() {
   const PetscScalar   S_b     = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
   const PetscScalar   S_t     = 1.67e-2 * 1e-3;           // K/m  Temp gradient
   PetscScalar         M_max,R_el,T_min;
   PetscErrorCode      ierr;
   PetscScalar         **accum, **Ts;
-
-  setMuSliding(0.0);  // note experiments G&H will need sliding
 
   switch (getExperName()) {
     case 'A':
@@ -198,8 +249,11 @@ PetscErrorCode IceEISModel::initAccumTs() {
       R_el = 450e3;
       T_min = 223.15;
       break;
+    case '0':
+      SETERRQ(1,"ISMIP-HEINO NOT IMPLEMENTED\n");
+      break;
     default:
-      SETERRQ(1,"\nEISMINT experiment must be A,B,C,D,F in IceEISModel::initEismint\n");
+      SETERRQ(1,"\n experiment name unknown in IceEISModel::initAccumTs()\n");
   }
   globalMinTemp=T_min;
 

@@ -29,6 +29,7 @@ static char help[] =
  * would produce  ant_141_DRAG.m  containing beta, betax, betay, and balvel
  * where betax,betay have units of  Pa s m^-1 */
 
+#include <cstring>
 #include <petscbag.h>
 #include "grid.hh"
 #include "materials.hh"
@@ -55,6 +56,9 @@ IceDragModel::IceDragModel(IceGrid &g, IceType &i)
   // do nothing (except pass g,i to constructor for IceModel)
 }
 
+
+//FIXME: need to remove C++ style calls to NetCDF library; see iMIOnetcdf.cc
+//for now the next thing produces a compile error
 
 #if (WITH_NETCDF)
 #include <netcdf.h>

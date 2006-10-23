@@ -37,7 +37,7 @@ int main() {
   const double SperA=31556926.0;  // seconds per year; 365.2422 days
   double year, r, HB, MB, HC, MC, HD, MD;
   
-  printf("Enter  t and r  separated by newline ");
+  printf("Enter  t and r  separated by space (or newline) ");
   printf("(in yrs and km, resp.; e.g. 15000 500):\n");
   scanf("%lf",&year);
   scanf("%lf",&r);

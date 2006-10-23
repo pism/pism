@@ -74,11 +74,11 @@ int main() {
   double *mb; /* a block of memory */
   int j, Mz;
 
-  printf("Enter  t and r  separated by newline");
-  printf(" (in yrs and km, resp.; e.g. 500 500):\n");
+  printf("Enter  t  and  r  separated by space (or newline)\n");
+  printf("       (in yrs and km, resp.; e.g. 500 500):\n");
   scanf("%lf",&year);
   scanf("%lf",&r);
-  printf("Enter  z  values sep by newline (in m);");
+  printf("Enter  z  values sep by space (in m);");
   printf(" '-1' to end; e.g. 0 100 500 1500 -1:\n");
 
   z = (double *) malloc(501 * sizeof(double));
