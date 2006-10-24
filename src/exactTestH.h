@@ -1,4 +1,3 @@
-
 /*
    Copyright (C) 2004-2006 Jed Brown and Ed Bueler
   
@@ -19,40 +18,39 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestsBCD_h
-#define __exactTestsBCD_h 1
+#ifndef __exactTestH_h
+#define __exactTestH_h 1
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#include <math.h>
-
 /*
-ELB 5/12/06; 10/14/06
+10/24/06
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! exactTestsBCD is a C implementation of the isothermal exact solutions 
-! (Tests) B, C, and D from:
+! exactTestH is a C implementation of a single isothermal exact solution
+! which is a concatenation of Tests C and B from
 !
 !    Ed Bueler, Craig S. Lingle, Jed A. Kallen-Brown, David N. Covey, and
 !       Latrice N. Bowman (2005) "Exact solutions and numerical verification
 !       for isothermal ice sheets," J. Glaciol. 51 (no. 173) 291--306.
+! 
+! Test H includes pointwise isostasy and was used in generating results in
+!
+!    Ed Bueler, Craig S. Lingle, and Jed A. Kallen-Brown (2006?) "Fast 
+!       computation of a deformable Earth model for ice sheet simulations,"
+!       submitted to Ann. Glaciol. 46
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactB(double t, double r, double *H, double *M);
-
-int exactC(double t, double r, double *H, double *M);
-
-int exactD(double t, double r, double *H, double *M);
-
+int exactH(const double f, const double t, const double r, 
+           double *H, double *M);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif
-
+#endif  /* __exactTestH_h */

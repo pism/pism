@@ -60,19 +60,13 @@ private:
   void mapcoords(const PetscInt i, const PetscInt j,
                  PetscScalar &x, PetscScalar &y, PetscScalar &r);
 
-  // tests B, C, D & H: separate public domain source "exactTestsBCD.cc" contains "exactB", 
-  // "exactC", "exactD" to compute these tests, along with "exactH" here.
+  // tests A, B, C, D, E: separate public domain source "exactTestsABCDE.h/c"
+  // test H: "exactTestH.h/c
   PetscErrorCode initTestBCDH();
   PetscErrorCode updateTestBCDH();
 
-  // Test H is the simple isostasy version of test C followed by a version of test B at
-  // t0=40034 years.  It is used in
-  //    Bueler and others (2006) "Fast computation of a viscoelastic deformable Earth model
-  //    for ice sheet simulations", submitted to Ann. Glaciol.
-  int exactH(double t, double r, double &H, double &M);
-  
-  // tests F & G: separate public domain source file "exactTestsFG.cc" contains "bothexact"
-  // which actually computes tests F & G 
+  // tests F & G: separate public domain source file "exactTestsFG.h/c" contains
+  // "bothexact" which actually computes tests F & G 
   PetscErrorCode initTestFG();
   PetscErrorCode updateTestFG();
 

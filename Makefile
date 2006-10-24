@@ -23,22 +23,22 @@ endif
 
 #VARIABLES:
 
-executables= flowTable pismr pismv pisms shelf simpleFG simpleBCD
+executables= flowTable pismr pismv pisms shelf simpleISO simpleFG
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
 	iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc iceCompModel.cc\
 	iceModel.cc materials.cc 
 ice_csources= cubature.c
-tests_sources= exactTestsBCD.c exactTestsFG.c
+tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c
 exec_sources= flowTable.cc simplify.cc run.cc verify.cc get_drag.cc shelf.cc
-exec_csources= simpleBCD.c simpleFG.c
+exec_csources= simpleISO.c simpleFG.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(exec_sources:.cc=.d) $(exec_csources:.c=.d)
 
 ICE_OBJS= $(patsubst %.cc, %.o, ${ice_sources}) cubature.o
-TESTS_OBJS= exactTestsBCD.o exactTestsFG.o
+TESTS_OBJS= exactTestsABCDE.o exactTestsFG.o exactTestH.o
 
 include ${PETSC_DIR}/bmake/common/base
 
@@ -71,9 +71,9 @@ pismv : obj/libpism.so obj/libtests.so iceCompModel.o verify.o
 shelf : obj/libpism.so shelf.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/shelf
 
-simpleBCD : obj/libtests.so simpleBCD.o
+simpleISO : obj/libtests.so simpleISO.o
 	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleBCD
+	 -o obj/simpleISO
 
 simpleFG : obj/libtests.so simpleFG.o
 	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \

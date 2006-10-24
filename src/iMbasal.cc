@@ -30,6 +30,11 @@
 PetscScalar IceModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
+
+  //PetscErrorCode  ierr = PetscPrintf(grid.com, 
+  //        "   [IceModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
+  //        x,y,H,T,alpha);  CHKERRQ(ierr);
+
   // This implements location-independent pressure-melting-temperature-activated
   // linear sliding law.  Returns *positive* coefficient C in the law
   //                U_b = <u_b,v_b> = - C grad h 

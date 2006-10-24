@@ -40,10 +40,10 @@ protected:
     PetscTruth inFileSet;
     PetscInt   flowlawNumber;
  
-    PetscErrorCode setExperNameFromOptions();
-    PetscScalar basal(const PetscScalar x, const PetscScalar y,
+    virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
          const PetscScalar mu);
+    PetscErrorCode setExperNameFromOptions();
     PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
@@ -72,6 +72,36 @@ void IceEISModel::setflowlawNumber(PetscInt law) {
 
 PetscInt IceEISModel::getflowlawNumber() {
   return flowlawNumber;
+}
+
+// reimplement IceModel::basal:
+PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
+      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+      const PetscScalar mu) {
+  // note this version ignors mu
+  
+  if (getExperName() == '0') { // ISMIP-HEINO
+    //PetscErrorCode  ierr = PetscPrintf(grid.com, 
+    //        "   [IceEISModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
+    //        x,y,H,T,alpha);  CHKERRQ(ierr);
+    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
+      // set coords according to ISMIP-HEINO convention
+      const PetscScalar  xIH = x + grid.p->Lx,
+                         yIH = y + grid.p->Ly;
+      if (   ( (xIH >= 2300e3-1) && (xIH <= 3300e3+1)
+               && (yIH >= 1500e3-1) && (yIH <= 2500e3+1) ) 
+          || ( (xIH >= 3300e3-1) && (xIH <= 4000e3+1)
+               && (yIH >= 1900e3-1) && (yIH <= 2100e3+1) ) ) {
+        // "soft sediment"; C_S = 500 a^-1
+        return (500 / secpera) * H;
+      } else {
+        // "hard rock"; C_R = 10^5 a^-1; alpha = |grad h|
+        return (1e5 /secpera) * H * alpha * alpha;
+      }
+    } else
+      return 0.0;  // not at pressure melting
+  } else
+    return 0.0;  // zero sliding for other tests
 }
 
 
@@ -213,32 +243,6 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
   }
 
   return 0;
-}
-
-
-PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
-      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar mu) {
-  
-  if (getExperName() == '0') { // ISMIP-HEINO
-    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
-      // set coords according to ISMIP-HEINO convention
-      const PetscScalar  xIH = x + grid.p->Lx,
-                         yIH = y + grid.p->Ly;
-      if (   ( (xIH >= 2300e3-1) && (xIH <= 3300e3+1)
-               && (yIH >= 1500e3-1) && (yIH <= 2500e3+1) ) 
-          || ( (xIH >= 3300e3-1) && (xIH <= 4000e3+1)
-               && (yIH >= 1900e3-1) && (yIH <= 2100e3+1) ) ) {
-        // "soft sediment"; C_S = 500 a^-1
-        return (500 / secpera) * H;
-      } else {
-        // "hard rock"; C_R = 10^5 a^-1; alpha = |grad h|
-        return (1e5 /secpera) * H * alpha * alpha;
-      }
-    } else
-      return 0.0;  // not at pressure melting
-  } else
-    return 0.0;  // zero sliding for other tests
 }
 
 

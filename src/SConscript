@@ -9,11 +9,11 @@ run = env.Program('pismr', 'run.cc', LIBS = ['pism'] + petsc_libs)
 simplify = env.Program('pisms', 'simplify.cc', LIBS = ['pism'] + petsc_libs)
 shelf = env.Program('shelf', 'shelf.cc', LIBS = ['pism'] + petsc_libs)
 
-env.SharedLibrary('tests', Split('exactTestsBCD.c exactTestsFG.c'))
+env.SharedLibrary('tests', Split('exactTestsABCDE.c exactTestsFG.c exactTestH.c'))
 
-simpleBCD = env.Program('simpleBCD', 'simpleBCD.c', LIBS = ['tests', 'm'])
+simpleISO = env.Program('simpleISO', 'simpleISO.c', LIBS = ['tests', 'm'])
 simpleFG = env.Program('simpleFG', 'simpleFG.c', LIBS = ['tests', 'm'])
 
 verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'], LIBS = ['pism', 'tests'] + petsc_libs)
 
-Default(flowTable, run, simplify, verify, simpleBCD, simpleFG)
+Default(flowTable, run, simplify, verify, simpleISO, simpleFG)

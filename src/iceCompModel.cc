@@ -20,8 +20,9 @@
 #include <cstring>
 #include <petscda.h>
 
-#include "exactTestsBCD.h"
+#include "exactTestsABCDE.h"
 #include "exactTestsFG.h" 
+#include "exactTestH.h" 
 
 #include "iceCompModel.hh"
 
@@ -63,14 +64,17 @@ PetscErrorCode IceCompModel::createCompVecs() {
   return 0;
 }
 
+
 PetscErrorCode IceCompModel::destroyCompVecs() {
   PetscErrorCode  ierr = VecDestroy(vSigmaComp); CHKERRQ(ierr);
   return 0;
 }
 
+
 void IceCompModel::setTest(char c) {
   testname = c;
 }
+
 
 PetscErrorCode IceCompModel::setExactOnly(PetscTruth eo) {
   exactOnly = eo;
@@ -85,17 +89,18 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
   
-  /* This option determines the single character name of a verification test:
-  "-ts B", for example. */
+  /* This option determines the single character name of a verification test
+  ("-test B", for example). */
   ierr = PetscOptionsGetString(PETSC_NULL, "-test", temptestname, 1, &testchosen); CHKERRQ(ierr);
   if (testchosen == PETSC_TRUE) {
     temp = temptestname[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
     switch (temp) {
- // list implemented tests here:
+      case 'A':
       case 'B':
       case 'C':
       case 'D':
+      case 'E':
       case 'F':
       case 'G':
         setTest(temp);
@@ -133,7 +138,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = PetscPrintf(grid.com, "continuing; using Test %c conditions ...\n",testname);  CHKERRQ(ierr);
     grid.p->year=startYear; // some exact solutions have "absolute time"
   } else {
-    ierr = PetscPrintf(grid.com, "initializing Test %c..\n",testname);  CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "initializing Test %c ...",testname);  CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
@@ -232,49 +237,6 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 }
 
 
-int IceCompModel::exactH(double t, double r, double &H, double &M) {
-  // just a wrapper for exactC_iso to form test H
-
-  // f should be already set
-  const double n = 3.0;
-  // t0 = (beta/Gamma) * pow((2n+1)/((n+1)(1-f)),n) * (pow(R0,n+1)/pow(H0,2n+1)) when beta=2;
-  double t0 = (15208.0 / pow(1-f,n)) * secpera;  // 40033 years  (for test C with isostasy)
-  double lambda, alpha, beta, Rmargin;
-  const double H0 = 3600.0, R0=750000.0;
-
-  if (t < t0) { // t <= t0: version of test C
-    lambda=5.0;
-    alpha=-1.0;  // alpha=(2-(n+1)*lambda)/(5*n+3)
-    beta=2.0;  // beta=(1+(2*n+1)*lambda)/(5*n+3)
-  } else { // t >= t0: version of test B
-    const double t0post = (t0/2.0) * (1.0/18.0);  // reset t and t0 
-    t = t - t0 + t0post; // reset to Halfar w. f
-    t0 = t0post;
-    lambda=0.0;
-    alpha=1.0/9.0;  // alpha=(2-(n+1)*lambda)/(5*n+3)=1/9
-    beta=1.0/18.0;  // beta=(1+(2*n+1)*lambda)/(5*n+3)=1/18
-  }
-
-  Rmargin = R0 * pow(t/t0,beta);
-  if (r < Rmargin)
-    H = H0 * pow(t/t0,-alpha) * pow(  1.0-pow( pow(t/t0,-beta)*(r/R0), (n+1)/n ),  n/(2*n+1)  );
-  else
-    H = 0.0;
-
-  if (t > 0.1*secpera)
-    M = (lambda/t) * H;
-  else {  // when less than 0.1 year, avoid division by time
-    Rmargin = R0 * pow(0.1*secpera/t0,beta);
-    if (r < Rmargin)
-      M = lambda * H0 / t0;  // constant value in disc of Rmargin radius
-    else
-      M = 0.0; 
-  }
-  
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::initTestBCDH() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum;
@@ -304,7 +266,7 @@ PetscErrorCode IceCompModel::initTestBCDH() {
       else if (testname == 'D')
         exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
       else if (testname == 'H') {
-        exactH(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+        exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
       }
       else SETERRQ(1,"test must be B, C, D, or H");
     }
@@ -354,7 +316,7 @@ PetscErrorCode IceCompModel::updateTestBCDH() {
         else if (testname == 'D')
           exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
         else if (testname == 'H')
-          exactH(grid.p->year*secpera,r,H[i][j],accum[i][j]);
+          exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
         else SETERRQ(1,"test must be B, C, D, or H");
       } else {
         if (testname == 'B')
@@ -364,7 +326,7 @@ PetscErrorCode IceCompModel::updateTestBCDH() {
         else if (testname == 'D')
           exactD(grid.p->year*secpera,r,&dummy,&accum[i][j]);
         else if (testname == 'H')
-          exactH(grid.p->year*secpera,r,dummy,accum[i][j]);
+          exactH(f,grid.p->year*secpera,r,&dummy,&accum[i][j]);
         else SETERRQ(1,"test must be B, C, D, or H");
       }
     }
@@ -688,7 +650,7 @@ PetscErrorCode IceCompModel::reporterror() {
           }
           break;
         case 'H':
-          exactH(grid.p->year*secpera,r,Hexact,dummy);
+          exactH(f,grid.p->year*secpera,r,&Hexact,&dummy);
           Texact[0] = T[i][j][0];  // no temp error to report
           break;
       }
