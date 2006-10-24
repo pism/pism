@@ -412,7 +412,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
         const PetscScalar hfloating = (1-ice.rho/ocean.rho) * H[i][j];
         if (modMask(mask[i][j]) == MASK_FLOATING) {
-          // check t=whether you are actually floating or grounded
+          // check whether you are actually floating or grounded
           if (hgrounded > hfloating+1.0) {
             mask[i][j] = MASK_GROUNDED_TO_DETERMINE;
             h[i][j] = hgrounded; // actually grounded so update h

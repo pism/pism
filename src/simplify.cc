@@ -42,7 +42,8 @@ protected:
  
     PetscErrorCode setExperNameFromOptions();
     PetscScalar basal(const PetscScalar x, const PetscScalar y,
-         const PetscScalar H, const PetscScalar T, const PetscScalar mu);
+         const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+         const PetscScalar mu);
     PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
@@ -126,7 +127,6 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = VecSet(vh, 0);
     ierr = VecSet(vH, 0);
     ierr = VecSet(vbed, 0);
-    ierr = VecSet(vMask, MASK_SHEET);
     ierr = VecSet(vGhf, G_geothermal);
     ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS);
     // none use Goldsby-Kohlstedt
@@ -182,21 +182,9 @@ PetscErrorCode IceEISModel::initFromOptions() {
 }
 
 
-PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
-      const PetscScalar H, const PetscScalar T, const PetscScalar mu) {
-  
-  if (getExperName() == '0') { // ISMIP-HEINO
-    SETERRQ(1,"ISMIP-HEINO NOT IMPLEMENTED\n");
-    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
-      return mu * ice.rho * ice.grav * H;
-    } else
-      return 0.0;  
-  } else
-    return 0.0;  // zero sliding for other tests
-}
-
-
 PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
+  PetscErrorCode   ierr;
+  PetscScalar      **mask;
 
   setThermalBedrock(PETSC_FALSE);
   setUseMacayealVelocity(PETSC_FALSE);
@@ -205,15 +193,58 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
 
   if (getExperName() == '0') { // ISMIP-HEINO
     setEnhancementFactor(3.0);
-  } else   setEnhancementFactor(1.0);
+    setOceanKill(PETSC_TRUE);
+    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        const PetscScalar myx = -grid.p->Lx + grid.p->dx * i, 
+                          myy = -grid.p->Ly + grid.p->dy * j;
+        const PetscScalar r = sqrt(PetscSqr(myx) + PetscSqr(myy));
+        if (r > (2000e3 - 1))
+          mask[i][j] = MASK_FLOATING_OCEAN0;
+        else
+          mask[i][j] = MASK_SHEET;
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  } else {
+    setEnhancementFactor(1.0);
+    ierr = VecSet(vMask, MASK_SHEET);
+  }
 
   return 0;
 }
 
 
+PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
+      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+      const PetscScalar mu) {
+  
+  if (getExperName() == '0') { // ISMIP-HEINO
+    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
+      // set coords according to ISMIP-HEINO convention
+      const PetscScalar  xIH = x + grid.p->Lx,
+                         yIH = y + grid.p->Ly;
+      if (   ( (xIH >= 2300e3-1) && (xIH <= 3300e3+1)
+               && (yIH >= 1500e3-1) && (yIH <= 2500e3+1) ) 
+          || ( (xIH >= 3300e3-1) && (xIH <= 4000e3+1)
+               && (yIH >= 1900e3-1) && (yIH <= 2100e3+1) ) ) {
+        // "soft sediment"; C_S = 500 a^-1
+        return (500 / secpera) * H;
+      } else {
+        // "hard rock"; C_R = 10^5 a^-1; alpha = |grad h|
+        return (1e5 /secpera) * H * alpha * alpha;
+      }
+    } else
+      return 0.0;  // not at pressure melting
+  } else
+    return 0.0;  // zero sliding for other tests
+}
+
+
 PetscErrorCode IceEISModel::initAccumTs() {
   const PetscScalar   S_b     = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
-  const PetscScalar   S_t     = 1.67e-2 * 1e-3;           // K/m  Temp gradient
+  PetscScalar   S_T     = 1.67e-2 * 1e-3;           // K/m  Temp gradient
   PetscScalar         M_max,R_el,T_min;
   PetscErrorCode      ierr;
   PetscScalar         **accum, **Ts;
@@ -250,7 +281,9 @@ PetscErrorCode IceEISModel::initAccumTs() {
       T_min = 223.15;
       break;
     case '0':
-      SETERRQ(1,"ISMIP-HEINO NOT IMPLEMENTED\n");
+      M_max = 0.3 / secpera;
+      T_min = 233.15;
+      S_T = 2.5e-9 / 1e9; // 2.5e-9 K km^-3
       break;
     default:
       SETERRQ(1,"\n experiment name unknown in IceEISModel::initAccumTs()\n");
@@ -262,10 +295,20 @@ PetscErrorCode IceEISModel::initAccumTs() {
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar r = sqrt(PetscSqr(grid.p->dx*(i-grid.p->Mx/2)) +
-                                 PetscSqr(grid.p->dy*(j-grid.p->My/2)));
-      accum[i][j] = PetscMin(M_max, S_b * (R_el-r));  // formula (7) in (Payne et al 2000)
-      Ts[i][j] = T_min + S_t * r;                     // formula (8)
+      const PetscScalar r = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
+                                  + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
+      // set accumulation
+      if ((getExperName() >= 'A') && (getExperName() <= 'F'))
+        accum[i][j] = PetscMin(M_max, S_b * (R_el-r));  // formula (7) in (Payne et al 2000)
+      else if (getExperName() == '0') {
+        const PetscScalar M_min = 0.15 / secpera;
+        accum[i][j] = M_min + ((M_max - M_min) / 2000e3) * r;
+      }
+      // set surface temperature
+      if ((getExperName() >= 'A') && (getExperName() <= 'F'))
+        Ts[i][j] = T_min + S_T * r;                 // formula (8) in (Payne et al 2000)
+      else if (getExperName() == '0')
+        Ts[i][j] = T_min + S_T * r * r * r;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
