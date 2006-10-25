@@ -18,16 +18,13 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/*  STANDARD CASE:
-Enter  t and r  separated by newline (in yrs and km, resp.; e.g. 500 500):
-500
-500
-Enter  z  values sep by newline (in m); '-1' to end; e.g. 0 100 500 1500 -1:
-0
-100
-500
-1500
--1
+/*  STANDARD DIALOG:
+user@home:~/pism$ obj/simpleFG
+Enter  t  and  r  separated by space (or newline)
+       (in yrs and km, resp.; e.g. 500 500):
+500 500
+Enter  z  values sep by space (in m); '-1' to end; e.g. 0 100 500 1500 -1:
+0 100 500 1500 -1
 
 Results:
            Test F                         Test G
@@ -71,7 +68,6 @@ int main() {
   const double Cp=200.0;     // m;  magnitude of the perturbation in test G
   double year, r, HF, MF, HG, MG;
   double *z, *TF, *UF, *wF, *SigF, *SigcF, *TG, *UG, *wG, *SigG, *SigcG;
-  double *mb; /* a block of memory */
   int j, Mz;
 
   printf("Enter  t  and  r  separated by space (or newline)\n");
@@ -83,24 +79,34 @@ int main() {
 
   z = (double *) malloc(501 * sizeof(double));
   if (z == NULL) { 
-    fprintf(stderr, "simpleFG: couldn't allocate memory\n"); return -9999; }
+    fprintf(stderr, "\nERROR simpleFG: couldn't allocate memory for z!\n\n");
+    return -9999;
+  }
 
   j=0;
   do {
     scanf("%lf",&z[j]);
     j++;
-    if (j>490) printf("\n\n\nWARNING: enter -1 to stop soon!!!\n");
+    if (j>490) printf("\n\n\nWARNING simpleFG: enter -1 to stop soon!!!\n");
   } while (z[j-1]>=0.0);
   Mz=j-1;
 
-  mb = (double *) malloc(10 * Mz * sizeof(double));
-  if (mb == NULL) { 
-    fprintf(stderr, "simpleFG: couldn't allocate memory\n"); return -9999; }
-  TF=mb; UF=mb+Mz*sizeof(double); wF=mb+2*Mz*sizeof(double);
-  SigF=mb+3*Mz*sizeof(double); SigcF=mb+4*Mz*sizeof(double);
-  TG=mb+5*Mz*sizeof(double); UG=mb+6*Mz*sizeof(double);
-  wG=mb+7*Mz*sizeof(double);   
-  SigG=mb+8*Mz*sizeof(double); SigcG=mb+9*Mz*sizeof(double);  
+  TF = (double *) malloc(Mz * sizeof(double));
+  UF = (double *) malloc(Mz * sizeof(double));
+  wF = (double *) malloc(Mz * sizeof(double));
+  SigF = (double *) malloc(Mz * sizeof(double));
+  SigcF = (double *) malloc(Mz * sizeof(double));
+  TG = (double *) malloc(Mz * sizeof(double));
+  UG = (double *) malloc(Mz * sizeof(double));
+  wG = (double *) malloc(Mz * sizeof(double));
+  SigG = (double *) malloc(Mz * sizeof(double));
+  SigcG = (double *) malloc(Mz * sizeof(double));
+  if ((TF == NULL) || (UF == NULL) || (wF == NULL) || (SigF == NULL)
+      || (SigcF == NULL) || (TG == NULL) || (UG == NULL) || (wG == NULL)
+      || (SigG == NULL) || (SigcG == NULL)) { 
+    fprintf(stderr, "\nERROR simpleFG: couldn't allocate memory!\n\n");
+    return -9999; 
+  }
 
   /* evaluate tests F and G */
   bothexact(0.0,r*1000.0,z,Mz,0.0,&HF,&MF,TF,UF,wF,SigF,SigcF);
@@ -125,6 +131,8 @@ int main() {
   }
   printf("(units: (*) = 10^-3 K/a)\n");
 
-  free(mb);
+  free(z);
+  free(TF); free(UF); free(wF); free(SigF); free(SigcF); 
+  free(TG); free(UG); free(wG); free(SigG); free(SigcG); 
   return 0;
 }

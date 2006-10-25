@@ -148,6 +148,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vGhf); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vubar); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vvbar); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vub); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vvb); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
 
@@ -198,6 +200,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vGhf); CHKERRQ(ierr);
   ierr = VecDestroy(vubar); CHKERRQ(ierr);
   ierr = VecDestroy(vvbar); CHKERRQ(ierr);
+  ierr = VecDestroy(vub); CHKERRQ(ierr);
+  ierr = VecDestroy(vvb); CHKERRQ(ierr);
   ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
 
@@ -248,23 +252,17 @@ PetscErrorCode IceModel::setEndYear(PetscScalar ye) {
     endYear = ye;
     relativeEndYear = PETSC_FALSE;
   }
-    
   return 0;
 }
 
 PetscErrorCode IceModel::setRunYears(PetscScalar y) {
-  PetscErrorCode ierr;
-    
-  ierr = setEndYear(startYear + y); CHKERRQ(ierr);
+  PetscErrorCode ierr = setEndYear(startYear + y); CHKERRQ(ierr);
   relativeEndYear = PETSC_TRUE;
-
   return 0;
 }
 
 void  IceModel::setInitialAgeYears(PetscScalar d) {
-  PetscErrorCode ierr;
-  
-  ierr = VecSet(vtau, d*secpera);
+  VecSet(vtau, d*secpera);
 }
 
 void IceModel::setShowViewers(PetscTruth show_viewers) {
@@ -273,10 +271,6 @@ void IceModel::setShowViewers(PetscTruth show_viewers) {
 
 void IceModel::setDoMassBal(PetscTruth do_mb) {
   doMassBal = do_mb;
-}
-
-void IceModel::setDoVelocity(PetscTruth do_v) {
-  doVelocity = do_v;
 }
 
 void IceModel::setDoTemp(PetscTruth do_temp) {
@@ -581,7 +575,6 @@ PetscErrorCode IceModel::run() {
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
     tempAgeStep = ((it % tempskip == 0) && (doTemp == PETSC_TRUE));
-    // if (doVelocity == PETSC_TRUE) // flag ignored
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 

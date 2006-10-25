@@ -43,7 +43,6 @@ const PetscScalar DEFAULT_START_YEAR = 0;
 const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
 const PetscTruth  DEFAULT_DO_MASS_BAL = PETSC_TRUE;
-const PetscTruth  DEFAULT_DO_VELOCITY = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMP = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
@@ -98,7 +97,6 @@ PetscErrorCode IceModel::setDefaults() {
   setStartYear(DEFAULT_START_YEAR);
   ierr = setRunYears(DEFAULT_RUN_YEARS); CHKERRQ(ierr);
   setDoMassBal(DEFAULT_DO_MASS_BAL);
-  setDoVelocity(DEFAULT_DO_VELOCITY);
   setDoTemp(DEFAULT_DO_TEMP);
   setDoGrainSize(DEFAULT_DO_GRAIN_SIZE);
   setIsDrySimulation(DEFAULT_IS_DRY_SIMULATION);

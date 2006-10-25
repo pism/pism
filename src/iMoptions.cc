@@ -129,13 +129,6 @@ IceModel::setFromOptions() {
     setDoTemp(PETSC_FALSE);
   }
 
-/*
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_velocity", &noVelocity); CHKERRQ(ierr);
-  if (noVelocity == PETSC_TRUE) {
-    setDoVelocity(PETSC_FALSE);
-  }
-*/
-  
 // note "-o" is in use for output file name
 
   // whether or not to kill ice if original condition was ice-free ocean

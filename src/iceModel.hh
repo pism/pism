@@ -69,7 +69,6 @@ public:
   void setInitialAgeYears(PetscScalar d);
   void setShowViewers(PetscTruth);
   void setDoMassBal(PetscTruth);
-  void setDoVelocity(PetscTruth);
   void setDoTemp(PetscTruth);
   void setDoGrainSize(PetscTruth);
   void setDoBedDef(PetscTruth);
@@ -168,14 +167,19 @@ protected:
   IceType      &ice;
   BedrockType  bedrock;
   OceanType    ocean;
-  Vec          vh, vH, vbed;  // 2-D vectors:     Mx x My
-  Vec          vAccum, vTs, vMask, vGhf, vbasalMeltRate, vuplift; // 2D
-  Vec          vubar, vvbar;               // (u bar and v bar *on standard grid*)
-  Vec*         vuvbar;                     // (vuvbar[0] and vuvbar[1] are u bar and v bar
-                                           //      *on staggered grid*)
-  Vec          vu, vv, vw, vSigma, vT;     // 3-D vectors:     Mx x My x Mz
-  Vec          vgs, vtau;                  // Grain size
-  Vec          vTb;                        // 3-D bed vectors: Mx x My x Mbz
+  Vec          vh, vH, vbed,            // 2D vectors; Mx x My
+               vAccum, vTs,             // accumulation, surface temp
+               vMask,                   // mask for flow type
+               vGhf, vbasalMeltRate,    // geothermal flux
+               vuplift,                 
+               vub, vvb,                // basal vels on standard grid
+               vubar, vvbar;            // vertically-averaged vels 
+                                        //   (u bar and v bar) on standard grid
+  Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
+                                        //   u bar and v bar on staggered grid
+  Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
+               vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
+  Vec          vTb;                     // 3D bed: Mx x My x Mbz
 
   // parameters and flags
   PetscScalar muSliding, enhancementFactor, globalMinTemp;
@@ -187,7 +191,7 @@ protected:
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill;
-  PetscTruth  doMassBal, doVelocity, doTemp, doGrainSize, doBedDef, doBedIso;
+  PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  showViewers, allowRegridding, beVerbose;
   PetscTruth  createVecs_done;
   PetscInt    tempskip, noSpokesLevel;
@@ -338,6 +342,7 @@ protected:
   // see iMvelocity.cc
   PetscErrorCode velocitySIAstaggered();
   PetscErrorCode velocitySIAregular();
+  PetscErrorCode storeBasalVelocity();
   PetscErrorCode smoothSigma();
   PetscErrorCode mapStaggeredVelocityToStandard();
   PetscErrorCode computeMaxVelocities();

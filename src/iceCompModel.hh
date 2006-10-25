@@ -36,7 +36,7 @@ public:
   PetscErrorCode setExactOnly(PetscTruth);
   PetscErrorCode summaryEismint_verify(bool);
   PetscErrorCode run();
-  PetscErrorCode reporterror();
+  PetscErrorCode reportErrors();
   virtual PetscErrorCode dumpToFile_Matlab(const char *fname);
 
 protected:
@@ -72,6 +72,17 @@ private:
   // "bothexact" which actually computes tests F & G 
   PetscErrorCode initTestFG();
   PetscErrorCode updateTestFG();
+
+  PetscErrorCode computeGeometryErrors(
+        PetscScalar &gvolexact, PetscScalar &gareaexact, PetscScalar &gdomeHexact,
+        PetscScalar &volerr, PetscScalar &areaerr,
+        PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
+        PetscScalar &domeHerr);
+  PetscErrorCode computeBasalTemperatureErrors(
+        PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &domeTerr);
+  PetscErrorCode computeBasalVelocityErrors(
+        PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
+        PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
 
 private:
   // boundary conditions & parameters for all tests

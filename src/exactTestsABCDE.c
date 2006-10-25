@@ -234,6 +234,7 @@ int exactE(const double xIN, const double yIN,
       P = rho * g * (*H);
       h_x = dhdr * cos(theta);
       h_y = dhdr * sin(theta);
+      printf("\nFIXME: return velocity direction according to SIGN of xIN, yIN !!\n\n");
       *ub = - (*mu) * P * h_x;
       *vb = - (*mu) * P * h_y;
  

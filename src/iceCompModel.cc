@@ -128,7 +128,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = PetscPrintf(grid.com, "continuing; using Test %c conditions ...\n",testname);  CHKERRQ(ierr);
     grid.p->year=startYear; // some exact solutions have "absolute time"
   } else {
-    ierr = PetscPrintf(grid.com, "initializing Test %c ...",testname);  CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
@@ -233,7 +233,7 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 }
 
 
-// reimplement IceModel::basal:
+// reimplement IceModel::basal
 PetscScalar IceCompModel::basal(const PetscScalar xIN, const PetscScalar yIN,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar muIN) {
@@ -646,37 +646,24 @@ PetscErrorCode IceCompModel::updateCompViewers() {
 }
 
 
-PetscErrorCode IceCompModel::reporterror() {
-
+PetscErrorCode IceCompModel::computeGeometryErrors(
+      PetscScalar &gvolexact, PetscScalar &gareaexact, PetscScalar &gdomeHexact,
+      PetscScalar &volerr, PetscScalar &areaerr,
+      PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
+      PetscScalar &domeHerr) {
+  // compute errors in thickness, thickness^{(2n+2)/n}, volume, area
+  
   PetscErrorCode  ierr;
-  PetscScalar     **H, ***T;
-  PetscScalar     Hexact, vol, area, domeH, domeT, volexact, areaexact, domeHexact, domeTexact;
-  PetscScalar     Herr, avHerr, etaerr, Terr, avTerr;
+  PetscScalar     **H;
+  PetscScalar     Hexact, vol, area, domeH, volexact, areaexact, domeHexact;
+  PetscScalar     Herr, avHerr, etaerr;
 
-  PetscScalar     dummy, *z, *Texact, *dummy1, *dummy2, *dummy3, *dummy4;
-  PetscScalar     dum1, dum2, dum3;
-  const PetscInt  Mz=1;
-  z=new PetscScalar[Mz];  Texact = new PetscScalar[Mz];
-  dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
-  dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
-
-  // geometry errors to report: 
-  //    -- max thickness error
-  //    -- average (at each grid point on whole grid) thickness error
-  //    -- dome thickness error
-  //    -- max (thickness)^(2n+2)/n error
-  //    -- volume error
-  //    -- area error
-  // and temperature errors:
-  //    -- max basal temp error [tests F&G]
-  //    -- average (at each grid point on whole grid) basal temp error [tests F&G]
-  //    -- dome basal temp error [tests F&G]
+  PetscScalar     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  vol = 0; area = 0; domeH = 0; domeT=0; 
-  volexact = 0; areaexact = 0; domeHexact = 0; domeTexact = 0;
-  Herr = 0; avHerr=0; etaerr = 0; Terr=0; avTerr=0;
+  vol = 0; area = 0; domeH = 0;
+  volexact = 0; areaexact = 0; domeHexact = 0;
+  Herr = 0; avHerr=0; etaerr = 0;
 
   // area of grid square in square km:
   const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3;
@@ -689,53 +676,44 @@ PetscErrorCode IceCompModel::reporterror() {
       }
       PetscScalar r,xx,yy;
       mapcoords(i,j,xx,yy,r);
-
       switch (testname) {
         case 'A':
           exactA(r,&Hexact,&dummy);
-          Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'B':
           exactB(grid.p->year*secpera,r,&Hexact,&dummy);
-          Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'C':
           exactC(grid.p->year*secpera,r,&Hexact,&dummy);
-          Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'D':
           exactD(grid.p->year*secpera,r,&Hexact,&dummy);
-          Texact[0] = T[i][j][0];  // no temp error to report
           break;
         case 'E':
-          exactE(xx,yy,&Hexact,&dummy,&dum1,&dum2,&dum3);
-          Texact[0] = T[i][j][0];  // no temp error to report
+          exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
           break;
         case 'F':
           if (r > LforFG - 1.0) {  // outside of sheet
             Hexact=0.0;
-            Texact[0]=Tmin + ST * r;  // = Ts
           } else {
             r=PetscMax(r,1.0);
-            z[0]=0.0;
-            bothexact(0.0,r,z,Mz,0.0,
-                      &Hexact,&dummy,Texact,dummy1,dummy2,dummy3,dummy4);
+            z=0.0;
+            bothexact(0.0,r,&z,1,0.0,
+                      &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
           }
           break;
         case 'G':
           if (r > LforFG -1.0) {  // outside of sheet
             Hexact=0.0;
-            Texact[0]=Tmin + ST * r;  // = Ts
           } else {
             r=PetscMax(r,1.0);
-            z[0]=0.0;
-            bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      &Hexact,&dummy,Texact,dummy1,dummy2,dummy3,dummy4);
+            z=0.0;
+            bothexact(grid.p->year*secpera,r,&z,1,ApforG,
+                      &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
           }
           break;
         case 'H':
           exactH(f,grid.p->year*secpera,r,&Hexact,&dummy);
-          Texact[0] = T[i][j][0];  // no temp error to report
           break;
         default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, or H");
       }
@@ -747,65 +725,207 @@ PetscErrorCode IceCompModel::reporterror() {
       if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
         domeH = H[i][j];
         domeHexact = Hexact;
-        domeT = T[i][j][0];
-        domeTexact = Texact[0];
       }
       // compute maximum errors
       Herr = PetscMax(Herr,PetscAbsReal(H[i][j] - Hexact));
       etaerr = PetscMax(etaerr,PetscAbsReal(pow(H[i][j],m) - pow(Hexact,m)));
-      Terr = PetscMax(Terr,PetscAbsReal(T[i][j][0] - Texact[0]));
       // add to sums for average errors
       avHerr += PetscAbsReal(H[i][j] - Hexact);
-      avTerr += PetscAbsReal(T[i][j][0] - Texact[0]);
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  
-  PetscScalar gvol, garea, gvolexact, gareaexact, 
-              gdomeH, gdomeHexact, gdomeT, gdomeTexact,
-              gHerr, gTerr, getaerr, gavHerr, gavTerr;
+
+  // globalize (find errors over all processors) 
+  PetscScalar gvol, garea, gdomeH;
+  ierr = PetscGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&vol, &gvol, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&Herr, &gHerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&etaerr, &getaerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&Terr, &gTerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
-  
-  PetscScalar   volerr = PetscAbsReal(gvol - gvolexact);
-  PetscScalar   areaerr = PetscAbsReal(garea - gareaexact);
-  PetscScalar   domeHerr = PetscAbsReal(gdomeH - gdomeHexact);
-  PetscScalar   domeTerr = PetscAbsReal(gdomeT - gdomeTexact);
-  
-  gavHerr = gavHerr/(grid.p->Mx*grid.p->My);
-  gavTerr = gavTerr/(grid.p->Mx*grid.p->My);
+  volerr = PetscAbsReal(gvol - gvolexact);
+  areaerr = PetscAbsReal(garea - gareaexact);
 
-  ierr = PetscPrintf(grid.com, "Actual ERRORS (evaluated at final time):\n"); CHKERRQ(ierr);
-  // print geometry errors
+  ierr = PetscGlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
+  gavHerr = gavHerr/(grid.p->Mx*grid.p->My);
+  ierr = PetscGlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
+  
+  ierr = PetscGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
+  domeHerr = PetscAbsReal(gdomeH - gdomeHexact);
+  
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
+      PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &domeTerr) {
+
+  PetscErrorCode  ierr;
+  PetscScalar     ***T, domeT, domeTexact, Terr, avTerr;
+
+  PetscScalar     dummy, z, Texact, dummy1, dummy2, dummy3, dummy4, dummy5;
+  const PetscInt  Mz=1;
+
+  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  domeT=0; domeTexact = 0; Terr=0; avTerr=0;
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar r,xx,yy;
+      mapcoords(i,j,xx,yy,r);
+      switch (testname) {
+        case 'F':
+          if (r > LforFG - 1.0) {  // outside of sheet
+            Texact=Tmin + ST * r;  // = Ts
+          } else {
+            r=PetscMax(r,1.0);
+            z=0.0;
+            bothexact(0.0,r,&z,1,0.0,
+                      &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
+          }
+          break;
+        case 'G':
+          if (r > LforFG -1.0) {  // outside of sheet
+            Texact=Tmin + ST * r;  // = Ts
+          } else {
+            r=PetscMax(r,1.0);
+            z=0.0;
+            bothexact(grid.p->year*secpera,r,&z,Mz,ApforG,
+                      &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
+          }
+          break;
+        default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
+      }
+
+      if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
+        domeT = T[i][j][0];
+        domeTexact = Texact;
+      }
+      // compute maximum errors
+      Terr = PetscMax(Terr,PetscAbsReal(T[i][j][0] - Texact));
+      // add to sums for average errors
+      avTerr += PetscAbsReal(T[i][j][0] - Texact);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  
+  PetscScalar gdomeT, gdomeTexact;
+
+  ierr = PetscGlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  gavTerr = gavTerr/(grid.p->Mx*grid.p->My);
+  ierr = PetscGlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);  
+  domeTerr = PetscAbsReal(gdomeT - gdomeTexact);
+  
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::computeBasalVelocityErrors(
+      PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
+      PetscScalar &gmaxuberr, PetscScalar &gmaxvberr) {
+
+  PetscErrorCode ierr;
+  PetscScalar    **H, **ub, **vb;
+  PetscScalar    maxvecerr, avvecerr, maxuberr, maxvberr;
+  
+  if (testname != 'E')
+    SETERRQ(1,"basal velocity errors only computable for test E\n");
+    
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (H[i][j] > 0.0) {
+        PetscScalar r,xx,yy, 
+                    ubexact,vbexact, dummy1,dummy2,dummy3;
+        mapcoords(i,j,xx,yy,r);
+        exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact); 
+        // compute maximum errors
+        const PetscScalar uberr = PetscAbsReal(ub[i][j] - ubexact);
+        const PetscScalar vberr = PetscAbsReal(vb[i][j] - vbexact);
+        maxuberr = PetscMax(maxuberr,uberr);
+        maxvberr = PetscMax(maxvberr,vberr);
+        const PetscScalar vecerr = sqrt(uberr*uberr + vberr*vberr);
+        maxvecerr = PetscMax(maxvecerr,vecerr);
+        avvecerr += vecerr;      
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  gavvecerr = gavvecerr/(grid.p->Mx*grid.p->My);
+  
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::reportErrors() {
+  // geometry errors to report (for all tests): 
+  //    -- max thickness error
+  //    -- average (at each grid point on whole grid) thickness error
+  //    -- dome thickness error
+  //    -- max (thickness)^(2n+2)/n error
+  //    -- volume error
+  //    -- area error
+  // and temperature errors (for tests F & G):
+  //    -- max basal temp error
+  //    -- average (at each grid point on whole grid) basal temp error
+  //    -- dome basal temp error
+  // and basal sliding errors (for test E):
+  //    -- max ub error
+  //    -- max vb error
+  //    -- max |<ub,vb> - <ubexact,vbexact>| error
+  //    -- av |<ub,vb> - <ubexact,vbexact>| error
+
+  PetscErrorCode  ierr;
+  ierr = PetscPrintf(grid.com, "Actual ERRORS evaluated at final time:\n"); CHKERRQ(ierr);
+
+  // geometry (thickness, vol, area) errors
+  PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
+              maxetaerr, domeHerr;
+  ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
+                               volerr,areaerr,maxHerr,avHerr,maxetaerr,domeHerr);
+     CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com, 
      "geometry  :  prcntVOL  prcntAREA      maxH         avH   relmaxETA    domeH\n");
      CHKERRQ(ierr);
+  const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
   ierr = PetscPrintf(grid.com, "           %10.4f%11.4f%10.4f%12.6f%12.6f%9.4f\n",
-                100*volerr/gvolexact, 100*areaerr/gareaexact, gHerr, gavHerr,
-                getaerr/pow(gdomeHexact,m), domeHerr); CHKERRQ(ierr);
-  // print temp errors
-  ierr = PetscPrintf(grid.com, 
-     "base temps:        maxT         avT      domeT\n"); CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com, "           %12.6f%12.6f%11.6f\n", 
-                gTerr, gavTerr, domeTerr); CHKERRQ(ierr);
+                100*volerr/volexact, 100*areaerr/areaexact, maxHerr, avHerr,
+                maxetaerr/pow(domeHexact,m), domeHerr); CHKERRQ(ierr);
 
-  delete [] z;  delete [] Texact;
-  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
+  // basal temp errors if appropriate
+  if ((testname == 'F') || (testname == 'G')) {
+    PetscScalar maxTerr, avTerr, domeTerr;
+    ierr = computeBasalTemperatureErrors(maxTerr, avTerr, domeTerr); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, 
+       "base temps:        maxT         avT      domeT\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "           %12.6f%12.6f%11.6f\n", 
+                  maxTerr, avTerr, domeTerr); CHKERRQ(ierr);
+  }
 
-  if (testname == 'E')   SETERRQ(1, "REPORT ERROR FOR test E NOT YET FULLY IMPLEMENTED");
+  // basal velocity errors if appropriate
+  if (testname == 'E') {
+    PetscScalar maxvecerr, avvecerr, maxuberr, maxvberr;
+    ierr = computeBasalVelocityErrors(maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, 
+       "base vels :   maxvector    avvector      maxub      maxvb\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "           %12.4f%12.5f%11.4f%11.4f\n", 
+                  maxvecerr*secpera, avvecerr*secpera, 
+                  maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -898,9 +1018,10 @@ PetscErrorCode IceCompModel::run() {
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-    tempAgeStep = ( (exactOnly == PETSC_FALSE) && (doTemp == PETSC_TRUE) && 
-                          (it % tempskip == 0) && ((testname == 'F') || (testname =='G')) );
-    // if (doVelocity == PETSC_TRUE) // flag ignored
+    tempAgeStep = (    (exactOnly == PETSC_FALSE)
+                    && (doTemp == PETSC_TRUE)
+                    && (it % tempskip == 0) 
+                    && ((testname == 'F') || (testname =='G')) );
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 
@@ -938,7 +1059,7 @@ PetscErrorCode IceCompModel::run() {
     
     if (tempAgeStep) {
       // note temps are allowed to go above pressure melting in verify
-      ierr = temperatureStep(PETSC_TRUE, dt_temp); CHKERRQ(ierr);  // also does age
+      ierr = temperatureStep(PETSC_TRUE, dt_temp); CHKERRQ(ierr);
       dt_temp = 0.0;
       ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
     } else {

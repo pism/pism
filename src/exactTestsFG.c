@@ -33,15 +33,10 @@ double p4(double x) {
   return 24.0 + x*(-24.0 + x*(12.0 + x*(-4.0 + x)));
 }
 
-int bothexact(double t, double r, double *z, int Mz,
-              double Cp, double *H, double *M, double *TT, double *U,
-              double *w, double *Sig, double *Sigc) {
-
-/*
-int bothexact(const double t, const double r, const double z[], const int Mz,
-              const double Cp, double &H, double &M, double TT[], double U[],
-              double w[], double Sig[], double Sigc[]) {
-*/
+int bothexact(double t, double r, double *z, int Mz, double Cp,
+	      double *Hreturn, double *M, double *TT,
+	      double *Ureturn, double *wreturn, 
+              double *Sigreturn, double *Sigc) {
 
   const double pi = 3.14159265358979;
   const double SperA=31556926.0;  /* seconds per year; 365.2422 days */
@@ -75,18 +70,22 @@ int bothexact(const double t, const double r, const double z[], const int Mz,
   double Sigmu, lamhatrr, frr, Hrr, Tsr, nur, mur, phi, gam;
   double I4H, divQ, Ht, nut;
   double I4,dTt,Tr,Tz,Tzz;
+  double H, *U, *w, *Sig; /* compute with these; return copies */
   int i;
   double *I3;
 
-  I3 = (double *) malloc(Mz * sizeof(double)); /* need temporary array */
-  if (I3 == NULL) { 
-    fprintf(stderr, "bothexact(): couldn't allocate memory\n");
+  I3 = (double *) malloc(Mz * sizeof(double)); /* need temporary arrays */
+  U = (double *) malloc(Mz * sizeof(double));
+  w = (double *) malloc(Mz * sizeof(double));
+  Sig = (double *) malloc(Mz * sizeof(double));
+  if ((I3 == NULL) || (U == NULL) || (w == NULL) || (Sig == NULL)) { 
+    fprintf(stderr, "\nERROR bothexact(): couldn't allocate memory!\n\n");
     return -9999;
   }
-
+  
   if ( (r<=0) || (r>=L) ) {
-    printf("\nERROR: code and derivation assume 0<r<L  !\n\n");
-    return -9999;
+    fprintf(stderr, "\nERROR bothexact(): code and derivation assume 0<r<L  !\n\n");
+    return 1;
   }
 
   /* compute H from analytical steady state Hs (Test D) plus perturbation */
@@ -99,14 +98,14 @@ int bothexact(const double t, const double r, const double z[], const int Mz,
   else
     f = 0.0;
   goft = Cp*sin(2.0*pi*t/Tp);
-  *H = Hconst*pow(lamhat,power) + goft*f;
+  H = Hconst*pow(lamhat,power) + goft*f;
 
   /* compute TT = temperature */
   Ts = Tmin+ST*r;
-  nusqrt = sqrt( 1 + (4.0*(*H)*Ggeo)/(k*Ts) );
+  nusqrt = sqrt( 1 + (4.0*H*Ggeo)/(k*Ts) );
   nu = ( k*Ts/(2.0*Ggeo) )*( 1 + nusqrt );
   for (i=0; i<Mz; i++)
-    TT[i] = Ts * (nu+(*H)) / (nu+z[i]);
+    TT[i] = Ts * (nu+H) / (nu+z[i]);
 
   /* compute surface slope and horizontal velocity */
   lamhatr = ((1+1/n)/L)*( 1 - pow(1-s,1/n) - pow(s,1/n) );
@@ -116,22 +115,22 @@ int bothexact(const double t, const double r, const double z[], const int Mz,
     fr = 0.0;
   Hr = Hconst * power * pow(lamhat,power-1) * lamhatr + goft*fr;   /* chain rule */
   if ( Hr>0 ) {
-    printf("\nERROR: assumes H_r negative for all 0<r<L  !\n");
-    return 1;
+    fprintf(stderr, "\nERROR bothexact(): assumes H_r negative for all 0<r<L !\n\n");
+    return 2;
   }
-  mu = Q/(Rgas*Ts*(nu+(*H)));
+  mu = Q/(Rgas*Ts*(nu+H));
   surfArr = exp(-Q/(Rgas*Ts));
   Uconst = 2.0 * pow(rho*g,n) * A;
   omega = Uconst * pow(-Hr,n) * surfArr * pow(mu,-n-1);
   for (i=0; i<Mz; i++) {
-    I3[i] = p3(mu*(*H)) * exp(mu*(*H)) - p3(mu*((*H)-z[i])) * exp(mu*((*H)-z[i]));
+    I3[i] = p3(mu*H) * exp(mu*H) - p3(mu*(H-z[i])) * exp(mu*(H-z[i]));
     U[i] = omega * I3[i];
   }
 
   /* compute strain heating */
   for (i=0; i<Mz; i++) {
-    Sigmu = -(Q*(nu+z[i])) / (Rgas*Ts*(nu+(*H)));
-    Sig[i] = (Uconst*g/cpheat) * exp(Sigmu) * pow( fabs(Hr)*( (*H) -z[i]) ,n+1);
+    Sigmu = -(Q*(nu+z[i])) / (Rgas*Ts*(nu+H));
+    Sig[i] = (Uconst*g/cpheat) * exp(Sigmu) * pow( fabs(Hr)*( H -z[i]) ,n+1);
   }
 
   /* compute vertical velocity */
@@ -144,32 +143,40 @@ int bothexact(const double t, const double r, const double z[], const int Mz,
     Hconst*power*pow(lamhat,power-1)*lamhatrr + goft*frr;
   Tsr = ST;
   nur = (k*Tsr/(2.0*Ggeo)) * (1 + nusqrt) +
-    (1/Ts) * (Hr*Ts-(*H)*Tsr) / nusqrt;
-  mur = ( -Q/(Rgas*Ts*Ts*pow(nu+(*H),2.0)) ) * ( Tsr*(nu+(*H))+Ts*(nur+Hr) );
+    (1/Ts) * (Hr*Ts-H*Tsr) / nusqrt;
+  mur = ( -Q/(Rgas*Ts*Ts*pow(nu+H,2.0)) ) * ( Tsr*(nu+H)+Ts*(nur+Hr) );
   phi = 1/r + n*Hrr/Hr + Q*Tsr/(Rgas*Ts*Ts) - (n+1)*mur/mu;   /* division by r */
-  gam = pow(mu,n) * exp(mu*(*H)) * (mur*(*H)+mu*Hr) * pow((*H),n);
+  gam = pow(mu,n) * exp(mu*H) * (mur*H+mu*Hr) * pow(H,n);
   for (i=0; i<Mz; i++) {
-    I4 = p4(mu*(*H)) * exp(mu*(*H)) - p4(mu*((*H)-z[i])) * exp(mu*((*H)-z[i]));
-    w[i] = omega * ((mur/mu - phi)*I4/mu + (phi*((*H)-z[i])+Hr)*I3[i] - gam*z[i]);
+    I4 = p4(mu*H) * exp(mu*H) - p4(mu*(H-z[i])) * exp(mu*(H-z[i]));
+    w[i] = omega * ((mur/mu - phi)*I4/mu + (phi*(H-z[i])+Hr)*I3[i] - gam*z[i]);
   }
 
   /* compute compensatory accumulation M */
-  I4H = p4(mu*(*H)) * exp(mu*(*H)) - 24.0;
-  divQ = - omega * (mur/mu - phi) * I4H / mu + omega * gam * (*H);
+  I4H = p4(mu*H) * exp(mu*H) - 24.0;
+  divQ = - omega * (mur/mu - phi) * I4H / mu + omega * gam * H;
   Ht = (Cp*2.0*pi/Tp) * cos(2.0*pi*t/Tp) * f;
   *M = Ht + divQ;
 
   /* compute compensatory heating */
   nut = Ht/nusqrt;
   for (i=0; i<Mz; i++) {
-    dTt = Ts * ((nut+Ht)*(nu+z[i])-(nu+(*H))*nut) * pow(nu+z[i],-2.0);
-    Tr = Tsr*(nu+(*H))/(nu+z[i])
-      + Ts * ((nur+Hr)*(nu+z[i])-(nu+(*H))*nur) * pow(nu+z[i],-2.0);
-    Tz = -Ts * (nu+(*H)) * pow(nu+z[i],-2.0);
-    Tzz = 2.0 * Ts * (nu+(*H)) * pow(nu+z[i],-3.0);
+    dTt = Ts * ((nut+Ht)*(nu+z[i])-(nu+H)*nut) * pow(nu+z[i],-2.0);
+    Tr = Tsr*(nu+H)/(nu+z[i])
+      + Ts * ((nur+Hr)*(nu+z[i])-(nu+H)*nur) * pow(nu+z[i],-2.0);
+    Tz = -Ts * (nu+H) * pow(nu+z[i],-2.0);
+    Tzz = 2.0 * Ts * (nu+H) * pow(nu+z[i],-3.0);
     Sigc[i] = dTt + U[i]*Tr + w[i]*Tz - Kcond*Tzz - Sig[i];
   }
 
-  free(I3);
+  /* return duplicate copies to avoid conflicts */
+  *Hreturn = H;
+  for (i=0; i<Mz; i++) {
+    Ureturn[i] = U[i];
+    wreturn[i] = w[i];
+    Sigreturn[i] = Sig[i];
+  }
+
+  free(I3); free(U); free(w); free(Sig);
   return 0;
 }

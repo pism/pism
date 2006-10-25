@@ -25,6 +25,7 @@ PetscErrorCode IceModel::velocity(bool updateSIAVelocityAtDepth) {
   static PetscTruth firstTime = PETSC_TRUE;
 
   ierr = velocitySIAstaggered(); CHKERRQ(ierr);
+  ierr = storeBasalVelocity(); CHKERRQ(ierr);
   
   if (updateSIAVelocityAtDepth) {
     ierr = velocitySIAregular(); CHKERRQ(ierr);
@@ -41,13 +42,13 @@ PetscErrorCode IceModel::velocity(bool updateSIAVelocityAtDepth) {
     ierr = velocityMacayeal(); CHKERRQ(ierr);
     ierr = cleanupAfterMacayeal(DEFAULT_MINH_MACAYEAL); CHKERRQ(ierr);
     ierr = broadcastMacayealVelocity(); CHKERRQ(ierr);
-  } else { // note vertically averaged vels on standard grid (Vecs vubar and vvbar)
-           // are set by MacAyeal procedures above,
-           // including (in a reasonable manner) within the MASK_SHEET regions,
-           // and we want to not overwrite the just-computed standard grid
-           // velocities in order to initialize another step of MacAyeal,
-           // BUT if we don't call the MacAyeal we need to get staggered onto 
-           // standard for viewer and for summary()
+  } else { // Note vertically averaged vels on standard grid (Vecs vubar and 
+     // vvbar) are set by MacAyeal procedures above, including (in a reasonable 
+     // manner) within the MASK_SHEET regions.  Also vubar and vvbar are used 
+     // to initialize the next step of MacAyeal.  SO we want to NOT overwrite 
+     // the just-computed standard grid velocities (as they will be needed to
+     // initialize another step of MacAyeal).  BUT if we don't call MacAyeal 
+     // we need to get staggered onto standard for viewer and for summary().
     ierr = mapStaggeredVelocityToStandard(); CHKERRQ(ierr);
   }
 
@@ -217,6 +218,42 @@ PetscErrorCode IceModel::velocitySIAstaggered() {
   ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
   
   delete [] delta; delete [] K;
+  return 0;
+}
+
+
+PetscErrorCode IceModel::storeBasalVelocity() {
+  
+  PetscErrorCode  ierr;
+  PetscScalar **ubreg, **vbreg, **ub[2], **vb[2];
+
+  // next lines only make sense if called just after velocitySIAstaggered
+  for (PetscInt k=4; k<8; ++k) {
+    ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+  }
+
+  // average basal vels onto regular grid
+  ierr = DAVecGetArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ubreg); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vbreg); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ubreg[i][j] = 0.25 * (ub[0][i][j] + ub[0][i-1][j] +
+                            ub[1][i][j] + ub[1][i][j-1]);
+      vbreg[i][j] = 0.25 * (vb[0][i][j] + vb[0][i-1][j] +
+                            vb[1][i][j] + vb[1][i][j-1]);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vub, &ubreg); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vbreg); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
   return 0;
 }
 

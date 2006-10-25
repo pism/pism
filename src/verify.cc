@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
                 "verify WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
                 "   for reported errors to be meaningful!\n"); CHKERRQ(ierr);
       }
-      ierr = m.reporterror();  CHKERRQ(ierr);
+      ierr = m.reportErrors();  CHKERRQ(ierr);
     }
 
     m.writeFiles("verify"); CHKERRQ(ierr);
