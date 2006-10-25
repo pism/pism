@@ -173,8 +173,9 @@ PetscErrorCode IceModel::updateViewers() {
   /* see IceModel::massBalExplicitStep() in iceModel.cc for update of  dhView  (i.e.  -d g) */
 
   PetscErrorCode ierr;
-  PetscScalar     ***T, ***Tb, ***u, ***v, ***w, ***Sigma, **sigma, **T2, **a, **H;
-  PetscScalar ***gs, **gs2, ***Tau, **tau, **umap, **vmap, **wmap;
+  PetscScalar ***T, ***Tb, ***u, ***v, ***w, **ub[2], **vb[2], ***Sigma, 
+              **sigma, **T2, **a, **H, ***gs, **gs2, ***Tau, **tau,
+              **umap, **vmap, **wmap;
   PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz;
   PetscInt   *row;
 
@@ -364,17 +365,24 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = VecView(g2, speedView); CHKERRQ(ierr);
   }
   if (slidespeedView != PETSC_NULL) {
+    // relies upon vWork2d[4 -- 7] containing up-to-date staggered grid basal vels
     ierr = DAVecGetArray(grid.da2, g2, &a); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (H[i][j] > 0.0) {
-          const PetscScalar cmpera = secpera * 
-                     sqrt(PetscSqr(u[i][j][0]) + PetscSqr(v[i][j][0]));
-          if (cmpera > 1.0e-6) {
-            a[i][j] = log10(cmpera);
+          const PetscScalar   u0 = 0.25 *
+            (ub[0][i][j] + ub[0][i-1][j] + ub[1][i][j] + ub[1][i][j-1]);
+          const PetscScalar   v0 = 0.25 *
+            (vb[0][i][j] + vb[0][i-1][j] + vb[1][i][j] + vb[1][i][j-1]);
+          const PetscScalar mpera = secpera * 
+                     sqrt(PetscSqr(u0) + PetscSqr(v0));
+          if (mpera > 1.0e-6) {
+            a[i][j] = log10(mpera);
           } else {
             a[i][j] = -3.0;  // essentially stopped ice
           }
@@ -384,9 +392,11 @@ PetscErrorCode IceModel::updateViewers() {
       }
     }
     ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, g2, &a); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
     ierr = VecView(g2, slidespeedView); CHKERRQ(ierr);
   }
   if (umapView != PETSC_NULL) {

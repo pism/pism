@@ -59,11 +59,14 @@ private:
   //general
   void mapcoords(const PetscInt i, const PetscInt j,
                  PetscScalar &x, PetscScalar &y, PetscScalar &r);
+  virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
+       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+       const PetscScalar mu);
 
   // tests A, B, C, D, E: separate public domain source "exactTestsABCDE.h/c"
   // test H: "exactTestH.h/c
-  PetscErrorCode initTestBCDH();
-  PetscErrorCode updateTestBCDH();
+  PetscErrorCode initTestISO();
+  PetscErrorCode updateTestISO();
 
   // tests F & G: separate public domain source file "exactTestsFG.h/c" contains
   // "bothexact" which actually computes tests F & G 
@@ -71,7 +74,7 @@ private:
   PetscErrorCode updateTestFG();
 
 private:
-  // boundary condition parameters for all tests
+  // boundary conditions & parameters for all tests
   static PetscScalar Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
   static PetscScalar ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
   static PetscScalar Tmin;    // K;       minimum temperature (at center)

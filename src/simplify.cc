@@ -35,7 +35,7 @@ public:
     void     setflowlawNumber(PetscInt);
     PetscInt getflowlawNumber();
     
-protected:
+private:
     char       expername;
     PetscTruth inFileSet;
     PetscInt   flowlawNumber;

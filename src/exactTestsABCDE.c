@@ -25,7 +25,7 @@
 #define pi 3.14159265358979
 #define SperA 31556926.0  /* seconds per year; 365.2422 days */
 
-int exactA(const double t, const double r, double *H, double *M) {
+int exactA(const double r, double *H, double *M) {
   /* NOTE: t is in seconds */
   const double L = 750000.0;       /* m; distance of margin from center */
   const double M0 = 0.3 / SperA;   /* 30 cm/year constant accumulation */
@@ -180,7 +180,7 @@ int exactD(const double t, const double rin, double *H, double *M) {
 }
 
 
-int exactE(const double t, const double xIN, const double yIN, 
+int exactE(const double xIN, const double yIN, 
            double *H, double *M, double *mu, double *ub, double *vb) {
 
   const double L = 750000.0;       /* m; distance of margin from center */
@@ -213,7 +213,7 @@ int exactE(const double t, const double xIN, const double yIN,
     *H = C * pow(chi, n / m); 
 
     if (x < 1.0)
-      theta = 0.0;
+      theta = pi / 2.0;
     else
       theta = atan(y / x);
 

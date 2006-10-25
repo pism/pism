@@ -39,7 +39,7 @@ ELB 5/12/06; 10/14/06; 10/24/06
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactA(const double t, const double r, double *H, double *M);
+int exactA(const double r, double *H, double *M);
 
 int exactB(const double t, const double r, double *H, double *M);
 
@@ -47,7 +47,7 @@ int exactC(const double t, const double r, double *H, double *M);
 
 int exactD(const double t, const double r, double *H, double *M);
 
-int exactE(const double t, const double x, const double y, 
+int exactE(const double x, const double y, 
            double *H, double *M, double *mu, double *ub, double *vb);
 
 
