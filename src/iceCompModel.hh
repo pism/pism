@@ -80,7 +80,7 @@ private:
         PetscScalar &domeHerr);
   PetscErrorCode computeBasalTemperatureErrors(
         PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &domeTerr);
-  PetscErrorCode computeBasalVelocityErrors(
+  PetscErrorCode computeBasalVelocityErrors(PetscScalar &exactmaxspeed,
         PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
 

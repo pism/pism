@@ -824,12 +824,14 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 
 
 PetscErrorCode IceCompModel::computeBasalVelocityErrors(
+      PetscScalar &exactmaxspeed,
       PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
       PetscScalar &gmaxuberr, PetscScalar &gmaxvberr) {
 
   PetscErrorCode ierr;
   PetscScalar    **H, **ub, **vb;
   PetscScalar    maxvecerr, avvecerr, maxuberr, maxvberr;
+  PetscScalar    ubexact,vbexact, dummy1,dummy2,dummy3;
   
   if (testname != 'E')
     SETERRQ(1,"basal velocity errors only computable for test E\n");
@@ -841,8 +843,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       if (H[i][j] > 0.0) {
-        PetscScalar r,xx,yy, 
-                    ubexact,vbexact, dummy1,dummy2,dummy3;
+        PetscScalar r,xx,yy;
         mapcoords(i,j,xx,yy,r);
         exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact); 
         // compute maximum errors
@@ -867,6 +868,11 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.p->Mx*grid.p->My);
   
+  const PetscScalar pi = 3.14159265358979;
+  const PetscScalar xpeak = 450e3 * cos(25.0*(pi/180.0)),
+                    ypeak = 450e3 * sin(25.0*(pi/180.0));
+  exactE(xpeak,ypeak,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
+  exactmaxspeed = sqrt(ubexact*ubexact + vbexact*vbexact);
   return 0;
 }
 
@@ -899,10 +905,10 @@ PetscErrorCode IceCompModel::reportErrors() {
                                volerr,areaerr,maxHerr,avHerr,maxetaerr,domeHerr);
      CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com, 
-     "geometry  :  prcntVOL  prcntAREA      maxH         avH   relmaxETA    domeH\n");
+     "geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH\n");
      CHKERRQ(ierr);
   const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
-  ierr = PetscPrintf(grid.com, "           %10.4f%11.4f%10.4f%12.6f%12.6f%9.4f\n",
+  ierr = PetscPrintf(grid.com, "           %10.4f%11.4f%11.4f%10.4f%12.6f%9.4f\n",
                 100*volerr/volexact, 100*areaerr/areaexact, maxHerr, avHerr,
                 maxetaerr/pow(domeHexact,m), domeHerr); CHKERRQ(ierr);
 
@@ -918,12 +924,15 @@ PetscErrorCode IceCompModel::reportErrors() {
 
   // basal velocity errors if appropriate
   if (testname == 'E') {
-    PetscScalar maxvecerr, avvecerr, maxuberr, maxvberr;
-    ierr = computeBasalVelocityErrors(maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
+    PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
+    ierr = computeBasalVelocityErrors(exactmaxspeed,
+                          maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
-       "base vels :   maxvector    avvector      maxub      maxvb\n"); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, "           %12.4f%12.5f%11.4f%11.4f\n", 
+       "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
+       CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
                   maxvecerr*secpera, avvecerr*secpera, 
+                  (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
   }
   return 0;

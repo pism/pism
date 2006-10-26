@@ -538,24 +538,28 @@ PetscErrorCode IceModel::velocityMacayeal() {
 
 PetscErrorCode IceModel::broadcastMacayealVelocity() {
   PetscErrorCode ierr;
-  PetscScalar **mask, **b, **basalMeltRate, **ubar, **vbar;
+  PetscScalar **mask, **b, **basalMeltRate, **ubar, **vbar, **ub, **vb;
   PetscScalar ***u, ***v, ***w;
 
   /* This allows the temperature equation to know about the velocity in the non-SHEET
   * regions. It is unnecessary if the temperature equation pays attention to the mask,
   * thus upwinding the 2-D velocity fields for the advection terms in the non-SHEET
-  * regions. */
+  * regions.  Note that basal velocities also get updated. */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET) {
+        ub[i][j] = ubar[i][j];
+        vb[i][j] = vbar[i][j];
         for (PetscInt k=0; k<grid.p->Mz; ++k) {
           u[i][j][k] = ubar[i][j];
           v[i][j][k] = vbar[i][j];
@@ -594,6 +598,8 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
   ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);

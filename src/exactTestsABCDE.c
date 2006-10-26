@@ -199,12 +199,15 @@ int exactE(const double xIN, const double yIN,
                thetabot = (theta2 - theta1) * (theta2 - theta1);
 
   /* note all features are reflected across coordinate axes */
-  double       x = fabs(xIN), y = fabs(yIN), r, theta;
+  double       x = fabs(xIN), y = fabs(yIN), 
+               sgnx = 1.0, sgny = 1.0, r, theta;
   double       m, q, C, chi;
   double       mufactor, dchidr, P, dhdr, h_x, h_y, d2hdr2, dmudr, Mb;
   
   r = sqrt(x * x + y * y);
-  
+  if (xIN < 0)  sgnx = -1.0;
+  if (yIN < 0)  sgny = -1.0;
+
   if (r < L) {
     m = 2.0 * n + 2.0;
     q = 1.0 + 1.0 / n;
@@ -234,9 +237,8 @@ int exactE(const double xIN, const double yIN,
       P = rho * g * (*H);
       h_x = dhdr * cos(theta);
       h_y = dhdr * sin(theta);
-      printf("\nFIXME: return velocity direction according to SIGN of xIN, yIN !!\n\n");
-      *ub = - (*mu) * P * h_x;
-      *vb = - (*mu) * P * h_y;
+      *ub = sgnx * ( -(*mu) * P * h_x );
+      *vb = sgny * ( -(*mu) * P * h_y );
  
       d2hdr2 = dhdr * ( -((n + 2.0) / m) * dchidr / chi + 1.0 / (n * r) );
       dmudr = mufactor * 4.0 * (r1 + r2 - 2.0 * r) / rbot;

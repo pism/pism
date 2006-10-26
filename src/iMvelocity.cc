@@ -263,7 +263,7 @@ PetscErrorCode IceModel::velocitySIAregular() {
   
   const PetscScalar   dx=grid.p->dx, dy=grid.p->dy, dz=grid.p->dz;
   PetscErrorCode  ierr;
-  PetscScalar **h_x[2], **h_y[2], **ub[2], **vb[2];
+  PetscScalar **h_x[2], **h_y[2], **ub, **vb;
   PetscScalar ***I[2], ***J[2], ***Sigma[2];
   PetscScalar **H, **h, **b, **basalMeltRate, **mask;
   PetscScalar ***u, ***v, ***w, ***Sigma0;
@@ -273,10 +273,16 @@ PetscErrorCode IceModel::velocitySIAregular() {
     ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
   }
-  for (PetscInt k=0; k<8; ++k) {
+  for (PetscInt k=0; k<4; ++k) {
     ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
   }
+  
+  // note ub, vb do get differenced
+  ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
 
   // average Sigma onto a regular grid for use in the temperature equation;
   //   set Sigma to zero above ice
@@ -320,10 +326,8 @@ PetscErrorCode IceModel::velocitySIAregular() {
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
 
   ierr = DAVecGetArray(grid.da3, vWork3d[0], &I[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vWork3d[1], &I[1]); CHKERRQ(ierr);
@@ -340,17 +344,12 @@ PetscErrorCode IceModel::velocitySIAregular() {
     
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-
       // compute u and v at depth
-      const PetscScalar   u0 = 0.25 *
-        (ub[0][i][j] + ub[0][i-1][j] + ub[1][i][j] + ub[1][i][j-1]);
-      const PetscScalar   v0 = 0.25 *
-        (vb[0][i][j] + vb[0][i-1][j] + vb[1][i][j] + vb[1][i][j-1]);
       for (PetscInt k=0; k<grid.p->Mz; ++k) {
-        u[i][j][k] =  u0 - 0.25 *
+        u[i][j][k] =  ub[i][j] - 0.25 *
           (I[0][i][j][k]*h_x[0][i][j] + I[0][i-1][j][k]*h_x[0][i-1][j] +
            I[1][i][j][k]*h_x[1][i][j] + I[1][i][j-1][k]*h_x[1][i][j-1]);
-        v[i][j][k] =  v0 - 0.25 *
+        v[i][j][k] =  ub[i][j] - 0.25 *
           (I[0][i][j][k]*h_y[0][i][j] + I[0][i-1][j][k]*h_y[0][i-1][j] +
            I[1][i][j][k]*h_y[1][i][j] + I[1][i][j-1][k]*h_y[1][i][j-1]);
       }
@@ -358,9 +357,16 @@ PetscErrorCode IceModel::velocitySIAregular() {
       // vertical velocity
       const PetscScalar wmelt = - basalMeltRate[i][j];  // contributed by temperature model
       for (PetscInt k=0; k<grid.p->Mz; ++k) {
-        const PetscScalar wfromslide = - (k * dz)
-                    * (+ (ub[0][i][j] - ub[0][i-1][j]) / dx
-                       + (vb[1][i][j] - vb[1][i][j-1]) / dy);
+        //old scheme:
+        //const PetscScalar wfromslide = - (k * dz) 
+        //   * ( (ub[0][i][j] - ub[0][i-1][j]) / dx + (vb[1][i][j] - vb[1][i][j-1]) / dy);
+
+        // this scheme differences on regular grid; it may have some 
+        // regularizing (side-)effect:
+        const PetscScalar wfromslide = - (k * dz) 
+                 * ( (ub[i+1][j] - ub[i-1][j]) / (2*dx) 
+                     + (vb[i][j+1] - vb[i][j-1]) / (2*dy) );
+
         const PetscScalar wmain =
                     (J[0][i][j][k]*h_x[0][i][j] - J[0][i-1][j][k]*h_x[0][i-1][j]) / dx
                   + (J[1][i][j][k]*h_y[1][i][j] - J[1][i][j-1][k]*h_y[1][i][j-1]) / dy;
@@ -388,10 +394,8 @@ PetscErrorCode IceModel::velocitySIAregular() {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
 
   ierr = DAVecRestoreArray(grid.da3, vWork3d[0], &I[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vWork3d[1], &I[1]); CHKERRQ(ierr);

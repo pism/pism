@@ -197,9 +197,9 @@ protected:
   PetscInt    tempskip, noSpokesLevel;
   PetscScalar gsIntervalYears, bedDefIntervalYears;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
-  PetscScalar CFLmaxdt;
-  PetscScalar gmaxu, gmaxv, gmaxw;    // global maximums on 3D grid for abs value of 3D components 
-                                      // of velocities
+  PetscScalar CFLmaxdt, gDmax;
+  PetscScalar gmaxu, gmaxv, gmaxw;  // global maximums on 3D grid for abs value 
+                                    // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
   PetscTruth  useIsothermalFlux;
@@ -245,13 +245,12 @@ protected:
   PetscErrorCode stampHistoryEnd();
   PetscErrorCode stampHistory(const char*);
   PetscErrorCode stampHistoryString(const char*);
-  PetscErrorCode computeMaxDiffusivityAndUbar
-                      (PetscScalar *gDmax, bool updateDiffusViewer,
-                       PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
+  PetscErrorCode computeFlowUbarStats
+                      (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
                        PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
                        PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
                        PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac);
-  PetscErrorCode computeMaxDiffusivityONLY(PetscScalar *gDmax, bool updateDiffusViewer);
+  PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode adaptTimeStepDiffusivity();
   PetscErrorCode adaptTimeStepCFL();
   PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,

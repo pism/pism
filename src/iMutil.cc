@@ -80,9 +80,8 @@ PetscErrorCode IceModel::vPetscPrintf(MPI_Comm comm,const char format[],...)
 
 
 
-PetscErrorCode IceModel::computeMaxDiffusivityAndUbar
-                      (PetscScalar *gDmax, bool updateDiffusViewer,
-                       PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
+PetscErrorCode IceModel::computeFlowUbarStats
+                      (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
                        PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
                        PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
                        PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac) {
@@ -91,70 +90,41 @@ PetscErrorCode IceModel::computeMaxDiffusivityAndUbar
 
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **ubar, **vbar, **D, **mask, ***u, ***v;
-  PetscScalar Dmax = 0.0, Ubarmax = 0.0, UbarSIAsum = 0.0, Ubarstreamsum = 0.0,
+  PetscScalar **H, **ubar, **vbar, **mask;
+  PetscScalar Ubarmax = 0.0, UbarSIAsum = 0.0, Ubarstreamsum = 0.0,
               Ubarshelfsum = 0.0, icecount = 0.0, SIAcount = 0.0, shelfcount = 0.0;
 
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
         icecount += 1.0;
-        const PetscScalar Ubarmag = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
-        if (Ubarmag > Ubarmax) Ubarmax = Ubarmag;
+        const PetscScalar Ubarmag 
+                           = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
+        Ubarmax = PetscMax(Ubarmax, Ubarmag);
         if (intMask(mask[i][j]) == MASK_SHEET) {
           SIAcount += 1.0;
           UbarSIAsum += Ubarmag;
-          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
-          const PetscScalar h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
-          const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-          const PetscScalar udef = ubar[i][j] - u[i][j][0];
-          const PetscScalar vdef = vbar[i][j] - v[i][j][0];
-          const PetscScalar Udefmag = sqrt(PetscSqr(udef) + PetscSqr(vdef));
-          const PetscScalar d =
-               H[i][j] * Udefmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
-          if (d > Dmax) Dmax = d;
-          D[i][j] = d;
+        } else if (modMask(mask[i][j]) == MASK_FLOATING) {
+          shelfcount += 1.0;
+          Ubarshelfsum += Ubarmag;
+        } else if (intMask(mask[i][j]) == MASK_DRAGGING) {
+          // streamcount = icecount - SIAcount - shelfcount
+          Ubarstreamsum += Ubarmag;
         } else {
-          D[i][j] = 0.0; // no diffusivity in non-SIA regions
-          if (modMask(mask[i][j]) == MASK_FLOATING) {
-            shelfcount += 1.0;
-            Ubarshelfsum += Ubarmag;
-          } else if (intMask(mask[i][j]) == MASK_DRAGGING) {
-            // streamcount = icecount - SIAcount - shelfcount
-            Ubarstreamsum += Ubarmag;
-          } else {
-            SETERRQ(1,"should not reach here!");
-          }
+          SETERRQ(1,"should not reach here!");
         }
-      } else {
-        D[i][j] = 0.0;
       }
     }
   }
- 
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
-  if (updateDiffusViewer && (diffusView != PETSC_NULL)) { // -f option: view diffusivity (m^2/s)
-    ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecView(g2, diffusView); CHKERRQ(ierr);
-  }
 
-  ierr = PetscGlobalMax(&Dmax, gDmax, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&Ubarmax, gUbarmax, grid.com); CHKERRQ(ierr);
   
   // get global sums
@@ -195,14 +165,13 @@ PetscErrorCode IceModel::computeMaxDiffusivityAndUbar
 }
 
 
-PetscErrorCode IceModel::computeMaxDiffusivityONLY
-                      (PetscScalar *gDmax, bool updateDiffusViewer) {
-  // NOTE:  Assumes IceModel::vubar, vvbar, vu, vv holds correct 
+PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
+  // NOTE:  Assumes IceModel::vubar, vvbar holds correct 
   // and up-to-date values of velocities
 
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **ubar, **vbar, **D, **mask, ***u, ***v;
+  PetscScalar **h, **H, **ubar, **vbar, **D, **mask;
   PetscScalar Dmax = 0.0;
 
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
@@ -211,9 +180,6 @@ PetscErrorCode IceModel::computeMaxDiffusivityONLY
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
@@ -221,8 +187,13 @@ PetscErrorCode IceModel::computeMaxDiffusivityONLY
           const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
           const PetscScalar h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
           const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-          const PetscScalar udef = ubar[i][j] - u[i][j][0];
-          const PetscScalar vdef = vbar[i][j] - v[i][j][0];
+          // very conservative method to avoid instability from map-plane
+          // advection when there is basal sliding:
+          const PetscScalar udef = ubar[i][j];
+          const PetscScalar vdef = vbar[i][j];
+          // should be:
+          //const PetscScalar udef = ubar[i][j] - ub[i][j];
+          //const PetscScalar vdef = vbar[i][j] - vb[i][j];
           const PetscScalar Udefmag = sqrt(PetscSqr(udef) + PetscSqr(vdef));
           const PetscScalar d =
                H[i][j] * Udefmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
@@ -236,21 +207,19 @@ PetscErrorCode IceModel::computeMaxDiffusivityONLY
       }
     }
   }
- 
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
+
   if (updateDiffusViewer && (diffusView != PETSC_NULL)) { // -f option: view diffusivity (m^2/s)
     ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
     ierr = VecView(g2, diffusView); CHKERRQ(ierr);
   }
 
-  ierr = PetscGlobalMax(&Dmax, gDmax, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -258,13 +227,14 @@ PetscErrorCode IceModel::computeMaxDiffusivityONLY
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
   PetscErrorCode ierr;
-  PetscScalar gDmax;
 
-  ierr = computeMaxDiffusivityONLY(&gDmax, true); CHKERRQ(ierr);
-  // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio * dx^2/maxD (if dx=dy)
+  ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
+  // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
+  // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
   // reference: Morton & Mayers 2nd ed. pp 62--63
   const PetscScalar gridfactor = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
-  dt = PetscMin(dt, adaptTimeStepRatio * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor));
+  dt = PetscMin( dt, adaptTimeStepRatio
+                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor) );
   return 0;
 }
 
@@ -407,9 +377,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     //       means max|w| was not calculated)
     //   the number of CFL violations
     //   the maximum of the diffusivity D on the grid
-    PetscScalar Dmax, Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
+    PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;
-    ierr = computeMaxDiffusivityAndUbar(&Dmax, false, &Ubarmax,
+    ierr = computeMaxDiffusivity(false); CHKERRQ(ierr); 
+    ierr = computeFlowUbarStats(&Ubarmax,
               &UbarSIAav, &Ubarstreamav, &Ubarshelfav, &icegridfrac,
               &SIAgridfrac, &streamgridfrac, &shelfgridfrac); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
@@ -431,7 +402,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
                          CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
            "  max diffusivity D on SIA (m^2/s):  %9.3f\n",
-                         Dmax); CHKERRQ(ierr);
+                         gDmax); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
            "  max |bar U| in all ice (m/a):     %10.3f\n", Ubarmax*secpera); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
@@ -456,6 +427,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
       }
     }
   }
+
   return 0;
 }
 

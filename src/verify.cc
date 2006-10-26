@@ -53,19 +53,18 @@ int main(int argc, char *argv[]) {
     IceType*            tempice;
     PetscInt            flowlawNumber = 1;  // use cold part of Paterson-Budd by default
 
+    ierr = PetscPrintf(com, "PISMV (verification mode): "); CHKERRQ(ierr);
+    
     ierr = getFlowLawFromUser(com, tempice, flowlawNumber); CHKERRQ(ierr);
     if (flowlawNumber != 1) {
       ierr = PetscPrintf(com, 
               "verify WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
               "   for reported errors to be meaningful!\n"); CHKERRQ(ierr);
-    }
-    
+    }    
     ice = (ThermoGlenArrIce*) tempice;
     IceCompModel m(g, *ice);
-
     ierr = m.setFromOptions();  CHKERRQ(ierr);
     ierr = m.initFromOptions();  CHKERRQ(ierr);
-
     ierr = m.setSoundingFromOptions();  CHKERRQ(ierr);
 
     ierr = m.run(); CHKERRQ(ierr);

@@ -69,8 +69,7 @@ const PetscScalar DEFAULT_GLOBAL_MIN_TEMP = 190.0;
 PetscErrorCode IceModel::setDefaults() {
   PetscErrorCode ierr;
     
-  ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
-
+  //ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
   initialized_p = PETSC_FALSE;
 
   // No X11 diagnostics by default, but allow them

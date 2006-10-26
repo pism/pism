@@ -108,13 +108,21 @@ PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
 PetscErrorCode IceEISModel::setExperNameFromOptions() {
   PetscErrorCode      ierr;
   char                temp, eisIIexpername[20], ismipexpername[20];
-  PetscTruth          EISIIchosen, ISMIPchosen;
+  PetscTruth          EISIIchosen, ISMIPchosen, ROSSchosen;
 
-  /* This option determines the single character name of EISMINT II experiment:
+  /* note EISMINT I is NOT worth implementing; for fixed margin isothermal 
+     tests do "pismv -test A" or "pismv -test E"; for moving margin isothermal
+     tests do "pismv -test B" or "-test C" or "-test D" or "-test H" */
+
+  /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example. */
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen); CHKERRQ(ierr);
   /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO */
   ierr = PetscOptionsGetString(PETSC_NULL, "-ismip", ismipexpername, 1, &ISMIPchosen); CHKERRQ(ierr);
+  /* This option chooses EISMINT ROSS, i.e. from the paper
+     MacAyeal and five others (1996). "An ice-shelf model test based on the Ross ice shelf,"
+     Ann. Glaciol. 23, 46-51 */
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &ROSSchosen); CHKERRQ(ierr);
   
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
@@ -124,10 +132,17 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
     temp = ismipexpername[0];
     if ((temp == 'H') || (temp == 'h')) // ISMIP-HEINO
         setExperName('0');
-    else if ((temp == 'O') || (temp == 'o')) // ISMIP-HOM
+    else if ((temp == 'O') || (temp == 'o')) {
         setExperName('1');
-    else if ((temp == 'P') || (temp == 'p')) // ISMIP-POLICE
+        SETERRQ(1, "ISMIP-HOM NOT IMPLEMENTED!");
+    }
+    else if ((temp == 'P') || (temp == 'p')) {
         setExperName('2');
+        SETERRQ(1, "ISMIP-POLICE NOT IMPLEMENTED!");
+    }
+  } else if (ROSSchosen == PETSC_TRUE) {
+    setExperName('3');
+    SETERRQ(1, "EISMINT-ROSS NOT IMPLEMENTED!");
   } else { // set a default: EISMINT II experiment A
     setExperName('A');
   }
@@ -149,6 +164,9 @@ PetscErrorCode IceEISModel::initFromOptions() {
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
   } else { 
+    ierr = PetscPrintf(grid.com, 
+              "initializing simplified geometry experiment %c ... \n", 
+              getExperName()); CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
     grid.p->Mbz = 0;
     ierr = grid.createDA(); CHKERRQ(ierr);
@@ -371,10 +389,10 @@ int main(int argc, char *argv[]) {
     IceType*   ice;
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     
+    ierr = PetscPrintf(com, "PISMS (simplified geometry mode): "); CHKERRQ(ierr);
+    
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
-
     IceEISModel m(g, *ice);
-
     m.setflowlawNumber(flowlawNumber);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
