@@ -54,6 +54,8 @@ private:
     PetscErrorCode heinoCreateDat();
     PetscErrorCode heinoCloseDat();
     bool inSoftSediment(const PetscScalar x, const PetscScalar y);
+    bool nearHeino(const PetscScalar x1, const PetscScalar y1,
+                   const PetscScalar x2, const PetscScalar y2);
     virtual PetscErrorCode additionalStuffAtTimestep();
     virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
@@ -310,11 +312,13 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
 
 
 PetscErrorCode IceEISModel::initAccumTs() {
-  const PetscScalar   S_b     = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
-  PetscScalar   S_T     = 1.67e-2 * 1e-3;           // K/m  Temp gradient
-  PetscScalar         M_max,R_el,T_min;
-  PetscErrorCode      ierr;
-  PetscScalar         **accum, **Ts;
+  PetscScalar       M_max,R_el,T_min;
+  PetscErrorCode    ierr;
+  PetscScalar       **accum, **Ts;
+
+  // EISMINT II values:
+  const PetscScalar S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
+  PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
 
   switch (getExperName()) {
     case 'A':
@@ -347,7 +351,7 @@ PetscErrorCode IceEISModel::initAccumTs() {
       R_el = 450e3;
       T_min = 223.15;
       break;
-    case '0':
+    case '0': // ISMIP-HEINO
       M_max = 0.3 / secpera;
       T_min = 233.15;
       S_T = 2.5e-9 / 1e9; // 2.5e-9 K km^-3
@@ -362,6 +366,7 @@ PetscErrorCode IceEISModel::initAccumTs() {
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // r is distance from center of grid
       const PetscScalar r = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
                                   + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
       // set accumulation
@@ -426,7 +431,7 @@ bool IceEISModel::inSoftSediment(const PetscScalar x, const PetscScalar y) {
 }
 
 
-// reimplement IceModel::basal:
+// reimplement IceModel::basal()
 PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
@@ -532,7 +537,6 @@ PetscErrorCode IceEISModel::heinoCreateDat() {
 //      ierr = PetscViewerASCIIPrintf(tsp[j][i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
     }
   }
-
   return 0;
 }
 
@@ -555,6 +559,13 @@ PetscErrorCode IceEISModel::heinoCloseDat() {
 }
 
 
+bool IceEISModel::nearHeino(const PetscScalar x1, const PetscScalar y1,
+                            const PetscScalar x2, const PetscScalar y2) {
+  const PetscScalar epsSuff = 1.0; // within epsSuff meters
+  return ( (fabs(x1 - x2) < epsSuff) && (fabs(y1 - y2) < epsSuff) );
+}
+
+
 PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
   PetscErrorCode  ierr;
   // this is called at the end of the main iteration in IceModel::run()
@@ -573,16 +584,22 @@ PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
     // get volume in 10^6 km^3 
     // and temperate (at pressure-melting = (T > DEFAULT_MIN_TEMP_FOR_SLIDING))
     // basal area in 10^6 km^2
-    PetscScalar     **H, ***T;
+    PetscScalar     **H, **ub, **vb, ***T;
     PetscScalar     volume=0.0, meltedarea=0.0,
                     ssavthick=0.0, ssavbasetemp=0.0, ssmeltedarea=0.0;
     PetscScalar     gvolume, gmeltedarea,
                     gssavthick, gssavbasetemp, gssmeltedarea;
-    PetscScalar     pnthick[7], pnbasetemp[7], pnbaseheating[7],
+    PetscScalar     pnthick[7]={0.0,0.0,0.0,0.0,0.0,0.0,0.0},
+                    pnbasetemp[7]={0.0,0.0,0.0,0.0,0.0,0.0,0.0},
+                    pnbaseheating[7]={0.0,0.0,0.0,0.0,0.0,0.0,0.0},
                     gpnthick[7], gpnbasetemp[7], gpnbaseheating[7];
+    // x-coords (in ISMIP-HEINO scheme) for delivered grid points; note Py=2000e3 for all
+    const PetscScalar  Px[7] = {3900e3, 3800e3, 3700e3, 3500e3, 3200e3, 2900e3, 2600e3};
     const PetscScalar  a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
   
     ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -599,10 +616,29 @@ PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
           ssavbasetemp += homT0 * a;
           if (ismelted)
             ssmeltedarea += a;
+          for (PetscInt k=0; k<7; k++) {
+            if (nearHeino(xIH,yIH,Px[k],2000e3)) {
+              // ierr = PetscPrintf(grid.com,
+              //          "  [at ISMIP-HEINO point P%d]\n",k+1); CHKERRQ(ierr);
+              pnthick[k] = H[i][j];
+              pnbasetemp[k] = homT0;
+              const PetscScalar 
+                  taubx = ice.rho * ice.grav * H[i][j]
+                            * (H[i+1][j] - H[i-1][j]) / (2 * grid.p->dx),
+                  tauby = ice.rho * ice.grav * H[i][j] 
+                            * (H[i][j+1] - H[i][j-1]) / (2 * grid.p->dy);
+              pnbaseheating[k] = taubx * ub[i][j] + tauby * vb[i][j];
+              if (pnbaseheating[k] < 0.0) 
+                SETERRQ(1, 
+                  "basal heating negative in IceEISModel::additionalStuffAtTimestep()\n");
+            }
+          }
         }
       }
     }  
     ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
@@ -611,7 +647,10 @@ PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
     ierr = PetscGlobalSum(&ssavbasetemp, &gssavbasetemp, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&ssmeltedarea, &gssmeltedarea, grid.com); CHKERRQ(ierr);
     // actually average
-    const PetscScalar ssTotalArea = 1000e3 + 140e3; // 1,140,000 (km^2)
+    PetscScalar ssTotalArea = 1000e3 + 140e3; // 1,140,000 (km^2)
+    const PetscScalar dxkm = grid.p->dx / 1000.0, dykm = grid.p->dy / 1000.0;
+    ssTotalArea += 2 * 1700.0 * (dykm/2) + 2 * 1000.0 * (dxkm/2)
+                   + 4 * (dxkm/2) * (dykm/2); // correct for edge effect;
     gssavthick = gssavthick / ssTotalArea;
     gssavbasetemp = gssavbasetemp / ssTotalArea;
 
@@ -625,6 +664,19 @@ PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
                grid.p->year, gssavbasetemp); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(tss[2],"%14.6E%14.6E\n", 
                grid.p->year, gssmeltedarea * 1e-6); CHKERRQ(ierr);
+
+    for (PetscInt k=0; k<7; k++) {
+      ierr = PetscGlobalMax(&pnthick[k], &gpnthick[k], grid.com); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(tsp[k][0],"%14.6E%14.6E\n", 
+               grid.p->year, gpnthick[k] * 1e-3); CHKERRQ(ierr);
+      ierr = PetscGlobalMax(&pnbasetemp[k], &gpnbasetemp[k], grid.com); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(tsp[k][1],"%14.6E%14.6E\n", 
+               grid.p->year, gpnbasetemp[k]); CHKERRQ(ierr);
+      ierr = PetscGlobalMax(&pnbaseheating[k], &gpnbaseheating[k], grid.com); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(tsp[k][2],"%14.6E%14.6E\n", 
+               grid.p->year, gpnbaseheating[k]); CHKERRQ(ierr);
+    }
+
   }
   return 0;
 }
