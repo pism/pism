@@ -491,7 +491,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0)  icecount++;
       PetscScalar divQ;
-      if (intMask(mask[i][j]) == MASK_SHEET) { // staggered grid Div(Q) (really for Q = D grad h)
+      if (intMask(mask[i][j]) == MASK_SHEET) { 
+        // staggered grid Div(Q) for Q = D grad h
         divQ =
           (uvbar[0][i][j] * 0.5*(H[i][j] + H[i+1][j])
            - uvbar[0][i-1][j] * 0.5*(H[i-1][j] + H[i][j])) / dx
@@ -507,8 +508,12 @@ PetscErrorCode IceModel::massBalExplicitStep() {
       PetscScalar dHdt = accum[i][j] - basalMeltRate[i][j] - divQ;
 
       Hnew[i][j] += dHdt * dt;
-      if ((Hnew[i][j] < 0) ||
-          ((doOceanKill == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING_OCEAN0)) )
+      if (Hnew[i][j] < 0)
+        // apply free boundary rule: negative thickness becomes zero
+        Hnew[i][j] = 0.0;
+      if ( (doOceanKill == PETSC_TRUE) 
+           && (intMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
+        // force zero at ocean; "accumulation-zone" b.c.
         Hnew[i][j] = 0.0;
     }
   }
@@ -619,7 +624,7 @@ PetscErrorCode IceModel::run() {
     }
     
     ierr = summary(tempAgeStep,true); CHKERRQ(ierr);
-
+    ierr = additionalStuffAtTimestep(); CHKERRQ(ierr);
     ierr = updateViewers(); CHKERRQ(ierr);
   }
   

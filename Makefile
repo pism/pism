@@ -27,8 +27,8 @@ executables= flowTable pismr pismv pisms shelf simpleISO simpleFG
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
-	iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc iceCompModel.cc\
-	iceModel.cc materials.cc 
+	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
+	iceCompModel.cc iceModel.cc materials.cc 
 ice_csources= cubature.c
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c
 exec_sources= flowTable.cc simplify.cc run.cc verify.cc get_drag.cc shelf.cc

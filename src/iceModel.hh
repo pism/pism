@@ -96,6 +96,7 @@ public:
   PetscTruth isInitialized() const;
 
   virtual PetscErrorCode run();
+  virtual PetscErrorCode additionalStuffAtTimestep();
 
   // see iMdefaults.cc
   virtual PetscErrorCode setDefaults();
@@ -235,12 +236,6 @@ protected:
   // see iMutil.cc
   PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);  // beVerbose modulated printf
   virtual PetscErrorCode afterInitHook();
-  PetscErrorCode regrid(const char *regridFile);
-  PetscErrorCode getInterpCtx(const DA dac, const DA daf,
-                              const IceModel &cmodel, InterpCtx &interpCtx);
-  PetscErrorCode destroyInterpCtx(InterpCtx &i);
-  PetscErrorCode regridVar(const char *vars, char c, const InterpCtx &i,
-                           const Vec src, Vec dest);
   PetscErrorCode stampHistoryCommand();
   PetscErrorCode stampHistoryEnd();
   PetscErrorCode stampHistory(const char*);
@@ -259,6 +254,14 @@ protected:
   PetscErrorCode summary(bool,bool);
   PetscErrorCode checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *normy,
                                    PetscInt stagger);
+
+  // see iMregrid.cc
+  PetscErrorCode regrid(const char *regridFile);
+  PetscErrorCode getInterpCtx(const DA dac, const DA daf,
+                              const IceModel &cmodel, InterpCtx &interpCtx);
+  PetscErrorCode destroyInterpCtx(InterpCtx &i);
+  PetscErrorCode regridVar(const char *vars, char c, const InterpCtx &i,
+                           const Vec src, Vec dest);
 
   // see iMgrainsize.cc
   PetscErrorCode updateGrainSizeIfNeeded();

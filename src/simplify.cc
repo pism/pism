@@ -17,10 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for thermocoupled EISMINT II and other simplified geometry\n"
+  "Ice sheet driver for EISMINT II, ISMIP-HEINO, and other simplified geometry\n"
   "ice sheet simulations.\n";
 // note this source defines derived class IceEISModel *and* provides driver itself
 
+#include <cstring>
 #include <petscbag.h>
 #include "grid.hh"
 #include "materials.hh"
@@ -30,23 +31,33 @@ class IceEISModel : public IceModel {
 public:
     IceEISModel(IceGrid &g, IceType &i);
     virtual PetscErrorCode initFromOptions();
-    void     setExperName(char);
-    char     getExperName();
-    void     setflowlawNumber(PetscInt);
-    PetscInt getflowlawNumber();
+    void           setExperName(char);
+    char           getExperName();
+    void           setflowlawNumber(PetscInt);
+    PetscInt       getflowlawNumber();
+    PetscErrorCode simpFinalize();
     
 private:
     char       expername;
     PetscTruth inFileSet;
     PetscInt   flowlawNumber;
  
-    virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
-         const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-         const PetscScalar mu);
     PetscErrorCode setExperNameFromOptions();
     PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
+    
+    char         ismipRunName[3], heinodatprefix[20];
+    PetscTruth   ismipNoDeliver;
+    PetscInt     ismipHeinoRun;
+    PetscViewer  ts[2], tss[3], tsp[7][3]; // viewers (ASCII .dat files) for HEINO
+    PetscErrorCode heinoCreateDat();
+    PetscErrorCode heinoCloseDat();
+    bool inSoftSediment(const PetscScalar x, const PetscScalar y);
+    virtual PetscErrorCode additionalStuffAtTimestep();
+    virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
+         const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+         const PetscScalar mu);
 };
 
 
@@ -74,41 +85,13 @@ PetscInt IceEISModel::getflowlawNumber() {
   return flowlawNumber;
 }
 
-// reimplement IceModel::basal:
-PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
-      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar mu) {
-  // note this version ignors mu
-  
-  if (getExperName() == '0') { // ISMIP-HEINO
-    //PetscErrorCode  ierr = PetscPrintf(grid.com, 
-    //        "   [IceEISModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
-    //        x,y,H,T,alpha);  CHKERRQ(ierr);
-    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
-      // set coords according to ISMIP-HEINO convention
-      const PetscScalar  xIH = x + grid.p->Lx,
-                         yIH = y + grid.p->Ly;
-      if (   ( (xIH >= 2300e3-1) && (xIH <= 3300e3+1)
-               && (yIH >= 1500e3-1) && (yIH <= 2500e3+1) ) 
-          || ( (xIH >= 3300e3-1) && (xIH <= 4000e3+1)
-               && (yIH >= 1900e3-1) && (yIH <= 2100e3+1) ) ) {
-        // "soft sediment"; C_S = 500 a^-1
-        return (500 / secpera) * H;
-      } else {
-        // "hard rock"; C_R = 10^5 a^-1; alpha = |grad h|
-        return (1e5 /secpera) * H * alpha * alpha;
-      }
-    } else
-      return 0.0;  // not at pressure melting
-  } else
-    return 0.0;  // zero sliding for other tests
-}
-
 
 PetscErrorCode IceEISModel::setExperNameFromOptions() {
   PetscErrorCode      ierr;
-  char                temp, eisIIexpername[20], ismipexpername[20];
-  PetscTruth          EISIIchosen, ISMIPchosen, ROSSchosen;
+  char                temp, eisIIexpername[20], ismipexpername[20],
+                      runName[20];
+  PetscTruth          EISIIchosen, ISMIPchosen, ROSSchosen, 
+                      datprefixchosen, ismiprunchosen;
 
   /* note EISMINT I is NOT worth implementing; for fixed margin isothermal 
      tests do "pismv -test A" or "pismv -test E"; for moving margin isothermal
@@ -123,7 +106,7 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
      MacAyeal and five others (1996). "An ice-shelf model test based on the Ross ice shelf,"
      Ann. Glaciol. 23, 46-51 */
   ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &ROSSchosen); CHKERRQ(ierr);
-  
+
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
@@ -146,7 +129,67 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
   } else { // set a default: EISMINT II experiment A
     setExperName('A');
   }
-  
+
+  if (getExperName() == '0') { 
+    /* if this option is set then no .dat files are produced for ISMIP-HEINO runs */  
+    ierr = PetscOptionsHasName(PETSC_NULL, "-no_deliver", &ismipNoDeliver); CHKERRQ(ierr);
+    /* see ISMIP-HEINO documentation; options are [corresponding val of ismipHeinoRun]:
+       -run ST  [0; default]
+       -run T1  [1]
+       -run T2  [2]
+       -run B1  [3]
+       -run B2  [4]
+       -run S1  [5]
+       -run S2  [6]
+       -run S3  [7]    */
+    ierr = PetscOptionsGetString(PETSC_NULL, "-datprefix", heinodatprefix, 20,
+                                 &datprefixchosen);  CHKERRQ(ierr);
+    if (datprefixchosen != PETSC_TRUE) {
+      strcpy(heinodatprefix,"PISM");
+    }
+    ierr = PetscOptionsGetString(PETSC_NULL, "-run", runName, 20, &ismiprunchosen);
+              CHKERRQ(ierr);
+    for (int i = 0; i<(int) strlen(runName); i++) {
+      if ((runName[i] >= 'a') && (runName[i] <= 'z'))
+        runName[i] += 'A'-'a';  // capitalize if lower
+    }
+    if (ismiprunchosen != PETSC_TRUE) {
+      ismipHeinoRun = 0;
+      strcpy(ismipRunName,"ST");
+    } else {
+      if      (strstr(runName,"ST") != NULL) {
+        ismipHeinoRun = 0;
+        strcpy(ismipRunName,"ST");
+      } else if (strstr(runName,"T1") != NULL) {
+        ismipHeinoRun = 1;
+        strcpy(ismipRunName,"T1");
+      } else if (strstr(runName,"T2") != NULL) {
+        ismipHeinoRun = 2;
+        strcpy(ismipRunName,"T2");
+      } else if (strstr(runName,"B1") != NULL) {
+        ismipHeinoRun = 3;
+        strcpy(ismipRunName,"B1");
+      } else if (strstr(runName,"B2") != NULL) {
+        ismipHeinoRun = 4;
+        strcpy(ismipRunName,"B2");
+      } else if (strstr(runName,"S1") != NULL) {
+        ismipHeinoRun = 5;
+        strcpy(ismipRunName,"S1");
+      } else if (strstr(runName,"S2") != NULL) {
+        ismipHeinoRun = 6;
+        strcpy(ismipRunName,"S2");
+      } else if (strstr(runName,"S3") != NULL) {
+        ismipHeinoRun = 7;        
+        strcpy(ismipRunName,"S3");
+      } else 
+        SETERRQ(1,
+        "ERROR setExperNameFromOptions(): known ISMIP-HEINO name not found");
+    }
+  } else {
+    ismipNoDeliver = PETSC_TRUE;
+    ismipHeinoRun = 0;
+    strcpy(ismipRunName,"ST");
+  }
   return 0;
 }
 
@@ -213,18 +256,20 @@ PetscErrorCode IceEISModel::initFromOptions() {
         break;
       case '0': // ISMIP-HEINO
         ierr = grid.rescale(2000e3, 2000e3, 5000); CHKERRQ(ierr);
+        if (ismipNoDeliver != PETSC_TRUE) {
+          ierr = heinoCreateDat(); CHKERRQ(ierr);
+        }
         break;
-      default:  SETERRQ(1,"ERROR: desired simplified geometry experiment NOT IMPLEMENTED\n");
+      default:  
+        SETERRQ(1,"ERROR: desired simplified geometry experiment NOT IMPLEMENTED\n");
     }
   }
 
   ierr = applyDefaultsForExperiment(); CHKERRQ(ierr);
   ierr = initAccumTs(); CHKERRQ(ierr);
-  
   if (inFileSet == PETSC_FALSE) {
     ierr = fillintemps(); CHKERRQ(ierr);
   }
-  
   ierr = afterInitHook(); CHKERRQ(ierr);
   return 0;
 }
@@ -235,8 +280,8 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
   PetscScalar      **mask;
 
   setThermalBedrock(PETSC_FALSE);
-  setUseMacayealVelocity(PETSC_FALSE);
-  setIsDrySimulation(PETSC_TRUE);
+  setUseMacayealVelocity(PETSC_FALSE); // NOT VALID FOR EISMINT-ROSS!!
+  setIsDrySimulation(PETSC_TRUE); // NOT VALID FOR EISMINT-ROSS!!
   setDoGrainSize(PETSC_FALSE);
 
   if (getExperName() == '0') { // ISMIP-HEINO
@@ -255,7 +300,7 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
       }
     }
     ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  } else {
+  } else {  // NOT VALID FOR EISMINT-ROSS!!
     setEnhancementFactor(1.0);
     ierr = VecSet(vMask, MASK_SHEET);
   }
@@ -371,6 +416,229 @@ PetscErrorCode IceEISModel::fillintemps() {
 }
 
 
+
+bool IceEISModel::inSoftSediment(const PetscScalar x, const PetscScalar y) {
+  const bool inbigrect = (   (x >= 2300e3-1) && (x <= 3300e3+1)
+                          && (y >= 1500e3-1) && (y <= 2500e3+1) ),
+             insmallrect = (   (x >= 3300e3-1) && (x <= 4000e3+1)
+                            && (y >= 1900e3-1) && (y <= 2100e3+1) );
+  return (inbigrect || insmallrect);
+}
+
+
+// reimplement IceModel::basal:
+PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
+      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+      const PetscScalar mu) {
+  // note this version ignors mu
+  
+  if (getExperName() == '0') { // ISMIP-HEINO
+    //PetscErrorCode  ierr = PetscPrintf(grid.com, 
+    //        "   [IceEISModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
+    //        x,y,H,T,alpha);  CHKERRQ(ierr);
+    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
+      // set coords according to ISMIP-HEINO convention
+      const PetscScalar  xIH = x + grid.p->Lx,
+                         yIH = y + grid.p->Ly;
+      if (inSoftSediment(xIH,yIH)) {
+        // "soft sediment"; C_S = 500 a^-1
+        return (500 / secpera) * H;
+      } else {
+        // "hard rock"; C_R = 10^5 a^-1; alpha = |grad h|
+        return (1e5 /secpera) * H * alpha * alpha;
+      }
+    } else
+      return 0.0;  // not at pressure melting
+  } else
+    return 0.0;  // zero sliding for other tests
+}
+
+
+PetscErrorCode IceEISModel::heinoCreateDat() {
+  PetscErrorCode  ierr;
+  char            tsname[2][4], tssname[3][5], tspname[3][4];
+  char            filename[40];
+
+/* files are "PISMHEINO_##_??.dat" where ##=ismipRunName and ?? is one of the 
+   following:
+                  ts_iv,   ts_tba, 
+
+                  tss_ait, tss_ahbt, tss_tba,
+
+                  tsp1_it, tsp1_hbt, tsp1_bfh,
+                  tsp2_it, tsp2_hbt, tsp2_bfh,
+                  tsp3_it, tsp3_hbt, tsp3_bfh,
+                  tsp4_it, tsp4_hbt, tsp4_bfh,
+                  tsp5_it, tsp5_hbt, tsp5_bfh,
+                  tsp6_it, tsp6_hbt, tsp6_bfh,
+                  tsp7_it, tsp7_hbt, tsp7_bfh
+*/
+
+  ierr = PetscPrintf(grid.com, "creating ISMIP-HEINO deliverable files ...\n", filename); CHKERRQ(ierr);
+  strcpy(tsname[0],"iv");
+  strcpy(tsname[1],"tba");
+  strcpy(tssname[0],"ait");
+  strcpy(tssname[1],"ahbt");
+  strcpy(tssname[2],"tba");
+  strcpy(tspname[0],"it");
+  strcpy(tspname[1],"hbt");
+  strcpy(tspname[2],"bfh");
+  
+  // create global time series viewers (i.e. ASCII .dat files)
+  for (PetscInt i=0; i<2; i++) {
+    strcpy(filename,heinodatprefix);
+    strcat(filename,"_");
+    strcat(filename,ismipRunName);
+    strcat(filename,"_ts_");
+    strcat(filename,tsname[i]);
+    strcat(filename,".dat");
+    ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIOpen(grid.com, filename, &ts[i]); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(ts[i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(ts[i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
+  }
+
+  // create sediment region time series viewers (i.e. ASCII .dat files)
+  for (PetscInt i=0; i<3; i++) {
+    strcpy(filename,heinodatprefix);
+    strcat(filename,"_");
+    strcat(filename,ismipRunName);
+    strcat(filename,"_tss_");
+    strcat(filename,tssname[i]);
+    strcat(filename,".dat");
+    ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIOpen(grid.com, filename, &tss[i]); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(tss[i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(tss[i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
+  }
+
+  // create P1,...,P7 time series viewers (i.e. ASCII .dat files)
+  for (PetscInt j=0; j<7; j++) {
+    for (PetscInt i=0; i<3; i++) {
+      strcpy(filename,heinodatprefix);
+      strcat(filename,"_");
+      strcat(filename,ismipRunName);
+      strcat(filename,"_tsp");
+      const char nums[]="1234567";
+      char       foo[]="A";
+      foo[0] = nums[j];
+      strcat(filename,foo);
+      strcat(filename,"_");
+      strcat(filename,tspname[i]);
+      strcat(filename,".dat");
+      ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(grid.com, filename, &tsp[j][i]); CHKERRQ(ierr);
+      ierr = PetscViewerSetFormat(tsp[j][i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+//      ierr = PetscViewerASCIIPrintf(tsp[j][i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
+    }
+  }
+
+  return 0;
+}
+
+
+PetscErrorCode IceEISModel::heinoCloseDat() {
+  PetscErrorCode  ierr;
+
+  for (PetscInt i=0; i<2; i++) {
+    ierr = PetscViewerDestroy(ts[i]); CHKERRQ(ierr);
+  }
+  for (PetscInt i=0; i<3; i++) {
+    ierr = PetscViewerDestroy(tss[i]); CHKERRQ(ierr);
+  }
+  for (PetscInt j=0; j<7; j++) {
+    for (PetscInt i=0; i<3; i++) {
+      ierr = PetscViewerDestroy(tsp[j][i]); CHKERRQ(ierr);
+    }
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
+  PetscErrorCode  ierr;
+  // this is called at the end of the main iteration in IceModel::run()
+  // here we compute the ISMIP-HEINO "deliverables" at every time step
+
+  // format specified by ISMIP-HEINO is following FORTRAN:
+  //       write(file_number, 1000) time, quantity
+  //       1000 format(2e14.6)
+  // which I will take as
+  //      ierr = PetscViewerASCIIPrintf(ts[i],"%14.6E%14.6E\n", time, quantity);
+  //              CHKERRQ(ierr);
+  // for now    
+
+  if ((getExperName() == '0') && (ismipNoDeliver != PETSC_TRUE)) {
+
+    // get volume in 10^6 km^3 
+    // and temperate (at pressure-melting = (T > DEFAULT_MIN_TEMP_FOR_SLIDING))
+    // basal area in 10^6 km^2
+    PetscScalar     **H, ***T;
+    PetscScalar     volume=0.0, meltedarea=0.0,
+                    ssavthick=0.0, ssavbasetemp=0.0, ssmeltedarea=0.0;
+    PetscScalar     gvolume, gmeltedarea,
+                    gssavthick, gssavbasetemp, gssmeltedarea;
+    PetscScalar     pnthick[7], pnbasetemp[7], pnbaseheating[7],
+                    gpnthick[7], gpnbasetemp[7], gpnbaseheating[7];
+    const PetscScalar  a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
+  
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        const PetscScalar dv = a * H[i][j] * 1e-3; // column vol (km^3)
+        volume += dv;
+        const PetscScalar homT0 = T[i][j][0] + ice.beta_CC_grad * H[i][j];
+        const bool ismelted = ((H[i][j] > 0) && (homT0 > DEFAULT_MIN_TEMP_FOR_SLIDING));
+        if (ismelted)
+          meltedarea += a;
+        const PetscScalar xIH = grid.p->dx * i, 
+                          yIH = grid.p->dy * j;
+        if (inSoftSediment(xIH,yIH)) {
+          ssavthick += H[i][j] * a;  // see averaging below to remove area factor
+          ssavbasetemp += homT0 * a;
+          if (ismelted)
+            ssmeltedarea += a;
+        }
+      }
+    }  
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+
+    ierr = PetscGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&meltedarea, &gmeltedarea, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&ssavthick, &gssavthick, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&ssavbasetemp, &gssavbasetemp, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&ssmeltedarea, &gssmeltedarea, grid.com); CHKERRQ(ierr);
+    // actually average
+    const PetscScalar ssTotalArea = 1000e3 + 140e3; // 1,140,000 (km^2)
+    gssavthick = gssavthick / ssTotalArea;
+    gssavbasetemp = gssavbasetemp / ssTotalArea;
+
+    ierr = PetscViewerASCIIPrintf(ts[0],"%14.6E%14.6E\n", 
+               grid.p->year, gvolume * 1e-6); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(ts[1],"%14.6E%14.6E\n", 
+               grid.p->year, gmeltedarea * 1e-6); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tss[0],"%14.6E%14.6E\n", 
+               grid.p->year, gssavthick * 1e-3); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tss[1],"%14.6E%14.6E\n", 
+               grid.p->year, gssavbasetemp); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tss[2],"%14.6E%14.6E\n", 
+               grid.p->year, gssmeltedarea * 1e-6); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceEISModel::simpFinalize() {
+  PetscErrorCode  ierr;
+  if ((getExperName() == '0') && (ismipNoDeliver != PETSC_TRUE)) {
+    ierr = heinoCloseDat(); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
@@ -405,6 +673,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, "done with run ... "); CHKERRQ(ierr);
     // see comments in run_ice.cc re default output naming convention
     ierr = m.writeFiles("simp_exper"); CHKERRQ(ierr);
+    ierr = m.simpFinalize(); CHKERRQ(ierr);
     ierr = PetscPrintf(com, " ... done.\n"); CHKERRQ(ierr);
   }
 
