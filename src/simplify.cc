@@ -257,7 +257,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
         }
         break;
       case '0': // ISMIP-HEINO
-        ierr = grid.rescale(2000e3, 2000e3, 5000); CHKERRQ(ierr);
+        ierr = grid.rescale(2000e3, 2000e3, 6000); CHKERRQ(ierr);
         if (ismipNoDeliver != PETSC_TRUE) {
           ierr = heinoCreateDat(); CHKERRQ(ierr);
         }
