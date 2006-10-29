@@ -224,27 +224,63 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 
 
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
-
   PetscErrorCode ierr;
+  const PetscScalar gridfactor 
+                    = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
 
   ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
   // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
   // reference: Morton & Mayers 2nd ed. pp 62--63
-  const PetscScalar gridfactor = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
-  dt = PetscMin( dt, adaptTimeStepRatio
-                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor) );
+  PetscScalar dt_from_diffus = adaptTimeStepRatio
+                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
+  if (dt_from_diffus < dt) {
+    dt = dt_from_diffus;
+    adaptReasonFlag = 'd';
+  }
   return 0;
 }
 
 
 PetscErrorCode IceModel::adaptTimeStepCFL() {
-
   // CFLmaxdt is set by computeMaxVelocities in iMvelocity.cc
-  dt = PetscMin(dt, CFLmaxdt / tempskip );
+  PetscScalar    dt_from_cfl = CFLmaxdt / tempskip;
+  if (dt_from_cfl < dt) {
+    dt = dt_from_cfl;
+    adaptReasonFlag = 'c';
+  }
   return 0;
 }
 
+
+PetscErrorCode IceModel::determineTimeStep(const PetscScalar currentYear) {
+  PetscErrorCode ierr;
+  
+  if (dt_force > 0.0) {
+    dt = dt_force; // override usual dt mechanism
+    adaptReasonFlag = 'f';
+  } else {
+    dt = maxdt;
+    adaptReasonFlag = 'm';
+    if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
+      dt = maxdt_temporary;
+      adaptReasonFlag = 'M';
+    }
+    const PetscScalar timeToEnd = (endYear-currentYear) * secpera;
+    if (timeToEnd < dt) {
+      dt = timeToEnd;
+      adaptReasonFlag = 'e';
+    }
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
+      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+    }
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)) {
+      // note: if tempskip > 1 then here dt is reduced by a factor of tempskip
+      ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
+    } 
+  }    
+  return 0;
+}
 
 PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
                                     PetscScalar& gvolSIA, PetscScalar& gvolstream, 
@@ -347,26 +383,37 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
  
   if (tempAndAge || (beVerbose == PETSC_TRUE)) {
   // give summary data a la EISMINT II:
-  //    year (+ dt) (years),
+  //    year (+ dt[R]) (years),
+  //       [ note R = reason for dt: 
+  //            m = maxdt applied, 
+  //            e = time to end, 
+  //            d = diffusive limit from mass continuity,
+  //            c = CFL for temperature equation,
+  //            f = forced by derived class,
+  //            M = maxdt from derived class,
+  //            [space] = no time step taken]
   //    volume (10^6 cubic km),
   //    area (10^6 square km),
-  //    basal melt ratio (=(area of base at *absolute*  or *pressure* melting); depends on useHomoTemp),
+  //    basal melt ratio [=(area of base at *absolute*  or *pressure* melting);
+  //                      depends on useHomoTemp],
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
-    ierr = PetscPrintf(grid.com, "%10.2f (+%7.3f):%8.3f%8.3f%9.3f%11.3f%10.3f\n",
-                       grid.p->year, dt/secpera, gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
+    ierr = PetscPrintf(grid.com, "%10.2f (+%8.4f[%c]):%8.3f%8.3f%9.3f%11.3f%10.3f\n",
+                       grid.p->year, dt/secpera, adaptReasonFlag, 
+                       gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
                        gdivideT); CHKERRQ(ierr);
   } else {
   // give REDUCED summary data w/o referencing temp and age fields:
-  //    year (+ dt) (years),
+  //    year (+ dt[R]) (years),
   //    volume (10^6 cubic km),
   //    area (10^6 square km),
   //    
   //    divide thickness (m),
   //    
     ierr = PetscPrintf(grid.com, 
-       "%10.2f (+%7.3f):%8.3f%8.3f   <same>%11.3f    <same>\n",
-       grid.p->year, dt/secpera, gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
+       "%10.2f (+%8.4f[%c]):%8.3f%8.3f   <same>%11.3f    <same>\n",
+       grid.p->year, dt/secpera, adaptReasonFlag, 
+       gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
   }
   
   if (beVerbose == PETSC_TRUE) {
@@ -431,7 +478,14 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 }
 
 
-PetscErrorCode IceModel::additionalStuffAtTimestep() {
+PetscErrorCode IceModel::additionalAtStartTimestep() {
+  // does nothing; allows derived classes to do more per-step computation,
+  // reporting and checking, etc.
+  return 0;
+}
+
+
+PetscErrorCode IceModel::additionalAtEndTimestep() {
   // does nothing; allows derived classes to do more per-step computation,
   // reporting and checking, etc.
   return 0;

@@ -559,17 +559,22 @@ PetscErrorCode IceModel::run() {
 
   ierr = initSounding(); CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com,
-          "$$$$$      YEAR (+   STEP):     VOL    AREA    MELTF     THICK0     TEMP0\n");
+  "$$$$$      YEAR (+    STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com, "$$$$$"); CHKERRQ(ierr);
+  adaptReasonFlag = ' '; // no reason for no timestep
   ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
 
   PetscInt    it = 0;
-  PetscScalar dt_temp = 0.0;
+  PetscScalar dt_temperature = 0.0;
   bool tempAgeStep;
 
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera, it++) {
+    dt_force = -1.0;
+    maxdt_temporary = -1.0;
+    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temp
+        
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);
@@ -590,27 +595,21 @@ PetscErrorCode IceModel::run() {
       ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
     }
     
-    // adapt time step using velocities just computed
-    dt = PetscMin(maxdt, (endYear-year) * secpera);  // don't go past end; "propose" this
-    if (doAdaptTimeStep == PETSC_TRUE) {
-      if (doMassBal == PETSC_TRUE) {
-        ierr = adaptTimeStepDiffusivity();  CHKERRQ(ierr);
-      }
-      if (doTemp == PETSC_TRUE) {
-        ierr = adaptTimeStepCFL();  CHKERRQ(ierr);  // if tempskip > 1 then here dt is reduced
-                                                    // by a factor of tempskip
-      }
-    }
-    // IceModel::dt is now set correctly according to mass-balance and CFL criteria
+    // adapt time step using velocities and diffusivity, ..., just computed
+    ierr = determineTimeStep(year); CHKERRQ(ierr);
+    // IceModel::dt is now set correctly according to mass-balance-diffusivity,
+    //    CFL criteria, and other criteria from derived class additionalAtStartTimestep()
 
-    // ierr = PetscPrintf(PETSC_COMM_SELF, "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera); CHKERRQ(ierr);
+    // ierr = PetscPrintf(PETSC_COMM_SELF,
+    //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
+    //        CHKERRQ(ierr);
 
-    dt_temp += dt;
+    dt_temperature += dt;
     grid.p->year += dt / secpera;  // adopt it
     
-    if ((doTemp == PETSC_TRUE) &&  (tempAgeStep)) {
-      ierr = temperatureStep(PETSC_FALSE, dt_temp); CHKERRQ(ierr);  // also does age
-      dt_temp = 0.0;
+    if ((doTemp == PETSC_TRUE) &&  (tempAgeStep)) { // do temperature and age
+      ierr = temperatureStep(PETSC_FALSE, dt_temperature); CHKERRQ(ierr);
+      dt_temperature = 0.0;
       ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
     } else {
       ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
@@ -624,8 +623,9 @@ PetscErrorCode IceModel::run() {
     }
     
     ierr = summary(tempAgeStep,true); CHKERRQ(ierr);
-    ierr = additionalStuffAtTimestep(); CHKERRQ(ierr);
     ierr = updateViewers(); CHKERRQ(ierr);
+
+    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
   }
   
   return 0;

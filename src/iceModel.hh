@@ -96,7 +96,10 @@ public:
   PetscTruth isInitialized() const;
 
   virtual PetscErrorCode run();
-  virtual PetscErrorCode additionalStuffAtTimestep();
+
+  // see iMutil.cc for default empty versions
+  virtual PetscErrorCode additionalAtStartTimestep();
+  virtual PetscErrorCode additionalAtEndTimestep();
 
   // see iMdefaults.cc
   virtual PetscErrorCode setDefaults();
@@ -185,10 +188,12 @@ protected:
   // parameters and flags
   PetscScalar muSliding, enhancementFactor, globalMinTemp;
   PetscScalar dt;                 // current time step in seconds
+  PetscScalar maxdt;
+  PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
+  char        adaptReasonFlag;
   PetscTruth  thermalBedrock, useMacayealVelocity, isDrySimulation;
   PetscTruth  initialized_p, useConstantNuForMacAyeal;
   PetscScalar constantNuForMacAyeal, macayealRelativeTolerance, macayealEpsilon;
-  PetscScalar maxdt;
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill;
@@ -248,6 +253,7 @@ protected:
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode adaptTimeStepDiffusivity();
   PetscErrorCode adaptTimeStepCFL();
+  virtual PetscErrorCode determineTimeStep(const PetscScalar currentYear);
   PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
                             PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                             PetscScalar& gvolshelf);

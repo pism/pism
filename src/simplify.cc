@@ -56,7 +56,8 @@ private:
     bool inSoftSediment(const PetscScalar x, const PetscScalar y);
     bool nearHeino(const PetscScalar x1, const PetscScalar y1,
                    const PetscScalar x2, const PetscScalar y2);
-    virtual PetscErrorCode additionalStuffAtTimestep();
+    virtual PetscErrorCode additionalAtStartTimestep();
+    virtual PetscErrorCode additionalAtEndTimestep();
     virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
          const PetscScalar mu);
@@ -566,9 +567,21 @@ bool IceEISModel::nearHeino(const PetscScalar x1, const PetscScalar y1,
 }
 
 
-PetscErrorCode IceEISModel::additionalStuffAtTimestep() {
+PetscErrorCode IceEISModel::additionalAtStartTimestep() {
+  // this is called at the beginning of time-stepping loop in IceModel::run()
+
+  dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
+  
+  // should have following mechanism: If -allow_adapt flag is set then time to
+  // next multiple of 0.25 should be computed and it should be used to set
+  // maxdt_temporary.  Then additionalAtEndTimestep() should look to see if
+  // current time is multiple of 0.25 yr, and only then save in deliverables file.
+  return 0;
+}
+
+PetscErrorCode IceEISModel::additionalAtEndTimestep() {
   PetscErrorCode  ierr;
-  // this is called at the end of the main iteration in IceModel::run()
+  // this is called at the end of time-stepping loop in IceModel::run()
   // here we compute the ISMIP-HEINO "deliverables" at every time step
 
   // format specified by ISMIP-HEINO is following FORTRAN:
