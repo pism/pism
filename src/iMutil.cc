@@ -253,8 +253,7 @@ PetscErrorCode IceModel::adaptTimeStepCFL() {
 }
 
 
-PetscErrorCode IceModel::determineTimeStep(const PetscScalar currentYear,
-                                           const bool doTemperatureCFL) {
+PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
   
   if (dt_force > 0.0) {
@@ -265,9 +264,9 @@ PetscErrorCode IceModel::determineTimeStep(const PetscScalar currentYear,
     adaptReasonFlag = 'm';
     if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
       dt = maxdt_temporary;
-      adaptReasonFlag = 'M';
+      adaptReasonFlag = 't';
     }
-    const PetscScalar timeToEnd = (endYear-currentYear) * secpera;
+    const PetscScalar timeToEnd = (endYear-grid.p->year) * secpera;
     if (timeToEnd < dt) {
       dt = timeToEnd;
       adaptReasonFlag = 'e';
@@ -392,7 +391,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //            d = diffusive limit from mass continuity,
   //            c = CFL for temperature equation,
   //            f = forced by derived class,
-  //            M = maxdt from derived class,
+  //            t = temporarily truncated (e.g. to next integer yr) by derived class,
   //            [space] = no time step taken]
   //    volume (10^6 cubic km),
   //    area (10^6 square km),

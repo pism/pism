@@ -48,7 +48,7 @@ private:
     PetscErrorCode fillintemps();
     
     char         ismipRunName[3], heinodatprefix[20];
-    PetscTruth   ismipNoDeliver;
+    PetscTruth   ismipNoDeliver, ismipAllowAdapt;
     PetscInt     ismipHeinoRun;
     PetscViewer  ts[2], tss[3], tsp[7][3]; // viewers (ASCII .dat files) for HEINO
     PetscErrorCode heinoCreateDat();
@@ -136,6 +136,9 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
   if (getExperName() == '0') { 
     /* if this option is set then no .dat files are produced for ISMIP-HEINO runs */  
     ierr = PetscOptionsHasName(PETSC_NULL, "-no_deliver", &ismipNoDeliver); CHKERRQ(ierr);
+    /* if this option is set then 0.25 year time steps are not forced (but a deliverable
+       is written at each integer year) */  
+    ierr = PetscOptionsHasName(PETSC_NULL, "-allow_adapt", &ismipAllowAdapt); CHKERRQ(ierr);
     /* see ISMIP-HEINO documentation; options are [corresponding val of ismipHeinoRun]:
        -run ST  [0; default]
        -run T1  [1]
@@ -209,7 +212,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
-  } else { 
+  } else {
     ierr = PetscPrintf(grid.com, 
               "initializing simplified geometry experiment %c ... \n", 
               getExperName()); CHKERRQ(ierr);
@@ -258,14 +261,15 @@ PetscErrorCode IceEISModel::initFromOptions() {
         }
         break;
       case '0': // ISMIP-HEINO
-        ierr = grid.rescale(2000e3, 2000e3, 6000); CHKERRQ(ierr);
-        if (ismipNoDeliver != PETSC_TRUE) {
-          ierr = heinoCreateDat(); CHKERRQ(ierr);
-        }
+        ierr = grid.rescale(2000e3, 2000e3, 7000); CHKERRQ(ierr);
         break;
       default:  
         SETERRQ(1,"ERROR: desired simplified geometry experiment NOT IMPLEMENTED\n");
     }
+  }
+
+  if ((getExperName() == '0') && (ismipNoDeliver != PETSC_TRUE)) {
+    ierr = heinoCreateDat(); CHKERRQ(ierr);
   }
 
   ierr = applyDefaultsForExperiment(); CHKERRQ(ierr);
@@ -569,14 +573,16 @@ bool IceEISModel::nearHeino(const PetscScalar x1, const PetscScalar y1,
 
 PetscErrorCode IceEISModel::additionalAtStartTimestep() {
   // this is called at the beginning of time-stepping loop in IceModel::run()
+  // only active for ISMIP-HEINO, for now
 
   if (getExperName() == '0')
-    dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
-  
-  // should have following mechanism: If -allow_adapt flag is set then time to
-  // next multiple of 0.25 should be computed and it should be used to set
-  // maxdt_temporary.  Then additionalAtEndTimestep() should look to see if
-  // current time is multiple of 0.25 yr, and only then save in deliverables file.
+    if (ismipAllowAdapt == PETSC_TRUE) {
+      // go to next integer year
+      maxdt_temporary = (1.0 - fmod(grid.p->year, 1.0)) * secpera;
+    } else {
+      dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
+                                  // and use .25 year steps as spec-ed by HEINO
+    }
   return 0;
 }
 
@@ -596,6 +602,11 @@ PetscErrorCode IceEISModel::additionalAtEndTimestep() {
 
   if ((getExperName() == '0') && (ismipNoDeliver != PETSC_TRUE)) {
 
+    // only deliver at integer year; must be on the year to 9 digits before we
+    // will proceed to deliver
+    if ( (fmod(grid.p->year,1.0) / PetscMax(1.0,grid.p->year)) > 5.0e-10)
+      return 0;
+    
     // get volume in 10^6 km^3 
     // and temperate (at pressure-melting = (T > DEFAULT_MIN_TEMP_FOR_SLIDING))
     // basal area in 10^6 km^2

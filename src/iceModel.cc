@@ -596,7 +596,7 @@ PetscErrorCode IceModel::run() {
     }
     
     // adapt time step using velocities and diffusivity, ..., just computed
-    ierr = determineTimeStep(year,(useIsothermalFlux == PETSC_FALSE)); CHKERRQ(ierr);
+    ierr = determineTimeStep((useIsothermalFlux != PETSC_TRUE)); CHKERRQ(ierr);
     // IceModel::dt is now set correctly according to mass-balance-diffusivity,
     //    CFL criteria, and other criteria from derived class additionalAtStartTimestep()
 

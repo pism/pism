@@ -1042,7 +1042,7 @@ PetscErrorCode IceCompModel::run() {
     // adapt time step using velocities and diffusivity, ..., just computed
     if (exactOnly == PETSC_TRUE)
       dt_force = maxdt;
-    ierr = determineTimeStep(year,
+    ierr = determineTimeStep(
              ( (useIsothermalFlux == PETSC_FALSE) 
                && ((testname == 'F') || (testname == 'G')) ) ); CHKERRQ(ierr);
     // IceModel::dt is now set correctly according to mass-balance-diffusivity,
