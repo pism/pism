@@ -253,7 +253,8 @@ PetscErrorCode IceModel::adaptTimeStepCFL() {
 }
 
 
-PetscErrorCode IceModel::determineTimeStep(const PetscScalar currentYear) {
+PetscErrorCode IceModel::determineTimeStep(const PetscScalar currentYear,
+                                           const bool doTemperatureCFL) {
   PetscErrorCode ierr;
   
   if (dt_force > 0.0) {
@@ -274,7 +275,8 @@ PetscErrorCode IceModel::determineTimeStep(const PetscScalar currentYear) {
     if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
       ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
     }
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)) {
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
+        && doTemperatureCFL) {
       // note: if tempskip > 1 then here dt is reduced by a factor of tempskip
       ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
     } 

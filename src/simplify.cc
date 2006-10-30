@@ -570,7 +570,8 @@ bool IceEISModel::nearHeino(const PetscScalar x1, const PetscScalar y1,
 PetscErrorCode IceEISModel::additionalAtStartTimestep() {
   // this is called at the beginning of time-stepping loop in IceModel::run()
 
-  dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
+  if (getExperName() == '0')
+    dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
   
   // should have following mechanism: If -allow_adapt flag is set then time to
   // next multiple of 0.25 should be computed and it should be used to set
@@ -578,6 +579,7 @@ PetscErrorCode IceEISModel::additionalAtStartTimestep() {
   // current time is multiple of 0.25 yr, and only then save in deliverables file.
   return 0;
 }
+
 
 PetscErrorCode IceEISModel::additionalAtEndTimestep() {
   PetscErrorCode  ierr;

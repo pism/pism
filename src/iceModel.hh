@@ -253,7 +253,8 @@ protected:
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode adaptTimeStepDiffusivity();
   PetscErrorCode adaptTimeStepCFL();
-  virtual PetscErrorCode determineTimeStep(const PetscScalar currentYear);
+  virtual PetscErrorCode determineTimeStep(const PetscScalar currentYear,
+                                           const bool doTemperatureCFL);
   PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
                             PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                             PetscScalar& gvolshelf);

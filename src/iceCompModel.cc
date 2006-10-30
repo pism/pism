@@ -1007,17 +1007,22 @@ PetscErrorCode IceCompModel::run() {
   }
   ierr = initSounding(); CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com,
-      "$$$$      YEAR (+   STEP):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
+      "$$$$      YEAR (+    STEP[R]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
       CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com,"$$$$");  CHKERRQ(ierr);
+  adaptReasonFlag = ' '; // no reason for no timestep
   ierr = summary(true,false); CHKERRQ(ierr);  // report starting state
 
-  PetscScalar dt_temp = 0.0;
+  PetscScalar dt_temperature = 0.0;
   PetscInt    it = 0;
   bool        tempAgeStep;
   
   // main loop
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera, it++) {
+    dt_force = -1.0;
+    maxdt_temporary = -1.0;
+    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temp
+
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);
@@ -1034,20 +1039,17 @@ PetscErrorCode IceCompModel::run() {
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 
-    // adapt time step using velocities just computed
-    dt = PetscMin(maxdt, (endYear-year) * secpera);  // don't go past end; "propose" this
-    if (doAdaptTimeStep == PETSC_TRUE) {
-      if ( (exactOnly == PETSC_FALSE) && (doMassBal == PETSC_TRUE)) {
-        ierr = adaptTimeStepDiffusivity();  CHKERRQ(ierr);
-      }
-      if ( (exactOnly == PETSC_FALSE) && (doTemp == PETSC_TRUE) && 
-               ((testname == 'F') || (testname =='G')) ) {
-        ierr = adaptTimeStepCFL();  CHKERRQ(ierr);  // if tempskip > 1 then here dt is reduced
-                                                    // by a factor of tempskip
-      }
-    }    
+    // adapt time step using velocities and diffusivity, ..., just computed
+    if (exactOnly == PETSC_TRUE)
+      dt_force = maxdt;
+    ierr = determineTimeStep(year,
+             ( (useIsothermalFlux == PETSC_FALSE) 
+               && ((testname == 'F') || (testname == 'G')) ) ); CHKERRQ(ierr);
+    // IceModel::dt is now set correctly according to mass-balance-diffusivity,
+    //    CFL criteria, and other criteria from derived class additionalAtStartTimestep()
+
     // IceModel::dt is now set correctly according to mass-balance and CFL criteria  
-    dt_temp += dt;
+    dt_temperature += dt;
     grid.p->year += dt / secpera;  // adopt it
 
     switch (testname) {
@@ -1068,8 +1070,8 @@ PetscErrorCode IceCompModel::run() {
     
     if (tempAgeStep) {
       // note temps are allowed to go above pressure melting in verify
-      ierr = temperatureStep(PETSC_TRUE, dt_temp); CHKERRQ(ierr);
-      dt_temp = 0.0;
+      ierr = temperatureStep(PETSC_TRUE, dt_temperature); CHKERRQ(ierr);
+      dt_temperature = 0.0;
       ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
     } else {
       ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
@@ -1083,8 +1085,9 @@ PetscErrorCode IceCompModel::run() {
     }
 
     ierr = summary(tempAgeStep,false); CHKERRQ(ierr);
-
     ierr = updateCompViewers(); CHKERRQ(ierr);
+    
+    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
   }  //  for loop
 
   return 0;
