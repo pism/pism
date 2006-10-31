@@ -654,9 +654,9 @@ PetscErrorCode IceEISModel::additionalAtEndTimestep() {
                   tauby = ice.rho * ice.grav * H[i][j] 
                             * (H[i][j+1] - H[i][j-1]) / (2 * grid.p->dy);
               pnbaseheating[k] = taubx * ub[i][j] + tauby * vb[i][j];
-              if (pnbaseheating[k] < 0.0) 
-                SETERRQ(1, 
-                  "basal heating negative in IceEISModel::additionalStuffAtTimestep()\n");
+//              if (pnbaseheating[k] < 0.0) 
+//                SETERRQ(1, 
+//                  "basal heating negative in IceEISModel::additionalStuffAtTimestep()\n");
             }
           }
         }
