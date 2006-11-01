@@ -1,4 +1,4 @@
-function showheino(pathprefix,datprefix,runname);
+function showheino(datdir,datprefix,runname);
 % SHOWHEINO  Reads and displays time series data produced by
 % ISMIP-HEINO run (i.e. a run like
 %    "pisms -ismip H -datprefix MYGROUP -run ST ...").
@@ -14,7 +14,7 @@ function showheino(pathprefix,datprefix,runname);
 % meaning of "t1" etc.; see the "description of the model setup").
 % [ELB 10/30/06]
 
-filestart = [pathprefix datprefix '_' runname '_'];
+filestart = [datdir datprefix '_' runname '_'];
 
 figure
 for j=1:2
@@ -73,14 +73,21 @@ for j=1:3
     B = zeros(0,0);
     for k=1:7
         A = readHeino([filestart 'tsp' num2str(k) '_' varname '.dat']);
-        B(:,k) = A(2,:)';
+        if k == 1
+            smallest = size(A,2);
+        else
+            smallest = min(smallest,size(A,2));
+        end
+        B(1:smallest,k) = A(2,1:smallest)';
     end
     figure
-    plot(A(1,:)/1000,B)
+    plot(A(1,1:size(B,1))/1000,B)
     legend('P_1','P_2','P_3','P_4','P_5','P_6','P_7');
     title([jtitle ' TIME SERIES (AT POINTS P_1,...,P_7)'])
     xlabel('10^3 years'), ylabel(ylab)
 end
+
+disp('five figures created')
 
 if max(A_ait(1,:)) >= 200000  % if run was completed
     A = A_ait(:, (A_ait(1,:) >= 150000)); % only consider last 50k yrs
@@ -89,8 +96,9 @@ if max(A_ait(1,:)) >= 200000  % if run was completed
     [yy,ii] = min(A(2,:));
     t2 = A(1,ii)
 else
-    disp(['WARNING: run not completed?  last recorded time = ' ...
-            num2str(max(A_ait(1,:))) ' years'])
+    disp(['WARNING: run not completed?  last recorded (_tss_) year = ' ...
+          num2str( max([max(A_ait(1,:)) max(A_ahbt(1,:)) max(A_tba(1,:))]) ) ...
+          ' years'])
 end
 if max(A_ahbt(1,:)) >= 200000  % if run was completed
     A = A_ahbt(:, (A_ahbt(1,:) >= 150000)); % only consider last 50k yrs

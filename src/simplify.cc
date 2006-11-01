@@ -648,15 +648,19 @@ PetscErrorCode IceEISModel::additionalAtEndTimestep() {
               //          "  [at ISMIP-HEINO point P%d]\n",k+1); CHKERRQ(ierr);
               pnthick[k] = H[i][j];
               pnbasetemp[k] = homT0;
+              // note equation (10) in ISMIP-HEINO documentation [date: 19 July 2006]
+              // is wrong; should read
+              //     " \tau_b = - \rho g H \grad_H h " 
               const PetscScalar 
-                  taubx = ice.rho * ice.grav * H[i][j]
+                  taubx = -ice.rho * ice.grav * H[i][j]
                             * (H[i+1][j] - H[i-1][j]) / (2 * grid.p->dx),
-                  tauby = ice.rho * ice.grav * H[i][j] 
+                  tauby = -ice.rho * ice.grav * H[i][j] 
                             * (H[i][j+1] - H[i][j-1]) / (2 * grid.p->dy);
               pnbaseheating[k] = taubx * ub[i][j] + tauby * vb[i][j];
-//              if (pnbaseheating[k] < 0.0) 
+//              if (pnbaseheating[k] < 0.0) {
 //                SETERRQ(1, 
 //                  "basal heating negative in IceEISModel::additionalStuffAtTimestep()\n");
+//              }
             }
           }
         }

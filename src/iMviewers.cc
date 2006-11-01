@@ -170,7 +170,11 @@ PetscErrorCode IceModel::initSounding() {
 
 
 PetscErrorCode IceModel::updateViewers() {
-  /* see IceModel::massBalExplicitStep() in iceModel.cc for update of  dhView  (i.e.  -d g) */
+  // see IceModel::massBalExplicitStep() in iceModel.cc for  dhView  ("-d g")
+  // see IceModel::computeMaxDiffusivity() in iMutil.cc for  diffusView ("-d f")
+  // see IceModel::velocityMacAyeal() in iMmacayeal.cc for   nuView  ("-d n")
+  //                                                   and   NuView  ("-d N")
+  // see iceCompModel.cc for compensatory Sigma viewers
 
   PetscErrorCode ierr;
   PetscScalar ***T, ***Tb, ***u, ***v, ***w, **ub, **vb, ***Sigma, 
@@ -179,23 +183,9 @@ PetscErrorCode IceModel::updateViewers() {
   PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz;
   PetscInt   *row;
 
+  // set up (quantity) vs z graphs in sounding:
   row = new PetscInt[Mzsum];
   for (PetscInt k=0; k < Mzsum; k++)   row[k] = k;
-
-  if (T2View != PETSC_NULL) {
-    ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, g2, &T2); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        T2[i][j] = T[i][j][kd];
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, g2, &T2); CHKERRQ(ierr);
-    ierr = VecView(g2, T2View); CHKERRQ(ierr);
-  }
-
-  // following are (quantity) vs z graphs in sounding
   if (id>=grid.xs && id<grid.xs+grid.xm && jd>=grid.ys && jd<grid.ys+grid.ym) {
     if (TView != PETSC_NULL) {
       ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
@@ -237,8 +227,10 @@ PetscErrorCode IceModel::updateViewers() {
       ierr = VecSetValues(gsd, grid.p->Mz, row, &Tau[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da3, vtau, &Tau); CHKERRQ(ierr);
     }
-  }  // done with soundings ...
-  
+  }
+  delete [] row;  // done with setting up soundings ...
+
+  // actually view soundings:  
   if (TView != PETSC_NULL) {
     ierr = VecAssemblyBegin(Td); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(Td); CHKERRQ(ierr);
@@ -268,43 +260,32 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = VecScale(Sigmad, secpera); CHKERRQ(ierr);
     ierr = VecView(Sigmad, SigmaView); CHKERRQ(ierr);
   }
-  if (SigmaMapView != PETSC_NULL) {
-    ierr = DAVecGetArray(grid.da2, g2, &sigma); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        sigma[i][j] = Sigma[i][j][kd];
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, g2, &sigma); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-    ierr = VecScale(g2, secpera); CHKERRQ(ierr);
-    ierr = VecView(g2, SigmaMapView); CHKERRQ(ierr);
-  }
   if (gsView != PETSC_NULL) {
     ierr = VecAssemblyBegin(gsd); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(gsd); CHKERRQ(ierr);
     ierr = VecScale(gsd, 1.0e3); CHKERRQ(ierr); // Display in mm
     ierr = VecView(gsd, gsView); CHKERRQ(ierr);
   }
-  if (gsMapView != PETSC_NULL) {
-    ierr = DAVecGetArray(grid.da2, g2, &gs2); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        gs2[i][j] = gs[i][j][kd];
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, g2, &gs2); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
-    ierr = VecScale(g2, 1.0e3); CHKERRQ(ierr); // Display in mm
-    ierr = VecView(g2, gsMapView); CHKERRQ(ierr);
-  }
   if (tauView != PETSC_NULL) {
     ierr = VecAssemblyBegin(taud); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(taud); CHKERRQ(ierr);
     ierr = VecScale(taud, 1.0/secpera); CHKERRQ(ierr); // Display in mm
     ierr = VecView(taud, tauView); CHKERRQ(ierr);
+  }
+  // done with soundings
+
+  // map-plane views:
+  if (T2View != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, g2, &T2); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        T2[i][j] = T[i][j][kd];
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, g2, &T2); CHKERRQ(ierr);
+    ierr = VecView(g2, T2View); CHKERRQ(ierr);
   }
   if (tauMapView != PETSC_NULL) {
     ierr = DAVecGetArray(grid.da2, g2, &tau); CHKERRQ(ierr);
@@ -318,6 +299,32 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = DAVecRestoreArray(grid.da3, vtau, &Tau); CHKERRQ(ierr);
     ierr = VecScale(g2, 1.0/secpera); CHKERRQ(ierr); // Display in mm
     ierr = VecView(g2, tauMapView); CHKERRQ(ierr);
+  }
+  if (SigmaMapView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &sigma); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        sigma[i][j] = Sigma[i][j][kd];
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, g2, &sigma); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
+    ierr = VecScale(g2, secpera); CHKERRQ(ierr);
+    ierr = VecView(g2, SigmaMapView); CHKERRQ(ierr);
+  }
+  if (gsMapView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &gs2); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        gs2[i][j] = gs[i][j][kd];
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, g2, &gs2); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
+    ierr = VecScale(g2, 1.0e3); CHKERRQ(ierr); // Display in mm
+    ierr = VecView(g2, gsMapView); CHKERRQ(ierr);
   }
   if (uvbarView[0] != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vuvbar[0], INSERT_VALUES, g2); CHKERRQ(ierr);
@@ -474,6 +481,5 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = VecView(g2, maskView); CHKERRQ(ierr);
   }
 
-  delete [] row;
   return 0;
 }

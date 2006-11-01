@@ -224,14 +224,12 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 
 
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
-  PetscErrorCode ierr;
-  const PetscScalar gridfactor 
-                    = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
-
-  ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
+  // note computeMaxDiffusivity() must be called before this to set gDmax
   // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
   // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
   // reference: Morton & Mayers 2nd ed. pp 62--63
+  const PetscScalar gridfactor 
+                    = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
   PetscScalar dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if (dt_from_diffus < dt) {
@@ -243,7 +241,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
 
 PetscErrorCode IceModel::adaptTimeStepCFL() {
-  // CFLmaxdt is set by computeMaxVelocities in iMvelocity.cc
+  // CFLmaxdt is set by computeMaxVelocities() in iMvelocity.cc
   PetscScalar    dt_from_cfl = CFLmaxdt / tempskip;
   if (dt_from_cfl < dt) {
     dt = dt_from_cfl;
@@ -255,7 +253,11 @@ PetscErrorCode IceModel::adaptTimeStepCFL() {
 
 PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
-  
+
+  if ( (diffusView != PETSC_NULL) 
+       || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE) ) ) {
+    ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
+  }
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';

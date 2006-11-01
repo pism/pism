@@ -102,18 +102,20 @@ PetscErrorCode IceModel::temperatureStep(PetscTruth allowAboveMelting, PetscScal
           if (modMask(mask[i][j]) != MASK_FLOATING) {
             const PetscScalar ub = u[i][j][0];
             const PetscScalar vb = v[i][j][0];
-            PetscScalar basal_force_x, basal_force_y;
-            if (modMask(mask[i][j]) == MASK_SHEET) {
-              basal_force_x = ice.rho * ice.grav * H[i][j] * (h[i+1][j] - h[i-1][j]) / (2 * dx);
-              basal_force_y = ice.rho * ice.grav * H[i][j] * (h[i][j+1] - h[i][j-1]) / (2 * dy);
-            } else {
-              basal_force_x = basalDrag(ub, vb) * ub;
-              basal_force_y = basalDrag(ub, vb) * vb;
+            PetscScalar basal_stress_x, basal_stress_y;
+            if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useMacayealVelocity)) {
+              basal_stress_x = basalDrag(ub, vb) * ub;
+              basal_stress_y = basalDrag(ub, vb) * vb;
+            } else { // usual SIA assumption: basal driving shear stress
+              basal_stress_x = -ice.rho * ice.grav * H[i][j] * (h[i+1][j] - h[i-1][j]) / (2 * dx);
+              basal_stress_y = -ice.rho * ice.grav * H[i][j] * (h[i][j+1] - h[i][j-1]) / (2 * dy);
             }
-            const PetscScalar basal_heating =
-              ((basal_force_x * ub + basal_force_y * vb)
-               * 2 / (ice.rho*ice.c_p + bedrock.rho*bedrock.c_p)) * dz;
-            rhs[Mbz] += dtT * basal_heating;
+            const PetscScalar basal_heating = basal_stress_x * ub + basal_stress_y * vb;
+//            if (basal_heating < 0.0) {
+//              SETERRQ(1,"basal heating negative in IceModel::temperatureStep()");
+//            }
+            const PetscScalar avrhocp = (ice.rho*ice.c_p + bedrock.rho*bedrock.c_p) / 2.0;
+            rhs[Mbz] += dtT * (basal_heating / (avrhocp * dz));
           } else {  // If floating, don't add basal strain heating but do
             // set temp at top of bedrock.  (It is in contact with ocean.)
             // Set to *pressure-melting temp at bottom of ice shelf*.
