@@ -63,8 +63,15 @@ IceDragModel::IceDragModel(IceGrid &g, IceType &i)
 #if (WITH_NETCDF)
 #include <netcdf.h>
 
+PetscErrorCode nc_check(int stat) {
+  if (stat)
+    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
+  return 0;
+}
+
 PetscErrorCode IceDragModel::readBalvelFromFile(const char *fname) {
   PetscErrorCode  ierr;
+  int stat;
   char filename[PETSC_MAX_PATH_LEN];
 
   vmagbalvel = vWork2d[2];  // already allocated
@@ -75,34 +82,27 @@ PetscErrorCode IceDragModel::readBalvelFromFile(const char *fname) {
     strcpy(filename, fname);
   }
 
-  NcVar *v_balvel;
-  NcFile *f;
+  int ncid;
+  int v_balvel;
   if (grid.rank == 0) {
-    f = new NcFile(filename);
-    if (! f->is_valid()) {
-      ierr = PetscPrintf(grid.com, "Could not open %s for reading.\n", filename); CHKERRQ(ierr);
-      return 1;
-    }
-  
-    v_balvel = f->get_var("balvel");   
+    stat = nc_open(filename, 0, &ncid); CHKERRQ(nc_check(stat));
+    stat = nc_inq_varid(ncid, "balvel", &v_balvel); CHKERRQ(nc_check(stat));
   }
 
-  // see iMIOnetcdf.cc for original technique
   Vec vzero;
   VecScatter ctx;
   ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
   ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
 
-  ierr = ncVarToDAVec(v_balvel, grid.da2, vmagbalvel, g2, vzero);     CHKERRQ(ierr);
+  ierr = ncVarToDAVec(ncid, v_balvel, grid.da2, vmagbalvel, g2, vzero); CHKERRQ(ierr);
   
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
   ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
 
   ierr = VecScale(vmagbalvel,1.0/secpera); CHKERRQ(ierr);  // convert to m/s
-  
+
   if (grid.rank == 0) {
-    f->close();
-    delete f;
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
   }
 
   return 0;

@@ -36,11 +36,10 @@ env['LIBPATH'] += [libpism_dir]
 env['RPATH'] += [libpism_dir]
 
 petsc_libs = ['petsc' + mod for mod in Split('ksp dm mat vec') + [""]]
-#petsc_libs += Split('X11 lapack blas mpi_cxx stdc++ dl netcdf_c++ netcdf fftw3 gsl gslcblas')
-petsc_libs += Split('X11 lapack blas stdc++ dl netcdf fftw3 gsl')
+pism_libs = petsc_libs + Split('X11 lapack blas stdc++ dl netcdf fftw3 gsl')
 
-Export('env petsc_libs')
+Export('env pism_libs')
 
 SConscript('src/SConscript', build_dir='obj', duplicate=0)
-SConscript('doc/SConscript')
+SConscript('doc/SConscript', duplicate=0)
 

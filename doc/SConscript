@@ -1,4 +1,13 @@
-DVI('manual.tex')
-DVI('eqns3D.tex')
-PostScript('manual.tex')
-PostScript('eqns3D.tex')
+man_tex = 'manual.tex'
+
+man_dvi = DVI(man_tex)
+man_ps = PostScript(man_tex)
+man_pdf = PDF(man_tex)
+
+eq3d_tex = 'eqns3D.tex'
+
+eq3d_dvi = DVI(eq3d_tex)
+eq3d_ps = PostScript(eq3d_tex)
+eq3d_pdf = PDF(eq3d_tex)
+
+Default()
