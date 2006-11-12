@@ -104,7 +104,8 @@ tags TAGS :
 depend : $(depfiles)
 
 distclean : clean
-	rm -f libpism.so libpism.a $(executables) *.d TAGS
+	rm -f obj/libpism.a obj/flowTable obj/pismr obj/pisms obj/pismv obj/simpleISO obj/simpleFG *.d TAGS
+#	rm -f libpism.so libpism.a $(executables) *.d TAGS
 
 .PHONY: clean
 

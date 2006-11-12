@@ -16,7 +16,7 @@
 % along with Pism; if not, write to the Free Software
 % Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-\documentclass[final]{amsart}
+\documentclass[11pt,final]{amsart}
 \addtolength\topmargin{-.1in}
 \addtolength\textheight{0.3in}
 \addtolength{\oddsidemargin}{-.5in}
@@ -51,14 +51,35 @@
 
 \author{Jed Brown and Ed Bueler}
 
-\date{\today.  This manual documents a parallel, verifiable, thermocoupled, multiple-flow-mode numerical ice sheet model developed by Jed Brown, Ed Bueler, and Craig Lingle at the University of Alaska, Fairbanks.  See \verb|https://gna.org/projects/pism/| and \verb|http://www.dms.uaf.edu/~bueler/iceflowpage.htm|}
+\date{\today.  \textbf{This manual is out of date.}}
 
 \begin{document}
 \maketitle
 \tablespacing
 \tableofcontents
+
+\newpage
+\phantom{bob}
+\vspace{2in}
+\begin{quote}
+\textsl{Copyright (C) 2004-2006 Jed Brown and Ed Bueler}
+\medskip
+
+\noindent \textsl{This file is part of PISM.}
+\medskip
+
+\noindent \textsl{PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.}
+\medskip
+
+\noindent \textsl{PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.}
+\medskip
+
+\noindent \textsl{You should have received a copy of the GNU General Public License along with PISM; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\end{quote}
+\vspace{1in}
 \normalspacing
 
+\newpage
 \section{Getting started}
 
 \subsection{Using \t{run\underline{ }ice} for Antarctica}  [FIXME FOR \verb|~/ice-input/ant_2006/init.nc|]British Antarctica Survey supplied data [REFERENCE?] for the current state of the Antarctic ice sheet is stored in a NetCDF file \t{bas\underline{ }2004.nc} included with the release.  We start by showing how it can be loaded as the initial data of an Antarctica simulation.  We assume that the release has been built; see the \textbf{Installation} section.
@@ -66,7 +87,7 @@
 The command ``\t{./run\underline{ }ice -if ...}'' here wraps past the end of the line.  We will explain the options below and in later sections, but furthermore we will describe shell scripts which simplify things.
 
 \beginV
-user@host:~/ice$ ./run_ice -if ~/ice-input/bas_2004.nc -Mx 121 -My 121 -Mz 81 -Mbz 21 
+user@host:~/ice$ ./run_ice -if ~/ice-input/bas_2004.nc -Mx 121 -My 121 -Mz 81 -Mbz 21
 -no_mass_bal -gk -e 2 -y 1000.0 -d hcTS
 
 Setting IceModel defaults...
@@ -75,7 +96,7 @@ Max(H) =     4224.000, Max(h) =     4081.445
 PetscBag Object:  IceParamBag Contains parameters controlling
 preferences for simulation of ice sheets.
   history =
-ed@edbueler 2006-06-12 10:07:31 AKDT : ./run_ice -if /home/ed/ice-input/bas_2004.nc -Mx 121 
+ed@edbueler 2006-06-12 10:07:31 AKDT : ./run_ice -if /home/ed/ice-input/bas_2004.nc -Mx 121
 -My 121 -Mz 81 -Mbz 21 -no_mass_bal -gk -e 2 -y 1000.0 -d hcTS
 ; History of commands used to generate this file.
   Lx = 2.8e+06; Half width of the ice model grid in x-direction (m).
@@ -114,7 +135,7 @@ At each time step we get a summary of the model state at the end of the step.  T
 \end{verbatim}
 \normalsize
 The first four columns are flags telling the user which quantities are being updated at each time step: ``\texttt{v}'' or ``\texttt{V}'' for velocity, ``\texttt{t}'' for temperature, ``\texttt{g}'' for grain size, and ``\texttt{f}'' for surface elevation (i.e.~a step of the flow equation has occurred); a placeholder ``\verb|$|'' appears if the given quantity is not updated.  (Lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that the vertically-averaged velocity, and the associated diffusivity, has been updates.)  The time and time step are in years.  The next three columns are the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the melting temperature, actually).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain, that is, the thickness at the origin in meters, and the basal absolute temperature at the origin in Kelvin.  This summary of the model state can be expanded by using the option \verb|-verbose|.
- 
+
 Note that the time step is adaptively determined.  The volume and area do not change in this run because this model run has no mass balance evolution.  The values ``\t{THICK0}'' and ``\t{TEMP0}'' happen to be at the South Pole in this case.  Several times during the run the grain size was update.  Grain size is computed based upon (roughly) modeled age of the ice and on grain size data from the Vostok core [REFERENCE]; the grain size is a parameter in the Goldsby-Kohlstedt flow law.  At the end of the run the model state is saved in a PETSc binary format file ``\t{unnamed.pb}''; an output filename may be chosen at the command line, of course.
 
 
@@ -130,7 +151,7 @@ initializing Test B..
 PetscBag Object:  IceParamBag Contains parameters controlling
 preferences for simulation of ice sheets.
   history =
-ed@edbueler 2006-06-12 11:12:20 AKDT : /home/ed/ice/verify -test B -ys 422.45 -ye 25000.0 -Mx 31 
+ed@edbueler 2006-06-12 11:12:20 AKDT : /home/ed/ice/verify -test B -ys 422.45 -ye 25000.0 -Mx 31
 -My 31 -p4pg /home/ed/ice/PI5846 -p4wd /home/ed/ice
 ; History of commands used to generate this file.
   Lx = 1.2e+06; Half width of the ice model grid in x-direction (m).
@@ -208,6 +229,8 @@ Note that the runs which have the \verb|-y 0| option either create a grid or reg
 
 \section{Installation}
 
+See the PISM web page \cite{pism-web-page}.
+
 With any luck installation is not too much harder than installing PETSc itself.  We recommend that MPI [reference], XWindows [reference], NetCDF [reference], GSL [reference], FFTW [reference], and PETSc [reference] be installed first [IN WHAT ORDER?].  NetCDF, GSL, and FFTW are optional, see below.
 
 \subsection{Example: bash shell, using GNU tar and wget, with NetCDF, GSL, and FFTW already installed and with (e.g.) OpenMPI}
@@ -242,7 +265,7 @@ make
 
 \subsection{If it builds} Some quick tests of basic functionality might be:
 \begin{quote}\begin{verbatim}
-./verify -test G -y 100 
+./verify -test G -y 100
 ./run_ice -if ../ice-input/ant_2006/init.nc -Mx 91 -My 91 -Mz 101 -y 500 -d Hgf -dbig cT
 ./verify -test H -y 40034 -Mx 31 -My 31 -Mz 11 -bed_def_lc
 \end{verbatim}
@@ -256,9 +279,9 @@ The first \t{verify} run is to test the core thermcoupled shallow ice approximat
 \newcommand{\optdef}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]:\quad\normalsize}
 \newcommand{\und}{$\underline{\,\,\,}$}
 
-\subsection{Command line options for \t{run\_ice} and \t{simplify}}  Much of the behavior of the ice model can be set at the command line.  
+\subsection{Command line options for \t{run\_ice} and \t{simplify}}  Much of the behavior of the ice model can be set at the command line.
 
-As a PETSc program all PETSc options are available \cite{petsc-web-page,petsc-user-ref}.  The next subsection recalls some of these PETSc options, but in this subsection we list the commands which are special to our ice sheet model.  Note that all of the parameters reported as part of the ``\verb|PetscBag Object|'' at the beginning of a run may be altered by the user, but some are not recommended for user modification.  
+As a PETSc program all PETSc options are available \cite{petsc-web-page,petsc-user-ref}.  The next subsection recalls some of these PETSc options, but in this subsection we list the commands which are special to our ice sheet model.  Note that all of the parameters reported as part of the ``\verb|PetscBag Object|'' at the beginning of a run may be altered by the user, but some are not recommended for user modification.
 
 The format of the following option documentation is
 
@@ -307,7 +330,7 @@ The format of the following option documentation is
 \item The Paterson-Budd \cite{PatersonBudd} flow law with exponent $n=3$.  In particular there is split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where $(A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* < 263$ K and $(A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* > 263$ K and where $T^*$ is the homologous temperature.  Also $R=8.314\, \text{J}\, \text{mol}^{-1}\, \text{K}^{-1}$.
 \item Just the \emph{cold} part of the Paterson-Budd flow law above, i.e.~regardless of temperature the values for $T^*<263$ K apply.  Note this is the flow law which applies to the thermocoupled exact solutions Tests \textbf{F} and \textbf{G} run by \verb|verify|.
 \item Just the \emph{warm} part of the Paterson-Budd flow law above, i.e.~regardless of temperature the values for $T^*>263$ K apply.
-\item The Hooke flow law with $n=3$ and with $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$ where [SEE \cite{Hooke,PayneBaldwin} FOR VALUES]. 
+\item The Hooke flow law with $n=3$ and with $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$ where [SEE \cite{Hooke,PayneBaldwin} FOR VALUES].
 \item A hybrid of the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} for grounded, shallow ice approximation ice and the Paterson-Budd flow law for MacAyeal equations regions (i.e.~ice streams and ice sheets; use \verb|-d m| to see relevant mask).
 \end{enumerate}
 
@@ -372,15 +395,15 @@ The format of the following option documentation is
 
 \opt{da\und processors\und y}  See \verb|-da_processors_x|.
 
-\opt{help} 
+\opt{help}
 
-\opt{info} 
+\opt{info}
 
 \optdef{ksp\und rtol}{1e-5}
 
 \optdef{ksp\und type}{gmres}  \t{bicg}, \t{cg}, \t{cgs}, \t{gmres}, \t{preonly}
 
-\opt{log\und summary} 
+\opt{log\und summary}
 
 \optdef{pc\und type}{ilu}   \t{jacobi}, \t{icc}, \t{ilu}, \t{lu}, \t{none}, \t{sor}
 
@@ -395,7 +418,7 @@ The format of the following option documentation is
 \end{verbatim}
 shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{g}'') and of vertically-averaged horizontal ice speed (``\t{c}'').
 
-The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.  
+The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
 
 \emph{Warning: At this point the diagnostic viewers only work with one processor.}
 
@@ -520,7 +543,7 @@ For the thermocoupled runs it is strongly recommended that at least $100$ vertic
 
 
 
-\section{PETSc}
+\section{PETSc: An overview for PISM users}
 
 \subsection{PETSc Preliminaries}
 The PETSc library \cite{petsc-web-page,petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  Specifically,it is a suite of data structures and routines in the C language, primarily, for the scalable (parallel) solution of scientific applications modeled by partial differential equations.  Large parts of PETSc relate especially to finite-difference type regular, rectangular grids.
@@ -628,88 +651,6 @@ consider options such as \verb|-log_summary| to get diagnostics written to the t
 
 \subsection{MPI}  MPI is a library which manages interprocessor communication for parallel computers.  One of the advantages of Petsc is that it calls MPI in a way that allows Petsc-using programs to be largely free of parallel communication details.
 
-
-\section{Source code survey}
-
-The class \t{IceModel} contains data members which are objects of type \t{IceGrid} and \t{IceType}.  This abstracts the choices of these objects to the
-user.  Since there are only reference implementations of \t{BedrockType} and \t{OceanType},
-these objects need not be passed into the \t{IceModel} at this time.  After the \t{IceGrid}
-is set (it is changed by loading a previous state file for instance),
-\t{IceModel::createVecs()} should be called. There is typically no need to explicitly call
-\t{IceModel::destroyVecs()} since it is called by the destructor\dots
-
-All ``\t{.cc}'' files in the release are C++ source files and ``\t{hh}'' files are C++ header files.  They have been compiled using the GNU compiler but should be highly portable.  Builds should be done by \t{make} in the directory \t{ice}; makefiles for this task and for \TeX-ing the manual are included in the release.
-
-Regarding reasonable entry points into the code for the developer, note that \t{iceModel.hh} is the header file describing the core of the ice flow model.  Implementations of the \t{IceModel} methods are spread through a number of source files, including files named \t{iM*.cc}.  Important numerical calculations are performed by \t{iceModel.cc}, \t{iMvelocity.cc}, \t{iMtemp.cc}, and \t{iMmacayeal.cc}.  On the other hand, the \t{.cc} files \t{run\underline{ }ice.cc} and \t{verify.cc} each contain a \t{main} subroutine and are also good to look at from the beginning.
-
-Now for modest synopses in alphabetical order:\bigskip
-\newcommand{\hfileno}[1]{\noindent\t{ice/#1.hh:}\par}
-\newcommand{\Cfile}[2]{\noindent\t{ice/#1.cc:}\par \begin{quote}#2\end{quote}\par\medskip}
-\newcommand{\hfile}[2]{\noindent\t{ice/#1.hh:}\par \begin{quote}#2\end{quote}\par\medskip}
-\newcommand{\iceinputFile}[2]{\noindent\t{ice-input/#1:}\par \begin{quote}#2\end{quote}\par\medskip}
-
-\hfileno{exactTestsBCD}
-\Cfile{exactTestsBCD}{Contains subroutines for verification tests from \cite{BLKCB}.}
-
-\hfileno{exactTestsFG}
-\Cfile{exactTestsFG}{Contains a single subroutine \t{bothexact} which implements both Test F and G.  See \cite{BK} and \cite{BKL}.}
-
-\hfileno{extrasGSL}
-\Cfile{extrasGSL}{Several procedures which use the GNU Scientific Library to compute numerical jobs for the bed deformation model.}
-
-\hfileno{grid}
-\Cfile{grid}{Defines constant \t{secpera}, structure \t{IceParam}, function \t{initIceParam}, and class \t{IceGrid}.  The latter class includes the Petsc \t{DA} for all vectors in \t{IceModel}.}
-
-\Cfile{flowtable}
-
-\hfileno{iceCompModel}
-\Cfile{iceCompModel}{}
-
-\hfileno{iceModel}
-\Cfile{iceModel}{Additional methods of the \t{iceModel} class are actually implemented in the separate files \t{iMIO.cc}, \t{iMutil.C}, \dots  This is done merely to reduce the size of \t{iceModel.cc}.}
-
-\Cfile{iMbasal}
-
-\Cfile{iMbeddef}{Parts of \t{IceModel} which compute the \cite{LingleClark} bed deformation model; see \cite{BLKfastearth} for the numerical approach and verification.}
-
-\Cfile{iMdefaults}
-
-\Cfile{iMgrainsize}
-
-\Cfile{iMIO}
-
-\Cfile{iMIOnetcdf}
-
-\Cfile{iMmacayeal}
-
-\Cfile{iMoptions}
-
-\Cfile{iMtemp}
-
-\Cfile{iMutil}
-
-\Cfile{iMvelocity}
-
-\Cfile{iMviewers}
-
-\hfileno{materials}
-\Cfile{materials}{Defines classes \t{MaterialType} and derived classes \t{IceType}, \t{GlenIce}, \t{ThermoGlenIce}, \t{GKIce}, \t{HybridIce}, \t{OceanType}, and \t{BedrockType}.  The various ice types have methods \t{flow} for the forward flow law (i.e.~find strain rate given stress) and \t{effectiveViscosityColumn} for the inverse law.  As noted, the inverse law for \t{GKIce} is not clearly implementable.  \t{HybridIce} and its \t{effectiveViscosityColumn} is just the inverse Glen law.}
-
-\Cfile{simplify}{Driver program for EISMINT II \cite{EISMINT00} and other simplified geometry experiments for which exact solutions are unknown.}
-
-\Cfile{run\underline{ }ice}{Driver program for real simulations.}
-
-\Cfile{simpleFG}{Simple program to display values of exact solutions ``Tests F'' and ``Test G'' from \cite{BKL}.}
-
-\Cfile{verify}{Driver program for verification, in particular for tests from \cite{BLKCB} and \cite{BKL}.  Exact solutions of these tests are known so errors are reportable and are reported.}
-
-\iceinputFile{ant\_2006/cdf\_init.py}{}
-
-\iceinputFile{ant\_2006/laplace.py}{}
-
-\iceinputFile{ant\_2006/showdats.m}{}
-
-\iceinputFile{ant\_2006/unproject.c}{}
 
 %         References
 \bibliography{ice_bib}
