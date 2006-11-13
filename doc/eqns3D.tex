@@ -219,7 +219,7 @@ The functions which are approximated by the model, and which are outputs from th
 &\bU_b=u_b\ihat+v_b\jhat &&\text{horizontal velocity at the bed (m/s);}\\
 &&& \text{[components } u_b,v_b \text{ depend on } x,y,t].
 \end{align*}
-Thickness, surface elevation and bed topography are, of course, related by $h=H+b$.
+Thickness, surface elevation and bed topography are, of course, related by $h=H+b$ when the ice is grounded.
 
 Physical constants appear in the text below.  Their values and units are given at the end of this paper.  A more complete index of notation is also given at the end of this paper.
 
@@ -230,7 +230,7 @@ if $\bV=u\ihat+v\jhat$.
 
 \subsection*{Equations of the shallow ice approximation}  The continuity equation for ice \citep{Paterson}, which we think of as the main flow partial differential equation, is
 \begin{equation}\label{Cfirst}
-\ddt{H} = M - \diverg \bQ.
+\ddt{H} = M - S - \diverg \bQ.
 \end{equation}
 By definition, $\bQ$ is the horizontal ice flux
 \begin{equation}\label{flux}
@@ -297,8 +297,8 @@ a_2 \exp\left[-Q_2/(R T^*)\right], &T^*\ge 263 \text{ K} \end{cases}.
 \end{equation}
 Figure \ref{arrfig} below compares these two relations in the relevant range\footnote{I believe this corrects figure 5 of \citep{PayneBaldwin}, and actually shows the phenomenon referred to there: ``The apparent discontinuity in the Hooke relationship near 273 K is due to the sampling interval used to plot this curve.  The relationship is, in fact, continuous throughout.''}.  A further important option in any simulation is the \emph{decoupled} choice, that is $A(T^*)\equiv A_0$.  Note that the \emph{EISMINT} isothermal benchmark \citep{EISMINT96} value of $A_0=10^{-16}$ $\text{Pa}^{-3}$ $\text{a}^{-1}$ corresponds to warm ice in either of the $A(T^*)$ models just mentioned.
 \begin{figure}[ht]
-\regfigure{arrfig}{2}
-\caption{Comparison of Hooke \citep{Hooke} and Paterson--Budd \citep{PatersonBudd} Arrhenius relations.}
+\regfigure{arrfig}{3}
+\caption{Comparison of \citet{Hooke} and \citet{PatersonBudd} Arrhenius relations.}
 \label{arrfig}
 \end{figure}
 
@@ -342,9 +342,11 @@ With $D$ given by \eqref{diffint}, the ice continuity equation \eqref{Cfirst} be
 \end{equation}
 This will be regarded as the primary equation of flow.
 
-It is convenient (and probably only that) to further simplify these expressions by introducing the ``local diffusivity rate''
+It is convenient (and probably only that) to further simplify these expressions by introducing the ``local diffusivity rate per change in depth''
     $$\delta = 2 F(T,\sigma,P) P.$$
-Note $\delta=\delta(x,y,z,t)$.  With this $\delta$, equation \eqref{ss} becomes simply  $\ddz{\bU} = - \delta \, \grad h$.  From expressions \eqref{pressure} for $P$ and \eqref{effstress} for $\sigma$, $\delta$ is determined by temperature, depth and surface slope.  Simplified forms using $\delta$ are
+Note $\delta=\delta(x,y,z,t)$.  With this $\delta$, equation \eqref{ss} becomes simply
+	$$\ddz{\bU} = - \delta \, \grad h.$$
+From expressions \eqref{pressure} for $P$ and \eqref{effstress} for $\sigma$, $\delta$ is determined by temperature, depth and surface slope.  Simplified forms using $\delta$ are
 \begin{equation}\label{UDsimp}
   \bU(z) = - \grad h \int_{b}^z \delta(\zeta) \,d\zeta + \bU_b \quad \text{ and } \quad D = \int_{b}^h \delta(z) (h-z) \,dz
 \end{equation}
@@ -486,6 +488,8 @@ and make the change of variables $(x,y,z,t)\mapsto (x,y,s,t)$.  This replaces $z
 \caption{In $(x,y,s)$ space temperature solves a free boundary problem in which only the upper surface $s=H(x,y,t)$ moves.  Compare to figure \ref{tempbdry}.}
 \label{stempbdry}
 \end{figure}
+
+[FIXME: NEEDED GENERALIZATION:  When floating, replace ``$b$'' with ``$-(\rho_i/\rho_o) H$''.]
 
 Note that the region $\mathcal{R}=\left\{(x,y,s)\big| -L_x\le x \le L_x, -L_y\le y \le L_y, 0\le s \le s_{max}\right\}$ will be divided into a fixed three dimensional finite difference grid.  See section \ref{numsect}.
 
@@ -638,10 +642,10 @@ Similar restrictions on $k$ apply to $\delta,\bU$, etc.~which follow.
 
 From the values of $T$ we compute the local diffusivity $\delta$:
 \begin{align}
-\delta_{i+1/2,k}&=2 \,\mtt{F}(T_{i+1/2,k},P_{i+1/2,k}, \sigma_{i+1/2,k})\,P_{i+1/2,k}, \\
-\delta_{j+1/2,k}&=2 \,\mtt{F}(T_{j+1/2,k},P_{j+1/2,k}, \sigma_{j+1/2,k})\,P_{j+1/2,k}\notag
+\delta_{i+1/2,k}&=2 \,F(T_{i+1/2,k},\sigma_{i+1/2,k},P_{i+1/2,k})\,P_{i+1/2,k}, \\
+\delta_{j+1/2,k}&=2 \,F(T_{j+1/2,k},\sigma_{j+1/2,k},P_{j+1/2,k})\,P_{j+1/2,k}\notag
 \end{align}
-where \mtt{F}$(T,P,\sigma)$ is (one of) the constitutive function(s) defined in subsection 1.3 and appendix A.
+where $F(T,\sigma,P)$ is one of the constitutive functions described earlier.
 
 Again, temporarily, we suppose that the vertical grid spacing is uniform with spacing $\Delta s$.  We compute the integral $I(s)=\int_0^s \delta(s')\,ds'$ in the main table approximately by the \emph{trapezoid} rule:
 \begin{align}
@@ -757,7 +761,7 @@ Method \eqref{fdTemp} has (more or less, obviously) $O(\Delta t,\Delta x,\Delta 
 In any case, \eqref{fdTemp} requires the solution of a system of linear equations in \emph{each vertical column}.  In particular, \eqref{fdTemp} can be rearranged to
 \begin{align}\label{triTemp}
 -R &T_{k+1,l+1} + (1+2R) T_{k,l+1} - R T_{k-1,l+1} \\
-    &\quad = -\Delta t \left(\Up(T_{\cdot,j,k,l} \big|i,u_{ijkl}) + \Up(T_{i,\cdot,k,l} \big|j,v_{ijkl}) + \Up(T_{i,j,\cdot,l} \big|k,\tilde w_{ijkl}) - \Sigma_{ijkl}\right)\notag
+    &\quad = -\Delta t \left(\Up(T_{\cdot,j,k,l} \big|i,u_{ijkl}) + \Up(T_{i,\cdot,k,l} \big|j,v_{ijkl}) + \Up(T_{i,j,\cdot,l} \big|k,\tilde w_{ijkl}) - \Sigma_{ijkl}\right) + T_{k,l}\notag
 \end{align}
 where $R=\frac{K\Delta t}{\Delta s^2}$.  This is a tridiagonal, symmetric, diagonally--dominant system which has an efficient (and accurate) solution by well--known means \citep{Pressetal}.
 
