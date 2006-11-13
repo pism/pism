@@ -29,11 +29,11 @@
 
 \usepackage{amssymb,alltt,verbatim,natbib}
 % check if we are compiling under latex or pdflatex
-\ifx\pdftexversion\undefined
+%\ifx\pdftexversion\undefined
   \usepackage[final,dvips]{graphicx}
-\else
-  \usepackage[final,pdftex]{graphicx}
-\fi
+%\else
+%  \usepackage[final,pdftex]{graphicx}
+%\fi
 
 \theoremstyle{plain}
 \newtheorem*{thm*}{Theorem}
@@ -104,6 +104,7 @@ keepaspectratio=true]{eqns3Deps/#1.eps}}
 \newcommand{\bG}{{\mathbf{G}}}
 \newcommand{\bq}{{\mathbf{q}}}
 \newcommand{\bQ}{{\mathbf{Q}}}
+\newcommand{\bu}{{\mathbf{u}}}
 \newcommand{\bU}{{\mathbf{U}}}
 \newcommand{\bV}{{\mathbf{V}}}
 \newcommand{\ufrac}[2]{\ensuremath{\frac{\text{#1}}{\text{#2}} }}
@@ -153,7 +154,7 @@ We thank the NASA Cryospheric Sciences Program for supporting this research with
 
 \newpage
 \section{Overview}
-Significant features of the continuum model approximated by PISM and described in this paper include:\begin{itemize}
+Significant features of the continuum model approximated by PISM and described in these notes include:\begin{itemize}
 \item The inland ice sheet is modeled with the thermocoupled shallow ice approximation equations \citep{Fowler}, and some temperature-activated basal sliding is allowed.
 \item Ice shelves and ice streams are modeled by equations which assume zero shear strain rate in planes parallel to the geoid.  The equations for ice shelves are standard \citep{Morland,MorlandZainuddin}.  Those for ice streams are the ``dragging ice shelf'' equations of \citep{MacAyeal,MacAyealetal}.
 \item The regions of grounded ice in which the ice stream model is applied are determined, in part, from mass balance velocities, for instance as reported in \citep{BamberVaughanJoughin} for Antarctica.  They could be determined from observed surface velocities, supposing those represent a sufficiently complete set.
@@ -166,46 +167,51 @@ Many of the parts of the model described above are optional.  For instance, the 
 
 The following features are \emph{not} included in the continuum model, and would (or will) require major additions:
 \begin{itemize}
-\item inclusion of all components of the stress tensor (i.e.~longitudinal stresses within the shallow ice approximation region and additional shear stress components in shelves/streams) through either an intermediate order scheme \citep{Blatter,SaitoEISMINT} or the full Stokes equations;
-\item a model for water--content within the ice; in the current model the ice is \emph{cold} and not \emph{polythermal} \citep[compare][]{Greve}, though a basal melt rate is computed;
-\item a model for basal water conservation \citep[compare][]{JohnsonFastook}; in the current model the water produced by basal melt is assumed to be transported away by some unspecified mechanism, though the basal melt rate can influence sliding;
-\item a fully spherical Earth deformation model, for example one descended from the Earth model of \citet{Peltier}.
+\item Inclusion of all components of the stress tensor (i.e.~longitudinal stresses within the shallow ice approximation region and additional shear stress components in shelves/streams) through either an intermediate order scheme \citep{Blatter,SaitoEISMINT} or the full Stokes equations.
+\item A model for water--content within the ice.  In the current model the ice is \emph{cold} and not \emph{polythermal} \citep[compare][]{Greve}.  (On the other hand, in the current model the energy used to melt the ice within a given column, if any, is conserved.  In particular, a layer of basal melt water evolves by conservation of energy in the column.  This layer can activate basal sliding and its energy is available for refreezing.) 
+\item A model for basal water mass conservation in the map-plane \citep[compare][]{JohnsonFastook}.
+\item A fully spherical Earth deformation model, for example one descended from the Earth model of \citet{Peltier}.
 \end{itemize}
 
-Significant features of the numerical method described in this paper and implemented in PISM \citep{pism-web-page}, include:\begin{itemize}
+Significant features of the numerical method described in these notes and implemented in PISM \citep{pism-web-page}, include:\begin{itemize}
 \item Verification \citep{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \citep{BLKCB}, thermocoupled sheet flow \citep{BB,BBL}, the earth deformation model itself \citep{BLKfastearth}, the coupled (isothermal ice flow)/(earth deformation) system \citep{BLKfastearth}, and the MacAyeal equations for ice stream flow \citep{BrownPresentation}.
 \item The code is structurally parallel because the PETSc toolkit is used at all levels \citep{petsc-web-page,petsc-user-ref}.  PETSc manages the MPI-based communication between processors, and provides an interface to parallel numerical linear algebra and other numerical functions.
 \item A moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \citep{Jenssen} change of variables is not used.
 \item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \citep{MortonMayers}.  As described by  \citet{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including the diffusivity-based criteria for the explicit mass continuity scheme and the CFL criteria \citep{MortonMayers} for temperature advection.  The local truncation error is $O(\Delta x,\Delta y,\Delta z,\Delta t)$.
 \item The equations to determine velocity in the ice shelf and ice stream regions are solved by a finite difference method which computes a nonlinear iteration of a Krylov subspace method implemented in PETSc \citep{BrownPresentation,petsc-web-page,petsc-user-ref}.
 \item The bed deformation model is implemented by a new Fourier collocation (spectral) method \citep{BLKfastearth}.
-\item Implementation is in C++ and is object-oriented.  For example, verification is a derived class.
+\item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class.
 \end{itemize}
 
 
 \newpage
 \section{The mathematical model}
 \label{mathmodelsect}
-\subsection*{Notation}  [NOTATION IDEA: use ``$\mathbf{U}$'' for 3D velocity field $\left<u,v,w\right>$ but use ``$\mathbf{u}$'' for map-plane velocity fields $\left<u,v\right>$]
+\subsection*{Notation}  [NOTATION IDEA: use ``$\bu$'' for 3D velocity field $\left<u,v,w\right>$ but use ``$\bU$'' for map-plane velocity fields $\left<u,v\right>$]
 
-The overall domain $\mathcal{D}$ is a rectangular region $(x,y,z)\in [-L_x,L_x]\times [-L_y,L_y]\times[\hmin,\hmax]$, $t\ge 0$.  Surfaces of constant $z$ are parallel to the geoid and $z$ increases as one goes away from the center of the geoid.
+The overall domain $\mathcal{D}$ is a rectangular region $(x,y,z)\in [-L_x,L_x]\times [-L_y,L_y]\times([\text{bed}_{\text{min}},H_{\text{max}}]$, $t\ge 0$.  Note that part of the vertical interval $[\text{bed}_{\text{min}},H_{\text{max}}]=[\text{bed}_{\text{min}},0]\cup[0,H_{\text{max}}]$ is within the bed.  Note $z$ increases as one goes away from the center of the geoid.
 
-The following functions are inputs to the model:
+The model is runs forward in time from an inital time $t_0$.  The following functions are required to initialize the model:
 \begin{align*}
-&b_0(x,y,t) &&\text{ice--free steady state bed elevation (m)}; \\
+&b(x,y,t_0) &&\text{initial bed elevation (m)}; \\
+&H(x,y,t_0) &&\text{initial ice thickness (m)};\\
+&T(x,y,z,t_0) &&\text{initial (absolute) ice temperature (K)}.
+\end{align*}
+
+The following functions are sources for the model:
+\begin{align*}
 &G(x,y,t) &&\text{geophysical heat flux at base of ice (J/$\text{m}^2$s)};\\
-&M(x,y,z,t) &&\text{ice--equivalent accumulation/ablation at all spatial points (m/s)};\\
+&M(x,y,t) &&\text{ice--equivalent accumulation/ablation in the map-plane (m/s)};\\
 &T_s(x,y,z,t) &&\text{surface air temperature (K)}.
 \end{align*}
 
-The functions which are to be approximated by the model are:
+The functions which are approximated by the model, and which are outputs from the model, are:
 \begin{align*}
-&a(x,y,t) &&\text{ice--equivalent accumulation/ablation at the ice surface (m/s)};\\
 &b(x,y,t) &&\text{bed elevation (m)}; \\
 &h(x,y,t) &&\text{ice surface elevation (m)};\\
 &H(x,y,t) &&\text{ice thickness (m)};\\
 &S(x,y,t) &&\text{basal melt rate (m/s);}\\
-&T(x,y,z,t) &&\text{absolute temperature (K)};\\
+&T(x,y,z,t) &&\text{(absolute) ice temperature (K)};\\
 &\tau(x,y,z,t) &&\text{age of the ice (a)};\\
 &\bU=u\ihat+v\jhat &&\text{horizontal velocity (m/s);}\\
 &&& \text{[components } u,v \text{ depend on } x,y,z,t];\\
@@ -213,7 +219,7 @@ The functions which are to be approximated by the model are:
 &\bU_b=u_b\ihat+v_b\jhat &&\text{horizontal velocity at the bed (m/s);}\\
 &&& \text{[components } u_b,v_b \text{ depend on } x,y,t].
 \end{align*}
-Thickness, surface elevation and bed topography are simply related by $h=H+b$.
+Thickness, surface elevation and bed topography are, of course, related by $h=H+b$.
 
 Physical constants appear in the text below.  Their values and units are given at the end of this paper.  A more complete index of notation is also given at the end of this paper.
 
@@ -224,13 +230,13 @@ if $\bV=u\ihat+v\jhat$.
 
 \subsection*{Equations of the shallow ice approximation}  The continuity equation for ice \citep{Paterson}, which we think of as the main flow partial differential equation, is
 \begin{equation}\label{Cfirst}
-\ddt{H} = a - \diverg \bQ
+\ddt{H} = M - \diverg \bQ.
 \end{equation}
-where $a(x,y,t)=M(x,y,h(x,y,t),t)$.  If $M$ actually depends on $z$ then $a$ must be determined by the model; otherwise $a$ is known in advance.  By definition, $\bQ$ is the horizontal ice flux
+By definition, $\bQ$ is the horizontal ice flux
 \begin{equation}\label{flux}
 \bQ = \int_{b}^h \bU\,dz = \bar \bU H.
 \end{equation}
-Evidently $\bar \bU$ is the depth--averaged horizontal velocity.  Though \eqref{Cfirst} is the main equation for flow, \emph{temperature} is the only quantity modelled by a three spatial dimension partial differential equation in this paper.  [NOTE TRUE IF AGE and/or GRAIN SIZE]  See subsection \ref{ss:temp}.
+Evidently $\bar \bU$ is the depth--averaged horizontal velocity.  Though \eqref{Cfirst} is the main equation for flow, \emph{temperature} is the only quantity modelled by a three spatial dimension partial differential equation in this paper.  [NOT TRUE: (AGE and/or GRAIN SIZE)!]  See subsection \ref{ss:temp}.
 
 In what follows we denote by $\sigma_{ij}$ the full stress tensor, $\sigma_{ij}'= \sigma_{ij}- \frac{1}{3} \delta_{ij} \sigma_{kk}$ the deviatoric stress tensor, $\sigma'= \left(\sigma_{ij}' \sigma_{ij}'\right)^{1/2}$  the effective shear stress, and $\dot \eps_{ij}$ the strain rate tensor.
 
@@ -240,13 +246,11 @@ Now, $\bU$ is a vertical integral of the horizontal shear strain rates.  In fact
 \end{equation}
 so $\bU=\int \ddz{\bU} dz$, as discussed in detail in subsection \ref{ss:horvel}.
 
-It is supposed \citep{Fowler,Greve,Hutter93} that these strain rates depend through a constitutive relation on the deviatoric stress and on the temperature.  The constitutive relation is taken to have the form
+It is supposed \citep{Fowler,Hutter93} that these strain rates depend through a constitutive relation on the deviatoric stress and on the temperature.  The constitutive relation is taken to have the form
 \begin{equation}\label{constitutive}
 \dot\eps_{ij}=F(T,\sigma',P)\,\sigma_{ij}'
 \end{equation}
-for a \emph{constitutive function} $F$, discussed in detail in the next section.  Here $T$ is the temperature and $P$ is the (hydrostatic) pressure.  This relation incorporates Nye's generalization \citep{Nye} even if the function $F$ is not given by Glen's power law \citep{Glen} form.  Regarding the interpretation of this law, note that if $\sigma_{ij}'=\eta \dot\eps_{ij}$ for some function $\eta$ then $\eta$ is the \emph{effective viscosity}.  Thus $F$ is an inverse viscosity \citep{Fowler}.
-
-Of course,
+for a \emph{constitutive function} $F$, discussed in detail in the next section.  Here $T$ is the temperature and $P$ is the (hydrostatic) pressure.  This relation incorporates Nye's generalization \citep{Nye} even if the function $F$ is not given by Glen's power law \citep{Glen} form.  Regarding the interpretation of this law, note that if $\sigma_{ij}'=\eta \dot\eps_{ij}$ for some function $\eta$ then $\eta$ is the \emph{effective viscosity}.  Thus $F$ is an inverse viscosity \citep{Fowler}. Of course,
 \begin{equation}\label{pressure}
 P(x,y,z,t)=\rho g (h(x,y,t)-z)
 \end{equation}
@@ -320,8 +324,8 @@ Recalling that the flux $\bQ$ is the vertical integral of $\bU$, the equation
 \bQ = - D\grad h + \bU_b H,
 \end{equation}
 defines a scalar ``diffusivity'' $D$ \citep{vanderVeen} as follows.  Equation \eqref{iceFourier} is essentially ``Fourier's law'' for ice flow, that is, the flux is proportional to the gradient of the height, though the proportionality depends on both thickness and surface slope.  From \eqref{flux} and the above equation for $\bU$,
-\begin{align}
-\label{diffint} D(x,y,t) &= 2 \int_{b}^h \int_{b}^z F(\zeta) P(\zeta)\,d\zeta\,dz = 2 \int_{b}^h F(z)P(z)(h-z)\,dz,\notag
+\begin{align}\label{diffint}
+D(x,y,t) &= 2 \int_{b}^h \int_{b}^z F(\zeta) P(\zeta)\,d\zeta\,dz = 2 \int_{b}^h F(z)P(z)(h-z)\,dz,
 \end{align}
 where $F(z)=F(T,\sigma,P)$ at depth $z$.  The order of integration can be changed, as shown, so as to eliminate one integral.
 
@@ -1107,19 +1111,17 @@ so
 \end{equation}
 in equation \eqref{acrossINTERFACEfd}.  Note that the modified version of \eqref{acrossINTERFACEfd} for this case still depends on $\rho_R$, $c_R$, and $k_R$.  Thus material properties of the bed would still matter, and we believe this is consistent with the physics of the situation.  For instance, the amount of heat from basal friction which enters the ice is in part controlled by how much is lost to the bed, even if we assume no ``heat storage'' in the bed.  (Note that ignoring heat storage in the bed is equivalent to assuming $k_R\partial T/\partial z = -G$ at every point in the bed.  To see why bed material properties should still matter even if there is no heat storage there, consider the extreme case of an ice sheet in contact with a strongly conducting base material like copper.  In any case, if desired one can artificially set the material properties of rock to those of ice if that fits ones purpose, like verification \citep{BBL} or certain simplified experiments \citep{EISMINT00}.)
 
-Now, what is the ``rate of change of thermal energy in $V$''?  First we must note the rigid rule
+Now, what is the ``rate of change of thermal energy in $V$'' in equation \eqref{acrossINTERFACEfd}?  First of all, in all cases we impose the rigid rule
     $$H_{\text{melt}} > 0 \qquad \iff \qquad T_\ast = \Tpmp.$$
-So let's first suppose $H_{\text{melt}} = 0$ and $T_\ast < \Tpmp$.  In this case the energy of the segment $V$ can increase by an increase in $T_\ast$, the representative temperature in $V$.  That is, our approximation is
+Consider the cold case: suppose $H_{\text{melt}} = 0$ and $T_\ast < \Tpmp$.  In this case the energy of the segment $V$ can increase by an increase in $T_\ast$, the representative temperature in $V$.  That is, our approximation is
 \begin{align*}
 \left(\text{rate of change of thermal energy in }V\right) &= \left[\rho_I c_I (\zeta_+ - z_\ast) + \rho_R c_R (z_\ast - \zeta_-)\right] \ddt{T_\ast} \Delta x \Delta y,
 \end{align*}
-which is then equal to the quantity computed in \eqref{acrossINTERFACEfd}.  That is, we determine the rate of change of the basal temperature.  It is possible that at the end of a time step, in this case, the temperature could reach or exceed $\Tpmp$.  In this case we set $T_\ast=\Tpmp$ and set $H_{\text{melt}} = 1\,\text{mm}$.
-
-On the other hand, if $H_{\text{melt}} > 0$ (and thus $T_\ast = \Tpmp$ by the rigid rule above) then
+which is then equal to the quantity computed in \eqref{acrossINTERFACEfd}.  That is, we determine the rate of change of the basal temperature.  It is possible that at the end of a time step, in this case, the temperature could reach or exceed $\Tpmp$.  In this case we set $T_\ast=\Tpmp$ and set $H_{\text{melt}} = 10^{-5}\,\text{m}$.  In the other case, where $H_{\text{melt}} > 0$ (and thus $T_\ast = \Tpmp$ by the rigid rule above),
 \begin{align*}
 \left(\text{rate of change of thermal energy in }V\right) &= L \rho_I \ddt{H_{\text{melt}}} \Delta x \Delta y.
 \end{align*}
-If the resulting predicted $H_{\text{melt}}$ is negative then we set $H_{\text{melt}} = 0$ and $T_\ast=\Tpmp - 0.1\,\text{K}$.
+If the resulting predicted $H_{\text{melt}}$ is negative then we set $H_{\text{melt}} = 0$ and $T_\ast=\Tpmp - 10^{-3}\,\text{K}$.
 
 
 
