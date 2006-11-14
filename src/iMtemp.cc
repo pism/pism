@@ -25,9 +25,19 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   // update temp and age fields
   PetscErrorCode  ierr;
 
-  ierr = ageStep(); CHKERRQ(ierr);  // does CFL and vertical grid blow-out checking
+  PetscScalar  myCFLviolcount = 0.0;  // it is a count but it is "PetscScalar"
+                                      // because that type works with PetscGlobalSum()
+  // do CFL and vertical grid blow-out checking in ageStep() but not temperatureStep()
+  ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);
   ierr = temperatureStep(); CHKERRQ(ierr);
-  
+
+  // no communication done in ageStep(), temperatureStep(); all done here:
+  ierr = DALocalToLocalBegin(grid.da3, vWork3d[0], INSERT_VALUES, vT); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da3, vWork3d[0], INSERT_VALUES, vT); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da3, vWork3d[1], INSERT_VALUES, vtau); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da3, vWork3d[1], INSERT_VALUES, vtau); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -43,7 +53,7 @@ PetscErrorCode IceModel::temperatureStep() {
   const PetscScalar   brK = bedrock.k / (bedrock.rho * bedrock.c_p);
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dz);
 
-  Vec     vTnew = vWork3d[0];
+  Vec     vTnew = vWork3d[0];  // will be communicated by temperatureAgeStep()
   PetscScalar **Ts, **H, **h, **bed, **Ghf, **mask, **basalMeltRate;
   PetscScalar ***T, ***Tb, ***Tnew, ***u, ***v, ***w, ***Sigma;
 
@@ -227,9 +237,7 @@ PetscErrorCode IceModel::temperatureStep() {
 
   // note that in above code 3 scalar fields were modified: vbasalMeltRate, vTb, and vT
   // but (8/03/06) vbasalMeltRate and vTb will never need to communicate ghosted values
-  // (i.e. horizontal stencil neighbors)
-  ierr = DALocalToLocalBegin(grid.da3, vTnew, INSERT_VALUES, vT); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vTnew, INSERT_VALUES, vT); CHKERRQ(ierr);
+  // (i.e. horizontal stencil neighbors);  vT is communicated by temperatureAgeStep()
 
   delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
 
@@ -237,15 +245,14 @@ PetscErrorCode IceModel::temperatureStep() {
 }
 
 
-PetscErrorCode IceModel::ageStep() {
+PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   PetscErrorCode  ierr;
 
   const PetscInt      Mz = grid.p->Mz;
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
   const PetscScalar   cflx = dx/dtTempAge, cfly = dy/dtTempAge, cflz = dz/dtTempAge;
 
-  PetscScalar  myCFLviolcount = 0.0;
-  Vec     vtaunew = vWork3d[1];
+  Vec     vtaunew = vWork3d[1];  // will be communicated by temperatureAgeStep()
   PetscScalar ***u, ***v, ***w, ***tau, ***taunew, **H;
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -266,9 +273,9 @@ PetscErrorCode IceModel::ageStep() {
       for (PetscInt k=0; k<ks; k++) {
         // age evolution is pure advection (so provides check on temp calculation)
         // check CFL conditions at each point, then upwind for age
-        if (PetscAbs(u[i][j][k]) > cflx)  myCFLviolcount++;
-        if (PetscAbs(v[i][j][k]) > cfly)  myCFLviolcount++;
-        if (PetscAbs(w[i][j][k]) > cflz)  myCFLviolcount++;
+        if (PetscAbs(u[i][j][k]) > cflx)  *CFLviol += 1.0;
+        if (PetscAbs(v[i][j][k]) > cfly)  *CFLviol += 1.0;
+        if (PetscAbs(w[i][j][k]) > cflz)  *CFLviol += 1.0;
         PetscScalar     rtau;
         rtau = (u[i][j][k] < 0) ?
           u[i][j][k] * (tau[i+1][j][k] - tau[i][j][k]) / dx :
@@ -296,11 +303,6 @@ PetscErrorCode IceModel::ageStep() {
   ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vtau, &tau); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vtaunew, &taunew); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da3, vtaunew, INSERT_VALUES, vtau); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vtaunew, INSERT_VALUES, vtau); CHKERRQ(ierr);
-
-  ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
   return 0;
 }

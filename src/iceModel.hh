@@ -340,7 +340,7 @@ protected:
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
   PetscErrorCode temperatureStep();
-  PetscErrorCode ageStep();
+  PetscErrorCode ageStep(PetscScalar* CFLviol);
   PetscErrorCode solveTridiagonalSystem(
            const PetscScalar* L, const PetscScalar* D, const PetscScalar* U,
            PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
