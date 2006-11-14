@@ -1013,10 +1013,10 @@ PetscErrorCode IceCompModel::run() {
   adaptReasonFlag = ' '; // no reason for no timestep
   ierr = summary(true,false); CHKERRQ(ierr);  // report starting state
 
-  PetscScalar dt_temperature = 0.0;
   PetscInt    it = 0;
   bool        tempAgeStep;
   
+  dtTempAge = 0.0;
   // main loop
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera, it++) {
     dt_force = -1.0;
@@ -1045,12 +1045,17 @@ PetscErrorCode IceCompModel::run() {
     ierr = determineTimeStep(
              ( (useIsothermalFlux == PETSC_FALSE) 
                && ((testname == 'F') || (testname == 'G')) ) ); CHKERRQ(ierr);
-    // IceModel::dt is now set correctly according to mass-balance-diffusivity,
-    //    CFL criteria, and other criteria from derived class additionalAtStartTimestep()
-
-    // IceModel::dt is now set correctly according to mass-balance and CFL criteria  
-    dt_temperature += dt;
+    dtTempAge += dt;
     grid.p->year += dt / secpera;  // adopt it
+    // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
+    //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
+    //    criteria from derived class additionalAtStartTimestep(), and from 
+    //    IceModel::tempskip mechanism
+
+    // ierr = PetscPrintf(PETSC_COMM_SELF,
+    //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
+    //        CHKERRQ(ierr);
+    
 
     switch (testname) {
       case 'A':
@@ -1070,8 +1075,9 @@ PetscErrorCode IceCompModel::run() {
     
     if (tempAgeStep) {
       // note temps are allowed to go above pressure melting in verify
-      ierr = temperatureStep(PETSC_TRUE, dt_temperature); CHKERRQ(ierr);
-      dt_temperature = 0.0;
+      allowAboveMelting = PETSC_TRUE;
+      ierr = temperatureAgeStep(); CHKERRQ(ierr);
+      dtTempAge = 0.0;
       ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
     } else {
       ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);

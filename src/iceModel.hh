@@ -187,7 +187,7 @@ protected:
 
   // parameters and flags
   PetscScalar muSliding, enhancementFactor, globalMinTemp;
-  PetscScalar dt;                 // current time step in seconds
+  PetscScalar dt, dtTempAge;    // current mass cont. and temp/age time steps in seconds
   PetscScalar maxdt;
   PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
   char        adaptReasonFlag;
@@ -196,7 +196,7 @@ protected:
   PetscScalar constantNuForMacAyeal, macayealRelativeTolerance, macayealEpsilon;
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
-  PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill;
+  PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  showViewers, allowRegridding, beVerbose;
   PetscTruth  createVecs_done;
@@ -338,14 +338,12 @@ protected:
   PetscErrorCode broadcastMacayealVelocity();
 
   // see iMtemp.cc
-  PetscErrorCode temperatureStep(PetscTruth allowAboveMelting, PetscScalar dtT);  // also age step
-  PetscErrorCode solveTridiagonalSystem(const PetscScalar* L,
-                                        const PetscScalar* D,
-                                        const PetscScalar* U,
-                                        PetscScalar* x,
-                                        const PetscScalar* rhs,
-                                        PetscScalar* work,
-                                        const int n) const;
+  PetscErrorCode temperatureAgeStep();
+  PetscErrorCode temperatureStep();
+  PetscErrorCode ageStep();
+  PetscErrorCode solveTridiagonalSystem(
+           const PetscScalar* L, const PetscScalar* D, const PetscScalar* U,
+           PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
 
   // see iMvelocity.cc
   PetscErrorCode velocitySIAstaggered();

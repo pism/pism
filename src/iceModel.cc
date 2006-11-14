@@ -566,9 +566,9 @@ PetscErrorCode IceModel::run() {
   ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
 
   PetscInt    it = 0;
-  PetscScalar dt_temperature = 0.0;
   bool tempAgeStep;
 
+  dtTempAge = 0.0;
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera, it++) {
     dt_force = -1.0;
@@ -597,19 +597,21 @@ PetscErrorCode IceModel::run() {
     
     // adapt time step using velocities and diffusivity, ..., just computed
     ierr = determineTimeStep((useIsothermalFlux != PETSC_TRUE)); CHKERRQ(ierr);
-    // IceModel::dt is now set correctly according to mass-balance-diffusivity,
-    //    CFL criteria, and other criteria from derived class additionalAtStartTimestep()
+    dtTempAge += dt;
+    grid.p->year += dt / secpera;  // adopt it
+    // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
+    //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
+    //    criteria from derived class additionalAtStartTimestep(), and from 
+    //    IceModel::tempskip mechanism
 
     // ierr = PetscPrintf(PETSC_COMM_SELF,
     //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
     //        CHKERRQ(ierr);
-
-    dt_temperature += dt;
-    grid.p->year += dt / secpera;  // adopt it
     
     if ((doTemp == PETSC_TRUE) &&  (tempAgeStep)) { // do temperature and age
-      ierr = temperatureStep(PETSC_FALSE, dt_temperature); CHKERRQ(ierr);
-      dt_temperature = 0.0;
+      allowAboveMelting = PETSC_FALSE;
+      ierr = temperatureAgeStep(); CHKERRQ(ierr);
+      dtTempAge = 0.0;
       ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
     } else {
       ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
