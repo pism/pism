@@ -195,9 +195,10 @@ public:
 };
 
 
-class OceanType : public MaterialType {
+class DumbOceanType : public MaterialType {
 public:
   static PetscScalar rho;
+  static PetscScalar homol_temp;
 };
 
 #endif /* __materials_hh */

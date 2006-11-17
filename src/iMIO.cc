@@ -95,6 +95,12 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = LVecLoad(grid.da3, vtau,     g3, viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);
 
+  ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
+  // FIXME: vHmelt should probably be part of saved state.  In this case the best
+  // procedure would be to *check* if vHmelt was saved, and if so to load it,
+  // otherwise to set it to zero and report that.  Similar behavior for vuplift, 
+  // vtau, others?  Similar behavior for many state variables in loading .nc files!
+
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
   setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
 

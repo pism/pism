@@ -44,6 +44,12 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   setIsDrySimulation(PETSC_TRUE);
 
   f = tgaIce.rho / bedrock.rho;
+  
+  // now make bedrock have same material properties as ice
+  // (note Mbz=0 also, by default, but want ice/rock interface to be pure ice)
+  bedrock.rho = tgaIce.rho;
+  bedrock.c_p = tgaIce.c_p;
+  bedrock.k = tgaIce.k;
 
   // Defaults specific to this pismv
   setTest('F');
@@ -130,6 +136,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
   } else {
     ierr = PetscPrintf(grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
+    grid.p->Mbz = 0; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -139,6 +146,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
     // all have no uplift at start
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
 
     grid.p->year=startYear; // some exact solutions have "absolute time"
     switch (testname) {
@@ -437,8 +445,6 @@ PetscErrorCode IceCompModel::initTestFG() {
   z=new PetscScalar[Mz];
   dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
   dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
-
-  globalMinTemp=Tmin;
 
   ierr = VecSet(vbed, 0); CHKERRQ(ierr);
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);

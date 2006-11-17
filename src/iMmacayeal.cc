@@ -614,3 +614,69 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
   return 0;
 }
 
+
+PetscErrorCode IceModel::correctBasalFrictionalHeating() {
+  // recompute vRb in ice stream (MASK_DRAGGING) locations; zeros vRb in FLOATING
+  PetscErrorCode  ierr;
+  PetscScalar **ub, **vb, **mask, **Rb;
+
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
+        Rb[i][j] = 0.0;
+      }
+      if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useMacayealVelocity)) {
+        const PetscScalar beta = basalDrag(ub[i][j], vb[i][j]);
+        const PetscScalar basal_stress_x = - beta * ub[i][j];
+        const PetscScalar basal_stress_y = - beta * vb[i][j];
+        Rb[i][j] = - basal_stress_x * ub[i][j] - basal_stress_y * vb[i][j];
+      } 
+      // otherwise leave SIA-computed value alone
+    }
+  }
+
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+PetscErrorCode IceModel::correctSigma() {
+  // recompute vSigma in ice stream and shelf (DRAGGING,FLOATING) locations
+ 
+  // FIXME!!  See below.  This is a place-holder which does nothing!!
+   
+  return 0;
+}
+
+/* following fragment of code should be totally re-thought and become correctSigma():
+
+      if (intMask(mask[i][j]) == MASK_SHEET) {
+        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+        for (PetscInt k=0; k<ks; ++k) {
+          Sigmareg[i][j][k] = 0.25 * (Sigma[0][i][j][k] + Sigma[0][i-1][j][k] +
+                                    Sigma[1][i][j][k] + Sigma[1][i][j-1][k]);
+        }
+        for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
+          Sigmareg[i][j][k] = 0.0;
+        }
+      } else { // add ocean heat flux to bottom layer Sigma on ice *shelves*, but 
+        // otherwise set Sigma to zero on ice shelves and ice streams (MacAyeal)
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          Sigma0[i][j][0] = DEFAULT_OCEAN_HEAT_FLUX / (ice.rho * ice.c_p * grid.p->dz);
+        } else {
+          Sigma0[i][j][0] = 0.0;  // no heating in streams at all
+        }
+        for (PetscInt k=1; k<grid.p->Mz; ++k) {
+          Sigma0[i][j][k] = 0.0;
+        }
+
+*/

@@ -84,7 +84,6 @@ public:
   void setIsDrySimulation(PetscTruth);
   void setEnhancementFactor(PetscScalar);
   void setMuSliding(PetscScalar);
-  void setGlobalMinTemp(PetscScalar);
   void setTempskip(PetscInt);
   void setGSIntervalYears(PetscScalar);
   void setBedDefIntervalYears(PetscScalar);
@@ -162,7 +161,7 @@ protected:
    static const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING;  // note less than ice.meltingTemp;
   // if above this value then decide to slide
    static const PetscScalar DEFAULT_INITIAL_AGE_YEARS;  // age for ice to start age computation
-   static const PetscScalar DEFAULT_GRAIN_SIZE;  // size of grains when assumed constant; for gk ice
+   static const PetscScalar DEFAULT_GRAIN_SIZE;  // size of ice grains when assumed constant
 
   // used in iMtemp.cc
   static const PetscScalar DEFAULT_OCEAN_HEAT_FLUX;
@@ -170,13 +169,17 @@ protected:
   IceGrid      &grid;
   IceType      &ice;
   BedrockType  bedrock;
-  OceanType    ocean;
+  DumbOceanType ocean;
+
   Vec          vh, vH, vbed,            // 2D vectors; Mx x My
                vAccum, vTs,             // accumulation, surface temp
                vMask,                   // mask for flow type
-               vGhf, vbasalMeltRate,    // geothermal flux
+               vGhf,                    // geothermal flux
+               vHmelt, vbasalMeltRate,  // thickness and rate of production of 
+                                        // basal melt water (ice-equivalent)
                vuplift,                 
                vub, vvb,                // basal vels on standard grid
+               vRb,                     // basal frictional heating on regular grid
                vubar, vvbar;            // vertically-averaged vels 
                                         //   (u bar and v bar) on standard grid
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
@@ -186,7 +189,7 @@ protected:
   Vec          vTb;                     // 3D bed: Mx x My x Mbz
 
   // parameters and flags
-  PetscScalar muSliding, enhancementFactor, globalMinTemp;
+  PetscScalar muSliding, enhancementFactor;
   PetscScalar dt, dtTempAge;    // current mass cont. and temp/age time steps in seconds
   PetscScalar maxdt;
   PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
@@ -215,10 +218,10 @@ protected:
   // viewer and sounding
   char         diagnostic[PETSC_MAX_PATH_LEN], diagnosticBIG[PETSC_MAX_PATH_LEN];
   PetscViewer  uvbarView[2], nuView[2], NuView[2];
-  PetscViewer  HView, hView, accumView, bedView, basalmeltView, maskView;
+  PetscViewer  HView, hView, accumView, bedView, HmeltView, basalmeltView, maskView;
   PetscViewer  speedView, ubarView, vbarView, ghfView, upliftView, TsView;
   PetscViewer  T2View, TView, uView, vView, wView, SigmaView, SigmaMapView;
-  PetscViewer  slidespeedView, gsView, gsMapView;
+  PetscViewer  slidespeedView, RbView, gsView, gsMapView;
   PetscViewer  dhView, diffusView, tauView, tauMapView, umapView, vmapView, wmapView;
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
@@ -228,7 +231,7 @@ protected:
   Vec g2, g3, g3b;    // Global work vectors
   Vec* vWork3d;
   Vec* vWork2d;
-  static const PetscInt nWork3d=6, nWork2d=8;
+  static const PetscInt nWork3d=6, nWork2d=10;
 
 protected:
 
@@ -336,6 +339,8 @@ protected:
   PetscErrorCode assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs);
   PetscErrorCode moveVelocityToDAVectors(Vec x);
   PetscErrorCode broadcastMacayealVelocity();
+  PetscErrorCode correctSigma();
+  PetscErrorCode correctBasalFrictionalHeating();
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
@@ -346,11 +351,13 @@ protected:
            PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
 
   // see iMvelocity.cc
-  PetscErrorCode velocitySIAstaggered();
-  PetscErrorCode velocitySIAregular();
-  PetscErrorCode storeBasalVelocity();
+  PetscErrorCode velocitySIAStaggered();
+  PetscErrorCode basalSIAConditionsToRegular();
+  PetscErrorCode SigmaSIAToRegular();
+  PetscErrorCode horizontalVelocitySIARegular();
+  PetscErrorCode verticalVelocitySIARegular();
   PetscErrorCode smoothSigma();
-  PetscErrorCode mapStaggeredVelocityToStandard();
+  PetscErrorCode vertAveragedVelocityToRegular();
   PetscErrorCode computeMaxVelocities();
   
   // see iMIO.cc

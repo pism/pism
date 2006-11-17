@@ -64,6 +64,7 @@ PetscErrorCode IceModel::createViewers() {
   } else kspLG = PETSC_NULL;
 
   ierr = createOneViewerIfDesired(&basalmeltView, 'l',"basal melt rate (m/a)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&HmeltView, 'L',"basal melt water thickness (m)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&maskView, 'm',"mask (1=SHEET, 2=DRAG, 3=FLOAT)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&nuView[0], 'n',"nu (I offset)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&nuView[1], 'n',"nu (J offset)");  CHKERRQ(ierr);
@@ -72,6 +73,7 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&upliftView, 'p',"bed uplift rate (m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&slidespeedView, 'q',"log(basal sliding speed) (log_10(m/a))");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&TsView, 'r',"suRface temperature (K)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&RbView, 'R',"basal frictional heating (mW/m^2)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&SigmaView, 's',"Sigma (strain heating; K/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&SigmaMapView, 'S',"Sigma (strain heating; K/a) at kd");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&TView, 't',"T (temperature; K)");  CHKERRQ(ierr);
@@ -105,6 +107,7 @@ PetscErrorCode IceModel::destroyViewers() {
   if (vbarView != PETSC_NULL) { ierr = PetscViewerDestroy(vbarView); CHKERRQ(ierr); }
   if (accumView != PETSC_NULL) { ierr = PetscViewerDestroy(accumView); CHKERRQ(ierr); }
   if (bedView != PETSC_NULL) { ierr = PetscViewerDestroy(bedView); CHKERRQ(ierr); }
+  if (HmeltView != PETSC_NULL) { ierr = PetscViewerDestroy(HmeltView); CHKERRQ(ierr); }
   if (basalmeltView != PETSC_NULL) { ierr = PetscViewerDestroy(basalmeltView); CHKERRQ(ierr); }
   if (ghfView != PETSC_NULL) { ierr = PetscViewerDestroy(ghfView); CHKERRQ(ierr); }
   if (upliftView != PETSC_NULL) { ierr = PetscViewerDestroy(upliftView); CHKERRQ(ierr); }
@@ -118,6 +121,7 @@ PetscErrorCode IceModel::destroyViewers() {
   if (TView != PETSC_NULL) { ierr = PetscViewerDestroy(TView); CHKERRQ(ierr); }
   if (T2View != PETSC_NULL) { ierr = PetscViewerDestroy(T2View); CHKERRQ(ierr); }
   if (TsView != PETSC_NULL) { ierr = PetscViewerDestroy(TsView); CHKERRQ(ierr); }
+  if (RbView != PETSC_NULL) { ierr = PetscViewerDestroy(RbView); CHKERRQ(ierr); }
   if (uView != PETSC_NULL) { ierr = PetscViewerDestroy(uView); CHKERRQ(ierr); }
   if (vView != PETSC_NULL) { ierr = PetscViewerDestroy(vView); CHKERRQ(ierr); }
   if (wView != PETSC_NULL) { ierr = PetscViewerDestroy(wView); CHKERRQ(ierr); }
@@ -466,10 +470,19 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = VecScale(g2, 1000); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
     ierr = VecView(g2, ghfView); CHKERRQ(ierr);
   }
+  if (RbView != PETSC_NULL) {
+    ierr = DALocalToGlobal(grid.da2, vRb, INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecScale(g2, 1000); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
+    ierr = VecView(g2, RbView); CHKERRQ(ierr);
+  }
   if (upliftView != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vuplift, INSERT_VALUES, g2); CHKERRQ(ierr);
     ierr = VecScale(g2, secpera); CHKERRQ(ierr); // Display in m/a
     ierr = VecView(g2, upliftView); CHKERRQ(ierr);
+  }
+  if (HmeltView != PETSC_NULL) {
+    ierr = DALocalToGlobal(grid.da2, vHmelt, INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView(g2, HmeltView); CHKERRQ(ierr);
   }
   if (basalmeltView != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vbasalMeltRate, INSERT_VALUES, g2); CHKERRQ(ierr);

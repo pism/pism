@@ -440,7 +440,7 @@ The single character names are:
 
 \verb|f|:\quad Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
 
-\verb|G|:\quad Map-plane view of basal geothermal heat flux, in milliWatts per meters squared.
+\verb|G|:\quad Map-plane view of basal geothermal heat flux, in milliWatts per meter squared.
 
 \verb|g|:\quad Map-plane view of rate of change in thickness in meters per year.
 
@@ -450,7 +450,9 @@ The single character names are:
 
 \verb|k|:\quad Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.
 
-\verb|l|:\quad Map-plane view of basal melt rate in meter per year.
+\verb|l|:\quad Map-plane view of basal melt rate in meters per year.
+
+\verb|L|:\quad Map-plane view of basal melt water thickness in meters.
 
 \verb|m|:\quad Map-plane view of mask for flow type:  \textbf{1} = grounded shallow ice sheet flow,  \textbf{2} = dragging ice shelf, \textbf{3} = floating ice shelf.
 
@@ -466,7 +468,9 @@ The single character names are:
 
 \verb|r|:\quad Map-plane view of surface temperature in Kelvin.
 
-\verb|S|:\quad Map-plane view of strain heating term $\Sigma=(\rho c_p)^{-1}\sigma |\partial \bU/\partial z|$ in temperature equation, where $\sigma$ is the effective shear stress, in Kelvin per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+\verb|R|:\quad Map-plane view of basal frictional heating in milliWatts per meter squared.
+
+\verb|S|:\quad Map-plane view of strain heating term $\Sigma$ in temperature equation, in Kelvin per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
 \verb|s|:\quad Strain heating term $\Sigma$ in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 

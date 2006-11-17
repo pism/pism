@@ -64,7 +64,6 @@ const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL = PETSC_FALSE;
 const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera; // from Ritz et al (2001)
 const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
 const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
-const PetscScalar DEFAULT_GLOBAL_MIN_TEMP = 190.0;
 
 PetscErrorCode IceModel::setDefaults() {
   PetscErrorCode ierr;
@@ -87,7 +86,6 @@ PetscErrorCode IceModel::setDefaults() {
   constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
-  setGlobalMinTemp(DEFAULT_GLOBAL_MIN_TEMP);
   
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);

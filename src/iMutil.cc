@@ -401,7 +401,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //                      depends on useHomoTemp],
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
-    ierr = PetscPrintf(grid.com, "%10.2f (+%8.4f[%c]):%8.3f%8.3f%9.3f%11.3f%10.3f\n",
+    ierr = PetscPrintf(grid.com, "%10.2f (+%8.4f[%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
                        grid.p->year, dt/secpera, adaptReasonFlag, 
                        gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
                        gdivideT); CHKERRQ(ierr);
@@ -414,18 +414,19 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //    divide thickness (m),
   //    
     ierr = PetscPrintf(grid.com, 
-       "%10.2f (+%8.4f[%c]):%8.3f%8.3f   <same>%11.3f    <same>\n",
+       "%10.2f (+%8.4f[%c]):%8.3f%8.3f   <same>%11.3f    <same>",
        grid.p->year, dt/secpera, adaptReasonFlag, 
        gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
   }
+
+  if (CFLviolcount > 0.5) { // report any CFL violations
+    ierr = PetscPrintf(grid.com,"  [!CFL#=%1.0f]\n",CFLviolcount); CHKERRQ(ierr);
+  } else {
+    ierr = PetscPrintf(grid.com,"\n"); CHKERRQ(ierr);
+  }
   
   if (beVerbose == PETSC_TRUE) {
-    // show additional info:
-    //   original ice ratio ( = (volume of ice which is original)/(totalvolume) ),
-    //   global max of abs(w) in m/a  (if it is not just the default value, which 
-    //       means max|w| was not calculated)
-    //   the number of CFL violations
-    //   the maximum of the diffusivity D on the grid
+    // show additional info
     PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;
     ierr = computeMaxDiffusivity(false); CHKERRQ(ierr); 
@@ -469,11 +470,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
       ierr = PetscPrintf(grid.com, 
            "  fraction of ice which is original: %9.3f\n",
                          origfrac); CHKERRQ(ierr);
-      if (CFLviolcount > 0.5) {
-        ierr = PetscPrintf(grid.com, 
-           "  number of temp CFL violations:        %6.0f\n",
-           CFLviolcount); CHKERRQ(ierr);
-      }
     }
   }
 

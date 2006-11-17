@@ -81,7 +81,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
-  // FIXME: this is clearly tied to antarctica only!
+  // FIXME: following is clearly tied to antarctica only!
   ierr = grid.rescale(280 * 20e3 / 2, 280 * 20e3 / 2, 5000); CHKERRQ(ierr);
 
   if (fname == NULL) { // This can be called from the driver for a default
@@ -197,6 +197,12 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
   setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
+
+  ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
+  // FIXME: vHmelt could probably be part of saved state.  In this case the best
+  // procedure would be to *check* if vHmelt was saved, and if so to load it,
+  // otherwise to set it to zero and report that.  Similar behavior appropriate
+  // for many state variables.
 
   // for now: go ahead and create mask according to (balvel>cutoff) rule
   ierr = createMask(PETSC_TRUE); CHKERRQ(ierr);
@@ -490,7 +496,7 @@ PetscErrorCode IceModel::createMask(PetscTruth balVelRule) {
   useMacayealVelocity = PETSC_FALSE;
   ierr = velocity(false); CHKERRQ(ierr);  // no need to update at depth; just
                                           // want ubar, vbar
-  ierr = mapStaggeredVelocityToStandard(); CHKERRQ(ierr);
+  ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr); // communication here
   useMacayealVelocity = saveUseMacayealVelocity;
   
   // remove deformational from balance velocity to give sliding

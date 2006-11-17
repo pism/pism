@@ -217,13 +217,14 @@ PetscErrorCode IceEISModel::initFromOptions() {
               "initializing simplified geometry experiment %c ... \n", 
               getExperName()); CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-    grid.p->Mbz = 0;
+    grid.p->Mbz = 0; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
     // if no inFile then starts with zero ice
     ierr = VecSet(vh, 0);
     ierr = VecSet(vH, 0);
     ierr = VecSet(vbed, 0);
+    ierr = VecSet(vHmelt, 0.0);
     ierr = VecSet(vGhf, G_geothermal);
     ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS);
     // none use Goldsby-Kohlstedt
@@ -291,6 +292,12 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
   setIsDrySimulation(PETSC_TRUE); // NOT VALID FOR EISMINT-ROSS!!
   setDoGrainSize(PETSC_FALSE);
 
+  // make bedrock material properties into ice properties
+  // (note Mbz=0 always, but want ice/rock interface segment to be all ice)
+  bedrock.rho = ice.rho;
+  bedrock.k = ice.k;
+  bedrock.c_p = ice.c_p;
+  
   if (getExperName() == '0') { // ISMIP-HEINO
     setEnhancementFactor(3.0);
     setOceanKill(PETSC_TRUE);
@@ -364,7 +371,6 @@ PetscErrorCode IceEISModel::initAccumTs() {
     default:
       SETERRQ(1,"\n experiment name unknown in IceEISModel::initAccumTs()\n");
   }
-  globalMinTemp=T_min;
 
   // now fill in accum and surface temp
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);

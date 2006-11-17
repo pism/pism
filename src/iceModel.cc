@@ -150,6 +150,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vvbar); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vub); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vvb); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vRb); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vHmelt); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
 
@@ -202,6 +204,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vvbar); CHKERRQ(ierr);
   ierr = VecDestroy(vub); CHKERRQ(ierr);
   ierr = VecDestroy(vvb); CHKERRQ(ierr);
+  ierr = VecDestroy(vRb); CHKERRQ(ierr);
+  ierr = VecDestroy(vHmelt); CHKERRQ(ierr);
   ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
 
@@ -335,11 +339,6 @@ void IceModel::setEnhancementFactor(PetscScalar e) {
 void IceModel::setMuSliding(PetscScalar mu) {
   muSliding = mu;
 }
-
-void IceModel::setGlobalMinTemp(PetscScalar mintemp) {
-  globalMinTemp = mintemp;
-}
-
 
 void IceModel::setTempskip(PetscInt ts) {
   tempskip = ts;
@@ -633,7 +632,7 @@ PetscErrorCode IceModel::run() {
   return 0;
 }
 
-// not no range checking in these two:
+// note no range checking in these two:
 int IceModel::intMask(PetscScalar maskvalue) {
   return static_cast<int>(floor(maskvalue + 0.5));
 }

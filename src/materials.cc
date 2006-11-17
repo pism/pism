@@ -24,6 +24,25 @@
 PetscScalar MaterialType::gasConst_R = 8.31441; // J/(mol K)    Gas Constant
 PetscScalar MaterialType::grav  = 9.81;         // m/s^2        acceleration of gravity
 
+
+/*
+* BedrockType 
+*/
+PetscScalar BedrockType::k      = 3.0;          // J/(m K s) = W/(m K)    thermal conductivity
+PetscScalar BedrockType::c_p    = 1000;         // J/(kg K)     specific heat capacity
+// for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
+// D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness T = 88 km,
+//    and Poisson's ratio nu = 0.5
+PetscScalar BedrockType::rho    = 3300;         // kg/(m^3)     density
+PetscScalar BedrockType::D      = 5.0e24;       // N m          lithosphere flexural rigidity
+PetscScalar BedrockType::eta    = 1.0e21;       // Pa s         half-space (mantle) viscosity
+
+/*
+* DumbOceanType has constant homologous temperature
+*/
+PetscScalar DumbOceanType::rho      = 1027;         // kg/m         density
+PetscScalar DumbOceanType::homol_temp = 273.15 + 2;  // i.e. 2 deg C
+
 /*
 * IceType
 */
@@ -368,21 +387,3 @@ PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar 
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
-
-
-/*
-* BedrockType 
-*/
-PetscScalar BedrockType::k      = 3.0;          // J/(m K s) = W/(m K)    thermal conductivity
-PetscScalar BedrockType::c_p    = 1000;         // J/(kg K)     specific heat capacity
-// for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
-// D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness T = 88 km,
-//    and Poisson's ratio nu = 0.5
-PetscScalar BedrockType::rho    = 3300;         // kg/(m^3)     density
-PetscScalar BedrockType::D      = 5.0e24;       // N m          lithosphere flexural rigidity
-PetscScalar BedrockType::eta    = 1.0e21;       // Pa s         half-space (mantle) viscosity
-
-/*
-* OceanType
-*/
-PetscScalar OceanType::rho      = 1027;         // kg/m         density
