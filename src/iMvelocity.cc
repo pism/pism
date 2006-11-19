@@ -208,7 +208,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           if (modMask(mask[i][j]) == MASK_FLOATING) {
             Rb[o][i][j] = 0.0;
           } else { // ignor ice streams; will be overwritten by
-                   //   correctBasalFrictionalHeating() if MacAyeal velocities are on
+                   //   correctBasalFrictionalHeating() if useMacAyealVelocities==TRUE
             const PetscScalar P = ice.rho * ice.grav * thickness;
             const PetscScalar basal_stress_x = P * h_x[o][i][j];
             const PetscScalar basal_stress_y = P * h_y[o][i][j];
@@ -401,10 +401,10 @@ PetscErrorCode IceModel::verticalVelocitySIARegular() {
   ierr = DAVecGetArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vWork3d[2], &J[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vWork3d[3], &J[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
     
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -415,7 +415,10 @@ PetscErrorCode IceModel::verticalVelocitySIARegular() {
         const PetscScalar wmain =
                     (J[0][i][j][k]*h_x[0][i][j] - J[0][i-1][j][k]*h_x[0][i-1][j]) / dx
                   + (J[1][i][j][k]*h_y[1][i][j] - J[1][i][j-1][k]*h_y[1][i][j-1]) / dy;
-        w[i][j][k] = wmain + wfromslide - basalMeltRate[i][j];
+        w[i][j][k] = wmain + wfromslide;
+        if (includeBMRinContinuity == PETSC_TRUE) {
+          w[i][j][k] -= capBasalMeltRate(basalMeltRate[i][j]);
+        }
 /* is the following really desirable? is w relative to base of ice or not?:
         if (modMask(mask[i][j]) != MASK_FLOATING) {
           // only add effect of sloped or moving bed if
@@ -443,12 +446,23 @@ PetscErrorCode IceModel::verticalVelocitySIARegular() {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[7], &vb[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vWork3d[2], &J[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vWork3d[3], &J[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
-
+  ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   return 0;
+}
+
+
+PetscScalar IceModel::capBasalMeltRate(const PetscScalar bMR) {
+  const PetscScalar MAX_BASALMELTRATE = 0.5/secpera;
+  if (bMR > MAX_BASALMELTRATE) {
+    return MAX_BASALMELTRATE;
+  } else if (bMR < -MAX_BASALMELTRATE) {
+    return -MAX_BASALMELTRATE;
+  } else {
+    return bMR;
+  }
 }
 
 
@@ -554,15 +568,20 @@ PetscErrorCode IceModel::computeMaxVelocities() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt      ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+      const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
+                                             H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
       for (PetscInt k=0; k<ks; ++k) {
         const PetscScalar au = PetscAbs(u[i][j][k]);
         const PetscScalar av = PetscAbs(v[i][j][k]);
-        const PetscScalar aw = PetscAbs(w[i][j][k]);
         maxu = PetscMax(maxu,au);
         maxv = PetscMax(maxv,av);
-        maxw = PetscMax(maxw,aw);
-        const PetscScalar tempdenom = PetscAbs(au/grid.p->dx) + PetscAbs(av/grid.p->dy)
-          + PetscAbs(aw/grid.p->dz);
+        PetscScalar tempdenom = (0.001/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+        tempdenom += PetscAbs(au/grid.p->dx) + PetscAbs(av/grid.p->dy);
+        if (!isMarginal) {
+          const PetscScalar aw = PetscAbs(w[i][j][k]);
+          maxw = PetscMax(maxw,aw);
+          tempdenom += PetscAbs(aw/grid.p->dz);
+        }
         locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
       }
     }

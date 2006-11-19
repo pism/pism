@@ -70,6 +70,7 @@ public:
   void setShowViewers(PetscTruth);
   void setDoMassBal(PetscTruth);
   void setDoTemp(PetscTruth);
+  void setIncludeBMRinContinuity(PetscTruth);
   void setDoGrainSize(PetscTruth);
   void setDoBedDef(PetscTruth);
   void setDoBedIso(PetscTruth);
@@ -165,6 +166,7 @@ protected:
 
   // used in iMtemp.cc
   static const PetscScalar DEFAULT_OCEAN_HEAT_FLUX;
+  static const PetscScalar DEFAULT_MAX_HMELT;
 
   IceGrid      &grid;
   IceType      &ice;
@@ -194,8 +196,8 @@ protected:
   PetscScalar maxdt;
   PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
   char        adaptReasonFlag;
-  PetscTruth  thermalBedrock, useMacayealVelocity, isDrySimulation;
-  PetscTruth  initialized_p, useConstantNuForMacAyeal;
+  PetscTruth  thermalBedrock, includeBMRinContinuity, isDrySimulation;
+  PetscTruth  useMacayealVelocity, initialized_p, useConstantNuForMacAyeal;
   PetscScalar constantNuForMacAyeal, macayealRelativeTolerance, macayealEpsilon;
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
@@ -349,6 +351,8 @@ protected:
   PetscErrorCode solveTridiagonalSystem(
            const PetscScalar* L, const PetscScalar* D, const PetscScalar* U,
            PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
+  bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
+                      PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
 
   // see iMvelocity.cc
   PetscErrorCode velocitySIAStaggered();
@@ -359,6 +363,7 @@ protected:
   PetscErrorCode smoothSigma();
   PetscErrorCode vertAveragedVelocityToRegular();
   PetscErrorCode computeMaxVelocities();
+  PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;

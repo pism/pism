@@ -42,6 +42,7 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   setThermalBedrock(PETSC_FALSE);
   setUseMacayealVelocity(PETSC_FALSE);
   setIsDrySimulation(PETSC_TRUE);
+  setIncludeBMRinContinuity(PETSC_FALSE);
 
   f = tgaIce.rho / bedrock.rho;
   

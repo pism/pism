@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     IceType*            tempice;
     PetscInt            flowlawNumber = 1;  // use cold part of Paterson-Budd by default
 
-    ierr = PetscPrintf(com, "PISMV (verification mode): "); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
     
     ierr = getFlowLawFromUser(com, tempice, flowlawNumber); CHKERRQ(ierr);
     if (flowlawNumber != 1) {

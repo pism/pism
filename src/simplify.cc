@@ -316,6 +316,7 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
     ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   } else {  // NOT VALID FOR EISMINT-ROSS!!
     setEnhancementFactor(1.0);
+    setIncludeBMRinContinuity(PETSC_FALSE);
     ierr = VecSet(vMask, MASK_SHEET);
   }
 
@@ -582,7 +583,9 @@ PetscErrorCode IceEISModel::additionalAtStartTimestep() {
   // only active for ISMIP-HEINO, for now
 
   if (getExperName() == '0')
-    if (ismipAllowAdapt == PETSC_TRUE) {
+    if ((ismipNoDeliver == PETSC_TRUE) && (ismipAllowAdapt == PETSC_TRUE)) {
+      // do nothing with time step; allow long time step
+    } else if ((ismipNoDeliver == PETSC_FALSE) && (ismipAllowAdapt == PETSC_TRUE)) {
       // go to next integer year
       maxdt_temporary = (1.0 - fmod(grid.p->year, 1.0)) * secpera;
     } else {
@@ -745,7 +748,7 @@ int main(int argc, char *argv[]) {
     IceType*   ice;
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     
-    ierr = PetscPrintf(com, "PISMS (simplified geometry mode): "); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
     
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     IceEISModel m(g, *ice);

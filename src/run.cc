@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     PetscInt   flowlawNumber = 0;  // use Paterson-Budd by default
     IceType*   ice;
 
-    ierr = PetscPrintf(com, "PISMR (run mode): "); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, "PISMR (primary run mode)\n"); CHKERRQ(ierr);
     
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     IceModel m(g, *ice);

@@ -55,11 +55,15 @@ const PetscScalar IceModel::DEFAULT_VERT_VEL_MACAYEAL = 0.0;  // temp evolution 
 const PetscScalar IceModel::DEFAULT_MAX_VEL_FOR_CFL = 1000.0 / secpera;  // 10 km/a
 const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
 //used in iMvelocity.C and iMutil.C
-const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than ice.meltingTemp;
-// if above this value then decide to slide
+const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
+     // ice.meltingTemp; if above this value then decide to slide
 const PetscScalar IceModel::DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
 const PetscScalar IceModel::DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when assumed constant; for gk ice
-const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 1.0;  // 1 W/m^2; about 8 times more heating than peak of Shapiro&Ritzwoller geo heat flux map (i.e. about 130 mW/m^2)
+const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 1.0;  // 1 W/m^2;
+        // about 8 times more heating than peak of 
+        // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
+const PetscScalar IceModel::DEFAULT_MAX_HMELT = 10.0;  // allow no more than 10 m thick basal
+                                                       // melt water layer
 
 
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum) {
@@ -279,6 +283,10 @@ void IceModel::setDoMassBal(PetscTruth do_mb) {
 
 void IceModel::setDoTemp(PetscTruth do_temp) {
   doTemp = do_temp;
+}
+
+void IceModel::setIncludeBMRinContinuity(PetscTruth includeit) {
+  includeBMRinContinuity = includeit;
 }
 
 void IceModel::setDoGrainSize(PetscTruth do_gs) {
@@ -504,9 +512,12 @@ PetscErrorCode IceModel::massBalExplicitStep() {
           + v[i][j] * (v[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy
           + H[i][j] * ((u[i+1][j]-u[i-1][j])/(2*dx) + (v[i][j+1]-v[i][j-1])/(2*dy));
       }
-      PetscScalar dHdt = accum[i][j] - basalMeltRate[i][j] - divQ;
 
-      Hnew[i][j] += dHdt * dt;
+      Hnew[i][j] += (accum[i][j] - divQ) * dt;
+      if (includeBMRinContinuity == PETSC_TRUE) {
+         Hnew[i][j] -= capBasalMeltRate(basalMeltRate[i][j]) * dt;
+      }
+
       if (Hnew[i][j] < 0)
         // apply free boundary rule: negative thickness becomes zero
         Hnew[i][j] = 0.0;
