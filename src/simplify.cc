@@ -217,7 +217,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
               "initializing simplified geometry experiment %c ... \n", 
               getExperName()); CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-    grid.p->Mbz = 0; // overrides options
+//    grid.p->Mbz = 0; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
     // if no inFile then starts with zero ice

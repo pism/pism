@@ -592,8 +592,13 @@ PetscErrorCode IceModel::afterInitHook() {
     ierr = PetscBagView(grid.bag, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(grid.com, 
-             "  [computational box for ice: (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
+             "  [computational box for ice: (%8.2f km) x (%8.2f km) x (%8.2f m",
              2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0,grid.p->Lz); CHKERRQ(ierr);
+    if (grid.p->Mbz > 0) {
+      ierr = PetscPrintf(grid.com," + %7.2f m bedrock)]\n",grid.p->Lbz); CHKERRQ(ierr);
+    } else {
+      ierr = PetscPrintf(grid.com,")]\n"); CHKERRQ(ierr);
+    }
     ierr = PetscPrintf(grid.com, 
              "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
              grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz); CHKERRQ(ierr);
