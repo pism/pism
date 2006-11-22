@@ -112,6 +112,7 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
   createVecs_done = PETSC_FALSE;
+  createViewers_done = PETSC_FALSE;
   ierr = setDefaults();
   if (ierr != 0) {
     PetscPrintf(grid.com, "Error setting defaults.\n");
@@ -121,15 +122,19 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
 
 
 IceModel::~IceModel() {
-  destroyVecs();
-  destroyViewers();
+  if (createVecs_done == PETSC_TRUE) {
+    destroyVecs();
+  }
+  if (createViewers_done == PETSC_TRUE) {
+    destroyViewers();
+  }
 }
 
 
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
 
-  if (createVecs_done) {
+  if (createVecs_done == PETSC_TRUE) {
     ierr = destroyVecs(); CHKERRQ(ierr);
   }
   

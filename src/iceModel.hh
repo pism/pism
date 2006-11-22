@@ -204,7 +204,7 @@ protected:
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  showViewers, allowRegridding, beVerbose;
-  PetscTruth  createVecs_done;
+  PetscTruth  createVecs_done, createViewers_done;
   PetscInt    tempskip, noSpokesLevel;
   PetscScalar gsIntervalYears, bedDefIntervalYears;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type

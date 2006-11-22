@@ -28,17 +28,19 @@ executables= flowTable pismr pismv pisms shelf simpleISO simpleFG
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
 	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
-	iceCompModel.cc iceModel.cc materials.cc 
+	iceModel.cc materials.cc 
 ice_csources= cubature.c
+ICE_OBJS= $(ice_sources:.cc=.o) cubature.o
+
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c
-exec_sources= flowTable.cc simplify.cc run.cc verify.cc get_drag.cc shelf.cc
-exec_csources= simpleISO.c simpleFG.c
+TESTS_OBJS= $(tests_sources:.c=.o)
+
+other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc run.cc\
+	verify.cc iceCompModel.cc get_drag.cc shelf.cc
+other_csources= simpleISO.c simpleFG.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
-	$(exec_sources:.cc=.d) $(exec_csources:.c=.d)
-
-ICE_OBJS= $(patsubst %.cc, %.o, ${ice_sources}) cubature.o
-TESTS_OBJS= exactTestsABCDE.o exactTestsFG.o exactTestH.o
+	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
 include ${PETSC_DIR}/bmake/common/base
 
@@ -62,7 +64,7 @@ get_drag : obj/libpism.so get_drag.o
 pismr : obj/libpism.so run.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
 
-pisms : obj/libpism.so simplify.o
+pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o simplify.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
 
 pismv : obj/libpism.so obj/libtests.so iceCompModel.o verify.o

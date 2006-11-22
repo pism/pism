@@ -89,6 +89,7 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&wView, 'z',"w (velocity; m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&wmapView, 'Z',"w (velocity; m/a) at kd");  CHKERRQ(ierr);
 
+  createViewers_done = PETSC_TRUE;
   return 0;
 }
 
