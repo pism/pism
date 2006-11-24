@@ -64,8 +64,6 @@ PetscErrorCode IceModel::temperatureStep() {
 
   const PetscInt      Mbz = grid.p->Mbz, Mz = grid.p->Mz;
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
-  const PetscScalar   darea = dx * dy;
-  const PetscScalar   dvol = darea * dz;  // only for equally-spaced!
   const PetscScalar   rho_c_I = ice.rho * ice.c_p;
   const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
   const PetscScalar   rho_c_av = (rho_c_I + rho_c_br) / 2.0;// only applies for equal-spaced!
@@ -216,51 +214,28 @@ PetscErrorCode IceModel::temperatureStep() {
         } else {
           const PetscScalar depth = H[i][j] - k * dz;
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
-          if (x[Mbz+k] <= Tpmp) {
-            Tnew[i][j][k] = x[Mbz + k];
-          } else { // T is above pressure-melting temp, so excess temperature
-                   // needs to be turned into melt water at base
-            const PetscScalar dE = rho_c_I * (x[Mbz + k] - Tpmp) * dvol; // always pos.
-            const PetscScalar massmelted = dE / ice.latentHeat;
-            Hmeltnew += massmelted / (ice.rho * darea);  // note: ice-equiv thickness
+          if (x[Mbz + k] > Tpmp) {
             Tnew[i][j][k] = Tpmp;
+            PetscScalar Texcess = x[Mbz + k] - Tpmp;
+            excessToFromBasalMeltLayer(rho_c_I, k * dz, &Texcess, &Hmeltnew);
+            // Texcess  will always come back zero here
+          } else {
+            Tnew[i][j][k] = x[Mbz + k];
           }
         }
       }
       
       // insert solution for ice/rock interface (or base of ice shelf) segment
       if (ks > 0) {
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
-          Tnew[i][j][0] = x[Mbz]; // see above for equation which determines this
-        } else {
+        if ((modMask(mask[i][j]) == MASK_FLOATING) || (allowAboveMelting == PETSC_TRUE)) {
+          Tnew[i][j][0] = x[Mbz]; // see above for equation which determines this for FLOATING
+        } else {  // compute diff between x[Mbz] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * H[i][j];
-          if (Hmeltnew > 0.0) { // have melt water; conservation of energy determines Hmelt; T=Tpmp
-            if (allowAboveMelting == PETSC_TRUE) {
-              SETERRQ(1,"conflict: Hmelt > 0 but allowAboveMelting==TRUE");
-            }
-            const PetscScalar dE = rho_c_av * (x[Mbz] - Tpmp) * dvol; // could be negative!
-            const PetscScalar massmelted = dE / ice.latentHeat; // could be negative
-            Hmeltnew += massmelted / (ice.rho * darea);
-            if (Hmeltnew <= 0.0) {
-              Hmeltnew = 0.0;
-              Tnew[i][j][0] = Tpmp - 1e-3;
-            } else {
-              Tnew[i][j][0] = Tpmp;
-            }
-          } else {  // Hmelt=0.0 from previous step, and no melt from above
-            if (allowAboveMelting == PETSC_TRUE) {
-              Tnew[i][j][0] = x[Mbz];
-            } else {
-              if (x[Mbz] <= Tpmp) {
-                Tnew[i][j][0] = x[Mbz];
-              } else { // T is above pressure-melting temp, so excess temperature
-                       // needs to be turned into melt water at base
-                const PetscScalar dE = rho_c_av * (x[Mbz] - Tpmp) * dvol; // always pos.
-                const PetscScalar massmelted = dE / ice.latentHeat;
-                Hmeltnew = massmelted / (ice.rho * darea); // was zero, so set
-                Tnew[i][j][0] = Tpmp;
-              }
-            }
+          PetscScalar Texcess = x[Mbz] - Tpmp;
+          excessToFromBasalMeltLayer(rho_c_av, 0.0, &Texcess, &Hmeltnew);
+          Tnew[i][j][0] = Tpmp + Texcess;
+          if (Tnew[i][j][0] > (Tpmp + 0.00001)) {
+            SETERRQ(1,"updated temperature came out above Tpmp");
           }
         }
       } else {
@@ -309,6 +284,51 @@ PetscErrorCode IceModel::temperatureStep() {
   delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
   return 0;
 }
+
+
+PetscErrorCode IceModel::excessToFromBasalMeltLayer(
+                PetscScalar rho_c, PetscScalar z,
+                PetscScalar *Texcess, PetscScalar *Hmelt) {
+
+  const PetscScalar darea = grid.p->dx * grid.p->dy;
+  const PetscScalar dvol = darea * grid.p->dz;  // only for equally-spaced!
+  const PetscScalar dE = rho_c * (*Texcess) * dvol;
+  const PetscScalar massmelted = dE / ice.latentHeat;
+
+  if (allowAboveMelting == PETSC_TRUE) {
+    SETERRQ(1,"excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
+  }
+  if (*Texcess >= 0.0) {
+    // T is at or above pressure-melting temp, so temp needs to be set to 
+    // pressure-melting, and a fraction of excess energy
+    // needs to be turned into melt water at base
+    // note massmelted is POSITIVE!
+    const PetscScalar FRACTION_TO_BASE
+                           = (z < 100.0) ? 0.4 * (100.0 - z) / 100.0 : 0.0;
+    *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice.rho * darea);  // note: ice-equiv thickness
+    *Texcess = 0.0;
+  } else {  
+    // Texcess negative; only refreeze (i.e. reduce Hmelt) if at base and Hmelt > 0.0
+    // note ONLY CALLED IF AT BASE!
+    // note massmelted is NEGATIVE!
+    if (z > 0.00001) {
+      SETERRQ(1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
+    }
+    if (*Hmelt > 0.0) {
+      const PetscScalar thicknessToFreezeOn = - massmelted / (ice.rho * darea);
+      if (thicknessToFreezeOn <= *Hmelt) { // the water *is* available to freeze on
+        *Hmelt -= thicknessToFreezeOn;
+        *Texcess = 0.0;
+      } else { // only refreeze Hmelt thickness of water; update Texcess
+        *Hmelt = 0.0;
+        const PetscScalar dTemp = ice.latentHeat * ice.rho * (*Hmelt) / (rho_c * grid.p->dz);
+        *Texcess += dTemp;
+      }
+    } 
+    // note: if *Hmelt == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
+  }
+  return 0;
+}                           
 
 
 PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {

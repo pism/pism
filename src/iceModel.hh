@@ -353,6 +353,8 @@ protected:
            PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
   bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
+  PetscErrorCode excessToFromBasalMeltLayer(PetscScalar rho_c, PetscScalar z,
+                                            PetscScalar *Texcess, PetscScalar *Hmelt);
 
   // see iMvelocity.cc
   PetscErrorCode velocitySIAStaggered();
