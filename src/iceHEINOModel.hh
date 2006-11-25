@@ -39,6 +39,12 @@ private:
     PetscTruth inFileSet;
     PetscInt   flowlawNumber;
  
+    char         ismipRunName[3], heinodatprefix[20];
+    PetscTruth   ismipNoDeliver, ismipAllowAdapt;
+    PetscInt     ismipHeinoRun;
+    PetscViewer  ts[2], tss[3], tsp[7][3]; // viewers (ASCII .dat files) for HEINO
+    PetscScalar  C_S;  // soft sediment sliding parameter
+    
     PetscErrorCode setExperNameFromOptions();
     PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
@@ -47,10 +53,6 @@ private:
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
          const PetscScalar mu);
     
-    char         ismipRunName[3], heinodatprefix[20];
-    PetscTruth   ismipNoDeliver, ismipAllowAdapt;
-    PetscInt     ismipHeinoRun;
-    PetscViewer  ts[2], tss[3], tsp[7][3]; // viewers (ASCII .dat files) for HEINO
     PetscErrorCode heinoCreateDat();
     PetscErrorCode heinoCloseDat();
     bool inSoftSediment(const PetscScalar x, const PetscScalar y);

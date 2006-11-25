@@ -215,6 +215,12 @@ PetscErrorCode IceHEINOModel::applyDefaultsForExperiment() {
   bedrock.c_p = ice.c_p;
   
   if (getExperName() == '0') { // ISMIP-HEINO
+
+    C_S = 500 / secpera;
+    if (ismipHeinoRun == 5) C_S = 100 / secpera; // S1
+    if (ismipHeinoRun == 6) C_S = 200 / secpera; // S2
+    if (ismipHeinoRun == 7) C_S = 1000 / secpera; // S3
+        
     ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -228,6 +234,7 @@ PetscErrorCode IceHEINOModel::applyDefaultsForExperiment() {
       }
     }
     ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
   } else {
     SETERRQ(1,"NO OTHER ISMIP EXPERIMENTS IMPLEMENTED");
   }
@@ -240,23 +247,34 @@ PetscErrorCode IceHEINOModel::initAccumTs() {
   PetscErrorCode    ierr;
   PetscScalar       **accum, **Ts;
 
-  const PetscScalar  b_max = 0.3 / secpera;
-  const PetscScalar  b_min = 0.15 / secpera;
   const PetscScalar  S_T = 2.5e-9 / 1e9; // 2.5e-9 K km^-3
-  const PetscScalar  T_min = 233.15;
+  PetscScalar  T_min = 233.15;
+  if (ismipHeinoRun == 1) T_min = 223.15; // T1
+  if (ismipHeinoRun == 2) T_min = 243.15; // T2
+    
+  PetscScalar  b_min = 0.15 / secpera;
+  PetscScalar  b_max = 0.3 / secpera;
+  if (ismipHeinoRun == 3) { // B1
+    b_min = 0.075 / secpera;
+    b_max = 0.15 / secpera;
+  }
+  if (ismipHeinoRun == 4) { // B2
+    b_min = 0.3 / secpera;
+    b_max = 0.6 / secpera;
+  }
 
   // now fill in accum and surface temp
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // r is distance from center of grid
-      const PetscScalar r = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
+      // d is distance from center of grid
+      const PetscScalar d = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
                                   + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
       // set accumulation
-      accum[i][j] = b_min + ((b_max - b_min) / 2000e3) * r;
+      accum[i][j] = b_min + ((b_max - b_min) / 2000e3) * d;
       // set surface temperature
-      Ts[i][j] = T_min + S_T * r * r * r;
+      Ts[i][j] = T_min + S_T * d * d * d;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
@@ -301,11 +319,13 @@ bool IceHEINOModel::inSoftSediment(const PetscScalar x, const PetscScalar y) {
 }
 
 
-// reimplement IceModel::basal()
+// reimplement IceModel::basal(): location-dependent pressure-melting-temperature-activated
+  // linear *or nonlinear* sliding law.  Returns positive coefficient C in the law
+  //                U_b = <u_b,v_b> = - C grad h 
+  // note: ignors mu
 PetscScalar IceHEINOModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
-  // note this version ignors mu
   
   if (getExperName() == '0') { // ISMIP-HEINO
     //PetscErrorCode  ierr = PetscPrintf(grid.com, 
@@ -316,8 +336,8 @@ PetscScalar IceHEINOModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar  xIH = x + grid.p->Lx,
                          yIH = y + grid.p->Ly;
       if (inSoftSediment(xIH,yIH)) {
-        // "soft sediment"; C_S = 500 a^-1
-        return (500 / secpera) * H;
+        // see applyDefaultsForExperiment() for setting C_S
+        return C_S * H;
       } else {
         // "hard rock"; C_R = 10^5 a^-1; alpha = |grad h|
         return (1e5 /secpera) * H * alpha * alpha;
@@ -334,7 +354,7 @@ PetscScalar IceHEINOModel::basal(const PetscScalar x, const PetscScalar y,
 PetscErrorCode IceHEINOModel::heinoCreateDat() {
   PetscErrorCode  ierr;
   char            tsname[2][4], tssname[3][5], tspname[3][4];
-  char            filename[40];
+  char            filename[40],basefilename[30];
 
 /* files are "PISMHEINO_##_??.dat" where ##=ismipRunName and ?? is one of the 
    following:
@@ -351,7 +371,13 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
                   tsp7_it, tsp7_hbt, tsp7_bfh
 */
 
-  ierr = PetscPrintf(grid.com, "creating ISMIP-HEINO deliverable files ...\n", filename); CHKERRQ(ierr);
+  strcpy(basefilename,heinodatprefix);
+  strcat(basefilename,"_");
+  strcat(basefilename,ismipRunName);
+  ierr = PetscPrintf(grid.com,
+            "creating ISMIP-HEINO deliverable files named %s_???.dat ...\n",
+            basefilename); CHKERRQ(ierr);
+
   strcpy(tsname[0],"iv");
   strcpy(tsname[1],"tba");
   strcpy(tssname[0],"ait");
@@ -363,9 +389,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
   
   // create global time series viewers (i.e. ASCII .dat files)
   for (PetscInt i=0; i<2; i++) {
-    strcpy(filename,heinodatprefix);
-    strcat(filename,"_");
-    strcat(filename,ismipRunName);
+    strcpy(filename,basefilename);
     strcat(filename,"_ts_");
     strcat(filename,tsname[i]);
     strcat(filename,".dat");
@@ -377,9 +401,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
 
   // create sediment region time series viewers (i.e. ASCII .dat files)
   for (PetscInt i=0; i<3; i++) {
-    strcpy(filename,heinodatprefix);
-    strcat(filename,"_");
-    strcat(filename,ismipRunName);
+    strcpy(filename,basefilename);
     strcat(filename,"_tss_");
     strcat(filename,tssname[i]);
     strcat(filename,".dat");
@@ -392,9 +414,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
   // create P1,...,P7 time series viewers (i.e. ASCII .dat files)
   for (PetscInt j=0; j<7; j++) {
     for (PetscInt i=0; i<3; i++) {
-      strcpy(filename,heinodatprefix);
-      strcat(filename,"_");
-      strcat(filename,ismipRunName);
+      strcpy(filename,basefilename);
       strcat(filename,"_tsp");
       const char nums[]="1234567";
       char       foo[]="A";
@@ -409,6 +429,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
 //      ierr = PetscViewerASCIIPrintf(tsp[j][i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
     }
   }
+
   return 0;
 }
 
