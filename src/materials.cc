@@ -18,16 +18,10 @@
 
 #include "materials.hh"
 
-/*
-* MaterialType
-*/
 PetscScalar MaterialType::gasConst_R = 8.31441; // J/(mol K)    Gas Constant
 PetscScalar MaterialType::grav  = 9.81;         // m/s^2        acceleration of gravity
 
 
-/*
-* BedrockType 
-*/
 PetscScalar BedrockType::k      = 3.0;          // J/(m K s) = W/(m K)    thermal conductivity
 PetscScalar BedrockType::c_p    = 1000;         // J/(kg K)     specific heat capacity
 // for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
@@ -37,15 +31,10 @@ PetscScalar BedrockType::rho    = 3300;         // kg/(m^3)     density
 PetscScalar BedrockType::D      = 5.0e24;       // N m          lithosphere flexural rigidity
 PetscScalar BedrockType::eta    = 1.0e21;       // Pa s         half-space (mantle) viscosity
 
-/*
-* DumbOceanType has constant homologous temperature
-*/
-PetscScalar DumbOceanType::rho      = 1027;         // kg/m         density
-PetscScalar DumbOceanType::homol_temp = 273.15 + 2;  // i.e. 2 deg C
+// DumbOceanType has nothing but density
+PetscScalar DumbOceanType::rho      = 1027;     // kg/m         density
 
-/*
-* IceType
-*/
+
 PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
 PetscScalar IceType::rho    = 910;          // kg/m^3       density
 PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
@@ -87,9 +76,6 @@ IceType::effectiveViscosityColumn(const PetscScalar H,
 #endif
 }
 
-/*
-* GlenIce
-*/
 PetscScalar GlenIce::hardness_a = 135720960.;
 PetscScalar GlenIce::softness_A = 4.0e-25;
 PetscInt    GlenIce::n = 3;
@@ -101,9 +87,7 @@ PetscScalar GlenIce::exponent() const {
   return n;
 }
 
-/*
-* ThermoGlenIce
-*/
+// ThermoGlenIce is Paterson-Budd
 PetscScalar ThermoGlenIce::A_cold = 3.61e-13;   // Pa^-3 / s
 PetscScalar ThermoGlenIce::A_warm = 1.73e3; // Pa^-3 / s
 PetscScalar ThermoGlenIce::Q_cold = 6.0e4;      // J / mol
@@ -162,29 +146,25 @@ PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
 }
 
 
-/*
-* ThermoGlenIceHooke: only change A(T) factor from ThermoGlenIce, which is
-* Paterson-Budd
-*/
+// ThermoGlenIceHooke: only change A(T) factor from ThermoGlenIce, which is
+// Paterson-Budd
 PetscScalar ThermoGlenIceHooke::Q_Hooke = 7.88e4;       // J / mol
 // A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa
 PetscScalar ThermoGlenIceHooke::A_Hooke = 4.42165e-9;    // s^-1 Pa^-3
-PetscScalar ThermoGlenIceHooke::C_Hooke = 0.16612;       // Kelvin^K_Hooke  (yeah, no shit this is the right units ...)
+PetscScalar ThermoGlenIceHooke::C_Hooke = 0.16612;       // Kelvin^K_Hooke
 PetscScalar ThermoGlenIceHooke::K_Hooke = 1.17;          // [unitless]
 PetscScalar ThermoGlenIceHooke::Tr_Hooke = 273.39;       // Kelvin
 PetscScalar ThermoGlenIceHooke::R_Hooke = 8.321;         // J mol^-1 K^-1
 
 PetscScalar ThermoGlenIceHooke::softnessParameter(PetscScalar T) const {
-  
+
   return A_Hooke * exp( -Q_Hooke/(R_Hooke * T)
                        + 3.0 * C_Hooke * pow(Tr_Hooke - T,-K_Hooke));
 }
 
 
-/*
-* ThermoGlenArrIce and ThermoGlenArrIceWarm: cold and warm parts, respectively,
-* (i.e. simple Arrhenius) of Paterson-Budd
-*/
+// ThermoGlenArrIce and ThermoGlenArrIceWarm: cold and warm parts, respectively,
+// (i.e. simple Arrhenius) of Paterson-Budd
 PetscScalar ThermoGlenArrIce::softnessParameter(PetscScalar T) const {
   return A() * exp(-Q()/(gasConst_R * T));
 }
@@ -211,11 +191,7 @@ PetscScalar ThermoGlenArrIceWarm::Q() const {
 }
 
 
-
-
-/*
-* HybridIce: Goldsby-Kohlstedt in ice sheets, Glen-Paterson-Budd in MacAyeal regions
-*/
+// HybridIce is Goldsby-Kohlstedt in ice sheets, Glen-Paterson-Budd in MacAyeal regions
 PetscScalar HybridIce::V_act_vol    = -13.e-6;  // m^3/mol
 PetscScalar HybridIce::d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
 //--- dislocation creep ---
@@ -347,6 +323,8 @@ GKparts HybridIce::flowParts(const PetscScalar stress, const PetscScalar temp,
 /*****************/
 
 
+// HybridIceStripped is a simplification of Goldsby-Kohlstedt; compare that
+// used in Peltier et al 2000, which is even simpler
 PetscScalar HybridIceStripped::d_grain_size_stripped = 3.0e-3;
                                     // m; = 3mm  (see Peltier et al 2000 paper)
 
@@ -377,11 +355,11 @@ PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar 
   eps_basal = basal_A * pow(stress, basal_n-1) * exp(-basal_Q/RT);
   // Grain Boundary Sliding
   if (T > gbs_crit_temp)
-    eps_gbs = gbs_A_warm * 
+    eps_gbs = gbs_A_warm *
               (pow(stress, gbs_n-1) / pow(d_grain_size_stripped, p_grain_sz_exp)) *
               exp(-gbs_Q_warm/RT);
   else
-    eps_gbs = gbs_A_cold * 
+    eps_gbs = gbs_A_cold *
               (pow(stress, gbs_n-1) / pow(d_grain_size_stripped, p_grain_sz_exp)) *
               exp(-gbs_Q_cold/RT);
 

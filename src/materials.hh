@@ -38,7 +38,7 @@ GlenIce           means *isothermal* Glen flow law ice.
 ThermoGlenIce     means *Paterson-Budd* version of Arhennius relation
 HybridIce         means *Goldsby-Kohlstedt* flow law where vMask=SHEET,
                   and otherwise Paterson-Budd
-HybridIceStripped means, where SHEET, G-K without the pressure dependence and without the 
+HybridIceStripped means, where SHEET, G-K without the pressure dependence and without the
                   diffusional part; also grain size fixed at 3mm
 Note each IceType has both a forward flow law ("flow") and an
 inverted-and-vertically-integrated flow law ("effectiveViscosityColumn").  Only the
@@ -198,7 +198,6 @@ public:
 class DumbOceanType : public MaterialType {
 public:
   static PetscScalar rho;
-  static PetscScalar homol_temp;
 };
 
 #endif /* __materials_hh */

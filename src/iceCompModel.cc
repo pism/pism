@@ -137,7 +137,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
   } else {
     ierr = PetscPrintf(grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-    grid.p->Mbz = 0; // overrides options
+//    grid.p->Mbz = 0; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -441,7 +441,7 @@ PetscErrorCode IceCompModel::updateTestISO() {
 PetscErrorCode IceCompModel::initTestFG() {
   PetscErrorCode  ierr;
   PetscInt        Mz=grid.p->Mz;
-  PetscScalar     **H, **accum, **Ts, ***T;
+  PetscScalar     **H, **accum, **Ts, ***T, ***Tb;
   PetscScalar     *z, *dummy1, *dummy2, *dummy3, *dummy4;
   z=new PetscScalar[Mz];
   dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
@@ -455,6 +455,7 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
   for (PetscInt k=0; k<Mz; k++)
     z[k]=k*grid.p->dz;
@@ -478,6 +479,12 @@ PetscErrorCode IceCompModel::initTestFG() {
                      &H[i][j],&accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
         }
       }
+      if (grid.p->Mbz > 0) { 
+        // normally no bedrock, but if so fill with basal temp increased by
+        // geothermal flux
+        for (PetscInt k=0; k<grid.p->Mbz; k++)
+          Tb[i][j][k] = T[i][j][0] + ice.k * (grid.p->Mbz - k) * grid.p->dz * Ggeo;
+      }
     }
   }
 
@@ -485,13 +492,10 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vTs, INSERT_VALUES, vTs); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vTs, INSERT_VALUES, vTs); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
 
@@ -579,8 +583,7 @@ PetscErrorCode IceCompModel::updateTestFG() {
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
+
   ierr = DALocalToLocalBegin(grid.da3, vSigma, INSERT_VALUES, vSigma); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vSigma, INSERT_VALUES, vSigma); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da3, vSigmaComp, INSERT_VALUES, vSigmaComp); CHKERRQ(ierr);

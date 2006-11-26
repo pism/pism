@@ -104,7 +104,8 @@ PetscErrorCode IceModel::temperatureStep() {
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dz));
       // go ahead and assume ks < Mz; see ageStep() for check
 
-      // only effect of this is whether vertical velocities are used in advection
+      // if isMarginal then only do vertical conduction for ice (i.e. ignor advection
+      // and strain heating if isMarginal)
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
       
@@ -112,7 +113,7 @@ PetscErrorCode IceModel::temperatureStep() {
         // basal condition (at bottom of bedrock when temp is modelled in bedrock)
         // {from FV (finite volume) across bedrock base z_0}
         D[0] = (1 + brR);  U[0] = -brR;  // note L[0] not an allocated location
-        rhs[0] = Tb[i][j][0] + (dtTempAge * brK * Ghf[i][j] / dz);
+        rhs[0] = Tb[i][j][0] + dtTempAge * Ghf[i][j] / (rho_c_br * dz);
       
         // bedrock only: pure vertical conduction problem
         // {from generic bedrock FV}
@@ -123,20 +124,29 @@ PetscErrorCode IceModel::temperatureStep() {
       }
       
       // bottom part of ice (and top of bedrock in some cases): k=Mbz eqn
-      if (ks == 0) { // no ice
+      if (ks == 0) { // no ice; set T[i][j][0] to surface temp
         if (Mbz > 0) { L[Mbz] = 0.0; } // note L[0] not allocated 
         D[Mbz] = 1.0; U[Mbz] = 0.0;
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
-          rhs[Mbz] = ocean.homol_temp;
-        } else {
-          rhs[Mbz] = Ts[i][j]; 
-        } 
+        rhs[Mbz] = Ts[i][j]; 
       } else { // ks > 0; there is ice
         if (modMask(mask[i][j]) == MASK_FLOATING) {
-          // base of ice shelf: eqn to set T[i][j][0] to 2 deg above T_pmp
-          if (Mbz > 0) { L[Mbz] = 0.0; }
-          D[Mbz] = 1.0; U[Mbz] = 0.0;
-          rhs[Mbz] = ocean.homol_temp - ice.beta_CC_grad * H[i][j];
+          // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
+          // by ocean flux; note volume for which energy is being computed is 
+          // *half* a segment
+          if (Mbz > 0) { L[Mbz] = 0.0; } // note L[0] not allocated 
+          D[Mbz] = 1+iceR; U[Mbz] = -iceR;
+          rhs[Mbz] = T[i][j][0] + dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dz);
+          if (!isMarginal) {
+            const PetscScalar UpTu = (u[i][j][0] < 0) ?
+                u[i][j][0] * (T[i+1][j][0] - T[i][j][0]) / dx :
+                u[i][j][0] * (T[i][j][0] - T[i-1][j][0]) / dx;
+            const PetscScalar UpTv = (v[i][j][0] < 0) ?
+                v[i][j][0] * (T[i][j+1][0] - T[i][j][0]) / dy :
+                v[i][j][0] * (T[i][j][0] - T[i][j-1][0]) / dy;
+            // for w, always upwind *up* from base
+            const PetscScalar UpTw = w[i][j][0] * (T[i][j][1] - T[i][j][0]) / dz;
+            rhs[Mbz] += dtTempAge * (Sigma[i][j][0] - UpTu - UpTv - UpTw) / 2;
+          }
         } else { // there is *grounded* ice; ice/bedrock interface
           // {from FV across interface}
           const PetscScalar rho_c_ratio = rho_c_I / rho_c_av;
@@ -218,7 +228,7 @@ PetscErrorCode IceModel::temperatureStep() {
             Tnew[i][j][k] = Tpmp;
             PetscScalar Texcess = x[Mbz + k] - Tpmp;
             excessToFromBasalMeltLayer(rho_c_I, k * dz, &Texcess, &Hmeltnew);
-            // Texcess  will always come back zero here
+            // Texcess  will always come back zero here; ignor it
           } else {
             Tnew[i][j][k] = x[Mbz + k];
           }
@@ -227,12 +237,18 @@ PetscErrorCode IceModel::temperatureStep() {
       
       // insert solution for ice/rock interface (or base of ice shelf) segment
       if (ks > 0) {
-        if ((modMask(mask[i][j]) == MASK_FLOATING) || (allowAboveMelting == PETSC_TRUE)) {
-          Tnew[i][j][0] = x[Mbz]; // see above for equation which determines this for FLOATING
+        if (allowAboveMelting == PETSC_TRUE) {
+          Tnew[i][j][0] = x[Mbz];
         } else {  // compute diff between x[Mbz] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * H[i][j];
           PetscScalar Texcess = x[Mbz] - Tpmp;
-          excessToFromBasalMeltLayer(rho_c_av, 0.0, &Texcess, &Hmeltnew);
+          if (modMask(mask[i][j]) == MASK_FLOATING) {
+             // when floating, only half a segment has had its temperature raised
+             // above Tpmp
+             excessToFromBasalMeltLayer(rho_c_I/2, 0.0, &Texcess, &Hmeltnew);
+          } else {
+             excessToFromBasalMeltLayer(rho_c_av, 0.0, &Texcess, &Hmeltnew);
+          }
           Tnew[i][j][0] = Tpmp + Texcess;
           if (Tnew[i][j][0] > (Tpmp + 0.00001)) {
             SETERRQ(1,"updated temperature came out above Tpmp");

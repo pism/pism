@@ -62,13 +62,14 @@ const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_MACAYEAL_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL = PETSC_FALSE;
-const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera; // from Ritz et al (2001)
+ // for next value, compare Ritz et al (2001)
+const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera;
 const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
 const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
 
 PetscErrorCode IceModel::setDefaults() {
   PetscErrorCode ierr;
-    
+
   //ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
   initialized_p = PETSC_FALSE;
 
@@ -87,7 +88,7 @@ PetscErrorCode IceModel::setDefaults() {
   constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
-  
+
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);
   setAllGMaxVelocities(DEFAULT_MAX_VEL_FOR_CFL);
@@ -106,7 +107,7 @@ PetscErrorCode IceModel::setDefaults() {
   setTempskip(DEFAULT_TEMPSKIP);
   setAllowRegridding(PETSC_TRUE);
   setNoSpokes(DEFAULT_NOSPOKESLEVEL);
-  
+
   setIsothermalFlux(PETSC_FALSE, DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT,
                     DEFAULT_ISOTHERMAL_FLUX_A_SOFTNESS);
   return 0;
