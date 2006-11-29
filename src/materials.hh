@@ -57,25 +57,26 @@ public:
   static PetscScalar meltingTemp;
 
   virtual ~IceType() {}
-  virtual PetscScalar flow(const PetscScalar stress) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure, const PetscScalar age) const;
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H,
-                                               const PetscScalar dz,
-                                               const PetscScalar u_x,
-                                               const PetscScalar u_y,
-                                               const PetscScalar v_x,
-                                               const PetscScalar v_y,
-                                               const PetscScalar *T1,
-                                               const PetscScalar *T2) const;
+                           const PetscScalar pressure, const PetscScalar gs) const;
+  // this one returns \nu:
+  virtual PetscScalar effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar temp, const PetscScalar pressure) const;
+  // this one returns \nu * H; it is adapted to a staggered grid so T1,T2 get averaged:
+  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar *T1, const PetscScalar *T2) const;
 };
 
 
 class GlenIce : public IceType {
 public:
-  virtual PetscScalar flow(const PetscScalar stress) const;
+  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
+                           const PetscScalar pressure) const;
   virtual PetscScalar exponent() const;
 protected:
   static PetscInt n;
@@ -86,7 +87,6 @@ private:
 
 
 class ThermoGlenIce : public GlenIce {
-  //private:  changed to public for inheritance to ThermoGlenArrIce in IceCompModel
 public:
   static PetscScalar A_cold;  // these four constants from Paterson & Budd (1982)
   static PetscScalar A_warm;
@@ -96,14 +96,13 @@ public:
 public:
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H,
-                                               const PetscScalar dz,
-                                               const PetscScalar u_x,
-                                               const PetscScalar u_y,
-                                               const PetscScalar v_x,
-                                               const PetscScalar v_y,
-                                               const PetscScalar *T1,
-                                               const PetscScalar *T2) const;
+  virtual PetscScalar effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar temp, const PetscScalar pressure) const;
+  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar *T1, const PetscScalar *T2) const;
 protected:
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
@@ -146,7 +145,6 @@ struct GKparts {
 
 class HybridIce : public ThermoGlenIce {
 public:
-  virtual PetscScalar flow(const PetscScalar stress) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
@@ -174,7 +172,6 @@ protected:
 
 class HybridIceStripped : public HybridIce {
 public:
-  virtual PetscScalar flow(const PetscScalar stress) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,

@@ -180,8 +180,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
                         * ice.flow(alpha * pressure,
                                    0.5 * (T[i][j][k] + T[i+oi][j+oj][k]), pressure,
                                    0.5 * (gs[i][j][k] + gs[i+oi][j+oj][k])));
-            Sigma[o][i][j][k] = (delta[k] * PetscSqr(alpha) * pressure
-                                 / (ice.rho * ice.c_p));
+            // for Sigma, ignor mask value and assume SHEET; will be overwritten
+            // by correctSigma() in iMmacayeal.cc
+            Sigma[o][i][j][k] = delta[k] * PetscSqr(alpha) * pressure
+                                 / (ice.rho * ice.c_p);
             if (k>0) { // trapezoid rule for I[][][][k] and K[k]
               I[o][i][j][k] = I[o][i][j][k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
               K[k] = K[k-1] + 0.5 * dz * ((s-dz)*delta[k-1] + s*delta[k]);

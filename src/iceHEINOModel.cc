@@ -185,10 +185,12 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
   }
 
   ierr = applyDefaultsForExperiment(); CHKERRQ(ierr);
+
   ierr = initAccumTs(); CHKERRQ(ierr);
   if (inFileSet == PETSC_FALSE) {
     ierr = fillintemps(); CHKERRQ(ierr);
   }
+
   ierr = afterInitHook(); CHKERRQ(ierr);
 
   ierr = PetscPrintf(grid.com, "running ISMIP-HEINO, run %s ...\n",ismipRunName);
@@ -205,7 +207,8 @@ PetscErrorCode IceHEINOModel::applyDefaultsForExperiment() {
   setIsDrySimulation(PETSC_TRUE);
   setDoGrainSize(PETSC_FALSE);
   setEnhancementFactor(3.0);
-  setIncludeBMRinContinuity(PETSC_FALSE);
+//  setIncludeBMRinContinuity(PETSC_FALSE);
+  setIncludeBMRinContinuity(PETSC_TRUE);
   setOceanKill(PETSC_TRUE);
 
   // make bedrock material properties into ice properties

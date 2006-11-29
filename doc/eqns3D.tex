@@ -951,7 +951,7 @@ Note we have arrived at a particular form of the second derivative of $T$ in the
 \end{equation}
 where
     $$\dot\eps_{xx,k} = \frac{u_{i+1,jk} - u_{i-1,jk}}{2\Delta x}, \qquad\dot\eps_{yy,k} = \frac{v_{i,j+1,k} - v_{i,j-1,k}}{2\Delta y},$$
-    $$\dot\eps_{xy,k} = \frac{1}{2}\left(\frac{u_{i,j+1,k} - u_{i,j-1,k}}{2\Delta y} - \frac{v_{i+1,jk} - v_{i-1,jk}}{2\Delta x}\right).$$
+    $$\dot\eps_{xy,k} = \frac{1}{2}\left(\frac{u_{i,j+1,k} - u_{i,j-1,k}}{2\Delta y} + \frac{v_{i+1,jk} - v_{i-1,jk}}{2\Delta x}\right).$$
 That is, for evaluating the strain heating we approximate strain rates by differencing values of the velocities on the regular grid; there is no reason to ``upwind'' because nothing is being transported.  These difference quotients result in a corresponding approximation $\dot\eps_k$ of the effective strain rate $\dot\eps$ at the center of the segment.  Thereby we define $\nu_k = \nu(T_k,\dot\eps_k,P_k)$.
 
 The corresponding equation for a generic segment in rock is straightforward:
@@ -1129,11 +1129,14 @@ L \rho_I \int_{S^\ast} \ddt{H_{\text{melt}}} &= \int_{V^+} \dot \eps_{ij} \sigma
 \end{align}
 using the notation of the previous subsection.  In particular, $V^+ = \{z_\ast < z < \zeta_+\}$, $S^+ = \{z=\zeta_+\}$, and $S^\ast = \{z=z_\ast\}$.  Note that there is no actual layer of basal melt water; we denote the basal melt rate $\partial H_{\text{melt}}/\partial t$ to suggest the method of computation, which is to compute the basal melt rate as $\Delta H_{\text{melt}}/\Delta t$ and then reset $H_{\text{melt}}=0$ at the end of every time step.
 
-\subsection*{Caveats on marginal points}  Unfortunately we observe that near the margin the thermocoupled flow is badly behaved.  For cold enough ice, with minimal strain heating near the margin, this does not cause excessive numerical difficulties \citep{BBL}.  For realistic margins, however, there are very strong temperature gradients and strain-heating near the margin.  In particular, the basal melt rates which result are generally unreasonable.
+\subsection*{Caveats on marginal points}  Unfortunately we observe that near the margin the thermocoupled flow is badly behaved.  For cold enough ice, with minimal strain heating near the margin, this does not cause excessive numerical difficulties \citep{BBL}.  For realistic margins, however, there are very strong temperature gradients and strain-heating near the margin.  There are also irregularities in the vertical velocity and the basal melt rate.
 
-Thus we have the following \emph{ad hoc} mechanism.  If a grid point has any horizontal neighbors where the ice is thin, defined as $H < 100$ m, then only the conduction part of the conservation of energy is used.  The advection and strain-heating terms are dropped.
+A better way of computing the surface gradient and certain other quantities near the margin is offered by \citet{SaitoMargin}.  They recommend differencing upstream into the ice sheet.  We have not yet implemented this.
 
-Even with this convention we still find bad behavior with the basal melt mechanism.  There seems to be some kind of basal melt runaway.  Thus, to avoid this problem, and \emph{not} just because the modeled basal melt rate is always small \citep[compare the dismissal in][]{EISMINT00}, one usually runs PISM with the contribution of basal melt rate to vertical velocity and to map-plane mass continuity removed.
+For now we have the following \emph{ad hoc} mechanism.  If a grid point has any horizontal neighbors where the ice is thin, defined as $H < 100$ m, then only the conduction part of the conservation of energy is used.  The advection and strain-heating terms are dropped.
+
+% following problem may have resulted from a bug in the geothermal flux condition at the base of the bedrock:
+%Even with this convention we still find bad behavior with the basal melt mechanism.  There seems to be some kind of basal melt runaway.  Thus, to avoid this problem, and \emph{not} just because the modeled basal melt rate is always small \citep[compare the dismissal in][]{EISMINT00}, one usually runs PISM with the contribution of basal melt rate to vertical velocity and to map-plane mass continuity removed.
 
 
 \section{Constants and Defaults}

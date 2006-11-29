@@ -651,32 +651,50 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
 PetscErrorCode IceModel::correctSigma() {
   // recompute vSigma in ice stream and shelf (DRAGGING,FLOATING) locations
- 
-  // FIXME!!  See below.  This is a place-holder which does nothing!!
-   
-  return 0;
-}
+  PetscErrorCode  ierr;
+  PetscScalar **H, **mask, ***Sigma, **ub, **vb, ***T;
 
-/* following fragment of code should be totally re-thought and become correctSigma():
+  ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
 
-      if (intMask(mask[i][j]) == MASK_SHEET) {
+  const PetscScalar dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      int m = modMask(mask[i][j]);
+      if (( (m == MASK_DRAGGING) || (m == MASK_FLOATING) ) && (useMacayealVelocity)) {
+        // hor. velocities don't depend on depth; use basal values
+        const PetscScalar u_x = (ub[i+1][j] - ub[i-1][j])/(2*dx),
+                          u_y = (ub[i][j+1] - ub[i][j-1])/(2*dy),
+                          v_x = (vb[i+1][j] - vb[i-1][j])/(2*dx),
+                          v_y = (vb[i][j+1] - vb[i][j-1])/(2*dy);
+        const PetscScalar beta = PetscSqr(u_x) + PetscSqr(v_y)
+                           + u_x * v_y + PetscSqr(0.5*(u_y + v_x));
         const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+        const PetscScalar CC = 4 * beta / (ice.rho * ice.c_p);
         for (PetscInt k=0; k<ks; ++k) {
-          Sigmareg[i][j][k] = 0.25 * (Sigma[0][i][j][k] + Sigma[0][i-1][j][k] +
-                                    Sigma[1][i][j][k] + Sigma[1][i][j-1][k]);
+          // use hydrostatic pressure; presumably this is not quite right in context 
+          // of shelves and streams
+          const PetscScalar pressure = ice.rho * ice.grav * (H[i][j] - k * dz);
+          Sigma[i][j][k] = CC * ice.effectiveViscosity(u_x,u_y,v_x,v_y,
+                                                       T[i][j][k],pressure);;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
-          Sigmareg[i][j][k] = 0.0;
+          Sigma[i][j][k] = 0.0;
         }
-      } else { // add ocean heat flux to bottom layer Sigma on ice *shelves*, but 
-        // otherwise set Sigma to zero on ice shelves and ice streams (MacAyeal)
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
-          Sigma0[i][j][0] = DEFAULT_OCEAN_HEAT_FLUX / (ice.rho * ice.c_p * grid.p->dz);
-        } else {
-          Sigma0[i][j][0] = 0.0;  // no heating in streams at all
-        }
-        for (PetscInt k=1; k<grid.p->Mz; ++k) {
-          Sigma0[i][j][k] = 0.0;
-        }
+      }
+      // otherwise leave SIA-computed value alone
+    }
+  }
 
-*/
+  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  return 0;
+}

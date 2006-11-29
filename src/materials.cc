@@ -42,27 +42,38 @@ PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capaci
 PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
 
-PetscScalar IceType::flow(const PetscScalar stress) const {
-  return 0;
-}
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
                           const PetscScalar pressure) const {
-  return flow(stress);
+  return 0;
 }
+
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
-                          const PetscScalar pressure, const PetscScalar age) const {
+                          const PetscScalar pressure, const PetscScalar gs) const {
   return flow(stress, temp, pressure);
 }
 
-PetscScalar
-IceType::effectiveViscosityColumn(const PetscScalar H,
-                                  const PetscScalar dz,
-                                  const PetscScalar u_x,
-                                  const PetscScalar u_y,
-                                  const PetscScalar v_x,
-                                  const PetscScalar v_y,
-                                  const PetscScalar* T1,
-                                  const PetscScalar* T2) const {
+PetscScalar IceType::effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar temp, const PetscScalar pressure) const {
+#if (0)
+  return 1.4e8 * 0.5 * pow(PetscSqr(u_x) + PetscSqr(v_y)
+                               + 0.25*PetscSqr(u_y + v_x)
+                               + PetscAbsScalar(u_x*v_y), -1.0 / 3.0);
+#else
+  const PetscScalar alpha = (0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
+                             + 0.5 * PetscSqr(u_x + v_y)
+                             + 0.25 * PetscSqr(u_y + v_x));
+  const PetscScalar B = 135720960;
+  return B / 2 * pow(alpha, -1.0 / 3.0);
+#endif
+}
+
+PetscScalar IceType::effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar *T1, const PetscScalar *T2) const  {
+// JED: why this stuff? is this used in SNES or in shelf.cc?  Note I duplicated it above
+// in IceType::effectiveViscosity()
 #if (0)
   return 1.4e8 * H * 0.5 * pow(PetscSqr(u_x) + PetscSqr(v_y)
                                + 0.25*PetscSqr(u_y + v_x)
@@ -80,9 +91,12 @@ PetscScalar GlenIce::hardness_a = 135720960.;
 PetscScalar GlenIce::softness_A = 4.0e-25;
 PetscInt    GlenIce::n = 3;
 
-PetscScalar GlenIce::flow(const PetscScalar stress) const {
+PetscScalar GlenIce::flow(const PetscScalar stress, const PetscScalar temp,
+                          const PetscScalar pressure) const {
+  // ignor temp and pressure
   return softness_A * pow(stress, n-1);
 }
+
 PetscScalar GlenIce::exponent() const {
   return n;
 }
@@ -96,19 +110,24 @@ PetscScalar ThermoGlenIce::crit_temp = 263.15;  // K
 
 PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp,
                                 const PetscScalar pressure) const {
-  PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
+  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
   return softnessParameter(T) * pow(stress,n-1);
 }
 
-PetscScalar
-ThermoGlenIce::effectiveViscosityColumn(const PetscScalar H,
-                                        const PetscScalar dz,
-                                        const PetscScalar u_x,
-                                        const PetscScalar u_y,
-                                        const PetscScalar v_x,
-                                        const PetscScalar v_y,
-                                        const PetscScalar *T1,
-                                        const PetscScalar *T2) const {
+PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar temp, const PetscScalar pressure) const  {
+  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
+  const PetscScalar B = hardnessParameter(T);
+  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
+                             + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
+  return 0.5 * B * pow(1e-25 + alpha, -(n-1.0)/(2.0*n));
+}
+
+PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar *T1, const PetscScalar *T2) const  {
 // DESPITE NAME, does *not* return effective viscosity.
 // The result is \nu_e H, i.e. viscosity times thickness
 
@@ -171,6 +190,7 @@ PetscScalar ThermoGlenArrIce::softnessParameter(PetscScalar T) const {
 
 PetscScalar ThermoGlenArrIce::flow(const PetscScalar stress, const PetscScalar temp,
                                    const PetscScalar pressure) const {
+  // ignors pressure
   return softnessParameter(temp) * pow(stress,n-1);  // uses NON-homologous temp
 }
 
@@ -231,13 +251,11 @@ HybridIce::diff_crit_temp=258.0,    // when to use enhancement factor
   HybridIce::diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
   HybridIce::diff_delta=9.04e-10;     // grain boundary width (m)
 
-PetscScalar HybridIce::flow(const PetscScalar stress) const {
-  return flow(stress, 260, 0);
-}
 PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure) const {
   return flow(stress, temp, pressure, d_grain_size);
 }
+
 PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure, const PetscScalar gs) const {
   /*
@@ -328,13 +346,11 @@ GKparts HybridIce::flowParts(const PetscScalar stress, const PetscScalar temp,
 PetscScalar HybridIceStripped::d_grain_size_stripped = 3.0e-3;
                                     // m; = 3mm  (see Peltier et al 2000 paper)
 
-PetscScalar HybridIceStripped::flow(const PetscScalar stress) const {
-  return flow(stress, 260, 0);
-}
 PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure) const {
   return flow(stress, temp, pressure, d_grain_size_stripped);
 }
+
 PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure, const PetscScalar gs) const {
   // note value of gs is ignored

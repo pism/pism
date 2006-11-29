@@ -226,7 +226,7 @@ PetscErrorCode IceModel::temperatureStep() {
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
           if (x[Mbz + k] > Tpmp) {
             Tnew[i][j][k] = Tpmp;
-            PetscScalar Texcess = x[Mbz + k] - Tpmp;
+            PetscScalar Texcess = x[Mbz + k] - Tpmp; // always positive
             excessToFromBasalMeltLayer(rho_c_I, k * dz, &Texcess, &Hmeltnew);
             // Texcess  will always come back zero here; ignor it
           } else {
@@ -241,7 +241,7 @@ PetscErrorCode IceModel::temperatureStep() {
           Tnew[i][j][0] = x[Mbz];
         } else {  // compute diff between x[Mbz] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * H[i][j];
-          PetscScalar Texcess = x[Mbz] - Tpmp;
+          PetscScalar Texcess = x[Mbz] - Tpmp; // positive or negative
           if (modMask(mask[i][j]) == MASK_FLOATING) {
              // when floating, only half a segment has had its temperature raised
              // above Tpmp
