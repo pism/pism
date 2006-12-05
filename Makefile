@@ -23,7 +23,7 @@ endif
 
 #VARIABLES:
 
-executables= flowTable pismr pismv pisms simpleISO simpleFG
+executables= flowTable pismr pismv pisms simpleISO simpleFG shelf get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -35,8 +35,8 @@ ICE_OBJS= $(ice_sources:.cc=.o) cubature.o
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
-other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc run.cc\
-	verify.cc iceCompModel.cc get_drag.cc shelf.cc
+other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
+	iceROSSModel.cc run.cc verify.cc iceCompModel.cc get_drag.cc shelf.cc
 other_csources= simpleISO.c simpleFG.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\

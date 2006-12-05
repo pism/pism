@@ -63,6 +63,7 @@ const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_MACAYEAL_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL = PETSC_FALSE;
+const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL = PETSC_FALSE;
  // for next value, compare Ritz et al (2001)
 const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera;
 const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
@@ -86,8 +87,10 @@ PetscErrorCode IceModel::setDefaults() {
   setMuSliding(DEFAULT_MU_SLIDING);
   setThermalBedrock(DEFAULT_THERMAL_BEDROCK);
   setOceanKill(DEFAULT_OCEAN_KILL);
+  
   setUseMacayealVelocity(DEFAULT_USE_MACAYEAL_VELOCITY);
-  useConstantNuForMacAyeal = DEFAULT_USE_MACAYEAL_VELOCITY;
+  useConstantNuForMacAyeal = DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL;
+  useConstantHardnessForMacAyeal = DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL;
   constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);

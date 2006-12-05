@@ -197,8 +197,8 @@ protected:
   PetscScalar maxdt;
   PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
   char        adaptReasonFlag;
-  PetscTruth  thermalBedrock, includeBMRinContinuity, isDrySimulation;
-  PetscTruth  useMacayealVelocity, initialized_p, useConstantNuForMacAyeal;
+  PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
+  PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, useConstantHardnessForMacAyeal;
   PetscScalar constantNuForMacAyeal, macayealRelativeTolerance, macayealEpsilon;
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;

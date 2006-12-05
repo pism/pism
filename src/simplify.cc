@@ -98,9 +98,14 @@ int main(int argc, char *argv[]) {
     ierr = m->run(); CHKERRQ(ierr);
 
     ierr = PetscPrintf(com, "done with run ... "); CHKERRQ(ierr);
-    // see comments in run_ice.cc re default output naming convention
-    ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
-    //ierr = m.simpFinalize(); CHKERRQ(ierr);
+
+    if (ROSSchosen == PETSC_FALSE) {
+      ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
+    }
+    
+    if (ISMIPchosen == PETSC_TRUE) {
+      ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
+    }
     ierr = PetscPrintf(com, " ... done.\n"); CHKERRQ(ierr);
   }
 

@@ -22,4 +22,4 @@ verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'],
 
 get_drag = env.Program('get_drag.cc', LIBS= ['pism'] + pism_libs)
 
-Default(flowTable, run, simplify, verify, simpleISO, simpleFG, shelf)
+Default(flowTable, run, simplify, verify, simpleISO, simpleFG, shelf, get_drag)

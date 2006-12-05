@@ -151,13 +151,21 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
             v_y = (v[i][j+1] - v[i][j]) / dy;
           }
 
-          if (true) { // temperature-dependent case
+          if (useConstantHardnessForMacAyeal == PETSC_FALSE) { // usual temperature-dependent case
             nu[o][i][j] = ice.effectiveViscosityColumn(0.5 * (H[i][j] + H[i+oi][j+oj]),
                                      dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
-          } else { // not temperature-dependent case
-            nu[o][i][j] = 1.4e8 * 0.5 * (H[i][j] + H[i+oi][j+oj]) * 0.5 *
-              pow(1e-24 + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) +
-                  PetscAbsScalar(u_x*v_y), -(1.0/3.0));
+//          } else { // not temperature-dependent case
+//            nu[o][i][j] = 1.4e8 * 0.5 * (H[i][j] + H[i+oi][j+oj]) * 0.5 *
+//              pow(1e-24 + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) +
+//                  PetscAbsScalar(u_x*v_y), -(1.0/3.0));
+//          }
+          } else { // constant \bar B case (value from EISMINT ROSS)
+            const PetscScalar barB = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+            const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
+            // "nu" is really "\nu H"
+            nu[o][i][j] = myH * barB * 0.5 *
+              pow(1e-24 + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
+                  -(1.0/3.0));
           }
 
           if (! finite(nu[o][i][j]) || false) {

@@ -59,13 +59,10 @@ PetscErrorCode IceModel::verbPrintf(const int thresh,
 
   if ((thresh < 1) || (thresh > 5)) { SETERRQ(1,"invalid threshold in verbPrintf()"); }
 
-  if (thresh > verbosityLevel) 
-    return 0;
-
   PetscFunctionBegin;
   if (!comm) comm = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-  if (!rank && ((beVerbose == PETSC_TRUE) || petsc_history) ) {
+  if (!rank && ((verbosityLevel >= thresh) || petsc_history) ) {
     va_list Argp;
     va_start(Argp,format);
 
@@ -90,7 +87,7 @@ PetscErrorCode IceModel::verbPrintf(const int thresh,
     } else {
       nformat = (char*)format;
     }
-    if (beVerbose == PETSC_TRUE) { // print only if -verbose
+    if (verbosityLevel >= thresh) {
       ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
     }
     if (petsc_history) { // always print to history

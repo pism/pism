@@ -27,18 +27,21 @@
 class IceROSSModel : public IceModel {
 public:
     IceROSSModel(IceGrid &g, IceType &i);
-    void                   setflowlawNumber(PetscInt);
     PetscInt               getflowlawNumber();
+    void                   setflowlawNumber(PetscInt);
     virtual PetscErrorCode initFromOptions();
+    PetscErrorCode         readROSSfiles();
     virtual PetscErrorCode run();
+    PetscErrorCode         writeROSSfiles();
+    PetscErrorCode         readRIGGSandCompare();
 
 private:
-    PetscInt   flowlawNumber;
-    Vec        obsAzimuth, obsMagnitude, obsAccurate;
+    PetscInt        flowlawNumber, xsROSS, xmROSS;
+    Vec             obsAzimuth, obsMagnitude, obsAccurate;
     
-    PetscErrorCode         readROSSfile();
-    PetscErrorCode         createROSSVecs();
-    PetscErrorCode         destroyROSSVecs();
+    PetscErrorCode  createROSSVecs();
+    PetscErrorCode  destroyROSSVecs();
+    PetscErrorCode  fillinTemps();
 };
 
 #endif /* __iceROSSModel_hh */
