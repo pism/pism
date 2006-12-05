@@ -147,12 +147,14 @@ IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &ts, &tempskipSet); CHKERRQ(ierr);
   if (tempskipSet == PETSC_TRUE)
     setTempskip(ts);
-  
+
+  // FIXME:  should follow scheme describe in iMutil.cc (see verbPrintf())  
   // verbose: the summary at each time step is more complete (see summary() in 
   //     iMutil.cc)
   ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
   if (verbose == PETSC_TRUE) {
     setBeVerbose(PETSC_TRUE);
+    setVerbosityLevel(5);
   }
 
   // Run length options

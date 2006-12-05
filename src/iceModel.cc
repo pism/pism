@@ -314,6 +314,15 @@ void IceModel::setBeVerbose(PetscTruth verbose) {
   beVerbose = verbose;
 }
 
+void IceModel::setVerbosityLevel(PetscInt level) {
+  if ((level < 0) || (level > 5)) {
+     PetscPrintf(grid.com,
+         "IceModel::setVerbosityLevel():verbosityLevel must be 0,1,2,3,4,5\n"); 
+     PetscEnd();
+  }
+  verbosityLevel = level;
+}
+
 void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
   gmaxu=uvw_for_cfl;
   gmaxv=uvw_for_cfl;

@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
+#include <cstdio>
 #include <petscda.h>
 #include "iceModel.hh"
 
@@ -184,6 +185,15 @@ PetscErrorCode IceModel::dumpToFile(const char *fname) {
   ierr = LVecView(grid.da3b, vTb,     g3b, viewer); CHKERRQ(ierr);
   ierr = LVecView(grid.da3, vtau,     g3, viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);
+  
+  // remove the irritating (and unused) .info file!
+  char info_filename[PETSC_MAX_PATH_LEN+5];
+  strcpy(info_filename, fname);
+  strcat(info_filename, ".info");
+  if (remove(info_filename) != 0) {  // from <cstdio>; hopefully will not cause problems to use
+    SETERRQ1(1,"error deleting file %s",info_filename);
+  }
+
   return 0;
 }
 

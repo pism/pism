@@ -88,7 +88,8 @@ public:
   void setTempskip(PetscInt);
   void setGSIntervalYears(PetscScalar);
   void setBedDefIntervalYears(PetscScalar);
-  void setBeVerbose(PetscTruth);
+  void setBeVerbose(PetscTruth);  // to be deleted!
+  void setVerbosityLevel(PetscInt);
   void setAllowRegridding(PetscTruth);
   void setNoSpokes(PetscInt);
   void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
@@ -205,7 +206,7 @@ protected:
   PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  showViewers, allowRegridding, beVerbose;
   PetscTruth  createVecs_done, createViewers_done;
-  PetscInt    tempskip, noSpokesLevel;
+  PetscInt    verbosityLevel, tempskip, noSpokesLevel;
   PetscScalar gsIntervalYears, bedDefIntervalYears;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
   PetscScalar CFLmaxdt, gDmax;
@@ -244,7 +245,9 @@ protected:
   int modMask(PetscScalar);
 
   // see iMutil.cc
-  PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);  // beVerbose modulated printf
+  PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
+  // beVerbose modulated printf: eliminate it when verbPrintf() is implemented correctly
+  PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);
   virtual PetscErrorCode afterInitHook();
   PetscErrorCode stampHistoryCommand();
   PetscErrorCode stampHistoryEnd();

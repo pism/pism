@@ -3,11 +3,11 @@
 # HEINOCATDAT.SH is a shell script to concatenate .dat files generated from
 # ISMIP-HEINO runs on PISM.  (I.e. "pisms -ismip H -datprefix FOO ...").
 # Execute as 
-#     test/catdat ST FOO BAR JOE
+#     test/heinocatdat.sh ST FOO BAR JOE
 # if files are FOO_ST_ts*.dat and BAR_ST_ts*.dat.  Generates files named
 # JOE_ST_ts*.dat.
 
-#ELB 11/1/06
+#ELB 11/1/06; 12/4/06
 
 echo "attempting to create files $4_$1_ts*.dat:"
 echo -n "   writing: "

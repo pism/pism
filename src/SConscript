@@ -7,8 +7,9 @@ extrasGSL.cc cubature.c"""))
 
 flowTable = env.Program('flowTable', 'flowTable.cc', LIBS = ['pism'] + pism_libs)
 run = env.Program('pismr', 'run.cc', LIBS = ['pism'] + pism_libs)
-simplify = env.Program('pisms', ['iceEISModel.cc', 'iceHEINOModel.cc', 'simplify.cc'], 
-                       LIBS = ['pism'] + pism_libs)
+simplify = env.Program('pisms',
+      ['iceEISModel.cc', 'iceHEINOModel.cc', 'iceROSSModel.cc', 'simplify.cc'], 
+      LIBS = ['pism'] + pism_libs)
 shelf = env.Program('shelf', 'shelf.cc', LIBS = ['pism'] + pism_libs)
 
 env.SharedLibrary('tests', Split('exactTestsABCDE.c exactTestsFG.c exactTestH.c'))
@@ -21,4 +22,4 @@ verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'],
 
 get_drag = env.Program('get_drag.cc', LIBS= ['pism'] + pism_libs)
 
-Default(flowTable, run, simplify, verify, simpleISO, simpleFG)
+Default(flowTable, run, simplify, verify, simpleISO, simpleFG, shelf)

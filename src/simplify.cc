@@ -27,6 +27,7 @@ static char help[] =
 #include "iceModel.hh"
 #include "iceEISModel.hh"
 #include "iceHEINOModel.hh"
+#include "iceROSSModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -53,10 +54,11 @@ int main(int argc, char *argv[]) {
     // call constructors on both, but have a pointer for either
     IceEISModel   mEISII(g, *ice);
     IceHEINOModel mHEINO(g, *ice);
+    IceROSSModel  mROSS(g, *ice);
     IceModel*     m;
 
     char        expername[20]; //ignored here; see IceEISModel,IceHEINOModel::initFromOptions
-    PetscTruth  EISIIchosen, ISMIPchosen;
+    PetscTruth  EISIIchosen, ISMIPchosen, ROSSchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", expername, 1, &EISIIchosen);
@@ -64,16 +66,29 @@ int main(int argc, char *argv[]) {
     /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO */
     ierr = PetscOptionsGetString(PETSC_NULL, "-ismip", expername, 1, &ISMIPchosen);
               CHKERRQ(ierr);
-    if ((EISIIchosen == PETSC_TRUE) && (ISMIPchosen == PETSC_FALSE)) {
+    /* This option chooses EISMINT ROSS; "-ross" */
+    ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &ROSSchosen); CHKERRQ(ierr);
+    
+    if ((EISIIchosen == PETSC_TRUE) && (ISMIPchosen == PETSC_FALSE) && (ROSSchosen == PETSC_FALSE)) {
       mEISII.setflowlawNumber(flowlawNumber);
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
-    } else if ((ISMIPchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE)) {
+    } else if ((ISMIPchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE) && (ROSSchosen == PETSC_FALSE)) {
       mHEINO.setflowlawNumber(flowlawNumber);
       ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
       ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mHEINO;
+    } else if ((ROSSchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE) && (ISMIPchosen == PETSC_FALSE)) {
+      if (size > 1) {
+        ierr = PetscPrintf(com, "EISMINT ROSS only works on a single processor!\n"); CHKERRQ(ierr);
+        ierr = PetscPrintf(com,"ending ... \n"); CHKERRQ(ierr);
+        PetscEnd();
+      }
+      mROSS.setflowlawNumber(flowlawNumber);
+      ierr = mROSS.setFromOptions(); CHKERRQ(ierr);
+      ierr = mROSS.initFromOptions(); CHKERRQ(ierr);
+      m = (IceModel*) &mROSS;
     } else {
       SETERRQ(1,"PISMS called with invalid, contradictory, or no experiment chosen");
     }

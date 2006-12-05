@@ -39,6 +39,7 @@
 // under all circumstances.
 
 const PetscTruth  DEFAULT_BE_VERBOSE = PETSC_FALSE;
+const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 const PetscScalar DEFAULT_START_YEAR = 0;
 const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
@@ -79,6 +80,8 @@ PetscErrorCode IceModel::setDefaults() {
   setShowViewers(PETSC_TRUE);
 
   setBeVerbose(DEFAULT_BE_VERBOSE);
+  setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);
+  
   setEnhancementFactor(DEFAULT_ENHANCEMENT_FACTOR);
   setMuSliding(DEFAULT_MU_SLIDING);
   setThermalBedrock(DEFAULT_THERMAL_BEDROCK);

@@ -25,9 +25,85 @@
 #include <stdlib.h>
 #include "petscfix.h"
 
-// verbosity level version of PetscPrintf: only prints if beVerbose == PETSC_TRUE
+// verbosity level version of PetscPrintf: print according to whether 
+// (thresh <= IceModel::verbosityLevel), in which case print, or 
+// (thresh > verbosityLevel) in which case no print
+//
+//   level  option        meaning
+//   -----  ------        -------
+//   0      -verbose 0    never print to std out AT ALL!
+//
+//   1      -verbose 1    less verbose than default: thresh must be 1 to print
+//
+//   2     [-verbose 2]   default
+//
+//   3      -verbose      somewhat verbose
+//         [-verbose 3]   
+//   4      -vverbose     fairly verbose
+//         [-verbose 4]
+//   5      -vvverbose    very verbose: if level this high then (thresh <= level) 
+//         [-verbose 5]       always, so print everything
+//
+// note: 1 <= thresh <= 5  enforced in verbPrintf() below
+PetscErrorCode IceModel::verbPrintf(const int thresh, 
+                                    MPI_Comm comm,const char format[],...)
+// FIXME: change all use of vPetscPrintf() below to use this one
+{
+  PetscErrorCode ierr;
+  PetscMPIInt    rank;
+  size_t         len;
+  char           *nformat,*sub1,*sub2;
+  PetscReal      value;
+
+  extern FILE *petsc_history;
+
+  if ((thresh < 1) || (thresh > 5)) { SETERRQ(1,"invalid threshold in verbPrintf()"); }
+
+  if (thresh > verbosityLevel) 
+    return 0;
+
+  PetscFunctionBegin;
+  if (!comm) comm = PETSC_COMM_WORLD;
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
+  if (!rank && ((beVerbose == PETSC_TRUE) || petsc_history) ) {
+    va_list Argp;
+    va_start(Argp,format);
+
+    ierr = PetscStrstr(format,"%A",&sub1);CHKERRQ(ierr);
+    if (sub1) {
+      ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
+      if (sub1 != sub2) SETERRQ(PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
+      ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
+      ierr    = PetscMalloc((len+16)*sizeof(char),&nformat);CHKERRQ(ierr);
+      ierr    = PetscStrcpy(nformat,format);CHKERRQ(ierr);
+      ierr    = PetscStrstr(nformat,"%",&sub2);CHKERRQ(ierr);
+      sub2[0] = 0;
+      value   = (double)va_arg(Argp,double);
+      if (PetscAbsReal(value) < 1.e-12) {
+        ierr    = PetscStrcat(nformat,"< 1.e-12");CHKERRQ(ierr);
+      } else {
+        ierr    = PetscStrcat(nformat,"%g");CHKERRQ(ierr);
+        va_end(Argp);
+        va_start(Argp,format);
+      }
+      ierr    = PetscStrcat(nformat,sub1+2);CHKERRQ(ierr);
+    } else {
+      nformat = (char*)format;
+    }
+    if (beVerbose == PETSC_TRUE) { // print only if -verbose
+      ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
+    }
+    if (petsc_history) { // always print to history
+      ierr = PetscVFPrintf(petsc_history,nformat,Argp);CHKERRQ(ierr);
+    }
+    va_end(Argp);
+    if (sub1) {ierr = PetscFree(nformat);CHKERRQ(ierr);}
+  }
+  PetscFunctionReturn(0);
+}
+
+// pre-verbosity level version of PetscPrintf: only prints if beVerbose == PETSC_TRUE
 // modification of PetscPrintf() in src/sys/fileio/mprint.c
-// FIXME: want to use an actual integer value for verbosity level
 PetscErrorCode IceModel::vPetscPrintf(MPI_Comm comm,const char format[],...)
 {
   PetscErrorCode ierr;

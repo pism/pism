@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Driver for testing ice shelf model.  Implements verification tests.";
+  "Driver for testing ice stream (dragging ice shelf) model.  Implements verification tests.";
 
 #include <cmath>
 #include "iceModel.hh"
@@ -513,7 +513,8 @@ PetscErrorCode ShelfModel::run() {
   ierr = VecSet(vvbar, 0.0); CHKERRQ(ierr);
 
   ierr = setupForMacayeal(DEFAULT_MINH_MACAYEAL,PETSC_FALSE); CHKERRQ(ierr);
-  ierr = mapStaggeredVelocityToStandard(); CHKERRQ(ierr);
+//  ierr = mapStaggeredVelocityToStandard(); CHKERRQ(ierr);
+  ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr);
   ierr = velocityMacayeal(); CHKERRQ(ierr);
   ierr = cleanupAfterMacayeal(DEFAULT_MINH_MACAYEAL); CHKERRQ(ierr);
   ierr = broadcastMacayealVelocity(); CHKERRQ(ierr);
