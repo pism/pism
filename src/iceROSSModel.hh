@@ -36,12 +36,16 @@ public:
     PetscErrorCode         readRIGGSandCompare();
 
 private:
+    char            prefixROSS[PETSC_MAX_PATH_LEN];
     PetscInt        flowlawNumber, xsROSS, xmROSS;
     Vec             obsAzimuth, obsMagnitude, obsAccurate;
+    PetscScalar     gridLat[111], gridLon[147];
     
     PetscErrorCode  createROSSVecs();
     PetscErrorCode  destroyROSSVecs();
     PetscErrorCode  fillinTemps();
+    PetscErrorCode  makeSurfaceFloating();
+    PetscErrorCode  showObservedVels();
 };
 
 #endif /* __iceROSSModel_hh */

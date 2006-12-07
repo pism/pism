@@ -121,8 +121,8 @@ PetscErrorCode IceCompModel::initFromOptions() {
   char inFile[PETSC_MAX_PATH_LEN];
 
   if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
-    ierr = PetscPrintf(grid.com, "[verify WARNING: Test H should be run with option  ");
-    ierr = PetscPrintf(grid.com, "-bed_def_iso  for the reported errors to be correct.]\n");
+    ierr = verbPrintf(1,grid.com, "[verify WARNING: Test H should be run with option  ");
+    ierr = verbPrintf(1,grid.com, "-bed_def_iso  for the reported errors to be correct.]\n");
     CHKERRQ(ierr);
   }
   if ((testname == 'A') || (testname == 'E'))
@@ -132,10 +132,10 @@ PetscErrorCode IceCompModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, "continuing; using Test %c conditions ...\n",testname);  CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, "continuing; using Test %c conditions ...\n",testname);  CHKERRQ(ierr);
     grid.p->year=startYear; // some exact solutions have "absolute time"
   } else {
-    ierr = PetscPrintf(grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
 //    grid.p->Mbz = 0; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
@@ -906,7 +906,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   //    -- av |<ub,vb> - <ubexact,vbexact>| error
 
   PetscErrorCode  ierr;
-  ierr = PetscPrintf(grid.com, "Actual ERRORS evaluated at final time:\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "Actual ERRORS evaluated at final time:\n"); CHKERRQ(ierr);
 
   // geometry (thickness, vol, area) errors
   PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
@@ -914,11 +914,11 @@ PetscErrorCode IceCompModel::reportErrors() {
   ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
                                volerr,areaerr,maxHerr,avHerr,maxetaerr,domeHerr);
      CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com, 
+  ierr = verbPrintf(2,grid.com, 
      "geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH\n");
      CHKERRQ(ierr);
   const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
-  ierr = PetscPrintf(grid.com, "           %10.4f%11.4f%11.4f%10.4f%12.6f%9.4f\n",
+  ierr = verbPrintf(2,grid.com, "           %10.4f%11.4f%11.4f%10.4f%12.6f%9.4f\n",
                 100*volerr/volexact, 100*areaerr/areaexact, maxHerr, avHerr,
                 maxetaerr/pow(domeHexact,m), domeHerr); CHKERRQ(ierr);
 
@@ -926,9 +926,9 @@ PetscErrorCode IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxTerr, avTerr, domeTerr;
     ierr = computeBasalTemperatureErrors(maxTerr, avTerr, domeTerr); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
        "base temps:        maxT         avT      domeT\n"); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, "           %12.6f%12.6f%11.6f\n", 
+    ierr = verbPrintf(2,grid.com, "           %12.6f%12.6f%11.6f\n", 
                   maxTerr, avTerr, domeTerr); CHKERRQ(ierr);
   }
 
@@ -937,10 +937,10 @@ PetscErrorCode IceCompModel::reportErrors() {
     PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     ierr = computeBasalVelocityErrors(exactmaxspeed,
                           maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
        "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
        CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
+    ierr = verbPrintf(2,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
                   maxvecerr*secpera, avvecerr*secpera, 
                   (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
@@ -962,7 +962,7 @@ PetscErrorCode IceCompModel::dumpToFile_Matlab(const char *fname) {
     strcpy(mcompf, b);
     strcat(mcompf, "_comp.m");
 
-    ierr = PetscPrintf(grid.com, "\n(also dumping Sigma_C to `%s'; also corrects Sigma)", mcompf); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, "\n(also dumping Sigma_C to `%s'; also corrects Sigma)", mcompf); CHKERRQ(ierr);
 
     ierr = PetscViewerASCIIOpen(grid.com, mcompf, &viewer); CHKERRQ(ierr);
     ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
@@ -1011,15 +1011,15 @@ PetscErrorCode IceCompModel::dumpToFile_Matlab(const char *fname) {
 PetscErrorCode IceCompModel::run() {
   PetscErrorCode  ierr;
   
-  ierr = PetscPrintf(grid.com, "running test %c ...\n", testname); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "running test %c ...\n", testname); CHKERRQ(ierr);
   if (exactOnly == PETSC_TRUE) {
-    ierr=PetscPrintf(grid.com,"  EXACT SOLUTION ONLY, NO NUMERICS\n"); CHKERRQ(ierr);
+    ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICS\n"); CHKERRQ(ierr);
   }
   ierr = initSounding(); CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com,
+  ierr = verbPrintf(2,grid.com,
       "$$$$      YEAR (+    STEP[R]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
       CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com,"$$$$");  CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   ierr = summary(true,false); CHKERRQ(ierr);  // report starting state
 
@@ -1037,7 +1037,7 @@ PetscErrorCode IceCompModel::run() {
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
     // always do vertically-average velocity calculation; only update velocities at depth if
@@ -1047,7 +1047,7 @@ PetscErrorCode IceCompModel::run() {
                     && (it % tempskip == 0) 
                     && ((testname == 'F') || (testname =='G')) );
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 
     // adapt time step using velocities and diffusivity, ..., just computed
     if (exactOnly == PETSC_TRUE)
@@ -1088,16 +1088,16 @@ PetscErrorCode IceCompModel::run() {
       allowAboveMelting = PETSC_TRUE;
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
-      ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     if ((exactOnly == PETSC_FALSE) && (doMassBal == PETSC_TRUE)) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
-      ierr = PetscPrintf(grid.com, "f"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "f"); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
     ierr = summary(tempAgeStep,false); CHKERRQ(ierr);

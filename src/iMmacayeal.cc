@@ -465,30 +465,31 @@ PetscErrorCode IceModel::velocityMacayeal() {
   ierr = VecCopy(vvbar, vvbarOld); CHKERRQ(ierr);
   maxIterations = DEFAULT_MAX_ITERATIONS_MACAYEAL;
   epsilon = macayealEpsilon;
-  ierr = vPetscPrintf(grid.com, "\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com, "  iteration to solve ice stream/shelf equations:\n"); CHKERRQ(ierr);
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
     for (PetscInt k=0; k<maxIterations; ++k) {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
-      ierr = vPetscPrintf(grid.com, "  %1d:%3d>A.", l, k); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "  %1d:%3d", l, k); CHKERRQ(ierr);
       ierr = assembleMacayealMatrix(vNu, A, rhs); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "A"); CHKERRQ(ierr);
 
 #if 0
         PetscReal vec_norm, mat_norm;
         ierr = MatNorm(A, NORM_FROBENIUS, &mat_norm); CHKERRQ(ierr);
-        ierr = vPetscPrintf(grid.com, "\nNorm(A) = %e\n", mat_norm); CHKERRQ(ierr);
+        ierr = verbPrintf(3,grid.com, "\nNorm(A) = %e\n", mat_norm); CHKERRQ(ierr);
         ierr = MatMult(A, rhs, x); CHKERRQ(ierr);
         ierr = VecNorm(x, NORM_2, &vec_norm); CHKERRQ(ierr);
-        ierr = vPetscPrintf(grid.com, "Norm(A * rhs) = % e\n", vec_norm); CHKERRQ(ierr);
+        ierr = verbPrintf(3,grid.com, "Norm(A * rhs) = % e\n", vec_norm); CHKERRQ(ierr);
 #endif
 
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
       //ierr = KSPSetType(ksp, KSPCGS); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-      ierr = vPetscPrintf(grid.com, "S."); CHKERRQ(ierr);
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "S"); CHKERRQ(ierr);
 
       /* -ksp_type will set it; defaults to GMRES(30)
        * -ksp_pc will set preconditioner; defaults to ILU
@@ -499,13 +500,12 @@ PetscErrorCode IceModel::velocityMacayeal() {
        * [default] and BJACOBI seem roughly equivalent. */
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
-      ierr = vPetscPrintf(grid.com, "%3d:%2d  ", its, reason); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "%3d:%1d ", its, reason); CHKERRQ(ierr);
 
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
       ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNu, vNuOld, &norm, &normChange); CHKERRQ(ierr);
-      ierr = vPetscPrintf(grid.com,
-                         "|nu|_2, |Delta nu|_2/|nu|_2 = %12.3e %12.3e\n",
+      ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
 
       /*
@@ -526,7 +526,7 @@ PetscErrorCode IceModel::velocityMacayeal() {
 
       if (norm == 0 || normChange / norm < macayealRelativeTolerance) goto done;
     }
-    ierr = vPetscPrintf(grid.com,
+    ierr = verbPrintf(1,grid.com,
                        "WARNING: Effective viscosity not converged after %d iterations\n"
                        "\twith epsilon=%8.2e. Retrying with"
                        " epsilon * DEFAULT_EPSILON_MULTIPLIER_MACAYEAL.\n",
@@ -539,7 +539,7 @@ PetscErrorCode IceModel::velocityMacayeal() {
   }
 
   done:
-  ierr = vPetscPrintf(grid.com, " "); CHKERRQ(ierr);  // has to do with summary appearance
+  ierr = verbPrintf(3,grid.com, " "); CHKERRQ(ierr);  // has to do with summary appearance
   return 0;
 }
 

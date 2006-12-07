@@ -68,7 +68,8 @@ const PetscScalar IceModel::DEFAULT_MAX_HMELT = 10.0;  // allow no more than 10 
 
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum) {
     PetscErrorCode ierr;
-    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
+    PetscInt       verbNum;
+    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE, verboseSet;
 
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
     ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);  // option included for backward compat
@@ -77,10 +78,13 @@ PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLaw
       flowLawNum = 4;
     }
     if (flowlawSet == PETSC_TRUE) {
-      ierr = PetscPrintf(com, 
-          "  [using flow law %d"
-          " (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
-          flowLawNum); CHKERRQ(ierr);
+      ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &verbNum, &verboseSet); CHKERRQ(ierr);
+      if ((verboseSet == PETSC_FALSE) || ((verboseSet == PETSC_TRUE) && (verbNum != 0))) {
+        ierr = PetscPrintf(com, 
+            "  [using flow law %d"
+            " (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
+            flowLawNum); CHKERRQ(ierr);
+      }
     }
     switch (flowLawNum) {
       case 0: // Paterson-Budd
@@ -115,7 +119,7 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   createViewers_done = PETSC_FALSE;
   ierr = setDefaults();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "Error setting defaults.\n");
+    verbPrintf(1,grid.com, "Error setting defaults.\n");
     PetscEnd();
   }        
 }
@@ -316,7 +320,7 @@ void IceModel::setBeVerbose(PetscTruth verbose) {
 
 void IceModel::setVerbosityLevel(PetscInt level) {
   if ((level < 0) || (level > 5)) {
-     PetscPrintf(grid.com,
+     verbPrintf(1,grid.com,
          "IceModel::setVerbosityLevel():verbosityLevel must be 0,1,2,3,4,5\n"); 
      PetscEnd();
   }
@@ -582,10 +586,10 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   ierr = initSounding(); CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com,
+  ierr = verbPrintf(2,grid.com,
   "$$$$$      YEAR (+    STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com, "$$$$$"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
 
@@ -603,20 +607,20 @@ PetscErrorCode IceModel::run() {
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
     tempAgeStep = ((it % tempskip == 0) && (doTemp == PETSC_TRUE));
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 
     // now that velocity field is up to date, compute grain size
     if (doGrainSize == PETSC_TRUE) {
       ierr = updateGrainSizeIfNeeded(); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     // adapt time step using velocities and diffusivity, ..., just computed
@@ -636,16 +640,16 @@ PetscErrorCode IceModel::run() {
       allowAboveMelting = PETSC_FALSE;
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
-      ierr = PetscPrintf(grid.com, "t"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     if (doMassBal == PETSC_TRUE) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
-      ierr = PetscPrintf(grid.com, "f"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "f"); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     ierr = summary(tempAgeStep,true); CHKERRQ(ierr);
