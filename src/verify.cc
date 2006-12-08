@@ -35,9 +35,8 @@ static char help[] =
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
-  MPI_Comm    com;
-  PetscMPIInt rank, size;
-  PetscTruth  dontReport;
+  MPI_Comm        com;
+  PetscMPIInt     rank, size;
 
   PetscInitialize(&argc, &argv, PETSC_NULL, help);
 
@@ -56,11 +55,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
     
     ierr = getFlowLawFromUser(com, tempice, flowlawNumber); CHKERRQ(ierr);
-    if (flowlawNumber != 1) {
-      ierr = PetscPrintf(com, 
-              "verify WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
-              "   for reported errors to be meaningful!\n"); CHKERRQ(ierr);
-    }    
+
     ice = (ThermoGlenArrIce*) tempice;
     IceCompModel m(g, *ice);
     ierr = m.setFromOptions();  CHKERRQ(ierr);
@@ -69,22 +64,23 @@ int main(int argc, char *argv[]) {
 
     ierr = m.run(); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "done with run\n"); CHKERRQ(ierr);
+    ierr = m.verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
     
     /* Whether to report error at end. */
+    PetscTruth dontReport;
     ierr = PetscOptionsHasName(PETSC_NULL, "-noreport", &dontReport); CHKERRQ(ierr);
     if (dontReport == PETSC_FALSE) {
       if (flowlawNumber != 1) {
         ierr = PetscPrintf(com, 
                 "verify WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
-                "   for reported errors to be meaningful!\n"); CHKERRQ(ierr);
+                "   for reported errors in tests F and G to be meaningful!\n"); CHKERRQ(ierr);
       }
       ierr = m.reportErrors();  CHKERRQ(ierr);
     }
 
     m.writeFiles("verify"); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, " ... done\n"); CHKERRQ(ierr);
+    ierr = m.verbPrintf(2,com, " ... done\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

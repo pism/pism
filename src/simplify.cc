@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     ierr = m->run(); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "done with run ... "); CHKERRQ(ierr);
+    ierr = m->verbPrintf(2,com, "done with run ... "); CHKERRQ(ierr);
 
     if (ROSSchosen == PETSC_FALSE) {
       ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     if (ISMIPchosen == PETSC_TRUE) {
       ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
     }
-    ierr = PetscPrintf(com, " ... done.\n"); CHKERRQ(ierr);
+    ierr = m->verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

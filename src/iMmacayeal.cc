@@ -123,7 +123,11 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   * strain rates and temperature field.
   */
   PetscScalar **mask, **H, ***T, **nu[2], **u, **v;
-
+  
+  // next constant is the form of regularization used by C. Schoof 2006 "A variational
+  // approach to ice streams" J Fluid Mech 556 pp 227--251
+  const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
+  
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr); CHKERRQ(ierr);
@@ -154,12 +158,12 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
           if (useConstantHardnessForMacAyeal == PETSC_FALSE) { // usual temperature-dependent case
             // "nu" is really "nu H"!
-            nu[o][i][j] = ice.effectiveViscosityColumn(regularizationForMacAyeal,
+            nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
                                     myH,dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
           } else { // constant \bar B case, i.e for EISMINT ROSS
             // "nu" is really "nu H"!
             nu[o][i][j] = myH * constantHardnessForMacAyeal * 0.5 *
-              pow(regularizationForMacAyeal + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
+              pow(schoofReg + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
                   -(1.0/3.0));
           }
 
@@ -502,8 +506,11 @@ PetscErrorCode IceModel::velocityMacayeal() {
   ierr = verbPrintf(3,grid.com, "  iteration to solve ice stream/shelf equations:\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(5,grid.com, 
-     "  [macayealEpsilon = %10.5e, regularizationForMacAyeal = %10.5e,\n",
-     macayealEpsilon, regularizationForMacAyeal); CHKERRQ(ierr);
+     "  [macayealEpsilon = %10.5e, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = %10.5e,\n",
+     macayealEpsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL); CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com, 
+     "   regularizingVelocitySchoof = %10.5e, regularizingVelocitySchoof = %10.5e,\n",
+     regularizingVelocitySchoof, regularizingVelocitySchoof); CHKERRQ(ierr);
   ierr = verbPrintf(5,grid.com, 
      "   constantHardnessForMacAyeal = %10.5e, macayealRelativeTolerance = %10.5e]\n",
     constantHardnessForMacAyeal, macayealRelativeTolerance); CHKERRQ(ierr);
@@ -696,6 +703,9 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
 
   const PetscScalar dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
+  // next constant is the form of regularization used by C. Schoof 2006 "A variational
+  // approach to ice streams" J Fluid Mech 556 pp 227--251
+  const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       int m = modMask(mask[i][j]);
@@ -713,7 +723,7 @@ PetscErrorCode IceModel::correctSigma() {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
           const PetscScalar pressure = ice.rho * ice.grav * (H[i][j] - k * dz);
-          Sigma[i][j][k] = CC * ice.effectiveViscosity(regularizationForMacAyeal,
+          Sigma[i][j][k] = CC * ice.effectiveViscosity(schoofReg,
                                          u_x,u_y,v_x,v_y,T[i][j][k],pressure);;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {

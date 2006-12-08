@@ -586,7 +586,6 @@ PetscErrorCode IceModel::massBalExplicitStep() {
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = initSounding(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
   "$$$$$      YEAR (+    STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);

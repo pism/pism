@@ -26,7 +26,7 @@
 
 #include "iceCompModel.hh"
 
-// boundary conditions for tests F, G (i.e. EISMINT II Experiment F)
+// boundary conditions for tests F, G (same as EISMINT II Experiment F)
 PetscScalar IceCompModel::Ggeo = 0.042;
 PetscScalar IceCompModel::ST = 1.67e-5;
 PetscScalar IceCompModel::Tmin = 223.15;  // K
@@ -52,8 +52,8 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   bedrock.c_p = tgaIce.c_p;
   bedrock.k = tgaIce.k;
 
-  // Defaults specific to this pismv
-  setTest('F');
+  // defaults for verification
+  setTest('A');
   setExactOnly(PETSC_FALSE);
 }
 
@@ -1015,7 +1015,6 @@ PetscErrorCode IceCompModel::run() {
   if (exactOnly == PETSC_TRUE) {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICS\n"); CHKERRQ(ierr);
   }
-  ierr = initSounding(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
       "$$$$      YEAR (+    STEP[R]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
       CHKERRQ(ierr);

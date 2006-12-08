@@ -38,16 +38,20 @@ public:
 private:
     char            prefixROSS[PETSC_MAX_PATH_LEN];
     PetscInt        flowlawNumber, xsROSS, xmROSS;
-    Vec             obsAzimuth, obsMagnitude, obsAccurate;
+    Vec             obsAzimuth, obsMagnitude, obsAccurate,
+                    ubarBC, vbarBC;
     PetscScalar     gridLat[111], gridLon[147];
+    PetscInt        kbcGridLoc[2][77], inletGridLoc[2][22];
     PetscScalar     vecErrAcc;
     
     PetscErrorCode  createROSSVecs();
     PetscErrorCode  destroyROSSVecs();
+    PetscErrorCode  setBoundaryVels();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  makeSurfaceFloating();
     PetscErrorCode  showObservedVels();
     PetscErrorCode  computeErrorsInAccurate();
+    PetscErrorCode  runTune();
 };
 
 #endif /* __iceROSSModel_hh */

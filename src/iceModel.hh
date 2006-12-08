@@ -98,7 +98,10 @@ public:
 
   virtual PetscErrorCode run();
 
-  // see iMutil.cc for default empty versions
+  // see iMutil.cc
+  PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
+  // beVerbose modulated printf: eliminate it when verbPrintf() is implemented correctly
+  PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -199,7 +202,8 @@ protected:
   char        adaptReasonFlag;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
   PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, useConstantHardnessForMacAyeal;
-  PetscScalar constantNuForMacAyeal, constantHardnessForMacAyeal, regularizationForMacAyeal,
+  PetscScalar constantNuForMacAyeal, constantHardnessForMacAyeal,
+              regularizingVelocitySchoof, regularizingLengthSchoof,
               macayealRelativeTolerance, macayealEpsilon;
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
@@ -245,9 +249,6 @@ protected:
   int modMask(PetscScalar);
 
   // see iMutil.cc
-  PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
-  // beVerbose modulated printf: eliminate it when verbPrintf() is implemented correctly
-  PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);
   virtual PetscErrorCode afterInitHook();
   PetscErrorCode stampHistoryCommand();
   PetscErrorCode stampHistoryEnd();

@@ -71,8 +71,10 @@ const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
  // for next value, compare Ritz et al (2001)
 const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera;
 const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-// for next constant, compare (typical value of u_x^2 in Ross shelf) = 1e-20 s^-2
-const PetscScalar DEFAULT_REGULARIZATION_FOR_MACAYEAL = 1e-25; // s^-2
+// for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
+// appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
+const PetscScalar DEFAULT_REGULARIZING_VELOCITY_SCHOOF = 1.0 / secpera;  // 1 m/a is small vel for stream/shelf
+const PetscScalar DEFAULT_REGULARIZING_LENGTH_SCHOOF = 1000.0e3;         // 1000km is largish for dim of stream/shelf
 const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
 
 
@@ -100,7 +102,8 @@ PetscErrorCode IceModel::setDefaults() {
   useConstantHardnessForMacAyeal = DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL;
   constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
   constantHardnessForMacAyeal = DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL;
-  regularizationForMacAyeal = DEFAULT_REGULARIZATION_FOR_MACAYEAL;
+  regularizingVelocitySchoof = DEFAULT_REGULARIZING_VELOCITY_SCHOOF;
+  regularizingLengthSchoof = DEFAULT_REGULARIZING_LENGTH_SCHOOF;
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
 

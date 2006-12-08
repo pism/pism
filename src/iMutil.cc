@@ -677,6 +677,7 @@ PetscErrorCode IceModel::afterInitHook() {
              grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz); CHKERRQ(ierr);
   }
 
+  ierr = initSounding(); CHKERRQ(ierr);
   ierr = createViewers(); CHKERRQ(ierr);
 
   return 0;
