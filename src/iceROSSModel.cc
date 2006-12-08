@@ -496,27 +496,34 @@ PetscErrorCode IceROSSModel::makeSurfaceFloating() {
 
 PetscErrorCode IceROSSModel::showObservedVels() {
   PetscErrorCode  ierr;
-  PetscScalar **azi, **mag, **ubar, **vbar;   
+  PetscScalar **azi, **mag, **acc, **ubar, **vbar;   
   const PetscScalar pi = 3.14159265358979;
   ierr = verbPrintf(2,grid.com,
               "updating viewers to show observed velocities ...\n"); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
+  ierr = DAVecGetArray(grid.da2, obsAccurate, &acc); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
   for (PetscInt i=xsROSS; i < xsROSS+xmROSS; i++) {
     for (PetscInt j=grid.ys; j < grid.ys+grid.ym; j++) {
-      vbar[i][j] = mag[i][j] * sin((pi/180.0) * azi[i][j]);
-      ubar[i][j] = mag[i][j] * cos((pi/180.0) * azi[i][j]);
+      vbar[i][j] = acc[i][j] * mag[i][j] * sin((pi/180.0) * azi[i][j]);
+      ubar[i][j] = acc[i][j] * mag[i][j] * cos((pi/180.0) * azi[i][j]);
       // uxbar(i0,j0) = magvel(i0,j0)* sin(3.1415926/180.*azvel(i0,j0))
       // uybar(i0,j0) = magvel(i0,j0)* cos(3.1415926/180.*azvel(i0,j0))
     }
   }
   ierr = DAVecRestoreArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
+  ierr = DAVecRestoreArray(grid.da2, obsAccurate, &acc); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
+  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+
   ierr = updateViewers(); CHKERRQ(ierr);
+
+  Vec vNu[2] = {vWork2d[0], vWork2d[1]};
+  ierr = computeEffectiveViscosity(vNu, macayealEpsilon); CHKERRQ(ierr);
+  ierr = updateNuViewers(vNu,vNu,false); CHKERRQ(ierr);
   return 0;
 }
 
@@ -541,13 +548,11 @@ PetscErrorCode IceROSSModel::writeROSSfiles() {
 
 PetscErrorCode IceROSSModel::readRIGGSandCompare() {
   PetscErrorCode  ierr;
-
   char            riggsfilename[PETSC_MAX_PATH_LEN];
   char            ignor[400];
 
   strcpy(riggsfilename,prefixROSS);
   strcat(riggsfilename,"RIGGS.dat");
-  
   ierr = verbPrintf(2,grid.com,"reading from data file %s ...\n",riggsfilename); CHKERRQ(ierr);
   FILE* riggsfile = fopen(riggsfilename,"r");
   if (riggsfile == NULL) {
@@ -563,12 +568,19 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
   if (fclose(riggsfile) != 0) {
     SETERRQ1(1,"error closing file %s in IceROSSModel",riggsfilename);
   }
+  return 0;
+}
 
-  // average over grid, where observed velocity is accurate according, the difference 
-  // between computed and observed u,v, and c=sqrt(u^2 + v^2)
-  PetscScalar  uerr=0.0, verr=0.0, cerr=0.0, accN=0.0, maxcComputed=0.0,
+
+PetscErrorCode IceROSSModel::computeErrorsInAccurate() {
+  // average over grid, where observed velocity is accurate according to 111by147grid.dat,
+  // the difference between computed and observed u,v
+  PetscErrorCode  ierr;
+  PetscScalar  uerr=0.0, verr=0.0,
+               accN=0.0, accArea=0.0, maxcComputed=0.0,
                **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
-  const PetscScalar pi = 3.14159265358979;
+  vecErrAcc = 0.0;
+  const PetscScalar pi = 3.14159265358979, area = grid.p->dx * grid.p->dy;
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
@@ -582,16 +594,18 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
         const PetscScalar ccomputed = sqrt(PetscSqr(vbar[i][j]) + PetscSqr(ubar[i][j]));
         maxcComputed = PetscMax(maxcComputed,ccomputed);
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
-          accN = accN + 1.0;
+          accN += 1.0;
+          accArea += area;
           const PetscScalar vobs = mag[i][j] * sin((pi/180.0) * azi[i][j]);
           const PetscScalar uobs = mag[i][j] * cos((pi/180.0) * azi[i][j]);
           // compare from readme.txt:
           // uxbar(i0,j0) = magvel(i0,j0)* sin(3.1415926/180.*azvel(i0,j0))
           // uybar(i0,j0) = magvel(i0,j0)* cos(3.1415926/180.*azvel(i0,j0))
-          verr += PetscAbs(vobs - vbar[i][j]);
-          uerr += PetscAbs(uobs - ubar[i][j]);
-          const PetscScalar cobs = sqrt(PetscSqr(vobs) + PetscSqr(uobs));
-          cerr += PetscAbs(cobs - ccomputed);
+          const PetscScalar Dv = PetscAbs(vobs - vbar[i][j]);
+          const PetscScalar Du = PetscAbs(uobs - ubar[i][j]);
+          verr += Dv;
+          uerr += Du;
+          vecErrAcc += (PetscSqr(Dv) + PetscSqr(Du)) * area;
         }
       }
     }
@@ -610,14 +624,17 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
   ierr = verbPrintf(2,grid.com,
              "  [number of grid points in 'accurate' observed area is %d]\n",(int) accN); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-             "  average (over accurate area) error in x-comp of vel = %9.3f (m/a)\n",
+             "  [area of 'accurate' observed area in km^2 %9.4f]\n",accArea / 1e6); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+             "  average (over accurate area) error in x-comp of vel   = %9.3f (m/a)\n",
              (verr * secpera) / accN); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-             "  average (over accurate area) error in y-comp of vel = %9.3f (m/a)\n",
+             "  average (over accurate area) error in y-comp of vel   = %9.3f (m/a)\n",
              (uerr * secpera) / accN); CHKERRQ(ierr);
+  vecErrAcc = secpera * sqrt(vecErrAcc) / sqrt(accArea);
   ierr = verbPrintf(2,grid.com,
-             "  average (over accurate area) error in speed         = %9.3f (m/a)\n",
-             (cerr * secpera) / accN); CHKERRQ(ierr);
+             "  rms average (over accurate area) error in vector vel  = %9.3f (m/a)\n",
+             vecErrAcc); CHKERRQ(ierr);
   return 0;
 }
 
@@ -625,40 +642,61 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
 PetscErrorCode IceROSSModel::run() {
   PetscErrorCode  ierr;
   PetscInt        pause_time;
-  PetscTruth      pause_p, showobsvel;
+  PetscTruth      pause_p, showobsvel, tune;
 
   ierr = initSounding(); CHKERRQ(ierr);
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, &pause_p); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-showobsvel", &showobsvel); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-tune", &tune); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
   "$$$$$      YEAR (+    STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
-  adaptReasonFlag = ' '; // no reason for no timestep
-  ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
+  adaptReasonFlag = ' '; // no reason for no timestep!
 
   ierr = makeSurfaceFloating(); CHKERRQ(ierr);
 
   // solve model equations 
-  // useConstantNuForMacAyeal = PETSC_TRUE;
-  useConstantHardnessForMacAyeal = PETSC_TRUE;
   useMacayealVelocity = PETSC_TRUE;
-  ierr = velocityMacayeal(); CHKERRQ(ierr);
-  
-  // report on result of computation (i.e. to standard out, to viewers, to Matlab file)
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
-  ierr = summary(true,true); CHKERRQ(ierr);
-  ierr = updateViewers(); CHKERRQ(ierr);
-  ierr = writeROSSfiles(); CHKERRQ(ierr);
-  
-  // compare to observed
-  ierr = readRIGGSandCompare(); CHKERRQ(ierr);
-
-  if (pause_p == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
-    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  useConstantNuForMacAyeal = PETSC_FALSE;
+  useConstantHardnessForMacAyeal = PETSC_TRUE;
+  setMacayealEpsilon(0.0);  // don't use this lower bound
+  if (tune == PETSC_TRUE) {
+    for (PetscScalar reg = 1e-26; reg > 1e-29; reg *= 1e-2) { // reg = [1e-26 1e-28]
+      regularizationForMacAyeal = reg;
+      for (PetscScalar hard = 1.7e8; hard < 2.95e8; hard += 0.1e8) { // hard = [1.7 1.8 1.9 ... 2.9] x 10^8
+        constantHardnessForMacAyeal = hard;
+        ierr = velocityMacayeal(); CHKERRQ(ierr);
+        ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+        ierr = summary(true,true); CHKERRQ(ierr);
+        ierr = updateViewers(); CHKERRQ(ierr);
+        if (pause_p == PETSC_TRUE) {
+          ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+          ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+        }
+        // compare to observed
+        ierr = computeErrorsInAccurate(); CHKERRQ(ierr);
+        // ierr = readRIGGSandCompare(); CHKERRQ(ierr);
+      }
+    }
+  } else {
+    constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}
+    regularizationForMacAyeal = 1e-27;  // s^{-2}
+    ierr = velocityMacayeal(); CHKERRQ(ierr);
+    // report on result of computation (i.e. to standard out, to viewers, to Matlab file)
+    ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+    ierr = summary(true,true); CHKERRQ(ierr);
+    ierr = updateViewers(); CHKERRQ(ierr);
+    if (pause_p == PETSC_TRUE) {
+      ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+      ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+    }
+    // compare to observed
+    ierr = computeErrorsInAccurate(); CHKERRQ(ierr);
+    // ierr = readRIGGSandCompare(); CHKERRQ(ierr);
   }
+
+  ierr = writeROSSfiles(); CHKERRQ(ierr);
 
   if (showobsvel == PETSC_TRUE) { 
     // update viewers to show observed velocities

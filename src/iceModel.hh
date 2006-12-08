@@ -199,7 +199,8 @@ protected:
   char        adaptReasonFlag;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
   PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, useConstantHardnessForMacAyeal;
-  PetscScalar constantNuForMacAyeal, macayealRelativeTolerance, macayealEpsilon;
+  PetscScalar constantNuForMacAyeal, constantHardnessForMacAyeal, regularizationForMacAyeal,
+              macayealRelativeTolerance, macayealEpsilon;
   PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
@@ -215,12 +216,11 @@ protected:
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
   PetscTruth  useIsothermalFlux;
-  PetscScalar isothermalFlux_n_exponent;
-  PetscScalar isothermalFlux_A_softness;
+  PetscScalar isothermalFlux_n_exponent, isothermalFlux_A_softness;
 
   // viewer and sounding
   char         diagnostic[PETSC_MAX_PATH_LEN], diagnosticBIG[PETSC_MAX_PATH_LEN];
-  PetscViewer  uvbarView[2], nuView[2], NuView[2];
+  PetscViewer  uvbarView[2], nuView[2], lognuView, NuView[2];
   PetscViewer  HView, hView, accumView, bedView, HmeltView, basalmeltView, maskView;
   PetscViewer  speedView, ubarView, vbarView, ghfView, upliftView, TsView;
   PetscViewer  T2View, TView, uView, vView, wView, SigmaView, SigmaMapView;
@@ -346,6 +346,7 @@ protected:
   PetscErrorCode broadcastMacayealVelocity();
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
+  PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();

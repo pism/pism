@@ -52,39 +52,27 @@ PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
   return flow(stress, temp, pressure);
 }
 
-PetscScalar IceType::effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+PetscScalar IceType::effectiveViscosity(const PetscScalar regularization,
+                           const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const {
-#if (0)
-  return 1.4e8 * 0.5 * pow(PetscSqr(u_x) + PetscSqr(v_y)
-                               + 0.25*PetscSqr(u_y + v_x)
-                               + PetscAbsScalar(u_x*v_y), -1.0 / 3.0);
-#else
-  const PetscScalar alpha = (0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
+  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
                              + 0.5 * PetscSqr(u_x + v_y)
-                             + 0.25 * PetscSqr(u_y + v_x));
+                             + 0.25 * PetscSqr(u_y + v_x);
   const PetscScalar B = 135720960;
-  return B / 2 * pow(alpha, -1.0 / 3.0);
-#endif
+  return B / 2 * pow(regularization + alpha, -1.0 / 3.0);
 }
 
-PetscScalar IceType::effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+PetscScalar IceType::effectiveViscosityColumn(const PetscScalar regularization,
+                           const PetscScalar H, const PetscScalar dz,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
-// JED: why this stuff? is this used in SNES or in shelf.cc?  Note I duplicated it above
-// in IceType::effectiveViscosity()
-#if (0)
-  return 1.4e8 * H * 0.5 * pow(PetscSqr(u_x) + PetscSqr(v_y)
-                               + 0.25*PetscSqr(u_y + v_x)
-                               + PetscAbsScalar(u_x*v_y), -1.0 / 3.0);
-#else
-  const PetscScalar alpha = (0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
+  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
                              + 0.5 * PetscSqr(u_x + v_y)
-                             + 0.25 * PetscSqr(u_y + v_x));
+                             + 0.25 * PetscSqr(u_y + v_x);
   const PetscScalar B = 135720960;
-  return H * B / 2 * pow(alpha, -1.0 / 3.0);
-#endif
+  return H * B / 2 * pow(regularization + alpha, -1.0 / 3.0);
 }
 
 PetscScalar GlenIce::hardness_a = 135720960.;
@@ -114,25 +102,27 @@ PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp
   return softnessParameter(T) * pow(stress,n-1);
 }
 
-PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar regularization,
+                           const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const  {
   const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
   const PetscScalar B = hardnessParameter(T);
   const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
                              + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
-  return 0.5 * B * pow(1e-25 + alpha, -(n-1.0)/(2.0*n));
+  return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n)); // regularization fixed at 1e-25 formerly
 }
 
-PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regularization,
+                           const PetscScalar H, const PetscScalar dz,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
-// DESPITE NAME, does *not* return effective viscosity.
-// The result is \nu_e H, i.e. viscosity times thickness
-
+  // DESPITE NAME, does *not* return effective viscosity.
+  // The result is \nu_e H, i.e. viscosity times thickness.
+  // B is really hardness times thickness.
   const PetscInt  ks = static_cast<PetscInt>(floor(H/dz));
-  // Integrate the hardness parameter using the trapezoid rule
+  // Integrate the hardness parameter using the trapezoid rule.
   PetscScalar B = 0;
   for (PetscInt m=1; m<ks; m++) {
     B += dz * hardnessParameter(0.5 * (T1[m] + T2[m]) + beta_CC_grad * (H - k*dz));
@@ -141,16 +131,9 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar H, const P
     B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
     B += 0.5 * dz * hardnessParameter(0.5 * (T1[ks] + T2[ks]) + beta_CC_grad * (H - ks*dz));
   }
-// B is really softness times thickness
-#if (0)
-  return 0.5 * B * pow(1e-25 + PetscSqr(u_x) + PetscSqr(v_y) + 0.25 * PetscSqr(u_y + v_x) +
-                       PetscAbsScalar(u_x * v_y), -(n-1.0)/(2.0*n));
-#else
-  return 0.5 * B * pow(1e-25 + 0.5 * PetscSqr(u_x)
-                       + 0.5 * PetscSqr(v_y)
-                       + 0.5 * PetscSqr(u_x + v_y)
-                       + 0.25 * PetscSqr(u_y + v_x), -(n-1.0)/(2.0*n));
-#endif
+  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
+                             + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
+  return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n));
 }
 
 PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {

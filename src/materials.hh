@@ -61,12 +61,14 @@ public:
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure, const PetscScalar gs) const;
-  // this one returns \nu:
-  virtual PetscScalar effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+  // this one returns nu; applies to ice shelf/stream approximation
+  virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
+                           const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const;
-  // this one returns \nu * H; it is adapted to a staggered grid so T1,T2 get averaged:
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+  // this one returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
+  virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
+                           const PetscScalar H, const PetscScalar dz,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
@@ -96,10 +98,12 @@ public:
 public:
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
-  virtual PetscScalar effectiveViscosity(const PetscScalar u_x, const PetscScalar u_y,
+  virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
+                           const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const;
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H, const PetscScalar dz,
+  virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
+                           const PetscScalar H, const PetscScalar dz,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;

@@ -151,20 +151,15 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
             v_y = (v[i][j+1] - v[i][j]) / dy;
           }
 
+          const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
           if (useConstantHardnessForMacAyeal == PETSC_FALSE) { // usual temperature-dependent case
-            nu[o][i][j] = ice.effectiveViscosityColumn(0.5 * (H[i][j] + H[i+oi][j+oj]),
-                                     dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
-//          } else { // not temperature-dependent case
-//            nu[o][i][j] = 1.4e8 * 0.5 * (H[i][j] + H[i+oi][j+oj]) * 0.5 *
-//              pow(1e-24 + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) +
-//                  PetscAbsScalar(u_x*v_y), -(1.0/3.0));
-//          }
-          } else { // constant \bar B case (value from EISMINT ROSS)
-            const PetscScalar barB = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-            const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-            // "nu" is really "\nu H"
-            nu[o][i][j] = myH * barB * 0.5 *
-              pow(1e-24 + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
+            // "nu" is really "nu H"!
+            nu[o][i][j] = ice.effectiveViscosityColumn(regularizationForMacAyeal,
+                                    myH,dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
+          } else { // constant \bar B case, i.e for EISMINT ROSS
+            // "nu" is really "nu H"!
+            nu[o][i][j] = myH * constantHardnessForMacAyeal * 0.5 *
+              pow(regularizationForMacAyeal + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
                   -(1.0/3.0));
           }
 
@@ -443,6 +438,45 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   return 0;
 }
 
+
+PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView) {
+  PetscErrorCode ierr;
+  if (lognuView != PETSC_NULL) {
+    PetscScalar  **nui, **nuj, **gg;  
+    ierr = DAVecGetArray(grid.da2, g2, &gg); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vNu[0], &nui); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vNu[1], &nuj); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        const PetscReal avnu = 0.5 * (nui[i][j] + nuj[i][j]);
+        if (avnu > 1.0e14) {
+          gg[i][j] = log10(avnu);
+        } else {
+          gg[i][j] = 14.0;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vNu[0], &nui); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vNu[1], &nuj); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, g2, &gg); CHKERRQ(ierr);
+    ierr = VecView(g2, lognuView); CHKERRQ(ierr);
+  }
+  if (nuView[0] != PETSC_NULL && nuView[1] != PETSC_NULL) {
+    ierr = DALocalToGlobal(grid.da2, vNu[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView(g2, nuView[0]); CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, vNu[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView(g2, nuView[1]); CHKERRQ(ierr);
+  }
+  if ((NuView[0] != PETSC_NULL) && (NuView[1] != PETSC_NULL) && updateNu_tView) {
+    // note vNuOld[] contain *difference* of nu after testConvergenceofNu()
+    ierr = DALocalToGlobal(grid.da2, vNuOld[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView(g2, NuView[0]); CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, vNuOld[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView(g2, NuView[1]); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
 /* **********************************************************************
 *                          Macayeal Velocity
 * **********************************************************************/
@@ -466,15 +500,23 @@ PetscErrorCode IceModel::velocityMacayeal() {
   maxIterations = DEFAULT_MAX_ITERATIONS_MACAYEAL;
   epsilon = macayealEpsilon;
   ierr = verbPrintf(3,grid.com, "  iteration to solve ice stream/shelf equations:\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(5,grid.com, 
+     "  [macayealEpsilon = %10.5e, regularizationForMacAyeal = %10.5e,\n",
+     macayealEpsilon, regularizationForMacAyeal); CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com, 
+     "   constantHardnessForMacAyeal = %10.5e, macayealRelativeTolerance = %10.5e]\n",
+    constantHardnessForMacAyeal, macayealRelativeTolerance); CHKERRQ(ierr);
+
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
     for (PetscInt k=0; k<maxIterations; ++k) {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
-      ierr = verbPrintf(3,grid.com, "  %1d:%3d", l, k); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "  %d,%d:", l, k); CHKERRQ(ierr);
       ierr = assembleMacayealMatrix(vNu, A, rhs); CHKERRQ(ierr);
-      ierr = verbPrintf(3,grid.com, "A"); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
 #if 0
         PetscReal vec_norm, mat_norm;
@@ -486,11 +528,6 @@ PetscErrorCode IceModel::velocityMacayeal() {
 #endif
 
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-      //ierr = KSPSetType(ksp, KSPCGS); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-      ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
-      ierr = verbPrintf(3,grid.com, "S"); CHKERRQ(ierr);
-
       /* -ksp_type will set it; defaults to GMRES(30)
        * -ksp_pc will set preconditioner; defaults to ILU
        * If you want to test different KSP methods, it may be helpful to
@@ -498,9 +535,12 @@ PetscErrorCode IceModel::velocityMacayeal() {
        * that CGS takes roughly half the iterations of GMRES(30)
        * [default], but is not significantly faster. Furthermore, ILU
        * [default] and BJACOBI seem roughly equivalent. */
+      //ierr = KSPSetType(ksp, KSPCGS); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+      ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
-      ierr = verbPrintf(3,grid.com, "%3d:%1d ", its, reason); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "S:%d,%d: ", its, reason); CHKERRQ(ierr);
 
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
       ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
@@ -508,29 +548,15 @@ PetscErrorCode IceModel::velocityMacayeal() {
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
 
-      /*
-      * Extra diagnostic information
-      */
-      if (nuView[0] != PETSC_NULL && nuView[1] != PETSC_NULL) {
-        ierr = DALocalToGlobal(grid.da2, vNu[0], INSERT_VALUES, g2); CHKERRQ(ierr);
-        ierr = VecView(g2, nuView[0]); CHKERRQ(ierr);
-        ierr = DALocalToGlobal(grid.da2, vNu[1], INSERT_VALUES, g2); CHKERRQ(ierr);
-        ierr = VecView(g2, nuView[1]); CHKERRQ(ierr);
-      }
-      if (NuView[0] != PETSC_NULL && NuView[1] != PETSC_NULL) {
-        ierr = DALocalToGlobal(grid.da2, vNuOld[0], INSERT_VALUES, g2); CHKERRQ(ierr);
-        ierr = VecView(g2, NuView[0]); CHKERRQ(ierr);
-        ierr = DALocalToGlobal(grid.da2, vNuOld[1], INSERT_VALUES, g2); CHKERRQ(ierr);
-        ierr = VecView(g2, NuView[1]); CHKERRQ(ierr);
-      }
+      /* extra diagnositic info */
+      ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
       if (norm == 0 || normChange / norm < macayealRelativeTolerance) goto done;
     }
     ierr = verbPrintf(1,grid.com,
                        "WARNING: Effective viscosity not converged after %d iterations\n"
-                       "\twith epsilon=%8.2e. Retrying with"
-                       " epsilon * DEFAULT_EPSILON_MULTIPLIER_MACAYEAL.\n",
-                       maxIterations, epsilon);
+                       "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
+                       maxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL);
     CHKERRQ(ierr);
     ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
     ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
@@ -687,8 +713,8 @@ PetscErrorCode IceModel::correctSigma() {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
           const PetscScalar pressure = ice.rho * ice.grav * (H[i][j] - k * dz);
-          Sigma[i][j][k] = CC * ice.effectiveViscosity(u_x,u_y,v_x,v_y,
-                                                       T[i][j][k],pressure);;
+          Sigma[i][j][k] = CC * ice.effectiveViscosity(regularizationForMacAyeal,
+                                         u_x,u_y,v_x,v_y,T[i][j][k],pressure);;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
           Sigma[i][j][k] = 0.0;

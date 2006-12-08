@@ -66,10 +66,11 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&basalmeltView, 'l',"basal melt rate (m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&HmeltView, 'L',"basal melt water thickness (m)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&maskView, 'm',"mask (1=SHEET, 2=DRAG, 3=FLOAT)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&nuView[0], 'n',"nu (I offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&nuView[1], 'n',"nu (J offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&NuView[0], 'N',"nu_t (I offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&NuView[1], 'N',"nu_t (J offset)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&nuView[0], 'i',"nu*H (I offset)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&nuView[1], 'j',"nu*H (J offset)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&lognuView, 'n',"log_10(nu*H)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&NuView[0], 'N',"(nu*H)_t (I offset)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&NuView[1], 'N',"(nu*H)_t (J offset)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&upliftView, 'p',"bed uplift rate (m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&slidespeedView, 'q',"log(basal sliding speed) (log_10(m/a))");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&TsView, 'r',"suRface temperature (K)");  CHKERRQ(ierr);
@@ -102,6 +103,7 @@ PetscErrorCode IceModel::destroyViewers() {
   if (uvbarView[1] != PETSC_NULL) { ierr = PetscViewerDestroy(uvbarView[1]); CHKERRQ(ierr); }
   if (nuView[0] != PETSC_NULL) { ierr = PetscViewerDestroy(nuView[0]); CHKERRQ(ierr); }
   if (nuView[1] != PETSC_NULL) { ierr = PetscViewerDestroy(nuView[1]); CHKERRQ(ierr); }
+  if (lognuView != PETSC_NULL) { ierr = PetscViewerDestroy(lognuView); CHKERRQ(ierr); }
   if (NuView[0] != PETSC_NULL) { ierr = PetscViewerDestroy(NuView[0]); CHKERRQ(ierr); }
   if (NuView[1] != PETSC_NULL) { ierr = PetscViewerDestroy(NuView[1]); CHKERRQ(ierr); }
   if (ubarView != PETSC_NULL) { ierr = PetscViewerDestroy(ubarView); CHKERRQ(ierr); }
@@ -177,7 +179,8 @@ PetscErrorCode IceModel::initSounding() {
 PetscErrorCode IceModel::updateViewers() {
   // see IceModel::massBalExplicitStep() in iceModel.cc for  dhView  ("-d g")
   // see IceModel::computeMaxDiffusivity() in iMutil.cc for  diffusView ("-d f")
-  // see IceModel::velocityMacAyeal() in iMmacayeal.cc for   nuView  ("-d n")
+  // see IceModel::velocityMacAyeal() in iMmacayeal.cc for   nuView  ("-d i" or "-d j")
+  //                                                   and   lognuView  ("-d n")
   //                                                   and   NuView  ("-d N")
   // see iceCompModel.cc for compensatory Sigma viewers
 

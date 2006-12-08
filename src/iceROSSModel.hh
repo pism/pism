@@ -40,12 +40,14 @@ private:
     PetscInt        flowlawNumber, xsROSS, xmROSS;
     Vec             obsAzimuth, obsMagnitude, obsAccurate;
     PetscScalar     gridLat[111], gridLon[147];
+    PetscScalar     vecErrAcc;
     
     PetscErrorCode  createROSSVecs();
     PetscErrorCode  destroyROSSVecs();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  makeSurfaceFloating();
     PetscErrorCode  showObservedVels();
+    PetscErrorCode  computeErrorsInAccurate();
 };
 
 #endif /* __iceROSSModel_hh */

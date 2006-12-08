@@ -40,34 +40,41 @@
 
 const PetscTruth  DEFAULT_BE_VERBOSE = PETSC_FALSE;
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
+
 const PetscScalar DEFAULT_START_YEAR = 0;
 const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
+const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 60.0;
+const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
+const PetscInt    DEFAULT_TEMPSKIP = 1;  // every mass balance step is a temp step
+
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
 const PetscTruth  DEFAULT_DO_MASS_BAL = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMP = PETSC_TRUE;
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
-const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 60.0;
+const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
+const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
+const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
+
+const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3.0;
+const PetscScalar DEFAULT_ISOTHERMAL_FLUX_A_SOFTNESS = 1.0e-16 / secpera; // Pa^{-3} s^{-1}
+
 const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
 const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 200.0;
-const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
-const PetscInt    DEFAULT_TEMPSKIP = 1;  // every mass balance step is a temp step
-const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
 
-const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3;
-const PetscScalar DEFAULT_ISOTHERMAL_FLUX_A_SOFTNESS = 1.0e-16 / secpera; // Pa^{-3} s^{-1}
-
-const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
-const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_MACAYEAL_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL = PETSC_FALSE;
+const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
  // for next value, compare Ritz et al (2001)
 const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera;
+const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+// for next constant, compare (typical value of u_x^2 in Ross shelf) = 1e-20 s^-2
+const PetscScalar DEFAULT_REGULARIZATION_FOR_MACAYEAL = 1e-25; // s^-2
 const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
-const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
+
 
 PetscErrorCode IceModel::setDefaults() {
   PetscErrorCode ierr;
@@ -92,6 +99,8 @@ PetscErrorCode IceModel::setDefaults() {
   useConstantNuForMacAyeal = DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL;
   useConstantHardnessForMacAyeal = DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL;
   constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
+  constantHardnessForMacAyeal = DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL;
+  regularizationForMacAyeal = DEFAULT_REGULARIZATION_FOR_MACAYEAL;
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
 
