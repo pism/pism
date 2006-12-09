@@ -84,32 +84,32 @@ libpism : ${ICE_OBJS}
 libtests : ${TESTS_OBJS}
 	${IBM_LINKER} -o obj/libtests.a ${TESTS_OBJS}
 
-flowTable : obj/libpism.so flowTable.o
+flowTable : obj/libpism.a flowTable.o
 #	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/flowTable
 	${IBMLINKER} $^ ${ICE_LIB_FLAGS} -o obj/flowTable
 
-get_drag : obj/libpism.so get_drag.o
+get_drag : obj/libpism.a get_drag.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/get_drag
 
-pismr : obj/libpism.so run.o
+pismr : obj/libpism.a run.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
 
-pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
+pisms : obj/libpism.a iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
 
-pismv : obj/libpism.so obj/libtests.so iceCompModel.o verify.o
+pismv : obj/libpism.a obj/libtests.a iceCompModel.o verify.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismv
 
-shelf : obj/libpism.so shelf.o
+shelf : obj/libpism.a shelf.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/shelf
 
-simpleISO : obj/libtests.so simpleISO.o
+simpleISO : obj/libtests.a simpleISO.o
 	${IBM_LINKER} $^ -lm -L`pwd`/obj -ltests -o obj/simpleISO
 
-simpleFG : obj/libtests.so simpleFG.o
+simpleFG : obj/libtests.a simpleFG.o
 	${IBM_LINKER} $^ -lm -L`pwd`/obj -ltests -o obj/simpleFG
 
-simpleI : obj/libtests.so simpleI.o
+simpleI : obj/libtests.a simpleI.o
 	${IBM_LINKER} $^ -lm -L`pwd`/obj -ltests -o obj/simpleI
 
 # Cancel the implicit rules
