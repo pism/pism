@@ -22,7 +22,6 @@
 #include <math.h>
 #include "exactTestH.h"
 
-#define pi 3.14159265358979
 #define SperA 31556926.0  /* seconds per year; 365.2422 days */
 
 int exactH(const double f, const double tIN, const double r,

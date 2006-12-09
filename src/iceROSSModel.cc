@@ -746,8 +746,8 @@ PetscErrorCode IceROSSModel::run() {
 //  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}
   constantHardnessForMacAyeal = 2.22e8;  // Pa s^{1/3}
 
-  regularizingVelocitySchoof = 1.0 / secpera;  // (VELOCITY/LENGTH)^2  is very close to 10^-27
-  regularizingLengthSchoof = 1000.0e3;
+  regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
+  regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
   ierr = verbPrintf(5,grid.com,"[using Schoof regularization constant = %10.5e]\n",
               PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
 

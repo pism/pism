@@ -12,14 +12,16 @@ simplify = env.Program('pisms',
       LIBS = ['pism'] + pism_libs)
 shelf = env.Program('shelf', 'shelf.cc', LIBS = ['pism'] + pism_libs)
 
-env.SharedLibrary('tests', Split('exactTestsABCDE.c exactTestsFG.c exactTestH.c'))
+env.SharedLibrary('tests', 
+           Split('exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c'))
 
 simpleISO = env.Program('simpleISO', 'simpleISO.c', LIBS = ['tests', 'm'])
 simpleFG = env.Program('simpleFG', 'simpleFG.c', LIBS = ['tests', 'm'])
+simpleI = env.Program('simpleI', 'simpleI.c', LIBS = ['tests', 'm'])
 
 verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'],
                      LIBS = ['pism', 'tests'] + pism_libs)
 
 get_drag = env.Program('get_drag.cc', LIBS= ['pism'] + pism_libs)
 
-Default(flowTable, run, simplify, verify, simpleISO, simpleFG, shelf, get_drag)
+Default(flowTable, run, simplify, verify, simpleISO, simpleFG, simpleI, shelf, get_drag)
