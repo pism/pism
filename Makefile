@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-VPATH = src
+VPATH = src:src/exact
 ALL : all
 
 #FLAGS:
@@ -23,7 +23,7 @@ endif
 
 #VARIABLES:
 
-executables= flowTable pismr pismv pisms simpleISO simpleFG shelf get_drag
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -32,12 +32,12 @@ ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 ice_csources= cubature.c
 ICE_OBJS= $(ice_sources:.cc=.o) cubature.o
 
-tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c
+tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
 	iceROSSModel.cc run.cc verify.cc iceCompModel.cc get_drag.cc shelf.cc
-other_csources= simpleISO.c simpleFG.c
+other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
@@ -64,7 +64,7 @@ get_drag : obj/libpism.so get_drag.o
 pismr : obj/libpism.so run.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
 
-pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o simplify.o
+pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
 
 pismv : obj/libpism.so obj/libtests.so iceCompModel.o verify.o
@@ -80,6 +80,10 @@ simpleISO : obj/libtests.so simpleISO.o
 simpleFG : obj/libtests.so simpleFG.o
 	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
 	 -o obj/simpleFG
+
+simpleI : obj/libtests.so simpleI.o
+	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
+	 -o obj/simpleI
 
 # Cancel the implicit rules
 % : %.cc
