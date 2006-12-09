@@ -38,7 +38,7 @@ int main() {
 
   double m, x, y, bed, tauc, u, v;
   int    scanret;
-  const double secpera=31556926.0;  // seconds per year; 365.2422 days
+  const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   
   printf("Enter  m, x, y  separated by space (or newline);\n");
   printf("    (units: pure, pure, km, km; e.g. 10 100 40):\n");

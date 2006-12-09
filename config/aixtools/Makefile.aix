@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-VPATH = src
+VPATH = src:src/exact
 ALL : all
 
 IBM_LINKER=ar -X64 -rs
