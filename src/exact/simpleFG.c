@@ -64,8 +64,8 @@ Results:
 
 int main() {
 
-  const double SperA=31556926.0;  // seconds per year; 365.2422 days
-  const double Cp=200.0;     // m;  magnitude of the perturbation in test G
+  const double SperA=31556926.0;  /* seconds per year; 365.2422 days */
+  const double Cp=200.0;     /* m;  magnitude of the perturbation in test G */
   double year, r, HF, MF, HG, MG;
   double *z, *TF, *UF, *wF, *SigF, *SigcF, *TG, *UG, *wG, *SigG, *SigcG;
   int j, Mz;

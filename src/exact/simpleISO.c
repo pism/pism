@@ -47,7 +47,7 @@ Results for Test E:
 
 int main() {
 
-  const double SperA=31556926.0;  // seconds per year; 365.2422 days
+  const double SperA=31556926.0;  /* seconds per year; 365.2422 days */
 
   double year, r, 
          HA, MA, HB, MB, HC, MC, HD, MD,
