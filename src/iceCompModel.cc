@@ -20,9 +20,9 @@
 #include <cstring>
 #include <petscda.h>
 
-#include "exactTestsABCDE.h"
-#include "exactTestsFG.h" 
-#include "exactTestH.h" 
+#include "exact/exactTestsABCDE.h"
+#include "exact/exactTestsFG.h" 
+#include "exact/exactTestH.h" 
 
 #include "iceCompModel.hh"
 

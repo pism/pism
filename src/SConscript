@@ -12,12 +12,12 @@ simplify = env.Program('pisms',
       LIBS = ['pism'] + pism_libs)
 shelf = env.Program('shelf', 'shelf.cc', LIBS = ['pism'] + pism_libs)
 
-env.SharedLibrary('tests', 
-           Split('exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c'))
+env.SharedLibrary('tests', Split("""exact/exactTestsABCDE.c exact/exactTestsFG.c 
+exact/exactTestH.c exact/exactTestI.c"""))
 
-simpleISO = env.Program('simpleISO', 'simpleISO.c', LIBS = ['tests', 'm'])
-simpleFG = env.Program('simpleFG', 'simpleFG.c', LIBS = ['tests', 'm'])
-simpleI = env.Program('simpleI', 'simpleI.c', LIBS = ['tests', 'm'])
+simpleISO = env.Program('simpleISO', 'exact/simpleISO.c', LIBS = ['tests', 'm'])
+simpleFG = env.Program('simpleFG', 'exact/simpleFG.c', LIBS = ['tests', 'm'])
+simpleI = env.Program('simpleI', 'exact/simpleI.c', LIBS = ['tests', 'm'])
 
 verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'],
                      LIBS = ['pism', 'tests'] + pism_libs)
