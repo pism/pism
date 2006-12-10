@@ -2,7 +2,8 @@ SHELL = /bin/sh
 VPATH = src:src/exact
 ALL : all
 
-IBM_LINKER=ar -X64 -rs
+#IBM_LINKER=ar -X64 -rs
+IBM_LINKER=mpcc_r -q64
 
 #FLAGS:
 
@@ -68,6 +69,7 @@ depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
 include ${PETSC_DIR}/bmake/common/base
+CPP = mpCC_r -q64 -E
 
 #TARGETS:
 
@@ -126,7 +128,7 @@ tags TAGS :
 %.d : %.cc
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 gcc -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -134,7 +136,7 @@ tags TAGS :
 %.d : %.c
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 gcc -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 

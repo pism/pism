@@ -47,13 +47,13 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&accumView, 'a',"M (surface accum rate; m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&bedView, 'b',"b (bed elev; m above sea level)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&speedView, 'c',"log(speed) (log_10(m/a))");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&gsView, 'd',"grain size (mm)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&gsMapView, 'D',"grain size (mm) at kd");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&gsView, 'g',"grain size (mm)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&gsMapView, 'G',"grain size (mm) at kd");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&tauView, 'e',"age of ice (years)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&tauMapView, 'E',"age of ice (years) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&diffusView, 'f',"D (diffusivity; m^2/s)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&dhView, 'g',"thickening rate dH/dt (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&ghfView, 'G',"geothermal heat flux (mW/m^2)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&diffusView, 'd',"D (diffusivity; m^2/s)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&dhView, 'f',"thickening rate dH/dt (m/a)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&ghfView, 'F',"geothermal heat flux (mW/m^2)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&HView, 'H',"H (thickness; m)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&hView, 'h',"h (surface elev; m above sea level)");  CHKERRQ(ierr);
 

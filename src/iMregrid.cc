@@ -19,8 +19,8 @@
 #include <cstring>
 #include "iceModel.hh"
 
-#include "petscsys.h"
-#include "petscfix.h"
+#include <petscsys.h>
+#include <petscfix.h>
 
 
 PetscErrorCode IceModel::regrid(const char *regridFile) {

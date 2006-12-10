@@ -20,10 +20,10 @@
 #include <ctime>
 #include "iceModel.hh"
 
-#include "petscsys.h"
+#include <petscsys.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include "petscfix.h"
+#include <petscfix.h>
 
 // verbosity level version of PetscPrintf: print according to whether 
 // (thresh <= IceModel::verbosityLevel), in which case print, or 
@@ -296,29 +296,36 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 }
 
 
-PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
-  // note computeMaxDiffusivity() must be called before this to set gDmax
-  // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
-  // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
-  // reference: Morton & Mayers 2nd ed. pp 62--63
-  const PetscScalar gridfactor 
-                    = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
-  PetscScalar dt_from_diffus = adaptTimeStepRatio
-                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
-  if (dt_from_diffus < dt) {
-    dt = dt_from_diffus;
-    adaptReasonFlag = 'd';
+PetscErrorCode IceModel::adaptTimeStepCFL() {
+  // CFLmaxdt is set by computeMaxVelocities() in call to velocity() iMvelocity.cc
+  dt_from_cfl = CFLmaxdt;
+  if (dt_from_cfl < dt) {
+    dt = dt_from_cfl;
+    adaptReasonFlag = 'c';
   }
   return 0;
 }
 
 
-PetscErrorCode IceModel::adaptTimeStepCFL() {
-  // CFLmaxdt is set by computeMaxVelocities() in iMvelocity.cc
-  PetscScalar    dt_from_cfl = CFLmaxdt / tempskip;
-  if (dt_from_cfl < dt) {
-    dt = dt_from_cfl;
-    adaptReasonFlag = 'c';
+PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
+  // note computeMaxDiffusivity() must be called before this to set gDmax
+  // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
+  // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
+  // reference: Morton & Mayers 2nd ed. pp 62--63
+  const PetscScalar  
+          gridfactor = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
+  dt_from_diffus = adaptTimeStepRatio
+                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
+  if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
+    const PetscInt     MAX_TEMP_SKIP = 5;
+    const PetscScalar  conservativeFactor = 0.8;
+    // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
+    tempskipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
+    tempskipCountDown = (tempskipCountDown > MAX_TEMP_SKIP) ? MAX_TEMP_SKIP : tempskipCountDown;
+  } // if tempskipCountDown > 0 then it will get decremented at the mass balance step
+  if (dt_from_diffus < dt) {
+    dt = dt_from_diffus;
+    adaptReasonFlag = 'd';
   }
   return 0;
 }
@@ -346,17 +353,18 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       dt = timeToEnd;
       adaptReasonFlag = 'e';
     }
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
-      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
-    }
     if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
         && doTemperatureCFL) {
-      // note: if tempskip > 1 then here dt is reduced by a factor of tempskip
       ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
     } 
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
+      // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
+      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+    }
   }    
   return 0;
 }
+
 
 PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
                                     PetscScalar& gvolSIA, PetscScalar& gvolstream, 
@@ -459,8 +467,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
  
   if (tempAndAge || (beVerbose == PETSC_TRUE)) {
   // give summary data a la EISMINT II:
-  //    year (+ dt[R]) (years),
-  //       [ note R = reason for dt: 
+  //    year (+ dt[NR]) (years),
+  //       [ note 
+  //            N = tempskipCountDown
+  //            R = on character reason for dt: 
   //            m = maxdt applied, 
   //            e = time to end, 
   //            d = diffusive limit from mass continuity,
@@ -474,8 +484,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //                      depends on useHomoTemp],
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
-    ierr = PetscPrintf(grid.com, "%10.2f (+%8.4f[%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
-                       grid.p->year, dt/secpera, adaptReasonFlag, 
+    ierr = PetscPrintf(grid.com, "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
+                       grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
                        gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
                        gdivideT); CHKERRQ(ierr);
   } else {
@@ -487,8 +497,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //    divide thickness (m),
   //    
     ierr = PetscPrintf(grid.com, 
-       "%10.2f (+%8.4f[%c]):%8.3f%8.3f   <same>%11.3f    <same>",
-       grid.p->year, dt/secpera, adaptReasonFlag, 
+       "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f   <same>%11.3f    <same>",
+       grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
        gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
   }
 

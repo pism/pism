@@ -31,8 +31,8 @@ IceModel::setFromOptions() {
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
              maxdtSet, startYearSet, runYearsSet, endYearSet, verbose,
              noMassBal, noTemp, bedDefiso, bedDef, bedDeflc, isoflux, muSet, 
-             nospokesSet, tempskipSet, oceanKillSet;
-  PetscInt nospokeslevel, ts;
+             nospokesSet, oceanKillSet, notempskipSet;
+  PetscInt nospokeslevel;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
@@ -144,9 +144,10 @@ IceModel::setFromOptions() {
 // note "-regrid_vars" is in use for regrid variable names
 
   /* This controls how many mass balance steps per temp step */
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &ts, &tempskipSet); CHKERRQ(ierr);
-  if (tempskipSet == PETSC_TRUE)
-    setTempskip(ts);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_tempskip", &notempskipSet); CHKERRQ(ierr);
+  if (notempskipSet == PETSC_TRUE) {
+    doTempSkip = PETSC_FALSE;
+  }
 
   // FIXME:  should follow scheme describe in iMutil.cc (see verbPrintf())  
   // verbose: the summary at each time step is more complete (see summary() in 

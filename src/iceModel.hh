@@ -85,7 +85,6 @@ public:
   void setIsDrySimulation(PetscTruth);
   void setEnhancementFactor(PetscScalar);
   void setMuSliding(PetscScalar);
-  void setTempskip(PetscInt);
   void setGSIntervalYears(PetscScalar);
   void setBedDefIntervalYears(PetscScalar);
   void setBeVerbose(PetscTruth);  // to be deleted!
@@ -177,6 +176,7 @@ protected:
   BedrockType  bedrock;
   DumbOceanType ocean;
 
+  // state variables
   Vec          vh, vH, vbed,            // 2D vectors; Mx x My
                vAccum, vTs,             // accumulation, surface temp
                vMask,                   // mask for flow type
@@ -194,33 +194,33 @@ protected:
                vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
   Vec          vTb;                     // 3D bed: Mx x My x Mbz
 
-  // parameters and flags
-  PetscScalar muSliding, enhancementFactor;
+  // parameters
+  PetscScalar maxdt, muSliding, enhancementFactor;
   PetscScalar dt, dtTempAge;    // current mass cont. and temp/age time steps in seconds
-  PetscScalar maxdt;
   PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
-  char        adaptReasonFlag;
-  PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
-  PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, useConstantHardnessForMacAyeal;
   PetscScalar constantNuForMacAyeal, constantHardnessForMacAyeal,
               regularizingVelocitySchoof, regularizingLengthSchoof,
               macayealRelativeTolerance, macayealEpsilon;
-  PetscScalar adaptTimeStepRatio;
   PetscScalar startYear, endYear;
-  PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
-  PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
-  PetscTruth  showViewers, allowRegridding, beVerbose;
-  PetscTruth  createVecs_done, createViewers_done;
-  PetscInt    verbosityLevel, tempskip, noSpokesLevel;
-  PetscScalar gsIntervalYears, bedDefIntervalYears;
+  PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
-  PetscScalar CFLmaxdt, gDmax;
+  PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, gDmax;
   PetscScalar gmaxu, gmaxv, gmaxw;  // global maximums on 3D grid for abs value 
                                     // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
-  PetscTruth  useIsothermalFlux;
   PetscScalar isothermalFlux_n_exponent, isothermalFlux_A_softness;
+  PetscInt    verbosityLevel, tempskipCountDown, noSpokesLevel;
+
+  // flags
+  PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
+  PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
+  PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, useConstantHardnessForMacAyeal;
+  PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
+  PetscTruth  showViewers, allowRegridding, beVerbose, doTempSkip;
+  PetscTruth  createVecs_done, createViewers_done;
+  PetscTruth  useIsothermalFlux;
+  char        adaptReasonFlag;
 
   // viewer and sounding
   char         diagnostic[PETSC_MAX_PATH_LEN], diagnosticBIG[PETSC_MAX_PATH_LEN];

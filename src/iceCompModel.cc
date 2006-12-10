@@ -1016,18 +1016,16 @@ PetscErrorCode IceCompModel::run() {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICS\n"); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,grid.com,
-      "$$$$      YEAR (+    STEP[R]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
+      "$$$$      YEAR (+    STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
       CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
+  tempskipCountDown = 0;
   ierr = summary(true,false); CHKERRQ(ierr);  // report starting state
 
-  PetscInt    it = 0;
-  bool        tempAgeStep;
-  
   dtTempAge = 0.0;
-  // main loop
-  for (PetscScalar year = startYear; year < endYear; year += dt/secpera, it++) {
+  // main loop for time evolution
+  for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temp
@@ -1041,10 +1039,10 @@ PetscErrorCode IceCompModel::run() {
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-    tempAgeStep = (    (exactOnly == PETSC_FALSE)
-                    && (doTemp == PETSC_TRUE)
-                    && (it % tempskip == 0) 
-                    && ((testname == 'F') || (testname =='G')) );
+    bool tempAgeStep = (    (exactOnly == PETSC_FALSE)
+                         && (doTemp == PETSC_TRUE)
+                         && (tempskipCountDown == 0) 
+                         && ((testname == 'F') || (testname =='G')) );
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 
@@ -1059,7 +1057,7 @@ PetscErrorCode IceCompModel::run() {
     // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
     //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
     //    criteria from derived class additionalAtStartTimestep(), and from 
-    //    IceModel::tempskip mechanism
+    //    "-tempskip" mechanism
 
     // ierr = PetscPrintf(PETSC_COMM_SELF,
     //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
@@ -1094,6 +1092,8 @@ PetscErrorCode IceCompModel::run() {
     
     if ((exactOnly == PETSC_FALSE) && (doMassBal == PETSC_TRUE)) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
+      if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
+        tempskipCountDown--;
       ierr = verbPrintf(2,grid.com, "f"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);

@@ -367,10 +367,6 @@ void IceModel::setMuSliding(PetscScalar mu) {
   muSliding = mu;
 }
 
-void IceModel::setTempskip(PetscInt ts) {
-  tempskip = ts;
-}
-
 void IceModel::setGSIntervalYears(PetscScalar years) {
   gsIntervalYears = years;
 }
@@ -587,18 +583,16 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com,
-  "$$$$$      YEAR (+    STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
+  "$$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
+  tempskipCountDown = 0;
   ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
-
-  PetscInt    it = 0;
-  bool tempAgeStep;
 
   dtTempAge = 0.0;
   // main loop for time evolution
-  for (PetscScalar year = startYear; year < endYear; year += dt/secpera, it++) {
+  for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temp
@@ -612,7 +606,7 @@ PetscErrorCode IceModel::run() {
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-    tempAgeStep = ((it % tempskip == 0) && (doTemp == PETSC_TRUE));
+    bool tempAgeStep = ((tempskipCountDown == 0) && (doTemp == PETSC_TRUE));
     ierr = velocity(tempAgeStep); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
 
@@ -630,7 +624,7 @@ PetscErrorCode IceModel::run() {
     // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
     //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
     //    criteria from derived class additionalAtStartTimestep(), and from 
-    //    IceModel::tempskip mechanism
+    //    "-tempskip" mechanism
 
     // ierr = PetscPrintf(PETSC_COMM_SELF,
     //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
@@ -647,12 +641,18 @@ PetscErrorCode IceModel::run() {
     
     if (doMassBal == PETSC_TRUE) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
+      if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
+        tempskipCountDown--;
       ierr = verbPrintf(2,grid.com, "f"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     ierr = summary(tempAgeStep,true); CHKERRQ(ierr);
+
+//    ierr = verbPrintf(2,grid.com, " tempskipCountDown=%d, dt_from_cfl=%10.5e, dt_from_diffus=%10.5e, CFLmaxdt=%10.5e\n",
+//                      tempskipCountDown, dt_from_cfl, dt_from_diffus, CFLmaxdt); CHKERRQ(ierr);
+     
     ierr = updateViewers(); CHKERRQ(ierr);
 
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
