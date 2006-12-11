@@ -65,7 +65,7 @@ get_drag : obj/libpism.so get_drag.o
 pismr : obj/libpism.so run.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
 
-pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o simplify.o
+pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
 
 pismv : obj/libpism.so obj/libtests.so iceCompModel.o verify.o
