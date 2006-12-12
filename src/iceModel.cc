@@ -169,6 +169,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
 
+  ierr = VecDuplicateVecs(vh, 2, &vDf); CHKERRQ(ierr);
   ierr = VecDuplicateVecs(vh, 2, &vuvbar); CHKERRQ(ierr);
 
   ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
@@ -224,6 +225,7 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
 
   ierr = VecDestroyVecs(vuvbar, 2); CHKERRQ(ierr);
+  ierr = VecDestroyVecs(vDf, 2); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork2d, nWork2d); CHKERRQ(ierr);
 
@@ -606,9 +608,9 @@ PetscErrorCode IceModel::run() {
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-    bool tempAgeStep = ((tempskipCountDown == 0) && (doTemp == PETSC_TRUE));
-    ierr = velocity(tempAgeStep); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
+    bool updateAtDepth = (tempskipCountDown == 0);
+    ierr = velocity(updateAtDepth); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
 
     // now that velocity field is up to date, compute grain size
     if (doGrainSize == PETSC_TRUE) {
@@ -618,7 +620,8 @@ PetscErrorCode IceModel::run() {
     }
     
     // adapt time step using velocities and diffusivity, ..., just computed
-    ierr = determineTimeStep((useIsothermalFlux != PETSC_TRUE)); CHKERRQ(ierr);
+    bool useCFLforTempAgeEqntoGetTimestep = (doTemp == PETSC_TRUE);
+    ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
     dtTempAge += dt;
     grid.p->year += dt / secpera;  // adopt it
     // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
@@ -630,7 +633,8 @@ PetscErrorCode IceModel::run() {
     //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
     //        CHKERRQ(ierr);
     
-    if ((doTemp == PETSC_TRUE) &&  (tempAgeStep)) { // do temperature and age
+    bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
+    if (tempAgeStep) { // do temperature and age
       allowAboveMelting = PETSC_FALSE;
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;

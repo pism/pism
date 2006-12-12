@@ -317,6 +317,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
+//    const PetscInt     MAX_TEMP_SKIP = 0;
     const PetscInt     MAX_TEMP_SKIP = 10;
     const PetscScalar  conservativeFactor = 0.8;
     // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
@@ -344,6 +345,14 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   } else {
     dt = maxdt;
     adaptReasonFlag = 'm';
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
+        && doTemperatureCFL) {
+      ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
+    } 
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
+      // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
+      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+    }
     if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
       dt = maxdt_temporary;
       adaptReasonFlag = 't';
@@ -353,13 +362,8 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       dt = timeToEnd;
       adaptReasonFlag = 'e';
     }
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
-        && doTemperatureCFL) {
-      ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
-    } 
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
-      // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
-      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+    if ((adaptReasonFlag == 'm') || (adaptReasonFlag == 't') || (adaptReasonFlag == 'e')) {
+      if (tempskipCountDown > 1) tempskipCountDown = 1; 
     }
   }    
   return 0;

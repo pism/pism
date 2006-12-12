@@ -189,7 +189,8 @@ protected:
                vubar, vvbar;            // vertically-averaged vels 
                                         //   (u bar and v bar) on standard grid
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
-                                        //   u bar and v bar on staggered grid
+                                        //   u bar and v bar on staggered grid,
+  Vec*         vDf;                     // vDf[0],vDf[1] are diffusivity on staggered grid
   Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
                vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
   Vec          vTb;                     // 3D bed: Mx x My x Mbz
@@ -362,7 +363,7 @@ protected:
                                             PetscScalar *Texcess, PetscScalar *Hmelt);
 
   // see iMvelocity.cc
-  PetscErrorCode velocitySIAStaggered();
+  PetscErrorCode velocitySIAStaggered(bool faststep);
   PetscErrorCode basalSIAConditionsToRegular();
   PetscErrorCode SigmaSIAToRegular();
   PetscErrorCode horizontalVelocitySIARegular();

@@ -1039,19 +1039,22 @@ PetscErrorCode IceCompModel::run() {
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-    bool tempAgeStep = (    (exactOnly == PETSC_FALSE)
-                         && (doTemp == PETSC_TRUE)
-                         && (tempskipCountDown == 0) 
-                         && ((testname == 'F') || (testname =='G')) );
-    ierr = velocity(tempAgeStep); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, tempAgeStep ? "v" : "V" ); CHKERRQ(ierr);
+//    bool tempAgeStep = (    (exactOnly == PETSC_FALSE)
+//                         && (doTemp == PETSC_TRUE)
+//                         && (tempskipCountDown == 0) 
+//                        && ((testname == 'F') || (testname =='G')) );
+//    ierr = velocity(tempAgeStep); CHKERRQ(ierr);
+    bool updateAtDepth = (    (exactOnly == PETSC_FALSE)
+                          && (tempskipCountDown == 0));
+    ierr = velocity(updateAtDepth); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
 
     // adapt time step using velocities and diffusivity, ..., just computed
     if (exactOnly == PETSC_TRUE)
       dt_force = maxdt;
-    ierr = determineTimeStep(
-             ( (useIsothermalFlux == PETSC_FALSE) 
-               && ((testname == 'F') || (testname == 'G')) ) ); CHKERRQ(ierr);
+    bool useCFLforTempAgeEqntoGetTimestep = 
+              ((doTemp == PETSC_TRUE) && ((testname == 'F') || (testname == 'G')));
+    ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
     dtTempAge += dt;
     grid.p->year += dt / secpera;  // adopt it
     // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
@@ -1080,6 +1083,9 @@ PetscErrorCode IceCompModel::run() {
       default: SETERRQ(1, "test must be A, B, C, D, E, F, G, or H\n");
     }
     
+    bool tempAgeStep = ( (doTemp == PETSC_TRUE)
+                         && ((testname == 'F') || (testname =='G'))
+                         && updateAtDepth );
     if (tempAgeStep) {
       // note temps are allowed to go above pressure melting in verify
       allowAboveMelting = PETSC_TRUE;
