@@ -42,7 +42,11 @@ private:
     char         ismipRunName[3], heinodatprefix[20];
     PetscTruth   ismipNoDeliver, ismipForceDT;
     PetscInt     ismipHeinoRun;
-    PetscViewer  ts[2], tss[3], tsp[7][3]; // viewers (ASCII .dat files) for HEINO
+    PetscViewer  ts[2], tss[3], tsp[7][3], // viewers (ASCII .dat files) for HEINO
+                 pf; // viewer (ASCII .dat files) for 2D plan form
+    PetscScalar  time1yr, time2yr, time3yr, time4yr;
+    PetscTruth   time1Set, time2Set, time3Set, time4Set;
+    bool         someTimeSet;
     PetscScalar  C_S;  // soft sediment sliding parameter
     
     PetscErrorCode setExperNameFromOptions();
@@ -60,6 +64,7 @@ private:
                    const PetscScalar x2, const PetscScalar y2);
     virtual PetscErrorCode additionalAtStartTimestep();
     virtual PetscErrorCode additionalAtEndTimestep();
+    PetscErrorCode planFormWrite(int nn);
 };
 
 #endif /* __iceHEINOModel_hh */

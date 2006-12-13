@@ -104,6 +104,14 @@ PetscErrorCode IceHEINOModel::setExperNameFromOptions() {
     strcpy(heinodatprefix,"PISM");
   }  
 
+  // times (in years) for "2D plan form output" deliverables
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-time1", &time1yr, &time1Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-time2", &time2yr, &time2Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-time3", &time3yr, &time3Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-time4", &time4yr, &time4Set); CHKERRQ(ierr);
+  someTimeSet = (    (time1Set == PETSC_TRUE) || (time2Set == PETSC_TRUE)
+                  || (time3Set == PETSC_TRUE) || (time4Set == PETSC_TRUE) );
+                 
   // set integer ismipHeinoRun according to string runname
   if (ismiprunchosen != PETSC_TRUE) {
     ismipHeinoRun = 0;
@@ -470,17 +478,158 @@ PetscErrorCode IceHEINOModel::additionalAtStartTimestep() {
   // this is called at the beginning of time-stepping loop in IceModel::run()
 
   if (getExperName() == '0') {
+    if (ismipNoDeliver == PETSC_FALSE)
+      maxdt_temporary = 2.0 * secpera;  // to make Min below meaningful
+    if ((ismipNoDeliver == PETSC_FALSE) && (someTimeSet)) {
+      const PetscScalar dt_to_time1 = (time1yr - grid.p->year) * secpera,
+                        dt_to_time2 = (time2yr - grid.p->year) * secpera,
+                        dt_to_time3 = (time3yr - grid.p->year) * secpera,
+                        dt_to_time4 = (time4yr - grid.p->year) * secpera;
+      if ((time1Set == PETSC_TRUE) && (dt_to_time1 > 0.0))
+        maxdt_temporary = PetscMin(maxdt_temporary,dt_to_time1); 
+      if ((time2Set == PETSC_TRUE) && (dt_to_time2 > 0.0))
+        maxdt_temporary = PetscMin(maxdt_temporary,dt_to_time2); 
+      if ((time3Set == PETSC_TRUE) && (dt_to_time3 > 0.0))
+        maxdt_temporary = PetscMin(maxdt_temporary,dt_to_time3); 
+      if ((time4Set == PETSC_TRUE) && (dt_to_time4 > 0.0))
+        maxdt_temporary = PetscMin(maxdt_temporary,dt_to_time4);
+    }
+
     if (ismipForceDT == PETSC_TRUE) {
       dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
                                   // and use .25 year steps as spec-ed by HEINO
+      maxdt_temporary = dt_force;
     } else {
       // if (ismipNoDeliver == PETSC_TRUE) then do nothing with time step; allow long time step
       if (ismipNoDeliver == PETSC_FALSE) {
         // go to next integer year
-        maxdt_temporary = (1.0 - fmod(grid.p->year, 1.0)) * secpera;
+        maxdt_temporary = PetscMin(maxdt_temporary,(1.0 - fmod(grid.p->year, 1.0)) * secpera);
       }
     }
   }
+  return 0;
+}
+
+
+// THIS IS OK FOR SINGLE PROCESSOR, BUT NOT FOR MULTIPLE
+// MUST MOVE ALL STUFF TO PROC 0; SEE iMbeddef.cc
+PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
+  PetscErrorCode  ierr;
+  char            basename[40], filename[40];
+  PetscScalar     **H, ***T, **ub, **vb, ***u, ***v;
+  
+  strcpy(basename,heinodatprefix);
+  strcat(basename,"_");
+  strcat(basename,ismipRunName);
+  const char nums[]="01234";
+  char       foo[]="_pf?_";
+  foo[3] = nums[nn];
+  strcat(basename,foo);
+  ierr = PetscPrintf(grid.com,
+            "writing ISMIP-HEINO 2D plan form files named %s???.dat for time t%d ...\n",
+            basename, nn); CHKERRQ(ierr);
+
+  // write    ise = ice surface elevation (km)
+  strcpy(filename,basename);
+  strcat(filename,"ise.dat");
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, H[i][j] * 1e-3); CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+  // write    hbt = homologous basal temp (K)
+  strcpy(filename,basename);
+  strcat(filename,"hbt.dat");
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar homT0 = T[i][j][0] + ice.beta_CC_grad * H[i][j];
+      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, homT0); CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+  // write    vxb = basal sliding velocity, x-component (m/a)
+  strcpy(filename,basename);
+  strcat(filename,"vxb.dat");
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, ub[i][j] * secpera); CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+  // write    vyb = basal sliding velocity, y-component (m/a)
+  strcpy(filename,basename);
+  strcat(filename,"vyb.dat");
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, vb[i][j] * secpera); CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+  // write    vxs = surface velocity, x-component (m/a)
+  strcpy(filename,basename);
+  strcat(filename,"vxs.dat");
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz)); 
+      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, u[i][j][ks] * secpera);
+         CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+  // write    vys = surface velocity, y-component (m/a)
+  strcpy(filename,basename);
+  strcat(filename,"vys.dat");
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz)); 
+      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, v[i][j][ks] * secpera);
+         CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
   return 0;
 }
 
@@ -500,8 +649,25 @@ PetscErrorCode IceHEINOModel::additionalAtEndTimestep() {
 
   if ((getExperName() == '0') && (ismipNoDeliver != PETSC_TRUE)) {
 
-    // only deliver at integer year; must be on the year to 9 digits before we
-    // will proceed to deliver
+    // if 2d plan form deliverables wanted then call planFormWrite(); year must agree
+    // to 5 digits past decimal point; note timeNyr is in [150k 200k]
+    if (someTimeSet) {
+      if (fabs(grid.p->year - time1yr) < 5.0e-6) {
+        ierr = planFormWrite(1); CHKERRQ(ierr);
+      }
+      if (fabs(grid.p->year - time2yr) < 5.0e-6) {
+        ierr = planFormWrite(2); CHKERRQ(ierr);
+      }
+      if (fabs(grid.p->year - time3yr) < 5.0e-6) {
+        ierr = planFormWrite(3); CHKERRQ(ierr);
+      }
+      if (fabs(grid.p->year - time4yr) < 5.0e-6) {
+        ierr = planFormWrite(4); CHKERRQ(ierr);
+      }
+    }
+    
+    // only deliver at integer year; must be on the year to 9 digits total
+    // before we will proceed to deliver
     if ( (fmod(grid.p->year,1.0) / PetscMax(1.0,grid.p->year)) > 5.0e-10)
       return 0;
     
