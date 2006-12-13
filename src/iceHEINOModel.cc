@@ -78,10 +78,11 @@ PetscErrorCode IceHEINOModel::setExperNameFromOptions() {
   
   /* if this option is set then no .dat files are produced for ISMIP-HEINO runs */  
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_deliver", &ismipNoDeliver); CHKERRQ(ierr);
-  /* if this option is set then 0.25 year time steps are not forced (but a deliverable
-     is written at each integer year) */  
-  ierr = PetscOptionsHasName(PETSC_NULL, "-allow_adapt", &ismipAllowAdapt); CHKERRQ(ierr);
-  /* see ISMIP-HEINO documentation; options are [corresponding val of ismipHeinoRun]:
+
+  /* if this option is set then 0.25 year time steps are *forced*; this is not wise! */  
+  ierr = PetscOptionsHasName(PETSC_NULL, "-force_quarter_year", &ismipForceDT); CHKERRQ(ierr);
+
+  /* see ISMIP-HEINO documentation; options are [with corresponding val of ismipHeinoRun]:
        -run ST  [0; default]
        -run T1  [1]
        -run T2  [2]
@@ -90,17 +91,20 @@ PetscErrorCode IceHEINOModel::setExperNameFromOptions() {
        -run S1  [5]
        -run S2  [6]
        -run S3  [7]    */
-  ierr = PetscOptionsGetString(PETSC_NULL, "-datprefix", heinodatprefix, 20,
-                               &datprefixchosen);  CHKERRQ(ierr);
-  if (datprefixchosen != PETSC_TRUE) {
-    strcpy(heinodatprefix,"PISM");
-  }
   ierr = PetscOptionsGetString(PETSC_NULL, "-run", runName, 20, &ismiprunchosen);
             CHKERRQ(ierr);
   for (int i = 0; i<(int) strlen(runName); i++) {
     if ((runName[i] >= 'a') && (runName[i] <= 'z'))
       runName[i] += 'A'-'a';  // capitalize if lower
   }
+
+  ierr = PetscOptionsGetString(PETSC_NULL, "-datprefix", heinodatprefix, 20,
+                               &datprefixchosen);  CHKERRQ(ierr);
+  if (datprefixchosen != PETSC_TRUE) {
+    strcpy(heinodatprefix,"PISM");
+  }  
+
+  // set integer ismipHeinoRun according to string runname
   if (ismiprunchosen != PETSC_TRUE) {
     ismipHeinoRun = 0;
     strcpy(ismipRunName,"ST");
@@ -466,14 +470,15 @@ PetscErrorCode IceHEINOModel::additionalAtStartTimestep() {
   // this is called at the beginning of time-stepping loop in IceModel::run()
 
   if (getExperName() == '0') {
-    if ((ismipNoDeliver == PETSC_TRUE) && (ismipAllowAdapt == PETSC_TRUE)) {
-      // do nothing with time step; allow long time step
-    } else if ((ismipNoDeliver == PETSC_FALSE) && (ismipAllowAdapt == PETSC_TRUE)) {
-      // go to next integer year
-      maxdt_temporary = (1.0 - fmod(grid.p->year, 1.0)) * secpera;
-    } else {
+    if (ismipForceDT == PETSC_TRUE) {
       dt_force = 0.25 * secpera;  // totally override adaptive time-stepping
                                   // and use .25 year steps as spec-ed by HEINO
+    } else {
+      // if (ismipNoDeliver == PETSC_TRUE) then do nothing with time step; allow long time step
+      if (ismipNoDeliver == PETSC_FALSE) {
+        // go to next integer year
+        maxdt_temporary = (1.0 - fmod(grid.p->year, 1.0)) * secpera;
+      }
     }
   }
   return 0;

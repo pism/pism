@@ -49,6 +49,9 @@ const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
 const PetscTruth  DEFAULT_DO_MASS_BAL = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMP = PETSC_TRUE;
+const PetscTruth  DEFAULT_DO_TEMPSKIP = PETSC_FALSE; // off by default
+const PetscInt    DEFAULT_TEMPSKIP_MAX = 10;
+
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
@@ -114,7 +117,9 @@ PetscErrorCode IceModel::setDefaults() {
   ierr = setRunYears(DEFAULT_RUN_YEARS); CHKERRQ(ierr);
   setDoMassBal(DEFAULT_DO_MASS_BAL);
   setDoTemp(DEFAULT_DO_TEMP);
-  doTempSkip = PETSC_TRUE; // on by default
+  doTempSkip = DEFAULT_DO_TEMPSKIP;
+  tempskipMax = DEFAULT_TEMPSKIP_MAX;
+  
   setIncludeBMRinContinuity(DEFAULT_INCLUDE_BMR_IN_CONTINUITY);
   setDoGrainSize(DEFAULT_DO_GRAIN_SIZE);
   setIsDrySimulation(DEFAULT_IS_DRY_SIMULATION);

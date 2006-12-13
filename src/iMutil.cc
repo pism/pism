@@ -317,12 +317,10 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
-//    const PetscInt     MAX_TEMP_SKIP = 0;
-    const PetscInt     MAX_TEMP_SKIP = 10;
     const PetscScalar  conservativeFactor = 0.8;
     // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
     tempskipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
-    tempskipCountDown = (tempskipCountDown > MAX_TEMP_SKIP) ? MAX_TEMP_SKIP : tempskipCountDown;
+    tempskipCountDown = (tempskipCountDown > tempskipMax) ? tempskipMax : tempskipCountDown;
   } // if tempskipCountDown > 0 then it will get decremented at the mass balance step
   if (dt_from_diffus < dt) {
     dt = dt_from_diffus;

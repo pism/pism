@@ -211,7 +211,7 @@ protected:
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
   PetscScalar isothermalFlux_n_exponent, isothermalFlux_A_softness;
-  PetscInt    verbosityLevel, tempskipCountDown, noSpokesLevel;
+  PetscInt    verbosityLevel, tempskipCountDown, tempskipMax, noSpokesLevel;
 
   // flags
   PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;

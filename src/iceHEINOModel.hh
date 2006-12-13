@@ -40,7 +40,7 @@ private:
     PetscInt   flowlawNumber;
  
     char         ismipRunName[3], heinodatprefix[20];
-    PetscTruth   ismipNoDeliver, ismipAllowAdapt;
+    PetscTruth   ismipNoDeliver, ismipForceDT;
     PetscInt     ismipHeinoRun;
     PetscViewer  ts[2], tss[3], tsp[7][3]; // viewers (ASCII .dat files) for HEINO
     PetscScalar  C_S;  // soft sediment sliding parameter

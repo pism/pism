@@ -56,8 +56,12 @@ int main(int argc, char *argv[]) {
     
     ierr = getFlowLawFromUser(com, tempice, flowlawNumber); CHKERRQ(ierr);
 
+// plan: as in simplify.cc, either choose an IceCompModel or an IceExactStreamModel;
+// for the latter there will be two tests, namely I and J
+
     ice = (ThermoGlenArrIce*) tempice;
     IceCompModel m(g, *ice);
+
     ierr = m.setFromOptions();  CHKERRQ(ierr);
     ierr = m.initFromOptions();  CHKERRQ(ierr);
     ierr = m.setSoundingFromOptions();  CHKERRQ(ierr);

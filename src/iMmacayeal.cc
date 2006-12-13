@@ -509,8 +509,8 @@ PetscErrorCode IceModel::velocityMacayeal() {
      "  [macayealEpsilon = %10.5e, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = %10.5e,\n",
      macayealEpsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL); CHKERRQ(ierr);
   ierr = verbPrintf(5,grid.com, 
-     "   regularizingVelocitySchoof = %10.5e, regularizingVelocitySchoof = %10.5e,\n",
-     regularizingVelocitySchoof, regularizingVelocitySchoof); CHKERRQ(ierr);
+     "   regularizingVelocitySchoof = %10.5e, regularizingLengthSchoof = %10.5e,\n",
+     regularizingVelocitySchoof, regularizingLengthSchoof); CHKERRQ(ierr);
   ierr = verbPrintf(5,grid.com, 
      "   constantHardnessForMacAyeal = %10.5e, macayealRelativeTolerance = %10.5e]\n",
     constantHardnessForMacAyeal, macayealRelativeTolerance); CHKERRQ(ierr);
@@ -521,7 +521,7 @@ PetscErrorCode IceModel::velocityMacayeal() {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
-      ierr = verbPrintf(3,grid.com, "  %d,%d:", l, k); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
       ierr = assembleMacayealMatrix(vNu, A, rhs); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 

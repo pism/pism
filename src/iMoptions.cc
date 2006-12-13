@@ -31,7 +31,7 @@ IceModel::setFromOptions() {
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
              maxdtSet, startYearSet, runYearsSet, endYearSet, verbose,
              noMassBal, noTemp, bedDefiso, bedDef, bedDeflc, isoflux, muSet, 
-             nospokesSet, oceanKillSet, notempskipSet;
+             nospokesSet, oceanKillSet, tempskipSet;
   PetscInt nospokeslevel;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
@@ -143,10 +143,10 @@ IceModel::setFromOptions() {
 
 // note "-regrid_vars" is in use for regrid variable names
 
-  /* This controls how many mass balance steps per temp step */
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_tempskip", &notempskipSet); CHKERRQ(ierr);
-  if (notempskipSet == PETSC_TRUE) {
-    doTempSkip = PETSC_FALSE;
+  /* This controls allows more than one mass continuity steps per temperature/age step */
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &tempskipSet); CHKERRQ(ierr);
+  if (tempskipSet == PETSC_TRUE) {
+    doTempSkip = PETSC_TRUE;
   }
 
   // FIXME:  should follow scheme describe in iMutil.cc (see verbPrintf())  

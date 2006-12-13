@@ -3,7 +3,7 @@
 # thermocoupled shallow ice components of ice model COMMVNISM.  Uses only tests
 # C and G.  Intended to do minimal amount of computation to show convergence 
 # to continuum results.  Takes about [ABOUT 6 HOURS??! on my laptop]
-# ELB 7/3/06; 11/19/06
+# ELB 7/3/06; 11/19/06; 12/11/06
 
 echo "++++++++ starting with isothermal test C and Mx=31,61,121:"
 

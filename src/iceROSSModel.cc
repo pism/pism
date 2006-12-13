@@ -609,7 +609,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurate() {
   // average over grid, where observed velocity is accurate according to 111by147grid.dat,
   // the difference between computed and observed u,v
   PetscErrorCode  ierr;
-  PetscScalar  uerr=0.0, verr=0.0,
+  PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0,
                accN=0.0, accArea=0.0, maxcComputed=0.0,
                **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
   vecErrAcc = 0.0;
@@ -638,6 +638,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurate() {
           const PetscScalar Du = PetscAbs(uobs - ubar[i][j]);
           verr += Dv;
           uerr += Du;
+          relvecerr += (PetscSqr(Dv) + PetscSqr(Du)) / (PetscSqr(vobs) + PetscSqr(uobs));
           vecErrAcc += (PetscSqr(Dv) + PetscSqr(Du)) * area;
         }
       }
@@ -658,14 +659,17 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurate() {
              "  [number of grid points in, and area of, 'accurate observed area' are %d, %9.4f (km^2)]\n",
              (int) accN, accArea / 1e6); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-             "  average (over accurate area) error in x-comp of vel   = %9.3f (m/a)\n",
+             "  average (over accurate area) error in x-comp of vel       = %9.3f (m/a)\n",
              (verr * secpera) / accN); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-             "  average (over accurate area) error in y-comp of vel   = %9.3f (m/a)\n",
+             "  average (over accurate area) error in y-comp of vel       = %9.3f (m/a)\n",
              (uerr * secpera) / accN); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+             "  average (over accurate area) relative error in vector vel = %9.5f\n",
+             relvecerr / accN); CHKERRQ(ierr);
   vecErrAcc = secpera * sqrt(vecErrAcc) / sqrt(accArea);
   ierr = verbPrintf(2,grid.com,
-             "  rms average (over accurate area) error in vector vel  = %9.3f (m/a)\n",
+             "  rms average (over accurate area) error in vector vel      = %9.3f (m/a)\n",
              vecErrAcc); CHKERRQ(ierr);
   return 0;
 }
@@ -748,7 +752,7 @@ PetscErrorCode IceROSSModel::run() {
 
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
-  ierr = verbPrintf(5,grid.com,"[using Schoof regularization constant = %10.5e]\n",
+  ierr = verbPrintf(5,grid.com,"  [using Schoof regularization constant = %10.5e]\n",
               PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
 
   ierr = velocityMacayeal(); CHKERRQ(ierr);
