@@ -92,7 +92,7 @@ disp('five figures created')
 if max(A_ait(1,:)) >= 200000  % if run was completed
     A = A_ait(:, (A_ait(1,:) >= 150000)); % only consider last 50k yrs
     [yy,ii] = max(A(2,:));
-    t1 = A(1,ii);
+    t1 = A(1,ii)
     [yy,ii] = min(A(2,:));
     t2 = A(1,ii)
 else

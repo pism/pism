@@ -54,27 +54,9 @@ PetscErrorCode IceHEINOModel::setExperNameFromOptions() {
   char                ismipexpername[20], runName[20];
   PetscTruth          ISMIPchosen, datprefixchosen, ismiprunchosen;
 
-  /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO */
+  /* This option chooses ISMIP-HEINO; "-ismip H" is ISMIP-HEINO */
   ierr = PetscOptionsGetString(PETSC_NULL, "-ismip", ismipexpername, 1, &ISMIPchosen); CHKERRQ(ierr);
-
-/*  this block might make sense later, but for now just set experiment name to HEINO:
-  if (ISMIPchosen == PETSC_TRUE) {
-    char temp = ismipexpername[0];
-    if ((temp == 'H') || (temp == 'h')) // ISMIP-HEINO
-        setExperName('0');
-    else if ((temp == 'O') || (temp == 'o')) {
-        setExperName('1');
-        SETERRQ(1, "ISMIP-HOM NOT IMPLEMENTED!");
-    }
-    else if ((temp == 'P') || (temp == 'p')) {
-        setExperName('2');
-        SETERRQ(1, "ISMIP-POLICE NOT IMPLEMENTED!");
-    }
-  } else { // set a default: ISMIP HEINO
-    setExperName('0');
-  }
-*/
-  setExperName('0');
+  setExperName('0'); // assume it is HEINO; other experiment names in future for ISMIP-HOM, ISMIP-POLICE
   
   /* if this option is set then no .dat files are produced for ISMIP-HEINO runs */  
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_deliver", &ismipNoDeliver); CHKERRQ(ierr);
@@ -411,7 +393,6 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
     ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
     ierr = PetscViewerASCIIOpen(grid.com, filename, &ts[i]); CHKERRQ(ierr);
     ierr = PetscViewerSetFormat(ts[i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(ts[i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
   }
 
   // create sediment region time series viewers (i.e. ASCII .dat files)
@@ -423,7 +404,6 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
     ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
     ierr = PetscViewerASCIIOpen(grid.com, filename, &tss[i]); CHKERRQ(ierr);
     ierr = PetscViewerSetFormat(tss[i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(tss[i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
   }
 
   // create P1,...,P7 time series viewers (i.e. ASCII .dat files)
@@ -441,10 +421,45 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
       ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
       ierr = PetscViewerASCIIOpen(grid.com, filename, &tsp[j][i]); CHKERRQ(ierr);
       ierr = PetscViewerSetFormat(tsp[j][i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-//      ierr = PetscViewerASCIIPrintf(tsp[j][i],"SAMPLE JUNK in file %s\n", filename);  CHKERRQ(ierr);
     }
   }
 
+  if (fabs(grid.p->year - 0.0) < 5.0e-6) { // go ahead and write first line in each file
+                                           // (because HEINO prescribes 200001 lines in files!)
+    ierr = PetscViewerASCIIPrintf(ts[0],"%14.6E%14.6E\n", 
+               0.0, 0.0); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(ts[1],"%14.6E%14.6E\n", 
+               0.0, 0.0); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tss[0],"%14.6E%14.6E\n", 
+               0.0, 0.0); CHKERRQ(ierr);
+    // initial average homol basal temp is special; it is set by Ts(x,y)
+    ierr = PetscViewerASCIIPrintf(tss[1],"%14.6E%14.6E\n", 
+               0.0, 2.366670e2); CHKERRQ(ierr);  // av homol basal temp
+    ierr = PetscViewerASCIIPrintf(tss[2],"%14.6E%14.6E\n", 
+               0.0, 0.0); CHKERRQ(ierr);
+    for (PetscInt k=0; k<7; k++) {
+      ierr = PetscViewerASCIIPrintf(tsp[k][0],"%14.6E%14.6E\n", 
+               0.0, 0.0); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(tsp[k][2],"%14.6E%14.6E\n", 
+               0.0, 0.0); CHKERRQ(ierr);
+    }
+    // initial homol basal temp is special to each point; it is set by Ts(x,y)
+    ierr = PetscViewerASCIIPrintf(tsp[0][1],"%14.6E%14.6E\n", 
+               0.0, 2.502978e2); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tsp[1][1],"%14.6E%14.6E\n", 
+               0.0, 2.477302e2); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tsp[2][1],"%14.6E%14.6E\n", 
+               0.0, 2.454327e2); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tsp[3][1],"%14.6E%14.6E\n", 
+               0.0, 2.415877e2); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tsp[4][1],"%14.6E%14.6E\n", 
+               0.0, 2.374702e2); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tsp[5][1],"%14.6E%14.6E\n", 
+               0.0, 2.349727e2); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(tsp[6][1],"%14.6E%14.6E\n", 
+               0.0, 2.336902e2); CHKERRQ(ierr);
+  }
+  
   return 0;
 }
 
@@ -511,13 +526,12 @@ PetscErrorCode IceHEINOModel::additionalAtStartTimestep() {
 }
 
 
-// THIS IS OK FOR SINGLE PROCESSOR, BUT NOT FOR MULTIPLE
-// MUST MOVE ALL STUFF TO PROC 0; SEE iMbeddef.cc
 PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
   PetscErrorCode  ierr;
-  char            basename[40], filename[40];
-  PetscScalar     **H, ***T, **ub, **vb, ***u, ***v;
+  Vec             Hp0, Thbp0, ubp0, vbp0, usp0, vsp0;
+  char            basename[40];
   
+  // set basename and send banner to std out
   strcpy(basename,heinodatprefix);
   strcat(basename,"_");
   strcat(basename,ismipRunName);
@@ -525,111 +539,195 @@ PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
   char       foo[]="_pf?_";
   foo[3] = nums[nn];
   strcat(basename,foo);
-  ierr = PetscPrintf(grid.com,
-            "writing ISMIP-HEINO 2D plan form files named %s???.dat for time t%d ...\n",
-            basename, nn); CHKERRQ(ierr);
-
-  // write    ise = ice surface elevation (km)
-  strcpy(filename,basename);
-  strcat(filename,"ise.dat");
-  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, H[i][j] * 1e-3); CHKERRQ(ierr);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+            "***********************************************************************\n");
+            CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+            "    HEINO TIME t%d = %15.5lf years REACHED!\n", nn, grid.p->year); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+            "    writing ISMIP-HEINO 2D plan form files named %s???.dat ...\n",
+            basename); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+            "***********************************************************************\n");
+            CHKERRQ(ierr);
+           
+  // create scatter context (to proc zero), etc.
+  ierr = createScatterToProcZero(Hp0); CHKERRQ(ierr);
+  ierr = VecDuplicate(Hp0, &Thbp0); CHKERRQ(ierr);
+  ierr = VecDuplicate(Hp0, &ubp0); CHKERRQ(ierr);
+  ierr = VecDuplicate(Hp0, &vbp0); CHKERRQ(ierr);
+  ierr = VecDuplicate(Hp0, &usp0); CHKERRQ(ierr);
+  ierr = VecDuplicate(Hp0, &vsp0); CHKERRQ(ierr);
   
-  // write    hbt = homologous basal temp (K)
-  strcpy(filename,basename);
-  strcat(filename,"hbt.dat");
-  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  // immediately store H, ub, vb values on proc zero with right units
+  ierr = putOnProcZero(vH,Hp0); CHKERRQ(ierr);
+  ierr = VecScale(Hp0, 1e-3); CHKERRQ(ierr); // km
+  ierr = putOnProcZero(vub,ubp0); CHKERRQ(ierr);
+  ierr = VecScale(ubp0, secpera); CHKERRQ(ierr); // m/a
+  ierr = putOnProcZero(vvb,vbp0); CHKERRQ(ierr);
+  ierr = VecScale(vbp0, secpera); CHKERRQ(ierr); // m/a
+  
+  // put basal homol temp in 2D Vec and then put on proc zero
+  {
+  Vec             Thb;
+  PetscScalar     **H, ***T, **valThb;
+  ierr = VecDuplicate(vH, &Thb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, Thb, &valThb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar homT0 = T[i][j][0] + ice.beta_CC_grad * H[i][j];
-      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, homT0); CHKERRQ(ierr);
+      valThb[i][j] = T[i][j][0] + ice.beta_CC_grad * H[i][j];
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, Thb, &valThb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
-  
-  // write    vxb = basal sliding velocity, x-component (m/a)
-  strcpy(filename,basename);
-  strcat(filename,"vxb.dat");
-  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, ub[i][j] * secpera); CHKERRQ(ierr);
-    }
+  ierr = putOnProcZero(Thb,Thbp0); CHKERRQ(ierr);
+  ierr = VecDestroy(Thb); CHKERRQ(ierr);  
   }
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
   
-  // write    vyb = basal sliding velocity, y-component (m/a)
-  strcpy(filename,basename);
-  strcat(filename,"vyb.dat");
-  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, vb[i][j] * secpera); CHKERRQ(ierr);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
-  
-  // write    vxs = surface velocity, x-component (m/a)
-  strcpy(filename,basename);
-  strcat(filename,"vxs.dat");
-  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+  // put surface velocities (m/a) in 2D Vecs and then put on proc zero
+  {
+  Vec             us, vs;
+  PetscScalar     **H, ***u, ***v, **valus, **valvs;
+  ierr = VecDuplicate(vH, &us); CHKERRQ(ierr);
+  ierr = VecDuplicate(vH, &vs); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, us, &valus); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vs, &valvs); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz)); 
-      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, u[i][j][ks] * secpera);
-         CHKERRQ(ierr);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
-  
-  // write    vys = surface velocity, y-component (m/a)
-  strcpy(filename,basename);
-  strcat(filename,"vys.dat");
-  ierr = PetscViewerASCIIOpen(grid.com, filename, &pf); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz)); 
-      ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, v[i][j][ks] * secpera);
-         CHKERRQ(ierr);
+      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+      valus[i][j] = u[i][j][ks] * secpera;
+      valvs[i][j] = v[i][j][ks] * secpera;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, us, &valus); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vs, &valvs); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  ierr = putOnProcZero(us,usp0); CHKERRQ(ierr);
+  ierr = putOnProcZero(vs,vsp0); CHKERRQ(ierr);
+  ierr = VecDestroy(us); CHKERRQ(ierr);  
+  ierr = VecDestroy(vs); CHKERRQ(ierr);  
+  }
+
+  if (grid.rank == 0) {  // now actually write file from proc zero
+    char            filename[40];
+    PetscScalar     **H, **valThb, **ub, **vb, **valus, **valvs;
+    const PetscInt  Mx = grid.p->Mx, My = grid.p->My;
   
+    // write    ise = ice surface elevation (km)
+    strcpy(filename,basename);
+    strcat(filename,"ise.dat");
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+    ierr = VecGetArray2d(Hp0, Mx, My, 0, 0, &H); CHKERRQ(ierr);
+    for (PetscInt i=0; i<Mx; ++i) {
+      for (PetscInt j=0; j<My; ++j) {
+        ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, H[i][j]);
+           CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray2d(Hp0, Mx, My, 0, 0, &H); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+
+    // write    hbt = homologous basal temp (K)
+    strcpy(filename,basename);
+    strcat(filename,"hbt.dat");
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+    ierr = VecGetArray2d(Thbp0, Mx, My, 0, 0, &valThb); CHKERRQ(ierr);
+    for (PetscInt i=0; i<Mx; ++i) {
+      for (PetscInt j=0; j<My; ++j) {
+        ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, valThb[i][j]);
+           CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray2d(Thbp0, Mx, My, 0, 0, &valThb); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+    // write    vxb = basal sliding velocity, x-component (m/a)
+    strcpy(filename,basename);
+    strcat(filename,"vxb.dat");
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+    ierr = VecGetArray2d(ubp0, Mx, My, 0, 0, &ub); CHKERRQ(ierr);
+    for (PetscInt i=0; i<Mx; ++i) {
+      for (PetscInt j=0; j<My; ++j) {
+        ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, ub[i][j]);
+           CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray2d(ubp0, Mx, My, 0, 0, &ub); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+    // write    vyb = basal sliding velocity, y-component (m/a)
+    strcpy(filename,basename);
+    strcat(filename,"vyb.dat");
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+    ierr = VecGetArray2d(vbp0, Mx, My, 0, 0, &vb); CHKERRQ(ierr);
+    for (PetscInt i=0; i<Mx; ++i) {
+      for (PetscInt j=0; j<My; ++j) {
+        ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, vb[i][j]);
+           CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray2d(vbp0, Mx, My, 0, 0, &vb); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+    // write    vxs = surface velocity, x-component (m/a)
+    strcpy(filename,basename);
+    strcat(filename,"vxs.dat");
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+    ierr = VecGetArray2d(usp0, Mx, My, 0, 0, &valus); CHKERRQ(ierr);
+    for (PetscInt i=0; i<Mx; ++i) {
+      for (PetscInt j=0; j<My; ++j) {
+        ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, valus[i][j]);
+           CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray2d(usp0, Mx, My, 0, 0, &valus); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+  
+    // write    vys = surface velocity, y-component (m/a)
+    strcpy(filename,basename);
+    strcat(filename,"vys.dat");
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(pf, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(pf,"%14.6E\n", grid.p->year); CHKERRQ(ierr);
+    ierr = VecGetArray2d(vsp0, Mx, My, 0, 0, &valvs); CHKERRQ(ierr);
+    for (PetscInt i=0; i<Mx; ++i) {
+      for (PetscInt j=0; j<My; ++j) {
+        ierr = PetscViewerASCIIPrintf(pf,"%d  %d %14.6E\n", i+1, j+1, valvs[i][j]);
+           CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray2d(vsp0, Mx, My, 0, 0, &valvs); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
+    
+    // done writing files
+  } // if (grid.rank == 0)
+  
+  ierr = VecDestroy(Hp0); CHKERRQ(ierr);  
+  ierr = VecDestroy(Thbp0); CHKERRQ(ierr);  
+  ierr = VecDestroy(ubp0); CHKERRQ(ierr);  
+  ierr = VecDestroy(vbp0); CHKERRQ(ierr);  
+  ierr = VecDestroy(usp0); CHKERRQ(ierr);  
+  ierr = VecDestroy(vsp0); CHKERRQ(ierr);  
+  ierr = destroyScatterToProcZero(); CHKERRQ(ierr);
+
   return 0;
 }
 

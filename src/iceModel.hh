@@ -298,7 +298,7 @@ protected:
   virtual PetscScalar basal(const PetscScalar x, const PetscScalar y, 
        const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
        const PetscScalar mu);
-  PetscScalar basalDrag(const PetscScalar u, const PetscScalar v) const;
+  virtual PetscScalar basalDrag(const PetscScalar u, const PetscScalar v) const;
 
   // This is an unfortunate kludge, but I won't rewrite the whole Macayeal code
   // just to implement a goofy verification case.
@@ -308,6 +308,7 @@ protected:
                                  PetscInt i, PetscInt j) const;
 
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
+  // (e.g. also used by derived class IceHEINOModel)
   Vec         g2natural;
   VecScatter  top0ctx;
   PetscErrorCode createScatterToProcZero(Vec& samplep0);
