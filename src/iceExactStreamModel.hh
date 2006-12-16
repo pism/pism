@@ -16,27 +16,30 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __iceExactSteamModel_hh
-#define __iceExactSteamModel_hh
+#ifndef __iceExactStreamModel_hh
+#define __iceExactStreamModel_hh
 
 #include <petscda.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
 
-class IceExactSteamModel : public IceModel {
+class IceExactStreamModel : public IceModel {
 public:
-    IceExactSteamModel(IceGrid &g, IceType &i);
+    IceExactStreamModel(IceGrid &g, IceType &i);
     PetscInt               getflowlawNumber();
     void                   setflowlawNumber(PetscInt);
     virtual PetscErrorCode initFromOptions();
     virtual PetscErrorCode run();
+    PetscErrorCode         reportErrors();
 
 private:
     PetscInt        flowlawNumber;
+    PetscScalar     plastic_regularize;
+    PetscTruth      exactOnly;
     static const PetscScalar   
-                    m_schoof, L_schoof, aspect_schoof, h0_schoof,
-                    B_schoof, p_schoof;
+                    m_schoof, L_schoof, aspect_schoof, H0_schoof,
+                    B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
     
     PetscScalar     taucGet(PetscInt i, PetscInt j) const;
     PetscScalar     basalDragx(PetscScalar **u, PetscScalar **v,
@@ -44,7 +47,7 @@ private:
     PetscScalar     basalDragy(PetscScalar **u, PetscScalar **v,
                                    PetscInt i, PetscInt j) const;
     PetscErrorCode  fillinTemps();
-    PetscErrorCode  setBoundaryVels();
+    PetscErrorCode  setInitStateAndBoundaryVels();
 };
 
-#endif /* __iceExactSteamModel_hh */
+#endif /* __iceExactStreamModel_hh */

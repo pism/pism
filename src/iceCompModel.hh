@@ -49,9 +49,8 @@ protected:
 
   // If I need features not present in IceType, I can get them here
   ThermoGlenArrIce &tgaIce;
-  PetscTruth       testchosen;
+  PetscTruth       testchosen, exactOnly, compVecsCreated, compViewersCreated;
   char             testname;  
-  PetscTruth       exactOnly;
   Vec              vSigmaComp;     // 3-D vector:   Mx x My x Mz
   PetscViewer      SigmaCompView, compSigmaMapView;
 

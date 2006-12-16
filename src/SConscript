@@ -19,7 +19,7 @@ simpleISO = env.Program('simpleISO', 'exact/simpleISO.c', LIBS = ['tests', 'm'])
 simpleFG = env.Program('simpleFG', 'exact/simpleFG.c', LIBS = ['tests', 'm'])
 simpleI = env.Program('simpleI', 'exact/simpleI.c', LIBS = ['tests', 'm'])
 
-verify = env.Program('pismv', ['iceCompModel.cc', 'verify.cc'],
+verify = env.Program('pismv', ['iceCompModel.cc', 'iceExactStreamModel.cc', 'verify.cc'],
                      LIBS = ['pism', 'tests'] + pism_libs)
 
 get_drag = env.Program('get_drag.cc', LIBS= ['pism'] + pism_libs)

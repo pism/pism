@@ -55,17 +55,34 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   // defaults for verification
   setTest('A');
   setExactOnly(PETSC_FALSE);
+  compVecsCreated = PETSC_FALSE;
+  compViewersCreated = PETSC_FALSE;
 }
 
 
 IceCompModel::~IceCompModel() {
-  destroyCompViewers();
-  destroyCompVecs();
+  if (compViewersCreated == PETSC_TRUE) {
+    destroyCompViewers();
+    compViewersCreated = PETSC_FALSE;
+  }
+  if (compVecsCreated == PETSC_TRUE) {
+    destroyCompVecs();
+    compVecsCreated = PETSC_FALSE;
+  }
+}
+
+
+PetscErrorCode IceCompModel::destroyCompViewers() {
+  PetscErrorCode ierr;
+  if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
+  if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
+  return 0;
 }
 
 
 PetscErrorCode IceCompModel::createCompVecs() {
   PetscErrorCode ierr = DACreateLocalVector(grid.da3, &vSigmaComp); CHKERRQ(ierr);
+  compVecsCreated = PETSC_TRUE;
   return 0;
 }
 
@@ -102,9 +119,11 @@ PetscErrorCode IceCompModel::setFromOptions() {
     if ((temp >= 'a') && (temp <= 'z'))
       temp += 'A'-'a';  // capitalize if lower
     if ((temp < 'A') || (temp > 'H'))
-      SETERRQ(1,"verify ERROR: desired test NOT IMPLEMENTED\n");
-    setTest(temp);
+      SETERRQ(1,"IceCompModel ERROR: desired test NOT IMPLEMENTED\n");
+  } else {
+    temp = 'A';
   }
+  setTest(temp);
   
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
@@ -217,14 +236,7 @@ PetscErrorCode IceCompModel::createCompViewers() {
              PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, &compSigmaMapView); CHKERRQ(ierr);
   } else compSigmaMapView = PETSC_NULL;
    
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::destroyCompViewers() {
-  PetscErrorCode ierr;
-  if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
-  if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
+  compViewersCreated = PETSC_TRUE;
   return 0;
 }
 
