@@ -216,7 +216,8 @@ protected:
   // flags
   PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
-  PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, useConstantHardnessForMacAyeal;
+  PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, 
+              useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, allowRegridding, beVerbose, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done;
@@ -344,7 +345,8 @@ protected:
   PetscErrorCode cleanupAfterMacayeal(const PetscScalar minH);
   virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);
   PetscErrorCode testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2], PetscReal *, PetscReal *);
-  PetscErrorCode assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs);
+  PetscErrorCode assembleMacayealMatrix(Vec vNu[2], Mat A);
+  PetscErrorCode assembleMacayealRhs(bool surfGradInward, Vec rhs);
   PetscErrorCode moveVelocityToDAVectors(Vec x);
   PetscErrorCode broadcastMacayealVelocity();
   PetscErrorCode correctSigma();

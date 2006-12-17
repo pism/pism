@@ -66,10 +66,12 @@ const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
 const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 200.0;
 
+const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
+
 const PetscTruth  DEFAULT_USE_MACAYEAL_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL = PETSC_FALSE;
-const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
+const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_MACAYEAL = PETSC_FALSE;
  // for next value, compare Ritz et al (2001)
 const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera;
 const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
@@ -108,6 +110,7 @@ PetscErrorCode IceModel::setDefaults() {
   regularizingLengthSchoof = DEFAULT_REGULARIZING_LENGTH_SCHOOF;
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
+  computeSurfGradInwardMacAyeal = DEFAULT_COMPUTE_SURF_GRAD_INWARD_MACAYEAL;
 
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);

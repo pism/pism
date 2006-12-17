@@ -163,7 +163,8 @@ PetscErrorCode IceDragModel::computeDragFromBalanceVelocity() {
   ierr = VecDuplicate(x, &dragxy); CHKERRQ(ierr);
 
   // build discrete version of MacAyeal-Morland equations (A x = rhs) at all grounded points
-  ierr = assembleMacayealMatrix(vNu, A, rhs); CHKERRQ(ierr);
+  ierr = assembleMacayealMatrix(vNu, A); CHKERRQ(ierr);
+  ierr = assembleMacayealRhs(false, rhs); CHKERRQ(ierr);
 
   // Note rhs contains driving terms  \rho g H \grad h  but  A  contains basal
   // drag term [betax*u betay*v]'.  It must be removed.

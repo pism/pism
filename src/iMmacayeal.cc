@@ -230,26 +230,22 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
   return 0;
 }
 
-PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs) {
+
+PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
   const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
   const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **h, **H, **nu[2], **uvbar[2], **u, **v;
+  PetscScalar     **mask, **nu[2], **u, **v;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
-  ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   /* matrix assembly loop */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt J = 2*j;
@@ -258,10 +254,6 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs) {
       if (intMask(mask[i][j]) == MASK_SHEET) {
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
         ierr = MatSetValues(A, 1, &rowV, 1, &rowV, &one, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
-                           INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
-                           INSERT_VALUES); CHKERRQ(ierr);
       } else {
         const PetscInt im = (i + Mx - 1) % Mx, ip = (i + 1) % Mx;
         const PetscInt Jm = 2 * ((j + My - 1) % My), Jp = 2 * ((j + 1) % My);
@@ -359,6 +351,9 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs) {
           /*               */ -4*c10/dy2 };
 #endif
 #endif
+
+        /* Dragging ice experiences friction at the bed determined by the
+        * basalDrag() method. This may be a linear friction law. */
         if (intMask(mask[i][j]) == MASK_DRAGGING) {
           // We do dragging implicitly now.
           // use the value from Hulbe & MacAyeal (1999), p. 25,356
@@ -368,9 +363,69 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs) {
 
         ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
         ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
 
-        PetscScalar h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-        PetscScalar h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::assembleMacayealRhs(bool surfGradInward, Vec rhs) {
+  const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
+  const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
+  PetscErrorCode  ierr;
+  PetscScalar     **mask, **h, **H, **uvbar[2];
+
+  ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
+
+  /* matrix assembly loop */
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscInt J = 2*j;
+      const PetscInt rowU = i*M + J;
+      const PetscInt rowV = i*M + J+1;
+      if (intMask(mask[i][j]) == MASK_SHEET) {
+        ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
+                           INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
+                           INSERT_VALUES); CHKERRQ(ierr);
+      } else {
+        PetscScalar h_x, h_y;
+        bool edge;
+        if (surfGradInward) edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
+        if (surfGradInward && edge) {
+          if (i == 0) {
+            h_x = (h[i+1][j] - h[i][j]) / (dx);
+            h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+          } else if (i == Mx-1) {
+            h_x = (h[i][j] - h[i-1][j]) / (dx);
+            h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+          } else if (j == 0) {
+            h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
+            h_y = (h[i][j+1] - h[i][j]) / (dy);
+          } else if (j == My-1) {        
+            h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
+            h_y = (h[i][j] - h[i][j-1]) / (dy);
+          } else {
+            SETERRQ(1,"should not reach here: surfGradInward=TRUE & edge=TRUE but not at edge");
+          }          
+        } else { 
+          h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
+          h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+        }
 #if 0
         /* This equation seems to behave badly in the event of large surface
         * slopes. To handle this, we cap the slope for the purpose of this
@@ -379,11 +434,7 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs) {
         if (PetscAbsScalar(h_x) > maxSlope) h_x = h_x * maxSlope / PetscAbsScalar(h_x);
         if (PetscAbsScalar(h_y) > maxSlope) h_y = h_y * maxSlope / PetscAbsScalar(h_y);
 #endif
-
-        // const PetscScalar r = -ice.rho * ice.grav * H[i][j];
         const PetscScalar r = ice.rho * ice.grav * H[i][j];  // CHANGE OF SIGN
-        /* Dragging ice experiences friction at the bed determined by the
-        * basalDrag() method. This may be a linear friction law. */
         ierr = VecSetValue(rhs, rowU, -r*h_x, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, -r*h_y, INSERT_VALUES); CHKERRQ(ierr);
       }
@@ -392,20 +443,14 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A, Vec rhs) {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
 
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);
-
   return 0;
 }
+
 
 PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   const PetscInt  M = 2 * grid.p->My;
@@ -522,7 +567,8 @@ PetscErrorCode IceModel::velocityMacayeal() {
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
-      ierr = assembleMacayealMatrix(vNu, A, rhs); CHKERRQ(ierr);
+      ierr = assembleMacayealMatrix(vNu, A); CHKERRQ(ierr);
+      ierr = assembleMacayealRhs((computeSurfGradInwardMacAyeal == PETSC_TRUE), rhs); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
 #if 0
