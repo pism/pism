@@ -67,7 +67,7 @@ pismr : obj/libpism.so run.o
 pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
 
-pismv : obj/libpism.so obj/libtests.so iceCompModel.o iceExactStream.o verify.o
+pismv : obj/libpism.so obj/libtests.so iceCompModel.o iceExactStreamModel.o verify.o
 	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismv
 
 shelf : obj/libpism.so shelf.o

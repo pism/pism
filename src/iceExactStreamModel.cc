@@ -191,9 +191,13 @@ PetscErrorCode IceExactStreamModel::setInitStateAndBoundaryVels() {
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);    
 
-  // Communicate so that we can successfully differentiate surface
+  // Communicate so that we can successfully differentiate surface and set boundary conditions
   ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
 
   return 0;
 }

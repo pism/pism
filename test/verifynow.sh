@@ -28,7 +28,7 @@ do
 done
 
 echo "+++++++++ continuing with thermocoupled SIA test G and Mx = My = 61, 91, 121"
-echo "          (so  dx = dy = 30, 20, 15  km):"
+echo "          (so  dx = dy = 30, 20, 15  km  and dz = 66.7, 44.4, 33.3 m):"
 
 for myMx in 61 91 121
 do

@@ -58,7 +58,7 @@ const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less 
      // ice.meltingTemp; if above this value then decide to slide
 const PetscScalar IceModel::DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
 const PetscScalar IceModel::DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when assumed constant; for gk ice
-const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 1 W/m^2;
+const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
         // about 4 times more heating than peak of 
         // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
 const PetscScalar IceModel::DEFAULT_MAX_HMELT = 10.0;  // allow no more than 10 m thick basal
