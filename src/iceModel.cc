@@ -47,7 +47,6 @@ const PetscScalar IceModel::DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; crit
 const PetscScalar IceModel::DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch MacAyeal --> SIA
 const PetscScalar IceModel::DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch MacAyeal --> SIA
 const PetscScalar IceModel::DEFAULT_MAXSLOPE_MACAYEAL = 1.0e-3; // no units/pure number; cap to avoid bad behavior
-const PetscInt    IceModel::DEFAULT_MAX_ITERATIONS_MACAYEAL = 50;
 const PetscScalar IceModel::DEFAULT_EPSILON_MACAYEAL = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
 const PetscScalar IceModel::DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = 4.0;  // no units/pure number; epsilon goes up by this ratio when
 // previous value failed

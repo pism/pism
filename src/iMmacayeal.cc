@@ -379,6 +379,8 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
 
 
 PetscErrorCode IceModel::assembleMacayealRhs(bool surfGradInward, Vec rhs) {
+  // surfGradInward == true then differentiate h(x,y) inward from edge of grid,
+  // so that certain solutions make sense on period grid; Test I, for now
   const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
   const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
   PetscErrorCode  ierr;
@@ -530,7 +532,7 @@ PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateN
 *                          Macayeal Velocity
 * **********************************************************************/
 PetscErrorCode IceModel::velocityMacayeal() {
-  PetscInt maxIterations;
+//  PetscInt maxIterations;
   PetscErrorCode ierr;
   KSP ksp = MacayealKSP;
   Mat A = MacayealStiffnessMatrix;
@@ -546,13 +548,12 @@ PetscErrorCode IceModel::velocityMacayeal() {
   // restart the iteration with larger values of epsilon.
   ierr = VecCopy(vubar, vubarOld); CHKERRQ(ierr);
   ierr = VecCopy(vvbar, vvbarOld); CHKERRQ(ierr);
-  maxIterations = DEFAULT_MAX_ITERATIONS_MACAYEAL;
   epsilon = macayealEpsilon;
-  ierr = verbPrintf(3,grid.com, "  iteration to solve ice stream/shelf equations:\n"); CHKERRQ(ierr);
+//  ierr = verbPrintf(3,grid.com, "  iteration to solve ice stream/shelf equations:\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(5,grid.com, 
-     "  [macayealEpsilon = %10.5e, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = %10.5e,\n",
-     macayealEpsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL); CHKERRQ(ierr);
+     "  [macayealEpsilon = %10.5e, EPSILON_MULTIPLIER_MACAYEAL = %6.2e, macayealMaxIterations = %d\n",
+     macayealEpsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL,macayealMaxIterations); CHKERRQ(ierr);
   ierr = verbPrintf(5,grid.com, 
      "   regularizingVelocitySchoof = %10.5e, regularizingLengthSchoof = %10.5e,\n",
      regularizingVelocitySchoof, regularizingLengthSchoof); CHKERRQ(ierr);
@@ -562,7 +563,7 @@ PetscErrorCode IceModel::velocityMacayeal() {
 
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
-    for (PetscInt k=0; k<maxIterations; ++k) {
+    for (PetscInt k=0; k<macayealMaxIterations; ++k) {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
@@ -609,11 +610,10 @@ PetscErrorCode IceModel::velocityMacayeal() {
     ierr = verbPrintf(1,grid.com,
                        "WARNING: Effective viscosity not converged after %d iterations\n"
                        "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
-                       maxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL);
+                       macayealMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL);
     CHKERRQ(ierr);
     ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
     ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
-    // maxIterations = DEFAULT_MAX_ITERATIONS_MACAYEAL;
     epsilon *= DEFAULT_EPSILON_MULTIPLIER_MACAYEAL;
   }
 

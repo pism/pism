@@ -22,8 +22,6 @@
 #include <math.h>
 #include "exactTestI.h"
 
-#define SperA 31556926.0  /* seconds per year; 365.2422 days */
-
 int exactI(const double m, const double x, const double y, 
            double *bed, double *tauc, double *u, double *v) {
   /* see exact solution for an ice stream sliding over plastic till described

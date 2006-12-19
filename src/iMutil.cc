@@ -690,6 +690,8 @@ PetscErrorCode IceModel::afterInitHook() {
   }
 
   ierr = initSounding(); CHKERRQ(ierr);
+  tempskipCountDown = 0;
+
   ierr = createViewers(); CHKERRQ(ierr);
 
   return 0;

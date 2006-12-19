@@ -154,7 +154,6 @@ protected:
    static const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET;    // m/a; crit SIA speed for switch MacAyeal --> SIA
    static const PetscScalar DEFAULT_MAX_VEL_FOR_CFL;  // max velocity used in CFL calculation if velocity is not actually calculated  (which would be weird)
    static const PetscScalar DEFAULT_MAXSLOPE_MACAYEAL; // no units/pure number; cap to avoid bad behavior
-   static const PetscInt    DEFAULT_MAX_ITERATIONS_MACAYEAL;
    static const PetscScalar DEFAULT_EPSILON_MACAYEAL;  // units?;  initial amount of (denominator) regularization in
   // computation of effective viscosity
    static const PetscScalar DEFAULT_EPSILON_MULTIPLIER_MACAYEAL;  // no units/pure number; epsilon goes up by this ratio when
@@ -202,6 +201,7 @@ protected:
   PetscScalar constantNuForMacAyeal, constantHardnessForMacAyeal,
               regularizingVelocitySchoof, regularizingLengthSchoof,
               macayealRelativeTolerance, macayealEpsilon;
+  PetscInt    macayealMaxIterations;
   PetscScalar startYear, endYear;
   PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type

@@ -918,7 +918,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   //    -- av |<ub,vb> - <ubexact,vbexact>| error
 
   PetscErrorCode  ierr;
-  ierr = verbPrintf(2,grid.com, "Actual ERRORS evaluated at final time:\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "Actual ERRORS evaluated at final time (relative to exact solution):\n"); CHKERRQ(ierr);
 
   // geometry (thickness, vol, area) errors
   PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
@@ -1025,7 +1025,7 @@ PetscErrorCode IceCompModel::run() {
   
   ierr = verbPrintf(2,grid.com, "running test %c ...\n", testname); CHKERRQ(ierr);
   if (exactOnly == PETSC_TRUE) {
-    ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICS\n"); CHKERRQ(ierr);
+    ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,grid.com,
       "$$$$      YEAR (+    STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
