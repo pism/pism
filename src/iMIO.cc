@@ -297,14 +297,13 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"Thomol = Tkd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"hand1=figure;\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"imagesc(x,y,flipup(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"imagesc(x,y,flipud(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"Tcmap = get(hand1,'ColorMap'); Tcmap(64,:)=[1 1 1];\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"set(hand1,'ColorMap',Tcmap)\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-       "title('temperature at z given by -kd (white is at pressure-melting)')\n\n");  CHKERRQ(ierr);
+       "title('temperature at z given by -kd (white = pressure-melting)')\n\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
 /*  DANGEROUS BECAUSE MATLAB USES LOTS OF MEMORY FOR THIS CONTOUR MAP
