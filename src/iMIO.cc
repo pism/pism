@@ -242,11 +242,13 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   CHKERRQ(ierr);
 
   /* following block write Matlab to display h and bed */
+/*
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"surf(x,y,bed), hold on, mesh(x,y,h), hold off\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"title('surface elevation')\n\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+*/
 
   ierr = PetscObjectSetName((PetscObject) g2,"c"); CHKERRQ(ierr);  // vert-integrated hor speed in m/a
   ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
@@ -296,10 +298,22 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"Thomol = Tkd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"hand1=figure;\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"imagesc(x,y,flipup(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"Tcmap = get(hand1,'ColorMap'); Tcmap(64,:)=[1 1 1];\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"set(hand1,'ColorMap',Tcmap)\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+       "title('temperature at z given by -kd (white is at pressure-melting)')\n\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+
+/*  DANGEROUS BECAUSE MATLAB USES LOTS OF MEMORY FOR THIS CONTOUR MAP
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"contour(x,y,Tkd,200:2:300)\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"title('temperature at z given by -kd')\n\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
+*/
 
   PetscScalar     ***Sigma, **Sigma2;
   ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
@@ -317,11 +331,13 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
         grid.p->Mx,grid.p->My);
   CHKERRQ(ierr);
 
+/*
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"mesh(x,y,Sigmakd), colormap cool\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"title('strain heating \\Sigma at z given by -kd')\n\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+*/
 
   // make slice along y-axis of T; requires nontrivial transfer from 3D DA-based array into new
   // type of 2D DA-based array, I think

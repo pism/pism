@@ -99,6 +99,8 @@ PetscErrorCode IceModel::temperatureStep() {
   ierr = DAVecGetArray(grid.da3, vTnew, &Tnew); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
+  PetscInt myLowTempCount = 0;
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dz));
@@ -209,9 +211,17 @@ PetscErrorCode IceModel::temperatureStep() {
         }
       }
 
+    const PetscScalar GlobalMinTemp = 200.0;
+
       // insert bedrock solution        
       for (PetscInt k=0; k < Mbz; k++) {
         Tb[i][j][k] = x[k];
+        if (Tb[i][j][k] < GlobalMinTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) bedrock temp at %d,%d,%d; processor %d; mask value %f]]\n",
+              i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+           myLowTempCount++;
+        }
       }
 
       // prepare for melting/refreezing
@@ -233,6 +243,12 @@ PetscErrorCode IceModel::temperatureStep() {
             Tnew[i][j][k] = x[Mbz + k];
           }
         }
+        if (Tnew[i][j][k] < GlobalMinTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) generic segment temp at %d,%d,%d; processor %d; mask value %f]]\n",
+              i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+           myLowTempCount++;
+        }
       }
       
       // insert solution for ice/rock interface (or base of ice shelf) segment
@@ -253,6 +269,12 @@ PetscErrorCode IceModel::temperatureStep() {
           if (Tnew[i][j][0] > (Tpmp + 0.00001)) {
             SETERRQ(1,"updated temperature came out above Tpmp");
           }
+        }
+        if (Tnew[i][j][0] < GlobalMinTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) ice/rock segment temp at %d,%d; processor %d; mask value %f]]\n",
+              i,j,grid.rank,mask[i][j]); CHKERRQ(ierr);
+           myLowTempCount++;
         }
       } else {
         Hmeltnew = 0.0;
@@ -279,6 +301,8 @@ PetscErrorCode IceModel::temperatureStep() {
     } 
   }
   
+  if (myLowTempCount > 10) { SETERRQ(1,"too many low temps"); }
+
   // note that in above code 4 scalar fields were modified: vHmelt, vbasalMeltRate, vTb, and vT
   // but (11/16/06) vHmelt, vbasalMeltRate and vTb will never need to communicate ghosted values
   // (i.e. horizontal stencil neighbors);  vT is communicated by temperatureAgeStep()
