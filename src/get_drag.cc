@@ -56,10 +56,6 @@ IceDragModel::IceDragModel(IceGrid &g, IceType &i)
   // do nothing (except pass g,i to constructor for IceModel)
 }
 
-
-//FIXME: need to remove C++ style calls to NetCDF library; see iMIOnetcdf.cc
-//for now the next thing produces a compile error
-
 #if (WITH_NETCDF)
 #include <netcdf.h>
 
@@ -279,8 +275,10 @@ PetscErrorCode IceDragModel::writeMatlabDragFile(const char *basename) {
         CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"\nbetay = reshape(betay,%d,%d);\n\n",
                                 grid.p->Mx,grid.p->My);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer, "beta = (max(betax,0.0) + max(betay,0.0))/2;\n"); CHKERRQ(ierr);
 
-  /* following block writes Matlab to display */
+  /* following block writes Matlab to display; not necessary */
+/*
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer, "figure, contourf(x,y,betax',50), colorbar\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"title('drag coeff in x direction (forcex = - betax * u)')\n\n");
@@ -288,13 +286,12 @@ PetscErrorCode IceDragModel::writeMatlabDragFile(const char *basename) {
   ierr = PetscViewerASCIIPrintf(viewer, "figure, contourf(x,y,betay',50), colorbar\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"title('drag coeff in y direction (forcey = - betay * v)')\n\n");
         CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer, "beta = (max(betax,0.0) + max(betay,0.0))/2;\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer, "figure, contour(x,y,balvel',[0 1 5 10 20 50 100 200 500 1000 2000 4000],'k')\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer, "hold on, surf(x,y,log(beta')/log(10)), view(2), colorbar, hold off\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"title('log_{10}(beta) (color) on contours of balance vels (black)')\n\n");
         CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+*/
 
   ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);
@@ -337,7 +334,7 @@ int main(int argc, char *argv[]) {
     ierr = m.initFromOptions(); CHKERRQ(ierr);
     ierr = m.setSoundingFromOptions(); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "computing velocities (with MacAyeal; including eff viscosity iteration) ..."); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, "computing velocities (with MacAyeal; including eff viscosity iteration) ...\n"); CHKERRQ(ierr);
     m.setUseMacayealVelocity(PETSC_TRUE);
     ierr = m.velocity(true); CHKERRQ(ierr);
     ierr = PetscPrintf(com, " done \n"); CHKERRQ(ierr);
