@@ -528,9 +528,6 @@ PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateN
   return 0;
 }
 
-/* **********************************************************************
-*                          Macayeal Velocity
-* **********************************************************************/
 PetscErrorCode IceModel::velocityMacayeal() {
 //  PetscInt maxIterations;
   PetscErrorCode ierr;
@@ -607,14 +604,19 @@ PetscErrorCode IceModel::velocityMacayeal() {
 
       if (norm == 0 || normChange / norm < macayealRelativeTolerance) goto done;
     }
-    ierr = verbPrintf(1,grid.com,
-                       "WARNING: Effective viscosity not converged after %d iterations\n"
-                       "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
-                       macayealMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL);
-    CHKERRQ(ierr);
-    ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
-    ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
-    epsilon *= DEFAULT_EPSILON_MULTIPLIER_MACAYEAL;
+    if (epsilon > 0.0) {
+       ierr = verbPrintf(1,grid.com,
+                  "WARNING: Effective viscosity not converged after %d iterations\n"
+                  "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
+                  macayealMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL);
+           CHKERRQ(ierr);
+       ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
+       ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
+       epsilon *= DEFAULT_EPSILON_MULTIPLIER_MACAYEAL;
+    } else {
+       SETERRQ1(1, "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.\n", 
+                macayealMaxIterations);
+    }
   }
 
   done:
