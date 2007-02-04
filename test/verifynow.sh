@@ -2,7 +2,8 @@
 # VERIFYNOW is a script to do fairly quick verification of the isothermal and 
 # thermocoupled shallow ice components of PISM, and of the ice stream components,
 # on a single processor.  Uses tests C, I and G.  It is intended to do roughly the
-# minimal amount of computation to show convergence to continuum results. ELB 1/31/07
+# minimal amount of computation to show convergence to continuum results.
+# ELB 1/31/07; 2/3/07: -ksp_rtol 1e-6 added
 
 echo "++++++++ starting with isothermal shallow ice approx (SIA) test C and Mx = My = 41, 61, 81"
 echo "          (so  dx = dy = 50, 33.3, 25 km):"
@@ -20,7 +21,7 @@ echo "          (so  dy = 5000, 1250, 312.5, 78.125 *meters*):"
 
 for myMy in 49 193 769 3073
 do
-   obj/pismv -test I -Mx 5 -My $myMy -mv_rtol 1e-7 -verbose > _temp_result.txt 
+   obj/pismv -test I -Mx 5 -My $myMy -mv_rtol 1e-7 -ksp_rtol 1e-6 -verbose > _temp_result.txt 
    sed '/  history =/,+1!d' _temp_result.txt | sed 1d
    sed '/Actual ERRORS/,+2!d' _temp_result.txt
    date
