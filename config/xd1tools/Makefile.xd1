@@ -2,6 +2,8 @@ SHELL = /bin/sh
 VPATH = src:src/exact
 ALL : all
 
+include ${PETSC_DIR}/bmake/common/base
+
 #FLAGS:
 
 WITH_NETCDF?=1
@@ -27,7 +29,8 @@ endif
 
 #VARIABLES:
 
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
+#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -46,7 +49,6 @@ other_csources= simpleISO.c simpleFG.c simpleI.c
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
-include ${PETSC_DIR}/bmake/common/base
 
 #TARGETS:
 

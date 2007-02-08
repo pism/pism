@@ -2,6 +2,8 @@ SHELL = /bin/sh
 VPATH = src:src/exact
 ALL : all
 
+include ${PETSC_DIR}/bmake/common/base
+
 #FLAGS:
 
 WITH_NETCDF?=1
@@ -41,8 +43,6 @@ other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
-
-include ${PETSC_DIR}/bmake/common/base
 
 #TARGETS:
 
