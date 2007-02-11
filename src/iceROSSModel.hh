@@ -50,7 +50,7 @@ private:
     PetscErrorCode  fillinTemps();
     PetscErrorCode  makeSurfaceFloating();
     PetscErrorCode  showObservedVels();
-    PetscErrorCode  computeErrorsInAccurate();
+    PetscErrorCode  computeErrorsInAccurateRegion();
     PetscErrorCode  runTune();
 };
 

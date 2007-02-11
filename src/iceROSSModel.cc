@@ -27,6 +27,47 @@
 #include "iceROSSModel.hh"
 
 
+/*  
+
+Run this derived class with "obj/pisms -ross".
+
+Allows the following options:  
+  -d cnmu       most useful way to see what is going on
+  -if foo       NOT allowed!
+  -o foo -of m  writes data to foo.m; note .pb is probably not useful
+  -pause N      pause for N seconds when refreshing viewers
+  -prefix foo   looks for files "111by147Grid.dat" and "kbc.dat" and 
+                "inlets.dat" in foo/; files at
+                http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html
+  -ross         to start this
+  -showobsvel   shows observed (but interpolated) speeds from "111by147Grid.dat"
+  -tune x,y,z   run through \bar B=x:y:z (Matlab) or 
+                \bar B = x, x+y, x+2y, ..., x+Ny=z as
+                hardness parameters; note no spaces in "x,y,z"!
+  -verbose      shows, in particular, omitted lines in "???.dat" reads
+
+Example 1.  Basic run with all info displayed.  Note \bar B = 2.22e8 versus 
+/bar B = 1.9e8 as in MacAyeal et al 1996.  Note files eisROSS/111by147Grid.dat,
+eisROSS/kbc.dat, and eisROSS/inlets.dat must be present: 
+  user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose
+  
+Example 2.  Same as above but saving Matlab results; no display.  The resulting
+file can be viewed in Matlab.  See also test/ross/README.rossPISM, 
+test/ross/riggs_ELBclean.dat, and test/ross/rossspeedplot.m, which can be used
+to produce \Chi^2 statistic relative to RIGGS data, and nice picture: 
+  user@home:~/pism$ obj/pisms -ross -verbose -o PISM_ross_2p22e8 -of m
+  
+Example 3.  Same, but asking for a lot more accuracy.  Nearly the same result, 
+which suggests defaults (-mv_rtol 1e-4 -ksp_rtol 1e-6) suffice:
+  user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose\
+                    -mv_rtol 1e-7 -ksp_rtol 1e-11  
+
+Example 4:  Tune across range of values of \bar B, including MacAyeal et al 1996
+value and (close to) optimal value:
+  user@home:~/pism$ obj/pisms -ross -verbose -tune 1.7e8,1e7,2.4e8
+  
+*/
+
 IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
 }
@@ -402,9 +443,9 @@ PetscErrorCode IceROSSModel::readROSSfiles() {
     SETERRQ1(1,"error closing file %s in IceROSSModel",datfilename);
   }
 
-  /*****************************************************************/
-  /*       NOW READ   kbc.dat   and use to set b.c.s for velocity  */
-  /*****************************************************************/
+  /************************************************************************/
+  /*  READ   kbc.dat  and  inlets.dat  and use to set b.c.s for velocity  */
+  /************************************************************************/
 
   PetscScalar   **ubar, **vbar;  // meaning switched!
   ierr = VecSet(ubarBC,0.0); CHKERRQ(ierr);
@@ -605,9 +646,9 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
 }
 
 
-PetscErrorCode IceROSSModel::computeErrorsInAccurate() {
-  // average over grid, where observed velocity is accurate according to 111by147grid.dat,
-  // the difference between computed and observed u,v
+PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
+  // average over grid, where observed velocity is accurate *according to
+  // 111by147grid.dat*, the difference between computed and observed u,v
   PetscErrorCode  ierr;
   PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0,
                accN=0.0, accArea=0.0, maxcComputed=0.0,
@@ -684,9 +725,10 @@ PetscErrorCode IceROSSModel::runTune() {
   // user might enter
   //     obj/pisms -ross -tune 1.7e8,0.1e8,2.5e8
   // [note no spaces between parameters!]
-  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-tune", tuneparam, &numtuneparam, &tuneSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-tune", tuneparam, &numtuneparam,
+                                  &tuneSet); CHKERRQ(ierr);
   if (tuneSet == PETSC_FALSE || numtuneparam != 3) {
-    SETERRQ(1,"-tune not accompanied by three parameters");
+    SETERRQ(1,"option -tune not accompanied by three parameters");
   }
   
   ierr = makeSurfaceFloating(); CHKERRQ(ierr);
@@ -696,7 +738,7 @@ PetscErrorCode IceROSSModel::runTune() {
   useConstantHardnessForMacAyeal = PETSC_TRUE;
   setMacayealEpsilon(0.0);  // don't use this lower bound
 
-  regularizingVelocitySchoof = 1.0 / secpera;  // (VELOCITY/LENGTH)^2  is very close to 10^-27
+  regularizingVelocitySchoof = 1.0 / secpera;  // \eps=(VELOCITY/LENGTH)^2 is close to 10^-27
   regularizingLengthSchoof = 1000.0e3;
   ierr = verbPrintf(2,grid.com,"[using Schoof regularization constant = %10.5e for all runs]\n",
               PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
@@ -710,7 +752,7 @@ PetscErrorCode IceROSSModel::runTune() {
     ierr = velocityMacayeal(); CHKERRQ(ierr);
     ierr = updateViewers(); CHKERRQ(ierr);
     // compare to observed
-    ierr = computeErrorsInAccurate(); CHKERRQ(ierr);
+    ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
   }
 
   ierr = writeROSSfiles(); CHKERRQ(ierr);
@@ -762,7 +804,7 @@ PetscErrorCode IceROSSModel::run() {
   ierr = summary(true,true); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
   // compare to observed
-  ierr = computeErrorsInAccurate(); CHKERRQ(ierr);
+  ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
   // ierr = readRIGGSandCompare(); CHKERRQ(ierr);
   ierr = writeROSSfiles(); CHKERRQ(ierr);
   if (pause_p == PETSC_TRUE) {

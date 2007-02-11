@@ -76,11 +76,11 @@ int initIceParam(MPI_Comm com, IceParam **param, PetscBag *bag) {
   ierr = PetscBagRegisterInt(b, &p.Mbz, 0, "Mbz",
                              "Number of bedrock grid points in z-direction."); CHKERRQ(ierr);
   ierr = PetscBagRegisterScalar(b, &p.dx, 2.0 * HALFWIDTH_X / (GRIDPTS_X - 1), "dx",
-                                "Grid spacing in x-direction; DO NOT MODIFY; MOD OF Lx,Mx OK."); CHKERRQ(ierr);
+                                "Grid spacing in x-direction (m); DO NOT MODIFY; MOD OF Lx,Mx OK."); CHKERRQ(ierr);
   ierr = PetscBagRegisterScalar(b, &p.dy, 2.0 * HALFWIDTH_Y / (GRIDPTS_Y - 1), "dy",
-                                "Grid spacing in y-direction; DO NOT MODIFY; MOD OF Ly,My OK."); CHKERRQ(ierr);
+                                "Grid spacing in y-direction (m); DO NOT MODIFY; MOD OF Ly,My OK."); CHKERRQ(ierr);
   ierr = PetscBagRegisterScalar(b, &p.dz, HEIGHT_Z / (GRIDSPACES_Z - 1), "dz",
-                                "Grid spacing in z-direction; DO NOT MODIFY; MOD OF Lz,Mz OK."); CHKERRQ(ierr);
+                                "Grid spacing in z-direction (m); DO NOT MODIFY; MOD OF Lz,Mz OK."); CHKERRQ(ierr);
   ierr = PetscBagRegisterScalar(b, &p.year, 0, "year",
                                 "Current time in years."); CHKERRQ(ierr);
 
