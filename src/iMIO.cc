@@ -208,7 +208,8 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
 
   ierr = PetscViewerASCIIPrintf(viewer,"\n\ndisp('iceModel output:')\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nclear year x y z xx yy zz c h H bed mask Tkd pmMaskkd Tid Tjd Sigmakd\n");
+  ierr = PetscViewerASCIIPrintf(viewer,
+    "\nclear year x y z xx yy zz ubar vbar c h H bed mask Tkd pmMaskkd Tid Tjd Sigmakd\n");
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
@@ -241,14 +242,15 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   ierr = PetscViewerASCIIPrintf(viewer,"\nmask = reshape(mask,%d,%d);\n\n",grid.p->Mx,grid.p->My);
   CHKERRQ(ierr);
 
-  /* following block write Matlab to display h and bed */
-/*
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"surf(x,y,bed), hold on, mesh(x,y,h), hold off\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"title('surface elevation')\n\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-*/
+  ierr=PetscObjectSetName((PetscObject) g2,"ubar"); CHKERRQ(ierr);
+  ierr = LVecView(grid.da2, vubar, g2, viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nubar = reshape(ubar,%d,%d);\n\n",grid.p->Mx,grid.p->My);
+  CHKERRQ(ierr);
+
+  ierr=PetscObjectSetName((PetscObject) g2,"vbar"); CHKERRQ(ierr);
+  ierr = LVecView(grid.da2, vvbar, g2, viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nvbar = reshape(vbar,%d,%d);\n\n",grid.p->Mx,grid.p->My);
+  CHKERRQ(ierr);
 
   ierr = PetscObjectSetName((PetscObject) g2,"c"); CHKERRQ(ierr);  // vert-integrated hor speed in m/a
   ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
@@ -371,33 +373,33 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
     }
     ierr = DAVecRestoreArray(daslice, vTid, &Tid); CHKERRQ(ierr);
 
-    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"z=linspace(0,%12.3f,%d);\n",grid.p->Lz,grid.p->Mz);
         CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
     ierr=PetscObjectSetName((PetscObject) gslice,"Tid"); CHKERRQ(ierr);
     ierr = LVecView(daslice, vTid, gslice, viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"\nTid = reshape(Tid,%d,%d);\n\n",grid.p->Mz,grid.p->My);
         CHKERRQ(ierr);
 
-    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"subplot(2,1,1), surf(y,z,Tid,'LineStyle','none')\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"title('slice of temp at x given by -id')\n\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"view(2), colorbar\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"subplot(2,1,1), surf(y,z,Tid,'LineStyle','none')\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"title('slice of temp at x given by -id')\n\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"view(2), colorbar\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
     ierr=PetscObjectSetName((PetscObject) gslice,"Tjd"); CHKERRQ(ierr);
     ierr = LVecView(daslice, vTjd, gslice, viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"\nTjd = reshape(Tjd,%d,%d);\n\n",grid.p->Mz,grid.p->Mx);
         CHKERRQ(ierr);
 
-    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"subplot(2,1,2), surf(x,z,Tjd,'LineStyle','none')\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"title('slice of temp at y given by -jd')\n\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"view(2), colorbar\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"subplot(2,1,2), surf(x,z,Tjd,'LineStyle','none')\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"title('slice of temp at y given by -jd')\n\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"view(2), colorbar\n");  CHKERRQ(ierr);
+//    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
     ierr = VecDestroy(gslice); CHKERRQ(ierr);
     ierr = VecDestroy(vTid); CHKERRQ(ierr);

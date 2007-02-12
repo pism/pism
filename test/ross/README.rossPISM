@@ -23,8 +23,10 @@ grid system is clearly described in Table A1, Part 1 of R.
 Thomas and three others, "Glaciological Studies on the Ross Ice 
 Shelf, Antarctica, 1973-1978", Antarctica Research Series 
 Volume 42, American Geophysical Union 1984.  (Unfortunately the
-grid system has been destroyed in the file "RIGGS.dat".)  There
-are 14 columns in this file:
+grid system has been destroyed in the file "RIGGS.dat".)  The 
+obviously spurious point "N16" in the RIGGS data has been thrown out;
+note that Figure 11 in (Thomas et al 1984) does not contain it either. 
+There are 14 columns in this file:
 COLUMN    MEANING
 1         index of point used in FILE1
 2         north latitude (i.e. actual latitude) from FILE1

@@ -60,7 +60,7 @@ to produce \Chi^2 statistic relative to RIGGS data, and nice picture:
 Example 3.  Same, but asking for a lot more accuracy.  Nearly the same result, 
 which suggests defaults (-mv_rtol 1e-4 -ksp_rtol 1e-6) suffice:
   user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose\
-                    -mv_rtol 1e-7 -ksp_rtol 1e-11  
+                    -mv_rtol 1e-7 -ksp_rtol 1e-10  
 
 Example 4:  Tune across range of values of \bar B, including MacAyeal et al 1996
 value and (close to) optimal value:
@@ -789,7 +789,7 @@ PetscErrorCode IceROSSModel::run() {
   useConstantNuForMacAyeal = PETSC_FALSE;
   useConstantHardnessForMacAyeal = PETSC_TRUE;
   setMacayealEpsilon(0.0);  // don't use this lower bound
-//  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}
+//  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3} (MacAyeal et al 1996) value
   constantHardnessForMacAyeal = 2.22e8;  // Pa s^{1/3}
 
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
