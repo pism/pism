@@ -16,9 +16,9 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <petscfix.h>
 #include <petscda.h>
 #include <petscbag.h>
-
 #include "grid.hh"
 
 // Note that the following choices may be overridden according to the input file.  
