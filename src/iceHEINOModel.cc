@@ -324,11 +324,13 @@ PetscScalar IceHEINOModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
   
+  const PetscScalar  heino_beta_cc = 8.7e-4;  // K/m
+  const PetscScalar  heino_temp_for_sliding = 273.15;  // K
   if (getExperName() == '0') { // ISMIP-HEINO
     //PetscErrorCode  ierr = PetscPrintf(grid.com, 
     //        "   [IceHEINOModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
     //        x,y,H,T,alpha);  CHKERRQ(ierr);
-    if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
+    if (T + heino_beta_cc * H > heino_temp_for_sliding) {
       // set coords according to ISMIP-HEINO convention
       const PetscScalar  xIH = x + grid.p->Lx,
                          yIH = y + grid.p->Ly;
