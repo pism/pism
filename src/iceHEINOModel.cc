@@ -323,6 +323,7 @@ bool IceHEINOModel::inSoftSediment(const PetscScalar x, const PetscScalar y) {
 PetscScalar IceHEINOModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
+  // ignors mu
   
   const PetscScalar  heino_beta_cc = 8.7e-4;  // K/m
   const PetscScalar  heino_temp_for_sliding = 273.15;  // K
@@ -344,7 +345,8 @@ PetscScalar IceHEINOModel::basal(const PetscScalar x, const PetscScalar y,
     } else
       return 0.0;  // not at pressure melting
   } else {
-    SETERRQ(1,"experiment name invalid in IceHEINOModel::basal()");
+    PetscPrintf(grid.com,"experiment name invalid in IceHEINOModel::basal()");
+    PetscEnd(); // note SETERRQ() won't work here because of traceback through ierr
     return 0.0;
   }
 }

@@ -56,7 +56,9 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&ghfView, 'F',"geothermal heat flux (mW/m^2)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&HView, 'H',"H (thickness; m)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&hView, 'h',"h (surface elev; m above sea level)");  CHKERRQ(ierr);
-
+  ierr = createOneViewerIfDesired(&nuView[0], 'i',"nu*H (I offset)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&nuView[1], 'j',"nu*H (J offset)");  CHKERRQ(ierr);
+ 
   if (strchr(diagnostic, 'k') != NULL) {
     ierr = KSPLGMonitorCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
                               PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
@@ -66,9 +68,7 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&basalmeltView, 'l',"basal melt rate (m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&HmeltView, 'L',"basal melt water thickness (m)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&maskView, 'm',"mask (1=SHEET, 2=DRAG, 3=FLOAT)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&nuView[0], 'i',"nu*H (I offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&nuView[1], 'j',"nu*H (J offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&lognuView, 'n',"log_10(nu*H)");  CHKERRQ(ierr);
+ ierr = createOneViewerIfDesired(&lognuView, 'n',"log_10(nu*H)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&NuView[0], 'N',"(nu*H)_t (I offset)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&NuView[1], 'N',"(nu*H)_t (J offset)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&upliftView, 'p',"bed uplift rate (m/a)");  CHKERRQ(ierr);
@@ -389,10 +389,11 @@ PetscErrorCode IceModel::updateViewers() {
         if (H[i][j] > 0.0) {
           const PetscScalar mpera = secpera * 
                      sqrt(PetscSqr(ub[i][j]) + PetscSqr(vb[i][j]));
-          if (mpera > 1.0e-6) {
+//          if (mpera > 1.0e-6) {
+          if (mpera > 1.0e-9) {
             a[i][j] = log10(mpera);
           } else {
-            a[i][j] = -3.0;  // essentially stopped ice
+            a[i][j] = -9.0;  // essentially stopped ice
           }
         } else {  // no ice at location
           a[i][j] = -3.0;

@@ -55,6 +55,9 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
   char                temp, eisIIexpername[20];
   PetscTruth          EISIIchosen;
 
+  /* this derived class only does EISMINT II experiments; for EISMINT ROSS
+     and for ISMIP HEINO see simplify.cc and the derived classes of IceModel
+     it uses */
   /* note EISMINT I is NOT worth implementing; for fixed margin isothermal 
      tests do "pismv -test A" or "pismv -test E"; for moving margin isothermal
      tests do "pismv -test B" or "-test C" or "-test D" or "-test H" */
@@ -63,20 +66,16 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
   "-eisII F", for example. */
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen); CHKERRQ(ierr);
 
-//   This option chooses EISMINT ROSS, i.e. from the paper
-//     MacAyeal and five others (1996). "An ice-shelf model test based on the Ross ice shelf,"
-//     Ann. Glaciol. 23, 46-51
-//  ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &ROSSchosen); CHKERRQ(ierr);
-
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    setExperName(temp);
-//  } else if (ROSSchosen == PETSC_TRUE) {
-//    setExperName('3');
-//    SETERRQ(1, "EISMINT-ROSS NOT IMPLEMENTED!");
-  } else { // set a default: EISMINT II experiment A
-    setExperName('A');
+    if ((temp >= 'A') && (temp <= 'H')) {
+      setExperName(temp);
+    } else {
+      SETERRQ(2,"option -eisII must have value A, B, C, D, E, F, G, or H\n");
+    }
+  } else {
+    SETERRQ(1,"option -eisII must have a value\n");
   }
 
   return 0;
@@ -143,8 +142,14 @@ PetscErrorCode IceEISModel::initFromOptions() {
           default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
         }
         break;
+      case 'G':
+        ierr = grid.rescale(L, L, 3000); CHKERRQ(ierr);
+        break;
+      case 'H':
+        ierr = grid.rescale(L, L, 4000); CHKERRQ(ierr);
+        break;
       default:  
-        SETERRQ(1,"ERROR: desired EISMINT II experiment NOT IMPLEMENTED\n");
+        SETERRQ(1,"option -eisII value not understood; EISMINT II experiment of given name may not exist.\n");
     }
   }
 
@@ -165,8 +170,8 @@ PetscErrorCode IceEISModel::initFromOptions() {
 PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
 
   setThermalBedrock(PETSC_FALSE);
-  setUseMacayealVelocity(PETSC_FALSE); // NOT VALID FOR EISMINT-ROSS!!
-  setIsDrySimulation(PETSC_TRUE); // NOT VALID FOR EISMINT-ROSS!!
+  setUseMacayealVelocity(PETSC_FALSE);
+  setIsDrySimulation(PETSC_TRUE);
   setDoGrainSize(PETSC_FALSE);
   setEnhancementFactor(1.0);
   setIncludeBMRinContinuity(PETSC_FALSE);
@@ -186,12 +191,14 @@ PetscErrorCode IceEISModel::initAccumTs() {
   PetscErrorCode    ierr;
   PetscScalar       **accum, **Ts;
 
-  // EISMINT II values:
+  // EISMINT II values
   const PetscScalar S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
   PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
 
   switch (getExperName()) {
     case 'A':
+    case 'G':
+    case 'H':
       // start with zero ice and:
       M_max = 0.5 / secpera;  // Max accumulation
       R_el = 450e3;           // Distance to equil line (accum=0)
@@ -275,8 +282,32 @@ PetscErrorCode IceEISModel::fillintemps() {
 PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
-  // note this version ignors mu
+  // this version ignors mu, x, and y
+
+  const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
+// see comment below; S is melt, which is no longer an argument to basal()
+//  const PetscScalar  B = Bfactor * S;  // units Pa^-1
+  const PetscScalar  eismintII_temp_sliding = 273.15;
   
-  return 0.0;  // zero sliding for other tests; EISMINT II exper G,H will need sliding
+  if (getExperName() == 'G') {
+//      if ( (PetscAbs(x - 0.0) < 1.0) && (PetscAbs(y - 0.0) < 1.0) ) {
+//        PetscPrintf(grid.com,"at origin; ending; values B = %f, H = %f, S = %f\n",B,H,S);
+//        PetscEnd(); // note SETERRQ() won't work here because of traceback through ierr
+//      }
+      return Bfactor * ice.rho * ice.grav * H; // supposes there was a misprint on page
+          // 230 of Payne et al 2000;  supposes last words of paragraph labelled
+          // "Experiment G" should have been "... that of basal pressure" instead
+          // of "... that of basal melt" 
+//      return B * ice.rho * ice.grav * H;
+  } else if (getExperName() == 'H') {
+      if (T + ice.beta_CC_grad * H > eismintII_temp_sliding) {
+//      return B * ice.rho * ice.grav * H;
+        return Bfactor * ice.rho * ice.grav * H; // ditto case G
+      } else {
+        return 0.0;
+      }
+  }
+  
+  return 0.0;  // zero sliding for other tests
 }
 

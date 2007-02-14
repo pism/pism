@@ -132,7 +132,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
   ierr = DAVecGetArray(grid.da2, vDf[0], &Df[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vDf[1], &Df[1]); CHKERRQ(ierr);
 
-  // note basal temps get evaled by basal sliding law, even in faststep
+  // note basal temps and melt rate get evaled by basal sliding law, even in faststep
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
 
   if (!faststep) {
