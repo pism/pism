@@ -2,10 +2,8 @@ SHELL = /bin/sh
 VPATH = src:src/exact
 ALL : all
 
-include ${PETSC_DIR}/bmake/common/base
-
-#IBM_LINKER=ar -X64 -rs
-IBM_LINKER=mpcc_r -q64
+IBM_AR=ar -X64 -rs
+IBM_LINKER=mpCC_r -q64
 
 #FLAGS:
 
@@ -22,11 +20,19 @@ ifneq (WITH_NETCDF, 0)
 endif
 
 FFTW_INC= -I$(FFTW_DIR)/include
-FFTW_LIB= -L$(FFTW_DIR)/lib
+FFTW_LIB= -L$(FFTW_DIR)/lib64
 CFLAGS+= -DWITH_FFTW=${WITH_FFTW} 
 ifneq (WITH_FFTW, 0)
     CFLAGS+= $(FFTW_INC)
     LDFLAGS+= $(FFTW_LIB)
+endif
+
+GSL_INC= -I$(GSL_DIR)/include
+GSL_LIB= -L$(GSL_DIR)/lib
+
+ifneq (WITH_GSL, 0)
+    CFLAGS+= $(GSL_INC)
+    LDFLAGS+= $(GSL_LIB)
 endif
 
 # for now will not use GSL so -bed_def_lc will not work
@@ -37,7 +43,7 @@ CFLAGS+= -DWITH_GSL=0
 #	-DWITH_GSL=${WITH_GSL} -pipe
 
 #ICE_LIB_FLAGS= -L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}
-ICE_LIB_FLAGS= -L`pwd`/obj -lice -ltests ${PETSC_LIB} $(LDFLAGS)
+ICE_LIB_FLAGS= $(LDFLAGS) -L`pwd`/obj -ltests ${PETSC_LIB}
 
 ifeq (${WITH_NETCDF}, 1)
 	ICE_LIB_FLAGS+= -lnetcdf
@@ -52,7 +58,7 @@ endif
 #VARIABLES:
 
 #executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -65,12 +71,14 @@ tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc run.cc verify.cc iceCompModel.cc get_drag.cc shelf.cc
+	iceROSSModel.cc run.cc verify.cc iceCompModel.cc get_drag.cc shelf.cc \
+        iceExactStreamModel.cc
 other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
+include ${PETSC_DIR}/bmake/common/base
 CPP = mpCC_r -q64 -E
 
 #TARGETS:
@@ -81,16 +89,15 @@ all : depend libpism libtests $(executables)
 #	${CLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
 #	ar cru -s obj/libpism.a ${ICE_OBJS}
 libpism : ${ICE_OBJS}
-	${IBM_LINKER} -o obj/libpism.a ${ICE_OBJS}
+	${IBM_AR} -o obj/libpism.a ${ICE_OBJS}
 
 #libtests : ${TESTS_OBJS}
 #	${CLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
 libtests : ${TESTS_OBJS}
-	${IBM_LINKER} -o obj/libtests.a ${TESTS_OBJS}
+	${IBM_AR} -o obj/libtests.a ${TESTS_OBJS}
 
 flowTable : obj/libpism.a flowTable.o
-#	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/flowTable
-	${IBMLINKER} $^ ${ICE_LIB_FLAGS} -o obj/flowTable
+	${IBM_LINKER} -lpism flowTable.o ${ICE_LIB_FLAGS} -o obj/flowTable
 
 get_drag : obj/libpism.a get_drag.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/get_drag
@@ -101,7 +108,8 @@ pismr : obj/libpism.a run.o
 pisms : obj/libpism.a iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
 
-pismv : obj/libpism.a obj/libtests.a iceCompModel.o verify.o
+#pismv : iceCompModel.o verify.o obj/libpism.a obj/libtests.a 
+pismv : iceCompModel.o verify.o iceExactStreamModel.o obj/libpism.a obj/libtests.a
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismv
 
 shelf : obj/libpism.a shelf.o
