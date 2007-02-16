@@ -8,7 +8,7 @@ home = os.environ['HOME']
 ccflags = "-Wall -Wextra -Wshadow -Wwrite-strings -Wno-unused-parameter"
 ccflags += " -Wno-strict-aliasing -Wpointer-arith -Wconversion -Winline"
 #ccflags += " -Wcast-qual -Wpadded -Wunreachable-code" # These are excessive
-ccflags += " -g3 -DWITH_NETCDF=1 -DWITH_FFTW=1 -DWITH_GSL=1 -pipe"
+ccflags += " -g3 -DWITH_FFTW=1 -DWITH_GSL=1 -pipe"
 #ccflags += " -fomit-frame-pointer"
 #ccflags += " -pg" # profiling
 
@@ -17,10 +17,10 @@ my_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                      CPPPATH=[os.path.join(petsc_dir, 'include'),
                               os.path.join(petsc_dir, 'bmake', petsc_arch),
                               os.path.join(home, 'usr/include')],
-                     LIBPATH=[os.path.join(petsc_dir, 'lib', petsc_arch),
-                              '/usr/X11R6/lib', '/usr/lib/atlas/sse2',
-                              '/usr/lib/atlas'],
-                     RPATH=[os.path.join(petsc_dir, 'lib', petsc_arch)])
+                      LIBPATH=[os.path.join(petsc_dir, 'lib', petsc_arch),
+                               '/usr/X11R6/lib', '/usr/lib/atlas/sse2'],
+                               #'/usr/lib/atlas'],
+                      RPATH=[os.path.join(petsc_dir, 'lib', petsc_arch)])
 
 deb_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                       CC='mpicc.mpich', CXX='mpicxx.mpich',
@@ -29,11 +29,34 @@ deb_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                       RPATH=[''])
 
 env = my_env
+
+conf = Configure(env)
+
+if conf.CheckCHeader('netcdf.h'):
+    ccflags += ' -DWITH_NETCDF=1'
+else:
+    print 'No netCDF support.'
+    ccflags += ' -DWITH_NETCDF=0'
+
+env = conf.Finish()
+
+# Get the necessary libraries and linker flags from the petscconf file.
+pcc_linker_libs = filter(lambda s: s[:15] == 'PCC_LINKER_LIBS',
+                          open('/home/jed/petscconf'))[0].split(' ')
+                          #open('/home/jed/nelchina/petscconf_NELCHINA'))[0].split(' ')
+rpath = filter(lambda s: s[:11] == '-Wl,-rpath,', pcc_linker_libs)
+libpath = filter(lambda s: s[:2] == '-L', pcc_linker_libs)
+
+print 'rpath = ' + ' '.join(rpath)
+print 'libpath = ' + ' '.join(libpath)
+env.Append(RPATH = [s[11:] for s in rpath])
+env.Append(LIBPATH = [s[2:] for s in libpath])
+
 env.Append(CCFLAGS=ccflags)
 libpism_dir = os.path.join(os.getcwd(), 'obj')
 print libpism_dir
-env['LIBPATH'] += [libpism_dir]
-env['RPATH'] += [libpism_dir]
+env.Append(LIBPATH = [libpism_dir])
+env.Append(RPATH = [libpism_dir])
 
 petsc_libs = ['petsc' + mod for mod in Split('ksp dm mat vec') + [""]]
 pism_libs = petsc_libs + Split('X11 lapack blas stdc++ dl netcdf fftw3 gsl')

@@ -22,6 +22,22 @@
 #include <petscsys.h>
 #include <petscfix.h>
 
+// The regrid process has been cleaned up, but the fundamentals are the same as
+// before.  We need to move a local vector from a coarse grid to a fine grid
+// (there is no requirement that the `coarse' grid need actually be coarser than
+// the `fine' grid).  Things are really ugly in any ordering other than the
+// `natural' ordering, so we move local -> global -> natural with the coarse
+// data.  We must have defined a weighting matrix which operates on this coarse
+// natural vector to produce a fine natural vector.  Currently, we use
+// tri-linear interpolation.  After applying the matrix, we move the fine vector
+// back to a local vector: natural -> global -> local.  It is theoretically
+// possible to make the matrix operate on vectors in the Petsc global ordering,
+// but that seems like a mess.  In particular, since the matrix is not square,
+// we cannot use DAGetMatrix() or the like.
+
+// Possible bugs:
+//   VecGetLocalSize() is not guaranteed to work on all platforms
+//   MatGetOwnershipRange() is not guaranteed to work on all platforms
 
 PetscErrorCode IceModel::regrid(const char *regridFile) {
   PetscErrorCode ierr;
@@ -150,10 +166,14 @@ PetscErrorCode IceModel::getInterpCtx(const DA dac, const DA daf,
     }
   }
 
-  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE,
-                         Mxf * Myf * Mzf, Mxc * Myc * Mzc,
+  ierr = DACreateNaturalVector(ic.dac, &(ic.coarse)); CHKERRQ(ierr);
+  ierr = DACreateNaturalVector(ic.daf, &(ic.fine)); CHKERRQ(ierr);
+  PetscInt cLocSize, fLocSize;
+  ierr = VecGetLocalSize(ic.coarse, &cLocSize); CHKERRQ(ierr);
+  ierr = VecGetLocalSize(ic.fine, &fLocSize); CHKERRQ(ierr);
+  ierr = MatCreateMPIAIJ(grid.com, fLocSize, cLocSize,
+                         PETSC_DETERMINE, PETSC_DETERMINE,
                          8, PETSC_NULL, 8, PETSC_NULL, &(ic.A)); CHKERRQ(ierr);
-  ierr = MatGetVecs(ic.A, &(ic.coarse), &(ic.fine)); CHKERRQ(ierr);
 
   ierr = MatGetOwnershipRange(ic.A, &rowl, &rowh); CHKERRQ(ierr);
 
@@ -227,60 +247,29 @@ PetscErrorCode IceModel::regridVar(const char *vars, char c, const InterpCtx &ic
     return 0;
   }
   
-  // This is a bit ugly.  We need to move the data on local vectors to a
-  // global vector which is compatible with the interpolation matrix `ic.A'.
-  // Then we move this onto a local vector.  We should be able to do this
-  // cleanly with scatters, but my first effort was repelled.  If performance
-  // is an issue, then we should improve this part.  Since regridding is only
-  // done once per model run, it should not be a problem considering that we
-  // do it in parallel.
   ierr = vPetscPrintf(grid.com, "  regridding %c ... ",c); CHKERRQ(ierr);
 
   ierr = DALocalToGlobal(ic.dac, src, INSERT_VALUES, ic.gc); CHKERRQ(ierr);
 
-  PetscInt low, high, n;
-  PetscInt *ida;
-  PetscScalar *a;
-  PetscInt xs, ys, zs, xm, ym, zm, Mz, My, Mx;
-  ierr = DAGetCorners(ic.dac, &zs, &ys, &xs, &zm, &ym, &xm); CHKERRQ(ierr);
-  ierr = DAGetInfo(ic.dac, PETSC_NULL, &Mz, &My, &Mx, PETSC_NULL, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-
-  ida = new PetscInt[xm * ym * zm];
-  n = 0;
-  for (PetscInt i = xs; i < xs + xm; i++) {
-    for (PetscInt j = ys; j < ys + ym; j++) {
-      for (PetscInt k = zs; k < zs + zm; k++) {
-        ida[n++] = i * (My * Mz) + j * Mz + k;
-      }
-    }
-  }
-    
-  ierr = VecGetArray(ic.gc, &a); CHKERRQ(ierr);
-  ierr = VecSetValues(ic.coarse, n, ida, a, INSERT_VALUES); CHKERRQ(ierr);
-  ierr = VecRestoreArray(ic.gc, &a); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(ic.coarse); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(ic.coarse); CHKERRQ(ierr);
-  delete [] ida;
-    
   // ierr = VecView(gsrc, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   // ierr = PetscPrintf(grid.com, "#######################################\n"); CHKERRQ(ierr);
   // ierr = VecView(interpCtx.coarse, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  ierr = DAGlobalToNaturalBegin(ic.dac, ic.gc, INSERT_VALUES, ic.coarse); CHKERRQ(ierr);
+  ierr = DAGlobalToNaturalEnd(ic.dac, ic.gc, INSERT_VALUES, ic.coarse); CHKERRQ(ierr);
+
+  PetscInt mm, mn, fm, cn;
+  ierr = MatGetSize(ic.A, &mm, &mn); CHKERRQ(ierr);
+  ierr = VecGetSize(ic.fine, &fm); CHKERRQ(ierr);
+  ierr = VecGetSize(ic.coarse, &cn); CHKERRQ(ierr);
+  ierr = vPetscPrintf(grid.com, "Interpolation matrix size: %d, %d\n", mm, mn); CHKERRQ(ierr);
+  ierr = vPetscPrintf(grid.com, "Coarse vector size: %d\n", cn); CHKERRQ(ierr);
+  ierr = vPetscPrintf(grid.com, "Fine vector size: %d\n", fm); CHKERRQ(ierr);
+  
   ierr = MatMult(ic.A, ic.coarse, ic.fine); CHKERRQ(ierr);
 
-  ierr = VecGetOwnershipRange(ic.fine, &low, &high); CHKERRQ(ierr);
-  ierr = VecGetArray(ic.fine, &a); CHKERRQ(ierr);
-  ida = new PetscInt[high - low];
-  for (PetscInt i = 0; i < high - low; i++) {
-    ida[i] = low + i;
-  }
-  ierr = VecSetValues(ic.gf, high - low, ida, a, INSERT_VALUES);
-  ierr = VecAssemblyBegin(ic.gf); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(ic.gf); CHKERRQ(ierr);
-  delete [] ida;
-  ierr = VecRestoreArray(ic.fine, &a); CHKERRQ(ierr);
-
+  ierr = DANaturalToGlobalBegin(ic.daf, ic.fine, INSERT_VALUES, ic.gf); CHKERRQ(ierr);
+  ierr = DANaturalToGlobalEnd(ic.daf, ic.fine, INSERT_VALUES, ic.gf); CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(ic.daf, ic.gf, INSERT_VALUES, dest); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(ic.daf, ic.gf, INSERT_VALUES, dest); CHKERRQ(ierr);
 

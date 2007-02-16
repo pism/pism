@@ -565,7 +565,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   // average value of dH/dt; also d(volume)/dt
   PetscScalar gicecount;
   ierr = PetscGlobalSum(&icecount, &gicecount, grid.com); CHKERRQ(ierr);
-  ierr = VecSum(vWork2d[1], &gdHdtav); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, vWork2d[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = VecSum(g2, &gdHdtav); CHKERRQ(ierr);
   dvoldt = gdHdtav * grid.p->dx * grid.p->dy;  // m^3/s
   gdHdtav = gdHdtav / gicecount; // m/s
 
