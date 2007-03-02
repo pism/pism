@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -60,7 +60,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 #if (WITH_NETCDF)
     ierr = PetscPrintf(grid.com,
                        "initializing from NetCDF format file  %s  ...\n", fname); CHKERRQ(ierr);
-    ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
+    ierr = initFromFile_netCDF_old(fname); CHKERRQ(ierr);
 #else
     SETERRQ(1, "netCDF not supported.  Recompile with WITH_NETCDF=1.");
 #endif
@@ -147,10 +147,7 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   if (strchr(fmt, 'n') != NULL) {
     strcpy(ncf, b);
     strcat(ncf, ".nc");
-    ierr = PetscPrintf(grid.com, "Error: netCDF not supported as an output format.\n");
-    CHKERRQ(ierr);
-    // Not implemented
-    // ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
+    ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'm') != NULL) {

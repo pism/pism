@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -126,7 +126,14 @@ public:
 
   // see iMIOnetcdf.cc
 #if (WITH_NETCDF)
+  PetscErrorCode initFromFile_netCDF_old(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
+  PetscErrorCode dumpToFile_netCDF(const char *fname);
+  PetscErrorCode nc_putLocalVar(int ncid, int v_id, int n_dims,
+                                DA da, Vec v, Vec g,
+                                float *a_mpi, void *buf, int b_size);
+  PetscErrorCode nc_putLocalMask(int ncid, int mask_id,
+                                 unsigned char *a_mpi, void *buf, int b_size);
 #endif
 
 protected:
@@ -193,6 +200,7 @@ protected:
   Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
                vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
   Vec          vTb;                     // 3D bed: Mx x My x Mbz
+  Vec          vLongitude, vLatitude;
 
   // parameters
   PetscScalar maxdt, muSliding, enhancementFactor;

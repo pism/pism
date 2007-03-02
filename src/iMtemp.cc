@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //

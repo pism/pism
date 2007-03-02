@@ -1,10 +1,10 @@
 import os
 
-petsc_dir = os.environ['PETSC_DIR']
-petsc_arch = os.environ['PETSC_ARCH']
-mpicc = os.environ['MPICC']
-mpicxx = os.environ['MPICXX']
-home = os.environ['HOME']
+petsc_dir = os.environ.get('PETSC_DIR', '/usr/lib/petsc')
+petsc_arch = os.environ.get('PETSC_ARCH', 'linux-gnu-c-opt')
+mpicc = os.environ.get('MPICC', 'mpicc')
+mpicxx = os.environ.get('MPICXX', 'mpicxx')
+home = os.environ.get('HOME')
 ccflags = "-Wall -Wextra -Wshadow -Wwrite-strings -Wno-unused-parameter"
 ccflags += " -Wno-strict-aliasing -Wpointer-arith -Wconversion -Winline"
 #ccflags += " -Wcast-qual -Wpadded -Wunreachable-code" # These are excessive
@@ -28,7 +28,11 @@ deb_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                       LIBPATH=['/usr/X11R6/lib', '/usr/lib/atlas/sse2'],
                       RPATH=[''])
 
-env = my_env
+debug = ARGUMENTS.get('debug', 0)
+if int(debug):
+    deb_env.Append(LIBPATH = ['/usr/lib/petsc/lib/debug'])
+
+env = deb_env
 
 conf = Configure(env)
 
@@ -42,15 +46,18 @@ env = conf.Finish()
 
 # Get the necessary libraries and linker flags from the petscconf file.
 pcc_linker_libs = filter(lambda s: s[:15] == 'PCC_LINKER_LIBS',
-                          open('/home/jed/petscconf'))[0].split(' ')
+                          open(os.path.join(petsc_dir, 'bmake', petsc_arch, 'petscconf')))[0].split(' ')
                           #open('/home/jed/nelchina/petscconf_NELCHINA'))[0].split(' ')
 rpath = filter(lambda s: s[:11] == '-Wl,-rpath,', pcc_linker_libs)
 libpath = filter(lambda s: s[:2] == '-L', pcc_linker_libs)
 
 print 'rpath = ' + ' '.join(rpath)
 print 'libpath = ' + ' '.join(libpath)
-env.Append(RPATH = [s[11:] for s in rpath])
-env.Append(LIBPATH = [s[2:] for s in libpath])
+if (0):
+    env.Append(RPATH = [s[11:] for s in rpath])
+    env.Append(LIBPATH = [s[2:] for s in libpath])
+else:
+    print 'not using rpath or libpath'
 
 env.Append(CCFLAGS=ccflags)
 libpism_dir = os.path.join(os.getcwd(), 'obj')

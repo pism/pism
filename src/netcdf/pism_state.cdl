@@ -1,0 +1,122 @@
+// Copyright (C) 2007 Jed Brown and Ed Bueler
+//
+// This file is part of Pism.
+//
+// Pism is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 2 of the License, or (at your option) any later
+// version.
+//
+// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Pism; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+netcdf pism_state { // name is magic in ncgen.rb
+
+dimensions:
+  x = 91; // numbers are magic in ncgen.rb
+  y = 92;
+  z = 93;
+  zb = 94;
+  t = UNLIMITED;
+
+variables: // The names of variables are magic in PISM source.
+  int polar_stereographic;
+    polar_stereographic:grid_mapping_name = "polar_stereographic";
+    polar_stereographic:straight_vertical_longitude_from_pole = 0;
+    polar_stereographic:latitude_of_projection_origin = 90;
+    polar_stereographic:standard_parallel = -71;
+  float x(x);
+    x:axis = "X";
+    x:long_name = "x-coordinate in Cartesian system";
+    x:standard_name = "projection_x_coordinate";
+    x:units = "m";
+  float y(y);
+    y:axis = "Y";
+    y:long_name = "y-coordinate in Cartesian system";
+    y:standard_name = "projection_y_coordinate";
+    y:units = "m";
+  float z(z);
+    z:axis = "Z";
+    z:long_name = "z-coordinate in Cartesian system";
+    z:standard_name = "projection_z_coordinate";
+    z:units = "m";
+    z:positive = "up";
+  float zb(zb);
+    zb:long_name = "z-coordinate in bedrock";
+    zb:standard_name = "projection_z_coordinate_in_bedrock";
+    zb:units = "m";
+    zb:positive = "up";
+  float t(t);
+    t:long_name = "time";
+    t:units = "seconds since 2007-01-01 00:00:00";
+    t:calendar = "none";
+    t:axis = "T";
+  float lon(x,y);
+    lon:long_name = "longitude";
+    lon:standard_name = "longitude";
+    lon:units = "degrees_east";
+  float lat(x,y);
+    lat:long_name = "latitude";
+    lat:standard_name = "latitude";
+    lat:units = "degrees_north";
+
+// 2-dimensional integer mask
+  byte mask(t,x,y);
+    mask:long_name = "grounded_dragging_floating_integer_mask";
+
+// 2-dimensional model quantities
+  float h(t,x,y);
+    h:long_name = "surface_altitude";
+    h:standard_name = "surface_altitude";
+    h:units = "m";
+  float H(t,x,y);
+    H:long_name = "land_ice_thickness";
+    H:standard_name = "land_ice_thickness";
+    H:units = "m";
+  float b(t,x,y);
+    b:long_name = "bedrock_altitude";
+    b:standard_name = "bedrock_altitude";
+    b:units = "m";
+  float dbdt(t,x,y);
+    dbdt:long_name = "uplift_rate";
+    dbdt:standard_name = "tendency_of_bedrock_altitude";
+    dbdt:units = "m s-1";
+
+// 2-dimensional climate quantities
+  float Ts(x,y);
+    Ts:long_name = "surface_temperature";
+    Ts:standard_name = "surface_temperature";
+    Ts:units = "K";
+  float ghf(x,y);
+    ghf:long_name = "upward_geothermal_heat_flux";
+    ghf:units = "W m-2";
+  float accum(x,y);
+    accum:long_name = "mean ice equivalent accumulation rate";
+    accum:standard_name = "land_ice_surface_specific_mass_balance";
+    accum:units = "m s-1";
+
+// 3-dimensional model quantities
+  float T(t,x,y,z);
+    T:long_name = "land_ice_temperature";
+    T:standard_name = "land_ice_temperature";
+    T:units = "K";
+  float Tb(t,x,y,zb);
+    Tb:long_name = "bedrock temperature";
+    Tb:standard_name = "bedrock temperature";
+    Tb:units = "K";
+  float age(t,x,y,z);
+    age:long_name = "land_ice_age";
+    age:standard_name = "land_ice_age";
+    age:units = "s";
+
+// global attributes
+    :Conventions = "CF-1.0";
+    :history = "history goes here";
+
+}

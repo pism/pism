@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -167,6 +167,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vHmelt); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vLatitude); CHKERRQ(ierr);
 
   ierr = VecDuplicateVecs(vh, 2, &vDf); CHKERRQ(ierr);
   ierr = VecDuplicateVecs(vh, 2, &vuvbar); CHKERRQ(ierr);
@@ -222,6 +224,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vHmelt); CHKERRQ(ierr);
   ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
+  ierr = VecDestroy(vLongitude); CHKERRQ(ierr);
+  ierr = VecDestroy(vLatitude); CHKERRQ(ierr);
 
   ierr = VecDestroyVecs(vuvbar, 2); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vDf, 2); CHKERRQ(ierr);
