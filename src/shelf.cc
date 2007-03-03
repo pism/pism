@@ -400,7 +400,7 @@ PetscErrorCode ShelfModel::initBoring() {
   const PetscScalar thickness = 500.0;
   const PetscScalar velocity_grad = 200 / secpera;
   PetscErrorCode ierr;
-  PetscScalar **mask, **myNu;
+  PetscScalar **mask, **myNu[2];
   PetscScalar **uvbar[2];
   PetscScalar **u_exact, **v_exact;
   
@@ -447,11 +447,14 @@ PetscErrorCode ShelfModel::initBoring() {
         const PetscScalar u_y = 0.0;
         const PetscScalar v_x = 0.0;
         const PetscScalar v_y = velocity_grad / grid.p->Ly;
-        myNu[i][j] = thickness * 0.5 * B * pow(0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
-                                               + 0.5 * PetscSqr(u_x + v_y)
-                                               + 0.25 * PetscSqr(u_y + v_x), -1 / 3);
         u_exact[i][j] = x * velocity_grad;
         v_exact[i][j] = y * velocity_grad;
+        for (int o = 0; o < 2; o++) {
+          myNu[o][i][j] = thickness * 0.5 * B * pow(0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
+                                                    + 0.5 * PetscSqr(u_x + v_y)
+                                                    + 0.25 * PetscSqr(u_y + v_x), -1 / 3);
+        }
+        
       }
 
       for (PetscInt o = 0; o < 2; o++) {

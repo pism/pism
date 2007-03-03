@@ -31,6 +31,7 @@
    int mask_id;
    int h_id;
    int H_id;
+   int Hmelt_id;
    int b_id;
    int dbdt_id;
    int Ts_id;
@@ -52,6 +53,7 @@
 #  define RANK_mask 3
 #  define RANK_h 3
 #  define RANK_H 3
+#  define RANK_Hmelt 3
 #  define RANK_b 3
 #  define RANK_dbdt 3
 #  define RANK_Ts 2
@@ -72,6 +74,7 @@
    int mask_dims[RANK_mask];
    int h_dims[RANK_h];
    int H_dims[RANK_H];
+   int Hmelt_dims[RANK_Hmelt];
    int b_dims[RANK_b];
    int dbdt_dims[RANK_dbdt];
    int Ts_dims[RANK_Ts];
@@ -81,7 +84,6 @@
    int Tb_dims[RANK_Tb];
    int age_dims[RANK_age];
 
-   /* attribute vectors */
    int polar_stereographic_straight_vertical_longitude_from_pole[1];
    int polar_stereographic_latitude_of_projection_origin[1];
    int polar_stereographic_standard_parallel[1];
@@ -154,6 +156,12 @@ if (grid.rank == 0) {
    H_dims[1] = x_dim;
    H_dims[2] = y_dim;
    stat = nc_def_var(ncid, "H", NC_FLOAT, RANK_H, H_dims, &H_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   Hmelt_dims[0] = t_dim;
+   Hmelt_dims[1] = x_dim;
+   Hmelt_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "Hmelt", NC_FLOAT, RANK_Hmelt, Hmelt_dims, &Hmelt_id);
    check_err(stat,__LINE__,__FILE__);
 
    b_dims[0] = t_dim;
@@ -284,6 +292,10 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, H_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Hmelt_id, "long_name", 34, "thickness_of_subglacial_melt_water");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Hmelt_id, "units", 1, "m");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, b_id, "long_name", 16, "bedrock_altitude");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, b_id, "standard_name", 16, "bedrock_altitude");
@@ -332,10 +344,5 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", 6, "CF-1.0");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, NC_GLOBAL, "history", 17, "history goes here");
-   check_err(stat,__LINE__,__FILE__);
 
-   /* leave define mode */
-   stat = nc_enddef (ncid);
-   check_err(stat,__LINE__,__FILE__);
 } // end if (grid.rank == 0)

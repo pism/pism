@@ -126,14 +126,9 @@ public:
 
   // see iMIOnetcdf.cc
 #if (WITH_NETCDF)
-  PetscErrorCode initFromFile_netCDF_old(const char *fname);
+  PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
-  PetscErrorCode nc_putLocalVar(int ncid, int v_id, int n_dims,
-                                DA da, Vec v, Vec g,
-                                float *a_mpi, void *buf, int b_size);
-  PetscErrorCode nc_putLocalMask(int ncid, int mask_id,
-                                 unsigned char *a_mpi, void *buf, int b_size);
 #endif
 
 protected:
@@ -396,8 +391,6 @@ protected:
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode cleanInputData();
 #if (WITH_NETCDF)
-//   PetscErrorCode ncVarToDAVec(const NcVar *v, DA da, Vec vecl,
-//                               Vec vecg, Vec vindzero);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
 #endif

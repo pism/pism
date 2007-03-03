@@ -79,6 +79,9 @@ variables: // The names of variables are magic in PISM source.
     H:long_name = "land_ice_thickness";
     H:standard_name = "land_ice_thickness";
     H:units = "m";
+  float Hmelt(t,x,y);
+    Hmelt:long_name = "thickness_of_subglacial_melt_water";
+    Hmelt:units = "m";
   float b(t,x,y);
     b:long_name = "bedrock_altitude";
     b:standard_name = "bedrock_altitude";
@@ -117,6 +120,5 @@ variables: // The names of variables are magic in PISM source.
 
 // global attributes
     :Conventions = "CF-1.0";
-    :history = "history goes here";
 
 }

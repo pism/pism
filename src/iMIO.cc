@@ -60,7 +60,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 #if (WITH_NETCDF)
     ierr = PetscPrintf(grid.com,
                        "initializing from NetCDF format file  %s  ...\n", fname); CHKERRQ(ierr);
-    ierr = initFromFile_netCDF_old(fname); CHKERRQ(ierr);
+    ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
 #else
     SETERRQ(1, "netCDF not supported.  Recompile with WITH_NETCDF=1.");
 #endif
