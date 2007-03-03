@@ -617,7 +617,7 @@ PetscErrorCode nc_putLocalVar(const IceGrid *grid, int ncid, const int var_id, n
         }
       }
 
-      if (true) {
+      if (false) {
         printf("[%1d] writing %4d [", proc, var_id);
         for (int i = 0; i < 2 * dims; i++) {
           if (i == dims) printf("] [");
@@ -703,7 +703,7 @@ PetscErrorCode nc_getLocalVar(const IceGrid *grid, int ncid, const char *name, n
       }
       for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
 
-      if (true) {
+      if (false) {
         printf("[%1d] reading %10s [", proc, name);
         for (int i = 0; i < 2 * dims; i++) {
           if (i == dims) printf("] [");
@@ -976,13 +976,16 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
                         s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
 
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
-
-  stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
-  CHKERRQ(check_err(stat,__LINE__,__FILE__));
     
   if (grid.rank == 0) {
+    stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    MPI_Bcast(grid.p->history, strlen(grid.p->history), MPI_CHAR, 0, grid.com);
+
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  } else {
+    MPI_Bcast(grid.p->history, HISTORY_STRING_LENGTH, MPI_CHAR, 0, grid.com);
   }
 
   initialized_p = PETSC_TRUE;
