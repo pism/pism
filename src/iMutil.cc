@@ -636,14 +636,14 @@ PetscErrorCode IceModel::initFromOptions() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootstrapSet);
   CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
+                               PETSC_MAX_PATH_LEN, &inFileSet);
+  CHKERRQ(ierr);
+  
   if (bootstrapSet == PETSC_TRUE) {
     ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
-  } else {
-    ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
-                                 PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-    if (inFileSet == PETSC_TRUE) {
-      ierr = initFromFile(inFile); CHKERRQ(ierr);
-    }
+  } else if (inFileSet == PETSC_TRUE) {
+    ierr = initFromFile(inFile); CHKERRQ(ierr);
   }
   
   if (! isInitialized()) {
@@ -746,7 +746,8 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Reduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, 0, grid.com);
   
-  snprintf(str, sizeof(str), "Done. Petsc reports %.2f MFlops.", flops * 1.0e-6);
+  snprintf(str, sizeof(str), "Done. Petsc reports %.2f MFlops on %d processes.",
+           flops * 1.0e-6, grid.size);
 
   ierr = stampHistory(str); CHKERRQ(ierr);
   

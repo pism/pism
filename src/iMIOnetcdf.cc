@@ -707,7 +707,7 @@ PetscErrorCode nc_getLocalVar(const IceGrid *grid, int ncid, const char *name, n
         printf("[%1d] reading %10s [", proc, name);
         for (int i = 0; i < 2 * dims; i++) {
           if (i == dims) printf("] [");
-          printf("%5d", sc_nc[i]);
+          printf("%5d", (int)sc_nc[i]);
         }
         printf("]\n");
       }
@@ -909,7 +909,11 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   grid.p->Mx = dim[1];
   grid.p->My = dim[2];
   grid.p->Mz = dim[3];
-  grid.p->Mbz = dim[4];
+  if (bdy[5] < 0) {
+    grid.p->Mbz = dim[4];
+  } else {
+    grid.p->Mbz = 0;
+  }
 
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
@@ -987,6 +991,8 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   } else {
     MPI_Bcast(grid.p->history, HISTORY_STRING_LENGTH, MPI_CHAR, 0, grid.com);
   }
+
+  setConstantGrainSize(DEFAULT_GRAIN_SIZE);
 
   initialized_p = PETSC_TRUE;
   return 0;

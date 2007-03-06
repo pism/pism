@@ -59,19 +59,23 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   if (hasSuffix(fname, ".nc") == true) {
 #if (WITH_NETCDF)
     ierr = PetscPrintf(grid.com,
-                       "initializing from NetCDF format file  %s  ...\n", fname); CHKERRQ(ierr);
+                       "initializing from NetCDF format file  %s  ...\n",
+                       fname); CHKERRQ(ierr);
     ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
 #else
     SETERRQ(1, "netCDF not supported.  Recompile with WITH_NETCDF=1.");
 #endif
     return 0;
   } else if (hasSuffix(fname, ".pb") == false) {
-    ierr = PetscPrintf(grid.com, "[Unknown file format.  Trying to read as PETSc binary.]\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "[Unknown file format."
+                       "  Trying to read as PETSc binary.]\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscPrintf(grid.com,
-                     "initializing from PETSc binary format file  %s  ...\n", fname); CHKERRQ(ierr);
-  ierr = PetscViewerBinaryOpen(grid.com, fname, FILE_MODE_READ, &viewer); CHKERRQ(ierr);
+                     "initializing from PETSc binary format file `%s'  ...\n",
+                     fname); CHKERRQ(ierr);
+  ierr = PetscViewerBinaryOpen(grid.com, fname, FILE_MODE_READ, &viewer);
+  CHKERRQ(ierr);
   ierr = PetscBagLoad(viewer, &grid.bag); CHKERRQ(ierr);
   ierr = PetscBagGetData(grid.bag, (void **)&(grid.p)); CHKERRQ(ierr);    
   if (relativeEndYear == PETSC_TRUE) {
@@ -97,13 +101,19 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = PetscViewerDestroy(viewer);
 
   ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
-  // FIXME: vHmelt should probably be part of saved state.  In this case the best
-  // procedure would be to *check* if vHmelt was saved, and if so to load it,
-  // otherwise to set it to zero and report that.  Similar behavior for vuplift, 
-  // vtau, others?  Similar behavior for many state variables in loading .nc files!
+  // FIXME: vHmelt should probably be part of saved state.  In this case the
+  // best procedure would be to *check* if vHmelt was saved, and if so to load
+  // it, otherwise to set it to zero and report that.  Similar behavior for
+  // vuplift, vtau, others?  Similar behavior for many state variables in
+  // loading .nc files!
+  // Note: As of rev 87, vHmelt is read in the netCDF file.  Since we are
+  // migrating to all netCDF I/O, vHmelt will not be a part of the Petsc saved
+  // state.
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
-  setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
+  
+  // We should not do this any more since age is part of the saved state.
+  // setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
 
   initialized_p = PETSC_TRUE;
   return 0;
@@ -136,17 +146,19 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   // to write in both Petsc binary and Matlab format, for instance:
   //     '-o foo -of pm' will generate foo.pb and foo.m
 
+  ierr = stampHistoryEnd(); CHKERRQ(ierr);
+
   if (strchr(fmt, 'p') != NULL) {
     strcpy(pf, b);
     strcat(pf, ".pb");
-    ierr = PetscPrintf(grid.com, "writing model state to file `%s'", pf); CHKERRQ(ierr);
-    ierr = stampHistoryEnd(); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "Writing model state to file `%s'\n", pf); CHKERRQ(ierr);
     ierr = dumpToFile(pf); CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'n') != NULL) {
     strcpy(ncf, b);
     strcat(ncf, ".nc");
+    ierr = PetscPrintf(grid.com, "Writing model state to file `%s'\n", ncf); CHKERRQ(ierr);
     ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
   }
 
