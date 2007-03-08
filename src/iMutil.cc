@@ -45,8 +45,8 @@
 //         [-verbose 5]       always, so print everything
 //
 // note: 1 <= thresh <= 5  enforced in verbPrintf() below
-PetscErrorCode IceModel::verbPrintf(const int thresh, 
-                                    MPI_Comm comm,const char format[],...)
+PetscErrorCode verbPrintf(const int thresh, 
+                          MPI_Comm comm,const char format[],...)
 // FIXME: change all use of vPetscPrintf() below to use this one
 {
   PetscErrorCode ierr;

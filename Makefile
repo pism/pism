@@ -29,8 +29,8 @@ executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_dr
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
-	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
-	iceModel.cc materials.cc 
+	iMregrid.cc iMregrid_netCDF.cc iMtemp.cc iMutil.cc iMvelocity.cc\
+	 iMviewers.cc iceModel.cc materials.cc nc_util.cc
 ice_csources= cubature.c
 ICE_OBJS= $(ice_sources:.cc=.o) cubature.o
 

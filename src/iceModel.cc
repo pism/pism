@@ -22,6 +22,8 @@
 
 #include "iceModel.hh"
 
+PetscInt verbosityLevel;
+
 // following numerical values have some significance; see updateSurfaceElevationAndMask() below
 const int IceModel::MASK_SHEET = 1;
 const int IceModel::MASK_DRAGGING = 2;

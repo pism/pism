@@ -45,11 +45,14 @@ struct InterpCtx {
   Vec fine;
 };
 
-
 // this is a utility to get a IceType based on options from user, for initialization
 // of an instance of IceModel below
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum);
 
+extern PetscInt verbosityLevel;
+
+// see iMutil.cc
+PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 
 class IceModel {
 public:
@@ -97,8 +100,6 @@ public:
 
   virtual PetscErrorCode run();
 
-  // see iMutil.cc
-  PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
   // beVerbose modulated printf: eliminate it when verbPrintf() is implemented correctly
   PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -124,11 +125,13 @@ public:
   PetscErrorCode writeFiles(const char* basename, const char* formats);
   PetscErrorCode initFromOptions();
 
-  // see iMIOnetcdf.cc
 #if (WITH_NETCDF)
+  // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
+  // see iMregrid_netCDF.cc
+  PetscErrorCode regrid_netCDF(const char *fname);
 #endif
 
 protected:
@@ -214,7 +217,7 @@ protected:
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
   PetscScalar isothermalFlux_n_exponent, isothermalFlux_A_softness;
-  PetscInt    verbosityLevel, tempskipCountDown, tempskipMax, noSpokesLevel;
+  PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel;
 
   // flags
   PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;

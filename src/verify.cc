@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     ierr = m->run(); CHKERRQ(ierr);
 
-    ierr = m->verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
     
     /* Whether to report error at end. */
     PetscTruth dontReport;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     }
 
     ierr = m->writeFiles("verify"); CHKERRQ(ierr);
-    ierr = m->verbPrintf(2,com, " ... done\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, " ... done\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

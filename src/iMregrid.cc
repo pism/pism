@@ -45,7 +45,13 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   char regridVars[PETSC_MAX_PATH_LEN];
   InterpCtx i2, i3, i3b;
 
-  ierr = PetscPrintf(grid.com, "regridding data from %s\n", regridFile); CHKERRQ(ierr);
+  ierr = PetscPrintf(grid.com, "regridding data from `%s'\n", regridFile); CHKERRQ(ierr);
+
+  if (hasSuffix(regridFile, ".nc")) {
+    // We have a much better method for regridding netCDF files.
+    ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
+    return 0;
+  }
 
   IceGrid g(grid.com, grid.rank, grid.size);
   IceModel m(g, ice);
@@ -71,10 +77,10 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
                                PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
   if (regridVarsSet == PETSC_FALSE) {
-    // As a default, we only regrid the mask and 3 dimensional quantities.  This
+    // As a default, we only regrid the 3 dimensional quantities.  This
     // is consistent with the standard purpose which is to stick with current
     // geometry through the downscaling procedure.
-    strcpy(regridVars, "mTBe");
+    strcpy(regridVars, "TBe");
   }
 
   ierr = regridVar(regridVars, 'm', i2, m.vMask, vMask);

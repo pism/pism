@@ -1,9 +1,9 @@
 Import('env pism_libs')
 
-env.SharedLibrary('pism', Split("""grid.cc materials.cc iceModel.cc iMbasal.cc 
-iMbeddef.cc iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMtemp.cc iMutil.cc 
-iMvelocity.cc iMviewers.cc iMdefaults.cc iMoptions.cc iMregrid.cc
-extrasGSL.cc cubature.c"""))
+env.SharedLibrary('pism', Split("""grid.cc materials.cc nc_util.cc iceModel.cc
+iMbasal.cc iMbeddef.cc iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc
+iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc iMdefaults.cc iMoptions.cc
+iMregrid.cc iMregrid_netCDF.cc extrasGSL.cc cubature.c"""))
 
 flowTable = env.Program('flowTable', 'flowTable.cc', LIBS = ['pism'] + pism_libs)
 run = env.Program('pismr', 'run.cc', LIBS = ['pism'] + pism_libs)
