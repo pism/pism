@@ -58,7 +58,7 @@ endif
 #VARIABLES:
 
 #executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\

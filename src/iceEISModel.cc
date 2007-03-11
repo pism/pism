@@ -191,10 +191,9 @@ PetscErrorCode IceEISModel::initAccumTs() {
   PetscErrorCode    ierr;
   PetscScalar       **accum, **Ts;
 
-  // EISMINT II values
-  const PetscScalar S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
+  // EISMINT II specified values
+  PetscScalar       S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
   PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
-
   switch (getExperName()) {
     case 'A':
     case 'G':
@@ -231,6 +230,20 @@ PetscErrorCode IceEISModel::initAccumTs() {
     default:
       SETERRQ(1,"\n experiment name unknown in IceEISModel::initAccumTs()\n");
   }
+
+  // if user specifies Tmin, Mmax, Sb, ST, Rel, then use that (overwrite above)
+  PetscScalar myTmin, myMmax, mySb, myST, myRel;
+  PetscTruth  paramSet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &myTmin, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     T_min = myTmin;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Mmax", &myMmax, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     M_max = myMmax / secpera;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Sb", &mySb, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     S_b = mySb * 1e-3 / secpera;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ST", &myST, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     S_T = myST * 1e-3;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
 
   // now fill in accum and surface temp
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);

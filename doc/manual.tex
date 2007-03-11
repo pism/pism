@@ -28,6 +28,12 @@
 
 \usepackage{bm,url,xspace,verbatim}
 
+\ifx\pdftexversion\undefined
+  \usepackage[final,dvips]{graphicx}
+\else
+  \usepackage[final,pdftex]{graphicx}
+\fi
+
 \renewcommand{\t}[1]{\texttt{#1}}
 \newcommand{\Matlab}{\textsc{Matlab}\xspace}
 \newcommand{\bU}{\mathbf{U}}
@@ -47,22 +53,25 @@
 \newcommand{\Vfile}[1]{ \begin{quote}\rule{4.6in}{0.1mm} \verbatiminput{#1} \rule{4.6in}{0.1mm}\end{quote} }
 
 
-\title[PISM User's Manual]{\underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel: \\ A User's Manual}
+\title[PISM User's Manual]{PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel: \\ User's Manual}
 
-\author{Jed Brown and Ed Bueler}
+\author{Jed Brown and Ed $\text{Bueler}^\ast$}
 
-\date{\today.  \textbf{This manual is out of date.}}
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 88.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
-\tablespacing
+\thispagestyle{empty}
+%\tablespacing
+
+\setcounter{tocdepth}{1}
 \tableofcontents
 
 \newpage
 \phantom{bob}
 \vspace{2in}
 \begin{quote}
-\textsl{Copyright (C) 2004-2006 Jed Brown and Ed Bueler}
+\textsl{Copyright (C) 2004--2007 Jed Brown and Ed Bueler}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -74,115 +83,219 @@
 \noindent \textsl{PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.}
 \medskip
 
-\noindent \textsl{You should have received a copy of the GNU General Public License along with PISM; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\noindent \textsl{You should have received a copy of the GNU General Public License along with PISM; see \emph{\texttt{pism/COPYING}}; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \vspace{1in}
 \normalspacing
 
 \newpage
+\section{Installation}
+
+\renewcommand{\labelenumi}{\arabic{enumi}.~}
+\begin{enumerate}
+\item You will need a UNIX system with X Windows and internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.
+\item You will need Subversion (\url{http://subversion.tigris.org/}) installed; it is automatic in current Linux distributions.
+\item You will need MPI (= Message Passing Interface; \url{http://www-unix.mcs.anl.gov/mpi/}).  It would be reasonable to learn enough about MPI to know how to run a very simple C code on multiple processors using MPI.  There are multiple flavors of MPI, but choose one which works with PETSc, next.
+\item Get PETSc = Portable Extensible Toolkit for Scientific computation from \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}.
+See the installation page for PETSc.  The ``lite'' form is fine if you are willing to depend on an internet connection for PETSc documentation.  Note that you will define environment variables \verb|PETSC_DIR| and \verb|PETSC_ARCH|.  When you run the configure script add the following options (note PISM uses shared libraries by default):
+
+\verb|$ ./config/configure.py --with-shared|
+
+\noindent Configuring and building Petsc takes a while.  After it finishes, ``\verb|make test|'' and watch the
+result; Xwindows must be functional to see all tests.  If PETSc is already defined system-wide then it will be desirable to have a \verb|PETSC_ARCH| with the configuration above.  Note that the configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.
+\item PISM uses NetCDF (\url{http://www.unidata.ucar.edu/software/netcdf/}) for a file format so you will need it installed in a location where the compiler/linker can find it, i.e.~on your \verb|PATH|.
+\item PISM uses the FFTW and GSL libraries for to approximate the solid earth (bed) deformation under ice loads \cite{BLKfastearth}.  Therefore:
+\renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
+\item If FFTW (\url{http://www.fftw.org/}) is installed and in a good system-wide place, do nothing.  Otherwise turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.  PISM will work except for the bed deformation model described in the paper \cite{BLKfastearth}.
+\item If GSL (\url{http://www.gnu.org/software/gsl/}) is installed and in a good system-wide place, do nothing.  Otherwise turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_GSL=0|.  PISM will work except for the bed deformation model described in the paper above.\end{enumerate}
+
+See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, as described so far.
+
+\item \label{getPISMstep} Get the source for PISM by
+
+\verb|svn co http://svn.gna.org/svn/pism/trunk pism|
+
+\noindent A directory called ``\verb|pism/|'' will be created.  Note that if you are in that directory then ``\verb|svn update|'' will get the latest revision of PISM.
+\item Enter directory \verb|pism/| and type ``\verb|make|''.  (\emph{PLEASE} report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)  Several executables, including \verb|pismv|, \verb|pisms|, and \verb|pismr| should appear in the \verb|pism/obj/| subdirectory.
+\item Try a serial verification run of PISM:
+
+\verb|$  obj/pismv -test G -y 100|
+
+\noindent If you see some output and a final 
+
+\verb|writing model state to file 'verify.pb' ... done|
+
+\noindent then PISM is working!  Note that at the end of this run you will get measurements of how close the numerical result is to the exact solution, that is, this is a verification run \cite{BBL}.
+\item Try the MPI four processor version of the above run:
+
+\verb|$  mpiexec -n 4 obj/pismv -test G -y 100|
+
+\noindent This should work even if the is only one actual processor on your machine; MPI should run multiple processes on that processor.  The results should be the same---in particular the reported errors should be very nearly the same---but the results should appear faster if there really are four processors!
+\item Try a verification run on a reasonably fine grid while watching the output under Xwindows:
+
+\verb|$  obj/pismv -test G -Mx 101 -My 101 -Mz 101 -y 2000 -d HTc|
+\item Running a verification test of the ice stream code looks like this:
+
+\verb|$  obj/pismv -test I -Mx 5 -My 401 -verbose|
+
+\noindent This will compare the numerical result to the exact solution appearing in \cite{SchoofStream}.
+\item Running a 10,000 year (shortened) EISMINT II experiment F \cite{EISMINT00}) is this:
+
+\verb|$  obj/pisms -eisII F -Mx 61 -My 61 -Mz 101 -y 10000|
+
+\noindent Note that all of these runs, when completed, save the model state and can be restarted and continued.
+\item Run a basic suite of verifications:
+
+\verb|$  test/verifynow.sh|
+
+\noindent The script is the serial version; we can send a multiprocessor version or you can modify it to be so.  If serial, this will take 2 to 6 hours.  Save the (one page or so of) output and send it to us if you want.
+\end{enumerate}
+
+\begin{table}
+\caption{External library dependencies for PISM.}\label{tab:PISMdepends}
+\begin{tabular}{@{}llll}\hline
+\small
+\textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\ \hline
+FFTW & \url{www.fftw.org} & \emph{no} & if not present  \\
+ & & & \quad set \verb|WITH_FFTW=0| \\
+GSL & \url{www.gnu.org/software/gsl} & \emph{no} &  if not present \\
+ & & & \quad set \verb|WITH_GSL=0| \\
+MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
+NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
+PETSc & \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} & \emph{required} & \\
+Subversion & \url{subversion.tigris.org} & \emph{required} & \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+Have fun!  Please write to us anytime (\verb|ffelb@uaf.edu|).
+
+Setting up PISM to model real ice sheets requires techniques not covered here, but that is something we welcome questions about and will seek to help with.
+
+A final reminder with respect to installation:  Once you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above, you can update it to the latest version by \verb|svn update| in the \verb|pism/| directory.  Then you will want to \verb|make| again.
+
+
+\clearpage
+\newpage
 \section{Getting started}
 
-\subsection{Using \t{run\underline{ }ice} for Antarctica}  [FIXME FOR \verb|~/ice-input/ant_2006/init.nc|]British Antarctica Survey supplied data [REFERENCE?] for the current state of the Antarctic ice sheet is stored in a NetCDF file \t{bas\underline{ }2004.nc} included with the release.  We start by showing how it can be loaded as the initial data of an Antarctica simulation.  We assume that the release has been built; see the \textbf{Installation} section.
+\subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  And real data is something we can't yet distribute under the GNU Public License.
 
-The command ``\t{./run\underline{ }ice -if ...}'' here wraps past the end of the line.  We will explain the options below and in later sections, but furthermore we will describe shell scripts which simplify things.
+So we describe how PISM does experiment F in the EISMINT II intercomparison \cite{EISMINT00}, in which one tries to approximate an unstable equilibrium and one gets the infamous ``spokes'' \cite{BBL}.  The prescribed grid has a grid with 60 subintervals in each direction of length 25km, but the vertical grid is not prescribed.  Runs are for 200,000 model years.
+
+PISM knows about the conditions of the EISMINT II tests but PISM always allows choice of the grid in three dimensions.  PISM requires choice of the number of grid points in each direction to start.  We choose the standard 25km grid in the horizontal and use a 25 m (equally-spaced) grid in the vertical.  The executable is ``\t{pisms}'', with trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM.  Here is a short 2000 year run.
 
 \beginV
-user@host:~/ice$ ./run_ice -if ~/ice-input/bas_2004.nc -Mx 121 -My 121 -Mz 81 -Mbz 21
--no_mass_bal -gk -e 2 -y 1000.0 -d hcTS
-
-Setting IceModel defaults...
-initializing from file: /home/ed/ice-input/bas_2004.nc
-Max(H) =     4224.000, Max(h) =     4081.445
-PetscBag Object:  IceParamBag Contains parameters controlling
-preferences for simulation of ice sheets.
-  history =
-ed@edbueler 2006-06-12 10:07:31 AKDT : ./run_ice -if /home/ed/ice-input/bas_2004.nc -Mx 121
--My 121 -Mz 81 -Mbz 21 -no_mass_bal -gk -e 2 -y 1000.0 -d hcTS
-; History of commands used to generate this file.
-  Lx = 2.8e+06; Half width of the ice model grid in x-direction (m).
-  Ly = 2.8e+06; Halfwidth of the ice model grid in y-direction (m).
-  Lz = 5000; Extent of the ice model grid in z-direction (m).
-  Lbz = 1312.5; Extent of the bedrock model grid in z-direction (m).
-  Mx = 121; Number of grid points in x-direction.
-  My = 121; Number of grid points in y-direction.
-  Mz = 81; Number of ice grid points in z-direction.
-  Mbz = 21; Number of bedrock grid points in z-direction.
-  dx = 46666.7; Grid spacing in x-direction.
-  dy = 46666.7; Grid spacing in y-direction.
-  dz = 62.5; Grid spacing in z-direction.
-  year = 0; Current time in years.
-done with initialization ... running ...
-$$$$      YEAR (+   STEP):     VOL    AREA    MELTF     THICK0     TEMP0    ORIGF     MAXw
-$$$$      0.00 (+  0.000):  25.659  13.592    0.000   2827.000   226.140    0.984    <N/A>
-vt$$     45.05 (+ 45.047):  25.659  13.592    0.103   2827.000   226.140    0.951   1.3306
-vt$$     88.92 (+ 43.875):  25.659  13.592    0.103   2827.000   226.141    0.951   1.3662
-vtg$    131.75 (+ 42.825):  25.659  13.592    0.103   2827.000   226.141    0.951   1.3997
-...
-vt$$    905.06 (+ 51.106):  25.659  13.592    0.103   2827.000   226.141    0.950   1.1788
-vtg$    955.68 (+ 50.626):  25.659  13.592    0.103   2827.000   226.141    0.950   1.1899
-vt$$   1000.00 (+ 44.318):  25.659  13.592    0.103   2827.000   226.141    0.949   1.2115
-done with run ... Writing model state to file `unnamed.pb' ... done.
+user@host:~/pism$ obj/pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
+PISMS (simplified geometry mode)
+  [using flow law 0 (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]
+initializing EISMINT II experiment F ...
+  [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
+  [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
+running EISMINT II experiment F ...
+$$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+$$$$$      0.00 (+  0.0000[0 ]):   0.000   0.000    0.000      0.000   223.150
+$v$tf     60.00 (+ 60.0000[0m]):   0.017   0.628    0.000     30.000   223.150
+$v$tf    120.00 (+ 60.0000[0m]):   0.034   0.628    0.000     60.000   223.538
+$v$tf    180.00 (+ 60.0000[0m]):   0.051   0.628    0.000     90.000   223.869
+$v$tf    240.00 (+ 60.0000[0m]):   0.068   0.628    0.000    120.000   224.162
+$v$tf    300.00 (+ 60.0000[0m]):   0.085   0.631    0.000    150.000   224.425
+$v$tf    360.00 (+ 60.0000[0m]):   0.102   0.631    0.000    180.000   224.667
+$v$tf    420.00 (+ 60.0000[0m]):   0.119   0.631    0.000    210.000   224.898
+$v$tf    480.00 (+ 60.0000[0m]):   0.136   0.631    0.000    240.000   225.117
+\dots
+$v$tf   1920.00 (+ 60.0000[0m]):   0.545   0.631    0.000    960.000   228.389
+$v$tf   1980.00 (+ 60.0000[0m]):   0.562   0.631    0.000    990.000   228.487
+$v$tf   2000.00 (+ 20.0000[0e]):   0.568   0.631    0.000   1000.000   228.520
+done with run ... writing model state to file `simp_exper.pb' ... done.
 \end{verbatim}
 \Vend
 
-Consider the behaviors specified at the command line.  The BAS data file \t{bas\underline{ }2004.nc} is located in a directory \t{ice-input} and is specified as the input file.  \emph{The grid is specified at the command line}, as $121\times 121 \times (81+21)$.  The vertical grid is 81 equally-spaced levels within the ice and an additional 21 within the bed below.  The next option ``\t{-no\underline{ }mass\underline{ }balance}'' turns off changes to the surface elevation.  (In this case we start from observed data which does not include a temperature field within the ice.  The run here could be the first step on computing such a field based on the default assumption that the Antarctic ice sheet is roughly in equilibrium.)  The next option chooses the Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} flow law, and the one after that chooses an enhancement factor of 2.0.  The run is run for the default time of 1000 model years; this can be specified as in the next example.  Finally, and this part of the output is not shown, four diagnostic windows are chosen, which show, respectively, a color map-plane contour views of vertically-averaged horizontal ice speed (``\t{c}''), of surface elevation (``\t{h}''), of basal temperature (``\t{T}''), and of the strain heating term in the temperature equation (``\t{S}'').
+This should have taken less than 30 seconds on any modern computer.  In a moment we will address the standard output information provided by PISM, shown above.
 
-The code starts by showing a ``PETSc bag'' containing all the fundamental numerical parameters and a bit more start-up information.
+For now illustrate how to restart, complete, and save the 200,000 year run.  Note that the model state was stored in a file with a default name ``\texttt{simp\underline{ }exper.pb}''.  Let's give it a more useful name with
+
+\verb|mv simp_exper.pb eisIIF2k.pb|
+
+\noindent We will see in a moment an example of telling PISM how to name the output file, and how to choose its format.
+
+The above was a single processor run, but let's suppose we have a four processor machine.  (Note that the following should work as stated on a single processor machine under most MPI installations.)  Let's run things in the background so we can continue to experiment.
+
+\beginV
+user@host:~/pism$ mpiexec -n 4 obj/pisms -eisII F -if eisIIF2k.pb -y 198000\
+  -o eisIIF200k >> eisIIF.out &
+[4] 7405
+\end{verbatim}
+\Vend
+
+One can view the standard output by ``\t{less eisIIF.out}'' as it is running in the background.  Also ``\t{top}'' is a convenient tool to see the processor usage during the run.
+
+While the above is running in the background, let's actually look at a few time steps by starting from the saved 2000 year state, using PISM's ``diagnostic viewers'':
+
+\beginV
+user@host:~/pism$ obj/pisms -eisII F -if eisIIF2k.pb -y 200 -d HTt
+PISMS (simplified geometry mode)
+  [using flow law 0 (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]
+initializing from PETSc binary format file  eisIIF2k.pb  ...
+  [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
+  [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
+running EISMINT II experiment F ...
+$$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+$$$$$   2000.00 (+  0.0000[0 ]):   0.568   0.631    0.000   1000.000   228.520
+$v$tf   2060.00 (+ 60.0000[0m]):   0.585   0.631    0.000   1030.000   228.616
+$v$tf   2120.00 (+ 60.0000[0m]):   0.602   0.631    0.000   1060.000   228.710
+$v$tf   2180.00 (+ 60.0000[0m]):   0.619   0.631    0.000   1090.000   228.804
+$v$tf   2200.00 (+ 20.0000[0e]):   0.625   0.631    0.000   1100.000   228.834
+done with run ... writing model state to file `simp_exper.pb' ... done.
+\end{verbatim}
+\Vend
+
+Three figures should appear and be refreshed at each time step namely one a map-plane view of thickness, another a map-plane view of the basal temperature in Kelvin, and also a graph with height above the bed versus temperature.  In fact, if one finishes the 200,000 year run and does \verb| obj/pisms -eisII F -if eisIIF200k.pb -y 200 -d HTt| one will see the result in figure \ref{fig:screenshot}.
+
+If the above run was too quick, one can ask for more model years with ``\verb|-y 1000|'', for instance, or one can require PISM to take shorter time steps than it would choose by default: \verb|obj/pisms -eisII F -if eisIIF2k.pb -y 200 -d HTt -maxdt 10|
+\medskip
+
+\begin{figure}[ht]
+\includegraphics[height=4.0in,keepaspectratio=true]{eqns3Deps/eisIIFshot}
+\caption{Diagnostic figures at the end of a 200,000 year EISMINT II experiment F run, showing the famous spokes.}
+\label{fig:screenshot}
+\end{figure}
 
 At each time step we get a summary of the model state at the end of the step.  The format of the summary is
 \scriptsize\begin{verbatim}
-    $$$$      YEAR (+   STEP):     VOL    AREA    MELTF     THICK0     TEMP0
+    $$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
 \end{verbatim}
 \normalsize
-The first four columns are flags telling the user which quantities are being updated at each time step: ``\texttt{v}'' or ``\texttt{V}'' for velocity, ``\texttt{t}'' for temperature, ``\texttt{g}'' for grain size, and ``\texttt{f}'' for surface elevation (i.e.~a step of the flow equation has occurred); a placeholder ``\verb|$|'' appears if the given quantity is not updated.  (Lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that the vertically-averaged velocity, and the associated diffusivity, has been updates.)  The time and time step are in years.  The next three columns are the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the melting temperature, actually).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain, that is, the thickness at the origin in meters, and the basal absolute temperature at the origin in Kelvin.  This summary of the model state can be expanded by using the option \verb|-verbose|.
+The first five columns are flags telling the user which quantities are being updated at each time step.  A dollar sign appears if the quantity does not update.  From the left the positions are: [\t{b\$}] for bed elevation, [\t{vV\$}] for velocity, [\t{g\$}] for grain size, [\t{t\$}] for temperature (and age), and [\t{f\$}] for surface elevation (i.e.~a step of the flow equation has occurred).  (Regarding velocity, a lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that only the vertically-averaged velocity, and the associated diffusivity, has been updated.)
 
-Note that the time step is adaptively determined.  The volume and area do not change in this run because this model run has no mass balance evolution.  The values ``\t{THICK0}'' and ``\t{TEMP0}'' happen to be at the South Pole in this case.  Several times during the run the grain size was update.  Grain size is computed based upon (roughly) modeled age of the ice and on grain size data from the Vostok core [REFERENCE]; the grain size is a parameter in the Goldsby-Kohlstedt flow law.  At the end of the run the model state is saved in a PETSc binary format file ``\t{unnamed.pb}''; an output filename may be chosen at the command line, of course.
+The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.  In the above example runs the time step is 60 years because that is the default maximum time step.  A small whole number and a single character flag appear in square brackets after the time step, and these explain what part of the (somewhat elaborate) adaptive time-stepping scheme was used to determine the time step.  ``\t{m}'', in particular, means that the step was the maximum allowed.
+
+The next three columns are the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the melting temperature).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain, that is, the thickness at the origin in meters, and the basal absolute temperature at the origin in Kelvin.
+
+This summary of the model state can be expanded by using the option \verb|-verbose|; an example of the result is discussed in the Verification section under ``Test I.''
+
+For more on simplified geometry experiments, and standardized validations, see the Simplified Geometry and Validation section.
+
+\subsection{Visualizing the results}  There are three modes for visualizing the various quantities in PISM.\begin{itemize}
+\item At runtime various diagnostic viewers can be specified by options of the form \verb|-d HTt|; see the Usage and options section below.  These viewers are updated at each step and work under X windows.  The format is limited by the style of PETSc viewers, but in fact these viewers may suffice for many routine purposes.
+\item The state of the model can be output in NetCDF format using the option \verb|-o foo -of n| to create the NetCDF file \verb|foo.nc|.  The resulting NetCDF file can be viewed with several available tools.
+\item A \Matlab output file, in particular \Matlab script, can be produced by the options \verb|-o foo -of m|.  When executed in \Matlab, the script \verb|foo.m| records several two dimensional quantities, including two dimensional slices of three dimensional quantities.  The location of these slices is controlled by the options \verb|-id|, \verb|-jd|, \verb|-kd|.  See the Usage and options section below.
+\end{itemize}
 
 
-\subsection{A \t{verify} run}  [FIXME: RERUN GIVEN VARIOUS UPDATES]  The purpose of a \t{verify} run is to establish that the code closely approximates an exact solution to the continuum equations of the model, and thus to check on the correctness of the code.  Thus \t{verify} should be used when major changes occur but also to understand the limits on reportable accuracy.  Of course the exact solutions have significantly simplified, in some cases not very physical, boundary conditions and sources.  On the other hand there are several types of exact solution based tests which verify several parts of the code, including isothermal mass balance, thermocoupling, and sliding.  The underlying ice model code executed by \t{verify} is identical to that executed by \verb|run_ice|, but the command line options are somewhat different.
+\subsection{Verification of PISM}  The purpose of the separate executable \t{pismv} is to establish that the code closely approximates an exact solution to the continuum equations of the model, and thus to check on the correctness of the code.  Thus \t{pismv} should be used when a new copy of PISM is installed, and especially when changes to the source code occur.
 
-Here is a basic isothermal example:
+Also, one wants to understand the limits on \emph{reportable accuracy} from an ice sheet simulation, and the verification tests give some indication of this.  Of course the exact solutions have significantly simplified boundary conditions etc., and in some cases they are not very physical.
+
+There are several types of exact solution based tests which verify several parts of the code, including the isothermal shallow ice approximation (SIA) \cite{BLKCB}, the thermomechanically coupled SIA \cite{BBL,BB}, sliding in the SIA \cite{BLKCB}, and the MacAyeal equations for ice streams as ``dragging ice shelves'' \cite{MacAyeal} with a plastic till assumption \cite{SchoofStream}.  The underlying ice model code executed by \t{pismv} is identical to that executed by \verb|run_ice|, but the command line options are somewhat different.
+
+As noted in the Installation section, there is a script to execute a short selection of verifications, namely \t{pism/test/verifynow.sh}.  The standard results of that script appear in \t{pism/test/README.verifynow}.
+
+Here is a basic isothermal verification example:
 
 \beginV
-user@host:~/ice$ mpirun -np 2 verify -test B -ys 422.45 -ye 25000.0 -Mx 31 -My 31
-
-Setting IceModel defaults...
-initializing Test B..
-PetscBag Object:  IceParamBag Contains parameters controlling
-preferences for simulation of ice sheets.
-  history =
-ed@edbueler 2006-06-12 11:12:20 AKDT : /home/ed/ice/verify -test B -ys 422.45 -ye 25000.0 -Mx 31
--My 31 -p4pg /home/ed/ice/PI5846 -p4wd /home/ed/ice
-; History of commands used to generate this file.
-  Lx = 1.2e+06; Half width of the ice model grid in x-direction (m).
-  Ly = 1.2e+06; Halfwidth of the ice model grid in y-direction (m).
-  Lz = 4000; Extent of the ice model grid in z-direction (m).
-  Lbz = 0; Extent of the bedrock model grid in z-direction (m).
-  Mx = 31; Number of grid points in x-direction.
-  My = 31; Number of grid points in y-direction.
-  Mz = 31; Number of ice grid points in z-direction.
-  Mbz = 0; Number of bedrock grid points in z-direction.
-  dx = 80000; Grid spacing in x-direction.
-  dy = 80000; Grid spacing in y-direction.
-  dz = 133.333; Grid spacing in z-direction.
-  year = 422.45; Current time in years.
-running test B ...
-$$$      YEAR (+   STEP):     VOL    AREA MELTFabs     THICK0     TEMP0    ORIGF     MAXw
-$$$    422.45 (+  0.000):   4.006   1.773    1.000   3600.000   283.454    0.978    <N/A>
-V$f    438.36 (+ 15.908):   4.006   2.131   <same>   3587.401    <same>   <same>   <same>
-V$f    454.82 (+ 16.457):   4.006   2.131   <same>   3574.205    <same>   <same>   <same>
-...
-V$f  24830.27 (+ 60.000):   4.006   3.130   <same>   2294.816    <same>   <same>   <same>
-V$f  24890.27 (+ 60.000):   4.006   3.130   <same>   2294.200    <same>   <same>   <same>
-V$f  24950.27 (+ 60.000):   4.006   3.130   <same>   2293.586    <same>   <same>   <same>
-V$f  25000.00 (+ 49.727):   4.006   3.130   <same>   2293.078    <same>   <same>   <same>
-done with run
-Actual ERRORS (evaluated at final time):
-geometry  :  prcntVOL  prcntAREA      maxH         avH   relmaxETA    domeH
-               0.0053    11.8993  146.9380    8.265441    0.020601   5.3977
-base temps:        maxT         avT      domeT
-               0.000000    0.000000   0.000000
-Writing model state to file `verify.pb'done
+user@host:~/pism$ obj/pismv -test B -ys 422.45 -ye 25000.0 -Mx 31 -My 31
 \end{verbatim}
 \Vend
 
@@ -191,101 +304,60 @@ Several behaviors were specified at the command line.  First, the code was \emph
 Errors at the final time are reported relative to the exact solution \cite{BLKCB}.  Note that the ``\t{-eo}'' flag can be given so that \t{verify} produces only the exact solution and does no numerics:
 \beginV
     user@host:~/ice$ ./verify -test B -ys 422.45 -ye 25000.0 -Mx 31 -My 31 -eo
+PISMV (verification mode)
+  [using flow law 1 (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]
+initializing Test B ...
+  [computational box for ice: ( 2400.00 km) x ( 2400.00 km) x ( 4000.00 m)]
+  [grid cell dimensions     : (   80.00 km) x (   80.00 km) x (  133.33 m)]
+running test B ...
+$$$$      YEAR (+    STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0
+$$$$    422.45 (+  0.0000[0 ]):   4.006   1.773    1.000   3600.000   283.454
+$v$f    438.36 (+ 15.9085[0d]):   4.006   2.131   <same>   3587.401    <same>
+$v$f    454.82 (+ 16.4574[0d]):   4.006   2.131   <same>   3574.205    <same>
+$v$f    471.84 (+ 17.0201[0d]):   4.006   2.131   <same>   3560.570    <same>
+$v$f    489.43 (+ 17.5941[0d]):   4.006   2.131   <same>   3546.692    <same>
+\dots
+$v$f   1793.45 (+ 56.0058[0d]):   4.006   2.464   <same>   3070.178    <same>
+$v$f   1851.04 (+ 57.5971[0d]):   4.006   2.464   <same>   3059.478    <same>
+$v$f   1910.27 (+ 59.2284[0d]):   4.006   2.464   <same>   3048.854    <same>
+$v$f   1970.27 (+ 60.0000[0m]):   4.006   2.464   <same>   3038.460    <same>
+$v$f   2030.27 (+ 60.0000[0m]):   4.006   2.464   <same>   3028.416    <same>
+$v$f   2090.27 (+ 60.0000[0m]):   4.006   2.464   <same>   3018.700    <same>
+\dots
+$v$f  24770.27 (+ 60.0000[0m]):   4.006   3.130   <same>   2295.434    <same>
+$v$f  24830.27 (+ 60.0000[0m]):   4.006   3.130   <same>   2294.816    <same>
+$v$f  24890.27 (+ 60.0000[0m]):   4.006   3.130   <same>   2294.200    <same>
+$v$f  24950.27 (+ 60.0000[0m]):   4.006   3.130   <same>   2293.586    <same>
+$v$f  25000.00 (+ 49.7274[0e]):   4.006   3.130   <same>   2293.078    <same>
+done with run
+Actual ERRORS evaluated at final time (relative to exact solution):
+geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+               0.0053    11.8993   146.9380    8.2654    0.020601   5.3977
+writing model state to file `verify.pb' ... done
 \end{verbatim}
 \Vend
 
-\subsection{Running EISMINT II experiments}  For the user who wants to see the EISMINT I \cite{EISMINT96}, EISMINT II \cite{EISMINT00}, ISMIP [FIXME: NOT IMPLEMENTED! CITATION?] as performed by this numerical ice sheet model, there is a separate executable ``\verb|simplify|'' which is runs identical code to ``\verb|run_ice|'' but does not require an initialization file and automatically sets up the correct, simplified experimental conditions (i.e. initial/boundary values and sources).  For example,
-\beginV
-    user@host:~/ice$ ./simplify -eisII F -Mx 61 -My 61 -Mz 201 -y 200000 -o eisF_61_201
-\end{verbatim}
-\Vend
-runs EISMINT II experiment F for the prescribed $200$k years and saves the result in \verb|eisF_61_201.pb| for inspection.  This particular run takes a while, and also shows the infamous spokes.
+Here we see the adapative time-stepping in action.  The exact solution being approximated here is the constant volume ice sheet which starts at time 0 as a delta function and spreads into a thinner and thinner ice sheet under the SIA \cite{BLKCB,Halfar83}.  At the end of this \t{pismv} verification run the errors are reported.  These are the differences between the values computed numerically on the grid and the known exact solution at the same grid points.  In particular, there are maximum thickness errors of up to 147 meters but the average thickness error is only 8.2 meters at the final time of 25,000 years (and on this very rough $31\times 31$ point grid).
+
+An illuminating verification run for the thermomechanically coupled SIA is to use Test G from \cite{BBL}, and to watch the evolution of the sheet. [DESCRIBE TEST G AND ALSO TEST I]
+
+[FORWARD REFERENCE TO Verification section] 
 
 
-\subsection{Regridding}  \normalspacing Running ice sheet simulations on fine grids takes a long time.  One technique to reduce computational time is to do computations on a rough grid and then refine the result.  The \verb|-regrid| option does this.  For example, the following does EISMINT II experiment F starting on a very rough grid and then regriding eventually onto a fine $12.5$ km horizontal grid with 200 vertical levels:
-[FIXME: this example can be simplified: remove -y 0 runs]
-\beginV
-    user@host:~/ice$ ./simplify -eisII F -Mx 31 -My 31 -Mz 31 -y 175000 -o eisF_31_31_175k
-       [RUN OF 20 minutes]
-    user@host:~/ice$ ./simplify -eisII F -y 0 -Mx 61 -My 61 -Mz 61 -regrid eisF_31_31_175k.pb \
-    > -regrid_vars hHTe -o eisF_61_61
-    user@host:~/ice$ ./simplify -eisII F -if eisF_61_61.pb -y 20000 -o eisF_61_61_195k
-       [RUN OF 30 minutes]
-    user@host:~/ice$ ./simplify -eisII F -y 0 -Mx 121 -My 121 -Mz 201 -regrid eisF_61_61_195k.pb \
-    > -regrid_vars hHTe -o eisF_121_201
-    user@host:~/ice$ ./simplify -eisII F -if eisF_121_201.pb -y 5000 -o eisF_121_201_200k
-       [RUN OF 7 HOURS]
-\end{verbatim}
-\Vend
-Note that the runs which have the \verb|-y 0| option either create a grid or regrid data on one grid onto another grid.  In either case no evolution occurs, obviously.  Note that the option \verb|-regrid_vars|, which has no argument, though a string giving a list of variables names is allowed (see below), indicates that all of the information in the \verb|-regrid| file will be regridded onto the new grid indicated by the \verb|-if| file.
-
-
-\subsection{Visualizing the results}  There are three modes for visualizing the various quantities in this ice model.\begin{itemize}
-\item At runtime various diagnostic viewers can be specified; see the Usage subsection below.  These viewers are updated at each step.  The format is limited by the style of PETSc viewers (see below) but in fact these viewers suffice for most routine diagnostic purposes.
-\item A \Matlab output file, in particular \Matlab script, can be produced by the options \verb|-o foo -of m|.  (This produces a file \verb|foo.m| in the current directory.)  When executed in \Matlab this script produces a variety of useful figures both for diagnostic purposes and for publishable results.  The script contains large amounts of data from the model but size concerns have limited us to outputing only surface elevation, temperature, and the strain-heating term in the temperature evolution equation.  Note that only slices of the temperature and strain-heating term are saved.  The locations of these slices can be controlled by the options \verb|-id|, \verb|-jd|, \verb|-kd|; see below.  If the executable \verb|verify| is used for a thermocoupled test then an additional file \verb|foo_comp.m| will be produced which corrects the strain-heating term and reports the compensatory heating term as well \cite{BKL}.  A possibly useful additional \Matlab script \verb|icemodelfigs| is also in the distribution; it was used to produce the figures in \cite{BKL}.
-\item The state of the model can be output in NetCDF format.  [\emph{THIS OPTION IS NOT CURRENTLY IMPLEMENTED}]
-\end{itemize}
-
-
-\section{Installation}
-
-See the PISM web page \cite{pism-web-page}.
-
-With any luck installation is not too much harder than installing PETSc itself.  We recommend that MPI [reference], XWindows [reference], NetCDF [reference], GSL [reference], FFTW [reference], and PETSc [reference] be installed first [IN WHAT ORDER?].  NetCDF, GSL, and FFTW are optional, see below.
-
-\subsection{Example: bash shell, using GNU tar and wget, with NetCDF, GSL, and FFTW already installed and with (e.g.) OpenMPI}
-
-\begin{quote}\begin{verbatim}
-mkdir safe
-cd safe
-wget http://www.dms.uaf.edu/~bueler/commvnism.tar.gz  # FIXME: where sources be?
-tar -xvvf commvnism.tar.gz
-cd ice
-export WITH_NETCDF=1
-export WITH_GSL=1
-export WITH_FFTW=1
-make   # may take a minute or two at most
-\end{verbatim}
-\end{quote}
-
-\subsection{Example: csh shell, using GNU tar and wget, with NetCDF and FFTW NOT installed and with (e.g.) OpenMPI}
-
-\begin{quote}\begin{verbatim}
-mkdir safe
-cd safe
-wget http://www.dms.uaf.edu/~bueler/commvnism.tar.gz
-tar -xvvf commvnism.tar.gz
-cd ice
-setenv WITH_NETCDF 0
-setenv WITH_FFTW 0
-setenv WITH_GSL 1
-make
-\end{verbatim}
-\end{quote}
-
-\subsection{If it builds} Some quick tests of basic functionality might be:
-\begin{quote}\begin{verbatim}
-./verify -test G -y 100
-./run_ice -if ../ice-input/ant_2006/init.nc -Mx 91 -My 91 -Mz 101 -y 500 -d Hgf -dbig cT
-./verify -test H -y 40034 -Mx 31 -My 31 -Mz 11 -bed_def_lc
-\end{verbatim}
-\end{quote}
-The first \t{verify} run is to test the core thermcoupled shallow ice approximation code and the basic I/O to standard out.  The \verb|run_ice| run tests NetCDF and diagnosic viewers which use X windows.  The second \t{verify} run tests the bed deformation code which uses FFTW and GSL.
-
-
-\section{Usage}
+\section{Usage and options}
 
 \newcommand{\opt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\,:\quad\normalsize}
 \newcommand{\optdef}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]:\quad\normalsize}
+\newcommand{\optdefrestrict}[3]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad\normalsize}
 \newcommand{\und}{$\underline{\,\,\,}$}
 
-\subsection{Command line options for \t{run\_ice} and \t{simplify}}  Much of the behavior of the ice model can be set at the command line.
+\subsection{Command line options for PISM}  Much of the behavior of PISM can be set at the command line by options.  The format of the option, and the documentation below, is
 
-As a PETSc program all PETSc options are available \cite{petsc-web-page,petsc-user-ref}.  The next subsection recalls some of these PETSc options, but in this subsection we list the commands which are special to our ice sheet model.  Note that all of the parameters reported as part of the ``\verb|PetscBag Object|'' at the beginning of a run may be altered by the user, but some are not recommended for user modification.
+\centerline{``\optdefrestrict{optionname}{A}{B} Description.''}
 
-The format of the following option documentation is
+\noindent Here ``A'' is the default value and ``\t{B}'' is a list of the allowed executables.  The option applies to all executables (\verb|pismr|, \verb|pisms|, \verb|pismv|) unless the allowed executables are specifically stated by giving ``[\t{B} \textsl{only}]''.
 
-\centerline{``\optdef{optionname}{default value} Description.''}
+As PISM is a PETSc program, all PETSc options are available \cite{petsc-web-page,petsc-user-ref}.  See the next subsection, which recalls some of these PETSc options.
 \bigskip
 
 \optdef{adapt\und ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
@@ -310,13 +382,15 @@ The format of the following option documentation is
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
-\optdef{eisII}{A}  [\emph{Only available in } \verb|simplify|.]  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.
+\optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
 
 \opt{history}  \emph{Use of this option is not recommended.}  It is usually desirable to keep the stored command history unaltered.
 
 \opt{id}
 
 \opt{if}  The model can be started from either a PETSc binary file written by the model, e.g.~\verb|foo.pb|, or certain NetCDF files with sufficient information to start, e.g.~\verb|bas_2004.nc|.
+
+\optdefrestrict{ismip}{H}{pisms}  Choose ISMIP simplified geometry experiment.  Only ``H'' for HEINO is allowed at this time.
 
 \opt{isoflux}  Isothermal runs can be done by two methods.  One may simply initialize with a constant temperature field and then turn off temperature evolution (see \verb|-no_temp|); in this case the horizontal velocity and the horizontal mass flux are computed by a vertical numerical integral.  If the option \verb|-isoflux| is used then the mass flux is computed by the usual isothermal, Glen formula without reference to the temperature field or the chosen flow law.
 
@@ -378,7 +452,9 @@ The format of the following option documentation is
 
 \optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.
 
-\opt{verbose}   Increased verbosity.  [FOR NOW 7/06:  If set: (1) adds additional information to summary reported at each time step; (2) reports convergence info on MacAyeal iterations; (3) prints PetscBag at start]
+\optdefrestrict{test}{A}{pismv}  Choose single character name of verification test.  Allowed values are A, B, C, D, E, F, G, H, I.  See the Verification section.
+
+\opt{verbose}   Increased verbosity of standard output.
 
 \optdef{y}{1000} Number of model years to run.
 
@@ -414,13 +490,11 @@ The format of the following option documentation is
 
 \subsection{Diagnostic viewers} Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
 \begin{verbatim}
-   ./run_ice ... -d hTg -dbig c
+   obj/pismr ... -d hTg -dbig c
 \end{verbatim}
 shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{g}'') and of vertically-averaged horizontal ice speed (``\t{c}'').
 
 The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
-
-\emph{Warning: At this point the diagnostic viewers only work with one processor.}
 
 The single character names are:
 
@@ -498,7 +572,44 @@ The single character names are:
 
 \verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
-\subsection{User's overview of the code}  This ice sheet model is implemented as a collection of C++ object classes [REFERENCE], the most central of which is \t{IceModel}.
+
+\subsection{Regridding}
+
+
+
+\section{Verification}
+
+
+\subsection{Exact solutions and compensatory sources in a derived class}  Various exact solutions and compensatory models are implemented in a class \t{IceCompModel} which is derived from \t{IceModel}.  This derived class leaves \t{IceModel} free of non-physical exact solution information.  Thus \t{IceModel} only contains information directly appropriate for actual ice sheet simulation, while verification using \t{IceCompModel} tests exactly the same codes as are used by actual simulations but adds the necessary code to use compensatory sources and to initialize with and verify against exact solutions.
+
+\t{IceCompModel} includes a material class \t{ThermoArrGlenIce} which has a pure Arrhenius term, unlike \t{ThermoGlenIce} which has a cold and warm regime for the exponential term.  The class reimplements \t{run()} and updates the compensatory terms during the time step.
+
+Note that the melt fraction is computed using the absolute temperature not the homologous temperature as in \verb|run_ice|.
+
+\subsection{Command line options for \t{verify}}  Essentially all of the command line options for \verb|run_ice| apply to \t{verify}.  The only option not available to \t{verify} is ``\t{-circular}''.  The new options are
+
+\opt{eo}  Only exact evolution is shown; no actual numerics are performed.  This option used in company with diagnosic viewers (\verb|-d |\dots) allows the user to visualize the exact solutions themselves.
+
+\opt{noreport}  Turns off error report at final time.
+
+\opt{test}  This option currently only allow values \t{B,C,D,F,G}.  Tests \t{B,C,D} are documented in \cite{BLKCB} while tests \t{F,G} are in \cite{BBL} with more detail in \cite{BB}.  The recommended \t{verify} runs are:\begin{itemize}
+\item \verb|  ./verify -test B -ys 422.45 -y 25000|
+\item \verb|  ./verify -test C -y 15208.0|
+\item \verb|  ./verify -test D -y 25000|
+\item \verb|  ./verify -test F -y 25000|
+\item \verb|  ./verify -test G -y 25000|
+\end{itemize}
+For the thermocoupled runs it is strongly recommended that at least $100$ vertical levels are used.
+
+
+
+\section{Simplified geometry and validation}
+
+
+\section{Realistic ice sheet modelling}
+
+
+\section{User's overview of the code}  This ice sheet model is implemented as a collection of C++ object classes [REFERENCE], the most central of which is \t{IceModel}.
 
 More elementary than \t{IceModel} are the classes\begin{itemize}
 \item \t{IceGrid}, which describes the shape of the grid and parallel
@@ -516,41 +627,11 @@ shelves.
 
 The methods for \t{IceModel} are many.  They initialize the model (from input data files or from formulas describing various exact solutions), they read user options, they allocate arrays in a distributed manner under PETSc, they compute the terms in the various continuum equations (mass balance, conservation of energy, and velocity), they control diagnostic viewers, they run the central time-stepping, and they write out the model state to files.
 
-A derived class of \t{IceModel} called \t{IceCompModel} is used for verification; see the next section.  It has additional structures which allows \t{IceModel} to have compensatory sources and compute initial conditions from, and especially to report errors relative to, known exact solutions \cite{BLKCB,BKL,BK}.
+A derived class of \t{IceModel} called \t{IceCompModel} is used for verification; see the next section.  It has additional structures which allows \t{IceModel} to have compensatory sources and compute initial conditions from, and especially to report errors relative to, known exact solutions \cite{BLKCB,BBL,BB,SchoofStream}.
 
 There are two established drivers which call constructors and destructors for \t{IceModel}, namely \verb|run_ice| and \verb|verify|; examples appear above.  These drivers include no computation but differ in which class is constructed (\t{IceModel} vs \t{IceCompModel}) and in how certain options are handled.  They invoke the same numerical proceedures to handle the various partial differential equations of the continuum model, and this fact, along with the derived class relation for \t{IceCompModel}, is at the heart of the verification mechanism.  Driver \verb|run_ice| should be used for actual ice sheet computations, based on data files which will typically be in NetCDF form.  Driver \verb|run_ice| should also be used for simulations of symmetrical or artificial sheets for which no exact solution is known (and, obviously, for which no compensatory sources are needed) such as the EISMINT experiments \cite{EISMINT96,EISMINT00}.  Driver \verb|verify| is simply for verification and reports errors relative to exact solutions.
 
-
-
-\section{Verification}
-
-\subsection{Exact solutions and compensatory sources in a derived class}  Various exact solutions and compensatory models are implemented in a class \t{IceCompModel} which is derived from \t{IceModel}.  This derived class leaves \t{IceModel} free of non-physical exact solution information.  Thus \t{IceModel} only contains information directly appropriate for actual ice sheet simulation, while verification using \t{IceCompModel} tests exactly the same codes as are used by actual simulations but adds the necessary code to use compensatory sources and to initialize with and verify against exact solutions.
-
-\t{IceCompModel} includes a material class \t{ThermoArrGlenIce} which has a pure Arrhenius term, unlike \t{ThermoGlenIce} which has a cold and warm regime for the exponential term.  The class reimplements \t{run()} and updates the compensatory terms during the time step.
-
-Note that the melt fraction is computed using the absolute temperature not the homologous temperature as in \verb|run_ice|.
-
-\subsection{Command line options for \t{verify}}  Essentially all of the command line options for \verb|run_ice| apply to \t{verify}.  The only option not available to \t{verify} is ``\t{-circular}''.  The new options are
-
-\opt{eo}  Only exact evolution is shown; no actual numerics are performed.  This option used in company with diagnosic viewers (\verb|-d |\dots) allows the user to visualize the exact solutions themselves.
-
-\opt{noreport}  Turns off error report at final time.
-
-\opt{test}  This option currently only allow values \t{B,C,D,F,G}.  Tests \t{B,C,D} are documented in \cite{BLKCB} while tests \t{F,G} are in \cite{BKL} with more detail in \cite{BK}.  The recommended \t{verify} runs are:\begin{itemize}
-\item \verb|  ./verify -test B -ys 422.45 -y 25000|
-\item \verb|  ./verify -test C -y 15208.0|
-\item \verb|  ./verify -test D -y 25000|
-\item \verb|  ./verify -test F -y 25000|
-\item \verb|  ./verify -test G -y 25000|
-\end{itemize}
-For the thermocoupled runs it is strongly recommended that at least $100$ vertical levels are used.
-
-
-
-\section{PETSc: An overview for PISM users}
-
-\subsection{PETSc Preliminaries}
-The PETSc library \cite{petsc-web-page,petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  Specifically,it is a suite of data structures and routines in the C language, primarily, for the scalable (parallel) solution of scientific applications modeled by partial differential equations.  Large parts of PETSc relate especially to finite-difference type regular, rectangular grids.
+\subsection{PETSc: An overview for PISM users}  The PETSc library \cite{petsc-web-page,petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  Specifically,it is a suite of data structures and routines in the C language, primarily, for the scalable (parallel) solution of scientific applications modeled by partial differential equations.  Large parts of PETSc relate especially to finite-difference type regular, rectangular grids.
 
 Documentation for PETSc is available from the web site at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/}.
 

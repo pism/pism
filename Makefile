@@ -9,13 +9,10 @@ include ${PETSC_DIR}/bmake/common/base
 WITH_NETCDF?=1
 WITH_FFTW?=1
 WITH_GSL?=1
-CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} -DWITH_FFTW=${WITH_FFTW}\
-	-DWITH_GSL=${WITH_GSL} -pipe
+CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
 
-ICE_LIB_FLAGS= -L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}
-ifeq (${WITH_NETCDF}, 1)
-	ICE_LIB_FLAGS+= -lnetcdf_c++ -lnetcdf
-endif
+ICE_LIB_FLAGS= -L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}\
+   -lnetcdf_c++ -lnetcdf
 ifeq (${WITH_FFTW}, 1)
 	ICE_LIB_FLAGS+= -lfftw3
 endif
@@ -25,7 +22,8 @@ endif
 
 #VARIABLES:
 
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
+#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\

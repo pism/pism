@@ -278,6 +278,41 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   ierr = PetscViewerASCIIPrintf(viewer,"\nc = reshape(c,%d,%d);\n\n",grid.p->Mx,grid.p->My);
   CHKERRQ(ierr);
 
+  PetscScalar     ***u, **ukd, ***v, **vkd, ***w, **wkd;
+  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &ukd); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[1], &vkd); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[2], &wkd); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ukd[i][j] = u[i][j][kd];
+      vkd[i][j] = v[i][j][kd];
+      wkd[i][j] = w[i][j][kd];
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &ukd); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vkd); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &wkd); CHKERRQ(ierr);
+
+  ierr=PetscObjectSetName((PetscObject) g2,"ukd"); CHKERRQ(ierr);
+  ierr = LVecView(grid.da2, vWork2d[0],  g2, viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nukd = reshape(ukd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
+    CHKERRQ(ierr);
+  ierr=PetscObjectSetName((PetscObject) g2,"vkd"); CHKERRQ(ierr);
+  ierr = LVecView(grid.da2, vWork2d[1],  g2, viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nvkd = reshape(vkd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
+    CHKERRQ(ierr);
+  ierr=PetscObjectSetName((PetscObject) g2,"wkd"); CHKERRQ(ierr);
+  ierr = LVecView(grid.da2, vWork2d[2],  g2, viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nwkd = reshape(wkd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
+    CHKERRQ(ierr);
+
+
   PetscScalar     ***T, **T2, **H, **pmMask;
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &T2); CHKERRQ(ierr);

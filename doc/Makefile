@@ -1,4 +1,10 @@
-ALL : manual.dvi manual.ps eqns3D.dvi eqns3D.ps
+ALL : manual.pdf eqns3D.dvi eqns3D.ps
+
+%.pdf : %.tex
+	pdflatex $*
+	bibtex $*
+	pdflatex $*
+	pdflatex $*
 
 %.dvi : %.tex
 	latex $*
@@ -10,4 +16,4 @@ ALL : manual.dvi manual.ps eqns3D.dvi eqns3D.ps
 	dvips $*
 
 clean :
-	rm -f {manual,eqns3D}.{aux,bbl,blg,log,toc,dvi,ps}
+	rm -f {manual,eqns3D}.{aux,bbl,blg,log,toc,dvi,ps,pdf}
