@@ -59,7 +59,9 @@ PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
   PetscInt     myverbosityLevel;
   PetscTruth   verbose, verbosityLevelSet;
+  PetscInt     DEFAULT_VERBOSITY_LEVEL = 2;
   
+  ierr = setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);  
   ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myverbosityLevel, &verbosityLevelSet); CHKERRQ(ierr);
   if (verbosityLevelSet == PETSC_TRUE) {
     ierr = setVerbosityLevel(myverbosityLevel);

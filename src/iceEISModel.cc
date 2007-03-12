@@ -95,7 +95,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(1,grid.com, 
               "initializing EISMINT II experiment %c ... \n", 
               getExperName()); CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
@@ -160,7 +160,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
   }
   ierr = afterInitHook(); CHKERRQ(ierr);
 
-  ierr = PetscPrintf(grid.com, "running EISMINT II experiment %c ...\n",getExperName());
+  ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",getExperName());
              CHKERRQ(ierr);
 
   return 0;

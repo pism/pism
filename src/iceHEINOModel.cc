@@ -143,7 +143,7 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(1,grid.com, 
               "initializing ISMIP-HEINO, run %s ... \n", 
               ismipRunName); CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
@@ -187,7 +187,7 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
 
   ierr = afterInitHook(); CHKERRQ(ierr);
 
-  ierr = PetscPrintf(grid.com, "running ISMIP-HEINO, run %s ...\n",ismipRunName);
+  ierr = verbPrintf(1,grid.com, "running ISMIP-HEINO, run %s ...\n",ismipRunName);
              CHKERRQ(ierr);
   return 0;
 }
@@ -375,7 +375,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
   strcpy(basefilename,heinodatprefix);
   strcat(basefilename,"_");
   strcat(basefilename,ismipRunName);
-  ierr = PetscPrintf(grid.com,
+  ierr = verbPrintf(2,grid.com,
             "creating ISMIP-HEINO deliverable files named %s_???.dat ...\n",
             basefilename); CHKERRQ(ierr);
 

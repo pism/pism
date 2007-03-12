@@ -79,14 +79,9 @@ PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLaw
       flowLawNum = 4;
     }
 
-    // specify flow law unless verbNum < 2
-    ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &verbNum, &verboseSet); CHKERRQ(ierr);
-    if ((verboseSet == PETSC_FALSE) || ((verboseSet == PETSC_TRUE) && (verbNum >= 2))) {
-      ierr = PetscPrintf(com, 
-          "  [using flow law %d"
-          " (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
-          flowLawNum); CHKERRQ(ierr);
-    }
+    ierr = verbPrintf(3,com, 
+        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
+        flowLawNum); CHKERRQ(ierr);
     
     switch (flowLawNum) {
       case 0: // Paterson-Budd
