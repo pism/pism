@@ -48,7 +48,8 @@ int main(int argc, char *argv[]) {
     PetscInt   flowlawNumber = 0;  // use Paterson-Budd by default
     IceType*   ice;
 
-    ierr = PetscPrintf(com, "PISMR (primary run mode)\n"); CHKERRQ(ierr);
+    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMR (primary run mode)\n"); CHKERRQ(ierr);
     
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     IceModel m(g, *ice);
@@ -56,10 +57,10 @@ int main(int argc, char *argv[]) {
     ierr = m.initFromOptions(); CHKERRQ(ierr);
     ierr = m.setSoundingFromOptions(); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "running ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);
     ierr = m.run(); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "... done with run\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
 
     // We provide a default base name.  If the user does not specify an
     // output file name, then we will write one with the following base in
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
     // a Petsc binary output file.
     ierr = m.writeFiles("unnamed"); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, " ... done.\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

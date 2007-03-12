@@ -29,19 +29,15 @@ IceModel::setFromOptions() {
   PetscScalar my_maxdt, my_mu, my_startYear, my_runYears, my_endYear;
   PetscScalar macRTol, my_nu, maceps;
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
-             maxdtSet, startYearSet, runYearsSet, endYearSet, verbose,
-             noMassBal, noTemp, bedDefiso, bedDef, bedDeflc, isoflux, muSet, 
+             maxdtSet, startYearSet, runYearsSet, endYearSet,
+             noMassConserve, noTemp, bedDefiso, bedDef, bedDeflc, isoflux, muSet, 
              nospokesSet, oceanKillSet, tempskipSet;
   PetscInt nospokeslevel;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &bedDeflc); CHKERRQ(ierr);
-
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def", &bedDef); CHKERRQ(ierr);
-  if (bedDef == PETSC_TRUE) {   bedDeflc = PETSC_TRUE; }
-  
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &bedDeflc); CHKERRQ(ierr);  
   ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &bedDefiso); CHKERRQ(ierr);
   if (bedDefiso == PETSC_TRUE) {
     setDoBedIso(PETSC_TRUE);
@@ -113,9 +109,9 @@ IceModel::setFromOptions() {
     setMacayealRelativeTolerance(macRTol);
   }
   
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass_bal", &noMassBal); CHKERRQ(ierr);
-  if (noMassBal == PETSC_TRUE) {
-    setDoMassBal(PETSC_FALSE);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
+  if (noMassConserve == PETSC_TRUE) {
+    setDoMassConserve(PETSC_FALSE);
   }
 
   // -no_spokes K for K=0,1,2,... turns on smoothing of spokes by smoothing Sigma (e.g. in EISMINT experiment F)
@@ -149,14 +145,8 @@ IceModel::setFromOptions() {
     doTempSkip = PETSC_TRUE;
   }
 
-  // FIXME:  should follow scheme describe in iMutil.cc (see verbPrintf())  
-  // verbose: the summary at each time step is more complete (see summary() in 
-  //     iMutil.cc)
-  ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
-  if (verbose == PETSC_TRUE) {
-    setBeVerbose(PETSC_TRUE);
-    setVerbosityLevel(5);
-  }
+  // verbosity options: more info to standard out.  see iMutil.cc
+  ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
   // Run length options
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &my_startYear, &startYearSet); CHKERRQ(ierr);

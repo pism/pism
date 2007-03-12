@@ -294,8 +294,8 @@ void IceModel::setShowViewers(PetscTruth show_viewers) {
   showViewers = show_viewers;
 }
 
-void IceModel::setDoMassBal(PetscTruth do_mb) {
-  doMassBal = do_mb;
+void IceModel::setDoMassConserve(PetscTruth do_mb) {
+  doMassConserve = do_mb;
 }
 
 void IceModel::setDoTemp(PetscTruth do_temp) {
@@ -320,19 +320,6 @@ void IceModel::setDoBedIso(PetscTruth do_iso) {
 
 void IceModel::setIsDrySimulation(PetscTruth is_dry) {
   isDrySimulation = is_dry;
-}
-
-void IceModel::setBeVerbose(PetscTruth verbose) {
-  beVerbose = verbose;
-}
-
-void IceModel::setVerbosityLevel(PetscInt level) {
-  if ((level < 0) || (level > 5)) {
-     verbPrintf(1,grid.com,
-         "IceModel::setVerbosityLevel():verbosityLevel must be 0,1,2,3,4,5\n"); 
-     PetscEnd();
-  }
-  verbosityLevel = level;
 }
 
 void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
@@ -649,7 +636,7 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-    if (doMassBal == PETSC_TRUE) {
+    if (doMassConserve == PETSC_TRUE) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
       if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
         tempskipCountDown--;

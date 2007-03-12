@@ -45,14 +45,18 @@ struct InterpCtx {
   Vec fine;
 };
 
+
 // this is a utility to get a IceType based on options from user, for initialization
-// of an instance of IceModel below
+// of an instance of IceModel below; see iceModel.cc
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum);
 
-extern PetscInt verbosityLevel;
 
-// see iMutil.cc
+// this utility prints only when verbosityLevel >= thresh; see iMutil.cc
+extern PetscInt verbosityLevel;
+PetscErrorCode setVerbosityLevel(PetscInt level);
+PetscErrorCode verbosityLevelFromOptions();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
+
 
 class IceModel {
 public:
@@ -71,7 +75,7 @@ public:
   PetscErrorCode setRunYears(PetscScalar);
   void setInitialAgeYears(PetscScalar d);
   void setShowViewers(PetscTruth);
-  void setDoMassBal(PetscTruth);
+  void setDoMassConserve(PetscTruth);
   void setDoTemp(PetscTruth);
   void setIncludeBMRinContinuity(PetscTruth);
   void setDoGrainSize(PetscTruth);
@@ -90,8 +94,6 @@ public:
   void setMuSliding(PetscScalar);
   void setGSIntervalYears(PetscScalar);
   void setBedDefIntervalYears(PetscScalar);
-  void setBeVerbose(PetscTruth);  // to be deleted!
-  void setVerbosityLevel(PetscInt);
   void setAllowRegridding(PetscTruth);
   void setNoSpokes(PetscInt);
   void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
@@ -100,8 +102,6 @@ public:
 
   virtual PetscErrorCode run();
 
-  // beVerbose modulated printf: eliminate it when verbPrintf() is implemented correctly
-  PetscErrorCode vPetscPrintf(MPI_Comm comm,const char format[],...);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -220,12 +220,12 @@ protected:
   PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel;
 
   // flags
-  PetscTruth  doMassBal, doTemp, doGrainSize, doBedDef, doBedIso;
+  PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
   PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, 
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
-  PetscTruth  showViewers, allowRegridding, beVerbose, doTempSkip;
+  PetscTruth  showViewers, allowRegridding, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done;
   PetscTruth  useIsothermalFlux;
   char        adaptReasonFlag;

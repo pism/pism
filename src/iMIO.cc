@@ -151,21 +151,21 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   if (strchr(fmt, 'p') != NULL) {
     strcpy(pf, b);
     strcat(pf, ".pb");
-    ierr = PetscPrintf(grid.com, "Writing model state to file `%s'\n", pf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'\n", pf); CHKERRQ(ierr);
     ierr = dumpToFile(pf); CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'n') != NULL) {
     strcpy(ncf, b);
     strcat(ncf, ".nc");
-    ierr = PetscPrintf(grid.com, "Writing model state to file `%s'\n", ncf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'\n", ncf); CHKERRQ(ierr);
     ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'm') != NULL) {
     strcpy(mf, b);
     strcat(mf, ".m");
-    ierr = PetscPrintf(grid.com, " ... dumping selected variables to Matlab file `%s'", mf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'", mf); CHKERRQ(ierr);
     ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
   }
 

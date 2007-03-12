@@ -47,7 +47,8 @@ int main(int argc, char *argv[]) {
     IceType*            tempice;
     PetscInt            flowlawNumber = 1;  // use cold part of Paterson-Budd by default
 
-    ierr = PetscPrintf(com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
+    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    ierr = verbPrintf(1, com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
     
     ierr = getFlowLawFromUser(com, tempice, flowlawNumber); CHKERRQ(ierr);
 
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
     if (dontReport == PETSC_FALSE) {
       if ((temp >= 'A') && (temp <= 'H')) {
         if ((flowlawNumber != 1) && ((temp == 'F') || (temp == 'G'))) {
-          ierr = PetscPrintf(com, 
+          ierr = verbPrintf(1,com, 
                 "verify WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
                 "   for reported errors in tests F and G to be meaningful!\n"); CHKERRQ(ierr);
         }

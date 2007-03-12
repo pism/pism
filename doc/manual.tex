@@ -37,6 +37,7 @@
 \renewcommand{\t}[1]{\texttt{#1}}
 \newcommand{\Matlab}{\textsc{Matlab}\xspace}
 \newcommand{\bU}{\mathbf{U}}
+\newcommand{\eps}{\epsilon}
 
 % note \beginV and \Vend are a pair, but they must be used as follows:
 %   \beginV
@@ -57,7 +58,7 @@
 
 \author{Jed Brown and Ed $\text{Bueler}^\ast$}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 88.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 90.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
@@ -344,14 +345,15 @@ An illuminating verification run for the thermomechanically coupled SIA is to us
 [FORWARD REFERENCE TO Verification section] 
 
 
-\section{Usage and options}
+\section{Runtime options}
 
 \newcommand{\opt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\,:\quad\normalsize}
 \newcommand{\optdef}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]:\quad\normalsize}
+\newcommand{\optrestrict}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\texttt{#2} \textsl{only}]:\quad\normalsize}
 \newcommand{\optdefrestrict}[3]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad\normalsize}
 \newcommand{\und}{$\underline{\,\,\,}$}
 
-\subsection{Command line options for PISM}  Much of the behavior of PISM can be set at the command line by options.  The format of the option, and the documentation below, is
+Much of the behavior of PISM can be set at the command line by options.  The format of the option, and the documentation below, is
 
 \centerline{``\optdefrestrict{optionname}{A}{B} Description.''}
 
@@ -362,17 +364,21 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-web-page
 
 \optdef{adapt\und ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
 
-\opt{bed\und def} Same as \verb|-bed_def_lc| below.
+\optrestrict{bal\und vel}{get\und drag}  
 
-\opt{bed\und def\und iso} Compute bed deformations by simple pointwise isostasy.  Assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.
+\opt{bed\und def\und iso} Compute bed deformations by simple pointwise isostasy.  Assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.  See Test H in Verification section.
 
-\opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.  [\emph{At present, assumes that the bed at the starting time is in equilibrium with the load.  Need uplift map to correctly initialize.}]
+\opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.
+
+\optrestrict{bif}{pismr}  The model can be ``bootstrapped'' from certain NetCDF files with just the right information.  Email \verb|ffelb@uaf.edu| for more info.  Compare \verb|-if|.
 
 \optdef{constant\und nu}{30.0}  If this option is used then the MacAyeal velocities (see \verb|-mv| below) are computed with a constant viscosity.  If this option is not used then the viscosities are computed by a nonlinear iteration.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
-\opt{d}  Specifies diagnostic (X Windows) viewers.  See subsection below on diagnostic viewers.
+\opt{d}  Specifies diagnostic (X Windows) viewers.  See Diagnostic viewers section below.
 
-\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See subsection below.
+\optdefrestrict{datprefix}{PISM}{pisms -ismip H}  Specify base name for ISMIP-HEINO deliverable \verb|.dat| files.  See also \verb|-no_deliver|.
+
+\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Diagnostic viewers section.
 
 \opt{dx}  \emph{Use of this option is not recommended.}  \verb|dx| is computed internally as \verb|2*Lx/(Mx-1)|.  The user may alter \verb|Lx| or \verb|Mx| at the command line.
 
@@ -382,31 +388,65 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-web-page
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
+\optrestrict{eo}{pismv}  See Verification section.
+
 \optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
+
+\optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This overrides the adaptime time-stepping and does $0.25$ year time steps anyway.
+
+\optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.]
 
 \opt{history}  \emph{Use of this option is not recommended.}  It is usually desirable to keep the stored command history unaltered.
 
-\opt{id}
+\optdef{id}{0}
 
-\opt{if}  The model can be started from either a PETSc binary file written by the model, e.g.~\verb|foo.pb|, or certain NetCDF files with sufficient information to start, e.g.~\verb|bas_2004.nc|.
+\opt{if}  The model can be restarted from either a PETSc binary file written by the model, e.g.~\verb|foo.pb| from \verb|-o foo| or \verb|-o foo -of p|, or from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
 
 \optdefrestrict{ismip}{H}{pisms}  Choose ISMIP simplified geometry experiment.  Only ``H'' for HEINO is allowed at this time.
 
 \opt{isoflux}  Isothermal runs can be done by two methods.  One may simply initialize with a constant temperature field and then turn off temperature evolution (see \verb|-no_temp|); in this case the horizontal velocity and the horizontal mass flux are computed by a vertical numerical integral.  If the option \verb|-isoflux| is used then the mass flux is computed by the usual isothermal, Glen formula without reference to the temperature field or the chosen flow law.
 
-\opt{gk}  [\emph{Not available in } \verb|verify|.]  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  [\emph{Option included for backward compatibility.}  See \verb|-law| for more complete option choice of flow law.]
-
-\opt{jd}
+\optdef{jd}{0}
 
 \optdef{kd}{0}
 
-\optdef{law}{0}  [\emph{Not available in } \verb|verify|.]  Allows choice of thermocoupled flow law.  Options are:\renewcommand{\labelenumi}{\arabic{enumi}:~}\begin{enumerate}\setcounter{enumi}{-1}
-\item The Paterson-Budd \cite{PatersonBudd} flow law with exponent $n=3$.  In particular there is split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where $(A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* < 263$ K and $(A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* > 263$ K and where $T^*$ is the homologous temperature.  Also $R=8.314\, \text{J}\, \text{mol}^{-1}\, \text{K}^{-1}$.
-\item Just the \emph{cold} part of the Paterson-Budd flow law above, i.e.~regardless of temperature the values for $T^*<263$ K apply.  Note this is the flow law which applies to the thermocoupled exact solutions Tests \textbf{F} and \textbf{G} run by \verb|verify|.
-\item Just the \emph{warm} part of the Paterson-Budd flow law above, i.e.~regardless of temperature the values for $T^*>263$ K apply.
-\item The Hooke flow law with $n=3$ and with $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$ where [SEE \cite{Hooke,PayneBaldwin} FOR VALUES].
-\item A hybrid of the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} for grounded, shallow ice approximation ice and the Paterson-Budd flow law for MacAyeal equations regions (i.e.~ice streams and ice sheets; use \verb|-d m| to see relevant mask).
-\end{enumerate}
+\begin{table}
+\caption{Choosing the flow law.}\label{tab:flowlaw}
+\begin{tabular}{@{}llll}\hline
+\small
+\textbf{Flow Law} & \textbf{Option} & \textbf{Comments and Reference} \\ \hline
+Paterson-Budd law   &  \t{-law 0} &   Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' \\
+  & & term $A(T) = A \exp(-Q/RT^*)$ where \\
+  & & $(A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if \\
+  & & $T^* < 263$ K and $(A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$, \\
+  & & $Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* > 263$ K and \\
+  & & where $T^*$ is the homologous temperature \cite{PatersonBudd}.  \\
+\emph{Cold} part of Paterson-Budd    &  \t{-law 1} &   Regardless of temperature, the values for $T^*<263$ K in \\
+  & & the Paterson-Budd law above apply.  This is the flow law \\
+  & & used in the thermomechanically coupled exact solutions \\
+  & & Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} \\
+  & & and run by \verb|pismv -test F|,  \verb|pismv -test F|.  \\
+\emph{Warm} part of Paterson-Budd     &  \t{-law 2} & Regardless of temperature, the values for $T^*>263$ K in \\
+  & &  Paterson-Budd apply.    \\
+Hooke law   &  \t{-law 3} &  Fixed Glen exponent $n=3$.  Here \\
+  & & $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of \\
+  & & constants as in \cite{Hooke,PayneBaldwin}.   \\
+Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a combination of exponents  \\
+  \qquad and Paterson-Budd & & from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded \\
+  & & shallow ice approximation regions.  Paterson-Budd flow \\
+  & & for ice streams and ice sheets. See mask for SIA \\
+  & & versus stream versus shelf by \verb|-d m|. \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+\optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
+	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
+where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
+	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
+Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \verb|-law 4| (or \verb|-gk|).
+
 
 \opt{Lbz}  \emph{Use of this option is not recommended.}  The vertical thickness of the bed in which temperature is modeled is kept internally as the product \verb|Mbz*dz|.  The user may alter \verb|Mbz| at the command line.
 
@@ -420,52 +460,117 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-web-page
 
 \optdef{Mbz}{0}
 
+\optrestrict{Mmax}{pisms -eisII}  Set value of $M_{\text{max}}$ for EISMINT II.
+
 \opt{mv}  Use the MacAyeal-Morland equations for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.
 
 \optdef{mv\und eps}{1.0e15}  The numerical scheme for the MacAyeal-Morland equations computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$.
 
 \optdef{mv\und rtol}{1.0e-4}  The numerical scheme for the MacAyeal-Morland equations does a nonlinear iteration wherein velocities (and temperatures) are used to compute an effective viscosity which is used to solve the equations for velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
 
-\optdef{Mx}{61}
+\optdef{Mx}{61}  Set number of grid points in horizontal direction.
 
-\optdef{My}{61}
+\optdef{My}{61}  Set number of grid points in horizontal direction.
 
-\optdef{Mz}{31}
+\optdef{Mz}{31}  Set number of grid points in vertical direction.
 
 \optdef{mu\und sliding}{3.17e-11}
 
-\opt{no\und mass\und bal}
+\opt{mv} Turn on solution of MacAyeal equations \cite{MacAyeal} in ice streams and ice shelves.
+ 
+\optdef{mv\und eps}{}
+ 
+\optdef{mv\und rtol}{}
+ 
+\optrestrict{no\und deliver}{pisms -ismip H}  Do not write \verb|.dat| deliverable files in ISMIP-HEINO.
 
-\optdef{no\und spokes}{0}  The strain heating term can be smoothed by averaging the neighboring horizontal neighbors (those which are within the ice).  The integer parameter controls the number of neighboring grid points over which the average is computed.  For instance, \verb|-no_spokes 0| is no smoothing while \verb|-no_spokes 3| is smoothing over the 3-neighborhood of horizontal grid points, that is, over a distance of \verb|3*dx|.
+\opt{no\und mass}  Do not change surface elevations or thicknesses.  That is, do not do time steps of mass conservation equation.
 
-\opt{no\und temp}
+\optrestrict{nreport}{pismv}  Do not report errors at the end of a verification run.
 
-\optdef{o}{unnamed} Give name of output file: \verb|-o foo| writes an output file named \verb|foo.pb|.  See \verb|-if|; note model can be restarted from a PETSc binary file, e.g.~\verb|foo.pb|.
+\optdef{no\und spokes}{0}  The strain heating term can be smoothed by non-physical averaging the neighboring horizontal neighbors (those which are within the ice) \cite{BBL}.  The integer parameter controls the number of neighboring grid points over which the average is computed.  For instance, \verb|-no_spokes 0| is no smoothing while \verb|-no_spokes 3| is smoothing over the 3-neighborhood of horizontal grid points, that is, over a distance of \verb|3*dx|.
 
-\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used with \verb|-no_mass_bal|.
+\opt{no\und temp}  Do not change temperature or age values within the ice.  That is, do not do time steps of energy conservation and age equation.
 
-\optdef{of}{p}  Format of output file(s).  Possible values are \verb|p| for the model state written to a PETSc binary file, e.g.~\verb|foo.pb|, \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|, and \verb|n| for selected variables written to a NetCDF file \verb|foo.nc|.  [\emph{NetCDF case not yet implemented.}]  By default an output file is written according to the name given by \verb|-o|.  Multiple files can be written, for instance, \verb|-o foo -of pm| writes both \verb|foo.pb| and \verb|foo.m|.
+\optdef{o}{unnamed.pb} Give name of output file: \verb|-o foo| writes an output file named \verb|foo.pb|.  See \verb|-if|; note model can be restarted from a PETSc binary file, e.g.~\verb|foo.pb|.  Default name is \verb|unnamed.pb| under \verb|pismr|, \verb|simp_exper.pb| under \verb|pisms|, and \verb|verify.pb| under \verb|pismv|.
 
-\opt{regrid}  See subsection on regridding above.
+\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used with \verb|-no_mass|.
 
-\optdef{regrid\und var}{mTBe}  See subsection on regridding above.
+\optdef{of}{p}  Format of output file(s).  Possible values are \verb|p| for the model state written to a PETSc binary file, e.g.~\verb|foo.pb|, \verb|n| for model state written to a NetCDF file \verb|foo.nc|, and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  From resulting output \verb|.pb| and \verb|.nc| files, PISM can be restarted using \verb|-if|.  Compage \verb|-bif|.  By default an output file is written according to the name given by \verb|-o|.  Multiple files can be written, for instance, \verb|-o foo -of pm| writes both \verb|foo.pb| and \verb|foo.m|.
 
-\optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.
+\opt{pause}    Pause for given number of seconds.  Allowed for \verb|pisms -ross| and \verb|pismv -test I|.
+
+\optrestrict{prefix}{pisms -ross}    Set the data file prefix for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.
+
+\optrestrict{plastic\und reg}{pismv -test I}    Set value of $\eps$ regularization of plastic till.  See \t{src/iceExactStreamModel.cc}.
+
+\opt{regrid}
+
+\opt{regrid\und vars}
+
+\optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
+
+\optrestrict{ross}{pisms}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
+
+\optdefrestrict{run}{ST}{pisms -ismip H}  ISMIP-HEINO has several run names: ST, T1, T2, B1, B2, S1, S2, S3.
+
+\optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
+
+\optrestrict{showobsvel}{pisms -ross -d c}    Show the map of observed velocity for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.
+
+\optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
+
+\optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  A maximum value of \verb|-tempskip 5| is recommended to avoid too many CFL violations.
 
 \optdefrestrict{test}{A}{pismv}  Choose single character name of verification test.  Allowed values are A, B, C, D, E, F, G, H, I.  See the Verification section.
 
-\opt{verbose}   Increased verbosity of standard output.
+\optrestrict{time1}{pisms -ismip H}  ISMIP-HEINO requires writing 2D planform \verb|.dat| files at four times in the interval $[150,200]\times 10^{3}$ years.  This specifies the time.  Note \verb|test/showheino.m| will compute the time from the other \verb|.dat| files.
+
+\optrestrict{time2}{pisms -ismip H}  See \verb|-time1| explanation.
+
+\optrestrict{time3}{pisms -ismip H}  See \verb|-time1| explanation.
+
+\optrestrict{time4}{pisms -ismip H}  See \verb|-time1| explanation.
+
+\optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
+
+\optrestrict{tune}{pisms -ross}    Tune the vertically averaged hardness $\bar B$ in the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.  A range of values can be given; see \verb|src/iceROSSModel.cc|.
+
+\opt{verbose}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
+
+\begin{table}
+\caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
+\begin{tabular}{@{}llll}\hline
+\small
+\textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
+   0  &  \t{-verbose 0} &   never print to standard out \emph{at all}  \\
+   1  &  \t{-verbose 1} &   less verbose than default  \\
+   2  &  [\t{-verbose 2}] & default verbosity    \\
+   3  &  \t{-verbose 3} &   somewhat verbose; expanded description of grid at start  \\
+      &  or \quad \t{-verbose} &  and expanded information in summary    \\
+   4  &  \t{-verbose 4} &     \\
+      &  or \quad \t{-vverbose} &  more verbose    \\
+   5  &  \t{-verbose 5} &     \\
+      &  or \quad \t{-vvverbose} &  maximally verbose \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+\opt{vverbose}   See table \ref{tab:verbosity}.
+
+\opt{vvverbose}   See table \ref{tab:verbosity}.
 
 \optdef{y}{1000} Number of model years to run.
 
 \opt{ye} Model year at which to end the run.
 
-\opt{year}  Internally stored model year.  Modify this with some caution.  Certain non-physical runs (e.g.~under the executable \verb|verify|) attach modeling meaning to the year.  [FUTURE CODES MAY ALSO USE \verb|year| TO GET TIME-DEPENDENT BOUNDARY DATA.]
+\opt{year}  Internally stored model year.  Modify this with some caution.  Certain non-physical runs (e.g.~under the executable \verb|pismv|) attach modeling meaning to the year.  That is, verification runs and others will \emph{not} be time-invariant.
 
 \opt{ys} Model year at which to start the run.
 
 
-\subsection{Additional options for Petsc programs}  All Petsc programs allow command line options which control the manner in which Petsc distributes jobs among parallel processors and how it solves linear systems, for instance.
+\subsection{Additional options (for any PETSc program)}  All PETSc programs allow command line options which control the manner in which PETSc distributes jobs among parallel processors and how it solves linear systems (in particular).  The PETSc manual (\url{http://www.mcs.anl.gov/petsc/petsc-as/snapshots/petsc-current/docs/manual.pdf}) is the complete reference on these, but we list some that are of known importance to PISM users.
 
 \opt{da\und processors\und x}
 
@@ -485,10 +590,10 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-web-page
 
 \opt{v}   Show version number of Petsc.
 
-\noindent [BUG: Note that \verb|-ksp_monitor| complains that ``\t{Too many KSP monitors set!}'']
 
+\section{Diagnostic viewers} 
 
-\subsection{Diagnostic viewers} Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
+Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
 \begin{verbatim}
    obj/pismr ... -d hTg -dbig c
 \end{verbatim}
@@ -577,39 +682,107 @@ The single character names are:
 
 
 
-\section{Verification}
+\section{Verification}  ``Verification'' is a crucial task for a code as complicated as PISM.  It is a task not directly related to the physical behavior of real ice sheets, but rather it is exclusively mathematical and numerical.  It is the task of checking that the predictions of a numerical code, here PISM of course, are close to the predictions of the continuum model which the numerical code claims to approximate.  In particular, one compares exact solutions of the continuum model, if available, to their numerical approximations.
+
+See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), and for exact solutions to these models.  See \cite{BB} on the construction of solutions to the thermomechanically coupled SIA.  See \cite{SchoofStream} for an exact solution to the MacAyeal equations for ice streams using a plastic till assumption.
+
+In PISM there is a separate executable \verb|pismv|, but the numerical code which is verified by \verb|pismv| is exactly the same sources as run by the executables \verb|pismr| and \verb|pisms|.  (In technical terms, \verb|pismv| runs a derived class of the core class \verb|IceModel|, which is most directly run by \verb|pismr|.)
+
+Table \ref{tab:tests} summarizes the many exact solutions contained within PISM, and shows how to use them individually to verify and to measure accuracy.   Note that all of these exact solutions is a solution to a free boundary problem for partial differential equations.
+
+\begin{table}
+\caption{Exact solutions for verification in PISM.}\label{tab:tests}
+\begin{tabular}{@{}llll}\hline
+\small
+\textbf{Test} & \textbf{Continuum model tested} & \textbf{Default invocation} & \textbf{Reference} \\ \hline
+A & isothermal SIA (mass conservation) & \verb|pismv -test A -y 25000| & \cite{BLKCB} \\
+B & isothermal SIA ('') & \verb|pismv -test B -ys 422.45 -y 25000| & \cite{BLKCB} \\
+C & isothermal SIA ('') & \verb|pismv -test C -y 15208.0| & \cite{BLKCB} \\
+D & isothermal SIA ('') & \verb|pismv -test D -y 25000| & \cite{BLKCB} \\
+E & isothermal SIA ('' and sliding) & \verb|pismv -test E -y 25000| & \cite{BLKCB} \\
+F & thermomechanically coupled SIA  & \verb|pismv -test F -y 25000| & \cite{BBL,BB} \\
+ & \quad (mass conservation and energy) & & \\
+G & thermomechanically coupled SIA ('') & \verb|pismv -test G -y 25000| & \cite{BBL,BB} \\
+H & bed deformation coupled & \verb|pismv -test H -y 40034 -bed_def_iso| & \cite{BLKfastearth} \\
+ & \quad with isothermal SIA & & \\
+I & velocity computation using & \verb|pismv -test I -mv| & \cite{MacAyeal,SchoofStream} \\
+ & \quad MacAyeal eqns and plastic till & & \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+For each of these tests, a serious attempt to verify requires going down a grid refinement path and measuring error.  For example, the runs
+\beginV
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
+\end{verbatim}
+\Vend
+will produce the error data which is displayed in figures 7, 8, 9, and 10 of \cite{BLKCB}.
+
+For thermocoupled tests one would refine in three dimensions.  For example, the runs
+\beginV
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
+\end{verbatim}
+\Vend
+produce the error data in figures 13, 14, and 15 of \cite{BBL}.  (Don't do the last couple of these without a supercomputer!  The $361\times 361\times 361$ run involves more that $100$ million unknowns, updated at each of millions of time steps.)
+
+Note there is a shell script, \verb|test/verifynow.sh|, which runs Tests C, G, and I, and suffices for basic verification of newly-installed copies of PISM.
 
 
-\subsection{Exact solutions and compensatory sources in a derived class}  Various exact solutions and compensatory models are implemented in a class \t{IceCompModel} which is derived from \t{IceModel}.  This derived class leaves \t{IceModel} free of non-physical exact solution information.  Thus \t{IceModel} only contains information directly appropriate for actual ice sheet simulation, while verification using \t{IceCompModel} tests exactly the same codes as are used by actual simulations but adds the necessary code to use compensatory sources and to initialize with and verify against exact solutions.
-
-\t{IceCompModel} includes a material class \t{ThermoArrGlenIce} which has a pure Arrhenius term, unlike \t{ThermoGlenIce} which has a cold and warm regime for the exponential term.  The class reimplements \t{run()} and updates the compensatory terms during the time step.
-
-Note that the melt fraction is computed using the absolute temperature not the homologous temperature as in \verb|run_ice|.
-
-\subsection{Command line options for \t{verify}}  Essentially all of the command line options for \verb|run_ice| apply to \t{verify}.  The only option not available to \t{verify} is ``\t{-circular}''.  The new options are
-
-\opt{eo}  Only exact evolution is shown; no actual numerics are performed.  This option used in company with diagnosic viewers (\verb|-d |\dots) allows the user to visualize the exact solutions themselves.
-
-\opt{noreport}  Turns off error report at final time.
-
-\opt{test}  This option currently only allow values \t{B,C,D,F,G}.  Tests \t{B,C,D} are documented in \cite{BLKCB} while tests \t{F,G} are in \cite{BBL} with more detail in \cite{BB}.  The recommended \t{verify} runs are:\begin{itemize}
-\item \verb|  ./verify -test B -ys 422.45 -y 25000|
-\item \verb|  ./verify -test C -y 15208.0|
-\item \verb|  ./verify -test D -y 25000|
-\item \verb|  ./verify -test F -y 25000|
-\item \verb|  ./verify -test G -y 25000|
-\end{itemize}
-For the thermocoupled runs it is strongly recommended that at least $100$ vertical levels are used.
 
 
+\section{Simplified geometry}
 
-\section{Simplified geometry and validation}
+
+\section{Validation}
 
 
 \section{Realistic ice sheet modelling}
 
 
-\section{User's overview of the code}  This ice sheet model is implemented as a collection of C++ object classes [REFERENCE], the most central of which is \t{IceModel}.
+\section{Overview of the continuum model in PISM}
+Significant features of the continuum model approximated by the PISM include:\begin{itemize}
+\item The inland ice sheet is modeled with the thermocoupled shallow ice approximation equations \cite{Fowler}, and some temperature-activated basal sliding is allowed.
+\item Ice shelves and ice streams are modeled by shallow equations which describe flow by longitudinal strain rates and basal sliding.  These equations are different from the shallow ice approximation.  In shelves and streams the velocities are independent of depth within the ice.  The equations were originally established for ice shelves \cite{Morland,MorlandZainuddin,MacAyealetal}.  They were adapted for ice streams, as ``dragging ice shelves,'' by \cite{MacAyeal}; see also \cite{HulbeMacAyeal}.
+\item The regions of grounded ice in which the ice stream model is applied can be determined from mass balance velocities \cite{BamberVaughanJoughin} or from observed surface velocities.
+\item A three dimensional age field is computed.
+\item A temperature model for the bedrock under an ice sheet is included.
+\item Geothermal flux which varies in the map-plane can be used, for instance based on the new Antarctic results in \cite{ShapiroRitzwoller} and \cite{FoxMaule}.
+\item Within the shallow ice sheet regions the model can use the constitutive relation of Goldsby and Kohlstedt \cite{GoldsbyKohlstedt,Peltieretal}.  For inclusion in this flow law, grain size can be computed using a age-grain size relation from the Vostok core data \cite{VostokCore}, for example.
+\item The \cite{LingleClark} bed deformation model can be used.  It combines a spherical elastic earth and viscous half-space asthenosphere/mantle.  This model can be initialized by an observed bed uplift map \cite{BLKfastearth}, or even an uplift map computed by an external model.\end{itemize}
+
+Many of the parts of the model described above are optional.  For instance, the Paterson-Budd-Glen \cite{PatersonBudd} flow can replace the Goldsby-Kohlstedt law, a simple isostasy model can be substituted for the more sophisticated one, and so on.  Options can be chosen at the command line  as described in the Run-time options section above.
+
+The following features are \emph{not} included in the continuum model, and would (or will) require major additions:
+\begin{itemize}
+\item Inclusion of all components of the stress tensor (i.e.~longitudinal stresses within the shallow ice approximation region and additional shear stress components in shelves/streams) through either an intermediate order scheme \cite{Blatter,SaitoEISMINT} or the full Stokes equations \cite{Fowler}.
+\item A model for water--content within the ice.  In the current model the ice is \emph{cold} and not \emph{polythermal}; compare \cite{Greve}.  On the other hand, in the current model the energy used to melt the ice within a given column, if any, is conserved.  In particular, a layer of basal melt water evolves by conservation of energy in the column.  This layer can activate basal sliding and its latent heat energy is available for refreezing.
+\item A model for basal water mass conservation in the map-plane; compare \cite{JohnsonFastook}.
+\item A fully spherical Earth deformation model, for example one descended from the Earth model of \cite{Peltier}.
+\end{itemize}
+
+\section{Overview of the numerical schemes in PISM}
+Significant features of the numerical method described in these notes and implemented in PISM, include:\begin{itemize}
+\item Verification \cite{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \cite{BLKCB}, thermocoupled sheet flow \cite{BB,BBL}, the earth deformation model \cite{BLKfastearth}, the coupled (ice flow)/(earth deformation) system in an isothermal and pointwise isostasy  case \cite{BLKfastearth}, and the MacAyeal equations for ice stream flow \cite{SchoofStream,BrownPresentation}.
+\item The code is \emph{structurally} parallel.  In fact, the PETSc toolkit is used at all levels \cite{petsc-web-page,petsc-user-ref}.  PETSc manages the MPI-based communication between processors, and provides an interface to parallel numerical linear algebra and other numerical functions.
+\item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid.
+\item A moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \cite{Jenssen} change of variables is not used.
+\item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \cite{MortonMayers}.  As described  in  \cite{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including the diffusivity-based criteria for the explicit mass continuity scheme and the CFL criteria \cite{MortonMayers} for temperature advection.  The local truncation error is $O(\Delta x,\Delta y,\Delta z,\Delta t)$.
+\item MacAyeal equations \cite{MacAyeal,SchoofStream} are used to determine velocity in the ice shelf and ice stream regions, and they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{BrownPresentation,petsc-web-page,petsc-user-ref}.
+\item The bed deformation model is implemented by a new Fourier collocation (spectral) method \cite{BLKfastearth}.
+\item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class.
+\end{itemize}
+
+
+\section{User's overview of the PISM source code}  This ice sheet model is implemented as a collection of C++ object classes [REFERENCE], the most central of which is \t{IceModel}.
 
 More elementary than \t{IceModel} are the classes\begin{itemize}
 \item \t{IceGrid}, which describes the shape of the grid and parallel

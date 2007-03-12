@@ -1108,7 +1108,7 @@ PetscErrorCode IceCompModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-    if ((exactOnly == PETSC_FALSE) && (doMassBal == PETSC_TRUE)) {
+    if ((exactOnly == PETSC_FALSE) && (doMassConserve == PETSC_TRUE)) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
       if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
         tempskipCountDown--;

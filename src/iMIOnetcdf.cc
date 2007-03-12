@@ -412,14 +412,14 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscReal   maxH, maxh;
   ierr = VecMax(vH, PETSC_NULL, &maxH); CHKERRQ(ierr);
   ierr = VecMax(vh, PETSC_NULL, &maxh); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, 
+  ierr = verbPrintf(3,grid.com, 
                       "properties of input data: Max(H) = %12.3f, Max(h) = %12.3f\n", 
                       maxH, maxh); CHKERRQ(ierr);
 
   PetscReal   maxMask, minMask;
   ierr = VecMax(vMask, PETSC_NULL, &maxMask); CHKERRQ(ierr);
   ierr = VecMin(vMask, PETSC_NULL, &minMask); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, 
+  ierr = verbPrintf(3,grid.com, 
                       "properties of input data: Max(Mask) = %12.3f, Min(Mask) = %12.3f\n", 
                       maxMask, minMask); CHKERRQ(ierr);
 #endif

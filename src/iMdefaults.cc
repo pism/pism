@@ -38,7 +38,6 @@
 // have precedence over these defaults.  These should be reasonable value
 // under all circumstances.
 
-const PetscTruth  DEFAULT_BE_VERBOSE = PETSC_FALSE;
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
 const PetscScalar DEFAULT_START_YEAR = 0;
@@ -47,7 +46,7 @@ const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 60.0;
 const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
-const PetscTruth  DEFAULT_DO_MASS_BAL = PETSC_TRUE;
+const PetscTruth  DEFAULT_DO_MASS_CONSERVE = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMP = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMPSKIP = PETSC_FALSE; // off by default
 const PetscInt    DEFAULT_TEMPSKIP_MAX = 10;
@@ -94,7 +93,6 @@ PetscErrorCode IceModel::setDefaults() {
   strcpy(diagnosticBIG, "");
   setShowViewers(PETSC_TRUE);
 
-  setBeVerbose(DEFAULT_BE_VERBOSE);
   setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);
   
   setEnhancementFactor(DEFAULT_ENHANCEMENT_FACTOR);
@@ -120,7 +118,7 @@ PetscErrorCode IceModel::setDefaults() {
 
   setStartYear(DEFAULT_START_YEAR);
   ierr = setRunYears(DEFAULT_RUN_YEARS); CHKERRQ(ierr);
-  setDoMassBal(DEFAULT_DO_MASS_BAL);
+  setDoMassConserve(DEFAULT_DO_MASS_CONSERVE);
   setDoTemp(DEFAULT_DO_TEMP);
   doTempSkip = DEFAULT_DO_TEMPSKIP;
   tempskipMax = DEFAULT_TEMPSKIP_MAX;

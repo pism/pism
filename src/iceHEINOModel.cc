@@ -394,7 +394,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
     strcat(filename,"_ts_");
     strcat(filename,tsname[i]);
     strcat(filename,".dat");
-    ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
     ierr = PetscViewerASCIIOpen(grid.com, filename, &ts[i]); CHKERRQ(ierr);
     ierr = PetscViewerSetFormat(ts[i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
   }
@@ -405,7 +405,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
     strcat(filename,"_tss_");
     strcat(filename,tssname[i]);
     strcat(filename,".dat");
-    ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
     ierr = PetscViewerASCIIOpen(grid.com, filename, &tss[i]); CHKERRQ(ierr);
     ierr = PetscViewerSetFormat(tss[i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
   }
@@ -422,7 +422,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
       strcat(filename,"_");
       strcat(filename,tspname[i]);
       strcat(filename,".dat");
-      ierr = vPetscPrintf(grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "  opening %s\n", filename); CHKERRQ(ierr);
       ierr = PetscViewerASCIIOpen(grid.com, filename, &tsp[j][i]); CHKERRQ(ierr);
       ierr = PetscViewerSetFormat(tsp[j][i], PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
     }

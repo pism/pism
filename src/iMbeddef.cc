@@ -111,7 +111,7 @@ PetscErrorCode IceModel::bedDefSetup() {
   const PetscInt  N = 2*(Mx-1);
   
   if ((doBedDef == PETSC_TRUE) && (doBedIso == PETSC_FALSE)) {
-    ierr = vPetscPrintf(grid.com,
+    ierr = verbPrintf(3, grid.com,
         "setting up bed deformation variables for Lingle & Clark model ...\n"); 
         CHKERRQ(ierr);
 #if (WITH_FFTW==0)
@@ -159,7 +159,7 @@ PetscErrorCode IceModel::bedDefSetup() {
       ierr = bed_uplift_init_lc(); CHKERRQ(ierr);
 
       // compare geforconv.m
-      ierr = vPetscPrintf(grid.com,
+      ierr = verbPrintf(3, grid.com,
          "     computing spherical elastic load response matrix ..."); CHKERRQ(ierr);
       const PetscInt  Nge = 2*Mx-1;
       ierr = VecCreateSeq(PETSC_COMM_SELF, Nge * Nge, &lrmEp0); CHKERRQ(ierr);
@@ -192,7 +192,7 @@ PetscErrorCode IceModel::bedDefSetup() {
 
   if (doBedDef == PETSC_TRUE) {
     if  (doBedIso == PETSC_TRUE) {
-        ierr = vPetscPrintf(grid.com,
+        ierr = verbPrintf(3, grid.com,
           "setting up bed deformation vars for pointwise isostasy ...");
            CHKERRQ(ierr);
     }

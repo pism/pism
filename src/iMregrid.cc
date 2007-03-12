@@ -68,11 +68,11 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   }
 
   ierr = getInterpCtx(m.grid.da2, grid.da2, m, i2); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, "  regrid interpolation context i2 created ... "); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "  regrid interpolation context i2 created ... "); CHKERRQ(ierr);
   ierr = getInterpCtx(m.grid.da3, grid.da3, m, i3); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, "i3 created ... "); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "i3 created ... "); CHKERRQ(ierr);
   ierr = getInterpCtx(m.grid.da3b, grid.da3b, m, i3b); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, "i3b created.\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "i3b created.\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
                                PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
@@ -94,7 +94,7 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   ierr = regridVar(regridVars, 'B', i3b, m.vTb, vTb); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'e', i3, m.vtau, vtau); CHKERRQ(ierr);
 
-  ierr = vPetscPrintf(grid.com, "\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "\n"); CHKERRQ(ierr);
 
   ierr = destroyInterpCtx(i2); CHKERRQ(ierr);
   ierr = destroyInterpCtx(i3); CHKERRQ(ierr);
@@ -253,7 +253,7 @@ PetscErrorCode IceModel::regridVar(const char *vars, char c, const InterpCtx &ic
     return 0;
   }
   
-  ierr = vPetscPrintf(grid.com, "  regridding %c ... ",c); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "  regridding %c ... ",c); CHKERRQ(ierr);
 
   ierr = DALocalToGlobal(ic.dac, src, INSERT_VALUES, ic.gc); CHKERRQ(ierr);
 
@@ -268,9 +268,9 @@ PetscErrorCode IceModel::regridVar(const char *vars, char c, const InterpCtx &ic
   ierr = MatGetSize(ic.A, &mm, &mn); CHKERRQ(ierr);
   ierr = VecGetSize(ic.fine, &fm); CHKERRQ(ierr);
   ierr = VecGetSize(ic.coarse, &cn); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, "Interpolation matrix size: %d, %d\n", mm, mn); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, "Coarse vector size: %d\n", cn); CHKERRQ(ierr);
-  ierr = vPetscPrintf(grid.com, "Fine vector size: %d\n", fm); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "Interpolation matrix size: %d, %d\n", mm, mn); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "Coarse vector size: %d\n", cn); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "Fine vector size: %d\n", fm); CHKERRQ(ierr);
   
   ierr = MatMult(ic.A, ic.coarse, ic.fine); CHKERRQ(ierr);
 

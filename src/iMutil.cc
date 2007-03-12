@@ -45,9 +45,38 @@
 //         [-verbose 5]       always, so print everything
 //
 // note: 1 <= thresh <= 5  enforced in verbPrintf() below
+PetscErrorCode setVerbosityLevel(PetscInt level) {
+  if ((level < 0) || (level > 5)) {
+     SETERRQ(1,"verbosity level invalid");
+  }
+  verbosityLevel = level;
+  return 0;  
+}
+
+
+PetscErrorCode verbosityLevelFromOptions() {
+  // verbosity options: more info to standard out
+  PetscErrorCode ierr;
+  PetscInt     myverbosityLevel;
+  PetscTruth   verbose, verbosityLevelSet;
+  
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myverbosityLevel, &verbosityLevelSet); CHKERRQ(ierr);
+  if (verbosityLevelSet == PETSC_TRUE) {
+    ierr = setVerbosityLevel(myverbosityLevel);
+  } else {
+    ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
+    if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
+  }
+  ierr = PetscOptionsHasName(PETSC_NULL, "-vverbose", &verbose); CHKERRQ(ierr);
+  if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(4);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-vvverbose", &verbose); CHKERRQ(ierr);
+  if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(5);
+  return 0;
+}
+
+
 PetscErrorCode verbPrintf(const int thresh, 
                           MPI_Comm comm,const char format[],...)
-// FIXME: change all use of vPetscPrintf() below to use this one
 {
   PetscErrorCode ierr;
   PetscMPIInt    rank;
@@ -98,59 +127,6 @@ PetscErrorCode verbPrintf(const int thresh,
   }
   PetscFunctionReturn(0);
 }
-
-// pre-verbosity level version of PetscPrintf: only prints if beVerbose == PETSC_TRUE
-// modification of PetscPrintf() in src/sys/fileio/mprint.c
-PetscErrorCode IceModel::vPetscPrintf(MPI_Comm comm,const char format[],...)
-{
-  PetscErrorCode ierr;
-  PetscMPIInt    rank;
-  size_t         len;
-  char           *nformat,*sub1,*sub2;
-  PetscReal      value;
-
-  extern FILE *petsc_history;
-
-  PetscFunctionBegin;
-  if (!comm) comm = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-  if (!rank && ((beVerbose == PETSC_TRUE) || petsc_history) ) {
-    va_list Argp;
-    va_start(Argp,format);
-
-    ierr = PetscStrstr(format,"%A",&sub1);CHKERRQ(ierr);
-    if (sub1) {
-      ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
-      if (sub1 != sub2) SETERRQ(PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
-      ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
-      ierr    = PetscMalloc((len+16)*sizeof(char),&nformat);CHKERRQ(ierr);
-      ierr    = PetscStrcpy(nformat,format);CHKERRQ(ierr);
-      ierr    = PetscStrstr(nformat,"%",&sub2);CHKERRQ(ierr);
-      sub2[0] = 0;
-      value   = (double)va_arg(Argp,double);
-      if (PetscAbsReal(value) < 1.e-12) {
-        ierr    = PetscStrcat(nformat,"< 1.e-12");CHKERRQ(ierr);
-      } else {
-        ierr    = PetscStrcat(nformat,"%g");CHKERRQ(ierr);
-        va_end(Argp);
-        va_start(Argp,format);
-      }
-      ierr    = PetscStrcat(nformat,sub1+2);CHKERRQ(ierr);
-    } else {
-      nformat = (char*)format;
-    }
-    if (beVerbose == PETSC_TRUE) { // print only if -verbose
-      ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
-    }
-    if (petsc_history) { // always print to history
-      ierr = PetscVFPrintf(petsc_history,nformat,Argp);CHKERRQ(ierr);
-    }
-    va_end(Argp);
-    if (sub1) {ierr = PetscFree(nformat);CHKERRQ(ierr);}
-  }
-  PetscFunctionReturn(0);
-}
-
 
 
 PetscErrorCode IceModel::computeFlowUbarStats
@@ -334,7 +310,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
 
   if ( (diffusView != PETSC_NULL) 
-       || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE) ) ) {
+       || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
     ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   }
   if (dt_force > 0.0) {
@@ -347,7 +323,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
         && doTemperatureCFL) {
       ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
     } 
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassBal == PETSC_TRUE)) {
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)) {
       // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
       ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
     }
@@ -416,7 +392,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   divideH = 0; 
-  if (tempAndAge || (beVerbose == PETSC_TRUE)) {
+  if (tempAndAge || (verbosityLevel >= 3)) {
     ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3, vtau, &tau); CHKERRQ(ierr);
     melt = 0; divideT = 0; orig = 0;
@@ -429,7 +405,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
       if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
         divideH = H[i][j];
       }
-      if (tempAndAge || (beVerbose == PETSC_TRUE)) {
+      if (tempAndAge || (verbosityLevel >= 3)) {
         if (H[i][j] > 0) {
           if (useHomoTemp) {
 //            if (T[i][j][0] + ice.beta_CC_grad * H[i][j] >= ice.meltingTemp)
@@ -455,7 +431,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
-  if (tempAndAge || (beVerbose == PETSC_TRUE)) {
+  if (tempAndAge || (verbosityLevel >= 3)) {
     ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da3, vtau, &tau); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&melt, &gmelt, grid.com); CHKERRQ(ierr);
@@ -467,7 +443,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     else meltfrac=0.0;
   }
  
-  if (tempAndAge || (beVerbose == PETSC_TRUE)) {
+  if (tempAndAge) {
   // give summary data a la EISMINT II:
   //    year (+ dt[NR]) (years),
   //       [ note 
@@ -486,7 +462,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //                      depends on useHomoTemp],
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
-    ierr = PetscPrintf(grid.com, "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
+    ierr = verbPrintf(2,grid.com, "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
                        grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
                        gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
                        gdivideT); CHKERRQ(ierr);
@@ -498,19 +474,19 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //    
   //    divide thickness (m),
   //    
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
        "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f   <same>%11.3f    <same>",
        grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
        gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
   }
 
   if (CFLviolcount > 0.5) { // report any CFL violations
-    ierr = PetscPrintf(grid.com,"  [!CFL#=%1.0f]\n",CFLviolcount); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f]\n",CFLviolcount); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com,"\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
   }
   
-  if (beVerbose == PETSC_TRUE) {
+  if (verbosityLevel >= 3) {
     // show additional info
     PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;
@@ -681,18 +657,18 @@ PetscErrorCode IceModel::afterInitHook() {
   // velocities do not use junk from uninitialized basal melt rate.
   ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
   
-  if (beVerbose == PETSC_TRUE) {
+  if (verbosityLevel >= 3) {
     ierr = PetscBagView(grid.bag, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
              "  [computational box for ice: (%8.2f km) x (%8.2f km) x (%8.2f m",
              2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0,grid.p->Lz); CHKERRQ(ierr);
     if (grid.p->Mbz > 0) {
-      ierr = PetscPrintf(grid.com," + %7.2f m bedrock)]\n",grid.p->Lbz); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com," + %7.2f m bedrock)]\n",grid.p->Lbz); CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(grid.com,")]\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,")]\n"); CHKERRQ(ierr);
     }
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
              "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
              grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz); CHKERRQ(ierr);
   }
