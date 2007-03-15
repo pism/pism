@@ -304,8 +304,8 @@ PetscErrorCode IceExactStreamModel::run() {
   constantHardnessForMacAyeal = B_schoof;
   macayealMaxIterations = 500;  
   setMacayealEpsilon(0.0);  // don't use this lower bound
-  regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for ice stream?
-  regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
+  // regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for ice stream?
+  // regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 
   if (exactOnly == PETSC_TRUE) { // just fill with exact solution
     PetscScalar **u, **v, **bed;

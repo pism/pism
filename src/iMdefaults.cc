@@ -106,8 +106,8 @@ PetscErrorCode IceModel::setDefaults() {
   useConstantHardnessForMacAyeal = DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL;
   constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
   constantHardnessForMacAyeal = DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL;
-  regularizingVelocitySchoof = DEFAULT_REGULARIZING_VELOCITY_SCHOOF;
-  regularizingLengthSchoof = DEFAULT_REGULARIZING_LENGTH_SCHOOF;
+  setRegularizingVelocitySchoof(DEFAULT_REGULARIZING_VELOCITY_SCHOOF);
+  setRegularizingLengthSchoof(DEFAULT_REGULARIZING_LENGTH_SCHOOF);
   setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
   setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
   computeSurfGradInwardMacAyeal = DEFAULT_COMPUTE_SURF_GRAD_INWARD_MACAYEAL;

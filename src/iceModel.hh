@@ -87,6 +87,8 @@ public:
   void setNoViewers();
   void setUseMacayealVelocity(PetscTruth);
   void setConstantNuForMacAyeal(PetscScalar);
+  void setRegularizingVelocitySchoof(PetscScalar);
+  void setRegularizingLengthSchoof(PetscScalar);
   void setMacayealEpsilon(PetscScalar);
   void setMacayealRelativeTolerance(PetscScalar);
   void setIsDrySimulation(PetscTruth);

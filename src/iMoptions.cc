@@ -27,11 +27,11 @@ PetscErrorCode
 IceModel::setFromOptions() {
   PetscErrorCode ierr;
   PetscScalar my_maxdt, my_mu, my_startYear, my_runYears, my_endYear;
-  PetscScalar macRTol, my_nu, maceps;
+  PetscScalar macRTol, my_nu, maceps, regVelSchoof, regLengthSchoof;
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
              maxdtSet, startYearSet, runYearsSet, endYearSet,
-             noMassConserve, noTemp, bedDefiso, bedDef, bedDeflc, isoflux, muSet, 
-             nospokesSet, oceanKillSet, tempskipSet;
+             noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
+             nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet;
   PetscInt nospokeslevel;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
@@ -133,11 +133,21 @@ IceModel::setFromOptions() {
     setOceanKill(PETSC_TRUE);
   }
 
-// note "-of" is in use for output file format
+// note "-of" is in use for output file format; see iMIO.cc
 
-// note "-regrid" is in use for regrid file name
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &regVelSchoof, &regVelSchoofSet); CHKERRQ(ierr);
+  if (regVelSchoofSet == PETSC_TRUE) {
+    setRegularizingVelocitySchoof(regVelSchoof/secpera);
+  }
+  
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_length_schoof", &regLengthSchoof, &regLengthSchoofSet); CHKERRQ(ierr);
+  if (regLengthSchoofSet == PETSC_TRUE) {
+    setRegularizingLengthSchoof(regLengthSchoof);
+  }
+  
+// note "-regrid" is in use for regrid file name; see iMregrid.cc
 
-// note "-regrid_vars" is in use for regrid variable names
+// note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 
   /* This controls allows more than one mass continuity steps per temperature/age step */
   ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &tempskipSet); CHKERRQ(ierr);

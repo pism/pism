@@ -69,8 +69,7 @@ const PetscScalar IceModel::DEFAULT_MAX_HMELT = 10.0;  // allow no more than 10 
 
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum) {
     PetscErrorCode ierr;
-    PetscInt       verbNum;
-    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE, verboseSet;
+    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
 
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
     ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);  // option included for backward compat
@@ -338,6 +337,14 @@ void IceModel::setUseMacayealVelocity(PetscTruth umv) {
 void IceModel::setConstantNuForMacAyeal(PetscScalar nu) {
   useConstantNuForMacAyeal = PETSC_TRUE;
   constantNuForMacAyeal = nu;
+}
+
+void IceModel::setRegularizingVelocitySchoof(PetscScalar rvS) {
+  regularizingVelocitySchoof = rvS;
+}
+
+void IceModel::setRegularizingLengthSchoof(PetscScalar rLS) {
+  regularizingLengthSchoof = rLS;
 }
 
 void IceModel::setMacayealEpsilon(PetscScalar meps) {

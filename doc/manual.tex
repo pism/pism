@@ -504,27 +504,25 @@ Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inver
 
 \optrestrict{Mmax}{pisms -eisII}  Set value of $M_{\text{max}}$ for EISMINT II.
 
-\opt{mv}  Use the MacAyeal-Morland equations for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.
+\optdef{mu\und sliding}{3.17e-11}
 
-\optdef{mv\und eps}{1.0e15}  The numerical scheme for the MacAyeal-Morland equations computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$.
+\opt{mv}  Use the MacAyeal-Morland equations  \cite{MacAyeal} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.
 
-\optdef{mv\und rtol}{1.0e-4}  The numerical scheme for the MacAyeal-Morland equations does a nonlinear iteration wherein velocities (and temperatures) are used to compute an effective viscosity which is used to solve the equations for velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
+\optdef{mv\und eps}{1.0e15}  The numerical scheme for the MacAyeal-Morland equations computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
+
+In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-mv_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|mv_eps| is set to zero automatically when running \verb|pismv -test I|.
+
+\optdef{mv\und rtol}{1.0e-4}  The numerical scheme for the MacAyeal-Morland equations does a nonlinear iteration wherein velocities (and temperatures) are used to compute a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
+
+In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
+	$$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{mv\und rtol}$$
+in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.
 
 \optdef{Mx}{61}  Set number of grid points in horizontal direction.
 
 \optdef{My}{61}  Set number of grid points in horizontal direction.
 
 \optdef{Mz}{31}  Set number of grid points in vertical direction.
-
-\optdef{mu\und sliding}{3.17e-11}
-
-\opt{mv} Turn on solution of MacAyeal equations \cite{MacAyeal} in ice streams and ice shelves.
- 
-\optdef{mv\und eps}{}
- 
-\optdef{mv\und rtol}{}
- 
-\optrestrict{no\und deliver}{pisms -ismip H}  Do not write \verb|.dat| deliverable files in ISMIP-HEINO.
 
 \opt{no\und mass}  Do not change surface elevations or thicknesses.  That is, do not do time steps of mass conservation equation.
 
@@ -544,11 +542,15 @@ Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inver
 
 \optrestrict{prefix}{pisms -ross}    Set the data file prefix for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.
 
-\optrestrict{plastic\und reg}{pismv -test I}    Set value of $\eps$ regularization of plastic till.  See \t{src/iceExactStreamModel.cc}.
+\optdefrestrict{plastic\und reg}{0.01 m/a}{pismv -test I}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  See \t{src/iceExactStreamModel.cc}.
 
 \opt{regrid}
 
 \opt{regrid\und vars}
+
+\optdef{reg\und length\und schoof}{1000 km}  Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-mv_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.
+
+\optdef{reg\und vel\und schoof}{1 m/a}  Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-mv_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.  Use \verb|-plastic_reg| above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}.
 
 \optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
 
@@ -621,13 +623,13 @@ Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inver
 
 \opt{info}
 
-\optdef{ksp\und rtol}{1e-5}
+\optdef{ksp\und rtol}{1e-5}  For solving the ice stream and shelf equations with high resolution on multiple processors, it is recommended that this be tightened.  For example, \verb|pismv -test I -Mx 5 -My 769| works poorly on 8 processors on a certain machine, but \verb|pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10| works fine.
 
-\optdef{ksp\und type}{gmres}  \t{bicg}, \t{cg}, \t{cgs}, \t{gmres}, \t{preonly}
+\optdef{ksp\und type}{gmres}  Based on one processor evidence from \verb|pismv -test I|, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
 
 \opt{log\und summary}
 
-\optdef{pc\und type}{ilu}   \t{jacobi}, \t{icc}, \t{ilu}, \t{lu}, \t{none}, \t{sor}
+\optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-mv_rtol 1e-7 -ksp_rtol 1e-12|).
 
 \opt{v}   Show version number of Petsc.
 

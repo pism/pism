@@ -165,7 +165,7 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   if (strchr(fmt, 'm') != NULL) {
     strcpy(mf, b);
     strcat(mf, ".m");
-    ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'", mf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'\n", mf); CHKERRQ(ierr);
     ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
   }
 
