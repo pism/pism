@@ -72,13 +72,13 @@ PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLaw
     PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
 
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);  // option included for backward compat
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);
     if (useGK==PETSC_TRUE) {
       flowlawSet = PETSC_TRUE;
       flowLawNum = 4;
     }
 
-    ierr = verbPrintf(3,com, 
+    ierr = verbPrintf((flowlawSet == PETSC_TRUE) ? 2 : 3,com, 
         "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
         flowLawNum); CHKERRQ(ierr);
     
@@ -518,6 +518,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
              - uvbar[1][i][j-1] * 0.5*(H[i][j-1] + H[i][j])) / dy;
       } else { // upwinded, regular grid Div(Q), for Q = Ubar H, computed as
                //     Div(Q) = U . grad H + Div(U) H
+               // note the CFL for "U . grad H" part of upwinding is checked; see
+               // broadcastMacayealVelocity() and determineTimeStep()
         divQ =
           u[i][j] * (u[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx
           + v[i][j] * (v[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy

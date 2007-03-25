@@ -218,8 +218,8 @@ PetscErrorCode IceModel::temperatureStep() {
         Tb[i][j][k] = x[k];
         if (Tb[i][j][k] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) bedrock temp at %d,%d,%d; processor %d; mask value %f]]\n",
-              i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+              "  [[too low (<200) bedrock temp at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
+              i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       }
@@ -245,8 +245,8 @@ PetscErrorCode IceModel::temperatureStep() {
         }
         if (Tnew[i][j][k] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) generic segment temp at %d,%d,%d; processor %d; mask value %f]]\n",
-              i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+              "  [[too low (<200) generic segment temp at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
+              i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       }
@@ -272,8 +272,8 @@ PetscErrorCode IceModel::temperatureStep() {
         }
         if (Tnew[i][j][0] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) ice/rock segment temp at %d,%d; processor %d; mask value %f]]\n",
-              i,j,grid.rank,mask[i][j]); CHKERRQ(ierr);
+              "  [[too low (<200) ice/rock segment temp at %d,%d; proc %d; mask=%f; w=%f]]\n",
+              i,j,grid.rank,mask[i][j],w[i][j][0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       } else {
@@ -288,7 +288,7 @@ PetscErrorCode IceModel::temperatureStep() {
       // basaMeltRate[][] is rate of change of Hmelt[][]; thus it can be negative
       basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
 
-      // limit Hmelt by default max thickness
+      // limit Hmelt by default max
       Hmeltnew = PetscMin(DEFAULT_MAX_HMELT,Hmeltnew);
 
       // eliminate basal water if floating

@@ -213,7 +213,7 @@ protected:
   PetscScalar startYear, endYear;
   PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
-  PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, gDmax;
+  PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax;
   PetscScalar gmaxu, gmaxv, gmaxw;  // global maximums on 3D grid for abs value 
                                     // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
@@ -271,7 +271,6 @@ protected:
                        PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac);
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode adaptTimeStepDiffusivity();
-  PetscErrorCode adaptTimeStepCFL();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
   PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
                             PetscScalar& gvolSIA, PetscScalar& gvolstream, 
@@ -381,7 +380,7 @@ protected:
   PetscErrorCode verticalVelocitySIARegular();
   PetscErrorCode smoothSigma();
   PetscErrorCode vertAveragedVelocityToRegular();
-  PetscErrorCode computeMaxVelocities();
+  PetscErrorCode computeMax3DVelocities();
   PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   
   // see iMIO.cc

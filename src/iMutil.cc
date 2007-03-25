@@ -274,17 +274,6 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 }
 
 
-PetscErrorCode IceModel::adaptTimeStepCFL() {
-  // CFLmaxdt is set by computeMaxVelocities() in call to velocity() iMvelocity.cc
-  dt_from_cfl = CFLmaxdt;
-  if (dt_from_cfl < dt) {
-    dt = dt_from_cfl;
-    adaptReasonFlag = 'c';
-  }
-  return 0;
-}
-
-
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   // note computeMaxDiffusivity() must be called before this to set gDmax
   // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
@@ -315,16 +304,34 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
        || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
     ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   }
+  const PetscScalar timeToEnd = (endYear-grid.p->year) * secpera;
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';
+    if (timeToEnd < dt) {
+      dt = timeToEnd;
+      adaptReasonFlag = 'e';
+    }
   } else {
     dt = maxdt;
     adaptReasonFlag = 'm';
     if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
         && doTemperatureCFL) {
-      ierr = adaptTimeStepCFL(); CHKERRQ(ierr); // might set adaptReasonFlag = 'c'
+      // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
+      dt_from_cfl = CFLmaxdt;
+      if (dt_from_cfl < dt) {
+        dt = dt_from_cfl;
+        adaptReasonFlag = 'c';
+      }
     } 
+    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)
+        && (useMacayealVelocity)) {
+      // CFLmaxdt2D is set by broadcastMacayealVelocity()
+      if (CFLmaxdt2D < dt) {
+        dt = CFLmaxdt2D;
+        adaptReasonFlag = 'u';
+      }
+    }
     if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)) {
       // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
       ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
@@ -333,7 +340,6 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       dt = maxdt_temporary;
       adaptReasonFlag = 't';
     }
-    const PetscScalar timeToEnd = (endYear-grid.p->year) * secpera;
     if (timeToEnd < dt) {
       dt = timeToEnd;
       adaptReasonFlag = 'e';

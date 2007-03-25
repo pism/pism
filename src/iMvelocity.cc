@@ -68,7 +68,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     }
     ierr = velocityMacayeal(); CHKERRQ(ierr); // comm here ...
     ierr = cleanupAfterMacayeal(DEFAULT_MINH_MACAYEAL); CHKERRQ(ierr);
-    ierr = broadcastMacayealVelocity(); CHKERRQ(ierr);
+    ierr = broadcastMacayealVelocity(); CHKERRQ(ierr); // sets CFLmaxdt2D
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   } else { // Note vertically averaged vels on regular grid (Vecs vubar and 
@@ -83,9 +83,10 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   }
 
   if ((useMacayealVelocity) || (updateVelocityAtDepth)) {
-    ierr = computeMaxVelocities(); CHKERRQ(ierr); // communication here for global max,min
+    // communication here for global max; sets CFLmaxdt
+    ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }
-
+  
   firstTime = PETSC_FALSE;
   return 0;
 }
@@ -577,18 +578,17 @@ PetscErrorCode IceModel::vertAveragedVelocityToRegular() {
 }
 
 
-PetscErrorCode IceModel::computeMaxVelocities() {
+PetscErrorCode IceModel::computeMax3DVelocities() {
   // computes max velocities in 3D grid and also sets CFLmaxdt by CFL condition
   PetscErrorCode ierr;
   PetscScalar ***u, ***v, ***w, **H;
-  PetscScalar locCFLmaxdt;
+  PetscScalar locCFLmaxdt = maxdt;
 
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
-  locCFLmaxdt = maxdt;
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {

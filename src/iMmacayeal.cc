@@ -629,7 +629,8 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
   PetscErrorCode ierr;
   PetscScalar **mask, **b, **basalMeltRate, **ubar, **vbar, **ub, **vb;
   PetscScalar ***u, ***v, ***w;
-
+  PetscScalar locCFLmaxdt2D = maxdt;
+  
   /* This allows the temperature equation to know about the velocity in the non-SHEET
   * regions. It is unnecessary if the temperature equation pays attention to the mask,
   * thus upwinding the 2-D velocity fields for the advection terms in the non-SHEET
@@ -649,27 +650,26 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
       if (intMask(mask[i][j]) != MASK_SHEET) {
         ub[i][j] = ubar[i][j];
         vb[i][j] = vbar[i][j];
+        
+        PetscScalar denom = PetscAbs(ub[i][j])/grid.p->dx + PetscAbs(vb[i][j])/grid.p->dy;
+        denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+        locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
+
         for (PetscInt k=0; k<grid.p->Mz; ++k) {
           u[i][j][k] = ubar[i][j];
           v[i][j][k] = vbar[i][j];
 
-#if 0
-          // Upwind the horizontal velocities for the purpose of calculating
-          // velocity gradients.
-          const PetscScalar u_x = ((ubar[i][j] < 0)
-                                   ? (ubar[i+1][j] - ubar[i][j]) / grid.p->dx
-                                   : (ubar[i][j] - ubar[i-1][j]) / grid.p->dx);
-          const PetscScalar v_y = ((vbar[i][j] < 0)
-                                   ? (vbar[i][j+1] - vbar[i][j]) / grid.p->dy
-                                   : (vbar[i][j] - vbar[i][j-1]) / grid.p->dy);
-#else
-          // ELB says: I see no reason to upwind in this context
+          //  no reason to upwind in this context; compare treatment of "div(U)" in
+          //  massBalExplicitStep using expression div(Q) = U . grad H + div(U) H
           const PetscScalar u_x = (ubar[i+1][j] - ubar[i-1][j]) / (2.0*grid.p->dx);
           const PetscScalar v_y = (vbar[i][j+1] - vbar[i][j-1]) / (2.0*grid.p->dy);
-#endif
-          w[i][j][k] = - k * grid.p->dz * (u_x + v_y) 
-                       - basalMeltRate[i][j];
-          
+
+          w[i][j][k] = - k * grid.p->dz * (u_x + v_y);
+          if (includeBMRinContinuity == PETSC_TRUE) {
+            w[i][j][k] -= capBasalMeltRate(basalMeltRate[i][j]);
+          }
+
+#if 0
           if (intMask(mask[i][j]) == MASK_DRAGGING) { // add velocity contribution from
                                  // contact with sloped and/or moving bed
             const PetscScalar   b_x0 = (b[i+1][j] - b[i-1][j]) / (2 * grid.p->dx);
@@ -678,6 +678,8 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
                            + 0;  // db/dt  FIXME?: use uplift? probably NO:
                                  //   vert velocity is relative!
           }
+#endif
+
         }
       }
     }
@@ -699,6 +701,8 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
   ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
