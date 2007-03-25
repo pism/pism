@@ -54,7 +54,7 @@
 
 \author[]{Jed Brown and Ed $\text{Bueler}^\ast$}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 90.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 95.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
@@ -124,24 +124,6 @@ See the installation page for PETSc.  PISM requires a version of PETSc later tha
 See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, as described so far.  At this point you have configured the environment which PISM needs and you are ready to build PISM itself.
 \bigskip
 
-\begin{table}
-\caption{External library dependencies for PISM.}\label{tab:PISMdepends}
-\small
-\begin{tabular}{@{}llll}\hline
-\textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\ \hline
-FFTW & \url{www.fftw.org} & \emph{no} & if not present  \\
- & & & \quad set \verb|WITH_FFTW=0| \\
-GSL & \url{www.gnu.org/software/gsl} & \emph{no} &  if not present \\
- & & & \quad set \verb|WITH_GSL=0| \\
-MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
-NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
-PETSc & \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} & \emph{required} & version $\ge$ 2.3.2 \\
-Subversion & \url{subversion.tigris.org} & \emph{required} & \\
-\hline
-\normalsize
-\end{tabular}
-\end{table}
-
 \begin{enumerate}\setcounter{enumi}{7}
 \item \label{getPISMstep} Get the source for PISM by
 
@@ -199,6 +181,23 @@ Setting up PISM to model real ice sheets requires techniques not covered here.  
 
 A final reminder with respect to installation:  Once you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above, you can update it to the latest version by \verb|svn update| in the \verb|pism/| directory.  Then you will want to \verb|make| again.
 
+\begin{table}[h]
+\caption{External library dependencies for PISM.}\label{tab:PISMdepends}
+\small
+\begin{tabular}{@{}llll}\hline
+\textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\ \hline
+FFTW & \url{www.fftw.org} & \emph{no} & if not present  \\
+ & & & \quad set \verb|WITH_FFTW=0| \\
+GSL & \url{www.gnu.org/software/gsl} & \emph{no} &  if not present \\
+ & & & \quad set \verb|WITH_GSL=0| \\
+MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
+NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
+PETSc & \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} & \emph{required} & version $\ge$ 2.3.2 \\
+Subversion & \url{subversion.tigris.org} & \emph{required} & \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
 
 \clearpage
 \newpage
@@ -301,7 +300,7 @@ This summary of the model state can be expanded by using the option \verb|-verbo
 
 \item The state of the model can be output in NetCDF format using the option \verb|-o foo -of n| to create the NetCDF file \verb|foo.nc|.  The resulting NetCDF file can be viewed or modified with the tools described in table \ref{tab:NetCDFview}.
 
-\begin{table}
+\begin{table}[h]
 \caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
 \begin{tabular}{@{}llll}\hline
@@ -452,7 +451,14 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optdef{kd}{0}
 
-\begin{table}
+\optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
+	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
+where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
+	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
+Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \verb|-law 4| (or \verb|-gk|).
+
+
+\begin{table}[h]
 \caption{Choosing the flow law.}\label{tab:flowlaw}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -482,12 +488,6 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \normalsize
 \end{tabular}
 \end{table}
-
-\optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
-	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
-where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
-	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
-Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \verb|-law 4| (or \verb|-gk|).
 
 
 \opt{Lbz}  \emph{Use of this option is not recommended.}  The vertical thickness of the bed in which temperature is modeled is kept internally as the product \verb|Mbz*dz|.  The user may alter \verb|Mbz| at the command line.
@@ -582,7 +582,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \opt{verbose}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
 
-\begin{table}
+\begin{table}[h]
 \caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
 \begin{tabular}{@{}llll}\hline
 \textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
@@ -727,6 +727,42 @@ The single character names are:
 \newpage
 \section{More on usage}
 
+\subsection{Understanding and controlling adaptive time-stepping}
+
+Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
+\small\begin{verbatim}
+    $$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+\end{verbatim}
+Here we will explain what appears in the `\verb|(+    STEP[N$])|' part of this summary.
+
+\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does explicit time-stepping when numerically approximating mass conservation in the map-plane.  This requires that PISM have adaptive time-stepping for stability in the shallow ice approximation regions, but in fact other issues like numerically approximating transport of temperature and age require adaptivity too \cite{BBL}.  
+
+Note that most of the time `\verb|N|' will be zero.  The exception is when the option \verb|-tempskip| is used.  If \verb|-tempskip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do: 
+\small\begin{verbatim}
+    user@home:~/pism$ obj/pismv -test G -Mx 141 -My 141 -Mz 51 -tempskip 4
+\end{verbatim}
+
+Table \ref{tab:adaptiveflag} explains the meaning of the one character flag `\verb|$|' in `\verb|(+    STEP[N$])|'.
+
+\begin{table}[h]
+\caption{Meaning of the adaptive time-stepping flag \texttt{\$} in `\texttt{(+    STEP[N\$])}'.}\label{tab:adaptiveflag}
+\begin{tabular}{@{}llll}\hline
+\textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
+\verb|c| & 3D CFL for temperature/age advection \cite{BBL} \\
+\verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
+\verb|e| & end of prescribed run time \\
+\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme, \\
+ & should not be used  \\
+\verb|m| & maximum allowed $\Delta t$ applies; set with \verb|-maxdt| \\
+\verb|t| & maximum $\Delta t$ was \emph{t}emporarily set by a derived class; e.g.~see effect of deliverables \\
+ & \verb|-time|$n$ in \verb|pisms -ismip H \time|$n$ \\
+\verb|u| & 2D CFL for mass conservation in Macayeal regions (where mass conservation is \emph{u}winded)\\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+
 \subsection{Choosing the grid and regridding}
 
 
@@ -740,7 +776,29 @@ In PISM there is a separate executable \verb|pismv|, but the numerical code whic
 
 Table \ref{tab:tests} summarizes the many exact solutions contained within PISM, and shows how to use them individually to verify and to measure accuracy.   Note that all of these exact solutions is a solution to a free boundary problem for partial differential equations.
 
-\begin{table}[H]
+For serious attempts at verificaiton, one must go down a grid refinement path and measure error.  For example, the runs
+\beginV
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
+obj/pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
+\end{verbatim}
+\Vend
+will produce the error data which is displayed in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.
+
+For thermocoupled tests one would refine in three dimensions.  For example, the runs
+\beginV
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
+obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
+\end{verbatim}
+\Vend
+produce the error data in figures 13, 14, and 15 of \cite{BBL}.  (Don't do the last couple of these without a supercomputer!  The $361\times 361\times 361$ run involves more that $100$ million unknowns, updated at each of millions of time steps.)
+
+\begin{table}[h]
 \caption{Exact solutions for verification in PISM.}\label{tab:tests}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -762,28 +820,6 @@ I & velocity computation using & \verb|pismv -test I| & \cite{MacAyeal,SchoofStr
 \end{tabular}
 \end{table}
 
-For each of these tests, a serious attempt to verify requires going down a grid refinement path and measuring error.  For example, the runs
-\beginV
-obj/pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
-obj/pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
-obj/pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
-obj/pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
-\end{verbatim}
-\Vend
-will produce the error data which is displayed in figures 7, 8, 9, and 10 of \cite{BLKCB}.
-
-For thermocoupled tests one would refine in three dimensions.  For example, the runs
-\beginV
-obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
-obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
-obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
-obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181
-obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
-obj/pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
-\end{verbatim}
-\Vend
-produce the error data in figures 13, 14, and 15 of \cite{BBL}.  (Don't do the last couple of these without a supercomputer!  The $361\times 361\times 361$ run involves more that $100$ million unknowns, updated at each of millions of time steps.)
-
 Note there is a shell script, \verb|test/verifynow.sh|, which runs Tests C, G, and I, and suffices for basic verification of newly-installed copies of PISM.
 
 
@@ -795,6 +831,109 @@ Note there is a shell script, \verb|test/verifynow.sh|, which runs Tests C, G, a
 \clearpage
 \newpage
 \section{Validation}
+
+\bigskip
+\begin{quote}  Two types of errors may be distinguished: modelling errors and numerical errors.  Modelling errors arise from not solving the right equations.  Numerical errors result from not solving the equations right.  The assessment of modelling errors is \emph{validation}, whereas the assessment of numerical errors is called \emph{verification} \dots  Validation makes sense only after verification, otherwise agreement between measured and computed results may well be fortuitous.
+\end{quote}
+\hfill P.~Wesseling, \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
+\bigskip
+
+\subsection{Validation of ice shelf numerics relative to Ross ice shelf data}
+
+In \cite{MacAyealetal} a well-known validation of several ice shelf numerical models was performed relative to data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
+
+Performing this validation requires data from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
+\begin{itemize}
+\item \verb|111by147Grid.dat|
+\item \verb|kbc.dat|
+\item \verb|inlets.dat|
+\end{itemize}
+For easiest use, create the directory \verb|pism/eisROSS|, and put these three \verb|.dat| files there.
+
+Note that the data is for a fixed $6.822$km grid and \emph{this is an unusual use of PISM in that the grid cannot be adjusted}.
+
+Run this validation with \verb|obj/pisms -ross|.  The next several examples are suggested methods for performing the validation.  Table \ref{tab:rossoptions} shows options available for this validation; note these options are also described in the Runtime Options section above.
+
+\bigskip
+\noindent\textbf{Example 1}.  Basic run with all info displayed: 
+\small\begin{verbatim}
+   user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose
+\end{verbatim}
+Note $\bar B = 2.22 \times 10^8$ versus $\bar B = 1.9 \times 10^8$ as in \cite{MacAyealetal}.  Files \verb|pism/eisROSS/111by147Grid.dat|, \verb|pism/eisROSS/kbc.dat|, and \verb|pism/eisROSS/inlets.dat| must be present.
+
+\bigskip
+\noindent\textbf{Example 2}.  Do same as above but save \Matlab results:
+\small\begin{verbatim}
+   user@home:~/pism$ obj/pisms -ross -verbose -o ross_2p22e8 -of m
+\end{verbatim}
+Note there is no graphical display.  The resulting file \verb|ross_2p22e8.m| can be run in \Matlab as a script.  
+
+The files \verb|README.rossPISM|, \verb|riggs_ELBclean.dat|, and \verb|ross_plot.m| in subdirectory \verb|pism/test/ross/| can be used to produce $\chi^2$ statistic relative to RIGGS data \cite{MacAyealetal}, and to give a nice picture.  In particular, once the above PISM run finishes and \verb|ross_2p22e8.m| is saved in a location on the \Matlab path, and once \verb|pism/test/ross/| is added to the \Matlab path, one can enter these commands at the \Matlab prompt:
+\small\begin{verbatim}
+>> ross_2p22e8
+...
+>> ross_plot
+ChiSqr =
+       3043.7
+max_computed_speed =
+       1129.9
+\end{verbatim}
+Compare these results to those in table 1 of \cite{MacAyealetal}.  The figures \ref{fig:rossscatter} and \ref{fig:rossvelocities} below are also produced.
+
+\begin{figure}[ht]
+\includegraphics[width=4.5in,keepaspectratio=true]{figs/rossvelocities}
+\caption{Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.}
+\label{fig:rossvelocities}
+\end{figure}
+
+\begin{figure}[ht]
+\includegraphics[width=3.5in,keepaspectratio=true]{figs/rossscatter}
+\caption{Comparison between modelled and observed velocities at RIGGS points; compare figure 2  in \cite{MacAyealetal}.}
+\label{fig:rossscatter}
+\end{figure}
+
+\bigskip
+\noindent\textbf{Example 3}.  Same as \textbf{Example 1}, but asking for a lot more accuracy:
+\small\begin{verbatim}
+   user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose\
+      -mv_rtol 1e-7 -ksp_rtol 1e-10  
+\end{verbatim}
+In fact one gets nearly the same result,  which suggests the default tolerances (\verb|-mv_rtol 1e-4 -ksp_rtol 1e-6|) suffice.
+
+\bigskip
+\noindent\textbf{Example 4}.  Tune across range of values of $\bar B$, including \cite{MacAyealetal}
+value.
+\small\begin{verbatim}
+   user@home:~/pism$ obj/pisms -ross -verbose -tune 1.7e8,1e7,2.4e8
+\end{verbatim}
+One sees why $\bar B = 2.22\times 10^8$ is used as default value by PISM.
+
+\small
+\begin{table}[h]
+\caption{Options available and/or recommended when validating using EISMINT Ross data; run with \texttt{obj/pisms -ross}.}\label{tab:rossoptions}
+\begin{tabular}{@{}llll}\hline
+\textbf{Option} & \textbf{Explanation/Comments} \\ \hline
+  \verb|-d cnmu| &       most useful way to see what is going on \\
+  \verb|-if foo| &       NOT allowed!  (there is no way to initialize from an input file) \\
+  \verb|-Mx|, \verb|-My| & do not adjust
+  \verb|-o foo -of m| &  writes data to foo.m; note that an output file \verb|foo.nc| (from \verb|-o foo -of n|) may also be useful \\
+  \verb|-pause N| &      pause for N seconds when refreshing viewers \\
+  \verb|-prefix foo| &   looks for files \verb|111by147Grid.dat|, \verb|kbc.dat|, and 
+                \verb|inlets.dat| in \verb|pism/foo/|; \\
+    & files are from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}; \\
+    & by default PISM looks in directory \verb|pism/eisROSS/| if \verb|-prefix foo| is not specified \\
+  \verb|-ross| &         to start the Ross validation; note it works only under executable \verb|pisms| \\
+  \verb|-showobsvel| &   shows observed (but interpolated) speeds from \verb|111by147Grid.dat| \\
+  \verb|-tune x,y,z| &   run through $\bar B$=\verb|x:y:z| (\Matlab syntax), that is, 
+                $\bar B = x, x+y, x+2y, \dots$, \\
+    & $x+Ny=z$ as hardness parameters; note no spaces in ``\verb|x,y,z|'' \\
+  \verb|-verbose| &      shows information on nonlinear iteration and Krylov solve \\
+  \verb|-verbose 5| &      shows, in particular, which lines were ignored during reads of \verb|???.dat| files, \\
+    & and parameters related to solving the ice shelf equations \\
+\hline
+\end{tabular}
+\end{table}
+\normalsize
 
 
 \clearpage
