@@ -29,8 +29,8 @@ ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
 	iMregrid.cc iMregrid_netCDF.cc iMtemp.cc iMutil.cc iMvelocity.cc\
 	 iMviewers.cc iceModel.cc materials.cc nc_util.cc
-ice_csources= cubature.c
-ICE_OBJS= $(ice_sources:.cc=.o) cubature.o
+ice_csources= cubature.c pism_signal.c
+ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)

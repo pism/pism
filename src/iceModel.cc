@@ -21,6 +21,7 @@
 #include <petscda.h>
 
 #include "iceModel.hh"
+#include "pism_signal.h"
 
 PetscInt verbosityLevel;
 
@@ -111,6 +112,10 @@ PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLaw
 IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
+  pism_signal = 0;
+  signal(SIGTERM, pism_signal_handler);
+  signal(SIGUSR1, pism_signal_handler);
+  
   createVecs_done = PETSC_FALSE;
   createViewers_done = PETSC_FALSE;
   ierr = setDefaults();
@@ -657,6 +662,8 @@ PetscErrorCode IceModel::run() {
     ierr = updateViewers(); CHKERRQ(ierr);
 
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+
+    if (endOfTimeStepHook() != 0) break;
   }
   
   return 0;

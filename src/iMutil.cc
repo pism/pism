@@ -19,6 +19,7 @@
 #include <cstring>
 #include <ctime>
 #include "iceModel.hh"
+#include "pism_signal.h"
 
 #include <petscsys.h>
 #include <stdarg.h>
@@ -685,6 +686,27 @@ PetscErrorCode IceModel::afterInitHook() {
   tempskipCountDown = 0;
 
   ierr = createViewers(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+int IceModel::endOfTimeStepHook() {
+  char file_name[PETSC_MAX_PATH_LEN];
+  snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%f.nc", grid.p->year);
+
+  if (pism_signal == SIGTERM) {
+    verbPrintf(1, grid.com, "Caught signal %s: exiting early.\n",
+               strsignal(pism_signal));
+    return 1;
+  }
+  
+  if (pism_signal == SIGUSR1) {
+    verbPrintf(1, grid.com, "Caught signal %s: Writing intermediate file `%s'.\n",
+               strsignal(pism_signal), file_name);
+    pism_signal = 0;
+    dumpToFile_netCDF(file_name);
+  }
 
   return 0;
 }

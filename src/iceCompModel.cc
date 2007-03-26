@@ -1121,6 +1121,7 @@ PetscErrorCode IceCompModel::run() {
     ierr = updateCompViewers(); CHKERRQ(ierr);
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+    if (endOfTimeStepHook() != 0) break;
   }  //  for loop
 
   return 0;

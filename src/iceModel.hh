@@ -30,9 +30,10 @@
 #include <fftw3.h>
 #endif
 
+#include <signal.h>
+
 #include "grid.hh"
 #include "materials.hh"
-
 
 // this structure is needed in regrid only (see iMutil.cc)
 struct InterpCtx {
@@ -259,6 +260,7 @@ protected:
   int modMask(PetscScalar);
 
   // see iMutil.cc
+  virtual int endOfTimeStepHook();
   virtual PetscErrorCode afterInitHook();
   PetscErrorCode stampHistoryCommand();
   PetscErrorCode stampHistoryEnd();
