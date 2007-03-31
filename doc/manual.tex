@@ -277,7 +277,7 @@ Three figures should appear and be refreshed at each time step.  One figure is a
 \medskip
 
 \begin{figure}[ht]
-\includegraphics[height=4.0in,keepaspectratio=true]{figs/eisIIFshot}
+\includegraphics[height=3.2in,keepaspectratio=true]{figs/eisIIFshot}
 \caption{Diagnostic figures at the end of a 200,000 year EISMINT II experiment F run, showing the famous spokes.}
 \label{fig:screenshot}
 \end{figure}
@@ -813,7 +813,7 @@ F & thermomechanically coupled SIA  & \verb|pismv -test F -y 25000| & \cite{BBL,
 G & thermomechanically coupled SIA ('') & \verb|pismv -test G -y 25000| & \cite{BBL,BB} \\
 H & bed deformation coupled & \verb|pismv -test H -y 40034 -bed_def_iso| & \cite{BLKfastearth} \\
  & \quad with isothermal SIA & & \\
-I & velocity computation using & \verb|pismv -test I| & \cite{MacAyeal,SchoofStream} \\
+I & velocity computation using & \verb|pismv -test I -Mx 5 -My $N| \quad (e.g.~\verb|$N|$\ge 200$) & \cite{MacAyeal,SchoofStream} \\
  & \quad MacAyeal eqns and plastic till & & \\
 \hline
 \normalsize
@@ -915,7 +915,7 @@ One sees why $\bar B = 2.22\times 10^8$ is used as default value by PISM.
 \textbf{Option} & \textbf{Explanation/Comments} \\ \hline
   \verb|-d cnmu| &       most useful way to see what is going on \\
   \verb|-if foo| &       NOT allowed!  (there is no way to initialize from an input file) \\
-  \verb|-Mx|, \verb|-My| & do not adjust
+  \verb|-Mx|, \verb|-My| & do not adjust \\
   \verb|-o foo -of m| &  writes data to foo.m; note that an output file \verb|foo.nc| (from \verb|-o foo -of n|) may also be useful \\
   \verb|-pause N| &      pause for N seconds when refreshing viewers \\
   \verb|-prefix foo| &   looks for files \verb|111by147Grid.dat|, \verb|kbc.dat|, and 

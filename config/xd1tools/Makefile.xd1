@@ -11,15 +11,13 @@ WITH_FFTW?=1
 WITH_GSL?=1
 
 CFLAGS+= -I${PET_HOME}/MATH/GNU/include
-CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} -DWITH_FFTW=${WITH_FFTW}\
-	-DWITH_GSL=${WITH_GSL} -pipe
+CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
 
 ICE_LIB_FLAGS= -L${PET_HOME}/MATH/GNU/lib\
 	-L/var/opt/pce/local/pkg/netcdf/netcdf-3.6.0-p1_gcc/lib\
-	-L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}
-ifeq (${WITH_NETCDF}, 1)
-	ICE_LIB_FLAGS+= -lnetcdf_c++ -lnetcdf
-endif
+	-L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}\
+        -lnetcdf_c++ -lnetcdf
+
 ifeq (${WITH_FFTW}, 1)
 	ICE_LIB_FLAGS+= -lfftw3 -lm
 endif
@@ -34,10 +32,10 @@ executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
-	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
-	iceModel.cc materials.cc 
-ice_csources= cubature.c
-ICE_OBJS= $(ice_sources:.cc=.o) cubature.o
+	iMregrid.cc iMregrid_netCDF.cc iMtemp.cc iMutil.cc iMvelocity.cc\
+	 iMviewers.cc iceModel.cc materials.cc nc_util.cc
+ice_csources= cubature.c pism_signal.c
+ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)
