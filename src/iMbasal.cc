@@ -27,7 +27,7 @@
 */
 
 /*** for SIA regions (MASK_SHEET): ***/
-PetscScalar IceModel::basal(const PetscScalar x, const PetscScalar y,
+PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
 
@@ -39,26 +39,28 @@ PetscScalar IceModel::basal(const PetscScalar x, const PetscScalar y,
   // linear sliding law.  Returns *positive* coefficient C in the law
   //                U_b = <u_b,v_b> = - C grad h 
   if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
-    return mu * ice.rho * ice.grav * H;
+    return basal->velocity(mu, ice.rho * grav * H);
   }
   return 0;
 }
 
+
 /*** for ice stream regions (MASK_DRAGGING): ***/
-PetscScalar IceModel::basalDragx(PetscScalar **u, PetscScalar **v,
+PetscScalar IceModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const {
-  return basalDrag(u[i][j], v[i][j]);
+  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
 }
 
-PetscScalar IceModel::basalDragy(PetscScalar **u, PetscScalar **v,
+PetscScalar IceModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const {
-  return basalDrag(u[i][j], v[i][j]);
+  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
 }
 
-PetscScalar IceModel::basalDrag(const PetscScalar u, const PetscScalar v) const {
-  /* This implements a linear sliding law.  A more elaborate relation may be
-  * appropriate. */
-
-  // return DEFAULT_BASAL_DRAG_COEFF_MACAYEAL;  // 2.0e9 Pa s m^-1
-  return 4.0e9;  
+PetscInt IceModel::initBasalFields() {
+  PetscErrorCode ierr;
+  ierr = VecSet(vtauc, DEFAULT_TAUC); CHKERRQ(ierr);
+  ierr = VecSet(vbeta, DEFAULT_BASAL_DRAG_COEFF_MACAYEAL); CHKERRQ(ierr);
+  return 0;
 }

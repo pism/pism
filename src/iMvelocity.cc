@@ -110,7 +110,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
   PetscScalar ***T, ***gs;
   PetscScalar *delta, *K;
   const PetscScalar Gamma = (2.0 * isothermalFlux_A_softness
-                             * pow(ice.rho * ice.grav, isothermalFlux_n_exponent)
+                             * pow(ice.rho * grav, isothermalFlux_n_exponent)
                              / (isothermalFlux_n_exponent + 2.0));
 
   delta = new PetscScalar[grid.p->Mz];
@@ -184,7 +184,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
             I[o][i][j][0] = 0; J[o][i][j][0] = 0; K[0] = 0;
             for (PetscInt k=0; k<=ks; ++k) {
               const PetscScalar   s = k * dz;
-              const PetscScalar   pressure = ice.rho * ice.grav * (thickness-s);
+              const PetscScalar   pressure = ice.rho * grav * (thickness-s);
               delta[k] = (2 * pressure * enhancementFactor
                           * ice.flow(alpha * pressure,
                                      0.5 * (T[i][j][k] + T[i+oi][j+oj][k]), pressure,
@@ -217,7 +217,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
               Rb[o][i][j] = 0.0;
             } else { // ignor ice streams; will be overwritten by
                      //   correctBasalFrictionalHeating() if useMacAyealVelocities==TRUE
-              const PetscScalar P = ice.rho * ice.grav * thickness;
+              const PetscScalar P = ice.rho * grav * thickness;
               const PetscScalar basal_stress_x = P * h_x[o][i][j];
               const PetscScalar basal_stress_y = P * h_y[o][i][j];
               Rb[o][i][j] = - basal_stress_x * ub[o][i][j] - basal_stress_y * vb[o][i][j];
@@ -229,7 +229,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
                             myy = -grid.p->Ly + grid.p->dy * j,
                             myT = 0.5 * (T[i][j][0] + T[i+oi][j+oj][0]);
           const PetscScalar basalC =
-            basal(myx, myy, thickness, myT, alpha, muSliding);
+            basalVelocity(myx, myy, thickness, myT, alpha, muSliding);
           ub[o][i][j] = - basalC * h_x[o][i][j];
           vb[o][i][j] = - basalC * h_y[o][i][j];
           // note (*slide) is either ub[o][i][j] or vb[o][i][j] as appropriate

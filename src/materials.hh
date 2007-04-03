@@ -21,16 +21,11 @@
 
 #include <cmath>
 #include <petsc.h>
-
-class MaterialType {
-public:
-  static PetscScalar gasConst_R;
-  static PetscScalar grav;
-};
+#include "pism_const.hh"
 
 /*******************
 REGARDING IceType and HybridIce:  The hierarchy is:
-  MaterialType <- IceType <- GlenIce <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
+  IceType <- GlenIce <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
 where "<-" means "derived class".  IceType is a virtual
 class; it should never be used "as is".
 Here:
@@ -47,7 +42,7 @@ invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
 derived class.
 *******************/
 
-class IceType : public MaterialType {
+class IceType {
 public:
   static PetscScalar beta_CC_grad;
   static PetscScalar rho;
@@ -186,7 +181,7 @@ protected:
 };
 
 
-class BedrockType : public MaterialType {
+class BedrockType {
 public:
   static PetscScalar rho;
   static PetscScalar k;
@@ -196,9 +191,41 @@ public:
 };
 
 
-class DumbOceanType : public MaterialType {
+class DumbOceanType {
 public:
   static PetscScalar rho;
 };
+
+
+class BasalType {
+public:
+  virtual PetscScalar velocity(PetscScalar sliding_coefficient,
+                               PetscScalar stress) = 0;
+  virtual PetscScalar drag(PetscScalar beta, PetscScalar tauc,
+                           PetscScalar vx, PetscScalar vy) = 0;
+  virtual ~BasalType() {};
+};
+
+class ViscousBasalType : public BasalType {
+public:
+  virtual PetscScalar velocity(PetscScalar sliding_coefficient,
+                               PetscScalar stress);
+  virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
+                           PetscScalar vx, PetscScalar vy);
+};
+
+
+class PlasticBasalType : public ViscousBasalType {
+public:
+  PlasticBasalType();
+  virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
+                           PetscScalar vx, PetscScalar vy) const;
+protected:
+  // 1 m/a is small in basalDrag[x|y] below
+  static const PetscScalar DEFAULT_PLASTIC_REGULARIZE;
+
+  PetscScalar plastic_regularize;
+};
+
 
 #endif /* __materials_hh */

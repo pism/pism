@@ -236,7 +236,7 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
   const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **nu[2], **u, **v;
+  PetscScalar     **mask, **nu[2], **u, **v, **beta, **tauc;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -244,6 +244,8 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -357,8 +359,8 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
         if (intMask(mask[i][j]) == MASK_DRAGGING) {
           // We do dragging implicitly now.
           // use the value from Hulbe & MacAyeal (1999), p. 25,356
-          valU[5] += basalDragx(u, v, i, j);
-          valV[7] += basalDragy(u, v, i, j);
+          valU[5] += basalDragx(beta, tauc, u, v, i, j);
+          valV[7] += basalDragy(beta, tauc, u, v, i, j);
         }
 
         ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
@@ -369,6 +371,8 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
 
@@ -436,7 +440,7 @@ PetscErrorCode IceModel::assembleMacayealRhs(bool surfGradInward, Vec rhs) {
         if (PetscAbsScalar(h_x) > maxSlope) h_x = h_x * maxSlope / PetscAbsScalar(h_x);
         if (PetscAbsScalar(h_y) > maxSlope) h_y = h_y * maxSlope / PetscAbsScalar(h_y);
 #endif
-        const PetscScalar r = ice.rho * ice.grav * H[i][j];  // CHANGE OF SIGN
+        const PetscScalar r = ice.rho * grav * H[i][j];  // CHANGE OF SIGN
         ierr = VecSetValue(rhs, rowU, -r*h_x, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, -r*h_y, INSERT_VALUES); CHKERRQ(ierr);
       }
@@ -711,10 +715,12 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
 PetscErrorCode IceModel::correctBasalFrictionalHeating() {
   // recompute vRb in ice stream (MASK_DRAGGING) locations; zeros vRb in FLOATING
   PetscErrorCode  ierr;
-  PetscScalar **ub, **vb, **mask, **Rb;
+  PetscScalar **ub, **vb, **mask, **Rb, **beta, **tauc;
 
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
 
@@ -724,9 +730,10 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
         Rb[i][j] = 0.0;
       }
       if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useMacayealVelocity)) {
-        const PetscScalar beta = basalDrag(ub[i][j], vb[i][j]);
-        const PetscScalar basal_stress_x = - beta * ub[i][j];
-        const PetscScalar basal_stress_y = - beta * vb[i][j];
+        const PetscScalar beta_x = basalDragx(beta, tauc, ub, vb, i, j);
+        const PetscScalar beta_y = basalDragy(beta, tauc, ub, vb, i, j);
+        const PetscScalar basal_stress_x = - beta_x * ub[i][j];
+        const PetscScalar basal_stress_y = - beta_y * vb[i][j];
         Rb[i][j] = - basal_stress_x * ub[i][j] - basal_stress_y * vb[i][j];
       } 
       // otherwise leave SIA-computed value alone
@@ -735,6 +742,8 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
 
@@ -774,7 +783,7 @@ PetscErrorCode IceModel::correctSigma() {
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
-          const PetscScalar pressure = ice.rho * ice.grav * (H[i][j] - k * dz);
+          const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
           Sigma[i][j][k] = CC * ice.effectiveViscosity(schoofReg,
                                          u_x,u_y,v_x,v_y,T[i][j][k],pressure);;
         }

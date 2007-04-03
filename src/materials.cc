@@ -18,10 +18,6 @@
 
 #include "materials.hh"
 
-PetscScalar MaterialType::gasConst_R = 8.31441; // J/(mol K)    Gas Constant
-PetscScalar MaterialType::grav  = 9.81;         // m/s^2        acceleration of gravity
-
-
 PetscScalar BedrockType::k      = 3.0;          // J/(m K s) = W/(m K)    thermal conductivity
 PetscScalar BedrockType::c_p    = 1000;         // J/(kg K)     specific heat capacity
 // for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
@@ -364,3 +360,37 @@ PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar 
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
+
+
+PetscScalar ViscousBasalType::velocity(PetscScalar sliding_coefficient,
+                                       PetscScalar stress) {
+  return sliding_coefficient * stress;
+}
+PetscScalar ViscousBasalType::drag(PetscScalar coeff, PetscScalar tauc,
+                                   PetscScalar vx, PetscScalar vy) {
+  /* This implements a linear sliding law.  A more elaborate relation may be
+  * appropriate. */
+  return coeff;
+}
+
+PlasticBasalType::PlasticBasalType() {
+  PetscErrorCode ierr;
+  PetscTruth plasticRegSet;
+  /* This parameter controls regularization of plastic basal sliding law. */
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_reg", &plastic_regularize,
+                               &plasticRegSet);
+  if (ierr != 0) PetscPrintf(MPI_COMM_WORLD, "Option failed: -plastic_reg\n");
+  if (plasticRegSet == PETSC_TRUE) {
+    plastic_regularize = plastic_regularize / secpera;
+  } else {
+    plastic_regularize = DEFAULT_PLASTIC_REGULARIZE;
+  }
+}
+    
+PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
+                                   PetscScalar vx, PetscScalar vy) const {
+  return tauc / sqrt(PetscSqr(plastic_regularize)
+                     + PetscSqr(vx) + PetscSqr(vy));
+}
+
+const PetscScalar PlasticBasalType::DEFAULT_PLASTIC_REGULARIZE = 0.01 / secpera; 

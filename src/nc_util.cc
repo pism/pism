@@ -90,14 +90,14 @@ PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc
         }
       }
 
-      if (false) {
+      /* {
         printf("[%1d] writing %4d [", proc, var_id);
         for (int i = 0; i < 2 * dims; i++) {
           if (i == dims) printf("] [");
           printf("%5d", sc[i]);
         }
         printf("]\n");
-      }
+      } */
 
       for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
       if (type == NC_FLOAT) {
@@ -235,14 +235,14 @@ PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc
       }
       for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
 
-      if (false) {
+      /* {
         printf("[%1d] reading %10s [", proc, name);
         for (int i = 0; i < 2 * dims; i++) {
           if (i == dims) printf("] [");
           printf("%5d", (int)sc_nc[i]);
         }
         printf("]\n");
-      }
+      } */
 
       int var_id;
       stat = nc_inq_varid(ncid, name, &var_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -370,7 +370,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
 
   ierr = verbPrintf(2, grid.com, "Regridding `%c' from `%s'.\n", c, name); CHKERRQ(ierr);
 
-  if (false) {
+  /* {
     printf("fstart = %10.2e %10.2e %10.2e\n", lic.fstart[0], lic.fstart[1], lic.fstart[2]);
     printf("delta  = %10.2e %10.2e %10.2e %10.2e\n", lic.delta[0], lic.delta[1],
            lic.delta[2], lic.delta[3]);
@@ -378,7 +378,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
            lic.start[3], lic.start[4]);
     printf("count  = %5d %5d %5d %5d %5d\n", lic.count[0], lic.count[1], lic.count[2],
            lic.count[3], lic.count[4]);
-  }
+  } */
   
   switch (dim_flag) {
     case 2:
@@ -417,16 +417,16 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
       stat = nc_inq_varid(lic.ncid, name, &var_id);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-      if (false) {
+      /* {
         printf("reading sc = ");
         for (int i = 0; i < sc_len; i++) printf("%4d", sc_nc[i]);
         printf("\n");
-      }
+      } */
 
       stat = nc_get_vara_float(lic.ncid, var_id, &sc_nc[0], &sc_nc[4], lic.a);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-      if (false) {
+      /* {
         printf("ncid, var_id = %d %d\n", lic.ncid, var_id);
         printf("a[] ni {%f %f %f %f}\n", lic.a[50], lic.a[150], lic.a[250], lic.a[350]);
 
@@ -439,7 +439,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
         for (int i = 0; i < blen; i++) printf(" %7.2e ", buf[i]);
         printf("\n");
         free(buf);
-      }
+      } */
 
       int a_len = 1;
       for (int i = 0; i < dims; i++) a_len *= sc[4 + i];
@@ -467,7 +467,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
   ierr = DALocalToGlobal(da, vec, INSERT_VALUES, g); CHKERRQ(ierr);
   ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
 
-  const int xcount = lic.count[1];
+  //const int xcount = lic.count[1];
   const int ycount = lic.count[2];
   for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
     for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
@@ -484,7 +484,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
         myMz = grid.p->Mbz;
         bottom = -grid.p->Lbz;
         zcount = lic.count[4];
-        zfstart = zcount * lic.delta[3];
+        zfstart = -(zcount - 1) * lic.delta[3];
       }
 
       for (int k = 0; k < myMz; k++) {
@@ -507,15 +507,6 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
           int pmp = ((int)ceil(ic) * ycount + (int)floor(jc)) * zcount + (int)ceil(kc);
           int ppm = ((int)ceil(ic) * ycount + (int)ceil(jc)) * zcount + (int)floor(kc);
           int ppp = ((int)ceil(ic) * ycount + (int)ceil(jc)) * zcount + (int)ceil(kc);
-
-          if (kc > zcount - 1) {
-            // We are doing basal temperature and must index T[][][0] which sits at an offset
-            const int offset = xcount * ycount * zcount;
-            mmp = (int)floor(ic) * ycount + (int)floor(jc) + offset;
-            mpp = (int)floor(ic) * ycount + (int)ceil(jc) + offset;
-            pmp = (int)ceil(ic) * ycount + (int)floor(jc) + offset;
-            ppp = (int)ceil(ic) * ycount + (int)ceil(jc) + offset;
-          }
 
           const float kk = kc - floor(kc);
           a_mm = lic.a[mmm] * (1.0 - kk) + lic.a[mmp] * kk;

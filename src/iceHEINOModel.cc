@@ -818,9 +818,9 @@ PetscErrorCode IceHEINOModel::additionalAtEndTimestep() {
               // is wrong; should read
               //     " \tau_b = - \rho g H \grad_H h " 
               const PetscScalar 
-                  taubx = -ice.rho * ice.grav * H[i][j]
+                  taubx = -ice.rho * grav * H[i][j]
                             * (H[i+1][j] - H[i-1][j]) / (2 * grid.p->dx),
-                  tauby = -ice.rho * ice.grav * H[i][j] 
+                  tauby = -ice.rho * grav * H[i][j] 
                             * (H[i][j+1] - H[i][j-1]) / (2 * grid.p->dy);
               pnbaseheating[k] = taubx * ub[i][j] + tauby * vb[i][j];
 //              if (pnbaseheating[k] < 0.0) {

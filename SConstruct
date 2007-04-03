@@ -15,12 +15,10 @@ ccflags += " -g3 -DWITH_FFTW=1 -DWITH_GSL=1 -pipe"
 my_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                      CC=mpicc, CXX=mpicxx,
                      CPPPATH=[os.path.join(petsc_dir, 'include'),
-                              os.path.join(petsc_dir, 'bmake', petsc_arch),
-                              os.path.join(home, 'usr/include')],
-                      LIBPATH=[os.path.join(petsc_dir, 'lib', petsc_arch),
-                               '/usr/X11R6/lib', '/usr/lib/atlas/sse2'],
-                               #'/usr/lib/atlas'],
-                      RPATH=[os.path.join(petsc_dir, 'lib', petsc_arch)])
+                              os.path.join(petsc_dir, 'bmake', petsc_arch)],
+                     LIBPATH=[os.path.join(petsc_dir, 'lib', petsc_arch),
+                              '/usr/X11R6/lib', '/usr/lib/atlas/sse2'],
+                     RPATH=[''])
 
 deb_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                       CC='mpicc.mpich', CXX='mpicxx.mpich',
@@ -32,7 +30,7 @@ debug = ARGUMENTS.get('debug', 0)
 if int(debug):
     deb_env.Append(LIBPATH = ['/usr/lib/petsc/lib/debug'])
 
-env = deb_env
+env = my_env
 
 conf = Configure(env)
 

@@ -42,10 +42,12 @@ private:
                     B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
     
     PetscScalar     taucGet(PetscInt i, PetscInt j) const;
-    PetscScalar     basalDragx(PetscScalar **u, PetscScalar **v,
-                                   PetscInt i, PetscInt j) const;
-    PetscScalar     basalDragy(PetscScalar **u, PetscScalar **v,
-                                   PetscInt i, PetscInt j) const;
+    PetscScalar     basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                               PetscScalar **u, PetscScalar **v,
+                               PetscInt i, PetscInt j) const;
+    PetscScalar     basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                               PetscScalar **u, PetscScalar **v,
+                               PetscInt i, PetscInt j) const;
     PetscErrorCode  fillinTemps();
     PetscErrorCode  setInitStateAndBoundaryVels();
 };

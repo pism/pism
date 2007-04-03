@@ -201,7 +201,7 @@ PetscErrorCode ShelfModel::initFloatingSlab() {
   PetscScalar **h, **H, **mask;
 
   ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-  grid.p->Mbz = 0;
+  grid.p->Mbz = 1;
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   ierr = grid.rescale(L, L, 1000); CHKERRQ(ierr);
@@ -264,7 +264,7 @@ PetscErrorCode ShelfModel::initEmbayment() {
   PetscScalar **u_exact, **v_exact;
   
   ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-  grid.p->Mbz = 0;
+  grid.p->Mbz = 1;
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   ierr = grid.rescale(0.5 * scale_factor * L, scale_factor * L, 1000); CHKERRQ(ierr);
@@ -310,14 +310,14 @@ PetscErrorCode ShelfModel::initEmbayment() {
                                   + (nu_y * H * (u_y + v_x)
                                      + nu * H_y * (u_y + v_x)
                                      + nu * H * (u_yy + v_xy)) / (L * L)
-                                  - IceType::rho * MaterialType::grav * H * h_x / L);
+                                  - IceType::rho * grav * H * h_x / L);
         const PetscScalar rhsy = ((2 * nu_y * H * (u_x + 2 * v_y)
                                    + 2 * nu * H_y * (u_x + 2 * v_y)
                                    + 2 * nu * H * (u_xy + 2 * v_yy)) / (L * L)
                                   + (nu_x * H * (u_y + v_x)
                                      + nu * H_x * (u_y + v_x)
                                      + nu * H * (u_xy + v_xx)) / (L * L)
-                                  - IceType::rho * MaterialType::grav * H * h_y / L);
+                                  - IceType::rho * grav * H * h_y / L);
         modelH[i][j] = H;
         modelh[i][j] = h;
         modelb[i][j] = b;
@@ -405,7 +405,7 @@ PetscErrorCode ShelfModel::initBoring() {
   PetscScalar **u_exact, **v_exact;
   
   ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-  grid.p->Mbz = 0;
+  grid.p->Mbz = 1;
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   ierr = grid.rescale(scale_factor * L, scale_factor * L, 1000); CHKERRQ(ierr);
@@ -607,7 +607,7 @@ int main(int argc, char *argv[]) {
                               + (nu_y * H * (u_y + v_x)
                                  + nu * H_y * (u_y + v_x)
                                  + nu * H * (u_yy + v_xy)) / (L * L)
-                              - IceType::rho * MaterialType::grav * H * h_x / L);
+                              - IceType::rho * grav * H * h_x / L);
     ierr = PetscPrintf(com, "nu: (%f, %f) %e %e %e\n", x, y, nu, nu_x/L, nu_y/L); CHKERRQ(ierr);
     ierr = PetscPrintf(com, "rhsx(%f, %f) = %e\n", x, y, rhsx); CHKERRQ(ierr);
     ierr = PetscPrintf(com, "my betax(%f, %f) = %e\n", x, y, rhsx / u); CHKERRQ(ierr);

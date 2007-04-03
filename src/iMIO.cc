@@ -123,7 +123,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 PetscErrorCode  IceModel::writeFiles(const char* basename) {
   PetscErrorCode ierr;
   // Write Petsc Binary format by default
-  ierr = writeFiles(basename, "p"); CHKERRQ(ierr);
+  ierr = writeFiles(basename, "n"); CHKERRQ(ierr);
 
   return 0;
 }

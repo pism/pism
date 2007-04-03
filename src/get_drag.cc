@@ -146,7 +146,7 @@ PetscErrorCode IceDragModel::computeDragFromBalanceVelocity() {
   PetscErrorCode ierr;
   Mat A;
   Vec x, result, rhs;
-  PetscScalar **u, **v, **mask, **balvel;
+  PetscScalar **u, **v, **mask, **balvel, **beta, **tauc;
 
   // allocate Vecs
   const PetscInt M = 2 * grid.p->Mx * grid.p->My;
@@ -169,6 +169,8 @@ PetscErrorCode IceDragModel::computeDragFromBalanceVelocity() {
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vmagbalvel, &balvel); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -177,8 +179,10 @@ PetscErrorCode IceDragModel::computeDragFromBalanceVelocity() {
       const PetscInt    rowV = i*2*grid.p->My + J+1;
       // remove old drag term
       if (intMask(mask[i][j]) == MASK_DRAGGING) {
-        ierr = MatSetValue(A, rowU, rowU, - basalDragx(u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(A, rowV, rowV, - basalDragy(u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(A, rowU, rowU,
+                           - basalDragx(beta, tauc, u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(A, rowV, rowV,
+                           - basalDragy(beta, tauc, u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
       }
       // remove deformational from mass-balance velocities; put in x
       const PetscScalar c = sqrt(PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
@@ -191,6 +195,8 @@ PetscErrorCode IceDragModel::computeDragFromBalanceVelocity() {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vmagbalvel, &balvel); CHKERRQ(ierr);
   // communicate!
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

@@ -50,6 +50,10 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   LocalInterpCtx lic;
   ierr = get_LocalInterpCtx(ncid, dim, bdy, lic, grid); CHKERRQ(ierr);
 
+  ierr = regrid_local_var(regridVars, 'h', "h", 2, lic, grid, grid.da2, vh, g2);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'H', "H", 2, lic, grid, grid.da2, vH, g2);
+  CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'T', "T", 3, lic, grid, grid.da3, vT, g3);
   CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'B', "Tb", 4, lic, grid, grid.da3b, vTb, g3b);

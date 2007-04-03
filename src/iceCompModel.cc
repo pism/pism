@@ -47,7 +47,7 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   f = tgaIce.rho / bedrock.rho;
   
   // now make bedrock have same material properties as ice
-  // (note Mbz=0 also, by default, but want ice/rock interface to be pure ice)
+  // (note Mbz=1 also, by default, but want ice/rock interface to be pure ice)
   bedrock.rho = tgaIce.rho;
   bedrock.c_p = tgaIce.c_p;
   bedrock.k = tgaIce.k;
@@ -156,7 +156,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
   } else {
     ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-//    grid.p->Mbz = 0; // overrides options
+//    grid.p->Mbz = 1; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -255,9 +255,9 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 
 
 // reimplement IceModel::basal
-PetscScalar IceCompModel::basal(const PetscScalar xIN, const PetscScalar yIN,
-      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar muIN) {
+PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar yIN,
+                                        const PetscScalar H, const PetscScalar T,
+                                        const PetscScalar alpha, const PetscScalar muIN) {
   // note: ignors T and muIN
 
   if (testname == 'E') {
@@ -282,7 +282,7 @@ PetscScalar IceCompModel::basal(const PetscScalar xIN, const PetscScalar yIN,
       const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
       PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot) 
                                * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
-      return muE * tgaIce.rho * tgaIce.grav * H;
+      return muE * tgaIce.rho * grav * H;
     } else
       return 0.0;
   } else
@@ -298,7 +298,7 @@ PetscErrorCode IceCompModel::initTestISO() {
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = isothermalFlux_A_softness;
-  T0 = -tgaIce.Q() / (tgaIce.gasConst_R * log(A0/tgaIce.A()));
+  T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = VecSet(vT, T0); CHKERRQ(ierr);
   ierr = VecSet(vTb, T0); CHKERRQ(ierr);
@@ -491,12 +491,9 @@ PetscErrorCode IceCompModel::initTestFG() {
                      &H[i][j],&accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
         }
       }
-      if (grid.p->Mbz > 0) { 
-        // normally no bedrock, but if so fill with basal temp increased by
-        // geothermal flux
-        for (PetscInt k=0; k<grid.p->Mbz; k++)
-          Tb[i][j][k] = T[i][j][0] + ice.k * (grid.p->Mbz - k) * grid.p->dz * Ggeo;
-      }
+      // fill with basal temp increased by geothermal flux
+      for (PetscInt k=0; k<grid.p->Mbz; k++)
+        Tb[i][j][k] = T[i][j][0] + bedrock.k * (grid.p->Mbz - k - 1) * grid.p->dz * Ggeo;
     }
   }
 

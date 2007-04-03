@@ -177,7 +177,7 @@ PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
   setIncludeBMRinContinuity(PETSC_FALSE);
 
   // make bedrock material properties into ice properties
-  // (note Mbz=0 is default, but want ice/rock interface segment to see all ice)
+  // (note Mbz=1 is default, but want ice/rock interface segment to see all ice)
   bedrock.rho = ice.rho;
   bedrock.k = ice.k;
   bedrock.c_p = ice.c_p;  
@@ -307,15 +307,15 @@ PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
 //        PetscPrintf(grid.com,"at origin; ending; values B = %f, H = %f, S = %f\n",B,H,S);
 //        PetscEnd(); // note SETERRQ() won't work here because of traceback through ierr
 //      }
-      return Bfactor * ice.rho * ice.grav * H; // supposes there was a misprint on page
+      return Bfactor * ice.rho * grav * H; // supposes there was a misprint on page
           // 230 of Payne et al 2000;  supposes last words of paragraph labelled
           // "Experiment G" should have been "... that of basal pressure" instead
           // of "... that of basal melt" 
-//      return B * ice.rho * ice.grav * H;
+//      return B * ice.rho * grav * H;
   } else if (getExperName() == 'H') {
       if (T + ice.beta_CC_grad * H > eismintII_temp_sliding) {
-//      return B * ice.rho * ice.grav * H;
-        return Bfactor * ice.rho * ice.grav * H; // ditto case G
+//      return B * ice.rho * grav * H;
+        return Bfactor * ice.rho * grav * H; // ditto case G
       } else {
         return 0.0;
       }

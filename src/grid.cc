@@ -73,7 +73,7 @@ int initIceParam(MPI_Comm com, IceParam **param, PetscBag *bag) {
                              "Number of grid points in y-direction."); CHKERRQ(ierr);
   ierr = PetscBagRegisterInt(b, &p.Mz, GRIDSPACES_Z, "Mz",
                              "Number of ice grid points in z-direction."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterInt(b, &p.Mbz, 0, "Mbz",
+  ierr = PetscBagRegisterInt(b, &p.Mbz, 1, "Mbz",
                              "Number of bedrock grid points in z-direction."); CHKERRQ(ierr);
   ierr = PetscBagRegisterScalar(b, &p.dx, 2.0 * HALFWIDTH_X / (GRIDPTS_X - 1), "dx",
                                 "Grid spacing in x-direction (m); DO NOT MODIFY; MOD OF Lx,Mx OK."); CHKERRQ(ierr);
@@ -128,8 +128,7 @@ PetscErrorCode IceGrid::createDA() {
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, p->Mz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3); CHKERRQ(ierr);
-  ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, (p->Mbz > 0) ? p->Mbz : 1,
-                    N, M, 1, n, m, 1, 1,
+  ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, p->Mbz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3b); CHKERRQ(ierr);
 
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
@@ -148,8 +147,9 @@ PetscErrorCode IceGrid::setCoordinatesDA() {
 
   ierr = DASetUniformCoordinates(da2, -p->Ly, p->Ly, -p->Lx, p->Lx,
                                  PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DASetUniformCoordinates(da3, 0, p->Lz, -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
-  ierr = DASetUniformCoordinates(da3b, ((p->Mbz == 0) ? -1.0 : -p->Lbz), 0.0,
+  ierr = DASetUniformCoordinates(da3, 0, p->Lz,
+                                 -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
+  ierr = DASetUniformCoordinates(da3b, -p->Lbz, 0.0,
                                  -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
   
   return 0;
@@ -174,7 +174,7 @@ PetscErrorCode IceGrid::rescale(PetscScalar lx, PetscScalar ly, PetscScalar lz) 
   p->dx = 2.0 * p->Lx / (p->Mx - 1);
   p->dy = 2.0 * p->Ly / (p->My - 1);
   p->dz = p->Lz / (p->Mz - 1);
-  p->Lbz = p->dz * p->Mbz;
+  p->Lbz = p->dz * (p->Mbz - 1);
 
   ierr = setCoordinatesDA(); CHKERRQ(ierr);
   

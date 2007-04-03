@@ -152,7 +152,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       }
       for (PetscInt kb=0; kb<grid.p->Mbz; kb++)
         Tb[i][j][kb] = T[i][j][0] + (Ghf[i][j]/bedrock.k) * 
-          static_cast<PetscScalar>(grid.p->Mbz-kb) * grid.p->dz;
+          static_cast<PetscScalar>(grid.p->Mbz - kb - 1) * grid.p->dz;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -648,12 +648,8 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   grid.p->Mx = dim[1];
   grid.p->My = dim[2];
   grid.p->Mz = dim[3];
-  if (bdy[5] < 0) {
-    grid.p->Mbz = dim[4];
-  } else {
-    grid.p->Mbz = 0;
-  }
-
+  grid.p->Mbz = dim[4];
+  
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
@@ -732,6 +728,40 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   }
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
+
+  PetscTruth legacy_nc_Mbz;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-legacy_nc_Mbz", &legacy_nc_Mbz); CHKERRQ(ierr);
+  if (legacy_nc_Mbz == PETSC_TRUE) {
+    PetscInt    M, N, m, n;
+    PetscScalar ***T, ***Tb, ***newTb;
+    DA _da3b;
+    Vec _vTb;
+
+    grid.p->Mbz++;
+    ierr = DAGetInfo(grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
+                     PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+    ierr = DACreate3d(grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, grid.p->Mbz, N, M,
+                      1, n, m, 1, 1, PETSC_NULL, PETSC_NULL, PETSC_NULL, &_da3b); CHKERRQ(ierr);
+    ierr = DACreateLocalVector(_da3b, &_vTb); CHKERRQ(ierr);
+
+    ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+    ierr = DAVecGetArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
+    for (PetscInt i = grid.xs; i < grid.xs + grid.xm; i++) {
+      for (PetscInt j = grid.ys; j < grid.ys + grid.ys; j++) {
+        for (PetscInt k = 0; k < grid.p->Mbz - 1; k++) {
+          newTb[i][j][k] = Tb[i][j][k];
+        }
+        newTb[i][j][grid.p->Mbz - 1] = T[i][j][0];
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
+    DADestroy(grid.da3b); grid.da3b = _da3b;
+    VecDestroy(vTb); vTb = _vTb;
+    // We never need the ghosted values of vTb, so we don't need LocalToLocal() here
+  }
 
   initialized_p = PETSC_TRUE;
   return 0;

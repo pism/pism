@@ -372,7 +372,7 @@ PetscErrorCode IceModel::bed_uplift_init_lc() {
     for (PetscInt i=0; i < N; i++) {
       for (PetscInt j=0; j < N; j++) {
         const PetscScalar cclap = cx[i]*cx[i] + cx[j]*cx[j];
-        left[i][j] = bedrock.rho * bedrock.grav + bedrock.D * cclap * cclap;
+        left[i][j] = bedrock.rho * grav + bedrock.D * cclap * cclap;
         right[i][j] = -2 * bedrock.eta * sqrt(cclap);
       }
     }
@@ -448,7 +448,7 @@ PetscErrorCode IceModel::bed_def_step_lc(PetscScalar dtBedDef) {
     ierr = VecGetArray2d(Hdiffp0, Mx, Mx, 0, 0, &Hdiff); CHKERRQ(ierr);
     for (PetscInt i=0; i < Mx; i++) {
       for (PetscInt j=0; j < Mx; j++) {
-        const PetscScalar sszz = - ice.rho * ice.grav * Hdiff[i][j];
+        const PetscScalar sszz = - ice.rho * grav * Hdiff[i][j];
         bdin[( j+(Mx-1)/2 ) + N * ( i+(Mx-1)/2 )][0] = dtBedDef * sszz;
       }
     }
@@ -487,7 +487,7 @@ PetscErrorCode IceModel::bed_def_step_lc(PetscScalar dtBedDef) {
         const PetscScalar cclap = cx[i]*cx[i] + cx[j]*cx[j];
         const PetscScalar part1 = 2 * bedrock.eta * sqrt(cclap);
         const PetscScalar part2 = (dtBedDef/2) *
-                      (bedrock.rho * bedrock.grav + bedrock.D * cclap * cclap);
+                      (bedrock.rho * grav + bedrock.D * cclap * cclap);
         left[i][j] = part1 + part2;
         right[i][j] = part1 - part2;
       }
@@ -528,7 +528,7 @@ PetscErrorCode IceModel::bed_def_step_lc(PetscScalar dtBedDef) {
     // FIXME: is this the right time if model is restarted from .pb file?
     const PetscScalar vd_time = (grid.p->year - startYear) * secpera;
     const PetscScalar discshift = viscDisc(vd_time,Hequiv,Requiv,L,      
-                                           bedrock.rho,bedrock.grav,bedrock.D,bedrock.eta)
+                                           bedrock.rho,grav,bedrock.D,bedrock.eta)
                                   - sum/(2*N); 
     for (PetscInt i=0; i < N; i++) {
       for (PetscInt j=0; j < N; j++) {

@@ -55,7 +55,9 @@ const PetscScalar IceModel::DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = 4.0;  // no un
 // previous value failed
 const PetscScalar IceModel::DEFAULT_VERT_VEL_MACAYEAL = 0.0;  // temp evolution uses this value; incompressibility not satisfied
 const PetscScalar IceModel::DEFAULT_MAX_VEL_FOR_CFL = 1000.0 / secpera;  // 10 km/a
-const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
+//const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
+const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 4.0e9; // seems to work better
+const PetscScalar IceModel::DEFAULT_TAUC = 1e4;
 //used in iMvelocity.C and iMutil.C
 const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
      // ice.meltingTemp; if above this value then decide to slide
@@ -115,7 +117,9 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
   signal(SIGUSR1, pism_signal_handler);
-  
+
+  basal = new ViscousBasalType;
+
   createVecs_done = PETSC_FALSE;
   createViewers_done = PETSC_FALSE;
   ierr = setDefaults();
@@ -127,6 +131,7 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
 
 
 IceModel::~IceModel() {
+  delete basal;
   if (createVecs_done == PETSC_TRUE) {
     destroyVecs();
   }
@@ -168,6 +173,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vHmelt); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vbeta); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vtauc); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLatitude); CHKERRQ(ierr);
 
@@ -225,6 +232,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vHmelt); CHKERRQ(ierr);
   ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
+  ierr = VecDestroy(vbeta); CHKERRQ(ierr);
+  ierr = VecDestroy(vtauc); CHKERRQ(ierr);
   ierr = VecDestroy(vLongitude); CHKERRQ(ierr);
   ierr = VecDestroy(vLatitude); CHKERRQ(ierr);
 

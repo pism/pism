@@ -44,7 +44,7 @@ s.each do |l|
   l.sub!(/91/, 'grid.p->Mx')
   l.sub!(/92/, 'grid.p->My')
   l.sub!(/93/, 'grid.p->Mz')
-  l.sub!(/94/, '(grid.p->Mbz == 0 ? 1 : grid.p->Mbz)')
+  l.sub!(/94/, 'grid.p->Mbz')
   oa << l
 end
 ov.close

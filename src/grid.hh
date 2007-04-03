@@ -21,9 +21,7 @@
 
 #include <petscbag.h>
 #include <petscda.h>
-
-const PetscScalar secpera = 3.1556926e7;
-const PetscInt HISTORY_STRING_LENGTH = 0x8000; // 32KiB ought to be enough
+#include "pism_const.hh"
 
 class IceParam {
 public:

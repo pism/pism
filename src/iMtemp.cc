@@ -62,7 +62,7 @@ PetscErrorCode IceModel::temperatureStep() {
   
   PetscErrorCode  ierr;
 
-  const PetscInt      Mbz = grid.p->Mbz, Mz = grid.p->Mz;
+  const PetscInt      Mbz = grid.p->Mbz, Mz = grid.p->Mz, k0 = Mbz - 1;
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
   const PetscScalar   rho_c_I = ice.rho * ice.c_p;
   const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
@@ -77,12 +77,12 @@ PetscErrorCode IceModel::temperatureStep() {
   PetscScalar ***T, ***Tb, ***Tnew, ***u, ***v, ***w, ***Sigma;
 
   PetscScalar *Lp, *L, *D, *U, *x, *rhs, *work;  
-  Lp = new PetscScalar[Mz+Mbz-1]; L = Lp-1; // ptr arith.; note L[0]=Lp[-1] not alloc
-  D = new PetscScalar[Mz+Mbz];
-  U = new PetscScalar[Mz+Mbz-1];
-  x = new PetscScalar[Mz+Mbz];
-  rhs = new PetscScalar[Mz+Mbz];
-  work = new PetscScalar[Mz+Mbz];
+  Lp = new PetscScalar[Mz+k0-1]; L = Lp-1; // ptr arith.; note L[0]=Lp[-1] not alloc
+  D = new PetscScalar[Mz+k0];
+  U = new PetscScalar[Mz+k0-1];
+  x = new PetscScalar[Mz+k0];
+  rhs = new PetscScalar[Mz+k0];
+  work = new PetscScalar[Mz+k0];
 
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -111,7 +111,7 @@ PetscErrorCode IceModel::temperatureStep() {
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
       
-      if (Mbz > 0) { // bedrock present: build k=0:Mbz-1 eqns
+      if (Mbz > 1) { // bedrock present: build k=0:Mbz-1 eqns
         // basal condition (at bottom of bedrock when temp is modelled in bedrock)
         // {from FV (finite volume) across bedrock base z_0}
         D[0] = (1 + brR);  U[0] = -brR;  // note L[0] not an allocated location
@@ -119,7 +119,7 @@ PetscErrorCode IceModel::temperatureStep() {
       
         // bedrock only: pure vertical conduction problem
         // {from generic bedrock FV}
-        for (PetscInt k=1; k < Mbz; k++) {
+        for (PetscInt k=1; k < k0; k++) {
           L[k] = -brR; D[k] = 1+2*brR; U[k] = -brR;
           rhs[k] = Tb[i][j][k];
         }
@@ -127,17 +127,17 @@ PetscErrorCode IceModel::temperatureStep() {
       
       // bottom part of ice (and top of bedrock in some cases): k=Mbz eqn
       if (ks == 0) { // no ice; set T[i][j][0] to surface temp
-        if (Mbz > 0) { L[Mbz] = 0.0; } // note L[0] not allocated 
-        D[Mbz] = 1.0; U[Mbz] = 0.0;
-        rhs[Mbz] = Ts[i][j]; 
+        if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
+        D[k0] = 1.0; U[k0] = 0.0;
+        rhs[k0] = Ts[i][j]; 
       } else { // ks > 0; there is ice
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
           // by ocean flux; note volume for which energy is being computed is 
           // *half* a segment
-          if (Mbz > 0) { L[Mbz] = 0.0; } // note L[0] not allocated 
-          D[Mbz] = 1+iceR; U[Mbz] = -iceR;
-          rhs[Mbz] = T[i][j][0] + dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dz);
+          if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
+          D[k0] = 1+iceR; U[k0] = -iceR;
+          rhs[k0] = T[i][j][0] + dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dz);
           if (!isMarginal) {
             const PetscScalar UpTu = (u[i][j][0] < 0) ?
                 u[i][j][0] * (T[i+1][j][0] - T[i][j][0]) / dx :
@@ -147,12 +147,12 @@ PetscErrorCode IceModel::temperatureStep() {
                 v[i][j][0] * (T[i][j][0] - T[i][j-1][0]) / dy;
             // for w, always upwind *up* from base
             const PetscScalar UpTw = w[i][j][0] * (T[i][j][1] - T[i][j][0]) / dz;
-            rhs[Mbz] += dtTempAge * (Sigma[i][j][0] - UpTu - UpTv - UpTw) / 2;
+            rhs[k0] += dtTempAge * (Sigma[i][j][0] - UpTu - UpTv - UpTw) / 2;
           }
         } else { // there is *grounded* ice; ice/bedrock interface
           // {from FV across interface}
           const PetscScalar rho_c_ratio = rho_c_I / rho_c_av;
-          rhs[Mbz] = T[i][j][0] + dtTempAge * (Rb[i][j] / (rho_c_av * dz));
+          rhs[k0] = T[i][j][0] + dtTempAge * (Rb[i][j] / (rho_c_av * dz));
           if (!isMarginal) {
             // for w, always upwind *up* from interface
             const PetscScalar UpTu = (u[i][j][0] < 0) ?
@@ -162,26 +162,26 @@ PetscErrorCode IceModel::temperatureStep() {
                 v[i][j][0] * (T[i][j+1][0] - T[i][j][0]) / dy :
                 v[i][j][0] * (T[i][j][0] - T[i][j-1][0]) / dy;
             const PetscScalar UpTw = w[i][j][0] * (T[i][j][1] - T[i][j][0]) / dz;
-            rhs[Mbz] += dtTempAge * rho_c_ratio * 0.5 * Sigma[i][j][0];
-            rhs[Mbz] -= dtTempAge * rho_c_ratio
+            rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[i][j][0];
+            rhs[k0] -= dtTempAge * rho_c_ratio
                             * (0.5 * (UpTu + UpTv + UpTw) + T[i][j][0] * w[i][j][0] / dz);
           }
           const PetscScalar iceReff = ice.k * dtTempAge / (rho_c_av * dz * dz);
           const PetscScalar brReff = bedrock.k * dtTempAge / (rho_c_av * dz * dz);
-          if (Mbz > 0) { // there is bedrock
-            L[Mbz] = - brReff; D[Mbz] = 1 + iceReff + brReff; U[Mbz] = - iceReff;
+          if (k0 > 0) { // there is bedrock
+            L[k0] = - brReff; D[k0] = 1 + iceReff + brReff; U[k0] = - iceReff;
           } else { // no bedrock
-            // L[Mbz] = 0.0;  (note this is not an allocated location!) 
-            D[Mbz] = 1 + iceReff; U[Mbz] = - iceReff;
-            rhs[Mbz] += dtTempAge * Ghf[i][j] / (rho_c_av * dz);
+            // L[k0] = 0.0;  (note this is not an allocated location!) 
+            D[k0] = 1 + iceReff; U[k0] = - iceReff;
+            rhs[k0] += dtTempAge * Ghf[i][j] / (rho_c_av * dz);
           }
         }
       }
 
-      // generic ice segment: build Mbz+1:Mbz+ks-1 eqns
+      // generic ice segment: build k0+1:k0+ks-1 eqns
       for (PetscInt k=1; k<ks; k++) {
-        L[Mbz+k] = -iceR; D[Mbz+k] = 1+2*iceR; U[Mbz+k] = -iceR;
-        rhs[Mbz+k] = T[i][j][k];
+        L[k0+k] = -iceR; D[k0+k] = 1+2*iceR; U[k0+k] = -iceR;
+        rhs[k0+k] = T[i][j][k];
         if (!isMarginal) {
           const PetscScalar UpTu = (u[i][j][k] < 0) ?
               u[i][j][k] * (T[i+1][j][k] - T[i][j][k]) / dx :
@@ -192,19 +192,19 @@ PetscErrorCode IceModel::temperatureStep() {
           const PetscScalar UpTw = (w[i][j][k] < 0) ?
               w[i][j][k] * (T[i][j][k+1] - T[i][j][k]) / dz :
               w[i][j][k] * (T[i][j][k] - T[i][j][k-1]) / dz;
-          rhs[Mbz+k] += dtTempAge * (Sigma[i][j][k] - UpTu - UpTv - UpTw);
+          rhs[k0+k] += dtTempAge * (Sigma[i][j][k] - UpTu - UpTv - UpTw);
         }
       }
       
       // surface b.c.
-      if (Mbz+ks>0) {
-        rhs[Mbz+ks-1] += iceR * Ts[i][j];
-        // U[Mbz+ks-1] = 0.0, but never actually eval'ed by tridiag solve
+      if (k0+ks>0) {
+        rhs[k0+ks-1] += iceR * Ts[i][j];
+        // U[k0+ks-1] = 0.0, but never actually eval'ed by tridiag solve
       }
 
       // solve system; melting not addressed yet
-      if (Mbz+ks>0) {
-        ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, Mbz+ks);
+      if (k0+ks>0) {
+        ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks);
         if (ierr != 0) {
           SETERRQ3(1, "Tridiagonal solve failed at (%d,%d) with zero pivot in position %d.",
                i, j, ierr);
@@ -214,7 +214,7 @@ PetscErrorCode IceModel::temperatureStep() {
     const PetscScalar GlobalMinTemp = 200.0;
 
       // insert bedrock solution        
-      for (PetscInt k=0; k < Mbz; k++) {
+      for (PetscInt k=0; k < k0; k++) {
         Tb[i][j][k] = x[k];
         if (Tb[i][j][k] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
@@ -230,17 +230,17 @@ PetscErrorCode IceModel::temperatureStep() {
       // insert solution for generic ice segments
       for (PetscInt k=1; k < ks; k++) {
         if (allowAboveMelting == PETSC_TRUE) {
-          Tnew[i][j][k] = x[Mbz + k];
+          Tnew[i][j][k] = x[k0 + k];
         } else {
           const PetscScalar depth = H[i][j] - k * dz;
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
-          if (x[Mbz + k] > Tpmp) {
+          if (x[k0 + k] > Tpmp) {
             Tnew[i][j][k] = Tpmp;
-            PetscScalar Texcess = x[Mbz + k] - Tpmp; // always positive
+            PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
             excessToFromBasalMeltLayer(rho_c_I, k * dz, &Texcess, &Hmeltnew);
             // Texcess  will always come back zero here; ignor it
           } else {
-            Tnew[i][j][k] = x[Mbz + k];
+            Tnew[i][j][k] = x[k0 + k];
           }
         }
         if (Tnew[i][j][k] < GlobalMinTemp) {
@@ -254,10 +254,10 @@ PetscErrorCode IceModel::temperatureStep() {
       // insert solution for ice/rock interface (or base of ice shelf) segment
       if (ks > 0) {
         if (allowAboveMelting == PETSC_TRUE) {
-          Tnew[i][j][0] = x[Mbz];
-        } else {  // compute diff between x[Mbz] and Tpmp; melt or refreeze as appropriate
+          Tnew[i][j][0] = x[k0];
+        } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * H[i][j];
-          PetscScalar Texcess = x[Mbz] - Tpmp; // positive or negative
+          PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
           if (modMask(mask[i][j]) == MASK_FLOATING) {
              // when floating, only half a segment has had its temperature raised
              // above Tpmp
@@ -279,7 +279,9 @@ PetscErrorCode IceModel::temperatureStep() {
       } else {
         Hmeltnew = 0.0;
       }
-       
+      
+      Tb[i][j][k0] = Tnew[i][j][0]; // we must agree on redundant values
+      
       // set to air temp above ice
       for (PetscInt k=ks; k<Mz; k++) {
         Tnew[i][j][k] = Ts[i][j];

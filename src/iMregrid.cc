@@ -158,11 +158,8 @@ PetscErrorCode IceModel::getInterpCtx(const DA dac, const DA daf,
       ic.gc = cmodel.g3; ic.gf = g3;
       zl = 0.0; zh = grid.p->Lz;
       zzl = 0.0; zzh = cgrid.p->Lz;
-    } else if (Mzf == grid.p->Mbz || Mzf == 1) {
+    } else if (Mzf == grid.p->Mbz) {
       ic.gc = cmodel.g3b; ic.gf = g3b;
-      // If there is no basal component (Mzf == 1) then this actually doesn't
-      // matter since it gets overwritten by the boundary condition in the
-      // temperature equation, so we will just do something.
       zl = -grid.p->Lbz; zh = 0.0;
       zzl = -cgrid.p->Lbz; zzh = 0.0;
       if (zl == 0.0) zl = -1.0;

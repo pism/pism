@@ -58,9 +58,9 @@ private:
   //general
   void mapcoords(const PetscInt i, const PetscInt j,
                  PetscScalar &x, PetscScalar &y, PetscScalar &r);
-  virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
-       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-       const PetscScalar mu);
+  virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y,
+                                    const PetscScalar H, const PetscScalar T,
+                                    const PetscScalar alpha, const PetscScalar mu);
 
   // tests A, B, C, D, E: separate public domain source "exactTestsABCDE.h/c"
   // test H: "exactTestH.h/c

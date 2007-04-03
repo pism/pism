@@ -33,9 +33,6 @@ const PetscScalar IceExactStreamModel::H0_schoof = aspect_schoof * L_schoof; // 
 const PetscScalar IceExactStreamModel::B_schoof = 3.7e8; // Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big?
 const PetscScalar IceExactStreamModel::p_schoof = 4.0/3.0; // = 1 + 1/n
 
-// 1 m/a is small in basalDrag[x|y] below
-const PetscScalar IceExactStreamModel::DEFAULT_PLASTIC_REGULARIZE = 0.01 / secpera; 
-
 
 IceExactStreamModel::IceExactStreamModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
@@ -54,7 +51,7 @@ PetscInt IceExactStreamModel::getflowlawNumber() {
 
 PetscErrorCode IceExactStreamModel::initFromOptions() {
   PetscErrorCode  ierr;
-  PetscTruth      sometestchosen, inFileSet, plasticRegSet;
+  PetscTruth      sometestchosen, inFileSet;
   char            inFile[PETSC_MAX_PATH_LEN], temptestname[20], temp;
 
   //   "-test I" should already have been chosen, but confirm
@@ -69,16 +66,11 @@ PetscErrorCode IceExactStreamModel::initFromOptions() {
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
   ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
-  
-  /* This parameter controls regularization of plastic basal sliding law. */
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_reg", &plastic_regularize,
-                              &plasticRegSet); CHKERRQ(ierr);
-  if (plasticRegSet == PETSC_TRUE) {
-    plastic_regularize = plastic_regularize / secpera;
-  } else {
-    plastic_regularize = DEFAULT_PLASTIC_REGULARIZE;
-  }
-  
+
+  // make sure we are using plastic till
+  if (basal != NULL) delete basal;
+  basal = new PlasticBasalType;
+
   /* input file not allowed */
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -122,20 +114,22 @@ PetscScalar IceExactStreamModel::taucGet(PetscInt i, PetscInt j) const {
           = static_cast<PetscScalar>(j) - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
   const PetscScalar y = grid.p->dy * jfrom0;
   const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-  const PetscScalar f = ice.rho * ice.grav * H0_schoof * tan(theta);
+  const PetscScalar f = ice.rho * grav * H0_schoof * tan(theta);
   return f * pow(PetscAbs(y / L_schoof), m_schoof);
 }
 
 
 // reimplement basal drag as plastic law [THIS MAY OR MAY NOT WORK!!]
-PetscScalar IceExactStreamModel::basalDragx(PetscScalar **u, PetscScalar **v,
+PetscScalar IceExactStreamModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                                            PetscScalar **u, PetscScalar **v,
                                             PetscInt i, PetscInt j) const {
   return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));  
 }
 
 
 // ditto
-PetscScalar IceExactStreamModel::basalDragy(PetscScalar **u, PetscScalar **v,
+PetscScalar IceExactStreamModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                                            PetscScalar **u, PetscScalar **v,
                                             PetscInt i, PetscInt j) const {
   return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));  
 }

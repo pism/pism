@@ -35,6 +35,8 @@
 #include "grid.hh"
 #include "materials.hh"
 
+using namespace std;
+
 // this structure is needed in regrid only (see iMutil.cc)
 struct InterpCtx {
   Mat A;
@@ -45,7 +47,6 @@ struct InterpCtx {
   Vec coarse;
   Vec fine;
 };
-
 
 // this is a utility to get a IceType based on options from user, for initialization
 // of an instance of IceModel below; see iceModel.cc
@@ -168,6 +169,7 @@ protected:
   // previous value failed
    static const PetscScalar DEFAULT_VERT_VEL_MACAYEAL;  // temp evolution uses this value; incompressibility not satisfied
    static const PetscScalar DEFAULT_BASAL_DRAG_COEFF_MACAYEAL;
+  static const PetscScalar DEFAULT_TAUC;
   //used in iMvelocity.C and iMutil.C
    static const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING;  // note less than ice.meltingTemp;
   // if above this value then decide to slide
@@ -180,21 +182,23 @@ protected:
 
   IceGrid      &grid;
   IceType      &ice;
+  BasalType    *basal;
   BedrockType  bedrock;
   DumbOceanType ocean;
 
   // state variables
-  Vec          vh, vH, vbed,            // 2D vectors; Mx x My
-               vAccum, vTs,             // accumulation, surface temp
-               vMask,                   // mask for flow type
-               vGhf,                    // geothermal flux
-               vHmelt, vbasalMeltRate,  // thickness and rate of production of 
-                                        // basal melt water (ice-equivalent)
-               vuplift,                 
-               vub, vvb,                // basal vels on standard grid
-               vRb,                     // basal frictional heating on regular grid
-               vubar, vvbar;            // vertically-averaged vels 
-                                        //   (u bar and v bar) on standard grid
+  Vec vh, vH, vbed,             // 2D vectors; Mx x My
+    vAccum, vTs,                // accumulation, surface temp
+    vMask,                      // mask for flow type
+    vGhf,                       // geothermal flux
+    vHmelt, vbasalMeltRate,     // thickness and rate of production of basal
+                                // meltwater (ice-equivalent)
+    vuplift,                 
+    vub, vvb,                   // basal vels on standard grid
+    vRb,                        // basal frictional heating on regular grid
+    vubar, vvbar,               // vertically-averaged vels (u bar and v bar) on
+                                // standard grid
+    vtauc, vbeta;               // basal fields; plastic/viscous coefficients
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
                                         //   u bar and v bar on staggered grid,
   Vec*         vDf;                     // vDf[0],vDf[1] are diffusivity on staggered grid
@@ -305,16 +309,18 @@ protected:
   PetscErrorCode destroyViewers();
 
   // see iMbasal.cc
-  virtual PetscScalar basal(const PetscScalar x, const PetscScalar y, 
+  virtual PetscInt initBasalFields();
+  virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y, 
        const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
        const PetscScalar mu);
-  virtual PetscScalar basalDrag(const PetscScalar u, const PetscScalar v) const;
 
   // This is an unfortunate kludge, but I won't rewrite the whole Macayeal code
   // just to implement a goofy verification case.
-  virtual PetscScalar basalDragx(PetscScalar **u, PetscScalar **v,
+  virtual PetscScalar basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
-  virtual PetscScalar basalDragy(PetscScalar **u, PetscScalar **v,
+  virtual PetscScalar basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
 
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
