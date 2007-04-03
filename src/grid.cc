@@ -149,8 +149,10 @@ PetscErrorCode IceGrid::setCoordinatesDA() {
                                  PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(da3, 0, p->Lz,
                                  -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
-  ierr = DASetUniformCoordinates(da3b, -p->Lbz, 0.0,
-                                 -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
+  if (p->Mbz > 1) {
+    ierr = DASetUniformCoordinates(da3b, -p->Lbz, 0.0,
+                                   -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
+  }
   
   return 0;
 }

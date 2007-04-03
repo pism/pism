@@ -42,46 +42,45 @@ other_csources= simpleISO.c simpleFG.c simpleI.c
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
+CCLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
+
 #TARGETS:
 
 all : depend libpism libtests $(executables)
 
 libpism : ${ICE_OBJS}
-	${CLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
+	${CCLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
 #	ar cru -s obj/libpism.a ${ICE_OBJS}
 
 libtests : ${TESTS_OBJS}
-	${CLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
+	${CCLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
 
-flowTable : obj/libpism.so flowTable.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/flowTable
+flowTable : flowTable.o obj/libpism.so
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/flowTable
 
-get_drag : obj/libpism.so get_drag.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/get_drag
+get_drag : get_drag.o obj/libpism.so
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/get_drag
 
-pismr : obj/libpism.so run.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
+pismr : run.o obj/libpism.so
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/pismr
 
-pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
+pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o obj/libpism.so
+	${CCLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o obj/pisms
 
-pismv : obj/libpism.so obj/libtests.so iceCompModel.o iceExactStreamModel.o verify.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismv
+pismv : iceCompModel.o iceExactStreamModel.o verify.o obj/libpism.so obj/libtests.so
+	${CCLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o obj/pismv
 
-shelf : obj/libpism.so shelf.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/shelf
+shelf : shelf.o obj/libpism.so
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/shelf
 
-simpleISO : obj/libtests.so simpleISO.o
-	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleISO
+simpleISO : simpleISO.o obj/libtests.so
+	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o obj/simpleISO
 
-simpleFG : obj/libtests.so simpleFG.o
-	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleFG
+simpleFG : simpleFG.o obj/libtests.so
+	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o obj/simpleFG
 
-simpleI : obj/libtests.so simpleI.o
-	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleI
+simpleI : simpleI.o obj/libtests.so
+	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o obj/simpleI
 
 # Cancel the implicit rules
 % : %.cc
