@@ -243,7 +243,7 @@ protected:
   PetscViewer  HView, hView, accumView, bedView, HmeltView, basalmeltView, maskView;
   PetscViewer  speedView, ubarView, vbarView, ghfView, upliftView, TsView;
   PetscViewer  T2View, TView, uView, vView, wView, SigmaView, SigmaMapView;
-  PetscViewer  slidespeedView, RbView, gsView, gsMapView;
+  PetscViewer  slidespeedView, RbView, gsView, gsMapView, betaView, taucView;
   PetscViewer  dhView, diffusView, tauView, tauMapView, umapView, vmapView, wmapView;
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
@@ -256,7 +256,6 @@ protected:
   static const PetscInt nWork3d=6, nWork2d=10;
 
 protected:
-
   // see iceModel.cc
   PetscErrorCode updateSurfaceElevationAndMask();
   PetscErrorCode massBalExplicitStep();

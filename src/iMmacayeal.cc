@@ -355,10 +355,9 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
 #endif
 
         /* Dragging ice experiences friction at the bed determined by the
-        * basalDrag() method. This may be a linear friction law. */
+        * basalDrag[x|y]() methods.  These may be a linear friction law or plastic. */
         if (intMask(mask[i][j]) == MASK_DRAGGING) {
-          // We do dragging implicitly now.
-          // use the value from Hulbe & MacAyeal (1999), p. 25,356
+          // Dragging is done implicitly (i.e. on left side of MacAyeal eqns for u,v).
           valU[5] += basalDragx(beta, tauc, u, v, i, j);
           valV[7] += basalDragy(beta, tauc, u, v, i, j);
         }

@@ -57,7 +57,7 @@ const PetscScalar IceModel::DEFAULT_VERT_VEL_MACAYEAL = 0.0;  // temp evolution 
 const PetscScalar IceModel::DEFAULT_MAX_VEL_FOR_CFL = 1000.0 / secpera;  // 10 km/a
 //const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
 const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 4.0e9; // seems to work better
-const PetscScalar IceModel::DEFAULT_TAUC = 1e4;
+const PetscScalar IceModel::DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 //used in iMvelocity.C and iMutil.C
 const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
      // ice.meltingTemp; if above this value then decide to slide

@@ -618,11 +618,11 @@ PetscErrorCode IceModel::initFromOptions() {
   PetscTruth inFileSet, bootstrapSet;
   char inFile[PETSC_MAX_PATH_LEN];
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
-                               PETSC_MAX_PATH_LEN, &bootstrapSet);
-  CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet);
+  CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
+                               PETSC_MAX_PATH_LEN, &bootstrapSet);
   CHKERRQ(ierr);
   
   if (bootstrapSet == PETSC_TRUE) {
@@ -657,6 +657,8 @@ PetscErrorCode IceModel::afterInitHook() {
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
+  ierr = initBasalFields(); CHKERRQ(ierr);
+  
   ierr = bedDefSetup(); CHKERRQ(ierr);
 
   // Note that basal melt rate is not read in as part of a stored model state or

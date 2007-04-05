@@ -46,7 +46,9 @@ PetscErrorCode IceModel::createViewers() {
 
   ierr = createOneViewerIfDesired(&accumView, 'a',"M (surface accum rate; m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&bedView, 'b',"b (bed elev; m above sea level)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&betaView, 'B',"log(beta) (drag coeff; log_10(Pa s m^-1))");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&speedView, 'c',"log(speed) (log_10(m/a))");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&taucView, 'C',"tau_c (till yield stress; bar=10^5Pa)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&diffusView, 'D',"D (diffusivity; m^2/s)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&tauView, 'e',"age of ice (years) at id,jd");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&tauMapView, 'E',"age of ice (years) at kd");  CHKERRQ(ierr);
@@ -110,6 +112,8 @@ PetscErrorCode IceModel::destroyViewers() {
   if (vbarView != PETSC_NULL) { ierr = PetscViewerDestroy(vbarView); CHKERRQ(ierr); }
   if (accumView != PETSC_NULL) { ierr = PetscViewerDestroy(accumView); CHKERRQ(ierr); }
   if (bedView != PETSC_NULL) { ierr = PetscViewerDestroy(bedView); CHKERRQ(ierr); }
+  if (betaView != PETSC_NULL) { ierr = PetscViewerDestroy(betaView); CHKERRQ(ierr); }
+  if (taucView != PETSC_NULL) { ierr = PetscViewerDestroy(taucView); CHKERRQ(ierr); }
   if (HmeltView != PETSC_NULL) { ierr = PetscViewerDestroy(HmeltView); CHKERRQ(ierr); }
   if (basalmeltView != PETSC_NULL) { ierr = PetscViewerDestroy(basalmeltView); CHKERRQ(ierr); }
   if (ghfView != PETSC_NULL) { ierr = PetscViewerDestroy(ghfView); CHKERRQ(ierr); }
@@ -187,7 +191,7 @@ PetscErrorCode IceModel::updateViewers() {
   PetscErrorCode ierr;
   PetscScalar ***T, ***Tb, ***u, ***v, ***w, **ub, **vb, ***Sigma, 
               **sigma, **T2, **a, **H, ***gs, **gs2, ***Tau, **tau,
-              **umap, **vmap, **wmap;
+              **umap, **vmap, **wmap, **beta;
   PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz;
   PetscInt   *row;
 
@@ -406,6 +410,22 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = DAVecRestoreArray(grid.da2, g2, &a); CHKERRQ(ierr);
     ierr = VecView(g2, slidespeedView); CHKERRQ(ierr);
   }
+  if (betaView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &a); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (beta[i][j] > 1.0e6) {
+          a[i][j] = log10(beta[i][j]);
+        } else {
+          a[i][j] = 6.0;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, g2, &a); CHKERRQ(ierr);
+    ierr = VecView(g2, betaView); CHKERRQ(ierr);
+  }
   if (umapView != PETSC_NULL) {
     ierr = DAVecGetArray(grid.da2, g2, &umap); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
@@ -488,6 +508,11 @@ PetscErrorCode IceModel::updateViewers() {
   if (HmeltView != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vHmelt, INSERT_VALUES, g2); CHKERRQ(ierr);
     ierr = VecView(g2, HmeltView); CHKERRQ(ierr);
+  }
+  if (taucView != PETSC_NULL) {
+    ierr = DALocalToGlobal(grid.da2, vtauc, INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecScale(g2, 0.00001); CHKERRQ(ierr); // Display in bar
+    ierr = VecView(g2, taucView); CHKERRQ(ierr);
   }
   if (basalmeltView != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vbasalMeltRate, INSERT_VALUES, g2); CHKERRQ(ierr);
