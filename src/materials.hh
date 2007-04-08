@@ -191,7 +191,13 @@ public:
 };
 
 
-class DumbOceanType {
+class SeaWaterType {
+public:
+  static PetscScalar rho;
+};
+
+
+class FreshWaterType {
 public:
   static PetscScalar rho;
 };

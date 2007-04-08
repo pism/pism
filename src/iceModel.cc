@@ -66,7 +66,7 @@ const PetscScalar IceModel::DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when 
 const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
         // about 4 times more heating than peak of 
         // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
-const PetscScalar IceModel::DEFAULT_MAX_HMELT = 10.0;  // allow no more than 10 m thick basal
+const PetscScalar IceModel::DEFAULT_MAX_HMELT = 5.0;  // allow no more than 5 m thick basal
                                                        // melt water layer
 
 

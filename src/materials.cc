@@ -27,8 +27,9 @@ PetscScalar BedrockType::rho    = 3300;         // kg/(m^3)     density
 PetscScalar BedrockType::D      = 5.0e24;       // N m          lithosphere flexural rigidity
 PetscScalar BedrockType::eta    = 1.0e21;       // Pa s         half-space (mantle) viscosity
 
-// DumbOceanType has nothing but density
-PetscScalar DumbOceanType::rho      = 1027;     // kg/m         density
+// WaterTypes have nothing but density
+PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density (Lingle & Borwn 1987)
+PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m         density
 
 
 PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient

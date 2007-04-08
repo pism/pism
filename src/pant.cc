@@ -27,7 +27,7 @@ static char help[] =
 
 1. For distributed *vector* beta computed from balance velocities:
 
-     pant -if ant40km.nc -mv -gk -e 1.2 -y 10 -verbose -balvel init.nc -betaxy betaxymap
+     pant -if ant40km.nc -mv -gk -e 1.2 -y 10 -verbose -betaxy -balvel init.nc -obasal betaxymap
 
 Here ant40km.nc contains a saved model state with a vaguely 
 reasonable temperature field.  The balance velocities are read in from init.nc.
@@ -35,80 +35,92 @@ Then the deformation (SIA) horizontal velocity is computed and subtracted from
 balance velocities to get a sliding velocity field (every where on grounded ice).
 The MacAyeal equations are (i.e. the MacAyeal nonlinear operator is) applied to 
 determine the vector (beta_x,beta_y).  These are written to a NetCDF file betaxymap.nc.
-Then a 10 year run is done using these; the model should be nearly in steady state 
+Then a 1 year run is done using these; the model should be nearly in steady state 
 (although it will drift away as the temperature changes).
 
 2. For distributed *scalar* beta computed from balance velocities:
 
-     pant -if ant40km.nc -mv -gk -e 1.2 -y 10 -verbose -balvel init.nc -beta betamap
+     pant -if ant40km.nc -mv -gk -e 1.2 -y 1 -verbose -beta -balvel init.nc -obasal betamap
 
 [CONCRETELY:
-     pant -if ant150k_40kmSMMV.nc -mv -gk -e 1.2 -ksp_rtol 1e-6 -ocean_kill -verbose\   
-         -balvel init.nc -beta betamap -d Bncm -y 10
+     pant -if ant150k_40kmSMMV.nc -mv -gk -e 1.2 -ksp_rtol 1e-6 -ocean_kill -verbose \   
+         -beta -balvel init.nc -obasal betamap -d Bncm -y 1
 ]
 
 As in 1. except that once the vector (beta_x,beta_y) is generated we combine: beta
-= (u^2 beta_x + v^2 beta_y)/(u^2+v^2) with max of BETAMX = 1.0e13.  beta is written to 
-a NetCDF file betamap.nc.  Then a 10 year run is done using the distributed beta; 
+= (u^2 beta_x + v^2 beta_y)/(u^2+v^2) with max of BETAMAX = 1.0e13.  beta is written to 
+a NetCDF file betamap.nc.  Then a 1 year run is done using the distributed beta; 
 the model should less in steady state than in 1.
 
 3. For Schoof-type solution of plastic till problem, with yield stress computed from 
 thermal model and estimate of basal till pore water pressure:
 
-     pant -if ant40km.nc -mv -gk -e 1.2 -y 10 -verbose -plastic taucmap
+     pant -if ant40km.nc -mv -gk -e 1.2 -y 1 -verbose -plastic -obasal taucmap
 
 Here the plastic till version of the MacAyeal equations are solved from the saved model
 state ant40km.nc.  In particular, the vHmelt values and the basal temps (vT) from
-ant40km.nc are used to comput vtauc.  This map is saved in taucmap.nc.  Then 10 years
+ant40km.nc are used to comput vtauc.  This map is saved in taucmap.nc.  Then 1 years
 are run.
 
 */
 
 #include <cstring>
 #include <petscbag.h>
+#include <netcdf.h>
 
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
-
-#include <netcdf.h>
 #include "nc_util.hh"
 
 class IceDragYieldModel : public IceModel {
 public:
-  PetscTruth     balvelFileSet, doBetaxy, doPlastic;
-  char           balvelFileName[PETSC_MAX_PATH_LEN], betaFileName[PETSC_MAX_PATH_LEN],
-                 betaxyFileName[PETSC_MAX_PATH_LEN], taucFileName[PETSC_MAX_PATH_LEN];
-  Vec            vbetax, vbetay;
-  Vec            vmagbalvel, vNu[2];
-  Vec 	         dragxy;  // this is not da2 sized; it's a (2 Mx My) x 1 column
-  
+  PetscTruth     doPlastic;
   IceDragYieldModel(IceGrid &g, IceType &i);
+  PetscErrorCode dragYieldInitFromOptions();
+  PetscErrorCode dragYieldFinalize();
+  PetscErrorCode writeBetaTaucNCFile();
+  PetscErrorCode setupPlasticTauc();  // call to start plastic case (doPlastic == PETSC_TRUE)
+  PetscErrorCode computeBeta();       // call to start linear case (doPlastic == PETSC_FALSE)
+ 
+private:
+  // note vWork2d[0:3] get used by methods of IceDragYieldModel
+  Vec            vbetaxORbeta, vbetayORtauc;  // copies; see overloading comment above
+  Vec            vNu[2];
+  Vec 	         dragxy;    // this is not da2 sized; it's a (2 Mx My) x 1 column
+  PetscTruth     doBetaxy;  // when doBetaxy = TRUE there is overloading of Vecs,
+                            // namely vbeta stores beta_x while vtauc stores beta_y;
+                            // this affects meaning of viewers "-d B" and "-d C"
+  
+  // for both plastic and linear (distributed beta) cases
+  char           betataucFileName[PETSC_MAX_PATH_LEN];
   PetscErrorCode createDragYieldVecs();
   PetscErrorCode destroyDragYieldVecs();
-  PetscErrorCode dragYieldOptions();
+  virtual PetscScalar basalDragx(PetscScalar**, PetscScalar**,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const;
+  virtual PetscScalar basalDragy(PetscScalar**, PetscScalar**,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const;
   
-  // for distribute beta (and (beta_x,beta_y) both)
-  PetscErrorCode computeScalarBeta();
+  // for plastic case: just insert computation of vtauc at start of each time step
+  virtual PetscErrorCode additionalAtStartTimestep();
+  
+  // for distributed scalar beta or vector (beta_x,beta_y) basal (force linear in velocity)
+  PetscTruth     balvelFileSet;
+  char           balvelFileName[PETSC_MAX_PATH_LEN];
+  Vec            vmagbalvel;
   PetscErrorCode readBalVels();
-  PetscErrorCode getEffectiveViscosity();
+  PetscErrorCode getEffectiveViscosityAllGrounded();
   PetscErrorCode computeDragFromBalanceVelocity();
-  PetscErrorCode moveDragxytoDAbetas();
-  PetscErrorCode writeBetaNC();
-  PetscErrorCode writeMatlabDragFile(const char *basename);
   PetscErrorCode updateMaskFromBeta();
-//  PetscErrorCode computeVectorBeta();
-//  PetscErrorCode writeBetaxyNC();
-  
-  // for plastic case
-//  PetscErrorCode computePlasticTauc();
-//  PetscErrorCode writeTaucNC();
-
+  PetscErrorCode moveDragxytoDAbetas();
+  PetscErrorCode replaceBadwMissing(Vec,bool);
 };
 
 
-#define BETAMAX 1.0e13  // Pa s m^-1; max allowed drag coeff beta
-
+#define BETAMAX 1.0e13  // Pa s m^-1; max allowed drag coeff beta; also missing_value in NetCDF output
+#define BETAMIN 1.0e5
 
 IceDragYieldModel::IceDragYieldModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {
@@ -119,8 +131,10 @@ IceDragYieldModel::IceDragYieldModel(IceGrid &g, IceType &i)
 PetscErrorCode IceDragYieldModel::createDragYieldVecs() {
   PetscErrorCode ierr;
   
-  ierr = VecDuplicate(vh, &vbetax); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vbetay); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vbetaxORbeta); CHKERRQ(ierr);
+  ierr = VecSet(vbetaxORbeta,BETAMAX); CHKERRQ(ierr);  // set to missing_value for now
+  ierr = VecDuplicate(vh, &vbetayORtauc); CHKERRQ(ierr);
+  ierr = VecSet(vbetayORtauc,BETAMAX); CHKERRQ(ierr);
   const PetscInt M = 2 * grid.p->Mx * grid.p->My;
   ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &dragxy); CHKERRQ(ierr);
   return 0;
@@ -130,57 +144,141 @@ PetscErrorCode IceDragYieldModel::createDragYieldVecs() {
 PetscErrorCode IceDragYieldModel::destroyDragYieldVecs() {
   PetscErrorCode  ierr;
 
-  ierr = VecDestroy(vbetax); CHKERRQ(ierr);
-  ierr = VecDestroy(vbetay); CHKERRQ(ierr);
+  ierr = VecDestroy(vbetaxORbeta); CHKERRQ(ierr);
+  ierr = VecDestroy(vbetayORtauc); CHKERRQ(ierr);
   ierr = VecDestroy(dragxy); CHKERRQ(ierr);
   // note vmagbalvel, vNu[0], vNu[1] are just IceModel work Vecs
   return 0;
 }
 
 
-PetscErrorCode IceDragYieldModel::dragYieldOptions() {
+PetscErrorCode IceDragYieldModel::dragYieldInitFromOptions() {
   PetscErrorCode  ierr;
-  PetscTruth      plasticSet, betaSet, betaxySet;
+  PetscTruth      obasalSet, betaSet;
 
-  // get filenames
+  ierr = PetscOptionsHasName(PETSC_NULL, "-beta", &betaSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-betaxy", &doBetaxy); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &doPlastic); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-balvel", balvelFileName,
                                PETSC_MAX_PATH_LEN, &balvelFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-beta", betaFileName,
-                               PETSC_MAX_PATH_LEN, &betaSet); CHKERRQ(ierr);
-  strcat(betaFileName, ".nc");
+  ierr = PetscOptionsGetString(PETSC_NULL, "-obasal", betataucFileName,
+                               PETSC_MAX_PATH_LEN, &obasalSet); CHKERRQ(ierr);
+  strcat(betataucFileName, ".nc");
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &plasticSet); CHKERRQ(ierr);  // filename ignored
-  ierr = PetscOptionsHasName(PETSC_NULL, "-betaxy", &betaxySet); CHKERRQ(ierr);  // filename ignored
-
-  if (plasticSet == PETSC_TRUE) {
+  // throw errors if options conflict or don't include filenames
+  if (doPlastic == PETSC_TRUE) {
     if (betaSet == PETSC_TRUE) {
       SETERRQ(1,"option conflict in pant; both -plastic and -beta set");
     }
-    if (betaxySet == PETSC_TRUE) {
+    if (doBetaxy == PETSC_TRUE) {
       SETERRQ(2,"option conflict in pant; both -plastic and -betaxy set");
     }
     if (balvelFileSet == PETSC_TRUE) {
-      SETERRQ(3,"option conflict in pant; both -plastic and a balance velocities file (-balvel) set");
+      verbPrintf(1,grid.com,
+         "warning: both -plastic and -balvel set; ignoring balance velocities file");
     }
-    doPlastic = PETSC_TRUE;
-    doBetaxy = PETSC_FALSE;
   } else {
     if (balvelFileSet == PETSC_FALSE) {
       SETERRQ(4,"pant requires source for balance velocities if -plastic is not set; use -balvel foo.nc");
     }
-    doPlastic = PETSC_FALSE;
     if (betaSet == PETSC_TRUE) {
-      if (betaxySet == PETSC_TRUE) {
+      if (doBetaxy == PETSC_TRUE) {
         SETERRQ(5,"option conflict in pant; both -beta and -betaxy set");
       }
-      doBetaxy = PETSC_FALSE;
-    } else {
-      doBetaxy = PETSC_TRUE;
     }
   }
+
+  ierr = createDragYieldVecs(); CHKERRQ(ierr);
   return 0;
 }
 
+
+PetscErrorCode IceDragYieldModel::dragYieldFinalize() {
+  PetscErrorCode  ierr;
+
+  if (doPlastic == PETSC_TRUE) { // in this case we write the final tauc
+    ierr = verbPrintf(2,grid.com, "saving tauc, beta, betax, betay in NetCDF file ..."); CHKERRQ(ierr);
+    ierr = writeBetaTaucNCFile(); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+  }
+  ierr = destroyDragYieldVecs(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscScalar IceDragYieldModel::basalDragx(PetscScalar **betaORbetax, PetscScalar **taucORbetay,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const {
+  if (doBetaxy == PETSC_TRUE) {
+    return betaORbetax[i][j]; // it is betax here
+  } else { // In both plastic and scalar beta case, just use drag method of BasalType
+    // class (see materials.hh).  Note this just returns beta[i][j] if doPlastic == FALSE 
+    // while it returns tauc[i][j] over (regularized) speed if doPlastic == TRUE.
+    return basal->drag(betaORbetax[i][j], taucORbetay[i][j], u[i][j], v[i][j]);  // beta and tauc here
+  }
+}
+
+
+PetscScalar IceDragYieldModel::basalDragy(PetscScalar **betaORbetax, PetscScalar **taucORbetay,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const {
+  if (doBetaxy == PETSC_TRUE) {
+    return taucORbetay[i][j]; // it is betay here
+  } else { // SEE COMMENT IN basalDragx
+    return basal->drag(betaORbetax[i][j], taucORbetay[i][j], u[i][j], v[i][j]);  // beta and tauc here
+  }
+}
+
+#if 0
+PetscScalar IceDragYieldModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const {
+  PetscScalar z;
+  if (doBetaxy == PETSC_TRUE) {
+    // first check ownership range
+    if (i >= grid.xs && i < grid.xs+grid.xm && j >= grid.ys && j < grid.ys+grid.ym) {
+      PetscScalar **betax;
+      DAVecGetArray(grid.da2, vbetax, &betax);
+      z = betax[i][j];
+      DAVecRestoreArray(grid.da2, vbetax, &betax);
+    } else {
+      verbPrintf(1,grid.com, "IceDragYieldModel::basalDragx() called with i,j out of ownership range\n");
+      PetscEnd();
+    }
+  } else { // in both plastic and scalar beta case, just use drag method of 
+    // BasalType class (see materials.hh)
+    // note this just returns beta[i][j] if doPlastic == FALSE while it returns
+    // tauc[i][j] over (regularized) speed if doPlastic == TRUE
+    z = basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
+  }
+  return z;
+}
+
+
+PetscScalar IceDragYieldModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const {
+  PetscScalar z;
+  if (doBetaxy == PETSC_TRUE) {
+    // first check ownership range
+    if (i >= grid.xs && i < grid.xs+grid.xm && j >= grid.ys && j < grid.ys+grid.ym) {
+      PetscScalar **betay;
+      DAVecGetArray(grid.da2, vbetay, &betay);
+      z = betay[i][j];
+      DAVecRestoreArray(grid.da2, vbetay, &betay);
+    } else {
+      verbPrintf(1,grid.com, "IceDragYieldModel::basalDragy() called with i,j out of ownership range\n");
+      PetscEnd();
+    }
+  } else { // in both plastic and scalar beta case, just use drag method of 
+    // BasalType class (see materials.hh)
+    // note this just returns beta[i][j] if doPlastic == FALSE while it returns
+    // tauc[i][j] over (regularized) speed if doPlastic == TRUE
+    z = basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
+  }
+  return z;
+}
+#endif
 
 PetscErrorCode nc_check(int stat) {
   if (stat)
@@ -189,33 +287,7 @@ PetscErrorCode nc_check(int stat) {
 }
 
 
-PetscErrorCode IceDragYieldModel::readBalVels() {
-  PetscErrorCode  ierr;
-  int stat, ncid, v_balvel;
-
-  if (grid.rank == 0) {
-    stat = nc_open(balvelFileName, 0, &ncid); CHKERRQ(nc_check(stat));
-    stat = nc_inq_varid(ncid, "balvel", &v_balvel); CHKERRQ(nc_check(stat));
-  }
-
-  vmagbalvel = vWork2d[2];  // already allocated
-  Vec vzero;
-  VecScatter ctx;
-  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
-  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_balvel, grid.da2, vmagbalvel, g2, vzero); CHKERRQ(ierr);
-  ierr = VecDestroy(vzero); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
-  ierr = VecScale(vmagbalvel,1.0/secpera); CHKERRQ(ierr);  // convert to m/s
-
-  if (grid.rank == 0) {
-    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
-  }
-  return 0;
-}
-
-
-PetscErrorCode IceDragYieldModel::writeBetaNC() {
+PetscErrorCode IceDragYieldModel::writeBetaTaucNCFile() {
   PetscErrorCode  ierr;
 
 /* BLOCK of code here parallels write_attributes.c */
@@ -240,6 +312,7 @@ PetscErrorCode IceDragYieldModel::writeBetaNC() {
    int beta_id;
    int betax_id;
    int betay_id;
+   int tauc_id;
 
 #  define RANK_x 1
 #  define RANK_y 1
@@ -247,6 +320,7 @@ PetscErrorCode IceDragYieldModel::writeBetaNC() {
 #  define RANK_beta 3
 #  define RANK_betax 3
 #  define RANK_betay 3
+#  define RANK_tauc 3
 
    /* variable shapes */
    int x_dims[RANK_x];
@@ -255,10 +329,11 @@ PetscErrorCode IceDragYieldModel::writeBetaNC() {
    int beta_dims[RANK_beta];
    int betax_dims[RANK_betax];
    int betay_dims[RANK_betay];
+   int tauc_dims[RANK_tauc];
 
    /* enter define mode */
 if (grid.rank == 0) {
-   stat = nc_create(betaFileName, NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
+   stat = nc_create(betataucFileName, NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
    CHKERRQ(nc_check(stat));
 
    /* define dimensions */
@@ -301,6 +376,12 @@ if (grid.rank == 0) {
    stat = nc_def_var(ncid, "betay", NC_FLOAT, RANK_betay, betay_dims, &betay_id);
    CHKERRQ(nc_check(stat));
 
+   tauc_dims[0] = t_dim;
+   tauc_dims[1] = x_dim;
+   tauc_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "tauc", NC_FLOAT, RANK_tauc, tauc_dims, &tauc_id);
+   CHKERRQ(nc_check(stat));
+
    /* assign attributes */
    stat = nc_put_att_text(ncid, x_id, "axis", 1, "X");
    CHKERRQ(nc_check(stat));
@@ -326,17 +407,27 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "axis", 1, "T");
    check_err(stat,__LINE__,__FILE__);
+
+   float miss = BETAMAX;
+
    stat = nc_put_att_text(ncid, beta_id, "long_name", 30, "ice_basal_friction_coefficient");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, beta_id, "units", 8, "Pa s m-1");
    CHKERRQ(nc_check(stat));
+   stat = nc_put_att_float(ncid, beta_id, "missing_value", NC_FLOAT, 1, &miss);
    stat = nc_put_att_text(ncid, betax_id, "long_name", 42, "ice_basal_friction_coefficient_x_component");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, betax_id, "units", 8, "Pa s m-1");
    CHKERRQ(nc_check(stat));
+   stat = nc_put_att_float(ncid, betax_id, "missing_value", NC_FLOAT, 1, &miss);
    stat = nc_put_att_text(ncid, betay_id, "long_name", 42, "ice_basal_friction_coefficient_y_component");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, betay_id, "units", 8, "Pa s m-1");
+   CHKERRQ(nc_check(stat));
+   stat = nc_put_att_float(ncid, betay_id, "missing_value", NC_FLOAT, 1, &miss);
+   stat = nc_put_att_text(ncid, tauc_id, "long_name", 27, "ice_basal_till_yield_stress");
+   CHKERRQ(nc_check(stat));
+   stat = nc_put_att_text(ncid, tauc_id, "units", 2, "Pa");
    CHKERRQ(nc_check(stat));
 
 } // end if (grid.rank == 0)
@@ -367,12 +458,39 @@ if (grid.rank == 0) {
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
   // 2-D model quantities
-  ierr = put_local_var(&grid, ncid, beta_id, NC_FLOAT, grid.da2, vbeta, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, betax_id, NC_FLOAT, grid.da2, vbetax, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, betay_id, NC_FLOAT, grid.da2, vbetay, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  Vec  to_put = vWork2d[3];
+  if (doPlastic == PETSC_TRUE) {  
+    ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy((doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta,to_put); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put,true); CHKERRQ(ierr);
+  }
+  ierr = put_local_var(&grid, ncid, beta_id, NC_FLOAT, grid.da2, to_put,
+  		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  if (doPlastic == PETSC_TRUE) {
+    ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy((doBetaxy == PETSC_TRUE) ? vbeta : vbetaxORbeta,to_put); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put,false); CHKERRQ(ierr);
+  }
+  ierr = put_local_var(&grid, ncid, betax_id, NC_FLOAT, grid.da2, to_put,
+  		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  if (doPlastic == PETSC_TRUE) {
+    ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy((doBetaxy == PETSC_TRUE) ? vtauc : vbetayORtauc,to_put); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put,false); CHKERRQ(ierr);
+  }
+  ierr = put_local_var(&grid, ncid, betay_id, NC_FLOAT, grid.da2, to_put,
+  		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  if (doPlastic == PETSC_FALSE) {
+    ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(vtauc,to_put); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put,false); CHKERRQ(ierr);
+  }
+  ierr = put_local_var(&grid, ncid, tauc_id, NC_FLOAT, grid.da2, to_put,
+  		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // We are done with these buffers
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
@@ -386,7 +504,100 @@ if (grid.rank == 0) {
 }
 
 
-PetscErrorCode IceDragYieldModel::getEffectiveViscosity() {
+PetscErrorCode IceDragYieldModel::replaceBadwMissing(Vec vmine, bool betaflag) {
+  PetscErrorCode  ierr;
+  PetscScalar     **vvv;
+
+    ierr = DAVecGetArray(grid.da2, vmine, &vvv); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (vvv[i][j] <= -BETAMAX + 1e-1)  vvv[i][j] = BETAMAX;
+        if ((betaflag) && (vvv[i][j] <= BETAMIN + 1e-7))   vvv[i][j] = BETAMAX;
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vmine, &vvv); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
+  PetscErrorCode  ierr;
+
+  if (doPlastic == PETSC_TRUE) {
+
+    // we implement formula (2.4) in C. Schoof 2006 "A variational approach to ice
+    // stream flow", J. Fluid Mech. vol 556 pp 227--251:
+    //  (2.4)   \tau_c = \mu (\rho g H - p_w)
+    // we modify it by:
+    //   1. adding a small till cohesion (see Paterson 3rd ed table 8.1)
+    //   2. replacing   p_w --> \lambda p_w   where \lambda = 0 if bed is frozen
+    //      and where \lambda = Hmelt / DEFAULT_MAX_HMELT when bed is not frozen 
+    //   3. computing a porewater pressure p_w which is the max of (0.95 of overburden)
+    //      and the porewater pressure computed by formula (4) in 
+    //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964
+
+    const PetscScalar plastic_till_c_0 = 20e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
+    const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
+    const PetscScalar porewater_gamma = 0.95; // max allowed fraction of overburden
+    
+    PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
+    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          tauc[i][j] = 0.0;  
+        } else { // grounded
+          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging ?????
+          const PetscScalar overburdenP = ice.rho * grav * H[i][j];
+          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
+          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
+          const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;  // note Hmelt[i][j]=0 if frozen
+          tauc[i][j] = plastic_till_c_0 + plastic_till_mu * (overburdenP - lambda * pw);
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  }
+  // if (doPlastic == PETSC_FALSE) then do nothing extra for each timestep
+  return 0;
+}
+
+
+PetscErrorCode IceDragYieldModel::readBalVels() {
+  PetscErrorCode  ierr;
+  int stat, ncid, v_balvel;
+
+  if (grid.rank == 0) {
+    stat = nc_open(balvelFileName, 0, &ncid); CHKERRQ(nc_check(stat));
+    stat = nc_inq_varid(ncid, "balvel", &v_balvel); CHKERRQ(nc_check(stat));
+  }
+
+  vmagbalvel = vWork2d[2];  // already allocated
+  Vec vzero;
+  VecScatter ctx;
+  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
+  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
+  ierr = ncVarToDAVec(ncid, v_balvel, grid.da2, vmagbalvel, g2, vzero); CHKERRQ(ierr);
+  ierr = VecDestroy(vzero); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
+  ierr = VecScale(vmagbalvel,1.0/secpera); CHKERRQ(ierr);  // convert to m/s
+
+  if (grid.rank == 0) {
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceDragYieldModel::getEffectiveViscosityAllGrounded() {
   PetscErrorCode ierr;
   PetscScalar epsilon = 0.0;  // actually get effective viscosity (not bdd below)
   PetscScalar **mask;
@@ -421,7 +632,7 @@ PetscErrorCode IceDragYieldModel::getEffectiveViscosity() {
 }
 
   
-// compute drag from velocities and mass-balance-velocity
+// compute drag from velocities and balance velocities
 PetscErrorCode IceDragYieldModel::computeDragFromBalanceVelocity() {
   PetscErrorCode ierr;
   Mat A;
@@ -437,7 +648,7 @@ PetscErrorCode IceDragYieldModel::computeDragFromBalanceVelocity() {
   ierr = VecDuplicate(dragxy, &rhs); CHKERRQ(ierr);
   ierr = VecDuplicate(dragxy, &x); CHKERRQ(ierr);
 
-  // build discrete version of MacAyeal-Morland equations (A x = rhs) at all grounded points
+  // build approximation of MacAyeal-Morland equations (A x = rhs) at all grounded points
   ierr = assembleMacayealMatrix(vNu, A); CHKERRQ(ierr);
   ierr = assembleMacayealRhs(false, rhs); CHKERRQ(ierr);
 
@@ -463,7 +674,7 @@ PetscErrorCode IceDragYieldModel::computeDragFromBalanceVelocity() {
         ierr = MatSetValue(A, rowV, rowV,
                            - basalDragy(beta, tauc, u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
       }
-      // remove deformational from mass-balance velocities; put in x
+      // remove deformational from balance velocities; put in x
       const PetscScalar c = sqrt(PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
       PetscScalar       residualFactor = (balvel[i][j] / c) - 1.0;
       // if (residualFactor < 0.0)   residualFactor = 0.0;  // avoid negative drag coeff here?  probably not
@@ -538,34 +749,41 @@ PetscErrorCode IceDragYieldModel::moveDragxytoDAbetas() {
   ierr = VecGetArray(dragxyLoc, &betaxylong); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbetax, &betax); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbetay, &betay); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbeta : vbetaxORbeta, &betax); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vtauc : vbetayORtauc, &betay); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta, &beta); CHKERRQ(ierr);
   const PetscInt     M = 2 * grid.p->My;
-  const PetscScalar  BETAMIN = 1.0e6;
   const PetscScalar  epsuv = PetscSqr(1.0 / secpera);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
       betax[i][j] = betaxylong[i*M + 2*j];
+      // note that on NetCDF write, BETAMAX is made to be missing value
       if (isnan(betax[i][j]))  betax[i][j] = BETAMAX;
-      if (isinf(PetscAbs(betax[i][j])))  betax[i][j] = BETAMAX;
+      if (isinf(betax[i][j]))  betax[i][j] = BETAMAX;
+      if (isinf(-betax[i][j]))  betax[i][j] = -BETAMAX;
+      if (betax[i][j] > BETAMAX)  betax[i][j] = BETAMAX;
+      if (betax[i][j] < -BETAMAX)  betax[i][j] = -BETAMAX;
+
       betay[i][j] = betaxylong[i*M + 2*j+1];
       if (isnan(betay[i][j]))  betay[i][j] = BETAMAX;
-      if (isinf(PetscAbs(betay[i][j])))  betay[i][j] = BETAMAX;
+      if (isinf(betay[i][j]))  betay[i][j] = BETAMAX;
+      if (isinf(-betay[i][j]))  betay[i][j] = -BETAMAX;
+      if (betay[i][j] > BETAMAX)  betay[i][j] = BETAMAX;
+      if (betay[i][j] < -BETAMAX)  betay[i][j] = -BETAMAX;
 
       const PetscScalar usqr = PetscSqr(u[i][j])+epsuv, vsqr = PetscSqr(v[i][j])+epsuv; 
       beta[i][j] = (usqr * betax[i][j] + vsqr * betay[i][j]) / (usqr + vsqr);
-      if (beta[i][j] > BETAMAX)  beta[i][j] = BETAMAX;
-      if (beta[i][j] < BETAMIN)  beta[i][j] = BETAMAX;  // this is better value for future use
+      if (beta[i][j] > BETAMAX)  beta[i][j] = BETAMAX;  // presumably redundant
+      if (beta[i][j] < BETAMIN)  beta[i][j] = BETAMIN;  // this is better value for future use
     }
   }
   ierr = VecRestoreArray(dragxyLoc, &betaxylong); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbetax, &betax); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbetay, &betay); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbeta : vbetaxORbeta, &betax); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vtauc : vbetayORtauc, &betay); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta, &beta); CHKERRQ(ierr);
 
   ierr = VecDestroy(dragxyLoc); CHKERRQ(ierr);
   ierr = VecScatterDestroy(dragxyScatterGlobalToLocal); CHKERRQ(ierr);
@@ -578,11 +796,12 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
   PetscScalar     **mask, **beta;
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta, &beta); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (modMask(mask[i][j]) != MASK_FLOATING) {
-        if (beta[i][j] < 1e-2 * BETAMAX) {
+        // only mark as an ice stream if computed beta was reasonable: in [5e5, 1e12]
+        if ((beta[i][j] < 1e-1 * BETAMAX) && (beta[i][j] > 5 * BETAMIN)) {
           mask[i][j] = MASK_DRAGGING;
         } else {
           mask[i][j] = MASK_SHEET;
@@ -590,9 +809,12 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
-  // now remove singleton and nearly singleton DRAGGING points, i.e. if 
-  //   all BOX stencil neighbors are SHEET or if at most one is DRAGGING:
+  ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta, &beta); CHKERRQ(ierr);
+
+  // 1.  remove singleton and nearly singleton DRAGGING points, i.e. if 
+  //     all box stencil neighbors are SHEET or if at most one is DRAGGING
+  // 2.  make SHEET points with >=3 box stencil FLOATING neighbors *and* 
+  //     >=2 box stencil dragging neighbors into DRAGGING (i.e. don't block streams as they hit floating)
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) == MASK_DRAGGING) {
@@ -602,6 +824,14 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
           modMask(mask[i-1][j-1]) + modMask(mask[i][j-1]) + modMask(mask[i+1][j-1]);
         if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING)) { 
           mask[i][j] = MASK_SHEET;
+        }
+      } else if (intMask(mask[i][j]) == MASK_SHEET) {
+        const int neighmasksum = 
+          modMask(mask[i-1][j+1]) + modMask(mask[i][j+1]) + modMask(mask[i+1][j+1]) +      
+          modMask(mask[i-1][j])   +                       + modMask(mask[i+1][j])   +
+          modMask(mask[i-1][j-1]) + modMask(mask[i][j-1]) + modMask(mask[i+1][j-1]);
+        if (neighmasksum >= (3*MASK_FLOATING + 2*MASK_DRAGGING + 3*MASK_SHEET)) { 
+          mask[i][j] = MASK_DRAGGING;
         }
       }
     }
@@ -615,7 +845,7 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
 }
 
 
-
+#if 0
 PetscErrorCode IceDragYieldModel::writeMatlabDragFile(const char *basename) {
   PetscErrorCode  ierr;
   PetscViewer     viewer;
@@ -667,65 +897,82 @@ PetscErrorCode IceDragYieldModel::writeMatlabDragFile(const char *basename) {
   ierr = PetscViewerDestroy(viewer);
   return 0;
 }
+#endif
 
 
-PetscErrorCode IceDragYieldModel::computeScalarBeta() {
+PetscErrorCode IceDragYieldModel::setupPlasticTauc() {
+  // PetscErrorCode  ierr;
+
+  delete basal;
+  basal = new PlasticBasalType;
+  
+  // see IceDragYieldModel::additionalAtStartTimeStep() for computation of tau_c
+  // from porewater pressure estimate (i.e. using vHmelt)
+
+  SETERRQ(1,"PLASTIC CASE NOT IMPLEMENTED; quitting ...\n");
+  return 0;
+}
+
+
+PetscErrorCode IceDragYieldModel::computeBeta() {
   PetscErrorCode  ierr;
-  PetscTruth      useMacayealVelocitySAVE;
-  PetscScalar     muSlidingSAVE, enhancementFactorSAVE;
+  PetscTruth      useMacayealVelocitySAVE, doBetaxySAVE;
+  PetscScalar     muSlidingSAVE;
 
+  // save aspects of IceModel state before computing beta
   useMacayealVelocitySAVE = useMacayealVelocity;
+  doBetaxySAVE = doBetaxy;
   muSlidingSAVE = muSliding;
-  enhancementFactorSAVE = enhancementFactor;
 
-    ierr = verbPrintf(2,grid.com, 
-          "computing velocities (with MacAyeal; including eff viscosity iteration) ...\n");
-          CHKERRQ(ierr);
-    setUseMacayealVelocity(PETSC_TRUE);
-    ierr = velocity(true); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
-    ierr = updateViewers(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+        "computing velocities (with MacAyeal; including eff viscosity iteration) ...\n");
+        CHKERRQ(ierr);
+  setUseMacayealVelocity(PETSC_TRUE);
+  doBetaxy = PETSC_FALSE; // so  IceDragYieldModel::basalDrag[x|y]()  have usual meaning
+                          // {i.e. same meaning as  IceModel::basalDrag[x|y]() }
+  ierr = velocity(true); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+  ierr = updateViewers(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,grid.com, "computing resulting effective viscosity at all grounded points ...");
-          CHKERRQ(ierr);
-    ierr = getEffectiveViscosity(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
-    ierr = updateViewers(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "computing resulting effective viscosity at all grounded points ...");
+        CHKERRQ(ierr);
+  ierr = getEffectiveViscosityAllGrounded(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+  ierr = updateViewers(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,grid.com, "computing deformational velocities (w/o MacAyeal) ...");
-          CHKERRQ(ierr);
-    setUseMacayealVelocity(PETSC_FALSE);
-    setMuSliding(0.0);  // for deformational, just assume frozen bed
-    setEnhancementFactor(0.8);  //  reduce amount of deformation to ascribe more
-                                //  of mass-balance velocities to sliding
-    ierr = velocity(true); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
-    ierr = updateViewers(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "computing deformational velocities (w/o MacAyeal) ...");
+        CHKERRQ(ierr);
+  setUseMacayealVelocity(PETSC_FALSE);
+  setMuSliding(0.0);  // for deformational, just assume frozen bed
+//  setEnhancementFactor(0.8);  //  reduce amount of deformation to ascribe more
+//                              //  of mass-balance velocities to sliding
+  ierr = velocity(true); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,grid.com, 
-          "computing (scalar) beta by subtracting deformation from balance and using MacAyeal eqns ...");
-          CHKERRQ(ierr);
-    ierr = readBalVels(); CHKERRQ(ierr);
-    ierr = computeDragFromBalanceVelocity(); CHKERRQ(ierr);
-    ierr = moveDragxytoDAbetas(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
-    ierr = updateViewers(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+        "computing (scalar and vector) beta by subtracting deformation from balance and using MacAyeal eqns ...");
+        CHKERRQ(ierr);
+  ierr = readBalVels(); CHKERRQ(ierr);
+  ierr = computeDragFromBalanceVelocity(); CHKERRQ(ierr);
 
-//    ierr = verbPrintf(2,grid.com, "saving Matlab file ..."); CHKERRQ(ierr);
-//    ierr = writeMatlabDragFile("dragfile"); CHKERRQ(ierr);
-//    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, "saving beta in NetCDF file ..."); CHKERRQ(ierr);
-    ierr = writeBetaNC(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+  // restore state before putting draxy into da2 Vecs (and writing nc file and updating mask ...) 
+  setUseMacayealVelocity(useMacayealVelocitySAVE);
+  setMuSliding(muSlidingSAVE);
+  doBetaxy = doBetaxySAVE;
 
-    ierr = verbPrintf(2,grid.com, "updating mask using beta ..."); CHKERRQ(ierr);
-    ierr = updateMaskFromBeta(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
-    ierr = updateViewers(); CHKERRQ(ierr);
-    
-    setUseMacayealVelocity(useMacayealVelocitySAVE);
-    setMuSliding(muSlidingSAVE);
-    setEnhancementFactor(enhancementFactorSAVE);
+  ierr = moveDragxytoDAbetas(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+  ierr = updateViewers(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, "saving beta, betax, betay, tauc in NetCDF file ..."); CHKERRQ(ierr);
+  ierr = writeBetaTaucNCFile(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, "updating mask using beta ..."); CHKERRQ(ierr);
+  ierr = updateMaskFromBeta(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
+  ierr = updateViewers(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -756,25 +1003,19 @@ int main(int argc, char *argv[]) {
     ierr = m.initFromOptions(); CHKERRQ(ierr);
     ierr = m.setSoundingFromOptions(); CHKERRQ(ierr);
 
-    ierr = m.dragYieldOptions(); CHKERRQ(ierr);
-    ierr = m.createDragYieldVecs(); CHKERRQ(ierr);
-    
-    // will allow choice of scalarBeta or vectorBeta or Plastic
-    ierr = m.computeScalarBeta(); CHKERRQ(ierr);
+    // special procedures for derived class IceDragYieldModel:
+    ierr = m.dragYieldInitFromOptions(); CHKERRQ(ierr);    
+    if (m.doPlastic == PETSC_TRUE) {
+      ierr = m.setupPlasticTauc(); CHKERRQ(ierr);
+    } else {
+      ierr = m.computeBeta(); CHKERRQ(ierr); // includes NetCDF write of basal fields
+    }
 
     ierr = verbPrintf(2,com, "running (as PISM) ...\n"); CHKERRQ(ierr);
     ierr = m.run(); CHKERRQ(ierr);
-
+    ierr = m.writeFiles("pant_unnamed"); CHKERRQ(ierr);
+    ierr = m.dragYieldFinalize(); CHKERRQ(ierr); // includes NetCDF write of basal fields in plastic case
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
-
-    ierr = m.writeFiles("unnamed"); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
-    
-    ierr = verbPrintf(2,com, "destroying IceDragYieldModel Vecs ..."); CHKERRQ(ierr);
-    ierr = m.destroyDragYieldVecs(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, " done\n"); CHKERRQ(ierr);
-    
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

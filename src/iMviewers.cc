@@ -415,10 +415,10 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (beta[i][j] > 1.0e6) {
+        if (beta[i][j] > 1.0e5) {
           a[i][j] = log10(beta[i][j]);
         } else {
-          a[i][j] = 6.0;
+          a[i][j] = 5.0;
         }
       }
     }

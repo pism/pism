@@ -180,11 +180,13 @@ protected:
   static const PetscScalar DEFAULT_OCEAN_HEAT_FLUX;
   static const PetscScalar DEFAULT_MAX_HMELT;
 
-  IceGrid      &grid;
-  IceType      &ice;
-  BasalType    *basal;
-  BedrockType  bedrock;
-  DumbOceanType ocean;
+  IceGrid        &grid;
+
+  IceType        &ice;
+  BasalType      *basal;
+  BedrockType    bedrock;
+  SeaWaterType   ocean;
+  FreshWaterType porewater;
 
   // state variables
   Vec vh, vH, vbed,             // 2D vectors; Mx x My
