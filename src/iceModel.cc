@@ -348,6 +348,10 @@ void IceModel::setUseMacayealVelocity(PetscTruth umv) {
   useMacayealVelocity = umv;
 }
 
+void IceModel::setDoSuperpose(PetscTruth ds) {
+  doSuperpose = ds;
+}
+
 void IceModel::setConstantNuForMacAyeal(PetscScalar nu) {
   useConstantNuForMacAyeal = PETSC_TRUE;
   constantNuForMacAyeal = nu;
@@ -402,6 +406,7 @@ void IceModel::setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A) {
   isothermalFlux_n_exponent = n;
   isothermalFlux_A_softness = A;
 }
+
 
 PetscTruth IceModel::isInitialized() const {
   return initialized_p;

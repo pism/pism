@@ -631,13 +631,11 @@ PetscErrorCode IceModel::velocityMacayeal() {
 PetscErrorCode IceModel::broadcastMacayealVelocity() {
   PetscErrorCode ierr;
   PetscScalar **mask, **b, **basalMeltRate, **ubar, **vbar, **ub, **vb;
-  PetscScalar ***u, ***v, ***w;
+  PetscScalar ***u, ***v, ***w, **uvbar[2];
   PetscScalar locCFLmaxdt2D = maxdt;
   
-  /* This allows the temperature equation to know about the velocity in the non-SHEET
-  * regions. It is unnecessary if the temperature equation pays attention to the mask,
-  * thus upwinding the 2-D velocity fields for the advection terms in the non-SHEET
-  * regions.  Note that basal velocities also get updated. */
+  /* This updates the 3D velocity field so that, for example, the temperature eqn
+     knows about the velocity in the non-SHEET regions.  Basal vels also get updated. */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
@@ -648,42 +646,45 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  if (doSuperpose == PETSC_TRUE) {
+    ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  }
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET) {
-        ub[i][j] = ubar[i][j];
-        vb[i][j] = vbar[i][j];
+        // apply glaciological-superposition-to-low-order if desired (and not floating)
+        bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
         
-        PetscScalar denom = PetscAbs(ub[i][j])/grid.p->dx + PetscAbs(vb[i][j])/grid.p->dy;
-        denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
-        locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
-
+        ub[i][j] = (addVels) ? ub[i][j] + ubar[i][j] : ubar[i][j];
+        vb[i][j] = (addVels) ? vb[i][j] + vbar[i][j] : vbar[i][j];
+        
         for (PetscInt k=0; k<grid.p->Mz; ++k) {
-          u[i][j][k] = ubar[i][j];
-          v[i][j][k] = vbar[i][j];
+          u[i][j][k] = (addVels) ? u[i][j][k] + ubar[i][j] : ubar[i][j];
+          v[i][j][k] = (addVels) ? v[i][j][k] + vbar[i][j] : vbar[i][j];
 
           //  no reason to upwind in this context; compare treatment of "div(U)" in
           //  massBalExplicitStep using expression div(Q) = U . grad H + div(U) H
           const PetscScalar u_x = (ubar[i+1][j] - ubar[i-1][j]) / (2.0*grid.p->dx);
           const PetscScalar v_y = (vbar[i][j+1] - vbar[i][j-1]) / (2.0*grid.p->dy);
 
-          w[i][j][k] = - k * grid.p->dz * (u_x + v_y);
+          // this vertical velocity is RELATIVE TO THE BED!  thus no contribution
+          // from moving or sloping bed
+          w[i][j][k] = (addVels) ? w[i][j][k] - k * grid.p->dz * (u_x + v_y)
+                                 : - k * grid.p->dz * (u_x + v_y);
           if (includeBMRinContinuity == PETSC_TRUE) {
             w[i][j][k] -= capBasalMeltRate(basalMeltRate[i][j]);
           }
-
-#if 0
-          if (intMask(mask[i][j]) == MASK_DRAGGING) { // add velocity contribution from
-                                 // contact with sloped and/or moving bed
-            const PetscScalar   b_x0 = (b[i+1][j] - b[i-1][j]) / (2 * grid.p->dx);
-            const PetscScalar   b_y0 = (b[i][j+1] - b[i][j-1]) / (2 * grid.p->dy);
-            w[i][j][k] +=  + u[i][j][k] * b_x0 + v[i][j][k] * b_y0
-                           + 0;  // db/dt  FIXME?: use uplift? probably NO:
-                                 //   vert velocity is relative!
-          }
-#endif
-
         }
+        
+        if (addVels) { // now update ubar,vbar by adding SIA contribution
+          ubar[i][j] += 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
+          vbar[i][j] += 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        }
+
+        PetscScalar denom = PetscAbs(ubar[i][j])/grid.p->dx + PetscAbs(vbar[i][j])/grid.p->dy;
+        denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+        locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
       }
     }
   }
@@ -697,6 +698,16 @@ PetscErrorCode IceModel::broadcastMacayealVelocity() {
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
+
+  if (doSuperpose == PETSC_TRUE) {
+    ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+    // now communicate modified ubar, vbar
+    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+  }
 
   ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
@@ -733,6 +744,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
         const PetscScalar beta_y = basalDragy(beta, tauc, ub, vb, i, j);
         const PetscScalar basal_stress_x = - beta_x * ub[i][j];
         const PetscScalar basal_stress_y = - beta_y * vb[i][j];
+        // note next line uses *updated* ub,vb if doSuperpose == TRUE
         Rb[i][j] = - basal_stress_x * ub[i][j] - basal_stress_y * vb[i][j];
       } 
       // otherwise leave SIA-computed value alone
@@ -768,8 +780,7 @@ PetscErrorCode IceModel::correctSigma() {
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      int m = modMask(mask[i][j]);
-      if (( (m == MASK_DRAGGING) || (m == MASK_FLOATING) ) && (useMacayealVelocity)) {
+      if (modMask(mask[i][j]) != MASK_SHEET) {
         // hor. velocities don't depend on depth; use basal values
         const PetscScalar u_x = (ub[i+1][j] - ub[i-1][j])/(2*dx),
                           u_y = (ub[i][j+1] - ub[i][j-1])/(2*dy),
@@ -779,12 +790,17 @@ PetscErrorCode IceModel::correctSigma() {
                            + u_x * v_y + PetscSqr(0.5*(u_y + v_x));
         const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
         const PetscScalar CC = 4 * beta / (ice.rho * ice.c_p);
+
+        // apply glaciological-superposition-to-low-order if desired (and not floating)
+        bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
+
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
           const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
-          Sigma[i][j][k] = CC * ice.effectiveViscosity(schoofReg,
-                                         u_x,u_y,v_x,v_y,T[i][j][k],pressure);;
+          const PetscScalar tempSigma = CC * ice.effectiveViscosity(schoofReg,
+                                               u_x,u_y,v_x,v_y,T[i][j][k],pressure);
+          Sigma[i][j][k] = (addVels) ? Sigma[i][j][k] + tempSigma : tempSigma;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
           Sigma[i][j][k] = 0.0;

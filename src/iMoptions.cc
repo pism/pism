@@ -29,7 +29,7 @@ IceModel::setFromOptions() {
   PetscScalar my_maxdt, my_mu, my_startYear, my_runYears, my_endYear;
   PetscScalar macRTol, my_nu, maceps, regVelSchoof, regLengthSchoof;
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
-             maxdtSet, startYearSet, runYearsSet, endYearSet,
+             maxdtSet, startYearSet, runYearsSet, endYearSet, superpose,
              noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
              nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet;
   PetscInt nospokeslevel;
@@ -148,6 +148,11 @@ IceModel::setFromOptions() {
 // note "-regrid" is in use for regrid file name; see iMregrid.cc
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
+
+  // apply "glaciological superposition to low order", i.e. add SIA results to those of MacAyeal equations
+  // where DRAGGING
+  ierr = PetscOptionsHasName(PETSC_NULL, "-super", &superpose); CHKERRQ(ierr);
+  setDoSuperpose(superpose);
 
   /* This controls allows more than one mass continuity steps per temperature/age step */
   ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &tempskipSet); CHKERRQ(ierr);

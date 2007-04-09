@@ -61,13 +61,13 @@ the model should less in steady state than in 1.
 3. For Schoof-type solution of plastic till problem, with yield stress computed from 
 thermal model and estimate of basal till pore water pressure:
 
-     pant -if ant40km.nc -mv -gk -e 1.2 -y 1 -verbose -plastic -obasal taucmap
+     pant -if ant40km.nc -mv -gk -e 1.2 -y 1 -verbose -super -plastic -obasal taucmap
 
 Here the plastic till Schoof version of the MacAyeal equations are solved from the saved model
 state ant40km.nc.  In particular, the vHmelt values and the basal temps (vT) from
 ant40km.nc are used to compute vtauc.  This map is saved in taucmap.nc.  Then 1 years
-are run.
-
+are run.  During this run the velocities computed from SIA are added to those from MacAyeal-Schoof
+in the grounded ice.  The ice shelves have their usual scheme.
 */
 
 #include <cstring>
@@ -133,7 +133,7 @@ private:
 // if mask[i][j] in these limits, and grounded, then marked as MASK_DRAGGING
 #define MASK_BETA_RANGE_LOW   (5.0 * BETAMIN)
 #define MASK_BETA_RANGE_HIGH  (0.01 * BETAMAX)
-
+#define MASK_BETA_MAXRATIO    4.0
 
 IceDragYieldModel::IceDragYieldModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {
@@ -493,11 +493,14 @@ PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
     //  (2.4)   \tau_c = \mu (\rho g H - p_w)
     // we modify it by:
     //   1. adding a small till cohesion (see Paterson 3rd ed table 8.1)
-    //   2. replacing   p_w --> \lambda p_w   where \lambda = 0 if bed is frozen
-    //      and where \lambda = Hmelt / DEFAULT_MAX_HMELT when bed is not frozen 
+    //   2. replacing   p_w --> \lambda p_w   where \lambda = Hmelt / DEFAULT_MAX_HMELT;
+    //      thus 0 <= \lambda <= 1 and \lambda = 0 when bed is frozen 
     //   3. computing a porewater pressure p_w which is the max of (0.95 of overburden)
     //      and the porewater pressure computed by formula (4) in 
-    //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964
+    //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964;
+    //      the modification of this porewater pressure as in Lingle&Brown 1987 is not 
+    //      implementable because the "elevation of the bed at the grounding line"
+    //      is at an unknowable location (we are not doing a flow line model!)
 
     const PetscScalar plastic_till_c_0 = 20e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
     const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
@@ -514,7 +517,7 @@ PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           tauc[i][j] = 0.0;  
         } else { // grounded
-          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging ?????
+          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
           const PetscScalar overburdenP = ice.rho * grav * H[i][j];
           const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
           const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
@@ -528,6 +531,7 @@ PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
     ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+    // communication of mask deliberately skipped; will happen next time step if not sooner
   }
   // if (doPlastic == PETSC_FALSE) then do nothing extra for each timestep
   return 0;
@@ -720,27 +724,24 @@ PetscErrorCode IceDragYieldModel::moveDragxytoDAbetas() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
+      // do bounds checking on betax, betay so that
+      //     BETAMIN <= betax,betay <= BETAMAX; note BETAMAX is missing_value
       betax[i][j] = betaxylong[i*M + 2*j];
       // note that on NetCDF write, BETAMAX is made to be missing value
       if (isnan(betax[i][j]))  betax[i][j] = BETAMAX;
       if (isinf(betax[i][j]))  betax[i][j] = BETAMAX;
-//      if (isinf(-betax[i][j]))  betax[i][j] = -BETAMAX;
       if (betax[i][j] > BETAMAX)  betax[i][j] = BETAMAX;
-//      if (betax[i][j] < -BETAMAX)  betax[i][j] = -BETAMAX;
       if (betax[i][j] < BETAMIN)  betax[i][j] = BETAMIN;
-
       betay[i][j] = betaxylong[i*M + 2*j+1];
       if (isnan(betay[i][j]))  betay[i][j] = BETAMAX;
       if (isinf(betay[i][j]))  betay[i][j] = BETAMAX;
-//      if (isinf(-betay[i][j]))  betay[i][j] = -BETAMAX;
       if (betay[i][j] > BETAMAX)  betay[i][j] = BETAMAX;
-//      if (betay[i][j] < -BETAMAX)  betay[i][j] = -BETAMAX;
       if (betay[i][j] < BETAMIN)  betay[i][j] = BETAMIN;
 
       const PetscScalar usqr = PetscSqr(u[i][j])+epsuv, vsqr = PetscSqr(v[i][j])+epsuv; 
       beta[i][j] = (usqr * betax[i][j] + vsqr * betay[i][j]) / (usqr + vsqr);
-      if (beta[i][j] > BETAMAX)  beta[i][j] = BETAMAX;  // presumably redundant
-      if (beta[i][j] < BETAMIN)  beta[i][j] = BETAMIN;  // this is better value for future use
+      if (beta[i][j] > BETAMAX)  beta[i][j] = BETAMAX;  // presumably redundant; accounts for possible rounding
+      if (beta[i][j] < BETAMIN)  beta[i][j] = BETAMIN;  
     }
   }
   ierr = VecRestoreArray(dragxyLoc, &betaxylong); CHKERRQ(ierr);
@@ -758,16 +759,20 @@ PetscErrorCode IceDragYieldModel::moveDragxytoDAbetas() {
 
 PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **beta, **newmask;
+  PetscScalar     **mask, **beta, **betax, **betay, **newmask;
   Vec             vnewMask;
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbeta : vbetaxORbeta, &betax); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vtauc : vbetayORtauc, &betay); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (modMask(mask[i][j]) != MASK_FLOATING) {
         // only mark as an ice stream if computed beta was reasonable
-        if ((beta[i][j] >= MASK_BETA_RANGE_LOW) && (beta[i][j] <= MASK_BETA_RANGE_HIGH)) {
+        const PetscScalar ratio = betax[i][j]/betay[i][j];
+        if ( (beta[i][j] >= MASK_BETA_RANGE_LOW) && (beta[i][j] <= MASK_BETA_RANGE_HIGH) 
+             && (ratio <= MASK_BETA_MAXRATIO) && ((1.0/ratio) <= MASK_BETA_MAXRATIO)     ) {
           mask[i][j] = MASK_DRAGGING;
         } else {
           mask[i][j] = MASK_SHEET;
@@ -776,6 +781,8 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
     }
   }
   ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta, &beta); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vbeta : vbetaxORbeta, &betax); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, (doBetaxy == PETSC_TRUE) ? vtauc : vbetayORtauc, &betay); CHKERRQ(ierr);
 
   // 1.  remove singleton and nearly singleton DRAGGING points, i.e. if 
   //     all box stencil neighbors are SHEET or if at most one is DRAGGING or FLOATING

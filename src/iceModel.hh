@@ -88,6 +88,7 @@ public:
   void setOceanKill(PetscTruth);
   void setNoViewers();
   void setUseMacayealVelocity(PetscTruth);
+  void setDoSuperpose(PetscTruth);
   void setConstantNuForMacAyeal(PetscScalar);
   void setRegularizingVelocitySchoof(PetscScalar);
   void setRegularizingLengthSchoof(PetscScalar);
@@ -231,7 +232,7 @@ protected:
   // flags
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
-  PetscTruth  useMacayealVelocity, useConstantNuForMacAyeal, 
+  PetscTruth  useMacayealVelocity, doSuperpose, useConstantNuForMacAyeal, 
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, allowRegridding, doTempSkip;
