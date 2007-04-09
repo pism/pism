@@ -22,8 +22,8 @@ endif
 
 #VARIABLES:
 
-#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag pant
+#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf pant
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI pant
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -36,7 +36,7 @@ tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc run.cc verify.cc iceCompModel.cc get_drag.cc shelf.cc pant.cc
+	iceROSSModel.cc run.cc verify.cc iceCompModel.cc shelf.cc pant.cc
 other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
@@ -57,9 +57,6 @@ libtests : ${TESTS_OBJS}
 
 flowTable : flowTable.o obj/libpism.so
 	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/flowTable
-
-get_drag : get_drag.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/get_drag
 
 pant : pant.o obj/libpism.so
 	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/pant
