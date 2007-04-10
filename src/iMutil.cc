@@ -663,16 +663,19 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
   ierr = initBasalFields(); CHKERRQ(ierr);
-  
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-
   // Note that basal melt rate is not read in as part of a stored model state or
   // an initialization file.  Because basal melt rate is used in computing vertical
   // velocity on the regular grid, and because that calculation could/does precede
   // the first call to temperatureAgeStep(), we want to make sure the first vert
   // velocities do not use junk from uninitialized basal melt rate.
   ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
-  
+  if (createBasal_done == PETSC_FALSE) {
+    basal = new ViscousBasalType;
+    createBasal_done = PETSC_TRUE;
+  }
+    
+  ierr = bedDefSetup(); CHKERRQ(ierr);
+
   if (verbosityLevel >= 3) {
     ierr = PetscBagView(grid.bag, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   } else {

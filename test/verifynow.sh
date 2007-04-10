@@ -21,7 +21,7 @@ echo "          (so  dy = 5000, 1250, 312.5, 78.125 *meters*):"
 
 for myMy in 49 193 769 3073
 do
-   obj/pismv -test I -Mx 5 -My $myMy -mv_rtol 1e-7 -ksp_rtol 1e-6 -verbose > _temp_result.txt 
+   obj/pismv -test I -Mx 5 -My $myMy -mv_rtol 1e-7 -ksp_rtol 1e-10 -verbose > _temp_result.txt 
    sed '/  history =/,+1!d' _temp_result.txt | sed 1d
    sed '/Actual ERRORS/,+2!d' _temp_result.txt
    date

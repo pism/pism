@@ -5,7 +5,7 @@
 # the minimal amount of computation to show convergence to continuum results.
 # ELB 1/31/07; 2/3/07: note -ksp_rtol added
 
-N=4
+N=8
 myKSPRTOL=1e-12
 myMVRTOL=5e-7
 echo "mpiverifynow.sh running with $N processors"
@@ -16,9 +16,9 @@ echo "          (so  dx = dy = 50, 33.3, 25, 16.7 km):"
 
 for myMx in 41 61 81 121
 do
-#   time mpiexec -n $N obj/pismv -test C -Mx $myMx -My $myMx -Mz 31 -y 15208.0 -verbose > _temp_result.txt 
-#   sed '/  history =/,+1!d' _temp_result.txt | sed 1d
-#   sed '/Actual ERRORS/,+2!d' _temp_result.txt
+   time mpiexec -n $N obj/pismv -test C -Mx $myMx -My $myMx -Mz 31 -y 15208.0 -verbose > _temp_result.txt 
+   sed '/  history =/,+1!d' _temp_result.txt | sed 1d
+   sed '/Actual ERRORS/,+2!d' _temp_result.txt
    date
 done
 

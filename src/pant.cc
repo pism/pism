@@ -519,8 +519,9 @@ PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
         } else { // grounded
           mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
           const PetscScalar overburdenP = ice.rho * grav * H[i][j];
-          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
-          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
+//          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
+//          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
+          const PetscScalar pw = porewater_gamma * overburdenP;
           const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;  // note Hmelt[i][j]=0 if frozen
           tauc[i][j] = plastic_till_c_0 + plastic_till_mu * (overburdenP - lambda * pw);
         }
@@ -836,15 +837,14 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
 
 
 PetscErrorCode IceDragYieldModel::setupPlasticTauc() {
-  // PetscErrorCode  ierr;
 
-  delete basal;
+  if (createBasal_done == PETSC_TRUE) delete basal;
   basal = new PlasticBasalType;
-  
+  createBasal_done = PETSC_TRUE;
+ 
   // see IceDragYieldModel::additionalAtStartTimeStep() for computation of tau_c
   // from porewater pressure estimate (i.e. using vHmelt)
 
-  SETERRQ(1,"PLASTIC CASE NOT IMPLEMENTED; quitting ...\n");
   return 0;
 }
 

@@ -22,7 +22,7 @@ simpleI = env.Program('simpleI', 'exact/simpleI.c', LIBS = ['tests', 'm'])
 verify = env.Program('pismv', ['iceCompModel.cc', 'iceExactStreamModel.cc', 'verify.cc'],
                      LIBS = ['pism', 'tests'] + pism_libs)
 
-get_drag = env.Program('get_drag.cc', LIBS= ['pism'] + pism_libs)
+pant = env.Program('pant.cc', LIBS= ['pism'] + pism_libs)
 
-#Default(flowTable, run, simplify, verify, simpleISO, simpleFG, simpleI, shelf, get_drag)
-Default(run, simplify, verify)
+#Default(flowTable, run, simplify, verify, simpleISO, simpleFG, simpleI, shelf, pant)
+Default(run, simplify, verify, pant)

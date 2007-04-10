@@ -87,14 +87,14 @@ PetscErrorCode IceExactStreamModel::initFromOptions() {
   
   ierr = fillinTemps();  CHKERRQ(ierr);
 
+  ierr = afterInitHook(); CHKERRQ(ierr);  // note this sets basal to ViscousBasalType
+
   // make sure we are using plastic till
   if (createBasal_done == PETSC_TRUE) delete basal;
   basal = new PlasticBasalType;
   createBasal_done = PETSC_TRUE;
-  ierr = taucSet(); CHKERRQ(ierr);
+  ierr = taucSet(); CHKERRQ(ierr);  // now fill vtauc with values for Schoof manufactured solution
   
-  ierr = afterInitHook(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -105,7 +105,7 @@ PetscErrorCode IceExactStreamModel::fillinTemps() {
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = VecSet(vT, T0); CHKERRQ(ierr);
   ierr = VecSet(vTb, T0); CHKERRQ(ierr);
-  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);
+  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age, not yield stress
   return 0;
 }
 

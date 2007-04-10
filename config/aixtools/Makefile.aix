@@ -49,8 +49,8 @@ endif
 
 #VARIABLES:
 
-#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf get_drag
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI get_drag
+#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf pant
+executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI pant
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -63,7 +63,7 @@ tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc run.cc verify.cc iceCompModel.cc get_drag.cc shelf.cc \
+	iceROSSModel.cc run.cc verify.cc iceCompModel.cc pant.cc shelf.cc \
         iceExactStreamModel.cc
 other_csources= simpleISO.c simpleFG.c simpleI.c
 
@@ -91,8 +91,8 @@ libtests : ${TESTS_OBJS}
 flowTable : obj/libpism.a flowTable.o
 	${IBM_LINKER} -lpism flowTable.o ${ICE_LIB_FLAGS} -o obj/flowTable
 
-get_drag : obj/libpism.a get_drag.o
-	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/get_drag
+pant : obj/libpism.a pant.o
+	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pant
 
 pismr : obj/libpism.a run.o
 	${IBM_LINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
