@@ -687,6 +687,11 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = initSounding(); CHKERRQ(ierr);
   tempskipCountDown = 0;
 
+  if (createBasal_done == PETSC_FALSE) {
+    basal = new ViscousBasalType;
+    createBasal_done = PETSC_TRUE;
+  }
+  
   ierr = createViewers(); CHKERRQ(ierr);
 
   return 0;

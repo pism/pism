@@ -18,6 +18,10 @@
 
 #include "materials.hh"
 
+// If we have more stuff like this, we should just make pism_util.{cc,hh}
+PetscErrorCode verbPrintf(const int thresh, 
+                          MPI_Comm comm,const char format[],...);
+
 PetscScalar BedrockType::k      = 3.0;          // J/(m K s) = W/(m K)    thermal conductivity
 PetscScalar BedrockType::c_p    = 1000;         // J/(kg K)     specific heat capacity
 // for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
@@ -362,6 +366,11 @@ PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
+PetscErrorCode ViscousBasalType::printInfo(const int thresh, MPI_Comm com) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(thresh, com, "Using viscous till.\n"); CHKERRQ(ierr);
+  return 0;
+}
 
 PetscScalar ViscousBasalType::velocity(PetscScalar sliding_coefficient,
                                        PetscScalar stress) {
@@ -371,6 +380,7 @@ PetscScalar ViscousBasalType::drag(PetscScalar coeff, PetscScalar tauc,
                                    PetscScalar vx, PetscScalar vy) {
   /* This implements a linear sliding law.  A more elaborate relation may be
   * appropriate. */
+  //printf("viscous_drag ");
   return coeff;
 }
 
@@ -387,9 +397,16 @@ PlasticBasalType::PlasticBasalType() {
     plastic_regularize = DEFAULT_PLASTIC_REGULARIZE;
   }
 }
+
+PetscErrorCode PlasticBasalType::printInfo(const int thresh, MPI_Comm com) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(thresh, com, "Using plastic till with regularization %10.5e (m^2/s^2).\n",
+                    plastic_regularize * secpera); CHKERRQ(ierr);
+  return 0;
+}
     
 PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
-                                   PetscScalar vx, PetscScalar vy) const {
+                                   PetscScalar vx, PetscScalar vy) {
   return tauc / sqrt(PetscSqr(plastic_regularize)
                      + PetscSqr(vx) + PetscSqr(vy));
 }

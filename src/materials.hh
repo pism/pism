@@ -205,6 +205,7 @@ public:
 
 class BasalType {
 public:
+  virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com) = 0;
   virtual PetscScalar velocity(PetscScalar sliding_coefficient,
                                PetscScalar stress) = 0;
   virtual PetscScalar drag(PetscScalar beta, PetscScalar tauc,
@@ -214,6 +215,7 @@ public:
 
 class ViscousBasalType : public BasalType {
 public:
+  virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com);
   virtual PetscScalar velocity(PetscScalar sliding_coefficient,
                                PetscScalar stress);
   virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
@@ -224,8 +226,9 @@ public:
 class PlasticBasalType : public ViscousBasalType {
 public:
   PlasticBasalType();
+  virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy) const;
+                           PetscScalar vx, PetscScalar vy);
 protected:
   // 1 m/a is small in basalDrag[x|y] below
   static const PetscScalar DEFAULT_PLASTIC_REGULARIZE;

@@ -236,7 +236,7 @@ protected:
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, allowRegridding, doTempSkip;
-  PetscTruth  createVecs_done, createViewers_done;
+  PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  useIsothermalFlux;
   char        adaptReasonFlag;
 

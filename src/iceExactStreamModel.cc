@@ -67,10 +67,6 @@ PetscErrorCode IceExactStreamModel::initFromOptions() {
      exact solution. */
   ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
 
-  // make sure we are using plastic till
-  if (basal != NULL) delete basal;
-  basal = new PlasticBasalType;
-
   /* input file not allowed */
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -90,6 +86,12 @@ PetscErrorCode IceExactStreamModel::initFromOptions() {
   ierr = grid.rescale(500e3, 120e3, 3000); CHKERRQ(ierr);
   
   ierr = fillinTemps();  CHKERRQ(ierr);
+
+  // make sure we are using plastic till
+  if (createBasal_done == PETSC_TRUE) delete basal;
+  basal = new PlasticBasalType;
+  createBasal_done = PETSC_TRUE;
+  ierr = taucSet(); CHKERRQ(ierr);
   
   ierr = afterInitHook(); CHKERRQ(ierr);
 
@@ -108,22 +110,36 @@ PetscErrorCode IceExactStreamModel::fillinTemps() {
 }
 
 
-PetscScalar IceExactStreamModel::taucGet(PetscInt i, PetscInt j) const {
+PetscErrorCode IceExactStreamModel::taucSet() {
   // compare IceCompModel::mapcoords()
-  const PetscScalar jfrom0
-          = static_cast<PetscScalar>(j) - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
-  const PetscScalar y = grid.p->dy * jfrom0;
-  const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-  const PetscScalar f = ice.rho * grav * H0_schoof * tan(theta);
-  return f * pow(PetscAbs(y / L_schoof), m_schoof);
+  PetscErrorCode ierr;
+  PetscScalar **tauc;
+
+  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+      const PetscScalar jfrom0
+        = static_cast<PetscScalar>(j) - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
+      const PetscScalar y = grid.p->dy * jfrom0;
+      const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
+      const PetscScalar f = ice.rho * grav * H0_schoof * tan(theta);
+      tauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+  
+  return 0;
 }
 
 
 // reimplement basal drag as plastic law [THIS MAY OR MAY NOT WORK!!]
+#if 0
 PetscScalar IceExactStreamModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
                                             PetscScalar **u, PetscScalar **v,
                                             PetscInt i, PetscInt j) const {
-  return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));  
+  //return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
+  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
 }
 
 
@@ -131,9 +147,10 @@ PetscScalar IceExactStreamModel::basalDragx(PetscScalar **beta, PetscScalar **ta
 PetscScalar IceExactStreamModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
                                             PetscScalar **u, PetscScalar **v,
                                             PetscInt i, PetscInt j) const {
-  return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));  
+  // return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
+  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
 }
-
+#endif
 
 PetscErrorCode IceExactStreamModel::setInitStateAndBoundaryVels() {
   PetscErrorCode ierr;
@@ -322,11 +339,13 @@ PetscErrorCode IceExactStreamModel::run() {
     ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(5,grid.com,
-        "  [using Schoof regularization constant = %10.5e (m^2/s^2) and plastic_regularize = %10.5e (m/a)]\n",
-        PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof),plastic_regularize*secpera);
-        CHKERRQ(ierr);
-    // solve model equations 
+    ierr = verbPrintf(4,grid.com,
+                      "  [using Schoof regularization constant = %10.5e (m^2/s^2)\n",
+                      PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof));
+    CHKERRQ(ierr);
+    ierr = basal->printInfo(4, grid.com); CHKERRQ(ierr);
+    // solve model equations
+
     ierr = velocityMacayeal(); CHKERRQ(ierr);
   }
 

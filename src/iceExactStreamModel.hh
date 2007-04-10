@@ -35,19 +35,18 @@ public:
 
 private:
     PetscInt        flowlawNumber;
-    PetscScalar     plastic_regularize;
     PetscTruth      exactOnly;
     static const PetscScalar   
                     m_schoof, L_schoof, aspect_schoof, H0_schoof,
                     B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
     
-    PetscScalar     taucGet(PetscInt i, PetscInt j) const;
-    PetscScalar     basalDragx(PetscScalar **beta, PetscScalar **tauc,
-                               PetscScalar **u, PetscScalar **v,
-                               PetscInt i, PetscInt j) const;
-    PetscScalar     basalDragy(PetscScalar **beta, PetscScalar **tauc,
-                               PetscScalar **u, PetscScalar **v,
-                               PetscInt i, PetscInt j) const;
+//     PetscScalar     basalDragx(PetscScalar **beta, PetscScalar **tauc,
+//                                PetscScalar **u, PetscScalar **v,
+//                                PetscInt i, PetscInt j) const;
+//     PetscScalar     basalDragy(PetscScalar **beta, PetscScalar **tauc,
+//                                PetscScalar **u, PetscScalar **v,
+//                                PetscInt i, PetscInt j) const;
+    PetscErrorCode  taucSet();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  setInitStateAndBoundaryVels();
 };

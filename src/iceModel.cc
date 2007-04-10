@@ -118,8 +118,7 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   signal(SIGTERM, pism_signal_handler);
   signal(SIGUSR1, pism_signal_handler);
 
-  basal = new ViscousBasalType;
-
+  createBasal_done = PETSC_FALSE;
   createVecs_done = PETSC_FALSE;
   createViewers_done = PETSC_FALSE;
   ierr = setDefaults();
@@ -131,12 +130,14 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
 
 
 IceModel::~IceModel() {
-  delete basal;
   if (createVecs_done == PETSC_TRUE) {
     destroyVecs();
   }
   if (createViewers_done == PETSC_TRUE) {
     destroyViewers();
+  }
+  if (createBasal_done == PETSC_TRUE) {
+    delete basal;
   }
 }
 
