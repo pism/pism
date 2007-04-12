@@ -280,7 +280,12 @@ PetscErrorCode IceModel::temperatureStep() {
         Hmeltnew = 0.0;
       }
       
-      Tb[i][j][k0] = Tnew[i][j][0]; // we must agree on redundant values
+//      Tb[i][j][k0] = Tnew[i][j][0]; // we must agree on redundant values
+      if (ks > 0) {
+        Tb[i][j][k0] = Tnew[i][j][0]; // we must agree on redundant values
+      } else {
+        Tb[i][j][k0] = Ts[i][j];
+      }
       
       // set to air temp above ice
       for (PetscInt k=ks; k<Mz; k++) {
