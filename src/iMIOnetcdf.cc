@@ -735,7 +735,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     PetscInt    M, N, m, n;
     PetscScalar ***T, ***Tb, ***newTb;
     DA _da3b;
-    Vec _vTb;
+    Vec _vTb, _g3b;
 
     grid.p->Mbz++;
     ierr = DAGetInfo(grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
@@ -743,12 +743,13 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     ierr = DACreate3d(grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, grid.p->Mbz, N, M,
                       1, n, m, 1, 1, PETSC_NULL, PETSC_NULL, PETSC_NULL, &_da3b); CHKERRQ(ierr);
     ierr = DACreateLocalVector(_da3b, &_vTb); CHKERRQ(ierr);
+    ierr = DACreateGlobalVector(_da3b, &_g3b); CHKERRQ(ierr);
 
     ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
     ierr = DAVecGetArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i < grid.xs + grid.xm; i++) {
-      for (PetscInt j = grid.ys; j < grid.ys + grid.ys; j++) {
+      for (PetscInt j = grid.ys; j < grid.ys + grid.ym; j++) {
         for (PetscInt k = 0; k < grid.p->Mbz - 1; k++) {
           newTb[i][j][k] = Tb[i][j][k];
         }
@@ -760,6 +761,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     ierr = DAVecRestoreArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
     DADestroy(grid.da3b); grid.da3b = _da3b;
     VecDestroy(vTb); vTb = _vTb;
+    VecDestroy(g3b); g3b = _g3b;
     // We never need the ghosted values of vTb, so we don't need LocalToLocal() here
   }
 
