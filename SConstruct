@@ -83,7 +83,7 @@ env.Append(LIBPATH = [libpism_dir])
 env.Append(RPATH = [libpism_dir])
 
 #petsc_libs = ['petsc' + mod for mod in Split('ksp dm mat vec') + [""]]
-pism_libs = petsc_libs + Split('stdc++ netcdf fftw3 gsl')
+pism_libs = petsc_libs + Split('stdc++ netcdf fftw3 gsl gslcblas')
 
 if False:
     print 'CC        = ', env['CC']

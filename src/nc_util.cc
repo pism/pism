@@ -395,9 +395,10 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
   for (int i = 0; i < 4; i++) sc[i] = lic.start[i];
   for (int i = 0; i < 4; i++) sc[4 + i] = lic.count[i];
 
+  // At this point, sc[] is set up correctly for normal 3-D quantities.
   if (dim_flag == 2) { // 2-D quantity
     sc[3] = 0; sc[7] = 1;
-  } else if (dim_flag == 4) { // Bedrock quantity.
+  } else if (dim_flag == 4) { // Bedrock quantity
     sc[3] = lic.start[4]; sc[7] = lic.count[4];
   }
   
@@ -443,17 +444,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
 
       int a_len = 1;
       for (int i = 0; i < dims; i++) a_len *= sc[4 + i];
-      
-      if (dim_flag == 4) { // We are doing basal temperature, so we need the temperature at z=0
-        sc_nc[3] = 0; sc_nc[7] = 1;
-        int T_id;
-        stat = nc_inq_varid(lic.ncid, "T", &T_id);
-        CHKERRQ(check_err(stat,__LINE__,__FILE__));
-        stat = nc_get_vara_float(lic.ncid, T_id, &sc_nc[0], &sc_nc[4], &(lic.a[a_len]));
-        CHKERRQ(check_err(stat,__LINE__,__FILE__));
-        a_len += sc[5] * sc[6];
-      }
-      
+
       if (proc != 0) {
         MPI_Send(lic.a, a_len, MPI_FLOAT, proc, var_tag, grid.com);
       }
@@ -464,7 +455,6 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
   }
   
   PetscScalar *vec_a;
-  ierr = DALocalToGlobal(da, vec, INSERT_VALUES, g); CHKERRQ(ierr);
   ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
 
   //const int xcount = lic.count[1];

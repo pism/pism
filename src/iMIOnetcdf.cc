@@ -715,17 +715,17 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
 
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
-    
+
+  int history_len;
   if (grid.rank == 0) {
     stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    MPI_Bcast(grid.p->history, strlen(grid.p->history), MPI_CHAR, 0, grid.com);
-
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  } else {
-    MPI_Bcast(grid.p->history, HISTORY_STRING_LENGTH, MPI_CHAR, 0, grid.com);
+    history_len = strnlen(grid.p->history, HISTORY_STRING_LENGTH);
   }
+  MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
+  MPI_Bcast(grid.p->history, history_len, MPI_CHAR, 0, grid.com);
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
 

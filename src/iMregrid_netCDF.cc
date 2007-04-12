@@ -64,14 +64,12 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   ierr = PetscFree(lic.a); CHKERRQ(ierr);
   
   if (grid.rank == 0) {
-//     stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
-//     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-//     MPI_Bcast(grid.p->history, strlen(grid.p->history), MPI_CHAR, 0, grid.com);
+    // If we want history from the regridded file, we can get it here and broadcast it.
+    // stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
+    // CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  } else {
-//     MPI_Bcast(grid.p->history, HISTORY_STRING_LENGTH, MPI_CHAR, 0, grid.com);
   }
 
   return 0;
