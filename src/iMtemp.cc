@@ -213,15 +213,9 @@ PetscErrorCode IceModel::temperatureStep() {
 
     const PetscScalar GlobalMinTemp = 200.0;
 
-      // insert bedrock solution        
+      // insert bedrock solution; check for too low below
       for (PetscInt k=0; k < k0; k++) {
         Tb[i][j][k] = x[k];
-        if (Tb[i][j][k] < GlobalMinTemp) {
-           ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) bedrock temp at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
-              i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
-           myLowTempCount++;
-        }
       }
 
       // prepare for melting/refreezing
@@ -280,11 +274,20 @@ PetscErrorCode IceModel::temperatureStep() {
         Hmeltnew = 0.0;
       }
       
-//      Tb[i][j][k0] = Tnew[i][j][0]; // we must agree on redundant values
+      // we must agree on redundant values T(z=0) at top of bedrock and at bottom of ice
       if (ks > 0) {
-        Tb[i][j][k0] = Tnew[i][j][0]; // we must agree on redundant values
+        Tb[i][j][k0] = Tnew[i][j][0];
       } else {
         Tb[i][j][k0] = Ts[i][j];
+      }
+      // check bedrock solution        
+      for (PetscInt k=0; k <= k0; k++) {
+        if (Tb[i][j][k] < GlobalMinTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) bedrock temp at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
+              i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
+           myLowTempCount++;
+        }
       }
       
       // set to air temp above ice

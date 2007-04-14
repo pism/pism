@@ -299,7 +299,7 @@ PetscErrorCode IceExactStreamModel::run() {
   }
 
   ierr = verbPrintf(2,grid.com,
-  "$$$$$      YEAR (+    STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
+  "$$$$$       YEAR (+     STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep!
 

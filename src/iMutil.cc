@@ -471,7 +471,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //                      depends on useHomoTemp],
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
-    ierr = verbPrintf(2,grid.com, "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
+    ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
                        grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
                        gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
                        gdivideT); CHKERRQ(ierr);
@@ -484,7 +484,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //    divide thickness (m),
   //    
     ierr = verbPrintf(2,grid.com, 
-       "%10.2f (+%8.4f[%d%c]):%8.3f%8.3f   <same>%11.3f    <same>",
+       "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f   <same>%11.3f    <same>",
        grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
        gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
   }

@@ -1025,7 +1025,7 @@ PetscErrorCode IceCompModel::run() {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,grid.com,
-      "$$$$      YEAR (+    STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
+      "$$$$       YEAR (+     STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
       CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep

@@ -87,6 +87,7 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   ierr = regridVar(regridVars, 'h', i2, m.vh, vh); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'H', i2, m.vH, vH); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'b', i2, m.vbed, vbed); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 'L', i2, m.vHmelt, vHmelt); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'a', i2, m.vAccum, vAccum); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 's', i2, m.vTs, vTs); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'g', i2, m.vGhf, vGhf); CHKERRQ(ierr);

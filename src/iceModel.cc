@@ -81,7 +81,7 @@ PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLaw
       flowLawNum = 4;
     }
 
-    ierr = verbPrintf((flowlawSet == PETSC_TRUE) ? 2 : 3,com, 
+    ierr = verbPrintf((flowlawSet == PETSC_TRUE) ? 3 : 4,com, 
         "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
         flowLawNum); CHKERRQ(ierr);
     
@@ -602,7 +602,7 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com,
-  "$$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
+  "$$$$$       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
