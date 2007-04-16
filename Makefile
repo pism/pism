@@ -23,7 +23,7 @@ endif
 #VARIABLES:
 
 #executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf pant
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI pant
+executables= pismr pismv pisms pant
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\

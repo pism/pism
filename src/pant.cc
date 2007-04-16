@@ -121,7 +121,7 @@ private:
   PetscErrorCode computeDragFromBalanceVelocity();
   PetscErrorCode updateMaskFromBeta();
   PetscErrorCode moveDragxytoDAbetas();
-  PetscErrorCode replaceBadwMissing(Vec,bool);
+  PetscErrorCode replaceBadwMissing(Vec);
 };
 
 
@@ -371,26 +371,31 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, t_id, "axis", 1, "T");
    check_err(stat,__LINE__,__FILE__);
 
-   float miss = BETAMAX;
+   float miss = BETAMAX, misstauc = 0.0;
 
    stat = nc_put_att_text(ncid, beta_id, "long_name", 30, "ice_basal_friction_coefficient");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, beta_id, "units", 8, "Pa s m-1");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_float(ncid, beta_id, "missing_value", NC_FLOAT, 1, &miss);
+   CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, betax_id, "long_name", 42, "ice_basal_friction_coefficient_x_component");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, betax_id, "units", 8, "Pa s m-1");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_float(ncid, betax_id, "missing_value", NC_FLOAT, 1, &miss);
+   CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, betay_id, "long_name", 42, "ice_basal_friction_coefficient_y_component");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, betay_id, "units", 8, "Pa s m-1");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_float(ncid, betay_id, "missing_value", NC_FLOAT, 1, &miss);
+   CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, tauc_id, "long_name", 27, "ice_basal_till_yield_stress");
    CHKERRQ(nc_check(stat));
    stat = nc_put_att_text(ncid, tauc_id, "units", 2, "Pa");
+   CHKERRQ(nc_check(stat));
+   stat = nc_put_att_float(ncid, tauc_id, "missing_value", NC_FLOAT, 1, &misstauc);
    CHKERRQ(nc_check(stat));
 
 } // end if (grid.rank == 0)
@@ -426,7 +431,7 @@ if (grid.rank == 0) {
     ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
   } else {
     ierr = VecCopy((doBetaxy == PETSC_TRUE) ? vbetaxORbeta : vbeta,to_put); CHKERRQ(ierr);
-    ierr = replaceBadwMissing(to_put,true); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put); CHKERRQ(ierr);
   }
   ierr = put_local_var(&grid, ncid, beta_id, NC_FLOAT, grid.da2, to_put,
   		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -434,7 +439,7 @@ if (grid.rank == 0) {
     ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
   } else {
     ierr = VecCopy((doBetaxy == PETSC_TRUE) ? vbeta : vbetaxORbeta,to_put); CHKERRQ(ierr);
-    ierr = replaceBadwMissing(to_put,true); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put); CHKERRQ(ierr);
   }
   ierr = put_local_var(&grid, ncid, betax_id, NC_FLOAT, grid.da2, to_put,
   		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -442,15 +447,24 @@ if (grid.rank == 0) {
     ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
   } else {
     ierr = VecCopy((doBetaxy == PETSC_TRUE) ? vtauc : vbetayORtauc,to_put); CHKERRQ(ierr);
-    ierr = replaceBadwMissing(to_put,true); CHKERRQ(ierr);
+    ierr = replaceBadwMissing(to_put); CHKERRQ(ierr);
   }
   ierr = put_local_var(&grid, ncid, betay_id, NC_FLOAT, grid.da2, to_put,
   		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  if (doPlastic == PETSC_FALSE) {
-    ierr = VecSet(to_put,BETAMAX); CHKERRQ(ierr);
-  } else {
+  float misstauc = 0.0;
+  if (doPlastic == PETSC_TRUE) {
     ierr = VecCopy(vtauc,to_put); CHKERRQ(ierr);
-    ierr = replaceBadwMissing(to_put,false); CHKERRQ(ierr);
+    PetscScalar     **vvv;
+    ierr = DAVecGetArray(grid.da2, to_put, &vvv); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (vvv[i][j] <= 0.001)  vvv[i][j] = misstauc;
+;
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, to_put, &vvv); CHKERRQ(ierr);
+  } else {
+    ierr = VecSet(to_put,misstauc); CHKERRQ(ierr);
   }
   ierr = put_local_var(&grid, ncid, tauc_id, NC_FLOAT, grid.da2, to_put,
   		       g2, s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -467,18 +481,18 @@ if (grid.rank == 0) {
 }
 
 
-PetscErrorCode IceDragYieldModel::replaceBadwMissing(Vec vmine, bool betaflag) {
+PetscErrorCode IceDragYieldModel::replaceBadwMissing(Vec vmine) {
   PetscErrorCode  ierr;
   PetscScalar     **vvv;
 
-    ierr = DAVecGetArray(grid.da2, vmine, &vvv); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (vvv[i][j] <= -BETAMAX + 10.0)  vvv[i][j] = BETAMAX;
-        if ((betaflag) && (vvv[i][j] <= BETAMIN + 1e-5))   vvv[i][j] = BETAMAX;
-      }
+  ierr = DAVecGetArray(grid.da2, vmine, &vvv); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vvv[i][j] <= -BETAMAX + 10.0)  vvv[i][j] = BETAMAX;
+      if (vvv[i][j] <= BETAMIN + 1e-5)   vvv[i][j] = BETAMAX;
     }
-    ierr = DAVecRestoreArray(grid.da2, vmine, &vvv); CHKERRQ(ierr);
+  }
+  ierr = DAVecRestoreArray(grid.da2, vmine, &vvv); CHKERRQ(ierr);
   return 0;
 }
 
@@ -504,7 +518,7 @@ PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
 
     const PetscScalar plastic_till_c_0 = 20e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
     const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
-    const PetscScalar porewater_gamma = 0.95; // max allowed fraction of overburden
+//    const PetscScalar porewater_gamma = 0.95; // max allowed fraction of overburden
     
     PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
     ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -521,7 +535,9 @@ PetscErrorCode IceDragYieldModel::additionalAtStartTimestep() {
           const PetscScalar overburdenP = ice.rho * grav * H[i][j];
 //          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
 //          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
-          const PetscScalar pw = porewater_gamma * overburdenP;
+//          const PetscScalar pw = porewater_gamma * overburdenP;
+          const PetscScalar bedfrac = PetscMax(-bed[i][j],0.0) / 1000.0;
+          const PetscScalar pw = (0.85 + 0.1 * PetscMin(bedfrac,1.0)) * overburdenP;
           const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;  // note Hmelt[i][j]=0 if frozen
           tauc[i][j] = plastic_till_c_0 + plastic_till_mu * (overburdenP - lambda * pw);
         }

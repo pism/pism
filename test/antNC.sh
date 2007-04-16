@@ -31,18 +31,18 @@ date
 
 echo "  4. running for another 3000 yrs to equilibriate temp on fine  ************"
 echo "     grid (steady geometry and SIA only)                         ************"
-mpiexec -n $N obj/pismr -if ant155k_20km.nc -gk -e 1.2 -no_mass\
+mpiexec -n $N obj/pismr -if ant155k_20km.nc -gk -e 1.2 -no_mass \
    -y 2990 -o ant158k_20km -of n
 date
 
 echo "  5.  2 yrs to smooth (with MacAyeal)                              ********"
-mpiexec -n $N obj/pismr -if ant158k_20km.nc -gk -e 1.2 -mv -ksp_rtol 1e-6\
+mpiexec -n $N obj/pismr -if ant158k_20km.nc -gk -e 1.2 -mv -ksp_rtol 1e-6 \
    -ocean_kill -verbose -y 2 -o ant158k_20kmSMMV -of n
 date
 
 echo "  6.  another 500 yrs to equilibriate temp (steady geometry      ********"
 echo "      with MacAyeal)                                             ********"
-mpiexec -n $N obj/pismr -if ant158k_20kmSMMV.nc -gk -e 1.2 -no_mass -mv -ksp_rtol 1e-6\
+mpiexec -n $N obj/pismr -if ant158k_20kmSMMV.nc -gk -e 1.2 -no_mass -mv -ksp_rtol 1e-6 \
    -ocean_kill -verbose -y 498 -o ant158p5k_20km -of n
 date
 
