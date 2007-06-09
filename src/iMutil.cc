@@ -46,6 +46,7 @@
 //         [-verbose 5]       always, so print everything
 //
 // note: 1 <= thresh <= 5  enforced in verbPrintf() below
+
 PetscErrorCode setVerbosityLevel(PetscInt level) {
   if ((level < 0) || (level > 5)) {
      SETERRQ(1,"verbosity level invalid");
@@ -647,8 +648,24 @@ PetscErrorCode IceModel::initFromOptions() {
 
 PetscErrorCode IceModel::afterInitHook() {
   PetscErrorCode ierr;
-  PetscTruth regridFileSet = PETSC_FALSE;
-  char regridFile[PETSC_MAX_PATH_LEN];
+  PetscTruth     regridFileSet = PETSC_FALSE;
+  char           regridFile[PETSC_MAX_PATH_LEN];
+  PetscTruth     LxSet, LySet, LzSet;
+  PetscScalar    my_Lx, my_Ly, my_Lz;
+
+  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including* if initialization is from an input file
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &my_Lx, &LxSet); CHKERRQ(ierr);
+  if (LxSet == PETSC_TRUE) {
+    ierr = grid.rescale(my_Lx*1000.0, grid.p->Ly, grid.p->Lz); CHKERRQ(ierr);
+  }  
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &my_Ly, &LySet); CHKERRQ(ierr);
+  if (LySet == PETSC_TRUE) {
+    ierr = grid.rescale(grid.p->Lx, my_Ly*1000.0, grid.p->Lz); CHKERRQ(ierr);
+  }  
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &my_Lz, &LzSet); CHKERRQ(ierr);
+  if (LzSet == PETSC_TRUE) {
+    ierr = grid.rescale(grid.p->Lx, grid.p->Ly, my_Lz); CHKERRQ(ierr);
+  }
 
   // When we regrid, the `small' model inherits the option `-regrid' but we
   // don't want it to regrid itself, so we short-circuit that action.
@@ -676,22 +693,28 @@ PetscErrorCode IceModel::afterInitHook() {
     
   ierr = bedDefSetup(); CHKERRQ(ierr);
 
-  if (verbosityLevel >= 3) {
-    ierr = PetscBagView(grid.bag, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+           "  [computational box for ice: (%8.2f km) x (%8.2f km) x (%8.2f m",
+           2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0,grid.p->Lz); CHKERRQ(ierr);
+  if (grid.p->Mbz > 1) {
+    ierr = verbPrintf(2,grid.com," + %7.2f m bedrock)]\n",grid.p->Lbz); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,grid.com, 
-             "  [computational box for ice: (%8.2f km) x (%8.2f km) x (%8.2f m",
-             2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0,grid.p->Lz); CHKERRQ(ierr);
-    if (grid.p->Mbz > 0) {
-      ierr = verbPrintf(2,grid.com," + %7.2f m bedrock)]\n",grid.p->Lbz); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com,")]\n"); CHKERRQ(ierr);
-    }
-    ierr = verbPrintf(2,grid.com, 
-             "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
-             grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,")]\n"); CHKERRQ(ierr);
   }
+  ierr = verbPrintf(2,grid.com, 
+           "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
+           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz); CHKERRQ(ierr);
 
+  // if -verbose then actually list all of IceParam
+  ierr = verbPrintf(3,grid.com,"  IceParam: Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
+                    grid.p->Mx,grid.p->My,grid.p->Mz,grid.p->Mbz); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,"            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
+                    grid.p->Lx/1000.0,grid.p->Ly/1000.0,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,"            dx = %6.3f km, dy = %6.3f km, dz = %6.3f m, year = %8.4f,\n",
+                    grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz,grid.p->year); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,"            history = ****************\n%s"
+                               "            **************************\n",grid.p->history); CHKERRQ(ierr);
+  
   ierr = initSounding(); CHKERRQ(ierr);
   tempskipCountDown = 0;
 

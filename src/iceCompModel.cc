@@ -110,7 +110,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
   char temp;
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
-  
+
   /* This option determines the single character name of a verification test
   ("-test B", for example). */
   ierr = PetscOptionsGetString(PETSC_NULL, "-test", temptestname, 1, &testchosen); CHKERRQ(ierr);
@@ -128,7 +128,6 @@ PetscErrorCode IceCompModel::setFromOptions() {
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
   ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -140,7 +139,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
   char inFile[PETSC_MAX_PATH_LEN];
 
   if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
-    ierr = verbPrintf(1,grid.com, "[verify WARNING: Test H should be run with option  ");
+    ierr = verbPrintf(1,grid.com, "[IceCompModel WARNING: Test H should be run with option  ");
     ierr = verbPrintf(1,grid.com, "-bed_def_iso  for the reported errors to be correct.]\n");
     CHKERRQ(ierr);
   }
@@ -151,13 +150,37 @@ PetscErrorCode IceCompModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, "continuing; using Test %c conditions ...\n",testname);  CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, "continuing from input file %s; using Test %c conditions during run ...\n",inFile,testname);  CHKERRQ(ierr);
     grid.p->year=startYear; // some exact solutions have "absolute time"
   } else {
     ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
-    ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-//    grid.p->Mbz = 1; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
+    switch (testname) {
+      case 'A':
+      case 'E':
+        // use 1600km by 1600km by 4000m rectangular domain
+        ierr = grid.rescale(800e3, 800e3, 4000); CHKERRQ(ierr);
+        break;
+      case 'B':
+        // use 2400km by 2400km by 4000m rectangular domain
+        ierr = grid.rescale(1200e3, 1200e3, 4000); CHKERRQ(ierr);
+        break;
+      case 'C':
+      case 'D':
+        // use 2000km by 2000km by 4000m rectangular domain
+        ierr = grid.rescale(1000e3, 1000e3, 4000); CHKERRQ(ierr);
+        break;
+      case 'F':
+      case 'G':
+        // use 1800km by 1800km by 4000m rectangular domain
+        ierr = grid.rescale(900e3, 900e3, 4000); CHKERRQ(ierr);
+        break;
+      case 'H':
+        // use 1500km by 1500km by 4000m rectangular domain
+        ierr = grid.rescale(1500e3, 1500e3, 4000); CHKERRQ(ierr);
+        break;
+      default:  SETERRQ(1,"IceCompModel ERROR : desired test not implemented\n");
+    }
     ierr = createVecs(); CHKERRQ(ierr);
 
     // none use Goldsby-Kohlstedt or do age calc
@@ -171,37 +194,21 @@ PetscErrorCode IceCompModel::initFromOptions() {
     grid.p->year=startYear; // some exact solutions have "absolute time"
     switch (testname) {
       case 'A':
-      case 'E':
-        // use 1600km by 1600km by 4000m rectangular domain
-        ierr = grid.rescale(800e3, 800e3, 4000); CHKERRQ(ierr);
-        ierr = initTestISO(); CHKERRQ(ierr);
-        break;
       case 'B':
-        // use 2400km by 2400km by 4000m rectangular domain
-        ierr = grid.rescale(1200e3, 1200e3, 4000); CHKERRQ(ierr);
-        ierr = initTestISO(); CHKERRQ(ierr);
-        break;
       case 'C':
       case 'D':
-        // use 2000km by 2000km by 4000m rectangular domain
-        ierr = grid.rescale(1000e3, 1000e3, 4000); CHKERRQ(ierr);
+      case 'E':
+      case 'H':
         ierr = initTestISO(); CHKERRQ(ierr);
         break;
       case 'F':
       case 'G':
-        // use 1800km by 1800km by 4000m rectangular domain
-        ierr = grid.rescale(900e3, 900e3, 4000); CHKERRQ(ierr);
         ierr = initTestFG(); CHKERRQ(ierr);
-        break;
-      case 'H':
-        // use 1500km by 1500km by 4000m rectangular domain
-        ierr = grid.rescale(1500e3, 1500e3, 4000); CHKERRQ(ierr);
-        ierr = initTestISO(); CHKERRQ(ierr);
         break;
       default:  SETERRQ(1,"verify ERROR : desired test not implemented\n");
     }
   }
-  
+
   ierr = afterInitHook(); CHKERRQ(ierr);
   return 0;
 }
@@ -915,7 +922,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   //    -- av |<ub,vb> - <ubexact,vbexact>| error
 
   PetscErrorCode  ierr;
-  ierr = verbPrintf(2,grid.com, "Actual ERRORS evaluated at final time (relative to exact solution):\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(1,grid.com, "Actual ERRORS evaluated at final time (relative to exact solution):\n"); CHKERRQ(ierr);
 
   // geometry (thickness, vol, area) errors
   PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
@@ -923,11 +930,11 @@ PetscErrorCode IceCompModel::reportErrors() {
   ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
                                volerr,areaerr,maxHerr,avHerr,maxetaerr,domeHerr);
      CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, 
+  ierr = verbPrintf(1,grid.com, 
      "geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH\n");
      CHKERRQ(ierr);
   const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
-  ierr = verbPrintf(2,grid.com, "           %10.4f%11.4f%11.4f%10.4f%12.6f%9.4f\n",
+  ierr = verbPrintf(1,grid.com, "           %10.4f%11.4f%11.4f%10.4f%12.6f%9.4f\n",
                 100*volerr/volexact, 100*areaerr/areaexact, maxHerr, avHerr,
                 maxetaerr/pow(domeHexact,m), domeHerr); CHKERRQ(ierr);
 
@@ -935,9 +942,9 @@ PetscErrorCode IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxTerr, avTerr, domeTerr;
     ierr = computeBasalTemperatureErrors(maxTerr, avTerr, domeTerr); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, 
+    ierr = verbPrintf(1,grid.com, 
        "base temps:        maxT         avT      domeT\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, "           %12.6f%12.6f%11.6f\n", 
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%11.6f\n", 
                   maxTerr, avTerr, domeTerr); CHKERRQ(ierr);
   }
 
@@ -946,10 +953,10 @@ PetscErrorCode IceCompModel::reportErrors() {
     PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     ierr = computeBasalVelocityErrors(exactmaxspeed,
                           maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, 
+    ierr = verbPrintf(1,grid.com, 
        "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
        CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
+    ierr = verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
                   maxvecerr*secpera, avvecerr*secpera, 
                   (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);

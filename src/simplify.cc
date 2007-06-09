@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     
-    // call constructors on both, but have a pointer for either
+    // call constructors on all three, but m will point to the one we use
     IceEISModel   mEISII(g, *ice);
     IceHEINOModel mHEINO(g, *ice);
     IceROSSModel  mROSS(g, *ice);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     "-eisII F", for example. */
     ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", expername, 1, &EISIIchosen);
               CHKERRQ(ierr);
-    /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO */
+    /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO and none others are implemented */
     ierr = PetscOptionsGetString(PETSC_NULL, "-ismip", expername, 1, &ISMIPchosen);
               CHKERRQ(ierr);
     /* This option chooses EISMINT ROSS; "-ross" */

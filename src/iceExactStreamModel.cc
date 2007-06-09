@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <cmath>
-#include <petscbag.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
@@ -75,8 +74,6 @@ PetscErrorCode IceExactStreamModel::initFromOptions() {
   }
   
   ierr = verbPrintf(2,grid.com,"initializing Test I ... \n"); CHKERRQ(ierr);
-
-  ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
 
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
@@ -223,7 +220,7 @@ PetscErrorCode IceExactStreamModel::reportErrors() {
               gmaxuerr = 0.0, gmaxverr = 0.0;
   PetscScalar **u, **v;
 
-  ierr = verbPrintf(2,grid.com, 
+  ierr = verbPrintf(1,grid.com, 
           "Actual ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
 
 //  ierr = verbPrintf(2,grid.com, "  xs = %d, xs+xm = %d, ys = %d, ys+ym = %d, Mx * My = %d\n",
@@ -273,10 +270,10 @@ PetscErrorCode IceExactStreamModel::reportErrors() {
 //  gavvecerr = avvecerr;
   gavvecerr = gavvecerr/(grid.p->Mx*grid.p->My);
 
-  ierr = verbPrintf(2,grid.com, 
+  ierr = verbPrintf(1,grid.com, 
      "      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv\n");
      CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, 
+  ierr = verbPrintf(1,grid.com, 
             "    %11.4f%11.5f%12.5f%10.4f%10.4f%10.4f%10.4f\n", 
             gmaxvecerr*secpera, gavvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
             gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, gavverr*secpera); CHKERRQ(ierr);

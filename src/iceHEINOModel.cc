@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <petscbag.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
@@ -146,8 +145,6 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
     ierr = verbPrintf(1,grid.com, 
               "initializing ISMIP-HEINO, run %s ... \n", 
               ismipRunName); CHKERRQ(ierr);
-    ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-//    grid.p->Mbz = 0; // overrides options
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
     // if no inFile then starts with zero ice
@@ -162,6 +159,12 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
     // all have no uplift at start
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
+
+    // set max_dt to 1.0 years unless explicit option -maxdt was set
+    PetscScalar junk;
+    PetscTruth  maxdtSet;
+    ierr = PetscOptionsGetScalar(PETSC_NULL, "-maxdt", &junk, &maxdtSet); CHKERRQ(ierr);
+    if (maxdtSet == PETSC_FALSE)   setMaxTimeStepYears(1.0);
 
     // next block checks if experiment is implemented
     // note height of grid must be great enough to handle max thickness

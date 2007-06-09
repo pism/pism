@@ -19,33 +19,32 @@
 #ifndef __grid_hh
 #define __grid_hh
 
-#include <petscbag.h>
 #include <petscda.h>
 #include "pism_const.hh"
 
 class IceParam {
 public:
-  PetscErrorCode setFromOptions();
-  char history[HISTORY_STRING_LENGTH];
-  PetscScalar Lx, Ly, Lz, Lbz;
-  PetscInt    Mx, My, Mz, Mbz;
-  PetscScalar dx, dy, dz;
-  PetscScalar year;              // years
+  char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this file
+  PetscScalar Lx, Ly;  // half width of the ice model grid in x-direction, y-direction (m)
+  PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
+  PetscInt    Mx, My; // number of grid points in x-direction, y-direction
+  PetscInt    Mz, Mbz; // number of grid points in z-direction (ice), z-direction (bedrock).
+  PetscScalar dx, dy, dz; // spacing of grid
+  PetscScalar year;       // current time; units of years
 };
 
-int initIceParam(MPI_Comm com, IceParam **param, PetscBag *bag);
+int initIceParam(MPI_Comm com, IceParam **param);
 
 class IceGrid {
 public:
   MPI_Comm    com;
   PetscMPIInt rank, size;
   IceParam    *p;
-  PetscBag    bag;
   DA          da2, da3, da3b;
   PetscInt    xs, xm, ys, ym;
 
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
-  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, IceParam *p, PetscBag b);
+  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, IceParam *p);
   ~IceGrid();
   PetscErrorCode createDA();
   PetscErrorCode setCoordinatesDA();

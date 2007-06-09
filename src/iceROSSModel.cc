@@ -19,16 +19,13 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
-#include <petscbag.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
 
 #include "iceROSSModel.hh"
 
-
 /*  
-
 Run this derived class with "obj/pisms -ross".
 
 Allows the following options:  
@@ -137,8 +134,6 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   ierr = verbPrintf((prefixSet == PETSC_TRUE) ? 2 : 4, grid.com,
             "prefix for ROSS data files =%s\n",prefixROSS); CHKERRQ(ierr);
   
-  ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
-
   // note region is *roughly* 1000km by 750km, but MacAyeal et al 1996 specifies these:
   PetscScalar dxROSS = 6822;
   // expand grid in y direction, but also swap meaning of x and y
@@ -147,6 +142,7 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   grid.p->Mx=MxROSS;
   grid.p->My=MyROSS;
   // Mz is 31 by default but can be set by user
+
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   ierr = grid.rescale(0.5 * (MxROSS - 1) * dxROSS, 0.5 * (MyROSS - 1) * dxROSS, 1000); CHKERRQ(ierr);
@@ -160,7 +156,6 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   ierr = afterInitHook(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, "running EISMINT ROSS ...\n"); CHKERRQ(ierr);
-
   return 0;
 }
 

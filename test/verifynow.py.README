@@ -1,0 +1,114 @@
+--------------------------------------------------------------------------------
+verifynow.py.README:
+
+The following came from a two process run on 31 May 2007 using revision
+112 of PISM (https://gna.org/projects/pism/).
+
+The result here shows convergence of the isothermal shallow ice approximation 
+(test C), the isothermal ice stream equations (test I), and the thermocoupled 
+shallow ice approximation (test G).
+
+Convergence is clearest in average errors (e.g. "avH", "prcntavvec", "avT")
+and is somewhat less clear in maximum errors.  (Though for tests C and G, 
+"relmaxeta", the maximum error in \eta=H^(8/3), shows clear convergence).
+
+These results are not rigid standards for the proper functioning of PISM.  For
+example, runs on a different number of processors will generally give different 
+results.  But convergence along these lines is expected from a properly-
+functioning and properly-used installation of PISM.
+
+The machine is a System 76 laptop with a 2.0Ghz Intel Core2 Duo two core processor
+running Ubuntu GNU/Linux.
+--------------------------------------------------------------------------------
+
+bueler@ubuntu:~/pism$ test/verifynow.py -n 2 -l 5
+  VERIFYNOW using 2 processor(s) and 5 level(s) of refinement
+  ++++ verifying isothermal SIA using test C (Mx=My=41,61,81,101,121
+       corresponds to dx=dy=50,33.3,25,20,16 km) ++++
+  trying "mpiexec -n 2 obj/pismv -test C -Mx 41 -My 41 -Mz 31 -y 15208.0"
+  finished in  7.7957 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.7189    12.6255   250.0035   12.0155    0.019159  10.0400
+  trying "mpiexec -n 2 obj/pismv -test C -Mx 61 -My 61 -Mz 31 -y 15208.0"
+  finished in 36.2827 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.1268     6.5122   224.3489    7.1291    0.012296   4.4014
+  trying "mpiexec -n 2 obj/pismv -test C -Mx 81 -My 81 -Mz 31 -y 15208.0"
+  finished in 121.0869 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.1970     5.5536   194.2413    4.1316    0.008131   2.1267
+  trying "mpiexec -n 2 obj/pismv -test C -Mx 101 -My 101 -Mz 31 -y 15208.0"
+  finished in 271.9847 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.0591     3.7096   178.5215    3.5007    0.006447   0.9464
+  trying "mpiexec -n 2 obj/pismv -test C -Mx 121 -My 121 -Mz 31 -y 15208.0"
+  finished in 563.0295 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.0655     3.5281   175.0928    2.6529    0.005029   0.2350
+  ++++ verifying plastic till ice stream using test I (My=49,193,769,3073,12289
+       corresponds to dy=5000,1250,312.5,78.13,19.53 m) ++++
+  trying "mpiexec -n 2 obj/pismv -test I -My 49 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12"
+  finished in  0.6735 seconds; reported numerical errors as follows:
+    |Actual ERRORS in velocity relative to exact solution:
+    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+    |        23.3329    7.69421     0.98956   23.3329    0.0000    7.6942    0.0000
+    |(exact maximum of u is    777.5366 (m/a))
+  trying "mpiexec -n 2 obj/pismv -test I -My 193 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12"
+  finished in  2.8132 seconds; reported numerical errors as follows:
+    |Actual ERRORS in velocity relative to exact solution:
+    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+    |         1.3246    0.44147     0.05678    1.3246    0.0000    0.4415    0.0000
+    |(exact maximum of u is    777.5366 (m/a))
+  trying "mpiexec -n 2 obj/pismv -test I -My 769 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12"
+  finished in 11.6763 seconds; reported numerical errors as follows:
+    |Actual ERRORS in velocity relative to exact solution:
+    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+    |         0.0923    0.03117     0.00401    0.0923    0.0000    0.0312    0.0000
+    |(exact maximum of u is    777.5366 (m/a))
+  trying "mpiexec -n 2 obj/pismv -test I -My 3073 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12"
+  finished in 83.8366 seconds; reported numerical errors as follows:
+    |Actual ERRORS in velocity relative to exact solution:
+    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+    |         0.0173    0.00631     0.00081    0.0173    0.0000    0.0063    0.0000
+    |(exact maximum of u is    777.5366 (m/a))
+  trying "mpiexec -n 2 obj/pismv -test I -My 12289 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12"
+  finished in 821.2699 seconds; reported numerical errors as follows:
+    |Actual ERRORS in velocity relative to exact solution:
+    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+    |         0.0132    0.00481     0.00062    0.0132    0.0001    0.0048    0.0000
+    |(exact maximum of u is    777.5366 (m/a))
+  ++++ verifying thermocoupled SIA using test G (Mx=My=Mz=61,91,121,181,241
+       corresponds to dx=dy=30,20,15,10,7.5 km and dz=66.7,44.4,33.3,22.2,16.7 m) ++++
+  trying "mpiexec -n 2 obj/pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000.0"
+  finished in 119.1150 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               2.1076     0.0000    64.3642   19.5506    0.017980   2.8224
+    |base temps:        maxT         avT      domeT
+    |               1.533177    0.471904   0.069055
+  trying "mpiexec -n 2 obj/pismv -test G -Mx 91 -My 91 -Mz 91 -y 25000.0"
+  finished in 881.5336 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.9508     0.0000    29.7903    9.0329    0.007974   0.0095
+    |base temps:        maxT         avT      domeT
+    |               0.962611    0.238721   0.025394
+  trying "mpiexec -n 2 obj/pismv -test G -Mx 121 -My 121 -Mz 121 -y 25000.0"
+  finished in 3629.4987 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.5216     0.0000    28.3494    4.9974    0.004423   0.8286
+    |base temps:        maxT         avT      domeT
+    |               0.781534    0.140056   0.003918
+  trying "mpiexec -n 2 obj/pismv -test G -Mx 181 -My 181 -Mz 181 -y 25000.0"
+  finished in 11.2446 seconds; reported numerical errors as follows:
+    {{crashed; out of memory??}}
+  trying "mpiexec -n 2 obj/pismv -test G -Mx 241 -My 241 -Mz 241 -y 25000.0"
+  finished in 25.6570 seconds; reported numerical errors as follows:
+    {{crashed; out of memory??}}
+

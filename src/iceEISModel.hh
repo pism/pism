@@ -31,6 +31,7 @@ public:
     char           getExperName();
     void           setflowlawNumber(PetscInt);
     PetscInt       getflowlawNumber();
+    virtual PetscErrorCode setFromOptions();
     virtual PetscErrorCode initFromOptions();
     
 private:
@@ -38,7 +39,6 @@ private:
     PetscInt   flowlawNumber;
     PetscTruth inFileSet;
  
-    PetscErrorCode setExperNameFromOptions();
     PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();

@@ -21,6 +21,10 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
+/*
+PARTS WHICH READ/WRITE .pb FILES ARE DEPRECATED!
+*/
+
 PetscErrorCode  IceModel::LVecLoad(DA da, Vec l, Vec g, PetscViewer v) {
   PetscErrorCode ierr;
 
@@ -76,8 +80,8 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
                      fname); CHKERRQ(ierr);
   ierr = PetscViewerBinaryOpen(grid.com, fname, FILE_MODE_READ, &viewer);
   CHKERRQ(ierr);
-  ierr = PetscBagLoad(viewer, &grid.bag); CHKERRQ(ierr);
-  ierr = PetscBagGetData(grid.bag, (void **)&(grid.p)); CHKERRQ(ierr);    
+//  ierr = PetscBagLoad(viewer, &grid.bag); CHKERRQ(ierr);
+//  ierr = PetscBagGetData(grid.bag, (void **)&(grid.p)); CHKERRQ(ierr);    
   if (relativeEndYear == PETSC_TRUE) {
     runYears = endYear - startYear;
   } else {
@@ -151,21 +155,21 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   if (strchr(fmt, 'p') != NULL) {
     strcpy(pf, b);
     strcat(pf, ".pb");
-    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'\n", pf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", pf); CHKERRQ(ierr);
     ierr = dumpToFile(pf); CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'n') != NULL) {
     strcpy(ncf, b);
     strcat(ncf, ".nc");
-    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'\n", ncf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
     ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'm') != NULL) {
     strcpy(mf, b);
     strcat(mf, ".m");
-    ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'\n", mf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'", mf); CHKERRQ(ierr);
     ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
   }
 
@@ -181,7 +185,7 @@ PetscErrorCode IceModel::dumpToFile(const char *fname) {
                                &viewer); CHKERRQ(ierr);
   ierr = PetscViewerBinarySkipInfo(viewer); CHKERRQ(ierr);
 
-  ierr = PetscBagView(grid.bag, viewer); CHKERRQ(ierr);
+//  ierr = PetscBagView(grid.bag, viewer); CHKERRQ(ierr);
   ierr = LVecView(grid.da2, vMask,    g2, viewer); CHKERRQ(ierr);
   ierr = LVecView(grid.da2, vh,       g2, viewer); CHKERRQ(ierr);
   ierr = LVecView(grid.da2, vH,       g2, viewer); CHKERRQ(ierr);

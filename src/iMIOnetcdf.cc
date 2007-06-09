@@ -176,10 +176,10 @@ PetscErrorCode IceModel::createMask(PetscTruth balVelRule) {
   PetscScalar     **mask, **balvel, **sliding, **ubar, **vbar, **accum, **H;
 
   if (balVelRule == PETSC_TRUE) {
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
                        "creating modal mask using balance velocities from input file ... "); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, 
+    ierr = verbPrintf(2,grid.com, 
                        "creating modal mask by simple floating/grounded decision ... "); CHKERRQ(ierr);
   }
 
@@ -322,8 +322,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   int stat;
   char filename[PETSC_MAX_PATH_LEN];
-
-  ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
 
   // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
@@ -633,9 +631,11 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
 PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   PetscScalar runYears;
-  size_t dim[5];
-  float bdy[7];
-  int ncid, stat;
+  size_t      dim[5];
+  float       bdy[7];
+  int         ncid, stat;
+  PetscInt    ignor;
+  PetscTruth  M_Set;
 
   if (grid.rank == 0) {
     stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -643,12 +643,28 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
 
   ierr = get_dimensions(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
 
-  ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
   grid.p->year = bdy[0] / secpera;
   grid.p->Mx = dim[1];
   grid.p->My = dim[2];
   grid.p->Mz = dim[3];
   grid.p->Mbz = dim[4];
+  // options read simply to warn user that they have been ignored
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignor, &M_Set); CHKERRQ(ierr);
+  if (M_Set == PETSC_TRUE) {
+    ierr = verbPrintf(1,grid.com,"WARNING: user option -Mx ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &ignor, &M_Set); CHKERRQ(ierr);
+  if (M_Set == PETSC_TRUE) {
+    ierr = verbPrintf(1,grid.com,"WARNING: user option -My ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &ignor, &M_Set); CHKERRQ(ierr);
+  if (M_Set == PETSC_TRUE) {
+    ierr = verbPrintf(1,grid.com,"WARNING: user option -Mz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &ignor, &M_Set); CHKERRQ(ierr);
+  if (M_Set == PETSC_TRUE) {
+    ierr = verbPrintf(1,grid.com,"WARNING: user option -Mbz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+  }
   
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
@@ -661,6 +677,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   //   grid.p->Ly = -bdy[3]; // == bdy[4]
   //   grid.p->Lbz = -bdy[5];
   //   grid.p->Lz = bdy[6];
+  // note user setting of -Lx,-Ly,-Lz will overwrite these settings from file
 
   if (relativeEndYear == PETSC_TRUE) {
     runYears = endYear - startYear;

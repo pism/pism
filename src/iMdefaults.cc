@@ -19,24 +19,27 @@
 #include <cstring>
 #include "iceModel.hh"
 
-// These are really default values.  They are set by IceModel::setDefaults()
-// Ideally all options will have defaults defined here.
-
-// The order of execution is:
+// The order of precedence for setting parameters in PISM is:
+//
 //      Default values:
 //              Reasonable values to set up the model with.
-//              IceModel::setDefaults() does this job and is virtual
-//      Driver overrides:
-//              The driver program can override these options through
-//              calls to IceModel::set[OPT]()
+//              IceModel::setDefaults() below does this job and is virtual.  
+//              Ideally all options will have defaults defined here.
+//      Derived class overrides:
+//              The derived class can override these options.
 //      Command line options:
-//              If the driver is willing to use command line options, it
-//              should call IceModel::setFromOptions() _after_ any overrides
-//              that it makes.  This method is also virtual.
-
-// Thus command line options take precedence over driver overrides which
-// have precedence over these defaults.  These should be reasonable value
-// under all circumstances.
+//              IceModel::setFromOptions().  This method is also virtual.  A derived
+//              class may have its own setFromOptions(), at the beginning of which
+//              IceModel::setFromOptions() should be called.
+//      Data file (input) overrides:
+//              The input (e.g. NetCDF) file may set quantities
+//              The data always has highest precedence.  The user is
+//              warned when their command line options are overridden.
+//
+// Thus the input data takes precedence over command line options which take 
+// precedence over driver overrides which have precedence over the defaults below.
+// The defaults should be reasonable values under all circumstances or they should
+// indicate missing values in some manner.
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 

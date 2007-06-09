@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <petscbag.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
@@ -50,7 +49,7 @@ PetscInt IceEISModel::getflowlawNumber() {
 }
 
 
-PetscErrorCode IceEISModel::setExperNameFromOptions() {
+PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
   char                temp, eisIIexpername[20];
   PetscTruth          EISIIchosen;
@@ -78,6 +77,7 @@ PetscErrorCode IceEISModel::setExperNameFromOptions() {
     SETERRQ(1,"option -eisII must have a value\n");
   }
 
+  ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
   return 0;
 }
 
@@ -88,8 +88,6 @@ PetscErrorCode IceEISModel::initFromOptions() {
   const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
   const PetscScalar   L              = 750e3;      // Horizontal extent of grid
 
-  ierr = setExperNameFromOptions(); CHKERRQ(ierr);
-
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
@@ -98,10 +96,9 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = verbPrintf(1,grid.com, 
               "initializing EISMINT II experiment %c ... \n", 
               getExperName()); CHKERRQ(ierr);
-    ierr = initIceParam(grid.com, &grid.p, &grid.bag); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
-    
+
     // following will be part of saved state; not reset if read from file
     // if no inFile then starts with zero ice
     ierr = VecSet(vh, 0);
@@ -114,7 +111,6 @@ PetscErrorCode IceEISModel::initFromOptions() {
     setConstantGrainSize(DEFAULT_GRAIN_SIZE);  // no expers use Goldsby-Kohlstedt
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
-    // next block checks if experiment is implemented
     // note height of grid must be great enough to handle max thickness
     switch (getExperName()) {
       case 'A':
@@ -152,17 +148,18 @@ PetscErrorCode IceEISModel::initFromOptions() {
         SETERRQ(1,"option -eisII value not understood; EISMINT II experiment of given name may not exist.\n");
     }
   }
-
+  
   ierr = applyDefaultsForExperiment(); CHKERRQ(ierr);
+
   ierr = initAccumTs(); CHKERRQ(ierr);
   if (inFileSet == PETSC_FALSE) {
     ierr = fillintemps(); CHKERRQ(ierr);
   }
+
   ierr = afterInitHook(); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",getExperName());
              CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -291,30 +288,23 @@ PetscErrorCode IceEISModel::fillintemps() {
 }
 
 
-// reimplement IceModel::basal()
+// reimplement IceModel::basal() which is virtual (e.g. for this purpose)
 PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
   // this version ignors mu, x, and y
+  // this code supposes there was a misprint on page
+  // 230 of Payne et al 2000; this code supposes that the last words of paragraph labelled
+  // "Experiment G" should have been "... that of basal pressure" instead
+  // of "... that of basal melt"; confirmed by correspondence with A. Payne spring 2007
 
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
-// see comment below; S is melt, which is no longer an argument to basal()
-//  const PetscScalar  B = Bfactor * S;  // units Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;
   
   if (getExperName() == 'G') {
-//      if ( (PetscAbs(x - 0.0) < 1.0) && (PetscAbs(y - 0.0) < 1.0) ) {
-//        PetscPrintf(grid.com,"at origin; ending; values B = %f, H = %f, S = %f\n",B,H,S);
-//        PetscEnd(); // note SETERRQ() won't work here because of traceback through ierr
-//      }
-      return Bfactor * ice.rho * grav * H; // supposes there was a misprint on page
-          // 230 of Payne et al 2000;  supposes last words of paragraph labelled
-          // "Experiment G" should have been "... that of basal pressure" instead
-          // of "... that of basal melt" 
-//      return B * ice.rho * grav * H;
+      return Bfactor * ice.rho * grav * H; 
   } else if (getExperName() == 'H') {
       if (T + ice.beta_CC_grad * H > eismintII_temp_sliding) {
-//      return B * ice.rho * grav * H;
         return Bfactor * ice.rho * grav * H; // ditto case G
       } else {
         return 0.0;

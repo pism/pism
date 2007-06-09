@@ -19,20 +19,22 @@
 #include <cstring>
 #include "iceModel.hh"
 
-// Process command line options.  This should be called by a driver
-// program, if it would like to use command line options, _after_
-// all driver overrides are performed.
+// Process command line options.  This is called by a driver
+// program, assuming it would like to use command line options.
 
-PetscErrorCode
-IceModel::setFromOptions() {
+/* Note no options to directly set dx, dy, dz, year as the user should not directly set these quantities; 
+see options for Mx,My,Mz,Mbz,Lx,Ly,Lz,ys,ye,y. */
+
+PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
   PetscScalar my_maxdt, my_mu, my_startYear, my_runYears, my_endYear;
   PetscScalar macRTol, my_nu, maceps, regVelSchoof, regLengthSchoof;
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
              maxdtSet, startYearSet, runYearsSet, endYearSet, superpose,
              noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
-             nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet;
-  PetscInt nospokeslevel;
+             nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet,
+             MxSet, MySet, MzSet, MbzSet;
+  PetscInt nospokeslevel, my_Mx, my_My, my_Mz, my_Mbz;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
@@ -84,6 +86,8 @@ IceModel::setFromOptions() {
 
 // note "-kd" is in use for horizontal slicing (in viewers and dumpToFileMatlab)
 
+// note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
+
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-maxdt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
   if (maxdtSet == PETSC_TRUE) {
     setMaxTimeStepYears(my_maxdt);
@@ -109,6 +113,18 @@ IceModel::setFromOptions() {
     setMacayealRelativeTolerance(macRTol);
   }
   
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &my_Mx, &MxSet); CHKERRQ(ierr);
+  if (MxSet == PETSC_TRUE)   grid.p->Mx = my_Mx;
+
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &my_My, &MySet); CHKERRQ(ierr);
+  if (MySet == PETSC_TRUE)   grid.p->My = my_My;
+
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &my_Mz, &MzSet); CHKERRQ(ierr);
+  if (MzSet == PETSC_TRUE)   grid.p->Mz = my_Mz;
+
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
+  if (MbzSet == PETSC_TRUE)   grid.p->Mbz = my_Mbz;
+
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE) {
     setDoMassConserve(PETSC_FALSE);

@@ -22,7 +22,6 @@ endif
 
 #VARIABLES:
 
-#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf pant
 executables= pismr pismv pisms pant
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
@@ -44,8 +43,6 @@ depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 
 CCLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
 
-#TARGETS:
-
 all : depend libpism libtests $(executables)
 
 libpism : ${ICE_OBJS}
@@ -55,32 +52,32 @@ libpism : ${ICE_OBJS}
 libtests : ${TESTS_OBJS}
 	${CCLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
 
-flowTable : flowTable.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/flowTable
-
-pant : pant.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/pant
-
 pismr : run.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/pismr
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/pismr
 
 pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o obj/libpism.so
-	${CCLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o obj/pisms
+	${CCLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o bin/pisms
 
 pismv : iceCompModel.o iceExactStreamModel.o verify.o obj/libpism.so obj/libtests.so
-	${CCLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o obj/pismv
+	${CCLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o bin/pismv
 
-shelf : shelf.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o obj/shelf
+pant : pant.o obj/libpism.so
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
+
+#shelf : shelf.o obj/libpism.so
+#	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
+
+flowTable : flowTable.o obj/libpism.so
+	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/flowTable
 
 simpleISO : simpleISO.o obj/libtests.so
-	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o obj/simpleISO
+	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleISO
 
 simpleFG : simpleFG.o obj/libtests.so
-	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o obj/simpleFG
+	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleFG
 
 simpleI : simpleI.o obj/libtests.so
-	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o obj/simpleI
+	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleI
 
 # Cancel the implicit rules
 % : %.cc
@@ -122,3 +119,4 @@ distclean : clean
 .PHONY: clean
 
 include $(depfiles)
+

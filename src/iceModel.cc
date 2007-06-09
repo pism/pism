@@ -121,6 +121,11 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   createBasal_done = PETSC_FALSE;
   createVecs_done = PETSC_FALSE;
   createViewers_done = PETSC_FALSE;
+  ierr = initIceParam(grid.com, &grid.p);
+  if (ierr != 0) {
+    verbPrintf(1,grid.com, "Error setting IceParams (in IceGrid).\n");
+    PetscEnd();
+  }        
   ierr = setDefaults();
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");

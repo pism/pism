@@ -23,7 +23,7 @@ static char help[] =
   "Includes Goldsby-Kohlstedt law, age field calculation, age-dependent \n"
   "grain size, spatially-varying geothermal heat flux, interface to NetCDF files,\n"
   "arbitrary grids chosen at the command line, regridding, and many other features.\n"
-  "(Jed Kallen-Brown and Ed Bueler, authors, and Craig Lingle, concepts.).\n";
+  "(Jed Brown and Ed Bueler, authors, and Craig Lingle, concepts.).\n";
 
 #include <petscbag.h>
 #include "grid.hh"
