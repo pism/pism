@@ -54,7 +54,7 @@
 
 \author[]{Jed Brown and Ed $\text{Bueler}^\ast$}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 113.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 114 and PETSC release 2.3.3-p2.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
@@ -98,6 +98,8 @@
 
 \item You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed; these are automatic in current Linux distributions.
 
+\item To build the latest manual from source you will need \LaTeX, but for most purposes the PDF manual at the PISM documentation page, \url{http://www.dms.uaf.edu/~bueler/manual.pdf}, should suffice.  (This is the only use of \LaTeX~in PISM.)
+
 \item You will need MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  It would be reasonable to learn enough about MPI to know how to run a simple C code on multiple processors using MPI.  There are multiple flavors of MPI, but choose one which works with PETSc, next.  It may be most convenient to either use an existing MPI installation or to have PETSc download MPICH as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| subdirectory to your path, that is,
 
 \verb|setenv PATH /home/user/mympi/bin:$PATH|  \qquad (for \verb|csh| or \verb|tcsh|),
@@ -107,18 +109,18 @@
 \verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for \verb|bash| or \verb|sh|)
 
 \noindent (\emph{From now on this manual will assume use of} \verb|bash|.)
-\item Download PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}, pronounced ``pet-see'') from \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}.  Configure and build PETSc as described on the installation page \url{???}.  Here are some comments on the PETSc configure and build process:
+\item Download PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}, pronounced ``pet-see'') from \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}.  You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it would be best to read the following comments on the PETSc configure and build process first:
 
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item PISM requires a version of PETSc later than \verb|petsc-2.3.2|, so Debian should be used with care.
+\item PISM requires a version of PETSc later than \verb|petsc-2.3.3| (patch level 2; i.e.~\verb|petsc-2.3.3-p2| or later), so Debian should be used with care.
 \item The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for PETSc documentation.
 \item Note that you will need defined environment variables \verb|PETSC_DIR| and \verb|PETSC_ARCH| to use PETSc and, in particular, to build PISM.  The lines
 
-\verb|   export PETSC_DIR=/home/user/petsc-2.3.2-p10/|
+\verb|   export PETSC_DIR=/home/user/petsc-2.3.3-p2/|
 
-\verb|   export PETSC_ARCH=linux-gnu-c-debug|
+\verb|   export PETSC_ARCH=linux-gnu-c-debug|  \qquad  \emph{(or something like that)}
 
-\noindent (or something like that) should presumably be added to your \verb|.profile|, \verb|.bashrc|, or \verb|.cshrc| file; see the PETSc installation page.
+\noindent should be added to your \verb|.profile| or \verb|.bashrc| file; see the PETSc installation page.
 \item When you run the configure script in the PETSc directory, the following options are recommended; note PISM builds with shared libraries by default (though other possibilities are illustrated by makefiles in \verb|pism/config/|):
 
 \verb|   $ ./config/configure.py --with-shared --with-c-support|
@@ -127,9 +129,9 @@
 \item On the other hand, it seems common that one needs to tell PETSc to download MPI into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
 \item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  The advice of an experienced system administrator for the machine in question---i.e.~someone very familiar with the batch system---has been found to be useful in this case.
 \item Finally, configuring and building PETSc takes many minutes even when everything goes smoothly.   Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.
-\end{enumerate}
 
-\item  After \verb|configure.py| finishes, \verb|make test| in the PETSc directory and watch the result.  If Xwindows is functional some example viewers will appear.
+\item  After \verb|configure.py| finishes, you will need to \verb|make all test| in the PETSc directory and watch the result.  If Xwindows is functional some example viewers will appear.
+\end{enumerate}
 
 \item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   You will need it installed in a location where your compiler/linker can find it, i.e.~on your \verb|PATH|.  \emph{The Debian version of NetCDF seems to work.}
 
@@ -156,13 +158,11 @@ See Table \ref{tab:PISMdepends} for a summary of the dependencies on external li
 
 \item Compile the source.  That is, enter directory \verb|pism/| and type ``\verb|make|''.  (Please report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)  Several executables, including \verb|pismv|, \verb|pisms|, and \verb|pismr|, should appear in the \verb|pism/bin/| subdirectory.  If these appear one can ``\verb|make clean|'' to clean up the files saved during the build process; specifically \verb|make clean| removes the \t{.d} and \t{.o} files.
 
-\item PISM executables can be run most easily by adding the directory \verb|pism/bin/| to your \verb|PATH|.  For instance, this command can be done in your shell or in your \verb|.bashrc|,\verb|.cshrc|,etc.~file:
+\item PISM executables can be run most easily by adding the directories \verb|pism/bin/| and \verb|pism/test/| to your \verb|PATH|.  (The former directory contains the major PISM executables while the latter contains several useful scripts.)  For instance, this command can be done in your shell or in your \verb|.bashrc| file:
 
-\verb|setenv PATH /home/user/pism/bin:$PATH|  \qquad (for \verb|csh| or \verb|tcsh|),
+\verb|export PATH=//home/user/pism/bin/:/home/user/pism/test/:$PATH|
 
-\noindent or
-
-\verb|export PATH=/home/user/pism/bin:$PATH|  \qquad (for \verb|bash| or \verb|sh|)
+\noindent(for \verb|bash|, anyway)
 \end{enumerate}
 
 \bigskip
@@ -186,13 +186,13 @@ The next few items are recommended as they allow you to observe that PISM is fun
 
 \noindent This should work even if there is only one actual processor on your machine.  \verb|mpiexec| will run multiple processes on that processor.  The reported errors should be very nearly the same as the serial run above, but the results should appear faster if there really are four processors!
 
-\item Try a verification run while watching the diagnostic views which use Xwindows:
+\item Try a verification run on a finer vertical grid while watching the diagnostic views which use Xwindows:
 
-\verb|$  pismv -test G -Mx 61 -My 61 -Mz 101 -y 2000 -d HTc|
+\verb|$  pismv -test G -Mz 201 -y 2000 -d HTc|
 
 \noindent When using such diagnostic views and \verb|mpiexec| the additional final option \verb|-display :0| may be required to enable MPI to use Xwindows:
 
-\verb|$  mpiexec -n 2 pismv -test G -Mx 61 -My 61 -Mz 101 -y 2000 -d HTc -display :0|
+\verb|$  mpiexec -n 2 pismv -test G -Mz 201 -y 2000 -d HTc -display :0|
 
 \item Run a verification test of the ice stream code:
 
@@ -202,9 +202,9 @@ The next few items are recommended as they allow you to observe that PISM is fun
 
 \item Run a Python script for a basic suite of verifications:
 
-\verb|$  test/verifynow.py|
+\verb|$  verifynow.py|
 
-\noindent If you would like us to confirm that PISM is working as expected---at least those parts addressed by tests C, G, and I described in section \ref{sect:verif}---save the one page or so of output from this run and send it to us (\verb|ffelb@uaf.edu|).
+\noindent If you would like us to confirm that PISM is working as expected---at least those parts addressed by tests C, G, and I described in section \ref{sect:verif}---save the one page or so of output from this run and send it to us (\verb|ffelb@uaf.edu|).  If you have a multiprocessor machine and would like to see a more 
 \end{enumerate}
 \bigskip
 
@@ -224,10 +224,11 @@ FFTW & \url{www.fftw.org} & \emph{recommended} & if not present  \\
  & & & \quad set \verb|WITH_FFTW=0| \\
 GSL & \url{www.gnu.org/software/gsl} & \emph{recommended} &  if not present \\
  & & & \quad set \verb|WITH_GSL=0| \\
+\LaTeX & \url{http://www.latex-project.org/} & \emph{optional} & for building manual from source \\
 Matlab & \url{www.mathworks.com} & \emph{optional} & for display of results only \\
 MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
 NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
-PETSc & \scriptsize \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} \small & \emph{required} & version $\ge$ 2.3.2 \\
+PETSc & \scriptsize \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} \small & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \url{python.org} & \emph{required} & \\
 Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 \hline
@@ -278,7 +279,7 @@ For now we simply illustrate how to restart, complete, and save the 200,000 year
 The above was a single processor run, but let's suppose we have a four processor machine.  (The following should work as stated on a single processor machine under most MPI installations.)  Let's run things in the background so we can continue to experiment.
 
 \small\begin{quote}\begin{verbatim}
-user@host:~/pism$ mpiexec -n 4 obj/pisms -eisII F -if eisIIF2k.nc -y 198000\
+user@host:~/pism$ mpiexec -n 4 pisms -eisII F -if eisIIF2k.nc -y 198000\
   -o eisIIF200k -of n >> eisIIF.out &
 \end{verbatim}
 \end{quote}\normalsize
@@ -356,7 +357,7 @@ Also, one wants to quantify the limits on \emph{reportable accuracy} from an ice
 
 There are several types of exact solution based tests which verify parts of PISM, including the isothermal shallow ice approximation (SIA) \cite{BLKCB}, the thermomechanically coupled SIA \cite{BBL,BB}, sliding in the SIA \cite{BLKCB}, and the MacAyeal equations for ice streams as ``dragging ice shelves'' \cite{MacAyeal} with a plastic till assumption \cite{SchoofStream}.  The underlying ice model code executed by \t{pismv} is identical to that executed by \verb|pismr| and \verb|pisms|, but the command line options are somewhat different.
 
-As noted in the section \ref{sect:install}, there is a Python script to execute a short selection of verifications, namely \t{pism/test/verifynow.py}.  The standard results of that script appear in \t{pism/test/verifynow.py.README}.
+As noted in the section \ref{sect:install}, there is a Python script to execute a short selection of verifications, namely \t{verifynow.py}.  The use of this command is illustrated in section \ref{sect:verif}.
 
 Here is a basic isothermal verification example, which takes less than a minute on a single processor:
 
@@ -897,59 +898,71 @@ I & velocity computation using & \verb|pismv -test I -Mx 5 -My $N| \quad (e.g.~\
 \end{tabular}
 \end{table}
 
-Note there is a Python script, \verb|test/verifynow.py|, which runs Tests C, G, and I, and suffices for basic verification of most of the numerical methods in PISM, and is a good test for newly-installed copies of PISM.  It takes two options:\begin{itemize}
+Note there is a Python script, \verb|verifynow.py|, which runs Tests C, G, and I, and suffices for basic verification of most of the numerical methods in PISM, and is a good test for newly-installed copies of PISM.  It takes two options:\begin{itemize}
 \item ``\verb|-n |$N$'' specifies $N$ processors to use (i.e.~\verb|mpiexec -n |$N$ is used if $N>1$); the default is $N=1$;
 \item ``\verb|-l |$L$'' specifies $L$ levels of refinement; $L=1,2,3,4,5$ are allowed values and the default is $L=3$.
 \end{itemize}
 Here is an example run:
 \scriptsize\begin{quote}\begin{verbatim}
-$ test/verifynow -n 2 -l 3
+$ verifynow -n 2 -l 3
   VERIFYNOW using 2 processor(s) and 3 level(s) of refinement
   ++++ verifying isothermal SIA using test C (Mx=My=41,61,81,101,121
        corresponds to dx=dy=50,33.3,25,20,16 km) ++++
   trying "mpiexec -n 2 pismv -test C -Mx 41 -My 41 -Mz 31 -y 15208.0 -verbose 1"
-  finished in 10.3536 seconds; reported numerical errors as follows:
+  finished in 10.8591 seconds; reported numerical errors as follows:
     |Actual ERRORS evaluated at final time (relative to exact solution):
     |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
     |               0.7189    12.6255   250.0035   12.0155    0.019159  10.0400
   trying "mpiexec -n 2 pismv -test C -Mx 61 -My 61 -Mz 31 -y 15208.0 -verbose 1"
-  finished in 36.6522 seconds; reported numerical errors as follows:
+  finished in 36.7092 seconds; reported numerical errors as follows:
     |Actual ERRORS evaluated at final time (relative to exact solution):
     |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
     |               0.1268     6.5122   224.3489    7.1291    0.012296   4.4014
   trying "mpiexec -n 2 pismv -test C -Mx 81 -My 81 -Mz 31 -y 15208.0 -verbose 1"
-  finished in 114.5583 seconds; reported numerical errors as follows:
+  finished in 112.6159 seconds; reported numerical errors as follows:
     |Actual ERRORS evaluated at final time (relative to exact solution):
     |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
     |               0.1970     5.5536   194.2413    4.1316    0.008131   2.1267
   ++++ verifying plastic till ice stream using test I (My=49,193,769,3073,12289
        corresponds to dy=5000,1250,312.5,78.13,19.53 m) ++++
   trying "mpiexec -n 2 pismv -test I -My 49 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
-  finished in  1.0653 seconds; reported numerical errors as follows:
+  finished in  0.9357 seconds; reported numerical errors as follows:
     |Actual ERRORS in velocity relative to exact solution:
     |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
     |        23.3329    7.69421     0.98956   23.3329    0.0000    7.6942    0.0000
   trying "mpiexec -n 2 pismv -test I -My 193 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
-  finished in  2.6358 seconds; reported numerical errors as follows:
+  finished in  3.8574 seconds; reported numerical errors as follows:
     |Actual ERRORS in velocity relative to exact solution:
     |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
     |         1.3246    0.44147     0.05678    1.3246    0.0000    0.4415    0.0000
   trying "mpiexec -n 2 pismv -test I -My 769 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
-  finished in 11.7793 seconds; reported numerical errors as follows:
+  finished in 16.2246 seconds; reported numerical errors as follows:
     |Actual ERRORS in velocity relative to exact solution:
     |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
     |         0.0923    0.03117     0.00401    0.0923    0.0000    0.0312    0.0000
   ++++ verifying thermocoupled SIA using test G (Mx=My=Mz=61,91,121,181,241
        corresponds to dx=dy=30,20,15,10,7.5 km and dz=66.7,44.4,33.3,22.2,16.7 m) ++++
   trying "mpiexec -n 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000.0 -verbose 1"
-  finished in 121.7949 seconds; reported numerical errors as follows:
+  finished in 119.0501 seconds; reported numerical errors as follows:
     |Actual ERRORS evaluated at final time (relative to exact solution):
     |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
     |               2.1076     0.0000    64.3642   19.5506    0.017980   2.8224
     |base temps:        maxT         avT      domeT
     |               1.533177    0.471904   0.069055
   trying "mpiexec -n 2 pismv -test G -Mx 91 -My 91 -Mz 91 -y 25000.0 -verbose 1"
-[WAS CUTOFF BY STUPIDITY; DO AGAIN!]
+  finished in 878.9009 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.9508     0.0000    29.7903    9.0329    0.007974   0.0095
+    |base temps:        maxT         avT      domeT
+    |               0.962611    0.238721   0.025394
+  trying "mpiexec -n 2 pismv -test G -Mx 121 -My 121 -Mz 121 -y 25000.0 -verbose 1"
+  finished in 3777.5895 seconds; reported numerical errors as follows:
+    |Actual ERRORS evaluated at final time (relative to exact solution):
+    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
+    |               0.5216     0.0000    28.3494    4.9974    0.004423   0.8286
+    |base temps:        maxT         avT      domeT
+    |               0.781534    0.140056   0.003918
 \end{verbatim}
 \end{quote}\normalsize
 

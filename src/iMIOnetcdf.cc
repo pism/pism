@@ -56,8 +56,8 @@ PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ct
   delete [] ida;
   delete [] a;
 
-  ierr = VecScatterBegin(vind, vindzero, INSERT_VALUES, SCATTER_FORWARD, ctx); CHKERRQ(ierr);
-  ierr = VecScatterEnd(vind, vindzero, INSERT_VALUES, SCATTER_FORWARD, ctx); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx, vind, vindzero, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx, vind, vindzero, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
   return 0;
 }

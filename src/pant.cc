@@ -724,10 +724,8 @@ PetscErrorCode IceDragYieldModel::moveDragxytoDAbetas() {
 //  ierr = VecScatterCreate(dragxy, PETSC_NULL, dragxyLoc, PETSC_NULL,
 //                          &dragxyScatterGlobalToLocal); CHKERRQ(ierr);
   ierr = VecScatterCreateToAll(dragxy, &dragxyScatterGlobalToLocal, &dragxyLoc); CHKERRQ(ierr);
-  ierr = VecScatterBegin(dragxy, dragxyLoc, INSERT_VALUES, SCATTER_FORWARD,
-                         dragxyScatterGlobalToLocal); CHKERRQ(ierr);
-  ierr = VecScatterEnd(dragxy, dragxyLoc, INSERT_VALUES, SCATTER_FORWARD,
-                       dragxyScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = VecScatterBegin(dragxyScatterGlobalToLocal, dragxy, dragxyLoc, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(dragxyScatterGlobalToLocal, dragxy, dragxyLoc, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
   /* now extract betax,betay and then compute average beta */
   ierr = VecGetArray(dragxyLoc, &betaxylong); CHKERRQ(ierr);

@@ -466,10 +466,8 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   /* Move the solution onto a grid which can be accessed normally. Since the parallel
   * layout of the vector x does not in general have anything to do with the DA based
   * vectors, we must scatter the entire vector to all processors. */
-  ierr = VecScatterBegin(x, xLoc, INSERT_VALUES, SCATTER_FORWARD,
-                         MacayealScatterGlobalToLocal); CHKERRQ(ierr);
-  ierr = VecScatterEnd(x, xLoc, INSERT_VALUES, SCATTER_FORWARD,
-                       MacayealScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = VecScatterBegin(MacayealScatterGlobalToLocal, x, xLoc, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(MacayealScatterGlobalToLocal, x, xLoc, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);

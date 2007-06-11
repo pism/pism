@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cmath>
 #include <petscda.h>
+#include <petscksp.h>
 #include "iceModel.hh"
 
 
@@ -62,9 +63,12 @@ PetscErrorCode IceModel::createViewers() {
   ierr = createOneViewerIfDesired(&nuView[1], 'j',"nu*H (J offset)");  CHKERRQ(ierr);
  
   if (strchr(diagnostic, 'k') != NULL) {
-    ierr = KSPLGMonitorCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
+    //ierr = KSPLGMonitorCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
+    //                          PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
+    ierr = KSPMonitorLGCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
                               PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
-    ierr = KSPSetMonitor(MacayealKSP, KSPLGMonitor, kspLG, 0); CHKERRQ(ierr);
+    //ierr = KSPSetMonitor(MacayealKSP, KSPLGMonitor, kspLG, 0); CHKERRQ(ierr);
+    ierr = KSPMonitorSet(MacayealKSP, KSPMonitorLG, kspLG, 0); CHKERRQ(ierr);
   } else kspLG = PETSC_NULL;
 
   ierr = createOneViewerIfDesired(&basalmeltView, 'l',"basal melt rate (m/a)");  CHKERRQ(ierr);
@@ -100,7 +104,7 @@ PetscErrorCode IceModel::createViewers() {
 PetscErrorCode IceModel::destroyViewers() {
   PetscErrorCode ierr;
 
-  if (kspLG != PETSC_NULL) { ierr = KSPLGMonitorDestroy(kspLG); CHKERRQ(ierr); }
+  if (kspLG != PETSC_NULL) { ierr = KSPMonitorLGDestroy(kspLG); CHKERRQ(ierr); }
   if (uvbarView[0] != PETSC_NULL) { ierr = PetscViewerDestroy(uvbarView[0]); CHKERRQ(ierr); }
   if (uvbarView[1] != PETSC_NULL) { ierr = PetscViewerDestroy(uvbarView[1]); CHKERRQ(ierr); }
   if (nuView[0] != PETSC_NULL) { ierr = PetscViewerDestroy(nuView[0]); CHKERRQ(ierr); }

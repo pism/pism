@@ -16,4 +16,6 @@ ALL : manual.pdf eqns3D.dvi eqns3D.ps
 	dvips $*
 
 clean :
-	rm -f {manual,eqns3D}.{aux,bbl,blg,log,toc,dvi,ps,pdf}
+	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.log manual.out manual.ps manual.toc
+	rm -f eqns3D.aux eqns3D.bbl eqns3D.blg eqns3D.log eqns3D.toc
+

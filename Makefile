@@ -41,43 +41,44 @@ other_csources= simpleISO.c simpleFG.c simpleI.c
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
-CCLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
-
 all : depend libpism libtests $(executables)
 
+# no longer works correctly with petsc 2.3.3:
+#CCLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
+
 libpism : ${ICE_OBJS}
-	${CCLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
+	${CLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
 #	ar cru -s obj/libpism.a ${ICE_OBJS}
 
 libtests : ${TESTS_OBJS}
-	${CCLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
+	${CLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
 
 pismr : run.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/pismr
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pismr
 
 pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o obj/libpism.so
-	${CCLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o bin/pisms
+	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o bin/pisms
 
 pismv : iceCompModel.o iceExactStreamModel.o verify.o obj/libpism.so obj/libtests.so
-	${CCLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o bin/pismv
+	${CLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o bin/pismv
 
 pant : pant.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
 
 #shelf : shelf.o obj/libpism.so
-#	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
+#	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
 
 flowTable : flowTable.o obj/libpism.so
-	${CCLINKER} $< ${ICE_LIB_FLAGS} -o bin/flowTable
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/flowTable
 
 simpleISO : simpleISO.o obj/libtests.so
-	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleISO
+	${CLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleISO
 
 simpleFG : simpleFG.o obj/libtests.so
-	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleFG
+	${CLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleFG
 
 simpleI : simpleI.o obj/libtests.so
-	${CCLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleI
+	${CLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleI
 
 # Cancel the implicit rules
 % : %.cc
@@ -93,7 +94,7 @@ tags TAGS :
 %.d : %.cc
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 $(CC) -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -101,7 +102,7 @@ tags TAGS :
 %.d : %.c
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 $(CC) -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -114,7 +115,7 @@ clean : depclean
 
 distclean : clean
 	rm -f TAGS obj/libpism.so obj/libtests.so \
-	 $(patsubst %, obj/%, ${executables})
+	 $(patsubst %, bin/%, ${executables})
 
 .PHONY: clean
 
