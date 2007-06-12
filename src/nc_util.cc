@@ -16,8 +16,6 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#if (WITH_NETCDF)
-
 #include <cstring>
 #include <cstdlib>
 #include <netcdf.h>
@@ -531,5 +529,3 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
   return 0;
 }
 
-
-#endif // WITH_NETCDF

@@ -308,7 +308,6 @@ PetscErrorCode IceModel::createMask(PetscTruth balVelRule) {
   return 0;
 }
 
-#if (WITH_NETCDF)
 #include <netcdf.h>
 #include "nc_util.hh"
 
@@ -786,4 +785,3 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   return 0;
 }
 
-#endif // (WITH_NETCDF)

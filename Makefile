@@ -6,10 +6,9 @@ include ${PETSC_DIR}/bmake/common/base
 
 #FLAGS:
 
-WITH_NETCDF?=1
 WITH_FFTW?=1
 WITH_GSL?=1
-CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
+CFLAGS+= -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
 
 ICE_LIB_FLAGS= -L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}\
    -lnetcdf_c++ -lnetcdf

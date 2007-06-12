@@ -21,10 +21,7 @@
 
 #include <petscda.h>
 #include <petscksp.h>
-
-#if (WITH_NETCDF)
 #include <netcdf.h>
-#endif
 
 #if (WITH_FFTW)
 #include <fftw3.h>
@@ -130,14 +127,12 @@ public:
   PetscErrorCode writeFiles(const char* basename, const char* formats);
   PetscErrorCode initFromOptions();
 
-#if (WITH_NETCDF)
   // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
   // see iMregrid_netCDF.cc
   PetscErrorCode regrid_netCDF(const char *fname);
-#endif
 
 protected:
    static const int MASK_SHEET;
@@ -404,10 +399,8 @@ protected:
   PetscErrorCode putTempAtDepth();
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode cleanInputData();
-#if (WITH_NETCDF)
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
-#endif
 
 private:
   // Pieces of the Macayeal Velocity routine defined in iMmacayeal.cc.

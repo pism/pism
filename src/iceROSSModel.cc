@@ -130,6 +130,11 @@ PetscErrorCode IceROSSModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &prefixSet); CHKERRQ(ierr);
   if (prefixSet == PETSC_FALSE) {
     strcpy(prefixROSS,"eisROSS/");
+  } else {
+    // make sure last character of prefixROSS is "/"
+    if (prefixROSS[strlen(prefixROSS)-1] != '/') {
+      strcat(prefixROSS,"/");
+    }
   }
   ierr = verbPrintf((prefixSet == PETSC_TRUE) ? 2 : 4, grid.com,
             "prefix for ROSS data files =%s\n",prefixROSS); CHKERRQ(ierr);

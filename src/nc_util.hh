@@ -19,8 +19,6 @@
 #ifndef __nc_util_hh
 #define __nc_util_hh
 
-#if (WITH_NETCDF)
-
 #include <netcdf.h>
 #include <petscmat.h>
 #include "grid.hh"
@@ -47,5 +45,4 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name, int 
 PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[],
                                   LocalInterpCtx &lic, IceGrid &grid);
 
-#endif // WITH_NETCDF
 #endif // __nc_util_hh

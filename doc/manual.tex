@@ -16,12 +16,12 @@
 % along with Pism; if not, write to the Free Software
 % Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-\documentclass[11pt,final]{amsart}
+\documentclass[12pt,final]{amsart}
 \addtolength\topmargin{-.1in}
 \addtolength\textheight{0.3in}
-\addtolength{\oddsidemargin}{-.5in}
-\addtolength{\evensidemargin}{-.5in}
-\addtolength{\textwidth}{1.0in}
+\addtolength{\oddsidemargin}{-.65in}
+\addtolength{\evensidemargin}{-.65in}
+\addtolength{\textwidth}{1.3in}
 \newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
 \newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
 \normalspacing
@@ -49,6 +49,7 @@
 
 \newcommand{\Vfile}[1]{ \begin{quote}\rule{4.6in}{0.1mm} \verbatiminput{#1} \rule{4.6in}{0.1mm}\end{quote} }
 
+%\makeindex
 
 \title[PISM User's Manual]{PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel: \\ User's Manual}
 
@@ -98,8 +99,6 @@
 
 \item You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed; these are automatic in current Linux distributions.
 
-\item To build the latest manual from source you will need \LaTeX, but for most purposes the PDF manual at the PISM documentation page, \url{http://www.dms.uaf.edu/~bueler/manual.pdf}, should suffice.  (This is the only use of \LaTeX~in PISM.)
-
 \item You will need MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  It would be reasonable to learn enough about MPI to know how to run a simple C code on multiple processors using MPI.  There are multiple flavors of MPI, but choose one which works with PETSc, next.  It may be most convenient to either use an existing MPI installation or to have PETSc download MPICH as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| subdirectory to your path, that is,
 
 \verb|setenv PATH /home/user/mympi/bin:$PATH|  \qquad (for \verb|csh| or \verb|tcsh|),
@@ -116,14 +115,14 @@
 \item The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for PETSc documentation.
 \item Note that you will need defined environment variables \verb|PETSC_DIR| and \verb|PETSC_ARCH| to use PETSc and, in particular, to build PISM.  The lines
 
-\verb|   export PETSC_DIR=/home/user/petsc-2.3.3-p2/|
+\verb|export PETSC_DIR=/home/user/petsc-2.3.3-p2/|
 
-\verb|   export PETSC_ARCH=linux-gnu-c-debug|  \qquad  \emph{(or something like that)}
+\verb|export PETSC_ARCH=linux-gnu-c-debug|  \qquad  \emph{(or something like that)}
 
 \noindent should be added to your \verb|.profile| or \verb|.bashrc| file; see the PETSc installation page.
 \item When you run the configure script in the PETSc directory, the following options are recommended; note PISM builds with shared libraries by default (though other possibilities are illustrated by makefiles in \verb|pism/config/|):
 
-\verb|   $ ./config/configure.py --with-shared --with-c-support|
+\verb|$  ./config/configure.py --with-shared --with-c-support|
 
 \item If there is an existing MPI installation, for example at \verb|/home/user/mympi|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi|.  In particular, the directory you want to give in this option will have MPI executables \verb|mpiexec| and \verb|mpicc| in subdirectory \verb|/home/user/mympi/bin| and will have MPI library files in subdirectory \verb|/home/user/mympi/lib|.
 \item On the other hand, it seems common that one needs to tell PETSc to download MPI into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
@@ -146,13 +145,16 @@
 \end{enumerate}
 
 \bigskip
-See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, as described so far.  At this point you have configured the environment which PISM needs and you are ready to build PISM itself.
+See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, including those mentioned so far.
+
+\medskip
+At this point you have configured the environment which PISM needs and you are ready to build PISM itself.
 \bigskip
 
 \begin{enumerate}\setcounter{enumi}{7}
 \item \label{getPISMstep} Get the source for PISM by
 
-\verb|svn co http://svn.gna.org/svn/pism/trunk pism|
+\verb|$  svn co http://svn.gna.org/svn/pism/trunk pism|
 
 \noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will get the latest revision of PISM.
 
@@ -224,8 +226,10 @@ FFTW & \url{www.fftw.org} & \emph{recommended} & if not present  \\
  & & & \quad set \verb|WITH_FFTW=0| \\
 GSL & \url{www.gnu.org/software/gsl} & \emph{recommended} &  if not present \\
  & & & \quad set \verb|WITH_GSL=0| \\
-\LaTeX & \url{http://www.latex-project.org/} & \emph{optional} & for building manual from source \\
-Matlab & \url{www.mathworks.com} & \emph{optional} & for display of results only \\
+\LaTeX & \url{http://www.latex-project.org/} & \emph{optional} & only used for \\
+& & & rebuilding manual from source \\
+Matlab & \url{www.mathworks.com} & \emph{optional} & only used for \\
+& & & alternate display of results \\
 MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
 NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
 PETSc & \scriptsize \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} \small & \emph{required} & version $\ge$ 2.3.3-p2 \\
@@ -246,7 +250,7 @@ So we describe how PISM does experiment F in the EISMINT II intercomparison \cit
 PISM always allows choice of the grid in three dimensions.  A runtime option chooses the number of grid points in each direction.  We choose the standard 25km grid in the horizontal and use a 25 m (equally-spaced) grid in the vertical.  The executable is ``\t{pisms}'', with trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM.  Here is a short 2000 year run.
 
 \small\begin{quote}\begin{verbatim}
-user@host:~/pism$ pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
+$  pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
 PISMS (simplified geometry mode)
 initializing EISMINT II experiment F ...
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
@@ -272,14 +276,14 @@ This should have taken less than 30 seconds on any modern computer.  In a moment
 
 For now we simply illustrate how to restart, complete, and save the 200,000 year run.  Note that the model state was stored in a file with a default name ``\texttt{simp\underline{ }exper.nc}''.  Let's give it a more useful name with
 
-\verb|$ mv simp_exper.nc eisIIF2k.nc|
+\verb|$  mv simp_exper.nc eisIIF2k.nc|
 
 \noindent We will see in a moment an example which uses an option to name the output file, and an option to choose its format.
 
 The above was a single processor run, but let's suppose we have a four processor machine.  (The following should work as stated on a single processor machine under most MPI installations.)  Let's run things in the background so we can continue to experiment.
 
 \small\begin{quote}\begin{verbatim}
-user@host:~/pism$ mpiexec -n 4 pisms -eisII F -if eisIIF2k.nc -y 198000\
+$  mpiexec -n 4 pisms -eisII F -if eisIIF2k.nc -y 198000 \
   -o eisIIF200k -of n >> eisIIF.out &
 \end{verbatim}
 \end{quote}\normalsize
@@ -289,11 +293,10 @@ user@host:~/pism$ mpiexec -n 4 pisms -eisII F -if eisIIF2k.nc -y 198000\
 While the above is running in the background, let's actually view the model state during a few time steps by starting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which are PETSc viewers working under Xwindows:
 
 \small\begin{quote}\begin{verbatim}
-user@host:~/pism$ pisms -eisII F -if eisIIF2k.nc -y 200 -d HTt
+$  pisms -eisII F -if eisIIF2k.nc -y 200 -d HTt
 PISMS (simplified geometry mode)
 initializing from NetCDF format file  eisIIF2k.nc  ...
-  [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m +
- 0.00 m bedrock)]
+  [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
 $$$$$       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
@@ -339,7 +342,7 @@ This summary of the model state can be expanded by using the option \verb|-verbo
 \textbf{Tool} & \textbf{Site} \\ \hline
 \verb|ncview| & \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html} \\
 \verb|ncBrowse| & \url{http://www.epic.noaa.gov/java/ncBrowse/} \\
-the CSIRO MATLAB/netCDF interface & \url{http://www.marine.csiro.au/sw/matlab-netcdf.html} \\
+CSIRO MATLAB/netCDF interface & \scriptsize \url{http://www.marine.csiro.au/sw/matlab-netcdf.html} \small \\
 \verb|NCO| = the NetCDF Operators & \url{http://nco.sourceforge.net/} \\
 \hline
 \multicolumn{2}{c}{See \url{http://www.unidata.ucar.edu/software/netcdf/docs/software.html} for additional tools.} \\
@@ -362,10 +365,10 @@ As noted in the section \ref{sect:install}, there is a Python script to execute 
 Here is a basic isothermal verification example, which takes less than a minute on a single processor:
 
 \small\begin{quote}\begin{verbatim}
-user@host:~/pism$ pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31
+$  pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31
 PISMV (verification mode)
 initializing Test B ...
-  [computational box for ice: ( 2400.00 km) x ( 2400.00 km) x ( 4000.00 m +    0.00 m bedrock)]
+  [computational box for ice: ( 2400.00 km) x ( 2400.00 km) x ( 4000.00 m)]
   [grid cell dimensions     : (   80.00 km) x (   80.00 km) x (  133.33 m)]
 running test B ...
 $$$$       YEAR (+     STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0
@@ -391,7 +394,7 @@ Here the PISM numerical results were compared to the exact solution Test B from 
 At the end of this \t{pismv} verification run the errors are reported.  These are the differences between the values computed numerically on the grid and the known exact solution at the same grid points.  In particular, while there are maximum thickness errors of up to 141 meters, the average thickness error is only 8.4 meters at the final time (on this very rough $31\times 31$ point grid).  For comparison, the errors for a finer $61\times 61$ grid are smaller:
 
 \small\begin{quote}\begin{verbatim}
-user@host:~/pism$ pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31
+$  pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31
 PISMV (verification mode)
 initializing Test B ...
   [computational box for ice: ( 2400.00 km) x ( 2400.00 km) x ( 4000.00 m)]
@@ -417,10 +420,11 @@ Writing model state to file `verify.nc' ... done
 See \cite{BLKCB} for a more complete discussion of this particular test.  See the section \ref{sect:verif} for a more complete discussion of verification in PISM, including verification of the thermomechanically coupled SIA and of the MacAyeal equations for ice streams.
 
 
-\newcommand{\opt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\,:\quad\normalsize}
-\newcommand{\optdef}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]:\quad\normalsize}
-\newcommand{\optrestrict}[2]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\texttt{#2} \textsl{only}]:\quad\normalsize}
-\newcommand{\optdefrestrict}[3]{\vspace{1mm}\noindent \large\texttt{-#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad\normalsize}
+\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\normalsize}
+\newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
+\newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
+\newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
+\newcommand{\optdefrestrict}[3]{\rawopt{#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad}
 \newcommand{\und}{$\underline{\,\,\,}$}
 
 \clearpage\newpage
@@ -564,7 +568,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdef{of}{p}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
 
-\optdefrestrict{pause}{}{pisms -ross,pismv -test I}    Pause for given number of seconds at the end of the run when the results are displayed.
+\optrestrict{pause}{pisms -ross,pismv -test I}    Pause for given number of seconds at the end of the run when the results are displayed.
 
 \optrestrict{prefix}{pisms -ross}    Set the data file prefix for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.
 
@@ -649,13 +653,21 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \opt{info}  Gives excessive information about PETSc operations during run.  Option \verb|-verbose| for PISM (above) is generally more useful, except possibly for debugging.
 
-\optdef{ksp\und rtol}{1e-5}  For solving the ice stream and shelf equations with high resolution on multiple processors, it is recommended that this be tightened.  For example, \verb|pismv -test I -Mx 5 -My 769| works poorly on 8 processors on a certain machine, but \verb|pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10| works fine.
+\optdef{ksp\und rtol}{1e-5}  For solving the ice stream and shelf equations with high resolution on multiple processors, it is recommended that this be tightened.  For example, 
+
+\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769|
+
+\noindent works poorly on a certain machine, but
+
+\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10|
+
+\noindent works fine.
 
 \optdef{ksp\und type}{gmres}  Based on one processor evidence from \verb|pismv -test I|, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
 
 \opt{log\und summary}  At the end of the run gives a performance summary and also a synopsis of the PETSc configuration in use.
 
-\optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-mv_rtol 1e-7 -ksp_rtol 1e-12|).
+\optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-mv_rtol 1e-7| \verb|-ksp_rtol 1e-12|).
 
 \opt{v}   Show version number of PETSc.
 
@@ -665,7 +677,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
 
-\verb|pismv -test G -d hTf -dbig c|
+\verb|$  pismv -test G -d hTf -dbig c|
 
 \noindent shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of vertically-averaged horizontal ice speed (``\t{c}'').
 
@@ -776,13 +788,13 @@ The distance \t{Lbz} is controlled by specifying the number \verb|Mbz| of grid p
 
 One is allowed to specify the grid when PISM is started \emph{without} a pre-existing model state (i.e.~as stored in a NetCDF input file output by PISM).  For instance, a EISMINT II experiment F \cite{EISMINT00} run is
 
-\verb|pisms -eisII F -Mx 61 -My 61 -Mz 101 -y 200000 -o foo|
+\verb|$  pisms -eisII F -Mx 61 -My 61 -Mz 101 -y 200000 -o foo|
 
 \noindent Note that PISM (i.e.~the executable \verb|pisms|) knows about the size of the computational box appropriate to each of the EISMINT II experiments.
 
 If one initializes PISM from a saved model state then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
 
-\verb|pisms -eisII F -if foo.nc -Mz 201 -y 100|
+\verb|$  pisms -eisII F -if foo.nc -Mz 201 -y 100|
 
 \noindent will give a warning that ``\verb|user option -Mz ignored; value read from file foo.nc|.''  To change the model grid one must explicitly ``regrid'', as described next.
 
@@ -790,12 +802,14 @@ If one initializes PISM from a saved model state then the input model state cont
 
 Such ``regridding'' is done using the \verb|-regrid| and \verb|-regrid_vars| commands as in this example:
 
-\verb|pisms -eisII F -Mx 101 -My 101 -Mz 201 -y 1000 -regrid foo.nc -regrid_vars HT -o bar|
+\verb|$  pisms -eisII F -Mx 101 -My 101 -Mz 201 -y 1000 \|
+
+\verb|     -regrid foo.nc -regrid_vars HT -o bar|
 
 \noindent Note one specifies ``\verb|HT|'' to indicate that the ice thickness and temperature values from the old grid should be interpolated onto the new grid.  (One doesn't need to specify the regridding of the bed elevation, which is set identically zero as part of the EISMINT II experiment F description, nor of the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.)
 
-A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:real}.  Here it is reasonable to have the sequence of commands
-\begin{quote}\small
+A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:real}.  Here it is reasonable to have the sequence of commands, run on 8 processors,
+\small
 \begin{verbatim}
 mpiexec -n 8 pismr -bif init.nc -Mx 141 -My 141 -Mz 101 -Mbz 21 -gk -e 1.2 \
    -verbose -y 10 -o ant10yr_40km -of n
@@ -807,8 +821,7 @@ mpiexec -n 8 pismr -bif init.nc -Mx 281 -My 281 -Mz 201 -Mbz 41 -gk -e 1.2 \
    -regrid ant150k_40km.nc -regrid_vars TBeL -verbose -y 10 -o ant150k_20km -of n
 \end{verbatim}
 \normalsize
-\end{quote}
-This is, incidentally, an 8 processor run.  Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth the surface for a short 10 year run on a coarseer 40km grid.  Then we do a long simulation to complete 150,000 years on this coarse grid to approximate the temperature and age fields, assuming steady boundary conditions and fixed geometry.  Finally we do a brief 0 year run with evolving geometry on a finer 20km grid, but we go back to the original data for the ice thickness; this last stage involves regridding temperature but not thickness, in particular.
+Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth the surface for a short 10 year run on a coarseer 40km grid.  Then we do a long simulation to complete 150,000 years on this coarse grid to approximate the temperature and age fields, assuming steady boundary conditions and fixed geometry.  Finally we do a brief 0 year run with evolving geometry on a finer 20km grid, but we go back to the original data for the ice thickness; this last stage involves regridding temperature but not thickness, in particular.
 
 \subsection{Understanding and controlling adaptive time-stepping}  Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
 \begin{verbatim}
@@ -820,7 +833,7 @@ Here we will explain what appears in the `\verb|(+    STEP[N$])|' part of this s
 
 Note that most of the time `\verb|N|' will be zero.  The exception is when the option \verb|-tempskip| is used.  If \verb|-tempskip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do: 
 
-\verb|pismv -test G -Mx 141 -My 141 -Mz 51 -tempskip 4|
+\verb|$  pismv -test G -Mx 141 -My 141 -Mz 51 -tempskip 4|
 
 Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-timestepping flag `\verb|$|'.
 
@@ -1357,4 +1370,5 @@ consider options such as \verb|-log_summary| to get diagnostics written to the t
 \bibliography{ice_bib}
 \bibliographystyle{siam}
 
+%\printindex
 \end{document}

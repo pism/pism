@@ -32,43 +32,6 @@ const int IceModel::MASK_FLOATING = 3;
 // (modMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill 
 const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 
-//used in iMutil.C
-const PetscScalar IceModel::DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
-const PetscScalar IceModel::DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
-const PetscScalar IceModel::DEFAULT_ADAPT_TIMESTEP_RATIO = 0.12;  // yes, I'm confident this is o.k.
-
-//used in iMIO.C
-const PetscScalar IceModel::DEFAULT_h_VALUE_MISSING = 0.0;
-const PetscScalar IceModel::DEFAULT_H_VALUE_MISSING = 0.0;
-const PetscScalar IceModel::DEFAULT_BED_VALUE_MISSING = -5000.0;
-const PetscScalar IceModel::DEFAULT_ACCUM_VALUE_MISSING = -0.5/ secpera;
-const PetscScalar IceModel::DEFAULT_SURF_TEMP_VALUE_MISSING = 270.0;
-
-//used in iMvelocity.C
-const PetscScalar IceModel::DEFAULT_MINH_MACAYEAL = 10.0;  // m; minimum thickness for MacAyeal velocity computation
-const PetscScalar IceModel::DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> MacAyeal
-const PetscScalar IceModel::DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch MacAyeal --> SIA
-const PetscScalar IceModel::DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch MacAyeal --> SIA
-const PetscScalar IceModel::DEFAULT_MAXSLOPE_MACAYEAL = 1.0e-3; // no units/pure number; cap to avoid bad behavior
-const PetscScalar IceModel::DEFAULT_EPSILON_MACAYEAL = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
-const PetscScalar IceModel::DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = 4.0;  // no units/pure number; epsilon goes up by this ratio when
-// previous value failed
-const PetscScalar IceModel::DEFAULT_VERT_VEL_MACAYEAL = 0.0;  // temp evolution uses this value; incompressibility not satisfied
-const PetscScalar IceModel::DEFAULT_MAX_VEL_FOR_CFL = 1000.0 / secpera;  // 10 km/a
-//const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
-const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 4.0e9; // seems to work better
-const PetscScalar IceModel::DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
-//used in iMvelocity.C and iMutil.C
-const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
-     // ice.meltingTemp; if above this value then decide to slide
-const PetscScalar IceModel::DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
-const PetscScalar IceModel::DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when assumed constant; for gk ice
-const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
-        // about 4 times more heating than peak of 
-        // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
-const PetscScalar IceModel::DEFAULT_MAX_HMELT = 5.0;  // allow no more than 5 m thick basal
-                                                       // melt water layer
-
 
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum) {
     PetscErrorCode ierr;

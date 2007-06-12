@@ -61,14 +61,10 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscScalar runYears;
 
   if (hasSuffix(fname, ".nc") == true) {
-#if (WITH_NETCDF)
     ierr = PetscPrintf(grid.com,
                        "initializing from NetCDF format file  %s  ...\n",
                        fname); CHKERRQ(ierr);
     ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
-#else
-    SETERRQ(1, "netCDF not supported.  Recompile with WITH_NETCDF=1.");
-#endif
     return 0;
   } else if (hasSuffix(fname, ".pb") == false) {
     ierr = PetscPrintf(grid.com, "[Unknown file format."

@@ -16,8 +16,6 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#if (WITH_NETCDF)
-
 #include <cstring>
 #include "iceModel.hh"
 #include "nc_util.hh"
@@ -79,4 +77,3 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   return 0;
 }
 
-#endif

@@ -694,12 +694,13 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = bedDefSetup(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, 
-           "  [computational box for ice: (%8.2f km) x (%8.2f km) x (%8.2f m",
-           2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0,grid.p->Lz); CHKERRQ(ierr);
+           "  [computational box for ice: (%8.2f km) x (%8.2f km)",
+           2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0); CHKERRQ(ierr);
   if (grid.p->Mbz > 1) {
-    ierr = verbPrintf(2,grid.com," + %7.2f m bedrock)]\n",grid.p->Lbz); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,
+         "\n                                 x (%8.2f m + %7.2f m bedrock)]\n",grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,grid.com,")]\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com," x (%8.2f m)]\n",grid.p->Lz); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,grid.com, 
            "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
