@@ -36,6 +36,10 @@ PetscErrorCode  IceModel::setFromOptions() {
              MxSet, MySet, MzSet, MbzSet;
   PetscInt nospokeslevel, my_Mx, my_My, my_Mz, my_Mbz;
 
+  // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
+  // allows users to set options using this.
+  ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (in PISM)",PETSC_NULL); CHKERRQ(ierr);
+
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
 
@@ -192,6 +196,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   if (endYearSet == PETSC_TRUE) {
     ierr = setEndYear(my_endYear); CHKERRQ(ierr);
   }
+ 
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
     
   return 0;
 }

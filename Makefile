@@ -2,6 +2,7 @@ SHELL = /bin/sh
 VPATH = src:src/exact
 ALL : all
 
+# get PETSc environment, rules:
 include ${PETSC_DIR}/bmake/common/base
 
 #FLAGS:
@@ -10,7 +11,7 @@ WITH_FFTW?=1
 WITH_GSL?=1
 CFLAGS+= -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
 
-ICE_LIB_FLAGS= -L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}\
+ICE_LIB_FLAGS= -L`pwd`/lib -Wl,-rpath,`pwd`/lib -lpism -ltests ${PETSC_LIB}\
    -lnetcdf_c++ -lnetcdf
 ifeq (${WITH_FFTW}, 1)
 	ICE_LIB_FLAGS+= -lfftw3
@@ -42,42 +43,39 @@ depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 
 all : depend libpism libtests $(executables)
 
-# no longer works correctly with petsc 2.3.3:
-#CCLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
-
 libpism : ${ICE_OBJS}
-	${CLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
-#	ar cru -s obj/libpism.a ${ICE_OBJS}
+	${CLINKER} -shared -o lib/libpism.so ${ICE_OBJS}
+#for static-linking:  ar cru -s lib/libpism.a ${ICE_OBJS}   etc
 
 libtests : ${TESTS_OBJS}
-	${CLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
+	${CLINKER} -shared -o lib/libtests.so ${TESTS_OBJS}
 
-pismr : run.o obj/libpism.so
+pismr : run.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pismr
 
-pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o obj/libpism.so
+pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o lib/libpism.so
 	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o bin/pisms
 
-pismv : iceCompModel.o iceExactStreamModel.o verify.o obj/libpism.so obj/libtests.so
+pismv : iceCompModel.o iceExactStreamModel.o verify.o lib/libpism.so lib/libtests.so
 	${CLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o bin/pismv
 
-pant : pant.o obj/libpism.so
+pant : pant.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
 
-#shelf : shelf.o obj/libpism.so
+#shelf : shelf.o lib/libpism.so
 #	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
 
-flowTable : flowTable.o obj/libpism.so
+flowTable : flowTable.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/flowTable
 
-simpleISO : simpleISO.o obj/libtests.so
-	${CLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleISO
+simpleISO : simpleISO.o lib/libtests.so
+	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o bin/simpleISO
 
-simpleFG : simpleFG.o obj/libtests.so
-	${CLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleFG
+simpleFG : simpleFG.o lib/libtests.so
+	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o bin/simpleFG
 
-simpleI : simpleI.o obj/libtests.so
-	${CLINKER} $< -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests -o bin/simpleI
+simpleI : simpleI.o lib/libtests.so
+	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o bin/simpleI
 
 # Cancel the implicit rules
 % : %.cc
@@ -113,7 +111,7 @@ depclean :
 clean : depclean
 
 distclean : clean
-	rm -f TAGS obj/libpism.so obj/libtests.so \
+	rm -f TAGS lib/libpism.so lib/libtests.so \
 	 $(patsubst %, bin/%, ${executables})
 
 .PHONY: clean
