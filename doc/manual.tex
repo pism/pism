@@ -860,6 +860,39 @@ value.
 
 \clearpage\newpage
 \section{Realistic ice sheet modelling}\label{sect:real}
+\subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License. Thus, this section describes the use of a Python script (\verb|eis_green.py|) to convert the EISMINT Greenland data into a NetCDF file useable by PISM.
+
+The Python script \verb|eis_green.py| can be found in the \verb|pism/test| directory. In order to use the script, you must have the following on your system:\begin{itemize}
+ \item The data files \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html} in your \verb|pism/test| directory.
+ \item An installation of Numpy (\url{http://numpy.scipy.org/}).
+\end{itemize}
+
+\noindent The script \verb|eis_green.py| is used by running the following command in the \verb|pism/test| directory:
+
+\small\begin{quote}\begin{verbatim}
+$  python eis_green.py
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent As a result, a NetCDF file named \verb|eis_green.nc| will be created in the same directory. This NetCDF file is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|S|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|). These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
+
+\small\begin{quote}\begin{verbatim}
+$  ncview eis_green.nc
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent In order to perform somewhat of a checksum on the resulting data, the NCO tools (\url{http://nco.sourceforge.net/}) can be used. The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable called \verb|check|:
+
+\small\begin{quote}\begin{verbatim}
+$  ncap -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$. Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant. Thus, this data and will be ignored.
+
+\subsection{Bootstrapping EISMINT Greenland Data}
+
+\subsection{Running Greenland Experiments Using Bootstrapped Data}
 
 
 \clearpage\newpage
