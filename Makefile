@@ -34,8 +34,9 @@ ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
-other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc run.cc verify.cc iceCompModel.cc shelf.cc pant.cc
+other_sources= pismr.cc pismv.cc pisms.cc pant.cc\
+	flowTable.cc iceEISModel.cc iceHEINOModel.cc\
+	iceROSSModel.cc iceCompModel.cc shelf.cc
 other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
@@ -50,14 +51,14 @@ libpism : ${ICE_OBJS}
 libtests : ${TESTS_OBJS}
 	${CLINKER} -shared -o lib/libtests.so ${TESTS_OBJS}
 
-pismr : run.o lib/libpism.so
+pismr : pismr.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pismr
 
-pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o lib/libpism.so
-	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o ${ICE_LIB_FLAGS} -o bin/pisms
+pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o lib/libpism.so
+	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o bin/pisms
 
-pismv : iceCompModel.o iceExactStreamModel.o verify.o lib/libpism.so lib/libtests.so
-	${CLINKER} iceCompModel.o iceExactStreamModel.o verify.o ${ICE_LIB_FLAGS} -o bin/pismv
+pismv : iceCompModel.o iceExactStreamModel.o pismv.o lib/libpism.so lib/libtests.so
+	${CLINKER} iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o bin/pismv
 
 pant : pant.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
