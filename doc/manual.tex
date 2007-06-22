@@ -27,6 +27,7 @@
 \normalspacing
 
 \usepackage{bm,url,xspace,verbatim}
+\usepackage{amssymb,amsmath}
 \usepackage[final,pdftex]{graphicx}
 \usepackage[pdftex]{hyperref}
 
@@ -100,9 +101,11 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
-\item You will need a UNIX system with an X Windows server and internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed; note are included in current Linux distributions.
+\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.
 
-\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation in which case the path to the MPI directory will be needed when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  Add the \verb|bin| directory with the statement
+\item To use the graphical output of PISM, which we recommend, you will need an X Windows server \emph{and} the developers' version of X11, which will contain the needed header files.
+
+\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  Add the \verb|bin| directory with the statement
 
 \verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for \verb|bash| shell)
 
@@ -112,14 +115,14 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 
 \noindent Such a statement can, of course, appear in your \verb|.bashrc|, \verb|.profile|, or \verb|.cshrc| file.  
 
-\emph{From now on this manual will assume use of} \verb|bash|.
+\centerline{\emph{From now on this manual will assume use of} \texttt|bash|.}
 
 \item Download PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}, pronounced ``pet-see'') from \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}.  You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it might be best to read the following comments on the PETSc configure and build process first:
 
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item PISM requires a version of PETSc later than \verb|petsc-2.3.3| (patch level 2; i.e.~\verb|petsc-2.3.3-p2| or later).   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for PETSc documentation.  The first step is to download the gzipped tar file for PETSc.
+\item PISM requires a version of PETSc which is \verb|petsc-2.3.3-p2| (patch level 2) or later.   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation.  
 
-\item Untar the downloaded PETSc.  Note that you will need to define the environment variable \verb|PETSC_DIR| before configuring PETSc (next).  For instance, if you are in the PETSc directory just untarred, do \verb|export PETSC_DIR=`pwd`|.
+\item The first step is to download the gzipped tar file for PETSc.  Untar it in your home directory or sub; note PETSc should \emph{not} be configured using root privileges.  Note that you will need to define the environment variable \verb|PETSC_DIR| before configuring PETSc (next).  For instance, if you are in the PETSc directory just untarred, do \verb|export PETSC_DIR=|$\phantom{!}^\backprime \mathtt{pwd}^\backprime$.  (Note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \verb|'|.)
 
 \item When you run the configure script in the PETSc directory, the following options are recommended; note PISM builds with shared libraries by default (though other possibilities are illustrated by makefiles in \verb|pism/config/|):
 
@@ -148,15 +151,17 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 \noindent could appear in one of those files.
 \end{enumerate}
 
-\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   Install it using the instructions at the NetCDF webpage or using a package management system.
+\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   Install it using the instructions at the NetCDF webpage or using a package management system.  You will need the development version (package) which includes the header files (e.g.~\verb|netcdf.h|); this is the \verb|xorg-dev| package in the Debian repositories.
 
-\item PISM uses the FFTW and GSL libraries for approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  Therefore:
+\item PISM uses two libraries called ``FFTW'' and ``GSL'' for approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install the following or check that it is installed already:
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
 
-\item If FFTW (= \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}) is installed and in a good system-wide place, e.g.~on your \verb|PATH|, do nothing.  Otherwise turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.  PISM will work except for the bed deformation model described in the paper \cite{BLKfastearth}.
+\item FFTW (= \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}).   Get the development version with header files (\verb|fftw3-dev| in Debian).   
 
-\item If GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}) is installed and in a good system-wide place, do nothing.  Otherwise turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_GSL=0|.  PISM will work except for the bed deformation model described in the paper \cite{BLKfastearth}.
+\item GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}).   Get the development version with header files (\verb|libgsl0-dev| in Debian).
 \end{enumerate}
+
+\noindent  If FFTW is not installed, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.  If GSL is not installed, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_GSL=0|.  If either of these libraries is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
 \end{enumerate}
 
 \bigskip
@@ -230,7 +235,7 @@ At this stage you can do the EISMINT II tests and some verification tests withou
 A final reminder with respect to installation:  Once you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above, you can update it to the latest version by \verb|svn update| in the \verb|pism/| directory, after which you will want to \verb|make| again, of course.
 
 \begin{table}[h]
-\caption{Dependencies for PISM, listed alphabetically.}\label{tab:PISMdepends}
+\caption{Dependencies for PISM, listed alphabetically.  Note developers' versions, which include the relevant header files, are needed for FFTW, GSL, and NetCDF.}\label{tab:PISMdepends}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\

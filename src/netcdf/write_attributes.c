@@ -16,7 +16,7 @@
    size_t x_len = grid.p->Mx;
    size_t y_len = grid.p->My;
    size_t z_len = grid.p->Mz;
-   size_t zb_len = (grid.p->Mbz == 0 ? 1 : grid.p->Mbz);
+   size_t zb_len = grid.p->Mbz;
    size_t t_len = NC_UNLIMITED;
 
    /* variable ids */
