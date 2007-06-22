@@ -195,6 +195,16 @@ PetscErrorCode IceGrid::destroyDA() {
 PetscErrorCode IceGrid::rescale(PetscScalar lx, PetscScalar ly, PetscScalar lz) {
   PetscErrorCode ierr;
 
+  if (lx<=0) {
+    SETERRQ(1, "rescale: error, lx must be positive\n");
+  }
+  if (ly<=0) {
+    SETERRQ(1, "rescale: error, ly must be positive\n");
+  }
+  if (lz<=0) {
+    SETERRQ(1, "rescale: error, lz must be positive\n");
+  }
+
   p->Lx = lx; p->Ly = ly; p->Lz = lz;
   p->dx = 2.0 * p->Lx / (p->Mx - 1);
   p->dy = 2.0 * p->Ly / (p->My - 1);

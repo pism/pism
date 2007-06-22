@@ -865,9 +865,9 @@ value.
 
 \clearpage\newpage
 \section{Realistic ice sheet modelling}\label{sect:real}
-\subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License. Thus, this section describes the use of a Python script (\verb|eis_green.py|) to convert the EISMINT Greenland data into a NetCDF file useable by PISM.
+\subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  Thus, this section describes the use of a Python script (\verb|eis_green.py|) to convert the EISMINT Greenland data into a NetCDF file useable by PISM.
 
-The Python script \verb|eis_green.py| can be found in the \verb|pism/test| directory. In order to use the script, you must have the following on your system:\begin{itemize}
+The Python script \verb|eis_green.py| can be found in the \verb|pism/test| directory.  In order to use the script, you must have the following on your system:\begin{itemize}
  \item The data files \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html} in your \verb|pism/test| directory.
  \item An installation of Numpy (\url{http://numpy.scipy.org/}).
 \end{itemize}
@@ -879,23 +879,54 @@ $  python eis_green.py
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent As a result, a NetCDF file named \verb|eis_green.nc| will be created in the same directory. This NetCDF file is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|S|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|). These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
+\noindent As a result, a NetCDF file named \verb|eis_green.nc| will be created in the same directory.  This NetCDF file is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|S|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
 
 \small\begin{quote}\begin{verbatim}
 $  ncview eis_green.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent In order to perform somewhat of a checksum on the resulting data, the NCO tools (\url{http://nco.sourceforge.net/}) can be used. The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable called \verb|check|:
+\noindent In order to perform somewhat of a checksum on the resulting data, the NCO tools (\url{http://nco.sourceforge.net/}) can be used.  The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable called \verb|check|:
 
 \small\begin{quote}\begin{verbatim}
 $  ncap -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$. Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant. Thus, this data and will be ignored.
+\noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data and will be ignored.
 
-\subsection{Bootstrapping EISMINT Greenland Data}
+%\subsection{Bootstrapping General Ice Sheet Data}  PISM has a couple forms of bootstrapping.  The most general of which is run %using the familiar \verb|pismr| executable.  A minimal bootstrapping example could be as follows:
+%
+%\small\begin{quote}\begin{verbatim}
+%$  pismv -test B -ys 422.45 -y 5000 -Mx 31 -My 31 -o eis_test_5000
+%$  ncks -O -x -v Ts,accum eis_test_5000.nc eis_test_5000_boot.nc ; \
+%   ncwa -O -a t eis_test_5000_boot.nc eis_test_5000_boot.nc
+%$  pismr -bif eis_test_5000_boot.nc -Mx 31 -My 31 -y 100 -o \
+%   eis_test_5100.nc -verbose
+%\end{verbatim}
+%\end{quote}\normalsize
+%
+%\noindent The first command runs the simplifies EISMINT
+\subsection{Bootstrapping EISMINT Greenland Data}  Once the EISMINT Greenland data is obtained and formatted properly, bootstrapping can begin.  A very simple run is shown below using the \verb|-verbose| option in order to show what exactly is happening.
+
+\small\begin{quote}\begin{verbatim}
+$  pismr -bif eis_green.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
+   PISMR (primary run mode)
+   Bootstrapping from New Option
+   Ignoring values found for h and using h = b + H
+   Ts not found. Filling in with default value: 0
+   ghf not found. Filling in with default value: 0.042000
+   uplift not found. Filling in with default value: 0
+   Figuring out gl
+   Filling in Hmelt with default value: 0.000000
+     [computational box for ice: ( 1640.00 km) x ( 2800.00 km) x ( 5000.00 m)]
+     [grid cell dimensions     : (   20.00 km) x (   20.00 km) x (  166.67 m)]
+   ...
+   Writing model state to file `grn0y_20km.nc' ... done.
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|0|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping is done, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
 
 \subsection{Running Greenland Experiments Using Bootstrapped Data}
 
@@ -1173,7 +1204,7 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
   & & for ice streams and ice sheets. See mask for SIA \\
   & & versus stream versus shelf by \verb|-d m|. \\
 \hline
-\normalsize
+\normalsize	
 \end{tabular}
 \end{table}
 

@@ -23,6 +23,7 @@ endif
 #VARIABLES:
 
 executables= pismr pismv pisms pant
+extra_execs= pgrn simpleISO simpleFG simpleI flowTable
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -36,7 +37,7 @@ TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= pismr.cc pismv.cc pisms.cc pant.cc\
 	flowTable.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc iceCompModel.cc shelf.cc
+	iceROSSModel.cc iceCompModel.cc shelf.cc iceGRNModel.cc greenland.cc
 other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
@@ -62,6 +63,9 @@ pismv : iceCompModel.o iceExactStreamModel.o pismv.o lib/libpism.so lib/libtests
 
 pant : pant.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
+
+pgrn : iceGRNModel.o greenland.o lib/libpism.so
+	${CLINKER} iceGRNModel.o greenland.o ${ICE_LIB_FLAGS} -o bin/pgrn
 
 #shelf : shelf.o lib/libpism.so
 #	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
@@ -113,7 +117,8 @@ clean : depclean
 
 distclean : clean
 	rm -f TAGS lib/libpism.so lib/libtests.so \
-	 $(patsubst %, bin/%, ${executables})
+	 $(patsubst %, bin/%, ${executables})\
+	 $(patsubst %, bin/%, ${extra_execs})
 
 .PHONY: clean
 

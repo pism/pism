@@ -129,6 +129,8 @@ public:
 
   // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
+  // USED TEMPORARILY UNTIL THE NEW BOOTSTRAP FUNCTION IS COMPLETE
+  PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
   // see iMregrid_netCDF.cc
@@ -395,12 +397,15 @@ protected:
 
   // see iMIOnetcdf.cc
   Vec    vbalvel;
-  PetscErrorCode createMask(PetscTruth balVelRule);
+  PetscErrorCode createMask_legacy(PetscTruth balVelRule);
   PetscErrorCode putTempAtDepth();
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
-  PetscErrorCode cleanInputData();
+  PetscErrorCode cleanInputData_legacy();
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
+  PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *first, PetscScalar *last);
+  PetscErrorCode setMaskSurfaceElevation_bootstrap();
+  PetscErrorCode maskAccum();
 
 private:
   // Pieces of the Macayeal Velocity routine defined in iMmacayeal.cc.

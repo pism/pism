@@ -62,7 +62,7 @@ PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ct
   return 0;
 }
 
-PetscErrorCode IceModel::cleanInputData() {
+PetscErrorCode IceModel::cleanInputData_legacy() {
   PetscErrorCode  ierr;
   PetscScalar     **h, **H, **bed, **ac, **Ts;
 
@@ -169,8 +169,32 @@ PetscErrorCode IceModel::putTempAtDepth() {
   return 0;
 }
 
+PetscErrorCode IceModel::maskAccum() {
+  PetscErrorCode ierr;
+  PetscScalar **mask, **accum;
 
-PetscErrorCode IceModel::createMask(PetscTruth balVelRule) {
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a
+      if (mask[i][j] == MASK_FLOATING || mask[i][j] == MASK_FLOATING_OCEAN0) {
+        accum[i][j] = - DEFAULT_ABLATION_IN_OCEAN0 / secpera;
+      }
+    }
+  }
+  // note ghosted values need to be communicated because of vote-by-neighbors
+  // in IceModel::updateSurfaceElevationAndMask()
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+
+  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   PetscErrorCode  ierr;
   Vec             vsliding;
   PetscScalar     **mask, **balvel, **sliding, **ubar, **vbar, **accum, **H;
@@ -320,7 +344,194 @@ PetscErrorCode nc_check(int stat) {
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   int stat;
+  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
+  const PetscScalar   T_surface_default = 263.15;
+  PetscReal lonExists, latExists, accumExists, hExists, HExists, bExists,
+      TsExists, ghfExists, upliftExists, balvelExists,
+      xExists, yExists, HmeltExists, tExists, glExists;
+  PetscReal glonExists=0, glatExists=0, gaccumExists=0, ghExists=0, gHExists=0, gbExists=0,
+      gTsExists=0, gghfExists=0, gupliftExists=0, gbalvelExists=0,
+      gxExists=0, gyExists=0, gHmeltExists=0, gtExists=0, gglExists=0;
+
+  verbPrintf(3, grid.com, "Bootstrapping from New Option\n");
+
+  // The netCDF file has this physical extent
+  ierr = grid.createDA(); CHKERRQ(ierr);
+  ierr = createVecs(); CHKERRQ(ierr);
+
+  if (fname == NULL) {
+    SETERRQ(1, "No file name given for bootstrapping\n");
+  }
+
+  int ncid;
+  int v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
+      v_balvel, v_x, v_y, v_Hmelt, v_t, v_gl;
+  if (grid.rank == 0) {
+    stat = nc_open(fname, 0, &ncid); CHKERRQ(nc_check(stat));
+    stat = nc_inq_varid(ncid, "x", &v_x); gxExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "y", &v_y); gyExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "lon", &v_lon); glonExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "lat", &v_lat); glatExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "accum", &v_accum); gaccumExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "h", &v_h); ghExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "H", &v_H); gHExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "b", &v_bed); gbExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "Ts", &v_Ts); gTsExists = stat == NC_NOERR;
+    //stat = nc_inq_varid(ncid, "gl", &v_gl); gglExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "ghf", &v_ghf); gghfExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "uplift", &v_uplift); gupliftExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "balvel", &v_balvel); gbalvelExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "Hmelt", &v_Hmelt); gHmeltExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "t", &v_t); gtExists = stat == NC_NOERR;
+  }
+
+  ierr = PetscGlobalMax(&gxExists, &xExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gyExists, &yExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&glonExists, &lonExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&glatExists, &latExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gaccumExists, &accumExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&ghExists, &hExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gHExists, &HExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gbExists, &bExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gTsExists, &TsExists, grid.com); CHKERRQ(ierr);
+  //ierr = PetscGlobalMax(&gglExists, &glExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gghfExists, &ghfExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gupliftExists, &upliftExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gbalvelExists, &balvelExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gHmeltExists, &HmeltExists, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&gtExists, &tExists, grid.com); CHKERRQ(ierr);
+  
+
+  // COMMENT FIXME:  Next block of code uses a sequential Vec ("vzero") on processor 
+  //   zero to take a NetCDF variable, which is a one-dimensional array representing 
+  //   a two-dimensional (map-plane) quantity to the correct two-dimensional DA-based 
+  //   Vec in IceModel.  A "scatter" to vector zero is needed because the entire 1D
+  //   NetCDF variable is put into memory from the NetCDF variable on processor zero.
+  //   Then on processor zero the VecSetValues puts the values in the global vec g2
+  //   using the scatter context.  Then the values of g are put into local variables.
+  //   All of the actual transfers, after the creation of the scatter context ctx, are
+  //   done in ncVarToDAVec. 
+  Vec vzero;
+  VecScatter ctx;
+  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
+  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
+  // Now vzero contains indices to put processor zero quantities into
+  // distributed global vectors.  These use g2 for scratch: the NetCDF variable
+  // is put into an array on proc 0 then vzero is used to get the indices which
+  // put the array into the scratch global Vec g2 and then the usual DA-based
+  // global (g2) to local (vAccum, etc.) is done
+  PetscScalar first, last, gx_scale, gy_scale, lx_scale = 750e3, ly_scale = 750e3;
+  if (xExists) {
+    ierr = getFirstLast(ncid, v_x, &first, &last);
+    gx_scale = last - first;
+    PetscGlobalMax(&gx_scale, &lx_scale, grid.com);
+  } else verbPrintf(1, grid.com, "WARNING: x not found in file. Proceeding with defaults\n");
+  if (yExists) {
+    ierr = getFirstLast(ncid, v_y, &first, &last);
+    gy_scale = last - first;
+    PetscGlobalMax(&gy_scale, &ly_scale, grid.com);
+  } else verbPrintf(1, grid.com, "WARNING: y not found in file. Proceeding with defaults\n");
+  ierr = grid.rescale(lx_scale / 2, ly_scale / 2, 5000); CHKERRQ(ierr);
+
+  if (lonExists) {
+    ierr = ncVarToDAVec(ncid, v_lon, grid.da2, vLongitude, g2, vzero);
+    CHKERRQ(ierr);
+  } else verbPrintf(3, grid.com, "Continuing without lon\n"); 
+  if (latExists) {
+    ierr = ncVarToDAVec(ncid, v_lat, grid.da2, vLatitude, g2, vzero);
+    CHKERRQ(ierr);
+  } else verbPrintf(3, grid.com, "Continuing without lat\n"); 
+  if (accumExists) {
+    ierr = ncVarToDAVec(ncid, v_accum, grid.da2, vAccum, g2, vzero);
+    CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "accum not found. Filling in with default value: %f\n", DEFAULT_ACCUM_VALUE_MISSING); 
+    ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
+  }
+  if (hExists)  
+    verbPrintf(3, grid.com, "Ignoring values found for h and using h = b + H\n");
+  if (HExists) {
+    ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero);
+    CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "H not found. Filling in with default value: %f\n", DEFAULT_H_VALUE_MISSING);
+    ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
+  }
+  if (bExists) {
+    ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero);
+    CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "b not found. Filling in with default value: %f\n", DEFAULT_BED_VALUE_MISSING); 
+    ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
+  }
+  if (TsExists) {
+    ierr = ncVarToDAVec(ncid, v_Ts, grid.da2, vTs, g2, vzero); CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "Ts not found. Filling in with default value: %f\n",
+               T_surface_default);
+    ierr = VecSet(vTs, T_surface_default); CHKERRQ(ierr);
+  }
+  if (ghfExists) {
+    ierr = ncVarToDAVec(ncid, v_ghf, grid.da2, vGhf, g2, vzero); CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "ghf not found. Filling in with default value: %f\n", G_geothermal); 
+    ierr = VecSet(vGhf, G_geothermal); CHKERRQ(ierr);
+  }
+  if (upliftExists) {
+    ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero); 
+    CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "uplift not found. Filling in with default value: %d\n", 0); 
+    ierr = VecSet(vuplift, 0); CHKERRQ(ierr);
+  }
+  /*if (glExists) {
+    ierr = ncVarToDAVec(ncid, v_gl, grid.da2, vMask, g2, vzero);
+    CHKERRQ(ierr);
+  } else {*/
+    verbPrintf(3, grid.com, "Figuring out gl\n");
+    //isDrySimulation = PETSC_FALSE;
+    ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
+    ierr = maskAccum(); CHKERRQ(ierr);
+  //}
+
+  if (HmeltExists) {
+    ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
+  } else {
+    verbPrintf(3, grid.com, "Filling in Hmelt with default value: %f\n", 0.0);
+    ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
+  }
+  if (tExists) {
+    const size_t idx = 0;
+    float begin_t;
+    nc_get_var1_float(ncid, v_t, &idx, &begin_t);
+    setInitialAgeYears(begin_t);
+  } else {
+    setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
+  }
+  ierr = VecDestroy(vzero); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
+
+  if (grid.rank == 0) {
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
+  }
+
+  // fill in temps at depth in reasonable way using surface temps and Ghf
+  ierr = putTempAtDepth(); CHKERRQ(ierr);
+
+  setConstantGrainSize(DEFAULT_GRAIN_SIZE);
+
+  initialized_p = PETSC_TRUE;
+  return 0;
+}
+
+// This function is only here until the new and better bootstrap function is
+// complete.
+PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
+  PetscErrorCode  ierr;
+  int stat;
   char filename[PETSC_MAX_PATH_LEN];
+
+  verbPrintf(2, grid.com, "Bootstrapping from Legacy Option\n");
 
   // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
@@ -400,7 +611,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // bal vels:        meters / a  -->  meters / s
   // Temperature:     Celsius     -->  Kelvin
   // uplift:          meters / a  -->  meters / s
-  ierr = cleanInputData(); CHKERRQ(ierr);
+  ierr = cleanInputData_legacy(); CHKERRQ(ierr);
 
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = putTempAtDepth(); CHKERRQ(ierr);
@@ -431,7 +642,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // for many state variables.
 
   // for now: go ahead and create mask according to (balvel>cutoff) rule
-  ierr = createMask(PETSC_TRUE); CHKERRQ(ierr);
+  ierr = createMask_legacy(PETSC_TRUE); CHKERRQ(ierr);
   
   // vbalvel will not be used again ...
   ierr = VecDestroy(vbalvel); CHKERRQ(ierr);
@@ -547,6 +758,110 @@ PetscErrorCode IceModel::ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
   return 0;
 }
 
+PetscErrorCode IceModel::getFirstLast(int ncid, int vid, PetscScalar *first, PetscScalar *last) {
+  int stat;
+  float       *f = NULL;
+  int         *g = NULL;
+
+  if (grid.rank == 0) {
+    int dimids[NC_MAX_VAR_DIMS];
+    int ndims, natts;
+    nc_type xtype;
+    char name[NC_MAX_NAME+1];
+    stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
+    if (ndims != 1) {
+      SETERRQ2(1, "ncVarToDaVec: number of dimensions = %d for %s\n",
+               ndims, name);
+    }
+
+    // In the netCDF file,
+    // we index 0:M in the x direction and 0:N in the y direction.  Such a
+    // location $(i,j) \in [0,M] \times [0,N]$ is addressed as [i*N + j]
+    size_t M;
+    stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
+
+    switch (xtype) {
+      case NC_INT:
+        g = new int[M];
+        stat = nc_get_var_int(ncid, vid, g); CHKERRQ(nc_check(stat));
+        break;
+      case NC_FLOAT:
+        f = new float[M];
+        stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
+        break;
+      default:
+        SETERRQ1(1, "NC_VAR `%s' not of type NC_INT or NC_FLOAT.\n", name);
+    }
+
+    if (g != NULL) {
+      *first = g[0];
+      *last = g[M-1];
+    } else if (f != NULL) {
+      *first = f[0];
+      *last = f[M-1];
+    } else {
+      SETERRQ(1, "This should not happen.\n");
+    }
+  } else {
+    *first = 0;
+    *last = 0;
+  }
+
+  return 0;
+}
+
+PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
+    PetscErrorCode ierr;
+  PetscScalar **h, **bed, **H, **mask;
+
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // take this opportunity to check that H[i][j] >= 0
+      if (H[i][j] < 0.0) {
+        SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
+      }
+      
+      if (H[i][j] < 0.001) {  // if no ice
+        if (bed[i][j] < 0.0) {
+          h[i][j] = 0.0;
+          mask[i][j] = MASK_FLOATING_OCEAN0;
+        } else {
+          h[i][j] = bed[i][j];
+          mask[i][j] = MASK_SHEET;
+        } 
+      } else { // if some ice thickness then check floating criterion
+        const PetscScalar hgrounded = bed[i][j] + H[i][j];
+        const PetscScalar hfloating = (1-ice.rho/ocean.rho) * H[i][j];
+        // check whether you are actually floating or grounded
+        if (hgrounded > hfloating) {
+          h[i][j] = hgrounded; // actually grounded so set h
+          mask[i][j] = MASK_SHEET;
+        } else {
+          h[i][j] = hfloating; // actually floating so update h
+          mask[i][j] = MASK_FLOATING;
+        }
+      }
+    }
+  }
+
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
+  // go ahead and communicate mask and surface elev now; may be redundant communication?
+  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+
+  return 0;
+}
 
 PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   PetscErrorCode ierr;

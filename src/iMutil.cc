@@ -616,7 +616,7 @@ PetscErrorCode IceModel::checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *
 
 PetscErrorCode IceModel::initFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth inFileSet, bootstrapSet;
+  PetscTruth inFileSet, bootstrapSet, bootstrapSetLegacy;
   char inFile[PETSC_MAX_PATH_LEN];
 
   if (createBasal_done == PETSC_FALSE) {
@@ -630,12 +630,18 @@ PetscErrorCode IceModel::initFromOptions() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootstrapSet);
   CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-bif_legacy", inFile,
+                               PETSC_MAX_PATH_LEN, &bootstrapSetLegacy);
+  CHKERRQ(ierr);
   
   if (bootstrapSet == PETSC_TRUE) {
     ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
+  } else if(bootstrapSetLegacy == PETSC_TRUE) {
+    ierr = bootstrapFromFile_netCDF_legacyAnt(inFile); CHKERRQ(ierr);
   } else if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
   }
+  
   
   if (! isInitialized()) {
     SETERRQ(1,"Model has not been initialized.");
