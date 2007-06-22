@@ -32,6 +32,7 @@ public:
   PetscInt getflowlawNumber();
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
+  virtual PetscErrorCode additionalAtStartTimestep();
 
 private:
   PetscInt flowlawNumber;

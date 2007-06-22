@@ -59,7 +59,11 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     //ierr = initFromFile(inFile); CHKERRQ(ierr);
   } else if (bootFileSet == PETSC_TRUE) {
     //ierr = bootstrapFromFile_netCDF(inFile);
+    
+    // after we set the new temperatures, we need
+    // to set the 3D temps again
     ierr = initTs(); CHKERRQ(ierr);
+    ierr = putTempAtDepth(); CHKERRQ(ierr);
     ierr = cleanExtraLand(); CHKERRQ(ierr);
   } else {
     SETERRQ(1, "Error: need input file.\n");
@@ -72,7 +76,17 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   return 0;
 }
 
-PetscErrorCode IceGRNModel::initTs(){
+PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
+    PetscErrorCode ierr;
+ 
+    // at the beginning of each time step
+    // we need to redo the model of the surface
+    // temperatures.
+    ierr = initTs(); CHKERRQ(ierr);
+    return 0;
+}
+
+PetscErrorCode IceGRNModel::initTs() {
   PetscErrorCode ierr;
   PetscScalar val, Z;
   PetscScalar **Ts, **lat, **h, **H, **b;

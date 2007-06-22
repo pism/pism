@@ -37,7 +37,7 @@ TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= pismr.cc pismv.cc pisms.cc pant.cc\
 	flowTable.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc iceCompModel.cc shelf.cc iceGRNModel.cc greenland.cc
+	iceROSSModel.cc iceCompModel.cc shelf.cc iceGRNModel.cc pgrn.cc
 other_csources= simpleISO.c simpleFG.c simpleI.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
@@ -64,8 +64,8 @@ pismv : iceCompModel.o iceExactStreamModel.o pismv.o lib/libpism.so lib/libtests
 pant : pant.o lib/libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
 
-pgrn : iceGRNModel.o greenland.o lib/libpism.so
-	${CLINKER} iceGRNModel.o greenland.o ${ICE_LIB_FLAGS} -o bin/pgrn
+pgrn : iceGRNModel.o pgrn.o lib/libpism.so
+	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o bin/pgrn
 
 #shelf : shelf.o lib/libpism.so
 #	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
