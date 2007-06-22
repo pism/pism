@@ -2,6 +2,7 @@ import os
 import tempfile
 import string
 
+prefix = ARGUMENTS.get('prefix', os.getcwd());
 petsc_dir = os.environ.get('PETSC_DIR', '/usr/lib/petsc')
 petsc_arch = os.environ.get('PETSC_ARCH', 'linux-gnu-c-opt')
 mpicc = os.environ.get('MPICC', 'mpicc')
@@ -36,6 +37,12 @@ os.remove(outputfile[1])
 #print petsc_compile_single, petsc_clinker, petsc_lib
 petsc_cc = petsc_compile_single.split(' ')[0]
 petsc_cxx = petsc_cc.replace('mpicc', 'mpicxx')
+if (os.access(petsc_cxx, os.X_OK)):
+    print 'Using mpicxx: ', petsc_cxx
+else:
+    print 'Cannot use mpicxx: ', petsc_cxx
+    print 'Will try with mpicc: ', petsc_cc
+    petsc_cxx = petsc_cc
 petsc_ccflags = [w for w in petsc_compile_single.split(' ')[2:]
                 if w[:2] in ('-f', '-W', '-g', '-p')]
 petsc_cpppath = [w[2:] for w in petsc_compile_single.split(' ')[2:]
@@ -94,7 +101,7 @@ if False:
     print 'RPATH     = ', env['RPATH']
     print 'pism_libs = ', pism_libs
 
-Export('env pism_libs')
+Export('env prefix pism_libs')
 
 SConscript('src/SConscript', build_dir='obj', duplicate=0)
 SConscript('doc/SConscript', duplicate=0)
