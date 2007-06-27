@@ -56,7 +56,7 @@
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 116 and PETSC release 2.3.3-p2.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 123 and PETSC release 2.3.3-p2.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
@@ -1364,19 +1364,31 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
 
-\verb|$  pismv -test G -d hTf -dbig c|
+\verb|$  pismv -test G -d hTf -dbig 0|
 
-\noindent shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of vertically-averaged horizontal ice speed (``\t{c}'').
+\noindent shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of horizontal ice speed at the surface (``\t{0}'', i.e.~zero).
 
 The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows only two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
 
 The single character diagnostic viewer names are:
 
+\verb|0|:\quad Map-plane view of horizontal ice speed (magnitude of velocity) at the surface of the ice in meters per year.
+
+\verb|1|:\quad Map-plane view of $x$-component of horizontal ice velocity at the surface of the ice in meters per year.
+
+\verb|2|:\quad Map-plane view of $y$-component of horizontal ice velocity at the surface of the ice in meters per year.
+
+\verb|3|:\quad Map-plane view of vertical ice velocity at the surface of the ice in meters per year; positive values are upward velocities.
+
 \verb|a|:\quad Map-plane view of accumulation in meters per year.
 
 \verb|b|:\quad Map-plane view of bed elevation in meters above sea level.
 
+\verb|B|:\quad Map-plane view of basal drag coefficient $\beta$ for ice stream regions.  $\beta$ has units of Pa s $\text{m}^{-1}$.  Displayed as log base ten of $\beta$.
+
 \verb|c|:\quad Map-plane view of horizontal speed, namely the absolute value of the vertically-averaged horizontal velocity.  Displayed as log base ten of speed in meters per year.
+
+\verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of bar (= $10^5$ Pa).
 
 \verb|D|:\quad Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
 
@@ -1400,13 +1412,13 @@ The single character diagnostic viewer names are:
 
 \verb|j|:\quad Map-plane view of vertically-averaged effective viscosity times thickness; on $i$ offset grid.  Only meaningful in ice streams and shelves.
 
-\verb|k|:\quad Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.
+\verb|k|:\quad Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.  Has same effect as PETSc option \verb|-ksp_monitor_draw|.
 
-\verb|L|:\quad Map-plane view of basal melt water thickness in meters.
+\verb|L|:\quad Map-plane view of basal melt water \emph{thickness} in meters.
 
-\verb|l|:\quad Map-plane view of basal melt rate in meters per year.
+\verb|l|:\quad Map-plane view of basal melt \emph{rate} in meters per year.
 
-\verb|m|:\quad Map-plane view of mask for flow type:  \textbf{1} = grounded shallow ice sheet flow,  \textbf{2} = dragging ice shelf, \textbf{3} = floating ice shelf.
+\verb|m|:\quad Map-plane view of mask for flow type:  \textbf{1} = grounded shallow ice sheet flow,  \textbf{2} = dragging ice shelf, \textbf{3} = floating ice shelf, \text{7} = ice free ocean (in original input file).
 
 \verb|N|:\quad Produces two viewers, namely the $i$ offset and $j$ offset grid versions of the rate of change of the vertically-averaged effective viscosity times thickness.  Only meaningful in ice streams and shelves.
 
@@ -1430,7 +1442,11 @@ The single character diagnostic viewer names are:
 
 \verb|t|:\quad Absolute ice temperature in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
+\verb|U|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction \emph{on the staggered grid} which is offset by positive one in $i$ direction;  in meters per year.  \emph{Meaningful only in technical/numerical context}; use \verb|u| generally.
+
 \verb|u|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction;  in meters per year.
+
+\verb|V|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction \emph{on the staggered grid} which is offset by positive one in $j$ direction;  in meters per year.  \emph{Meaningful only in technical/numerical context}; use \verb|v| generally.
 
 \verb|v|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction;  in meters per year.
 

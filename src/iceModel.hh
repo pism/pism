@@ -245,6 +245,7 @@ protected:
   PetscViewer  T2View, TView, uView, vView, wView, SigmaView, SigmaMapView;
   PetscViewer  slidespeedView, RbView, gsView, gsMapView, betaView, taucView;
   PetscViewer  dhView, diffusView, tauView, tauMapView, umapView, vmapView, wmapView;
+  PetscViewer  surfHorSpeedView, surfuView, surfvView, surfwView;
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, gsd, taud;

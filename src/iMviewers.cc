@@ -45,6 +45,10 @@ PetscErrorCode IceModel::createViewers() {
   // It is important that the createVecs() has been called before we call this.
   PetscErrorCode ierr;
 
+  ierr = createOneViewerIfDesired(&surfHorSpeedView, '0',"hor. speed at surface (m/a)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfuView, '1',"u at surface (m/a)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfvView, '2',"v at surface (m/a)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfwView, '3',"w at surface (m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&accumView, 'a',"M (surface accum rate; m/a)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&bedView, 'b',"b (bed elev; m above sea level)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&betaView, 'B',"log(beta) (drag coeff; log_10(Pa s m^-1))");  CHKERRQ(ierr);
@@ -136,6 +140,10 @@ PetscErrorCode IceModel::destroyViewers() {
   if (uView != PETSC_NULL) { ierr = PetscViewerDestroy(uView); CHKERRQ(ierr); }
   if (vView != PETSC_NULL) { ierr = PetscViewerDestroy(vView); CHKERRQ(ierr); }
   if (wView != PETSC_NULL) { ierr = PetscViewerDestroy(wView); CHKERRQ(ierr); }
+  if (surfHorSpeedView != PETSC_NULL) { ierr = PetscViewerDestroy(surfHorSpeedView); CHKERRQ(ierr); }
+  if (surfuView != PETSC_NULL) { ierr = PetscViewerDestroy(surfuView); CHKERRQ(ierr); }
+  if (surfvView != PETSC_NULL) { ierr = PetscViewerDestroy(surfvView); CHKERRQ(ierr); }
+  if (surfwView != PETSC_NULL) { ierr = PetscViewerDestroy(surfwView); CHKERRQ(ierr); }
   if (umapView != PETSC_NULL) { ierr = PetscViewerDestroy(umapView); CHKERRQ(ierr); }
   if (vmapView != PETSC_NULL) { ierr = PetscViewerDestroy(vmapView); CHKERRQ(ierr); }
   if (wmapView != PETSC_NULL) { ierr = PetscViewerDestroy(wmapView); CHKERRQ(ierr); }
@@ -468,6 +476,97 @@ PetscErrorCode IceModel::updateViewers() {
     ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
     ierr = VecScale(g2, secpera); CHKERRQ(ierr); // m/a
     ierr = VecView(g2, wmapView); CHKERRQ(ierr);
+  }
+  if (surfHorSpeedView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &a); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+    const PetscScalar dz = grid.p->dz;
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/dz));
+        if (ks == grid.p->Mz-1) {
+          a[i][j] = sqrt(PetscSqr(u[i][j][ks]) + PetscSqr(v[i][j][ks]));
+        } else {  // general case is to linearly interpolate to z=H[i][j]
+          const PetscScalar cks = sqrt(PetscSqr(u[i][j][ks]) + PetscSqr(v[i][j][ks]));
+          const PetscScalar cksp1 = sqrt(PetscSqr(u[i][j][ks+1]) + PetscSqr(v[i][j][ks+1]));
+          a[i][j] = ((H[i][j] - ks * dz) * cks + ((ks+1) * dz - H[i][j]) * cksp1) / dz;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, g2, &a); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
+    ierr = VecScale(g2, secpera); CHKERRQ(ierr); // m/a
+    ierr = VecView(g2, surfHorSpeedView); CHKERRQ(ierr);
+  }
+  if (surfuView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &umap); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
+    const PetscScalar dz = grid.p->dz;
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/dz));
+        if (ks == grid.p->Mz-1) {
+          umap[i][j] = u[i][j][ks];
+        } else {  // general case is to linearly interpolate to z=H[i][j]
+          umap[i][j] = ((H[i][j] - ks * dz) * u[i][j][ks]
+                           + ((ks+1) * dz - H[i][j]) * u[i][j][ks+1]) / dz;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, g2, &umap); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+    ierr = VecScale(g2, secpera); CHKERRQ(ierr); // m/a
+    ierr = VecView(g2, surfuView); CHKERRQ(ierr);
+  }
+  if (surfvView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &vmap); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+    const PetscScalar dz = grid.p->dz;
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/dz));
+        if (ks == grid.p->Mz-1) {
+          vmap[i][j] = v[i][j][ks];
+        } else {  // general case is to linearly interpolate to z=H[i][j]
+          vmap[i][j] = ((H[i][j] - ks * dz) * v[i][j][ks]
+                           + ((ks+1) * dz - H[i][j]) * v[i][j][ks+1]) / dz;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, g2, &vmap); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
+    ierr = VecScale(g2, secpera); CHKERRQ(ierr); // m/a
+    ierr = VecView(g2, surfvView); CHKERRQ(ierr);
+  }
+  if (surfwView != PETSC_NULL) {
+    ierr = DAVecGetArray(grid.da2, g2, &wmap); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
+    const PetscScalar dz = grid.p->dz;
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/dz));
+        if (ks == grid.p->Mz-1) {
+          wmap[i][j] = w[i][j][ks];
+        } else {  // general case is to linearly interpolate to z=H[i][j]
+          wmap[i][j] = ((H[i][j] - ks * dz) * w[i][j][ks]
+                           + ((ks+1) * dz - H[i][j]) * w[i][j][ks+1]) / dz;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, g2, &wmap); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
+    ierr = VecScale(g2, secpera); CHKERRQ(ierr); // m/a
+    ierr = VecView(g2, surfwView); CHKERRQ(ierr);
   }
   if (HView != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vH, INSERT_VALUES, g2); CHKERRQ(ierr);
