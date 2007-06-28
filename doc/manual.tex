@@ -895,6 +895,7 @@ $  ncap -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
 
 \noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data and will be ignored.
 
+In addition to getting the EISMINT data into a NetCDF format, there is an issue with Ellesmere Island. Ellesmere Island is very close to Greenland, and so it is possible for the ice sheet to jump over onto to it. Since we don't know much about ice sheets on Ellesmere Island, we want to prevent this from happening. So within the \verb|pgrn| derived class, any bedrock above sealevel northwest of the line connecting $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ was removed (the same applies to anything southeast of $(30^\circ E, 67^\circ N)$ due to the tip of Iceland).
 %\subsection{Bootstrapping General Ice Sheet Data}  PISM has a couple forms of bootstrapping.  The most general of which is run %using the familiar \verb|pismr| executable.  A minimal bootstrapping example could be as follows:
 %
 %\small\begin{quote}\begin{verbatim}

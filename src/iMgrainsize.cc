@@ -92,9 +92,11 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
   ierr = DAVecRestoreArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
 
-  // We never need to address grain size at a grid point other than in the
-  // current column.  That is, we never differentiate grain size.  If we want to
-  // then we must call DALocalToLocalBegin() and then DALocalToLocalEnd() here.
+  // In velocitySIAStaggered, PISM uses ghosted values for gs. Thus, we need
+  // the DALocalToLocal call.
+  ierr = DALocalToLocalBegin(grid.da3, vgs, INSERT_VALUES, vgs); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da3, vgs, INSERT_VALUES, vgs); CHKERRQ(ierr);
+
   return 0;
 }
 

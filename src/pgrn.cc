@@ -51,10 +51,11 @@ int main(int argc, char *argv[]){
  
     IceGRNModel mGRN(g, *ice);
     
-    mGRN.setflowlawNumber(flowlawNumber);
     ierr = mGRN.setFromOptions(); CHKERRQ(ierr);
     ierr = mGRN.initFromOptions(); CHKERRQ(ierr);
-    
+   
+    ierr = verbPrintf(2, com, "Running Test %d\n", mGRN.getTestNum());
+ 
     ierr = mGRN.setSoundingFromOptions(); CHKERRQ(ierr);
     ierr = mGRN.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);

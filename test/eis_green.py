@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import sys
 import numpy
 import Scientific.IO.NetCDF
 import Numeric
@@ -8,11 +9,22 @@ from Scientific.IO.NetCDF import NetCDFFile
 from Numeric import zeros
 
 SECPERA = 3.1556926e7
+GRID_FILE = 'grid20-EISMINT'
+SUAQ_FILE = 'suaq20-EISMINT'
+WRIT_FILE = 'eis_green20.nc'
+
+##### command line arguments #####
+
+argc = len(sys.argv)
+if argc  == 2:
+  GRID_FILE = "grid" + sys.argv[1] + "-EISMINT"
+  SUAQ_FILE = "suaq" + sys.argv[1] + "-EISMINT"
+  WRIT_FILE = "eis_green" + sys.argv[1] + ".nc"
 
 ##### grid20-EISMINT #####
 
 # open the data file and begin reading it
-input=open('grid20-EISMINT', 'r')
+input=open(GRID_FILE, 'r')
 
 dim=[]
 for num in input.readline().split():
@@ -27,13 +39,13 @@ loncount=0
 x=0
 # read in all the data
 for line in input.read().split():
-        if x%4 == 2: # surface elevation
-                lat[latcount%int(dim[0]), latcount/int(dim[0])]=float(line)
-                latcount = latcount + 1
-        elif x%4 == 3: # thickness
-                lon[loncount%int(dim[0]), loncount/int(dim[0])]=float(line)
-                loncount = loncount + 1
-        x = x+1
+  if x%4 == 2: # surface elevation
+    lat[latcount%int(dim[0]), latcount/int(dim[0])]=float(line)
+    latcount = latcount + 1
+  elif x%4 == 3: # thickness
+    lon[loncount%int(dim[0]), loncount/int(dim[0])]=float(line)
+    loncount = loncount + 1
+  x = x+1
 
 # done reading from data file
 input.close()
@@ -41,7 +53,7 @@ input.close()
 ##### suaq20-EISMINT #####
 
 # open the data file and begin reading it
-input=open('suaq20-EISMINT', 'r')
+input=open(SUAQ_FILE, 'r')
 
 dim=[]
 for num in input.readline().split():
@@ -80,7 +92,7 @@ input.close()
 print "Total Values Read: "+str(x)
 
 # ready to write NetCDF file
-ncfile = NetCDFFile('eis_green.nc', 'w')
+ncfile = NetCDFFile(WRIT_FILE, 'w')
 
 # define the dimensions
 ncfile.createDimension('x', int(dim[0]))
@@ -109,7 +121,7 @@ setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
 setattr(yvar, 'standard_name', 'projection_y_coordinate')
 setattr(yvar, 'units', 'm')
 
-setattr(tvar, 'units', 'seconds since 1986-01-28 00:00:00 (NEED CHANGE)')
+setattr(tvar, 'units', 'seconds since 2007-01-01 00:00:00')
 
 setattr(lonvar, 'long_name', 'longitude')
 setattr(lonvar, 'standard_name', 'longitude')
@@ -133,7 +145,7 @@ setattr(Bvar, 'units', 'm')
 
 setattr(Accvar, 'long_name', 'mean ice equivalent accumulation rate')
 setattr(Accvar, 'standard_name', 'land_ice_surface_specific_mass_balance')
-setattr(Accvar, 'units', 'm y-1')
+setattr(Accvar, 'units', 'm s-1')
 
 # write the data to the NetCDF file
 spacing = float(dim[2])*1000

@@ -348,10 +348,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   const PetscScalar   T_surface_default = 263.15;
   PetscReal lonExists, latExists, accumExists, hExists, HExists, bExists,
       TsExists, ghfExists, upliftExists, balvelExists,
-      xExists, yExists, HmeltExists, tExists, glExists;
+      xExists, yExists, HmeltExists, tExists;
   PetscReal glonExists=0, glatExists=0, gaccumExists=0, ghExists=0, gHExists=0, gbExists=0,
       gTsExists=0, gghfExists=0, gupliftExists=0, gbalvelExists=0,
-      gxExists=0, gyExists=0, gHmeltExists=0, gtExists=0, gglExists=0;
+      gxExists=0, gyExists=0, gHmeltExists=0, gtExists=0;
 
   verbPrintf(3, grid.com, "Bootstrapping from New Option\n");
 
@@ -365,7 +365,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   int ncid;
   int v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
-      v_balvel, v_x, v_y, v_Hmelt, v_t, v_gl;
+      v_balvel, v_x, v_y, v_Hmelt, v_t;
   if (grid.rank == 0) {
     stat = nc_open(fname, 0, &ncid); CHKERRQ(nc_check(stat));
     stat = nc_inq_varid(ncid, "x", &v_x); gxExists = stat == NC_NOERR;
@@ -377,7 +377,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     stat = nc_inq_varid(ncid, "H", &v_H); gHExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "b", &v_bed); gbExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "Ts", &v_Ts); gTsExists = stat == NC_NOERR;
-    //stat = nc_inq_varid(ncid, "gl", &v_gl); gglExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "ghf", &v_ghf); gghfExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "uplift", &v_uplift); gupliftExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "balvel", &v_balvel); gbalvelExists = stat == NC_NOERR;
@@ -394,7 +393,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = PetscGlobalMax(&gHExists, &HExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&gbExists, &bExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&gTsExists, &TsExists, grid.com); CHKERRQ(ierr);
-  //ierr = PetscGlobalMax(&gglExists, &glExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&gghfExists, &ghfExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&gupliftExists, &upliftExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&gbalvelExists, &balvelExists, grid.com); CHKERRQ(ierr);
@@ -484,15 +482,9 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     verbPrintf(3, grid.com, "uplift not found. Filling in with default value: %d\n", 0); 
     ierr = VecSet(vuplift, 0); CHKERRQ(ierr);
   }
-  /*if (glExists) {
-    ierr = ncVarToDAVec(ncid, v_gl, grid.da2, vMask, g2, vzero);
-    CHKERRQ(ierr);
-  } else {*/
-    verbPrintf(3, grid.com, "Figuring out gl\n");
-    //isDrySimulation = PETSC_FALSE;
-    ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
-    ierr = maskAccum(); CHKERRQ(ierr);
-  //}
+  verbPrintf(3, grid.com, "Figuring out gl\n");
+  ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
+  ierr = maskAccum(); CHKERRQ(ierr);
 
   if (HmeltExists) {
     ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);

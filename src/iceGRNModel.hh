@@ -20,6 +20,8 @@
 #define __iceGRNModel_hh
 
 #include <petscda.h>
+#include <gsl/gsl_cdf.h>
+#include <gsl/gsl_randist.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
@@ -27,18 +29,30 @@
 class IceGRNModel : public IceModel {
 
 public:
+  
   IceGRNModel(IceGrid &g, IceType &i);
-  void setflowlawNumber(PetscInt);
-  PetscInt getflowlawNumber();
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode additionalAtStartTimestep();
+  int getTestNum();
+protected:
+  Vec vSnowAccum; // this vector will hold the amount of snow that falls,
+                  // as apposed to vAccum which holds the net accumulation
+  Vec vIceCoreData;
+  Vec vIceCoreTime;
+  int iceCoreIdx;
+  gsl_rng *rand_gen;
+  int testnum;
 
 private:
-  PetscInt flowlawNumber;
   PetscTruth inFileSet;
   
-  PetscErrorCode initTs();
+  PetscErrorCode initNetAccum();  // creates vSnowAccum and copies vAccum into it
+  PetscErrorCode fillTs();
+  PetscErrorCode calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val);
+  PetscErrorCode calculateSummerTemp(PetscScalar h, PetscScalar lat, PetscScalar *val);
+  PetscErrorCode calculateTempFromCosine(PetscScalar Ts, PetscScalar Ta, int t, PetscScalar *temp);
+  PetscErrorCode calculateNetAccum();
   PetscErrorCode ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat);
   PetscErrorCode cleanExtraLand();
 };
