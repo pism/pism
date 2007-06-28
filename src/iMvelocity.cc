@@ -113,6 +113,10 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
                              * pow(ice.rho * grav, isothermalFlux_n_exponent)
                              / (isothermalFlux_n_exponent + 2.0));
 
+#if (MARGIN_TRICK)
+  ierr = verbPrintf(4,grid.com,"  MARGIN_TRICK velocitySIAStaggered() ..."); CHKERRQ(ierr);
+#endif
+
   delta = new PetscScalar[grid.p->Mz];
   K = new PetscScalar[grid.p->Mz];
 
@@ -147,6 +151,64 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
     ierr = DAVecGetArray(grid.da2, vWork2d[9], &Rb[1]); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
   }
+
+#if (MARGIN_TRICK)
+  PetscScalar **eta, **b;
+  ierr = DAVecGetArray(grid.da2, vWork2d[8], &eta); CHKERRQ(ierr);
+  const PetscScalar etapow = 8.0/3.0;  // FIXME: n=3 hard-coded for now
+  // compute eta = H^{8/3}, which is more regular, on reg grid
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      eta[i][j] = pow(H[i][j], etapow);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[8], &eta); CHKERRQ(ierr);
+  // communicate eta: other processors will need ghosted
+  ierr = DALocalToLocalBegin(grid.da2, vWork2d[8], INSERT_VALUES, vWork2d[8]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vWork2d[8], INSERT_VALUES, vWork2d[8]); CHKERRQ(ierr);
+  // now use Mahaffy on eta to get grad h on staggered;
+  // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[8], &eta); CHKERRQ(ierr);
+  for (PetscInt o=0; o<2; o++) {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (o==0) {     // If I-offset
+          const PetscScalar mean_eta = 0.5 * (eta[i+1][j] + eta[i][j]);
+          if (mean_eta > 0.0) {
+            const PetscScalar factor = (3.0/8.0) * pow(mean_eta, -5.0/8.0);
+            h_x[o][i][j] = factor * (eta[i+1][j] - eta[i][j]) / dx;
+            h_y[o][i][j] = factor * (+ eta[i+1][j+1] + eta[i][j+1]
+                                     - eta[i+1][j-1] - eta[i][j-1]) / (4.0*dy);
+          } else {
+            h_x[o][i][j] = 0.0;
+            h_y[o][i][j] = 0.0;
+          }
+          h_x[o][i][j] += (b[i+1][j] - b[i][j]) / dx;
+          h_y[o][i][j] += (+ b[i+1][j+1] + b[i][j+1]
+                           - b[i+1][j-1] - b[i][j-1]) / (4.0*dy);
+        } else {        // J-offset
+          const PetscScalar mean_eta = 0.5 * (eta[i][j+1] + eta[i][j]);
+          if (mean_eta > 0.0) {
+            const PetscScalar factor = (3.0/8.0) * pow(mean_eta, -5.0/8.0);
+            h_y[o][i][j] = factor * (eta[i][j+1] - eta[i][j]) / dy;
+            h_x[o][i][j] = factor * (+ eta[i+1][j+1] + eta[i+1][j]
+                                     - eta[i-1][j+1] - eta[i-1][j]) / (4.0*dx);
+          } else {
+            h_y[o][i][j] = 0.0;
+            h_x[o][i][j] = 0.0;
+          }
+          // now add bed slope to get actual h_x,h_y
+          h_y[o][i][j] += (b[i][j+1] - b[i][j]) / dy;
+          h_x[o][i][j] += (+ b[i+1][j+1] + b[i+1][j]
+                           - b[i-1][j+1] - b[i-1][j]) / (4.0*dx);
+        }
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[8], &eta); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+#endif
   
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
@@ -156,6 +218,13 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
         const PetscInt      oi = 1-o, oj=o;
 
         PetscScalar  slope;
+#if (MARGIN_TRICK)
+        if (o==0) {     // If I-offset
+          slope = h_x[o][i][j];
+        } else {        // J-offset
+          slope = h_y[o][i][j];
+        }
+#else 
         if (o==0) {     // If I-offset
           slope = (h[i+1][j] - h[i][j]) / dx;
           h_x[o][i][j] = slope;
@@ -167,7 +236,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
           h_x[o][i][j] = (+ h[i+1][j+1] + h[i+1][j]
                           - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
         }
-
+#endif
         const PetscScalar   thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
  
         if (thickness > 0) { 

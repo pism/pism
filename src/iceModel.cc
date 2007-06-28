@@ -481,6 +481,10 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   PetscScalar **u, **v, **accum, **basalMeltRate, **mask;
   Vec vHnew = vWork2d[0];
 
+#if (MARGIN_TRICK)
+  ierr = verbPrintf(4,grid.com,"  MARGIN_TRICK massBalExplicitStep() ..."); CHKERRQ(ierr);
+#endif
+
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
@@ -499,11 +503,27 @@ PetscErrorCode IceModel::massBalExplicitStep() {
       PetscScalar divQ;
       if (intMask(mask[i][j]) == MASK_SHEET) { 
         // staggered grid Div(Q) for Q = D grad h
+#if (MARGIN_TRICK_TWO)
+        /* switching between MARGIN_TRICK_TWO=1 and MARGIN_TRICK_TWO=0 versions seems to make no 
+           significant difference
+           in tests B, C, and G but there does seem to be a difference in EISMINT II exp F */
+        const PetscScalar He = (H[i+1][j] > 0.0) ? 0.5*(H[i][j] + H[i+1][j])
+                            : ( (H[i-1][j] > 0.0) ? 1.5*H[i-1][j] - 0.5*H[i][j] : H[i][j] );
+        const PetscScalar Hw = (H[i-1][j] > 0.0) ? 0.5*(H[i-1][j] + H[i][j])
+                            : ( (H[i+1][j] > 0.0) ? 1.5*H[i+1][j] - 0.5*H[i][j] : H[i][j] );
+        const PetscScalar Hn = (H[i][j+1] > 0.0) ? 0.5*(H[i][j] + H[i][j+1])
+                            : ( (H[i][j-1] > 0.0) ? 1.5*H[i][j-1] - 0.5*H[i][j] : H[i][j] );
+        const PetscScalar Hs = (H[i][j-1] > 0.0) ? 0.5*(H[i][j-1] + H[i][j])
+                            : ( (H[i][j+1] > 0.0) ? 1.5*H[i][j+1] - 0.5*H[i][j] : H[i][j] );
+        divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
+              + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
+#else
         divQ =
           (uvbar[0][i][j] * 0.5*(H[i][j] + H[i+1][j])
            - uvbar[0][i-1][j] * 0.5*(H[i-1][j] + H[i][j])) / dx
           + (uvbar[1][i][j] * 0.5*(H[i][j] + H[i][j+1])
              - uvbar[1][i][j-1] * 0.5*(H[i][j-1] + H[i][j])) / dy;
+#endif
       } else { // upwinded, regular grid Div(Q), for Q = Ubar H, computed as
                //     Div(Q) = U . grad H + Div(U) H
                // note the CFL for "U . grad H" part of upwinding is checked; see

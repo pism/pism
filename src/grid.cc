@@ -147,9 +147,17 @@ PetscErrorCode IceGrid::createDA() {
     ierr = destroyDA(); CHKERRQ(ierr);
   }
 
+#if (MARGIN_TRICK_TWO)
+  ierr = PetscPrintf(com,"  MARGIN_TRICK_TWO createDA(): setting stencil width to 2 ...\n"); CHKERRQ(ierr);
+  PetscInt stencilwidth = 2;
+  ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
+                    p->My, p->Mx, PETSC_DECIDE, PETSC_DECIDE, 1, stencilwidth,
+                    PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+#else
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     p->My, p->Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+#endif
   ierr = DAGetInfo(da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, p->Mz, N, M, 1, n, m, 1, 1,

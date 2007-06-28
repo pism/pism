@@ -7,9 +7,12 @@ include ${PETSC_DIR}/bmake/common/base
 
 #FLAGS:
 
+MARGIN_TRICK?=0
+MARGIN_TRICK_TWO?=0
 WITH_FFTW?=1
 WITH_GSL?=1
-CFLAGS+= -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
+CFLAGS+= -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL}\
+   -DMARGIN_TRICK=${MARGIN_TRICK} -DMARGIN_TRICK_TWO=${MARGIN_TRICK_TWO} -pipe
 
 ICE_LIB_FLAGS= -L`pwd`/lib -Wl,-rpath,`pwd`/lib -lpism -ltests ${PETSC_LIB}\
    -lnetcdf_c++ -lnetcdf
