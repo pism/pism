@@ -96,6 +96,8 @@
 
 The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Art Mahoney for helpful comments on the manual and the installation process.
 
+We also want to thank PISM users whose questions and comments have contributed to improving PISM and this manual.
+
 \newpage
 \section{Installation}\label{sect:install}
 
@@ -115,7 +117,7 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 
 \noindent Such a statement can, of course, appear in your \verb|.bashrc|, \verb|.profile|, or \verb|.cshrc| file.  
 
-\centerline{\emph{From now on this manual will assume use of} \texttt|bash|.}
+\centerline{\emph{From now on this manual will assume use of} bash.}
 
 \item Download PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}, pronounced ``pet-see'') from \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}.  You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it might be best to read the following comments on the PETSc configure and build process first:
 
@@ -124,15 +126,17 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 
 \item The first step is to download the gzipped tar file for PETSc.  Untar it in your home directory or sub; note PETSc should \emph{not} be configured using root privileges.  Note that you will need to define the environment variable \verb|PETSC_DIR| before configuring PETSc (next).  For instance, if you are in the PETSc directory just untarred, do \verb|export PETSC_DIR=|$\phantom{!}^\backprime \mathtt{pwd}^\backprime$.  (Note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \verb|'|.)
 
-\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM builds with shared libraries by default (though other possibilities are illustrated by makefiles in \verb|pism/config/|):
+\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default (though other possibilities are illustrated by makefiles in \verb|pism/config/|):
 
-\verb|$  ./config/configure.py --with-shared --with-c-support|
+\verb|$  ./config/configure.py --with-shared --with-c-support --with-clanguage=cxx|
+
+Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS and LAPACK rather than using the system-wide version.  In such case one might add ``\verb|--download-c-blas-lapack=1| \verb|--with-fortran=0|'' to the other configure options.
 
 \item If there is an existing MPI installation, for example at \verb|/home/user/mympi/|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi/|.  The path used in this option must have MPI executables \verb|mpiexec| and \verb|mpicc| in subdirectory \verb|bin/| and MPI library files in subdirectory \verb|lib/|.
 
 \item On the other hand, it seems common that one needs to tell PETSc to download MPI into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
 
-\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  The advice of an experienced system administrator for the machine in question---i.e.~someone very familiar with the batch system---has been found to be useful in this case.
+\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  In particular there is a configure option \verb|--with-batch=1|.  The advice of an experienced system administrator for the machine in question---i.e.~someone very familiar with the batch system---has been found to be useful in this case.
 
 \item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \verb|PETSC_ARCH| will be reported at the end of the configure process; take note of this value.  Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.
 
@@ -653,34 +657,48 @@ $ verifynow -n 2 -l 3
 
 \subsection{Historical note}  There have been at least three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s.
 
-EISMINT I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  ``EISMINT'' stands for European Ice Sheet Model INTercomparison initiative [CHECK THIS!].  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  Nonetheless we straightforwardly assert that EISMINT I is superceded by verification using the full variety of exact solutions to the isothermal SIA, especially as described in \cite{BLKCB} and noting the ``rediscovery'' since EISMINT I of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83}.  For this reason there has been no attempt to support the reproduction of the EISMINT I experiments in PISM.  (EISMINT I is a perfectly reasonable task for PISM.  It is strictly easier to perform the EISMINT I experiments than the verification relative to tests A, B, C, D, and E described in the previous section, not to mention than the EISMINT II intercomparison or ISMIP-HEINO.  But one learns much more about numerical performance through verification with exact solutions \cite{BLKCB}.)
+EISMINT I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  ``EISMINT'' stands for European Ice Sheet Modeling INiTiative.  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  
 
-EISMINT II \cite{EISMINT00} was a possibly more important, and certainly more controversial, intercomparison which pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models (i.e.~shortfalls revealed by the EISMINT II results and their interpretations).  PISM has built-in support for reproduction of all of the EISMINT II experiments; these are described below.
+EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.  (On the other hand, EISMINT I is a perfectly reasonable task for PISM.  It is strictly easier to perform the EISMINT I experiments than the verification relative to tests A, B, C, D, and E described in the previous section.  But one learns \emph{much} more about numerical performance through verification with exact solutions, and in the isothermal flat base case considered in EISMINT I, the selection of exact solutions is copious.)
 
-The ISMIP round of intercomparisons are ongoing at the time of this writing (mid 2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Program [CHECK THIS!!].  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = HEInrich events ????, and POLICE = POLar ICE sheets; none of these are completed and published and the last is still in early planning.  Of these PISM currently only supports HEINO; see below.
+EISMINT II \cite{EISMINT00} was both a more significant, and certainly more controversial, intercomparison.  It clearly pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the EISMINT II experiments; these are described in the next subsection.
 
-Again as of mid 2007, the PISM authors plan to participate in ISMIP-POLICE and an upcoming Marine Ice Sheet Intercomparison exercise.  Watch this space \dots
+The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = Heinrich Event INtercOmparison, and POLICE = POLar ICE sheet modelss.  None of these are completed and published and the last is still in early planning.  
 
-\subsection{EISMINT II in PISM}  There are seven experiments described in the EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, they are 200,000 year runs on a fixed $61\times 61$ horizontal grid, but, as usual, the grid and the length of the run are command line options in PISM.  The experiments differ from each other in their various combinations of surface temperature and accumulation parameterizations, and in that experiments H and G involve basal sliding, while the others don't.  Some experiments start with zero ice (A,F,G,H) while some start from the end state of other experiments.  In particular, experiments B, C, and D start from the final state of experiment A.
+Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  The point is that we believe the continuum problem described by HEINO to be not-easily-approximateable, regardless of the details of the numerical schemes.  (Feel free to write to \verb|ffelb@uaf.edu| on this topic, of course.)
 
-The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.  There is no thermal model for the bedrock in EISMINT II, however.
+Again as of July 2007, the PISM authors plan to participate in ISMIP-POLICE and an upcoming Marine Ice Sheet Intercomparison exercise.
+
+\subsection{EISMINT II in PISM}  There are seven experiments described in the EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
+\item runs are of 200,000 years, with no prescribed time step;
+\item runs are on a prescribed $61\times 61$ horizontal grid (but, as usual, the grid and the length of the run are command line options in PISM so PISM can easily run the same experiments on a refined grid);
+\item the boundary conditions always have angular symmetry around the center of the grid;
+\item the bed is always flat and does not move (so the effects of isostasy were ignored throughout);
+\item the temperature in the bedrock is not modelled;
+\item only shallow ice approximation physics is included;
+\item thermodynamics is included in that the temperature of ice is controlled by conservation of energy;
+\item thermomechanical coupling is included, both because of the temperature dependence of the softness of the ice, \emph{and} through the strain-heating (dissipation-heating) term in the conservation of energy equation;
+\item the ice is \emph{cold} and not \emph{polythermal} \cite{Greve}; and finally
+\item though basal melt rates may be computed diagnostically, they do not contribute to the thermomechanical evolution of the ice sheet.
+\end{itemize}
+The experiments differ from each other in their various combinations of surface temperature and accumulation parameterizations.  Also, experiments H and G involve basal sliding, while the others don't.  Some experiments start with zero ice (A,F,G,H) while some start from the end state of other experiments.  In particular, experiments B, C, and D start from the final state of experiment A.
+
+The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.
 
 Thus a reasonable experiment A run on four processors is
 
 \verb|mpiexec -n 4 pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIA|
 
-\noindent Note that once the above run is completed, which might take an hour, something like
+\noindent Note that once the above run is completed, which might take an hour or two on the four processors in this case, something like
 
 \verb|mpiexec -n 4 pisms -eisII A -if eisIIA.nc -d HTcf -display :0|
 
-\noindent will give a quick view of thickness, basal temperature, the horizontal speed of the ice, and the residual rate of change of the thickness at the final state.  A more complete view of the final state might be 
+\noindent will give a quick view of thickness, basal temperature, the vertically-integrated horizontal speed of the ice, and the residual rate of change of the thickness at the final state.  A more complete view of the final state using \verb|ncview| is of course worthwhile.
 
-\verb|ncview -minmax all eisIIA.nc|
-
-Table \ref{tab:eisII} shows how the other EISMINT II experiments can be done in PISM.  As noted, experiments B,C,D start from the saved state of experiment A.  Note that ``\t{-y 200000}'' is equivalent to ``\t{-y 2e5}'' as a specification of run lenghth
+Table \ref{tab:eisII} shows how the other EISMINT II experiments can be done in PISM.  As noted, experiments B,C,D start from the saved state of experiment A.
 
 \begin{table}[h]
-\caption{Running the EISMINT II experiments in PISM; command is ``\t{pisms}'' plus the given options.}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus these options.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms}'' $+$} & \textbf{Relation to experiment A} \\ \hline
@@ -694,7 +712,7 @@ Table \ref{tab:eisII} shows how the other EISMINT II experiments can be done in 
 \hline\normalsize
 \end{tabular}\end{table}
 
-The EISMINT II experiments can be run with various modifications of the default settings.  Certainly the grid can be refined.  For instance a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists the optional settings which are particular to the EISMINT II experiments; these options will only work with ``\t{-eisII ?}'' set.
+The EISMINT II experiments can be run with various modifications of the default settings.  Certainly the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists the optional settings which are particular to the EISMINT II experiments; these options will only work if option ``\t{-eisII ?}'' is also set.
 
 \begin{table}[h]
 \caption{Changing the default settings for the EISMINT II experiments in PISM.}\label{tab:eisIIoptions}
@@ -705,9 +723,13 @@ The EISMINT II experiments can be run with various modifications of the default 
 \verb|-Rel| & 450 [ABFGH], 425 [CD] & km & radial distance to equilibrium line \\
 \verb|-Sb| & $10^{-2}$ [\emph{all}] & (m/a)/km & radial gradient of accumulation rate \\
 \verb|-ST| & $1.67 \times 10^{-2}$ [\emph{all}] & K/km & radial gradient of surface temperature\\
-\verb|-Tmin| & 238.15 [ACDGH], 243.15[B], 223.15[F] & K & max of surface temperature \\
+\verb|-Tmin| & 238.15 [ACDGH], 243.15[B], 223.15[F] & K & max of surface temperature \\ \hline
+\verb|-Lz| & 4500 [A], 4000 [BCD], 5000 [F], 3000 [G] & m & height of the computational box \\
 \hline\normalsize
 \end{tabular}\end{table}
+
+Note that in PISM the height \verb|Lz| of the computational box is fixed at the beginning of the run.  On the other hand, changing the boundary conditions of the flow, as for instance by setting option \verb|-Mmax| to a larger than default value (see table \ref{tab:eisIIoptions}), may cause the ice sheet to thicken above the \verb|Lz| height.  If the ice grows above the height of the computational box then a ``\verb|Vertical grid exceeded!|'' or ``\verb|thickness overflow in SIA velocity: ks>Mz!|'' error occurs.  This can be fixed by remedied by restarting with a larger value for option \verb|-Lz|.
+
 
 \begin{comment}
 \subsection{ISMIP-HEINO in PISM}  The goal of the ISMIP-HEINO intercomparison is to evaluate the degree to which the thermomechanically coupled shallow ice approximation with basal sliding is a model for the surge behavior of the Laurentide ice sheet which is believed to have caused the ``Heinrich events'' described in [CITE HEINRICH].  Further information about HEINO, including the intercomparison description [URL FOR HEINO PDF] can be found at \url{http://www.pik-potsdam.de/~calov/heino.html}.

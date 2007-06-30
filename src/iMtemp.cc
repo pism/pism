@@ -211,7 +211,7 @@ PetscErrorCode IceModel::temperatureStep() {
         }
       }
 
-    const PetscScalar GlobalMinTemp = 200.0;
+      const PetscScalar GlobalMinTemp = 200.0;
 
       // insert bedrock solution; check for too low below
       for (PetscInt k=0; k < k0; k++) {
@@ -349,15 +349,18 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
     SETERRQ(1,"excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
   }
   if (*Texcess >= 0.0) {
-    // T is at or above pressure-melting temp, so temp needs to be set to 
-    // pressure-melting, and a fraction of excess energy
-    // needs to be turned into melt water at base
-    // note massmelted is POSITIVE!
-    const PetscScalar FRACTION_TO_BASE
+    if (isDrySimulation == PETSC_FALSE) {  // only add to Hmelt if not dry; compare IceEISModel
+      // T is at or above pressure-melting temp, so temp needs to be set to 
+      // pressure-melting, and a fraction of excess energy
+      // needs to be turned into melt water at base
+      // note massmelted is POSITIVE!
+      const PetscScalar FRACTION_TO_BASE
                            = (z < 100.0) ? 0.4 * (100.0 - z) / 100.0 : 0.0;
-    *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice.rho * darea);  // note: ice-equiv thickness
+      *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice.rho * darea);  // note: ice-equiv thickness
+    }
     *Texcess = 0.0;
-  } else {  
+  } else if (isDrySimulation == PETSC_FALSE) {  // neither Texcess nor Hmelt need to change 
+                                                // if Texcess < 0.0 and dry; compare IceEISModel
     // Texcess negative; only refreeze (i.e. reduce Hmelt) if at base and Hmelt > 0.0
     // note ONLY CALLED IF AT BASE!
     // note massmelted is NEGATIVE!

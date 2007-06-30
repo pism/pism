@@ -142,7 +142,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
         ierr = grid.rescale(L, L, 3000); CHKERRQ(ierr);
         break;
       case 'H':
-        ierr = grid.rescale(L, L, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
         break;
       default:  
         SETERRQ(1,"option -eisII value not understood; EISMINT II experiment of given name may not exist.\n");
