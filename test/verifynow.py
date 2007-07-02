@@ -64,7 +64,7 @@ for test in alltests:
       if status:
          sys.exit(status)
       print '  finished in %7.4f seconds; reported numerical errors as follows:' % elapsetime
-      errpos = output.find('Actual ERRORS')
+      errpos = output.find('NUMERICAL ERRORS')
       if errpos:
          errreport = output[errpos:output.rfind('Writing')-1]
          print '    |' + string.replace(errreport,'\n','\n    |')

@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include "iceModel.hh"
+#include "nc_util.hh"
 
 #include <petscsys.h>
 #include <petscfix.h>
@@ -39,19 +40,83 @@
 //   VecGetLocalSize() is not guaranteed to work on all platforms
 //   MatGetOwnershipRange() is not guaranteed to work on all platforms
 
+
+PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
+  PetscErrorCode ierr;
+  PetscTruth regridVarsSet;
+  char regridVars[PETSC_MAX_PATH_LEN];
+
+  ierr = verbPrintf(2,grid.com, "regridding data from `%s': ", regridFile); CHKERRQ(ierr);
+
+  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
+                               PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
+  if (regridVarsSet == PETSC_FALSE) {
+    // As a default, we only regrid the 3 dimensional quantities.  This
+    // is consistent with one standard purpose which is to stick with current
+    // geometry through the downscaling procedure.
+    strcpy(regridVars, "TBe");
+  }
+
+  size_t dim[5];
+  float bdy[7];
+  double bdy_time;
+  int ncid, stat;
+
+  if (grid.rank == 0) {
+    stat = nc_open(regridFile, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  //ierr = get_dimensions(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  ierr = get_dimensions(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);
+
+  // Get Local Interpolation Context
+  LocalInterpCtx lic;
+  ierr = get_LocalInterpCtx(ncid, dim, bdy, bdy_time, lic, grid); CHKERRQ(ierr);
+
+  ierr = regrid_local_var(regridVars, 'h', "h", 2, lic, grid, grid.da2, vh, g2);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'H', "H", 2, lic, grid, grid.da2, vH, g2);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'L', "Hmelt", 2, lic, grid, grid.da2, vHmelt, g2);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'b', "b", 2, lic, grid, grid.da2, vbed, g2);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'T', "T", 3, lic, grid, grid.da3, vT, g3);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'B', "Tb", 4, lic, grid, grid.da3b, vTb, g3b);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, vtau, g3);
+  CHKERRQ(ierr);
+
+  ierr = PetscFree(lic.a); CHKERRQ(ierr);
+  
+  if (grid.rank == 0) {
+    // If we want history from the regridded file, we can get it here and broadcast it.
+    // stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
+    // CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = nc_close(ncid);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);
+
+  return 0;
+}
+
 PetscErrorCode IceModel::regrid(const char *regridFile) {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet;
   char regridVars[PETSC_MAX_PATH_LEN];
   InterpCtx i2, i3, i3b;
 
-  ierr = PetscPrintf(grid.com, "regridding data from `%s'\n", regridFile); CHKERRQ(ierr);
-
   if (hasSuffix(regridFile, ".nc")) {
-    // We have a much better method for regridding netCDF files.
+    // We have a much better method for regridding netCDF files, above
     ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
     return 0;
   }
+
+  ierr = PetscPrintf(grid.com, "regridding data from `%s'\n", regridFile); CHKERRQ(ierr);
 
   IceGrid g(grid.com, grid.rank, grid.size);
   IceModel m(g, ice);

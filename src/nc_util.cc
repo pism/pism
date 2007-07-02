@@ -1,19 +1,19 @@
-// Copyright (C) 2007 Jed Brown
+// Copyright (C) 2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
@@ -137,7 +137,7 @@ PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, f
 }
 
 
-PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[],
+PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[], double *bdy_time, 
                               MPI_Comm com) {
   PetscErrorCode ierr;
   PetscMPIInt rank;
@@ -170,12 +170,16 @@ PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[],
     stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     
     size_t t_end = t_len - 1;
+    // get extent of grid by looking for last and first of variables x,y;
+    // for z get first of zb and last of z
     size_t x_bdy[] = {0, x_len - 1};
     size_t y_bdy[] = {0, y_len - 1};
     size_t z_bdy[] = {0, z_len - 1}; // Start at 0 in `zb', end at z_len - 1 of `z'
 
-    stat = nc_get_var1_float(ncid, t_id, &t_end, &bdy[0]);
+    //stat = nc_get_var1_float(ncid, t_id, &t_end, &bdy[0]);
+    stat = nc_get_var1_double(ncid, t_id, &t_end, bdy_time);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    bdy[0] = *bdy_time;  // bdy[0] has original meaning: time in seconds as a float
     stat = nc_get_var1_float(ncid, x_id, &x_bdy[0], &bdy[1]);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_get_var1_float(ncid, x_id, &x_bdy[1], &bdy[2]);
@@ -299,8 +303,8 @@ PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc
 }
 
 
-PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[],
-                                 LocalInterpCtx &lic, IceGrid &grid) {
+PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
+                                  LocalInterpCtx &lic, IceGrid &grid) {
   PetscErrorCode ierr;
   const float Lx = grid.p->Lx;
   const float Ly = grid.p->Ly;
@@ -332,7 +336,8 @@ PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[
   lic.start[3] = 0; // We start at the bed.
   lic.start[4] = (int)floor((zbdy[0] - bdy[5]) / lic.delta[3]);
   
-  lic.fstart[0] = bdy[0];
+  lic.timestart = bdy_time;
+  lic.fstart[0] = bdy[0];  // this value is a float; use lic.timestart instead
   lic.fstart[1] = bdy[1] + lic.start[1] * lic.delta[1];
   lic.fstart[2] = bdy[3] + lic.start[2] * lic.delta[2];
 
@@ -366,7 +371,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
     return 0;
   }
 
-  ierr = verbPrintf(2, grid.com, "Regridding `%c' from `%s'.\n", c, name); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "regridding `%c' from `%s' ... ", c, name); CHKERRQ(ierr);
 
   /* {
     printf("fstart = %10.2e %10.2e %10.2e\n", lic.fstart[0], lic.fstart[1], lic.fstart[2]);

@@ -614,6 +614,50 @@ PetscErrorCode IceModel::checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *
 }
 
 
+PetscErrorCode IceModel::getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k) {
+  PetscErrorCode ierr;
+  PetscScalar    ***val, **slice_val;
+
+  ierr = DAVecGetArray(grid.da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, v3D, &val); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      slice_val[i][j] = val[i][j][k];
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, v3D, &val); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::getSurfaceValuesOf3D(Vec v3D, Vec &gsurf) {
+  PetscErrorCode ierr;
+  PetscScalar    ***val, **H, **surf_val;
+
+  ierr = DAVecGetArray(grid.da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, v3D, &val); CHKERRQ(ierr);
+  const PetscScalar dz = grid.p->dz;
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/dz));
+      if (ks == grid.p->Mz-1) {  // if at top of grid
+        surf_val[i][j] = val[i][j][ks];
+      } else {  // general case is to linearly interpolate to z=H[i][j]
+        surf_val[i][j] = ((H[i][j] - ks * dz) * val[i][j][ks]
+                         + ((ks+1) * dz - H[i][j]) * val[i][j][ks+1]) / dz;
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, v3D, &val); CHKERRQ(ierr);
+  return 0;
+}
+
+
+
 PetscErrorCode IceModel::initFromOptions() {
   PetscErrorCode ierr;
   PetscTruth inFileSet, bootstrapSet, bootstrapSetLegacy;
@@ -722,6 +766,7 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = verbPrintf(3,grid.com,"            history = ****************\n%s"
                                "            **************************\n",grid.p->history); CHKERRQ(ierr);
   
+  ierr = setSoundingFromOptions(); CHKERRQ(ierr);
   ierr = initSounding(); CHKERRQ(ierr);
   tempskipCountDown = 0;
 

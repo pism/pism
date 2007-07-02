@@ -14,7 +14,7 @@ WITH_GSL?=1
 CFLAGS+= -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL}\
    -DMARGIN_TRICK=${MARGIN_TRICK} -DMARGIN_TRICK_TWO=${MARGIN_TRICK_TWO} -pipe
 
-ICE_LIB_FLAGS= -L`pwd`/lib -Wl,-rpath,`pwd`/lib -lpism -ltests ${PETSC_LIB}\
+ICE_LIB_FLAGS= -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib -lpism -ltests ${PETSC_LIB}\
    -lnetcdf_c++ -lnetcdf
 ifeq (${WITH_FFTW}, 1)
 	ICE_LIB_FLAGS+= -lfftw3
@@ -25,13 +25,13 @@ endif
 
 #VARIABLES:
 
-executables= pismr pismv pisms pant
-extra_execs= pgrn simpleISO simpleFG simpleI flowTable
+executables= pismr pismv pisms pgrn pant
+extra_execs= simpleISO simpleFG simpleI flowTable
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
-	iMregrid.cc iMregrid_netCDF.cc iMtemp.cc iMutil.cc iMvelocity.cc\
-	 iMviewers.cc iceModel.cc materials.cc nc_util.cc
+	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc\
+	iMviewers.cc iceModel.cc materials.cc nc_util.cc
 ice_csources= cubature.c pism_signal.c
 ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
@@ -46,55 +46,65 @@ other_csources= simpleISO.c simpleFG.c simpleI.c
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
-all : depend libpism libtests $(executables)
+all : depend libpism.so libtests.so $(executables)
 
-libpism : ${ICE_OBJS}
-	${CLINKER} -shared -o lib/libpism.so ${ICE_OBJS}
+install : local_install clean
+
+local_install : libpism.so libtests.so $(executables)
+	cp libpism.so lib/
+	cp libtests.so lib/
+	cp $(executables) bin/
+	rm -f libpism.so
+	rm -f libtests.so
+	rm -f $(executables)
+
+libpism.so : ${ICE_OBJS}
+	${CLINKER} -shared ${ICE_OBJS} -o libpism.so
 #for static-linking:  ar cru -s lib/libpism.a ${ICE_OBJS}   etc
 
-libtests : ${TESTS_OBJS}
-	${CLINKER} -shared -o lib/libtests.so ${TESTS_OBJS}
+libtests.so : ${TESTS_OBJS}
+	${CLINKER} -shared ${TESTS_OBJS} -o libtests.so
 
-pismr : pismr.o lib/libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pismr
+pismr : pismr.o libpism.so
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o pismr
 
-pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o lib/libpism.so
-	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o bin/pisms
+pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o libpism.so
+	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o pisms
 
-pismv : iceCompModel.o iceExactStreamModel.o pismv.o lib/libpism.so lib/libtests.so
-	${CLINKER} iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o bin/pismv
+pismv : iceCompModel.o iceExactStreamModel.o pismv.o libpism.so libtests.so
+	${CLINKER} iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o pismv
 
-pant : pant.o lib/libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/pant
+pant : pant.o libpism.so
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o pant
 
-pgrn : iceGRNModel.o pgrn.o lib/libpism.so
-	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o bin/pgrn
+pgrn : iceGRNModel.o pgrn.o libpism.so
+	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o pgrn
 
-#shelf : shelf.o lib/libpism.so
-#	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/shelf
+#shelf : shelf.o libpism.so
+#	${CLINKER} $< ${ICE_LIB_FLAGS} -o shelf
 
-flowTable : flowTable.o lib/libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o bin/flowTable
+flowTable : flowTable.o libpism.so
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o flowTable
 
-simpleISO : simpleISO.o lib/libtests.so
-	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o bin/simpleISO
+simpleISO : simpleISO.o libtests.so
+	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o simpleISO
 
-simpleFG : simpleFG.o lib/libtests.so
-	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o bin/simpleFG
+simpleFG : simpleFG.o libtests.so
+	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o simpleFG
 
-simpleI : simpleI.o lib/libtests.so
-	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o bin/simpleI
+simpleI : simpleI.o libtests.so
+	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o simpleI
 
-# Cancel the implicit rules
-% : %.cc
-% : %.c
+# Cancel the implicit rules  WHY?
+#% : %.cc
+#% : %.c
 
 # Emacs style tags
 .PHONY: tags TAGS
 tags TAGS :
 	etags *.cc *.hh *.c
 
-# The GNU recommended proceedure for automatically generating dependencies.
+# The GNU recommended procedure for automatically generating dependencies.
 # This rule updates the `*.d' to reflect changes in `*.cc' files
 %.d : %.cc
 	@echo "Dependencies from" $< "-->" $@
@@ -119,9 +129,10 @@ depclean :
 clean : depclean
 
 distclean : clean
-	rm -f TAGS lib/libpism.so lib/libtests.so \
-	 $(patsubst %, bin/%, ${executables})\
-	 $(patsubst %, bin/%, ${extra_execs})
+	rm -f TAGS \
+	libpism.so libtests.so lib/libpism.so lib/libtests.so \
+	${executables} $(patsubst %, bin/%, ${executables})\
+	${extra_execs} $(patsubst %, bin/%, ${extra_execs})
 
 .PHONY: clean
 

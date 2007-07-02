@@ -34,12 +34,12 @@
    int Hmelt_id;
    int b_id;
    int dbdt_id;
-   int Ts_id;
-   int ghf_id;
-   int accum_id;
    int T_id;
    int Tb_id;
    int age_id;
+   int Ts_id;
+   int ghf_id;
+   int accum_id;
 
    /* rank (number of dimensions) for each variable */
 #  define RANK_polar_stereographic 0
@@ -56,12 +56,12 @@
 #  define RANK_Hmelt 3
 #  define RANK_b 3
 #  define RANK_dbdt 3
-#  define RANK_Ts 2
-#  define RANK_ghf 2
-#  define RANK_accum 2
 #  define RANK_T 4
 #  define RANK_Tb 4
 #  define RANK_age 4
+#  define RANK_Ts 3
+#  define RANK_ghf 3
+#  define RANK_accum 3
 
    /* variable shapes */
    int x_dims[RANK_x];
@@ -77,12 +77,12 @@
    int Hmelt_dims[RANK_Hmelt];
    int b_dims[RANK_b];
    int dbdt_dims[RANK_dbdt];
-   int Ts_dims[RANK_Ts];
-   int ghf_dims[RANK_ghf];
-   int accum_dims[RANK_accum];
    int T_dims[RANK_T];
    int Tb_dims[RANK_Tb];
    int age_dims[RANK_age];
+   int Ts_dims[RANK_Ts];
+   int ghf_dims[RANK_ghf];
+   int accum_dims[RANK_accum];
 
    int polar_stereographic_straight_vertical_longitude_from_pole[1];
    int polar_stereographic_latitude_of_projection_origin[1];
@@ -127,7 +127,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
 
    t_dims[0] = t_dim;
-   stat = nc_def_var(ncid, "t", NC_FLOAT, RANK_t, t_dims, &t_id);
+   stat = nc_def_var(ncid, "t", NC_DOUBLE, RANK_t, t_dims, &t_id);
    check_err(stat,__LINE__,__FILE__);
 
    lon_dims[0] = x_dim;
@@ -176,21 +176,6 @@ if (grid.rank == 0) {
    stat = nc_def_var(ncid, "dbdt", NC_FLOAT, RANK_dbdt, dbdt_dims, &dbdt_id);
    check_err(stat,__LINE__,__FILE__);
 
-   Ts_dims[0] = x_dim;
-   Ts_dims[1] = y_dim;
-   stat = nc_def_var(ncid, "Ts", NC_FLOAT, RANK_Ts, Ts_dims, &Ts_id);
-   check_err(stat,__LINE__,__FILE__);
-
-   ghf_dims[0] = x_dim;
-   ghf_dims[1] = y_dim;
-   stat = nc_def_var(ncid, "ghf", NC_FLOAT, RANK_ghf, ghf_dims, &ghf_id);
-   check_err(stat,__LINE__,__FILE__);
-
-   accum_dims[0] = x_dim;
-   accum_dims[1] = y_dim;
-   stat = nc_def_var(ncid, "accum", NC_FLOAT, RANK_accum, accum_dims, &accum_id);
-   check_err(stat,__LINE__,__FILE__);
-
    T_dims[0] = t_dim;
    T_dims[1] = x_dim;
    T_dims[2] = y_dim;
@@ -210,6 +195,24 @@ if (grid.rank == 0) {
    age_dims[2] = y_dim;
    age_dims[3] = z_dim;
    stat = nc_def_var(ncid, "age", NC_FLOAT, RANK_age, age_dims, &age_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   Ts_dims[0] = t_dim;
+   Ts_dims[1] = x_dim;
+   Ts_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "Ts", NC_FLOAT, RANK_Ts, Ts_dims, &Ts_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   ghf_dims[0] = t_dim;
+   ghf_dims[1] = x_dim;
+   ghf_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "ghf", NC_FLOAT, RANK_ghf, ghf_dims, &ghf_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   accum_dims[0] = t_dim;
+   accum_dims[1] = x_dim;
+   accum_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "accum", NC_FLOAT, RANK_accum, accum_dims, &accum_id);
    check_err(stat,__LINE__,__FILE__);
 
    /* assign attributes */
@@ -232,6 +235,8 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, x_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, x_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "axis", 1, "Y");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "long_name", 32, "y-coordinate in Cartesian system");
@@ -239,6 +244,8 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, y_id, "standard_name", 23, "projection_y_coordinate");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "units", 1, "m");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, y_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, z_id, "axis", 1, "Z");
    check_err(stat,__LINE__,__FILE__);
@@ -250,6 +257,8 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, z_id, "positive", 2, "up");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, z_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "long_name", 23, "z-coordinate in bedrock");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "standard_name", 34, "projection_z_coordinate_in_bedrock");
@@ -258,6 +267,8 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "positive", 2, "up");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, zb_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "long_name", 4, "time");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "units", 33, "seconds since 2007-01-01 00:00:00");
@@ -265,6 +276,8 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, t_id, "calendar", 4, "none");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "axis", 1, "T");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, t_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, lon_id, "long_name", 9, "longitude");
    check_err(stat,__LINE__,__FILE__);
@@ -280,11 +293,15 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, mask_id, "long_name", 39, "grounded_dragging_floating_integer_mask");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, mask_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, h_id, "long_name", 16, "surface_altitude");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, h_id, "standard_name", 16, "surface_altitude");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, h_id, "units", 1, "m");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, h_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, H_id, "long_name", 18, "land_ice_thickness");
    check_err(stat,__LINE__,__FILE__);
@@ -292,9 +309,13 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, H_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, H_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, Hmelt_id, "long_name", 34, "thickness_of_subglacial_melt_water");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, Hmelt_id, "units", 1, "m");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Hmelt_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, b_id, "long_name", 16, "bedrock_altitude");
    check_err(stat,__LINE__,__FILE__);
@@ -302,27 +323,13 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, b_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, b_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, dbdt_id, "long_name", 11, "uplift_rate");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, dbdt_id, "standard_name", 28, "tendency_of_bedrock_altitude");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, dbdt_id, "units", 5, "m s-1");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, Ts_id, "long_name", 19, "surface_temperature");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, Ts_id, "standard_name", 19, "surface_temperature");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, Ts_id, "units", 1, "K");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, ghf_id, "long_name", 27, "upward_geothermal_heat_flux");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, ghf_id, "units", 5, "W m-2");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, accum_id, "long_name", 37, "mean ice equivalent accumulation rate");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, accum_id, "standard_name", 38, "land_ice_surface_specific_mass_balance");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, accum_id, "units", 5, "m s-1");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, T_id, "long_name", 20, "land_ice_temperature");
    check_err(stat,__LINE__,__FILE__);
@@ -330,17 +337,43 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, T_id, "units", 1, "K");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, Tb_id, "long_name", 19, "bedrock temperature");
+   stat = nc_put_att_text(ncid, T_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, Tb_id, "standard_name", 19, "bedrock temperature");
+   stat = nc_put_att_text(ncid, Tb_id, "long_name", 19, "bedrock_temperature");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Tb_id, "standard_name", 19, "bedrock_temperature");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, Tb_id, "units", 1, "K");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Tb_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, age_id, "long_name", 12, "land_ice_age");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, age_id, "standard_name", 12, "land_ice_age");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, age_id, "units", 1, "s");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Ts_id, "long_name", 19, "surface_temperature");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Ts_id, "standard_name", 19, "surface_temperature");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Ts_id, "units", 1, "K");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, Ts_id, "pism_intent", 14, "climate_steady");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, ghf_id, "long_name", 27, "upward_geothermal_heat_flux");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, ghf_id, "units", 5, "W m-2");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, ghf_id, "pism_intent", 14, "climate_steady");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, accum_id, "long_name", 37, "mean ice equivalent accumulation rate");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, accum_id, "standard_name", 38, "land_ice_surface_specific_mass_balance");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, accum_id, "units", 5, "m s-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, accum_id, "pism_intent", 14, "climate_steady");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", 6, "CF-1.0");
    check_err(stat,__LINE__,__FILE__);

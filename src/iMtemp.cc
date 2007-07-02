@@ -172,8 +172,8 @@ PetscErrorCode IceModel::temperatureStep() {
             L[k0] = - brReff; D[k0] = 1 + iceReff + brReff; U[k0] = - iceReff;
           } else { // no bedrock
             // L[k0] = 0.0;  (note this is not an allocated location!) 
-            D[k0] = 1 + iceReff; U[k0] = - iceReff;
-            rhs[k0] += dtTempAge * Ghf[i][j] / (rho_c_av * dz);
+            D[k0] = 1 + iceR; U[k0] = - iceR;
+            rhs[k0] += dtTempAge * Ghf[i][j] / (rho_c_I * dz);
           }
         }
       }

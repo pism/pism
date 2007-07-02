@@ -77,8 +77,6 @@ int main(int argc, char *argv[]) {
       SETERRQ(1,"(PISMV; verify.cc) ERROR: desired test NOT IMPLEMENTED\n");
     }
 
-    ierr = m->setSoundingFromOptions();  CHKERRQ(ierr);
-
     ierr = m->run(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);

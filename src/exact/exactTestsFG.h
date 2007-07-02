@@ -35,9 +35,9 @@ ELB 9/12/05;  05/12/06;  10/14/06
 ! exactTestsFG is a C implementation of the exact solutions Test F & G for a
 ! thermocoupled ice sheet.  References:
 !
-!    Ed Bueler, Jed Brown, and Craig Lingle, "Exact solutions to the 
-!       thermocoupled shallow approximation: effective tools for verification,"
-!       submitted 2006
+!    Ed Bueler, Jed Brown, and Craig Lingle, "Exact solutions to the
+!       thermomechanically coupled shallow ice approximation: effective 
+!       tools for verification," to appear J. Glaciol. 2007 (or 2008)
 !
 !    Ed Bueler and Jed Brown, "On exact solutions for cold, shallow, and 
 !       thermocoupled ice sheets," preprint arXiv:physics/0610106, 2006

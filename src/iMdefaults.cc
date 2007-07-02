@@ -51,7 +51,9 @@ const PetscScalar IceModel::DEFAULT_h_VALUE_MISSING = 0.0;
 const PetscScalar IceModel::DEFAULT_H_VALUE_MISSING = 0.0;
 const PetscScalar IceModel::DEFAULT_BED_VALUE_MISSING = -5000.0;
 const PetscScalar IceModel::DEFAULT_ACCUM_VALUE_MISSING = -0.5/ secpera;
-const PetscScalar IceModel::DEFAULT_SURF_TEMP_VALUE_MISSING = 270.0;
+const PetscScalar IceModel::DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
+const PetscScalar IceModel::DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
+const PetscScalar IceModel::DEFAULT_ACCUMULATION_IN_OCEAN0 = -20.0 / secpera;   // -20.0 m/a
 
 //used in iMvelocity.C
 const PetscScalar IceModel::DEFAULT_MINH_MACAYEAL = 10.0;  // m; minimum thickness for MacAyeal velocity computation

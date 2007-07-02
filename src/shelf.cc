@@ -627,7 +627,6 @@ int main(int argc, char *argv[]) {
 
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
-    ierr = m.setSoundingFromOptions(); CHKERRQ(ierr);
 
     ierr = PetscPrintf(com, "initialization done\n"); CHKERRQ(ierr);
 

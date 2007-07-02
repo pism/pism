@@ -70,32 +70,23 @@ PetscErrorCode IceGRNModel::getInterpolationCode(int ncid, int vid, int *code) {
 
 PetscErrorCode IceGRNModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth enhancementSet, usrTestSet;
+  PetscTruth usrTestSet;
   int usr_test;
-
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
-
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor,
-                               &enhancementSet); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-test", &usr_test,
                             &usrTestSet); CHKERRQ(ierr);
-
-  enhancementFactor = 3;
-  if (enhancementSet) {
-    verbPrintf(1, grid.com,
-               "Enhancement Factor specified, but using %f instead\n",
-               enhancementFactor);
-  }
-
   if (usrTestSet) {
     testnum = usr_test;
   } else {
     testnum=1;
   }
 
+  enhancementFactor = 3;
+
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // note -e will override e=3 if set
   return 0;
 }
+
 
 PetscErrorCode IceGRNModel::initFromOptions() {
   PetscErrorCode ierr;
@@ -120,7 +111,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-force", coreFile,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-forcing", coreFile,
                                PETSC_MAX_PATH_LEN, &forceSet); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-ys", &usr_year,
@@ -387,12 +378,12 @@ PetscErrorCode IceGRNModel::fillTs() {
 
 PetscErrorCode IceGRNModel::calculateTempFromCosine(PetscScalar Ts, PetscScalar Ta,
                                                     int t, PetscScalar *temp) {
-  float summer_offset = 243; // appoximately August 1st
+  float summer_offset = 243; // approximately August 1st
   // NOTE: Ta means "Mean annual Temperature" and
   //       Ts means "Summer Temperature"
   // These values are computed according to the
   // functions given in the EISMINT Greenland
-  // experriment. also, they can be computed using
+  // experiment. also, they can be computed using
   // the follow functions:
   // Ta: calculateMeanAnnual
   // Ts: calculateSummerTemp
@@ -507,3 +498,4 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
 
   return 0;
 }
+

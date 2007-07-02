@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007 Ed Bueler and Nathan Shemonski
 //
 // This file is part of Pism.
 //
@@ -56,7 +56,6 @@ int main(int argc, char *argv[]){
    
     ierr = verbPrintf(2, com, "Running Test %d\n", mGRN.getTestNum());
  
-    ierr = mGRN.setSoundingFromOptions(); CHKERRQ(ierr);
     ierr = mGRN.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);
 

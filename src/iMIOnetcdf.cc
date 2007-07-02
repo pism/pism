@@ -63,6 +63,7 @@ PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ct
 }
 
 PetscErrorCode IceModel::cleanInputData_legacy() {
+  // this procedure cleans data tied to Antarctica, including BAS data (acquired for PISM in 2004)
   PetscErrorCode  ierr;
   PetscScalar     **h, **H, **bed, **ac, **Ts;
 
@@ -177,9 +178,8 @@ PetscErrorCode IceModel::maskAccum() {
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a
       if (mask[i][j] == MASK_FLOATING || mask[i][j] == MASK_FLOATING_OCEAN0) {
-        accum[i][j] = - DEFAULT_ABLATION_IN_OCEAN0 / secpera;
+        accum[i][j] = DEFAULT_ACCUMULATION_IN_OCEAN0;
       }
     }
   }
@@ -211,7 +211,6 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a
       /* The BAS input mask uses:
       *    0 : Ocean           1 : Grounded
       *    2 : Floating        3 : Rock outcrop
@@ -221,7 +220,7 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
         case 0:
           mask[i][j] = MASK_FLOATING_OCEAN0;
           // FIXME: this ablation mechanism should be replaced by ocean model
-          accum[i][j] = - DEFAULT_ABLATION_IN_OCEAN0 / secpera;
+          accum[i][j] = DEFAULT_ACCUMULATION_IN_OCEAN0;
           break;
         case 2:
           mask[i][j] = MASK_FLOATING;
@@ -344,8 +343,6 @@ PetscErrorCode nc_check(int stat) {
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   int stat;
-  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
-  const PetscScalar   T_surface_default = 263.15;
   PetscReal lonExists, latExists, accumExists, hExists, HExists, bExists,
       TsExists, ghfExists, upliftExists, balvelExists,
       xExists, yExists, HmeltExists, tExists;
@@ -353,7 +350,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
       gTsExists=0, gghfExists=0, gupliftExists=0, gbalvelExists=0,
       gxExists=0, gyExists=0, gHmeltExists=0, gtExists=0;
 
-  verbPrintf(3, grid.com, "Bootstrapping from New Option\n");
+  verbPrintf(2, grid.com, "bootstrapping by PISM default method from file %s\n",fname);
 
   // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
@@ -418,78 +415,90 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // is put into an array on proc 0 then vzero is used to get the indices which
   // put the array into the scratch global Vec g2 and then the usual DA-based
   // global (g2) to local (vAccum, etc.) is done
-  PetscScalar first, last, gx_scale, gy_scale, lx_scale = 750e3, ly_scale = 750e3;
+  PetscScalar first, last;
+  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 5000.0;
   if (xExists) {
     ierr = getFirstLast(ncid, v_x, &first, &last);
-    gx_scale = last - first;
-    PetscGlobalMax(&gx_scale, &lx_scale, grid.com);
-  } else verbPrintf(1, grid.com, "WARNING: x not found in file. Proceeding with defaults\n");
+    x_scale = (last - first) / 2.0;
+    // verbPrintf(1,grid.com,"   for x: last,first,x_scale = %f,%f,%f\n",last,first,x_scale);
+  } else verbPrintf(2, grid.com, 
+         "WARNING: variable x(x) not found in file. Proceeding with default interval [-Lx,Lx] = [-%f,%f]\n",
+         x_scale,x_scale);
   if (yExists) {
     ierr = getFirstLast(ncid, v_y, &first, &last);
-    gy_scale = last - first;
-    PetscGlobalMax(&gy_scale, &ly_scale, grid.com);
-  } else verbPrintf(1, grid.com, "WARNING: y not found in file. Proceeding with defaults\n");
-  ierr = grid.rescale(lx_scale / 2, ly_scale / 2, 5000); CHKERRQ(ierr);
+    y_scale = (last - first) / 2.0;
+    // verbPrintf(1,grid.com,"   for y: last,first,y_scale = %f,%f,%f\n",last,first,y_scale);
+  } else verbPrintf(2, grid.com, 
+         "WARNING: variable y(y) not found in file. Proceeding with defaults [-Ly,Ly] = [-%f,%f]\n",
+         y_scale,y_scale);
+  verbPrintf(2, grid.com, 
+         "using default value Lz=%f for vertical extent of computational box for ice\n", z_scale);
+  ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
   if (lonExists) {
     ierr = ncVarToDAVec(ncid, v_lon, grid.da2, vLongitude, g2, vzero);
     CHKERRQ(ierr);
-  } else verbPrintf(3, grid.com, "Continuing without lon\n"); 
+  } else verbPrintf(3, grid.com, "continuing without lon\n"); 
   if (latExists) {
     ierr = ncVarToDAVec(ncid, v_lat, grid.da2, vLatitude, g2, vzero);
     CHKERRQ(ierr);
-  } else verbPrintf(3, grid.com, "Continuing without lat\n"); 
+  } else verbPrintf(3, grid.com, "continuing without lat\n"); 
   if (accumExists) {
     ierr = ncVarToDAVec(ncid, v_accum, grid.da2, vAccum, g2, vzero);
     CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "accum not found. Filling in with default value: %f\n", DEFAULT_ACCUM_VALUE_MISSING); 
+    verbPrintf(2, grid.com, "accum not found. Filling in with default value: %f\n", DEFAULT_ACCUM_VALUE_MISSING); 
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (hExists)  
-    verbPrintf(3, grid.com, "Ignoring values found for h and using h = b + H\n");
+    verbPrintf(2, grid.com, "WARNING: ignoring values found for surface elevation h and using h = b + H\n");
   if (HExists) {
     ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero);
     CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "H not found. Filling in with default value: %f\n", DEFAULT_H_VALUE_MISSING);
+    verbPrintf(2, grid.com, "WARNING: thickness H not found. Filling in with default value: %f\n",
+               DEFAULT_H_VALUE_MISSING);
     ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
   }
   if (bExists) {
     ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero);
     CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "b not found. Filling in with default value: %f\n", DEFAULT_BED_VALUE_MISSING); 
+    verbPrintf(2, grid.com, "WARNING: bedrock elevation b not found. Filling in with default value: %f\n",
+               DEFAULT_BED_VALUE_MISSING); 
     ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (TsExists) {
     ierr = ncVarToDAVec(ncid, v_Ts, grid.da2, vTs, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "Ts not found. Filling in with default value: %f\n",
-               T_surface_default);
-    ierr = VecSet(vTs, T_surface_default); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "WARNING: surface temperature Ts not found. Filling in with default value: %f\n",
+               DEFAULT_SURF_TEMP_VALUE_MISSING);
+    ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (ghfExists) {
     ierr = ncVarToDAVec(ncid, v_ghf, grid.da2, vGhf, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "ghf not found. Filling in with default value: %f\n", G_geothermal); 
-    ierr = VecSet(vGhf, G_geothermal); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "WARNING: geothermal flux ghf not found. Filling in with default value: %f\n",
+               DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); 
+    ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (upliftExists) {
     ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero); 
     CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "uplift not found. Filling in with default value: %d\n", 0); 
-    ierr = VecSet(vuplift, 0); CHKERRQ(ierr);
+    verbPrintf(3, grid.com, "uplift not found. Filling with zero\n"); 
+    ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
   }
-  verbPrintf(3, grid.com, "Figuring out gl\n");
+  verbPrintf(2, grid.com, "determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
+  verbPrintf(3, grid.com, 
+             "setting accumulation in ice shelf-free ocean to default value %f\n",
+             DEFAULT_ACCUMULATION_IN_OCEAN0 * secpera);
   ierr = maskAccum(); CHKERRQ(ierr);
-
   if (HmeltExists) {
     ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "Filling in Hmelt with default value: %f\n", 0.0);
+    verbPrintf(2, grid.com, "Hmelt not found. Filling with zero\n");
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }
   if (tExists) {
@@ -498,6 +507,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     nc_get_var1_float(ncid, v_t, &idx, &begin_t);
     setInitialAgeYears(begin_t);
   } else {
+    verbPrintf(2, grid.com, "time t not found. Using t=%f years\n",
+               DEFAULT_INITIAL_AGE_YEARS);
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
   }
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
@@ -795,8 +806,9 @@ PetscErrorCode IceModel::ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
   return 0;
 }
 
-PetscErrorCode IceModel::getFirstLast(int ncid, int vid, PetscScalar *first, PetscScalar *last) {
+PetscErrorCode IceModel::getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast) {
   int stat;
+  PetscScalar first, last;
   float       *f = NULL;
   int         *g = NULL;
 
@@ -807,7 +819,7 @@ PetscErrorCode IceModel::getFirstLast(int ncid, int vid, PetscScalar *first, Pet
     char name[NC_MAX_NAME+1];
     stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
     if (ndims != 1) {
-      SETERRQ2(1, "ncVarToDaVec: number of dimensions = %d for %s\n",
+      SETERRQ2(1, "getFirstLast: number of dimensions = %d for %s\n",
                ndims, name);
     }
 
@@ -831,19 +843,21 @@ PetscErrorCode IceModel::getFirstLast(int ncid, int vid, PetscScalar *first, Pet
     }
 
     if (g != NULL) {
-      *first = g[0];
-      *last = g[M-1];
+      first = g[0];
+      last = g[M-1];
     } else if (f != NULL) {
-      *first = f[0];
-      *last = f[M-1];
+      first = f[0];
+      last = f[M-1];
     } else {
       SETERRQ(1, "This should not happen.\n");
     }
   } else {
-    *first = 0;
-    *last = 0;
+    first = 1.0e30;
+    last = -1.0e30;
   }
-
+  
+  PetscGlobalMin(&first,gfirst,grid.com);  
+  PetscGlobalMax(&last,glast,grid.com);
   return 0;
 }
 
@@ -913,9 +927,11 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
     stat = nc_enddef (ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    float t = grid.p->year * secpera;
+    // float t = grid.p->year * secpera;
+    double t = grid.p-> year * secpera;
     size_t zero = 0;
-    stat = nc_put_var1_float(ncid, t_id, &zero, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // stat = nc_put_var1_float(ncid, t_id, &zero, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_put_var1_double(ncid, t_id, &zero, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     ierr = put_dimension_regular(ncid, x_id, x_len, -grid.p->Lx, grid.p->dx); CHKERRQ(ierr);
     ierr = put_dimension_regular(ncid, y_id, y_len, -grid.p->Ly, grid.p->dy); CHKERRQ(ierr);
@@ -952,6 +968,14 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, dbdt_id, NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // 2-D climate quantities
+  ierr = put_local_var(&grid, ncid, Ts_id, NC_FLOAT, grid.da2, vTs, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, ghf_id, NC_FLOAT, grid.da2, vGhf, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, accum_id, NC_FLOAT, grid.da2, vAccum, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+/*                       
   // 2-D constant quantities
   ierr = put_local_var(&grid, ncid, Ts_id, NC_FLOAT, grid.da2, vTs, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -959,6 +983,7 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, accum_id, NC_FLOAT, grid.da2, vAccum, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
+*/
   // 3-D model quantities
   ierr = put_local_var(&grid, ncid, T_id, NC_FLOAT, grid.da3, vT, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -984,6 +1009,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   PetscScalar runYears;
   size_t      dim[5];
   float       bdy[7];
+  double 	  bdy_time;
   int         ncid, stat;
   PetscInt    ignor;
   PetscTruth  M_Set;
@@ -992,9 +1018,10 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  ierr = get_dimensions(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  ierr = get_dimensions(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);
 
-  grid.p->year = bdy[0] / secpera;
+  // grid.p->year = bdy[0] / secpera;
+  grid.p->year = bdy_time / secpera;
   grid.p->Mx = dim[1];
   grid.p->My = dim[2];
   grid.p->Mz = dim[3];
@@ -1067,6 +1094,14 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "dbdt", NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // 2-D climate quantities
+  ierr = get_local_var(&grid, ncid, "Ts", NC_FLOAT, grid.da2, vTs, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = get_local_var(&grid, ncid, "ghf", NC_FLOAT, grid.da2, vGhf, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = get_local_var(&grid, ncid, "accum", NC_FLOAT, grid.da2, vAccum, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+/*
   // 2-D constant quantities
   ierr = get_local_var(&grid, ncid, "Ts", NC_FLOAT, grid.da2, vTs, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -1074,6 +1109,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "accum", NC_FLOAT, grid.da2, vAccum, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
+*/
   // 3-D model quantities
   ierr = get_local_var(&grid, ncid, "T", NC_FLOAT, grid.da3, vT, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);

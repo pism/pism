@@ -221,7 +221,7 @@ PetscErrorCode IceExactStreamModel::reportErrors() {
   PetscScalar **u, **v;
 
   ierr = verbPrintf(1,grid.com, 
-          "Actual ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
+          "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
 
 //  ierr = verbPrintf(2,grid.com, "  xs = %d, xs+xm = %d, ys = %d, ys+ym = %d, Mx * My = %d\n",
 //            grid.xs,grid.xs+grid.xm,grid.ys,grid.ys+grid.ym,grid.p->Mx*grid.p->My); CHKERRQ(ierr);

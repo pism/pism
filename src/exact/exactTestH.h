@@ -34,13 +34,13 @@ extern "C"
 !
 !    Ed Bueler, Craig S. Lingle, Jed A. Kallen-Brown, David N. Covey, and
 !       Latrice N. Bowman (2005) "Exact solutions and numerical verification
-!       for isothermal ice sheets," J. Glaciol. 51 (no. 173) 291--306.
+!       for isothermal ice sheets," J. Glaciol. 51 (no. 173), 291--306.
 ! 
 ! Test H includes pointwise isostasy and was used in generating results in
 !
-!    Ed Bueler, Craig S. Lingle, and Jed A. Kallen-Brown (2006?) "Fast 
-!       computation of a deformable Earth model for ice sheet simulations,"
-!       submitted to Ann. Glaciol. 46
+!    Ed Bueler, Craig S. Lingle, and Jed Brown (2006?) "Fast 
+!       computation of a deformable Earth model for ice-sheet simulations,"
+!       Ann. Glaciol. 46, 97--105
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */

@@ -72,14 +72,22 @@ private:
   PetscErrorCode initTestFG();
   PetscErrorCode updateTestFG();
 
-  PetscErrorCode computeGeometryErrors(
+  PetscErrorCode computeGeometryErrors(         // alltests
         PetscScalar &gvolexact, PetscScalar &gareaexact, PetscScalar &gdomeHexact,
         PetscScalar &volerr, PetscScalar &areaerr,
         PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
-        PetscScalar &domeHerr);
-  PetscErrorCode computeBasalTemperatureErrors(
-        PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &domeTerr);
-  PetscErrorCode computeBasalVelocityErrors(PetscScalar &exactmaxspeed,
+        PetscScalar &centerHerr);
+  PetscErrorCode computeTemperatureErrors(      // tests F and G
+        PetscScalar &gmaxTerr, PetscScalar &gavTerr);
+  PetscErrorCode computeBasalTemperatureErrors( // tests F and G
+        PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &centerTerr);
+  PetscErrorCode computeSigmaErrors(            // tests F and G
+        PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr);
+  PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
+        PetscScalar &gmaxUerr, PetscScalar &gavUerr,  // 2D vector errors
+        PetscScalar &gmaxWerr, PetscScalar &gavWerr); // scalar errors
+  PetscErrorCode computeBasalVelocityErrors(    // test E
+        PetscScalar &exactmaxspeed,
         PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
 

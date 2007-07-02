@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
     IceModel m(g, *ice);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
-    ierr = m.setSoundingFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);
     ierr = m.run(); CHKERRQ(ierr);

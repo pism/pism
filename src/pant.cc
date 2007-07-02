@@ -950,7 +950,6 @@ int main(int argc, char *argv[]) {
     IceDragYieldModel m(g, *ice);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
-    ierr = m.setSoundingFromOptions(); CHKERRQ(ierr);
 
     // special procedures for derived class IceDragYieldModel:
     ierr = m.dragYieldInitFromOptions(); CHKERRQ(ierr);    

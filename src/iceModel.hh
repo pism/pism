@@ -147,12 +147,14 @@ protected:
    static const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT;
    static const PetscScalar DEFAULT_ADAPT_TIMESTEP_RATIO;
 
-  //used in iMIO.cc
+  //used in iMIO.cc and iMIOnetcdf.cc
    static const PetscScalar DEFAULT_h_VALUE_MISSING;
    static const PetscScalar DEFAULT_H_VALUE_MISSING;
    static const PetscScalar DEFAULT_BED_VALUE_MISSING;
    static const PetscScalar DEFAULT_ACCUM_VALUE_MISSING;
    static const PetscScalar DEFAULT_SURF_TEMP_VALUE_MISSING;
+   static const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING;
+   static const PetscScalar DEFAULT_ACCUMULATION_IN_OCEAN0;
 
   //used in iMvelocity.cc
    static const PetscScalar DEFAULT_MINH_MACAYEAL;  // m; minimum thickness for MacAyeal velocity computation
@@ -282,6 +284,8 @@ protected:
                             PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                             PetscScalar& gvolshelf);
   PetscErrorCode summary(bool,bool);
+  PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);
+  PetscErrorCode getSurfaceValuesOf3D(Vec v3D, Vec &g2D);
   PetscErrorCode checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *normy,
                                    PetscInt stagger);
 
@@ -302,7 +306,8 @@ protected:
   // see iMviewers.cc
   int isViewer(char name);
   PetscErrorCode initSounding();
-  PetscErrorCode updateViewers();
+  PetscErrorCode updateSoundings();
+  PetscErrorCode updateViewers();  // it calls updateSoundings()
   PetscErrorCode createOneViewerIfDesired(PetscViewer *viewer, 
                                           char name, const char* title);
   PetscErrorCode createViewers();
@@ -405,7 +410,7 @@ protected:
   PetscErrorCode ncVarBcastVec(int ncid, int vid, Vec *vecg);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
-  PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *first, PetscScalar *last);
+  PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
   PetscErrorCode maskAccum();
 

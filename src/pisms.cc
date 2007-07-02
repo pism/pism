@@ -94,8 +94,6 @@ int main(int argc, char *argv[]) {
       SETERRQ(1,"PISMS called with invalid, contradictory, or no experiment chosen");
     }
 
-    ierr = m->setSoundingFromOptions(); CHKERRQ(ierr);
-
     ierr = m->run(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "done with run ... "); CHKERRQ(ierr);

@@ -56,7 +56,7 @@
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Manual version based on PISM revision 123 and PETSC release 2.3.3-p2.  Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision 129 and PETSC release 2.3.3-p2.  \\\tiny Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
@@ -74,7 +74,7 @@
 \phantom{bob}
 \vspace{2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2007 Jed Brown and Ed Bueler}
+\textsl{Copyright (C) 2004--2007 Jed Brown and Ed Bueler and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -182,7 +182,17 @@ At this point you have configured the environment which PISM needs.  You are rea
 
 \noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will get the latest revision of PISM.
 
-\item Compile the source.  That is, enter directory \verb|pism/| and type ``\verb|make|''.  (Please report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)  Several executables, including \verb|pismv|, \verb|pisms|, and \verb|pismr|, should appear in the \verb|pism/bin/| subdirectory.  If these appear one can ``\verb|make clean|'' to clean up the files saved during the build process; specifically \verb|make clean| removes the \t{.d} and \t{.o} files.
+\item Build PISM:
+
+\verb|cd pism|
+
+\verb|make|
+
+\verb|make install|
+
+\noindent  Note that the ``\verb|install|'' is local to the \verb|pism| directory and does not require root permission.  Several executables, including \verb|pismv|, \verb|pisms|, and \verb|pismr|, should appear in the \verb|pism/bin/| subdirectory.
+
+(Please report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)  
 
 \item PISM executables can be run most easily by adding the directories \verb|pism/bin/| and \verb|pism/test/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:
 
