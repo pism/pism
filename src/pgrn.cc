@@ -59,6 +59,12 @@ int main(int argc, char *argv[]){
     ierr = mGRN.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);
 
+    // FIXME: snow_accum is copied over to accum so that it doesn't
+    // mess up when we read in accum again. This misrepresents the
+    // data for the netCDF file and needs to be fixed using the
+    // PISM intent attributes
+    ierr = mGRN.copySnowAccum(); CHKERRQ(ierr);
+
     ierr = mGRN.writeFiles("grn_exper"); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, com, " ... done.\n"); CHKERRQ(ierr);

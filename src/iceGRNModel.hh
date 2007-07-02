@@ -37,6 +37,7 @@ public:
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
   int getTestNum();
+  PetscErrorCode copySnowAccum();
 protected:
   Vec vSnowAccum; // this vector will hold the amount of snow that falls,
                   // as apposed to vAccum which holds the net accumulation

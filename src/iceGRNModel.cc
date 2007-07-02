@@ -45,6 +45,12 @@ int IceGRNModel::getTestNum() {
   return testnum;
 }
 
+PetscErrorCode IceGRNModel::copySnowAccum() {
+  PetscErrorCode ierr;
+  ierr = VecCopy(vSnowAccum, vAccum); CHKERRQ(ierr);
+  return 0;
+}
+
 IceGRNModel::IceGRNModel(IceGrid &g, IceType &i) : IceModel(g, i) {
   // only call parent's constructor
 }
@@ -433,10 +439,18 @@ PetscErrorCode IceGRNModel::calculateNetAccum() {
       }
       if (snow_melt <= snow_year) {
         accum[i][j] = ((snow_year-snow_melt) + (snow_melt * REFREEZE_FACTOR))/secpera;
+        /*if (accum[i][j] < -1e-5 ) {
+          verbPrintf(2, grid.com, "Here 1. accum[%d][%d]: %f\n", i, j, accum[i][j]);
+          verbPrintf(2, grid.com, "snow_year: %f, snow_melt: %f\n", snow_year, snow_melt);
+        }*/
       } else {
         accum[i][j] = (snow_accum[i][j] * REFREEZE_FACTOR);
         ice_melt = (snow_melt-snow_year)/POS_DEGREE_DAY_FACTOR_SNOW*POS_DEGREE_DAY_FACTOR_ICE;
         accum[i][j] -= ice_melt/secpera;
+        /*if (accum[i][j] < -1e-5 ) {
+          verbPrintf(2, grid.com, "Here 2. accum[%d][%d]: %f\n", i, j, accum[i][j]);
+          verbPrintf(2, grid.com, "snow_year: %f, snow_melt: %f, ice_melt: %f\n", snow_year, snow_melt, ice_melt);
+        }*/
       }
     }
   }

@@ -25,14 +25,24 @@
 PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer, 
                                    char name, const char* title) {
   PetscErrorCode ierr;
-  
+  int x_dim, y_dim;
+  int larger = grid.p->Mx, smaller = grid.p->My;
+  if (grid.p->My > grid.p->Mx) {
+    larger = grid.p->My;
+    smaller = grid.p->Mx;
+  }
   if (strchr(diagnosticBIG, name) != NULL) {
-    const int bigsize = 600;
+    const int bigsize = 720;
+    x_dim = bigsize*1;
+    y_dim = (PetscInt)(bigsize*(smaller/(PetscScalar)larger));
     ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
-             PETSC_DECIDE, PETSC_DECIDE, bigsize, bigsize, viewer);  CHKERRQ(ierr);
+             PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);
   } else if (strchr(diagnostic, name) != NULL) {
+    const int size = 480;
+    x_dim = (int)(size*(1+smaller/(PetscScalar)larger)/2.);
+    y_dim = (int)(x_dim*(smaller/(PetscScalar)larger));
     ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
-             PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, viewer);  CHKERRQ(ierr);
+             PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);
   } else {
     *viewer = PETSC_NULL;
   }
