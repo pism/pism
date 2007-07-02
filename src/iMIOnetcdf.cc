@@ -643,6 +643,51 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   return 0;
 }
 
+// change to use MPIBcast
+PetscErrorCode IceModel::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
+  PetscErrorCode ierr;
+  int stat;
+  size_t M;
+  float *f = NULL;
+
+  if (grid.rank == 0) {
+    int dimids[NC_MAX_VAR_DIMS];
+    int ndims, natts;
+    nc_type xtype;
+    char name[NC_MAX_NAME+1];
+    stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
+    if (ndims != 1) {
+      SETERRQ2(1, "ncVarBcastDaVec: number of dimensions = %d for %s\n",
+               ndims, name);
+    }
+    stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
+    f = new float[M];
+    stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
+  }
+
+  // broadcast the length
+  ierr = MPI_Bcast(&M, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+ 
+  // if you're not rank 0, you still need to create the array
+  if (grid.rank != 0){
+    f = new float[M];
+  }
+  ierr = MPI_Bcast(f, M, MPI_FLOAT, 0, grid.com); CHKERRQ(ierr);
+
+  VecCreateSeq(grid.com, M, vecg);
+
+  for (int x=0; x<(int)M; x++) {
+    ierr = VecSetValue(*vecg, x, f[x], INSERT_VALUES); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "here: f[%d]=%f\n", x, f[x]);
+  }
+  
+  ierr = VecAssemblyBegin(*vecg); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(*vecg); CHKERRQ(ierr)
+
+  delete [] f;
+
+  return 0;
+}
 
 PetscErrorCode IceModel::ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                                       Vec vecg, Vec vindzero) {
@@ -677,7 +722,7 @@ PetscErrorCode IceModel::ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
         break;
       case NC_FLOAT:
         f = new float[M*N];
-	stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
+        stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
         break;
       default:
         SETERRQ1(1, "NC_VAR `%s' not of type NC_INT or NC_FLOAT.\n", name);

@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
     IceGrid g(com, rank, size);
     IceType *ice;
     PetscInt flowlawNumber = 0;
-  
+ 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1, com, "PGRN (EISMINT Greenland mode)\n"); CHKERRQ(ierr);
 

@@ -1,12 +1,9 @@
 #! /usr/bin/env python
 
-import os
+#import Numeric
 import sys
-import numpy
-import Scientific.IO.NetCDF
-import Numeric
-from Scientific.IO.NetCDF import NetCDFFile
-from Numeric import zeros
+from numpy import *
+from pycdf import *
 
 SECPERA = 3.1556926e7
 GRID_FILE = 'grid20-EISMINT'
@@ -31,8 +28,8 @@ for num in input.readline().split():
         dim.append(num)
 input.readline() # get rid of the titles
 
-lat = zeros((int(dim[0]), int(dim[1])), Numeric.Float32)
-lon = zeros((int(dim[0]), int(dim[1])), Numeric.Float32)
+lat = zeros((int(dim[0]), int(dim[1])), float32)
+lon = zeros((int(dim[0]), int(dim[1])), float32)
 
 latcount=0;
 loncount=0
@@ -60,10 +57,10 @@ for num in input.readline().split():
 	dim.append(num)
 input.readline() # get rid of the titles
 
-S = zeros((int(dim[0]), int(dim[1])), Numeric.Float32)
-H = zeros((int(dim[0]), int(dim[1])), Numeric.Float32)
-B = zeros((int(dim[0]), int(dim[1])), Numeric.Float32)
-acc = zeros((int(dim[0]), int(dim[1])), Numeric.Float32)
+S = zeros((int(dim[0]), int(dim[1])), float32)
+H = zeros((int(dim[0]), int(dim[1])), float32)
+B = zeros((int(dim[0]), int(dim[1])), float32)
+acc = zeros((int(dim[0]), int(dim[1])), float32)
 
 Scount=0;
 Hcount=0
@@ -92,23 +89,24 @@ input.close()
 print "Total Values Read: "+str(x)
 
 # ready to write NetCDF file
-ncfile = NetCDFFile(WRIT_FILE, 'w')
+ncfile = CDF(WRIT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
+ncfile.automode()
 
 # define the dimensions
-ncfile.createDimension('x', int(dim[0]))
-ncfile.createDimension('y', int(dim[1]))
-ncfile.createDimension('t', None)
+xdim = ncfile.def_dim('x', int(dim[0]))
+ydim = ncfile.def_dim('y', int(dim[1]))
+tdim = ncfile.def_dim('t', NC.UNLIMITED)
 
 # define the variables
-xvar = ncfile.createVariable('x', 'f', ('x',))
-yvar = ncfile.createVariable('y', 'f', ('y',))
-tvar = ncfile.createVariable('t', 'f', ('t',))
-lonvar = ncfile.createVariable('lon', 'f', ('x', 'y'))
-latvar = ncfile.createVariable('lat', 'f', ('x', 'y'))
-hvar = ncfile.createVariable('h', 'f', ('x','y'))
-Hvar = ncfile.createVariable('H', 'f', ('x','y'))
-Bvar = ncfile.createVariable('b', 'f', ('x','y')) 
-Accvar = ncfile.createVariable('accum', 'f', ('x','y'))
+xvar = ncfile.def_var('x', NC.FLOAT, (xdim,))
+yvar = ncfile.def_var('y', NC.FLOAT, (ydim,))
+tvar = ncfile.def_var('t', NC.FLOAT, (tdim,))
+lonvar = ncfile.def_var('lon', NC.FLOAT, (xdim, ydim))
+latvar = ncfile.def_var('lat', NC.FLOAT, (xdim, ydim))
+hvar = ncfile.def_var('h', NC.FLOAT, (xdim, ydim))
+Hvar = ncfile.def_var('H', NC.FLOAT, (xdim, ydim))
+Bvar = ncfile.def_var('b', NC.FLOAT, (xdim, ydim)) 
+Accvar = ncfile.def_var('accum', NC.FLOAT, (xdim, ydim))
 
 # set the attributes of the variables
 setattr(xvar, 'axis', 'X')

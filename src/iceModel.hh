@@ -402,6 +402,7 @@ protected:
   PetscErrorCode putTempAtDepth();
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode cleanInputData_legacy();
+  PetscErrorCode ncVarBcastVec(int ncid, int vid, Vec *vecg);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *first, PetscScalar *last);

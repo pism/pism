@@ -32,7 +32,6 @@ const int IceModel::MASK_FLOATING = 3;
 // (modMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill 
 const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 
-
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum) {
     PetscErrorCode ierr;
     PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
@@ -108,7 +107,6 @@ IceModel::~IceModel() {
     delete basal;
   }
 }
-
 
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;

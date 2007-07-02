@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
+#include <netcdf.hh>
+#include "nc_util.hh"
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
@@ -28,6 +30,16 @@ const PetscScalar POS_DEGREE_DAY_FACTOR_ICE = .008;  // m d^-1 C^-1
 const PetscScalar REFREEZE_FACTOR = .6;
 const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a
 const PetscScalar   G_geothermal   = 0.050;      // J/m^2 s; geo. heat flux
+const int CONST_PIECE_FWD_INTERP = 0;
+const int CONST_PIECE_BCK_INTERP = 1;
+const int LINEAR_INTERP = 2;
+
+PetscErrorCode nc_check(int stat) {
+  if (stat) {
+    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
+  }
+  return 0;
+}
 
 int IceGRNModel::getTestNum() {
   return testnum;
@@ -35,6 +47,25 @@ int IceGRNModel::getTestNum() {
 
 IceGRNModel::IceGRNModel(IceGrid &g, IceType &i) : IceModel(g, i) {
   // only call parent's constructor
+}
+
+PetscErrorCode IceGRNModel::getInterpolationCode(int ncid, int vid, int *code) {
+  int stat;
+  char attr[NC_MAX_NAME];
+
+  stat = nc_get_att(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
+  if (strcmp(attr, "constant_piecewise_forward") == 0) {
+    *code = CONST_PIECE_FWD_INTERP;
+  } else if (strcmp(attr, "constant_piecewise_backward") == 0) {
+    *code = CONST_PIECE_BCK_INTERP;
+  } else if (strcmp(attr, "linear") == 0) {
+    *code = LINEAR_INTERP;
+  } else {
+    verbPrintf(1, grid.com, "Interpolation is unknown, defaulting to linear.\n");
+    *code = LINEAR_INTERP;
+  }
+
+  return 0;
 }
 
 PetscErrorCode IceGRNModel::setFromOptions() {
@@ -68,6 +99,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
 PetscErrorCode IceGRNModel::initFromOptions() {
   PetscErrorCode ierr;
+  int stat;
 
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
 
@@ -111,10 +143,59 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     SETERRQ(1, "Error: need input file.\n");
   }
 
+  // If the user is using the ice core data, it is necessary
+  // to set the current year to be in the past so that we can
+  // use the ice core data to model the ice sheet until the
+  // present
+  if (usrYearSet) {
+    grid.p->year = usr_year;
+  }
+
   if (forceSet == PETSC_TRUE) {
+    int ncid, v_dT, v_dSea, v_time;
+    PetscScalar *years;
+
     iceCoreIdx = 0;
     // read in core data from file
-    
+    if (grid.rank == 0) {
+      stat = nc_open(coreFile, 0, &ncid); CHKERRQ(nc_check(stat));
+      stat = nc_inq_varid(ncid, "delta_T", &v_dT); CHKERRQ(nc_check(stat));
+      stat = nc_inq_varid(ncid, "delta_Sea", &v_dSea); CHKERRQ(nc_check(stat));
+      stat = nc_inq_varid(ncid, "t", &v_time); CHKERRQ(nc_check(stat));
+      ierr = getInterpolationCode(ncid, v_dT, &gripDeltaTInterp); CHKERRQ(ierr);
+      ierr = getInterpolationCode(ncid, v_dSea, &gripDeltaSeaInterp); CHKERRQ(ierr);
+    }
+    MPI_Bcast(&gripDeltaTInterp, 1, MPI_INT, 0, grid.com);
+    MPI_Bcast(&gripDeltaSeaInterp, 1, MPI_INT, 0, grid.com);
+    verbPrintf(2, grid.com, "Starting read....\n");
+    ierr = ncVarBcastVec(ncid, v_dT, &vIceCoreDeltaT); CHKERRQ(ierr);
+    ierr = ncVarBcastVec(ncid, v_dSea, &vIceCoreDeltaSea); CHKERRQ(ierr);
+    ierr = ncVarBcastVec(ncid, v_time, &vIceCoreTime); CHKERRQ(ierr);
+
+    verbPrintf(2, grid.com, "Finishing read....\n");
+   
+    ierr = VecGetArray(vIceCoreTime, &years); CHKERRQ(ierr);
+    int r, l=0;
+    ierr = VecGetLocalSize(vIceCoreTime, &iceCoreLen); CHKERRQ(ierr);
+    r = iceCoreLen;
+    // do a binary search to find where our year fits in.
+    while (r > l + 1) {
+      PetscInt j = (r + l)/2;
+      if(grid.p->year < years[j]) {
+        r = j;
+      } else {
+        l = j;
+      }
+    }    
+    iceCoreIdx = l;
+    // maybe we are already past our place.
+    if (l >= iceCoreLen) {
+      climateForcing = PETSC_FALSE;
+      verbPrintf(1, grid.com, "No more climate forcing data. Turning off Force.\n");
+    } else {
+      climateForcing = PETSC_TRUE;
+    }
+
   } else if (testnum == 2) {
     SETERRQ(1, "Error: need ice core data for this test.\n");
   }
@@ -123,18 +204,34 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   rand_gen = gsl_rng_alloc(gsl_rng_taus);
   gsl_rng_set(rand_gen, usrSeedSet ? usr_seed : (int)grid.p->year);
   ierr = initNetAccum(); CHKERRQ(ierr);
-
-  // If the user is using the ice core data, it is necessary
-  // to set the current year to be in the past so that we can
-  // use the ice core data to model the ice sheet until the
-  // present
-  if (usrYearSet) {
-    grid.p->year = usr_year;
-  }
                         
   if (!isInitialized()) {
     SETERRQ(1, "Model has not been initialized.\n");
   }       
+
+  return 0;
+}
+
+PetscErrorCode IceGRNModel::createVecs() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
+  verbPrintf(2, grid.com, "Begin Create\n");
+
+  return 0;
+}
+
+PetscErrorCode IceGRNModel::destroyVecs() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
+
+  verbPrintf(2, grid.com, "Begin Destroy\n");
+
+  ierr = VecDestroy(vIceCoreDeltaT); CHKERRQ(ierr);
+  ierr = VecDestroy(vIceCoreDeltaSea); CHKERRQ(ierr);
+  ierr = VecDestroy(vIceCoreTime); CHKERRQ(ierr);
 
   return 0;
 }
@@ -156,15 +253,78 @@ PetscErrorCode IceGRNModel::initNetAccum() {
 PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     PetscErrorCode ierr;
     PetscTruth integralYear = PETSC_FALSE;
- 
+    PetscScalar *time, *deltaSea, *deltaT;
+    PetscScalar **Ts, **h, **bed;
+    PetscScalar TsChange, seaChange;
+
     // at the beginning of each time step
     // we need to redo the model of the surface
     // temperatures.
     ierr = fillTs(); CHKERRQ(ierr);
-    if (testnum==2) {
-      ///////////////
-      // Add in change in temperature dictated by the d18O values
-      //////////////
+    if (testnum==2 && climateForcing == PETSC_TRUE) {
+      // apply the climate forcing
+
+      ierr = VecGetArray(vIceCoreTime, &time); CHKERRQ(ierr);
+      ierr = VecGetArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
+      ierr = VecGetArray(vIceCoreDeltaT, &deltaT); CHKERRQ(ierr);
+      ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+      ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+      ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
+      // if there was a large time step, it is possible
+      // that we skip over multiple entries
+      while (iceCoreIdx < iceCoreLen && grid.p->year >= time[iceCoreIdx]) {
+         iceCoreIdx++;
+      }
+      if (iceCoreIdx >= iceCoreLen) {
+        verbPrintf(1, grid.com, "No more climate forcing data. Turning off Force.\n");
+        climateForcing = PETSC_FALSE;
+      } else {
+
+        switch (gripDeltaSeaInterp) {
+          case CONST_PIECE_FWD_INTERP:
+
+            break;
+          case CONST_PIECE_BCK_INTERP:
+    
+            break;
+          case LINEAR_INTERP:
+
+            break;
+          default:
+            SETERRQ(1, "Unknown Interpolation method");
+        }
+
+        switch (gripDeltaTInterp) {
+          case CONST_PIECE_FWD_INTERP:
+
+            break;
+          case CONST_PIECE_BCK_INTERP:
+    
+            break;
+          case LINEAR_INTERP:
+
+            break;
+          default:
+            SETERRQ(1, "Unknown Interpolation method");
+        }
+        
+        for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+          for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+
+            Ts[i][j] += TsChange;
+            h[i][j] -= seaChange;
+            bed[i][j] -= seaChange;
+
+        }
+      }
+      }
+      ierr = VecRestoreArray(vIceCoreTime, &time); CHKERRQ(ierr);
+      ierr = VecRestoreArray(vIceCoreDeltaT, &deltaT); CHKERRQ(ierr);
+      ierr = VecRestoreArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
       
     }
     if ((fmod(grid.p->year, 1.0) + 5e-6) < 1e-5 ) {
@@ -263,7 +423,7 @@ PetscErrorCode IceGRNModel::calculateNetAccum() {
   
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (snow_accum[i][j] == - DEFAULT_ABLATION_IN_OCEAN0 / secpera) {
+      if (snow_accum[i][j]*secpera == (float)- DEFAULT_ABLATION_IN_OCEAN0) {
         continue;
       }
       pos_sum = 0;
@@ -285,7 +445,7 @@ PetscErrorCode IceGRNModel::calculateNetAccum() {
       } else {
         accum[i][j] = (snow_accum[i][j] * REFREEZE_FACTOR);
         ice_melt = (snow_melt-snow_year)/POS_DEGREE_DAY_FACTOR_SNOW*POS_DEGREE_DAY_FACTOR_ICE;
-        accum[i][j] -= ice_melt;
+        accum[i][j] -= ice_melt/secpera;
       }
     }
   }
@@ -295,6 +455,9 @@ PetscErrorCode IceGRNModel::calculateNetAccum() {
   ierr = DAVecRestoreArray(grid.da2, vTs, &surface_t); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vSnowAccum, &snow_accum); CHKERRQ(ierr);
+
+  //ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
+  //ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
 
   return 0;
 }

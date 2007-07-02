@@ -34,19 +34,27 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode additionalAtStartTimestep();
+  virtual PetscErrorCode createVecs();
+  virtual PetscErrorCode destroyVecs();
   int getTestNum();
 protected:
   Vec vSnowAccum; // this vector will hold the amount of snow that falls,
                   // as apposed to vAccum which holds the net accumulation
-  Vec vIceCoreData;
+  Vec vIceCoreDeltaT;
+  Vec vIceCoreDeltaSea;
   Vec vIceCoreTime;
   int iceCoreIdx;
+  int iceCoreLen;
+  PetscTruth climateForcing;
+  int gripDeltaSeaInterp;
+  int gripDeltaTInterp;
   gsl_rng *rand_gen;
   int testnum;
 
 private:
   PetscTruth inFileSet;
-  
+ 
+  PetscErrorCode getInterpolationCode(int ncid, int vid, int *code); 
   PetscErrorCode initNetAccum();  // creates vSnowAccum and copies vAccum into it
   PetscErrorCode fillTs();
   PetscErrorCode calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val);
