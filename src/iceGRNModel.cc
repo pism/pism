@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <netcdf.hh>
+#include <netcdf.h>
 #include "nc_util.hh"
 #include "grid.hh"
 #include "materials.hh"
