@@ -61,7 +61,7 @@ setattr(dTvar, 'interpolation', 'constant_piecewise_forward')
 
 setattr(dSeavar, 'units', 'm')
 setattr(dSeavar, 'long_name', 'change in sea level from the previous time step')
-setattr(dSeacar, 'interpolation', 'constant_piecewise_forward')
+setattr(dSeavar, 'interpolation', 'constant_piecewise_forward')
 
 # write data
 tvar[:] = y_bp

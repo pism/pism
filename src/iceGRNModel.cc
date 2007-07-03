@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <netcdf.h>
+#include <netcdf.hh>
 #include "nc_util.hh"
 #include "grid.hh"
 #include "materials.hh"
@@ -164,12 +164,9 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     MPI_Bcast(&gripDeltaTInterp, 1, MPI_INT, 0, grid.com);
     MPI_Bcast(&gripDeltaSeaInterp, 1, MPI_INT, 0, grid.com);
-    verbPrintf(2, grid.com, "Starting read....\n");
     ierr = ncVarBcastVec(ncid, v_dT, &vIceCoreDeltaT); CHKERRQ(ierr);
     ierr = ncVarBcastVec(ncid, v_dSea, &vIceCoreDeltaSea); CHKERRQ(ierr);
     ierr = ncVarBcastVec(ncid, v_time, &vIceCoreTime); CHKERRQ(ierr);
-
-    verbPrintf(2, grid.com, "Finishing read....\n");
    
     ierr = VecGetArray(vIceCoreTime, &years); CHKERRQ(ierr);
     int r, l=0;
@@ -198,8 +195,12 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   }
 
   // initialize the random number generator
+  #if (WITH_GSL)
   rand_gen = gsl_rng_alloc(gsl_rng_taus);
   gsl_rng_set(rand_gen, usrSeedSet ? usr_seed : (int)grid.p->year);
+  #else
+  verbPrintf(1, grid.com, "WARNING: No randomness in weather because GSL is not included.\n");
+  #endif
   ierr = initNetAccum(); CHKERRQ(ierr);
                         
   if (!isInitialized()) {
@@ -214,8 +215,6 @@ PetscErrorCode IceGRNModel::createVecs() {
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
-  verbPrintf(2, grid.com, "Begin Create\n");
-
   return 0;
 }
 
@@ -223,8 +222,6 @@ PetscErrorCode IceGRNModel::destroyVecs() {
   PetscErrorCode ierr;
 
   ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
-
-  verbPrintf(2, grid.com, "Begin Destroy\n");
 
   ierr = VecDestroy(vIceCoreDeltaT); CHKERRQ(ierr);
   ierr = VecDestroy(vIceCoreDeltaSea); CHKERRQ(ierr);
@@ -250,78 +247,67 @@ PetscErrorCode IceGRNModel::initNetAccum() {
 PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     PetscErrorCode ierr;
     PetscTruth integralYear = PETSC_FALSE;
-    PetscScalar *time, *deltaSea, *deltaT;
-    PetscScalar **Ts, **h, **bed;
-    PetscScalar TsChange, seaChange;
+    PetscScalar *deltaT, *iceCoreTime;
+    PetscScalar **Ts;
+    PetscScalar TsChange;
 
     // at the beginning of each time step
     // we need to redo the model of the surface
     // temperatures.
     ierr = fillTs(); CHKERRQ(ierr);
     if (testnum==2 && climateForcing == PETSC_TRUE) {
-      // apply the climate forcing
 
-      ierr = VecGetArray(vIceCoreTime, &time); CHKERRQ(ierr);
-      ierr = VecGetArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
+      // apply the climate forcing
       ierr = VecGetArray(vIceCoreDeltaT, &deltaT); CHKERRQ(ierr);
+      ierr = VecGetArray(vIceCoreTime, &iceCoreTime); CHKERRQ(ierr);
       ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-      ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-      ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
 
       // if there was a large time step, it is possible
       // that we skip over multiple entries
-      while (iceCoreIdx < iceCoreLen && grid.p->year >= time[iceCoreIdx]) {
+      while (iceCoreIdx < iceCoreLen && grid.p->year > iceCoreTime[iceCoreIdx]) {
          iceCoreIdx++;
       }
       if (iceCoreIdx >= iceCoreLen) {
-        verbPrintf(1, grid.com, "No more climate forcing data. Turning off Force.\n");
+        verbPrintf(1, grid.com, "No more climate data. Turning off Climate Forcing.\n");
         climateForcing = PETSC_FALSE;
       } else {
 
-        switch (gripDeltaSeaInterp) {
-          case CONST_PIECE_FWD_INTERP:
-
-            break;
-          case CONST_PIECE_BCK_INTERP:
-    
-            break;
-          case LINEAR_INTERP:
-
-            break;
-          default:
-            SETERRQ(1, "Unknown Interpolation method");
+        // if we have exact data, use it
+        if (grid.p->year == iceCoreTime[iceCoreIdx]) {
+          TsChange = deltaT[iceCoreIdx];
+        } else { // otherwise, we need to interpolate.
+          PetscScalar y0, y1;
+          switch (gripDeltaSeaInterp) {
+            case CONST_PIECE_BCK_INTERP:
+              // use the data point we are infront of
+              TsChange = deltaT[iceCoreIdx-1];
+              break;
+            case CONST_PIECE_FWD_INTERP:
+              TsChange = deltaT[iceCoreIdx];
+              break;
+            case LINEAR_INTERP:
+              y0 = deltaT[iceCoreIdx-1];
+              y1 = deltaT[iceCoreIdx];
+              TsChange = y0+(y1-y0)/(iceCoreTime[iceCoreIdx]-iceCoreTime[iceCoreIdx-1])*(grid.p->year/secpera-iceCoreTime[iceCoreIdx-1]);
+              break;
+            default:
+              SETERRQ(1, "Unknown Interpolation method");
+          }
         }
 
-        switch (gripDeltaTInterp) {
-          case CONST_PIECE_FWD_INTERP:
-
-            break;
-          case CONST_PIECE_BCK_INTERP:
-    
-            break;
-          case LINEAR_INTERP:
-
-            break;
-          default:
-            SETERRQ(1, "Unknown Interpolation method");
-        }
-        
+        verbPrintf(2, grid.com, "For year: %f, TsChange: %f\n", grid.p->year, TsChange);       
+ 
         for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
           for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-
             Ts[i][j] += TsChange;
-            h[i][j] -= seaChange;
-            bed[i][j] -= seaChange;
-
+          }
         }
       }
-      }
-      ierr = VecRestoreArray(vIceCoreTime, &time); CHKERRQ(ierr);
       ierr = VecRestoreArray(vIceCoreDeltaT, &deltaT); CHKERRQ(ierr);
-      ierr = VecRestoreArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
+      ierr = VecRestoreArray(vIceCoreTime, &iceCoreTime); CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
+      ierr = DALocalToLocalEnd(grid.da2, vTs, INSERT_VALUES, vTs); CHKERRQ(ierr);
       
     }
     if ((fmod(grid.p->year, 1.0) + 5e-6) < 1e-5 ) {
@@ -334,9 +320,103 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       calculateNetAccum();
     }
 
-    maxdt_temporary = (1.0 - fmod(grid.p->year, 1.0)) * secpera;
+    maxdt_temporary = (1.0 - fabs(fmod(grid.p->year, 1.0))) * secpera;
     
     return 0;
+}
+
+PetscErrorCode IceGRNModel::additionalAtEndTimestep() {
+    PetscErrorCode ierr;
+    PetscScalar *deltaSea, *iceCoreTime;
+    PetscScalar **bed;
+    PetscScalar seaChange, sea0, sea1;
+    int secondIdx;
+
+    if (testnum==2 && climateForcing == PETSC_TRUE) {
+
+      // apply the climate forcing
+      ierr = VecGetArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
+      ierr = VecGetArray(vIceCoreTime, &iceCoreTime); CHKERRQ(ierr);
+      ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
+      // if there was a large time step, it is possible
+      // that we skip over multiple entries
+      while (iceCoreIdx < iceCoreLen && grid.p->year > iceCoreTime[iceCoreIdx]) {
+         iceCoreIdx++;
+      }
+      secondIdx = iceCoreIdx; // it will at least be this far
+      while (secondIdx < iceCoreLen && grid.p->year+dt > iceCoreTime[secondIdx]) {
+         secondIdx++;
+      }
+
+      if (iceCoreIdx >= iceCoreLen || secondIdx >= iceCoreLen) {
+        verbPrintf(1, grid.com, "No more climate data. Turning off Climate Forcing.\n");
+        climateForcing = PETSC_FALSE;
+      } else {
+
+        // if we have exact data, use it
+        if (grid.p->year == iceCoreTime[iceCoreIdx]) {
+          sea0 = deltaSea[iceCoreIdx];
+        } else { // otherwise, we need to interpolate.
+          PetscScalar y0, y1;
+          switch (gripDeltaSeaInterp) {
+            case CONST_PIECE_BCK_INTERP:
+              // use the data point we are infront of
+              sea0 = deltaSea[iceCoreIdx-1];
+              break;
+            case CONST_PIECE_FWD_INTERP:
+              sea0 = deltaSea[iceCoreIdx];
+              break;
+            case LINEAR_INTERP:
+              y0 = deltaSea[iceCoreIdx-1];
+              y1 = deltaSea[iceCoreIdx];
+              sea0 = y0+(y1-y0)/(iceCoreTime[iceCoreIdx]-iceCoreTime[iceCoreIdx-1])*(grid.p->year/secpera-iceCoreTime[iceCoreIdx-1]);
+              break;
+            default:
+              SETERRQ(1, "Unknown Interpolation method");
+          }
+        }
+        // if we have exact data, use it
+        if (grid.p->year+dt == iceCoreTime[secondIdx]) {
+          sea1 = deltaSea[secondIdx];
+        } else { // otherwise, we need to interpolate.
+          PetscScalar y0, y1;
+          switch (gripDeltaSeaInterp) {
+            case CONST_PIECE_BCK_INTERP:
+              // use the data point we are infront of
+              sea1 = deltaSea[secondIdx-1];
+              break;
+            case CONST_PIECE_FWD_INTERP:
+              sea1 = deltaSea[secondIdx];
+              break;
+            case LINEAR_INTERP:
+              y0 = deltaSea[secondIdx-1];
+              y1 = deltaSea[secondIdx];
+              sea1 = y0+(y1-y0)/(iceCoreTime[secondIdx]-iceCoreTime[secondIdx-1])*(grid.p->year/secpera-iceCoreTime[secondIdx-1]);
+              break;
+            default:
+              SETERRQ(1, "Unknown Interpolation method");
+          }
+        }
+        
+        seaChange = sea1 - sea0;
+
+        verbPrintf(2, grid.com, "For year: %f, seaChange: %f\n", grid.p->year, seaChange);
+
+        for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+          for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+            bed[i][j] -= seaChange;
+          }
+        }
+      }
+      ierr = VecRestoreArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
+      ierr = VecRestoreArray(vIceCoreTime, &iceCoreTime); CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
+      ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+
+    }
+
 }
 
 PetscErrorCode IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val) {
@@ -408,9 +488,11 @@ PetscErrorCode IceGRNModel::calculateNetAccum() {
   // calculate a random number for each day
   // in the year. The same numbers will be
   // used for all points on the grid
+  #if (WITH_GSL)
   for (int x=0; x<365; x++) {
     rand_values[x] = gsl_ran_gaussian(rand_gen, STD_DEV);
   }
+  #endif
 
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);

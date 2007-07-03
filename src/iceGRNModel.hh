@@ -20,11 +20,13 @@
 #define __iceGRNModel_hh
 
 #include <petscda.h>
-#include <gsl/gsl_cdf.h>
-#include <gsl/gsl_randist.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
+
+#if (WITH_GSL)
+#include <gsl/gsl_randist.h>
+#endif
 
 class IceGRNModel : public IceModel {
 
@@ -34,6 +36,7 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode additionalAtStartTimestep();
+  virtual PetscErrorCode additionalAtEndTimestep();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
   int getTestNum();
@@ -49,8 +52,10 @@ protected:
   PetscTruth climateForcing;
   int gripDeltaSeaInterp;
   int gripDeltaTInterp;
-  gsl_rng *rand_gen;
   int testnum;
+  #if (WITH_GSL)
+  gsl_rng *rand_gen;
+  #endif
 
 private:
   PetscTruth inFileSet;

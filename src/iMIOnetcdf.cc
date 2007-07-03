@@ -689,7 +689,6 @@ PetscErrorCode IceModel::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
 
   for (int x=0; x<(int)M; x++) {
     ierr = VecSetValue(*vecg, x, f[x], INSERT_VALUES); CHKERRQ(ierr);
-    verbPrintf(2, grid.com, "here: f[%d]=%f\n", x, f[x]);
   }
   
   ierr = VecAssemblyBegin(*vecg); CHKERRQ(ierr);

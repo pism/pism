@@ -27,7 +27,6 @@
 #include <gsl/gsl_integration.h>
 #endif
 
-
 double interp1_linear(const double x[], const double Y[], int N, double xi) {
 // no-input-checking version of Matlab's
 //     yi=interp1(x,Y,xi,'linear')  *or*  yi=interp1(x,Y,xi,'linear','extrap')
