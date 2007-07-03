@@ -4,7 +4,7 @@ Import('env prefix pism_libs')
 libpism = env.SharedLibrary('pism', Split("""grid.cc materials.cc nc_util.cc iceModel.cc
 iMbasal.cc iMbeddef.cc iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc
 iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc iMdefaults.cc iMoptions.cc
-iMregrid.cc iMregrid_netCDF.cc extrasGSL.cc cubature.c pism_signal.c"""))
+iMregrid.cc extrasGSL.cc cubature.c pism_signal.c"""))
 
 flowTable = env.Program('flowTable', 'flowTable.cc', LIBS = ['pism'] + pism_libs)
 pismr = env.Program('pismr.cc', LIBS = ['pism'] + pism_libs)
@@ -24,14 +24,21 @@ pismv = env.Program('pismv', ['iceCompModel.cc', 'iceExactStreamModel.cc', 'pism
                      LIBS = ['pism', 'pismtests'] + pism_libs)
 
 pant = env.Program('pant.cc', LIBS= ['pism'] + pism_libs)
+pgrn = env.Program(['pgrn.cc', 'iceGRNModel.cc'], LIBS= ['pism'] + pism_libs)
 
 #Default(flowTable, run, simplify, verify, simpleISO, simpleFG, simpleI, shelf, pant)
-Default(pismr, pisms, pismv, pant)
+Default(pismr, pisms, pismv, pant, pgrn)
+
+env.Alias('pismr', pismr)
+env.Alias('pisms', pisms)
+env.Alias('pismv', pismv)
+env.Alias('pant', pant)
+env.Alias('pgrn', pgrn)
 
 # Install
 bindir = os.path.join(prefix, 'bin')
 libdir = os.path.join(prefix, 'lib')
-env.Install(bindir, [pismr, pisms, pismv, pant])
+env.Install(bindir, [pismr, pisms, pismv, pant, pgrn])
 env.Install(libdir, [libpism, libpismtests])
 ib = env.Alias('install-bin', bindir)
 il = env.Alias('install-lib', libdir)
