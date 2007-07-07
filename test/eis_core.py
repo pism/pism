@@ -56,12 +56,14 @@ dSeavar = ncfile.def_var('delta_Sea', NC.FLOAT, (tdim,))
 setattr(tvar, 'units', 'years since 1989')
 
 setattr(dTvar, 'units', 'm')
-setattr(dTvar, 'long_name', 'change in surface temperature from the previous time step')
-setattr(dTvar, 'interpolation', 'constant_piecewise_forward')
+setattr(dTvar, 'long_name', 'change in surface temperature from 1986')
+setattr(dTvar, 'interpolation', 'linear')
+#setattr(dTvar, 'interpolation', 'constant_piecewise_forward')
 
 setattr(dSeavar, 'units', 'm')
-setattr(dSeavar, 'long_name', 'change in sea level from the previous time step')
-setattr(dSeavar, 'interpolation', 'constant_piecewise_forward')
+setattr(dSeavar, 'long_name', 'change in sea level from 1986')
+setattr(dSeavar, 'interpolation', 'linear')
+#setattr(dSeavar, 'interpolation', 'constant_piecewise_forward')
 
 # write data
 tvar[:] = y_bp

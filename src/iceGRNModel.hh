@@ -36,14 +36,16 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode additionalAtStartTimestep();
-  virtual PetscErrorCode additionalAtEndTimestep();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
   int getTestNum();
   PetscErrorCode copySnowAccum();
+  PetscErrorCode copyOrigBed();
 protected:
   Vec vSnowAccum; // this vector will hold the amount of snow that falls,
                   // as apposed to vAccum which holds the net accumulation
+                  // and takes into account ablation
+  Vec vOrigBed;
   Vec vIceCoreDeltaT;
   Vec vIceCoreDeltaSea;
   Vec vIceCoreTime;
@@ -61,7 +63,8 @@ private:
   PetscTruth inFileSet;
  
   PetscErrorCode getInterpolationCode(int ncid, int vid, int *code); 
-  PetscErrorCode initNetAccum();  // creates vSnowAccum and copies vAccum into it
+  PetscErrorCode saveOrigVecs();  // creates vSnowAccum and vOrigBed and
+                                  // copies vAccum and vBed into them
   PetscErrorCode fillTs();
   PetscErrorCode calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val);
   PetscErrorCode calculateSummerTemp(PetscScalar h, PetscScalar lat, PetscScalar *val);

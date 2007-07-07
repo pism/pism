@@ -53,8 +53,6 @@ int main(int argc, char *argv[]){
     
     ierr = mGRN.setFromOptions(); CHKERRQ(ierr);
     ierr = mGRN.initFromOptions(); CHKERRQ(ierr);
-   
-    ierr = verbPrintf(2, com, "Running Test %d\n", mGRN.getTestNum());
  
     ierr = mGRN.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);
@@ -64,6 +62,7 @@ int main(int argc, char *argv[]){
     // data for the netCDF file and needs to be fixed using the
     // PISM intent attributes
     ierr = mGRN.copySnowAccum(); CHKERRQ(ierr);
+    ierr = mGRN.copyOrigBed(); CHKERRQ(ierr);
 
     ierr = mGRN.writeFiles("grn_exper"); CHKERRQ(ierr);
 
