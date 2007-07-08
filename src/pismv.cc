@@ -18,7 +18,7 @@
 
 static char help[] =
 "Ice sheet driver for SIA verification.  Uses exact solutions to various coupled\n"
-"subsystems.  Currently implements tests A, B, C, D, E, F, G, H, I.\n\n";
+"subsystems.  Currently implements tests A, B, C, D, E, F, G, H, I, L.\n\n";
 
 #include <cstring>
 #include <cstdio>
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     char temp = testname[0];
     if (testchosen == PETSC_FALSE)     temp = 'A';           // default to test A
     if ((temp >= 'a') && (temp <= 'z'))    temp += 'A'-'a';  // capitalize if lower    
-    if ((temp >= 'A') && (temp <= 'H')) {
+    if (((temp >= 'A') && (temp <= 'H')) || (temp == 'L')) {
       ierr = mComp.setFromOptions(); CHKERRQ(ierr);
       ierr = mComp.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mComp;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       ierr = mStream.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mStream;
     } else {
-      SETERRQ(1,"(PISMV; verify.cc) ERROR: desired test NOT IMPLEMENTED\n");
+      SETERRQ(1,"(pismv.cc) ERROR: desired test NOT IMPLEMENTED\n");
     }
 
     ierr = m->run(); CHKERRQ(ierr);
@@ -85,17 +85,17 @@ int main(int argc, char *argv[]) {
     PetscTruth dontReport;
     ierr = PetscOptionsHasName(PETSC_NULL, "-noreport", &dontReport); CHKERRQ(ierr);
     if (dontReport == PETSC_FALSE) {
-      if ((temp >= 'A') && (temp <= 'H')) {
+      if (((temp >= 'A') && (temp <= 'H')) || (temp == 'L')) {
         if ((flowlawNumber != 1) && ((temp == 'F') || (temp == 'G'))) {
           ierr = verbPrintf(1,com, 
-                "verify WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
+                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
                 "   for reported errors in tests F and G to be meaningful!\n"); CHKERRQ(ierr);
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
       } else if (temp == 'I') {
         ierr = mStream.reportErrors();  CHKERRQ(ierr);
       } else {
-        SETERRQ(2,"(PISMV; verify.cc) ERROR: can not report error for desired test\n");
+        SETERRQ(2,"(pismv.cc) ERROR: can not report error for desired test\n");
       }
     }
 

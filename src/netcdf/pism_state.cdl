@@ -149,7 +149,7 @@ variables: // The names of variables are magic in PISM source.
     ghf:units = "W m-2";
     ghf:pism_intent = "climate_steady";  // at this point; ditto
   float accum(t,x,y);
-    accum:long_name = "mean annual ice equivalent accumulation rate";
+    accum:long_name = "mean annual net ice equivalent accumulation rate";
     accum:standard_name = "land_ice_surface_specific_mass_balance";
     accum:units = "m s-1";
     accum:pism_intent = "climate_steady";  // at this point; ditto

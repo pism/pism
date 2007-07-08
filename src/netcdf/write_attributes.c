@@ -367,7 +367,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, ghf_id, "pism_intent", 14, "climate_steady");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, accum_id, "long_name", 37, "mean ice equivalent accumulation rate");
+   stat = nc_put_att_text(ncid, accum_id, "long_name", 48, "mean annual net ice equivalent accumulation rate");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, accum_id, "standard_name", 38, "land_ice_surface_specific_mass_balance");
    check_err(stat,__LINE__,__FILE__);

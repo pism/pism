@@ -1,19 +1,19 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
@@ -23,15 +23,11 @@
 #include "exact/exactTestsABCDE.h"
 #include "exact/exactTestsFG.h" 
 #include "exact/exactTestH.h" 
+#include "exact/exactTestL.h" 
+#include "extrasGSL.hh"
 
 #include "iceCompModel.hh"
 
-// boundary conditions for tests F, G (same as EISMINT II Experiment F)
-PetscScalar IceCompModel::Ggeo = 0.042;
-PetscScalar IceCompModel::ST = 1.67e-5;
-PetscScalar IceCompModel::Tmin = 223.15;  // K
-PetscScalar IceCompModel::LforFG = 750000; // m
-PetscScalar IceCompModel::ApforG = 200; // m
 PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
 IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
@@ -57,6 +53,7 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   setExactOnly(PETSC_FALSE);
   compVecsCreated = PETSC_FALSE;
   compViewersCreated = PETSC_FALSE;
+  vHexactLCreated = PETSC_FALSE;
 }
 
 
@@ -69,27 +66,10 @@ IceCompModel::~IceCompModel() {
     destroyCompVecs();
     compVecsCreated = PETSC_FALSE;
   }
-}
-
-
-PetscErrorCode IceCompModel::destroyCompViewers() {
-  PetscErrorCode ierr;
-  if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
-  if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::createCompVecs() {
-  PetscErrorCode ierr = DACreateLocalVector(grid.da3, &vSigmaComp); CHKERRQ(ierr);
-  compVecsCreated = PETSC_TRUE;
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::destroyCompVecs() {
-  PetscErrorCode  ierr = VecDestroy(vSigmaComp); CHKERRQ(ierr);
-  return 0;
+  if (vHexactLCreated == PETSC_TRUE) {
+    VecDestroy(vSigmaComp);
+    vHexactLCreated = PETSC_FALSE;
+  }
 }
 
 
@@ -118,8 +98,9 @@ PetscErrorCode IceCompModel::setFromOptions() {
     temp = temptestname[0];
     if ((temp >= 'a') && (temp <= 'z'))
       temp += 'A'-'a';  // capitalize if lower
-    if ((temp < 'A') || (temp > 'H'))
-      SETERRQ(1,"IceCompModel ERROR: desired test NOT IMPLEMENTED\n");
+    if ((temp < 'A') || (temp == 'I') || (temp == 'J') || (temp == 'K') || (temp > 'L')) {
+      SETERRQ(1,"IceCompModel ERROR: desired test NOT IMPLEMENTED (here)\n");
+    }
   } else {
     temp = 'A';
   }
@@ -172,6 +153,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
         break;
       case 'F':
       case 'G':
+      case 'L':
         // use 1800km by 1800km by 4000m rectangular domain
         ierr = grid.rescale(900e3, 900e3, 4000); CHKERRQ(ierr);
         break;
@@ -184,10 +166,10 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = createVecs(); CHKERRQ(ierr);
 
     // none use Goldsby-Kohlstedt or do age calc
-    ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS);
+    ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
     setConstantGrainSize(DEFAULT_GRAIN_SIZE);
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
-    // all have no uplift at start
+    // all have no uplift or Hmelt
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
 
@@ -203,7 +185,10 @@ PetscErrorCode IceCompModel::initFromOptions() {
         break;
       case 'F':
       case 'G':
-        ierr = initTestFG(); CHKERRQ(ierr);
+        ierr = initTestFG(); CHKERRQ(ierr);  // see iCMthermo.cc
+        break;
+      case 'L':
+        ierr = initTestL(); CHKERRQ(ierr);
         break;
       default:  SETERRQ(1,"verify ERROR : desired test not implemented\n");
     }
@@ -222,28 +207,6 @@ PetscErrorCode IceCompModel::afterInitHook() {
   ierr = createCompVecs(); CHKERRQ(ierr);
   ierr = createCompViewers();
 
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::createCompViewers() {
-  PetscErrorCode ierr;
-
-  // must be called after IceModel::createViewers because diagnostic needs to be filled
-  if (((testname=='F') || (testname=='G')) && (strchr(diagnostic, 'P') != NULL)) {
-    ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, "Sigma_C (comPensatory heat) at kd",
-             PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, &SigmaCompView); CHKERRQ(ierr);
-  } else SigmaCompView = PETSC_NULL;
-  
-  // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
-  if (SigmaMapView != PETSC_NULL) {
-    ierr = PetscViewerDestroy(SigmaMapView); CHKERRQ(ierr);
-    SigmaMapView = PETSC_NULL;
-    ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, "Sigma (strain heat) at kd",
-             PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, &compSigmaMapView); CHKERRQ(ierr);
-  } else compSigmaMapView = PETSC_NULL;
-   
-  compViewersCreated = PETSC_TRUE;
   return 0;
 }
 
@@ -373,6 +336,96 @@ PetscErrorCode IceCompModel::initTestISO() {
 }
 
 
+PetscErrorCode IceCompModel::initTestL() {
+  PetscErrorCode  ierr;
+  PetscScalar     A0, T0, **H, **accum, **bed;
+
+  if (testname != 'L')  { SETERRQ(1,"test must be 'L'"); }
+  
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // set all temps to this constant
+  A0 = isothermalFlux_A_softness;
+  T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
+  ierr = VecSet(vTs, T0); CHKERRQ(ierr);
+  ierr = VecSet(vT, T0); CHKERRQ(ierr);
+  ierr = VecSet(vTb, T0); CHKERRQ(ierr);
+  ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
+  
+  ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
+  setMuSliding(0.0);  // note reimplementation of basal()
+
+//  ierr = PetscPrintf(PETSC_COMM_SELF, "rank = %d;   grid.xs ys xm ym  =  %d %d %d %d\n",
+//                     grid.rank,grid.xs,grid.ys,grid.xm,grid.ym);  CHKERRQ(ierr);
+
+  // setup to evaluate test L; requires solving an ODE numerically
+  const PetscInt  MM = grid.xm * grid.ym;
+  double          *rr, *HH, *bb, *aa;
+  int             *ia, *ja;
+  rr = new double[MM];  
+  HH = new double[MM];  bb = new double[MM];  aa = new double[MM];
+  ia = new int[MM];  ja = new int[MM];
+
+  for (PetscInt i = 0; i < grid.xm; i++) {
+    for (PetscInt j = 0; j < grid.ym; j++) {
+      const PetscInt  k = i * grid.ym + j;
+      PetscScalar  junkx, junky;
+      mapcoords(i + grid.xs, j + grid.ys, junkx, junky, rr[k]);
+      rr[k] = - rr[k];
+      ia[k] = i + grid.xs;  ja[k] = j + grid.ys;
+    }
+  }
+
+//  if (grid.rank == 0) {
+//    for (PetscInt k = 0; k < MM; k++) 
+//       PetscPrintf(PETSC_COMM_SELF,"MM = %d   (i,j)=(%d,%d)   k = %d   rr = %f\n",
+//                   MM,ia[k],ja[k],k,rr[k]);
+//  }
+  heapsort_double_2indfollow(rr,ia,ja,MM);  // sorts into ascending;  O(MM log MM) time
+  for (PetscInt k = 0; k < MM; k++)   rr[k] = -rr[k];   // now descending
+//  if (grid.rank == 0) {
+//    for (PetscInt k = 0; k < MM; k++) 
+//       PetscPrintf(PETSC_COMM_SELF,"MM = %d   (i,j)=(%d,%d)   k = %d   rr = %f\n",
+//                   MM,ia[k],ja[k],k,rr[k]);
+//  }
+
+  // get soln to test L at these points; solves ODE only once (on each processor)
+  ierr = exactL_list(rr, MM, HH, bb, aa);
+//  PetscPrintf(PETSC_COMM_SELF, "rank = %d;   stat returned by exactL_list() = %d\n",
+//                     grid.rank,ierr);
+  CHKERRQ(ierr);
+  
+  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  for (PetscInt k = 0; k < MM; k++) {
+    const PetscInt i = ia[k],  j = ja[k];
+    H[i][j] = HH[k];
+    bed[i][j] = bb[k];
+    accum[i][j] = aa[k];
+  }
+  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
+  delete [] rr;  delete [] HH;  delete [] bb;  delete [] aa;  delete [] ia;  delete [] ja; 
+
+  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+
+  // set surface to H+b
+  ierr = VecWAXPY(vh,1.0,vH,vbed); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+
+  // store copy of vH for "-eo" runs and for evaluating geometry errors
+  ierr = VecDuplicate(vh, &vHexactL); CHKERRQ(ierr);
+  ierr = VecCopy(vH, vHexactL); CHKERRQ(ierr);
+  return 0;
+}
+
+
 PetscErrorCode IceCompModel::updateTestISO() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum, dummy, dummy1, dummy2, dummy3;
@@ -408,12 +461,15 @@ PetscErrorCode IceCompModel::updateTestISO() {
           case 'H':
             exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
             break;
+          case 'L':
+            // do nothing here, but will copy vHexactL --> vH
+            break;
           default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
         }
       } else { // real verification; only update accumulation
         switch (testname) {
           case 'A':
-            accum[i][j] = 0.3/secpera; // no need to waste time ...
+            accum[i][j] = 0.3/secpera; // really could do nothing here as accum is steady ...
             break;
           case 'B':
             accum[i][j] = 0.0; // ditto ...
@@ -430,6 +486,9 @@ PetscErrorCode IceCompModel::updateTestISO() {
           case 'H':
             exactH(f,grid.p->year*secpera,r,&dummy,&accum[i][j]);
             break;
+          case 'L':
+            // do nothing as accum is steady
+            break;
           default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
         }
       }
@@ -437,9 +496,17 @@ PetscErrorCode IceCompModel::updateTestISO() {
   }
 
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-
   if (exactOnly==PETSC_TRUE) {
     ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  }
+
+  if ((exactOnly==PETSC_TRUE) && (testname == 'L')) {
+//    ierr = DALocalToLocalBegin(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
+//    ierr = DALocalToLocalEnd(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (exactOnly==PETSC_TRUE) {
     ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
     if (testname == 'H') {
@@ -452,222 +519,6 @@ PetscErrorCode IceCompModel::updateTestISO() {
       ierr = VecSet(vbed,0.0); CHKERRQ(ierr);
     }
   }
-
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::initTestFG() {
-  PetscErrorCode  ierr;
-  PetscInt        Mz=grid.p->Mz;
-  PetscScalar     **H, **accum, **Ts, ***T, ***Tb;
-  PetscScalar     *z, *dummy1, *dummy2, *dummy3, *dummy4;
-  z=new PetscScalar[Mz];
-  dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
-  dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
-
-  ierr = VecSet(vbed, 0); CHKERRQ(ierr);
-  ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
-  ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
-
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-
-  for (PetscInt k=0; k<Mz; k++)
-    z[k]=k*grid.p->dz;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
-      Ts[i][j] = Tmin + ST * r;
-      if (r > LforFG - 1.0) { // if (essentially) outside of sheet
-        H[i][j]=0.0;
-        accum[i][j] = -ablationRateOutside/secpera;
-        for (PetscInt k=0; k<Mz; k++)
-          T[i][j][k]=Ts[i][j];
-      } else {
-        r=PetscMax(r,1.0); // avoid singularity at origin
-        if (testname == 'F') {
-           bothexact(0.0,r,z,Mz,0.0,
-                     &H[i][j],&accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
-        } else {
-           bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                     &H[i][j],&accum[i][j],T[i][j],dummy1,dummy2,dummy3,dummy4);
-        }
-      }
-      // fill with basal temp increased by geothermal flux
-      for (PetscInt k=0; k<grid.p->Mbz; k++)
-        Tb[i][j][k] = T[i][j][0] + bedrock.k * (grid.p->Mbz - k - 1) * grid.p->dz * Ggeo;
-    }
-  }
-
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
-
-  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-
-  delete [] z;  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::updateTestFG() {
-  PetscErrorCode  ierr;
-  PetscInt        Mz=grid.p->Mz;
-  PetscScalar     **H, **accum, ***T, ***w, ***u, ***v, ***Sigma, ***SigmaC;
-  PetscScalar     Ts, dummy0;
-  PetscScalar     *z, *dummy1, *dummy2, *dummy3, *dummy4, *Uradial;
-  z=new PetscScalar[Mz];  Uradial=new PetscScalar[Mz];
-  dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
-  dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
-
-  // before temperature and flow step, set Sigma_c and accumulation from
-  // exact values for test F; also add SigmaC to Sigma for temperature computation
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-
-  if (exactOnly==PETSC_TRUE) {
-    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
-  }
-
-  for (PetscInt k=0; k<Mz; k++)
-    z[k]=k*grid.p->dz;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
-      if (r > LforFG - 1.0) {  // outside of sheet
-        accum[i][j] = -ablationRateOutside/secpera;
-        for (PetscInt k=0; k<Mz; k++)  SigmaC[i][j][k]=0.0;
-        if (exactOnly == PETSC_TRUE) {
-          H[i][j] = 0.0;
-          Ts = Tmin + ST * r;
-          for (PetscInt k=0; k<Mz; k++) {
-            T[i][j][k]=Ts;
-            u[i][j][k]=0.0;
-            v[i][j][k]=0.0;
-            w[i][j][k]=0.0;
-            Sigma[i][j][k]=0.0;
-          }
-        }
-      } else {
-        r=PetscMax(r,1.0); // avoid singularity at origin
-        if (exactOnly==PETSC_TRUE) {
-          if (testname == 'F') {
-            bothexact(0.0,r,z,Mz,0.0,
-                      &H[i][j],&accum[i][j],T[i][j],Uradial,w[i][j],
-                      Sigma[i][j],SigmaC[i][j]);
-          } else {
-            bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      &H[i][j],&accum[i][j],T[i][j],Uradial,w[i][j],
-                      Sigma[i][j],SigmaC[i][j]);
-          }
-          for (PetscInt k=0; k<Mz; k++) {
-            u[i][j][k]=Uradial[k]*(xx/r);
-            v[i][j][k]=Uradial[k]*(yy/r);
-          }
-        } else { // actually do update with compensatory Sigma; not exactOnly
-          if (testname == 'F') {
-            bothexact(0.0,r,z,Mz,0.0,
-                      &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC[i][j]);
-          } else {
-             bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC[i][j]);
-          }
-          for (PetscInt k=0; k<Mz; k++)
-            Sigma[i][j][k] += SigmaC[i][j][k]; // for rest of model, Sigma is both terms
-        }
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da3, vSigma, INSERT_VALUES, vSigma); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vSigma, INSERT_VALUES, vSigma); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da3, vSigmaComp, INSERT_VALUES, vSigmaComp); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vSigmaComp, INSERT_VALUES, vSigmaComp); CHKERRQ(ierr);
-
-  if (exactOnly==PETSC_TRUE) {
-    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
-    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-  }
-
-  delete [] z;  delete [] Uradial;
-  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::updateCompViewers() {
-  PetscErrorCode ierr;
-  PetscScalar    ***SigmaC, **sigmaC, ***Sigma, **sigma;
-
-  ierr = updateViewers();  CHKERRQ(ierr);
-  
-  if (SigmaCompView != PETSC_NULL) {
-    ierr = DAVecGetArray(grid.da2, g2, &sigmaC); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        sigmaC[i][j] = SigmaC[i][j][kd];
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, g2, &sigmaC); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-    ierr = VecScale(g2, secpera); CHKERRQ(ierr);
-    ierr = VecView(g2, SigmaCompView); CHKERRQ(ierr);
-  }
-  
-  // now redraw Sigma view to be just the strain-heating, not the sum of strain-heating 
-  //      and compensatory
-  if (compSigmaMapView != PETSC_NULL) {
-    ierr = DAVecGetArray(grid.da2, g2, &sigma); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        sigma[i][j] = Sigma[i][j][kd] - SigmaC[i][j][kd];
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, g2, &sigma); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-    ierr = VecScale(g2, secpera); CHKERRQ(ierr);
-    ierr = VecView(g2, compSigmaMapView); CHKERRQ(ierr);
-  }
-  
   return 0;
 }
 
@@ -677,16 +528,20 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
       PetscScalar &volerr, PetscScalar &areaerr,
       PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
       PetscScalar &centerHerr) {
-  // compute errors in thickness, thickness^{(2n+2)/n}, volume, area
+  // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
   
   PetscErrorCode  ierr;
-  PetscScalar     **H;
+  PetscScalar     **H, **HexactL;
   PetscScalar     Hexact, vol, area, domeH, volexact, areaexact, domeHexact;
   PetscScalar     Herr, avHerr, etaerr;
 
   PetscScalar     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  if (testname == 'L') {
+    ierr = DAVecGetArray(grid.da2, vHexactL, &HexactL); CHKERRQ(ierr);
+  }
+
   vol = 0; area = 0; domeH = 0;
   volexact = 0; areaexact = 0; domeHexact = 0;
   Herr = 0; avHerr=0; etaerr = 0;
@@ -741,7 +596,10 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
         case 'H':
           exactH(f,grid.p->year*secpera,r,&Hexact,&dummy);
           break;
-        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, or H");
+        case 'L':
+          Hexact = HexactL[i][j];
+          break;
+        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, or L");
       }
 
       if (Hexact > 0) {
@@ -759,8 +617,12 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
       avHerr += PetscAbsReal(H[i][j] - Hexact);
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  if (testname == 'L') {
+    ierr = DAVecRestoreArray(grid.da2, vHexactL, &HexactL); CHKERRQ(ierr);
+  }
+  
   // globalize (find errors over all processors) 
   PetscScalar gvol, garea, gdomeH;
   ierr = PetscGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
@@ -780,253 +642,6 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
   ierr = PetscGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
   centerHerr = PetscAbsReal(gdomeH - gdomeHexact);
   
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::computeTemperatureErrors(PetscScalar &gmaxTerr, PetscScalar &gavTerr) {
-
-  PetscErrorCode ierr;
-  PetscScalar    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
-  PetscScalar    **H, ***T;
-  const PetscInt Mz = grid.p->Mz;
-  
-  PetscScalar   *z, *dummy1, *dummy2, *dummy3, *dummy4, *Tex;
-  PetscScalar   junk0, junk1;
-  z = new PetscScalar[Mz];  Tex = new PetscScalar[Mz];
-  dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
-  dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
-  for (PetscInt k=0; k<Mz; k++)
-    z[k]=k*grid.p->dz;
-    
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
-                                                // and not at central singularity
-        switch (testname) {
-          case 'F':
-            bothexact(0.0,r,z,Mz,0.0,
-                      &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
-            break;
-          case 'G':
-            bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
-            break;
-          default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
-        }
-       const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
-        for (PetscInt k=0; k<ks; k++) {  // only eval error if below num surface
-          const PetscScalar Terr = PetscAbs(T[i][j][k] - Tex[k]);
-          maxTerr = PetscMax(maxTerr,Terr);
-          avcount += 1.0;
-          avTerr += Terr;
-        }
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-
-  delete [] z;  delete [] Tex;
-  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  
-  ierr = PetscGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
-  PetscScalar  gavcount;
-  ierr = PetscGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
-  gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
-      PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &centerTerr) {
-
-  PetscErrorCode  ierr;
-  PetscScalar     ***T, domeT, domeTexact, Terr, avTerr;
-
-  PetscScalar     dummy, z, Texact, dummy1, dummy2, dummy3, dummy4, dummy5;
-
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  domeT=0; domeTexact = 0; Terr=0; avTerr=0;
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
-      switch (testname) {
-        case 'F':
-          if (r > LforFG - 1.0) {  // outside of sheet
-            Texact=Tmin + ST * r;  // = Ts
-          } else {
-            r=PetscMax(r,1.0);
-            z=0.0;
-            bothexact(0.0,r,&z,1,0.0,
-                      &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
-          }
-          break;
-        case 'G':
-          if (r > LforFG -1.0) {  // outside of sheet
-            Texact=Tmin + ST * r;  // = Ts
-          } else {
-            r=PetscMax(r,1.0);
-            z=0.0;
-            bothexact(grid.p->year*secpera,r,&z,1,ApforG,
-                      &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
-          }
-          break;
-        default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
-      }
-
-      if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
-        domeT = T[i][j][0];
-        domeTexact = Texact;
-      }
-      // compute maximum errors
-      Terr = PetscMax(Terr,PetscAbsReal(T[i][j][0] - Texact));
-      // add to sums for average errors
-      avTerr += PetscAbs(T[i][j][0] - Texact);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  
-  PetscScalar gdomeT, gdomeTexact;
-
-  ierr = PetscGlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
-  gavTerr = gavTerr/(grid.p->Mx*grid.p->My);
-  ierr = PetscGlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);  
-  centerTerr = PetscAbsReal(gdomeT - gdomeTexact);
-  
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::computeSigmaErrors(PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr) {
-
-  PetscErrorCode ierr;
-  PetscScalar    maxSigerr = 0.0, avSigerr = 0.0, avcount = 0.0;
-  PetscScalar    **H, ***Sig;
-  const PetscInt Mz = grid.p->Mz;
-  
-  PetscScalar   *z, *dummy1, *dummy2, *dummy3, *Sigex, *SigCompex;
-  PetscScalar   junk0, junk1;
-  z = new PetscScalar[Mz];  Sigex = new PetscScalar[Mz];  SigCompex = new PetscScalar[Mz];
-  dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
-  dummy3 = new PetscScalar[Mz];
-  for (PetscInt k=0; k<Mz; k++)
-    z[k]=k*grid.p->dz;
-    
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vSigma, &Sig); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
-                                                // and not at central singularity
-        switch (testname) {
-          case 'F':
-            bothexact(0.0,r,z,Mz,0.0,
-                      &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,SigCompex);
-            break;
-          case 'G':
-            bothexact(grid.p->year*secpera,r,z,Mz,ApforG,
-                      &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,SigCompex);
-            break;
-          default:  SETERRQ(1,"strain-heating (Sigma) errors only computable for tests F and G\n");
-        }
-        // verbPrintf(1,grid.com,"%e|",Sigex[3]);
-        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
-        for (PetscInt k=0; k<ks; k++) {  // only eval error if below num surface
-          const PetscScalar actualSignum  = Sig[i][j][k] - SigCompex[k];
-          const PetscScalar Sigerr = PetscAbs(actualSignum - Sigex[k]);
-          maxSigerr = PetscMax(maxSigerr,Sigerr);
-          avcount += 1.0;
-          avSigerr += Sigerr;
-        }
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vSigma, &Sig); CHKERRQ(ierr);
-
-  delete [] z;  delete [] Sigex;  delete [] SigCompex;
-  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;
-  
-  ierr = PetscGlobalMax(&maxSigerr, &gmaxSigmaerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avSigerr, &gavSigmaerr, grid.com); CHKERRQ(ierr);
-  PetscScalar  gavcount;
-  ierr = PetscGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
-  gavSigmaerr = gavSigmaerr/PetscMax(gavcount,1.0);  // avoid div by zero
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
-        PetscScalar &gmaxUerr, PetscScalar &gavUerr,
-        PetscScalar &gmaxWerr, PetscScalar &gavWerr) {
-
-  PetscErrorCode ierr;
-  PetscScalar    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
-  PetscScalar    **H, **unum, **vnum, **wnum;
-
-  ierr = getSurfaceValuesOf3D(vu, vWork2d[0]); CHKERRQ(ierr); // = numerical surface val of u
-  ierr = getSurfaceValuesOf3D(vv, vWork2d[1]); CHKERRQ(ierr); // = numerical surface val of v
-  ierr = getSurfaceValuesOf3D(vw, vWork2d[2]); CHKERRQ(ierr); // = numerical surface val of w
-
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &unum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &vnum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[2], &wnum); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
-                                               // and not at central singularity
-        PetscScalar radialUex,wex;
-        PetscScalar dummy0,dummy1,dummy2,dummy3,dummy4;
-        PetscScalar z = H[i][j];
-        switch (testname) {
-          case 'F':
-            bothexact(0.0,r,&z,1,0.0,
-                      &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
-            break;
-          case 'G':
-            bothexact(grid.p->year*secpera,r,&z,1,ApforG,
-                      &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
-            break;
-          default:  SETERRQ(1,"surface velocity errors only computed for tests F and G\n");
-        }
-        // verbPrintf(1,grid.com,"[%f|%f]",radialUex,wex);
-        const PetscScalar uex = (xx/r) * radialUex;
-        const PetscScalar vex = (yy/r) * radialUex;
-        const PetscScalar Uerr = sqrt(PetscSqr(unum[i][j] - uex) + PetscSqr(vnum[i][j] - vex));
-        maxUerr = PetscMax(maxUerr,Uerr);
-        avUerr += Uerr;
-        const PetscScalar Werr = PetscAbs(wnum[i][j] - wex);
-        maxWerr = PetscMax(maxWerr,Werr);
-        avWerr += Werr;
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &unum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vnum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &wnum); CHKERRQ(ierr);
-
-  ierr = PetscGlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
-  gavUerr = gavUerr/(grid.p->Mx*grid.p->My);
-  ierr = PetscGlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
-  gavWerr = gavWerr/(grid.p->Mx*grid.p->My);
   return 0;
 }
 
@@ -1152,7 +767,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxSigerr*secpera*1.0e3, avSigerr*secpera*1.0e3); CHKERRQ(ierr);
   }
 
-  // surface velocity errors if appropriate
+  // surface velocity errors if exact values are available
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxUerr, avUerr, maxWerr, avWerr;
     ierr = computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr); CHKERRQ(ierr);
@@ -1258,7 +873,7 @@ PetscErrorCode IceCompModel::run() {
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
-    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temp
+    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force or maxdt_temporary
 
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
@@ -1267,13 +882,8 @@ PetscErrorCode IceCompModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
-    // always do vertically-average velocity calculation; only update velocities at depth if
+    // always do vertically-averaged velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-//    bool tempAgeStep = (    (exactOnly == PETSC_FALSE)
-//                         && (doTemp == PETSC_TRUE)
-//                         && (tempskipCountDown == 0) 
-//                        && ((testname == 'F') || (testname =='G')) );
-//    ierr = velocity(tempAgeStep); CHKERRQ(ierr);
     bool updateAtDepth = (    (exactOnly == PETSC_FALSE)
                           && (tempskipCountDown == 0));
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);
@@ -1304,13 +914,14 @@ PetscErrorCode IceCompModel::run() {
       case 'D':
       case 'E':
       case 'H':
+      case 'L':
         ierr = updateTestISO(); CHKERRQ(ierr);
         break;
       case 'F':
       case 'G':
         ierr = updateTestFG(); CHKERRQ(ierr);
         break;
-      default: SETERRQ(1, "test must be A, B, C, D, E, F, G, or H\n");
+      default: SETERRQ(1, "test must be A, B, C, D, E, F, G, H, or L\n");
     }
     
     bool tempAgeStep = ( (doTemp == PETSC_TRUE)
@@ -1344,3 +955,4 @@ PetscErrorCode IceCompModel::run() {
 
   return 0;
 }
+

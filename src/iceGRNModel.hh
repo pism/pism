@@ -23,10 +23,7 @@
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
-
-#if (WITH_GSL)
 #include <gsl/gsl_randist.h>
-#endif
 
 class IceGRNModel : public IceModel {
 
@@ -55,9 +52,7 @@ protected:
   int gripDeltaSeaInterp;
   int gripDeltaTInterp;
   int testnum;
-  #if (WITH_GSL)
   gsl_rng *rand_gen;
-  #endif
 
 private:
   PetscTruth inFileSet;

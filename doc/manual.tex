@@ -17,6 +17,10 @@
 % Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 \documentclass[11pt,final]{amsart}
+
+\newcommand{\PISMREV}{136}
+\newcommand{\PETSCREV}{2.3.3-p2}
+
 \addtolength\topmargin{-.1in}
 \addtolength\textheight{0.3in}
 \addtolength{\oddsidemargin}{-.65in}
@@ -56,7 +60,7 @@
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision 129 and PETSC release 2.3.3-p2.  \\\tiny Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
 
 \begin{document}
 \maketitle
@@ -103,11 +107,17 @@ We also want to thank PISM users whose questions and comments have contributed t
 
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
-\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.
+\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.
 
-\item To use the graphical output of PISM, which we recommend, you will need an X Windows server \emph{and} the developers' version of X11, which will contain the needed header files.
+\item To use the graphical output of PISM, which we recommend, you will need an X Windows server \emph{and} the developers' version of X11, which will contain the needed header files.  The relevant development package in Debian is called \verb|xorg-dev|.
 
-\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  Add the \verb|bin| directory with the statement
+\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   Install it using the instructions at the NetCDF webpage or using a package management system.  You will need the development version (package) which includes the header files; this is the \verb|netcdfg-dev| package in the Debian repositories.
+
+\item PISM uses the GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}) for certain numerical calculations and special functions.  Install it using the instructions at the GSL webpage or using a package management system.  You will need the development version (package) which includes header files; this is the \verb|libgsl0-dev| package in the Debian repositories.
+
+\item PISM optionally uses the ``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}) in approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install FFTW or check that it is installed already.   In particular, get the development version with header files, which is \verb|fftw3-dev| in Debian.   If FFTW is \emph{not installed}, however, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.   If this library is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
+
+\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  For example, you can add it with the statement
 
 \verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for \verb|bash| shell)
 
@@ -115,34 +125,36 @@ We also want to thank PISM users whose questions and comments have contributed t
 
 \verb|setenv PATH /home/user/mympi/bin:$PATH|  \qquad (for \verb|csh| or \verb|tcsh| shell).
 
-\noindent Such a statement can, of course, appear in your \verb|.bashrc|, \verb|.profile|, or \verb|.cshrc| file.  
+\noindent Such a statement can, of course, appear in your \verb|.bashrc|, \verb|.profile|, or \verb|.cshrc| file so that there is no need to retype it each time you use MPI.
 
+\medskip
 \centerline{\emph{From now on this manual will assume use of} bash.}
+\medskip
 
-\item Download PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}, pronounced ``pet-see'') from \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}.  You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it might be best to read the following comments on the PETSc configure and build process first:
+\item PISM uses PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}; \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}).  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}.  PISM requires a version of PETSc which is \texttt{\PETSCREV} or later.   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
+
+You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it might be best to read the following comments on the PETSc configure and build process first:
 
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item PISM requires a version of PETSc which is \verb|petsc-2.3.3-p2| (patch level 2) or later.   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation.  
+\item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges.  Note that you will need to define the environment variable \verb|PETSC_DIR| before configuring PETSc (next).  For instance, once you have entered the PETSc directory just untarred, \verb|export PETSC_DIR=|$\phantom{!}^\backprime \mathtt{pwd}^\backprime$.  (Note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \verb|'|.)
 
-\item The first step is to download the gzipped tar file for PETSc.  Untar it in your home directory or sub; note PETSc should \emph{not} be configured using root privileges.  Note that you will need to define the environment variable \verb|PETSC_DIR| before configuring PETSc (next).  For instance, if you are in the PETSc directory just untarred, do \verb|export PETSC_DIR=|$\phantom{!}^\backprime \mathtt{pwd}^\backprime$.  (Note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \verb|'|.)
-
-\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default (though other possibilities are illustrated by makefiles in \verb|pism/config/|):
+\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default:
 
 \verb|$  ./config/configure.py --with-shared --with-c-support --with-clanguage=cxx|
 
-Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS and LAPACK rather than using the system-wide version.  In such case one might add ``\verb|--download-c-blas-lapack=1| \verb|--with-fortran=0|'' to the other configure options.
+Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS and LAPACK rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
 
-\item If there is an existing MPI installation, for example at \verb|/home/user/mympi/|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi/|.  The path used in this option must have MPI executables \verb|mpiexec| and \verb|mpicc| in subdirectory \verb|bin/| and MPI library files in subdirectory \verb|lib/|.
+\item If there is an existing MPI installation, for example at \verb|/home/user/mympi/|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi/|.  The path used in this option must have MPI executables \verb|mpicxx| and \verb|mpicc|, and either \verb|mpiexec| or \verb|mpirun|, in subdirectory \verb|bin/| and MPI library files in subdirectory \verb|lib/|.
 
 \item On the other hand, it seems common that one needs to tell PETSc to download MPI into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
 
-\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  In particular there is a configure option \verb|--with-batch=1|.  The advice of an experienced system administrator for the machine in question---i.e.~someone very familiar with the batch system---has been found to be useful in this case.
+\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \verb|--with-batch=1|.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/documentation/installation.html}.
 
-\item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \verb|PETSC_ARCH| will be reported at the end of the configure process; take note of this value.  Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.
+\item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \verb|PETSC_ARCH| will be reported at the end of the configure process; take note of this value.  (Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.)
 
-\item  After \verb|configure.py| finishes, you will need to \verb|make all test| in the PETSc directory and watch the result.  If the X Windows system is functional some example viewers will appear; you may need the X development files for this to work.
+\item  After \verb|configure.py| finishes, you will need to \verb|make all test| in the PETSc directory and watch the result.  If the X Windows system is functional some example viewers will appear; as noted you will need the X header files for this to work.
 
-\item You will want to set the \verb|PETSC_DIR| and (usually) the \verb|PETSC_ARCH| environment variables in your \verb|.profile| or \verb|.bashrc| file.  Also remember to add the MPI \verb|bin| directory to your \verb|PATH|.  For instance, if you used the option \verb|--download-mpich=1| in the PETSc configure, the MPI \verb|bin| directory will have a path like \verb|$PETSC_DIR/| \verb|externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/|.  Therefore the lines 
+\item Finally, you will want to set the \verb|PETSC_DIR| and the \verb|PETSC_ARCH| environment variables in your \verb|.profile| or \verb|.bashrc| file.  Also remember to add the MPI \verb|bin| directory to your \verb|PATH|.  For instance, if you used the option \verb|--download-mpich=1| in the PETSc configure, the MPI \verb|bin| directory will have a path like \verb|$PETSC_DIR/| \verb|externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/|.  Therefore the lines 
 
 \small
 \verb|export PETSC_DIR=/home/user/petsc-2.3.3-p2/|
@@ -154,33 +166,21 @@ Note that there is no PISM use of Fortran, and that it is sometimes convenient t
 
 \noindent could appear in one of those files.
 \end{enumerate}
-
-\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   Install it using the instructions at the NetCDF webpage or using a package management system.  You will need the development version (package) which includes the header files (e.g.~\verb|netcdf.h|); this is the \verb|xorg-dev| package in the Debian repositories.
-
-\item PISM uses two libraries called ``FFTW'' and ``GSL'' for approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install the following or check that it is installed already:
-\renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-
-\item FFTW (= \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}).   Get the development version with header files (\verb|fftw3-dev| in Debian).   
-
-\item GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}).   Get the development version with header files (\verb|libgsl0-dev| in Debian).
-\end{enumerate}
-
-\noindent  If FFTW is not installed, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.  If GSL is not installed, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_GSL=0|.  If either of these libraries is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
 \end{enumerate}
 
 \bigskip
 See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, including those mentioned so far.
 
 \medskip
-At this point you have configured the environment which PISM needs.  You are ready to build PISM itself.
+At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is much quicker procedure!
 \bigskip
 
 \begin{enumerate}\setcounter{enumi}{5}
-\item \label{getPISMstep} Get the source for PISM by
+\item \label{getPISMstep} Get the latest source for PISM by
 
 \verb|$  svn co http://svn.gna.org/svn/pism/trunk pism|
 
-\noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will get the latest revision of PISM.
+\noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.
 
 \item Build PISM:
 
@@ -190,9 +190,7 @@ At this point you have configured the environment which PISM needs.  You are rea
 
 \verb|make install|
 
-\noindent  Note that the ``\verb|install|'' is local to the \verb|pism| directory and does not require root permission.  Several executables, including \verb|pismv|, \verb|pisms|, and \verb|pismr|, should appear in the \verb|pism/bin/| subdirectory.
-
-(Please report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)  
+\noindent  Note that the ``\verb|install|'' is local to the \verb|pism| directory and does not require root permission.  Several executables, including \verb|pismv|, \verb|pisms|, and \verb|pismr|, should appear in the \verb|pism/bin/| subdirectory.  (Please report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)  
 
 \item PISM executables can be run most easily by adding the directories \verb|pism/bin/| and \verb|pism/test/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:
 
@@ -244,7 +242,9 @@ You are done with installation at this point.  The next few items are recommende
 
 Have fun!
 
-At this stage you can do the EISMINT II tests and some verification tests without further downloads.  Sections \ref{sect:valid} and \ref{sect:real} describe uses of PISM based on freely available data already on the web.  Setting up PISM to model real ice sheets requires some techniques not covered until sections \ref{sect:usage} and \ref{sect:real} below.  Use of PISM for real ice sheet modelling is something we welcome questions about and will attempt to help with.
+At this stage you can do the EISMINT II tests and some verification tests without further downloads.  Sections \ref{sect:valid} and \ref{sect:real} describe using PISM to model real ice sheets (and shelves) based on freely available data already on the web.  
+
+Naturally, setting up PISM to model real ice sheets will generally require techniques not be covered in this manual.  It may require the writing of additional source code, which for PISM means writing a derived class of the base \verb|IceModel| class defined by the PISM C++ source code.  Use of PISM for real ice sheet modelling is something we welcome questions about and will attempt to help with.
 
 A final reminder with respect to installation:  Once you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above, you can update it to the latest version by \verb|svn update| in the \verb|pism/| directory, after which you will want to \verb|make| again, of course.
 
@@ -256,8 +256,7 @@ A final reminder with respect to installation:  Once you have checked out a copy
 \textbf{/Program} &  &  &  \\ \hline
 FFTW & \url{www.fftw.org} & \emph{recommended} & if not present  \\
  & & & \quad set \verb|WITH_FFTW=0| \\
-GSL & \url{www.gnu.org/software/gsl} & \emph{recommended} &  if not present \\
- & & & \quad set \verb|WITH_GSL=0| \\
+GSL & \url{www.gnu.org/software/gsl} & \emph{required} &  \\
 \LaTeX & \url{http://www.latex-project.org/} & \emph{optional} & only used for rebuilding \\
 & & & manual from source \\
 Matlab & \url{www.mathworks.com} & \emph{optional} & only used for alternate\\
@@ -271,6 +270,7 @@ Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 \normalsize
 \end{tabular}
 \end{table}
+
 
 \clearpage\newpage
 \section{Getting started}\label{sect:start}

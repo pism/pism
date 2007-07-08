@@ -334,7 +334,7 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
 #include <netcdf.h>
 #include "nc_util.hh"
 
-PetscErrorCode nc_check(int stat) {
+PetscErrorCode IceModel::nc_check(int stat) {
   if (stat)
     SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
   return 0;
@@ -422,41 +422,41 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     x_scale = (last - first) / 2.0;
     // verbPrintf(1,grid.com,"   for x: last,first,x_scale = %f,%f,%f\n",last,first,x_scale);
   } else verbPrintf(2, grid.com, 
-         "WARNING: variable x(x) not found in file. Proceeding with default interval [-Lx,Lx] = [-%f,%f]\n",
+         "  WARNING: variable x(x) not found in file. Proceeding with default interval [-Lx,Lx] = [-%f,%f]\n",
          x_scale,x_scale);
   if (yExists) {
     ierr = getFirstLast(ncid, v_y, &first, &last);
     y_scale = (last - first) / 2.0;
     // verbPrintf(1,grid.com,"   for y: last,first,y_scale = %f,%f,%f\n",last,first,y_scale);
   } else verbPrintf(2, grid.com, 
-         "WARNING: variable y(y) not found in file. Proceeding with defaults [-Ly,Ly] = [-%f,%f]\n",
+         "  WARNING: variable y(y) not found in file. Proceeding with defaults [-Ly,Ly] = [-%f,%f]\n",
          y_scale,y_scale);
   verbPrintf(2, grid.com, 
-         "using default value Lz=%f for vertical extent of computational box for ice\n", z_scale);
+         "  using default value Lz=%f for vertical extent of computational box for ice\n", z_scale);
   ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
   if (lonExists) {
     ierr = ncVarToDAVec(ncid, v_lon, grid.da2, vLongitude, g2, vzero);
     CHKERRQ(ierr);
-  } else verbPrintf(3, grid.com, "continuing without lon\n"); 
+  } else verbPrintf(3, grid.com, "  continuing without lon\n"); 
   if (latExists) {
     ierr = ncVarToDAVec(ncid, v_lat, grid.da2, vLatitude, g2, vzero);
     CHKERRQ(ierr);
-  } else verbPrintf(3, grid.com, "continuing without lat\n"); 
+  } else verbPrintf(3, grid.com, "  continuing without lat\n"); 
   if (accumExists) {
     ierr = ncVarToDAVec(ncid, v_accum, grid.da2, vAccum, g2, vzero);
     CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "accum not found. Filling in with default value: %f\n", DEFAULT_ACCUM_VALUE_MISSING); 
+    verbPrintf(2, grid.com, "  accum not found. Filling in with default value: %f\n", DEFAULT_ACCUM_VALUE_MISSING); 
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (hExists)  
-    verbPrintf(2, grid.com, "WARNING: ignoring values found for surface elevation h and using h = b + H\n");
+    verbPrintf(2, grid.com, "  WARNING: ignoring values found for surface elevation h and using h = b + H\n");
   if (HExists) {
     ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero);
     CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "WARNING: thickness H not found. Filling in with default value: %f\n",
+    verbPrintf(2, grid.com, "  WARNING: thickness H not found. Filling in with default value: %f\n",
                DEFAULT_H_VALUE_MISSING);
     ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
   }
@@ -464,21 +464,21 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero);
     CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "WARNING: bedrock elevation b not found. Filling in with default value: %f\n",
+    verbPrintf(2, grid.com, "  WARNING: bedrock elevation b not found. Filling in with default value: %f\n",
                DEFAULT_BED_VALUE_MISSING); 
     ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (TsExists) {
     ierr = ncVarToDAVec(ncid, v_Ts, grid.da2, vTs, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "WARNING: surface temperature Ts not found. Filling in with default value: %f\n",
+    verbPrintf(2, grid.com, "  WARNING: surface temperature Ts not found. Filling in with default value: %f\n",
                DEFAULT_SURF_TEMP_VALUE_MISSING);
     ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (ghfExists) {
     ierr = ncVarToDAVec(ncid, v_ghf, grid.da2, vGhf, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "WARNING: geothermal flux ghf not found. Filling in with default value: %f\n",
+    verbPrintf(2, grid.com, "  WARNING: geothermal flux ghf not found. Filling in with default value: %f\n",
                DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); 
     ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
   }
@@ -486,19 +486,19 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero); 
     CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "uplift not found. Filling with zero\n"); 
+    verbPrintf(3, grid.com, "  uplift not found. Filling with zero\n"); 
     ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
   }
-  verbPrintf(2, grid.com, "determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
+  verbPrintf(2, grid.com, "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   verbPrintf(3, grid.com, 
-             "setting accumulation in ice shelf-free ocean to default value %f\n",
+             "  setting accumulation in ice shelf-free ocean to default value %f\n",
              DEFAULT_ACCUMULATION_IN_OCEAN0 * secpera);
   ierr = maskAccum(); CHKERRQ(ierr);
   if (HmeltExists) {
     ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "Hmelt not found. Filling with zero\n");
+    verbPrintf(2, grid.com, "  Hmelt not found. Filling with zero\n");
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }
   if (tExists) {
@@ -507,7 +507,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     nc_get_var1_float(ncid, v_t, &idx, &begin_t);
     setInitialAgeYears(begin_t);
   } else {
-    verbPrintf(2, grid.com, "time t not found. Using t=%f years\n",
+    verbPrintf(2, grid.com, "  time t not found. Using t=%f years\n",
                DEFAULT_INITIAL_AGE_YEARS);
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
   }
@@ -523,6 +523,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
 
+  verbPrintf(2, grid.com, "bootstrapping done\n");
   initialized_p = PETSC_TRUE;
   return 0;
 }

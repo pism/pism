@@ -34,12 +34,6 @@ const int CONST_PIECE_FWD_INTERP = 0;
 const int CONST_PIECE_BCK_INTERP = 1;
 const int LINEAR_INTERP = 2;
 
-PetscErrorCode nc_check(int stat) {
-  if (stat) {
-    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
-  }
-  return 0;
-}
 
 int IceGRNModel::getTestNum() {
   return testnum;
@@ -207,12 +201,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   }
 
   // initialize the random number generator
-  #if (WITH_GSL)
   rand_gen = gsl_rng_alloc(gsl_rng_taus);
   gsl_rng_set(rand_gen, usrSeedSet ? usr_seed : (int)grid.p->year);
-  #else
-  verbPrintf(1, grid.com, "WARNING: No randomness in weather because GSL is not included.\n");
-  #endif
                         
   if (!isInitialized()) {
     SETERRQ(1, "Model has not been initialized.\n");
@@ -444,11 +434,9 @@ PetscErrorCode IceGRNModel::calculateNetAccum() {
   // calculate a random number for each day
   // in the year. The same numbers will be
   // used for all points on the grid
-  #if (WITH_GSL)
   for (int x=0; x<365; x++) {
     rand_values[x] = gsl_ran_gaussian(rand_gen, STD_DEV);
   }
-  #endif
 
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);

@@ -140,7 +140,7 @@ setattr(Hvar, 'units', 'm')
 setattr(Bvar, 'long_name', 'bedrock_altitude')
 setattr(Bvar, 'standard_name', 'bedrock_altitude')
 setattr(Bvar, 'units', 'm')
-setattr(Bvar, 'missing_value', '0')
+setattr(Bvar, 'missing_value', 0.0)
 
 setattr(Accvar, 'long_name', 'mean ice equivalent accumulation rate')
 setattr(Accvar, 'standard_name', 'land_ice_surface_specific_mass_balance')

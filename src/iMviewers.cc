@@ -25,27 +25,24 @@
 PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer, 
                                    char name, const char* title) {
   PetscErrorCode ierr;
-  int x_dim, y_dim;
-  int larger = grid.p->Mx, smaller = grid.p->My;
-  if (grid.p->My > grid.p->Mx) {
-    larger = grid.p->My;
-    smaller = grid.p->Mx;
-  }
+  const int SIZE = 320, bigSIZE = 600;
+  PetscScalar  yTOx = (PetscScalar)grid.p->My / (PetscScalar)grid.p->Mx;
+  int size, x_dim, y_dim;
   if (strchr(diagnosticBIG, name) != NULL) {
-    const int bigsize = 720;
-    x_dim = bigsize*1;
-    y_dim = (PetscInt)(bigsize*(smaller/(PetscScalar)larger));
-    ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
-             PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);
+    size = bigSIZE;
   } else if (strchr(diagnostic, name) != NULL) {
-    const int size = 480;
-    x_dim = (int)(size*(1+smaller/(PetscScalar)larger)/2.);
-    y_dim = (int)(x_dim*(smaller/(PetscScalar)larger));
-    ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
-             PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);
+    size = SIZE;
   } else {
     *viewer = PETSC_NULL;
+    return 0;
   }
+  if (grid.p->My > grid.p->Mx) {
+    x_dim = size; y_dim = (PetscInt) ((PetscScalar) size * yTOx); 
+  } else {
+    y_dim = size; x_dim = (PetscInt) ((PetscScalar) size / yTOx);
+  } 
+  ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
+           PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);
   return 0;
 }
 

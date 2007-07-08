@@ -5,28 +5,25 @@ ALL : all
 # get PETSc environment, rules:
 include ${PETSC_DIR}/bmake/common/base
 
-#FLAGS:
 
+#FLAGS:
 MARGIN_TRICK?=0
 MARGIN_TRICK_TWO?=0
 WITH_FFTW?=1
-WITH_GSL?=1
-CFLAGS+= -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL}\
+CFLAGS+= -DWITH_FFTW=${WITH_FFTW} \
    -DMARGIN_TRICK=${MARGIN_TRICK} -DMARGIN_TRICK_TWO=${MARGIN_TRICK_TWO} -pipe
 
-ICE_LIB_FLAGS= -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib -lpism -ltests ${PETSC_LIB}\
-   -lnetcdf_c++ -lnetcdf
+TESTS_LIB_FLAGS= -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib -lm\
+   -lgsl -lgslcblas -ltests
+ICE_LIB_FLAGS= ${TESTS_LIB_FLAGS} -lnetcdf_c++ -lnetcdf -lpism ${PETSC_LIB}
 ifeq (${WITH_FFTW}, 1)
 	ICE_LIB_FLAGS+= -lfftw3
 endif
-ifeq (${WITH_GSL}, 1)
-	ICE_LIB_FLAGS+= -lgsl -lgslcblas
-endif
+
 
 #VARIABLES:
-
 executables= pismr pismv pisms pgrn pant
-extra_execs= simpleISO simpleFG simpleI flowTable
+extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
@@ -35,13 +32,13 @@ ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 ice_csources= cubature.c pism_signal.c
 ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
-tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
+tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= pismr.cc pismv.cc pisms.cc pant.cc\
 	flowTable.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc iceCompModel.cc shelf.cc iceGRNModel.cc pgrn.cc
-other_csources= simpleISO.c simpleFG.c simpleI.c
+	iceROSSModel.cc iceCompModel.cc iCMthermo.cc shelf.cc iceGRNModel.cc pgrn.cc
+other_csources= simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
@@ -59,41 +56,53 @@ local_install : libpism.so libtests.so $(executables)
 	rm -f $(executables)
 
 libpism.so : ${ICE_OBJS}
-	${CLINKER} -shared ${ICE_OBJS} -o libpism.so
-#for static-linking:  ar cru -s lib/libpism.a ${ICE_OBJS}   etc
+	${CLINKER} -shared ${ICE_OBJS} -o $@
+#for static-linking:  ar cru -s libpism.a ${ICE_OBJS}   etc
 
 libtests.so : ${TESTS_OBJS}
-	${CLINKER} -shared ${TESTS_OBJS} -o libtests.so
+	${CLINKER} -shared ${TESTS_OBJS} -o $@
 
 pismr : pismr.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o pismr
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o libpism.so
-	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o pisms
+	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
-pismv : iceCompModel.o iceExactStreamModel.o pismv.o libpism.so libtests.so
-	${CLINKER} iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o pismv
+pismv : iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o libpism.so libtests.so
+	${CLINKER} iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
 pant : pant.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o pant
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 pgrn : iceGRNModel.o pgrn.o libpism.so
-	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o pgrn
+	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
 
 #shelf : shelf.o libpism.so
-#	${CLINKER} $< ${ICE_LIB_FLAGS} -o shelf
+#	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 flowTable : flowTable.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o flowTable
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-simpleISO : simpleISO.o libtests.so
-	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o simpleISO
+simpleABCD : simpleABCD.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleE : simpleE.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 simpleFG : simpleFG.o libtests.so
-	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o simpleFG
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleH : simpleH.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 simpleI : simpleI.o libtests.so
-	${CLINKER} $< -lm -L`pwd`/lib -Wl,-rpath,`pwd`/lib -ltests -o simpleI
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleL : simpleL.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+gridL : gridL.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 # Cancel the implicit rules  WHY?
 #% : %.cc

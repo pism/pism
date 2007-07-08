@@ -243,13 +243,6 @@ PetscScalar IceDragYieldModel::basalDragy(PetscScalar **betaORbetax, PetscScalar
 }
 
 
-PetscErrorCode nc_check(int stat) {
-  if (stat)
-    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
-  return 0;
-}
-
-
 PetscErrorCode IceDragYieldModel::writeBetaTaucNCFile() {
   PetscErrorCode  ierr;
 

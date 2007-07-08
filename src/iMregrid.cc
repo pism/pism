@@ -116,7 +116,7 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
     return 0;
   }
 
-  ierr = PetscPrintf(grid.com, "regridding data from `%s'\n", regridFile); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "regridding data from `%s'\n", regridFile); CHKERRQ(ierr);
 
   IceGrid g(grid.com, grid.rank, grid.size);
   IceModel m(g, ice);
@@ -176,6 +176,8 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   ierr = stampHistoryString(m.grid.p->history); CHKERRQ(ierr);
   ierr = stampHistoryString(" ---- ----  End regrid block  ---- ---->\n"); CHKERRQ(ierr);
   
+  ierr = verbPrintf(2,grid.com, "regridding done\n"); CHKERRQ(ierr);
+
   // The model that we just grabbed data from will fall out of scope and its
   // memory will be freed at the end of this method.  
   return 0;
@@ -316,7 +318,7 @@ PetscErrorCode IceModel::regridVar(const char *vars, char c, const InterpCtx &ic
     return 0;
   }
   
-  ierr = verbPrintf(3, grid.com, "  regridding %c ... ",c); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "  regridding %c ...\n",c); CHKERRQ(ierr);
 
   ierr = DALocalToGlobal(ic.dac, src, INSERT_VALUES, ic.gc); CHKERRQ(ierr);
 
