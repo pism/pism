@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{136}
+\newcommand{\PISMREV}{138}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -537,19 +537,56 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \end{tabular}
 \end{table}
 
+\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation accordind to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
+
+A reasonable method for computing the melting of snowfall, used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:real} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
+
+The part of this cycle above $0\!\phantom{|}^\circ \text{C}$ is converted to positive degree days.  This number of positive degree days is multiplied by a coefficient (set by \verb|-pdd_factor_snow|) to compute the amount of snow melted.  Of this melted snow, a fraction (\verb|-pdd_refreeze|) is kept as ice.  This ice, plus all unmelted snow (measured as ice-equivalent) is applied as accumulation, unless the number of positive degree days exceeds that required to melt all of the snow-fall in the year.  In this latter case in which there are excess positive degree days available for melting, the number of excess positive degree days is multiplied by a coefficient (\verb|-pdd_factor_ice|) to compute how much ice is melted, so that net ablation occurs (at the given point).
+
+As an additional feature one may add ``white noise'' to the temperature cycle.  More precisely, a normally-distributed, mean zero random temperature increment is added (or subtracted) from the temperature for each day.  These increments are independent over the days of the year, though of course we only have pseudo-randomness \dots, but they are the same over the whole sheet.  Their standard deviation is controlled by \verb|-pdd_std_dev|.  If one wants runs with repeatable randomness, add the option \verb|-pdd_repeatable|.
+
+As an example of this mechanism, first do
+
+\verb|pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 8000 -o foo|
+
+\noindent to get an ice sheet which is large enough to have spread significantly into the ablation zone.  Next observe how it behaves in a warmer ``climate'' \emph{without} the positive degree day model; note that the peak surface temperature in EISMINT II experiment B is 5.0 degrees warmer than that in experiment A \cite{EISMINT00}:
+
+\verb|pisms -eisII B -if foo.nc -y 40|
+
+\noindent In this 40 year run the ice sheet grows a bit.  Now observe how it behaves with the default positive degree day model:
+
+\verb|pisms -eisII B -if foo.nc -y 40 -pdd|
+
+\noindent Note that this latter run is the same as
+
+\verb|pisms -eisII B -if foo.nc -y 40 -pdd_summer_warming 15.0 -pdd_factor_snow 0.003 \|
+
+\verb|  -pdd_factor_ice 0.008 -pdd_refreeze 0.6 -pdd_std_dev 0.0|
+
+\noindent and that any of these options can be adjusted.
+
+A positive degree day model specific to the Greenland ice sheet is used in section \ref{sect:real}.
+
+
 
 \clearpage\newpage
 \section{Verification}\label{sect:verif}
 
-``Verification'' is a crucial task for a code as complicated as PISM.  It is a task not directly related to the physical behavior of real ice sheets in the sense that it is exclusively mathematical and numerical.  It is the task of checking that the predictions of a numerical code are close to the predictions of the continuum model which the numerical code claims to approximate.  In particular, one compares exact solutions of the continuum model, if available, to their numerical approximations.
+\bigskip
+\begin{quote}  Two types of errors may be distinguished: modelling errors and numerical errors.  Modelling errors arise from not solving the right equations.  Numerical errors result from not solving the equations right.  The assessment of modelling errors is \emph{validation}, whereas the assessment of numerical errors is called \emph{verification} \dots  Validation makes sense only after verification, otherwise agreement between measured and computed results may well be fortuitous.
+\end{quote}
+\hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
+\bigskip
+
+``Verification'' is a crucial task for a code as complicated as PISM.  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  In particular, one compares exact solutions of the continuum model, if available, to their numerical approximations.
 
 See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the MacAyeal equations for ice streams using a plastic till assumption.
 
 In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical code which is verified by \verb|pismv| is, however, exactly the same lines of code in exactly the same source files as is run by the non-verification executables \verb|pismr| and \verb|pisms|.  (In technical terms, \verb|pismv| runs a derived class of the core class \verb|IceModel|.  The core class corresponds to \verb|pismr|.)
 
-Table \ref{tab:tests} summarizes the many exact solutions contained within PISM, and shows how to use them individually to verify and to measure accuracy.   Note that each of these exact solutions is a solution to a free boundary problem for partial differential equations.
+Table \ref{tab:tests} summarizes the many exact solutions contained within PISM.  Note that all of these exact solutions except tests A and E are solutions of free boundary problems for partial differential equations.
 
-For serious attempts at verification, one must go down a grid refinement path and measure error.  For example, the runs
+Table \ref{tab:tests_exec} shows how to run them for an example grid, namely a grid recommended for quick execution time.   For serious attempts at verification, however, one must go down a grid refinement path and measure error.  For example, the runs
 \begin{quote}\small\begin{verbatim}
 pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
@@ -572,22 +609,45 @@ pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 produce the error data in figures 13, 14, and 15 of \cite{BBL}.  (Don't do the last couple of these without a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
 
 \begin{table}[h]
-\caption{Exact solutions for verification in PISM.}\label{tab:tests}
+\caption{Exact solutions for verification.}\label{tab:tests}
 \small
 \begin{tabular}{@{}llll}\hline
-\textbf{Test} & \textbf{Continuum model tested} & \textbf{Default invocation} & \textbf{Reference} \\ \hline
-A & isothermal SIA (mass conservation) & \verb|pismv -test A -y 25000| & \cite{BLKCB} \\
-B & isothermal SIA ('') & \verb|pismv -test B -ys 422.45 -y 25000| & \cite{BLKCB} \\
-C & isothermal SIA ('') & \verb|pismv -test C -y 15208.0| & \cite{BLKCB} \\
-D & isothermal SIA ('') & \verb|pismv -test D -y 25000| & \cite{BLKCB} \\
-E & isothermal SIA ('' and sliding) & \verb|pismv -test E -y 25000| & \cite{BLKCB} \\
-F & thermomechanically coupled SIA  & \verb|pismv -test F -y 25000| & \cite{BBL,BB} \\
- & \quad (mass conservation and energy) & & \\
-G & thermomechanically coupled SIA ('') & \verb|pismv -test G -y 25000| & \cite{BBL,BB} \\
-H & bed deformation coupled & \verb|pismv -test H -y 40034 -bed_def_iso| & \cite{BLKfastearth} \\
- & \quad with isothermal SIA & & [rev 113: BROKEN!!] \\
-I & velocity computation using & \verb|pismv -test I -Mx 5 -My $N| \quad (e.g.~\verb|$N|$\ge 200$) & \cite{MacAyeal,SchoofStream} \\
- & \quad MacAyeal eqns and plastic till & & \\
+\textbf{Test} & \textbf{Continuum model tested} & \textbf{Comments} & \textbf{Reference} \\ \hline
+A & isothermal SIA (mass conservation), steady, &  & \cite{BLKCB} \\
+ & flat bed, constant accumulation &  &  \\
+B & isothermal SIA, flat bed, zero accum & similarity soln & \cite{BLKCB} \\
+C & isothermal SIA, flat bed, growing accum & similarity soln & \cite{BLKCB} \\
+D & isothermal SIA, flat bed, oscillating accum & compensatory accum & \cite{BLKCB} \\
+E & isothermal SIA; as A &  compensatory accum & \cite{BLKCB} \\
+ & but with sliding in a sector &  &  \\
+F & thermomechanically coupled SIA (mass &  compensatory accum & \cite{BB,BBL} \\
+ & and energy cons.), steady, flat bed & and comp~heating &  \\
+G & thermomechanically coupled SIA; as F  & ditto & \cite{BB,BBL} \\
+ & but with oscillating accumulation &  &  \\
+H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
+I & velocity computation using MacAyeal eqns and plastic till &  & \cite{MacAyeal,SchoofStream} \\
+L & isothermal SIA, steady, non-flat bed & numerical ODE soln & \cite{BuelerEquilSheets} \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+
+\begin{table}[h]
+\caption{Running PISM to verify against the exact solutions.}\label{tab:tests_exec}
+\small
+\begin{tabular}{@{}llll}\hline
+\textbf{Test} & \textbf{Example invocation}  \\ \hline
+A & \verb|pismv -test A -Mx 61 -My 61 -Mz 11 -y 25000| \\
+B & \verb|pismv -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000|  \\
+C & \verb|pismv -test C -Mx 61 -My 61 -Mz 11 -y 15208.0|  \\
+D & \verb|pismv -test D -Mx 61 -My 61 -Mz 11 -y 25000|  \\
+E & \verb|pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000|  \\
+F & \verb|pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000|  \\
+G & \verb|pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000|  \\
+H & \verb|pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso| \\
+I & \verb|pismv -test I -Mx 5 -My 500 -mv_rtol 1e-6 -ksp_rtol 1e-11| \\
+L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \hline
 \normalsize
 \end{tabular}
@@ -790,12 +850,6 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 
 \clearpage\newpage
 \section{Validation}\label{sect:valid}
-
-\bigskip
-\begin{quote}  Two types of errors may be distinguished: modelling errors and numerical errors.  Modelling errors arise from not solving the right equations.  Numerical errors result from not solving the equations right.  The assessment of modelling errors is \emph{validation}, whereas the assessment of numerical errors is called \emph{verification} \dots  Validation makes sense only after verification, otherwise agreement between measured and computed results may well be fortuitous.
-\end{quote}
-\hfill P.~Wesseling, \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
-\bigskip
 
 \subsection{Validation of ice shelf numerics relative to Ross ice shelf data}  In \cite{MacAyealetal} a well-known validation of several ice shelf numerical models was performed relative to data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
 
@@ -1286,6 +1340,20 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used in conjunction with \verb|-no_mass|.
 
 \optdef{of}{p}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
+
+\opt{pdd}  Turns on the positive degree day model.  See subsection \ref{subsect:pdd}.
+
+\optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
+
+\optdef{pdd\und factor\und snow}{0.003}  The amount of snow, measured in meters ice-equivalent, which is melted per positive degree day.  In units of $\text{m}\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
+
+\optdef{pdd\und refreeze}{0.6}  Fraction of melted snow, from positive degree day melting, which locally refreezes as ice (and therefore adds to accumulation).  See subsection \ref{subsect:pdd}.
+
+\opt{pdd\und repeatable}  Base the randomness specified by \verb|pdd_std_dev| on a predictable seed.  Makes no difference if \verb|pdd_std_dev| is 0.0.  Allows runs with positive \verb|pdd_std_dev| to be identically repeated.  See subsection \ref{subsect:pdd}.
+
+\optdef{pdd\und std\und dev}{0.0}  Standard deviation of temperature increment added each day to temperature cycle in positive degree day model.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
+
+\optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
 \optrestrict{pause}{pisms -ross,pismv -test I}    Pause for given number of seconds at the end of the run when the results are displayed.
 

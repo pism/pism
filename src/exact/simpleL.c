@@ -43,25 +43,60 @@ int main() {
     return 1;
   }
 
-  exactL(r*1000.0,&H,&b,&a);
+  double EPS_ABS[] = { 1.0e-12, 1.0e-9, 1.0e-7 };
+  double EPS_REL[] = { 0.0, 1.0e-14, 1.0e-11 }; 
+  exactL(r*1000.0,&H,&b,&a,EPS_ABS[0],EPS_REL[0],1);
 
   printf("Results from Test L:\n");
-  printf("  H = %11.5f (m)   b = %10.5f (m)   a = %8.5f (m/a)\n",
+  printf("     H = %11.5f (m)   b = %10.5f (m)   a = %8.5f (m/a)\n",
          H,b,a*secpera);
 
-/*  produce graphs from this data:
+#define COMMENTARY 1
+#if COMMENTARY
+  printf("(*COMMENTARY*\n Above were produced with RK Cash-Karp method and default (tight) tolerances\n");
+  printf(" EPS_ABS = %e, EPS_REL = %e.\n",EPS_ABS[0],EPS_REL[0]);
+  printf(" Here is a table of values of H using alternative methods and tolerances:\n");
+  int method,i,j; 
+  for (method=1; method<5; method++) {
+    printf("   method = %d  (1=rkck,2=rk2,3=rk4,4=rk8pd):\n",method);  
+    for (i=0; i<3; i++) {
+      for (j=0; j<3; j++) {
+        if ((method == 2) && (j == 0)) {
+          printf("     EPS_ABS = %e, EPS_REL = %e:    <method hangs for this EPS_REL>\n",
+                 EPS_ABS[i],EPS_REL[j]);
+        } else {
+          exactL(r*1000.0,&H,&b,&a,EPS_ABS[i],EPS_REL[j],method);
+          printf("     EPS_ABS = %e, EPS_REL = %e:    H = %17.11f\n",EPS_ABS[i],EPS_REL[j],H);
+        }
+      }
+    }
+  }
+  printf(" *END COMMENTARY*)\n");
+#endif
+
+
+#define GRAPHABLE 0
+#if GRAPHABLE
+/*
+    produce profile and bed graphs from this data.
+    e.g. saving output in file "rHba.sce", editing out above stuff, 
+    running scilab, do "exec('rHba.sce')" in scilab   
+*/
 #define N 751
-  int i;
+  int k;
   double rr[N];
   double HH[N],bb[N],aa[N];
-  for (i = 0; i<N; i++) {
-    rr[i] = 750000.0 - 1000.0 * i;
+  for (k= 0; k<N; k++) {
+    rr[k] = 750000.0 - 1000.0 * k;
   }
   exactL_list(rr,N,HH,bb,aa);
-  for (i = 0; i<N; i++) {
+  printf("\n  rHba = [\n");
+  for (k = 0; k<N; k++) {
     printf("%10.3f  %11.5f  %10.5f  %8.5f\n",
-           rr[i]/1000.0,HH[i],bb[i],aa[i]*secpera);
+           rr[k]/1000.0,HH[k],bb[k],aa[k]*secpera);
   }
-*/
+  printf("];\n\n plot(rHba(:,1),rHba(:,2)+rHba(:,3),rHba(:,1),rHba(:,3))\n");
+#endif
+
   return 0;
 }

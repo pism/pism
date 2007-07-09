@@ -175,6 +175,7 @@ PetscErrorCode IceModel::destroyVecs() {
   PetscErrorCode ierr;
 
   ierr = bedDefCleanup(); CHKERRQ(ierr);
+  ierr = PDDCleanup(); CHKERRQ(ierr);
 
   ierr = VecDestroy(vu); CHKERRQ(ierr);
   ierr = VecDestroy(vv); CHKERRQ(ierr);
@@ -600,8 +601,14 @@ PetscErrorCode IceModel::run() {
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
-    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temp
-        
+    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
+    
+    // compute PDD; generates net accumulation, with possible ablation area, using snow accumulation
+    // might set maxdt_temporary 
+    if ((doPDD == PETSC_TRUE) && IsIntegralYearPDD()) {
+      ierr = updateNetAccumFromPDD();  CHKERRQ(ierr);
+    }
+
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);

@@ -16,6 +16,8 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <petscvec.h>
+#include <petscda.h>
 #include <cstring>
 #include <netcdf.h>
 #include "nc_util.hh"
@@ -24,77 +26,34 @@
 #include "iceModel.hh"
 #include "iceGRNModel.hh"
 
-const int STD_DEV = 5;
-const PetscScalar POS_DEGREE_DAY_FACTOR_SNOW = .003; // m d^-1 C^-1
-const PetscScalar POS_DEGREE_DAY_FACTOR_ICE = .008;  // m d^-1 C^-1
-const PetscScalar REFREEZE_FACTOR = .6;
 const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a
-const PetscScalar   G_geothermal   = 0.050;      // J/m^2 s; geo. heat flux
+const PetscScalar EISMINT_G_geothermal   = 0.050;      // J/m^2 s; geo. heat flux
 const int CONST_PIECE_FWD_INTERP = 0;
 const int CONST_PIECE_BCK_INTERP = 1;
 const int LINEAR_INTERP = 2;
 
 
-int IceGRNModel::getTestNum() {
-  return testnum;
-}
-
-PetscErrorCode IceGRNModel::copySnowAccum() {
-  PetscErrorCode ierr;
-  ierr = VecCopy(vSnowAccum, vAccum); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceGRNModel::copyOrigBed() {
-  PetscErrorCode ierr;
-  ierr = VecCopy(vOrigBed, vbed); CHKERRQ(ierr);
-  return 0;
-}
-
 IceGRNModel::IceGRNModel(IceGrid &g, IceType &i) : IceModel(g, i) {
-  // only call parent's constructor
+  // only call parent's constructor; do all classes need constructors?
 }
 
-PetscErrorCode IceGRNModel::getInterpolationCode(int ncid, int vid, int *code) {
-  int stat;
-  char attr[NC_MAX_NAME+1];
-  size_t len;
-
-  stat = nc_get_att_text(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
-  stat = nc_inq_attlen(ncid, vid, "interpolation", &len); CHKERRQ(nc_check(stat));
-
-  attr[len] = '\0';
-
-  if (strcmp(attr, "constant_piecewise_forward") == 0) {
-    *code = CONST_PIECE_FWD_INTERP;
-  } else if (strcmp(attr, "constant_piecewise_backward") == 0) {
-    *code = CONST_PIECE_BCK_INTERP;
-  } else if (strcmp(attr, "linear") == 0) {
-    *code = LINEAR_INTERP;
-  } else {
-    verbPrintf(1, grid.com, "Interpolation '%s' is unknown, defaulting to linear.\n", attr);
-    *code = LINEAR_INTERP;
-  }
-
-  return 0;
-}
 
 PetscErrorCode IceGRNModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth usrTestSet;
-  int usr_test;
+  PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-test", &usr_test,
-                            &usrTestSet); CHKERRQ(ierr);
-  if (usrTestSet) {
-    testnum = usr_test;
-  } else {
-    testnum=1;
-  }
+  testnum = 1;  // SSL2 is the default
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl2", &ssl2Set); CHKERRQ(ierr);
+  if (ssl2Set == PETSC_TRUE)   testnum = 1;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
+  if (ssl3Set == PETSC_TRUE)   testnum = 2;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ccl3", &ccl3Set); CHKERRQ(ierr);
+  if (ccl3Set == PETSC_TRUE)   testnum = 3;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-gwl3", &gwl3Set); CHKERRQ(ierr);
+  if (gwl3Set == PETSC_TRUE)   testnum = 4;
 
   enhancementFactor = 3;
-
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // note -e will override e=3 if set
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // note: user value for -e will override e=3
   return 0;
 }
 
@@ -107,14 +66,12 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   ierr = saveOrigVecs(); CHKERRQ(ierr);
 
   char inFile[PETSC_MAX_PATH_LEN], coreFile[PETSC_MAX_PATH_LEN];
-  int usr_year, usr_seed;
-  PetscTruth inFileSet, bootFileSet, usrYearSet, usrSeedSet,
-             forceSet;
+  int usr_year;
+  PetscTruth inFileSet, bootFileSet, usrYearSet, forceSet, nopddSet;
   
-  verbPrintf(3, grid.com,
-             "Running Greenland Eismint test, so ghf is being set to: %f\n",
-             G_geothermal);
-  ierr = VecSet(vGhf, G_geothermal); CHKERRQ(ierr);
+  verbPrintf(3, grid.com,"geothermal flux vGhf is being set to: %f\n",
+             EISMINT_G_geothermal);
+  ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
   
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
@@ -129,21 +86,40 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-ys", &usr_year,
                             &usrYearSet); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-repeatable", &usr_seed,
-                            &usrSeedSet); CHKERRQ(ierr);
-
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_pdd", &nopddSet); CHKERRQ(ierr);
+  if (nopddSet == PETSC_TRUE) {
+    doPDD = PETSC_FALSE;
+  } else { 
+    // in this case, turn the PDD on for this derived class, so no "-pdd" is needed to turn it on
+    doPDD = PETSC_TRUE;
+    if (pddStuffCreated == PETSC_FALSE) {
+      ierr = initPDDFromOptions(); CHKERRQ(ierr);
+    }
+    PetscTruth pddSummerWarmingSet, pddStdDevSet;
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming", &pddSummerWarmingSet); CHKERRQ(ierr);
+    if (pddSummerWarmingSet == PETSC_TRUE) { // note IceGRNModel::getSummerWarming() is below
+      verbPrintf(1, grid.com, 
+         "WARNING: -pdd_summer_warming option ignored.  Using EISMINT-GREENLAND\n"
+         "         summer temperature formula\n");
+    }
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); CHKERRQ(ierr);
+    if (pddStdDevSet == PETSC_FALSE) {
+      pddStdDev = 5.0;  // EISMINT-GREENLAND default; note we allow user to override
+    }
+  }
+  
   if (inFileSet == PETSC_TRUE) {
     if (bootFileSet) {
-      verbPrintf(1, grid.com, "WARNING: -bif and -if given. using -if.\n");
+      verbPrintf(1, grid.com, "WARNING: -bif and -if given; using -if\n");
     }
   } else if (bootFileSet == PETSC_TRUE) {
     // after we set the new temperatures, we need
     // to set the 3D temps again
-    ierr = fillTs(); CHKERRQ(ierr);
+    ierr = updateTs(); CHKERRQ(ierr);
     ierr = putTempAtDepth(); CHKERRQ(ierr);
     ierr = cleanExtraLand(); CHKERRQ(ierr);
   } else {
-    SETERRQ(1, "Error: need input file.\n");
+    SETERRQ(1, "ERROR: IceGRNModel needs an input file\n");
   }
 
   // If the user is using the ice core data, it is necessary
@@ -170,9 +146,9 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     MPI_Bcast(&gripDeltaTInterp, 1, MPI_INT, 0, grid.com);
     MPI_Bcast(&gripDeltaSeaInterp, 1, MPI_INT, 0, grid.com);
-    ierr = ncVarBcastVec(ncid, v_dT, &vIceCoreDeltaT); CHKERRQ(ierr);
-    ierr = ncVarBcastVec(ncid, v_dSea, &vIceCoreDeltaSea); CHKERRQ(ierr);
-    ierr = ncVarBcastVec(ncid, v_time, &vIceCoreTime); CHKERRQ(ierr);
+    ierr = ncVarBcastVec(ncid, v_dT, &vIceCoreDeltaT); CHKERRQ(ierr);  // creates this Vec
+    ierr = ncVarBcastVec(ncid, v_dSea, &vIceCoreDeltaSea); CHKERRQ(ierr);  // creates this Vec
+    ierr = ncVarBcastVec(ncid, v_time, &vIceCoreTime); CHKERRQ(ierr);  // creates this Vec
    
     ierr = VecGetArray(vIceCoreTime, &years); CHKERRQ(ierr);
     int r, l=0;
@@ -196,28 +172,26 @@ PetscErrorCode IceGRNModel::initFromOptions() {
       climateForcing = PETSC_TRUE;
     }
 
-  } else if (testnum == 2) {
-    SETERRQ(1, "Error: need ice core data for this test.\n");
+  } else if (testnum == 3) {
+    SETERRQ(1, "ERROR: EISMINT-GREENLAND experiment CCL3 needs ice core data\n");
   }
 
-  // initialize the random number generator
-  rand_gen = gsl_rng_alloc(gsl_rng_taus);
-  gsl_rng_set(rand_gen, usrSeedSet ? usr_seed : (int)grid.p->year);
-                        
   if (!isInitialized()) {
     SETERRQ(1, "Model has not been initialized.\n");
-  }       
-
+  }
   return 0;
 }
+
 
 PetscErrorCode IceGRNModel::createVecs() {
   PetscErrorCode ierr;
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
+  ierr = VecDuplicate(vh, &vOrigBed); CHKERRQ(ierr);
   return 0;
 }
+
 
 PetscErrorCode IceGRNModel::destroyVecs() {
   PetscErrorCode ierr;
@@ -227,42 +201,61 @@ PetscErrorCode IceGRNModel::destroyVecs() {
   ierr = VecDestroy(vIceCoreDeltaT); CHKERRQ(ierr);
   ierr = VecDestroy(vIceCoreDeltaSea); CHKERRQ(ierr);
   ierr = VecDestroy(vIceCoreTime); CHKERRQ(ierr);
-
   return 0;
 }
+
+
+PetscErrorCode IceGRNModel::copyOrigBed() {
+  PetscErrorCode ierr;
+  ierr = VecCopy(vOrigBed, vbed); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceGRNModel::getInterpolationCode(int ncid, int vid, int *code) {
+  int stat;
+  char attr[NC_MAX_NAME+1];
+  size_t len;
+
+  stat = nc_get_att_text(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
+  stat = nc_inq_attlen(ncid, vid, "interpolation", &len); CHKERRQ(nc_check(stat));
+
+  attr[len] = '\0';
+
+  if (strcmp(attr, "constant_piecewise_forward") == 0) {
+    *code = CONST_PIECE_FWD_INTERP;
+  } else if (strcmp(attr, "constant_piecewise_backward") == 0) {
+    *code = CONST_PIECE_BCK_INTERP;
+  } else if (strcmp(attr, "linear") == 0) {
+    *code = LINEAR_INTERP;
+  } else {
+    verbPrintf(1, grid.com, "Interpolation '%s' is unknown, defaulting to linear.\n", attr);
+    *code = LINEAR_INTERP;
+  }
+  return 0;
+}
+
 
 PetscErrorCode IceGRNModel::saveOrigVecs() {
   PetscErrorCode ierr;
 
-  // the data that represents the snow fall is actually
-  // in vAccum, so we need to make an equivalent vector
-  // and copy over the data.
-  ierr = VecDuplicate(vAccum, &vSnowAccum); CHKERRQ(ierr);
-  ierr = VecCopy(vAccum, vSnowAccum); CHKERRQ(ierr);
-
   // we need to save the original bed information and copy
   // it back before we write it to the nc file.
-  ierr = VecDuplicate(vbed, &vOrigBed); CHKERRQ(ierr);
   ierr = VecCopy(vbed, vOrigBed); CHKERRQ(ierr);
-  
-
-  ierr = calculateNetAccum(); CHKERRQ(ierr);
-
   return 0;
 }
 
 PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     PetscErrorCode ierr;
-    PetscTruth integralYear = PETSC_FALSE;
     PetscScalar *deltaT, *iceCoreTime, *deltaSea;
     PetscScalar **Ts, **bed, **origBed;
     PetscScalar TsChange, seaChange;
 
-    // at the beginning of each time step
-    // we need to redo the model of the surface
-    // temperatures.
-    ierr = fillTs(); CHKERRQ(ierr);
-    if (testnum==2 && climateForcing == PETSC_TRUE) {
+    // at the beginning of each time step we need to recompute
+    // surface temperatures from surface elevation and latitude
+    ierr = updateTs(); CHKERRQ(ierr);
+    
+    if (testnum == 3 && climateForcing == PETSC_TRUE) {
 
       // apply the climate forcing
       ierr = VecGetArray(vIceCoreDeltaT, &deltaT); CHKERRQ(ierr);
@@ -278,7 +271,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
          iceCoreIdx++;
       }
       if (iceCoreIdx >= iceCoreLen) {
-        verbPrintf(1, grid.com, "No more climate data. Turning off Climate Forcing.\n");
+        verbPrintf(1, grid.com, "ATTENTION: no more climate data. Turning off Climate Forcing.\n");
         climateForcing = PETSC_FALSE;
       } else {
 
@@ -294,7 +287,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
               if (iceCoreIdx == 0) {
                 TsChange = 0;
                 seaChange = 0;
-                verbPrintf(2, grid.com, "Year before Climate Data, using TsChange 0\n");
+                verbPrintf(2, grid.com, "model year precedes beginning of climate Data; using TsChange=0\n");
               } else {
                 TsChange = deltaT[iceCoreIdx-1];
                 seaChange = deltaSea[iceCoreIdx-1];
@@ -308,15 +301,16 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
               if (iceCoreIdx == 0) {
                 TsChange = 0;
                 seaChange = 0;
-                verbPrintf(2, grid.com, "Year before Climate Data, using TsChange 0\n");
+                verbPrintf(2, grid.com, "model year precedes beginning of climate Data; using TsChange=0\n");
               } else {
                 y0 = deltaT[iceCoreIdx-1];
                 y1 = deltaT[iceCoreIdx];
-                TsChange = y0+(y1-y0)/(iceCoreTime[iceCoreIdx]-iceCoreTime[iceCoreIdx-1])*(grid.p->year-iceCoreTime[iceCoreIdx-1]);
-
+                TsChange = y0 + ((y1-y0) / (iceCoreTime[iceCoreIdx]-iceCoreTime[iceCoreIdx-1]))
+                                    * (grid.p->year-iceCoreTime[iceCoreIdx-1]);
                 y0 = deltaSea[iceCoreIdx-1];
                 y1 = deltaSea[iceCoreIdx];
-                seaChange = y0+(y1-y0)/(iceCoreTime[iceCoreIdx]-iceCoreTime[iceCoreIdx-1])*(grid.p->year-iceCoreTime[iceCoreIdx-1]);
+                seaChange = y0 + ((y1-y0) / (iceCoreTime[iceCoreIdx]-iceCoreTime[iceCoreIdx-1]))
+                                    * (grid.p->year-iceCoreTime[iceCoreIdx-1]);
               }
               break;
             default:
@@ -345,160 +339,61 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
       
     }
-    if ((fmod(grid.p->year, 1.0) + 5e-6) < 1e-5 ) {
-      integralYear = PETSC_TRUE;
-    }
-
-    // the net accumulation depends on Ta, Ts, lat,
-    // d18O, and snow accumulation
-    if (integralYear) {
-      calculateNetAccum();
-    }
-
-    if (grid.p->year<0) {
-      maxdt_temporary = fmod(fabs(grid.p->year), 1.0) * secpera;
-    } else {
-      maxdt_temporary = (1.0 - fmod(fabs(grid.p->year), 1.0)) * secpera;
-    }
-    
     return 0;
 }
 
 
 PetscErrorCode IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val) {
-  PetscScalar Z;
-
-  Z = PetscMax(h, 20 * (lat - 65));
+  //EISMINT surface temperature model
+  PetscScalar Z = PetscMax(h, 20 * (lat - 65));
   *val = 49.13 - 0.007992 * Z - 0.7576 * (lat);
   return 0;
 }
 
-PetscErrorCode IceGRNModel::calculateSummerTemp(PetscScalar h, PetscScalar lat, PetscScalar *val) {
-  *val = 30.38 - .006277 * h - .3262 * lat;
-  return 0;
+
+PetscScalar IceGRNModel::getSummerWarming(
+       const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const {
+  // this is virtual in IceModel
+  // EISMINT summer surface temperature model (expressed as warming above mean annual)
+  // Ta, Ts in degrees C; Ta is mean annual, Ts is summer peak
+  const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
+  return Ts - Ta;
 }
 
-PetscErrorCode IceGRNModel::fillTs() {
+
+PetscErrorCode IceGRNModel::updateTs() {
   PetscErrorCode ierr;
   PetscScalar val;
-  PetscScalar **Ts, **lat, **h, **H, **b;
+  PetscScalar **Ts, **lat, **h;
   
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      //EISMINT surface temperature model
       calculateMeanAnnual(h[i][j], lat[i][j], &val);
       Ts[i][j] = val + ice.meltingTemp;
     }
   }
-  
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vTs, INSERT_VALUES, vTs); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vTs, INSERT_VALUES, vTs); CHKERRQ(ierr);
-
   return 0;
 }
 
-PetscErrorCode IceGRNModel::calculateTempFromCosine(PetscScalar Ts, PetscScalar Ta,
-                                                    int t, PetscScalar *temp) {
-  float summer_offset = 243; // approximately August 1st
-  // NOTE: Ta means "Mean annual Temperature" and
-  //       Ts means "Summer Temperature"
-  // These values are computed according to the
-  // functions given in the EISMINT Greenland
-  // experiment. also, they can be computed using
-  // the follow functions:
-  // Ta: calculateMeanAnnual
-  // Ts: calculateSummerTemp
-  *temp = (Ts-Ta) * cos((2 * PETSC_PI * (t - summer_offset)) / 365) + Ta;
-  return 0;
-}
-
-PetscErrorCode IceGRNModel::calculateNetAccum() {
-  PetscErrorCode ierr;
-  PetscScalar **accum, **surface_t, **h, **lat, **snow_accum;
-  PetscScalar val, pos_sum;
-  PetscScalar mean_annual, summer;
-  float rand_values[365];
-  PetscScalar snow_melt, ice_melt, snow_year;
-
-  // calculate a random number for each day
-  // in the year. The same numbers will be
-  // used for all points on the grid
-  for (int x=0; x<365; x++) {
-    rand_values[x] = gsl_ran_gaussian(rand_gen, STD_DEV);
-  }
-
-  ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vTs, &surface_t); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vSnowAccum, &snow_accum); CHKERRQ(ierr);
-  
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (snow_accum[i][j]*secpera == (float)- DEFAULT_ABLATION_IN_OCEAN0) {
-        continue;
-      }
-      pos_sum = 0;
-      ierr = calculateMeanAnnual(h[i][j], lat[i][j], &mean_annual); CHKERRQ(ierr);
-      ierr = calculateSummerTemp(h[i][j], lat[i][j], &summer); CHKERRQ(ierr);
-      for (int x=0; x<365; x++){
-        ierr = calculateTempFromCosine(summer, mean_annual, x, &val); CHKERRQ(ierr);
-        val += rand_values[x];
-        if (val > 0) {
-          pos_sum += val;
-        }
-      }
-      snow_year = snow_accum[i][j]*secpera;
-      snow_melt = pos_sum * POS_DEGREE_DAY_FACTOR_SNOW;
-      if (snow_melt!=0){
-      }
-      if (snow_melt <= snow_year) {
-        accum[i][j] = ((snow_year-snow_melt) + (snow_melt * REFREEZE_FACTOR))/secpera;
-      } else {
-        accum[i][j] = (snow_accum[i][j] * REFREEZE_FACTOR);
-        ice_melt = (snow_melt-snow_year)/POS_DEGREE_DAY_FACTOR_SNOW*POS_DEGREE_DAY_FACTOR_ICE;
-        accum[i][j] -= ice_melt/secpera;
-      }
-    }
-  }
-
-  ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vTs, &surface_t); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vSnowAccum, &snow_accum); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
-
-  return 0;
-}
 
 PetscErrorCode IceGRNModel::ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat) {
   // first function
   float l1_x1 = -68.18, l1_y1 = 80.1;
   float l1_x2 = -62, l1_y2 = 82.24;
-
-  // piecewise boundaries
-  float m, b;
+  float m, b;  // piecewise boundaries
 
   m = (l1_y1 - l1_y2) / (l1_x1 - l1_x2);
   b = (l1_y2) - m * (l1_x2);
   *lat = m * lon + b;
-
   return 0;
 }
+
 
 PetscErrorCode IceGRNModel::cleanExtraLand(){
   PetscErrorCode ierr;
@@ -512,7 +407,6 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-
       ellePiecewiseFunc(lon[i][j], &lat_line);
       if (lat[i][j]>lat_line) {
           mask[i][j] = MASK_FLOATING_OCEAN0;

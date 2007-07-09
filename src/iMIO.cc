@@ -137,6 +137,10 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   char ncf[PETSC_MAX_PATH_LEN]; // netCDF format
   char mf[PETSC_MAX_PATH_LEN];  // Matlab format
 
+  if (doPDD == PETSC_TRUE) { // want to save snow accumulation map, not net accumulation
+    ierr = putBackSnowAccumPDD(); CHKERRQ(ierr);
+  }
+  
   // Use the defaults passed from the driver if not specified on command line.
   // We should leave space for a suffix and null byte
   strncpy(b, basename, PETSC_MAX_PATH_LEN-4);
@@ -151,7 +155,7 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   if (strchr(fmt, 'p') != NULL) {
     strcpy(pf, b);
     strcat(pf, ".pb");
-    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", pf); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'", pf); CHKERRQ(ierr);
     ierr = dumpToFile(pf); CHKERRQ(ierr);
   }
 

@@ -703,7 +703,8 @@ PetscErrorCode IceModel::afterInitHook() {
   PetscTruth     LxSet, LySet, LzSet;
   PetscScalar    my_Lx, my_Ly, my_Lz;
 
-  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including* if initialization is from an input file
+  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
+  // if initialization is from an input file
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &my_Lx, &LxSet); CHKERRQ(ierr);
   if (LxSet == PETSC_TRUE) {
     ierr = grid.rescale(my_Lx*1000.0, grid.p->Ly, grid.p->Lz); CHKERRQ(ierr);
@@ -743,12 +744,20 @@ PetscErrorCode IceModel::afterInitHook() {
     
   ierr = bedDefSetup(); CHKERRQ(ierr);
 
+  ierr = initPDDFromOptions(); CHKERRQ(ierr);
+
+  ierr = setSoundingFromOptions(); CHKERRQ(ierr);
+  ierr = initSounding(); CHKERRQ(ierr);
+  tempskipCountDown = 0;
+
+  // initialization should be done; report on starting state
   ierr = verbPrintf(2,grid.com, 
            "  [computational box for ice: (%8.2f km) x (%8.2f km)",
            2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0); CHKERRQ(ierr);
   if (grid.p->Mbz > 1) {
     ierr = verbPrintf(2,grid.com,
-         "\n                                 x (%8.2f m + %7.2f m bedrock)]\n",grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
+         "\n                                 x (%8.2f m + %7.2f m bedrock)]\n"
+         ,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com," x (%8.2f m)]\n",grid.p->Lz); CHKERRQ(ierr);
   }
@@ -759,17 +768,16 @@ PetscErrorCode IceModel::afterInitHook() {
   // if -verbose then actually list all of IceParam
   ierr = verbPrintf(3,grid.com,"  IceParam: Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
                     grid.p->Mx,grid.p->My,grid.p->Mz,grid.p->Mbz); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,"            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
-                    grid.p->Lx/1000.0,grid.p->Ly/1000.0,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,"            dx = %6.3f km, dy = %6.3f km, dz = %6.3f m, year = %8.4f,\n",
-                    grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz,grid.p->year); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,"            history = ****************\n%s"
-                               "            **************************\n",grid.p->history); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+           "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
+           grid.p->Lx/1000.0,grid.p->Ly/1000.0,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+           "            dx = %6.3f km, dy = %6.3f km, dz = %6.3f m, year = %8.4f,\n",
+           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz,grid.p->year); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+     "            history = ****************\n%s            **************************\n"
+     ,grid.p->history); CHKERRQ(ierr);
   
-  ierr = setSoundingFromOptions(); CHKERRQ(ierr);
-  ierr = initSounding(); CHKERRQ(ierr);
-  tempskipCountDown = 0;
-
   ierr = createViewers(); CHKERRQ(ierr);
 
   return 0;

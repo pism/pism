@@ -19,16 +19,16 @@
 #ifndef __iceModel_hh
 #define __iceModel_hh
 
-#include <petscda.h>
-#include <petscksp.h>
+#include <signal.h>
 #include <netcdf.h>
+#include <gsl/gsl_rng.h>
 
 #if (WITH_FFTW)
 #include <fftw3.h>
 #endif
 
-#include <signal.h>
-
+#include <petscda.h>
+#include <petscksp.h>
 #include "grid.hh"
 #include "materials.hh"
 
@@ -328,6 +328,26 @@ protected:
                                  PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
 
+  // see iMpdd.cc (positive degree day model for ablation)
+  Vec         vAccumSnow;
+  gsl_rng     *pddRandGen;
+  PetscTruth  doPDD, pddStuffCreated;
+  PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, pddSummerWarming;
+  static const PetscScalar DEFAULT_PDD_STD_DEV;
+  static const PetscScalar DEFAULT_PDD_FACTOR_SNOW;
+  static const PetscScalar DEFAULT_PDD_FACTOR_ICE;
+  static const PetscScalar DEFAULT_PDD_REFREEZE_FRAC;
+  static const PetscScalar DEFAULT_PDD_SUMMER_WARMING;
+  PetscErrorCode initPDDFromOptions();
+  bool IsIntegralYearPDD();
+  virtual PetscScalar getTemperatureFromYearlyCycle(
+                  const PetscScalar summer_warming, const PetscScalar Ta, const int day) const;
+  virtual PetscScalar getSummerWarming(
+                  const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const;
+  PetscErrorCode updateNetAccumFromPDD();
+  PetscErrorCode putBackSnowAccumPDD();
+  PetscErrorCode PDDCleanup();
+  
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
   // (e.g. also used by derived class IceHEINOModel)
   Vec         g2natural;

@@ -63,26 +63,44 @@ int func(double r, const double u[], double f[], void *params) {
 
 #define NOT_DONE       8966
 #define NOT_DECREASING 8967
+#define INVALID_METHOD 8968
 
-int getU(double *r, int N, double *u) {
+// combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
+// believed to be predictable and accurate
+int getU(double *r, int N, double *u, 
+         const double EPS_ABS, const double EPS_REL, const int ode_method) {
    // solves ODE for u(r)=H(r)^{8/3}, 0 <= r <= L, for test L
    // r and u must be allocated vectors of length N; r[] must be decreasing
 
    // check r is decreasing first
    int i;
    for (i = 1; i<N; i++) {
-     if (r[i] > r[i-1])   return NOT_DECREASING;
+     if (r[i] > r[i-1]) {
+       printf("r[] not decreasing in getU()\n");
+       return NOT_DECREASING;
+     }
    }
 
-   // setup for GSL ODE solver
-// 	const double EPS_ABS = 1.0e-8, EPS_REL = 1.0e-14;
- 	const double EPS_ABS = 1.0e-9, EPS_REL = 0.0;
-	const gsl_odeiv_step_type* T = gsl_odeiv_step_rkck;  // doesn't need Jacobian
-// alternative methods:
-//	const gsl_odeiv_step_type* T = gsl_odeiv_step_rk2;  // doesn't need Jacobian
-//	const gsl_odeiv_step_type* T = gsl_odeiv_step_rkf45;  // doesn't need Jacobian
-// const gsl_odeiv_step_type* T = gsl_odeiv_step_rk4;  // doesn't need Jacobian
-
+   // setup for GSL ODE solver; following step choices don't need Jacobian,
+   // but should we chose one that does?
+	const gsl_odeiv_step_type* T;
+   switch (ode_method) {
+     case 1:
+       T = gsl_odeiv_step_rkck;
+       break;
+     case 2:
+       T = gsl_odeiv_step_rk2;
+       break;
+     case 3:
+       T = gsl_odeiv_step_rk4;
+       break;
+     case 4:
+       T = gsl_odeiv_step_rk8pd;
+       break;
+     default:
+       printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
+       return INVALID_METHOD;
+   }
 	gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     // one scalar ode
 	gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
 	gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    // one scalar ode
@@ -113,10 +131,11 @@ int getU(double *r, int N, double *u) {
 }
 
 
-int exactL(double r, double *H, double *b, double *a) {
+int exactL(double r, double *H, double *b, double *a, 
+           const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
   double u[1] = { 0.0 };
-  getU(&r,1,u);
+  getU(&r,1,u,EPS_ABS,EPS_REL,ode_method);
   *H = pow(u[0],3.0/8.0);
   *b = - b0 * cos(z0 * pi * r / L);
   const double Lsqr = L * L;
@@ -135,7 +154,9 @@ int exactL_list(double *r, int N, double *H, double *b, double *a) {
   double *u;
   u = (double *) malloc(N * sizeof(double)); // temporary arrays
   
-  int stat = getU(r,N,u);
+  // combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
+  // believed to be predictable and accurate
+  int stat = getU(r,N,u,1.0e-12,0.0,1); 
   if (stat != GSL_SUCCESS) {
     return stat;
   }

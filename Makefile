@@ -26,7 +26,7 @@ executables= pismr pismv pisms pgrn pant
 extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
-	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
+	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc iMpdd.cc\
 	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc\
 	iMviewers.cc iceModel.cc materials.cc nc_util.cc
 ice_csources= cubature.c pism_signal.c
@@ -43,17 +43,20 @@ other_csources= simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
-all : depend libpism.so libtests.so $(executables)
+all : depend libpism.so libtests.so $(executables) .makeremind
 
 install : local_install clean
 
-local_install : libpism.so libtests.so $(executables)
-	cp libpism.so lib/
-	cp libtests.so lib/
-	cp $(executables) bin/
-	rm -f libpism.so
-	rm -f libtests.so
-	rm -f $(executables)
+local_install : depend libpism.so libtests.so $(executables)
+	@cp libpism.so lib/
+	@cp libtests.so lib/
+	@echo 'PISM libraries installed in lib/'
+	@cp $(executables) bin/
+	@rm -f libpism.so
+	@rm -f libtests.so
+	@rm -f $(executables)
+	@echo 'PISM executables installed in bin/'
+	@rm .makeremind
 
 libpism.so : ${ICE_OBJS}
 	${CLINKER} -shared ${ICE_OBJS} -o $@
@@ -107,6 +110,17 @@ gridL : gridL.o libtests.so
 # Cancel the implicit rules  WHY?
 #% : %.cc
 #% : %.c
+
+.makeremind :
+	@touch .makeremind
+	@echo '*** Remember to "make install".  For now, new executables are "./pismv", etc. ****'
+
+showEnv :
+	@echo ${CLINKER}
+	@echo ${PETSC_DIR}
+	@echo ${PETSC_LIB}
+	@echo ${ICE_LIB_FLAGS}
+	@echo ${TESTS_LIB_FLAGS}
 
 # Emacs style tags
 .PHONY: tags TAGS

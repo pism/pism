@@ -153,9 +153,10 @@ int main() {
 
   // slow method: re-solve ODE for each grid point
   printf(" ---- start slow method ----  (takes 10 to 30 seconds for Mx=My=36, perhaps)\n");
+  const double EPS_ABS = 1.0e-9, EPS_REL = 0.0; 
   for (i = 0; i < Mx; i++) {
     for (j = 0; j < My; j++) {
-      exactL(rr[i][j],&HH[i][j],&bb[i][j],&aa[i][j]);
+      exactL(rr[i][j],&HH[i][j],&bb[i][j],&aa[i][j],EPS_ABS,EPS_REL,1);
     }
   }
   printf(" ---- end slow ----\n");

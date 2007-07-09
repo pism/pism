@@ -39,12 +39,14 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactL(double r, double *H, double *b, double *a);
+int exactL(double r, double *H, double *b, double *a, 
+           const double EPS_ABS, const double EPS_REL, const int ode_method);
    /* r in meters,  0 <= r <= 750000 */
   
 int exactL_list(double *r, int N, double *H, double *b, double *a);
    /* N values r[0] > r[1] > ... > r[N-1]  (_decreasing_)
       assumes r, H, b, a are _allocated_ length N arrays  */
+   /* uses defaults EPS_ABS=1.0e-12, EPS_REL=0.0, ode_method=1 (RK Cash-Karp) */
 
 #ifdef __cplusplus
 }
