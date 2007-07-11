@@ -173,7 +173,8 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
 
-    grid.p->year=startYear; // some exact solutions have "absolute time"
+    ierr = afterInitHook(); CHKERRQ(ierr);
+
     switch (testname) {
       case 'A':
       case 'B':
@@ -194,7 +195,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
     }
   }
 
-  ierr = afterInitHook(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -700,6 +700,38 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
 }
 
 
+PetscErrorCode IceCompModel::summaryPrintLine(
+    const PetscTruth printPrototype, const PetscTruth tempAndAge,
+    const PetscScalar year, const PetscScalar dt, 
+    const PetscInt tempskipCount, const char adaptReason,
+    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
+
+  PetscErrorCode ierr;
+  if (printPrototype == PETSC_TRUE) {
+    if (tempAndAge == PETSC_TRUE) {
+      ierr = verbPrintf(2,grid.com,
+               "       YEAR (+     STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
+               CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com,
+               "       YEAR (+     STEP[N$]):     VOL    AREA     THICK0\n"); CHKERRQ(ierr);
+    }
+  } else {
+    if (tempAndAge == PETSC_TRUE) {
+      ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
+                       year, dt/secpera, tempskipCount, adaptReason, 
+                       volume_kmcube/1.0e6,area_kmsquare/1.0e6,meltfrac,H0,T0); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%11.3f",
+         year, dt/secpera, tempskipCount, adaptReason, 
+         volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
+    }
+  }
+  return 0;
+}
+
+
 PetscErrorCode IceCompModel::reportErrors() {
   // geometry errors to report (for all tests): 
   //    -- max thickness error
@@ -860,13 +892,15 @@ PetscErrorCode IceCompModel::run() {
   if (exactOnly == PETSC_TRUE) {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
-  ierr = verbPrintf(2,grid.com,
-      "$$$$       YEAR (+     STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0\n");
-      CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
+  PetscTruth tempAge = ((doTemp == PETSC_TRUE) && ((testname == 'F') || (testname =='G'))) 
+                       ? PETSC_TRUE : PETSC_FALSE;
+  ierr = summaryPrintLine(PETSC_TRUE, tempAge,
+                          0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
-  ierr = summary(true,false); CHKERRQ(ierr);  // report starting state
+  ierr = summary(tempAge,false); CHKERRQ(ierr);  // report starting state
 
   dtTempAge = 0.0;
   // main loop for time evolution
@@ -901,11 +935,6 @@ PetscErrorCode IceCompModel::run() {
     //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
     //    criteria from derived class additionalAtStartTimestep(), and from 
     //    "-tempskip" mechanism
-
-    // ierr = PetscPrintf(PETSC_COMM_SELF,
-    //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
-    //        CHKERRQ(ierr);
-    
 
     switch (testname) {
       case 'A':

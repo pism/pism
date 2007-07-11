@@ -480,7 +480,7 @@ If one initializes PISM from a saved model state then the input model state cont
 
 \noindent will give a warning that ``\verb|user option -Mz ignored; value read from file foo.nc|.''  To change the model grid one must explicitly ``regrid'', as described next.
 
-\subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment F as above, producing \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  Speaking conceptually, the idea in PISM is that one starts over from the beginning of EISMINT II experiment F on the finer grid, but one extracts the thickness and ice temperature stored in the coarse grid file and interpolates onto the finer grid before proceeding with the actual computation.  The transfer from grid to grid is actually quite general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter should always produce a PISM error.)
+\subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment F as above, producing \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  Speaking conceptually, the idea in PISM is that one starts over from the beginning of EISMINT II experiment F on the finer grid, but one extracts the thickness and ice temperature stored in the coarse grid file and interpolates onto the finer grid before proceeding with the actual computation.  The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter should always produce a PISM error.)
 
 Such ``regridding'' is done using the \verb|-regrid| and \verb|-regrid_vars| commands as in this example:
 
@@ -488,7 +488,7 @@ Such ``regridding'' is done using the \verb|-regrid| and \verb|-regrid_vars| com
 
 \verb|     -regrid foo.nc -regrid_vars HT -o bar|
 
-\noindent Note one specifies ``\verb|HT|'' to indicate that the ice thickness and temperature values from the old grid should be interpolated onto the new grid.  (One doesn't need to specify the regridding of the bed elevation, which is set identically zero as part of the EISMINT II experiment F description, nor of the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.)
+\noindent Note one specifies ``\verb|HT|'' to indicate that the ice thickness and temperature values from the old grid should be interpolated onto the new grid.  See table \ref{tab:regridvar} for the regriddable variables.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment F description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
 A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:real}.  Here it is reasonable to have the sequence of commands, run on 8 processors,
 \small
@@ -504,6 +504,25 @@ mpiexec -n 8 pismr -bif init.nc -Mx 281 -My 281 -Mz 201 -Mbz 41 -gk -e 1.2 \
 \end{verbatim}
 \normalsize
 Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth the surface for a short 10 year run on a coarseer 40km grid.  Then we do a long simulation to complete 150,000 years on this coarse grid to approximate the temperature and age fields, assuming steady boundary conditions and fixed geometry.  Finally we do a brief 10 year run with evolving geometry on a finer 20km grid, but we go back to the original data for the ice thickness; this last stage involves regridding temperature but not thickness, in particular.
+
+
+\begin{table}[h]
+\caption{Regriddable variables.  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
+\begin{tabular}{@{}llll}\hline
+\textbf{Flag} & \textbf{Variable} & \textbf{Comment}\\ \hline
+\verb|a| & (net annual) accumulation & \emph{climate data}; usually not regridded \\
+\verb|b| & bed elevation & \\
+\verb|B| & temperature in bedrock & \\
+\verb|e| & age of the ice & \\
+\verb|g| & geothermal flux & \emph{climate data}; usually not regridded \\
+\verb|H| & thickness & \\
+\verb|L| & thickness of basal melt water (stored in till) & \\
+\verb|s| & ice surface temperature & \emph{climate data}; usually not regridded\\
+\verb|T| & ice temperature & \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
 
 \subsection{Understanding and controlling adaptive time-stepping}  Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
 \begin{verbatim}

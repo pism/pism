@@ -58,7 +58,6 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
 PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscErrorCode  ierr;
   PetscViewer viewer;
-  PetscScalar runYears;
 
   if (hasSuffix(fname, ".nc") == true) {
     ierr = PetscPrintf(grid.com,
@@ -78,13 +77,11 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   CHKERRQ(ierr);
 //  ierr = PetscBagLoad(viewer, &grid.bag); CHKERRQ(ierr);
 //  ierr = PetscBagGetData(grid.bag, (void **)&(grid.p)); CHKERRQ(ierr);    
-  if (relativeEndYear == PETSC_TRUE) {
-    runYears = endYear - startYear;
-  } else {
-    runYears = endYear - grid.p->year;
-  }
-  ierr = setStartYear(grid.p->year); CHKERRQ(ierr);
-  ierr = setRunYears(runYears); CHKERRQ(ierr);
+
+  // set IceModel::startYear, IceModel::endYear, grid.p->year, but respecting grid.p->year
+  // which came from -if file, _unless_ -ys set by user
+  ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
+
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   ierr = LVecLoad(grid.da2, vMask,    g2, viewer); CHKERRQ(ierr);
@@ -120,9 +117,53 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 }
 
 
+PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID) {
+  PetscErrorCode ierr;
+
+  //ierr = verbPrintf(2,grid.com," startYear, endYear, grid.p->year = %f, %f, %f;   grid_p_year_VALID = %d\n",
+  //                  startYear, endYear, grid.p->year, (int)grid_p_year_VALID); CHKERRQ(ierr);
+  
+  // read options about year of start, year of end, number of run years;
+  // note grid.p->year has already been set from input file
+  PetscScalar usrStartYear, usrEndYear, usrRunYears;
+  PetscTruth ysSet, yeSet, ySet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear, &yeSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y", &usrRunYears, &ySet); CHKERRQ(ierr);
+  if (ysSet == PETSC_TRUE) {
+    // user option overwrites data
+    ierr = setStartYear(usrStartYear); CHKERRQ(ierr);
+    grid.p->year = usrStartYear;
+  } else if (grid_p_year_VALID == PETSC_TRUE) {
+    ierr = setStartYear(grid.p->year); CHKERRQ(ierr);
+  } // else do nothing; defaults are set
+  if (yeSet == PETSC_TRUE) {
+    if (usrEndYear < startYear) {
+      SETERRQ(1,
+        "ERROR: -ye value less than -ys value (or input file year or default).\n"
+        "PISM cannot run backward in time");
+    }
+    if (ySet == PETSC_TRUE) {
+      ierr = verbPrintf(1,grid.com,"WARNING: -y option ignored.  -ye used instead.\n"); CHKERRQ(ierr);
+    }
+    ierr = setEndYear(usrEndYear); CHKERRQ(ierr);
+  } else if (ySet == PETSC_TRUE) {
+    ierr = setEndYear(usrRunYears + startYear); CHKERRQ(ierr);
+  } else {
+    ierr = setEndYear(DEFAULT_RUN_YEARS + startYear); CHKERRQ(ierr);
+  }
+  
+  yearsStartRunEndDetermined = PETSC_TRUE;
+
+  //ierr = verbPrintf(2,grid.com," startYear, endYear, grid.p->year = %f, %f, %f\n",
+  //                  startYear, endYear, grid.p->year); CHKERRQ(ierr);
+  return 0;
+}
+
+  
 PetscErrorCode  IceModel::writeFiles(const char* basename) {
   PetscErrorCode ierr;
-  // Write Petsc Binary format by default
+
   ierr = writeFiles(basename, "n"); CHKERRQ(ierr);
 
   return 0;

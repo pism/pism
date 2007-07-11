@@ -148,17 +148,21 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
     strcpy(regridVars, "TBe");
   }
 
-  ierr = regridVar(regridVars, 'm', i2, m.vMask, vMask);
-  ierr = regridVar(regridVars, 'h', i2, m.vh, vh); CHKERRQ(ierr);
-  ierr = regridVar(regridVars, 'H', i2, m.vH, vH); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 'm', i2, m.vMask, vMask);  // not recommended?
+  // ierr = regridVar(regridVars, 'h', i2, m.vh, vh); CHKERRQ(ierr); // it is diagnositic 
+
+  // regridable model state variables
   ierr = regridVar(regridVars, 'b', i2, m.vbed, vbed); CHKERRQ(ierr);
-  ierr = regridVar(regridVars, 'L', i2, m.vHmelt, vHmelt); CHKERRQ(ierr);
-  ierr = regridVar(regridVars, 'a', i2, m.vAccum, vAccum); CHKERRQ(ierr);
-  ierr = regridVar(regridVars, 's', i2, m.vTs, vTs); CHKERRQ(ierr);
-  ierr = regridVar(regridVars, 'g', i2, m.vGhf, vGhf); CHKERRQ(ierr);
-  ierr = regridVar(regridVars, 'T', i3, m.vT, vT); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'B', i3b, m.vTb, vTb); CHKERRQ(ierr);
   ierr = regridVar(regridVars, 'e', i3, m.vtau, vtau); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 'H', i2, m.vH, vH); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 'L', i2, m.vHmelt, vHmelt); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 'T', i3, m.vT, vT); CHKERRQ(ierr);
+
+  // regriddable climate variables
+  ierr = regridVar(regridVars, 'a', i2, m.vAccum, vAccum); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 'g', i2, m.vGhf, vGhf); CHKERRQ(ierr);
+  ierr = regridVar(regridVars, 's', i2, m.vTs, vTs); CHKERRQ(ierr);
 
   ierr = verbPrintf(3, grid.com, "\n"); CHKERRQ(ierr);
 
@@ -166,9 +170,8 @@ PetscErrorCode IceModel::regrid(const char *regridFile) {
   ierr = destroyInterpCtx(i3); CHKERRQ(ierr);
   ierr = destroyInterpCtx(i3b); CHKERRQ(ierr);
 
-  PetscScalar run_years = endYear - startYear;
   ierr = setStartYear(m.grid.p->year); CHKERRQ(ierr);
-  ierr = setRunYears(run_years); CHKERRQ(ierr);
+  ierr = setEndYear(endYear); CHKERRQ(ierr);
   grid.p->year = startYear;
   
   // Stamp history

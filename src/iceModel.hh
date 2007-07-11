@@ -71,7 +71,6 @@ public:
   void setAdaptTimeStepRatio(PetscScalar);
   PetscErrorCode setStartYear(PetscScalar);
   PetscErrorCode setEndYear(PetscScalar);
-  PetscErrorCode setRunYears(PetscScalar);
   void setInitialAgeYears(PetscScalar d);
   void setShowViewers(PetscTruth);
   void setDoMassConserve(PetscTruth);
@@ -141,6 +140,9 @@ protected:
    static const int MASK_DRAGGING;
    static const int MASK_FLOATING;
    static const int MASK_FLOATING_OCEAN0;
+
+   static const PetscScalar DEFAULT_START_YEAR;
+   static const PetscScalar DEFAULT_RUN_YEARS;
 
   //used in iMutil.cc
    static const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE;
@@ -233,7 +235,7 @@ protected:
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
   PetscTruth  useMacayealVelocity, doSuperpose, useConstantNuForMacAyeal, 
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
-  PetscTruth  relativeEndYear, doAdaptTimeStep, doOceanKill, allowAboveMelting;
+  PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, allowRegridding, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  useIsothermalFlux;
@@ -283,7 +285,13 @@ protected:
   PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
                             PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                             PetscScalar& gvolshelf);
-  PetscErrorCode summary(bool,bool);
+  virtual PetscErrorCode summary(bool,bool);
+  virtual PetscErrorCode summaryPrintLine(
+              const PetscTruth printPrototype, const PetscTruth tempAndAge,
+              const PetscScalar year, const PetscScalar dt, 
+              const PetscInt tempskipCount, const char adaptReason,
+              const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+              const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
   PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);
   PetscErrorCode getSurfaceValuesOf3D(Vec v3D, Vec &g2D);
   PetscErrorCode checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *normy,
@@ -420,6 +428,7 @@ protected:
   bool hasSuffix(const char* fname, const char* suffix) const;
   PetscErrorCode LVecView(DA da, Vec l, Vec g, PetscViewer v);
   PetscErrorCode LVecLoad(DA da, Vec l, Vec g, PetscViewer v);
+  PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
 
   // see iMIOnetcdf.cc
   Vec    vbalvel;

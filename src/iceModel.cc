@@ -248,17 +248,9 @@ PetscErrorCode IceModel::setStartYear(PetscScalar y0) {
 PetscErrorCode IceModel::setEndYear(PetscScalar ye) {
     
   if (ye < startYear)   {
-    SETERRQ(1, "ERROR: endYear < startYear\n");
-  } else {
-    endYear = ye;
-    relativeEndYear = PETSC_FALSE;
+    SETERRQ(1, "ERROR: ye < startYear.  PISM cannot run backward in time.\n");
   }
-  return 0;
-}
-
-PetscErrorCode IceModel::setRunYears(PetscScalar y) {
-  PetscErrorCode ierr = setEndYear(startYear + y); CHKERRQ(ierr);
-  relativeEndYear = PETSC_TRUE;
+  endYear = ye;
   return 0;
 }
 
@@ -588,9 +580,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com,
-  "$$$$$       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
-  CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;

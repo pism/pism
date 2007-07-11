@@ -41,6 +41,9 @@
 // The defaults should be reasonable values under all circumstances or they should
 // indicate missing values in some manner.
 
+const PetscScalar IceModel::DEFAULT_START_YEAR = 0;
+const PetscScalar IceModel::DEFAULT_RUN_YEARS = 1000.0;  // years
+
 //used in iMutil.C
 const PetscScalar IceModel::DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
 const PetscScalar IceModel::DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
@@ -93,8 +96,6 @@ const PetscScalar IceModel::DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
-const PetscScalar DEFAULT_START_YEAR = 0;
-const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 60.0;
 const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 
@@ -137,7 +138,6 @@ const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
 
 
 PetscErrorCode IceModel::setDefaults() {
-  PetscErrorCode ierr;
 
   //ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
   initialized_p = PETSC_FALSE;
@@ -172,7 +172,9 @@ PetscErrorCode IceModel::setDefaults() {
   setAllGMaxVelocities(DEFAULT_MAX_VEL_FOR_CFL);
 
   setStartYear(DEFAULT_START_YEAR);
-  ierr = setRunYears(DEFAULT_RUN_YEARS); CHKERRQ(ierr);
+  setEndYear(DEFAULT_RUN_YEARS);
+  yearsStartRunEndDetermined = PETSC_FALSE;
+
   setDoMassConserve(DEFAULT_DO_MASS_CONSERVE);
   setDoTemp(DEFAULT_DO_TEMP);
   doTempSkip = DEFAULT_DO_TEMPSKIP;

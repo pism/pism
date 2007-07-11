@@ -27,10 +27,10 @@ see options for Mx,My,Mz,Mbz,Lx,Ly,Lz,ys,ye,y. */
 
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscScalar my_maxdt, my_mu, my_startYear, my_runYears, my_endYear;
+  PetscScalar my_maxdt, my_mu;
   PetscScalar macRTol, my_nu, maceps, regVelSchoof, regLengthSchoof;
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
-             maxdtSet, startYearSet, runYearsSet, endYearSet, superpose,
+             maxdtSet, superpose,
              noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
              nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet,
              MxSet, MySet, MzSet, MbzSet;
@@ -183,22 +183,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   // verbosity options: more info to standard out.  see iMutil.cc
   ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-  // Run length options
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &my_startYear, &startYearSet); CHKERRQ(ierr);
-  if (startYearSet == PETSC_TRUE) {
-    setStartYear(my_startYear);
-  }
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y", &my_runYears, &runYearsSet); CHKERRQ(ierr);
-  if (runYearsSet == PETSC_TRUE) {
-    ierr = setRunYears(my_runYears); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &my_endYear, &endYearSet); CHKERRQ(ierr);
-  if (endYearSet == PETSC_TRUE) {
-    ierr = setEndYear(my_endYear); CHKERRQ(ierr);
-  }
+  // -ys, -ye, -y options read in setStartRunEndYearsFromOptions()
  
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-    
   return 0;
 }

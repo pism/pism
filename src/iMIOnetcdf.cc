@@ -1006,7 +1006,6 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
 
 PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
-  PetscScalar runYears;
   size_t      dim[5];
   float       bdy[7];
   double 	  bdy_time;
@@ -1057,13 +1056,9 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   //   grid.p->Lz = bdy[6];
   // note user setting of -Lx,-Ly,-Lz will overwrite these settings from file
 
-  if (relativeEndYear == PETSC_TRUE) {
-    runYears = endYear - startYear;
-  } else {
-    runYears = endYear - grid.p->year;
-  }
-  ierr = setStartYear(grid.p->year); CHKERRQ(ierr);
-  ierr = setRunYears(runYears); CHKERRQ(ierr);
+  // set IceModel::startYear, IceModel::endYear, grid.p->year, but respecting grid.p->year
+  // which came from -if file, _unless_ -ys set by user
+  ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
 
   // Time to compute what we need.
   int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent

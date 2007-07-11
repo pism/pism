@@ -350,6 +350,18 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       if (tempskipCountDown > 1) tempskipCountDown = 1; 
     }
   }    
+
+/*
+verbPrintf(1,grid.com,
+   "\n   leaving determineTimeStep();\n     endYear, grid.p->year, dt_force = %f,%f,%e\n",
+   endYear, grid.p->year, dt_force);
+verbPrintf(1,grid.com,
+   "     maxdt, CFLmaxdt, maxdt_temporary, gDmax = %e,%e,%e,%e\n",
+   maxdt, CFLmaxdt, maxdt_temporary, gDmax);
+verbPrintf(1,grid.com,
+   "     dt, dt/secpera = %e, %f\n",
+   dt, dt/secpera);
+*/
   return 0;
 }
 
@@ -453,7 +465,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     else meltfrac=0.0;
   }
  
-  if (tempAndAge) {
   // give summary data a la EISMINT II:
   //    year (+ dt[NR]) (years),
   //       [ note 
@@ -472,25 +483,12 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //                      depends on useHomoTemp],
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
-    ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
-                       grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
-                       gvolume/1.0e6, garea/1.0e6, meltfrac, gdivideH,
-                       gdivideT); CHKERRQ(ierr);
-  } else {
-  // give REDUCED summary data w/o referencing temp and age fields:
-  //    year (+ dt[R]) (years),
-  //    volume (10^6 cubic km),
-  //    area (10^6 square km),
-  //    
-  //    divide thickness (m),
-  //    
-    ierr = verbPrintf(2,grid.com, 
-       "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f   <same>%11.3f    <same>",
-       grid.p->year, dt/secpera, tempskipCountDown, adaptReasonFlag, 
-       gvolume/1.0e6, garea/1.0e6, gdivideH); CHKERRQ(ierr);
-  }
+  // NOTE DERIVED CLASSES MAY HAVE OTHER DISPLAYED QUANTITIES
+  ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.p->year,dt,
+                          tempskipCountDown,adaptReasonFlag,
+                          gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
 
-  if (CFLviolcount > 0.5) { // report any CFL violations
+  if (CFLviolcount > 0.5) { // report any CFL violations at end of line
     ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f]\n",CFLviolcount); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
@@ -544,6 +542,27 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     }
   }
 
+  return 0;
+}
+
+
+PetscErrorCode IceModel::summaryPrintLine(
+    const PetscTruth printPrototype, const PetscTruth tempAndAge,
+    const PetscScalar year, const PetscScalar dt, 
+    const PetscInt tempskipCount, const char adaptReason,
+    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
+
+  PetscErrorCode ierr;
+  if (printPrototype == PETSC_TRUE) {
+    ierr = verbPrintf(2,grid.com,
+      "       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
+  } else {
+    ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
+                       year, dt/secpera, tempskipCount, adaptReason, 
+                       volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
+                       H0,T0); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -686,7 +705,6 @@ PetscErrorCode IceModel::initFromOptions() {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
   }
   
-  
   if (! isInitialized()) {
     SETERRQ(1,"Model has not been initialized.");
   }
@@ -703,6 +721,10 @@ PetscErrorCode IceModel::afterInitHook() {
   PetscTruth     LxSet, LySet, LzSet;
   PetscScalar    my_Lx, my_Ly, my_Lz;
 
+  if (yearsStartRunEndDetermined == PETSC_FALSE) {
+    ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
+  }
+  
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &my_Lx, &LxSet); CHKERRQ(ierr);
@@ -725,6 +747,9 @@ PetscErrorCode IceModel::afterInitHook() {
                                  &regridFileSet); CHKERRQ(ierr);
     if (regridFileSet == PETSC_TRUE) {
       ierr = regrid(regridFile); CHKERRQ(ierr);
+      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);  // resolve incompatibilites immediately;
+                                                              // this is called anyway at end of first time
+                                                              // step
     }
   }
 
