@@ -40,9 +40,12 @@ protected:
   Vec vOrigBed;
   Vec vIceCoreDeltaT;
   Vec vIceCoreDeltaSea;
-  Vec vIceCoreTime;
-  int iceCoreIdx;
-  int iceCoreLen;
+  Vec vIceCoreTimeT;
+  Vec vIceCoreTimeSea;
+  int iceCoreIdxT;
+  int iceCoreIdxSea;
+  int iceCoreLenT;
+  int iceCoreLenSea;
   PetscTruth climateForcing;
   int gripDeltaSeaInterp;
   int gripDeltaTInterp;
@@ -50,6 +53,7 @@ protected:
 
 private:
   PetscTruth inFileSet;
+  PetscErrorCode initGRIPVecIdx();
   PetscErrorCode getInterpolationCode(int ncid, int vid, int *code); 
   PetscErrorCode saveOrigVecs();  // copies vBed into vOrigBed
   PetscErrorCode updateTs();

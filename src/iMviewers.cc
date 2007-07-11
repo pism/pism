@@ -37,9 +37,9 @@ PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer,
     return 0;
   }
   if (grid.p->My > grid.p->Mx) {
-    x_dim = size; y_dim = (PetscInt) ((PetscScalar) size * yTOx); 
+    y_dim = size; x_dim = (PetscInt) ((PetscScalar) size * yTOx); 
   } else {
-    y_dim = size; x_dim = (PetscInt) ((PetscScalar) size / yTOx);
+    x_dim = size; y_dim = (PetscInt) ((PetscScalar) size / yTOx);
   } 
   ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
            PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);

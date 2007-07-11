@@ -493,13 +493,13 @@ Such ``regridding'' is done using the \verb|-regrid| and \verb|-regrid_vars| com
 A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:real}.  Here it is reasonable to have the sequence of commands, run on 8 processors,
 \small
 \begin{verbatim}
-mpiexec -n 8 pismr -bif init.nc -Mx 141 -My 141 -Mz 101 -Mbz 21 -gk -e 1.2 \
+mpiexec -n 8 pismr -bif_legacy init.nc -Mx 141 -My 141 -Mz 101 -Mbz 21 -gk -e 1.2 \
    -verbose -y 10 -o ant10yr_40km -of n
 
 mpiexec -n 8 pismr -if ant10yr_40km.nc -gk -e 1.2 -no_mass -y 149990 \
    -o ant150k_40km -of n
 
-mpiexec -n 8 pismr -bif init.nc -Mx 281 -My 281 -Mz 201 -Mbz 41 -gk -e 1.2 \
+mpiexec -n 8 pismr -bif_legacy init.nc -Mx 281 -My 281 -Mz 201 -Mbz 41 -gk -e 1.2 \
    -regrid ant150k_40km.nc -regrid_vars TBeL -verbose -y 10 -o ant150k_20km -of n
 \end{verbatim}
 \normalsize
@@ -556,7 +556,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \end{tabular}
 \end{table}
 
-\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation accordind to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
+\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation according to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
 
 A reasonable method for computing the melting of snowfall, used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:real} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
 
@@ -970,53 +970,61 @@ value.
 
 \clearpage\newpage
 \section{Realistic ice sheet modelling}\label{sect:real}
-\subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  Thus, this section describes the use of a Python script (\verb|eis_green.py|) to convert the EISMINT Greenland data into a NetCDF file useable by PISM.
+\subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  Thus, this section describes the use of Python scripts (\verb|eis_green.py| and \verb|eis_core.py|) to convert the EISMINT Greenland data into NetCDF files useable by PISM.
 
-The Python script \verb|eis_green.py| can be found in the \verb|pism/test| directory.  In order to use the script, you must have the following on your system:\begin{itemize}
- \item The data files \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html} in your \verb|pism/test| directory.
- \item An installation of Numpy (\url{http://numpy.scipy.org/}).
+The Python scripts \verb|eis_green.py| and \verb|eis_core.py| can be found in the \verb|pism/test| directory.  In order to use the scripts, you must have the following on your system:\begin{itemize}
+ \item The data files \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|), \verb|suaq20-EISMINT| (or \verb|suaq40-EISMINT|), and
+ \verb|sum89-92-ss09-50yr.stp| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}.
+ \item Installations of Numpy (\url{http://numpy.scipy.org/}) and pycdf (\url{http://pysclint.sourceforge.net/pycdf/}).
 \end{itemize}
 
-\noindent The script \verb|eis_green.py| is used by running the following command in the \verb|pism/test| directory:
+\noindent The script \verb|eis_green.py| has one, optional command line argument (\verb|-g|). This argument takes one value (should be 20 or 40) which is used to identify if you are using the 20km or 40km gridded data (\verb|grid20-EISMINT| and \verb|suaq20-EISMINT| or \verb|grid40-EISMINT| and \verb|suaq40-EISMINT|). By default, \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| will be used. As for the \verb|eis_core.py| script, there is one option (\verb|-i|) that is used to specify how to interpolate the data. The three types of interpolation implemented in \verb|pgrn| are ``linear'', ``constant\_piecewise\_forward'', and ``constant\_piecewise\_backward''.  Now, from a directory with the EISMINT data files, run:
 
 \small\begin{quote}\begin{verbatim}
-$  python eis_green.py
+$  eis_green.py -g 20
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent As a result, a NetCDF file named \verb|eis_green.nc| will be created in the same directory.  This NetCDF file is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|S|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
+and
+
+\small\begin{quote}\begin{verbatim}
+$  eis_core.py -i constant_piecewise_backward
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent As a result, two NetCDF files named \verb|eis_green20.nc| (or \verb|eis_green40.nc|) and \verb|eis_core.nc| will be created in the same directory.  The NetCDF file \verb|eis_green20.nc| is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|S|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
 
 \small\begin{quote}\begin{verbatim}
 $  ncview eis_green.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent In order to perform somewhat of a checksum on the resulting data, the NCO tools (\url{http://nco.sourceforge.net/}) can be used.  The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable called \verb|check|:
+\noindent In order to perform somewhat of a checksum on the \verb|eis_green.nc|, the NCO tools (\url{http://nco.sourceforge.net/}) can be used.  The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable called \verb|check|:
 
 \small\begin{quote}\begin{verbatim}
-$  ncap -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
+$  ncap -O -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
 \end{verbatim}
 \end{quote}\normalsize
 
 \noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data and will be ignored.
 
-In addition to getting the EISMINT data into a NetCDF format, there is an issue with Ellesmere Island. Ellesmere Island is very close to Greenland, and so it is possible for the ice sheet to jump over onto to it. Since we don't know much about ice sheets on Ellesmere Island, we want to prevent this from happening. So within the \verb|pgrn| derived class, any bedrock above sealevel northwest of the line connecting $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ was removed (the same applies to anything southeast of $(30^\circ E, 67^\circ N)$ due to the tip of Iceland).
-%\subsection{Bootstrapping General Ice Sheet Data}  PISM has a couple forms of bootstrapping.  The most general of which is run %using the familiar \verb|pismr| executable.  A minimal bootstrapping example could be as follows:
-%
-%\small\begin{quote}\begin{verbatim}
-%$  pismv -test B -ys 422.45 -y 5000 -Mx 31 -My 31 -o eis_test_5000
-%$  ncks -O -x -v Ts,accum eis_test_5000.nc eis_test_5000_boot.nc ; \
-%   ncwa -O -a t eis_test_5000_boot.nc eis_test_5000_boot.nc
-%$  pismr -bif eis_test_5000_boot.nc -Mx 31 -My 31 -y 100 -o \
-%   eis_test_5100.nc -verbose
-%\end{verbatim}
-%\end{quote}\normalsize
-%
-%\noindent The first command runs the simplifies EISMINT
-\subsection{Bootstrapping EISMINT Greenland Data}  Once the EISMINT Greenland data is obtained and formatted properly, bootstrapping can begin.  A very simple run is shown below using the \verb|-verbose| option in order to show what exactly is happening.
+It also should be noted that bed elevation (\verb|b|) contains a missing value attribute of $0.0$. When viewing this data in Ncview, these values will show as white spots. If these missing values are left in, sharp formations may appear after some time in PISM. Thus, it might be useful to `smooth' the data. This can be done with another script named \verb|fill_missing.py|. To use this script, the following command can be run:
 
 \small\begin{quote}\begin{verbatim}
-$  pismr -bif eis_green.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
+$  fill_missing.py -i eis_green.nc -v b
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent Here, \verb|eis_green.nc| is the input file, and \verb|b| is the variable with missing values. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors. Multiple variables can be fixed at the same time by separating the variable names by commas (e.g. \verb|fill_missing.py -i data.nc -v b,H,Ts|). The only requirement is that each variable has an attribute named \verb|missing_value|.
+
+The file \verb|eis_core.nc| contains the GRIP data used for the climate forcing options which will be explained later.
+
+In addition to getting the EISMINT data into a NetCDF format and filling missing values, there is an issue with Ellesmere Island. Ellesmere Island is very close to Greenland, and so it is possible for the ice sheet to jump over onto to it. Since we don't know much about ice sheets on Ellesmere Island, we want to prevent this from happening. So within the \verb|pgrn| derived class, any bedrock above sealevel northwest of the line connecting $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ was removed (the same applies to anything southeast of $(30^\circ E, 67^\circ N)$ due to the tip of Iceland).
+
+\subsection{Bootstrapping EISMINT Greenland Data}  Once the EISMINT Greenland data is obtained and formatted properly, bootstrapping can begin.  A very simple run is shown below using the \verb|-verbose| option in order to show what is happening.
+
+\small\begin{quote}\begin{verbatim}
+$  pgrn -bif eis_green20.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
    PISMR (primary run mode)
    Bootstrapping from New Option
    Ignoring values found for h and using h = b + H
@@ -1035,6 +1043,13 @@ $  pismr -bif eis_green.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
 \noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|0|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping is done, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
 
 \subsection{Running Greenland Experiments Using Bootstrapped Data}
+There are several experiments that can be run using command line arguments with \verb|pgrn|. The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison. This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the volume changes. This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under a different flow law (Goldsby-Kohlstedt). An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
+
+\small\begin{quote}\begin{verbatim}
+$  ssl2_expr.py -n 8
+\end{verbatim}
+\end{quote}\normalsize
+The next experiment is intended to be carried out after the completion of the first steady state run using the steady model state. The main focus here is the option \verb|-forcing| which uses the GRIP data in \verb|eis_core.nc| to somewhat force the climate. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level which is specified in \verb|eis_core.nc| and interpolated according to the method chosen when \verb|eis_core.nc| was created.
 
 
 \clearpage\newpage
@@ -1239,7 +1254,9 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.
 
-\optrestrict{bif}{pismr}  The model can be ``bootstrapped'' from certain NetCDF files with just the right information.  See section \ref{sect:real}.  Compare \verb|-if|.
+\optrestrict{bif}{pismr, pgrn}  The model can be ``bootstrapped'' from certain NetCDF files with just the right information.  See section \ref{sect:real}.  Compare \verb|-if|.
+
+\optrestrict{bif\und legacy}{pant}  The model can be ``bootstrapped'' from certain NetCDF files dealing with antarctica (\verb|init.nc|).
 
 \optdef{constant\und nu}{30.0}  If this option is used then the MacAyeal velocities (see \verb|-mv| below) are computed with a constant viscosity.  If this option is not used then the viscosities are computed by a nonlinear iteration.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 

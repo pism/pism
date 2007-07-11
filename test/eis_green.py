@@ -2,6 +2,7 @@
 
 #import Numeric
 import sys
+import getopt
 from numpy import *
 from pycdf import *
 
@@ -12,11 +13,16 @@ WRIT_FILE = 'eis_green20.nc'
 
 ##### command line arguments #####
 
-argc = len(sys.argv)
-if argc  == 2:
-  GRID_FILE = "grid" + sys.argv[1] + "-EISMINT"
-  SUAQ_FILE = "suaq" + sys.argv[1] + "-EISMINT"
-  WRIT_FILE = "eis_green" + sys.argv[1] + ".nc"
+try:
+  opts, args = getopt.getopt(sys.argv[1:], "g:", ["grid"])
+  for opt, arg in opts:
+    if opt in ("-g", "--grid"):
+      GRID_FILE = "grid" + opt + "-EISMINT"
+      SUAQ_FILE = "suaq" + opt + "-EISMINT"
+      WRIT_FILE = "eis_green" + opt + ".nc"
+except getopt.GetoptError:
+  print 'Incorrect command line arguments'
+  sys.exit(2)
 
 ##### grid20-EISMINT #####
 
@@ -98,6 +104,7 @@ ydim = ncfile.def_dim('y', int(dim[1]))
 tdim = ncfile.def_dim('t', NC.UNLIMITED)
 
 # define the variables
+polarVar = ncfile.def_var('polar_stereographic', NC.INT)
 xvar = ncfile.def_var('x', NC.FLOAT, (xdim,))
 yvar = ncfile.def_var('y', NC.FLOAT, (ydim,))
 tvar = ncfile.def_var('t', NC.FLOAT, (tdim,))
@@ -108,7 +115,15 @@ Hvar = ncfile.def_var('H', NC.FLOAT, (xdim, ydim))
 Bvar = ncfile.def_var('b', NC.FLOAT, (xdim, ydim)) 
 Accvar = ncfile.def_var('accum', NC.FLOAT, (xdim, ydim))
 
+# set global attributes
+setattr(ncfile, 'Conventions', 'CF-1.0')
+
 # set the attributes of the variables
+setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
+setattr(polarVar, 'straight_vertical_longitude_from_pole', 0)
+setattr(polarVar, 'straight_vertical_longitude_from_pole', 90)
+setattr(polarVar, 'standard_parallel', -71)
+
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
 setattr(xvar, 'standard_name', 'projection_x_coordinate')

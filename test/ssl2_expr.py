@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+# this script will run the EISMINT SSL2 experiment. It will run pgrn
+# until there is less than a .01% change in volume in 10,000 years
 
 import sys
 import getopt
@@ -9,12 +11,16 @@ import string
 # command line arguments
 num_proc=1
 stdout_file = "output_file"
+steadyState = "-ssl2"
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "n:", ["num_proc"])
+  opts, args = getopt.getopt(sys.argv[1:], "n:s", ["num_proc", "ssl3"])
   for opt, arg in opts:
     if opt in ("-n", "--num_proc"):
       num_proc=int(arg)
+    if opt in ("-s", "--ssl3"):
+      steadyState = "-ssl3"
+      print "Running SSL3 experiment"
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -24,11 +30,11 @@ print 'Running with ' + str(num_proc) + ' processors'
 # run pism setup stuff
 try:
   print '1. trivial amount of surface smoothing'
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file)
+  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file)
   print '2. 100k year run to get approximate temperature equilibrium (no surface change)'
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file)
+  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file)
   print '3. run for 100k years to head toward thermocoupled-geometry equil'
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn -if green20km_Tequil.nc -y 1e5 -ocean_kill -tempskip 3 -o green20km_SSL2100k >>'+stdout_file)
+  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ocean_kill -tempskip 3 -o green20km_SSL2100k >>'+stdout_file)
 except KeyboardInterrupt:
   sys.exit(2)
 except:
@@ -44,7 +50,7 @@ prev_year=100
 while result > .0001:
   #run pism
   print 'running until '+str(curr_year)+'k years'
-  run_pism='mpiexec -n ' + str(num_proc) + ' pgrn -if green20km_SSL2'+str(prev_year)+'k.nc -y 1e4 -ocean_kill -tempskip 3 -o green20km_SSL'+str(curr_year)+'k >> '+stdout_file
+  run_pism='mpiexec -n ' + str(num_proc) + ' pgrn ' + steadyState + ' -if green20km_SSL2'+str(prev_year)+'k.nc -y 1e4 -ocean_kill -tempskip 3 -o green20km_SSL'+str(curr_year)+'k >> '+stdout_file
   try:
     (status, output)=commands.getstatusoutput(run_pism)
   except KeyboardInterrupt:
@@ -80,6 +86,6 @@ while result > .0001:
   print 'percent difference is: '+str(result*100)+'%'
   prev_year=curr_year
   curr_year=curr_year+10
-  
+
 output.close()    
 
