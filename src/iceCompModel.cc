@@ -132,7 +132,11 @@ PetscErrorCode IceCompModel::initFromOptions() {
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, "continuing from input file %s; using Test %c conditions during run ...\n",inFile,testname);  CHKERRQ(ierr);
-    grid.p->year=startYear; // some exact solutions have "absolute time"
+    ierr = createCompVecs(); CHKERRQ(ierr);
+    ierr = createCompViewers();
+    if (yearsStartRunEndDetermined == PETSC_FALSE) {
+      ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
+    }
   } else {
     ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
@@ -173,7 +177,11 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
 
-    ierr = afterInitHook(); CHKERRQ(ierr);
+    ierr = createCompVecs(); CHKERRQ(ierr);
+    ierr = createCompViewers();
+    if (yearsStartRunEndDetermined == PETSC_FALSE) {
+      ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
+    }
 
     switch (testname) {
       case 'A':
@@ -195,17 +203,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     }
   }
 
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::afterInitHook() {
-  PetscErrorCode ierr;
-
   ierr = IceModel::afterInitHook(); CHKERRQ(ierr);
-  
-  ierr = createCompVecs(); CHKERRQ(ierr);
-  ierr = createCompViewers();
 
   return 0;
 }

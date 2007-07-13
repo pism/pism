@@ -23,21 +23,23 @@ endif
 
 #VARIABLES:
 executables= pismr pismv pisms pgrn pant
-extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable
+extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc iMpdd.cc\
 	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc\
-	iMviewers.cc iceModel.cc materials.cc nc_util.cc
+	iMviewers.cc iceModel.cc materials.cc nc_util.cc\
+	beddefLC.cc
 ice_csources= cubature.c pism_signal.c
 ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
 TESTS_OBJS= $(tests_sources:.c=.o)
 
-other_sources= pismr.cc pismv.cc pisms.cc pant.cc\
-	flowTable.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc iceCompModel.cc iCMthermo.cc shelf.cc iceGRNModel.cc pgrn.cc
+other_sources= pismr.cc pismv.cc pisms.cc pant.cc pgrn.cc\
+	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc\
+	iceCompModel.cc iCMthermo.cc shelf.cc\
+	flowTable.cc tryLCbd.cc
 other_csources= simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
@@ -83,8 +85,11 @@ pgrn : iceGRNModel.o pgrn.o libpism.so
 #shelf : shelf.o libpism.so
 #	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-flowTable : flowTable.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
+flowTable : flowTable.o materials.o
+	${CLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
+
+tryLCbd : tryLCbd.o beddefLC.o materials.o
+	${CLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
 
 simpleABCD : simpleABCD.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@

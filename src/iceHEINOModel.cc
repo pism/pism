@@ -567,11 +567,11 @@ PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
   ierr = VecDuplicate(Hp0, &vsp0); CHKERRQ(ierr);
   
   // immediately store H, ub, vb values on proc zero with right units
-  ierr = putOnProcZero(vH,Hp0); CHKERRQ(ierr);
+  ierr = putLocalOnProcZero(vH,Hp0); CHKERRQ(ierr);
   ierr = VecScale(Hp0, 1e-3); CHKERRQ(ierr); // km
-  ierr = putOnProcZero(vub,ubp0); CHKERRQ(ierr);
+  ierr = putLocalOnProcZero(vub,ubp0); CHKERRQ(ierr);
   ierr = VecScale(ubp0, secpera); CHKERRQ(ierr); // m/a
-  ierr = putOnProcZero(vvb,vbp0); CHKERRQ(ierr);
+  ierr = putLocalOnProcZero(vvb,vbp0); CHKERRQ(ierr);
   ierr = VecScale(vbp0, secpera); CHKERRQ(ierr); // m/a
   
   // put basal homol temp in 2D Vec and then put on proc zero
@@ -590,7 +590,7 @@ PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, Thb, &valThb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = putOnProcZero(Thb,Thbp0); CHKERRQ(ierr);
+  ierr = putLocalOnProcZero(Thb,Thbp0); CHKERRQ(ierr);
   ierr = VecDestroy(Thb); CHKERRQ(ierr);  
   }
   
@@ -617,8 +617,8 @@ PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
   ierr = DAVecRestoreArray(grid.da2, vs, &valvs); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = putOnProcZero(us,usp0); CHKERRQ(ierr);
-  ierr = putOnProcZero(vs,vsp0); CHKERRQ(ierr);
+  ierr = putLocalOnProcZero(us,usp0); CHKERRQ(ierr);
+  ierr = putLocalOnProcZero(vs,vsp0); CHKERRQ(ierr);
   ierr = VecDestroy(us); CHKERRQ(ierr);  
   ierr = VecDestroy(vs); CHKERRQ(ierr);  
   }

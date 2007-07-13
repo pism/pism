@@ -37,12 +37,19 @@ PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer,
     return 0;
   }
   if (grid.p->My > grid.p->Mx) {
-    y_dim = size; x_dim = (PetscInt) ((PetscScalar) size * yTOx); 
+    x_dim = size; y_dim = (PetscInt) ((PetscScalar) size * yTOx); 
   } else {
-    x_dim = size; y_dim = (PetscInt) ((PetscScalar) size / yTOx);
+    y_dim = size; x_dim = (PetscInt) ((PetscScalar) size / yTOx);
   } 
+  // note we reverse x_dim <-> y_dim; see IceGrid::createDA() for original reversal
   ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
-           PETSC_DECIDE, PETSC_DECIDE, x_dim, y_dim, viewer);  CHKERRQ(ierr);
+           PETSC_DECIDE, PETSC_DECIDE, y_dim, x_dim, viewer);  CHKERRQ(ierr);
+  
+  // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
+  // there is a no-titles bug
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(*viewer,0,&draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw,title); CHKERRQ(ierr);
   return 0;
 }
 

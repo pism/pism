@@ -170,7 +170,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   return 0;
 }
 
-PetscErrorCode IceModel::maskAccum() {
+PetscErrorCode IceModel::setAccumInOcean() {
   PetscErrorCode ierr;
   PetscScalar **mask, **accum;
 
@@ -183,14 +183,9 @@ PetscErrorCode IceModel::maskAccum() {
       }
     }
   }
-  // note ghosted values need to be communicated because of vote-by-neighbors
-  // in IceModel::updateSurfaceElevationAndMask()
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-
+  // no communication needed for accum
   return 0;
 }
 
@@ -352,7 +347,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   verbPrintf(2, grid.com, "bootstrapping by PISM default method from file %s\n",fname);
 
-  // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
@@ -360,6 +354,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     SETERRQ(1, "No file name given for bootstrapping\n");
   }
 
+  // determine if variables exist in bootstrapping file
   int ncid;
   int v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
       v_balvel, v_x, v_y, v_Hmelt, v_t;
@@ -380,7 +375,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     stat = nc_inq_varid(ncid, "Hmelt", &v_Hmelt); gHmeltExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "t", &v_t); gtExists = stat == NC_NOERR;
   }
-
   ierr = PetscGlobalMax(&gxExists, &xExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&gyExists, &yExists, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&glonExists, &lonExists, grid.com); CHKERRQ(ierr);
@@ -494,7 +488,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   verbPrintf(3, grid.com, 
              "  setting accumulation in ice shelf-free ocean to default value %f\n",
              DEFAULT_ACCUMULATION_IN_OCEAN0 * secpera);
-  ierr = maskAccum(); CHKERRQ(ierr);
+  ierr = setAccumInOcean(); CHKERRQ(ierr);
   if (HmeltExists) {
     ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
   } else {

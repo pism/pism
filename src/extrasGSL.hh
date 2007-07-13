@@ -38,18 +38,6 @@ double interp1_linear(const double x[], const double Y[], int N, double xi);
 double dblquad_cubature(integrand f, const double ax, const double bx, const double ay, const double by,
                         double reqRelError, void *fdata);
 
-
-struct ge_params { double dx; double dy; int p; int q; };
-
-double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN);
-
-struct vd_params { double t; double R0; double rk; double rho; double grav; double D; double eta; };
-
-double viscDiscIntegrand (double kap, void * paramsIN);
-
-double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta);
-
 // heapsort from 
 //   http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
 // (found 7/7/07 by ELB;  see also http://en.wikipedia.org/wiki/Heapsort)
@@ -59,4 +47,24 @@ double viscDisc(double t, double H0, double R0, double r,
 // but what I have here seems to work well; also there are routines in gsl_sort.h
 // and gsl_sort_vector.h
 void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N);
+
+
+/*
+// these are moved to beddefLC.hh
+struct ge_params {
+   double dx, dy;
+   int p, q; 
+};
+
+double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN);
+
+struct vd_params {
+   double t, R0, rk, rho, grav, D, eta;
+};
+
+double viscDiscIntegrand (double kap, void * paramsIN);
+
+double viscDisc(double t, double H0, double R0, double r, 
+                double rho, double grav, double D, double eta);
+*/
 

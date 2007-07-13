@@ -117,7 +117,7 @@ const PetscScalar DEFAULT_ISOTHERMAL_FLUX_A_SOFTNESS = 1.0e-16 / secpera; // Pa^
 
 const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
-const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 200.0;
+const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 100.0;
 
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 

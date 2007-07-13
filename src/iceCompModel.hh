@@ -41,8 +41,6 @@ protected:
   PetscTruth       testchosen, exactOnly, compVecsCreated, compViewersCreated;
   char             testname;  
 
-  virtual PetscErrorCode afterInitHook();
-
   // see iCMthermo.cc:
   Vec              vSigmaComp;     // 3-D vector:   Mx x My x Mz
   PetscViewer      SigmaCompView, compSigmaMapView;

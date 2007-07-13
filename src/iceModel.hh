@@ -22,15 +22,11 @@
 #include <signal.h>
 #include <netcdf.h>
 #include <gsl/gsl_rng.h>
-
-#if (WITH_FFTW)
-#include <fftw3.h>
-#endif
-
 #include <petscda.h>
 #include <petscksp.h>
 #include "grid.hh"
 #include "materials.hh"
+#include "beddefLC.hh"
 
 using namespace std;
 
@@ -358,33 +354,25 @@ protected:
   
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
   // (e.g. also used by derived class IceHEINOModel)
-  Vec         g2natural;
-  VecScatter  top0ctx;
+  Vec            g2natural;
+  VecScatter     top0ctx;
+  PetscTruth     top0ctx_created;
   PetscErrorCode createScatterToProcZero(Vec& samplep0);
   PetscErrorCode destroyScatterToProcZero();
-  PetscErrorCode putOnProcZero(Vec& vlocal, Vec& onp0);
-  PetscErrorCode getFromProcZero(Vec& onp0, Vec& vlocal);
+  PetscErrorCode putLocalOnProcZero(Vec& vlocal, Vec& onp0);
+  PetscErrorCode getLocalFromProcZero(Vec& onp0, Vec& vlocal);
 
   // see iMbeddef.cc
-  PetscScalar   lastBedDefUpdateYear;
-  Vec           vHlast, vbedlast;  // used for simple pointwise isostasy and to
+  BedDeformLC    bdLC;
+  PetscScalar    lastBedDefUpdateYear;
+  Vec            vHlast, vbedlast;  // used for simple pointwise isostasy and to
                                    // compute uplift
-  // used for Lingle&Clark model:
-  Vec           Hstartp0, bedstartp0, platep0fat, vleft, vright, lrmEp0;  
-#if (WITH_FFTW)
-  fftw_complex  *bdin, *bdout;  // note these are 2D arrays but must be sequential
-  fftw_plan     bdplanfor,bdplanback;
-#endif
-  PetscScalar    volumeChange(Vec Hp0, Vec Hstartp0);
-  PetscErrorCode conv2_same(Vec vA, const PetscInt mA, const PetscInt nA, 
-                            Vec vB, const PetscInt mB, const PetscInt nB,
-                            Vec &vresult);
+  Vec            Hp0, bedp0,                       // vecs on proc zero for
+                 Hstartp0, bedstartp0, upliftp0;   // passing to bdLC
   PetscErrorCode bedDefSetup();
   PetscErrorCode bedDefCleanup();
   PetscErrorCode bedDefStepIfNeeded();
-  PetscErrorCode bed_def_step_iso(PetscScalar dtBedDef);
-  PetscErrorCode bed_uplift_init_lc();
-  PetscErrorCode bed_def_step_lc(PetscScalar dtBedDef);
+  PetscErrorCode bed_def_step_iso();
 
   // see iMmacayeal.cc
   PetscErrorCode velocityMacayeal();
@@ -442,7 +430,7 @@ protected:
                               Vec vecg, Vec vindzero);
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
-  PetscErrorCode maskAccum();
+  PetscErrorCode setAccumInOcean();
 
 private:
   // Pieces of the Macayeal Velocity routine defined in iMmacayeal.cc.

@@ -65,6 +65,91 @@ double dblquad_cubature(integrand f, const double ax, const double bx, const dou
 }
 
 
+/*
+// original code from http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
+// below: modified for type double, and to have two index arrays "follow along"
+// and get rearranged the same way
+void heapsort(int arr[], unsigned int N)
+{
+   unsigned int n = N, i = n/2, parent, child;
+   int t;
+
+   for (;;) { // Loops until arr is sorted 
+      if (i > 0) { // First stage - Sorting the heap 
+            i--;           // Save its index to i 
+            t = arr[i];    // Save parent value to t 
+      } else {     // Second stage - Extracting elements in-place 
+            n--;           // Make the new heap smaller 
+            if (n == 0) return; // When the heap is empty, we are done 
+            t = arr[n];    // Save last value (it will be overwritten) 
+            arr[n] = arr[0]; // Save largest value at the end of arr 
+      }
+
+      parent = i; // We will start pushing down t from parent 
+      child = i*2 + 1; // parent's left child 
+
+      // Shift operation - pushing the value of t down the heap 
+      while (child < n) {
+            if (child + 1 < n  &&  arr[child + 1] > arr[child]) {
+               child++; // Choose the largest child 
+            }
+            if (arr[child] > t) { // If any child is bigger than the parent 
+               arr[parent] = arr[child]; // Move the largest child up 
+               parent = child; // Move parent pointer to this child 
+               child = parent*2 + 1; // Find the next child 
+            } else {
+               break; // t's place is found 
+            }
+      }
+      arr[parent] = t; // We save t in the heap 
+   }
+}
+*/
+
+ 
+void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N) {
+   unsigned int n = N, i = n/2, parent, child;
+   double t;
+   int tia, tib;
+
+   for (;;) { /* Loops until arr is sorted */
+      if (i > 0) { /* First stage - Sorting the heap */
+            i--;           /* Save its index to i */
+            t = arr[i];    /* Save parent value to t */
+            tia = ia[i];
+            tib = ib[i];
+      } else {     /* Second stage - Extracting elements in-place */
+            n--;           /* Make the new heap smaller */
+            if (n == 0) return; /* When the heap is empty, we are done */
+            t = arr[n];    /* Save last value (it will be overwritten) */
+            tia = ia[n];
+            tib = ib[n];
+            arr[n] = arr[0]; /* Save largest value at the end of arr */
+            ia[n] = ia[0];
+            ib[n] = ib[0];
+      }
+      parent = i; /* We will start pushing down t from parent */
+      child = i*2 + 1; /* parent's left child */
+      while (child < n) { /* Shift operation - pushing the value of t down the heap */
+            if (child + 1 < n  &&  arr[child + 1] > arr[child]) {
+               child++; /* Choose the largest child */
+            }
+            if (arr[child] > t) { /* If any child is bigger than the parent */
+               arr[parent] = arr[child]; /* Move the largest child up */
+               ia[parent] = ia[child];
+               ib[parent] = ib[child];
+               parent = child; /* Move parent pointer to this child */
+               child = parent*2 + 1; /* Find the next child */
+            } else { break; /* t's place is found */ }
+      }
+      arr[parent] = t; /* We save t in the heap */
+      ia[parent] = tia;
+      ib[parent] = tib;
+   }
+}
+
+
+/*
 double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN) {
   // Matlab:  function z=integrand(xi,eta,dx,dy,p,q)
 
@@ -171,88 +256,6 @@ double viscDisc(double t, double H0, double R0, double r,
   // u(k)=rhoi*g*H0*R0*result;
   return rho * grav * H0 * R0 * sum;
 }
-
-
-/*
-// original code from http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
-// below: modified for type double, and to have two index arrays "follow along"
-// and get rearranged the same way
-void heapsort(int arr[], unsigned int N)
-{
-   unsigned int n = N, i = n/2, parent, child;
-   int t;
-
-   for (;;) { // Loops until arr is sorted 
-      if (i > 0) { // First stage - Sorting the heap 
-            i--;           // Save its index to i 
-            t = arr[i];    // Save parent value to t 
-      } else {     // Second stage - Extracting elements in-place 
-            n--;           // Make the new heap smaller 
-            if (n == 0) return; // When the heap is empty, we are done 
-            t = arr[n];    // Save last value (it will be overwritten) 
-            arr[n] = arr[0]; // Save largest value at the end of arr 
-      }
-
-      parent = i; // We will start pushing down t from parent 
-      child = i*2 + 1; // parent's left child 
-
-      // Shift operation - pushing the value of t down the heap 
-      while (child < n) {
-            if (child + 1 < n  &&  arr[child + 1] > arr[child]) {
-               child++; // Choose the largest child 
-            }
-            if (arr[child] > t) { // If any child is bigger than the parent 
-               arr[parent] = arr[child]; // Move the largest child up 
-               parent = child; // Move parent pointer to this child 
-               child = parent*2 + 1; // Find the next child 
-            } else {
-               break; // t's place is found 
-            }
-      }
-      arr[parent] = t; // We save t in the heap 
-   }
-}
 */
 
- 
-void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N) {
-   unsigned int n = N, i = n/2, parent, child;
-   double t;
-   int tia, tib;
-
-   for (;;) { /* Loops until arr is sorted */
-      if (i > 0) { /* First stage - Sorting the heap */
-            i--;           /* Save its index to i */
-            t = arr[i];    /* Save parent value to t */
-            tia = ia[i];
-            tib = ib[i];
-      } else {     /* Second stage - Extracting elements in-place */
-            n--;           /* Make the new heap smaller */
-            if (n == 0) return; /* When the heap is empty, we are done */
-            t = arr[n];    /* Save last value (it will be overwritten) */
-            tia = ia[n];
-            tib = ib[n];
-            arr[n] = arr[0]; /* Save largest value at the end of arr */
-            ia[n] = ia[0];
-            ib[n] = ib[0];
-      }
-      parent = i; /* We will start pushing down t from parent */
-      child = i*2 + 1; /* parent's left child */
-      while (child < n) { /* Shift operation - pushing the value of t down the heap */
-            if (child + 1 < n  &&  arr[child + 1] > arr[child]) {
-               child++; /* Choose the largest child */
-            }
-            if (arr[child] > t) { /* If any child is bigger than the parent */
-               arr[parent] = arr[child]; /* Move the largest child up */
-               ia[parent] = ia[child];
-               ib[parent] = ib[child];
-               parent = child; /* Move parent pointer to this child */
-               child = parent*2 + 1; /* Find the next child */
-            } else { break; /* t's place is found */ }
-      }
-      arr[parent] = t; /* We save t in the heap */
-      ia[parent] = tia;
-      ib[parent] = tib;
-   }
-}
 
