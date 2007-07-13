@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{138}
+\newcommand{\PISMREV}{141}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -973,12 +973,12 @@ value.
 \subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  Thus, this section describes the use of Python scripts (\verb|eis_green.py| and \verb|eis_core.py|) to convert the EISMINT Greenland data into NetCDF files useable by PISM.
 
 The Python scripts \verb|eis_green.py| and \verb|eis_core.py| can be found in the \verb|pism/test| directory.  In order to use the scripts, you must have the following on your system:\begin{itemize}
- \item The data files \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|), \verb|suaq20-EISMINT| (or \verb|suaq40-EISMINT|), and
- \verb|sum89-92-ss09-50yr.stp| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}.
+ \item The data files \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|), \verb|suaq20-EISMINT| (or \verb|suaq40-EISMINT|), 
+ \verb|specmap.017|, and \verb|sum89-92-ss09-50yr.stp| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}.
  \item Installations of Numpy (\url{http://numpy.scipy.org/}) and pycdf (\url{http://pysclint.sourceforge.net/pycdf/}).
 \end{itemize}
 
-\noindent The script \verb|eis_green.py| has one, optional command line argument (\verb|-g|). This argument takes one value (should be 20 or 40) which is used to identify if you are using the 20km or 40km gridded data (\verb|grid20-EISMINT| and \verb|suaq20-EISMINT| or \verb|grid40-EISMINT| and \verb|suaq40-EISMINT|). By default, \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| will be used. As for the \verb|eis_core.py| script, there is one option (\verb|-i|) that is used to specify how to interpolate the data. The three types of interpolation implemented in \verb|pgrn| are ``linear'', ``constant\_piecewise\_forward'', and ``constant\_piecewise\_backward''.  Now, from a directory with the EISMINT data files, run:
+\noindent The script \verb|eis_green.py| has one, optional command line argument (\verb|-g|). This argument takes one value (should be 20 or 40) which is used to identify if you are using the 20km or 40km gridded data (\verb|grid20-EISMINT| and \verb|suaq20-EISMINT| or \verb|grid40-EISMINT| and \verb|suaq40-EISMINT|). By default, \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| will be used. As for the \verb|eis_core.py| script, there are two options, \verb|-s| and \verb|-t|, that are used to specify how to interpolate the change in sea level data and the change in temperature data respectively. The three types of interpolation currently implemented in \verb|pgrn| are ``linear'', ``constant\_piecewise\_forward'', and ``constant\_piecewise\_backward''.  Now, from a directory with the EISMINT data files, run:
 
 \small\begin{quote}\begin{verbatim}
 $  eis_green.py -g 20
@@ -988,7 +988,7 @@ $  eis_green.py -g 20
 and
 
 \small\begin{quote}\begin{verbatim}
-$  eis_core.py -i constant_piecewise_backward
+$  eis_core.py -t constant_piecewise_backward -s linear
 \end{verbatim}
 \end{quote}\normalsize
 
@@ -1006,7 +1006,7 @@ $  ncap -O -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data and will be ignored.
+\noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data will be ignored.
 
 It also should be noted that bed elevation (\verb|b|) contains a missing value attribute of $0.0$. When viewing this data in Ncview, these values will show as white spots. If these missing values are left in, sharp formations may appear after some time in PISM. Thus, it might be useful to `smooth' the data. This can be done with another script named \verb|fill_missing.py|. To use this script, the following command can be run:
 
@@ -1025,31 +1025,58 @@ In addition to getting the EISMINT data into a NetCDF format and filling missing
 
 \small\begin{quote}\begin{verbatim}
 $  pgrn -bif eis_green20.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
-   PISMR (primary run mode)
-   Bootstrapping from New Option
-   Ignoring values found for h and using h = b + H
-   Ts not found. Filling in with default value: 0
-   ghf not found. Filling in with default value: 0.042000
-   uplift not found. Filling in with default value: 0
-   Figuring out gl
-   Filling in Hmelt with default value: 0.000000
+   PGRN (EISMINT Greenland mode)
+   bootstrapping by PISM default method from file test/eis_green20.nc
+     using default value Lz=5000.000000 for vertical extent of computational box for ice
+     WARNING: ignoring values found for surface elevation h and using h = b + H
+     WARNING: surface temperature Ts not found. Filling in with default value: 263.150000
+     WARNING: geothermal flux ghf not found. Filling in with default value: 0.042000
+     uplift not found. Filling with zero
+     determining mask by floating criterion; grounded ice marked as SIA (=1)
+     setting accumulation in ice shelf-free ocean to default value -20.000000
+    Hmelt not found. Filling with zero
+   bootstrapping done
      [computational box for ice: ( 1640.00 km) x ( 2800.00 km) x ( 5000.00 m)]
      [grid cell dimensions     : (   20.00 km) x (   20.00 km) x (  166.67 m)]
    ...
+   done with run ... 
    Writing model state to file `grn0y_20km.nc' ... done.
+
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|0|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping is done, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
+\noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in several default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|263.15|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
 
 \subsection{Running Greenland Experiments Using Bootstrapped Data}
-There are several experiments that can be run using command line arguments with \verb|pgrn|. The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison. This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the volume changes. This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under a different flow law (Goldsby-Kohlstedt). An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
+There are several experiments that can be run using command line arguments with \verb|pgrn|. The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison (-ssl2). This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under a different flow law (Goldsby-Kohlstedt). An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
 
 \small\begin{quote}\begin{verbatim}
 $  ssl2_expr.py -n 8
 \end{verbatim}
 \end{quote}\normalsize
-The next experiment is intended to be carried out after the completion of the first steady state run using the steady model state. The main focus here is the option \verb|-forcing| which uses the GRIP data in \verb|eis_core.nc| to somewhat force the climate. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level which is specified in \verb|eis_core.nc| and interpolated according to the method chosen when \verb|eis_core.nc| was created.
+
+The next experiment is intended to be carried out after the completion of the first steady state run using the steady model state. The main focus here is the option \verb|-forcing| which uses the GRIP data in \verb|eis_core.nc| to somewhat force the climate. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to simulate part of a global climate system, which is specified in \verb|eis_core.nc| and interpolated between years according to the options chosen when \verb|eis_core.py| was run. The data in \verb|eis_core.nc| goes about 250,000 years into the past. Therefore, it is necessary to manually set the year into the past when running \verb|pgrn|. To do this, the option \verb|-ys| is used. This experiment can be run using the following command:
+
+\small\begin{quote}\begin{verbatim}
+$  pgrn -ccl3 -if green20_SSL3.nc -forcing eis_core.nc -ys -249900 \
+     -ye 0 -o green20_CCL3_y0
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent The EISMINT Intercomparison also calls to run for another 500 years with $\bigtriangleup$T and $\bigtriangleup$Sea set to zero. If \verb|pgrn| is run beyond the times in the climate forcing data, this is exactly what it will do. So the rest of the experiment can be run using the following command:
+
+\small\begin{quote}\begin{verbatim}
+$  pgrn -ccl3 -if green20_CCL3_y0.nc -forcing eis_core.nc -y 500 \
+     -o green20_CCL3_y500
+\end{verbatim}
+\end{quote}\normalsize
+
+\noindent The last experiment (Greenhouse Warming) described in the EISMINT Intercomparison uses the model state obtained for present day (1989). From the commands before, this is file \verb|green20_CCL3_y0.nc|. The Greenhouse Warming experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years. The following command will run this experiment:
+
+\small\begin{quote}\begin{verbatim}
+$  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3
+\end{verbatim}
+\end{quote}\normalsize
 
 
 \clearpage\newpage

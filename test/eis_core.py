@@ -8,17 +8,20 @@ import sys
 SUM8_FILE = 'sum89-92-ss09-50yr.stp'
 SPEC_FILE = 'specmap.017'
 CORE_FILE = 'eis_core.nc'
-INTERPOLATION = 'linear'
+T_INTERPOLATION = 'constant_piecewise_forward'
+S_INTERPOLATION = 'linear'
 
 SPEC_LENGTH = 782
 
 ##### command line arguments #####
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "i:", ["interpolation"])
+  opts, args = getopt.getopt(sys.argv[1:], "t:s:", ["t_interpolation", "s_interpolation"])
   for opt, arg in opts:
-    if opt in ("-i", "--interpolation"):
-      INTERPOLATION = arg
+    if opt in ("-t", "--t_interpolation"):
+      T_INTERPOLATION = arg
+    if opt in ("s", "--s_interpolation"):
+      S_INTERPOLATION = arg
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -115,11 +118,11 @@ setattr(Stvar, 'units', 'years since 1989')
 
 setattr(dTvar, 'units', 'm')
 setattr(dTvar, 'long_name', 'change in surface temperature from 1986')
-setattr(dTvar, 'interpolation', INTERPOLATION)
+setattr(dTvar, 'interpolation', T_INTERPOLATION)
 
 setattr(dSeavar, 'units', 'm')
 setattr(dSeavar, 'long_name', 'change in sea level from 1986')
-setattr(dSeavar, 'interpolation', INTERPOLATION)
+setattr(dSeavar, 'interpolation', S_INTERPOLATION)
 
 # write data
 Ttvar[:] = y_bp

@@ -12,6 +12,7 @@ import string
 num_proc=1
 stdout_file = "output_file"
 steadyState = "-ssl2"
+out_end = "SSL2"
 
 try:
   opts, args = getopt.getopt(sys.argv[1:], "n:s", ["num_proc", "ssl3"])
@@ -19,7 +20,8 @@ try:
     if opt in ("-n", "--num_proc"):
       num_proc=int(arg)
     if opt in ("-s", "--ssl3"):
-      steadyState = "-ssl3"
+      steadyState = "-ssl3 -gk"
+      out_end = "SSL3"
       print "Running SSL3 experiment"
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
@@ -30,11 +32,12 @@ print 'Running with ' + str(num_proc) + ' processors'
 # run pism setup stuff
 try:
   print '1. trivial amount of surface smoothing'
+  print 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file
   (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file)
   print '2. 100k year run to get approximate temperature equilibrium (no surface change)'
   (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file)
   print '3. run for 100k years to head toward thermocoupled-geometry equil'
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ocean_kill -tempskip 3 -o green20km_SSL2100k >>'+stdout_file)
+  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >>'+stdout_file)
 except KeyboardInterrupt:
   sys.exit(2)
 except:
@@ -50,7 +53,7 @@ prev_year=100
 while result > .0001:
   #run pism
   print 'running until '+str(curr_year)+'k years'
-  run_pism='mpiexec -n ' + str(num_proc) + ' pgrn ' + steadyState + ' -if green20km_SSL2'+str(prev_year)+'k.nc -y 1e4 -ocean_kill -tempskip 3 -o green20km_SSL'+str(curr_year)+'k >> '+stdout_file
+  run_pism='mpiexec -n ' + str(num_proc) + ' pgrn ' + steadyState + ' -if green20km_'+out_end+str(prev_year)+'k.nc -y 1e4 -ocean_kill -tempskip 3 -o green20km_'+out_end+str(curr_year)+'k >> '+stdout_file
   try:
     (status, output)=commands.getstatusoutput(run_pism)
   except KeyboardInterrupt:
@@ -60,8 +63,8 @@ while result > .0001:
   # sum of the thicknesses, but since the grid is
   # equally spaced, the result will be the same
 
-  cmd1='ncwa -O -N -v H -a x,y green20km_SSL2'+str(prev_year)+'k.nc -o area_'+str(prev_year)+'k.nc'
-  cmd2='ncwa -O -N -v H -a x,y green20km_SSL2'+str(curr_year)+'k.nc -o area_'+str(curr_year)+'k.nc'
+  cmd1='ncwa -O -N -v H -a x,y green20km_'+out_end+str(prev_year)+'k.nc -o area_'+str(prev_year)+'k.nc'
+  cmd2='ncwa -O -N -v H -a x,y green20km_'+out_end+str(curr_year)+'k.nc -o area_'+str(curr_year)+'k.nc'
   cmd3='ncks -O -s \'%f\n\' -C -v H area_'+str(prev_year)+'k.nc | tail -n 1'
   cmd4='ncks -O -s \'%f\n\' -C -v H area_'+str(curr_year)+'k.nc | tail -n 1'
   try:
