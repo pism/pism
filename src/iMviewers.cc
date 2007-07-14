@@ -314,8 +314,8 @@ PetscErrorCode IceModel::updateSoundings() {
 
 PetscErrorCode IceModel::updateViewers() {
   // others updated elsewhere:
-  // see IceModel::massBalExplicitStep() in iceModel.cc for  dhView  ("-d g")
-  // see IceModel::computeMaxDiffusivity() in iMutil.cc for  diffusView ("-d f")
+  // see IceModel::massBalExplicitStep() in iceModel.cc for  dHdtView  ("-d f")
+  // see IceModel::computeMaxDiffusivity() in iMutil.cc for  diffusView ("-d D")
   // see IceModel::velocityMacAyeal() in iMmacayeal.cc for   nuView  ("-d i" or "-d j")
   //                                                   and   lognuView  ("-d n")
   //                                                   and   NuView  ("-d N")
@@ -536,6 +536,11 @@ PetscErrorCode IceModel::updateViewers() {
   if (maskView != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vMask, INSERT_VALUES, g2); CHKERRQ(ierr);
     ierr = VecView(g2, maskView); CHKERRQ(ierr);
+  }
+  if (dhView != PETSC_NULL) {
+    ierr = DALocalToGlobal(grid.da2, vdHdt, INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecScale(g2, secpera); CHKERRQ(ierr); // to report in m/a
+    ierr = VecView(g2, dhView); CHKERRQ(ierr);
   }
 
   return 0;

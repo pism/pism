@@ -141,6 +141,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vHmelt); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vdHdt); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbeta); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vtauc); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
@@ -201,6 +202,7 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vHmelt); CHKERRQ(ierr);
   ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
+  ierr = VecDestroy(vdHdt); CHKERRQ(ierr);
   ierr = VecDestroy(vbeta); CHKERRQ(ierr);
   ierr = VecDestroy(vtauc); CHKERRQ(ierr);
   ierr = VecDestroy(vLongitude); CHKERRQ(ierr);
@@ -551,18 +553,14 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vHnew, &Hnew); CHKERRQ(ierr);
 
-  // compute dH/dt (thickening rate)
-  ierr = VecWAXPY(vWork2d[1], -1, vH, vHnew); CHKERRQ(ierr);
-  ierr = VecScale(vWork2d[1],1.0/dt); CHKERRQ(ierr);
-  if (dhView != PETSC_NULL) { // -g option: view m/year rate of change
-    ierr = DALocalToGlobal(grid.da2, vWork2d[1], INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecScale(g2, secpera); CHKERRQ(ierr); // to report in m/a
-    ierr = VecView(g2, dhView); CHKERRQ(ierr);
-  }
+  // compute dH/dt (thickening rate) for viewing and for saving at end; only diagnostic
+  ierr = VecWAXPY(vdHdt, -1, vH, vHnew); CHKERRQ(ierr);
+  ierr = VecScale(vdHdt,1.0/dt); CHKERRQ(ierr);
+
   // average value of dH/dt; also d(volume)/dt
   PetscScalar gicecount;
   ierr = PetscGlobalSum(&icecount, &gicecount, grid.com); CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, vWork2d[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, vdHdt, INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr = VecSum(g2, &gdHdtav); CHKERRQ(ierr);
   dvoldt = gdHdtav * grid.p->dx * grid.p->dy;  // m^3/s
   gdHdtav = gdHdtav / gicecount; // m/s

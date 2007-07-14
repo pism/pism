@@ -193,7 +193,7 @@ protected:
     vGhf,                       // geothermal flux
     vHmelt, vbasalMeltRate,     // thickness and rate of production of basal
                                 // meltwater (ice-equivalent)
-    vuplift,                 
+    vdHdt, vuplift,                 
     vub, vvb,                   // basal vels on standard grid
     vRb,                        // basal frictional heating on regular grid
     vubar, vvbar,               // vertically-averaged vels (u bar and v bar) on

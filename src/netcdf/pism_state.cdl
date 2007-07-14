@@ -1,34 +1,36 @@
 // Copyright (C) 2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-
-// on attribute "pism_intent":
+// regarding attribute "pism_intent": pism_intent can have one of five values:
+//           model_state, mapping, climate_steady, climate_snapshot, diagnostic
+//
 // 1.  those variables with pism_intent attribute "model_state" are *required* if the .nc file is
 //     to be used to initialize PISM (by "-if", i.e. without bootstrapping)
-// 2.  those variables with "climate_steady" or "climate_snapshot" are boundary
+// 2.  those variables with "mapping" are not model state but are generally required
+// 3.  those variables with "climate_steady" or "climate_snapshot" are boundary
 //     conditions stored from an earlier bootstrap, or are initialized to constants, but these could be 
 //     variables modified by external models (e.g. of ocean or atmosphere ...); modifying these variables 
 //     will usually effect the behavior of the PISM run from "-if"
-// 3.  "climate_steady" means that the run occurred from bootstrapping information that had no time dimension
+// 4.  "climate_steady" means that the run occurred from bootstrapping information that had no time dimension
 //     or had only one time value, and that this variable did not change during the run; "climate_snapshot"
 //     otherwise (i.e. -forcing was used or that there was climate data fed from another model)
-// 4.  pism_intent "diagnositic" means just that; modifying or removing them will have no effect
+// 5.  pism_intent "diagnostic" means just that; modifying or removing them will have no effect
 //     on the future run
 
 netcdf pism_state { // name is magic in ncgen.rb
@@ -46,49 +48,48 @@ variables: // The names of variables are magic in PISM source.
     polar_stereographic:straight_vertical_longitude_from_pole = 0;
     polar_stereographic:latitude_of_projection_origin = 90;
     polar_stereographic:standard_parallel = -71;
-    // pism_intent?
+    polar_stereographic:pism_intent = "mapping";
   float x(x);
     x:axis = "X";
     x:long_name = "x-coordinate in Cartesian system";
     x:standard_name = "projection_x_coordinate";
     x:units = "m";
-    x:pism_intent = "model_state";
+    x:pism_intent = "mapping";
   float y(y);
     y:axis = "Y";
     y:long_name = "y-coordinate in Cartesian system";
     y:standard_name = "projection_y_coordinate";
     y:units = "m";
-    y:pism_intent = "model_state";
+    y:pism_intent = "mapping";
   float z(z);
     z:axis = "Z";
     z:long_name = "z-coordinate in Cartesian system";
     z:standard_name = "projection_z_coordinate";
     z:units = "m";
     z:positive = "up";
-    z:pism_intent = "model_state";
+    z:pism_intent = "mapping";
   float zb(zb);
     zb:long_name = "z-coordinate in bedrock";
     zb:standard_name = "projection_z_coordinate_in_bedrock";
     zb:units = "m";
     zb:positive = "up";
-    zb:pism_intent = "model_state";
+    zb:pism_intent = "mapping";
   double t(t);  // note accuracy desirable even for long runs (e.g. day accuracy for 1e6 year runs
                 // so that PDD method works; also note appearance of year at each restart)
     t:long_name = "time";
     t:units = "seconds since 2007-01-01 00:00:00";
     t:calendar = "none";
     t:axis = "T";
-    t:pism_intent = "model_state";
   float lon(x,y);
     lon:long_name = "longitude";
     lon:standard_name = "longitude";
     lon:units = "degrees_east";
-    // pism_intent?
+    lon:pism_intent = "mapping";
   float lat(x,y);
     lat:long_name = "latitude";
     lat:standard_name = "latitude";
     lat:units = "degrees_north";
-    // pism_intent?
+    lat:pism_intent = "mapping";
 
 // 2-dimensional integer mask
   byte mask(t,x,y);
@@ -96,11 +97,6 @@ variables: // The names of variables are magic in PISM source.
     mask:pism_intent = "model_state";
 
 // 2-dimensional model quantities
-  float h(t,x,y);
-    h:long_name = "surface_altitude";
-    h:standard_name = "surface_altitude";
-    h:units = "m";
-    h:pism_intent = "diagnostic";  // because h = H + b; H and b are model_state
   float H(t,x,y);
     H:long_name = "land_ice_thickness";
     H:standard_name = "land_ice_thickness";
@@ -119,7 +115,7 @@ variables: // The names of variables are magic in PISM source.
     dbdt:long_name = "uplift_rate";
     dbdt:standard_name = "tendency_of_bedrock_altitude";
     dbdt:units = "m s-1";
-    // pism_intent?
+    dbdt:pism_intent = "model_state";  // note LC bed model treats as model state
 
 // 3-dimensional model quantities
   float T(t,x,y,z);
@@ -136,7 +132,8 @@ variables: // The names of variables are magic in PISM source.
     age:long_name = "land_ice_age";
     age:standard_name = "land_ice_age";
     age:units = "s";
-    // pism_intent?
+    age:pism_intent = "model_state";
+
 // 2-dimensional climate quantities
   float Ts(t,x,y);
     Ts:long_name = "surface_temperature";
@@ -153,6 +150,29 @@ variables: // The names of variables are magic in PISM source.
     accum:standard_name = "land_ice_surface_specific_mass_balance";
     accum:units = "m s-1";
     accum:pism_intent = "climate_steady";  // at this point; ditto
+
+// 2-dimensional diagnostic quantities
+  float h(t,x,y);
+    h:long_name = "surface_altitude";
+    h:standard_name = "surface_altitude";
+    h:units = "m";
+    h:pism_intent = "diagnostic";  // because h = H + b; H and b are model_state
+  float dHdt(t,x,y);
+    dHdt:long_name = "rate of change of ice thickness";
+    dHdt:units = "m year-1";
+    dHdt:pism_intent = "diagnostic";
+  float cbar(t,x,y);
+    cbar:long_name = "magnitude of vertically-integrated horizontal velocity of ice";
+    cbar:units = "m year-1";
+    cbar:pism_intent = "diagnostic";
+  float csurf(t,x,y);
+    csurf:long_name = "magnitude of horizontal velocity of ice at ice surface";
+    csurf:units = "m year-1";
+    csurf:pism_intent = "diagnostic";
+  float wsurf(t,x,y);
+    wsurf:long_name = "magnitude of vertical velocity of ice at ice surface";
+    wsurf:units = "m year-1";
+    wsurf:pism_intent = "diagnostic";
 
 // global attributes
     :Conventions = "CF-1.0";

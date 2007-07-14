@@ -810,18 +810,19 @@ PetscErrorCode IceModel::afterInitHook() {
 
 
 int IceModel::endOfTimeStepHook() {
-  char file_name[PETSC_MAX_PATH_LEN];
-  snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%f.nc", grid.p->year);
 
+  // SIGTERM makes PISM end, saving state under original -o name
   if (pism_signal == SIGTERM) {
-    verbPrintf(1, grid.com, "Caught signal %s: exiting early.\n",
-               strsignal(pism_signal));
+    verbPrintf(1, grid.com, "Caught signal SIGTERM: exiting early.\n");
     return 1;
   }
   
+  // SIGUSR1 makes PISM save state under filename based on the current year
   if (pism_signal == SIGUSR1) {
-    verbPrintf(1, grid.com, "Caught signal %s: Writing intermediate file `%s'.\n",
-               strsignal(pism_signal), file_name);
+    char file_name[PETSC_MAX_PATH_LEN];
+    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%f.nc", grid.p->year);
+    verbPrintf(1, grid.com, "Caught signal SIGUSR1: Writing intermediate file `%s'.\n",
+               file_name);
     pism_signal = 0;
     dumpToFile_netCDF(file_name);
   }

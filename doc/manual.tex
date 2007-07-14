@@ -67,9 +67,7 @@
 \thispagestyle{empty}
 %\tablespacing
 
-\setcounter{tocdepth}{1}
-\tableofcontents
-
+\vspace{2.0in}
 \begin{center}
 \includegraphics[height=2.7in,keepaspectratio=true]{figs/ant153k_mv100_speed}
 \end{center}
@@ -101,6 +99,11 @@
 The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Art Mahoney for helpful comments on the manual and the installation process.
 
 We also want to thank PISM users whose questions and comments have contributed to improving PISM and this manual.
+
+\newpage
+\setcounter{tocdepth}{2}
+\tableofcontents
+
 
 \newpage
 \section{Installation}\label{sect:install}
@@ -306,11 +309,11 @@ This should have taken less than 30 seconds on any modern computer.  In a moment
 
 \small\begin{quote}\begin{verbatim}
 $  mpiexec -n 4 pisms -eisII F -if simp_exper.nc -y 198000 \
-  -o eisIIF200k -of n >> eisIIF.out &
+  -o eisIIF200k >> eisIIF.out &
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent We have named the output and specified that it is in NetCDF format.  The file \verb|eisIIF200k.nc| will eventually appear, but this run will take at least an hour on a four processor computer.  One can view the redirected standard output by \verb|less eisIIF.out| as the job is running in the background.  Also ``\t{top}'' is a convenient tool to see processor usage during the run.  (If one kills the run with \verb|pkill pism|, which sends a \verb|SIGTERM| signal to all \verb|pism| processes, then the run will stop with the model state saved in the named output file \verb|eisIIF200k.nc| even though it will not represent the state at 200,000 years.)
+\noindent We have named the output.  The file \verb|eisIIF200k.nc| (NetCDF format) will appear at the end of this run, which will take at least an hour on a four processor computer.  One can, however, view the redirected standard output by \verb|less eisIIF.out| as the job is running in the background.  Also ``\t{top}'' is a convenient tool to see processor usage during the run.  (If one kills the run with \verb|pkill pism|, which sends a \verb|SIGTERM| signal to all \verb|pism| processes, then the run will stop with the model state saved in the named output file \verb|eisIIF200k.nc| even though it will not represent the state at 200,000 years.)
 
 While the above is running in the background, let's actually view the model state during a few time steps by starting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which are PETSc viewers working under Xwindows:
 
@@ -555,6 +558,51 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \normalsize
 \end{tabular}
 \end{table}
+
+\subsection{Using signals to observe or stop a running PISM model} \label{subsect:signal}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.
+
+Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:
+
+\verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion >> log.txt &|
+
+\noindent This run gets a Unix process id (``\verb|pid|''), and we will need that number.  (One can get the \verb|pid| by using the \verb|ps| or \verb|pgrep| utilities.)
+
+If we want to observe the run without stopping it we send the \verb|USR1| signal:
+
+\verb|kill -USR1 8920|
+
+\noindent where ``\verb|8920|'' happened to be the \verb|pid| of the running PISM process.  It happens that we caught the run at year 31871.5 or so because a NetCDF file \verb|pism-31871.495239.nc| is produced.  This intermediate state file can be viewed by \verb|ncview pism-31871.495239.nc|.  Note also that in the standard out log file \verb|log.txt| the lines
+
+\verb|...|
+
+\verb|$vtf  31871.495 (+ 30.84701[0d]):   2.985   1.747    0.000   2997.637   272.236|
+
+\verb|Caught signal SIGUSR1: Writing intermediate file `pism-31871.495239.nc'.|
+
+\verb|$vtf  31904.021 (+ 32.52611[0d]):   2.997   1.747    0.000   2997.641   272.235|
+
+\verb|...|
+
+\noindent appear.
+
+Suppose, on the other hand, that the run needs to be stopped.  One may use the usual interrupt ``\verb|kill 8920|'' or ``\verb|kill -KILL 8920|'' for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method stops the process but does not allow it to be restarted because the state is not saved.  If one wants the possibility of restarting then one should used the \verb|TERM| signal, 
+
+\verb|kill -TERM 8920|
+
+\noindent Then the PISM run is stopped, the lines
+
+\verb|Caught signal SIGTERM: exiting early.|
+
+\verb|...|
+
+\verb|Writing model state to file `testGmillion.nc' ... done|
+
+\noindent appear in the log file \verb|log.txt|, and the NetCDF model state file \verb|testGmillion.nc| appears.  Note this file has the original output name.  One can restart and finish by the command
+
+\verb|pismv -test G -if testGmillion.nc -ye 1e6 -o testGmillion_finish >> log_cont.txt &|
+
+\noindent for instance.
+
 
 \subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation according to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
 

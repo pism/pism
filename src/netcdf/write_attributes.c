@@ -29,7 +29,6 @@
    int lon_id;
    int lat_id;
    int mask_id;
-   int h_id;
    int H_id;
    int Hmelt_id;
    int b_id;
@@ -40,6 +39,11 @@
    int Ts_id;
    int ghf_id;
    int accum_id;
+   int h_id;
+   int dHdt_id;
+   int cbar_id;
+   int csurf_id;
+   int wsurf_id;
 
    /* rank (number of dimensions) for each variable */
 #  define RANK_polar_stereographic 0
@@ -51,7 +55,6 @@
 #  define RANK_lon 2
 #  define RANK_lat 2
 #  define RANK_mask 3
-#  define RANK_h 3
 #  define RANK_H 3
 #  define RANK_Hmelt 3
 #  define RANK_b 3
@@ -62,6 +65,11 @@
 #  define RANK_Ts 3
 #  define RANK_ghf 3
 #  define RANK_accum 3
+#  define RANK_h 3
+#  define RANK_dHdt 3
+#  define RANK_cbar 3
+#  define RANK_csurf 3
+#  define RANK_wsurf 3
 
    /* variable shapes */
    int x_dims[RANK_x];
@@ -72,7 +80,6 @@
    int lon_dims[RANK_lon];
    int lat_dims[RANK_lat];
    int mask_dims[RANK_mask];
-   int h_dims[RANK_h];
    int H_dims[RANK_H];
    int Hmelt_dims[RANK_Hmelt];
    int b_dims[RANK_b];
@@ -83,6 +90,11 @@
    int Ts_dims[RANK_Ts];
    int ghf_dims[RANK_ghf];
    int accum_dims[RANK_accum];
+   int h_dims[RANK_h];
+   int dHdt_dims[RANK_dHdt];
+   int cbar_dims[RANK_cbar];
+   int csurf_dims[RANK_csurf];
+   int wsurf_dims[RANK_wsurf];
 
    int polar_stereographic_straight_vertical_longitude_from_pole[1];
    int polar_stereographic_latitude_of_projection_origin[1];
@@ -144,12 +156,6 @@ if (grid.rank == 0) {
    mask_dims[1] = x_dim;
    mask_dims[2] = y_dim;
    stat = nc_def_var(ncid, "mask", NC_BYTE, RANK_mask, mask_dims, &mask_id);
-   check_err(stat,__LINE__,__FILE__);
-
-   h_dims[0] = t_dim;
-   h_dims[1] = x_dim;
-   h_dims[2] = y_dim;
-   stat = nc_def_var(ncid, "h", NC_FLOAT, RANK_h, h_dims, &h_id);
    check_err(stat,__LINE__,__FILE__);
 
    H_dims[0] = t_dim;
@@ -215,6 +221,36 @@ if (grid.rank == 0) {
    stat = nc_def_var(ncid, "accum", NC_FLOAT, RANK_accum, accum_dims, &accum_id);
    check_err(stat,__LINE__,__FILE__);
 
+   h_dims[0] = t_dim;
+   h_dims[1] = x_dim;
+   h_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "h", NC_FLOAT, RANK_h, h_dims, &h_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   dHdt_dims[0] = t_dim;
+   dHdt_dims[1] = x_dim;
+   dHdt_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "dHdt", NC_FLOAT, RANK_dHdt, dHdt_dims, &dHdt_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   cbar_dims[0] = t_dim;
+   cbar_dims[1] = x_dim;
+   cbar_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "cbar", NC_FLOAT, RANK_cbar, cbar_dims, &cbar_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   csurf_dims[0] = t_dim;
+   csurf_dims[1] = x_dim;
+   csurf_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "csurf", NC_FLOAT, RANK_csurf, csurf_dims, &csurf_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   wsurf_dims[0] = t_dim;
+   wsurf_dims[1] = x_dim;
+   wsurf_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "wsurf", NC_FLOAT, RANK_wsurf, wsurf_dims, &wsurf_id);
+   check_err(stat,__LINE__,__FILE__);
+
    /* assign attributes */
    stat = nc_put_att_text(ncid, polar_stereographic_id, "grid_mapping_name", 19, "polar_stereographic");
    check_err(stat,__LINE__,__FILE__);
@@ -227,6 +263,8 @@ if (grid.rank == 0) {
    polar_stereographic_standard_parallel[0] = -71;
    stat = nc_put_att_int(ncid, polar_stereographic_id, "standard_parallel", NC_INT, 1, polar_stereographic_standard_parallel);
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, polar_stereographic_id, "pism_intent", 7, "mapping");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, x_id, "axis", 1, "X");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, x_id, "long_name", 32, "x-coordinate in Cartesian system");
@@ -235,7 +273,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, x_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, x_id, "pism_intent", 11, "model_state");
+   stat = nc_put_att_text(ncid, x_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "axis", 1, "Y");
    check_err(stat,__LINE__,__FILE__);
@@ -245,7 +283,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, y_id, "pism_intent", 11, "model_state");
+   stat = nc_put_att_text(ncid, y_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, z_id, "axis", 1, "Z");
    check_err(stat,__LINE__,__FILE__);
@@ -257,7 +295,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, z_id, "positive", 2, "up");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, z_id, "pism_intent", 11, "model_state");
+   stat = nc_put_att_text(ncid, z_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "long_name", 23, "z-coordinate in bedrock");
    check_err(stat,__LINE__,__FILE__);
@@ -267,7 +305,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "positive", 2, "up");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, zb_id, "pism_intent", 11, "model_state");
+   stat = nc_put_att_text(ncid, zb_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "long_name", 4, "time");
    check_err(stat,__LINE__,__FILE__);
@@ -277,13 +315,13 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "axis", 1, "T");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, t_id, "pism_intent", 11, "model_state");
-   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, lon_id, "long_name", 9, "longitude");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, lon_id, "standard_name", 9, "longitude");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, lon_id, "units", 12, "degrees_east");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, lon_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, lat_id, "long_name", 8, "latitude");
    check_err(stat,__LINE__,__FILE__);
@@ -291,17 +329,11 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, lat_id, "units", 13, "degrees_north");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, lat_id, "pism_intent", 7, "mapping");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, mask_id, "long_name", 39, "grounded_dragging_floating_integer_mask");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, mask_id, "pism_intent", 11, "model_state");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, h_id, "long_name", 16, "surface_altitude");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, h_id, "standard_name", 16, "surface_altitude");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, h_id, "units", 1, "m");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, h_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, H_id, "long_name", 18, "land_ice_thickness");
    check_err(stat,__LINE__,__FILE__);
@@ -331,6 +363,8 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, dbdt_id, "units", 5, "m s-1");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, dbdt_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, T_id, "long_name", 20, "land_ice_temperature");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, T_id, "standard_name", 20, "land_ice_temperature");
@@ -353,6 +387,8 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, age_id, "units", 1, "s");
    check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, age_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, Ts_id, "long_name", 19, "surface_temperature");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, Ts_id, "standard_name", 19, "surface_temperature");
@@ -374,6 +410,38 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, accum_id, "units", 5, "m s-1");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, accum_id, "pism_intent", 14, "climate_steady");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, h_id, "long_name", 16, "surface_altitude");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, h_id, "standard_name", 16, "surface_altitude");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, h_id, "units", 1, "m");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, h_id, "pism_intent", 10, "diagnostic");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, dHdt_id, "long_name", 31, "rate of change of ice thickness");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, dHdt_id, "units", 8, "m year-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, dHdt_id, "pism_intent", 10, "diagnostic");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cbar_id, "long_name", 61, "magnitude of vertically-integrated horizontal velocity of ice");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cbar_id, "units", 8, "m year-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cbar_id, "pism_intent", 10, "diagnostic");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, csurf_id, "long_name", 54, "magnitude of horizontal velocity of ice at ice surface");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, csurf_id, "units", 8, "m year-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, csurf_id, "pism_intent", 10, "diagnostic");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, wsurf_id, "long_name", 52, "magnitude of vertical velocity of ice at ice surface");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, wsurf_id, "units", 8, "m year-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, wsurf_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", 6, "CF-1.0");
    check_err(stat,__LINE__,__FILE__);

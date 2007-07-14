@@ -331,13 +331,16 @@ PetscErrorCode BedDeformLC::alloc() {
 
 PetscErrorCode BedDeformLC::uplift_init() {
   // to initialize we solve: 
-  //   rho_r g U + D grad^4 U = - rho g Hstart - 2 eta |grad| uplift
-  // where U=plateoffset; see equation (16) in 
+  //   rho_r g U + D grad^4 U = 0 - 2 eta |grad| uplift
+  // where U=plateoffset; yes it really should have "0" on right side because
+  // load for future times will be "-rho g (H-Hstart)", which is zero if no geometry 
+  // change
+  // compare equation (16) in 
   // Bueler, Lingle, Brown (2007) "Fast computation of a viscoelastic
   // deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
-  // NOTE PROBABLE SIGN ERROR in eqn (16):  load "rho g H" should be "- rho g H"
+  // [NOTE PROBABLE SIGN ERROR in eqn (16)?:  load "rho g H" should be "- rho g H"]
   PetscErrorCode ierr;
-  PetscScalar **upl, **pla, **lft, **rgt, **HH;
+  PetscScalar **upl, **pla, **lft, **rgt;
     
 #if (WITH_FFTW)
   // spectral/FFT quantities are on fat computational grid but uplift is on thin
@@ -345,15 +348,6 @@ PetscErrorCode BedDeformLC::uplift_init() {
   ierr = VecGetArray2d(plateoffset, Nx, Ny, 0, 0, &pla); CHKERRQ(ierr);
   ierr = VecGetArray2d(vleft, Nx, Ny, 0, 0, &lft); CHKERRQ(ierr);
   ierr = VecGetArray2d(vright, Nx, Ny, 0, 0, &rgt); CHKERRQ(ierr);
-
-  // Matlab: sszz=rhoi*g*Hstart;
-  //         COMPUTE fft2(msszz);
-  for (PetscInt i=0; i < Nx; i++) {
-    for (PetscInt j=0; j < Ny; j++) {
-      bdin[j + Ny * i][0] = 0.0;
-      bdin[j + Ny * i][1] = 0.0;
-    }
-  }
 
   // fft2(uplift)
   for (PetscInt i=0; i < Nx; i++) {

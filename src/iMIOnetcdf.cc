@@ -410,7 +410,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // put the array into the scratch global Vec g2 and then the usual DA-based
   // global (g2) to local (vAccum, etc.) is done
   PetscScalar first, last;
-  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 5000.0;
+  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 5000.0; // just defaults
   if (xExists) {
     ierr = getFirstLast(ncid, v_x, &first, &last);
     x_scale = (last - first) / 2.0;
@@ -649,8 +649,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   return 0;
 }
 
-// change to use MPIBcast
 PetscErrorCode IceModel::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
+  // note this is used by IceGRNModel to spread (broadcast) sequential
+  // Vecs containing ice core-derived climate data to each processor
+  
   PetscErrorCode ierr;
   int stat;
   size_t M;
@@ -663,7 +665,7 @@ PetscErrorCode IceModel::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
     char name[NC_MAX_NAME+1];
     stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
     if (ndims != 1) {
-      SETERRQ2(1, "ncVarBcastDaVec: number of dimensions = %d for %s\n",
+      SETERRQ2(1, "ncVarBcastDaVec: number of dimensions = %d for %s; should have ndims=1\n",
                ndims, name);
     }
     stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
@@ -952,8 +954,6 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   // 2-D model quantities
   ierr = put_local_var(&grid, ncid, mask_id, NC_BYTE, grid.da2, vMask, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, h_id, NC_FLOAT, grid.da2, vh, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, H_id, NC_FLOAT, grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, Hmelt_id, NC_FLOAT, grid.da2, vHmelt, g2,
@@ -962,22 +962,6 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, dbdt_id, NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  // 2-D climate quantities
-  ierr = put_local_var(&grid, ncid, Ts_id, NC_FLOAT, grid.da2, vTs, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, ghf_id, NC_FLOAT, grid.da2, vGhf, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, accum_id, NC_FLOAT, grid.da2, vAccum, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-/*                       
-  // 2-D constant quantities
-  ierr = put_local_var(&grid, ncid, Ts_id, NC_FLOAT, grid.da2, vTs, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, ghf_id, NC_FLOAT, grid.da2, vGhf, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, accum_id, NC_FLOAT, grid.da2, vAccum, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-*/
   // 3-D model quantities
   ierr = put_local_var(&grid, ncid, T_id, NC_FLOAT, grid.da3, vT, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -985,6 +969,64 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
                        s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, age_id, NC_FLOAT, grid.da3, vtau, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  // 2-D climate quantities
+  ierr = put_local_var(&grid, ncid, Ts_id, NC_FLOAT, grid.da2, vTs, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, ghf_id, NC_FLOAT, grid.da2, vGhf, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, accum_id, NC_FLOAT, grid.da2, vAccum, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
+  // 2-D diagnostic quantities
+  // note h is diagnostic because it is recomputed by h=H+b at each time step
+  ierr = put_local_var(&grid, ncid, h_id, NC_FLOAT, grid.da2, vh, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = VecCopy(vdHdt,vWork2d[0]); CHKERRQ(ierr);
+  ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, dHdt_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // compute cbar = sqrt(ubar^2 + vbar^2) and save it
+  ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
+  ierr = VecPointwiseMult(vWork2d[1], vvbar, vvbar); CHKERRQ(ierr);
+  ierr = VecAXPY(vWork2d[0], 1, vWork2d[1]); CHKERRQ(ierr);
+  PetscScalar **a, **H;
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0.0) {
+        a[i][j] = sqrt(a[i][j]) * secpera;
+      } else {
+        a[i][j] = 0.0; // no ice at location
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, cbar_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
+  ierr = getSurfaceValuesOf3D(vu,vWork2d[0]); CHKERRQ(ierr);
+  ierr = getSurfaceValuesOf3D(vv,vWork2d[1]); CHKERRQ(ierr);
+  PetscScalar **us, **vs;
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      a[i][j] = sqrt(PetscSqr(us[i][j]) + PetscSqr(vs[i][j])) * secpera;
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, csurf_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // compute wsurf, the surface values of vertical velocity
+  ierr = getSurfaceValuesOf3D(vw,vWork2d[0]); CHKERRQ(ierr);
+  ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // We are done with these buffers
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
@@ -993,7 +1035,6 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-
   return 0;
 }
 
@@ -1022,19 +1063,23 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   // options read simply to warn user that they have been ignored
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,"WARNING: user option -Mx ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com,
+             "WARNING: user option -Mx ignored; value read from file %s\n", fname); CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,"WARNING: user option -My ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com,
+             "WARNING: user option -My ignored; value read from file %s\n", fname); CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,"WARNING: user option -Mz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com,
+             "WARNING: user option -Mz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,"WARNING: user option -Mbz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com,
+              "WARNING: user option -Mbz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
   }
   
   ierr = grid.createDA(); CHKERRQ(ierr);
@@ -1090,15 +1135,6 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "accum", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-/*
-  // 2-D constant quantities
-  ierr = get_local_var(&grid, ncid, "Ts", NC_FLOAT, grid.da2, vTs, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "ghf", NC_FLOAT, grid.da2, vGhf, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "accum", NC_FLOAT, grid.da2, vAccum, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-*/
   // 3-D model quantities
   ierr = get_local_var(&grid, ncid, "T", NC_FLOAT, grid.da3, vT, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
