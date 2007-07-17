@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{141}
+\newcommand{\PISMREV}{144}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -96,7 +96,7 @@
 \centerline{\textsc{Acknowledgements}}
 \bigskip
 
-The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Art Mahoney for helpful comments on the manual and the installation process.
+The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Kent Overstreet and Art Mahoney for helpful comments on the manual and the installation process.
 
 We also want to thank PISM users whose questions and comments have contributed to improving PISM and this manual.
 
@@ -453,7 +453,7 @@ See \cite{BLKCB} for a more complete discussion of this particular test.  See th
 
 The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice and it is exactly opposite to the vector of gravity.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.  Vertical lines $(x,y)=(a,b)$, for constant $a,b$, are generally not at right angles to the planes $z=c$, so the coordinate system is not technically rectilinear.
 
-Bed topography is, of course, allowed.  In fact, when the ice is grounded, the true physical vertical coordinate $z'$ is described by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.  Thus in the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ applys if $H(x,y)$ is the thickness of the ice.
+Bed topography is, of course, allowed.  In fact, when the ice is grounded, the true physical vertical coordinate $z'$ is described by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.  Thus in the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ applies if $H(x,y)$ is the thickness of the ice.  In the floating case, $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$, where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water; again $z=0$ is the base of the ice, however.
 
 The computational box can extend downward into the bedrock.  As $z=0$ is the base of the ice, the bedrock corresponds to negative $z$ values.
 
@@ -527,6 +527,12 @@ Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth th
 \end{tabular}
 \end{table}
 
+\subsection{Fast flow and the flow-type mask} \label{subsect:mask}  An important fact about PISM is that there are two sets of equations which may be used to describe the manner in which the geometry and the temperature of the ice determine the flow of the ice.  First there are the equations of the shallow ice approximation (SIA) \cite{Fowler}, describing ice flowing as a function of the driving shear stresses of classical glacioloty.  Second, however, there are the Morland-MacAyeal-Schoof equations \cite{Morland,MacAyeal,SchoofStream} (or shallow shelf approximation = SSA) describing a membrane-type flow.  In the former case the shear stress at the base of the ice must be substantial, while in the latter case the base is assumed to slide fairly easily.  In fact, for the SSA equations there are two physical circumstances, that of ice shelves, where there is zero basal shear stress, and that of ice streams, where there is basal shear stress which might be proportional to till thickness \cite{MacAyeal} or might be based on a plasticity assumption for the till \cite{SchoofStream}.  Because of the typical magnitudes of the (vertically-integrated horizontal) velocities in these two cases, we identify the SIA flow as \emph{slow flow} and all cases of the SSA flow as \emph{fast flow}.
+
+The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through the mask, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+
+
+
 \subsection{Understanding and controlling adaptive time-stepping}  Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
 \begin{verbatim}
     $$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
@@ -559,7 +565,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \end{tabular}
 \end{table}
 
-\subsection{Using signals to observe or stop a running PISM model} \label{subsect:signal}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.
+\subsection{Using signals to observe or stop a running PISM model} \label{subsect:signal}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
 
 Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:
 
@@ -585,11 +591,11 @@ If we want to observe the run without stopping it we send the \verb|USR1| signal
 
 \noindent appear.
 
-Suppose, on the other hand, that the run needs to be stopped.  One may use the usual interrupt ``\verb|kill 8920|'' or ``\verb|kill -KILL 8920|'' for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method stops the process but does not allow it to be restarted because the state is not saved.  If one wants the possibility of restarting then one should used the \verb|TERM| signal, 
+Suppose, on the other hand, that the run needs to be stopped.  One may use the interrupt ``\verb|kill -KILL 8920|'' for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method, which a process cannot catch or block, stops the process but does not allow it  time to save the model state, which is necessary to restart at the same place, or to inspect the model state more thoroughly.  If one wants the possibility of restarting then one should used the \verb|TERM| signal, 
 
 \verb|kill -TERM 8920|
 
-\noindent Then the PISM run is stopped, the lines
+\noindent Then the PISM run is stopped and the lines
 
 \verb|Caught signal SIGTERM: exiting early.|
 
@@ -597,16 +603,34 @@ Suppose, on the other hand, that the run needs to be stopped.  One may use the u
 
 \verb|Writing model state to file `testGmillion.nc' ... done|
 
-\noindent appear in the log file \verb|log.txt|, and the NetCDF model state file \verb|testGmillion.nc| appears.  Note this file has the original output name.  One can restart and finish by the command
+\noindent appear in the log file \verb|log.txt|.  In this case the NetCDF model state file \verb|testGmillion.nc| appears; note this file has the original output name specified by the option \verb|-o|.  One can restart and finish the run by the command (for example)
 
 \verb|pismv -test G -if testGmillion.nc -ye 1e6 -o testGmillion_finish >> log_cont.txt &|
+\smallskip
 
-\noindent for instance.
+\newcommand\pid{\textsl{pid}}
+\newcommand\same{(\textsl{same})}
+\begin{table}[h]
+\caption{Signalling PISM.  \pid~stands for the identifier of the running PISM process}\label{tab:signals}
+\begin{tabular}{@{}llll}\hline
+\textbf{Command}\phantom{bobbob} & \textbf{Signal}\phantom{bobbob} & \textbf{PISM behavior} \\ \hline
+\texttt{kill -KILL} \pid & \texttt{SIGKILL} & terminate with extreme prejudice; PISM cannot catch it \\
+\texttt{kill} -9 \pid & \same & \same \\
+Ctrl-C & \same & same, but only for foreground processes  \\ \hline
+\texttt{kill -TERM} \pid & \texttt{SIGTERM} & end process but save the last model state \\
+ &  & using the user-given \verb|-o| name or the default name \\
+\texttt{kill} -15 \pid & \same & \same \\
+\texttt{kill} \pid & \same & \same \\ \hline
+\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & allow process to continue but save model state \\
+ &  & at current time using name \texttt{pism-}\textsl{year}\texttt{.nc} \\
+\hline\normalsize
+\end{tabular}
+\end{table}
 
 
 \subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation according to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
 
-A reasonable method for computing the melting of snowfall, used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:real} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
+A reasonable method for computing the melting of snowfall, optionally used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:real} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
 
 The part of this cycle above $0\!\phantom{|}^\circ \text{C}$ is converted to positive degree days.  This number of positive degree days is multiplied by a coefficient (set by \verb|-pdd_factor_snow|) to compute the amount of snow melted.  Of this melted snow, a fraction (\verb|-pdd_refreeze|) is kept as ice.  This ice, plus all unmelted snow (measured as ice-equivalent) is applied as accumulation, unless the number of positive degree days exceeds that required to melt all of the snow-fall in the year.  In this latter case in which there are excess positive degree days available for melting, the number of excess positive degree days is multiplied by a coefficient (\verb|-pdd_factor_ice|) to compute how much ice is melted, so that net ablation occurs (at the given point).
 

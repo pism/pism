@@ -20,8 +20,9 @@ static char help[] =
   "Ice sheet driver for EISMINT II experiment H with random accumulation.\n";
 
 #include <petscda.h>
-#include "grid.hh"
-#include "materials.hh"
+#include "../grid.hh"
+#include "../materials.hh"
+
 #include "iceRYANModel.hh"
 
 int main(int argc, char *argv[]) {
@@ -38,6 +39,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
+    IceType*   ice;
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PRYAN (perturbed accumulation EISMINT II mode)\n"); CHKERRQ(ierr);
 
@@ -45,7 +47,6 @@ int main(int argc, char *argv[]) {
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     
     IceGrid    g(com, rank, size);
-    IceType*   ice;
     IceRYANModel   m(g, *ice);
 
     ierr = m.setFromOptions(); CHKERRQ(ierr);

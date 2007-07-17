@@ -1,0 +1,19 @@
+VPATH+=:src/ryan
+
+CFLAGS+= -I/opt/acml3.6.0/gnu32/include/
+
+RYAN_LIB_FLAGS= -Wl,-rpath,/opt/acml3.6.0/gnu32/lib -L/opt/acml3.6.0/gnu32/lib/ -lacml
+
+executables+= pryan
+
+other_sources+= iceRYANModel.cc pryan.cc
+
+pryan : iceRYANModel.o iceEISModel.o pryan.o libpism.so
+	echo ${VPATH}
+	echo ${CFLAGS}
+	echo ${RYAN_LIB_FLAGS}
+	echo ${executables}
+	echo ${other_sources}
+	${CLINKER} iceRYANModel.o iceEISModel.o pryan.o ${RYAN_LIB_FLAGS} ${ICE_LIB_FLAGS} -o $@
+
+

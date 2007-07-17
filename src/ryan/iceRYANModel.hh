@@ -21,9 +21,9 @@
 
 #include <petscda.h>
 /* #include <vector> */
-#include "grid.hh"
-#include "materials.hh"
-#include "iceEISModel.hh"
+#include "../grid.hh"
+#include "../materials.hh"
+#include "../iceEISModel.hh"
 
 struct RandomnessACML {
   PetscInt    lseed, lstate, n, genid, subid, i, info;

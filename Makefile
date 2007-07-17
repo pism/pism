@@ -31,16 +31,20 @@ ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMviewers.cc iceModel.cc materials.cc nc_util.cc\
 	beddefLC.cc
 ice_csources= cubature.c pism_signal.c
-ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
-TESTS_OBJS= $(tests_sources:.c=.o)
 
 other_sources= pismr.cc pismv.cc pisms.cc pant.cc pgrn.cc\
 	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc\
 	iceCompModel.cc iCMthermo.cc shelf.cc\
 	flowTable.cc tryLCbd.cc
 other_csources= simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
+
+#include config/ryan_make
+
+TESTS_OBJS= $(tests_sources:.c=.o)
+
+ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)

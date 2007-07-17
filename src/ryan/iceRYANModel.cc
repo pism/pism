@@ -18,10 +18,10 @@
 
 #include <petscda.h>
 #include <acml.h>
-#include <acml_mv.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceEISModel.hh"
+// #include <acml_mv.h>  only seems available under 64 bit, which seems incompatible with my machine
+#include "../grid.hh"
+#include "../materials.hh"
+#include "../iceEISModel.hh"
 
 #include "iceRYANModel.hh"
 
@@ -66,6 +66,14 @@ PetscErrorCode IceRYANModel::initFromOptions() {
   ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);
 
   // Ryan put this at the end of  IceEISModel::initAccumTs()
+  // these are the values that apply to  "case 'H':"
+      PetscScalar       S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
+  //    PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
+      PetscScalar M_max, R_el, T_min;
+      // start with zero ice and:
+      M_max = 0.5 / secpera;  // Max accumulation
+      R_el = 450e3;           // Distance to equil line (accum=0)
+      T_min = 238.15;
   setM_max_g(M_max);
   setS_b_g(S_b);
   setR_el_g(R_el);
@@ -189,11 +197,11 @@ PetscErrorCode IceRYANModel::initRandomnessACML() {
   ISCreateGeneral(PETSC_COMM_SELF, randomnessacml.lseed, seed, &randomnessacml.seed);
   // Note that ISCreateGeneral() has made a copy of seed
   // so we may (and generally should) free seed
-  PetscFree(seed);
+  ierr = PetscFree(seed); CHKERRQ(ierr);
 
   PetscMalloc(randomnessacml.lstate * sizeof(PetscInt), &state);
   ISCreateGeneral(PETSC_COMM_SELF, randomnessacml.lstate, state, &randomnessacml.state);
-  PetscFree(state);
+  ierr = PetscFree(state); CHKERRQ(ierr);
 
   ierr = VecCreateSeq(PETSC_COMM_SELF, randomnessacml.n, &randomnessacml.x);
 
