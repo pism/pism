@@ -195,6 +195,7 @@ PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[], double *bdy_t
   }
   MPI_Bcast(dim, 5, MPI_LONG, 0, com);
   MPI_Bcast(bdy, 7, MPI_FLOAT, 0, com);
+  MPI_Bcast(bdy_time, 1, MPI_DOUBLE, 0, com);
 
   return 0;
 }

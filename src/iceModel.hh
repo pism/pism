@@ -189,6 +189,7 @@ protected:
   // state variables
   Vec vh, vH, vbed,             // 2D vectors; Mx x My
     vAccum, vTs,                // accumulation, surface temp
+    vAccumSnow,                 // see iMpdd.cc; vAccum is net (including ablation)
     vMask,                      // mask for flow type
     vGhf,                       // geothermal flux
     vHmelt, vbasalMeltRate,     // thickness and rate of production of basal
@@ -333,7 +334,6 @@ protected:
                                  PetscInt i, PetscInt j) const;
 
   // see iMpdd.cc (positive degree day model for ablation)
-  Vec         vAccumSnow;
   gsl_rng     *pddRandGen;
   PetscTruth  doPDD, pddStuffCreated;
   PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, pddSummerWarming;

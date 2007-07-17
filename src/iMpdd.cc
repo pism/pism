@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2007 Nathan Shemonski and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,6 @@
 // FIXME:
 //   3. for EIMINT-GREENLAND, summer_warming = Ts - Ta is *not* constant;
 //      need alternative determined from flag?
-//   5. go back to IceGRNModel and fix it up
-//   6. document in manual
 
 PetscErrorCode IceModel::initPDDFromOptions() {
   PetscErrorCode  ierr;
@@ -200,8 +198,8 @@ PetscErrorCode IceModel::updateNetAccumFromPDD() {
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
+//  ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
+//  ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
   return 0;
 }
 

@@ -629,7 +629,8 @@ PetscErrorCode IceModel::run() {
     //    "-tempskip" mechanism
 
     // ierr = PetscPrintf(PETSC_COMM_SELF,
-    //           "\n[rank=%d, it=%d, year=%f, dt=%f]", grid.rank, it, year, dt/secpera);
+    //           "\n[rank=%d, year=%f, dt=%f, startYear=%f, endYear=%f]",
+    //           grid.rank, grid.p->year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
     
     bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
