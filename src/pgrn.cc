@@ -58,7 +58,7 @@ int main(int argc, char *argv[]){
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);
 
     // FIXME: fix data for the netCDF file
-//    ierr = mGRN.copyOrigBed(); CHKERRQ(ierr);
+    ierr = mGRN.removeBedDiff(); CHKERRQ(ierr);
 
     ierr = mGRN.writeFiles("grn_exper"); CHKERRQ(ierr);
 

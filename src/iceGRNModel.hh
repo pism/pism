@@ -34,10 +34,11 @@ public:
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
-  PetscErrorCode copyOrigBed();
+  PetscErrorCode removeBedDiff();
 
 protected:
-  Vec vOrigBed;
+  //Vec vOrigBed;
+  PetscScalar bedDiff;
   Vec vIceCoreDeltaT;
   Vec vIceCoreDeltaSea;
   Vec vIceCoreTimeT;
@@ -55,7 +56,6 @@ private:
   PetscTruth inFileSet;
   PetscErrorCode initGRIPVecIdx();
   PetscErrorCode getInterpolationCode(int ncid, int vid, int *code); 
-  PetscErrorCode saveOrigVecs();  // copies vBed into vOrigBed
   PetscErrorCode updateTs();
   PetscErrorCode calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val);
 //  PetscErrorCode calculateSummerTemp(PetscScalar h, PetscScalar lat, PetscScalar *val);

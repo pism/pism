@@ -70,23 +70,25 @@ def laplace(a, bad_value, eps=2.):
   return size(ind)
 
 # command line arguments set
-fileSet = 0;
-variablesSet = 0;
+fileSet = 0
+variablesSet = 0
+outFileSet = 0
 fileName = "guess.nc"
+outFileName = "fill_missing_out.nc"
 variables = ("bed")
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "i:v:", ["in_file", "variables"])
+  opts, args = getopt.getopt(sys.argv[1:], "i:v:o:", ["in_file", "variables", "out_file"])
   for opt, arg in opts:
     if opt in ("-i", "--in_file"):
       fileName = arg
       fileSet = 1;
     if opt in ("-o", "--out_file"):
-      outfileName = arg
-      outfileSet = 1;
+      outFileName = arg
+      outFileSet = 1
     if opt in ("-v", "--variables"):
       variables = arg.split(",");
-      variablesSet = 1;
+      variablesSet = 1
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -98,9 +100,15 @@ if variablesSet == 0:
   print 'ERROR: No variable names given, exiting...'
   sys.exit(2)
 
+try:
+  (status, output)=commands.getstatusoutput('cp '+fileName+' '+outFileName)
+except:
+  print 'output: '+output
+  sys.exit(status)
+
 print 'Reading from file: ' + fileName
 
-ncfile = CDF(fileName, NC.WRITE)
+ncfile = CDF(outFileName, NC.WRITE)
 ncfile.automode()
 
 for varName in variables:

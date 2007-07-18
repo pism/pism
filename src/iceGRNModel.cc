@@ -74,7 +74,6 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   int stat;
 
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
-  ierr = saveOrigVecs(); CHKERRQ(ierr);
 
   char inFile[PETSC_MAX_PATH_LEN], coreFile[PETSC_MAX_PATH_LEN];
   int usrYear;
@@ -192,6 +191,8 @@ PetscErrorCode IceGRNModel::initGRIPVecIdx() {
   ierr = VecGetLocalSize(vIceCoreTimeT, &iceCoreLenT); CHKERRQ(ierr);
   ierr = VecGetLocalSize(vIceCoreTimeSea, &iceCoreLenSea); CHKERRQ(ierr);
 
+  bedDiff = 0;
+
   int r, l=0;
   r = iceCoreLenT;
   // do a binary search to find where our year fits in.
@@ -244,7 +245,6 @@ PetscErrorCode IceGRNModel::createVecs() {
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
-  ierr = VecDuplicate(vh, &vOrigBed); CHKERRQ(ierr);
   return 0;
 }
 
@@ -262,9 +262,20 @@ PetscErrorCode IceGRNModel::destroyVecs() {
 }
 
 
-PetscErrorCode IceGRNModel::copyOrigBed() {
+PetscErrorCode IceGRNModel::removeBedDiff() {
   PetscErrorCode ierr;
-  ierr = VecCopy(vOrigBed, vbed); CHKERRQ(ierr);
+  PetscScalar **bed;
+
+  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
+  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+      bed[i][j] += bedDiff;
+    }
+  }
+
+  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -292,20 +303,10 @@ PetscErrorCode IceGRNModel::getInterpolationCode(int ncid, int vid, int *code) {
   return 0;
 }
 
-
-PetscErrorCode IceGRNModel::saveOrigVecs() {
-  PetscErrorCode ierr;
-
-  // we need to save the original bed information and copy
-  // it back before we write it to the nc file.
-  ierr = VecCopy(vbed, vOrigBed); CHKERRQ(ierr);
-  return 0;
-}
-
 PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     PetscErrorCode ierr;
     PetscScalar *deltaT, *iceCoreTimeT, *iceCoreTimeSea, *deltaSea;
-    PetscScalar **Ts, **bed, **origBed;
+    PetscScalar **Ts, **bed;
     PetscScalar TsChange, seaChange;
 
     // at the beginning of each time step we need to recompute
@@ -349,7 +350,6 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       ierr = VecGetArray(vIceCoreTimeSea, &iceCoreTimeSea); CHKERRQ(ierr);
       ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
       ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-      ierr = DAVecGetArray(grid.da2, vOrigBed, &origBed); CHKERRQ(ierr);
 
       // if there was a large time step, it is possible
       // that we skip over multiple entries
@@ -432,15 +432,17 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
 
         //verbPrintf(2, grid.com, "For year: %f, TsChange: %f\n", grid.p->year, TsChange);       
         //verbPrintf(2, grid.com, "For year: %f, seaChange: %f\n", grid.p->year, seaChange);       
+
+        //verbPrintf(2, grid.com, "bed[%d][%d] = %f\n", grid.xs, grid.ys, bed[grid.xs][grid.ys]);
  
-        if (seaChange != 0 || TsChange != 0) {
-          for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-            for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-              Ts[i][j] += TsChange;
-              bed[i][j] = origBed[i][j] - seaChange;
-            }
+        for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+          for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+            Ts[i][j] += TsChange;
+            bed[i][j] += bedDiff;
+            bed[i][j] -= seaChange;
           }
         }
+        bedDiff = seaChange;
       }
       ierr = VecRestoreArray(vIceCoreDeltaSea, &deltaSea); CHKERRQ(ierr);
       ierr = VecRestoreArray(vIceCoreDeltaT, &deltaT); CHKERRQ(ierr);
@@ -448,7 +450,6 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       ierr = VecRestoreArray(vIceCoreTimeSea, &iceCoreTimeSea); CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da2, vOrigBed, &origBed); CHKERRQ(ierr);
 
       ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
       ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);

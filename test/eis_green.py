@@ -120,9 +120,9 @@ setattr(ncfile, 'Conventions', 'CF-1.0')
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
-setattr(polarVar, 'straight_vertical_longitude_from_pole', -40)
-setattr(polarVar, 'latitude_of_projection_origin', 75)
-setattr(polarVar, 'standard_parallel', 90)
+setattr(polarVar, 'straight_vertical_longitude_from_pole', -41.1376)
+setattr(polarVar, 'latitude_of_projection_origin', 71.6468)
+setattr(polarVar, 'standard_parallel', 71)
 
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')

@@ -1148,15 +1148,15 @@ $  pgrn -bif eis_green20.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
 
 \noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in several default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|263.15|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
 
-\subsection{Running Greenland Experiments Using Bootstrapped Data}
-There are several experiments that can be run using command line arguments with \verb|pgrn|. The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison (-ssl2). This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under a different flow law (Goldsby-Kohlstedt). An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
+\subsection{Running Greenland Experiments Using Bootstrapped Data}  There are several experiments that can be run using command line arguments with \verb|pgrn|. Some of them require the use of more python scripts, while single line commands are sufficient for others.
+\subsubsection{Steady State Experiments}  The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison (-ssl2). This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under a different flow law (Goldsby-Kohlstedt). Also, \verb|pgrn| will run with an enhancement factor of 1, rather than 3 as with SSL2.  An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
 
 \small\begin{quote}\begin{verbatim}
 $  ssl2_expr.py -n 8
 \end{verbatim}
 \end{quote}\normalsize
 
-The next experiment is intended to be carried out after the completion of the first steady state run using the steady model state. The main focus here is the option \verb|-forcing| which uses the GRIP data in \verb|eis_core.nc| to somewhat force the climate. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to simulate part of a global climate system, which is specified in \verb|eis_core.nc| and interpolated between years according to the options chosen when \verb|eis_core.py| was run. The data in \verb|eis_core.nc| goes about 250,000 years into the past. Therefore, it is necessary to manually set the year into the past when running \verb|pgrn|. To do this, the option \verb|-ys| is used. This experiment can be run using the following command:
+\subsubsection{Climate Forcing}  The next experiment is intended to be carried out after the completion of the first steady state run using the steady model state. The main focus here is the option \verb|-forcing| which uses the GRIP data in \verb|eis_core.nc| to somewhat force the climate. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to simulate part of a global climate system, which is specified in \verb|eis_core.nc| and interpolated between years according to the options chosen when \verb|eis_core.py| was run. The data in \verb|eis_core.nc| goes about 250,000 years into the past. Therefore, it is necessary to manually set the year into the past when running \verb|pgrn|. To do this, the option \verb|-ys| is used. This experiment can be run using the following command:
 
 \small\begin{quote}\begin{verbatim}
 $  pgrn -ccl3 -if green20_SSL3.nc -forcing eis_core.nc -ys -249900 \
@@ -1172,7 +1172,7 @@ $  pgrn -ccl3 -if green20_CCL3_y0.nc -forcing eis_core.nc -y 500 \
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent The last experiment (Greenhouse Warming) described in the EISMINT Intercomparison uses the model state obtained for present day (1989). From the commands before, this is file \verb|green20_CCL3_y0.nc|. The Greenhouse Warming experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years. The following command will run this experiment:
+\subsubsection{Greenhouse Warming}  The last experiment (Greenhouse Warming) described in the EISMINT Intercomparison uses the model state obtained for present day (1989). From the commands before, this is file \verb|green20_CCL3_y0.nc|. The Greenhouse Warming experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years. The following command will run this experiment:
 
 \small\begin{quote}\begin{verbatim}
 $  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3
@@ -1388,6 +1388,8 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optdef{constant\und nu}{30.0}  If this option is used then the MacAyeal velocities (see \verb|-mv| below) are computed with a constant viscosity.  If this option is not used then the viscosities are computed by a nonlinear iteration.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
+\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:real}
+
 \opt{d}  Specifies diagnostic (X Windows) viewers.  See Appendix C.
 
 \optdefrestrict{datprefix}{PISM}{pisms -ismip H}  Specify base name for ISMIP-HEINO deliverable \verb|.dat| files.  See also \verb|-no_deliver|.
@@ -1402,7 +1404,11 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This option overrides the adaptime time-stepping and does $0.25$ year time steps anyway; \emph{will probably cause blowup so don't bother}.
 
+\optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:real}.
+
 \optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
+
+\optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:real}
 
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
 
@@ -1536,6 +1542,10 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
 
 \optrestrict{showobsvel}{pisms -ross -d c}    Show the map of observed velocity for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross| and \verb|-pause|.
+
+\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:real}.
+
+\optrestrict{ssl3}{pgrn -gk}    Run EISMINT-GREENLAND steady state experiment level 3. See section \ref{sect:real}.
 
 \optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
 

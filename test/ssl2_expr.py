@@ -91,6 +91,3 @@ while result > .0001:
   print 'percent difference is: '+str(result*100)+'%'
   prev_year=curr_year
   curr_year=curr_year+10
-
-output.close()    
-
