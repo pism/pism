@@ -2,108 +2,149 @@ SHELL = /bin/sh
 VPATH = src:src/exact
 ALL : all
 
+# get PETSc environment, rules:
 include ${PETSC_DIR}/bmake/common/base
 
+
 #FLAGS:
-
-WITH_NETCDF?=1
+MARGIN_TRICK?=0
+MARGIN_TRICK_TWO?=0
 WITH_FFTW?=1
-WITH_GSL?=1
+CFLAGS+= -I${PET_HOME}/MATH/GNU/include\
+   -I/usr/local/pkg/netcdf/netcdf-3.6.0-p1_gcc/include\
+   -DWITH_FFTW=${WITH_FFTW}\
+   -DMARGIN_TRICK=${MARGIN_TRICK} -DMARGIN_TRICK_TWO=${MARGIN_TRICK_TWO} -pipe
 
-CFLAGS+= -I${PET_HOME}/MATH/GNU/include
-CFLAGS+= -DWITH_NETCDF=${WITH_NETCDF} -DWITH_FFTW=${WITH_FFTW} -DWITH_GSL=${WITH_GSL} -pipe
-
-ICE_LIB_FLAGS= -L${PET_HOME}/MATH/GNU/lib\
-	-L/var/opt/pce/local/pkg/netcdf/netcdf-3.6.0-p1_gcc/lib\
-	-L`pwd`/obj -Wl,-rpath,`pwd`/obj -lpism -ltests ${PETSC_LIB}\
-        -lnetcdf_c++ -lnetcdf
-
+TESTS_LIB_FLAGS= -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib\
+   -ltests -lm -lgsl -lgslcblas
+ICE_LIB_FLAGS= -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -L${PET_HOME}/MATH/GNU/lib\
+	-L/usr/local/pkg/netcdf/netcdf-3.6.0-p1_gcc/lib -lnetcdf 
 ifeq (${WITH_FFTW}, 1)
-	ICE_LIB_FLAGS+= -lfftw3 -lm
+	ICE_LIB_FLAGS+= -lfftw3
 endif
-ifeq (${WITH_GSL}, 1)
-	ICE_LIB_FLAGS+= -lgsl -lgslcblas
-endif
+
 
 #VARIABLES:
-
-#executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI shelf pant
-executables= flowTable pismr pismv pisms simpleISO simpleFG simpleI pant
+executables= pismr pismv pisms pgrn pant
+extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
-	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc\
-	iMregrid.cc iMregrid_netCDF.cc iMtemp.cc iMutil.cc iMvelocity.cc\
-	 iMviewers.cc iceModel.cc materials.cc nc_util.cc
+	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc iMpdd.cc\
+	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc\
+	iMviewers.cc iceModel.cc materials.cc nc_util.cc\
+	beddefLC.cc
 ice_csources= cubature.c pism_signal.c
-ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
-tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c
+tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
+
+other_sources= pismr.cc pismv.cc pisms.cc pant.cc pgrn.cc\
+	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc\
+	iceCompModel.cc iCMthermo.cc shelf.cc\
+	flowTable.cc tryLCbd.cc
+other_csources= simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
+
+#include config/ryan_make
+
 TESTS_OBJS= $(tests_sources:.c=.o)
 
-other_sources= flowTable.cc simplify.cc iceEISModel.cc iceHEINOModel.cc\
-	iceROSSModel.cc run.cc verify.cc iceCompModel.cc pant.cc shelf.cc
-other_csources= simpleISO.c simpleFG.c simpleI.c
+ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
+all : depend libpism.so libtests.so $(executables) .makeremind
 
-#TARGETS:
+install : local_install clean
 
-all : depend libpism libtests $(executables)
+local_install : depend libpism.so libtests.so $(executables)
+	@cp libpism.so lib/
+	@cp libtests.so lib/
+	@echo 'PISM libraries installed in lib/'
+	@cp $(executables) bin/
+	@rm -f libpism.so
+	@rm -f libtests.so
+	@rm -f $(executables)
+	@echo 'PISM executables installed in bin/'
+	@rm .makeremind
 
-libpism : ${ICE_OBJS}
-	${CLINKER} -shared -o obj/libpism.so ${ICE_OBJS}
-#	ar cru -s obj/libpism.a ${ICE_OBJS}
+libpism.so : ${ICE_OBJS}
+	${CLINKER} -shared ${ICE_OBJS} -o $@
+#for static-linking:  ar cru -s libpism.a ${ICE_OBJS}   etc
 
-libtests : ${TESTS_OBJS}
-	${CLINKER} -shared -o obj/libtests.so ${TESTS_OBJS}
+libtests.so : ${TESTS_OBJS}
+	${CLINKER} -shared ${TESTS_OBJS} -o $@
 
-flowTable : obj/libpism.so flowTable.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/flowTable
+pismr : pismr.o libpism.so
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-pant : obj/libpism.so pant.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pant
+pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o libpism.so
+	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
-pismr : obj/libpism.so run.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismr
+pismv : iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o libpism.so libtests.so
+	${CLINKER} iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : obj/libpism.so iceEISModel.o iceHEINOModel.o iceROSSModel.o simplify.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pisms
+pant : pant.o libpism.so
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-pismv : obj/libpism.so obj/libtests.so iceCompModel.o iceExactStreamModel.o verify.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/pismv
+pgrn : iceGRNModel.o pgrn.o libpism.so
+	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
 
-shelf : obj/libpism.so shelf.o
-	${CLINKER} $^ ${ICE_LIB_FLAGS} -o obj/shelf
+#shelf : shelf.o libpism.so
+#	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-simpleISO : obj/libtests.so simpleISO.o
-	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleISO
+flowTable : flowTable.o materials.o
+	${CLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-simpleFG : obj/libtests.so simpleFG.o
-	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleFG
+tryLCbd : tryLCbd.o beddefLC.o materials.o
+	${CLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-simpleI : obj/libtests.so simpleI.o
-	${CLINKER} $^ -lm -L`pwd`/obj -Wl,-rpath,`pwd`/obj -ltests \
-	 -o obj/simpleI
+simpleABCD : simpleABCD.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-# Cancel the implicit rules
-% : %.cc
-% : %.c
+simpleE : simpleE.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleFG : simpleFG.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleH : simpleH.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleI : simpleI.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleL : simpleL.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+gridL : gridL.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+# Cancel the implicit rules  WHY?
+#% : %.cc
+#% : %.c
+
+.makeremind :
+	@touch .makeremind
+	@echo '*** Remember to "make install".  For now, new executables are "./pismv", etc. ****'
+
+showEnv :
+	@echo ${CLINKER}
+	@echo ${PETSC_DIR}
+	@echo ${PETSC_LIB}
+	@echo ${ICE_LIB_FLAGS}
+	@echo ${TESTS_LIB_FLAGS}
 
 # Emacs style tags
 .PHONY: tags TAGS
 tags TAGS :
 	etags *.cc *.hh *.c
 
-# The GNU recommended proceedure for automatically generating dependencies.
+# The GNU recommended procedure for automatically generating dependencies.
 # This rule updates the `*.d' to reflect changes in `*.cc' files
 %.d : %.cc
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 $(CC) -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -111,7 +152,7 @@ tags TAGS :
 %.d : %.c
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(PETSC_COMPILE_SINGLE) -MM $< > $@.$$$$; \
+	 $(CC) -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -123,9 +164,12 @@ depclean :
 clean : depclean
 
 distclean : clean
-	rm -f TAGS obj/libpism.so obj/libtests.so \
-	 $(patsubst %, obj/%, ${executables})
+	rm -f TAGS \
+	libpism.so libtests.so lib/libpism.so lib/libtests.so \
+	${executables} $(patsubst %, bin/%, ${executables})\
+	${extra_execs} $(patsubst %, bin/%, ${extra_execs})
 
 .PHONY: clean
 
 include $(depfiles)
+

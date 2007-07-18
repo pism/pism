@@ -682,7 +682,7 @@ PetscErrorCode IceModel::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
   }
   ierr = MPI_Bcast(f, M, MPI_FLOAT, 0, grid.com); CHKERRQ(ierr);
 
-  VecCreateSeq(grid.com, M, vecg);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, M, vecg); CHKERRQ(ierr);
 
   for (int x=0; x<(int)M; x++) {
     ierr = VecSetValue(*vecg, x, f[x], INSERT_VALUES); CHKERRQ(ierr);

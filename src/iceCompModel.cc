@@ -133,7 +133,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, "continuing from input file %s; using Test %c conditions during run ...\n",inFile,testname);  CHKERRQ(ierr);
     ierr = createCompVecs(); CHKERRQ(ierr);
-    ierr = createCompViewers();
     if (yearsStartRunEndDetermined == PETSC_FALSE) {
       ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
     }
@@ -178,7 +177,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
 
     ierr = createCompVecs(); CHKERRQ(ierr);
-    ierr = createCompViewers();
     if (yearsStartRunEndDetermined == PETSC_FALSE) {
       ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
     }
@@ -204,7 +202,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
   }
 
   ierr = IceModel::afterInitHook(); CHKERRQ(ierr);
-
+  ierr = createCompViewers(); CHKERRQ(ierr);
   return 0;
 }
 
