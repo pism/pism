@@ -56,11 +56,11 @@
 
 %\makeindex
 
-\title[PISM User's Manual]{\protect{\Large PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel:\normalsize} \\ \protect{\Large \medskip User's Manual and Reference\normalsize}}
+\title[PISM User's Manual]{\protect{\Large PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel:\normalsize} \\ \protect{\Large \bigskip User's Manual and Reference\normalsize}}
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}; update to latest version by \texttt{svn update}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}.} 
 
 \begin{document}
 \maketitle
@@ -565,7 +565,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \end{tabular}
 \end{table}
 
-\subsection{Using signals to observe or stop a running PISM model} \label{subsect:signal}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
+\subsection{Using signals to observe or stop a running PISM model} \label{subsect:signal}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard.  Such signals are included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
 
 Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:
 
@@ -607,6 +607,24 @@ Suppose, on the other hand, that the run needs to be stopped.  One may use the i
 
 \verb|pismv -test G -if testGmillion.nc -ye 1e6 -o testGmillion_finish >> log_cont.txt &|
 \smallskip
+
+Finally we consider a multiple process run of PISM.  Here the point is that each of the processes must be sent the same signal at the same time.  For example, consider the dialog
+\begin{quote}
+\begin{verbatim}
+	~/pism$ mpiexec -n 4 pismv -test C -y 100000 >> log.txt &
+	~/pism$ ps
+	PID TTY          TIME CMD
+	6761 pts/0    00:00:00 mpiexec
+	6762 pts/0    00:00:00 pismv
+	6763 pts/0    00:00:00 pismv
+	6764 pts/0    00:00:00 pismv
+	6765 pts/0    00:00:00 pismv
+	6770 pts/2    00:00:00 ps
+	~/pism$ kill -USR1 6762 6763 6764 6765
+	~/pism$ kill -TERM 6762 6763 6764 6765
+\end{verbatim}
+\end{quote}
+Here the \verb|kill| command sent the signal to all four of the running PISM processes simultaneously.  The \verb|kill -USR1| command caused the NetCDF file \verb|pism-10852.037393.nc| to be written, while \verb|kill -TERM| caused all four processes to end after (collectively, of course) writing \verb|verify.nc|.
 
 \newcommand\pid{\textsl{pid}}
 \newcommand\same{(\textsl{same})}
@@ -1042,7 +1060,18 @@ value.
 
 \clearpage\newpage
 \section{Realistic ice sheet modelling}\label{sect:real}
-\subsection{Obtaining Greenland Data}  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  Thus, this section describes the use of Python scripts (\verb|eis_green.py| and \verb|eis_core.py|) to convert the EISMINT Greenland data into NetCDF files useable by PISM.
+
+In this section we give one big example, namely how to use PISM to perform the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  The data for performing this intercomparison is, however, freely available at
+\medskip
+
+\centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
+\medskip
+
+The data for this intercomparison is not new.  The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.
+
+Clearly newer data, and even some newer understanding, is available in 2007.  The reader is encouraged to go and build a better Greenland model than the tutorial example here.
+
+\subsection{Obtaining and converting Greenland data}  This section describes the use of Python scripts (\verb|eis_green.py| and \verb|eis_core.py|) to convert the EISMINT Greenland data into NetCDF files useable by PISM.
 
 The Python scripts \verb|eis_green.py| and \verb|eis_core.py| can be found in the \verb|pism/test| directory.  In order to use the scripts, you must have the following on your system:\begin{itemize}
  \item The data files \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|), \verb|suaq20-EISMINT| (or \verb|suaq40-EISMINT|), 
@@ -1210,9 +1239,9 @@ A derived class of \t{IceModel} called \t{IceCompModel} is used for verification
 
 Other derived classes of \t{IceModel} are \t{IceEISModel}, \t{IceHEINOModel}, and \t{IceROSSModel}.  These correspond to simplified geometry experiments and the Ross ice shelf validation described in previous sections of this manual.
 
-There are three established drivers which call constructors and destructors for \t{IceModel}, namely \verb|run.cc|, \verb|simplify.cc|, and \verb|verify.cc|.  These produce the executables \verb|pismr|, \verb|pisms|, and \verb|pismv| described in the rest of this manual.  These drivers do no computation but differ in which derived class is constructed and in how certain options are handled.  In particular, the driver \verb|run.cc| and its executable \verb|pismr| only use the base class \verb|IceModel|.
+There are three established drivers which call constructors and destructors for \t{IceModel}, namely \verb|pismr.cc|, \verb|pisms.cc|, and \verb|pismv.cc|.  These produce the executables \verb|pismr|, \verb|pisms|, and \verb|pismv| described in the rest of this manual.  These drivers do no computation but differ in which derived class is constructed and in how certain options are handled.  In particular, the driver \verb|pismr.cc| and its executable \verb|pismr| only use the base class \verb|IceModel|.
 
-The different derived classes invoke the same numerical procedures to handle the various partial differential equations of the continuum model.  In the case of \t{IceCompModel}, this fact is at the heart of the verification mechanism.  
+The different derived classes invoke the same numerical procedures to handle the various partial differential equations of the continuum model.  In the case of \t{IceCompModel}, this fact is at the heart of the verification mechanism.
 
 \subsection{PETSc: An overview for PISM users}  The PETSc library \cite{petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  It is a suite of data structures and routines in C for the scalable parallel solution of partial differential equations and their scientific applications.  Large parts of PETSc relate especially to finite-difference-type regular, rectangular grids but PETSc has been used for unstructured grids as well.  Documentation for PETSc is available from the web site at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/}.  PETSc employs the MPI standard for all message-passing communication.  PETSc is deliberately at a higher level of abstraction than MPI; PETSc protects the programmer from explicit consideration of message passing.
 
@@ -1359,17 +1388,11 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optdef{constant\und nu}{30.0}  If this option is used then the MacAyeal velocities (see \verb|-mv| below) are computed with a constant viscosity.  If this option is not used then the viscosities are computed by a nonlinear iteration.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
-\opt{d}  Specifies diagnostic (X Windows) viewers.  See Diagnostic viewers section below.
+\opt{d}  Specifies diagnostic (X Windows) viewers.  See Appendix C.
 
 \optdefrestrict{datprefix}{PISM}{pisms -ismip H}  Specify base name for ISMIP-HEINO deliverable \verb|.dat| files.  See also \verb|-no_deliver|.
 
 \opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Diagnostic viewers section.
-
-\opt{dx}  \emph{Use of this option is not recommended.}  \verb|dx| is computed internally as \verb|2*Lx/(Mx-1)|.  The user may alter \verb|Lx| or \verb|Mx| at the command line.
-
-\opt{dy}  \emph{Use of this option is not recommended.}  \verb|dy| is computed internally as \verb|2*Ly/(My-1)|.  The user may alter \verb|Ly| or \verb|My| at the command line.
-
-\opt{dz}  \emph{Use of this option is not recommended.}  \verb|dz| is computed internally as \verb|Lz/(Mz-1)|.  The user may alter \verb|Lz| or \verb|Mz| at the command line.
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
@@ -1377,13 +1400,13 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
 
-\optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This overrides the adaptime time-stepping and does $0.25$ year time steps anyway.
+\optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This option overrides the adaptime time-stepping and does $0.25$ year time steps anyway; \emph{will probably cause blowup so don't bother}.
 
 \optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
 
-\opt{if}  The model can be restarted from either a PETSc binary file written by the model, e.g.~\verb|foo.pb| from \verb|-o foo| or \verb|-o foo -of p|, or from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
+\opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
 
 \optdefrestrict{ismip}{H}{pisms}  Choose ISMIP simplified geometry experiment.  Only ``H'' for HEINO is allowed at this time.
 
@@ -1470,13 +1493,13 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \opt{no\und temp}  Do not change temperature or age values within the ice.  That is, do not do time steps of energy conservation and age equation.
 
-\optdef{o}{unnamed.pb} Give name of output file: \verb|-o foo| writes an output file named \verb|foo.nc|.  See the description of option \verb|-if|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
+\optdef{o}{unnamed.nc} Give name of output file: \verb|-o foo| writes an output file named \verb|foo.nc|.  See the description of option \verb|-if|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
 
 \opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used in conjunction with \verb|-no_mass|.
 
-\optdef{of}{p}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
+\optdef{of}{n}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
 
-\opt{pdd}  Turns on the positive degree day model.  See subsection \ref{subsect:pdd}.
+\opt{pdd}  Turns on the positive degree day model which is off by default (for \verb|pismr|, \verb|pisms|, \verb|pismv|, anyway).  See subsection \ref{subsect:pdd}.
 
 \optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
 
@@ -1538,8 +1561,8 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
 \begin{tabular}{@{}llll}\hline
 \textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
-   0  &  \t{-verbose 0} &   never print to standard out \emph{at all}  \\
-   1  &  \t{-verbose 1} &   less verbose than default  \\
+   0  &  \t{-verbose 0} &   never print to standard out \emph{at all}; no warnings appear  \\
+   1  &  \t{-verbose 1} &   only warning messages and other high priority messages will appear  \\
    2  &  [\t{-verbose 2}] & default verbosity    \\
    3  &  \t{-verbose 3} &   somewhat verbose; expanded description of grid at start  \\
       &  or \quad \t{-verbose} &  and expanded information in summary    \\

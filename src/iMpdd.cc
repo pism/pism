@@ -136,7 +136,7 @@ PetscErrorCode IceModel::updateNetAccumFromPDD() {
   PetscScalar **accum, **Ts, **snow_accum, **h, **lat;
 
   if (doPDD == PETSC_FALSE)  return 0;
-  
+
   // Calculate and store a random number for each day in the year. 
   // The same numbers will be used for all points on the grid
   // Note option -repeatable_pdd sets pdd_rand_gen to fixed value at start of run
@@ -181,15 +181,16 @@ PetscErrorCode IceModel::updateNetAccumFromPDD() {
 //        ice_melt = ((snow_melted - snow) / DEFAULT_PDD_FACTOR_SNOW) * DEFAULT_PDD_FACTOR_ICE;
         const PetscScalar excess_pdd_sum = pdd_sum - (snow / pddFactorSnow);
         const PetscScalar ice_melted = excess_pdd_sum * pddFactorIce;
-        accum[i][j] -= ice_melted / secpera;
+        accum[i][j] = snow_accum[i][j] - (ice_melted / secpera);
       }
 
-//      if ((i == id) && (j == jd)) {
-//        verbPrintf(1,grid.com,
-//              " Ts[id][jd] = %f, pdd_sum = %f, snow_accum[id][jd] = %f, accum[id][jd] = %f\n",
-//              Ts[id][jd],pdd_sum,snow_accum[id][jd]*secpera,accum[id][jd]*secpera);
-//      }
-
+/*
+      if ((i == id) && (j == jd)) {
+        verbPrintf(1,grid.com,
+              "at id,jd:  h = %f, Ts = %f, pdd_sum = %f, snow_accum = %f, accum = %f\n",
+              h[id][jd],Ts[id][jd],pdd_sum,snow_accum[id][jd]*secpera,accum[id][jd]*secpera);
+      }
+*/
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
@@ -197,9 +198,6 @@ PetscErrorCode IceModel::updateNetAccumFromPDD() {
   ierr = DAVecRestoreArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-
-//  ierr = DALocalToLocalBegin(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
-//  ierr = DALocalToLocalEnd(grid.da2, vAccum, INSERT_VALUES, vAccum); CHKERRQ(ierr);
   return 0;
 }
 

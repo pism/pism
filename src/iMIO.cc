@@ -21,21 +21,9 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-/*
-PARTS WHICH READ/WRITE .pb FILES ARE DEPRECATED!
-*/
-
-PetscErrorCode  IceModel::LVecLoad(DA da, Vec l, Vec g, PetscViewer v) {
-  PetscErrorCode ierr;
-
-  ierr = VecLoadIntoVector(v, g); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, l); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, l); CHKERRQ(ierr);
-  return 0;
-}
-
 
 PetscErrorCode  IceModel::LVecView(DA da, Vec l, Vec g, PetscViewer v) {
+  // note this is used by .m write (not just old .pb write)
   PetscErrorCode ierr;
   
   ierr = DALocalToGlobal(da, l, INSERT_VALUES, g); CHKERRQ(ierr);
@@ -57,62 +45,19 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
 
 PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscErrorCode  ierr;
-  PetscViewer viewer;
 
-  if (hasSuffix(fname, ".nc") == true) {
-    ierr = PetscPrintf(grid.com,
-                       "initializing from NetCDF format file  %s  ...\n",
-                       fname); CHKERRQ(ierr);
-    ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
-    return 0;
-  } else if (hasSuffix(fname, ".pb") == false) {
-    ierr = PetscPrintf(grid.com, "[Unknown file format."
-                       "  Trying to read as PETSc binary.]\n"); CHKERRQ(ierr);
+  if (hasSuffix(fname, ".pb") == true) {
+    SETERRQ1(1,"ERROR: .pb format no longer supported; cannot initialize from file %s", fname);
+  }
+  
+  if (hasSuffix(fname, ".nc") == false) {
+    ierr = verbPrintf(1,grid.com,
+       "WARNING:  Unknown file format for %s.  Trying to read as NetCDF.\n",fname); CHKERRQ(ierr);
   }
 
-  ierr = PetscPrintf(grid.com,
-                     "initializing from PETSc binary format file `%s'  ...\n",
+  ierr = verbPrintf(2,grid.com,"initializing from NetCDF format file  %s  ...\n",
                      fname); CHKERRQ(ierr);
-  ierr = PetscViewerBinaryOpen(grid.com, fname, FILE_MODE_READ, &viewer);
-  CHKERRQ(ierr);
-//  ierr = PetscBagLoad(viewer, &grid.bag); CHKERRQ(ierr);
-//  ierr = PetscBagGetData(grid.bag, (void **)&(grid.p)); CHKERRQ(ierr);    
-
-  // set IceModel::startYear, IceModel::endYear, grid.p->year, but respecting grid.p->year
-  // which came from -if file, _unless_ -ys set by user
-  ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
-
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  ierr = createVecs(); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vMask,    g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vh,       g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vH,       g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vbed,     g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vAccum,   g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vTs,      g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vGhf,     g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da2, vuplift,  g2, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da3, vT,       g3, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da3b, vTb,     g3b, viewer); CHKERRQ(ierr);
-  ierr = LVecLoad(grid.da3, vtau,     g3, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(viewer);
-
-  ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
-  // FIXME: vHmelt should probably be part of saved state.  In this case the
-  // best procedure would be to *check* if vHmelt was saved, and if so to load
-  // it, otherwise to set it to zero and report that.  Similar behavior for
-  // vuplift, vtau, others?  Similar behavior for many state variables in
-  // loading .nc files!
-  // Note: As of rev 87, vHmelt is read in the netCDF file.  Since we are
-  // migrating to all netCDF I/O, vHmelt will not be a part of the Petsc saved
-  // state.
-
-  setConstantGrainSize(DEFAULT_GRAIN_SIZE);
-  
-  // We should not do this any more since age is part of the saved state.
-  // setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
-
-  initialized_p = PETSC_TRUE;
+  ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
   return 0;
 }
 
@@ -120,9 +65,6 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID) {
   PetscErrorCode ierr;
 
-  //ierr = verbPrintf(2,grid.com," startYear, endYear, grid.p->year = %f, %f, %f;   grid_p_year_VALID = %d\n",
-  //                  startYear, endYear, grid.p->year, (int)grid_p_year_VALID); CHKERRQ(ierr);
-  
   // read options about year of start, year of end, number of run years;
   // note grid.p->year has already been set from input file
   PetscScalar usrStartYear, usrEndYear, usrRunYears;
@@ -154,9 +96,6 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   }
   
   yearsStartRunEndDetermined = PETSC_TRUE;
-
-  //ierr = verbPrintf(2,grid.com," startYear, endYear, grid.p->year = %f, %f, %f\n",
-  //                  startYear, endYear, grid.p->year); CHKERRQ(ierr);
   return 0;
 }
 
@@ -165,7 +104,6 @@ PetscErrorCode  IceModel::writeFiles(const char* basename) {
   PetscErrorCode ierr;
 
   ierr = writeFiles(basename, "n"); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -174,7 +112,6 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   PetscErrorCode ierr;
   char b[PETSC_MAX_PATH_LEN];
   char fmt[PETSC_MAX_PATH_LEN];
-  char pf[PETSC_MAX_PATH_LEN];  // PETSc format
   char ncf[PETSC_MAX_PATH_LEN]; // netCDF format
   char mf[PETSC_MAX_PATH_LEN];  // Matlab format
 
@@ -188,16 +125,14 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", b, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
   strncpy(fmt, formats, PETSC_MAX_PATH_LEN-4);
   ierr = PetscOptionsGetString(PETSC_NULL, "-of", fmt, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-  // to write in both Petsc binary and Matlab format, for instance:
-  //     '-o foo -of pm' will generate foo.pb and foo.m
+  // to write in both NetCDF and Matlab format, for instance:
+  //     '-o foo -of nm' will generate foo.nc and foo.m
 
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   if (strchr(fmt, 'p') != NULL) {
-    strcpy(pf, b);
-    strcat(pf, ".pb");
-    ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'", pf); CHKERRQ(ierr);
-    ierr = dumpToFile(pf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, "WARNING: .pb format no longer supported; writing .nc"); CHKERRQ(ierr);
+    strcat(fmt,"n");
   }
 
   if (strchr(fmt, 'n') != NULL) {
@@ -213,42 +148,6 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
     ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'", mf); CHKERRQ(ierr);
     ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
   }
-
-  return 0;
-}
-
-
-PetscErrorCode IceModel::dumpToFile(const char *fname) {
-  PetscErrorCode  ierr;
-  PetscViewer viewer;
-
-  ierr = PetscViewerBinaryOpen(grid.com, fname, FILE_MODE_WRITE,
-                               &viewer); CHKERRQ(ierr);
-  ierr = PetscViewerBinarySkipInfo(viewer); CHKERRQ(ierr);
-
-//  ierr = PetscBagView(grid.bag, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vMask,    g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vh,       g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vH,       g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vbed,     g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vAccum,   g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vTs,      g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vGhf,     g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vuplift,  g2, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da3, vT,       g3, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da3b, vTb,     g3b, viewer); CHKERRQ(ierr);
-  ierr = LVecView(grid.da3, vtau,     g3, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(viewer);
-  
-  // try to remove the irritating (and unused) .info file!
-  char info_filename[PETSC_MAX_PATH_LEN+5];
-  strcpy(info_filename, fname);
-  strcat(info_filename, ".info");
-  remove(info_filename);
-//  if (remove(info_filename) != 0) {  // from <cstdio>; hopefully will not cause problems to use
-//    SETERRQ1(1,"error deleting file %s",info_filename);
-//  }
-
   return 0;
 }
 
@@ -397,14 +296,6 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
        "title('temperature at z given by -kd (white = pressure-melting)')\n\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
-/*  DANGEROUS BECAUSE MATLAB USES LOTS OF MEMORY FOR THIS CONTOUR MAP
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"contour(x,y,Tkd,200:2:300)\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"title('temperature at z given by -kd')\n\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-*/
-
   PetscScalar     ***Sigma, **Sigma2;
   ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &Sigma2); CHKERRQ(ierr);
@@ -420,14 +311,6 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   ierr = PetscViewerASCIIPrintf(viewer,"\nSigmakd = reshape(Sigmakd,%d,%d);\n\n",
         grid.p->Mx,grid.p->My);
   CHKERRQ(ierr);
-
-/*
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"mesh(x,y,Sigmakd), colormap cool\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"title('strain heating \\Sigma at z given by -kd')\n\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-*/
 
   // make slice along y-axis of T; requires nontrivial transfer from 3D DA-based array into new
   // type of 2D DA-based array, I think
@@ -462,76 +345,25 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
     }
     ierr = DAVecRestoreArray(daslice, vTid, &Tid); CHKERRQ(ierr);
 
-//    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"z=linspace(0,%12.3f,%d);\n",grid.p->Lz,grid.p->Mz);
         CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
     ierr=PetscObjectSetName((PetscObject) gslice,"Tid"); CHKERRQ(ierr);
     ierr = LVecView(daslice, vTid, gslice, viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"\nTid = reshape(Tid,%d,%d);\n\n",grid.p->Mz,grid.p->My);
         CHKERRQ(ierr);
 
-//    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"subplot(2,1,1), surf(y,z,Tid,'LineStyle','none')\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"title('slice of temp at x given by -id')\n\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"view(2), colorbar\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
     ierr=PetscObjectSetName((PetscObject) gslice,"Tjd"); CHKERRQ(ierr);
     ierr = LVecView(daslice, vTjd, gslice, viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"\nTjd = reshape(Tjd,%d,%d);\n\n",grid.p->Mz,grid.p->Mx);
         CHKERRQ(ierr);
-
-//    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"subplot(2,1,2), surf(x,z,Tjd,'LineStyle','none')\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"title('slice of temp at y given by -jd')\n\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"view(2), colorbar\n");  CHKERRQ(ierr);
-//    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 
     ierr = VecDestroy(gslice); CHKERRQ(ierr);
     ierr = VecDestroy(vTid); CHKERRQ(ierr);
     ierr = VecDestroy(vTjd); CHKERRQ(ierr);
     ierr = DADestroy(daslice); CHKERRQ(ierr);
   }
-  
-  // finally restore T
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-
-/*
-  // next block shows full 3D view of T; dangerously large in practice
-  ierr = PetscViewerASCIIPrintf(viewer,"\nclear z zz T\n");
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"z=0.0:%12.3f:%12.3f;\n",grid.p->dz,grid.p->Lz);
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy,zz]=meshgrid(x,y,z);\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
-  ierr = PetscObjectSetName((PetscObject) g3,"T"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da3, vT,       g3, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nT = reshape(T,%d,%d,%d);\n",
-                                grid.p->Mz,grid.p->Mx,grid.p->My);  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"T=permute(T,[2 3 1]);\n");  CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer,"figure(2), clf\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "sliceh=slice(xx,yy,zz,T,[x(%d)],[],[z(1) z(%d) z(%d)]);\n",
-                                (grid.p->Mx+1)/2,(int) floor(0.25*static_cast<PetscScalar>(grid.p->Mz)),
-                                (int) floor(0.5*static_cast<PetscScalar>(grid.p->Mz)));
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"set(sliceh,'FaceColor','interp','EdgeColor','none')\n");
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "alpha(1.0), colorbar, title('temperature slices; surface elevation mesh'), hold on\n");
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"xlabel('x (km)'), ylabel('y (km)'), zlabel('z (m)');\n");
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "surfh=mesh(x,y,h); set(surfh,'EdgeColor','k','FaceAlpha',0.0), hold off\n");
-  CHKERRQ(ierr);
-*/
 
   ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);

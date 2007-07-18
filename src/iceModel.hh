@@ -58,7 +58,6 @@ public:
   // see iceModel.cc
   IceModel(IceGrid &g, IceType &i);
   virtual ~IceModel();
-
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
   void setDoTimeStep(PetscTruth);
@@ -97,8 +96,8 @@ public:
   void setIsothermalFlux(PetscTruth);
   PetscTruth isInitialized() const;
 
+  // see iceModel.cc
   virtual PetscErrorCode run();
-
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -108,6 +107,9 @@ public:
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
 
+  // see iMutil.cc
+  PetscErrorCode initFromOptions();
+
   // see iMviewers.cc
   PetscErrorCode setSoundingFromOptions();
 
@@ -116,20 +118,16 @@ public:
     
   // see iMIO.cc
   PetscErrorCode initFromFile(const char *);
-  PetscErrorCode dumpToFile(const char *);
   virtual PetscErrorCode dumpToFile_Matlab(const char *);
   PetscErrorCode writeFiles(const char* basename);
   PetscErrorCode writeFiles(const char* basename, const char* formats);
-  PetscErrorCode initFromOptions();
 
   // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
-  // USED TEMPORARILY UNTIL THE NEW BOOTSTRAP FUNCTION IS COMPLETE
+  // USED TEMPORARILY UNTIL THE NEW BOOTSTRAP FUNCTION IS COMPLETE:
   PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
-  // see iMregrid_netCDF.cc
-  PetscErrorCode regrid_netCDF(const char *fname);
 
 protected:
    static const int MASK_SHEET;
@@ -296,6 +294,7 @@ protected:
 
   // see iMregrid.cc
   PetscErrorCode regrid(const char *regridFile);
+  PetscErrorCode regrid_netCDF(const char *fname);
   PetscErrorCode getInterpCtx(const DA dac, const DA daf,
                               const IceModel &cmodel, InterpCtx &interpCtx);
   PetscErrorCode destroyInterpCtx(InterpCtx &i);
