@@ -109,6 +109,7 @@ IceModel::~IceModel() {
   }
 }
 
+
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
 
@@ -463,7 +464,6 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -591,6 +591,11 @@ PetscErrorCode IceModel::run() {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
+    
+    // update basal till yield stress if appropriate; will modify and communicate mask
+    if (doPlasticTill == PETSC_TRUE) {
+      ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
+    }
     
     // compute PDD; generates net accumulation, with possible ablation area, using snow accumulation
     // might set maxdt_temporary 

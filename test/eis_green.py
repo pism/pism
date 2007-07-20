@@ -17,9 +17,9 @@ try:
   opts, args = getopt.getopt(sys.argv[1:], "g:", ["grid"])
   for opt, arg in opts:
     if opt in ("-g", "--grid"):
-      GRID_FILE = "grid" + opt + "-EISMINT"
-      SUAQ_FILE = "suaq" + opt + "-EISMINT"
-      WRIT_FILE = "eis_green" + opt + ".nc"
+      GRID_FILE = "grid" + arg + "-EISMINT"
+      SUAQ_FILE = "suaq" + arg + "-EISMINT"
+      WRIT_FILE = "eis_green" + arg + ".nc"
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)

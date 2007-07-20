@@ -232,7 +232,6 @@ public:
 protected:
   // 1 m/a is small in basalDrag[x|y] below
   static const PetscScalar DEFAULT_PLASTIC_REGULARIZE;
-
   PetscScalar plastic_regularize;
 };
 

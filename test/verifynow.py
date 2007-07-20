@@ -3,9 +3,10 @@
 ## VERIFYNOW.PY is a script to verify several components of PISM.  Uses tests C, I and G.  
 ## It is intended to do roughly the minimal amount of computation to show convergence to continuum results.
 
-## ELB 1/31/07; 2/3/07: -ksp_rtol 1e-6 added; 5/29/07 verifynow.sh --> verifynow.py
+## ELB 1/31/07; 2/3/07: -ksp_rtol 1e-6 added; 5/29/07 verifynow.sh --> verifynow.py; 7/20/07 used getopt
 
 import sys
+import getopt
 import time
 import commands
 import string
@@ -15,6 +16,8 @@ NP = 1
 LEVELS = 3
 KSPRTOL = 1e-12
 MVRTOL = 5e-7
+PREFIX = ''
+MPIDO = 'mpiexec'
 
 ## tests and additional info for verification
 alltests = [
@@ -31,12 +34,22 @@ alltests = [
 ## get options: -n for number of processors, -l for number of levels
 nproc = NP  ## default; will not use 'mpiexec' if equal to one
 levs = LEVELS
-for ll in range(len(sys.argv))[1:]:
-   if sys.argv[ll].find('l') > -1:
-      levs = string.atoi(sys.argv[ll+1])
-      if levs > 5: print '  WARNING: optional number of levels too large (>5)'
-   elif sys.argv[ll].find('n') > -1:
-      nproc = string.atoi(sys.argv[ll+1])
+mpi = MPIDO
+pref = PREFIX
+try:
+  opts, args = getopt.getopt(sys.argv[1:], "p:m:n:l:", ["prefix=", "mpido=", "nproc=", "levels="])
+  for opt, arg in opts:
+    if opt in ("-p", "--prefix"):
+      pref = arg
+    elif opt in ("-m", "--mpido"):
+      mpi = arg
+    elif opt in ("-n", "--nproc"):
+      nproc = string.atoi(arg)
+    elif opt in ("-l", "--levels"):
+      levs = string.atoi(arg)
+except getopt.GetoptError:
+  print 'Incorrect command line arguments'
+  sys.exit(2)
 
 print '  VERIFYNOW using %d processor(s) and %d level(s) of refinement' % (nproc, levs)
 ## go through verification tests
@@ -50,10 +63,10 @@ for test in alltests:
       elif test[3] == 2:
          gridopts = ' -Mx ' + str(myMx) + ' -My ' + str(myMx) + ' -Mz ' + str(myMx)
       if nproc > 1:
-         predo = 'mpiexec -n ' + str(nproc) + ' '
+         predo = mpi + ' -np ' + str(nproc) + ' '
       else:
          predo = ''
-      testdo = predo + 'pismv -test ' + test[0] + gridopts + test[4] + ' -verbose 1'
+      testdo = predo + pref + 'pismv -test ' + test[0] + gridopts + test[4] + ' -verbose 1'
       print '  trying \"' + testdo + '\"'
       try:
          lasttime = time.time()

@@ -453,16 +453,22 @@ PetscErrorCode IceModel::updateViewers() {
   if (surfHorSpeedView != PETSC_NULL) {
     ierr = getSurfaceValuesOf3D(vu,vWork2d[0]); CHKERRQ(ierr);
     ierr = getSurfaceValuesOf3D(vv,vWork2d[1]); CHKERRQ(ierr);
-    PetscScalar **a, **us, **vs;
+    PetscScalar **a, **us, **vs, **H;
     ierr = DAVecGetArray(grid.da2, g2, &a); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        a[i][j] = sqrt(PetscSqr(us[i][j]) + PetscSqr(vs[i][j]));
+        if (H[i][j] == 0.0) {
+          a[i][j] = 0.0; 
+        } else {
+          a[i][j] = sqrt(PetscSqr(us[i][j]) + PetscSqr(vs[i][j]));
+        }
       }
     }
     ierr = DAVecRestoreArray(grid.da2, g2, &a); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
     ierr = VecScale(g2, secpera); CHKERRQ(ierr); // m/a

@@ -155,6 +155,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-of" is in use for output file format; see iMIO.cc
 
+  // use a plastic basal till mechanical model
+  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &doPlasticTill); CHKERRQ(ierr);
+
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &regVelSchoof, &regVelSchoofSet); CHKERRQ(ierr);
   if (regVelSchoofSet == PETSC_TRUE) {
     setRegularizingVelocitySchoof(regVelSchoof/secpera);

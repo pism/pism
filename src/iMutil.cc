@@ -581,58 +581,6 @@ PetscErrorCode IceModel::additionalAtEndTimestep() {
 }
 
 
-PetscErrorCode IceModel::checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *normy, PetscInt stagger) {
-  const PetscInt  Mx = grid.p->Mx, My = grid.p->My;
-  PetscErrorCode  ierr;
-  PetscScalar     **v;
-  PetscInt        ind[2];
-  Vec va, vb, vc;
-  AO  ao;
-
-  ierr = DACreateGlobalVector(grid.da2, &va); CHKERRQ(ierr);
-  ierr = VecDuplicate(va, &vb); CHKERRQ(ierr);
-  ierr = VecDuplicate(va, &vc); CHKERRQ(ierr);
-  ierr = DAGetAO(grid.da2, &ao); CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, vec, INSERT_VALUES, va); CHKERRQ(ierr);
-
-  ierr = DAVecGetArray(grid.da2, va, &v); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (stagger == 0) {
-        if (i<Mx-1) ind[0] = (Mx-2-i)*My + j;
-        else ind[0] = i*My + j;
-      } else {
-        ind[0] = (Mx-1-i)*My + j;
-      }
-      if (stagger == 1) {
-        if (j<My-1) ind[1] = i*My + (My-2-j);
-        else ind[1] = i*My + j;
-      } else {
-        ind[1] = i*My + (My-1-j);
-      }
-      ierr = AOApplicationToPetsc(ao, 2, ind); CHKERRQ(ierr);
-      ierr = VecSetValue(vb, ind[0], v[i][j], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValue(vc, ind[1], v[i][j], INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, va, &v); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(vb); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(vc); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(vb); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(vc); CHKERRQ(ierr);
-  ierr = VecAXPY(vb, (stagger == 0) ? 1 : -1, va); CHKERRQ(ierr);
-  ierr = VecAXPY(vc, (stagger == 1) ? 1 : -1, va); CHKERRQ(ierr);
-  ierr = VecNorm(vb, NORM_INFINITY, normx); CHKERRQ(ierr);
-  ierr = VecNorm(vc, NORM_INFINITY, normy); CHKERRQ(ierr);
-
-  ierr = VecDestroy(va); CHKERRQ(ierr);
-  ierr = VecDestroy(vb); CHKERRQ(ierr);
-  ierr = VecDestroy(vc); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 PetscErrorCode IceModel::getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k) {
   PetscErrorCode ierr;
   PetscScalar    ***val, **slice_val;
@@ -755,17 +703,14 @@ PetscErrorCode IceModel::afterInitHook() {
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
-  ierr = initBasalFields(); CHKERRQ(ierr);
   // Note that basal melt rate is not read in as part of a stored model state or
   // an initialization file.  Because basal melt rate is used in computing vertical
   // velocity on the regular grid, and because that calculation could/does precede
   // the first call to temperatureAgeStep(), we want to make sure the first vert
   // velocities do not use junk from uninitialized basal melt rate.
   ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
-  if (createBasal_done == PETSC_FALSE) {
-    basal = new ViscousBasalType;
-    createBasal_done = PETSC_TRUE;
-  }
+
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
     
   ierr = bedDefSetup(); CHKERRQ(ierr);
 

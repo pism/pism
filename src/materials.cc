@@ -412,3 +412,4 @@ PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
 }
 
 const PetscScalar PlasticBasalType::DEFAULT_PLASTIC_REGULARIZE = 0.01 / secpera; 
+

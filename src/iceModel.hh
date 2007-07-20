@@ -228,7 +228,7 @@ protected:
   // flags
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
-  PetscTruth  useMacayealVelocity, doSuperpose, useConstantNuForMacAyeal, 
+  PetscTruth  useMacayealVelocity, doPlasticTill, doSuperpose, useConstantNuForMacAyeal, 
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, allowRegridding, doTempSkip;
@@ -289,8 +289,6 @@ protected:
               const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
   PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);
   PetscErrorCode getSurfaceValuesOf3D(Vec v3D, Vec &g2D);
-  PetscErrorCode checkForSymmetry(Vec vec, PetscReal *normx, PetscReal *normy,
-                                   PetscInt stagger);
 
   // see iMregrid.cc
   PetscErrorCode regrid(const char *regridFile);
@@ -317,14 +315,13 @@ protected:
   PetscErrorCode createViewers();
   PetscErrorCode destroyViewers();
 
-  // see iMbasal.cc
-  virtual PetscInt initBasalFields();
+  // see iMbasal.cc (basal mechanical model: either linear viscosity or
+  //                 perfectly plastic according to doPlasticTill) 
+  PetscErrorCode initBasalTillModel();
+  PetscErrorCode updateYieldStressFromHmelt();
   virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y, 
        const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
        const PetscScalar mu);
-
-  // This is an unfortunate kludge, but I won't rewrite the whole Macayeal code
-  // just to implement a goofy verification case.
   virtual PetscScalar basalDragx(PetscScalar **beta, PetscScalar **tauc,
                                  PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
@@ -443,6 +440,5 @@ private:
   VecScatter MacayealScatterGlobalToLocal;
 
 };
-
 
 #endif /* __iceModel_hh */

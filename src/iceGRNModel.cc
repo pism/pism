@@ -69,8 +69,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 PetscErrorCode IceGRNModel::initFromOptions() {
   PetscErrorCode ierr;
   char inFile[PETSC_MAX_PATH_LEN], dTFile[PETSC_MAX_PATH_LEN], dSLFile[PETSC_MAX_PATH_LEN];
-//  PetscScalar usrYear;
-  PetscTruth inFileSet, bootFileSet, dTforceSet, dSLforceSet, nopddSet, yearSet;
+  PetscTruth inFileSet, bootFileSet, dTforceSet, dSLforceSet, nopddSet;
   
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
 
@@ -86,14 +85,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &dTforceSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-dSLforcing", dSLFile,
                                PETSC_MAX_PATH_LEN, &dSLforceSet); CHKERRQ(ierr);
-//  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrYear,
-//                               &yearSet); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_pdd", &nopddSet); CHKERRQ(ierr);
 
-//  if (yearSet == PETSC_TRUE) {
-//    grid.p->year = usrYear;
-//  }
- 
   if (nopddSet == PETSC_TRUE) {
     doPDD = PETSC_FALSE;
   } else { 

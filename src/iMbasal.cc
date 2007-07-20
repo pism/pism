@@ -20,12 +20,6 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-/*
-* The basal sliding components. These could be wrapped in a BasalType class ala IceType.
-* That would allow easy plugability of different sliding relations. It should be
-* very easy to implement when an alternative sliding law is included.
-*/
-
 /*** for SIA regions (MASK_SHEET): ***/
 PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
@@ -58,9 +52,75 @@ PetscScalar IceModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
   return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
 }
 
-PetscInt IceModel::initBasalFields() {
+
+PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
+  if (createBasal_done == PETSC_FALSE) {
+    if (doPlasticTill == PETSC_TRUE) {
+      basal = new PlasticBasalType;
+    } else {
+      basal = new ViscousBasalType;
+    }
+  }
   ierr = VecSet(vtauc, DEFAULT_TAUC); CHKERRQ(ierr);
   ierr = VecSet(vbeta, DEFAULT_BASAL_DRAG_COEFF_MACAYEAL); CHKERRQ(ierr);
+  createBasal_done = PETSC_TRUE;
   return 0;
 }
+
+
+PetscErrorCode IceModel::updateYieldStressFromHmelt() {
+  PetscErrorCode  ierr;
+  // only makes sense when doPlasticTill == TRUE
+  // we implement formula (2.4) in C. Schoof 2006 "A variational approach to ice
+  // stream flow", J. Fluid Mech. vol 556 pp 227--251:
+  //  (2.4)   \tau_c = \mu (\rho g H - p_w)
+  // we modify it by:
+  //   1. adding a small till cohesion (see Paterson 3rd ed table 8.1)
+  //   2. replacing   p_w --> \lambda p_w   where \lambda = Hmelt / DEFAULT_MAX_HMELT;
+  //      thus 0 <= \lambda <= 1 and \lambda = 0 when bed is frozen 
+  //   3. computing a porewater pressure p_w which is the max of (0.95 of overburden)
+  //      and the porewater pressure computed by formula (4) in 
+  //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964;
+  //      the modification of this porewater pressure as in Lingle&Brown 1987 is not 
+  //      implementable because the "elevation of the bed at the grounding line"
+  //      is at an unknowable location (we are not doing a flow line model!)
+
+  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
+  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
+//    const PetscScalar porewater_gamma = 0.95; // max allowed fraction of overburden
+    
+  PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
+        tauc[i][j] = 0.0;  
+      } else { // grounded
+        mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
+        const PetscScalar overburdenP = ice.rho * grav * H[i][j];
+//          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
+//          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
+//          const PetscScalar pw = porewater_gamma * overburdenP;
+        const PetscScalar bedfrac = PetscMax(-bed[i][j],0.0) / 1000.0;
+        const PetscScalar pw = (0.85 + 0.1 * PetscMin(bedfrac,1.0)) * overburdenP;
+        const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;  // note Hmelt[i][j]=0 if frozen
+        tauc[i][j] = plastic_till_c_0 + plastic_till_mu * (overburdenP - lambda * pw);
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  // communicate mask
+  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  return 0;
+}
+
