@@ -5,11 +5,10 @@ from pycdf import *
 import getopt
 import sys
 
-SUM8_FILE = 'sum89-92-ss09-50yr.stp'
+GRIP_FILE = 'sum89-92-ss09-50yr.stp'
 SPEC_FILE = 'specmap.017'
-CORE_FILE = 'eis_core.nc'
-T_INTERPOLATION = 'constant_piecewise_forward'
-S_INTERPOLATION = 'linear'
+DT_FILE = 'grip_dT.nc'
+DSL_FILE = 'specmap_dSL.nc'
 
 SPEC_LENGTH = 782
 
@@ -26,52 +25,70 @@ except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
 
-##### specmap.017 #####
+##### sea level from SPECMAP first  #####
 
+# read specmap.017
+print "reading data from ",SPEC_FILE
 input = open(SPEC_FILE, 'r');
-
 years_sea=[]
+d18Osea=[]
 dSea=[]
-#years_sea = zeros(SPEC_LENGTH, float32)
-#dSea = zeros(SPEC_LENGTH, float32)
-
+# ignor some lines
 input.readline()
 input.readline()
-
 # take care of the fact that the data is offset
+d18Osea.append(0.0)
 dSea.append(0.0)
-
 count=0;
 for num in input.read().split():
   if count%2 == 0:
-    years_sea.append(-float(num) * 1000)
+    years_sea.append(float(num) * 1000)
   else:
+    d18Osea.append(float(num))
+    # compute delta sea level from formula in EISMINT-Greenland description
     dSea.append(-34.83 * (float(num) + 1.93))
   count = count + 1
-
+print str(count) + ' numbers read.'
+d18Osea = d18Osea[:(size(d18Osea)-1)]
 dSea = dSea[:(size(dSea)-1)]
-
 years_sea.reverse()
+d18Osea.reverse()
 dSea.reverse()
-
-print "len(years_sea) = ",size(years_sea)
-print "len(dSea) = ",size(dSea)
-
 input.close()
 
-##### sum89-92-ss09-50yr.stp #####
+# open the nc for delta Sea Level file to write to
+ncfile = CDF(DSL_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
+ncfile.automode()
+# define time dimension, then time variable, then attributes
+Stdim = ncfile.def_dim('t', size(dSea))
+Stvar = ncfile.def_var('t', NC.FLOAT, (Stdim,))
+setattr(Stvar, 'units', 'years before present')
+d18Oseavar = ncfile.def_var('delta_18_O', NC.FLOAT, (Stdim,))
+setattr(d18Oseavar, 'units', 'normalized O-18') # see specmap_readme.txt
+setattr(d18Oseavar, 'long_name', 'change in oxygen isotope ratio (18^O to 16^O) from present')
+setattr(d18Oseavar, 'interpolation', 'linear')
+dSeavar = ncfile.def_var('delta_sea_level', NC.FLOAT, (Stdim,))
+setattr(dSeavar, 'units', 'm')
+setattr(dSeavar, 'long_name', 'change in sea level from present')
+setattr(dSeavar, 'interpolation', 'linear')
+# write data and close
+Stvar[:] = years_sea
+d18Oseavar[:] = d18Osea
+dSeavar[:] = dSea
+ncfile.close()
+print "NetCDF file ",DSL_FILE," created"
 
+
+##### delta T (and delta O18) from GRIP next  #####
+# read sum89-92-ss09-50yr.stp
+print "reading data from ",GRIP_FILE
 dim=[]
-
-input = open(SUM8_FILE, 'r')
-
+input = open(GRIP_FILE, 'r')
 # remove headers 
 for n in zeros(8):
   input.readline()
-
 for num in input.readline().split():
   dim.append(num)
-
 y_bp = zeros(int(dim[0])/2, float32)
 d18O = zeros(int(dim[0])/2, float32)
 dT = zeros(int(dim[0])/2, float32)
@@ -80,55 +97,34 @@ y_count= int(dim[0])/2-1
 
 for num in input.read().split():
   if count%4 == 0:
-    y_bp[y_count] = -float(num)
+    y_bp[y_count] = float(num)
   if count%4 == 1:
     d18O[y_count] = float(num)
+    # compute delta T from formula in EISMINT-Greenland description
     dT[y_count] = 1.5*(d18O[y_count]+35.27)
     y_count = y_count-1
   count = count + 1
-
 print str(count) + ' numbers read.'
 
 # open the nc file to write to
-ncfile = CDF(CORE_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
+ncfile = CDF(DT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
-
-
-# define the one dimension
-Ttdim = ncfile.def_dim('delta_T_t', int(dim[0])/2)
-Stdim = ncfile.def_dim('delta_Sea_t', size(dSea))
-
-# define variables
-polarVar = ncfile.def_var('polar_stereographic', NC.INT)
-Ttvar = ncfile.def_var('delta_T_t', NC.FLOAT, (Ttdim,))
-Stvar = ncfile.def_var('delta_Sea_t', NC.FLOAT, (Stdim,))
-d18Ovar = ncfile.def_var('delta_O_18', NC.FLOAT, (Ttdim,))
+# define time dimension, then time variable, then attributes
+Ttdim = ncfile.def_dim('t', int(dim[0])/2)
+Ttvar = ncfile.def_var('t', NC.FLOAT, (Ttdim,))
+setattr(Ttvar, 'units', 'years before present')
+d18Ovar = ncfile.def_var('delta_18_O', NC.FLOAT, (Ttdim,))
+setattr(d18Ovar, 'units', 'per mil relative to the SMOW standard') # see grip18o.readme
+setattr(d18Ovar, 'long_name', 'change in isotope ratio 18^O to 16^O (oxygen) from present')
+setattr(d18Ovar, 'interpolation', 'constant_piecewise_forward')
 dTvar = ncfile.def_var('delta_T', NC.FLOAT, (Ttdim,))
-dSeavar = ncfile.def_var('delta_Sea', NC.FLOAT, (Stdim,))
-
-# define attributes
-setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
-setattr(polarVar, 'straight_vertical_longitude_from_pole', 0)
-setattr(polarVar, 'straight_vertical_longitude_from_pole', 90)
-setattr(polarVar, 'standard_parallel', -71)
-
-setattr(Ttvar, 'units', 'years since 1989')
-
-setattr(Stvar, 'units', 'years since 1989')
-
-setattr(dTvar, 'units', 'm')
-setattr(dTvar, 'long_name', 'change in surface temperature from 1986')
-setattr(dTvar, 'interpolation', T_INTERPOLATION)
-
-setattr(dSeavar, 'units', 'm')
-setattr(dSeavar, 'long_name', 'change in sea level from 1986')
-setattr(dSeavar, 'interpolation', S_INTERPOLATION)
-
-# write data
+setattr(dTvar, 'units', 'degrees C')
+setattr(dTvar, 'long_name', 'change in surface temperature from present')
+setattr(dTvar, 'interpolation', 'constant_piecewise_forward')
+# write data and close
 Ttvar[:] = y_bp
-Stvar[:] = years_sea
 d18Ovar[:] = d18O
 dTvar[:] = dT
-dSeavar[:] = dSea
-
 ncfile.close()
+print "NetCDF file ",DT_FILE," created"
+

@@ -29,7 +29,7 @@ ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc iMoptions.cc iMpdd.cc\
 	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc\
 	iMviewers.cc iceModel.cc materials.cc nc_util.cc\
-	beddefLC.cc
+	beddefLC.cc forcing.cc
 ice_csources= cubature.c pism_signal.c
 
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c

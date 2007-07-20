@@ -27,6 +27,7 @@ except getopt.GetoptError:
 ##### grid20-EISMINT #####
 
 # open the data file and begin reading it
+print "reading grid data from ",GRID_FILE
 input=open(GRID_FILE, 'r')
 
 dim=[]
@@ -56,6 +57,7 @@ input.close()
 ##### suaq20-EISMINT #####
 
 # open the data file and begin reading it
+print "reading thickness, bed elevation, and accumulation data from ",SUAQ_FILE
 input=open(SUAQ_FILE, 'r')
 
 dim=[]
@@ -91,7 +93,6 @@ for line in input.read().split():
 
 # done reading from data file
 input.close()
-
 print "Total Values Read: "+str(x)
 
 # ready to write NetCDF file
@@ -175,3 +176,5 @@ latvar[:] = lat
 lonvar[:] = lon
 Accvar[:] = acc
 ncfile.close()
+print "NetCDF file ",WRIT_FILE," created"
+

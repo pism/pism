@@ -338,21 +338,18 @@ PetscErrorCode IceModel::nc_check(int stat) {
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   int stat;
-  PetscReal lonExists, latExists, accumExists, hExists, HExists, bExists,
-      TsExists, ghfExists, upliftExists, balvelExists,
-      xExists, yExists, HmeltExists, tExists;
-  PetscReal glonExists=0, glatExists=0, gaccumExists=0, ghExists=0, gHExists=0, gbExists=0,
-      gTsExists=0, gghfExists=0, gupliftExists=0, gbalvelExists=0,
-      gxExists=0, gyExists=0, gHmeltExists=0, gtExists=0;
+  PetscInt lonExists=0, latExists=0, accumExists=0, hExists=0, HExists=0, bExists=0,
+      TsExists=0, ghfExists=0, upliftExists=0, balvelExists=0,
+      xExists=0, yExists=0, HmeltExists=0, tExists=0;
 
-  verbPrintf(2, grid.com, "bootstrapping by PISM default method from file %s\n",fname);
-
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  ierr = createVecs(); CHKERRQ(ierr);
-
+  ierr = verbPrintf(2, grid.com, "bootstrapping by PISM default method from file %s\n",fname); 
+           CHKERRQ(ierr);
   if (fname == NULL) {
     SETERRQ(1, "No file name given for bootstrapping\n");
   }
+
+  ierr = grid.createDA(); CHKERRQ(ierr);
+  ierr = createVecs(); CHKERRQ(ierr);
 
   // determine if variables exist in bootstrapping file
   int ncid;
@@ -360,35 +357,36 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
       v_balvel, v_x, v_y, v_Hmelt, v_t;
   if (grid.rank == 0) {
     stat = nc_open(fname, 0, &ncid); CHKERRQ(nc_check(stat));
-    stat = nc_inq_varid(ncid, "x", &v_x); gxExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "y", &v_y); gyExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "lon", &v_lon); glonExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "lat", &v_lat); glatExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "accum", &v_accum); gaccumExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "h", &v_h); ghExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "H", &v_H); gHExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "b", &v_bed); gbExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "Ts", &v_Ts); gTsExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "ghf", &v_ghf); gghfExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "uplift", &v_uplift); gupliftExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "balvel", &v_balvel); gbalvelExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "Hmelt", &v_Hmelt); gHmeltExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "t", &v_t); gtExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "x", &v_x); xExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "y", &v_y); yExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "t", &v_t); tExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "lon", &v_lon); lonExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "lat", &v_lat); latExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "accum", &v_accum); accumExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "h", &v_h); hExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "H", &v_H); HExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "b", &v_bed); bExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "Ts", &v_Ts); TsExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "ghf", &v_ghf); ghfExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "uplift", &v_uplift); upliftExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "balvel", &v_balvel); balvelExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "Hmelt", &v_Hmelt); HmeltExists = stat == NC_NOERR;
   }
-  ierr = PetscGlobalMax(&gxExists, &xExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gyExists, &yExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&glonExists, &lonExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&glatExists, &latExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gaccumExists, &accumExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&ghExists, &hExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gHExists, &HExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gbExists, &bExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gTsExists, &TsExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gghfExists, &ghfExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gupliftExists, &upliftExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gbalvelExists, &balvelExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gHmeltExists, &HmeltExists, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&gtExists, &tExists, grid.com); CHKERRQ(ierr);
+  // broadcast the existence flags
+  ierr = MPI_Bcast(&xExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&yExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&tExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&lonExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&latExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&accumExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&hExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&HExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&bExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&TsExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&ghfExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&upliftExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&balvelExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&HmeltExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
 
   // COMMENT FIXME:  Next block of code uses a sequential Vec ("vzero") on processor 
@@ -410,99 +408,118 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // put the array into the scratch global Vec g2 and then the usual DA-based
   // global (g2) to local (vAccum, etc.) is done
   PetscScalar first, last;
-  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 5000.0; // just defaults
+  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 4000.0; // just defaults
   if (xExists) {
-    ierr = getFirstLast(ncid, v_x, &first, &last);
+    ierr = getFirstLast(ncid, v_x, &first, &last); CHKERRQ(ierr);
     x_scale = (last - first) / 2.0;
     // verbPrintf(1,grid.com,"   for x: last,first,x_scale = %f,%f,%f\n",last,first,x_scale);
-  } else verbPrintf(2, grid.com, 
-         "  WARNING: variable x(x) not found in file. Proceeding with default interval [-Lx,Lx] = [-%f,%f]\n",
-         x_scale,x_scale);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+         "  WARNING: variable x(x) not found in file."
+         " Proceeding with default interval [-Lx,Lx] = [-%f,%f]\n",
+         x_scale,x_scale); CHKERRQ(ierr);
+  }
   if (yExists) {
-    ierr = getFirstLast(ncid, v_y, &first, &last);
+    ierr = getFirstLast(ncid, v_y, &first, &last); CHKERRQ(ierr);
     y_scale = (last - first) / 2.0;
     // verbPrintf(1,grid.com,"   for y: last,first,y_scale = %f,%f,%f\n",last,first,y_scale);
-  } else verbPrintf(2, grid.com, 
-         "  WARNING: variable y(y) not found in file. Proceeding with defaults [-Ly,Ly] = [-%f,%f]\n",
-         y_scale,y_scale);
-  verbPrintf(2, grid.com, 
-         "  using default value Lz=%f for vertical extent of computational box for ice\n", z_scale);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+         "  WARNING: variable y(y) not found in file."
+         " Proceeding with defaults [-Ly,Ly] = [-%f,%f]\n",
+         y_scale,y_scale); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(2, grid.com, 
+         "  using default value Lz=%f for vertical extent of computational box for ice\n",
+         z_scale); CHKERRQ(ierr);
   ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
   if (lonExists) {
-    ierr = ncVarToDAVec(ncid, v_lon, grid.da2, vLongitude, g2, vzero);
-    CHKERRQ(ierr);
-  } else verbPrintf(3, grid.com, "  continuing without lon\n"); 
-  if (latExists) {
-    ierr = ncVarToDAVec(ncid, v_lat, grid.da2, vLatitude, g2, vzero);
-    CHKERRQ(ierr);
-  } else verbPrintf(3, grid.com, "  continuing without lat\n"); 
-  if (accumExists) {
-    ierr = ncVarToDAVec(ncid, v_accum, grid.da2, vAccum, g2, vzero);
-    CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, v_lon, grid.da2, vLongitude, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "  accum not found. Filling in with default value: %f\n", DEFAULT_ACCUM_VALUE_MISSING); 
+    ierr = verbPrintf(3, grid.com, "  continuing without lon\n");  CHKERRQ(ierr);
+  }
+  if (latExists) {
+    ierr = ncVarToDAVec(ncid, v_lat, grid.da2, vLatitude, g2, vzero); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(3, grid.com, "  continuing without lat\n");  CHKERRQ(ierr);
+  }
+  if (accumExists) {
+    ierr = ncVarToDAVec(ncid, v_accum, grid.da2, vAccum, g2, vzero); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+               "  accum not found. Filling in with default value: %f\n",
+               DEFAULT_ACCUM_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
   }
-  if (hExists)  
-    verbPrintf(2, grid.com, "  WARNING: ignoring values found for surface elevation h and using h = b + H\n");
+  if (hExists) {
+    ierr = verbPrintf(2, grid.com, 
+          "  WARNING: ignoring values found for surface elevation h and using h = b + H\n");
+          CHKERRQ(ierr);
+  }
   if (HExists) {
-    ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero);
-    CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "  WARNING: thickness H not found. Filling in with default value: %f\n",
-               DEFAULT_H_VALUE_MISSING);
+    ierr = verbPrintf(2, grid.com, 
+               "  WARNING: thickness H not found. Filling in with default value: %f\n",
+               DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
   }
   if (bExists) {
-    ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero);
-    CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "  WARNING: bedrock elevation b not found. Filling in with default value: %f\n",
-               DEFAULT_BED_VALUE_MISSING); 
+    ierr = verbPrintf(2, grid.com, 
+             "  WARNING: bedrock elevation b not found. Filling in with default value: %f\n",
+             DEFAULT_BED_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (TsExists) {
     ierr = ncVarToDAVec(ncid, v_Ts, grid.da2, vTs, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "  WARNING: surface temperature Ts not found. Filling in with default value: %f\n",
-               DEFAULT_SURF_TEMP_VALUE_MISSING);
+    ierr = verbPrintf(2, grid.com,
+             "  WARNING: surface temperature Ts not found. Filling in with default value: %f\n",
+             DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (ghfExists) {
     ierr = ncVarToDAVec(ncid, v_ghf, grid.da2, vGhf, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "  WARNING: geothermal flux ghf not found. Filling in with default value: %f\n",
-               DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); 
+    ierr = verbPrintf(2, grid.com, 
+             "  WARNING: geothermal flux ghf not found. Filling in with default value: %f\n",
+             DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (upliftExists) {
-    ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero); 
-    CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(3, grid.com, "  uplift not found. Filling with zero\n"); 
+    ierr = verbPrintf(3, grid.com, "  uplift not found. Filling with zero\n");  CHKERRQ(ierr);
     ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
   }
-  verbPrintf(2, grid.com, "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
+  ierr = verbPrintf(2, grid.com, 
+            "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
+            CHKERRQ(ierr);
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
-  verbPrintf(3, grid.com, 
+  ierr = verbPrintf(3, grid.com, 
              "  setting accumulation in ice shelf-free ocean to default value %f\n",
-             DEFAULT_ACCUMULATION_IN_OCEAN0 * secpera);
+             DEFAULT_ACCUMULATION_IN_OCEAN0 * secpera); CHKERRQ(ierr);
   ierr = setAccumInOcean(); CHKERRQ(ierr);
   if (HmeltExists) {
     ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
   } else {
-    verbPrintf(2, grid.com, "  Hmelt not found. Filling with zero\n");
+    ierr = verbPrintf(2, grid.com, "  Hmelt not found. Filling with zero\n"); CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }
   if (tExists) {
     const size_t idx = 0;
     float begin_t;
-    nc_get_var1_float(ncid, v_t, &idx, &begin_t);
+    if (grid.rank == 0) {
+      nc_get_var1_float(ncid, v_t, &idx, &begin_t);
+    }
+    ierr = MPI_Bcast(&begin_t, 1, MPI_FLOAT, 0, grid.com); CHKERRQ(ierr);
     setInitialAgeYears(begin_t);
   } else {
-    verbPrintf(2, grid.com, "  time t not found. Using t=%f years\n",
-               DEFAULT_INITIAL_AGE_YEARS);
+    ierr = verbPrintf(2, grid.com, "  time t not found. Using t=%f years\n",
+               DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
   }
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
@@ -649,52 +666,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   return 0;
 }
 
-PetscErrorCode IceModel::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
-  // note this is used by IceGRNModel to spread (broadcast) sequential
-  // Vecs containing ice core-derived climate data to each processor
-  
-  PetscErrorCode ierr;
-  int stat;
-  size_t M;
-  float *f = NULL;
-
-  if (grid.rank == 0) {
-    int dimids[NC_MAX_VAR_DIMS];
-    int ndims, natts;
-    nc_type xtype;
-    char name[NC_MAX_NAME+1];
-    stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
-    if (ndims != 1) {
-      SETERRQ2(1, "ncVarBcastDaVec: number of dimensions = %d for %s; should have ndims=1\n",
-               ndims, name);
-    }
-    stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
-    f = new float[M];
-    stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
-  }
-
-  // broadcast the length
-  ierr = MPI_Bcast(&M, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
- 
-  // if you're not rank 0, you still need to create the array
-  if (grid.rank != 0){
-    f = new float[M];
-  }
-  ierr = MPI_Bcast(f, M, MPI_FLOAT, 0, grid.com); CHKERRQ(ierr);
-
-  ierr = VecCreateSeq(PETSC_COMM_SELF, M, vecg); CHKERRQ(ierr);
-
-  for (int x=0; x<(int)M; x++) {
-    ierr = VecSetValue(*vecg, x, f[x], INSERT_VALUES); CHKERRQ(ierr);
-  }
-  
-  ierr = VecAssemblyBegin(*vecg); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(*vecg); CHKERRQ(ierr)
-
-  delete [] f;
-
-  return 0;
-}
 
 PetscErrorCode IceModel::ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                                       Vec vecg, Vec vindzero) {
