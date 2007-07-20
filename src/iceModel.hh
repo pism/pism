@@ -373,7 +373,7 @@ protected:
   // see iMmacayeal.cc
   PetscErrorCode velocityMacayeal();
 
-  PetscErrorCode setupForMacayeal(const PetscScalar minH, const PetscTruth adjustMask);
+  PetscErrorCode setupForMacayeal(const PetscScalar minH);
   PetscErrorCode cleanupAfterMacayeal(const PetscScalar minH);
   virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);
   PetscErrorCode testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2], PetscReal *, PetscReal *);

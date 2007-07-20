@@ -630,11 +630,6 @@ PetscErrorCode IceModel::initFromOptions() {
   PetscTruth inFileSet, bootstrapSet, bootstrapSetLegacy;
   char inFile[PETSC_MAX_PATH_LEN];
 
-  if (createBasal_done == PETSC_FALSE) {
-    basal = new ViscousBasalType;
-    createBasal_done = PETSC_TRUE;
-  }
-  
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet);
   CHKERRQ(ierr);

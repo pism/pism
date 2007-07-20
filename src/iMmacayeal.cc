@@ -21,7 +21,7 @@
 #include "iceModel.hh"
 
 
-PetscErrorCode IceModel::setupForMacayeal(const PetscScalar minH, const PetscTruth adjustMask) {
+PetscErrorCode IceModel::setupForMacayeal(const PetscScalar minH) {
   PetscErrorCode ierr;
   PetscScalar **h, **H, **mask, **ubar, **vbar;
   PetscScalar ***u, ***v;
@@ -35,25 +35,6 @@ PetscErrorCode IceModel::setupForMacayeal(const PetscScalar minH, const PetscTru
   ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // FIXME: at this point we should probably not call with adjustMask == 
-      // PETSC_TRUE because this cutoff is (I think) kludgier than the vote-by-
-      // neighbors scheme in IceModel::updateSurfaceElevationandMask() and the
-      // initialization of the mask using the mass balance velocity values (see
-      // iMIOnetcdf.cc).
-      if (adjustMask==PETSC_TRUE) {
-        /* When this works properly, we should be able to tune it to reproduce ice
-        * streams. It will only function correctly after the temperature has come to
-        * equilibrium.                                                          */
-        const PetscScalar speedSIA = sqrt(PetscSqr(u[i][j][0]) + PetscSqr(v[i][j][0]));
-        const PetscScalar speed = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
-        if (intMask(mask[i][j]) == MASK_SHEET && speedSIA > DEFAULT_MIN_SHEET_TO_DRAGGING/secpera) {
-          mask[i][j] = MASK_DRAGGING;
-        } else if (intMask(mask[i][j]) == MASK_DRAGGING
-                   && speed < DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET/secpera
-                   && speedSIA < DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET/secpera) {
-          mask[i][j] = MASK_SHEET;
-        }
-      }
       if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] < minH) {
         h[i][j] += (minH - H[i][j]);
         H[i][j] = minH;
@@ -431,14 +412,6 @@ PetscErrorCode IceModel::assembleMacayealRhs(bool surfGradInward, Vec rhs) {
           h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
           h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
         }
-#if 0
-        /* This equation seems to behave badly in the event of large surface
-        * slopes. To handle this, we cap the slope for the purpose of this
-        * computation only. */
-        const PetscScalar   maxSlope = DEFAULT_MAXSLOPE_MACAYEAL;
-        if (PetscAbsScalar(h_x) > maxSlope) h_x = h_x * maxSlope / PetscAbsScalar(h_x);
-        if (PetscAbsScalar(h_y) > maxSlope) h_y = h_y * maxSlope / PetscAbsScalar(h_y);
-#endif
         const PetscScalar r = ice.rho * grav * H[i][j];  // CHANGE OF SIGN
         ierr = VecSetValue(rhs, rowU, -r*h_x, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, -r*h_y, INSERT_VALUES); CHKERRQ(ierr);
@@ -486,7 +459,6 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -530,7 +502,6 @@ PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateN
 }
 
 PetscErrorCode IceModel::velocityMacayeal() {
-//  PetscInt maxIterations;
   PetscErrorCode ierr;
   KSP ksp = MacayealKSP;
   Mat A = MacayealStiffnessMatrix;
@@ -547,7 +518,6 @@ PetscErrorCode IceModel::velocityMacayeal() {
   ierr = VecCopy(vubar, vubarOld); CHKERRQ(ierr);
   ierr = VecCopy(vvbar, vvbarOld); CHKERRQ(ierr);
   epsilon = macayealEpsilon;
-//  ierr = verbPrintf(3,grid.com, "  iteration to solve ice stream/shelf equations:\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(5,grid.com, 
      "  [macayealEpsilon = %10.5e, EPSILON_MULTIPLIER_MACAYEAL = %6.2e, macayealMaxIterations = %d\n",
@@ -796,9 +766,9 @@ PetscErrorCode IceModel::correctSigma() {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
           const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
-          const PetscScalar tempSigma = CC * ice.effectiveViscosity(schoofReg,
+          const PetscScalar mvSigma = CC * ice.effectiveViscosity(schoofReg,
                                                u_x,u_y,v_x,v_y,T[i][j][k],pressure);
-          Sigma[i][j][k] = (addVels) ? Sigma[i][j][k] + tempSigma : tempSigma;
+          Sigma[i][j][k] = (addVels) ? Sigma[i][j][k] + mvSigma : mvSigma;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
           Sigma[i][j][k] = 0.0;
@@ -812,7 +782,7 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   return 0;
 }

@@ -62,6 +62,9 @@ PetscErrorCode IceModel::initBasalTillModel() {
       basal = new ViscousBasalType;
     }
   }
+  if (useMacayealVelocity == PETSC_TRUE) {
+    ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
+  }
   ierr = VecSet(vtauc, DEFAULT_TAUC); CHKERRQ(ierr);
   ierr = VecSet(vbeta, DEFAULT_BASAL_DRAG_COEFF_MACAYEAL); CHKERRQ(ierr);
   createBasal_done = PETSC_TRUE;
@@ -86,9 +89,10 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   //      implementable because the "elevation of the bed at the grounding line"
   //      is at an unknowable location (we are not doing a flow line model!)
 
-  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
-  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
-//    const PetscScalar porewater_gamma = 0.95; // max allowed fraction of overburden
+//  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
+  const PetscScalar plastic_till_c_0 = 5.0e3;
+//  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
+  const PetscScalar plastic_till_mu = 0.2125565616700221;  // = tan(12^o); till friction angle
     
   PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);

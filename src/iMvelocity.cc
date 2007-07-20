@@ -62,7 +62,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   }
 
   if (useMacayealVelocity) { // communication happens within MacAyeal
-    ierr = setupForMacayeal(DEFAULT_MINH_MACAYEAL,PETSC_FALSE); CHKERRQ(ierr);
+    ierr = setupForMacayeal(DEFAULT_MINH_MACAYEAL); CHKERRQ(ierr);
     if (firstTime) {
       ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr);  // comm here
     }
