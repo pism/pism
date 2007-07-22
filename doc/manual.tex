@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{145}
+\newcommand{\PISMREV}{152}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -39,6 +39,15 @@
 \newcommand{\Matlab}{\textsc{Matlab}\xspace}
 \newcommand{\bU}{\mathbf{U}}
 \newcommand{\eps}{\epsilon}
+
+\newcommand{\optoptdef}[3]{\vspace{1mm}\noindent \large\texttt{-#1},\,\,\texttt{--#2=}\normalsize\,\,[\textsl{#3}]:\quad}
+
+\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize}
+\newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
+\newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
+\newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
+\newcommand{\optdefrestrict}[3]{\rawopt{#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad}
+\newcommand{\und}{$\underline{\,\,\,}$}
 
 % note \beginV and \Vend are a pair, but they must be used as follows:
 %   \beginV
@@ -449,7 +458,7 @@ See \cite{BLKCB} for a more complete discussion of this particular test.  See th
 \newpage
 \section{More on usage}\label{sect:usage}
 
-\subsection{The PISM coordinate system and grid}  PISM does all simulations in a computational box which is rectangular in the PISM coordinates.
+\subsection{The PISM coordinate system and grid} \label{subsect:coords} PISM does all simulations in a computational box which is rectangular in the PISM coordinates.
 
 The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice and it is exactly opposite to the vector of gravity.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.  Vertical lines $(x,y)=(a,b)$, for constant $a,b$, are generally not at right angles to the planes $z=c$, so the coordinate system is not technically rectilinear.
 
@@ -687,35 +696,11 @@ A positive degree day model specific to the Greenland ice sheet is used in secti
 \hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
 \bigskip
 
-``Verification'' is a crucial task for a code as complicated as PISM.  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  In particular, one compares exact solutions of the continuum model, if available, to their numerical approximations.
+\subsection{Ideas} ``Verification'' is a crucial task for a code as complicated as PISM.  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  In particular, one compares exact solutions of the continuum model, if available, to their numerical approximations.
 
 See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the MacAyeal equations for ice streams using a plastic till assumption.
 
-In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical code which is verified by \verb|pismv| is, however, exactly the same lines of code in exactly the same source files as is run by the non-verification executables \verb|pismr| and \verb|pisms|.  (In technical terms, \verb|pismv| runs a derived class of the core class \verb|IceModel|.  The core class corresponds to \verb|pismr|.)
-
-Table \ref{tab:tests} summarizes the many exact solutions contained within PISM.  Note that all of these exact solutions except tests A and E are solutions of free boundary problems for partial differential equations.
-
-Table \ref{tab:tests_exec} shows how to run them for an example grid, namely a grid recommended for quick execution time.   For serious attempts at verification, however, one must go down a grid refinement path and measure error.  For example, the runs
-\begin{quote}\small\begin{verbatim}
-pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
-pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
-pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
-pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
-\end{verbatim}
-\normalsize\end{quote}
-verify the basic function of the isothermal shallow ice approximation components of PISM.  The data produced by these four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  Thereby we see that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.
-
-For thermocoupled tests one would refine in three dimensions.  For example, the runs
-\begin{quote}\small\begin{verbatim}
-pismv -test G -maxdt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
-pismv -test G -maxdt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
-pismv -test G -maxdt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
-pismv -test G -maxdt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181
-pismv -test G -maxdt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
-pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
-\end{verbatim}
-\normalsize\end{quote}
-produce the error data in figures 13, 14, and 15 of \cite{BBL}.  (Don't do the last couple of these without a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
+In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical code which is verified by \verb|pismv| is, however, exactly the same lines of code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the core class \verb|IceModel|; the core class without frills is run by \verb|pismr|.)
 
 \begin{table}[h]
 \caption{Exact solutions for verification.}\label{tab:tests}
@@ -741,9 +726,8 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & \cite{BuelerEqui
 \end{tabular}
 \end{table}
 
-
 \begin{table}[h]
-\caption{Running PISM to verify against the exact solutions.}\label{tab:tests_exec}
+\caption{Running PISM to verify using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Test} & \textbf{Example invocation}  \\ \hline
@@ -762,71 +746,175 @@ L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \end{tabular}
 \end{table}
 
-Note there is a Python script, \verb|verifynow.py|, which runs Tests C, G, and I, and suffices for basic verification of most of the numerical methods in PISM, and is a good test for newly-installed copies of PISM.  It takes two options:\begin{itemize}
-\item ``\verb|-n |$N$'' specifies $N$ processors to use (i.e.~\verb|mpiexec -n |$N$ is used if $N>1$); the default is $N=1$;
-\item ``\verb|-l |$L$'' specifies $L$ levels of refinement; $L=1,2,3,4,5$ are allowed values and the default is $L=3$.
+Table \ref{tab:tests} summarizes the many exact solutions contained within PISM.  Note that all of these exact solutions, except tests A and E, are solutions of free boundary problems for partial differential equations.  Table \ref{tab:tests_exec} shows how to run each of them for an example grid, namely one with relatively quick execution time.
+
+\subsection{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure error for each grid.  By ``a refinement path'' we mean the specification of a sequence of grid cell sizes (e.g.~a sequence of triples $(\Delta x,\Delta y,\Delta t)$ in the two spatial and one time dimension case) which decrease toward the (unreachable) infinite refinement limit (i.e.~$(\Delta x,\Delta y,\Delta t) = (0,0,0)$).  By ``measuring the error for each grid'' we will concretely mean computing two limiting norms, namely both the maximum absolute error anywhere on the grid, relative to the exact solution, and computing the average error on the grid.
+
+The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense, generally.  Rather the goal is to see that the error is trending toward zero, and to measure the rate at which decays.  See \cite{BLKCB,BBL,Roache,Wesseling}.
+
+For an example of a refinement path, consider the runs
+\begin{quote}\small\begin{verbatim}
+pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
+pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
+pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
+pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
+\end{verbatim}
+\normalsize\end{quote}
+These verify the basic function of the isothermal shallow ice approximation components of PISM in the case of no accumulation.  Note that one specifies the number of grid spaces when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.
+
+The exact solution in question is the Halfar similarity solution \cite{Halfar83}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined by a stability criterion \cite{BBL}.  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
+
+The data produced by the above four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  But we also want to note the ever-present situation that future improvements in the numerical scheme can make the error decrease more quickly.
+
+For thermocoupled tests one refines in three dimensions.  For example, the runs
+\begin{quote}\small\begin{verbatim}
+pismv -test G -maxdt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
+pismv -test G -maxdt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
+pismv -test G -maxdt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
+pismv -test G -maxdt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181
+pismv -test G -maxdt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
+pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
+\end{verbatim}
+\normalsize\end{quote}
+produced figures 13, 14, and 15 of \cite{BBL}.  The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.
+
+\subsection{\texttt{verifynow.py}}  This is the Python script in subdirectory \verb|pism/test/| which organizes the process of verifying PISM.  By default it runs Tests C, G, and I, because these tests exercise most of the numerical methods in PISM, and thus suffice for basic verification.
+
+Three example usages are \begin{itemize}
+\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGI|,
+\item ``\verb|verifynow.py -n 8 -l 1 --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do only one level of refinement, and
+\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIL|'' will use lots of processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you are prepared to wait.
 \end{itemize}
-Here is an example run:
+
+\noindent In fact, \verb|verifynow.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
+
+\optoptdef{l}{levels}{3} specifies number of levels of refinement; $1,2,3,4,5$ are allowed values
+
+\optoptdef{m}{mpido}{\texttt{mpiexec}} how to run PISM as an MPI program
+
+\optoptdef{n}{nproc}{1} specify number of processors to use
+
+\optoptdef{p}{prefix}{} where the PISM executable \verb|pismv| is located
+
+\optoptdef{t}{tests}{CGI} which tests to run
+
+\medskip
+
+\subsection{Example \texttt{verifynow.py} output}  Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
+
 \scriptsize\begin{quote}\begin{verbatim}
-$ verifynow -n 2 -l 3
-  VERIFYNOW using 2 processor(s) and 3 level(s) of refinement
-  ++++ verifying isothermal SIA using test C (Mx=My=41,61,81,101,121
-       corresponds to dx=dy=50,33.3,25,20,16 km) ++++
-  trying "mpiexec -n 2 pismv -test C -Mx 41 -My 41 -Mz 31 -y 15208.0 -verbose 1"
-  finished in 10.8591 seconds; reported numerical errors as follows:
-    |Actual ERRORS evaluated at final time (relative to exact solution):
-    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-    |               0.7189    12.6255   250.0035   12.0155    0.019159  10.0400
-  trying "mpiexec -n 2 pismv -test C -Mx 61 -My 61 -Mz 31 -y 15208.0 -verbose 1"
-  finished in 36.7092 seconds; reported numerical errors as follows:
-    |Actual ERRORS evaluated at final time (relative to exact solution):
-    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-    |               0.1268     6.5122   224.3489    7.1291    0.012296   4.4014
-  trying "mpiexec -n 2 pismv -test C -Mx 81 -My 81 -Mz 31 -y 15208.0 -verbose 1"
-  finished in 112.6159 seconds; reported numerical errors as follows:
-    |Actual ERRORS evaluated at final time (relative to exact solution):
-    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-    |               0.1970     5.5536   194.2413    4.1316    0.008131   2.1267
-  ++++ verifying plastic till ice stream using test I (My=49,193,769,3073,12289
-       corresponds to dy=5000,1250,312.5,78.13,19.53 m) ++++
-  trying "mpiexec -n 2 pismv -test I -My 49 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
-  finished in  0.9357 seconds; reported numerical errors as follows:
-    |Actual ERRORS in velocity relative to exact solution:
-    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
-    |        23.3329    7.69421     0.98956   23.3329    0.0000    7.6942    0.0000
-  trying "mpiexec -n 2 pismv -test I -My 193 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
-  finished in  3.8574 seconds; reported numerical errors as follows:
-    |Actual ERRORS in velocity relative to exact solution:
-    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
-    |         1.3246    0.44147     0.05678    1.3246    0.0000    0.4415    0.0000
-  trying "mpiexec -n 2 pismv -test I -My 769 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
-  finished in 16.2246 seconds; reported numerical errors as follows:
-    |Actual ERRORS in velocity relative to exact solution:
-    |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
-    |         0.0923    0.03117     0.00401    0.0923    0.0000    0.0312    0.0000
-  ++++ verifying thermocoupled SIA using test G (Mx=My=Mz=61,91,121,181,241
-       corresponds to dx=dy=30,20,15,10,7.5 km and dz=66.7,44.4,33.3,22.2,16.7 m) ++++
-  trying "mpiexec -n 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000.0 -verbose 1"
-  finished in 119.0501 seconds; reported numerical errors as follows:
-    |Actual ERRORS evaluated at final time (relative to exact solution):
-    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-    |               2.1076     0.0000    64.3642   19.5506    0.017980   2.8224
-    |base temps:        maxT         avT      domeT
-    |               1.533177    0.471904   0.069055
-  trying "mpiexec -n 2 pismv -test G -Mx 91 -My 91 -Mz 91 -y 25000.0 -verbose 1"
-  finished in 878.9009 seconds; reported numerical errors as follows:
-    |Actual ERRORS evaluated at final time (relative to exact solution):
-    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-    |               0.9508     0.0000    29.7903    9.0329    0.007974   0.0095
-    |base temps:        maxT         avT      domeT
-    |               0.962611    0.238721   0.025394
-  trying "mpiexec -n 2 pismv -test G -Mx 121 -My 121 -Mz 121 -y 25000.0 -verbose 1"
-  finished in 3777.5895 seconds; reported numerical errors as follows:
-    |Actual ERRORS evaluated at final time (relative to exact solution):
-    |geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-    |               0.5216     0.0000    28.3494    4.9974    0.004423   0.8286
-    |base temps:        maxT         avT      domeT
-    |               0.781534    0.140056   0.003918
+$ verifynow.py -n 2 -l 3 -t CEGIL
+ VERIFYNOW using 2 processor(s) and 3 level(s) of refinement
+ ++++ verifying isothermal SIA w moving margin using test C ++++
+ (Mx=My=41,61,81,101,121 corresponds to dx=dy=50,33.3,25,20,16 km)
+ trying "mpiexec -np 2 pismv -test C -Mx 41 -My 41 -Mz 31 -y 15208.0 -verbose 1"
+ finished in  9.2709 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.718900  250.003494   12.015517    0.019159    10.040006
+ trying "mpiexec -np 2 pismv -test C -Mx 61 -My 61 -Mz 31 -y 15208.0 -verbose 1"
+ finished in 41.2792 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.126767  224.348860    7.129075    0.012296     4.401402
+ trying "mpiexec -np 2 pismv -test C -Mx 81 -My 81 -Mz 31 -y 15208.0 -verbose 1"
+ finished in 122.7838 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.197003  194.241335    4.131559    0.008131     2.126740
+ ++++ verifying isothermal SIA w sliding using test E ++++
+ (Mx=My=31,41,61,81,121 corresponds to dx=dy=53.3,40,26.7,20,13.3 km)
+ trying "mpiexec -np 2 pismv -test E -Mx 31 -My 31 -Mz 31 -y 25000.0 -verbose 1"
+ finished in 85.2384 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               6.144464  920.922943   85.952669    0.078342    47.073721
+  |base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
+  |               12.4115    0.91501     1.80232   10.0374    7.5887
+ trying "mpiexec -np 2 pismv -test E -Mx 41 -My 41 -Mz 31 -y 25000.0 -verbose 1"
+ finished in 193.6552 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               4.481193  726.112323   63.817098    0.059375    36.149340
+  |base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
+  |                8.7523    0.67766     1.33480    8.6051    5.2778
+ trying "mpiexec -np 2 pismv -test E -Mx 61 -My 61 -Mz 31 -y 25000.0 -verbose 1"
+ finished in 893.9928 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               2.804588  636.954964   40.564555    0.040141    21.534520
+  |base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
+  |                7.1069    0.44876     0.88394    6.0500    4.3875
+ ++++ verifying plastic till ice stream using test I ++++
+ (My=49,193,769,3073,12289 corresponds to dy=5000,1250,312.5,78.13,19.53 m)
+ trying "mpiexec -np 2 pismv -test I -My 49 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
+ finished in  1.1180 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS in velocity relative to exact solution:
+  |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+  |        23.3329    7.69421     0.98956   23.3329    0.0000    7.6942    0.0000
+ trying "mpiexec -np 2 pismv -test I -My 193 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
+ finished in  3.2881 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS in velocity relative to exact solution:
+  |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+  |         1.3246    0.44147     0.05678    1.3246    0.0000    0.4415    0.0000
+ trying "mpiexec -np 2 pismv -test I -My 769 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
+ finished in 12.0152 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS in velocity relative to exact solution:
+  |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
+  |         0.0923    0.03117     0.00401    0.0923    0.0000    0.0312    0.0000
+ ++++ verifying isothermal SIA w non-flat bed using test L ++++
+ (Mx=My=31,61,91,121,181 corresponds to dx=dy=60,30,20,15,10 km)
+ trying "mpiexec -np 2 pismv -test L -Mx 31 -My 31 -Mz 31 -y 25000.0 -verbose 1"
+ finished in 13.2488 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.152375  381.614581   15.555426    0.006689     6.533219
+ trying "mpiexec -np 2 pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000.0 -verbose 1"
+ finished in 169.4863 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.206286  359.083724    4.984371    0.002643     1.386802
+ trying "mpiexec -np 2 pismv -test L -Mx 91 -My 91 -Mz 31 -y 25000.0 -verbose 1"
+ finished in 821.1084 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.159108  306.654292    3.789676    0.001773     1.542505
+ ++++ verifying thermocoupled SIA w variable accum using test G ++++
+ (Mx=My=Mz=61,91,121,181,241 corresponds to dx=dy=30,20,15,10,7.5 km
+ and dz=66.7,44.4,33.3,22.2,16.7 m)
+ trying "mpiexec -np 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000.0 -verbose 1"
+ finished in 120.9870 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               2.107584   64.364190   19.550635    0.017980     2.822391
+  |temp      :        maxT         avT    basemaxT     baseavT  basecenterT
+  |               1.920759    1.050554    1.533177    0.471904     0.069055
+  |Sigma (3D):         max          av
+  |               0.051570    0.002843
+  |surf vels :     maxUvec      avUvec        maxW         avW
+  |               0.263333    0.070287    0.022908    0.002659
+ trying "mpiexec -np 2 pismv -test G -Mx 91 -My 91 -Mz 91 -y 25000.0 -verbose 1"
+ finished in 882.4219 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.950808   29.790284    9.032937    0.007974     0.009471
+  |temp      :        maxT         avT    basemaxT     baseavT  basecenterT
+  |               1.108004    0.556731    0.962611    0.238721     0.025394
+  |Sigma (3D):         max          av
+  |               0.025978    0.001190
+  |surf vels :     maxUvec      avUvec        maxW         avW
+  |               0.129822    0.032835    0.035400    0.004319
+ trying "mpiexec -np 2 pismv -test G -Mx 121 -My 121 -Mz 121 -y 25000.0 -verbose 1"
+ finished in 3634.9651 seconds; reported numerical errors as follows:
+  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+  |               0.520703   28.348163    4.989002    0.004474     0.806247
+  |temp      :        maxT         avT    basemaxT     baseavT  basecenterT
+  |               0.810869    0.360046    0.781534    0.141099     0.009927
+  |Sigma (3D):         max          av
+  |               0.061469    0.000725
+  |surf vels :     maxUvec      avUvec        maxW         avW
+  |               0.089217    0.020179    0.046493    0.005915
 \end{verbatim}
 \end{quote}\normalsize
 
@@ -838,15 +926,15 @@ $ verifynow -n 2 -l 3
 
 EISMINT I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  ``EISMINT'' stands for European Ice Sheet Modeling INiTiative.  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  
 
-EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.  (On the other hand, EISMINT I is a perfectly reasonable task for PISM.  It is strictly easier to perform the EISMINT I experiments than the verification relative to tests A, B, C, D, and E described in the previous section.  But one learns \emph{much} more about numerical performance through verification with exact solutions, and in the isothermal flat base case considered in EISMINT I, the selection of exact solutions is copious.)
+EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.
 
-EISMINT II \cite{EISMINT00} was both a more significant, and certainly more controversial, intercomparison.  It clearly pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the EISMINT II experiments; these are described in the next subsection.
+EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the EISMINT II experiments; these are described in the next subsection.
 
-The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = Heinrich Event INtercOmparison, and POLICE = POLar ICE sheet modelss.  None of these are completed and published and the last is still in early planning.  
+The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = Heinrich Event INtercOmparison, and POLICE = POLar ICE sheet modelss.  None of these are completed or published at the time of this writing.
 
-Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  The point is that we believe the continuum problem described by HEINO to be not-easily-approximateable, regardless of the details of the numerical schemes.  (Feel free to write to \verb|ffelb@uaf.edu| on this topic, of course.)
+Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  We believe the continuum problem described by HEINO to not be easily approximateable, regardless of the details of the numerical schemes.
 
-Again as of July 2007, the PISM authors plan to participate in ISMIP-POLICE and an upcoming Marine Ice Sheet Intercomparison exercise.
+As of July 2007, the PISM authors plan to participate in ISMIP-POLICE and an upcoming Marine Ice Sheet Intercomparison exercise.
 
 \subsection{EISMINT II in PISM}  There are seven experiments described in the EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
@@ -1350,13 +1438,6 @@ consider options such as \verb|-log_summary| to get diagnostics written to the t
 \bibliographystyle{siam}
 
 \appendix
-
-\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize}
-\newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
-\newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
-\newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
-\newcommand{\optdefrestrict}[3]{\rawopt{#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad}
-\newcommand{\und}{$\underline{\,\,\,}$}
 
 \clearpage\newpage
 \section{PISM command line options}\label{sect:options}
