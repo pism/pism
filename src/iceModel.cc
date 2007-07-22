@@ -93,7 +93,11 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
     PetscEnd();
-  }        
+  }
+  
+  psParams.svlfp = 0.0;  // default polar stereographic projection settings
+  psParams.lopo = 90.0;
+  psParams.sp = -71.0;
 }
 
 

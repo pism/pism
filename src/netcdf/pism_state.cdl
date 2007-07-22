@@ -22,7 +22,8 @@
 //
 // 1.  those variables with pism_intent attribute "model_state" are *required* if the .nc file is
 //     to be used to initialize PISM (by "-if", i.e. without bootstrapping)
-// 2.  those variables with "mapping" are not model state but are generally required
+// 2.  those variables with "mapping" are not model state but are generally required by PISM and generally
+//     will affect programs which display or process nc files
 // 3.  those variables with "climate_steady" or "climate_snapshot" are boundary
 //     conditions stored from an earlier bootstrap, or are initialized to constants, but these could be 
 //     variables modified by external models (e.g. of ocean or atmosphere ...); modifying these variables 
@@ -43,11 +44,13 @@ dimensions:
   t = UNLIMITED;
 
 variables: // The names of variables are magic in PISM source.
-  int polar_stereographic;  // the following choices are clearly tied to Antarctic use and should change
+// the following choices are clearly tied to Antarctic but they are only defaults because
+// if the input or bootstrap file has this var then it is written into the pism state file
+  int polar_stereographic;
     polar_stereographic:grid_mapping_name = "polar_stereographic";
-    polar_stereographic:straight_vertical_longitude_from_pole = 0;
-    polar_stereographic:latitude_of_projection_origin = 90;
-    polar_stereographic:standard_parallel = -71;
+    polar_stereographic:straight_vertical_longitude_from_pole = 0.0;
+    polar_stereographic:latitude_of_projection_origin = 90.0;
+    polar_stereographic:standard_parallel = -71.0;
     polar_stereographic:pism_intent = "mapping";
   float x(x);
     x:axis = "X";
@@ -142,7 +145,7 @@ variables: // The names of variables are magic in PISM source.
     Ts:pism_intent = "climate_steady";  // at this point; change to default "climate_snapshot" according
                                         // to -forcing?
   float ghf(t,x,y);
-    ghf:long_name = "upward_geothermal_heat_flux";
+    ghf:long_name = "upward_geothermal_flux";
     ghf:units = "W m-2";
     ghf:pism_intent = "climate_steady";  // at this point; ditto
   float accum(t,x,y);

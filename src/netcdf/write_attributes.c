@@ -96,9 +96,9 @@
    int csurf_dims[RANK_csurf];
    int wsurf_dims[RANK_wsurf];
 
-   int polar_stereographic_straight_vertical_longitude_from_pole[1];
-   int polar_stereographic_latitude_of_projection_origin[1];
-   int polar_stereographic_standard_parallel[1];
+   double polar_stereographic_straight_vertical_longitude_from_pole[1];
+   double polar_stereographic_latitude_of_projection_origin[1];
+   double polar_stereographic_standard_parallel[1];
 
    /* enter define mode */
 if (grid.rank == 0) {
@@ -255,13 +255,13 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, polar_stereographic_id, "grid_mapping_name", 19, "polar_stereographic");
    check_err(stat,__LINE__,__FILE__);
    polar_stereographic_straight_vertical_longitude_from_pole[0] = 0;
-   stat = nc_put_att_int(ncid, polar_stereographic_id, "straight_vertical_longitude_from_pole", NC_INT, 1, polar_stereographic_straight_vertical_longitude_from_pole);
+   stat = nc_put_att_double(ncid, polar_stereographic_id, "straight_vertical_longitude_from_pole", NC_DOUBLE, 1, polar_stereographic_straight_vertical_longitude_from_pole);
    check_err(stat,__LINE__,__FILE__);
    polar_stereographic_latitude_of_projection_origin[0] = 90;
-   stat = nc_put_att_int(ncid, polar_stereographic_id, "latitude_of_projection_origin", NC_INT, 1, polar_stereographic_latitude_of_projection_origin);
+   stat = nc_put_att_double(ncid, polar_stereographic_id, "latitude_of_projection_origin", NC_DOUBLE, 1, polar_stereographic_latitude_of_projection_origin);
    check_err(stat,__LINE__,__FILE__);
    polar_stereographic_standard_parallel[0] = -71;
-   stat = nc_put_att_int(ncid, polar_stereographic_id, "standard_parallel", NC_INT, 1, polar_stereographic_standard_parallel);
+   stat = nc_put_att_double(ncid, polar_stereographic_id, "standard_parallel", NC_DOUBLE, 1, polar_stereographic_standard_parallel);
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, polar_stereographic_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);

@@ -41,6 +41,15 @@ struct InterpCtx {
   Vec fine;
 };
 
+// this structure is to save polar stereographic projection
+// defaults are for Antarctic ice sheet
+struct PolarStereoParams {
+  // these are "double" and not "float" ultimately because of how ncgen works
+  double svlfp; // straight_vertical_longitude_from_pole; defaults to 0
+  double lopo;  // latitude_of_projection_origin; defaults to 90
+  double sp;    // standard_parallel; defaults to -71
+};
+
 // this is a utility to get a IceType based on options from user, for initialization
 // of an instance of IceModel below; see iceModel.cc
 PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum);
@@ -124,8 +133,6 @@ public:
 
   // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
-  // USED TEMPORARILY UNTIL THE NEW BOOTSTRAP FUNCTION IS COMPLETE:
-  PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
 
@@ -177,6 +184,8 @@ protected:
   static const PetscScalar DEFAULT_MAX_HMELT;
 
   IceGrid        &grid;
+
+  PolarStereoParams  psParams;
 
   IceType        &ice;
   BasalType      *basal;
@@ -415,18 +424,24 @@ protected:
   PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
 
   // see iMIOnetcdf.cc
-  Vec    vbalvel;
-  PetscErrorCode createMask_legacy(PetscTruth balVelRule);
   PetscErrorCode putTempAtDepth();
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
-  PetscErrorCode cleanInputData_legacy();
   PetscErrorCode nc_check(int stat);
-  PetscErrorCode ncVarBcastVec(int ncid, int vid, Vec *vecg);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
   PetscErrorCode setAccumInOcean();
+
+  // see iMIOlegacy.cc
+  // these are used in legacy pant and pismr runs and apply to "init.nc" which has non-standard
+  // bootstrap conventions
+  Vec    vbalvel;
+  PetscErrorCode cleanJustNan_legacy();
+  PetscErrorCode createMask_legacy(PetscTruth balVelRule);
+  PetscErrorCode cleanInputData_legacy();
+  PetscErrorCode reconfigure_legacy_Mbz();
+  PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
 
 private:
   // Pieces of the Macayeal Velocity routine defined in iMmacayeal.cc.
