@@ -71,7 +71,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   char inFile[PETSC_MAX_PATH_LEN], dTFile[PETSC_MAX_PATH_LEN], dSLFile[PETSC_MAX_PATH_LEN];
   PetscTruth inFileSet, bootFileSet, dTforceSet, dSLforceSet, nopddSet;
   
-  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
+  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // wait on init hook; possible regridding!
 
   verbPrintf(3, grid.com,"geothermal flux vGhf is being set to: %f\n",
              EISMINT_G_geothermal);
@@ -162,6 +162,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   if (!isInitialized()) {
     SETERRQ(1, "IceGRNModel has not been initialized.\n");
   }
+
+  ierr = afterInitHook(); CHKERRQ(ierr);  // note regridding can happen here
   return 0;
 }
 

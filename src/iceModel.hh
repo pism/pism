@@ -117,6 +117,7 @@ public:
 
   // see iMutil.cc
   PetscErrorCode initFromOptions();
+  PetscErrorCode initFromOptions(PetscTruth doHook);
 
   // see iMviewers.cc
   PetscErrorCode setSoundingFromOptions();

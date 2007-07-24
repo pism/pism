@@ -624,8 +624,15 @@ PetscErrorCode IceModel::getSurfaceValuesOf3D(Vec v3D, Vec &gsurf) {
 }
 
 
-
 PetscErrorCode IceModel::initFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = initFromOptions(PETSC_TRUE); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
   PetscTruth inFileSet, bootstrapSet, bootstrapSetLegacy;
   char inFile[PETSC_MAX_PATH_LEN];
@@ -652,24 +659,14 @@ PetscErrorCode IceModel::initFromOptions() {
     SETERRQ(1,"Model has not been initialized.");
   }
   
-  ierr = afterInitHook(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceModel::afterInitHook() {
-  PetscErrorCode ierr;
-  PetscTruth     regridFileSet = PETSC_FALSE;
-  char           regridFile[PETSC_MAX_PATH_LEN];
-  PetscTruth     LxSet, LySet, LzSet;
-  PetscScalar    my_Lx, my_Ly, my_Lz;
-
   if (yearsStartRunEndDetermined == PETSC_FALSE) {
     ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
   }
   
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
+  PetscTruth     LxSet, LySet, LzSet;
+  PetscScalar    my_Lx, my_Ly, my_Lz;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &my_Lx, &LxSet); CHKERRQ(ierr);
   if (LxSet == PETSC_TRUE) {
     ierr = grid.rescale(my_Lx*1000.0, grid.p->Ly, grid.p->Lz); CHKERRQ(ierr);
@@ -682,6 +679,18 @@ PetscErrorCode IceModel::afterInitHook() {
   if (LzSet == PETSC_TRUE) {
     ierr = grid.rescale(grid.p->Lx, grid.p->Ly, my_Lz); CHKERRQ(ierr);
   }
+
+  if (doHook == PETSC_TRUE) {
+    ierr = afterInitHook(); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceModel::afterInitHook() {
+  PetscErrorCode ierr;
+  PetscTruth     regridFileSet = PETSC_FALSE;
+  char           regridFile[PETSC_MAX_PATH_LEN];
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
                                &regridFileSet); CHKERRQ(ierr);

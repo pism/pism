@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{152}
+\newcommand{\PISMREV}{155}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -287,9 +287,11 @@ Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 \clearpage\newpage
 \section{Getting started}\label{sect:start}
 
-\subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  And real data is something we cannot generally distribute under the GNU Public License.  (Real ice sheet and ice shelf data \emph{is} available on the web as part of the EISMINT intercomparison efforts; see sections \ref{sect:valid} and \ref{sect:real}.)  So this section describes how PISM does experiment F in the EISMINT II thermomechanical coupling intercomparison \cite{EISMINT00}.  In this experiment one tries to approximate an unstable equilibrium of the thermomechanically coupled differential equations for a shallow, grounded ice sheet.  One gets the infamous ``spokes'' \cite{BBL,PayneBaldwin}.  The prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km, but the vertical grid is not prescribed.  Runs are for 200,000 model years.
+\subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  Real ice sheet and ice shelf data are available on the web as part of the EISMINT intercomparison efforts, and sections \ref{sect:real} and \ref{sect:valid}, respectively, are tutorials on the use of PISM as a Greenland ice sheet and Ross ice shelf flow model.
 
-PISM always allows choice of the grid in three dimensions.  A runtime option chooses the number of grid points in each direction; the number of points is one greater than the number of subintervals.  We choose the standard 25km grid in the horizontal and use 201 grid points in the vertical for a 25 m (equally-spaced) grid because the computational box is 5000 m for EISMINT II experiment F in PISM.  The executable is ``\t{pisms}'', a name which has trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM.  Here is a short 2000 year run.
+For now, however, and to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II thermomechanical coupling intercomparison \cite{EISMINT00}.  In this experiment one tries to approximate an unstable equilibrium of the thermomechanically coupled differential equations for a shallow, grounded ice sheet, and one inevitably gets the infamous ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin}.  The prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km, but the vertical grid is not prescribed.  Runs are for 200,000 model years.
+
+PISM always allows choice of the grid in three dimensions.  A runtime option chooses the number of grid points in each direction.  (Note that the number of points is one greater than the number of subintervals or grid spaces.)  We choose the standard 25km grid in the horizontal and use 201 grid points in the vertical for a 25 m (equally-spaced) grid because the computational box is 5000 m for EISMINT II experiment F in PISM.  The executable is ``\t{pisms}'', a name which has trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM.  Here is a short 2000 year run.
 
 \small\begin{quote}\begin{verbatim}
 $  pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
@@ -364,94 +366,42 @@ The next three columns in the summary are the volume of the ice in $10^6 \,\text
 
 This summary of the model state can be expanded by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.
 
-\subsection{Visualizing the results}  There are three modes for visualizing the various quantities in PISM.\begin{itemize}
-\item At runtime, various diagnostic viewers can be specified by options of the form \verb|-d HTt|; see the Diagnostic viewers section below.  These viewers are updated at each step and work under X windows.  The format is limited by the style of PETSc viewers.  We find that these viewers suffice for quick visualization.  Those diagnostic viewers which show ``soundings'' are controlled by the options \verb|-id|, \verb|-jd|; see section \ref{sect:options}.  Those diagnostic viewers which show slices parallel to the bed are controlled by the option \verb|-kd|.
+\subsection{Visualizing the results}  There are two basic modes for visualizing the various quantities in PISM, namely runtime viewers and the visualization of the final NetCDF file.
 
-\item The state of the model can be output in NetCDF format using the option \verb|-o foo -of n| to create the NetCDF file \verb|foo.nc|.  The resulting NetCDF file can be viewed or modified with the tools described in table \ref{tab:NetCDFview}.
+At runtime, various diagnostic viewers can be specified by options of the form \verb|-d HTt| or \verb|-dbig HTt|; see Appendix C.  These viewers are updated at each step and work under X windows.  The format is limited by the style of PETSc viewers but these viewers suffice for quick visualization and allow the monitoring of the run.  Note that those diagnostic viewers which show slices parallel to the bed are controlled by the option \verb|-kd|, while those which show ``soundings'' are controlled by the options \verb|-id|, \verb|-jd|; see Appendix A.
+
+When a PISM run is finished, the state of the model is output in NetCDF format.  The name can be specified by the option \verb|-o|, so \verb|-o foo| writes the NetCDF file \verb|foo.nc|.  The resulting NetCDF file can be viewed or modified with a variety of tools, some of which are mentioned in table \ref{tab:NetCDFview}.  We find \verb|ncview| to be the fastest routine way to look at PISM output files.
 
 \begin{table}[h]
 \caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
-\small
+\scriptsize
 \begin{tabular}{@{}llll}\hline
-\textbf{Tool} & \textbf{Site} \\ \hline
-\verb|ncview| & \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html} \\
-\verb|ncBrowse| & \url{http://www.epic.noaa.gov/java/ncBrowse/} \\
-CSIRO MATLAB/netCDF interface & \scriptsize \url{http://www.marine.csiro.au/sw/matlab-netcdf.html} \small \\
-\verb|NCO| = the NetCDF Operators & \url{http://nco.sourceforge.net/} \\
+\textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
+\verb|ncdump| & \emph{included with any NetCDF distribution} & dump as text file \\
+\verb|ncview| & \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html} & quick graphical view \\
+\verb|ncBrowse| & \url{http://www.epic.noaa.gov/java/ncBrowse/} & quick graphical view \\
+\verb|IDV| & \url{http://www.unidata.ucar.edu/software/idv/} & more complete visualization \\
+MATLAB/netCDF & \url{http://www.marine.csiro.au/sw/matlab-netcdf.html} & read and write from MATLAB \\
+\quad interface & & \\
+\verb|NCO| = the NetCDF & \url{http://nco.sourceforge.net/} & sophisticated manipulations \\
+\quad Operators & & \quad at command line\\
 \hline
 \multicolumn{2}{c}{See \url{http://www.unidata.ucar.edu/software/netcdf/docs/software.html} for additional tools.} \\
 \end{tabular}
 \normalsize
 \end{table}
 
-\item A \Matlab (\url{http://www.mathworks.com/}) output file, specifically a \Matlab script, can be produced by the options \verb|-o foo -of m|.  When executed in \Matlab, the script \verb|foo.m| records several two dimensional quantities, including two dimensional slices of three dimensional quantities like temperature and velocity.  The location of these slices is controlled by the options \verb|-id|, \verb|-jd|, \verb|-kd|; see the Runtime options section below.
-\end{itemize}
+\clearpage
+\newpage
+\section{Ice dynamics in PISM}\label{sect:dynamics}
 
+\subsection{Two models of ice flow: slow and fast, but always shallow}  An important fact about PISM is that there are two sets of equations which may be used to describe the manner in which the geometry and the temperature of the ice determine the flow of the ice.  First there are the equations of the shallow ice approximation (SIA) \cite{Fowler}, describing ice flowing as a function of the driving shear stresses of classical glacioloty.  Second, however, there are the Morland-MacAyeal-Schoof equations \cite{Morland,MacAyeal,SchoofStream} (or shallow shelf approximation = SSA) describing a membrane-type flow.  In the former case the shear stress at the base of the ice must be substantial, while in the latter case the base is assumed to slide fairly easily.  In fact, for the SSA equations there are two physical circumstances, that of ice shelves, where there is zero basal shear stress, and that of ice streams, where there is basal shear stress which might be proportional to till thickness \cite{MacAyeal} or might be based on a plasticity assumption for the till \cite{SchoofStream}.  Because of the typical magnitudes of the (vertically-integrated horizontal) velocities in these two cases, we identify the SIA flow as \emph{slow flow} and all cases of the SSA flow as \emph{fast flow}.
 
-\subsection{Verification of PISM}  The purpose of the separate executable \t{pismv} is to establish that the PISM code closely approximates an exact solution to the continuum equations of the model.  Thus one can check the numerical ``correctness'' of PISM at any time, at least in certain simplified situations in which exact solutions are known.  The executable \t{pismv} should certainly be used when changes to the source code occur.
+The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through the mask, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
 
-Also, one wants to quantify the limits on \emph{reportable accuracy} from an ice sheet simulation, and the verification tests give some indication of this.  Of course the exact solutions have significantly simplified boundary conditions etc., and in some cases they are not very physical.
+\subsection{The flow-type mask} \label{subsect:mask}
 
-There are several types of exact solution based tests which verify parts of PISM, including the isothermal shallow ice approximation (SIA) \cite{BLKCB}, the thermomechanically coupled SIA \cite{BBL,BB}, sliding in the SIA \cite{BLKCB}, and the MacAyeal equations for ice streams as ``dragging ice shelves'' \cite{MacAyeal} with a plastic till assumption \cite{SchoofStream}.  The underlying ice model code executed by \t{pismv} is identical to that executed by \verb|pismr| and \verb|pisms|, but the command line options are somewhat different.
-
-As noted in the section \ref{sect:install}, there is a Python script to execute a short selection of verifications, namely \t{verifynow.py}.  The use of this command is illustrated in section \ref{sect:verif}.
-
-Here is a basic isothermal verification example, which takes less than a minute on a single processor:
-
-\small\begin{quote}\begin{verbatim}
-$  pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31
-PISMV (verification mode)
-initializing Test B ...
-  [computational box for ice: ( 2400.00 km) x ( 2400.00 km) x ( 4000.00 m)]
-  [grid cell dimensions     : (   80.00 km) x (   80.00 km) x (  133.33 m)]
-running test B ...
-$$$$       YEAR (+     STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0
-$$$$    422.450 (+  0.00000[0 ]):   4.006   1.773    1.000   3600.000   283.454
-$v$f    438.358 (+ 15.90848[0d]):   4.006   2.131   <same>   3587.401    <same>
-$v$f    454.816 (+ 16.45735[0d]):   4.006   2.131   <same>   3574.205    <same>
-$v$f    471.836 (+ 17.02012[0d]):   4.006   2.131   <same>   3560.570    <same>
-$v$f    489.430 (+ 17.59408[0d]):   4.006   2.131   <same>   3546.692    <same>
-...
-$v$f  25310.273 (+ 60.00000[0m]):   4.006   3.130   <same>   2289.933    <same>
-$v$f  25370.273 (+ 60.00000[0m]):   4.006   3.130   <same>   2289.330    <same>
-$v$f  25422.450 (+ 52.17742[0e]):   4.006   3.130   <same>   2288.807    <same>
-done with run
-Actual ERRORS evaluated at final time (relative to exact solution):
-geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-               0.0083    11.8993   141.3549    8.4164    0.021347   5.3817
-Writing model state to file `verify.nc' ... done
-\end{verbatim}
-\end{quote}\normalsize
-
-Here the PISM numerical results were compared to the exact solution Test B from \cite{BLKCB}, which is the Halfar solution \cite{Halfar83}.  Test B is a zero accumulation isothermal shallow ice approximation (SIA) solution.  The exact solution was used as the initial condition and then at the end of the run when the numerical result was compared to the exact solution to compute errors.  As suggested in \cite{BLKCB}, we start at a convenient positive time in years ``\verb|-ys 422.45|''  and do a run of 25000 years.  Note that as the sheet became thinner the adaptive time-stepping scheme lengthens the steps up to the (default) maximum time step of 60 years.  A grid with $31\times 31$ points in the horizontal is used, matching the EISMINT I choice \cite{EISMINT96} in the horizontal.  No diagnostic viewers were requested though they are available.
-
-At the end of this \t{pismv} verification run the errors are reported.  These are the differences between the values computed numerically on the grid and the known exact solution at the same grid points.  In particular, while there are maximum thickness errors of up to 141 meters, the average thickness error is only 8.4 meters at the final time (on this very rough $31\times 31$ point grid).  For comparison, the errors for a finer $61\times 61$ grid are smaller:
-
-\small\begin{quote}\begin{verbatim}
-$  pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31
-PISMV (verification mode)
-initializing Test B ...
-  [computational box for ice: ( 2400.00 km) x ( 2400.00 km) x ( 4000.00 m)]
-  [grid cell dimensions     : (   40.00 km) x (   40.00 km) x (  133.33 m)]
-running test B ...
-$$$$      YEAR (+    STEP[N$]):     VOL    AREA MELTFabs     THICK0     TEMP0
-$$$$    422.45 (+  0.0000[0 ]):   3.999   1.762    1.000   3600.000   283.454
-$v$f    426.41 (+  3.9647[0d]):   3.999   1.934   <same>   3596.839    <same>
-$v$f    430.41 (+  3.9981[0d]):   3.999   1.934   <same>   3593.587    <same>
-$v$f    434.44 (+  4.0317[0d]):   3.999   1.934   <same>   3590.254    <same>
-...
-$v$f  25341.53 (+ 60.0000[0m]):   3.999   2.965   <same>   2284.171    <same>
-$v$f  25401.53 (+ 60.0000[0m]):   3.999   2.965   <same>   2283.570    <same>
-$v$f  25422.45 (+ 20.9180[0e]):   3.999   2.978   <same>   2283.361    <same>
-done with run
-Actual ERRORS evaluated at final time (relative to exact solution):
-geometry  :  prcntVOL  prcntAREA       maxH       avH   relmaxETA    domeH
-               0.0480     6.4037   133.5960    4.3618    0.009738   0.0638
-Writing model state to file `verify.nc' ... done
-\end{verbatim}
-\end{quote}\normalsize
-
-See \cite{BLKCB} for a more complete discussion of this particular test.  See the section \ref{sect:verif} for a more complete discussion of verification in PISM, including verification of the thermomechanically coupled SIA and of the MacAyeal equations for ice streams.
+\subsection{Evolution runs versus ``diagnostic'' runs}
 
 
 \clearpage
@@ -535,11 +485,6 @@ Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth th
 \normalsize
 \end{tabular}
 \end{table}
-
-\subsection{Fast flow and the flow-type mask} \label{subsect:mask}  An important fact about PISM is that there are two sets of equations which may be used to describe the manner in which the geometry and the temperature of the ice determine the flow of the ice.  First there are the equations of the shallow ice approximation (SIA) \cite{Fowler}, describing ice flowing as a function of the driving shear stresses of classical glacioloty.  Second, however, there are the Morland-MacAyeal-Schoof equations \cite{Morland,MacAyeal,SchoofStream} (or shallow shelf approximation = SSA) describing a membrane-type flow.  In the former case the shear stress at the base of the ice must be substantial, while in the latter case the base is assumed to slide fairly easily.  In fact, for the SSA equations there are two physical circumstances, that of ice shelves, where there is zero basal shear stress, and that of ice streams, where there is basal shear stress which might be proportional to till thickness \cite{MacAyeal} or might be based on a plasticity assumption for the till \cite{SchoofStream}.  Because of the typical magnitudes of the (vertically-integrated horizontal) velocities in these two cases, we identify the SIA flow as \emph{slow flow} and all cases of the SSA flow as \emph{fast flow}.
-
-The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through the mask, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
-
 
 
 \subsection{Understanding and controlling adaptive time-stepping}  Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
