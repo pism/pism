@@ -187,7 +187,6 @@ PetscErrorCode IceModel::setDefaults() {
   setDoBedDef(DEFAULT_DO_BED_DEF);
   setDoBedIso(DEFAULT_DO_BED_ISO);
   setBedDefIntervalYears(DEFAULT_BED_DEF_INTERVAL_YEARS);
-  setAllowRegridding(PETSC_TRUE);
   setNoSpokes(DEFAULT_NOSPOKESLEVEL);
   doPDD = PETSC_FALSE;
 

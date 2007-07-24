@@ -99,7 +99,6 @@ public:
   void setMuSliding(PetscScalar);
   void setGSIntervalYears(PetscScalar);
   void setBedDefIntervalYears(PetscScalar);
-  void setAllowRegridding(PetscTruth);
   void setNoSpokes(PetscInt);
   void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
   void setIsothermalFlux(PetscTruth);
@@ -240,7 +239,7 @@ protected:
   PetscTruth  useMacayealVelocity, doPlasticTill, doSuperpose, useConstantNuForMacAyeal, 
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
-  PetscTruth  showViewers, allowRegridding, doTempSkip;
+  PetscTruth  showViewers, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  useIsothermalFlux;
   char        adaptReasonFlag;
@@ -299,14 +298,9 @@ protected:
   PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);
   PetscErrorCode getSurfaceValuesOf3D(Vec v3D, Vec &g2D);
 
-  // see iMregrid.cc
+  // see iMregrid.cc (these use nc_util.cc heavily)
   PetscErrorCode regrid(const char *regridFile);
   PetscErrorCode regrid_netCDF(const char *fname);
-  PetscErrorCode getInterpCtx(const DA dac, const DA daf,
-                              const IceModel &cmodel, InterpCtx &interpCtx);
-  PetscErrorCode destroyInterpCtx(InterpCtx &i);
-  PetscErrorCode regridVar(const char *vars, char c, const InterpCtx &i,
-                           const Vec src, Vec dest);
 
   // see iMgrainsize.cc
   PetscErrorCode updateGrainSizeIfNeeded();

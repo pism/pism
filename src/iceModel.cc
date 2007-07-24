@@ -357,10 +357,6 @@ void IceModel::setBedDefIntervalYears(PetscScalar years) {
   bedDefIntervalYears = years;
 }
 
-void IceModel::setAllowRegridding(PetscTruth p) {
-  allowRegridding = p;
-}
-
 void IceModel::setIsothermalFlux(PetscTruth use) {
   useIsothermalFlux = use;
 }

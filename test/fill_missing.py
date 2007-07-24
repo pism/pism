@@ -19,19 +19,20 @@ def get_bad(a, bad_value):
 
   return points
 
-def laplace(a, bad_value, eps=2.):
+def laplace(a, bad_value, eps=1.):
   """Computes the solution to laplace's equation in the region where the
-  values of a are nan and mask != 0. Boundary conditions where mask != 0
-  are Dirichlet and where mask==0, the boundary condition is Neumann."""
+  values of a are equal to bad_value. Boundary conditions around bad_value
+  regions are Dirichlet."""
   t = transpose
   ind = get_bad(a, bad_value)
 
   change = 100
-  eps = 1
+  #eps = 1
 
   dimensions = shape(a)
 
-  before = sqrt((a[tuple(t(ind))]**2).mean())
+  #before = sqrt((a[tuple(t(ind))]**2).mean())
+  before = sqrt( (a[tuple(t(ind))]**2).mean() )
   while (abs(change) > eps):
     for e in ind:
       e = tuple(e)
@@ -58,11 +59,10 @@ def laplace(a, bad_value, eps=2.):
      
       row = tuple(row)
       col = tuple(col)
-   
-
       u = (row, col)
       a[tuple(e)] = a[u].mean()
-    after = sqrt((a[tuple(t(ind))]**2).mean())
+    after = sqrt( (a[tuple(t(ind))]**2).mean() )
+    #after = sqrt((a[tuple(t(ind))]**2).mean())
     change = after-before
     before = after
     print "change: " + str(change)

@@ -683,26 +683,16 @@ PetscErrorCode IceModel::afterInitHook() {
     ierr = grid.rescale(grid.p->Lx, grid.p->Ly, my_Lz); CHKERRQ(ierr);
   }
 
-  // When we regrid, the `small' model inherits the option `-regrid' but we
-  // don't want it to regrid itself, so we short-circuit that action.
-  if (allowRegridding == PETSC_TRUE) {
-    ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
-                                 &regridFileSet); CHKERRQ(ierr);
-    if (regridFileSet == PETSC_TRUE) {
-      ierr = regrid(regridFile); CHKERRQ(ierr);
-      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);  // resolve incompatibilites immediately;
-                                                              // this is called anyway at end of first time
-                                                              // step
-    }
+  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
+                               &regridFileSet); CHKERRQ(ierr);
+  if (regridFileSet == PETSC_TRUE) {
+    ierr = regrid(regridFile); CHKERRQ(ierr);
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
   }
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
-  // Note that basal melt rate is not read in as part of a stored model state or
-  // an initialization file.  Because basal melt rate is used in computing vertical
-  // velocity on the regular grid, and because that calculation could/does precede
-  // the first call to temperatureAgeStep(), we want to make sure the first vert
-  // velocities do not use junk from uninitialized basal melt rate.
+  // make sure the first vertical velocities do not use junk from uninitialized basal melt rate.
   ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
 
   ierr = initBasalTillModel(); CHKERRQ(ierr);
