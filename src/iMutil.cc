@@ -541,7 +541,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
                          origfrac); CHKERRQ(ierr);
     }
   }
-
   return 0;
 }
 
@@ -558,10 +557,16 @@ PetscErrorCode IceModel::summaryPrintLine(
     ierr = verbPrintf(2,grid.com,
       "       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
   } else {
-    ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
-                       year, dt/secpera, tempskipCount, adaptReason, 
-                       volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
-                       H0,T0); CHKERRQ(ierr);
+    if (tempAndAge == PETSC_FALSE) {
+      ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f   <same>%11.3f    <same>",
+                         year, dt/secpera, tempskipCount, adaptReason, 
+                         volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
+    } else { // general case
+      ierr = verbPrintf(2,grid.com, "%11.3f (+%9.5f[%d%c]):%8.3f%8.3f%9.3f%11.3f%10.3f",
+                         year, dt/secpera, tempskipCount, adaptReason, 
+                         volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
+                         H0,T0); CHKERRQ(ierr);
+    }
   }
   return 0;
 }

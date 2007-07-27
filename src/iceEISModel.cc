@@ -29,16 +29,6 @@ IceEISModel::IceEISModel(IceGrid &g, IceType &i)
 }
 
 
-void IceEISModel::setExperName(char name) {
-  expername = name;
-}
-
-
-char IceEISModel::getExperName() {
-  return expername;
-}
-
-
 void IceEISModel::setflowlawNumber(PetscInt law) {
   flowlawNumber = law;
 }
@@ -58,8 +48,23 @@ PetscErrorCode IceEISModel::setFromOptions() {
      and for ISMIP HEINO see simplify.cc and the derived classes of IceModel
      it uses */
   /* note EISMINT I is NOT worth implementing; for fixed margin isothermal 
-     tests do "pismv -test A" or "pismv -test E"; for moving margin isothermal
-     tests do "pismv -test B" or "-test C" or "-test D" or "-test H" */
+     tests compare "pismv -test A" or "pismv -test E"; 
+     for moving margin isothermal tests compare "pismv -test B" or "-test C" 
+     or "-test D" */
+
+  // apply eismint defaults settings; options may overwrite
+  setThermalBedrock(PETSC_FALSE);
+  setUseMacayealVelocity(PETSC_FALSE);
+  setIsDrySimulation(PETSC_TRUE);
+  setDoGrainSize(PETSC_FALSE);
+  setEnhancementFactor(1.0);
+  setIncludeBMRinContinuity(PETSC_FALSE);
+
+  // make bedrock material properties into ice properties
+  // (note Mbz=1 is default, but want ice/rock interface segment to see all ice)
+  bedrock.rho = ice.rho;
+  bedrock.k = ice.k;
+  bedrock.c_p = ice.c_p;  
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example. */
@@ -69,7 +74,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
     if ((temp >= 'A') && (temp <= 'H')) {
-      setExperName(temp);
+      expername = temp;
     } else {
       SETERRQ(2,"option -eisII must have value A, B, C, D, E, F, G, or H\n");
     }
@@ -84,23 +89,28 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
 PetscErrorCode IceEISModel::initFromOptions() {
   PetscErrorCode      ierr;
-  char                inFile[PETSC_MAX_PATH_LEN];
-  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
-  const PetscScalar   L              = 750e3;      // Horizontal extent of grid
+  PetscTruth          inFileSet, bootFileSet;
+  bool                infileused;
+  char                inFile[PETSC_MAX_PATH_LEN], bootFile[PETSC_MAX_PATH_LEN];
 
+  // check if input file was used
+  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", bootFile,
+                               PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  if (inFileSet == PETSC_TRUE) {
-    ierr = initFromFile(inFile); CHKERRQ(ierr);
-  } else {
+  infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
+  
+  if (!infileused) { 
+    // initialize from EISMINT II formulas
     ierr = verbPrintf(1,grid.com, 
               "initializing EISMINT II experiment %c ... \n", 
-              getExperName()); CHKERRQ(ierr);
+              expername); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
     // following will be part of saved state; not reset if read from file
     // if no inFile then starts with zero ice
+    const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
     ierr = VecSet(vh, 0);
     ierr = VecSet(vH, 0);
     ierr = VecSet(vbed, 0);
@@ -112,7 +122,8 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
     // note height of grid must be great enough to handle max thickness
-    switch (getExperName()) {
+    const PetscScalar   L              = 750e3;      // Horizontal extent of grid
+    switch (expername) {
       case 'A':
         ierr = grid.rescale(L, L, 4500); CHKERRQ(ierr);
         break;
@@ -147,38 +158,20 @@ PetscErrorCode IceEISModel::initFromOptions() {
       default:  
         SETERRQ(1,"option -eisII value not understood; EISMINT II experiment of given name may not exist.\n");
     }
+
+    ierr = initAccumTs(); CHKERRQ(ierr);
+    ierr = fillintemps(); CHKERRQ(ierr);
+    initialized_p = PETSC_TRUE;
+  }
+
+  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
+
+  if (infileused) {
+    ierr = initAccumTs(); CHKERRQ(ierr); // just overwrite accum and Ts with EISMINT II vals
   }
   
-  ierr = applyDefaultsForExperiment(); CHKERRQ(ierr);
-
-  ierr = initAccumTs(); CHKERRQ(ierr);
-  if (inFileSet == PETSC_FALSE) {
-    ierr = fillintemps(); CHKERRQ(ierr);
-  }
-
-  ierr = afterInitHook(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",getExperName());
+  ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
              CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceEISModel::applyDefaultsForExperiment() {
-
-  setThermalBedrock(PETSC_FALSE);
-  setUseMacayealVelocity(PETSC_FALSE);
-  setIsDrySimulation(PETSC_TRUE);
-  setDoGrainSize(PETSC_FALSE);
-  setEnhancementFactor(1.0);
-  setIncludeBMRinContinuity(PETSC_FALSE);
-
-  // make bedrock material properties into ice properties
-  // (note Mbz=1 is default, but want ice/rock interface segment to see all ice)
-  bedrock.rho = ice.rho;
-  bedrock.k = ice.k;
-  bedrock.c_p = ice.c_p;  
-
   return 0;
 }
 
@@ -191,7 +184,7 @@ PetscErrorCode IceEISModel::initAccumTs() {
   // EISMINT II specified values
   PetscScalar       S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
   PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
-  switch (getExperName()) {
+  switch (expername) {
     case 'A':
     case 'G':
     case 'H':
@@ -301,9 +294,9 @@ PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;
   
-  if (getExperName() == 'G') {
+  if (expername == 'G') {
       return Bfactor * ice.rho * grav * H; 
-  } else if (getExperName() == 'H') {
+  } else if (expername == 'H') {
       if (T + ice.beta_CC_grad * H > eismintII_temp_sliding) {
         return Bfactor * ice.rho * grav * H; // ditto case G
       } else {

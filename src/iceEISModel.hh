@@ -27,8 +27,6 @@
 class IceEISModel : public IceModel {
 public:
     IceEISModel(IceGrid &g, IceType &i);
-    void           setExperName(char);
-    char           getExperName();
     void           setflowlawNumber(PetscInt);
     PetscInt       getflowlawNumber();
     virtual PetscErrorCode setFromOptions();
@@ -37,9 +35,7 @@ public:
 private:
     char       expername;
     PetscInt   flowlawNumber;
-    PetscTruth inFileSet;
  
-    PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
     virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,

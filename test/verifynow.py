@@ -49,7 +49,7 @@ NP = 1
 LEVELS = 3
 PREFIX = ''
 MPIDO = 'mpiexec'
-TESTS = 'CEGI'
+TESTS = 'CGI'
 KSPRTOL = 1e-12 # for test I
 MVRTOL = 5e-7   # ditto
 
