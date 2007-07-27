@@ -38,7 +38,7 @@ os.remove(outputfile[1])
 
 #print petsc_compile_single, petsc_clinker, petsc_lib
 def xworks(string):
-    return os.system(string + ' 2>\&1 > /dev/null') == 0
+    return os.system(string + ' > /dev/null 2>&1') == 0
 petsc_cc = petsc_compile_single.split(' ')[0]
 petsc_cxx = petsc_cc.replace('mpicc', 'mpicxx')
 if xworks(petsc_cxx + ' -v'):
