@@ -13,7 +13,9 @@ my_ccflags += " -Wno-strict-aliasing -Wpointer-arith -Wconversion -Winline"
 #my_ccflags += " -Wcast-qual -Wpadded -Wunreachable-code" # These are excessive
 my_ccflags += " -g3 -pipe"
 
-defines = " -DWITH_FFTW=1 -DWITH_GSL=1"
+mt = os.environ.get('MARGIN_TRICK', '0')
+mt2 = os.environ.get('MARGIN_TRICK_TWO', '0')
+defines = ' -DMARGIN_TRICK=' + mt + ' -DMARGIN_TRICK_TWO=' + mt2
 
 makefile_contents = ('include ' + os.path.join(petsc_dir, 'bmake/common/base') + '\n'
             + 'ALL : \n'
@@ -60,34 +62,27 @@ petsc_env = Environment(ENV = {'PATH' : os.environ['PATH']},
                         LIBPATH=petsc_libpath,
                         RPATH=petsc_rpath)
 
-my_env = Environment(ENV = {'PATH' : os.environ['PATH']},
-                     CC=mpicc, CXX=mpicxx,
-                     CCFLAGS=my_ccflags,
-                     CPPPATH=[os.path.join(petsc_dir, 'include'),
-                              os.path.join(petsc_dir, 'bmake', petsc_arch)],
-                     LIBPATH=[os.path.join(petsc_dir, 'lib', petsc_arch),
-                              '/usr/X11R6/lib', '/usr/lib/atlas/sse2'],
-                     RPATH=[''])
-
-if True:
-    env = petsc_env
-    ccflags = string.join(petsc_ccflags)
+env = petsc_env
+ccflags = string.join(petsc_ccflags)
 
 conf = Configure(env)
-
-if conf.CheckCHeader('netcdf.h'):
-    defines += ' -DWITH_NETCDF=1'
+if not conf.CheckLibWithHeader('netcdf', 'netcdf.h', 'C'):
+    print 'Pism needs the netCDF (>=3.6.0) library and header.'
+    Exit(1)
+if not conf.CheckLibWithHeader(Split('gsl gslcblas'), 'gsl/gsl_integration.h', 'C'):
+    print 'Pism needs the GSL library and headers.'
+    Exit(1)
+if conf.CheckLibWithHeader('fftw3', 'fftw3.h', 'C'):
+    defines += " -DWITH_FFTW=1"
 else:
-    print 'No netCDF support.'
-    defines += ' -DWITH_NETCDF=0'
-
+    defines += " -DWITH_FFTW=0"
 env = conf.Finish()
 
-libpism_dir = os.path.join(os.getcwd(), 'obj')
+libpism_dir = os.path.join(prefix, 'lib')
 #print libpism_dir
 env.Append(CCFLAGS = ccflags + defines)
-env.Append(LIBPATH = [libpism_dir])
-env.Append(RPATH = [libpism_dir])
+env.Append(LIBPATH = ['.', libpism_dir])
+env.Append(RPATH = ['.', libpism_dir])
 
 #petsc_libs = ['petsc' + mod for mod in Split('ksp dm mat vec') + [""]]
 pism_libs = petsc_libs + Split('stdc++ netcdf fftw3 gsl gslcblas')
@@ -103,6 +98,6 @@ if False:
 
 Export('env prefix pism_libs')
 
-SConscript('src/SConscript', build_dir='obj', duplicate=0)
-SConscript('doc/SConscript', duplicate=0)
+SConscript('src/SConscript')
+SConscript('doc/SConscript')
 

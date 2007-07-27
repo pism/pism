@@ -1,45 +1,61 @@
 import os
 Import('env prefix pism_libs')
 
-libpism = env.SharedLibrary('pism', Split("""grid.cc materials.cc nc_util.cc iceModel.cc
-iMbasal.cc iMbeddef.cc iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMmacayeal.cc
-iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc iMdefaults.cc iMoptions.cc
-iMregrid.cc extrasGSL.cc cubature.c pism_signal.c"""))
+libpism_sources = Split("""
+extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrainsize.cc iMIO.cc
+iMIOnetcdf.cc iMlegacy.cc iMmacayeal.cc iMoptions.cc iMpdd.cc iMregrid.cc
+iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc materials.cc
+nc_util.cc beddefLC.cc forcing.cc cubature.c pism_signal.c""")
+libpism = env.SharedLibrary('pism', libpism_sources)
 
-flowTable = env.Program('flowTable', 'flowTable.cc', LIBS = ['pism'] + pism_libs)
-pismr = env.Program('pismr.cc', LIBS = ['pism'] + pism_libs)
-pisms = env.Program('pisms',
-      ['iceEISModel.cc', 'iceHEINOModel.cc', 'iceROSSModel.cc', 'pisms.cc'], 
-      LIBS = ['pism'] + pism_libs)
-shelf = env.Program('shelf', 'shelf.cc', LIBS = ['pism'] + pism_libs)
+libpismtests_sources = [os.path.join('exact', 'exactTest') + t + '.c' for t in
+                        'sABCDE sFG H I L'.split()]
+libpismtests = env.SharedLibrary('pismtests', libpismtests_sources)
 
-libpismtests = env.SharedLibrary('pismtests', Split("""exact/exactTestsABCDE.c exact/exactTestsFG.c 
-exact/exactTestH.c exact/exactTestI.c"""))
+testlibs = Split('pismtests gsl gslcblas m')
+testsource = [os.path.join('exact', 'simple') + t + '.c' for t in 'ABCD E FG H I L'.split()]
+simple = []
+for s in testsource:
+    p = env.Program(s, LIBS = testlibs)
+    simple.append(p)
+gridL = env.Program('exact/gridL.c', LIBS = testlibs)
 
-simpleISO = env.Program('simpleISO', 'exact/simpleISO.c', LIBS = ['tests', 'm'])
-simpleFG = env.Program('simpleFG', 'exact/simpleFG.c', LIBS = ['tests', 'm'])
-simpleI = env.Program('simpleI', 'exact/simpleI.c', LIBS = ['tests', 'm'])
+env.Alias('exact', simple + [gridL])
 
-pismv = env.Program('pismv', ['iceCompModel.cc', 'iceExactStreamModel.cc', 'pismv.cc'],
-                     LIBS = ['pism', 'pismtests'] + pism_libs)
+lpism = ['pism'] + pism_libs
 
-pant = env.Program('pant.cc', LIBS= ['pism'] + pism_libs)
-pgrn = env.Program(['pgrn.cc', 'iceGRNModel.cc'], LIBS= ['pism'] + pism_libs)
+## Standard Pism executables
+pismr = env.Program('pismr.cc', LIBS = lpism)
+pisms = env.Program(Split('pisms.cc iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc'),
+      LIBS = lpism)
+pismv = env.Program(Split('pismv.cc iCMthermo.cc iceCompModel.cc iceExactStreamModel.cc'),
+                     LIBS = ['pismtests'] + lpism)
+pant = env.Program('pant.cc', LIBS = lpism)
+pgrn = env.Program(['pgrn.cc', 'iceGRNModel.cc'], LIBS = lpism)
 
-#Default(flowTable, run, simplify, verify, simpleISO, simpleFG, simpleI, shelf, pant)
-Default(pismr, pisms, pismv, pant, pgrn)
+## Extras (these will not be installed)
+flowTable = env.Program('flowTable.cc', LIBS = lpism)
+tryLCbd = env.Program('tryLCbd', Split('exact/tryLCbd.cc beddefLC.cc materials.cc'), LIBS = lpism)
+shelf = env.Program('shelf.cc', LIBS = lpism)
 
 env.Alias('pismr', pismr)
 env.Alias('pisms', pisms)
 env.Alias('pismv', pismv)
 env.Alias('pant', pant)
 env.Alias('pgrn', pgrn)
+env.Alias('extras', [flowTable, tryLCbd])
 
-# Install
+## This is broken
+#env.Alias('shelf', shelf)
+
+## Install
 bindir = os.path.join(prefix, 'bin')
 libdir = os.path.join(prefix, 'lib')
 env.Install(bindir, [pismr, pisms, pismv, pant, pgrn])
 env.Install(libdir, [libpism, libpismtests])
 ib = env.Alias('install-bin', bindir)
 il = env.Alias('install-lib', libdir)
-env.Alias('install', [ib, il])
+install = env.Alias('install', [ib, il])
+
+#Default(install)
+Default(pismr, pisms, pismv, pant, pgrn)
