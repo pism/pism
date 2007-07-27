@@ -37,14 +37,22 @@ petsc_lib = output.readline()[:-1]
 os.remove(outputfile[1])
 
 #print petsc_compile_single, petsc_clinker, petsc_lib
+def xworks(string):
+    return os.system(string + ' 2>\&1 > /dev/null') == 0
 petsc_cc = petsc_compile_single.split(' ')[0]
 petsc_cxx = petsc_cc.replace('mpicc', 'mpicxx')
-if (os.access(petsc_cxx, os.X_OK)):
+if xworks(petsc_cxx + ' -v'):
     print 'Using mpicxx: ', petsc_cxx
 else:
     print 'Cannot use mpicxx: ', petsc_cxx
-    print 'Will try with mpicc: ', petsc_cc
-    petsc_cxx = petsc_cc
+    petsc_cxx = petsc_cc.replace('mpicc', 'mpic++')
+    if xworks(petsc_cxx + ' -v'):
+        print 'Using mpic++: ', petsc_cxx
+    else:
+        print 'Cannot use mpic++: ', petsc_cxx
+        print 'Will try with mpicc: ', petsc_cc
+        petsc_cxx = petsc_cc
+
 petsc_ccflags = [w for w in petsc_compile_single.split(' ')[2:]
                 if w[:2] in ('-f', '-W', '-g', '-p')]
 petsc_cpppath = [w[2:] for w in petsc_compile_single.split(' ')[2:]
