@@ -5,8 +5,8 @@ ALL : all
 # get PETSc environment, rules:
 include ${PETSC_DIR}/bmake/common/base
 
-
 #FLAGS:
+PISM_PREFIX?=`pwd`
 MARGIN_TRICK?=0
 MARGIN_TRICK_TWO?=0
 WITH_FFTW?=1
@@ -22,7 +22,7 @@ endif
 
 
 #VARIABLES:
-executables= pismr pismv pisms pgrn pant
+executables= pismr pismd pismv pisms pgrn pant
 extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
@@ -34,7 +34,7 @@ ice_csources= cubature.c pism_signal.c
 
 tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
 
-other_sources= pismr.cc pismv.cc pisms.cc pant.cc pgrn.cc\
+other_sources= pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc\
 	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc\
 	iceCompModel.cc iCMthermo.cc shelf.cc\
 	flowTable.cc tryLCbd.cc
@@ -49,20 +49,20 @@ ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
-all : depend libpism.so libtests.so $(executables) .makeremind
+all : depend libpism.so libtests.so $(executables) .pismmakeremind
 
 install : local_install clean
 
 local_install : depend libpism.so libtests.so $(executables)
-	@cp libpism.so lib/
-	@cp libtests.so lib/
-	@echo 'PISM libraries installed in lib/'
-	@cp $(executables) bin/
+	@cp libpism.so ${PISM_PREFIX}/lib/
+	@cp libtests.so ${PISM_PREFIX}/lib/
+	@echo 'PISM libraries installed in ' ${PISM_PREFIX}'/lib/'
+	@cp $(executables) ${PISM_PREFIX}/bin/
 	@rm -f libpism.so
 	@rm -f libtests.so
 	@rm -f $(executables)
-	@echo 'PISM executables installed in bin/'
-	@rm .makeremind
+	@echo 'PISM executables installed in ' ${PISM_PREFIX}'/bin/'
+	@rm .pismmakeremind
 
 libpism.so : ${ICE_OBJS}
 	${CLINKER} -shared ${ICE_OBJS} -o $@
@@ -72,6 +72,9 @@ libtests.so : ${TESTS_OBJS}
 	${CLINKER} -shared ${TESTS_OBJS} -o $@
 
 pismr : pismr.o libpism.so
+	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
+
+pismd : pismd.o libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o libpism.so
@@ -120,8 +123,8 @@ gridL : gridL.o libtests.so
 #% : %.cc
 #% : %.c
 
-.makeremind :
-	@touch .makeremind
+.pismmakeremind :
+	@touch .pismmakeremind
 	@echo '*** Remember to "make install".  For now, new executables are "./pismv", etc. ****'
 
 showEnv :

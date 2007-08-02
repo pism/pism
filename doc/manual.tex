@@ -371,19 +371,19 @@ When a PISM run is finished, the state of the model is output in NetCDF format. 
 
 \begin{table}[h]
 \caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
-\scriptsize
+\small
 \begin{tabular}{@{}llll}\hline
 \textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
 \verb|ncdump| & \emph{included with any NetCDF distribution} & dump as text file \\
-\verb|ncview| & \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html} & quick graphical view \\
+\verb|ncview| & \scriptsize\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}\small & quick graphical view \\
 \verb|ncBrowse| & \url{http://www.epic.noaa.gov/java/ncBrowse/} & quick graphical view \\
 \verb|IDV| & \url{http://www.unidata.ucar.edu/software/idv/} & more complete visualization \\
-MATLAB/netCDF & \url{http://www.marine.csiro.au/sw/matlab-netcdf.html} & read and write from MATLAB \\
+MATLAB/netCDF & \scriptsize\url{http://www.marine.csiro.au/sw/matlab-netcdf.html}\small & read and write from MATLAB \\
 \quad interface & & \\
 \verb|NCO| = the NetCDF & \url{http://nco.sourceforge.net/} & sophisticated manipulations \\
 \quad Operators & & \quad at command line\\
 \hline
-\multicolumn{2}{c}{See \url{http://www.unidata.ucar.edu/software/netcdf/docs/software.html} for additional tools.} \\
+\multicolumn{3}{c}{See \url{http://www.unidata.ucar.edu/software/netcdf/docs/software.html} for additional tools.} \\
 \end{tabular}
 \normalsize
 \end{table}
@@ -400,15 +400,15 @@ We emphasize that both the SIA and SSA models are \emph{shallow}.  That is, the 
 
 The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through the mask, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
 
-\subsection{The flow-type mask} \label{subsect:mask}
+\subsection{The flow-type mask} \label{subsect:mask}  [TO BE ADDED]
 
-\subsection{Evolution runs versus ``diagnostic'' runs}
+\subsection{Evolution runs versus ``diagnostic'' runs}  [TO BE ADDED]
 
 
 
 \clearpage
 \newpage
-\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}
+\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [TO BE ADDED]
 
 
 \clearpage
@@ -1006,7 +1006,7 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \clearpage\newpage
 \section{Validation}\label{sect:valid}
 
-\subsection{Validation of ice shelf numerics relative to Ross ice shelf data}  In \cite{MacAyealetal} a well-known validation of several ice shelf numerical models was performed relative to data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
+\subsection{Validation of ice shelf numerics relative to Ross ice shelf data}  MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
 
 Performing this validation requires data from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
 \begin{itemize}

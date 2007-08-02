@@ -672,6 +672,36 @@ PetscErrorCode IceModel::run() {
   return 0;
 }
 
+
+PetscErrorCode IceModel::diagnosticRun() {
+  PetscErrorCode  ierr;
+
+  // print out some stats about input state
+  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  adaptReasonFlag = ' '; // no reason for no timestep
+  tempskipCountDown = 0;
+  ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
+
+  // update basal till yield stress if appropriate; will modify and communicate mask
+  if (doPlasticTill == PETSC_TRUE) {
+    ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
+  }
+    
+  // compute velocities at depth
+  ierr = velocity(true); CHKERRQ(ierr);
+  
+  // update viewers and pause for a chance to view
+  ierr = updateViewers(); CHKERRQ(ierr);
+  PetscInt    pause_time = 5;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+  ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  return 0;
+}
+
+
 // note no range checking in these two:
 int IceModel::intMask(PetscScalar maskvalue) {
   return static_cast<int>(floor(maskvalue + 0.5));

@@ -41,6 +41,11 @@ struct InterpCtx {
   Vec fine;
 };
 
+struct MaskInterp {
+  int number_allowed;
+  int allowed_levels[50];// must be strictly increasing
+};
+
 // this structure is to save polar stereographic projection
 // defaults are for Antarctic ice sheet
 struct PolarStereoParams {
@@ -108,6 +113,7 @@ public:
   virtual PetscErrorCode run();
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
+  virtual PetscErrorCode diagnosticRun();
 
   // see iMdefaults.cc
   virtual PetscErrorCode setDefaults();
@@ -129,12 +135,14 @@ public:
   PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode dumpToFile_Matlab(const char *);
   PetscErrorCode writeFiles(const char* basename);
-  PetscErrorCode writeFiles(const char* basename, const char* formats);
+  PetscErrorCode writeFiles(const char* basename, const PetscTruth fullDiagnostics);
 
   // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
   PetscErrorCode initFromFile_netCDF(const char *fname);
+  PetscErrorCode readShelfStreamBCFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
+  PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
 
 protected:
    static const int MASK_SHEET;
@@ -424,6 +432,8 @@ protected:
   PetscErrorCode nc_check(int stat);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
+  PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
+                              Vec vecg, Vec vindzero, MaskInterp masktool);
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
   PetscErrorCode setAccumInOcean();

@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    ierr = m->writeFiles("verify"); CHKERRQ(ierr);
+    ierr = m->writeFiles("verify",(PetscTruth) (temp == 'I')); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, " ... done\n"); CHKERRQ(ierr);
   }
 

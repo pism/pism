@@ -14,12 +14,15 @@ WRIT_FILE = 'eis_green20.nc'
 ##### command line arguments #####
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "g:", ["grid"])
+  opts, args = getopt.getopt(sys.argv[1:], "g:p:", ["grid=","prefix="])
   for opt, arg in opts:
     if opt in ("-g", "--grid"):
       GRID_FILE = "grid" + arg + "-EISMINT"
       SUAQ_FILE = "suaq" + arg + "-EISMINT"
       WRIT_FILE = "eis_green" + arg + ".nc"
+    if opt in ("-p", "--prefix"):
+      GRID_FILE = arg + GRID_FILE
+      SUAQ_FILE = arg + SUAQ_FILE
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)

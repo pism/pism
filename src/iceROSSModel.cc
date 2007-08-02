@@ -613,7 +613,7 @@ PetscErrorCode IceROSSModel::writeROSSfiles() {
                                10, &formatSet); CHKERRQ(ierr);
   if ((outputSet == PETSC_TRUE) && (formatSet == PETSC_TRUE)
       && (strchr(format,'m') != NULL)) {
-    ierr = writeFiles(basename,"m"); CHKERRQ(ierr);  
+    ierr = writeFiles(basename,PETSC_TRUE); CHKERRQ(ierr);  
     ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);
   }
   return 0;

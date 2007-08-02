@@ -1,0 +1,15 @@
+// 3-dimensional diagnostic quantities
+  float u(t,x,y,z);
+    u:long_name = "horizontal velocity of ice in projection_x_coordinate direction";
+    u:units = "m s-1";
+    u:pism_intent = "diagnostic";
+  float v(t,x,y,z);
+    v:long_name = "horizontal velocity of ice in projection_y_coordinate direction";
+    v:units = "m s-1";
+    v:pism_intent = "diagnostic";
+  float w(t,x,y,z);
+    w:long_name = "vertical velocity of ice";
+    w:units = "m s-1";
+    w:pism_intent = "diagnostic";
+
+// global attributes

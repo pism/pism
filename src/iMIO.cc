@@ -101,17 +101,16 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
 
   
 PetscErrorCode  IceModel::writeFiles(const char* basename) {
-  PetscErrorCode ierr;
-
-  ierr = writeFiles(basename, "n"); CHKERRQ(ierr);
+  PetscErrorCode ierr = writeFiles(basename,PETSC_FALSE); CHKERRQ(ierr);
   return 0;
 }
 
-
-PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
+  
+PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth fullDiagnostics) {
   PetscErrorCode ierr;
+
   char b[PETSC_MAX_PATH_LEN];
-  char fmt[PETSC_MAX_PATH_LEN];
+  char fmt[PETSC_MAX_PATH_LEN] = "n";
   char ncf[PETSC_MAX_PATH_LEN]; // netCDF format
   char mf[PETSC_MAX_PATH_LEN];  // Matlab format
 
@@ -123,7 +122,6 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
   // We should leave space for a suffix and null byte
   strncpy(b, basename, PETSC_MAX_PATH_LEN-4);
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", b, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-  strncpy(fmt, formats, PETSC_MAX_PATH_LEN-4);
   ierr = PetscOptionsGetString(PETSC_NULL, "-of", fmt, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
   // to write in both NetCDF and Matlab format, for instance:
   //     '-o foo -of nm' will generate foo.nc and foo.m
@@ -132,6 +130,7 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
 
   if (strchr(fmt, 'p') != NULL) {
     ierr = verbPrintf(1, grid.com, "WARNING: .pb format no longer supported; writing .nc"); CHKERRQ(ierr);
+    strcat(b,"_pb");  // will write basename_pb.nc
     strcat(fmt,"n");
   }
 
@@ -139,7 +138,11 @@ PetscErrorCode IceModel::writeFiles(const char* basename, const char* formats) {
     strcpy(ncf, b);
     strcat(ncf, ".nc");
     ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
-    ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
+    if (fullDiagnostics == PETSC_TRUE) {
+      ierr = dumpToFile_diagnostic_netCDF(ncf); CHKERRQ(ierr);
+    } else {
+      ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
+    }
   }
 
   if (strchr(fmt, 'm') != NULL) {

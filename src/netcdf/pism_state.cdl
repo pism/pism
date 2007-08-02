@@ -44,9 +44,9 @@ dimensions:
   t = UNLIMITED;
 
 variables: // The names of variables are magic in PISM source.
-// the following choices are clearly tied to Antarctic but they are only defaults because
-// if the input or bootstrap file has this var then it is written into the pism state file
-  int polar_stereographic;
+  int polar_stereographic;  
+    // the following choices are clearly tied to Antarctic but they are only defaults because
+    // if the input or bootstrap file has this var then it is written into the pism state file
     polar_stereographic:grid_mapping_name = "polar_stereographic";
     polar_stereographic:straight_vertical_longitude_from_pole = 0.0;
     polar_stereographic:latitude_of_projection_origin = 90.0;
@@ -77,8 +77,8 @@ variables: // The names of variables are magic in PISM source.
     zb:units = "m";
     zb:positive = "up";
     zb:pism_intent = "mapping";
-  double t(t);  // note accuracy desirable even for long runs (e.g. day accuracy for 1e6 year runs
-                // so that PDD method works; also note appearance of year at each restart)
+  double t(t); // note accuracy desirable even for long runs (e.g. day accuracy for 1e6 year runs
+               // so that PDD method works; also note appearance of year at each restart)
     t:long_name = "time";
     t:units = "seconds since 2007-01-01 00:00:00";
     t:calendar = "none";
