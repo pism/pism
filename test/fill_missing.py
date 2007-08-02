@@ -108,8 +108,12 @@ except:
 
 print 'Reading from file: ' + fileName
 
-ncfile = CDF(outFileName, NC.WRITE)
-ncfile.automode()
+try:
+  ncfile = CDF(outFileName, NC.WRITE)
+  ncfile.automode()
+except CDFError,err:
+  print err[2]
+  sys.exit(2)
 
 for varName in variables:
   try:

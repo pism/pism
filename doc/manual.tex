@@ -1,4 +1,4 @@
-% Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+% Copyright (C) 2004-2007 Jed Brown and Ed Bueler and Nathan Shemonski
 %
 % This file is part of Pism.
 %
@@ -1139,30 +1139,31 @@ $  eis_core.py -t constant_piecewise_backward -s linear
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent As a result, two NetCDF files named \verb|eis_green20.nc| (or \verb|eis_green40.nc|) and \verb|eis_core.nc| will be created in the same directory.  The NetCDF file \verb|eis_green20.nc| is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|S|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
+\noindent As a result, two NetCDF files named \verb|eis_green20.nc| (or \verb|eis_green40.nc|) and \verb|eis_core.nc| will be created in the same directory.  The NetCDF file \verb|eis_green20.nc| is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|h|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
 
 \small\begin{quote}\begin{verbatim}
-$  ncview eis_green.nc
+$  ncview eis_green20.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent In order to perform somewhat of a checksum on the \verb|eis_green.nc|, the NCO tools (\url{http://nco.sourceforge.net/}) can be used.  The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable called \verb|check|:
+\noindent In order to perform somewhat of a checksum on the \verb|eis_green20.nc|, the NCO tools (\url{http://nco.sourceforge.net/}) can be used.  The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable named \verb|check|:
 
 \small\begin{quote}\begin{verbatim}
-$  ncap -O -vs "check=S-(H+b)" eis_green.nc eis_green_check.nc
+$  ncap -O -vs "check=h-(H+b)" eis_green20.nc eis_green_check.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent This variable holds the difference of \verb|S| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|S| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data will be ignored.
+\noindent This variable holds the difference of \verb|h| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|h| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data will be ignored.
 
 It also should be noted that bed elevation (\verb|b|) contains a missing value attribute of $0.0$. When viewing this data in Ncview, these values will show as white spots. If these missing values are left in, sharp formations may appear after some time in PISM. Thus, it might be useful to `smooth' the data. This can be done with another script named \verb|fill_missing.py|. To use this script, the following command can be run:
 
 \small\begin{quote}\begin{verbatim}
-$  fill_missing.py -i eis_green.nc -v b
+$  fill_missing.py -i eis_green.nc -v b -o eis_green_smoothed.nc
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent Here, \verb|eis_green.nc| is the input file, and \verb|b| is the variable with missing values. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors. Multiple variables can be fixed at the same time by separating the variable names by commas (e.g. \verb|fill_missing.py -i data.nc -v b,H,Ts|). The only requirement is that each variable has an attribute named \verb|missing_value|.
+\noindent Here, \verb|eis_green.nc| is the input file, \verb|b| is the variable with missing values, and \verb|eis_green_smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors. Multiple variables can be fixed at the same time by separating the variable names by commas \\
+(e.g. \verb|fill_missing.py -i data.nc -v b,H,Ts -o data_smoothed.nc|). The only requirement is that each variable has an attribute named \verb|missing_value|.
 
 The file \verb|eis_core.nc| contains the GRIP data used for the climate forcing options which will be explained later.
 
@@ -1195,30 +1196,29 @@ $  pgrn -bif eis_green20.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
 \noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in several default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|263.15|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
 
 \subsection{Running Greenland Experiments Using Bootstrapped Data}  There are several experiments that can be run using command line arguments with \verb|pgrn|. Some of them require the use of more python scripts, while single line commands are sufficient for others.
-\subsubsection{Steady State Experiments}  The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison (-ssl2). This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under a different flow law (Goldsby-Kohlstedt). Also, \verb|pgrn| will run with an enhancement factor of 1, rather than 3 as with SSL2.  An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
+\subsubsection{Steady State Experiments}  The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison (-ssl2). This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under slightly different parameters (namely, an enhancement factor of 1 and the Goldsby-Kohlstedt flow law).  An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
 
 \small\begin{quote}\begin{verbatim}
 $  ssl2_expr.py -n 8
 \end{verbatim}
 \end{quote}\normalsize
 
-\subsubsection{Climate Forcing}  The next experiment is intended to be carried out after the completion of the first steady state run using the steady model state. The main focus here is the option \verb|-forcing| which uses the GRIP data in \verb|eis_core.nc| to somewhat force the climate. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to simulate part of a global climate system, which is specified in \verb|eis_core.nc| and interpolated between years according to the options chosen when \verb|eis_core.py| was run. The data in \verb|eis_core.nc| goes about 250,000 years into the past. Therefore, it is necessary to manually set the year into the past when running \verb|pgrn|. To do this, the option \verb|-ys| is used. This experiment can be run using the following command:
+\subsubsection{Climate Forcing}  The next experiment is intended to be carried out after the completion of the steady state run using the resulting steady model state. The main focus here is the options \verb|-dTforcing| and \verb|-dSLforcing| which use the GRIP data in \verb|grip_dT.nc| and \verb|specmap_dSL.nc| to force the surface temperature and sea level respectively. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to simulate part of a global climate system, which is specified in \verb|grip_dT.nc| and \verb|specmap_dSL.nc| and interpolated between years according to the options chosen when \verb|eis_core.py| was run. The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years. Therefore, it is necessary to manually set the year into the past when running \verb|pgrn|. To do this, the option \verb|-ys| is used. This experiment can be run using the following command:
 
 \small\begin{quote}\begin{verbatim}
-$  pgrn -ccl3 -if green20_SSL3.nc -forcing eis_core.nc -ys -249900 \
-     -ye 0 -o green20_CCL3_y0
+$  pgrn -ccl3 -if green20_SSL3.nc -dTforcing grid_dT.nc \
+	-dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green20_CCL3_y0
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent The EISMINT Intercomparison also calls to run for another 500 years with $\bigtriangleup$T and $\bigtriangleup$Sea set to zero. If \verb|pgrn| is run beyond the times in the climate forcing data, this is exactly what it will do. So the rest of the experiment can be run using the following command:
+\noindent The EISMINT Intercomparison also calls to run for another 500 years with $\bigtriangleup$T and $\bigtriangleup$Sea set to zero. If \verb|pgrn| is run beyond the times in the climate forcing data, this is exactly what it will do. So the previous command can be run for another 500 years, or the forcing can be omitted completely using the following command:
 
 \small\begin{quote}\begin{verbatim}
-$  pgrn -ccl3 -if green20_CCL3_y0.nc -forcing eis_core.nc -y 500 \
-     -o green20_CCL3_y500
+$  pgrn -ccl3 -if green20_CCL3_y0.nc -y 500 -o green20_CCL3_y500
 \end{verbatim}
 \end{quote}\normalsize
 
-\subsubsection{Greenhouse Warming}  The last experiment (Greenhouse Warming) described in the EISMINT Intercomparison uses the model state obtained for present day (1989). From the commands before, this is file \verb|green20_CCL3_y0.nc|. The Greenhouse Warming experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years. The following command will run this experiment:
+\subsubsection{Greenhouse Warming}  The last experiment (Greenhouse Warming) described in the EISMINT Intercomparison uses the model state obtained for present day (1989). Using the previous commands, this is the file named \verb|green20_CCL3_y0.nc|. The Greenhouse Warming experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years. The following command will run this experiment:
 
 \small\begin{quote}\begin{verbatim}
 $  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3

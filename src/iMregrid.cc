@@ -88,6 +88,8 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, vtau, g3);
   CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'a', "accum", 2, lic, grid, grid.da2, vAccum, g2);
+  CHKERRQ(ierr);
 
   ierr = PetscFree(lic.a); CHKERRQ(ierr);
   

@@ -29,7 +29,12 @@ except getopt.GetoptError:
 
 # read specmap.017
 print "reading data from ",SPEC_FILE
-input = open(SPEC_FILE, 'r');
+try:
+  input = open(SPEC_FILE, 'r');
+except IOError:
+  print 'ERROR: File: ' + SPEC_FILE + ' could not be found.'
+  sys.exit(2)
+
 years_sea=[]
 d18Osea=[]
 dSea=[]
@@ -81,9 +86,14 @@ print "NetCDF file ",DSL_FILE," created"
 
 ##### delta T (and delta O18) from GRIP next  #####
 # read sum89-92-ss09-50yr.stp
-print "reading data from ",GRIP_FILE
 dim=[]
-input = open(GRIP_FILE, 'r')
+try:
+  print "reading data from ",GRIP_FILE
+  input = open(GRIP_FILE, 'r')
+except IOError:
+  print 'ERROR: File: ' + GRIP_FILE + ' could not be found.'
+  sys.exit(2)
+
 # remove headers 
 for n in zeros(8):
   input.readline()

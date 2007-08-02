@@ -90,7 +90,8 @@ PetscErrorCode IceSheetForcing::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
   
   PetscErrorCode ierr;
   int stat;
-  size_t M;
+  size_t M_s;
+  int M;
   float *f = NULL;
 
   if (rank == 0) {
@@ -103,7 +104,8 @@ PetscErrorCode IceSheetForcing::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
       SETERRQ2(1, "ncVarBcastDaVec: number of dimensions = %d for %s; should have ndims=1\n",
                ndims, name);
     }
-    stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
+    stat = nc_inq_dimlen(ncid, dimids[0], &M_s); CHKERRQ(nc_check(stat));
+    M = (int)M_s;
     f = new float[M];
     stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
   }
@@ -145,6 +147,7 @@ PetscErrorCode IceSheetForcing::initIndex(PetscScalar curr_year) {
     }
   }    
   index = l;
+  printf("index found: %d\n", index);
   // maybe we are already past our place.
   if (l >= len) {
     forcingActive = PETSC_FALSE;

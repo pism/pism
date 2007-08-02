@@ -401,7 +401,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   return 0;
 }
 
-
 PetscErrorCode IceModel::ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                                       Vec vecg, Vec vindzero) {
   PetscErrorCode  ierr;

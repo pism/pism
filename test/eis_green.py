@@ -27,8 +27,12 @@ except getopt.GetoptError:
 ##### grid20-EISMINT #####
 
 # open the data file and begin reading it
-print "reading grid data from ",GRID_FILE
-input=open(GRID_FILE, 'r')
+try:
+  print "reading grid data from ",GRID_FILE
+  input=open(GRID_FILE, 'r')
+except IOError:
+  print 'ERROR: File: ' + GRID_FILE + ' could not be found.'
+  sys.exit(2)
 
 dim=[]
 for num in input.readline().split():
@@ -57,8 +61,12 @@ input.close()
 ##### suaq20-EISMINT #####
 
 # open the data file and begin reading it
-print "reading thickness, bed elevation, and accumulation data from ",SUAQ_FILE
-input=open(SUAQ_FILE, 'r')
+try:
+  print "reading thickness, bed elevation, and accumulation data from ",SUAQ_FILE
+  input=open(SUAQ_FILE, 'r')
+except IOError:
+  print 'ERROR: File: ' + SUAQ_FILE + ' could not be found.'
+  sys.exit(2)
 
 dim=[]
 for num in input.readline().split():

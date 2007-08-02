@@ -32,14 +32,20 @@ print 'Running with ' + str(num_proc) + ' processors'
 # run pism setup stuff
 try:
   print '1. trivial amount of surface smoothing'
-  print 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file)
+  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file
+  print cmd
+  (status, output)=commands.getstatusoutput(cmd)
+
   print '2. 100k year run to get approximate temperature equilibrium (no surface change)'
-  print 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file)
+  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file
+  print cmd
+  (status, output)=commands.getstatusoutput(cmd)
+
   print '3. run for 100k years to head toward thermocoupled-geometry equil'
-  print 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >>'+stdout_file
-  (status, output)=commands.getstatusoutput('mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >>'+stdout_file)
+  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ys 0 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >>'+stdout_file
+  print cmd
+  (status, output)=commands.getstatusoutput(cmd)
+
 except KeyboardInterrupt:
   sys.exit(2)
 except:
