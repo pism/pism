@@ -748,7 +748,6 @@ PetscErrorCode IceModel::afterInitHook() {
      ,grid.p->history); CHKERRQ(ierr);
   
   ierr = createViewers(); CHKERRQ(ierr);
-
   return 0;
 }
 

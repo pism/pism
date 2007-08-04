@@ -26,16 +26,18 @@ def vprint(s):
 def read2dROSSfloat(mygrid,myarray,xs,xm,My,mymissing,myshift,myscale):
   vprint(mygrid.readline()) # ignor two lines
   vprint(mygrid.readline())
+  Mx = xs + xm
+  top = Mx - 1
   for i in range(xs):
     for j in range(My):
-      myarray[i,j] = mymissing
+      myarray[top - i,j] = mymissing
   for i in range(xm):
     j = 0
     for num in mygrid.readline().split():
-      myarray[i+xs,j] = (float(num) + myshift) * myscale
+      myarray[top - (i+xs),j] = (float(num) + myshift) * myscale
       j = j + 1
 
-# function convert velocities from (azimuth,magnitude) to (u,v)
+# function convert velocities from (azimuth,magnitude), with magnitude to (u,v)
 def uvGet(mag,azi):
   uv = zeros((2,),float32)
   uv[0] = mag * cos((pi/180.0) * azi)
@@ -68,6 +70,7 @@ xmROSS = int(dim[0])
 MyROSS = int(dim[1])
 xsROSS = MyROSS - xmROSS
 MxROSS = MyROSS
+top = MxROSS - 1
 lat = zeros((MxROSS, MyROSS), float32)
 lon = zeros((MxROSS, MyROSS), float32)
 mask = zeros((MxROSS,MyROSS), int16)
@@ -85,12 +88,12 @@ vprint(grid.readline())
 j=0;
 for line in range(xsROSS):
    for i in range(MyROSS):
-      lat[j,i] = 9999.;
+      lat[top-j,i] = 9999.;
    j = j + 1
 for line in range(xmROSS):
    latvalue = float(grid.readline())
    for i in range(MyROSS):
-      lat[j,i] = latvalue
+      lat[top-j,i] = latvalue
    j = j + 1
 vprint(grid.readline()) # read extra value
 # note there are actually 148 "columns position" values in 111by147Grid.dat file
@@ -100,40 +103,40 @@ i=0;
 for line in range(MyROSS):
    lonvalue = float(grid.readline())
    for j in range(MxROSS):
-      lon[j,i] = lonvalue
+      lon[top-j,i] = lonvalue
    i = i + 1
 vprint(grid.readline()) # read extra value
 vprint(grid.readline()) # ignor two lines
 vprint(grid.readline())
 for i in [0, 1]:
   for j in range(MyROSS):
-    mask[i,j] = MASK_SHEET
+    mask[top - i,j] = MASK_SHEET
 for i in range(xsROSS-2):
   for j in range(MyROSS):
-    mask[i+2,j] = MASK_FLOATING
+    mask[top - (i+2),j] = MASK_FLOATING
 for i in range(xmROSS):
   j = 0
   for num in grid.readline().split():
     if int(num) == 1:
-       mask[i+xsROSS,j] = MASK_FLOATING
+       mask[top - (i+xsROSS),j] = MASK_FLOATING
     else:
-       mask[i+xsROSS,j] = MASK_SHEET
+       mask[top - (i+xsROSS),j] = MASK_SHEET
     j = j + 1
 read2dROSSfloat(grid,azi,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
-read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
+read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0 / SECPERA)
 read2dROSSfloat(grid,thk,xsROSS,xmROSS,MyROSS,1.0,0.0,1.0)
 vprint(grid.readline()) # ignor two lines
 vprint(grid.readline())
 for i in range(xsROSS):
   for j in range(MyROSS):
-    accur[i,j] = -1
+    accur[top - i,j] = -1
 for i in range(xmROSS):
   j = 0
   for num in grid.readline().split():
     if float(num) == 1.0:
-       accur[i+xsROSS,j] = 1
+       accur[top - (i+xsROSS),j] = 1
     else:
-       accur[i+xsROSS,j] = 0
+       accur[top - (i+xsROSS),j] = 0
     j = j + 1
 read2dROSSfloat(grid,bed,xsROSS,xmROSS,MyROSS,-600.0,0.0,-1.0)
 # set thickness to 1.0 m according to this info
@@ -143,7 +146,7 @@ for i in range(xmROSS):
   j = 0
   for num in grid.readline().split():
     if (float(num) == 1.0):
-      thk[i,j] = 1.0
+      thk[top - i,j] = 1.0
     j = j + 1
 read2dROSSfloat(grid,accum,xsROSS,xmROSS,MyROSS,0.2/SECPERA,0.0,SECPERA/1000.0)
 read2dROSSfloat(grid,barB,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
@@ -152,7 +155,6 @@ grid.close()
 
 
 ##### create arrays for observed ubar, vbar and fill with missing_value #####
-bcflag = zeros((MxROSS, MyROSS), int16) # no b.c. locations, by default
 ubarOBS = zeros((MxROSS, MyROSS), float32)
 vbarOBS = zeros((MxROSS, MyROSS), float32)
 for i in range(MxROSS):
@@ -165,9 +167,8 @@ print "reading boundary condition locations from ",KBC_FILE
 kbc=open(KBC_FILE, 'r')
 for count in range(77):
   coords = kbc.readline().split()
-  i = int(coords[0]) + xsROSS
+  i = top - (int(coords[0]) + xsROSS)
   j = int(coords[1])
-  bcflag[i,j] = 1
   mask[i,j] = MASK_SHEET
   [ubarOBS[i,j], vbarOBS[i,j]] = uvGet(mag[i,j],azi[i,j])
 kbc.close()
@@ -178,11 +179,10 @@ print "   from ",INLETS_FILE
 inlets=open(INLETS_FILE, 'r')
 for count in range(22):
   data = inlets.readline().split()
-  i = int(data[0]) + xsROSS
+  i = top - (int(data[0]) + xsROSS)
   j = int(data[1])
-  bcflag[i,j] = 1
   mask[i,j] = MASK_SHEET
-  [ubarOBS[i,j], vbarOBS[i,j]]  = uvGet(float(data[3]),float(data[2]))
+  [ubarOBS[i,j], vbarOBS[i,j]]  = uvGet(float(data[3]) / SECPERA,float(data[2]))
 inlets.close()
 
 
@@ -208,7 +208,6 @@ barBvar = ncfile.def_var('barB', NC.FLOAT, (xdim,ydim))
 Tsvar = ncfile.def_var('Ts', NC.FLOAT, (xdim,ydim))
 ubarvar = ncfile.def_var('ubar', NC.FLOAT, (xdim,ydim))
 vbarvar = ncfile.def_var('vbar', NC.FLOAT, (xdim,ydim))
-bcvar = ncfile.def_var('bcflag', NC.INT, (xdim,ydim))
 
 ##### attributes in NetCDF file #####
 # set global attributes
@@ -216,20 +215,23 @@ setattr(ncfile, 'Conventions', 'CF-1.0')
 # set the attributes of the variables
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
-# units of "rows" and "columns" in 111by147Grid.dat are unclear to me
-#setattr(xvar, 'standard_name', 'projection_x_coordinate')
-#setattr(xvar, 'units', 'm')
+setattr(xvar, 'standard_name', 'projection_x_coordinate')
+setattr(xvar, 'units', 'm')
 setattr(yvar, 'axis', 'Y')
 setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
-#setattr(yvar, 'standard_name', 'projection_y_coordinate')
-#setattr(yvar, 'units', 'm')
+setattr(yvar, 'standard_name', 'projection_y_coordinate')
+setattr(yvar, 'units', 'm')
 setattr(latvar, 'long_name', 'EISMINT ROSS rows position')
+setattr(latvar, 'units', '(UNITS UNKNOWN)')
 setattr(latvar, 'missing_value', 9999.)
 setattr(lonvar, 'long_name', 'EISMINT ROSS columns position')
+setattr(lonvar, 'units', '(UNITS UNKNOWN)')
 setattr(maskvar, 'long_name', 'shallow ice approximation or ice shelf mask')
 setattr(azivar, 'long_name', 'EISMINT ROSS observed ice velocity azimuth')
+setattr(azivar, 'units', 'degrees east')
 setattr(azivar, 'missing_value', 9999.)
 setattr(magvar, 'long_name', 'EISMINT ROSS observed ice velocity magnitude')
+setattr(magvar, 'units', 'm s-1')
 setattr(magvar, 'missing_value', 9999.)
 setattr(thkvar, 'long_name', 'floating_ice_thickness')
 setattr(thkvar, 'units', 'm')
@@ -259,7 +261,6 @@ setattr(vbarvar, 'long_name',
         'vertical average of horizontal velocity of ice in projection_y_coordinate direction')
 setattr(vbarvar, 'units', 'm s-1')
 setattr(vbarvar, 'missing_value', 9999.)
-setattr(bcvar, 'long_name', 'flag for boundary condition for ice velocity computation')
 
 ##### write data into and close NetCDF file #####
 for i in range(MxROSS):
@@ -279,7 +280,6 @@ barBvar[:] = barB
 Tsvar[:] = Ts
 ubarvar[:] = ubarOBS
 vbarvar[:] = vbarOBS
-bcvar[:] = bcflag;
 # finish up
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"

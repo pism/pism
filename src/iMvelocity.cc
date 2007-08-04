@@ -24,42 +24,44 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
-  ierr = velocitySIAStaggered(!updateVelocityAtDepth); CHKERRQ(ierr);
+  if (computeSIAVelocities == PETSC_TRUE) {
+    ierr = velocitySIAStaggered(!updateVelocityAtDepth); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-  for (PetscInt k=4; k<8; ++k) { // communicate ub[o], vb[o] on staggered
-    ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-  }
+    ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+    for (PetscInt k=4; k<8; ++k) { // communicate ub[o], vb[o] on staggered
+      ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+      ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+    }
 
-  ierr = basalSIAConditionsToRegular(); CHKERRQ(ierr);
+    ierr = basalSIAConditionsToRegular(); CHKERRQ(ierr);
   
-  if (updateVelocityAtDepth) {
+    if (updateVelocityAtDepth) {
+  
+      for (PetscInt k=0; k<6; ++k) { // communicate I[o], J[o], Sigma[o] on staggered
+        ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
+        ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
+      }
+      for (PetscInt k=0; k<4; ++k) { // communicate h_x[o], h_y[o] on staggered
+        ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+        ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+      }
+      for (PetscInt k=8; k<10; ++k) { // communicate Rb[o] on staggered
+        ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+        ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+      }
 
-    for (PetscInt k=0; k<6; ++k) { // communicate I[o], J[o], Sigma[o] on staggered
-      ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-    }
-    for (PetscInt k=0; k<4; ++k) { // communicate h_x[o], h_y[o] on staggered
-      ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-    }
-    for (PetscInt k=8; k<10; ++k) { // communicate Rb[o] on staggered
-      ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-    }
+      ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
+      ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
+      ierr = verticalVelocitySIARegular(); CHKERRQ(ierr);
 
-    ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
-    ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
-    ierr = verticalVelocitySIARegular(); CHKERRQ(ierr);
-
-    if (noSpokesLevel > 0) {
-      ierr = smoothSigma(); CHKERRQ(ierr); // communication occurs in here!
+      if (noSpokesLevel > 0) {
+        ierr = smoothSigma(); CHKERRQ(ierr); // communication occurs in here!
+      }
     }
-  }
+  }  // if computeSIAVelocities
 
   if (useMacayealVelocity) { // communication happens within MacAyeal
     ierr = setupForMacayeal(DEFAULT_MINH_MACAYEAL); CHKERRQ(ierr);

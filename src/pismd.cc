@@ -18,20 +18,36 @@
 
 static char help[] =
   "Driver for ice sheet, shelf, and stream simulations, for 'diagnostic' computation\n"
-  "of velocity field from geometry and temperature field.\n";
+  "of velocity field from geometry and temperature field.\n"
+  "(Also a driver for EISMINT-Ross diagnostic velocity computation in ice shelf.)\n";
 
 /* 
-example of use for diagnostic computation of Ross ice shelf velocities:
+1.  example of diagnostic computation of velocities from saved model state
+file, using only SIA:
 
-  $ eis_ross.py --prefix=eisROSS/    # creates eis_ross.nc on from 147x147 grid data
-  $ pismd -bif eis_ross.nc -shelfstreamBC eis_ross.nc -Mx 147 -My 147 -Lz 1000 -mv \
-    -d cnmu -pause 10 -verbose 
+  $ pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 6000 -o foo
+  $ pisms -eisII A -if foo.nc -y 0.00001 -o bar
+  $ pismd -if foo.nc -mu_sliding 0.0 -no_bmr_in_vert -d Xc03 -kd 10 -pause 10 -o full_foo
+  $ ncdiff -O -v cbar full_foo.nc bar.nc cbardiff.nc  # cbar nearly equal, not quite at margin; why?
+  
+2. generic example of diagnostic computation of velocities from bootstrap file foo_boot.nc;  assumes
+this file includes boundary conditions shelf/stream equations; at end saves "allfields.nc":
+
+  $ pismd -bif foo_boot.nc -shelfstreamBC foo_boot.nc -Mx 61 -My 61 -Mz 101 \
+    -mv -d cnmu -pause 10 -verbose
+
+3. example of diagnostic computation of Ross ice shelf velocities:
+
+  $ eis_ross.py --prefix=eisROSS/    # creates eis_ross.nc from EISMINT-Ross ascii files
+  $ pismd -ross -bif eis_ross.nc -shelfstreamBC eis_ross.nc -Mx 147 -My 147 -Mz 11 \
+    -Lz 1000 -mv -d cnmu -pause 5 -verbose 5
 */
 
 #include <petsc.h>
 #include "grid.hh"
 #include "materials.hh"
 #include "iceModel.hh"
+#include "iceROSSModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -48,34 +64,51 @@ int main(int argc, char *argv[]) {
     IceType*   ice;
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMD (diagnositic velocity computation mode)\n"); CHKERRQ(ierr);
-
+    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
-    IceModel   m(g, *ice);
-    ierr = m.setFromOptions(); CHKERRQ(ierr);
-    ierr = m.initFromOptions(); CHKERRQ(ierr);
 
+    IceModel*      m;
+    IceModel       mPlain(g, *ice);
+    IceROSSModel   mRoss(g, *ice);
+
+    PetscTruth  doRoss, ssBCset;
     char        ssBCfile[PETSC_MAX_PATH_LEN];
-    PetscTruth  ssBCset;
+    // re next option, see:
+    //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
+    //     Ross ice shelf," Ann. Glaciol. 23, 46--51
+    ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &doRoss); CHKERRQ(ierr);
     ierr = PetscOptionsGetString(PETSC_NULL, "-shelfstreamBC", ssBCfile,
                                  PETSC_MAX_PATH_LEN, &ssBCset); CHKERRQ(ierr);
+    if (doRoss == PETSC_TRUE) {
+      ierr = verbPrintf(2,com, 
+            "PISMD: initializing EISMINT Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
+      m = (IceModel*) &mRoss;
+    } else 
+      m = (IceModel*) &mPlain;
+    ierr = m->setFromOptions(); CHKERRQ(ierr);
+    ierr = m->initFromOptions(); CHKERRQ(ierr);
+
     if (ssBCset == PETSC_TRUE) {
        ierr = verbPrintf(2, com, 
              "  attempting to read mask and boundary conditions (ubar,vbar) from file %s\n",
              ssBCfile);   CHKERRQ(ierr);
-       ierr = m.readShelfStreamBCFromFile_netCDF(ssBCfile); CHKERRQ(ierr);
+       ierr = m->readShelfStreamBCFromFile_netCDF(ssBCfile); CHKERRQ(ierr);
        ierr = verbPrintf(2, com, 
              "  done reading -shelfstreamBC file and setting boundary conditions\n");
              CHKERRQ(ierr);
     }
 
     ierr = verbPrintf(2,com, "computing velocity field (diagnostically) ...\n"); CHKERRQ(ierr);
-    ierr = m.diagnosticRun(); CHKERRQ(ierr);
+    ierr = m->diagnosticRun(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "... done\n"); CHKERRQ(ierr);
 
     // provide a default base name if no -o option.
-    ierr = m.writeFiles("allfields",PETSC_TRUE); CHKERRQ(ierr);
+    ierr = m->writeFiles("allfields",PETSC_TRUE); CHKERRQ(ierr);
+
+    if (doRoss == PETSC_TRUE) {
+      ierr = mRoss.finishROSS(); CHKERRQ(ierr);
+    }
 
     ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }

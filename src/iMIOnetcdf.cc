@@ -129,7 +129,7 @@ PetscErrorCode IceModel::setAccumInOcean() {
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask[i][j] == MASK_FLOATING || mask[i][j] == MASK_FLOATING_OCEAN0) {
+      if (mask[i][j] == MASK_FLOATING_OCEAN0) {
         accum[i][j] = DEFAULT_ACCUMULATION_IN_OCEAN0;
       }
     }
@@ -895,7 +895,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
     }
     ierr = MPI_Bcast(&ubarMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
     ierr = MPI_Bcast(&vbarMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-    ierr = verbPrintf(3, grid.com, 
+    ierr = verbPrintf(5, grid.com, 
              "read  ubar:missing_value = %f  and  vbar:missing_value = %f\n",
              ubarMiss, vbarMiss);   CHKERRQ(ierr);
   } else {
@@ -920,6 +920,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
     ierr = verbPrintf(3, grid.com, "  mask not found.  Using current values.\n");
                CHKERRQ(ierr);
   }
+  // NOTE: reading ubar,vbar assumes they are in m/s
   if (ubarExists) {
     ierr = ncVarToDAVec(ncid, ubarid, grid.da2, vubar, g2, vzero); CHKERRQ(ierr);
   } else {

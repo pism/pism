@@ -154,6 +154,8 @@ PetscErrorCode IceModel::setDefaults() {
   setThermalBedrock(DEFAULT_THERMAL_BEDROCK);
   setOceanKill(DEFAULT_OCEAN_KILL);
   
+  computeSIAVelocities = PETSC_TRUE;
+  
   setUseMacayealVelocity(DEFAULT_USE_MACAYEAL_VELOCITY);
   setDoSuperpose(DEFAULT_DO_SUPERPOSE);
   macayealMaxIterations = DEFAULT_MAX_ITERATIONS_MACAYEAL;

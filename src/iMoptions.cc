@@ -30,7 +30,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   PetscScalar my_maxdt, my_mu;
   PetscScalar macRTol, my_nu, maceps, regVelSchoof, regLengthSchoof;
   PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
-             maxdtSet, superpose,
+             maxdtSet, superpose, noBMRInVert,
              noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
              nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet,
              MxSet, MySet, MzSet, MbzSet;
@@ -128,6 +128,11 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
   if (MbzSet == PETSC_TRUE)   grid.p->Mbz = my_Mbz;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_bmr_in_vert", &noBMRInVert); CHKERRQ(ierr);
+  if (noBMRInVert == PETSC_TRUE) {
+     setIncludeBMRinContinuity(PETSC_FALSE);
+  }
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE) {

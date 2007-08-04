@@ -74,11 +74,11 @@ libtests.so : ${TESTS_OBJS}
 pismr : pismr.o libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-pismd : pismd.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
+pismd : pismd.o iceROSSModel.o libpism.so
+	${CLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o libpism.so
-	${CLINKER} iceEISModel.o iceHEINOModel.o iceROSSModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
+pisms : iceEISModel.o iceHEINOModel.o pisms.o libpism.so
+	${CLINKER} iceEISModel.o iceHEINOModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
 pismv : iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o libpism.so libtests.so
 	${CLINKER} iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o $@

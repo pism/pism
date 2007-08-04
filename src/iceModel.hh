@@ -122,8 +122,8 @@ public:
   virtual PetscErrorCode setFromOptions();
 
   // see iMutil.cc
-  PetscErrorCode initFromOptions();
-  PetscErrorCode initFromOptions(PetscTruth doHook);
+  virtual PetscErrorCode initFromOptions();
+  virtual PetscErrorCode initFromOptions(PetscTruth doHook);
 
   // see iMviewers.cc
   PetscErrorCode setSoundingFromOptions();
@@ -250,7 +250,7 @@ protected:
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
-  PetscTruth  useIsothermalFlux;
+  PetscTruth  computeSIAVelocities, useIsothermalFlux;
   char        adaptReasonFlag;
 
   // viewer and sounding

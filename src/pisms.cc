@@ -27,7 +27,6 @@ static char help[] =
 #include "iceModel.hh"
 #include "iceEISModel.hh"
 #include "iceHEINOModel.hh"
-#include "iceROSSModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -55,7 +54,6 @@ int main(int argc, char *argv[]) {
     // call constructors on all three, but m will point to the one we use
     IceEISModel   mEISII(g, *ice);
     IceHEINOModel mHEINO(g, *ice);
-    IceROSSModel  mROSS(g, *ice);
     IceModel*     m;
 
     char        expername[20]; //ignored here; see IceEISModel,IceHEINOModel::initFromOptions
@@ -81,26 +79,15 @@ int main(int argc, char *argv[]) {
       ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mHEINO;
     } else if ((ROSSchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE) && (ISMIPchosen == PETSC_FALSE)) {
-      if (size > 1) {
-        ierr = PetscPrintf(com, "EISMINT ROSS only works on a single processor!\n"); CHKERRQ(ierr);
-        ierr = PetscPrintf(com,"ending ... \n"); CHKERRQ(ierr);
-        PetscEnd();
-      }
-      mROSS.setflowlawNumber(flowlawNumber);
-      ierr = mROSS.setFromOptions(); CHKERRQ(ierr);
-      ierr = mROSS.initFromOptions(); CHKERRQ(ierr);
-      m = (IceModel*) &mROSS;
+        ierr = PetscPrintf(com, "pisms no longer runs EISMINT ROSS; use pismd\nending ... \n"); CHKERRQ(ierr);
+        PetscEnd();      
     } else {
       SETERRQ(1,"PISMS called with invalid, contradictory, or no experiment chosen");
     }
 
     ierr = m->run(); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2,com, "done with run ... "); CHKERRQ(ierr);
-
-    if (ROSSchosen == PETSC_FALSE) {
-      ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
-    }
+    ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
+    ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
     
     if (ISMIPchosen == PETSC_TRUE) {
       ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);

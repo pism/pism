@@ -892,11 +892,9 @@ EISMINT I is, however, superceded by \emph{verification} using the full variety 
 
 EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the published EISMINT II experiments; these are described in the next subsection.
 
-The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = Heinrich Event INtercOmparison, and POLICE = POLar ICE sheet modelss.  None of these are completed or published at the time of this writing.
+The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = Heinrich Event INtercOmparison, and POLICE = POLar ICE sheet models.  None of these are completed or published at the time of this writing.
 
-Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  We believe the continuum problem described by HEINO to not be easily approximateable, regardless of the details of the numerical schemes.
-
-As of July 2007, the PISM authors plan to participate in ISMIP-POLICE and in an upcoming Marine Ice Sheet Intercomparison exercise.
+Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  We believe the continuum problem described by HEINO to not be easily approximate-able, regardless of the details of the numerical schemes.\footnote{As of July 2007, the PISM authors plan to participate in ISMIP-POLICE and in an upcoming Marine Ice Sheet Intercomparison exercise.}
 
 \subsection{EISMINT II in PISM}  There are seven experiments described in the EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
@@ -1006,7 +1004,10 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \clearpage\newpage
 \section{Validation}\label{sect:valid}
 
-\subsection{Validation of ice shelf numerics relative to Ross ice shelf data}  MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
+\subsection{Validation of ice shelf numerics relative to Ross ice shelf data}  
+THIS SUBSECTION IS OUT OF DATE AND NEEDS UPDATING.  USE OF pisms IS REPLACED BY pismd.  SEE COMMENTS AT START OF pism/src/pismd.cc  THE DEPENDENCE ON Matlab IS LARGELY REMOVED.  THE REQUIREMENT OF FIXED GRID AND ONE PROCESSOR IS REMOVED.
+
+MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
 
 Performing this validation requires data from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
 \begin{itemize}
