@@ -41,6 +41,22 @@ this file includes boundary conditions shelf/stream equations; at end saves "all
   $ eis_ross.py --prefix=eisROSS/    # creates eis_ross.nc from EISMINT-Ross ascii files
   $ pismd -ross -bif eis_ross.nc -shelfstreamBC eis_ross.nc -Mx 147 -My 147 -Mz 11 \
     -Lz 1000 -mv -d cnmu -pause 5 -verbose 5
+
+4. example of multiprocessor and grid-refined Ross ice shelf:
+
+  $ eis_ross.py --prefix=eisROSS/    # creates eis_ross.nc from EISMINT-Ross ascii files
+  $ fill_missing.py -i eis_ross.nc --eps=4e-8 -v ubar,vbar -o eis_ross1.nc
+  $ mpiexec -n 2 pismd -ross -bif eis_ross1.nc -shelfstreamBC eis_ross1.nc \
+    -Mx 293 -My 293 -Mz 5 -Lz 1000 -mv -d cnUu -pause 5 -verbose 5 -display :0
+
+the second step fixes the boundary condition data in ubar,vbar variables in eis_ross.nc so
+that it is usable under grid refinement
+
+5. tuning run for Ross ice shelf (tuning constant hardness):
+
+  $ eis_ross.py --prefix=eisROSS/    # creates eis_ross.nc from EISMINT-Ross ascii files
+  $ pismd -ross -tune 1.6e8,0.1e8,2.3e8 -bif eis_ross.nc -shelfstreamBC eis_ross.nc \
+    -Mx 147 -My 147 -Mz 11 -Lz 1000 -mv -d cnmu -pause 5 -verbose 5
 */
 
 #include <petsc.h>
@@ -90,8 +106,8 @@ int main(int argc, char *argv[]) {
     ierr = m->initFromOptions(); CHKERRQ(ierr);
 
     if (ssBCset == PETSC_TRUE) {
-       ierr = verbPrintf(2, com, 
-             "  attempting to read mask and boundary conditions (ubar,vbar) from file %s\n",
+       ierr = verbPrintf(4, com, 
+             "  attempting to read mask and boundary conds (ubar,vbar) from %s\n",
              ssBCfile);   CHKERRQ(ierr);
        ierr = m->readShelfStreamBCFromFile_netCDF(ssBCfile); CHKERRQ(ierr);
        ierr = verbPrintf(2, com, 

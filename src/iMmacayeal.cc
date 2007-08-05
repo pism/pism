@@ -439,8 +439,10 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   /* Move the solution onto a grid which can be accessed normally. Since the parallel
   * layout of the vector x does not in general have anything to do with the DA based
   * vectors, we must scatter the entire vector to all processors. */
-  ierr = VecScatterBegin(MacayealScatterGlobalToLocal, x, xLoc, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(MacayealScatterGlobalToLocal, x, xLoc, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterBegin(MacayealScatterGlobalToLocal, x, xLoc, 
+           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(MacayealScatterGlobalToLocal, x, xLoc, 
+           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
@@ -519,13 +521,13 @@ PetscErrorCode IceModel::velocityMacayeal() {
   ierr = VecCopy(vvbar, vvbarOld); CHKERRQ(ierr);
   epsilon = macayealEpsilon;
 
-  ierr = verbPrintf(5,grid.com, 
-     "  [macayealEpsilon = %10.5e, EPSILON_MULTIPLIER_MACAYEAL = %6.2e, macayealMaxIterations = %d\n",
-     macayealEpsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL,macayealMaxIterations); CHKERRQ(ierr);
-  ierr = verbPrintf(5,grid.com, 
+  ierr = verbPrintf(4,grid.com, 
+     "  [macayealEpsilon = %10.5e, macayealMaxIterations = %d\n",
+     macayealEpsilon, macayealMaxIterations); CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com, 
      "   regularizingVelocitySchoof = %10.5e, regularizingLengthSchoof = %10.5e,\n",
      regularizingVelocitySchoof, regularizingLengthSchoof); CHKERRQ(ierr);
-  ierr = verbPrintf(5,grid.com, 
+  ierr = verbPrintf(4,grid.com, 
      "   constantHardnessForMacAyeal = %10.5e, macayealRelativeTolerance = %10.5e]\n",
     constantHardnessForMacAyeal, macayealRelativeTolerance); CHKERRQ(ierr);
 

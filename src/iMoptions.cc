@@ -27,14 +27,14 @@ see options for Mx,My,Mz,Mbz,Lx,Ly,Lz,ys,ye,y. */
 
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscScalar my_maxdt, my_mu;
-  PetscScalar macRTol, my_nu, maceps, regVelSchoof, regLengthSchoof;
-  PetscTruth my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
-             maxdtSet, superpose, noBMRInVert,
-             noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
-             nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet,
-             MxSet, MySet, MzSet, MbzSet;
-  PetscInt nospokeslevel, my_Mx, my_My, my_Mz, my_Mbz;
+  PetscScalar my_maxdt, my_mu, macRTol, my_nu, maceps, regVelSchoof, 
+              regLengthSchoof, my_barB;
+  PetscTruth  my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
+              maxdtSet, superpose, noBMRInVert, my_useConstantHardness,
+              noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
+              nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet,
+              MxSet, MySet, MzSet, MbzSet;
+  PetscInt    nospokeslevel, my_Mx, my_My, my_Mz, my_Mbz;
 
   // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
   // allows users to set options using this.
@@ -56,6 +56,14 @@ PetscErrorCode  IceModel::setFromOptions() {
   // user gives nu in MPa yr (e.g. Ritz value is 30.0)
   if (my_useConstantNu == PETSC_TRUE) {
     setConstantNuForMacAyeal(my_nu  * 1.0e6 * secpera);
+  }
+
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);
+           CHKERRQ(ierr);
+  // user gives \bar B in 
+  if (my_useConstantHardness == PETSC_TRUE) {
+    useConstantHardnessForMacAyeal = PETSC_TRUE;
+    constantHardnessForMacAyeal = my_barB;
   }
 
   // regular size viewers
@@ -139,8 +147,8 @@ PetscErrorCode  IceModel::setFromOptions() {
     setDoMassConserve(PETSC_FALSE);
   }
 
-  // -no_spokes K for K=0,1,2,... turns on smoothing of spokes by smoothing Sigma (e.g. in EISMINT experiment F)
-  // values K>3 not recommended (lots of communication!)
+  // -no_spokes K for K=0,1,2,... turns on smoothing of spokes by smoothing Sigma 
+  // (e.g. in EISMINT experiment F) values K>3 not recommended (lots of communication!)
   ierr = PetscOptionsGetInt(PETSC_NULL, "-no_spokes", &nospokeslevel, &nospokesSet); CHKERRQ(ierr);
   if (nospokesSet == PETSC_TRUE)
     setNoSpokes(nospokeslevel);
@@ -163,12 +171,14 @@ PetscErrorCode  IceModel::setFromOptions() {
   // use a plastic basal till mechanical model
   ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &doPlasticTill); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &regVelSchoof, &regVelSchoofSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &regVelSchoof, &regVelSchoofSet);
+           CHKERRQ(ierr);
   if (regVelSchoofSet == PETSC_TRUE) {
     setRegularizingVelocitySchoof(regVelSchoof/secpera);
   }
   
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_length_schoof", &regLengthSchoof, &regLengthSchoofSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_length_schoof", 
+           &regLengthSchoof, &regLengthSchoofSet); CHKERRQ(ierr);
   if (regLengthSchoofSet == PETSC_TRUE) {
     setRegularizingLengthSchoof(regLengthSchoof);
   }
@@ -177,8 +187,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 
-  // apply "glaciological superposition to low order", i.e. add SIA results to those of MacAyeal equations
-  // where DRAGGING
+  // apply "glaciological superposition to low order", i.e. add SIA results to those of 
+  // MacAyeal equations where DRAGGING
   ierr = PetscOptionsHasName(PETSC_NULL, "-super", &superpose); CHKERRQ(ierr);
   setDoSuperpose(superpose);
 
@@ -196,3 +206,4 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
+

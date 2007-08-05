@@ -25,7 +25,8 @@
 
 #include "iceROSSModel.hh"
 
-/*  THIS COMMENT IS NO LONGER ACCURATE:
+/*  THIS COMMENT IS NO LONGER ACCURATE but it should be kept until new setup
+is fully documented in the manual:
 Run this derived class with "obj/pisms -ross".
 
 Allows the following options:  
@@ -67,6 +68,19 @@ value and (close to) optimal value:
 
 IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
+
+  // use defined velocity boundary condition for shelf, instead of computing 
+  // SIA values at those locations
+  computeSIAVelocities = PETSC_FALSE;
+
+  // further settings for velocity computation 
+  useConstantNuForMacAyeal = PETSC_FALSE;
+  useConstantHardnessForMacAyeal = PETSC_TRUE;
+  setMacayealEpsilon(0.0);  // don't use this lower bound
+//  constantHardnessForMacAyeal = 2.22e8;
+  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}; 1.9e8 is (MacAyeal et al 1996) value
+  regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
+  regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 }
 
 
@@ -95,6 +109,13 @@ PetscErrorCode IceROSSModel::initFromOptions() {
 
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
+  // set Lz to 1000.0 m by default; note max thickness in data is 800.0 m
+  PetscTruth LzSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-Lz", &LzSet); CHKERRQ(ierr);
+  if (LzSet == PETSC_FALSE) {
+    ierr = grid.rescale(grid.p->Lx, grid.p->Ly, 1000.0); CHKERRQ(ierr);
+  }
+
   // allocate observed velocity space
   ierr = createROSSVecs(); CHKERRQ(ierr);
 
@@ -111,21 +132,45 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
   ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
 
-  // settings for velocity computation 
-  computeSIAVelocities = PETSC_FALSE;  // use zero velocity boundary condition for shelf except where
-                                       // streams and outlet glaciers come in
-  useConstantNuForMacAyeal = PETSC_FALSE;
-  useConstantHardnessForMacAyeal = PETSC_TRUE;
-  setMacayealEpsilon(0.0);  // don't use this lower bound
-  constantHardnessForMacAyeal = 2.22e8;  // Pa s^{1/3}; 1.9e8 is (MacAyeal et al 1996) value
-  regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
-  regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
   ierr = verbPrintf(5,grid.com,"  [using Schoof regularization constant = %10.5e]\n",
               PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
 
   ierr = afterInitHook(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, "running EISMINT ROSS ...\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceROSSModel::diagnosticRun() {
+  PetscErrorCode  ierr;
+  PetscReal       tuneparam[20];
+  PetscTruth      tuneSet;
+  PetscInt        numtuneparam=3;
+  
+  // user might enter
+  //     pisms -ross -tune 1.7e8,0.1e8,2.5e8
+  // [note no spaces between parameters!]
+  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-tune", tuneparam, &numtuneparam,
+                                  &tuneSet); CHKERRQ(ierr);
+  if ((tuneSet == PETSC_TRUE) && (numtuneparam != 3)) {
+    SETERRQ(1,"option -tune not accompanied by three parameters");
+  }
+
+  if (tuneSet == PETSC_FALSE) {
+    ierr = IceModel::diagnosticRun(); CHKERRQ(ierr);
+  } else {
+    // in Matlab notation:  hard = tuneparam[0]:tuneparam[1]:tuneparam[2]
+    for (PetscScalar hard = tuneparam[0]; hard < tuneparam[2]+0.1*tuneparam[1];
+                     hard += tuneparam[1]) { 
+      ierr = verbPrintf(2,grid.com,"computing velocities with hardness (=bar B) = %10.5e ...\n",
+                        hard); CHKERRQ(ierr);
+      constantHardnessForMacAyeal = hard;
+      ierr = IceModel::diagnosticRun(); CHKERRQ(ierr);
+      ierr = finishROSS(); CHKERRQ(ierr);
+      ierr = createROSSVecs(); CHKERRQ(ierr);
+    }
+  }
   return 0;
 }
 
@@ -149,7 +194,7 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
   //  ierr = readRIGGSandCompare(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "showing EISMINT ROSS observed velocities ...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "showing EISMINT ROSS observed velocities"); CHKERRQ(ierr);
   ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
   Vec vNu[2] = {vWork2d[0], vWork2d[1]};
@@ -158,9 +203,11 @@ PetscErrorCode IceROSSModel::finishROSS() {
   
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
-  ierr = PetscSleep(pause_time); CHKERRQ(ierr);
-
+  if (pause_time > 0) {
+    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  }
+  
   ierr = destroyROSSVecs(); CHKERRQ(ierr);
   return 0;
 }
@@ -217,9 +264,6 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
   ierr = MPI_Bcast(&accMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&magMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&aziMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-  ierr = verbPrintf(5, grid.com, 
-      "read  acc:missing_value = %d,  mag:missing_value = %7.1f,  azi:missing_value = %7.1f\n",
-      accMiss, magMiss, aziMiss);   CHKERRQ(ierr);
 
   // compare comment in bootstrapFromFile_netCDF 
   Vec vzero;
@@ -262,10 +306,12 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   // average over grid, where observed velocity is accurate *according to
   // 111by147grid.dat*, the difference between computed and observed u,v
   PetscErrorCode  ierr;
-  PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0,
-               accN=0.0, accArea=0.0, maxcComputed=0.0;
+  PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0, accN=0.0, 
+               accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
+  PetscScalar  guerr, gverr, grelvecerr, gaccN, 
+               gaccArea, gmaxcComputed, gvecErrAcc;
   PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
-  vecErrAcc = 0.0;
+  
   const PetscScalar pi = 3.14159265358979, area = grid.p->dx * grid.p->dy;
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);    
@@ -304,34 +350,41 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  // FIXME: make sums global over all processors
-  // are sums of m/s; report in m/a and as averages
+
+  ierr = PetscGlobalMax(&maxcComputed, &gmaxcComputed, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&accN, &gaccN, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&accArea, &gaccArea, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&verr, &gverr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&uerr, &guerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&relvecerr, &grelvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&vecErrAcc, &gvecErrAcc, grid.com); CHKERRQ(ierr);
+
   ierr = verbPrintf(2,grid.com,"maximum computed speed in ice shelf is %10.3f (m/a)\n",
-             maxcComputed * secpera); CHKERRQ(ierr);
+             gmaxcComputed * secpera); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,"ERRORS relative to observations of Ross Ice Shelf:\n");
              CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
              "  [number of grid points in 'accurate observed area' = %d]\n",
-             (int) accN); CHKERRQ(ierr);
+             (int) gaccN); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
              "  [area of 'accurate observed area' = %9.4f (km^2)]\n",
-             accArea / 1e6); CHKERRQ(ierr);
+             gaccArea / 1e6); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
              "  following are average errors computed over 'accurate observed area':\n");
              CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
              "  average error in x-comp of vel       = %9.3f (m/a)\n",
-             (verr * secpera) / accN); CHKERRQ(ierr);
+             (gverr * secpera) / gaccN); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
              "  average error in y-comp of vel       = %9.3f (m/a)\n",
-             (uerr * secpera) / accN); CHKERRQ(ierr);
+             (guerr * secpera) / gaccN); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
              "  average relative error in vector vel = %9.5f\n",
-             relvecerr / accN); CHKERRQ(ierr);
-  vecErrAcc = secpera * sqrt(vecErrAcc) / sqrt(accArea);
+             grelvecerr / gaccN); CHKERRQ(ierr);
+  gvecErrAcc = secpera * sqrt(gvecErrAcc) / sqrt(gaccArea);
   ierr = verbPrintf(2,grid.com,
              "  rms average error in vector vel      = %9.3f (m/a)\n",
-             vecErrAcc); CHKERRQ(ierr);
+             gvecErrAcc); CHKERRQ(ierr);
   return 0;
 }
 
@@ -386,51 +439,6 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
   if (fclose(riggsfile) != 0) {
     SETERRQ1(1,"error closing file %s in IceROSSModel",riggsfilename);
   }
-  return 0;
-}
-
-
-PetscErrorCode IceROSSModel::runTune() {
-  PetscErrorCode  ierr;
-  PetscReal       tuneparam[20];
-  PetscTruth      tuneSet;
-  PetscInt        numtuneparam=3;
-  
-  // user might enter
-  //     pisms -ross -tune 1.7e8,0.1e8,2.5e8
-  // [note no spaces between parameters!]
-  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-tune", tuneparam, &numtuneparam,
-                                  &tuneSet); CHKERRQ(ierr);
-  if (tuneSet == PETSC_FALSE || numtuneparam != 3) {
-    SETERRQ(1,"option -tune not accompanied by three parameters");
-  }
-  
-//  ierr = makeSurfaceFloating(); CHKERRQ(ierr);
-
-  useMacayealVelocity = PETSC_TRUE;
-  useConstantNuForMacAyeal = PETSC_FALSE;
-  useConstantHardnessForMacAyeal = PETSC_TRUE;
-  setMacayealEpsilon(0.0);  // don't use this lower bound
-
-  regularizingVelocitySchoof = 1.0 / secpera;  // \eps=(VELOCITY/LENGTH)^2 is close to 10^-27
-  regularizingLengthSchoof = 1000.0e3;
-  ierr = verbPrintf(2,grid.com,"[using Schoof regularization constant = %10.5e for all runs]\n",
-              PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
-
-  // in Matlab notation:  hard = tuneparam[0]:tuneparam[1]:tuneparam[2]
-  for (PetscScalar hard = tuneparam[0]; hard < tuneparam[2]+0.1*tuneparam[1]; hard += tuneparam[1]) { 
-    ierr = verbPrintf(2,grid.com,"computing velocities with hardness (=bar B) = %10.5e ...\n",hard); CHKERRQ(ierr);
-//    ierr = setBoundaryVels(); CHKERRQ(ierr);
-    constantHardnessForMacAyeal = hard;
-    // solve ice shelf equations:
-    ierr = velocityMacayeal(); CHKERRQ(ierr);
-    ierr = updateViewers(); CHKERRQ(ierr);
-    // compare to observed
-    ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
-  }
-
-  ierr = writeROSSfiles(); CHKERRQ(ierr);
-  ierr = destroyROSSVecs(); CHKERRQ(ierr);
   return 0;
 }
 #endif

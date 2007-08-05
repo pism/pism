@@ -148,7 +148,7 @@ for i in range(xmROSS):
     if (float(num) == 1.0):
       thk[top - i,j] = 1.0
     j = j + 1
-read2dROSSfloat(grid,accum,xsROSS,xmROSS,MyROSS,0.2/SECPERA,0.0,SECPERA/1000.0)
+read2dROSSfloat(grid,accum,xsROSS,xmROSS,MyROSS,0.2/SECPERA,0.0,1.0/(SECPERA * 1000.0))
 read2dROSSfloat(grid,barB,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,Ts,xsROSS,xmROSS,MyROSS,248.0,273.15,1.0)
 grid.close()
@@ -157,11 +157,24 @@ grid.close()
 ##### create arrays for observed ubar, vbar and fill with missing_value #####
 ubarOBS = zeros((MxROSS, MyROSS), float32)
 vbarOBS = zeros((MxROSS, MyROSS), float32)
+bcflag = zeros((MxROSS, MyROSS), int16)
 for i in range(MxROSS):
   for j in range(MxROSS):
-    ubarOBS[i,j] = 9999.
-    vbarOBS[i,j] = 9999.
-
+    ubarOBS[i,j] = 1.0 / SECPERA
+    vbarOBS[i,j] = 1.0 / SECPERA
+    bcflag[i,j] = 0
+# also fill in zeros along sides; better for Laplace solution
+for i in range(MxROSS):
+  ubarOBS[i,0] = 0.0
+  vbarOBS[i,0] = 0.0
+  ubarOBS[i,MyROSS-1] = 0.0
+  vbarOBS[i,MyROSS-1] = 0.0
+for j in range(MyROSS):
+  ubarOBS[0,j] = 0.0
+  vbarOBS[0,j] = 0.0
+  ubarOBS[MxROSS-1,j] = 0.0
+  vbarOBS[MxROSS-1,j] = 0.0
+  
 ##### read kbc.dat #####
 print "reading boundary condition locations from ",KBC_FILE
 kbc=open(KBC_FILE, 'r')
@@ -170,6 +183,7 @@ for count in range(77):
   i = top - (int(coords[0]) + xsROSS)
   j = int(coords[1])
   mask[i,j] = MASK_SHEET
+  bcflag[i,j] = 1
   [ubarOBS[i,j], vbarOBS[i,j]] = uvGet(mag[i,j],azi[i,j])
 kbc.close()
 
@@ -182,6 +196,7 @@ for count in range(22):
   i = top - (int(data[0]) + xsROSS)
   j = int(data[1])
   mask[i,j] = MASK_SHEET
+  bcflag[i,j] = 1
   [ubarOBS[i,j], vbarOBS[i,j]]  = uvGet(float(data[3]) / SECPERA,float(data[2]))
 inlets.close()
 
@@ -208,6 +223,7 @@ barBvar = ncfile.def_var('barB', NC.FLOAT, (xdim,ydim))
 Tsvar = ncfile.def_var('Ts', NC.FLOAT, (xdim,ydim))
 ubarvar = ncfile.def_var('ubar', NC.FLOAT, (xdim,ydim))
 vbarvar = ncfile.def_var('vbar', NC.FLOAT, (xdim,ydim))
+bcflagvar = ncfile.def_var('bcflag', NC.INT, (xdim,ydim))
 
 ##### attributes in NetCDF file #####
 # set global attributes
@@ -256,11 +272,12 @@ setattr(Tsvar, 'missing_value', 248.0)
 setattr(ubarvar, 'long_name', 
         'vertical average of horizontal velocity of ice in projection_x_coordinate direction')
 setattr(ubarvar, 'units', 'm s-1')
-setattr(ubarvar, 'missing_value', 9999.)
+setattr(ubarvar, 'missing_value', 1.0 / SECPERA)
 setattr(vbarvar, 'long_name', 
         'vertical average of horizontal velocity of ice in projection_y_coordinate direction')
 setattr(vbarvar, 'units', 'm s-1')
-setattr(vbarvar, 'missing_value', 9999.)
+setattr(vbarvar, 'missing_value', 1.0 / SECPERA)
+setattr(bcflagvar, 'long_name', 'location of Dirichlet boundary condition for velocity')
 
 ##### write data into and close NetCDF file #####
 for i in range(MxROSS):
@@ -280,6 +297,7 @@ barBvar[:] = barB
 Tsvar[:] = Ts
 ubarvar[:] = ubarOBS
 vbarvar[:] = vbarOBS
+bcflagvar[:] = bcflag
 # finish up
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"

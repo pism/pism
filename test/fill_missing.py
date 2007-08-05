@@ -7,7 +7,7 @@ import commands
 import getopt
 
 def get_bad(a, bad_value):
-  """Scans the matrix 'a' and returns the indicies where 'bad_value'
+  """Scans the matrix 'a' and returns the indices where 'bad_value'
   occurs."""
   points = []
   s = shape(a)
@@ -19,7 +19,7 @@ def get_bad(a, bad_value):
 
   return points
 
-def laplace(a, bad_value, eps=1.):
+def laplace(a, bad_value, myeps=1.):
   """Computes the solution to laplace's equation in the region where the
   values of a are equal to bad_value. Boundary conditions around bad_value
   regions are Dirichlet."""
@@ -27,13 +27,11 @@ def laplace(a, bad_value, eps=1.):
   ind = get_bad(a, bad_value)
 
   change = 100
-  #eps = 1
 
   dimensions = shape(a)
 
-  #before = sqrt((a[tuple(t(ind))]**2).mean())
   before = sqrt( (a[tuple(t(ind))]**2).mean() )
-  while (abs(change) > eps):
+  while (abs(change) > myeps):
     for e in ind:
       e = tuple(e)
       row = [1, -1 , 0, 0] + e[0]
@@ -65,7 +63,7 @@ def laplace(a, bad_value, eps=1.):
     #after = sqrt((a[tuple(t(ind))]**2).mean())
     change = after-before
     before = after
-    print "change: " + str(change)
+    print "  |change| = " + str(abs(change))
         
   return size(ind)
 
@@ -76,9 +74,11 @@ outFileSet = 0
 fileName = "guess.nc"
 outFileName = "fill_missing_out.nc"
 variables = ("bed")
+eps = 1.0
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "i:v:o:", ["in_file", "variables", "out_file"])
+  opts, args = getopt.getopt(sys.argv[1:], "i:v:o:e:", 
+                             ["in_file=", "variables=", "out_file=", "eps="])
   for opt, arg in opts:
     if opt in ("-i", "--in_file"):
       fileName = arg
@@ -89,6 +89,8 @@ try:
     if opt in ("-v", "--variables"):
       variables = arg.split(",");
       variablesSet = 1
+    if opt in ("-e", "--eps"):
+      eps = float(arg);
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -121,8 +123,9 @@ for varName in variables:
     vMissing = var.attr("missing_value")
     bad_value = vMissing.get(NC.FLOAT)
     print "Smoothing "+ varName + " with missing value: " + str(bad_value)
+    print "Goal is   |change| < " + str(eps)
     b = var[:]
-    num = laplace(b, float(bad_value))
+    num = laplace(b, float(bad_value), eps)
     var[:] = b
     print "Number of missing values for "+ varName + ": " + str(num)
   except CDFError,err:

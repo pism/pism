@@ -63,7 +63,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
     }
   }
   if (useMacayealVelocity == PETSC_TRUE) {
-    ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
+    ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
   ierr = VecSet(vtauc, DEFAULT_TAUC); CHKERRQ(ierr);
   ierr = VecSet(vbeta, DEFAULT_BASAL_DRAG_COEFF_MACAYEAL); CHKERRQ(ierr);

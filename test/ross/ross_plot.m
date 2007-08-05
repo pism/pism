@@ -15,7 +15,7 @@ gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
 gridlon = linspace(-5.26168,3.72207,147);
 
 % load RIGGS data FROM D. MACAYEAL TO ELB ON 19 DEC 2006.
-load -ascii riggs_ELBclean.dat
+load -ascii riggs_clean.dat
 RIGGS=riggs_ELBclean;
 clear riggs_ELBclean;
 

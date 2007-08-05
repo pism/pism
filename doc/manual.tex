@@ -35,6 +35,9 @@
 \usepackage[final,pdftex]{graphicx}
 \usepackage[pdftex]{hyperref}
 
+\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
+\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
+\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
 \renewcommand{\t}[1]{\texttt{#1}}
 \newcommand{\Matlab}{\textsc{Matlab}\xspace}
 \newcommand{\bU}{\mathbf{U}}
@@ -408,7 +411,7 @@ The references are, of course, the right place to examine the physics of the con
 
 \clearpage
 \newpage
-\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [TO BE ADDED]
+\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [TO BE ADDED; cite \cite{JoughinMacAyealTulaczyk} as representative inverse modelling results which could be incorporated in a forward model]
 
 
 \clearpage
@@ -1004,23 +1007,46 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \clearpage\newpage
 \section{Validation}\label{sect:valid}
 
-\subsection{Validation of ice shelf numerics relative to Ross ice shelf data}  
-THIS SUBSECTION IS OUT OF DATE AND NEEDS UPDATING.  USE OF pisms IS REPLACED BY pismd.  SEE COMMENTS AT START OF pism/src/pismd.cc  THE DEPENDENCE ON Matlab IS LARGELY REMOVED.  THE REQUIREMENT OF FIXED GRID AND ONE PROCESSOR IS REMOVED.
+\subsection{Validation of PISM as an ice shelf model using Ross ice shelf data} Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.
 
-MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data was acquired in the period 1973--1978 by classical surveying techniques.   This validation was part of the EISMINT I  series of intercomparisons; the intercomparison reported in \cite{EISMINT96} was also in that series.
+As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data includes the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf.
 
-Performing this validation requires data from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
+Using these data to validate PISM's ice shelf modelling abilities requires downloading text files from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
 \begin{itemize}
 \item \verb|111by147Grid.dat|
 \item \verb|kbc.dat|
 \item \verb|inlets.dat|
 \end{itemize}
-For easiest use, create the directory \verb|pism/eisROSS|, and put these three \verb|.dat| files there.
+For the rest of the discussion we will assume that these three files are in a directory \verb|eisROSS/|, and we will refer to these as the ``EISMINT-Ross'' data.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but that (as usual) the PISM computational grid is determined by the user.
 
-Note that the data is for a fixed $6.822$km grid and \emph{this is an unusual use of PISM in that the grid cannot be adjusted}.
+The first step for using these data, as usual for PISM, is to convert them to a machine readable NetCDF file which includes the metadata needed to use it with PISM.  There is already a script \verb|eis_ross.py| for this purpose in subdirectory \verb|pism/test/|.  It  reads the above three EISMINT-Ross \verb|.dat| files and it creates a NetCDF file \verb|eis_ross.nc|.  It is used this way:
 
-Run this validation with \verb|pisms -ross|.  The next several examples are suggested methods for performing the validation.  Note that this Ross ice shelf validation can only be run using a single processor; ``\verb|mpiexec -n |$N$\verb| pisms -ross|'' generates an error.  Table \ref{tab:rossoptions} shows options available for this validation; note these options are also described in the Runtime Options section above.
+\verb|eis_ross.py --prefix=eisROSS/|
 
+\noindent  The output file can be reconverted to text using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
+
+\begin{figure}[ht]
+\includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
+\caption{Two views from \protect{\texttt{ncview}} of the EISMINT-Ross data in the NetCDF file \protect{\texttt{eis\_ross.nc}}.  The floating-versus-grounded mask (left) and the $x$-component of the kinematic (Dirichlet) boundary condition for velocity (right).}
+\label{fig:rossmaskubar}
+\end{figure}
+
+The NetCDF file \verb|eis_ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation, and all of these are typical of ice sheet modelling data.  It also has variables \verb|ubar| and \verb|vbar| which give the boundary values which are needed for the diagnostic computation of velocity.  Also present are the variables \verb|mask|, which shows the domain where the ice shelf is modelled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Note that the original EISMINT-Ross data are on a 111 by 147 grid but that \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid, with the same $6.822$km spacing, which has ice-free ocean beyond the (straightened; compare \cite{MacAyealetal}) calving front.  See figure \ref{fig:rossmaskubar}.
+
+The basic Ross ice shelf velocity computation might be this:
+
+\verb|   pismd -ross -bif eis_ross.nc -shelfstreamBC eis_ross.nc \|
+
+\verb|      -Mx 147 -My 147 -Mz 11 -mv|
+
+\noindent Here we bootstrap (\verb|-bif|) from \verb|eis_ross.nc| but we also specify \verb|eis_ross.nc| as the source of the boundary value data mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  Note that the small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at depth be the surface temperature \cite{MacAyealetal}, and thus there is no thermocoupling issue.
+
+At the end of this run the computed velocity field is compared to the data on observed velocities in the file \verb|eis_ross.nc|.  (In particular, that NetCDF file contains a variable \verb|accur| which identifies the region in which the observed velocities are valid.  The observed (interpolated) velocities themselves are stored in variables \verb|mag_obs| and \verb|azi_obs|.)  We see that the largest computed velocity in the ice shelf is just under a thousand meters per year, and that errors in the vector values of velocity are roughly 10\% in a sum of squares average sense.  (There is more on viewing the results, on measuring the correspondence with measurements, and on tuning the hardness parameter to fit the data, below.)
+
+There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding 
+
+
+[[OUT OF DATE BELOW]]
 \bigskip
 \noindent\textbf{Example 1}.  Basic run with all info displayed: 
 
@@ -1426,7 +1452,16 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optrestrict{bif\und legacy}{pant}  The model can be ``bootstrapped'' from certain NetCDF files dealing with antarctica (\verb|init.nc|).
 
-\optdef{constant\und nu}{30.0}  If this option is used then the MacAyeal velocities (see \verb|-mv| below) are computed with a constant viscosity.  If this option is not used then the viscosities are computed by a nonlinear iteration.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
+\opt{constant\und hardness}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the MacAyeal-Morland equations for ice shelves and ice streams is
+	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
+where 
+	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
+  \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
+Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field.  If \verb|-constant_hardness| is used then $\bar B$ is set to the given value.
+
+In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
+
+\optdef{constant\und nu}{30.0}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant viscosity $\nu$; see the option \verb|-constant_hardness| above.  Generally the viscosity is computed by a nonlinear iteration.  With option \verb|-constant_nu|, this iteration does not occur.  If \verb|-constant_nu| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
 \optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:real}
 
@@ -1669,9 +1704,9 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 
 \clearpage \newpage
-\section{PISM runtime diagnostic viewers}\label{sect:viewers}
+\section{PISM viewers}\label{sect:viewers}
 
-Many basic views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
+Basic graphical views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
 
 \verb|$  pismv -test G -d hTf -dbig 0|
 

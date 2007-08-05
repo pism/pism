@@ -28,19 +28,17 @@ class IceROSSModel : public IceModel {
 public:
     IceROSSModel(IceGrid &g, IceType &i);
     virtual PetscErrorCode initFromOptions();
+    virtual PetscErrorCode  diagnosticRun();
     PetscErrorCode         finishROSS();
 
 private:
-    Vec             obsAzimuth, obsMagnitude, obsAccurate;
-    PetscScalar     vecErrAcc;
-    
+    Vec             obsAzimuth, obsMagnitude, obsAccurate;    
     PetscErrorCode  createROSSVecs();
     PetscErrorCode  destroyROSSVecs();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  readObservedVels(const char *fname);
     PetscErrorCode  putObservedVelsCartesian();
     PetscErrorCode  computeErrorsInAccurateRegion();
-//    PetscErrorCode  runTune();
 //    PetscErrorCode  readRIGGSandCompare();
 };
 
