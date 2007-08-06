@@ -354,8 +354,10 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
       // pressure-melting, and a fraction of excess energy
       // needs to be turned into melt water at base
       // note massmelted is POSITIVE!
+//      const PetscScalar FRACTION_TO_BASE
+//                           = (z < 100.0) ? 0.4 * (100.0 - z) / 100.0 : 0.0;
       const PetscScalar FRACTION_TO_BASE
-                           = (z < 100.0) ? 0.4 * (100.0 - z) / 100.0 : 0.0;
+                           = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
       *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice.rho * darea);  // note: ice-equiv thickness
     }
     *Texcess = 0.0;

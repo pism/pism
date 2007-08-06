@@ -1,7 +1,7 @@
 % ROSS_PLOT Plots computed speed of Ross and shows observed values from RIGGS
 % data.  
 %    Assumes foo.m, the result of PISM Ross computation, has already been
-% run (i.e. "$ pisms -ross -o foo -of m" and then do ">> foo"), so variables 
+% run (i.e. "$ pismd -ross -o foo -of m" and then do ">> foo" in Matlab), so variables 
 % c,ubar,vbar,H,mask,x,y are defined.  Reads RIGGS data from riggs_ELBclean.dat.
 % Compare figures 3 from (Bently 1984) and figures 11 and 14 from 
 % (Thomas et al 1984) and figures in (MacAyeal et al 1996).
@@ -16,8 +16,8 @@ gridlon = linspace(-5.26168,3.72207,147);
 
 % load RIGGS data FROM D. MACAYEAL TO ELB ON 19 DEC 2006.
 load -ascii riggs_clean.dat
-RIGGS=riggs_ELBclean;
-clear riggs_ELBclean;
+RIGGS=riggs_clean;
+clear riggs_clean;
 
 % show computed speed as color
 cforplot=c;  cforplot(H<20) = -20; cforplot(mask==1) = -20;

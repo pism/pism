@@ -1,4 +1,4 @@
-README.rossPISM                                   ELB 2/9/07; 8/4/07
+README                                      ELB 2/9/07; 8/4/07
 
 This README file supplements the "readme.txt" file from the 
 EISMINT Ross intercomparison (that file is dated "Oct 2nd 1996" 
@@ -44,6 +44,6 @@ COLUMN    MEANING
           for Chi^2 stat in MacAyeal et al 1996)
 
 ross_plot.m:  Takes the result of a PISM Ross run (i.e. foo.m
-if "pisms -ross -o foo -of m" created it) and produces a
+if "pismd -ross -o foo -of m" created it) and produces a
 good-looking figure.  Also reads the riggs_clean.dat file and
 produces the value of the Chi^2 statistic.

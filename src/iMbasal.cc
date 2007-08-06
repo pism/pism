@@ -82,7 +82,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   //   1. adding a small till cohesion (see Paterson 3rd ed table 8.1)
   //   2. replacing   p_w --> \lambda p_w   where \lambda = Hmelt / DEFAULT_MAX_HMELT;
   //      thus 0 <= \lambda <= 1 and \lambda = 0 when bed is frozen 
-  //   3. computing a porewater pressure p_w which is the max of (0.95 of overburden)
+  //   3. computing a porewater pressure p_w which is the max of 0.95 * overburden
   //      and the porewater pressure computed by formula (4) in 
   //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964;
   //      the modification of this porewater pressure as in Lingle&Brown 1987 is not 

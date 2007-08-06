@@ -31,60 +31,82 @@ PetscErrorCode nc_check(int stat) {
 }
 
 
-IceSheetForcing::IceSheetForcing() {
+Data1D::Data1D() {
   vecsAllocated = PETSC_FALSE;
-  forcingActive = PETSC_FALSE;
-  index = 0;
-  interpCode = ISF_LINEAR_INTERP;
+  interpCode = DATA1D_LINEAR_INTERP;
 }
 
 
-IceSheetForcing::~IceSheetForcing() {
+Data1D::~Data1D() {
   if (vecsAllocated == PETSC_TRUE) {
-    VecDestroy(vtimeinyears);
+    VecDestroy(vindep);
     VecDestroy(vdata);
     vecsAllocated = PETSC_FALSE;
   }
-  forcingActive = PETSC_FALSE;
 }
 
 
-PetscErrorCode IceSheetForcing::readDataAndAlloc(
-                           MPI_Comm mycom, PetscMPIInt myrank, PetscInt mydatatype,
-                           int ncid, PetscScalar curr_year) {
+PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank, int ncid, 
+                                const char *myindepvarname, const char *mydatavarname) {
   PetscErrorCode ierr;
-  int stat, timeid, dataid;
+  int indepid, dataid;
 
   com = mycom;
   rank = myrank;
-  datatype = mydatatype;
-  switch (datatype) {
-    case ISF_DELTA_T:
-      strcpy(datavarname, "delta_T");
-      break;
-    case ISF_DELTA_SEA_LEVEL:
-      strcpy(datavarname, "delta_sea_level");
-      break;
-    default:
-      verbPrintf(1,com, "invalid datatype when setting object IceSheetForcing\n");
-      PetscEnd();
-  } 
+  strcpy(indepvarname, myindepvarname);
+  strcpy(datavarname, mydatavarname);
   if (rank == 0) {
-    stat = nc_inq_varid(ncid, "t", &timeid); CHKERRQ(nc_check(stat));
+    int stat;
+    stat = nc_inq_varid(ncid, indepvarname, &indepid); CHKERRQ(nc_check(stat));
     stat = nc_inq_varid(ncid, datavarname, &dataid); CHKERRQ(nc_check(stat));
-    ierr = getInterpolationCode(ncid, dataid, &interpCode); CHKERRQ(ierr);
   }
+  ierr = getInterpolationCode(ncid, dataid, &interpCode); CHKERRQ(ierr);
   MPI_Bcast(&interpCode, 1, MPI_INT, 0, com);
-  ierr = ncVarBcastVec(ncid, timeid, &vtimeinyears); CHKERRQ(ierr);  // creates this Vec
+  ierr = ncVarBcastVec(ncid, indepid, &vindep); CHKERRQ(ierr);  // creates this Vec
   ierr = ncVarBcastVec(ncid, dataid, &vdata); CHKERRQ(ierr);  // creates this Vec
-  ierr = VecScale(vtimeinyears,-1.0); CHKERRQ(ierr);  // vtime values now negative; years *after* present
   vecsAllocated = PETSC_TRUE;
-  ierr = initIndex(curr_year); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode IceSheetForcing::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
+PetscErrorCode Data1D::getInterpolationCode(int ncid, int vid, int *code) {
+  PetscErrorCode ierr;
+
+  if (rank == 0) {
+    int stat;
+    char attr[NC_MAX_NAME+1];
+    size_t len;
+
+    stat = nc_get_att_text(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
+    if (stat == NC_NOERR) {
+      stat = nc_inq_attlen(ncid, vid, "interpolation", &len); CHKERRQ(nc_check(stat));
+      attr[len] = '\0';
+      if (strcmp(attr, "constant_piecewise_forward") == 0) {
+        *code = DATA1D_CONST_PIECE_FWD_INTERP;
+      } else if (strcmp(attr, "constant_piecewise_backward") == 0) {
+        *code = DATA1D_CONST_PIECE_BCK_INTERP;
+      } else if (strcmp(attr, "linear") == 0) {
+        *code = DATA1D_LINEAR_INTERP;
+      } else {
+        ierr = verbPrintf(5, com, 
+            "ATTENTION: interpolation '%s' for 1D data %s is unknown; defaulting to linear\n",
+            attr,datavarname); CHKERRQ(ierr);
+        *code = DATA1D_LINEAR_INTERP;
+      }
+    } else {
+      ierr = verbPrintf(5, com, 
+          "ATTENTION: interpolation attribute for 1D data %s is not found; defaulting to linear\n",
+          datavarname); CHKERRQ(ierr);
+      *code = DATA1D_LINEAR_INTERP;
+    }
+  } else {
+    *code = -1;
+  }
+  return 0;
+}
+
+
+PetscErrorCode Data1D::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
   // spread (broadcast) sequential Vecs containing ice or sea bed core-derived 
   // climate data to each processor
   
@@ -101,7 +123,7 @@ PetscErrorCode IceSheetForcing::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
     char name[NC_MAX_NAME+1];
     stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
     if (ndims != 1) {
-      SETERRQ2(1, "ncVarBcastDaVec: number of dimensions = %d for %s; should have ndims=1\n",
+      SETERRQ2(1, "number of dimensions = %d for %s; should have ndims=1\n",
                ndims, name);
     }
     stat = nc_inq_dimlen(ncid, dimids[0], &M_s); CHKERRQ(nc_check(stat));
@@ -127,10 +149,125 @@ PetscErrorCode IceSheetForcing::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
 }
 
 
-PetscErrorCode IceSheetForcing::initIndex(PetscScalar curr_year) {
+PetscErrorCode Data1D::getIndexedDataValue(PetscInt index, PetscScalar *value) {
   PetscErrorCode ierr;
+  PetscScalar *data;
   PetscInt    len;
-  PetscScalar *timeinyears;
+
+  if (index < 0) {
+    SETERRQ(1,"index negative");
+  }
+  ierr = VecGetLocalSize(vdata, &len); CHKERRQ(ierr);
+  if (index >= len) {
+    SETERRQ(1,"index out of bounds: too large");
+  }
+  ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
+  *value = data[index];
+  ierr = VecRestoreArray(vdata, &data); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode Data1D::getInterpolatedDataValue(PetscScalar myindep, PetscScalar *value) {
+  PetscErrorCode ierr;
+  PetscScalar *indep, *data;
+  PetscInt    index, len;
+
+  // determine index into data
+  ierr = VecGetLocalSize(vindep, &len); CHKERRQ(ierr);
+  ierr = VecGetArray(vindep, &indep); CHKERRQ(ierr);
+  PetscInt r, l=0;
+  r = len;
+  // do a binary search to find where our value of the independent variable fits in.
+  while (r > l + 1) {
+    PetscInt j = (r + l)/2;
+    if (myindep < indep[j]) {
+      r = j;
+    } else {
+      l = j;
+    }
+  }    
+  index = l;
+  if (index < 0) {
+    SETERRQ(1,"computed index is negative");
+  }
+  if (index >= len) {
+    SETERRQ(2,"computed index exceeds length");
+  }
+  ierr = VecRestoreArray(vindep, &indep); CHKERRQ(ierr);
+
+  ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
+  if (myindep == indep[index]) {
+    *value = data[index]; // if we have exact data, use it
+  } else { // otherwise we need to interpolate
+    switch (interpCode) {
+      case DATA1D_CONST_PIECE_BCK_INTERP:
+        // use the data point we are in front of
+        if (index == 0) {
+          *value = data[index];
+        } else {
+          *value = data[index-1];
+        }
+        break;
+      case DATA1D_CONST_PIECE_FWD_INTERP:
+        *value = data[index];
+        break;
+      case DATA1D_LINEAR_INTERP:
+        if (index == 0) {
+          *value = data[index];
+        } else {
+          const PetscScalar slope = (myindep - data[index-1]) / (data[index] - data[index-1]);
+          *value = data[index-1] + slope * (data[index]- data[index-1]);
+        }
+        break;
+      default:
+        SETERRQ1(1, "unknown interpolation method for %s\n", datavarname);
+    } // end switch
+  }
+  ierr = VecRestoreArray(vdata, &data); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+
+IceSheetForcing::IceSheetForcing() : Data1D() {
+  forcingActive = PETSC_FALSE;
+  index = 0;
+}
+
+
+IceSheetForcing::~IceSheetForcing() {
+  forcingActive = PETSC_FALSE;
+}
+
+
+PetscErrorCode IceSheetForcing::readStandardIceCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
+        int ncid, PetscScalar curr_year, PetscInt datatype) {
+  PetscErrorCode ierr;
+  
+  switch (datatype) {
+    case ISF_DELTA_T:
+      ierr = readData(mycom,myrank,ncid,"t","delta_T"); CHKERRQ(ierr);
+      break;
+    case ISF_DELTA_SEA_LEVEL:
+      ierr = readData(mycom,myrank,ncid,"t","delta_sea_level"); CHKERRQ(ierr);
+      break;
+    default:
+      SETERRQ(1,"invalid datatype\n");
+  } 
+  // times are positive (years b.p.) in data; change to negative (years *after* present)
+  vtimeinyears = vindep;
+  ierr = VecScale(vtimeinyears,-1.0); CHKERRQ(ierr);
+  ierr = initStandardIceCoreIndex(curr_year); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceSheetForcing::initStandardIceCoreIndex(PetscScalar curr_year) {
+  PetscErrorCode ierr;
+  PetscInt       len;
+  PetscScalar    *timeinyears;
 
   ierr = VecGetArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
   ierr = VecGetLocalSize(vtimeinyears, &len); CHKERRQ(ierr);
@@ -163,33 +300,7 @@ PetscErrorCode IceSheetForcing::initIndex(PetscScalar curr_year) {
 }
 
 
-
-PetscErrorCode IceSheetForcing::getInterpolationCode(int ncid, int vid, int *code) {
-  PetscErrorCode ierr;
-  int stat;
-  char attr[NC_MAX_NAME+1];
-  size_t len;
-
-  stat = nc_get_att_text(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
-  stat = nc_inq_attlen(ncid, vid, "interpolation", &len); CHKERRQ(nc_check(stat));
-  attr[len] = '\0';
-  if (strcmp(attr, "constant_piecewise_forward") == 0) {
-    *code = ISF_CONST_PIECE_FWD_INTERP;
-  } else if (strcmp(attr, "constant_piecewise_backward") == 0) {
-    *code = ISF_CONST_PIECE_BCK_INTERP;
-  } else if (strcmp(attr, "linear") == 0) {
-    *code = ISF_LINEAR_INTERP;
-  } else {
-    ierr = verbPrintf(1, com, 
-            "ATTENTION: Interpolation '%s' for climate forcing %s is unknown, defaulting to linear.\n",
-            attr,datavarname); CHKERRQ(ierr);
-    *code = ISF_LINEAR_INTERP;
-  }
-  return 0;
-}
-
-
-PetscErrorCode IceSheetForcing::updateFromData(PetscScalar curr_year, PetscScalar *change) {
+PetscErrorCode IceSheetForcing::updateFromStandardIceCoreData(PetscScalar curr_year, PetscScalar *change) {
   PetscErrorCode ierr;
   PetscScalar *timeinyears, *data;
   PetscInt    len;
@@ -213,7 +324,7 @@ PetscErrorCode IceSheetForcing::updateFromData(PetscScalar curr_year, PetscScala
     } else { // otherwise we need to interpolate
       PetscScalar y0, y1;
       switch (interpCode) {
-        case ISF_CONST_PIECE_BCK_INTERP:
+        case DATA1D_CONST_PIECE_BCK_INTERP:
           // use the data point we are infront of
           if (index == 0) {
             *change = 0.0;
@@ -224,10 +335,10 @@ PetscErrorCode IceSheetForcing::updateFromData(PetscScalar curr_year, PetscScala
             *change = data[index-1];
           }
           break;
-        case ISF_CONST_PIECE_FWD_INTERP:
+        case DATA1D_CONST_PIECE_FWD_INTERP:
           *change = data[index];
           break;
-        case ISF_LINEAR_INTERP:
+        case DATA1D_LINEAR_INTERP:
           if (index == 0) {
             *change = 0.0;
             ierr = verbPrintf(1, com, 

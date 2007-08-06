@@ -88,14 +88,14 @@ int main(int argc, char *argv[]) {
     IceModel       mPlain(g, *ice);
     IceROSSModel   mRoss(g, *ice);
 
-    PetscTruth  doRoss, ssBCset;
-    char        ssBCfile[PETSC_MAX_PATH_LEN];
+    PetscTruth  doRoss, ssaBCset;
+    char        ssaBCfile[PETSC_MAX_PATH_LEN];
     // re next option, see:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
     //     Ross ice shelf," Ann. Glaciol. 23, 46--51
     ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &doRoss); CHKERRQ(ierr);
-    ierr = PetscOptionsGetString(PETSC_NULL, "-shelfstreamBC", ssBCfile,
-                                 PETSC_MAX_PATH_LEN, &ssBCset); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
+                                 PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
     if (doRoss == PETSC_TRUE) {
       ierr = verbPrintf(2,com, 
             "PISMD: initializing EISMINT Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
@@ -105,13 +105,13 @@ int main(int argc, char *argv[]) {
     ierr = m->setFromOptions(); CHKERRQ(ierr);
     ierr = m->initFromOptions(); CHKERRQ(ierr);
 
-    if (ssBCset == PETSC_TRUE) {
+    if (ssaBCset == PETSC_TRUE) {
        ierr = verbPrintf(4, com, 
              "  attempting to read mask and boundary conds (ubar,vbar) from %s\n",
-             ssBCfile);   CHKERRQ(ierr);
-       ierr = m->readShelfStreamBCFromFile_netCDF(ssBCfile); CHKERRQ(ierr);
+             ssaBCfile);   CHKERRQ(ierr);
+       ierr = m->readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
        ierr = verbPrintf(2, com, 
-             "  done reading -shelfstreamBC file and setting boundary conditions\n");
+             "  done reading -ssaBC file and setting boundary conditions\n");
              CHKERRQ(ierr);
     }
 

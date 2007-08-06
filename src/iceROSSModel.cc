@@ -77,8 +77,7 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   useConstantNuForMacAyeal = PETSC_FALSE;
   useConstantHardnessForMacAyeal = PETSC_TRUE;
   setMacayealEpsilon(0.0);  // don't use this lower bound
-//  constantHardnessForMacAyeal = 2.22e8;
-  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}; 1.9e8 is (MacAyeal et al 1996) value
+  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 }
@@ -178,16 +177,16 @@ PetscErrorCode IceROSSModel::diagnosticRun() {
 PetscErrorCode IceROSSModel::finishROSS() {
   PetscErrorCode  ierr;
 
-  PetscTruth  ssBCset;
-  char        ssBCfile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-shelfstreamBC", ssBCfile,
-                               PETSC_MAX_PATH_LEN, &ssBCset); CHKERRQ(ierr);
-  if (ssBCset == PETSC_FALSE)
+  PetscTruth  ssaBCset;
+  char        ssaBCfile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
+                               PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
+  if (ssaBCset == PETSC_FALSE)
     return 0;
     
   ierr = verbPrintf(2,grid.com, "\nreading EISMINT ROSS observed velocities from %s...\n",
-                    ssBCfile); CHKERRQ(ierr);
-  ierr = readObservedVels(ssBCfile); CHKERRQ(ierr);
+                    ssaBCfile); CHKERRQ(ierr);
+  ierr = readObservedVels(ssaBCfile); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, "computing error relative to EISMINT ROSS observed velocities ...\n");
       CHKERRQ(ierr);
@@ -204,7 +203,7 @@ PetscErrorCode IceROSSModel::finishROSS() {
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
   if (pause_time > 0) {
-    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,"\npausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
   

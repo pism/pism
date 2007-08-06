@@ -1017,51 +1017,85 @@ Using these data to validate PISM's ice shelf modelling abilities requires downl
 \item \verb|kbc.dat|
 \item \verb|inlets.dat|
 \end{itemize}
-For the rest of the discussion we will assume that these three files are in a directory \verb|eisROSS/|, and we will refer to these as the ``EISMINT-Ross'' data.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but that (as usual) the PISM computational grid is determined by the user.
+In the next step we will assume that these three files are in a directory \verb|eisDownload/|, and we will refer to these as the ``EISMINT-Ross'' data.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but that (as usual) the PISM computational grid is determined by the user.
 
-The first step for using these data, as usual for PISM, is to convert them to a machine readable NetCDF file which includes the metadata needed to use it with PISM.  There is already a script \verb|eis_ross.py| for this purpose in subdirectory \verb|pism/test/|.  It  reads the above three EISMINT-Ross \verb|.dat| files and it creates a NetCDF file \verb|eis_ross.nc|.  It is used this way:
+The first step for using these data, as usual for PISM, is to convert them to a machine readable NetCDF file.  There is already a script \verb|eis_ross.py| for this purpose in subdirectory \verb|pism/test/ross/|.  It  reads the above three EISMINT-Ross \verb|.dat| files and it creates a NetCDF file with the data and some metadate needed by PISM.  It is used this way:
 
-\verb|eis_ross.py --prefix=eisROSS/|
+\verb|test/ross/eis_ross.py --prefix=eisDownload/ -o ross.nc|
 
-\noindent  The output file can be reconverted to text using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
+\noindent (In fact the ``\verb|-o ross.nc|'' is not needed because it is the default name.)  The output file can be reconverted to text using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
 
 \begin{figure}[ht]
 \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
-\caption{Two views from \protect{\texttt{ncview}} of the EISMINT-Ross data in the NetCDF file \protect{\texttt{eis\_ross.nc}}.  The floating-versus-grounded mask (left) and the $x$-component of the kinematic (Dirichlet) boundary condition for velocity (right).}
+\caption{Two views from \protect{\texttt{ncview}} of the EISMINT-Ross data in the NetCDF file \protect{\texttt{ross.nc}}.  The floating-versus-grounded mask (left; red areas are floating ice shelf) and the $x$-component of the non-zero kinematic (Dirichlet) boundary condition for velocity (right).}
 \label{fig:rossmaskubar}
 \end{figure}
 
-The NetCDF file \verb|eis_ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation, and all of these are typical of ice sheet modelling data.  It also has variables \verb|ubar| and \verb|vbar| which give the boundary values which are needed for the diagnostic computation of velocity.  Also present are the variables \verb|mask|, which shows the domain where the ice shelf is modelled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Note that the original EISMINT-Ross data are on a 111 by 147 grid but that \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid, with the same $6.822$km spacing, which has ice-free ocean beyond the (straightened; compare \cite{MacAyealetal}) calving front.  See figure \ref{fig:rossmaskubar}.
+The NetCDF file \verb|ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation, and all of these are typical of ice sheet modelling data.  It also has variables \verb|ubar| and \verb|vbar| which give the boundary values which are needed for the diagnostic computation of velocity.  Also present are the variables \verb|mask|, which shows the domain where the ice shelf is modelled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Note that the original EISMINT-Ross data are on a 111 by 147 grid but that \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid, with the same $6.822$km spacing, which has ice-free ocean beyond the (straightened; compare \cite{MacAyealetal}) calving front.  See figure \ref{fig:rossmaskubar}.
 
 The basic Ross ice shelf velocity computation might be this:
 
-\verb|   pismd -ross -bif eis_ross.nc -shelfstreamBC eis_ross.nc \|
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv|
 
-\verb|      -Mx 147 -My 147 -Mz 11 -mv|
+\noindent Here we bootstrap (\verb|-bif|) from \verb|ross.nc| but we also specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  Note that the small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at depth be the surface temperature \cite{MacAyealetal}, and thus there is no thermocoupling issue.
 
-\noindent Here we bootstrap (\verb|-bif|) from \verb|eis_ross.nc| but we also specify \verb|eis_ross.nc| as the source of the boundary value data mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  Note that the small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at depth be the surface temperature \cite{MacAyealetal}, and thus there is no thermocoupling issue.
+At the end of this run the computed velocity field is compared to the interpolated data on observed velocities in the file \verb|ross.nc|.  (In particular, that NetCDF file contains a variable \verb|accur| which identifies the region in which the observed velocities are valid.  The observed (interpolated) velocities themselves are stored in variables \verb|mag_obs| and \verb|azi_obs|.)  We see that the largest computed velocity in the ice shelf is just under a thousand meters per year, and that errors in the vector values of velocity are roughly 10\% in a sum of squares average sense.  (There is more on viewing the results, on measuring the correspondence with measurements, and on tuning the hardness parameter to fit the data, below.)
 
-At the end of this run the computed velocity field is compared to the data on observed velocities in the file \verb|eis_ross.nc|.  (In particular, that NetCDF file contains a variable \verb|accur| which identifies the region in which the observed velocities are valid.  The observed (interpolated) velocities themselves are stored in variables \verb|mag_obs| and \verb|azi_obs|.)  We see that the largest computed velocity in the ice shelf is just under a thousand meters per year, and that errors in the vector values of velocity are roughly 10\% in a sum of squares average sense.  (There is more on viewing the results, on measuring the correspondence with measurements, and on tuning the hardness parameter to fit the data, below.)
+There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding diagnositic viewers and a more complete (verbose) report to standard out:
 
-There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding 
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
+
+\verb|     -d cnmu -verbose 4 -pause 10|
+
+\noindent Alternately one might want to change the hardness parameter from the default value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal} to a slightly softer value because the highest computed velocity with the default setting is a little lower than the maximum measured in the RIGGS data (namely, $1007$ m/a; see files \verb|pism/test/ross/README| and \verb|pism/test/ross/riggs_clean.dat|).   We can also use lower (more severe) tolerances for the nonlinear iteration (\verb|-mv_rtol|) and the linear iteration (\verb|-ksp_rtol|) to get more confidence in the numerical scheme.   Finally we can also save the model state with a meaningful name:
+
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
+
+\verb|     -verbose 4 -constant_hardness 1.8e8 -mv_rtol 1e-6 -ksp_rtol 1e-10 \|
+
+\verb|     -o ross_out_1p8|
+
+\noindent Using \verb|ncview| on \verb|ross_out_1p8.nc| to view the horizontal speed of the ice shelf gives figure \ref{fig:rossspeed1p8}.
+
+\begin{figure}[ht]
+\includegraphics[height=3.5in,keepaspectratio=true]{figs/rossspeed1p8}
+\caption{Computed horizontal speed of the Ross ice shelf using $\bar B = 1.8 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$.  Color gives velocity in m/a; see scale.}
+\label{fig:rossspeed1p8}
+\end{figure}
+
+\small
+\begin{table}[h]
+\caption{Non-obvious options available and/or recommended with \texttt{pismd -ross}.}\label{tab:rossoptions}
+\begin{tabular}{@{}llll}\hline
+\textbf{Option} & \textbf{Explanation/Comments} \\ \hline
+  \verb|-d cnmu| &       a good way to see what is going on \\
+  \verb|-o foo -of nm| &  writes NetCDF file \verb|foo.nc| with full three-dimensional \\
+    & velocity fields \emph{and} writes some model results to \\
+    & Matlab-readable file \verb|foo.m| \\
+  \verb|-pause N| &      pause for N seconds when refreshing viewers \\
+  \verb|-ross| &         only use with executable \verb|pismd| \\
+  \verb|-tune x,y,z| &   run through constant hardness values $\bar B = x, x+y, x+2y,$ \\
+ & $\dots, z(=x+ky)$; (note no spaces in ``\verb|x,y,z|'') \\
+  \verb|-verbose 4| &      shows information on nonlinear iteration and Krylov solve \\
+    & and parameters related to solving the ice shelf equations \\
+\hline
+\end{tabular}
+\end{table}
+\normalsize
+
+Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnositic velocity computation.
 
 
 [[OUT OF DATE BELOW]]
-\bigskip
-\noindent\textbf{Example 1}.  Basic run with all info displayed: 
 
-\verb|pisms -ross -d cnmu -pause 10 -showobsvel -verbose|
 
-\noindent Note $\bar B = 2.22 \times 10^8$ versus $\bar B = 1.9 \times 10^8$ as in \cite{MacAyealetal}.  Files \verb|pism/eisROSS/111by147Grid.dat|, \verb|pism/eisROSS/kbc.dat|, and \verb|pism/eisROSS/inlets.dat| must be present (though \verb|-prefix| can be used if they are at a different location).
-
-\bigskip
 \noindent\textbf{Example 2}.  Do same as above but save \Matlab results:
 
 \verb|pisms -ross -verbose -o ross_2p22e8 -of m|
 
 \noindent Note there is no graphical display.  The resulting file \verb|ross_2p22e8.m| can be run in \Matlab as a script.
 
-The files \verb|README.rossPISM|, \verb|riggs_ELBclean.dat|, and \verb|ross_plot.m| in subdirectory \verb|pism/test/ross/| can be used to produce $\chi^2$ statistic relative to RIGGS data \cite{MacAyealetal}, and to give a nice picture.  In particular, once the above PISM run finishes and \verb|ross_2p22e8.m| is saved in a location on the \Matlab path, and once \verb|pism/test/ross/| is added to the \Matlab path, one can enter these commands at the \Matlab prompt:
+The files \verb|README|, \verb|riggs_clean.dat|, and \verb|ross_plot.m| in subdirectory \verb|pism/test/ross/| can be used to produce $\chi^2$ statistic relative to RIGGS data \cite{MacAyealetal}, and to give a nice picture.  In particular, once the above PISM run finishes and \verb|ross_2p22e8.m| is saved in a location on the \Matlab path, and once \verb|pism/test/ross/| is added to the \Matlab path, one can enter these commands at the \Matlab prompt:
 \small\begin{verbatim}
 >> ross_2p22e8
 ...
@@ -1086,16 +1120,6 @@ These results compare well to those in table 1 of \cite{MacAyealetal}.  The figu
 \label{fig:rossscatter}
 \end{figure}
 
-\bigskip
-\noindent\textbf{Example 3}.  Same as \textbf{Example 1}, but asking for a lot more accuracy:
-
-\verb|pisms -ross -d cnmu -pause 10 -showobsvel -verbose \|
-
-\verb|  -mv_rtol 1e-7 -ksp_rtol 1e-10|
-
-\noindent In fact one gets nearly the same result,  which suggests the default tolerances (\verb|-mv_rtol 1e-4| \verb|-ksp_rtol 1e-6|) suffice.
-
-\bigskip
 \noindent\textbf{Example 4}.  Tune across range of values of $\bar B$, including \cite{MacAyealetal}
 value.
 
@@ -1103,32 +1127,7 @@ value.
 
 \noindent One sees why $\bar B = 2.22\times 10^8$ is used as default value by PISM.
 
-\small
-\begin{table}[h]
-\caption{Options available and/or recommended when validating using EISMINT Ross data; run with \texttt{obj/pisms -ross}.}\label{tab:rossoptions}
-\begin{tabular}{@{}llll}\hline
-\textbf{Option} & \textbf{Explanation/Comments} \\ \hline
-  \verb|-d cnmu| &       most useful way to see what is going on \\
-  \verb|-if foo| &       NOT allowed!  (there is no way to initialize from an input file) \\
-  \verb|-Mx|, \verb|-My| & do not adjust \\
-  \verb|-o foo -of m| &  writes data to foo.m; note that an output file \verb|foo.nc| (from \verb|-o foo -of n|) may also be useful \\
-  \verb|-pause N| &      pause for N seconds when refreshing viewers \\
-  \verb|-prefix foo| &   looks for files \verb|111by147Grid.dat|, \verb|kbc.dat|, and 
-                \verb|inlets.dat| in \verb|pism/foo/|; \\
-    & files are from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}; \\
-    & by default PISM looks in directory \verb|pism/eisROSS/| if \verb|-prefix foo| is not specified \\
-  \verb|-ross| &         to start the Ross validation; note it works only under executable \verb|pisms| \\
-  \verb|-showobsvel| &   shows observed (but interpolated) speeds from \verb|111by147Grid.dat| \\
-  \verb|-tune x,y,z| &   run through $\bar B$=\verb|x:y:z| (\Matlab syntax), that is, 
-                $\bar B = x, x+y, x+2y, \dots$, \\
-    & $x+Ny=z$ as hardness parameters; note no spaces in ``\verb|x,y,z|'' \\
-  \verb|-verbose| &      shows information on nonlinear iteration and Krylov solve \\
-  \verb|-verbose 5| &      shows, in particular, which lines were ignored during reads of \verb|???.dat| files, \\
-    & and parameters related to solving the ice shelf equations \\
-\hline
-\end{tabular}
-\end{table}
-\normalsize
+
 
 
 \clearpage\newpage
@@ -1140,117 +1139,139 @@ In this section we give one big example, namely how to use PISM to perform the i
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
 \medskip
 
-The data for this intercomparison is not new.  The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.
+The data for this intercomparison is not new.  The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  (Newer data, and even some newer understanding, is available in 2007.  The reader is encouraged to go and build a better Greenland model than the tutorial example here.)
 
-Clearly newer data, and even some newer understanding, is available in 2007.  The reader is encouraged to go and build a better Greenland model than the tutorial example here.
+\subsection{Obtaining and converting EISMINT-Greenland data}  This subsection describes the use of two Python scripts to convert the EISMINT-Greenland data into NetCDF files useable by PISM.
 
-\subsection{Obtaining and converting Greenland data}  This section describes the use of Python scripts (\verb|eis_green.py| and \verb|eis_core.py|) to convert the EISMINT Greenland data into NetCDF files useable by PISM.
-
-The Python scripts \verb|eis_green.py| and \verb|eis_core.py| can be found in the \verb|pism/test| directory.  In order to use the scripts, you must have the following on your system:\begin{itemize}
- \item The data files \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|), \verb|suaq20-EISMINT| (or \verb|suaq40-EISMINT|), 
- \verb|specmap.017|, and \verb|sum89-92-ss09-50yr.stp| from \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}.
- \item Installations of Numpy (\url{http://numpy.scipy.org/}) and pycdf (\url{http://pysclint.sourceforge.net/pycdf/}).
+The Python scripts \verb|eis_green.py| and \verb|eis_core.py| can be found in the \verb|pism/test| directory.  In order to use the scripts, you must have downloaded the following ascii data files from the above web site:\begin{itemize}
+ \item \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|)
+ \item \verb|suaq20-EISMINT| (or \verb|suaq40-EISMINT|)
+ \item \verb|specmap.017|
+ \item \verb|sum89-92-ss09-50yr.stp|
 \end{itemize}
+The Python libraries \verb|numpy| (\url{http://numpy.scipy.org/}) and \verb|pycdf| (\url{http://pysclint.sourceforge.net/pycdf/}) must also be present.  Note that the scripts \verb|eis_green.py| and \verb|eis_core.py| can both take option \verb|--prefix=foo/| to specify that the downloaded data is in directory \verb|foo/|.  The script \verb|eis_green.py| has an option (\verb|-g|) which allows the modeler to specify that either the 20 km (default) or 40 km data be converted to NetCDF; use \verb|-g 40| for the coarser data.
 
-\noindent The script \verb|eis_green.py| has one, optional command line argument (\verb|-g|). This argument takes one value (should be 20 or 40) which is used to identify if you are using the 20km or 40km gridded data (\verb|grid20-EISMINT| and \verb|suaq20-EISMINT| or \verb|grid40-EISMINT| and \verb|suaq40-EISMINT|). By default, \verb|grid20-EISMINT| and \verb|suaq20-EISMINT| will be used. As for the \verb|eis_core.py| script, there are two options, \verb|-s| and \verb|-t|, that are used to specify how to interpolate the change in sea level data and the change in temperature data respectively. The three types of interpolation currently implemented in \verb|pgrn| are ``linear'', ``constant\_piecewise\_forward'', and ``constant\_piecewise\_backward''.  Now, from a directory with the EISMINT data files, run:
+Run
+
+\verb|  eis_green.py --prefix=foo/ -g 20|
+
+The NetCDF file \verb|eis_green20.nc| (or \verb|eis_green40.nc|) will be created, in the current directory, from the data in \verb|grid20-EISMINT| and \verb|suaq20-EISMINT|.  It contains variables for the gridded latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|h|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can be viewed graphically with \verb|ncview| or as long text files with \verb|ncdump|.
+
+As an exercise, the NCO (\url{http://nco.sourceforge.net/}) can be used on \verb|eis_green20.nc| to compare the putative ice surface elevation to the sum of the ice thickness and the bed elevation:
+
+\verb|  ncap -O -vs "check=h-(H+b)" eis_green20.nc eis_green_check.nc|
+
+\noindent The variable \verb|check| in the output file holds the difference of \verb|h| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|h| is within 1 meter of $\verb|b|+\verb|H|$.  Thus the surface elevation \verb|h| is consistent.  It is also redundant: at bootstrapping PISM simply reads ice thickness \verb|H| and bed elevation \verb|b| and computes ice surface elevation as the sum of these two; the ice surface elevation variable \verb|h| is not actually read from the bootstrapping NetCDF file.
+
+It also should be noted that bed elevation (\verb|b|) contains a missing value attribute of $0.0$ because in several places (deep fjords, apparently) the bed elevation was not measured or trusted.  When viewing this data in \verb|ncview|, these values show as white spots. If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions essentially impossible.  We therefore suggest smoothing this aspect of the data.  This can be done with another script named \verb|fill_missing.py|, found in directory \verb|pism/test/|. To use this script, the following command can be run:
+
+\verb|  fill_missing.py -i eis_green20.nc -v b -o eis_green_smoothedbed.nc|
+
+\noindent Here, \verb|eis_green20.nc| is the input file, \verb|b| is the variable with missing values, and \verb|eis_green_smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors.  Multiple variables can be fixed at the same time by separating the variable names by commas.  (That is,\\
+\verb|fill_missing.py -i data.nc -v b,H,Ts -o data_smoothed.nc|.  Note that \emph{each} of the listed variables must have an attribute named \verb|missing_value|.)
+
+In addition to getting the EISMINT gridded data into a NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it is possible for the modelled ice sheet to flow onto to it, and indeed this presumably occurred at the last glacial maximum.  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island we want to prevent this from happening.  Therefore special code runs when \verb|pgrn| is used (see below) which says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely).  (``Removed from the flow simulation'' actually means marked as ice-free ocean; note the use of option \verb|-ocean_kill| below.)
+
+Recall we mentioned the script \verb|eis_core.py| as well.  Just execute it, possibly giving the directory where the ice core and sea bed core data \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| are found, if that is not the current directory:
+
+\verb|  eis_core.py --prefix=foo/|
+
+Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  These can be \verb|ncview|ed or \verb|ncdump|ed.
+
+\subsection{Bootstrapping with EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, bootstrapping can begin.  This 100 year run is a basic version, shown with \verb|-verbose| to suggest the many aspects of ``bootstrapping'':
 
 \small\begin{quote}\begin{verbatim}
-$  eis_green.py -g 20
+$ pgrn -bif eis_green_smoothedbed.nc -Mx 83 -My 141 -Mz 101 -y 10 -o grn10yr_20km -verbose
+PGRN (EISMINT Greenland mode)
+bootstrapping by PISM default method from file eis_green_smoothedbed.nc
+  polar stereographic found: svlfp = -41.14, lopo =  71.65, sp =  71.00
+  time t found in bootstrap file; using to set current year
+  using default value Lz=4000.000000 for vertical extent of computational box for ice
+  WARNING: ignoring values found for surface elevation h and using h = b + H
+  WARNING: surface temperature Ts not found; using default  263.15 K
+  WARNING: geothermal flux ghf not found; using default  0.042 W/m^2
+  uplift not found. Filling with zero
+  Hmelt not found. Filling with zero
+  done reading .nc file
+  determining mask by floating criterion; grounded ice marked as SIA (=1)
+  setting accumulation in ice shelf-free ocean to default value -20.00 m/a
+  filling in temperatures at depth using surface temperatures and guesses
+bootstrapping done
+geothermal flux vGhf is being set to: 0.050000
+  [computational box for ice: ( 1640.00 km) x ( 2800.00 km) x ( 4000.00 m)]
+  [grid cell dimensions     : (   20.00 km) x (   20.00 km) x (   40.00 m)]
+  IceParam: Mx = 83, My = 141, Mz = 101, Mbz = 1,
+            Lx = 820.00 km, Ly = 1400.00 m, Lz = 4000.00 m, Lbz =   0.00 m,
+            dx = 20.000 km, dy = 20.000 km, dz = 40.000 m, year =   0.0000,
+            history = ****************
+bueler@ubuntu 2007-08-06 00:10:07 AKDT : pgrn -bif eis_green_smoothedbed.nc 
+-Mx 83 -My 141 -Mz 101 -y 10 -o grn10yr_20km -verbose
+            **************************
+$$$$$       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+$$$$$      0.000 (+  0.00000[0 ]):   2.825   1.671    0.207   3042.000   273.173
+    (volume of ice which is SIA, stream, shelf:     2.825,     0.000,     0.000)
+  d(volume)/dt of ice (km^3/a):           0.00
+  average value of dH/dt (m/a):        0.00000
+  area percent covered by ice:         35.6917
+    (area percent ice SIA, stream, shelf:         99.8564,    0.0000,    0.1436)
+  max diffusivity D on SIA (m^2/s):      0.000
+  max |bar U| in all ice (m/a):          0.000
+    (av |bar U| in SIA, stream, shelf (m/a):        0.000,     0.000,     0.000)
+  maximum |u|,|v|,|w| in ice (m/a):      <N/A>
+  fraction of ice which is original:     0.989
+$v$tf      0.128 (+  0.12831[0d]):   2.825   1.879    0.185   3041.841   270.516
+    (volume of ice which is SIA, stream, shelf:     2.825,     0.000,     0.000)
+  d(volume)/dt of ice (km^3/a):         419.30
+  average value of dH/dt (m/a):        0.25096
+  area percent covered by ice:         40.1350
+    (area percent ice SIA, stream, shelf:         99.8723,    0.0000,    0.1277)
+  max diffusivity D on SIA (m^2/s):     13.152
+  max |bar U| in all ice (m/a):        739.232
+    (av |bar U| in SIA, stream, shelf (m/a):       42.225,     0.000,     9.982)
+  maximum |u|,|v|,|w| in ice (m/a):    712.745,   477.121,   137.953
+  fraction of ice which is original:     0.965
+...
+$v$tf     10.000 (+  0.10510[0t]):   2.831   1.873    0.187   3033.913   270.523
+    (volume of ice which is SIA, stream, shelf:     2.830,     0.000,     0.000)
+  d(volume)/dt of ice (km^3/a):         578.85
+  average value of dH/dt (m/a):        0.30902
+  area percent covered by ice:         40.0154
+    (area percent ice SIA, stream, shelf:         99.9146,    0.0000,    0.0854)
+  max diffusivity D on SIA (m^2/s):      5.054
+  max |bar U| in all ice (m/a):        370.554
+    (av |bar U| in SIA, stream, shelf (m/a):       33.263,     0.000,    14.683)
+  maximum |u|,|v|,|w| in ice (m/a):    331.165,   291.717,     8.628
+  fraction of ice which is original:     0.964
+done with run ... 
+Writing model state to file `grn10yr_20km.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
 
-and
+\noindent Since the EISMINT Greenland data does not contain certain variables necessary to initialize PISM in the sense of initial values for the relevant partial differential equations, this bootstrapping mode fills in several default values.  (As noted in section \ref{sect:boot} we are doing naive inverse modeling.)  For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in the \verb|-bif| file.  Thus, these variables were filled with default \verb|263.15|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values, we see that \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness ``\verb|h = b + H|''.
 
-\small\begin{quote}\begin{verbatim}
-$  eis_core.py -t constant_piecewise_backward -s linear
-\end{verbatim}
-\end{quote}\normalsize
+\subsection{Running the EISMINT-Greenland experiments}  There are several experiments that can be run using command line arguments with \verb|pgrn|.  Some of them require the use of more python scripts, while single line commands are sufficient for others.
 
-\noindent As a result, two NetCDF files named \verb|eis_green20.nc| (or \verb|eis_green40.nc|) and \verb|eis_core.nc| will be created in the same directory.  The NetCDF file \verb|eis_green20.nc| is the EISMINT Greenland data consisting of values for latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|h|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can easily be viewed using Ncview (\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}) with the command:
+\subsubsection{Steady state experiments}  The first experiment is a steady state run ``SSL2'' which uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}. This experiment is intended to be run until the model reaches a ``steady state'', which means a particular standard for a small volume change rate (less than a .01\% change in volume in 10,000 years).  To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl_exper.py| and can be found in the \verb|pism/test| directory.  When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs.  It can be used with multiple processors by setting the option \verb|-n|, for example:
 
-\small\begin{quote}\begin{verbatim}
-$  ncview eis_green20.nc
-\end{verbatim}
-\end{quote}\normalsize
+\verb|  ssl_exper.py -n 8|
 
-\noindent In order to perform somewhat of a checksum on the \verb|eis_green20.nc|, the NCO tools (\url{http://nco.sourceforge.net/}) can be used.  The following command creates a new NetCDF file named \verb|eis_green_check.nc| with a variable named \verb|check|:
+One can also give a \verb|-ssl3 -gk| option to \verb|pgrn|, or a \verb|--ssl3| option to \verb|ssl_exper.py|.  This gives a particular interpretation to the SSL3 experiment which is described in \cite{RitzEISMINT}, namely that the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0 will be used.  (There is no assertion that this choice is superior at this point.)
 
-\small\begin{quote}\begin{verbatim}
-$  ncap -O -vs "check=h-(H+b)" eis_green20.nc eis_green_check.nc
-\end{verbatim}
-\end{quote}\normalsize
+\subsubsection{Climate forcing from GRIP and SPECMAP, and a greenhouse-warming scenario}  The next experiment is intended to be carried out after the completion of the steady state run (above) using the saved steady model state. 
 
-\noindent This variable holds the difference of \verb|h| and $\verb|b|+\verb|H|$.  Viewing this variable will show that \verb|h| is within 1 meter of $\verb|b|+\verb|H|$ and is considered to be redundant.  Thus, this data will be ignored.
+Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:
 
-It also should be noted that bed elevation (\verb|b|) contains a missing value attribute of $0.0$. When viewing this data in Ncview, these values will show as white spots. If these missing values are left in, sharp formations may appear after some time in PISM. Thus, it might be useful to `smooth' the data. This can be done with another script named \verb|fill_missing.py|. To use this script, the following command can be run:
+\verb|  pgrn -ccl3 -if green20_SSL3.nc -dTforcing grid_dT.nc \|
 
-\small\begin{quote}\begin{verbatim}
-$  fill_missing.py -i eis_green.nc -v b -o eis_green_smoothed.nc
-\end{verbatim}
-\end{quote}\normalsize
+\verb|    -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green20_CCL3_y0|
 
-\noindent Here, \verb|eis_green.nc| is the input file, \verb|b| is the variable with missing values, and \verb|eis_green_smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors. Multiple variables can be fixed at the same time by separating the variable names by commas \\
-(e.g. \verb|fill_missing.py -i data.nc -v b,H,Ts -o data_smoothed.nc|). The only requirement is that each variable has an attribute named \verb|missing_value|.
+\noindent EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing.  If \verb|pgrn -ccl3| is run past year 0, and thus past then end of the GRIP and SPECMAP data, this baseline run will occur by default.  So the previous command can be run for another 500 years, and the forcing can be omitted:
 
-The file \verb|eis_core.nc| contains the GRIP data used for the climate forcing options which will be explained later.
+\verb|  pgrn -ccl3 -if green20_CCL3_y0.nc -y 500 -o green20_CCL3_y500|
 
-In addition to getting the EISMINT data into a NetCDF format and filling missing values, there is an issue with Ellesmere Island. Ellesmere Island is very close to Greenland, and so it is possible for the ice sheet to jump over onto to it. Since we don't know much about ice sheets on Ellesmere Island, we want to prevent this from happening. So within the \verb|pgrn| derived class, any bedrock above sealevel northwest of the line connecting $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ was removed (the same applies to anything southeast of $(30^\circ E, 67^\circ N)$ due to the tip of Iceland).
+\subsubsection{Greenhouse warming}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It uses the model state obtained for present day from the CCL3 run.  Using the previous commands, this is the file named \verb|green20_CCL3_y0.nc|.  The GWL3 experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\subsection{Bootstrapping EISMINT Greenland Data}  Once the EISMINT Greenland data is obtained and formatted properly, bootstrapping can begin.  A very simple run is shown below using the \verb|-verbose| option in order to show what is happening.
-
-\small\begin{quote}\begin{verbatim}
-$  pgrn -bif eis_green20.nc -Mx 83 -My 141 -y 0 -o grn0y_20km -verbose
-   PGRN (EISMINT Greenland mode)
-   bootstrapping by PISM default method from file test/eis_green20.nc
-     using default value Lz=5000.000000 for vertical extent of computational box for ice
-     WARNING: ignoring values found for surface elevation h and using h = b + H
-     WARNING: surface temperature Ts not found. Filling in with default value: 263.150000
-     WARNING: geothermal flux ghf not found. Filling in with default value: 0.042000
-     uplift not found. Filling with zero
-     determining mask by floating criterion; grounded ice marked as SIA (=1)
-     setting accumulation in ice shelf-free ocean to default value -20.000000
-    Hmelt not found. Filling with zero
-   bootstrapping done
-     [computational box for ice: ( 1640.00 km) x ( 2800.00 km) x ( 5000.00 m)]
-     [grid cell dimensions     : (   20.00 km) x (   20.00 km) x (  166.67 m)]
-   ...
-   done with run ... 
-   Writing model state to file `grn0y_20km.nc' ... done.
-
-\end{verbatim}
-\end{quote}\normalsize
-
-\noindent Since the EISMINT Greenland data does not contain certain variables necessary to run PISM, this bootstrapping mode fills in several default values. For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in \verb|eis_green.nc|. Thus, these variables were filled with default \verb|263.15|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values. When bootstrapping, \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness (\verb|Ignoring values found for h and using h = b + H|).
-
-\subsection{Running Greenland Experiments Using Bootstrapped Data}  There are several experiments that can be run using command line arguments with \verb|pgrn|. Some of them require the use of more python scripts, while single line commands are sufficient for others.
-\subsubsection{Steady State Experiments}  The first experiment is a steady state run using the parameters specified in the EISMINT Intercomparison (-ssl2). This experiment is intended to be run until the model reaches a ``steady state'' (less than a .01\% change in volume in 10,000 years). To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl2_expr.py| and can be found in the \verb|pism/test| directory. When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs. It can take two options at the command line. the first is \verb|-n| which is used to specify the number of processors to be used, and the second is \verb|--ssl3| which is used to tell the script to run a steady state run under slightly different parameters (namely, an enhancement factor of 1 and the Goldsby-Kohlstedt flow law).  An example use of \verb|ssl2_expr.py| to run the first steady state experiment on 8 processors is as follows:
-
-\small\begin{quote}\begin{verbatim}
-$  ssl2_expr.py -n 8
-\end{verbatim}
-\end{quote}\normalsize
-
-\subsubsection{Climate Forcing}  The next experiment is intended to be carried out after the completion of the steady state run using the resulting steady model state. The main focus here is the options \verb|-dTforcing| and \verb|-dSLforcing| which use the GRIP data in \verb|grip_dT.nc| and \verb|specmap_dSL.nc| to force the surface temperature and sea level respectively. Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to simulate part of a global climate system, which is specified in \verb|grip_dT.nc| and \verb|specmap_dSL.nc| and interpolated between years according to the options chosen when \verb|eis_core.py| was run. The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years. Therefore, it is necessary to manually set the year into the past when running \verb|pgrn|. To do this, the option \verb|-ys| is used. This experiment can be run using the following command:
-
-\small\begin{quote}\begin{verbatim}
-$  pgrn -ccl3 -if green20_SSL3.nc -dTforcing grid_dT.nc \
-	-dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green20_CCL3_y0
-\end{verbatim}
-\end{quote}\normalsize
-
-\noindent The EISMINT Intercomparison also calls to run for another 500 years with $\bigtriangleup$T and $\bigtriangleup$Sea set to zero. If \verb|pgrn| is run beyond the times in the climate forcing data, this is exactly what it will do. So the previous command can be run for another 500 years, or the forcing can be omitted completely using the following command:
-
-\small\begin{quote}\begin{verbatim}
-$  pgrn -ccl3 -if green20_CCL3_y0.nc -y 500 -o green20_CCL3_y500
-\end{verbatim}
-\end{quote}\normalsize
-
-\subsubsection{Greenhouse Warming}  The last experiment (Greenhouse Warming) described in the EISMINT Intercomparison uses the model state obtained for present day (1989). Using the previous commands, this is the file named \verb|green20_CCL3_y0.nc|. The Greenhouse Warming experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years. The following command will run this experiment:
-
-\small\begin{quote}\begin{verbatim}
-$  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3
-\end{verbatim}
-\end{quote}\normalsize
+\verb|  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3|
 
 
 \clearpage\newpage

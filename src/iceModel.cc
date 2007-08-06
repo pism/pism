@@ -695,8 +695,10 @@ PetscErrorCode IceModel::diagnosticRun() {
   ierr = updateViewers(); CHKERRQ(ierr);
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
-  ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  if (pause_time > 0) {
+    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  }
   return 0;
 }
 

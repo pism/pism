@@ -131,8 +131,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta T data from forcing file %s ...\n", dTFile); CHKERRQ(ierr);
-    ierr = dTforcing.readDataAndAlloc(grid.com, grid.rank, ISF_DELTA_T, 
-                                      ncid, grid.p->year);
+    ierr = dTforcing.readStandardIceCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,
+                                             ISF_DELTA_T);  CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(5, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta T forcing data\n");
   }
@@ -146,8 +146,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta sea level data from forcing file %s ...\n", dSLFile); CHKERRQ(ierr);
-    ierr = dSLforcing.readDataAndAlloc(grid.com, grid.rank, ISF_DELTA_SEA_LEVEL, 
-                                       ncid, grid.p->year);
+    ierr = dSLforcing.readStandardIceCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,
+                                              ISF_DELTA_SEA_LEVEL); CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
   }
@@ -178,8 +178,8 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
   if (expernum == 3) {  // for CCL3 get delta Temperature and delta Sea Level
                         // from ice code/ sea bed core data
     PetscScalar TsChange, seaLevelChange;
-    ierr = dTforcing.updateFromData(grid.p->year,&TsChange); CHKERRQ(ierr);
-    ierr = dSLforcing.updateFromData(grid.p->year,&seaLevelChange); CHKERRQ(ierr);
+    ierr = dTforcing.updateFromStandardIceCoreData(grid.p->year,&TsChange); CHKERRQ(ierr);
+    ierr = dSLforcing.updateFromStandardIceCoreData(grid.p->year,&seaLevelChange); CHKERRQ(ierr);
     ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
     ierr = VecShift(vbed,bedDiff - seaLevelChange); CHKERRQ(ierr);
     bedDiff = seaLevelChange;

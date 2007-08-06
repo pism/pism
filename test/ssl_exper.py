@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# this script will run the EISMINT SSL2 experiment. It will run pgrn
+# This script will run the EISMINT-Greenland SSL2 or SSL3 experiment. It runs pgrn
 # until there is less than a .01% change in volume in 10,000 years
 
 import sys
@@ -11,6 +11,7 @@ import string
 # command line arguments
 num_proc=1
 stdout_file = "output_file"
+BOOT_IN_FILE = "eis_green_smoothedbed.nc"
 steadyState = "-ssl2"
 out_end = "SSL2"
 
@@ -32,7 +33,7 @@ print 'Running with ' + str(num_proc) + ' processors'
 # run pism setup stuff
 try:
   print '1. trivial amount of surface smoothing'
-  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif eis_green20.nc -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file
+  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif ' + BOOT_IN_FILE + ' -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file
   print cmd
   (status, output)=commands.getstatusoutput(cmd)
 
@@ -97,3 +98,4 @@ while result > .0001:
   print 'percent difference is: '+str(result*100)+'%'
   prev_year=curr_year
   curr_year=curr_year+10
+  

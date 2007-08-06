@@ -10,7 +10,7 @@ SECPERA = 3.1556926e7
 GRID_FILE = '111by147Grid.dat'
 KBC_FILE = 'kbc.dat'
 INLETS_FILE = 'inlets.dat'
-WRIT_FILE = 'eis_ross.nc'
+WRIT_FILE = 'ross.nc'
 dxROSS = 6822.0 # meters
 MASK_SHEET = 1
 MASK_FLOATING = 3
@@ -46,12 +46,14 @@ def uvGet(mag,azi):
 
 ##### command line arguments #####
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:", ["prefix="])
+  opts, args = getopt.getopt(sys.argv[1:], "p:o:", ["prefix=", "out="])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
       GRID_FILE = arg + GRID_FILE
       KBC_FILE = arg + KBC_FILE
       INLETS_FILE = arg + INLETS_FILE
+    if opt in ("-o", "--out"):
+      WRIT_FILE = arg
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -71,8 +73,22 @@ MyROSS = int(dim[1])
 xsROSS = MyROSS - xmROSS
 MxROSS = MyROSS
 top = MxROSS - 1
+# compute RIGGS grid coordinates (from original RIGGS documents)
 lat = zeros((MxROSS, MyROSS), float32)
 lon = zeros((MxROSS, MyROSS), float32)
+dlat = (-5.42445 - (-12.3325)) / 110.0
+dlon = (3.72207 - (-5.26168)) / 146.0
+#from Matlab file ross_plot.m:
+#dlat = (-5.42445 - (-12.3325))/110;
+#gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
+#gridlon = linspace(-5.26168,3.72207,147);
+for i in range(MxROSS):
+  for j in range(MyROSS):
+    lat[top - i,j] = -12.3325 - dlat * 46.0 + (top - i) * dlat
+    lon[top - i,j] = -5.26168 + j * dlon
+#these are to be filled from 111by147.dat:
+eislat = zeros((MxROSS, MyROSS), float32) # actually ignored
+eislon = zeros((MxROSS, MyROSS), float32) # actually ignored
 mask = zeros((MxROSS,MyROSS), int16)
 azi = zeros((MxROSS, MyROSS), float32)
 mag = zeros((MxROSS, MyROSS), float32)
@@ -88,12 +104,12 @@ vprint(grid.readline())
 j=0;
 for line in range(xsROSS):
    for i in range(MyROSS):
-      lat[top-j,i] = 9999.;
+      eislat[top-j,i] = 9999.;
    j = j + 1
 for line in range(xmROSS):
    latvalue = float(grid.readline())
    for i in range(MyROSS):
-      lat[top-j,i] = latvalue
+      eislat[top-j,i] = latvalue
    j = j + 1
 vprint(grid.readline()) # read extra value
 # note there are actually 148 "columns position" values in 111by147Grid.dat file
@@ -103,7 +119,7 @@ i=0;
 for line in range(MyROSS):
    lonvalue = float(grid.readline())
    for j in range(MxROSS):
-      lon[top-j,i] = lonvalue
+      eislon[top-j,i] = lonvalue
    i = i + 1
 vprint(grid.readline()) # read extra value
 vprint(grid.readline()) # ignor two lines
@@ -210,8 +226,8 @@ ydim = ncfile.def_dim('y', MyROSS)
 # define the variables
 xvar = ncfile.def_var('x', NC.FLOAT, (xdim,))
 yvar = ncfile.def_var('y', NC.FLOAT, (ydim,))
-latvar = ncfile.def_var('rows', NC.FLOAT, (xdim,ydim))
-lonvar = ncfile.def_var('cols', NC.FLOAT, (xdim,ydim))
+latvar = ncfile.def_var('lat', NC.FLOAT, (xdim,ydim))
+lonvar = ncfile.def_var('lon', NC.FLOAT, (xdim,ydim))
 maskvar = ncfile.def_var('mask', NC.INT, (xdim,ydim))
 azivar = ncfile.def_var('azi_obs', NC.FLOAT, (xdim,ydim))
 magvar = ncfile.def_var('mag_obs', NC.FLOAT, (xdim,ydim))
@@ -237,11 +253,8 @@ setattr(yvar, 'axis', 'Y')
 setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
 setattr(yvar, 'standard_name', 'projection_y_coordinate')
 setattr(yvar, 'units', 'm')
-setattr(latvar, 'long_name', 'EISMINT ROSS rows position')
-setattr(latvar, 'units', '(UNITS UNKNOWN)')
-setattr(latvar, 'missing_value', 9999.)
-setattr(lonvar, 'long_name', 'EISMINT ROSS columns position')
-setattr(lonvar, 'units', '(UNITS UNKNOWN)')
+setattr(latvar, 'long_name', 'RIGGS grid south latitude')
+setattr(lonvar, 'long_name', 'RIGGS grid west longitude')
 setattr(maskvar, 'long_name', 'shallow ice approximation or ice shelf mask')
 setattr(azivar, 'long_name', 'EISMINT ROSS observed ice velocity azimuth')
 setattr(azivar, 'units', 'degrees east')

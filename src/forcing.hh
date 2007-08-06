@@ -28,40 +28,60 @@ For now, when using pgrn, for each of the -dTforcing and -dSLforcing options, a 
     1D data will be used to move the bed elevations up and down accordingly.
 */
 
-// codes for datatype:
-#define ISF_DELTA_T          0
-#define ISF_DELTA_SEA_LEVEL  1
-
-// codes for interpolation
-#define ISF_CONST_PIECE_FWD_INTERP  0
-#define ISF_CONST_PIECE_BCK_INTERP  1
-#define ISF_LINEAR_INTERP           2
-
 #ifndef __forcing_hh
 #define __forcing_hh
 
-class IceSheetForcing {
+// codes for interpolation
+#define DATA1D_CONST_PIECE_FWD_INTERP  0
+#define DATA1D_CONST_PIECE_BCK_INTERP  1
+#define DATA1D_LINEAR_INTERP           2
+
+// this class is a general facility for reading one-dimensional data from a
+// NetCDF file and putting a copy of it on each processor, and for accessing it
+// either by integer index or by giving the value of the independent variable and
+// interpolating
+class Data1D {
 public:
-  IceSheetForcing();
-  ~IceSheetForcing();
-  PetscErrorCode readDataAndAlloc(MPI_Comm mycom, PetscMPIInt myrank, PetscInt mydatatype, 
-                                  int ncid, PetscScalar curr_year);
-  PetscErrorCode updateFromData(PetscScalar curr_year, PetscScalar *change);
-  PetscErrorCode printCurrData(PetscScalar curr_year);
+  Data1D();
+  ~Data1D();
+  PetscErrorCode readData(MPI_Comm mycom, PetscMPIInt myrank, int ncid,
+                          const char *myindepvarname, const char *mydatavarname);
+  PetscErrorCode getIndexedDataValue(PetscInt index, PetscScalar *value);
+  PetscErrorCode getInterpolatedDataValue(PetscScalar myindep, PetscScalar *value);
 
 protected:
-  PetscErrorCode initIndex(PetscScalar curr_year);
+  Vec          vindep, vdata;
+  char         indepvarname[PETSC_MAX_PATH_LEN], datavarname[PETSC_MAX_PATH_LEN];
+  PetscInt     interpCode;
+  MPI_Comm     com;
+  
+private:
   PetscErrorCode getInterpolationCode(int ncid, int vid, int *code);
   PetscErrorCode ncVarBcastVec(int ncid, int vid, Vec *vecg);
-
-private:
-  MPI_Comm     com;
-  PetscMPIInt  rank;
-  PetscInt     datatype, index, interpCode;
-  char         datavarname[PETSC_MAX_PATH_LEN];
-  Vec          vtimeinyears, vdata;
-  PetscTruth   vecsAllocated, forcingActive;
+  PetscMPIInt    rank;
+  PetscTruth     vecsAllocated;
 };
 
 
+// codes for datatype in call to IceSheetForcing::readStandardClimateData()
+#define ISF_DELTA_T          0
+#define ISF_DELTA_SEA_LEVEL  1
+
+class IceSheetForcing : public Data1D {
+public:
+  IceSheetForcing();
+  ~IceSheetForcing();
+  
+  PetscErrorCode readStandardIceCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
+                             int ncid, PetscScalar curr_year, PetscInt datatype);
+  PetscErrorCode updateFromStandardIceCoreData(PetscScalar curr_year, PetscScalar *change);
+
+protected:
+  PetscErrorCode initStandardIceCoreIndex(PetscScalar curr_year);
+  PetscInt     index;
+  Vec          vtimeinyears;
+  PetscTruth   forcingActive;
+};
+
 #endif /* __forcing_hh */
+

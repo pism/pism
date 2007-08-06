@@ -9,18 +9,15 @@ GRIP_FILE = 'sum89-92-ss09-50yr.stp'
 SPEC_FILE = 'specmap.017'
 DT_FILE = 'grip_dT.nc'
 DSL_FILE = 'specmap_dSL.nc'
-
 SPEC_LENGTH = 782
 
 ##### command line arguments #####
-
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "t:s:", ["t_interpolation", "s_interpolation"])
+  opts, args = getopt.getopt(sys.argv[1:], "p:", ["prefix="])
   for opt, arg in opts:
-    if opt in ("-t", "--t_interpolation"):
-      T_INTERPOLATION = arg
-    if opt in ("s", "--s_interpolation"):
-      S_INTERPOLATION = arg
+    if opt in ("-p", "--prefix"):
+      GRIP_FILE = arg + GRIP_FILE
+      SPEC_FILE = arg + SPEC_FILE
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
