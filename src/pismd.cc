@@ -16,6 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <petsc.h>
+#include "base/grid.hh"
+#include "base/materials.hh"
+#include "base/iceModel.hh"
+#include "eismint/iceROSSModel.hh"
+
 static char help[] =
   "Driver for ice sheet, shelf, and stream simulations, for 'diagnostic' computation\n"
   "of velocity field from geometry and temperature field.\n"
@@ -59,12 +65,6 @@ that it is usable under grid refinement
     -Mx 147 -My 147 -Mz 11 -Lz 1000 -mv -d cnmu -pause 5 -verbose 5
 */
 
-#include <petsc.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
-#include "iceROSSModel.hh"
-
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
@@ -106,13 +106,9 @@ int main(int argc, char *argv[]) {
     ierr = m->initFromOptions(); CHKERRQ(ierr);
 
     if (ssaBCset == PETSC_TRUE) {
-       ierr = verbPrintf(4, com, 
-             "  attempting to read mask and boundary conds (ubar,vbar) from %s\n",
-             ssaBCfile);   CHKERRQ(ierr);
+       ierr = verbPrintf(2, com,"reading -ssaBC file %s and setting boundary conditions\n",
+             ssaBCfile); CHKERRQ(ierr);
        ierr = m->readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
-       ierr = verbPrintf(2, com, 
-             "  done reading -ssaBC file and setting boundary conditions\n");
-             CHKERRQ(ierr);
     }
 
     ierr = verbPrintf(2,com, "computing velocity field (diagnostically) ...\n"); CHKERRQ(ierr);

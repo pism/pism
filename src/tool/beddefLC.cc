@@ -23,8 +23,8 @@
 #include <fftw3.h>
 #endif
 #include <petscvec.h>
-#include "pism_const.hh"
-#include "extrasGSL.hh"
+#include "../base/pism_const.hh"
+#include "../num/extrasGSL.hh"
 #include "beddefLC.hh"
 
 

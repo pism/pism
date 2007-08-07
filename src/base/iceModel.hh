@@ -26,7 +26,7 @@
 #include <petscksp.h>
 #include "grid.hh"
 #include "materials.hh"
-#include "beddefLC.hh"
+#include "../tool/beddefLC.hh"
 
 using namespace std;
 

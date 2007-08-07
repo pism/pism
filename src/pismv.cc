@@ -24,10 +24,9 @@ static char help[] =
 #include <cstdio>
 #include <petscda.h>
 #include <petscbag.h>
-
-#include "grid.hh"
-#include "iceCompModel.hh"
-#include "iceExactStreamModel.hh"
+#include "base/grid.hh"
+#include "verif/iceCompModel.hh"
+#include "verif/iceExactStreamModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

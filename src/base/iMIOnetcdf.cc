@@ -387,7 +387,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 
-             "  filling in temperatures at depth using surface temperatures and guesses\n"); CHKERRQ(ierr);
+             "  filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
   // fill in other 3D fields
   setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
@@ -651,7 +651,7 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   PetscErrorCode ierr;
 
 // bring in the result of applying ncgen.rb to pism_state.cdl (see directory pism/src/netcdf/)
-#include "netcdf/write_attributes.c"
+#include "../netcdf/write_attributes.c"
 
   int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
   int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
@@ -665,7 +665,7 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
 // complete the output file
-#include "netcdf/complete_dump.cc"
+#include "../netcdf/complete_dump.cc"
 
   // We are done with these buffers
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
@@ -683,7 +683,7 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 
 // bring in the result of applying ncgen.rb to pism_state.cdl along with pism_diag.fragment
 // ("ncid" defined in included file)
-#include "netcdf/write_diag_attributes.c"
+#include "../netcdf/write_diag_attributes.c"
 
   int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
   int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
@@ -698,7 +698,7 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 
 // complete the output file as in usual dump
 // ("u_id", "v_id", "w_id" defined in included file)
-#include "netcdf/complete_dump.cc"
+#include "../netcdf/complete_dump.cc"
 
   // now write additional 3-D diagnostic quantities
   ierr = put_local_var(&grid, ncid, u_id, NC_FLOAT, grid.da3, vu, g3,

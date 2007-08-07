@@ -20,10 +20,10 @@
 #define __iceGRNModel_hh
 
 #include <petscvec.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "forcing.hh"
-#include "iceModel.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
+#include "../tool/forcing.hh"
 
 class IceGRNModel : public IceModel {
 

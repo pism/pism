@@ -21,10 +21,10 @@ static char help[] =
 
 #include <cstring>
 #include <petscbag.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
-#include "iceGRNModel.hh"
+#include "base/grid.hh"
+#include "base/materials.hh"
+#include "base/iceModel.hh"
+#include "eismint/iceGRNModel.hh"
 
 int main(int argc, char *argv[]){
   PetscErrorCode ierr;

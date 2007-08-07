@@ -20,8 +20,8 @@ static char help[] =
   "Driver for testing ice stream (dragging ice shelf) model.  Implements verification tests.";
 
 #include <cmath>
-#include "iceModel.hh"
-#include "iceCompModel.hh"
+#include "base/iceModel.hh"
+#include "verif/iceCompModel.hh"
 
 #define sec(x) (1.0 / cos((x)))
 

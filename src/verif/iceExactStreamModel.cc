@@ -18,12 +18,11 @@
 
 #include <cstring>
 #include <cmath>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
-
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
+#include "../exact/exactTestI.h"
 #include "iceExactStreamModel.hh"
-#include "exact/exactTestI.h"
 
 const PetscScalar IceExactStreamModel::m_schoof = 10; // (pure number)
 const PetscScalar IceExactStreamModel::L_schoof = 40e3; // meters

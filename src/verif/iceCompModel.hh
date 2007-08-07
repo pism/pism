@@ -20,8 +20,8 @@
 #define __iceCompModel_hh
 
 #include <petscda.h>
-#include "materials.hh"
-#include "iceModel.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
 
 class IceCompModel : public IceModel {
 

@@ -44,8 +44,16 @@ class Data1D {
 public:
   Data1D();
   ~Data1D();
-  PetscErrorCode readData(MPI_Comm mycom, PetscMPIInt myrank, int ncid,
+  // first readData() opens and closes NetCDF file
+  PetscErrorCode readData(MPI_Comm mycom, PetscMPIInt myrank,
+                          const char *myncfilename,
                           const char *myindepvarname, const char *mydatavarname);
+  // second readData() assumes NetCDF file is open and does not close it  
+  PetscErrorCode readData(MPI_Comm mycom, PetscMPIInt myrank,
+                          int myncid,
+                          const char *myindepvarname, const char *mydatavarname);
+  PetscErrorCode getIndexMax(PetscInt *len);  
+  // in getIndexedDataValue(), use  index = 0,1,...,len-1   if len is from getIndexMax()
   PetscErrorCode getIndexedDataValue(PetscInt index, PetscScalar *value);
   PetscErrorCode getInterpolatedDataValue(PetscScalar myindep, PetscScalar *value);
 

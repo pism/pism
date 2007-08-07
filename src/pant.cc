@@ -16,6 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cstring>
+#include <petscbag.h>
+#include <netcdf.h>
+#include "base/grid.hh"
+#include "base/materials.hh"
+#include "base/nc_util.hh"
+#include "base/iceModel.hh"
+
 static char help[] =
   "PISM driver whose purpose is to have either: (1) spatially-variable scalar basal sliding\n"
   "friction parameter beta, (2) spatially-variable vector basal sliding friction parameter\n"
@@ -69,15 +77,6 @@ ant40km.nc are used to compute vtauc.  This map is saved in taucmap.nc.  Then 1 
 are run.  During this run the velocities computed from SIA are added to those from MacAyeal-Schoof
 in the grounded ice.  The ice shelves have their usual scheme.
 */
-
-#include <cstring>
-#include <petscbag.h>
-#include <netcdf.h>
-
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
-#include "nc_util.hh"
 
 class IceDragYieldModel : public IceModel {
 public:

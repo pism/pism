@@ -84,7 +84,7 @@ dlon = (3.72207 - (-5.26168)) / 146.0
 #gridlon = linspace(-5.26168,3.72207,147);
 for i in range(MxROSS):
   for j in range(MyROSS):
-    lat[top - i,j] = -12.3325 - dlat * 46.0 + (top - i) * dlat
+    lat[top - i,j] = -12.3325 - dlat * 46.0 + i * dlat
     lon[top - i,j] = -5.26168 + j * dlon
 #these are to be filled from 111by147.dat:
 eislat = zeros((MxROSS, MyROSS), float32) # actually ignored

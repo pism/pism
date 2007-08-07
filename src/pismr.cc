@@ -20,9 +20,9 @@ static char help[] =
   "Ice sheet driver for ice sheet simulations initialized from data.\n";
 
 #include <petsc.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
+#include "base/grid.hh"
+#include "base/materials.hh"
+#include "base/iceModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

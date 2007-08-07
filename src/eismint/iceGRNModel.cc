@@ -19,11 +19,11 @@
 #include <petscda.h>
 #include <cstring>
 #include <netcdf.h>
-#include "nc_util.hh"
-#include "grid.hh"
-#include "materials.hh"
-#include "forcing.hh"
-#include "iceModel.hh"
+#include "../base/nc_util.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
+#include "../tool/forcing.hh"
 #include "iceGRNModel.hh"
 
 const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a

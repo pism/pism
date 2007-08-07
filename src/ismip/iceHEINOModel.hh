@@ -20,9 +20,9 @@
 #define __iceHEINOModel_hh
 
 #include <petscda.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
 
 class IceHEINOModel : public IceModel {
 public:

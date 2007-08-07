@@ -19,52 +19,12 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
-
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
+#include "../tool/forcing.hh"
 #include "iceROSSModel.hh"
 
-/*  THIS COMMENT IS NO LONGER ACCURATE but it should be kept until new setup
-is fully documented in the manual:
-Run this derived class with "obj/pisms -ross".
-
-Allows the following options:  
-  -d cnmu       most useful way to see what is going on
-  -if foo       NOT allowed!
-  -o foo -of m  writes data to foo.m; note .pb is probably not useful
-  -pause N      pause for N seconds when refreshing viewers
-  -prefix foo   looks for files "111by147Grid.dat" and "kbc.dat" and 
-                "inlets.dat" in foo/; files at
-                http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html
-  -ross         to start this
-  -showobsvel   shows observed (but interpolated) speeds from "111by147Grid.dat"
-  -tune x,y,z   run through \bar B=x:y:z (Matlab) or 
-                \bar B = x, x+y, x+2y, ..., x+Ny=z as
-                hardness parameters; note no spaces in "x,y,z"!
-  -verbose      shows, in particular, omitted lines in "???.dat" reads
-
-Example 1.  Basic run with all info displayed.  Note \bar B = 2.22e8 versus 
-/bar B = 1.9e8 as in MacAyeal et al 1996.  Note files eisROSS/111by147Grid.dat,
-eisROSS/kbc.dat, and eisROSS/inlets.dat must be present: 
-  user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose
-  
-Example 2.  Same as above but saving Matlab results; no display.  The resulting
-file can be viewed in Matlab.  See also test/ross/README.rossPISM, 
-test/ross/riggs_ELBclean.dat, and test/ross/rossspeedplot.m, which can be used
-to produce \Chi^2 statistic relative to RIGGS data, and nice picture: 
-  user@home:~/pism$ obj/pisms -ross -verbose -o PISM_ross_2p22e8 -of m
-  
-Example 3.  Same, but asking for a lot more accuracy.  Nearly the same result, 
-which suggests defaults (-mv_rtol 1e-4 -ksp_rtol 1e-6) suffice:
-  user@home:~/pism$ obj/pisms -ross -d cnmu -pause 10 -showobsvel -verbose\
-                    -mv_rtol 1e-7 -ksp_rtol 1e-10  
-
-Example 4:  Tune across range of values of \bar B, including MacAyeal et al 1996
-value and (close to) optimal value:
-  user@home:~/pism$ obj/pisms -ross -verbose -tune 1.7e8,1e7,2.4e8
-  
-*/
 
 IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
@@ -141,39 +101,6 @@ PetscErrorCode IceROSSModel::initFromOptions() {
 }
 
 
-PetscErrorCode IceROSSModel::diagnosticRun() {
-  PetscErrorCode  ierr;
-  PetscReal       tuneparam[20];
-  PetscTruth      tuneSet;
-  PetscInt        numtuneparam=3;
-  
-  // user might enter
-  //     pisms -ross -tune 1.7e8,0.1e8,2.5e8
-  // [note no spaces between parameters!]
-  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-tune", tuneparam, &numtuneparam,
-                                  &tuneSet); CHKERRQ(ierr);
-  if ((tuneSet == PETSC_TRUE) && (numtuneparam != 3)) {
-    SETERRQ(1,"option -tune not accompanied by three parameters");
-  }
-
-  if (tuneSet == PETSC_FALSE) {
-    ierr = IceModel::diagnosticRun(); CHKERRQ(ierr);
-  } else {
-    // in Matlab notation:  hard = tuneparam[0]:tuneparam[1]:tuneparam[2]
-    for (PetscScalar hard = tuneparam[0]; hard < tuneparam[2]+0.1*tuneparam[1];
-                     hard += tuneparam[1]) { 
-      ierr = verbPrintf(2,grid.com,"computing velocities with hardness (=bar B) = %10.5e ...\n",
-                        hard); CHKERRQ(ierr);
-      constantHardnessForMacAyeal = hard;
-      ierr = IceModel::diagnosticRun(); CHKERRQ(ierr);
-      ierr = finishROSS(); CHKERRQ(ierr);
-      ierr = createROSSVecs(); CHKERRQ(ierr);
-    }
-  }
-  return 0;
-}
-
-
 PetscErrorCode IceROSSModel::finishROSS() {
   PetscErrorCode  ierr;
 
@@ -188,12 +115,10 @@ PetscErrorCode IceROSSModel::finishROSS() {
                     ssaBCfile); CHKERRQ(ierr);
   ierr = readObservedVels(ssaBCfile); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "computing error relative to EISMINT ROSS observed velocities ...\n");
-      CHKERRQ(ierr);
   ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
-  //  ierr = readRIGGSandCompare(); CHKERRQ(ierr);
+  ierr = readRIGGSandCompare(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "showing EISMINT ROSS observed velocities"); CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com, "showing EISMINT ROSS observed velocities"); CHKERRQ(ierr);
   ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
   Vec vNu[2] = {vWork2d[0], vWork2d[1]};
@@ -307,8 +232,6 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   PetscErrorCode  ierr;
   PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0, accN=0.0, 
                accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
-  PetscScalar  guerr, gverr, grelvecerr, gaccN, 
-               gaccArea, gmaxcComputed, gvecErrAcc;
   PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
   
   const PetscScalar pi = 3.14159265358979, area = grid.p->dx * grid.p->dy;
@@ -350,6 +273,8 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
+  PetscScalar  guerr, gverr, grelvecerr, gaccN, 
+               gaccArea, gmaxcComputed, gvecErrAcc;
   ierr = PetscGlobalMax(&maxcComputed, &gmaxcComputed, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&accN, &gaccN, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&accArea, &gaccArea, grid.com); CHKERRQ(ierr);
@@ -415,29 +340,86 @@ PetscErrorCode IceROSSModel::putObservedVelsCartesian() {
 }
 
 
-#if 0
 PetscErrorCode IceROSSModel::readRIGGSandCompare() {
   PetscErrorCode  ierr;
-  char            riggsfilename[PETSC_MAX_PATH_LEN];
-  char            ignor[400];
+  PetscTruth      riggsSet;
+  char            riggsfile[PETSC_MAX_PATH_LEN];
 
-  strcpy(riggsfilename,prefixROSS);
-  strcat(riggsfilename,"RIGGS.dat");
-  ierr = verbPrintf(2,grid.com,"reading from data file %s ...\n",riggsfilename); CHKERRQ(ierr);
-  FILE* riggsfile = fopen(riggsfilename,"r");
-  if (riggsfile == NULL) {
-    SETERRQ1(1,"error opening file %s for reading in IceROSSModel",riggsfilename);
-  }
-  // ignor first 4 lines;  JUST FOR TEST OF READ FOR NOW
-  for (PetscInt j = 1; j <= 4; j++) {
-    fgets(ignor, 400, riggsfile);
-    if (ferror(riggsfile)) {
-      SETERRQ1(1,"error reading from file %s in IceROSSModel",riggsfilename);
-    }
-  }
-  if (fclose(riggsfile) != 0) {
-    SETERRQ1(1,"error closing file %s in IceROSSModel",riggsfilename);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-riggs", riggsfile,
+                               PETSC_MAX_PATH_LEN, &riggsSet); CHKERRQ(ierr);
+  if (riggsSet == PETSC_FALSE) {
+    return 0;
+  } else {
+      ierr = verbPrintf(2,grid.com,"comparing to RIGGS is data in %s ...\n",
+             riggsfile); CHKERRQ(ierr);
+
+      Data1D      latdata, londata, magdata, udata, vdata;
+      PetscInt    len;
+      PetscScalar **ubar, **vbar, **clat, **clon, **mask;
+
+      ierr = DAVecGetArray(grid.da2, vLatitude, &clat); CHKERRQ(ierr);    
+      ierr = DAVecGetArray(grid.da2, vLongitude, &clon); CHKERRQ(ierr);    
+      ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
+      ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
+      ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
+      
+      ierr = latdata.readData(grid.com,grid.rank, riggsfile, "count", "riggslat"); CHKERRQ(ierr);
+      ierr = londata.readData(grid.com,grid.rank, riggsfile, "count", "riggslon"); CHKERRQ(ierr);
+      ierr = magdata.readData(grid.com,grid.rank, riggsfile, "count", "riggsmag"); CHKERRQ(ierr);
+      ierr = udata.readData(grid.com,grid.rank, riggsfile, "count", "riggsu"); CHKERRQ(ierr);
+      ierr = vdata.readData(grid.com,grid.rank, riggsfile, "count", "riggsv"); CHKERRQ(ierr);
+      ierr = latdata.getIndexMax(&len); CHKERRQ(ierr);  // same length for all vars here
+      PetscScalar  goodptcount = 0.0, ChiSqr = 0.0;
+      for (PetscInt k = 0; k<len; k++) {
+        PetscScalar lat, lon, mag, u, v;
+        ierr = latdata.getIndexedDataValue(k, &lat); CHKERRQ(ierr);
+        ierr = londata.getIndexedDataValue(k, &lon); CHKERRQ(ierr);
+        ierr = magdata.getIndexedDataValue(k, &mag); CHKERRQ(ierr);
+        ierr = udata.getIndexedDataValue(k, &u); CHKERRQ(ierr);
+        ierr = vdata.getIndexedDataValue(k, &v); CHKERRQ(ierr);
+        ierr = verbPrintf(4,grid.com,
+                 " RIGGS[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
+                 k,lat,lon,mag,u,v); CHKERRQ(ierr); 
+        //from Matlab file ross_plot.m:
+        //dlat = (-5.42445 - (-12.3325))/110;
+        //gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
+        //gridlon = linspace(-5.26168,3.72207,147);
+        const PetscScalar origdlat = (-5.42445 - (-12.3325)) / 110.0;
+        const PetscScalar lowlat = -12.3325 - origdlat * 46.0;
+        const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.p->Mx - 1);        
+        const PetscScalar lowlon = -5.26168;
+        const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.p->My - 1);
+        const int         ci = (int) floor((lat - lowlat) / dlat);
+        const int         cj = (int) floor((lon - lowlon) / dlon);
+        if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {
+          const PetscScalar cu = secpera * vbar[ci][cj];  // note switched meaning
+          const PetscScalar cv = secpera * ubar[ci][cj];
+          const PetscScalar cmag = sqrt(PetscSqr(cu)+PetscSqr(cv));
+          ierr = verbPrintf(4,PETSC_COMM_SELF,
+                 " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
+                 grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr); 
+          if (intMask(mask[ci][cj]) == MASK_FLOATING) {
+            goodptcount += 1.0;
+            ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
+          }
+        }
+      }
+      ChiSqr = ChiSqr / PetscSqr(30.0); // see page 48 of MacAyeal et al
+      PetscScalar g_goodptcount, g_ChiSqr;
+      ierr = PetscGlobalSum(&goodptcount, &g_goodptcount, grid.com); CHKERRQ(ierr);
+      ierr = PetscGlobalSum(&ChiSqr, &g_ChiSqr, grid.com); CHKERRQ(ierr);
+      ierr = verbPrintf(4,grid.com,"number of RIGGS data points = %d\n"
+             "number of RIGGS points in computed ice shelf region = %8.2f\n",
+             len, g_goodptcount); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,"Chi^2 statistic for computed results compared to RIGGS is %10.3f\n",
+             g_ChiSqr * (156.0 / g_goodptcount)); CHKERRQ(ierr);
+
+      ierr = DAVecRestoreArray(grid.da2, vLatitude, &clat); CHKERRQ(ierr);    
+      ierr = DAVecRestoreArray(grid.da2, vLongitude, &clon); CHKERRQ(ierr);    
+      ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
+      ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
+      ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   }
   return 0;
 }
-#endif
+

@@ -1,24 +1,24 @@
 % Copyright (C) 2004-2007 Jed Brown and Ed Bueler and Nathan Shemonski
 %
-% This file is part of Pism.
+% This file is part of PISM.
 %
-% Pism is free software; you can redistribute it and/or modify it under the
+% PISM is free software; you can redistribute it and/or modify it under the
 % terms of the GNU General Public License as published by the Free Software
 % Foundation; either version 2 of the License, or (at your option) any later
 % version.
 %
-% Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+% PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 % WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 % FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 % details.
 %
 % You should have received a copy of the GNU General Public License
-% along with Pism; if not, write to the Free Software
+% along with PISM; if not, write to the Free Software
 % Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{155}
+\newcommand{\PISMREV}{165}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -108,9 +108,7 @@
 \centerline{\textsc{Acknowledgements}}
 \bigskip
 
-The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Kent Overstreet and Art Mahoney for helpful comments on the manual and the installation process.
-
-We also want to thank PISM users whose questions and comments have contributed to improving PISM and this manual.
+The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Martin Truffer, Kent Overstreet, and Art Mahoney for helpful comments on the manual and the installation process.  We also want to thank several PISM users whose questions and comments have contributed to improving PISM and this manual.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -274,8 +272,11 @@ Matlab & \url{www.mathworks.com} & \emph{optional} & only used for alternate\\
 & & & display of results \\
 MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
 NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
+\texttt{numpy} & \url{http://numpy.scipy.org/} & \emph{recommended}  & used in Python scripts in sections \ref{sect:valid} and \ref{sect:real}  \\
 PETSc & \scriptsize \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} \small & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \url{python.org} & \emph{required} & \\
+\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{pysclint.sourceforge.net/pycdf} & \emph{recommended}  & used in Python scripts in sections \ref{sect:valid} and \ref{sect:real}  \\
+ &  &   & to create PISM-readable NetCDF files \\
 Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 \hline
 \normalsize
@@ -1007,11 +1008,11 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \clearpage\newpage
 \section{Validation}\label{sect:valid}
 
-\subsection{Validation of PISM as an ice shelf model using Ross ice shelf data} Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.
+\subsection{Validation of PISM as an ice shelf model using Ross ice shelf data} Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
 
-As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data includes the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf.
+As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data includes the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rossvelocities} below.
 
-Using these data to validate PISM's ice shelf modelling abilities requires downloading text files from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
+\subsubsection{Bringing in the data}  Using these data to validate PISM's ice shelf modelling abilities requires downloading (text) data files from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
 \begin{itemize}
 \item \verb|111by147Grid.dat|
 \item \verb|kbc.dat|
@@ -1023,7 +1024,7 @@ The first step for using these data, as usual for PISM, is to convert them to a 
 
 \verb|test/ross/eis_ross.py --prefix=eisDownload/ -o ross.nc|
 
-\noindent (In fact the ``\verb|-o ross.nc|'' is not needed because it is the default name.)  The output file can be reconverted to text using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
+\noindent The output file can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
 
 \begin{figure}[ht]
 \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
@@ -1033,7 +1034,7 @@ The first step for using these data, as usual for PISM, is to convert them to a 
 
 The NetCDF file \verb|ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation, and all of these are typical of ice sheet modelling data.  It also has variables \verb|ubar| and \verb|vbar| which give the boundary values which are needed for the diagnostic computation of velocity.  Also present are the variables \verb|mask|, which shows the domain where the ice shelf is modelled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Note that the original EISMINT-Ross data are on a 111 by 147 grid but that \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid, with the same $6.822$km spacing, which has ice-free ocean beyond the (straightened; compare \cite{MacAyealetal}) calving front.  See figure \ref{fig:rossmaskubar}.
 
-The basic Ross ice shelf velocity computation might be this:
+\subsubsection{Diagnostic computation of ice shelf velocity}  The basic Ross ice shelf velocity computation from these data might be:
 
 \verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv|
 
@@ -1047,7 +1048,15 @@ There are many variations on this basic ``\verb|pismd -ross|'' run above.  First
 
 \verb|     -d cnmu -verbose 4 -pause 10|
 
-\noindent Alternately one might want to change the hardness parameter from the default value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal} to a slightly softer value because the highest computed velocity with the default setting is a little lower than the maximum measured in the RIGGS data (namely, $1007$ m/a; see files \verb|pism/test/ross/README| and \verb|pism/test/ross/riggs_clean.dat|).   We can also use lower (more severe) tolerances for the nonlinear iteration (\verb|-mv_rtol|) and the linear iteration (\verb|-ksp_rtol|) to get more confidence in the numerical scheme.   Finally we can also save the model state with a meaningful name:
+\noindent Secondly one might want to do the run in parallel, do it on a finer grid, and ask for higher tolerance.  For example, 
+
+\small
+\verb|   mpiexec -n 6 pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 201 -My 201 -Mz 11 -mv|
+\normalsize
+
+The result is not exactly the same [but really good; FIXME].
+
+Alternately one might want to change the hardness parameter from the default value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal} to a slightly softer value because the highest computed velocity with the default setting is a little lower than the maximum measured in the RIGGS data (namely, $1007$ m/a; see files \verb|pism/test/ross/README| and \verb|pism/test/ross/riggs_clean.dat|).   We can also use lower (more severe) tolerances for the nonlinear iteration (\verb|-mv_rtol|) and the linear iteration (\verb|-ksp_rtol|) to get more confidence in the numerical scheme.   Finally we can also save the model state with a meaningful name:
 
 \verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
 
@@ -1085,7 +1094,44 @@ There are many variations on this basic ``\verb|pismd -ross|'' run above.  First
 
 Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnositic velocity computation.
 
+\subsubsection{Comparison to RIGGS data and hardness tuning}  The file \verb|riggs_clean.dat| in subdirectory \verb|pism/test/ross/| can be used to produce $\chi^2$ statistic relative to RIGGS data \cite{MacAyealetal} [FIXME: finish]
 
+\small\begin{verbatim}
+$ test/ross/tune.py -n 2
+TUNE.PY (for EISMINT Ross; compare to table 1 in MacAyeal et al 1996)
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.5e8"
+  finished in 108.9859 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1749.024 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is  10153.2
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.6e8"
+  finished in 107.7356 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1471.820 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   4833.6
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.7e8"
+  finished in 104.5976 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1256.762 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   3398.0
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.8e8"
+  finished in 105.8533 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1087.281 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   3917.0
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.9e8"
+  finished in 100.2162 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is    951.721 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   5382.4
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 2.0e8"
+  finished in 102.3863 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is    841.752 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   7266.9
+\end{verbatim}
+\normalsize
+  
 [[OUT OF DATE BELOW]]
 
 
@@ -1311,31 +1357,26 @@ The following features are \emph{not} included in the continuum model, and would
 \end{itemize}
 
 
-\subsection{The PISM source code} This ice sheet model is implemented as a collection of C++ object classes, the most central of which is \t{IceModel}.
-
-More elementary than \t{IceModel} are the classes\begin{itemize}
+\subsection{The PISM source code} This ice sheet model is implemented as a collection of C++ object classes, the most central of which is \t{IceModel}.  Actually there are three basic classes to know about, all of which are in \verb|pism/src/base/|:
+\begin{itemize}
 \item \t{IceGrid}, which describes the shape of the grid and parallel
 layout. This abstraction could be used to streamline transferring model data between
 different grids.
-\item \t{MaterialType}.  Various materials are derived from the class \t{MaterialType} which merely defines a couple
-physical constants. \t{IceType} is still an abstract class which defines the interface to
-ice flow. Concrete classes derived from \t{IceType} are \t{ThermoGlenIce} (which uses the
-EISMINT constants) and \t{GKIce} as well as \t{HybridIce}.  Similarly, there is \t{BedrockType} and \t{OceanType} which merely define
-associated physical constants.\end{itemize}
+\item \t{MaterialType}.  Various materials are derived from the class \t{MaterialType} which merely defines a couple physical constants. \t{IceType} is a derived class, but still an abstract class. which defines the physical properties of ice as a material.  Concrete classes derived from \t{IceType} are \t{ThermoGlenIce} (which uses the
+EISMINT constants) and \t{GKIce} as well as \t{HybridIce}, which implements the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt}.\footnote{Actually, it is difficult or impossible to implement a complete Goldsby-Kohlstedt \t{IceType} because the inverse constitutive relation is required for computation of MacAyeal-type ice shelf and dragging ice shelf \cite{MacAyeal} velocity fields. \t{HybridIce} is Goldsby-Kohlstedt ice in the interior of the ice sheet and Glen ice in ice streams and
+shelves.}  Similarly, there is \t{BedrockType} and \t{OceanType} which merely define
+associated physical constants.
+\item \t{IceModel} which contains myriad data structures, flags, PETSc \verb|Vec|s (below), and most of the methods and numerical methods of PISM.\end{itemize}
 
-An example derived class of \t{IceType} is \t{HybridIce}, as mentioned.  Note that it is difficult, at least, to implement a complete Goldsby-Kohlstedt ice type \cite{GoldsbyKohlstedt} since the inverse constitutive
-relation is required for computation of MacAyeal-type ice shelf and dragging ice shelf \cite{MacAyeal} velocity fields. \t{HybridIce} is Goldsby-Kohlstedt ice in the interior of the ice sheet and Glen ice in ice streams and
-shelves.
+The methods for \t{IceModel} are many, as noted.  In addition to numerics, they initialize the model (from input data files or from formulas describing various exact solutions), they read user options, they allocate arrays in a distributed manner under PETSc (below), they control diagnostic viewers, they run the adaptive time-stepping mechanism, they report the state of PISM to the user, and they write out the model state to files.
 
-The methods for \t{IceModel} are many.  They initialize the model (from input data files or from formulas describing various exact solutions), they read user options, they allocate arrays in a distributed manner under PETSc, they compute the terms in the various continuum equations (mass balance, conservation of energy, and velocity), they control diagnostic viewers, they run the central time-stepping, and they write out the model state to files.
+A derived class of \t{IceModel} called \t{IceCompModel} is used for verification.  It has additional structures which allows \t{IceModel} to have compensatory sources and compute initial conditions from, and especially to report errors relative to, known exact solutions \cite{BLKCB,BBL,BB}.  Another derived class used for verification is \t{IceExactStreamModel}, which implements the exact solution described in \cite{SchoofStream}.
 
-A derived class of \t{IceModel} called \t{IceCompModel} is used for verification; see the next section.  It has additional structures which allows \t{IceModel} to have compensatory sources and compute initial conditions from, and especially to report errors relative to, known exact solutions \cite{BLKCB,BBL,BB}.  Another derived class used for verification is \t{IceExactStreamModel}, which implements the exact solution described in \cite{SchoofStream}.
+Other derived classes of \t{IceModel} are \t{IceEISModel}, \t{IceGRNModel}, and \t{IceROSSModel}.  These correspond to simplified geometry experiments, the EISMINT-Greenland, and the EISMINT-Ross ice shelf models described in this manual.
 
-Other derived classes of \t{IceModel} are \t{IceEISModel}, \t{IceHEINOModel}, and \t{IceROSSModel}.  These correspond to simplified geometry experiments and the Ross ice shelf validation described in previous sections of this manual.
+There are five established drivers which in essense just call constructors and destructors for \t{IceModel} or a derived class thereof, and tell it to go.  These are in the source files \verb|pgrn.cc|, \verb|pismd.cc|, \verb|pismr.cc|, \verb|pisms.cc|, and \verb|pismv.cc|.  These correspond to the executables \verb|pgrn|, \verb|pismd|, \verb|pismr|, \verb|pisms|, and \verb|pismv|, respectively.  These drivers do no computation but differ in which derived class is constructed and in how certain options are handled.  The driver \verb|pismr.cc| and its executable \verb|pismr| only use the base class \verb|IceModel|; it requires a pre-existing saved PISM model state to start.
 
-There are three established drivers which call constructors and destructors for \t{IceModel}, namely \verb|pismr.cc|, \verb|pisms.cc|, and \verb|pismv.cc|.  These produce the executables \verb|pismr|, \verb|pisms|, and \verb|pismv| described in the rest of this manual.  These drivers do no computation but differ in which derived class is constructed and in how certain options are handled.  In particular, the driver \verb|pismr.cc| and its executable \verb|pismr| only use the base class \verb|IceModel|.
-
-The different derived classes invoke the same numerical procedures to handle the various partial differential equations of the continuum model.  In the case of \t{IceCompModel}, this fact is at the heart of the verification mechanism.
+The different derived classes generally invoke the same numerical procedures to handle the various partial differential equations of the continuum model.  In the case of \t{IceCompModel}, this fact is at the heart of the verification mechanism.
 
 \subsection{PETSc: An overview for PISM users}  The PETSc library \cite{petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  It is a suite of data structures and routines in C for the scalable parallel solution of partial differential equations and their scientific applications.  Large parts of PETSc relate especially to finite-difference-type regular, rectangular grids but PETSc has been used for unstructured grids as well.  Documentation for PETSc is available from the web site at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/}.  PETSc employs the MPI standard for all message-passing communication.  PETSc is deliberately at a higher level of abstraction than MPI; PETSc protects the programmer from explicit consideration of message passing.
 

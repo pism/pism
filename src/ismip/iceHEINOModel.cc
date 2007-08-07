@@ -17,10 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
-
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
 #include "iceHEINOModel.hh"
 
 IceHEINOModel::IceHEINOModel(IceGrid &g, IceType &i)

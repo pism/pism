@@ -19,10 +19,9 @@
 #include <petscda.h>
 #include <cstring>
 #include <netcdf.h>
-#include "forcing.hh"
 // next is only needed for verbPrintF()
-#include "iceModel.hh"
-
+#include "../base/iceModel.hh"
+#include "forcing.hh"
 
 PetscErrorCode nc_check(int stat) {
   if (stat)
@@ -46,7 +45,24 @@ Data1D::~Data1D() {
 }
 
 
-PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank, int ncid, 
+PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank,
+                                    const char *myncfilename,
+                                    const char *myindepvarname, const char *mydatavarname) {
+  PetscErrorCode ierr;
+  int stat, ncid = 0;
+  if (myrank == 0) {
+      stat = nc_open(myncfilename, 0, &ncid); CHKERRQ(nc_check(stat));
+  }
+  MPI_Bcast(&ncid, 1, MPI_INT, 0, mycom);
+  ierr = readData(mycom, myrank, ncid, myindepvarname, mydatavarname); CHKERRQ(ierr);
+  if (myrank == 0) {
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
+  }
+  return 0;
+}
+
+
+PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank, int myncid, 
                                 const char *myindepvarname, const char *mydatavarname) {
   PetscErrorCode ierr;
   int indepid, dataid;
@@ -57,13 +73,13 @@ PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank, int ncid,
   strcpy(datavarname, mydatavarname);
   if (rank == 0) {
     int stat;
-    stat = nc_inq_varid(ncid, indepvarname, &indepid); CHKERRQ(nc_check(stat));
-    stat = nc_inq_varid(ncid, datavarname, &dataid); CHKERRQ(nc_check(stat));
+    stat = nc_inq_varid(myncid, indepvarname, &indepid); CHKERRQ(nc_check(stat));
+    stat = nc_inq_varid(myncid, datavarname, &dataid); CHKERRQ(nc_check(stat));
   }
-  ierr = getInterpolationCode(ncid, dataid, &interpCode); CHKERRQ(ierr);
+  ierr = getInterpolationCode(myncid, dataid, &interpCode); CHKERRQ(ierr);
   MPI_Bcast(&interpCode, 1, MPI_INT, 0, com);
-  ierr = ncVarBcastVec(ncid, indepid, &vindep); CHKERRQ(ierr);  // creates this Vec
-  ierr = ncVarBcastVec(ncid, dataid, &vdata); CHKERRQ(ierr);  // creates this Vec
+  ierr = ncVarBcastVec(myncid, indepid, &vindep); CHKERRQ(ierr);  // creates this Vec
+  ierr = ncVarBcastVec(myncid, dataid, &vdata); CHKERRQ(ierr);  // creates this Vec
   vecsAllocated = PETSC_TRUE;
   return 0;
 }
@@ -77,7 +93,7 @@ PetscErrorCode Data1D::getInterpolationCode(int ncid, int vid, int *code) {
     char attr[NC_MAX_NAME+1];
     size_t len;
 
-    stat = nc_get_att_text(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
+    stat = nc_get_att_text(ncid, vid, "interpolation", attr);
     if (stat == NC_NOERR) {
       stat = nc_inq_attlen(ncid, vid, "interpolation", &len); CHKERRQ(nc_check(stat));
       attr[len] = '\0';
@@ -145,6 +161,12 @@ PetscErrorCode Data1D::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
   ierr = VecAssemblyBegin(*vecg); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(*vecg); CHKERRQ(ierr);
   delete [] f;
+  return 0;
+}
+
+
+PetscErrorCode Data1D::getIndexMax(PetscInt *len) {
+  PetscErrorCode  ierr = VecGetLocalSize(vdata, len); CHKERRQ(ierr);
   return 0;
 }
 

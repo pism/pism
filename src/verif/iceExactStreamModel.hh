@@ -20,9 +20,9 @@
 #define __iceExactStreamModel_hh
 
 #include <petscda.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
 
 class IceExactStreamModel : public IceModel {
 public:

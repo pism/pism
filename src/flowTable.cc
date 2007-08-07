@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "materials.hh"
+#include "base/materials.hh"
 
 int main(int argc, char *argv[]) {
   PetscScalar     T0=273.15, dT=10, p=2e7;

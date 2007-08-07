@@ -20,16 +20,16 @@
 #define __iceROSSModel_hh
 
 #include <petscvec.h>
-#include "grid.hh"
-#include "materials.hh"
-#include "iceModel.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../base/iceModel.hh"
 
 class IceROSSModel : public IceModel {
 public:
     IceROSSModel(IceGrid &g, IceType &i);
     virtual PetscErrorCode initFromOptions();
-    virtual PetscErrorCode  diagnosticRun();
     PetscErrorCode         finishROSS();
+    PetscErrorCode         readRIGGSandCompare();
 
 private:
     Vec             obsAzimuth, obsMagnitude, obsAccurate;    
@@ -39,7 +39,6 @@ private:
     PetscErrorCode  readObservedVels(const char *fname);
     PetscErrorCode  putObservedVelsCartesian();
     PetscErrorCode  computeErrorsInAccurateRegion();
-//    PetscErrorCode  readRIGGSandCompare();
 };
 
 #endif /* __iceROSSModel_hh */
