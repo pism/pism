@@ -19,9 +19,9 @@
 #include <petscda.h>
 #include <acml.h>
 // #include <acml_mv.h>  only seems available under 64 bit, which seems incompatible with my machine
-#include "../grid.hh"
-#include "../materials.hh"
-#include "../iceEISModel.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
+#include "../eismint/iceEISModel.hh"
 
 #include "iceRYANModel.hh"
 

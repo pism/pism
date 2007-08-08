@@ -20,8 +20,8 @@ static char help[] =
   "Ice sheet driver for EISMINT II experiment H with random accumulation.\n";
 
 #include <petscda.h>
-#include "../grid.hh"
-#include "../materials.hh"
+#include "../base/grid.hh"
+#include "../base/materials.hh"
 
 #include "iceRYANModel.hh"
 

@@ -251,7 +251,7 @@ You are done with installation at this point.  The next few items are recommende
 
 Have fun!
 
-At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Sections \ref{sect:valid} and \ref{sect:real} describe using PISM to model real ice sheets (and shelves) based on freely available data.
+At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Section \ref{sect:real} gives examples of using PISM to model a real ice sheet and a real ice shelf using freely-downloadable data.
 
 Naturally, setting up PISM to model real ice sheets will generally require techniques not be covered in this manual.  It may require the writing of additional source code, which for PISM means writing a derived class of the base \verb|IceModel| class.  (Note PISM is written in C++.  The base class is defined in the source file \verb|pism/src/iceModel.hh|.)  Use of PISM for real ice sheet modelling is something we welcome questions about, and will attempt to help with, but we will not pretend it is routine.
 
@@ -272,10 +272,10 @@ Matlab & \url{www.mathworks.com} & \emph{optional} & only used for alternate\\
 & & & display of results \\
 MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
 NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
-\texttt{numpy} & \url{http://numpy.scipy.org/} & \emph{recommended}  & used in Python scripts in sections \ref{sect:valid} and \ref{sect:real}  \\
+\texttt{numpy} & \url{http://numpy.scipy.org/} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
 PETSc & \scriptsize \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} \small & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \url{python.org} & \emph{required} & \\
-\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{pysclint.sourceforge.net/pycdf} & \emph{recommended}  & used in Python scripts in sections \ref{sect:valid} and \ref{sect:real}  \\
+\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{pysclint.sourceforge.net/pycdf} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
  &  &   & to create PISM-readable NetCDF files \\
 Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 \hline
@@ -287,7 +287,7 @@ Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 \clearpage\newpage
 \section{Getting started}\label{sect:start}
 
-\subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  Real ice sheet and ice shelf data are available on the web as part of the EISMINT intercomparison efforts.  Sections \ref{sect:real} and \ref{sect:valid}, respectively, are tutorials on the use of PISM as a Greenland ice sheet and Ross ice shelf flow model using the EISMINT data sets.
+\subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  Real ice sheet and ice shelf data are available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:real} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.
 
 For now, however, and to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II thermomechanical coupling intercomparison \cite{EISMINT00}.  In this experiment one tries to approximate an unstable equilibrium of the thermomechanically coupled differential equations for a shallow, grounded ice sheet, and one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin}.  
 
@@ -396,15 +396,24 @@ MATLAB/netCDF & \scriptsize\url{http://www.marine.csiro.au/sw/matlab-netcdf.html
 \newpage
 \section{Ice dynamics in PISM}\label{sect:dynamics}
 
-\subsection{Two models of ice flow: slow and fast, but always shallow}  An important fact about PISM is that there are two sets of equations which may be used to describe the manner in which the geometry and the temperature of the ice determine the flow of the ice.  First there are the equations of the shallow ice approximation (SIA) \cite{Fowler}, describing ice flowing as a function of the driving shear stresses of classical glaciology.  Second, however, there are the Morland-MacAyeal-Schoof equations \cite{Morland,MacAyeal,SchoofStream}, or shallow shelf approximation (= SSA) equations, describing a membrane-type flow.  
+\subsection{Two models of ice flow: slow and fast, but always shallow}  An important fact about PISM is that there are two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the basal condition, and the temperature field within the ice determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
+\item the shallow ice approximation (SIA) \cite{Hutter}, describing ice flowing as a function of the driving shear stresses of classical glaciology \cite{Paterson}, and
+\item the shallow shelf approximation (SSA) \cite{Morland,MacAyeal,SchoofStream,HumbertGreveHutter,GreveNotes} describing a membrane-type flow driven by longitudinal stress gradients.
+\end{itemize}
 
-The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock.  The SSA equations can confidently be applied to ice shelves for which there is (essentiall) no shear stress at the base of the (floating) ice.  However, modelling the faster-flowing grounded parts of ice sheets in PISM requires the application of SSA to grounded ice.  This only makes sense where the basal ice slides fairly easily over the underlying bedrock or loose till.  That is, for the SSA equations there are two physical circumstances, namely that of ice shelves, where there is zero basal shear stress, and that of ice streams, where there is basal shear stress which might be proportional to till thickness \cite{MacAyeal,HulbeMacAyeal} or might be the yield stress of a hypothesized till which is perfectly plastic \cite{SchoofStream}.  In any case, because of the typical magnitudes of the (vertically-integrated horizontal) velocities in these two cases, we identify the SIA flow as \emph{slow flow} and all cases of the SSA flow as \emph{fast flow}.
+The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock \cite{Fowler}.  The SSA equations can confidently be applied to ice shelves for which there is no (deviatoric) stress at the base of the (floating) ice \cite{Morland,MorlandZainuddin}.
 
-We emphasize that both the SIA and SSA models are \emph{shallow}.  That is, the partial differential equations (being approximate by PISM) in these two approximations follow, by different but analogous small-parameter arguments \cite[see the appendices]{SchoofStream}, from the Stokes equations of a non-Newtonian fluid \cite{Fowler}.
+Ice sheets have faster-flowing grounded parts, however, usually called ``ice streams'' or ``outlet glaciers''.  Describing these faster-flowing grounded parts of ice sheets requires either a higher-order (but still shallow) stress balance \cite{Blatter}, or the Stokes equations which represent the balance of \emph{all} tensor components, \emph{or} one must decide to use SIA in some parts of the grounded ice sheet and SSA in others.  This latter choice is the one made in PISM.
 
-The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through the mask, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+That is, one may apply the SSA equations to grounded ice.  This is justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure.  These are the models PISM uses to describe faster-flowing ice, namely either the SSA with linear or plastic till.  In any case, because of the typical magnitudes of the (vertically-integrated horizontal) velocities in these two cases, for the rest of this manual we identify the SIA flow as \emph{slow flow} and all cases of the SSA flow as \emph{fast flow}.
 
-\subsection{The flow-type mask} \label{subsect:mask}  [TO BE ADDED]
+We emphasize that both the SIA and SSA models are \emph{shallow}.  That is, the partial differential equations in these two approximations come by different but analogous small-parameter arguments from the Stokes equations of a non-Newtonian fluid.  (For these small-parameter arguments see \cite{Fowler} and the appendices of \cite{SchoofStream}.)  Of course, the partial differential equations are shallow approximations, but PISM proceeds to only solve them approximately, that is, numerically by finite difference schemes.
+
+The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through a \emph{mask}, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+
+\subsection{The flow-type mask} \label{subsect:mask}  
+
+\subsection{Schoof's plastic till free boundary problem for ice streams}  
 
 \subsection{Evolution runs versus ``diagnostic'' runs}  [TO BE ADDED]
 
@@ -896,9 +905,11 @@ EISMINT I is, however, superceded by \emph{verification} using the full variety 
 
 EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the published EISMINT II experiments; these are described in the next subsection.
 
-The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are three components of ISMIP namely HOM = Higher Order Models, HEINO = Heinrich Event INtercOmparison, and POLICE = POLar ICE sheet models.  None of these are completed or published at the time of this writing.
+The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are two components of ISMIP partially completed, namely HOM = Higher Order Models and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
 
-Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  We believe the continuum problem described by HEINO to not be easily approximate-able, regardless of the details of the numerical schemes.\footnote{As of July 2007, the PISM authors plan to participate in ISMIP-POLICE and in an upcoming Marine Ice Sheet Intercomparison exercise.}
+Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  We believe the continuum problem described by HEINO to not be easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  This is a problem regardless of the details of the numerical schemes or even (roughly speaking) of the shallowness of the continuum model.
+
+As of August 2007, the PISM authors plan to participate in the upcoming ISMIP-POLICE and Marine Ice Sheet Intercomparison exercises.
 
 \subsection{EISMINT II in PISM}  There are seven experiments described in the EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
@@ -1005,181 +1016,12 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \end{comment}
 
 
-\clearpage\newpage
-\section{Validation}\label{sect:valid}
-
-\subsection{Validation of PISM as an ice shelf model using Ross ice shelf data} Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
-
-As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models against data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data includes the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rossvelocities} below.
-
-\subsubsection{Bringing in the data}  Using these data to validate PISM's ice shelf modelling abilities requires downloading (text) data files from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
-\begin{itemize}
-\item \verb|111by147Grid.dat|
-\item \verb|kbc.dat|
-\item \verb|inlets.dat|
-\end{itemize}
-In the next step we will assume that these three files are in a directory \verb|eisDownload/|, and we will refer to these as the ``EISMINT-Ross'' data.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but that (as usual) the PISM computational grid is determined by the user.
-
-The first step for using these data, as usual for PISM, is to convert them to a machine readable NetCDF file.  There is already a script \verb|eis_ross.py| for this purpose in subdirectory \verb|pism/test/ross/|.  It  reads the above three EISMINT-Ross \verb|.dat| files and it creates a NetCDF file with the data and some metadate needed by PISM.  It is used this way:
-
-\verb|test/ross/eis_ross.py --prefix=eisDownload/ -o ross.nc|
-
-\noindent The output file can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
-
-\begin{figure}[ht]
-\includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
-\caption{Two views from \protect{\texttt{ncview}} of the EISMINT-Ross data in the NetCDF file \protect{\texttt{ross.nc}}.  The floating-versus-grounded mask (left; red areas are floating ice shelf) and the $x$-component of the non-zero kinematic (Dirichlet) boundary condition for velocity (right).}
-\label{fig:rossmaskubar}
-\end{figure}
-
-The NetCDF file \verb|ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation, and all of these are typical of ice sheet modelling data.  It also has variables \verb|ubar| and \verb|vbar| which give the boundary values which are needed for the diagnostic computation of velocity.  Also present are the variables \verb|mask|, which shows the domain where the ice shelf is modelled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Note that the original EISMINT-Ross data are on a 111 by 147 grid but that \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid, with the same $6.822$km spacing, which has ice-free ocean beyond the (straightened; compare \cite{MacAyealetal}) calving front.  See figure \ref{fig:rossmaskubar}.
-
-\subsubsection{Diagnostic computation of ice shelf velocity}  The basic Ross ice shelf velocity computation from these data might be:
-
-\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv|
-
-\noindent Here we bootstrap (\verb|-bif|) from \verb|ross.nc| but we also specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  Note that the small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at depth be the surface temperature \cite{MacAyealetal}, and thus there is no thermocoupling issue.
-
-At the end of this run the computed velocity field is compared to the interpolated data on observed velocities in the file \verb|ross.nc|.  (In particular, that NetCDF file contains a variable \verb|accur| which identifies the region in which the observed velocities are valid.  The observed (interpolated) velocities themselves are stored in variables \verb|mag_obs| and \verb|azi_obs|.)  We see that the largest computed velocity in the ice shelf is just under a thousand meters per year, and that errors in the vector values of velocity are roughly 10\% in a sum of squares average sense.  (There is more on viewing the results, on measuring the correspondence with measurements, and on tuning the hardness parameter to fit the data, below.)
-
-There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding diagnositic viewers and a more complete (verbose) report to standard out:
-
-\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
-
-\verb|     -d cnmu -verbose 4 -pause 10|
-
-\noindent Secondly one might want to do the run in parallel, do it on a finer grid, and ask for higher tolerance.  For example, 
-
-\small
-\verb|   mpiexec -n 6 pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 201 -My 201 -Mz 11 -mv|
-\normalsize
-
-The result is not exactly the same [but really good; FIXME].
-
-Alternately one might want to change the hardness parameter from the default value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal} to a slightly softer value because the highest computed velocity with the default setting is a little lower than the maximum measured in the RIGGS data (namely, $1007$ m/a; see files \verb|pism/test/ross/README| and \verb|pism/test/ross/riggs_clean.dat|).   We can also use lower (more severe) tolerances for the nonlinear iteration (\verb|-mv_rtol|) and the linear iteration (\verb|-ksp_rtol|) to get more confidence in the numerical scheme.   Finally we can also save the model state with a meaningful name:
-
-\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
-
-\verb|     -verbose 4 -constant_hardness 1.8e8 -mv_rtol 1e-6 -ksp_rtol 1e-10 \|
-
-\verb|     -o ross_out_1p8|
-
-\noindent Using \verb|ncview| on \verb|ross_out_1p8.nc| to view the horizontal speed of the ice shelf gives figure \ref{fig:rossspeed1p8}.
-
-\begin{figure}[ht]
-\includegraphics[height=3.5in,keepaspectratio=true]{figs/rossspeed1p8}
-\caption{Computed horizontal speed of the Ross ice shelf using $\bar B = 1.8 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$.  Color gives velocity in m/a; see scale.}
-\label{fig:rossspeed1p8}
-\end{figure}
-
-\small
-\begin{table}[h]
-\caption{Non-obvious options available and/or recommended with \texttt{pismd -ross}.}\label{tab:rossoptions}
-\begin{tabular}{@{}llll}\hline
-\textbf{Option} & \textbf{Explanation/Comments} \\ \hline
-  \verb|-d cnmu| &       a good way to see what is going on \\
-  \verb|-o foo -of nm| &  writes NetCDF file \verb|foo.nc| with full three-dimensional \\
-    & velocity fields \emph{and} writes some model results to \\
-    & Matlab-readable file \verb|foo.m| \\
-  \verb|-pause N| &      pause for N seconds when refreshing viewers \\
-  \verb|-ross| &         only use with executable \verb|pismd| \\
-  \verb|-tune x,y,z| &   run through constant hardness values $\bar B = x, x+y, x+2y,$ \\
- & $\dots, z(=x+ky)$; (note no spaces in ``\verb|x,y,z|'') \\
-  \verb|-verbose 4| &      shows information on nonlinear iteration and Krylov solve \\
-    & and parameters related to solving the ice shelf equations \\
-\hline
-\end{tabular}
-\end{table}
-\normalsize
-
-Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnositic velocity computation.
-
-\subsubsection{Comparison to RIGGS data and hardness tuning}  The file \verb|riggs_clean.dat| in subdirectory \verb|pism/test/ross/| can be used to produce $\chi^2$ statistic relative to RIGGS data \cite{MacAyealetal} [FIXME: finish]
-
-\small\begin{verbatim}
-$ test/ross/tune.py -n 2
-TUNE.PY (for EISMINT Ross; compare to table 1 in MacAyeal et al 1996)
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
--ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.5e8"
-  finished in 108.9859 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   1749.024 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is  10153.2
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
--ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.6e8"
-  finished in 107.7356 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   1471.820 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   4833.6
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
--ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.7e8"
-  finished in 104.5976 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   1256.762 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   3398.0
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
--ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.8e8"
-  finished in 105.8533 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   1087.281 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   3917.0
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
--ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.9e8"
-  finished in 100.2162 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is    951.721 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   5382.4
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
--ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 2.0e8"
-  finished in 102.3863 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is    841.752 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   7266.9
-\end{verbatim}
-\normalsize
-  
-[[OUT OF DATE BELOW]]
-
-
-\noindent\textbf{Example 2}.  Do same as above but save \Matlab results:
-
-\verb|pisms -ross -verbose -o ross_2p22e8 -of m|
-
-\noindent Note there is no graphical display.  The resulting file \verb|ross_2p22e8.m| can be run in \Matlab as a script.
-
-The files \verb|README|, \verb|riggs_clean.dat|, and \verb|ross_plot.m| in subdirectory \verb|pism/test/ross/| can be used to produce $\chi^2$ statistic relative to RIGGS data \cite{MacAyealetal}, and to give a nice picture.  In particular, once the above PISM run finishes and \verb|ross_2p22e8.m| is saved in a location on the \Matlab path, and once \verb|pism/test/ross/| is added to the \Matlab path, one can enter these commands at the \Matlab prompt:
-\small\begin{verbatim}
->> ross_2p22e8
-...
->> ross_plot
-ChiSqr =
-       3043.7
-max_computed_speed =
-       1129.9
-\end{verbatim}
-\normalsize
-These results compare well to those in table 1 of \cite{MacAyealetal}.  The figures \ref{fig:rossscatter} and \ref{fig:rossvelocities} below are also produced.
-
-\begin{figure}[ht]
-\includegraphics[width=4.5in,keepaspectratio=true]{figs/rossvelocities}
-\caption{Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.}
-\label{fig:rossvelocities}
-\end{figure}
-
-\begin{figure}[ht]
-\includegraphics[width=3.5in,keepaspectratio=true]{figs/rossscatter}
-\caption{Comparison between modelled and observed velocities at RIGGS points; compare figure 2  in \cite{MacAyealetal}.}
-\label{fig:rossscatter}
-\end{figure}
-
-\noindent\textbf{Example 4}.  Tune across range of values of $\bar B$, including \cite{MacAyealetal}
-value.
-
-\verb|pisms -ross -verbose -tune 1.7e8,1e7,2.4e8|
-
-\noindent One sees why $\bar B = 2.22\times 10^8$ is used as default value by PISM.
-
-
 
 
 \clearpage\newpage
-\section{Realistic ice sheet modelling}\label{sect:real}
+\section{Realistic ice sheet and ice shelf modelling: two examples}\label{sect:real}
 
-In this section we give one big example, namely how to use PISM to perform the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  The data for performing this intercomparison is, however, freely available at
+\subsection{Modelling the Greenland ice sheet}  In this subsection we give an extended example of how to use PISM to model the Greenland ice sheet using somewhat out-of-date data.  That is, we perform the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  The data for performing this intercomparison is, however, freely available at
 \medskip
 
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
@@ -1187,7 +1029,7 @@ In this section we give one big example, namely how to use PISM to perform the i
 
 The data for this intercomparison is not new.  The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  (Newer data, and even some newer understanding, is available in 2007.  The reader is encouraged to go and build a better Greenland model than the tutorial example here.)
 
-\subsection{Obtaining and converting EISMINT-Greenland data}  This subsection describes the use of two Python scripts to convert the EISMINT-Greenland data into NetCDF files useable by PISM.
+\subsubsection{Obtaining and converting EISMINT-Greenland data}  This subsection describes the use of two Python scripts to convert the EISMINT-Greenland data into NetCDF files useable by PISM.
 
 The Python scripts \verb|eis_green.py| and \verb|eis_core.py| can be found in the \verb|pism/test| directory.  In order to use the scripts, you must have downloaded the following ascii data files from the above web site:\begin{itemize}
  \item \verb|grid20-EISMINT| (or \verb|grid40-EISMINT|)
@@ -1224,7 +1066,7 @@ Recall we mentioned the script \verb|eis_core.py| as well.  Just execute it, pos
 
 Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  These can be \verb|ncview|ed or \verb|ncdump|ed.
 
-\subsection{Bootstrapping with EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, bootstrapping can begin.  This 100 year run is a basic version, shown with \verb|-verbose| to suggest the many aspects of ``bootstrapping'':
+\subsubsection{Bootstrapping with EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, bootstrapping can begin.  This 100 year run is a basic version, shown with \verb|-verbose| to suggest the many aspects of ``bootstrapping'':
 
 \small\begin{quote}\begin{verbatim}
 $ pgrn -bif eis_green_smoothedbed.nc -Mx 83 -My 141 -Mz 101 -y 10 -o grn10yr_20km -verbose
@@ -1295,15 +1137,15 @@ Writing model state to file `grn10yr_20km.nc' ... done.
 
 \noindent Since the EISMINT Greenland data does not contain certain variables necessary to initialize PISM in the sense of initial values for the relevant partial differential equations, this bootstrapping mode fills in several default values.  (As noted in section \ref{sect:boot} we are doing naive inverse modeling.)  For instance, the variables \verb|Ts|, \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in the \verb|-bif| file.  Thus, these variables were filled with default \verb|263.15|, \verb|0.042|, \verb|0|, and \verb|0| respectively. Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values, we see that \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness ``\verb|h = b + H|''.
 
-\subsection{Running the EISMINT-Greenland experiments}  There are several experiments that can be run using command line arguments with \verb|pgrn|.  Some of them require the use of more python scripts, while single line commands are sufficient for others.
+\subsubsection{Running the EISMINT-Greenland steady state experiments}  There are several experiments that can be run using command line arguments with \verb|pgrn|.  Some of them require the use of more python scripts, while single line commands are sufficient for others.
 
-\subsubsection{Steady state experiments}  The first experiment is a steady state run ``SSL2'' which uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}. This experiment is intended to be run until the model reaches a ``steady state'', which means a particular standard for a small volume change rate (less than a .01\% change in volume in 10,000 years).  To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl_exper.py| and can be found in the \verb|pism/test| directory.  When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs.  It can be used with multiple processors by setting the option \verb|-n|, for example:
+The first experiment is a steady state run ``SSL2'' which uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}. This experiment is intended to be run until the model reaches a ``steady state'', which means a particular standard for a small volume change rate (less than a .01\% change in volume in 10,000 years).  To run this experiment, there is a script that automates the process so that it is not necessary to manually check the changes in volume . This script is called \verb|ssl_exper.py| and can be found in the \verb|pism/test| directory.  When run, it will continue, saving states every 10,000 years, until the change in volume is less than .01\% between 10,000 year runs.  It can be used with multiple processors by setting the option \verb|-n|, for example:
 
 \verb|  ssl_exper.py -n 8|
 
 One can also give a \verb|-ssl3 -gk| option to \verb|pgrn|, or a \verb|--ssl3| option to \verb|ssl_exper.py|.  This gives a particular interpretation to the SSL3 experiment which is described in \cite{RitzEISMINT}, namely that the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0 will be used.  (There is no assertion that this choice is superior at this point.)
 
-\subsubsection{Climate forcing from GRIP and SPECMAP, and a greenhouse-warming scenario}  The next experiment is intended to be carried out after the completion of the steady state run (above) using the saved steady model state. 
+\subsubsection{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run (above) using the saved steady model state. 
 
 Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:
 
@@ -1315,9 +1157,198 @@ Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain
 
 \verb|  pgrn -ccl3 -if green20_CCL3_y0.nc -y 500 -o green20_CCL3_y500|
 
-\subsubsection{Greenhouse warming}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It uses the model state obtained for present day from the CCL3 run.  Using the previous commands, this is the file named \verb|green20_CCL3_y0.nc|.  The GWL3 experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
+\subsubsection{A greenhouse warming scenario}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It uses the model state obtained for present day from the CCL3 run.  Using the previous commands, this is the file named \verb|green20_CCL3_y0.nc|.  The GWL3 experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
 \verb|  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3|
+
+
+\subsection{Validation of PISM as a flow model for the Ross ice shelf} Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
+
+As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models using the Ross ice shelf as an example.  We will refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rossmatlab} below for an indicaiton of these positions.
+
+A parameter-sensitivity study of a particular Ross ice shelf numerical model is described in \cite{HumbertGreveHutter}.
+
+\subsubsection{Bringing in the data}  Using these data to validate PISM's ice shelf modelling abilities requires downloading (text) data files from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
+\begin{itemize}
+\item \verb|111by147Grid.dat|
+\item \verb|kbc.dat|
+\item \verb|inlets.dat|
+\end{itemize}
+In the next step we will assume that these three files are in a directory \verb|eisDownload/|, and we will refer to these as the ``EISMINT-Ross'' data.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but that (as usual) the PISM computational grid is determined by the user.
+
+The first step for using these data, as usual for PISM, is to convert them to a machine readable NetCDF file.  There is already a script \verb|eis_ross.py| for this purpose in subdirectory \verb|pism/test/ross/|.  It  reads the above three EISMINT-Ross \verb|.dat| files and it creates a NetCDF file with the data and some metadate needed by PISM.  It is used this way:
+
+\verb|test/ross/eis_ross.py --prefix=eisDownload/ -o ross.nc|
+
+\noindent The output file can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.
+
+\begin{figure}[ht]
+\includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
+\caption{Two views from \protect{\texttt{ncview}} of the EISMINT-Ross data in the NetCDF file \protect{\texttt{ross.nc}}.  The floating-versus-grounded mask (left; red areas are floating ice shelf) and the $x$-component of the non-zero kinematic (Dirichlet) boundary condition for velocity (right).}
+\label{fig:rossmaskubar}
+\end{figure}
+
+The NetCDF file \verb|ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation, and all of these are typical of ice sheet modelling data.  It also has variables \verb|ubar| and \verb|vbar| which give the boundary values which are needed for the diagnostic computation of velocity.  Also present are the variables \verb|mask|, which shows the domain where the ice shelf is modelled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Note that the original EISMINT-Ross data are on a 111 by 147 grid but that \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid, with the same $6.822$km spacing, which has ice-free ocean beyond the (straightened; compare \cite{MacAyealetal}) calving front.  See figure \ref{fig:rossmaskubar}.
+
+\subsubsection{Diagnostic computation of ice shelf velocity}  The basic Ross ice shelf velocity computation from these data might be:
+
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv|
+
+\noindent Here we bootstrap (\verb|-bif|) from \verb|ross.nc|.  We also use option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  Note that the small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at depth be the surface temperature \cite{MacAyealetal}, and thus there is no thermocoupling issue.
+
+At the end of this run the computed velocity field is compared to the interpolated data on observed velocities in the file \verb|ross.nc|.  (In particular, that NetCDF file contains a variable \verb|accur| which identifies the region in which the observed velocities are valid.  The observed (interpolated) velocities themselves are stored in variables \verb|mag_obs| and \verb|azi_obs|.)  We see that the largest computed velocity in the ice shelf is just under a thousand meters per year, and that errors in the vector values of velocity are roughly 10\% in a sum of squares average sense.  (There is more on viewing the results, on measuring the correspondence with measurements, and on tuning the hardness parameter to fit the data, below.)
+
+There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding diagnositic viewers and a more complete (verbose) report to standard out:
+
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
+
+\verb|     -d cnmu -verbose 4 -pause 10|
+
+\noindent Secondly one might want to do the run in parallel, do it on a finer grid, and ask for higher tolerance.  For example, 
+
+\small
+\verb|   mpiexec -n 6 pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 201 -My 201 -Mz 11 -mv|
+\normalsize
+
+The result is not exactly the same [but really good; FIXME].
+
+Alternately one might want to change the hardness parameter from the default value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal} to a slightly softer value because the highest computed velocity with the default setting is a little lower than the maximum measured in the RIGGS data (namely, $1007$ m/a; see files \verb|pism/test/ross/README| and \verb|pism/test/ross/riggs_clean.dat|).   We can also use lower (more severe) tolerances for the nonlinear iteration (\verb|-mv_rtol|) and the linear iteration (\verb|-ksp_rtol|) to get more confidence in the numerical scheme.   Finally we can also save the model state with a meaningful name:
+
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv \|
+
+\verb|     -verbose 4 -constant_hardness 1.8e8 -mv_rtol 1e-6 -ksp_rtol 1e-10 \|
+
+\verb|     -o ross_out_1p8|
+
+\noindent Using \verb|ncview| on \verb|ross_out_1p8.nc| to view the horizontal speed of the ice shelf gives figure \ref{fig:rossspeed1p8}.
+
+\begin{figure}[ht]
+\includegraphics[height=3.5in,keepaspectratio=true]{figs/rossspeed1p8}
+\caption{Computed horizontal speed of the Ross ice shelf using $\bar B = 1.8 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$.  Color gives velocity in m/a; see scale.}
+\label{fig:rossspeed1p8}
+\end{figure}
+
+\small
+\begin{table}[h]
+\caption{Non-obvious options available and/or recommended with \texttt{pismd -ross}.}\label{tab:rossoptions}
+\begin{tabular}{@{}llll}\hline
+\textbf{Option} & \textbf{Explanation/Comments} \\ \hline
+  \verb|-d cnmu| &       a good way to see what is going on \\
+  \verb|-o foo -of nm| &  writes NetCDF file \verb|foo.nc| with full three-dimensional \\
+    & velocity fields \emph{and} writes some model results to \\
+    & Matlab-readable file \verb|foo.m| \\
+  \verb|-pause N| &      pause for N seconds when refreshing viewers \\
+  \verb|-ross| &         only use with executable \verb|pismd| \\
+  \verb|-tune x,y,z| &   run through constant hardness values $\bar B = x, x+y, x+2y,$ \\
+ & $\dots, z(=x+ky)$; (note no spaces in ``\verb|x,y,z|'') \\
+  \verb|-verbose 4| &      shows information on nonlinear iteration and Krylov solve \\
+    & and parameters related to solving the ice shelf equations \\
+\hline
+\end{tabular}
+\end{table}
+\normalsize
+
+Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnositic velocity computation.
+
+\subsubsection{Comparison to RIGGS data}  The file \verb|riggs_clean.dat| in directory \verb|pism/test/ross/| is a cleaned-up version of the original RIGGS data \cite{RIGGS1, RIGGS2}.  To convert this data to a NetCDF file, as needed next, do
+
+\verb|   cd test/ross/|
+
+\verb|   ./eis_riggs.py -o riggs.nc|
+
+\noindent A file \verb|riggs.nc| will be created.  Note that the data is one-dimensional in this NetCDF file, that is, it is just some lists of values with an index dimension \verb|count|.  (See \verb|pism/test/ross/README| for more explanation on this RIGGS data.)
+
+Now, \verb|pismd -ross| can read this data and compute a $\chi^2$ statistic comparing model output to the data.  Assuming one is in the \verb|pism/test/ross/| directory, and that both \verb|ross.nc| and \verb|riggs.nc| are in this directory, this command will produce a $\chi^2$ statistic:
+
+\small\begin{verbatim}
+$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -mv -riggs riggs.nc
+PISMD: initializing EISMINT Ross ice shelf velocity computation ...
+...
+maximum computed speed in ice shelf is    951.113 (m/a)
+...
+comparing to RIGGS is data in riggs.nc ...
+Chi^2 statistic for computed results compared to RIGGS is   5390.542
+ ... done.
+\end{verbatim}
+\normalsize
+
+Naturally, the question is ``does this $\chi^2$ value of $5390.5$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}.  The maximum computed horizontal ice speed above of $951.1$ m/a is lower than the maximum velocities reported by the other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (near the calving front, of course).
+
+\small
+\begin{table}[h]
+\caption{Model performance index, $\chi^2$ (non-dimensional).  \protect{\textsl{(Reproduction of Table 1 in \cite{MacAyealetal}.)}}}\label{tab:chisqr}
+\begin{tabular}{@{}llll}\hline
+\textsl{Model} & $\chi^2$ & \textsl{Maximum velocity} \\
+ & & $\text{m}\,\text{a}^{-1}$ \\ \hline
+Bremerhaven1 & 3605 & 1379 \\
+Bremerhaven2 & 12\,518 & 1663 \\
+Chicago1 & 5114 & 1497 \\
+Chicago2 & 5125 & 1497 \\
+Grenoble & 5237 & 1508 \\
+\hline
+\end{tabular}
+\end{table}
+\normalsize
+
+\subsubsection{Tuning the ice hardness for a better fit to RIGGS}  Because there is a relatively rich data set from RIGGS on ice velocity, it is reasonable to ask whether the PISM computed velocities can fit the data better if the hardness parameter $\bar B$ is adjusted.  There is a Python script \verb|pism/test/ross/tune.py| which runs \verb|pismd -ross| with several values of $\bar B$.  By default it uses smaller values for the convergence tolerances, and it can be run with multiple processors.  We see that with a hardness $\bar B = 1.7 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ we get a maximum computed speed of $1256.8$ m/a and a $\chi^2$ of $3398.0$.  To the extent that we are comparing apples to apples, so to speak, this is more-or-less as good as any of the results reported \cite{MacAyealetal}.
+
+\small\begin{verbatim}
+$ ./tune.py -n 2
+TUNE.PY (for EISMINT Ross; compare to table 1 in MacAyeal et al 1996)
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.5e8"
+  finished in 108.9859 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1749.024 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is  10153.2
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.6e8"
+  finished in 107.7356 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1471.820 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   4833.6
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.7e8"
+  finished in 104.5976 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1256.762 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   3398.0
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.8e8"
+  finished in 105.8533 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is   1087.281 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   3917.0
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 1.9e8"
+  finished in 100.2162 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is    951.721 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   5382.4
+trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc 
+-ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv -constant_hardness 2.0e8"
+  finished in 102.3863 seconds; max computed speed and Chi^2 as follows:
+  |maximum computed speed in ice shelf is    841.752 (m/a)
+  |Chi^2 statistic for computed results compared to RIGGS is   7266.9
+\end{verbatim}
+\normalsize
+
+\subsubsection{Additional visualization using \Matlab output from PISM}  The visualization abilities of PISM's runtime viewers and of \verb|ncview| (applied to the PISM output NetCDF file) are limited.  PISM can save certain variables in a \Matlab-readable form, however, and this is a situation where it might be useful.
+
+\verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc \|
+
+\verb|     -ksp_rtol 1e-08 -mv_rtol 1e-05 -Mx 147 -My 147 -Mz 11 -mv \|
+
+\verb|     -constant_hardness 1.7e8 -o ross1p7 -of m|
+
+\noindent When this completes, make sure \Matlab can find \verb|ross1p7.m| and also files \verb|ross_plot.m| and \verb|riggs_clean.dat| (both in directory \verb|pism/test/ross/|).  Execute the \verb|m|-files as commands:
+
+\verb|>> ross1p7|
+
+\verb|>> ross_plot|
+
+\noindent Figure \ref{fig:rossmatlab} is the result.  We have succeeded in modeling a real ice shelf.
+
+\begin{figure}[ht]
+\includegraphics[width=3.5in,keepaspectratio=true]{figs/rossquiver}\quad \includegraphics[width=2.5in,keepaspectratio=true]{figs/rossscatter}
+\caption{\protect{\emph{Left}}: Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.  \protect{\emph{Right}}: Comparison between modelled and observed speeds at RIGGS points; compare figure 2  in \cite{MacAyealetal}.}
+\label{fig:rossmatlab}
+\end{figure}
 
 
 \clearpage\newpage
@@ -1642,7 +1673,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdef{of}{n}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
 
-\opt{pdd}  Turns on the positive degree day model which is off by default (for \verb|pismr|, \verb|pisms|, \verb|pismv|, anyway).  See subsection \ref{subsect:pdd}.
+\opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  See subsection \ref{subsect:pdd}.
 
 \optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
 
@@ -1656,9 +1687,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
-\optrestrict{pause}{pisms -ross,pismv -test I}    Pause for given number of seconds at the end of the run when the results are displayed.
-
-\optrestrict{prefix}{pisms -ross}    Set the data file prefix for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.
+\optrestrict{pause}{pismd -ross,pismv -test I}    Pause for given number of seconds at the end of the run when the results are displayed.
 
 \optdefrestrict{plastic\und reg}{0.01 m/a}{pismv -test I}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  See \t{src/iceExactStreamModel.cc}.
 
@@ -1678,11 +1707,9 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
 
-\optrestrict{showobsvel}{pisms -ross -d c}    Show the map of observed velocity for the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross| and \verb|-pause|.
-
 \optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:real}.
 
-\optrestrict{ssl3}{pgrn -gk}    Run EISMINT-GREENLAND steady state experiment level 3. See section \ref{sect:real}.
+\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.  See section \ref{sect:real}.
 
 \optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
 
@@ -1699,8 +1726,6 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optrestrict{time4}{pisms -ismip H}  See \verb|-time1| explanation.
 
 \optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
-
-\optrestrict{tune}{pisms -ross}    Tune the vertically averaged hardness $\bar B$ in the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  See \verb|-ross|.  A range of values can be given; see \verb|src/iceROSSModel.cc|.
 
 \opt{verbose}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
 

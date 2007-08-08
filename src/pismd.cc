@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     ierr = m->initFromOptions(); CHKERRQ(ierr);
 
     if (ssaBCset == PETSC_TRUE) {
-       ierr = verbPrintf(2, com,"reading -ssaBC file %s and setting boundary conditions\n",
+       ierr = verbPrintf(2, com,"reading SSA boundary condition file %s and setting bdry conds\n",
              ssaBCfile); CHKERRQ(ierr);
        ierr = m->readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
     }
