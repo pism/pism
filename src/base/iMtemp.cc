@@ -51,6 +51,21 @@ bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, Pets
 }
 
 
+//! Take a semi-implicit time-step for the temperature equation.
+/*! 
+@cond CONTINUUM
+The conservation of energy equation is
+    \f[ \rho c_p \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f] 
+where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
+of the full three-dimensional conservation of energy.  Here \f$\rho\f$ is the density of ice, 
+\f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.
+
+@endcond
+@cond NUMERIC
+The numerical method is first-order upwind for advection and centered-differences with
+semi-implicitness for the vertical conduction term.
+@endcond
+ */
 PetscErrorCode IceModel::temperatureStep() {
   // update temp fields vTnew, vTb
 
@@ -386,6 +401,22 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 }                           
 
 
+//! Take an explicit time-step for the age equation.  Also check the CFL for advection.
+/*! 
+@cond CONTINUUM
+The age equation is\f$ \frac{d\tau}{dt} = 1\f$, that is,
+    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x} + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
+where \f$\tau(t,x,y,z)\f$ is the age of the ice.  This equation is hyperbolic (purely advective).  
+The boundary condition is that when the ice fell as snow it had age zero.  
+That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, and no boundary condition elsewhere
+(as the characteristics go outward elsewhere).  At this point the refreeze case, either grounded basal
+ice or marine basal ice, is not handled correctly.
+
+@endcond
+@cond NUMERIC
+The numerical method is first-order upwind.
+@endcond
+ */
 PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   // update age field vtaunew
   PetscErrorCode  ierr;

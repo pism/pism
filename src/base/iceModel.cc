@@ -114,6 +114,7 @@ IceModel::~IceModel() {
 }
 
 
+//! Allocate all Vecs defined in IceModel.
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
 

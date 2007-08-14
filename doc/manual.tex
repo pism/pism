@@ -68,7 +68,7 @@
 
 %\makeindex
 
-\title[PISM User's Manual]{\protect{\Large PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel:\normalsize} \\ \protect{\Large \bigskip User's Manual and Reference\normalsize}}
+\title[PISM User's Manual]{\protect{\Large PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel:\normalsize} \\ \protect{\Large \bigskip \bigskip User's Manual\normalsize}}
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
@@ -258,26 +258,39 @@ Naturally, setting up PISM to model real ice sheets will generally require techn
 A final reminder with respect to installation:  Once you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above, you can update it to the latest version by \verb|svn update| in the \verb|pism/| directory, after which you will want to \verb|make| and \verb|make install| in order to rebuild the PISM executables using the updated source files.
 
 \begin{table}[h]
-\caption{Dependencies for PISM, listed alphabetically.  Note developers' versions, which include the relevant header files, are needed for FFTW, GSL, and NetCDF.}\label{tab:PISMdepends}
+\caption{Dependencies for PISM, listed alphabetically.  These are needed to build a fully-functional PISM from source and to do all the examples in the manual.  \scriptsize (Note that ``developers' versions,'' which include the relevant header files, \protect{\emph{are}} needed for FFTW, GSL, and NetCDF, if using Debian repositories.)\normalsize}\label{tab:PISMdepends}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\
 \textbf{/Program} &  &  &  \\ \hline
-FFTW & \url{www.fftw.org} & \emph{recommended} & if not present  \\
- & & & \quad set \verb|WITH_FFTW=0| \\
-GSL & \url{www.gnu.org/software/gsl} & \emph{required} &  \\
-\LaTeX & \url{http://www.latex-project.org/} & \emph{optional} & only used for rebuilding \\
-& & & manual from source \\
-Matlab & \url{www.mathworks.com} & \emph{optional} & only used for alternate\\
+FFTW & \href{http://www.fftw.org/}{\t{www.fftw.org}} & \emph{recommended} & if not present set \\
+ & & & \quad \verb|WITH_FFTW=0| for PISM build \\
+GSL & \href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}} & \emph{required} &  \\
+Matlab & \href{http://www.mathworks.com/}{\t{www.mathworks.com}} & \emph{optional} & only used for alternate\\
 & & & display of results \\
-MPI & \url{www-unix.mcs.anl.gov/mpi} & \emph{required} & \\
-NetCDF & \url{www.unidata.ucar.edu/software/netcdf} & \emph{required} & \\
-\texttt{numpy} & \url{http://numpy.scipy.org/} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
-PETSc & \scriptsize \url{www-unix.mcs.anl.gov/petsc/petsc-2/index.html} \small & \emph{required} & version $\ge$ 2.3.3-p2 \\
-Python & \url{python.org} & \emph{required} & \\
-\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{pysclint.sourceforge.net/pycdf} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
- &  &   & to create PISM-readable NetCDF files \\
-Subversion & \url{subversion.tigris.org} & \emph{required} & \\
+MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
+NetCDF & \href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}} & \emph{required} & \\
+\texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
+PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ 2.3.3-p2 \\
+Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
+\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
+Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+
+\begin{table}[h]
+\caption{Additional dependencies for PISM, listed alphabetically.  These are \protect{\large \emph{needed only for serious developers of PISM}\normalsize}.}\label{tab:PISMdepends_superdev}
+\small
+\begin{tabular}{@{}llll}\hline
+\textbf{Library} & \textbf{Site} & \textbf{Comment} \\
+\textbf{/Program} &  &  &  \\ \hline
+\LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} & only used for rebuilding manuals (both the User's Manual  \\
+ &  & and the Reference Manual) from source \\
+\texttt{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} & only used for rebuilding the Reference Manual from source \\
+\texttt{ruby} & \href{http://www.ruby-lang.org/en/}{\texttt{www.ruby-lang.org}} & only used when NetCDF format for PISM output file changes \\
 \hline
 \normalsize
 \end{tabular}
@@ -289,7 +302,7 @@ Subversion & \url{subversion.tigris.org} & \emph{required} & \\
 
 \subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  Real ice sheet and ice shelf data are available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:real} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.
 
-For now, however, and to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II thermomechanical coupling intercomparison \cite{EISMINT00}.  In this experiment one tries to approximate an unstable equilibrium of the thermomechanically coupled differential equations for a shallow, grounded ice sheet, and one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin}.  
+For now, however, and to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II thermomechanical coupling intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
 
 In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km, for a total width of 1500 km for the computational box in both $x$ and $y$ directions, but the vertical grid is not prescribed.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction.  (Note that the number of points is one greater than the number of subintervals or grid spaces.)  We choose the standard 25km grid in the horizontal and use 201 grid points in the vertical for a 25 m (equally-spaced) grid.  Note that the computational box is 5000 m high by default for EISMINT II experiment F in PISM.  
 
@@ -348,8 +361,11 @@ done with run ... Writing model state to file `simp_exper.nc' ... done.
 
 Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.  
 
-When the full 200,000 year run finishes, on can display the result by \verb|pisms -eisII F| \verb|-if eisIIF200k.nc -y 200 -d HTt|.  In that case a result like that shown in figure \ref{fig:screenshot} will appear.
-\medskip
+When the full 200,000 year run finishes, one can continue the run and watch its evolving state by
+
+\verb|pisms -eisII F -if eisIIF200k.nc -d HTt|
+
+\noindent A result like that shown in figure \ref{fig:screenshot} will appear.
 
 \begin{figure}[ht]
 \includegraphics[height=3.2in,keepaspectratio=true]{figs/eisIIFshot}
@@ -392,30 +408,65 @@ MATLAB/netCDF & \scriptsize\url{http://www.marine.csiro.au/sw/matlab-netcdf.html
 \normalsize
 \end{table}
 
+\subsection{Evolution runs versus ``diagnostic'' runs}  The goal of a numerical ice sheet model like PISM is, ostensibly, to be a dynamical system which evolves over time just like the modelled ice sheet, assuming one starts with the right initial conditions and one has the right climate and other inputs at each time (boundary conditions).  For example, the EISMINT II simplified geometry experiments above are posed as initial value problems for evolution-in-time partial differential equations.
+
+Much of ice sheet modelling, however, requires ``diagnositic'' solution of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid \cite{Fowler}.  As explained in the next section, the ``shallow ice approximation'' which underlies the EISMINT II experiments is only one of two forms of the balance of momentum equations solved by PISM; the other is the ``shallow shelf approximation''.
+
+In summary, the goal of a ``diagnostic run'' is, by definition in this manual, to compute the velocity field.  On the other hand, the NetCDF model state saved by PISM at the end of an evolution run does not contain the three-dimensional velocity field.  Instead, it contains those variables which are needed to restart the run, especially the geometry (e.g.~thickness and bed elevation) and the ice temperature field.
+
+Thus there is a separate executable \verb|pismd| which does a diagnostic computation of velocity and saves the full three-dimensional velocity field.  For example, 
+
+\verb|pismd -if eisIIF200k.nc -o eisIIF200k_fullvels|
+
+\noindent The result of this command is a NetCDF file \verb|eisIIF200k_fullvels.nc| which contains the full three-dimensional velocity field in the scalar NetCDF variables \verb|u|, \verb|v|, and \verb|w|.
+
+The velocity field saved by \verb|pismd| is the one which would be computed at the \emph{next} time step in an evolution run.  That is, if we also run
+
+\verb|pisms -eisII F -if eisIIF200k.nc -y 0.1 -o eisIIF200k_plus|
+
+\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIF200k_fullvels.nc|.  Users of the NCO can check that the two saved NetCDF files really correspond to the same horizontal velocity field by examining \verb|foo.nc| if it is generated by \verb|ncdiff -v cbar,csurf eisIIF200k_plus.nc eisIIF200k_fullvels.nc foo.nc|.  We see that the \verb|cbar| and \verb|csurf| variables are identically zero in \verb|foo.nc|.
+
+Subsection \ref{subsect:ross} describes the use of \verb|pismd| in modelling the Ross ice shelf.  Indeed, ``ice shelf modelling'' usually means diagnositic and not evolution computations \cite{MacAyealetal,HumbertGreveHutter}.
+
+
 \clearpage
 \newpage
 \section{Ice dynamics in PISM}\label{sect:dynamics}
 
-\subsection{Two models of ice flow: slow and fast, but always shallow}  An important fact about PISM is that there are two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the basal condition, and the temperature field within the ice determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
-\item the shallow ice approximation (SIA) \cite{Hutter}, describing ice flowing as a function of the driving shear stresses of classical glaciology \cite{Paterson}, and
-\item the shallow shelf approximation (SSA) \cite{Morland,MacAyeal,SchoofStream,HumbertGreveHutter,GreveNotes} describing a membrane-type flow driven by longitudinal stress gradients.
+\subsection{Two models of ice flow: slow versus fast, but always shallow}  An important fact about PISM is that there are two significantly different sets of equations which determine the velocity field within the ice.  Roughly speaking, in both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice together determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
+\item the shallow ice approximation (SIA) \cite{Hutter}, which describes ice flow as a function of the driving shear stresses of classical glaciology (i.e.~in planes parallel to the geoid) \cite{Paterson}, and
+\item the shallow shelf approximation (SSA) \cite{WeisGreveHutter}, which describes a membrane-type flow driven by longitudinal stress gradients \cite{Morland,MacAyeal,SchoofStream}.
 \end{itemize}
 
-The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock \cite{Fowler}.  The SSA equations can confidently be applied to ice shelves for which there is no (deviatoric) stress at the base of the (floating) ice \cite{Morland,MorlandZainuddin}.
+The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock \cite{Fowler}.  These equations are, as a rule, easier to numerically solve than the SSA.  Certainly they are easier to parallelize.
 
-Ice sheets have faster-flowing grounded parts, however, usually called ``ice streams'' or ``outlet glaciers''.  Describing these faster-flowing grounded parts of ice sheets requires either a higher-order (but still shallow) stress balance \cite{Blatter}, or the Stokes equations which represent the balance of \emph{all} tensor components, \emph{or} one must decide to use SIA in some parts of the grounded ice sheet and SSA in others.  This latter choice is the one made in PISM.
+The SSA equations can confidently be applied to ice shelves because in shelves there is no (deviatoric) stress at the base of the (floating) ice \cite{Morland,MorlandZainuddin}.  These equations are harder to solve numerically and harder to parallelize.  
 
-That is, one may apply the SSA equations to grounded ice.  This is justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure.  These are the models PISM uses to describe faster-flowing ice, namely either the SSA with linear or plastic till.  In any case, because of the typical magnitudes of the (vertically-integrated horizontal) velocities in these two cases, for the rest of this manual we identify the SIA flow as \emph{slow flow} and all cases of the SSA flow as \emph{fast flow}.
+Nonetheless PISM numerically solves both the SIA and SSA equations in parallel.
 
-We emphasize that both the SIA and SSA models are \emph{shallow}.  That is, the partial differential equations in these two approximations come by different but analogous small-parameter arguments from the Stokes equations of a non-Newtonian fluid.  (For these small-parameter arguments see \cite{Fowler} and the appendices of \cite{SchoofStream}.)  Of course, the partial differential equations are shallow approximations, but PISM proceeds to only solve them approximately, that is, numerically by finite difference schemes.
+Ice sheets have faster-flowing \emph{grounded} parts, however, usually called ``ice streams'' or ``outlet glaciers'' in the context of the Greenland and Antarctic ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the SIA.  Ultimately one might use the full Stokes equations which represent the balance of \emph{all} tensor components \cite{Fowler}.  Alternatively one might use a ``higher-order'' (but also still shallow) stress balance \cite{Blatter}.
 
-The references are, of course, the right place to examine the physics of the continuum equations (approximations) described above.  Here we address how to control which model PISM uses through a \emph{mask}, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+One may apply the SSA equations with additional basal resistance terms to grounded ice, however.  This was justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure; see also \cite{SchoofTill}.  These are the models PISM uses to describe faster-flowing ice, namely the SSA with either linearly-viscous or plastic till.  
+
+Because of the typical magnitudes of the (vertically-averaged) horizontal velocities in these two cases, for the rest of this manual we identify the SIA as \emph{slow flow} and all cases of the SSA as \emph{fast flow}.
+
+We emphasize, however, that both the SIA and SSA models are \emph{shallow}.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments from the Stokes equations of a non-Newtonian fluid.  For these small-parameter argument in the SIA see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.  (The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids direct discussuion of the continuum model.)
+
+Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  One must decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  This section discusses from a practical point of view how the user can make this choice when using PISM.  We address how to make the choice through specifying a \emph{mask}, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+
+The transition from SIA to SSA flow is an internal boundary within the model domain.  Along this boundary, the numerical schemes in PISM attempt to maintain these continuum facts:
+\renewcommand{\labelenumi}{\textbf{\roman{enumi})}~}
+\begin{enumerate}
+\item continuity of the \emph{vertically-integrated} horizontal velocity field across the SIA--SSA transition,
+\item conservation of mass \emph{in the map plane} across the SIA--SSA transition, and
+\item conservation of energy (for cold ice) across the SIA--SSA transition.
+\end{enumerate}
+Of course the statement ``attempt to'' maintain is important because PISM does not have exact representations of any of the continuous functions but only their gridded numerical approximations.  See section \ref{sect:over} for additional comments and references on the continuum models and numerical schemes in PISM.
 
 \subsection{The flow-type mask} \label{subsect:mask}  
 
 \subsection{Schoof's plastic till free boundary problem for ice streams}  
 
-\subsection{Evolution runs versus ``diagnostic'' runs}  [TO BE ADDED]
 
 
 
@@ -774,8 +825,7 @@ Three example usages are \begin{itemize}
 \optoptdef{t}{tests}{CGI} which tests to run
 
 \medskip
-
-\subsection{Example \texttt{verifynow.py} output}  Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
+Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
 
 \scriptsize\begin{quote}\begin{verbatim}
 $ verifynow.py -n 2 -l 3 -t CEGIL
@@ -903,7 +953,7 @@ EISMINT I \cite{EISMINT96} was the first of these and involved only the isotherm
 
 EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.
 
-EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the published EISMINT II experiments; these are described in the next subsection.
+EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
 The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are two components of ISMIP partially completed, namely HOM = Higher Order Models and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
 
@@ -911,7 +961,7 @@ Of these ISMIP experiments, PISM currently only supports HEINO, but the results 
 
 As of August 2007, the PISM authors plan to participate in the upcoming ISMIP-POLICE and Marine Ice Sheet Intercomparison exercises.
 
-\subsection{EISMINT II in PISM}  There are seven experiments described in the EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
+\subsection{EISMINT II in PISM}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
 \item runs are on a prescribed $61\times 61$ horizontal grid (but, as usual, the grid and the length of the run are command line options in PISM so PISM can easily run the same experiments on a refined grid);
 \item the boundary conditions always have angular symmetry around the center of the grid;
@@ -925,6 +975,9 @@ As of August 2007, the PISM authors plan to participate in the upcoming ISMIP-PO
 \end{itemize}
 The experiments differ from each other in their various combinations of surface temperature and accumulation parameterizations.  Also, experiments H and G involve basal sliding, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
 
+In addition to the seven experiments published in \cite{EISMINT00}, there were an additional four experiments described in the EISMINT II intercomparison description 
+\cite{EISIIdescribe}, labeled I, J, K, and L.  These experiments were similar to A and C but with non-flat topography.  In the PISM directory the topography files are at \verb|test/eisII/trough.nc| and \verb|test/eisII/mound.nc|.  See table \ref{tab:eisII} for how to run these experiments.
+
 The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.
 
 Thus a reasonable experiment A run on four processors is
@@ -936,7 +989,7 @@ Thus a reasonable experiment A run on four processors is
 Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done in PISM.
 
 \begin{table}[h]
-\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus these options.}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus these options..}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms}'' $+$} & \textbf{Relation to experiment A} \\ \hline
@@ -946,7 +999,13 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 \verb|-eisII D -if eisIIA.nc -y 200000 -o eisIID| & smaller area of accumulation \\
 \verb|-eisII F -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIF| & colder; famous spokes \cite{BBL} \\
 \verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIG| & sliding (regardless of temperature) \\
-\verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH| & melt-temperature activated sliding \\
+\verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH| & melt-temperature activated sliding \\ \hline
+\verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 \| & trough topography \\
+\verb|     -topo test/eisII/trough.nc -o eisIII| &  \\
+\verb|-eisII J -if eisIII -y 2e5 -o eisIIJ| & trough topography and less snow \\
+\verb|-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 \| & mound topography \\
+\verb|     -topo test/eisII/mound.nc -o eisIIK| &  \\
+\verb|-eisII L -if eisIIK -y 2e5 -o eisIIL| & mound topography and less snow \\
 \hline\normalsize
 \end{tabular}\end{table}
 
@@ -957,11 +1016,11 @@ The EISMINT II experiments can be run with various modifications of the default 
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Option} & \textbf{Default values [expers]} & \textbf{Units} & \textbf{Meaning} \\ \hline
-\verb|-Mmax| & 0.5 [ABDFGH], 0.25 [C] & m$/$a & max value of accumulation rate \\
-\verb|-Rel| & 450 [ABFGH], 425 [CD] & km & radial distance to equilibrium line \\
+\verb|-Mmax| & 0.5 [ABDFGHIK], 0.25 [CJL] & m$/$a & max value of accumulation rate \\
+\verb|-Rel| & 450 [ABFGHIK], 425 [CDJL] & km & radial distance to equilibrium line \\
 \verb|-Sb| & $10^{-2}$ [\emph{all}] & (m/a)/km & radial gradient of accumulation rate \\
 \verb|-ST| & $1.67 \times 10^{-2}$ [\emph{all}] & K/km & radial gradient of surface temperature\\
-\verb|-Tmin| & 238.15 [ACDGH], 243.15[B], 223.15[F] & K & max of surface temperature \\ \hline
+\verb|-Tmin| & 238.15 [ACDGHIJKL], 243.15[B], 223.15[F] & K & max of surface temperature \\ \hline
 \verb|-Lz| & 4500 [A], 4000 [BCD], 5000 [F], 3000 [G] & m & height of the computational box \\
 \hline\normalsize
 \end{tabular}\end{table}
@@ -1027,7 +1086,11 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
 \medskip
 
-The data for this intercomparison is not new.  The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  (Newer data, and even some newer understanding, is available in 2007.  The reader is encouraged to go and build a better Greenland model than the tutorial example here.)
+The data for this intercomparison is out of date, but this fact does not reduce its usefulness as an intercomparison or for a tutorial example in this manual.\footnote{Indeed the reader is encouraged to go and build a better Greenland model than the tutorial example here!}  The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  
+
+Substantial developments have occurred in modelling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, a parameter-sensitivity study of a Greenland ice sheet model is described in \cite{RitzFabreLetreguilly}.  The relation between Greenland ice sheet modelling, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  The response of Greenland ice sheet models to climate warming is described in \cite{HuybrechtsdeWolde} and \cite{Greve00}.
+
+
 
 \subsubsection{Obtaining and converting EISMINT-Greenland data}  This subsection describes the use of two Python scripts to convert the EISMINT-Greenland data into NetCDF files useable by PISM.
 
@@ -1162,11 +1225,11 @@ Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain
 \verb|  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3|
 
 
-\subsection{Validation of PISM as a flow model for the Ross ice shelf} Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
+\subsection{Validation of PISM as a flow model for the Ross ice shelf}\label{subsect:ross}  Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
 
 As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models using the Ross ice shelf as an example.  We will refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rossmatlab} below for an indicaiton of these positions.
 
-A parameter-sensitivity study of a particular Ross ice shelf numerical model is described in \cite{HumbertGreveHutter}.
+Substantial developments have occurred in the modelling of the Ross ice shelf since the EISMINT-Ross intercomparison.  For example, inverse modelling techniques were used to recover depth-averaged viscosity of the Ross ice shelf from the RIGGS data \cite{RommelaereMacAyeal} and a parameter-sensitivity study was performed for a particular Ross ice shelf numerical model \cite{HumbertGreveHutter}. 
 
 \subsubsection{Bringing in the data}  Using these data to validate PISM's ice shelf modelling abilities requires downloading (text) data files from the website \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.  In particular, these files must be downloaded:
 \begin{itemize}

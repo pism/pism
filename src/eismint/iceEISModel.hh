@@ -41,6 +41,8 @@ private:
     virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
          const PetscScalar mu);
+    // for experiments I and K (also J,L indirectly): read NetCDF files for bed topography:
+    PetscErrorCode getBedTopography(const char* topoFile); 
 };
 
 #endif /* __iceEISModel_hh */

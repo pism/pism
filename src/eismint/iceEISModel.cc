@@ -72,10 +72,10 @@ PetscErrorCode IceEISModel::setFromOptions() {
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    if ((temp >= 'A') && (temp <= 'H')) {
+    if ((temp >= 'A') && (temp <= 'L')) {
       expername = temp;
     } else {
-      SETERRQ(2,"option -eisII must have value A, B, C, D, E, F, G, or H\n");
+      SETERRQ(2,"option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
     }
   } else {
     SETERRQ(1,"option -eisII must have a value\n");
@@ -152,6 +152,10 @@ PetscErrorCode IceEISModel::initFromOptions() {
         ierr = grid.rescale(L, L, 3000); CHKERRQ(ierr);
         break;
       case 'H':
+      case 'I':
+      case 'J':
+      case 'K':
+      case 'L':
         ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
         break;
       default:  
@@ -167,6 +171,22 @@ PetscErrorCode IceEISModel::initFromOptions() {
 
   if (infileused) {
     ierr = initAccumTs(); CHKERRQ(ierr); // just overwrite accum and Ts with EISMINT II vals
+  }
+
+  // get user-specified file name from which to read bed topography;
+  // this is allowed for any experiment, but makes sense for experiments I and K
+  // (noting J and L should -if the result of I and K, resp.)
+  PetscTruth      topoSet = PETSC_FALSE;
+  char            topoFile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-topo", topoFile,
+                               PETSC_MAX_PATH_LEN, &topoSet); CHKERRQ(ierr);
+  if (topoSet == PETSC_TRUE) {
+    ierr = getBedTopography(topoFile); CHKERRQ(ierr);
+  } else if ((expername == 'I') || (expername == 'K')) {
+    ierr = verbPrintf(2, grid.com, 
+           "WARNING: no option -topo set for EISMINT II experiment %c;\n"
+           "         continuing with current bed topography ...\n",expername); 
+           CHKERRQ(ierr);
   }
   
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
@@ -187,6 +207,8 @@ PetscErrorCode IceEISModel::initAccumTs() {
     case 'A':
     case 'G':
     case 'H':
+    case 'I':
+    case 'K':
       // start with zero ice and:
       M_max = 0.5 / secpera;  // Max accumulation
       R_el = 450e3;           // Distance to equil line (accum=0)
@@ -199,7 +221,9 @@ PetscErrorCode IceEISModel::initAccumTs() {
       T_min = 243.15;
       break;
     case 'C':
-      // supposed to start from end of experiment A and:
+    case 'J':
+    case 'L':
+      // supposed to start from end of experiment A (for C; resp I and K for J and L) and:
       M_max = 0.25 / secpera;
       R_el = 425e3;
       T_min = 238.15;
@@ -276,6 +300,47 @@ PetscErrorCode IceEISModel::fillintemps() {
 
   ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceEISModel::getBedTopography(const char* topoFile) {
+  PetscErrorCode  ierr;
+  int             ncid, stat, bid;
+  PetscInt        bExists = 0;
+
+  // open NetCDF file and see if "b" variable is present
+  if (grid.rank == 0) {
+    stat = nc_open(topoFile, 0, &ncid); CHKERRQ(nc_check(stat));
+    stat = nc_inq_varid(ncid, "b", &bid); bExists = stat == NC_NOERR;
+  }
+  ierr = MPI_Bcast(&bExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  if (!bExists) {
+    ierr = verbPrintf(2, grid.com, 
+           "WARNING: variable b not found in -topo file for EISMINT II experiment %c;\n"
+           "         continuing with current bed topography ...\n",expername); 
+           CHKERRQ(ierr);
+    return 0;
+  }
+
+  ierr = verbPrintf(2, grid.com, 
+         "reading bed topography found from file %s ...\n",topoFile); 
+         CHKERRQ(ierr);                              
+  // see comments in IceModel::bootstrapFromFile_netCDF() 
+  Vec vzero;
+  VecScatter ctx;
+  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
+  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
+
+  // move NetCDF variable bid into PETSc Vec vbed using DA to control distribution
+  // across processors
+  ierr = ncVarToDAVec(ncid, bid, grid.da2, vbed, g2, vzero); CHKERRQ(ierr);
+
+  ierr = VecDestroy(vzero); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
+  if (grid.rank == 0) {
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
+  }
   return 0;
 }
 
