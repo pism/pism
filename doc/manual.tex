@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{165}
+\newcommand{\PISMREV}{169}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -120,17 +120,17 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
-\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.
+\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.  To use the (recommended) graphical output of PISM you will need an X Windows server (\url{http://www.x.org/}).
 
-\item To use the graphical output of PISM, which we recommend, you will need an X Windows server \emph{and} the developers' version of X11, which will contain the needed header files.  The relevant development package in Debian is called \verb|xorg-dev|.
+\item As PISM is currently under rapid development, we distribute it only as compilable source code.  On the other hand, in this Installation section we describe several software libraries needed by PISM.  Therefore the ``header files'' for these libraries are required at the stage of compiling PISM.  In particular this means that the ``developer's versions'' of the libraries are needed if the libraries are downloaded from package repositories like Debian.  (In summary, \verb|xorg-dev|, \verb|netcdfg-dev|, \verb|libgsl0-dev|, and \verb|fftw3-dev| are the Debian packages we---the PISM developers---have used in compiling and linking PISM.  That is, \verb|sudo apt-get install xorg-dev|, etc.)
 
-\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   Install it using the instructions at the NetCDF webpage or using a package management system.  You will need the development version (package) which includes the header files; this is the \verb|netcdfg-dev| package in the Debian repositories.
+\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   If it is not already present, install it using the instructions at the webpage or using a package management system.
 
-\item PISM uses the GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}) for certain numerical calculations and special functions.  Install it using the instructions at the GSL webpage or using a package management system.  You will need the development version (package) which includes header files; this is the \verb|libgsl0-dev| package in the Debian repositories.
+\item PISM uses the GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}) for certain numerical calculations and special functions.  If it is not already present, install it using the instructions at the webpage or using a package management system.
 
-\item PISM optionally uses the ``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}) in approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install FFTW or check that it is installed already.   In particular, get the development version with header files, which is \verb|fftw3-dev| in Debian.   If FFTW is \emph{not installed}, however, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.   If this library is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
+\item PISM optionally uses the ``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}) in approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.   If this library is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
 
-\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  For example, you can add it with the statement
+\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation, in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  For example, you can add it with the statement
 
 \verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for \verb|bash| shell)
 
@@ -144,7 +144,7 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 \centerline{\emph{From now on this manual will assume use of} bash.}
 \medskip
 
-\item PISM uses PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}; \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}).  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}.  PISM requires a version of PETSc which is \texttt{\PETSCREV} or later.   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
+\item PISM uses PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}; \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}).  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}.  PISM requires a version of PETSc which is \texttt{\PETSCREV} or later.\footnote{A Debian package for PETSc may exist, but it should only be used if it is version \texttt{\PETSCREV} or later.}   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
 
 You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it might be best to read the following comments on the PETSc configure and build process first:
 
@@ -189,13 +189,13 @@ At this point you have configured the environment which PISM needs.  You are rea
 \bigskip
 
 \begin{enumerate}\setcounter{enumi}{5}
-\item \label{getPISMstep} Get the latest source for PISM by
+\item \label{getPISMstep} Get the latest source for PISM using the Subversion version control system:
 
 \verb|svn co http://svn.gna.org/svn/pism/trunk pism|
 
-\noindent A directory called ``\verb|pism/|'' will be created.  (Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.  After \verb|svn update| you will \verb|make| and \verb|make install| to rebuild PISM with the newest sources.)
+\noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM.}
 
-\item Build PISM:
+\item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \t{ffelb} AT \t{uaf.edu}.}
 
 \verb|cd pism|
 
@@ -203,7 +203,7 @@ At this point you have configured the environment which PISM needs.  You are rea
 
 \verb|make install|
 
-\noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismv|, and \verb|pisms|, in the \verb|pism/bin/| subdirectory and cleans up the junk from the build process.  ``\verb|make install|'' does \emph{not} require root permission.  (Please report any problems you meet at this stage by sending us the output: \verb|ffelb@uaf.edu|.)
+\noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismd|, \verb|pismr|, \verb|pismv|, and \verb|pisms|, in the \verb|pism/bin/| subdirectory and cleans up the junk from the build process.  ``\verb|make install|'' does \emph{not} require root permission.
 
 \item PISM executables can be run most easily by adding the directories \verb|pism/bin/| and \verb|pism/test/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:
 
@@ -251,14 +251,14 @@ You are done with installation at this point.  The next few items are recommende
 
 Have fun!
 
-At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Section \ref{sect:real} gives examples of using PISM to model a real ice sheet and a real ice shelf using freely-downloadable data.
+At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Subsection \ref{subsect:green} is an example of using PISM to model the Greenland ice sheet using freely-downloadable data.  Similarly one can model the Ross ice shelf using free data as described in subsection \ref{subsect:ross}.
 
-Naturally, setting up PISM to model real ice sheets will generally require techniques not be covered in this manual.  It may require the writing of additional source code, which for PISM means writing a derived class of the base \verb|IceModel| class.  (Note PISM is written in C++.  The base class is defined in the source file \verb|pism/src/iceModel.hh|.)  Use of PISM for real ice sheet modelling is something we welcome questions about, and will attempt to help with, but we will not pretend it is routine.
+Naturally, setting up PISM to model real ice sheets will generally require techniques not be covered in this manual.  First of all one usual needs to convert ice sheet data to NetCDF format so that it can be read by PISM.  Actual modelling may also require the writing of additional source code.  As PISM is written in C++, this means writing a derived class of the base class.  (The base class \verb|IceModel| is defined in the source file \verb|pism/src/iceModel.hh|.)  Use of PISM for real ice sheet modelling is something we welcome questions about, and will attempt to help with, but we will not pretend it is routine.
 
-A final reminder with respect to installation:  Once you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above, you can update it to the latest version by \verb|svn update| in the \verb|pism/| directory, after which you will want to \verb|make| and \verb|make install| in order to rebuild the PISM executables using the updated source files.
+A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.   You can update your copy of PISM to the latest version by \verb|svn update| in the \verb|pism/| directory.  After doing so you will want to \verb|make| and \verb|make install| in order to rebuild the PISM executables using the updated source code files.
 
 \begin{table}[h]
-\caption{Dependencies for PISM, listed alphabetically.  These are needed to build a fully-functional PISM from source and to do all the examples in the manual.  \scriptsize (Note that ``developers' versions,'' which include the relevant header files, \protect{\emph{are}} needed for FFTW, GSL, and NetCDF, if using Debian repositories.)\normalsize}\label{tab:PISMdepends}
+\caption{Dependencies for PISM, listed alphabetically.  These are needed to build a fully-functional PISM from source and to do all the examples in the manual.}\label{tab:PISMdepends}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\
@@ -282,15 +282,17 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 
 
 \begin{table}[h]
-\caption{Additional dependencies for PISM, listed alphabetically.  These are \protect{\large \emph{needed only for serious developers of PISM}\normalsize}.}\label{tab:PISMdepends_superdev}
+\caption{Additional dependencies for PISM, listed alphabetically.  \protect{\emph{These are needed only for serious developers of PISM.}}}\label{tab:PISMdepends_superdev}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Library} & \textbf{Site} & \textbf{Comment} \\
 \textbf{/Program} &  &  &  \\ \hline
-\LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} & only used for rebuilding manuals (both the User's Manual  \\
+\LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} & only used for rebuilding manuals (both this User's Manual  \\
  &  & and the Reference Manual) from source \\
-\texttt{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} & only used for rebuilding the Reference Manual from source \\
-\texttt{ruby} & \href{http://www.ruby-lang.org/en/}{\texttt{www.ruby-lang.org}} & only used when NetCDF format for PISM output file changes \\
+\texttt{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} & only used for rebuilding the Reference Manual and the \\
+ & & Source Code Browser from the source code files \\
+\texttt{ruby} & \href{http://www.ruby-lang.org/en/}{\texttt{www.ruby-lang.org}} & only used when changing the NetCDF format \\
+ &  & for PISM output files \\
 \hline
 \normalsize
 \end{tabular}
@@ -300,13 +302,13 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 \clearpage\newpage
 \section{Getting started}\label{sect:start}
 
-\subsection{Running the EISMINT II tests}  PISM's purpose is the realistic simulation of ice sheets.  But real ice sheet simulations require real data.  Real ice sheet and ice shelf data are available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:real} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.
+\subsection{Running the EISMINT II tests}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:real} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.}  For now, in order to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
 
-For now, however, and to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II thermomechanical coupling intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
+In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction; note that the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.
 
-In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km, for a total width of 1500 km for the computational box in both $x$ and $y$ directions, but the vertical grid is not prescribed.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction.  (Note that the number of points is one greater than the number of subintervals or grid spaces.)  We choose the standard 25km grid in the horizontal and use 201 grid points in the vertical for a 25 m (equally-spaced) grid.  Note that the computational box is 5000 m high by default for EISMINT II experiment F in PISM.  
+We choose the standard 25km grid in the horizontal and use 201 grid points in the vertical for a 25 m (equally-spaced) grid.  Note that the computational box is 5000 m high by default for EISMINT II experiment F in PISM.  Experiment F starts with zero ice, but the center thickness of the ice sheet grows to a peak near 5000 m before decaying to an equilibrium center thickness of about 4400 m.
 
-In EISMINT II all runs are for 200,000 model years, but we start with a short 2000 year run for a quicker illustration.  The executable is ``\t{pisms}'', a name which has trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM:
+In EISMINT II all runs are for 200,000 model years.  Here we start with a short 2000 year run for a quicker illustration.  The executable is ``\t{pisms}'', a name which has trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM:
 
 \small\begin{quote}\begin{verbatim}
 $  pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
@@ -326,9 +328,9 @@ $v$tf   2000.00 (+ 20.0000[0e]):   0.568   0.631    0.000   1000.000   228.520
 done with run ... Writing model state to file `simp_exper.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
-\noindent This should have taken less than 30 seconds on any modern computer.  
+\noindent This should have taken less than 30 seconds.
 
-In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\texttt{simp\underline{ }exper.nc}''.  We will see next an example which uses a ``\verb|-o|'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a four processor machine.  (In fact, the following should also work as stated on a single processor machine under most MPI installations.)  Let's run things in the background so we can continue to experiment:
+In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\texttt{simp\underline{ }exper.nc}''.  The next run will use a ``\verb|-o|'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a four processor machine.  (The following should also work fine on a single processor machine  by dropping the prefix ``\verb|mpiexec -n 4|''.)  Let's also run things in the background so we can continue to experiment:
 
 \small\begin{quote}\begin{verbatim}
 $  mpiexec -n 4 pisms -eisII F -if simp_exper.nc -y 198000 \
@@ -336,11 +338,11 @@ $  mpiexec -n 4 pisms -eisII F -if simp_exper.nc -y 198000 \
 \end{verbatim}
 \end{quote}\normalsize
 
-This run will take at least an hour on a four processor computer.  The file \verb|eisIIF200k.nc| (NetCDF format) will appear at the end.  One can, however, view the redirected standard output by \verb|less eisIIF.out| as the job is running in the background.  Also note that ``\t{top}'' is a convenient tool to see processor usage during the run.
+This run will take at least an hour on a four processor computer.  The file \verb|eisIIF200k.nc| (NetCDF format) will appear at the end.  One can, however, view the redirected standard output by \verb|less eisIIF.out| as the job is running in the background.\footnote{\t{top} is a convenient Linux tool to see processor usage during the run.}
 
-If a view of the model state is desired in the midst of this run, one can send all four running \verb|pisms| processes a signal which causes PISM to write out the model state, namely a file in NetCDF format with name \verb|pism-|\emph{year}\verb|.nc| at that instant: \verb|pkill -USR1 pisms|.  On the other hand, if one terminates the run with \verb|pkill pism| then the run will stop with the model state saved in the named output file \verb|eisIIF200k.nc| even though it will not represent the state at 200,000 years.  (See subsection \ref{subsect:signal} on how PISM catches signals.)
+If one wants a view of the model state in the midst of this (or any other PISM) run, one can send all running \verb|pisms| processes a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc| using the year at that time step.  On the other hand, if one terminates the run with \verb|pkill -TERM pisms| then the run will stop and save the model state using the \verb|-o| specified name even though it will not be the state at the end of a completed run.\footnote{Indeed, if the reader is impatient or has a single processor machine and doesn't want to wait more than an hour, the experiment F run can be terminated by \t{pkill -TERM pisms} after about 50,000 model years and the basic model result will be similar to that at 200,000 years.}  (See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.)
 
-While the four process run continues in the background, let's view the model state during a few time steps by starting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which are PETSc viewers under Xwindows:
+While the four process run continues in the background, let's view the model state during a few time steps by starting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:
 
 \small\begin{quote}\begin{verbatim}
 $  pisms -eisII F -if simp_exper.nc -y 200 -d HTt
@@ -379,15 +381,17 @@ At each time step PISM shows a summary of the model state using a few numbers.  
 
 \noindent The first five columns are flags telling the user which quantities are being updated at that time step.  A dollar sign appears if the quantity does not update.  From the left the positions are: [\t{b\$}] for bed elevation, [\t{vV\$}] for velocity, [\t{g\$}] for grain size, [\t{t\$}] for temperature and age (which are always updated together), and [\t{f\$}] for surface elevation.   (That is, an ``\verb|f|'' in the last column means a step of the flow or mass conservation equation has occurred.  Regarding the two possible velocity flags, a lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that only the vertically-averaged velocity, and the associated diffusivity, has been updated.)
 
-The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.  In the above examples the time step is 60 years because that is the default maximum time step.  A small whole number and a single character flag appear in square brackets after the time step, and these explain what part of the adaptive time-stepping scheme was used to determine the time step.  For instance, ``\t{m}'' means that the step was the maximum allowed, ``\t{e}'' means that the time step was shortened to hit the end of the specified run, ``\t{d}'' means the step was determined by the diffusivity of the flow equation \cite{BBL}, and ``\t{c}'' means the CFL condition limited the time step \cite{BBL,MortonMayers}.  The small integer before this single character flag is related to the \verb|-tempskip| mechanism; see sections \ref{sect:options} and \ref{sect:simp} for further description and examples of this mechanism.
+The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.\footnote{At the beginning of the EISMINT II experiment F run the ice has small thickness so the time step is 60 years because that is the default maximum time step.  Later in the experiment F run, after 5000 years, for instance, the time step is made smaller by the adaptive time-stepping mechanism in PISM.  See subsection \ref{subsect:adapt} for more on adaptive time-stepping.}  A small whole number and a single character flag appear in square brackets after the time step, and these explain what part of the adaptive time-stepping scheme was used to determine the time step.  For instance, ``\t{m}'' means that the step was the maximum allowed, ``\t{e}'' means that the time step was shortened to hit the end of the specified run, ``\t{d}'' means the step was determined by the diffusivity of the flow equation \cite{BBL}, and ``\t{c}'' means the CFL condition limited the time step \cite{BBL,MortonMayers}.  The small integer before this single character flag is related to the \verb|-tempskip| mechanism; see sections \ref{sect:options} and \ref{sect:simp} for further description and examples of this mechanism.
 
-The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the triple point).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometime useful for comparison.  (This summary of the model state can be made more verbose by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.)
+The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the triple point).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometime useful for comparison.  This summary of the model state can be made more verbose by using the option \verb|-verbose|.
 
-\subsection{Visualizing the results}  There are two basic modes for visualizing the various quantities in PISM, namely using runtime viewers and visualizing the final NetCDF file.
+For more on the EISMINT II experiments see section \ref{sect:simp}.
 
-At runtime, various diagnostic viewers can be specified by options of the form \verb|-d HTt| or \verb|-dbig HTt|; see Appendix C.  These viewers are updated at each step and work under Xwindows.  The format is limited by the style of PETSc viewers, but these viewers suffice for quick visualization and allow the monitoring of the run.  Note that some diagnostic viewers show slices parallel to the bed.  They are controlled by the option \verb|-kd|.  Those which show ``soundings'' are controlled by the options \verb|-id|, \verb|-jd|; see Appendix A.
+\subsection{Visualizing the results}  There are two basic modes for visualizing the various quantities in PISM, namely using runtime viewers and visualizing output NetCDF files.
 
-When a PISM run is finished, the state of the model is output in NetCDF format.  The name can be specified by the option \verb|-o|, so \verb|-o foo| writes the NetCDF file \verb|foo.nc|.  NetCDF files can be viewed or modified with a variety of tools, some of which are mentioned in table \ref{tab:NetCDFview}.  We find \verb|ncview| to be the fastest routine way to look at PISM output files.
+At runtime, various viewers can be specified by options of the form \verb|-d |\emph{letters} or \verb|-dbig |\emph{letters}; the latter type are fairly large.  See Appendix C for the possible single letter names of each runtime viewer.  These viewers are updated at each step and work under Xwindows.  The format is limited by the style of PETSc viewers, but these viewers suffice for quick visualization and allow the monitoring of the run.  Note that some diagnostic viewers show slices parallel to the bed.  They are controlled by the option \verb|-kd|.  Those which show ``soundings'' are controlled by the options \verb|-id|, \verb|-jd|; see Appendix A.
+
+When a PISM run is finished the state of the model is output in NetCDF format.  The name can be specified by the option \verb|-o|, so \verb|-o foo| writes the NetCDF file \verb|foo.nc|.  NetCDF files can be viewed or modified with a variety of tools, some of which are mentioned in table \ref{tab:NetCDFview}.\footnote{The PISM developers find \t{ncview} to be the fastest routine way to look at PISM output files.}
 
 \begin{table}[h]
 \caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
@@ -408,9 +412,9 @@ MATLAB/netCDF & \scriptsize\url{http://www.marine.csiro.au/sw/matlab-netcdf.html
 \normalsize
 \end{table}
 
-\subsection{Evolution runs versus ``diagnostic'' runs}  The goal of a numerical ice sheet model like PISM is, ostensibly, to be a dynamical system which evolves over time just like the modelled ice sheet, assuming one starts with the right initial conditions and one has the right climate and other inputs at each time (boundary conditions).  For example, the EISMINT II simplified geometry experiments above are posed as initial value problems for evolution-in-time partial differential equations.
+\subsection{Evolution runs versus ``diagnostic'' runs}  The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time just like the modelled ice sheet, assuming one starts with the right initial conditions and one has the right climate and other inputs at each time step (i.e.~boundary conditions).  For example, the EISMINT II simplified geometry experiments above are posed as initial/boundary value problems for evolution-in-time partial differential equations.
 
-Much of ice sheet modelling, however, requires ``diagnositic'' solution of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid \cite{Fowler}.  As explained in the next section, the ``shallow ice approximation'' which underlies the EISMINT II experiments is only one of two forms of the balance of momentum equations solved by PISM; the other is the ``shallow shelf approximation''.
+Much of ice sheet, stream, and shelf modelling, however, requires ``diagnositic'' solution of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid \cite{Fowler}.  As explained in the next section, the ``shallow ice approximation'' which underlies the EISMINT II experiments is only one of two forms of the balance of momentum equations solved by PISM.  The other is the ``shallow shelf approximation''.
 
 In summary, the goal of a ``diagnostic run'' is, by definition in this manual, to compute the velocity field.  On the other hand, the NetCDF model state saved by PISM at the end of an evolution run does not contain the three-dimensional velocity field.  Instead, it contains those variables which are needed to restart the run, especially the geometry (e.g.~thickness and bed elevation) and the ice temperature field.
 
@@ -1080,7 +1084,7 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \clearpage\newpage
 \section{Realistic ice sheet and ice shelf modelling: two examples}\label{sect:real}
 
-\subsection{Modelling the Greenland ice sheet}  In this subsection we give an extended example of how to use PISM to model the Greenland ice sheet using somewhat out-of-date data.  That is, we perform the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  The data for performing this intercomparison is, however, freely available at
+\subsection{Modelling the Greenland ice sheet}\label{subsect:green}  In this subsection we give an extended example of how to use PISM to model the Greenland ice sheet using somewhat out-of-date data.  That is, we perform the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.  As stated earlier, real data is not something we can freely distribute under the GNU Public License.  The data for performing this intercomparison is, however, freely available at
 \medskip
 
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}

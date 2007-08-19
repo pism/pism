@@ -345,15 +345,11 @@ PetscErrorCode IceEISModel::getBedTopography(const char* topoFile) {
 }
 
 
-// reimplement IceModel::basal() which is virtual (e.g. for this purpose)
-PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
+// reimplement IceModel::basalVelocity() which is virtual; basalVelocity() is 
+// for SIA regions (MASK_SHEET), and it is called within IceModel::velocitySIAStaggered)
+PetscScalar IceEISModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
-  // this version ignors mu, x, and y
-  // this code supposes there was a misprint on page
-  // 230 of Payne et al 2000; this code supposes that the last words of paragraph labelled
-  // "Experiment G" should have been "... that of basal pressure" instead
-  // of "... that of basal melt"; confirmed by correspondence with A. Payne spring 2007
 
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;
@@ -366,8 +362,7 @@ PetscScalar IceEISModel::basal(const PetscScalar x, const PetscScalar y,
       } else {
         return 0.0;
       }
-  }
-  
+  }  
   return 0.0;  // zero sliding for other tests
 }
 

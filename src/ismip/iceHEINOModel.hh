@@ -53,7 +53,7 @@ private:
     PetscErrorCode applyDefaultsForExperiment();
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
-    virtual PetscScalar basal(const PetscScalar x, const PetscScalar y,
+    virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y, 
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
          const PetscScalar mu);
     

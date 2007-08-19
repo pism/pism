@@ -220,7 +220,7 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 }
 
 
-// reimplement IceModel::basal
+// reimplement IceModel::basalVelocity()
 PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar yIN,
                                         const PetscScalar H, const PetscScalar T,
                                         const PetscScalar alpha, const PetscScalar muIN) {
@@ -271,7 +271,7 @@ PetscErrorCode IceCompModel::initTestISO() {
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
-  setMuSliding(0.0);  // note reimplementation of basal()
+  setMuSliding(0.0);  // note reimplementation of basalVelocity()
 
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -348,7 +348,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
-  setMuSliding(0.0);  // note reimplementation of basal()
+  setMuSliding(0.0);  // note reimplementation of basalVelocity()
 
 //  ierr = PetscPrintf(PETSC_COMM_SELF, "rank = %d;   grid.xs ys xm ym  =  %d %d %d %d\n",
 //                     grid.rank,grid.xs,grid.ys,grid.xm,grid.ym);  CHKERRQ(ierr);
