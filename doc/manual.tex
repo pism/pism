@@ -437,26 +437,24 @@ Subsection \ref{subsect:ross} describes the use of \verb|pismd| in modelling the
 \newpage
 \section{Ice dynamics in PISM}\label{sect:dynamics}
 
-\subsection{Two models of ice flow: slow versus fast, but always shallow}  An important fact about PISM is that there are two significantly different sets of equations which determine the velocity field within the ice.  Roughly speaking, in both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice together determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
+\subsection{Two models of ice flow: slow versus fast, but always shallow}  An important fact about PISM is that there are two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice together determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
 \item the shallow ice approximation (SIA) \cite{Hutter}, which describes ice flow as a function of the driving shear stresses of classical glaciology (i.e.~in planes parallel to the geoid) \cite{Paterson}, and
 \item the shallow shelf approximation (SSA) \cite{WeisGreveHutter}, which describes a membrane-type flow driven by longitudinal stress gradients \cite{Morland,MacAyeal,SchoofStream}.
 \end{itemize}
 
-The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock \cite{Fowler}.  These equations are, as a rule, easier to numerically solve than the SSA.  Certainly they are easier to parallelize.
+PISM numerically solves both the SIA and SSA equations in parallel.  The SIA equations are, as a rule, easier to numerically solve than the SSA.  Certainly the SIA equations are easier to parallelize.
 
-The SSA equations can confidently be applied to ice shelves because in shelves there is no (deviatoric) stress at the base of the (floating) ice \cite{Morland,MorlandZainuddin}.  These equations are harder to solve numerically and harder to parallelize.  
+The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock and the bed topography is relatively slowly-varying \cite{Fowler}.  These equations are also used with basal shear stress dependent sliding, but with lessened validity as the contribution of the basal sliding to the total flow velocity increases.
 
-Nonetheless PISM numerically solves both the SIA and SSA equations in parallel.
+The SSA equations can confidently be applied to large floating ice shelves because such shelves have small depth-to-width ratio and because there is no (deviatoric) stress at the base of the (floating) ice \cite{Morland,MorlandZainuddin}.
 
-Ice sheets have faster-flowing \emph{grounded} parts, however, usually called ``ice streams'' or ``outlet glaciers'' in the context of the Greenland and Antarctic ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the SIA.  Ultimately one might use the full Stokes equations which represent the balance of \emph{all} tensor components \cite{Fowler}.  Alternatively one might use a ``higher-order'' (but also still shallow) stress balance \cite{Blatter}.
+Ice sheets have faster-flowing \emph{grounded} parts, however.  These are usually called ``ice streams'' or ``outlet glaciers'' in the context of the Greenland and Antarctic ice sheets \cite{BamberVaughanJoughin}.  Describing these faster-flowing grounded parts of ice sheets requires something more than the SIA.  Ultimately one might use the full Stokes equations which represent the balance of \emph{all} tensor components \cite{Fowler}.  Alternatively one might use a ``higher-order'' (but also still shallow) stress balance \cite{Blatter}.
 
-One may apply the SSA equations with additional basal resistance terms to grounded ice, however.  This was justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure; see also \cite{SchoofTill}.  These are the models PISM uses to describe faster-flowing ice, namely the SSA with either linearly-viscous or plastic till.  
+One may apply the SSA equations with additional basal resistance terms to grounded ice, however.  This was justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure; see also \cite{SchoofTill}.  These are the models PISM uses to describe faster-flowing ice, namely the SSA with either linearly-viscous or plastic till.
 
-Because of the typical magnitudes of the (vertically-averaged) horizontal velocities in these two cases, for the rest of this manual we identify the SIA as \emph{slow flow} and all cases of the SSA as \emph{fast flow}.
+We emphasize, however, that both the SIA and SSA models are \emph{shallow}.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments, based on a small depth-to-width ``aspect ratio'', from the Stokes equations of a non-Newtonian fluid.  For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.\footnote{The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids serious discussion of the continuum model.}
 
-We emphasize, however, that both the SIA and SSA models are \emph{shallow}.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments from the Stokes equations of a non-Newtonian fluid.  For these small-parameter argument in the SIA see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.  (The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids direct discussuion of the continuum model.)
-
-Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  One must decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  This section discusses from a practical point of view how the user can make this choice when using PISM.  We address how to make the choice through specifying a \emph{mask}, or, alternatively, how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  One must decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  This section discusses from a practical point of view how the user can make this choice when using PISM.  We address how to make the choice through specifying a \emph{mask}.  Alternatively to the mask technique, we also describe how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
 
 The transition from SIA to SSA flow is an internal boundary within the model domain.  Along this boundary, the numerical schemes in PISM attempt to maintain these continuum facts:
 \renewcommand{\labelenumi}{\textbf{\roman{enumi})}~}
@@ -469,7 +467,53 @@ Of course the statement ``attempt to'' maintain is important because PISM does n
 
 \subsection{The flow-type mask} \label{subsect:mask}  
 
-\subsection{Schoof's plastic till free boundary problem for ice streams}  
+\subsection{Schoof's plastic till free boundary problem for ice streams}  We describe an example based on EISMINT II experiment I.  This experiment is documented in \cite{EISIIdescribe},\footnote{Experiment I is not discussed in \cite{EISMINT00} because the results of intercomparison for experiment I were ``straightforward results with little variability between groups''.} and it is identical to experiment A except for having ``trough'' bed topography.   As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.
+
+The following run will start us off by building up the ice sheet for experiment I for 10,000 model years:
+
+\verb|pisms -eisII I -Mx 61 -My 61 -Mz 201 -topo test/eisII/trough.nc \|
+
+\verb|    -y 10000 -o eis2I10k >> eis2I10k.out &|
+
+\noindent To view the resulting ice sheet one might do
+
+\verb|pisms -eisII I -if eis2I10k.nc -d bHh|
+
+\noindent to see the geometry (bed, thickness, surface elevation).  We see the trough bed topography and its effect on the horizontal extent of the ice sheet.  Also do
+
+\verb|pisms -eisII I -if eis2I10k.nc -d 0cLT|
+
+\noindent to see the horizontal velocity (surface and vertically-averaged), effective thickness of the till water, and basal temperature.
+
+Note that a significant fraction of the base is at the pressure-melting temperature but that the effective thickness of the till water is zero.  This is because \verb|pisms -eisII| enforces zero stored melt water as a special simplification, for the EISMINT II tests \cite{EISMINT00}, of PISM's conservation of energy model.  On the other hand the yield stress of the till, in PISM's default plastic till model, is tied to the effective thickness of the basal water.  Therefore let us continue the run, but letting PISM's default energy model build up a nonzero amount of basal water:
+
+\verb|pisms -eisII I -if eis2I10k.nc -track_Hmelt -y 1000 -o eis2Iwmelt|
+
+\noindent When this last run finishes, an interesting view of the result is
+
+\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0HLT|
+
+\noindent In particular we see that the effective thickness of the till water has increased to its maximum of 2 m in much of the area where the base is at the pressure-melting temperature.  In particular there is a layer of till water at the base of the ice in the trough part of the ice sheet.
+
+Now we turn on Schoof's plastic till ice stream model:
+
+\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -o eis2Isia|
+
+\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -mv -plastic -super -o eis2Iplastic|
+
+
+[THIS PRODUCES TOO LITTLE SLIDING BUT IS ROUGHLY THE RIGHT INVOCATION.  PLAY WITH THE PARAMETERS IN THE BASAL YIELD STRESS MODEL?]
+
+[NOTE eis2Iplastic.nc SHOWS SERIOUS ASYMMETRY.  LIKEWISE IF ONE DOES 
+
+\verb|ncpdq -a x,y trough.nc -o trough_swap.nc| TO ROTATE THE TROUGH, THERE IS STILL ASYMMETRY]
+
+This kind of plastic till free boundary problem is also solved by test I in the verification suite.  Here is an example run with some viewers:
+
+\verb|pismv -test I -Mx 5 -My 500 -d ncqu -verbose|
+
+\noindent The boundary conditions are a uniform slab of ice on a bed with constant slope, but with a central low in the till yield stress.  Thus the center of the slab slides, and thus the ice flows under the SSA equations, because of the plastic failure, while at the margins the base of the ice does not slide.  That is, we have a single simplified ice stream.  But in this case we have the exact solution published in \cite{SchoofStream} with which to compare the diagnostically-computed velocities.  This test, and convergence of the numerical solution under grid refinement, are addressed in section \ref{sect:verif}.
+
 
 
 
@@ -957,13 +1001,13 @@ EISMINT I \cite{EISMINT96} was the first of these and involved only the isotherm
 
 EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.
 
-EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models.   (I.e.~shortfalls revealed by the EISMINT II results and their interpretations.)  PISM has built-in support for reproduction of all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
+EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models (as evidenced by their behavior on EISMINT II experiments).  PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
 The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are two components of ISMIP partially completed, namely HOM = Higher Order Models and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
 
-Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  We believe the continuum problem described by HEINO to not be easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  This is a problem regardless of the details of the numerical schemes or even (roughly speaking) of the shallowness of the continuum model.
+Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  (ISMIP-HEINO support in PISM is an \emph{un}documented feature.)  We believe the continuum problem described by HEINO to not be easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  This is a problem regardless of the details of the numerical schemes or even (roughly speaking) of the shallowness of the continuum model.
 
-As of August 2007, the PISM authors plan to participate in the upcoming ISMIP-POLICE and Marine Ice Sheet Intercomparison exercises.
+As of August 2007, the PISM developers plan to participate in the upcoming ISMIP-POLICE and Marine Ice Sheet Intercomparison exercises.
 
 \subsection{EISMINT II in PISM}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
@@ -979,31 +1023,30 @@ As of August 2007, the PISM authors plan to participate in the upcoming ISMIP-PO
 \end{itemize}
 The experiments differ from each other in their various combinations of surface temperature and accumulation parameterizations.  Also, experiments H and G involve basal sliding, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
 
-In addition to the seven experiments published in \cite{EISMINT00}, there were an additional four experiments described in the EISMINT II intercomparison description 
-\cite{EISIIdescribe}, labeled I, J, K, and L.  These experiments were similar to A and C but with non-flat topography.  In the PISM directory the topography files are at \verb|test/eisII/trough.nc| and \verb|test/eisII/mound.nc|.  See table \ref{tab:eisII} for how to run these experiments.
+In addition to the seven experiments published in \cite{EISMINT00}, there were an additional five experiments described in the EISMINT II intercomparison description 
+\cite{EISIIdescribe}, labeled E, I, J, K, and L.  These experiments share most features, itemized above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat topography.  Experiments K and L are similar to experiment C but with non-flat topography.  In the PISM directory the two needed topography files are at \verb|test/eisII/trough.nc| and \verb|test/eisII/mound.nc|.  See table \ref{tab:eisII} for how to run these experiments.
 
-The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.
+The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.  Thus a reasonable experiment A run on one processor is
 
-Thus a reasonable experiment A run on four processors is
-
-\verb|mpiexec -n 4 pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIA|
+\verb|pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIA|
 
 \noindent The final state \verb|eisIIA.nc| can, of course, be viewed using \verb|ncview|.
 
 Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done in PISM.
 
 \begin{table}[h]
-\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus these options..}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus the given options.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms}'' $+$} & \textbf{Relation to experiment A} \\ \hline
 \verb|-eisII A -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIA| & \\
 \verb|-eisII B -if eisIIA.nc -y 2e5 -o eisIIB| & warmer \\
-\verb|-eisII C -if eisIIA.nc -y 200000 -o eisIIC| & less snow \\
-\verb|-eisII D -if eisIIA.nc -y 200000 -o eisIID| & smaller area of accumulation \\
+\verb|-eisII C -if eisIIA.nc -y 2e5 -o eisIIC| & less snow (lower accumulation)\\
+\verb|-eisII D -if eisIIA.nc -y 2e5 -o eisIID| & only smaller area of accumulation \\
 \verb|-eisII F -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIF| & colder; famous spokes \cite{BBL} \\
 \verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIG| & sliding (regardless of temperature) \\
 \verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH| & melt-temperature activated sliding \\ \hline
+\verb|-eisII E -if eisIIA.nc -y 2e5 -o eisIIE| & shifted accumulation/temperature maps \\
 \verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 \| & trough topography \\
 \verb|     -topo test/eisII/trough.nc -o eisIII| &  \\
 \verb|-eisII J -if eisIII -y 2e5 -o eisIIJ| & trough topography and less snow \\
@@ -1013,19 +1056,25 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 \hline\normalsize
 \end{tabular}\end{table}
 
-The EISMINT II experiments can be run with various modifications of the default settings.  Certainly the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists the optional settings which are particular to the EISMINT II experiments; these options will only work if option ``\t{-eisII ?}'' is also set.
+The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.  With the exception of ``\verb|-Lz|'', these options will only work if option ``\t{-eisII ?}'' is also set.
 
 \begin{table}[h]
 \caption{Changing the default settings for the EISMINT II experiments in PISM.}\label{tab:eisIIoptions}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Option} & \textbf{Default values [expers]} & \textbf{Units} & \textbf{Meaning} \\ \hline
-\verb|-Mmax| & 0.5 [ABDFGHIK], 0.25 [CJL] & m$/$a & max value of accumulation rate \\
-\verb|-Rel| & 450 [ABFGHIK], 425 [CDJL] & km & radial distance to equilibrium line \\
+\verb|-Mmax| & 0.5 [ABDEFGHIK], 0.25 [CJL] & m$/$a & max value of accumulation rate \\
+\verb|-Rel| & 450 [ABEFGHIK], 425 [CDJL] & km & radial distance to equilibrium line \\
 \verb|-Sb| & $10^{-2}$ [\emph{all}] & (m/a)/km & radial gradient of accumulation rate \\
 \verb|-ST| & $1.67 \times 10^{-2}$ [\emph{all}] & K/km & radial gradient of surface temperature\\
-\verb|-Tmin| & 238.15 [ACDGHIJKL], 243.15[B], 223.15[F] & K & max of surface temperature \\ \hline
-\verb|-Lz| & 4500 [A], 4000 [BCD], 5000 [F], 3000 [G] & m & height of the computational box \\
+\verb|-Tmin| & 238.15 [ACDEGHIJKL], & K & max of surface temperature \\
+ & 243.15[B], 223.15[F] & & \\
+\verb|-topo| &  &  & give location of bed topography file  \\
+ &  &  & (a NetCDF file with variable ``\t{b}'')  \\
+\verb|-track_Hmelt| &  &  & compute effective thickness of basal melt \\
+ &  &  & water (override default for EISMINT II) \\
+\verb|-Lz| & 4500 [AE], 4000 [BCD], & m & height of the computational box \\
+ & 5000 [F], 3000 [G] &  &  \\
 \hline\normalsize
 \end{tabular}\end{table}
 

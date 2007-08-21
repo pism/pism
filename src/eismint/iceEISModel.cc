@@ -57,8 +57,9 @@ PetscErrorCode IceEISModel::setFromOptions() {
   setIsDrySimulation(PETSC_TRUE);
   setDoGrainSize(PETSC_FALSE);
   setEnhancementFactor(1.0);
-  setIncludeBMRinContinuity(PETSC_FALSE);
-
+  setIncludeBMRinContinuity(PETSC_FALSE); // basal melt does not change computation of vertical velocity
+  ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
+  
   // make bedrock material properties into ice properties
   // (note Mbz=1 is default, but want ice/rock interface segment to see all ice)
   bedrock.rho = ice.rho;
@@ -124,6 +125,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
     const PetscScalar   L              = 750e3;      // Horizontal extent of grid
     switch (expername) {
       case 'A':
+      case 'E':
         ierr = grid.rescale(L, L, 4500); CHKERRQ(ierr);
         break;
       case 'B':
@@ -205,6 +207,7 @@ PetscErrorCode IceEISModel::initAccumTs() {
   PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
   switch (expername) {
     case 'A':
+    case 'E':  // starts from end of A
     case 'G':
     case 'H':
     case 'I':
@@ -261,11 +264,12 @@ PetscErrorCode IceEISModel::initAccumTs() {
   // now fill in accum and surface temp
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  PetscScalar cx = grid.p->Lx, cy = grid.p->Ly;
+  if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // r is distance from center of grid
-      const PetscScalar r = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
-                                  + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
+      // r is distance from center of grid; if E then center is shifted (above)
+      const PetscScalar r = sqrt( PetscSqr(-cx + grid.p->dx*i) + PetscSqr(-cy + grid.p->dy*j) );
       // set accumulation
       accum[i][j] = PetscMin(M_max, S_b * (R_el-r));  // formula (7) in (Payne et al 2000)
       // set surface temperature

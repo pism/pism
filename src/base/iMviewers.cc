@@ -378,10 +378,10 @@ PetscErrorCode IceModel::updateViewers() {
           if (cmpera > 1.0e-6) {
             a[i][j] = log10(cmpera);
           } else {
-            a[i][j] = -3.0;  // essentially stopped ice
+            a[i][j] = -6.0;  // essentially stopped ice
           }
         } else {
-          a[i][j] = -3.0; // no ice at location
+          a[i][j] = -6.0; // no ice at location
         }
       }
     }
@@ -401,14 +401,13 @@ PetscErrorCode IceModel::updateViewers() {
         if (H[i][j] > 0.0) {
           const PetscScalar mpera = secpera * 
                      sqrt(PetscSqr(ub[i][j]) + PetscSqr(vb[i][j]));
-//          if (mpera > 1.0e-6) {
-          if (mpera > 1.0e-9) {
+          if (mpera > 1.0e-6) {
             a[i][j] = log10(mpera);
           } else {
-            a[i][j] = -9.0;  // essentially stopped ice
+            a[i][j] = -6.0;  // essentially stopped ice
           }
         } else {  // no ice at location
-          a[i][j] = -3.0;
+          a[i][j] = -6.0;
         }
       }
     }

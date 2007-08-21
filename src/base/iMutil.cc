@@ -236,7 +236,7 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
-        if (intMask(mask[i][j]) == MASK_SHEET) {
+        if ( (intMask(mask[i][j]) == MASK_SHEET) || (doSuperpose == PETSC_TRUE) ) {
           const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
           const PetscScalar h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
           const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));

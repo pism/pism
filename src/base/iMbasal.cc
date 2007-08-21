@@ -90,9 +90,9 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   //      is at an unknowable location (we are not doing a flow line model!)
 
 //  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
-  const PetscScalar plastic_till_c_0 = 5.0e3;
+//  plastic_till_c_0 = 5.0e3;
 //  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
-  const PetscScalar plastic_till_mu = 0.2125565616700221;  // = tan(12^o); till friction angle
+//  plastic_till_mu = 0.2125565616700221;  // = tan(12^o); till friction angle
     
   PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);

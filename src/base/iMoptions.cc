@@ -198,6 +198,14 @@ PetscErrorCode  IceModel::setFromOptions() {
     doTempSkip = PETSC_TRUE;
   }
 
+  // till cohesion c_0 and till friction angle are relevant in IceModel::updateYieldStressFromHmelt()
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_cohesion", &plastic_till_c_0, PETSC_NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_friction_angle", &plastic_till_mu, PETSC_NULL); CHKERRQ(ierr);
+
+//  ierr = verbPrintf(1,grid.com,"\n   [plastic_till_c_0 = %9.2f, plastic_till_mu = %9.6f]\n",
+//                    plastic_till_c_0, plastic_till_mu); CHKERRQ(ierr);
+
   // verbosity options: more info to standard out.  see iMutil.cc
   ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 

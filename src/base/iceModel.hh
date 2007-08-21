@@ -245,6 +245,7 @@ protected:
               regularizingVelocitySchoof, regularizingLengthSchoof,
               macayealRelativeTolerance, macayealEpsilon;
   PetscInt    macayealMaxIterations;
+  PetscScalar plastic_till_c_0, plastic_till_mu;
   PetscScalar startYear, endYear;
   PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
@@ -258,7 +259,8 @@ protected:
 
   // flags
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
-  PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, isDrySimulation;
+  PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
+              isDrySimulation;
   PetscTruth  useMacayealVelocity, doPlasticTill, doSuperpose, useConstantNuForMacAyeal, 
               useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
