@@ -84,8 +84,8 @@ PetscErrorCode IceModel::createViewers() {
     //                          PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
     ierr = KSPMonitorLGCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
                               PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
-    //ierr = KSPSetMonitor(MacayealKSP, KSPLGMonitor, kspLG, 0); CHKERRQ(ierr);
-    ierr = KSPMonitorSet(MacayealKSP, KSPMonitorLG, kspLG, 0); CHKERRQ(ierr);
+    //ierr = KSPSetMonitor(SSAKSP, KSPLGMonitor, kspLG, 0); CHKERRQ(ierr);
+    ierr = KSPMonitorSet(SSAKSP, KSPMonitorLG, kspLG, 0); CHKERRQ(ierr);
   } else kspLG = PETSC_NULL;
 
   ierr = createOneViewerIfDesired(&basalmeltView, 'l',"basal melt rate (m/a)");  CHKERRQ(ierr);

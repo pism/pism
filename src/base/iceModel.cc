@@ -166,13 +166,13 @@ PetscErrorCode IceModel::createVecs() {
   const PetscInt M = 2 * grid.p->Mx * grid.p->My;
   ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
                          13, PETSC_NULL, 13, PETSC_NULL,
-                         &MacayealStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &MacayealX); CHKERRQ(ierr);
-  ierr = VecDuplicate(MacayealX, &MacayealRHS); CHKERRQ(ierr);
-  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &MacayealXLocal);
-  ierr = VecScatterCreate(MacayealX, PETSC_NULL, MacayealXLocal, PETSC_NULL,
-                          &MacayealScatterGlobalToLocal); CHKERRQ(ierr);
-  ierr = KSPCreate(grid.com, &MacayealKSP); CHKERRQ(ierr);
+                         &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
+  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
+  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
+                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
 
   createVecs_done = PETSC_TRUE;
   return 0;
@@ -223,12 +223,12 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(g3); CHKERRQ(ierr);
   ierr = VecDestroy(g3b); CHKERRQ(ierr);
 
-  ierr = KSPDestroy(MacayealKSP); CHKERRQ(ierr);
-  ierr = MatDestroy(MacayealStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecDestroy(MacayealX); CHKERRQ(ierr);
-  ierr = VecDestroy(MacayealRHS); CHKERRQ(ierr);
-  ierr = VecDestroy(MacayealXLocal); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(MacayealScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
+  ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = VecDestroy(SSAX); CHKERRQ(ierr);
+  ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
+  ierr = VecDestroy(SSAXLocal); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(SSAScatterGlobalToLocal); CHKERRQ(ierr);
 
   return 0;
 }
@@ -313,17 +313,17 @@ void IceModel::setOceanKill(PetscTruth ok) {
   doOceanKill = ok;
 }
 
-void IceModel::setUseMacayealVelocity(PetscTruth umv) {
-  useMacayealVelocity = umv;
+void IceModel::setUseSSAVelocity(PetscTruth umv) {
+  useSSAVelocity = umv;
 }
 
 void IceModel::setDoSuperpose(PetscTruth ds) {
   doSuperpose = ds;
 }
 
-void IceModel::setConstantNuForMacAyeal(PetscScalar nu) {
-  useConstantNuForMacAyeal = PETSC_TRUE;
-  constantNuForMacAyeal = nu;
+void IceModel::setConstantNuForSSA(PetscScalar nu) {
+  useConstantNuForSSA = PETSC_TRUE;
+  constantNuForSSA = nu;
 }
 
 void IceModel::setRegularizingVelocitySchoof(PetscScalar rvS) {
@@ -334,12 +334,12 @@ void IceModel::setRegularizingLengthSchoof(PetscScalar rLS) {
   regularizingLengthSchoof = rLS;
 }
 
-void IceModel::setMacayealEpsilon(PetscScalar meps) {
-  macayealEpsilon = meps;
+void IceModel::setSSAEpsilon(PetscScalar meps) {
+  ssaEpsilon = meps;
 }
 
-void IceModel::setMacayealRelativeTolerance(PetscScalar mrc) {
-  macayealRelativeTolerance = mrc;
+void IceModel::setSSARelativeTolerance(PetscScalar mrc) {
+  ssaRelativeTolerance = mrc;
 }
 
 void IceModel::setEnhancementFactor(PetscScalar e) {
@@ -402,7 +402,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
       if (isDrySimulation == PETSC_TRUE) {
         h[i][j] = hgrounded;
-        // don't update mask; potentially one would want to do MacAyeal
+        // don't update mask; potentially one would want to do SSA
         //   dragging ice shelf in dry case and/or ignor mean sea level elevation
       } else {
 
@@ -425,7 +425,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         }
 
         if (intMask(mask[i][j]) == MASK_GROUNDED_TO_DETERMINE) {
-          if (useMacayealVelocity != PETSC_TRUE) {
+          if (useSSAVelocity != PETSC_TRUE) {
             mask[i][j] = MASK_SHEET;
           } else {
             // if frozen to bed or essentially frozen to bed then make it SHEET
@@ -522,7 +522,7 @@ PetscErrorCode IceModel::massBalExplicitStep() {
       } else { // upwinded, regular grid Div(Q), for Q = Ubar H, computed as
                //     Div(Q) = U . grad H + Div(U) H
                // note the CFL for "U . grad H" part of upwinding is checked; see
-               // broadcastMacayealVelocity() and determineTimeStep()
+               // broadcastSSAVelocity() and determineTimeStep()
         divQ =
           u[i][j] * (u[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx
           + v[i][j] * (v[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy

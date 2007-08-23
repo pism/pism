@@ -46,7 +46,7 @@ Here ant40km.nc contains a saved model state with a vaguely
 reasonable temperature field.  The balance velocities are read in from init.nc.
 Then the deformation (SIA) velocity is computed and subtracted from
 balance velocities to get a sliding velocity field everywhere ice is grounded.
-The MacAyeal equations are (i.e. the MacAyeal nonlinear operators) applied to 
+The MacAyeal equations are (i.e. the SSA nonlinear operators) applied to 
 determine the vector (beta_x,beta_y).  These are written to a NetCDF file betaxymap.nc.
 The mask is updated based on the value of scalar beta.  Then a 1 year run is done 
 using the vector beta values; the model should be nearly in steady state 
@@ -71,10 +71,10 @@ thermal model and estimate of basal till pore water pressure:
 
      pant -if ant40km.nc -mv -gk -e 1.2 -y 1 -verbose -super -plastic -obasal taucmap
 
-Here the plastic till Schoof version of the MacAyeal equations are solved from the saved model
+Here the plastic till Schoof version of the SSA equations are solved from the saved model
 state ant40km.nc.  In particular, the vHmelt values and the basal temps (vT) from
 ant40km.nc are used to compute vtauc.  This map is saved in taucmap.nc.  Then 1 years
-are run.  During this run the velocities computed from SIA are added to those from MacAyeal-Schoof
+are run.  During this run the velocities computed from SIA are added to those from SSA
 in the grounded ice.  The ice shelves have their usual scheme.
 */
 
@@ -624,9 +624,9 @@ PetscErrorCode IceDragYieldModel::computeDragFromBalanceVelocity() {
   ierr = VecDuplicate(dragxy, &rhs); CHKERRQ(ierr);
   ierr = VecDuplicate(dragxy, &x); CHKERRQ(ierr);
 
-  // build approximation of MacAyeal-Morland equations (A x = rhs) at all grounded points
-  ierr = assembleMacayealMatrix(vNu, A); CHKERRQ(ierr);
-  ierr = assembleMacayealRhs(false, rhs); CHKERRQ(ierr);
+  // build approximation of SSA equations (A x = rhs) at all grounded points
+  ierr = assembleSSAMatrix(vNu, A); CHKERRQ(ierr);
+  ierr = assembleSSARhs(false, rhs); CHKERRQ(ierr);
 
   // Note rhs contains driving terms  \rho g H \grad h  but  A  contains basal
   // drag term [betax*u betay*v]'.  It must be removed.
@@ -857,18 +857,18 @@ PetscErrorCode IceDragYieldModel::setupPlasticTauc() {
 
 PetscErrorCode IceDragYieldModel::computeBeta() {
   PetscErrorCode  ierr;
-  PetscTruth      useMacayealVelocitySAVE, doBetaxySAVE;
+  PetscTruth      useSSAVelocitySAVE, doBetaxySAVE;
   PetscScalar     muSlidingSAVE;
 
   // save aspects of IceModel state before computing beta
-  useMacayealVelocitySAVE = useMacayealVelocity;
+  useSSAVelocitySAVE = useSSAVelocity;
   doBetaxySAVE = doBetaxy;
   muSlidingSAVE = muSliding;
 
   ierr = verbPrintf(2,grid.com, 
-        "computing velocities (with MacAyeal; including eff viscosity iteration) ...\n");
+        "computing velocities (with SSA; including eff viscosity iteration) ...\n");
         CHKERRQ(ierr);
-  setUseMacayealVelocity(PETSC_TRUE);
+  setUseSSAVelocity(PETSC_TRUE);
   doBetaxy = PETSC_FALSE; // so  IceDragYieldModel::basalDrag[x|y]()  have usual meaning
                           // {i.e. same meaning as  IceModel::basalDrag[x|y]() }
   ierr = velocity(true); CHKERRQ(ierr);
@@ -881,9 +881,9 @@ PetscErrorCode IceDragYieldModel::computeBeta() {
   ierr = verbPrintf(2,grid.com, " done \n"); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "computing deformational velocities (w/o MacAyeal) ...");
+  ierr = verbPrintf(2,grid.com, "computing deformational velocities (w/o SSA) ...");
         CHKERRQ(ierr);
-  setUseMacayealVelocity(PETSC_FALSE);
+  setUseSSAVelocity(PETSC_FALSE);
   setMuSliding(0.0);  // for deformational, just assume frozen bed
 //  setEnhancementFactor(0.8);  //  reduce amount of deformation to ascribe more
 //                              //  of mass-balance velocities to sliding
@@ -897,7 +897,7 @@ PetscErrorCode IceDragYieldModel::computeBeta() {
   ierr = computeDragFromBalanceVelocity(); CHKERRQ(ierr);
 
   // restore state before putting draxy into da2 Vecs (and writing nc file and updating mask ...) 
-  setUseMacayealVelocity(useMacayealVelocitySAVE);
+  setUseSSAVelocity(useSSAVelocitySAVE);
   setMuSliding(muSlidingSAVE);
   doBetaxy = doBetaxySAVE;
 

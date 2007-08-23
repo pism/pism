@@ -185,13 +185,13 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   // NOTE!!: from here on we are using mass balance velocities in the 
   //   computation of the mask:
   
-  // compute deformational velocities (i.e. SIA and no Macayeal)
-  const PetscTruth  saveUseMacayealVelocity = useMacayealVelocity;
-  useMacayealVelocity = PETSC_FALSE;
+  // compute deformational velocities (i.e. SIA and no SSA)
+  const PetscTruth  saveUseSSAVelocity = useSSAVelocity;
+  useSSAVelocity = PETSC_FALSE;
   ierr = velocity(false); CHKERRQ(ierr);  // no need to update at depth; just
   // want ubar, vbar
   ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr); // communication here
-  useMacayealVelocity = saveUseMacayealVelocity;
+  useSSAVelocity = saveUseSSAVelocity;
   
   // remove deformational from balance velocity to give sliding
   ierr = VecDuplicate(vh,&vsliding); CHKERRQ(ierr);
@@ -212,8 +212,8 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   ierr = DAVecRestoreArray(grid.da2, vbalvel, &balvel); CHKERRQ(ierr);
   
   // now apply cutoff to determine mask
-  const PetscScalar DEFAULT_MIN_SLIDING_FOR_MACAYEAL = 40.0; // m/a; FIXME: this is rigid
-  const PetscScalar slideVelCutoff = DEFAULT_MIN_SLIDING_FOR_MACAYEAL / secpera;  
+  const PetscScalar DEFAULT_MIN_SLIDING_FOR_SSA = 40.0; // m/a; FIXME: this is rigid
+  const PetscScalar slideVelCutoff = DEFAULT_MIN_SLIDING_FOR_SSA / secpera;  
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);

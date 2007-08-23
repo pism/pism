@@ -36,7 +36,7 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   // Override some defaults from parent class
   setEnhancementFactor(1.0);
   setThermalBedrock(PETSC_FALSE);
-  setUseMacayealVelocity(PETSC_FALSE);
+  setUseSSAVelocity(PETSC_FALSE);
   setIsDrySimulation(PETSC_TRUE);
   setIncludeBMRinContinuity(PETSC_FALSE);
 

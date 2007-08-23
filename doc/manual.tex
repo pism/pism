@@ -499,7 +499,7 @@ Now we turn on Schoof's plastic till ice stream model:
 
 \verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -o eis2Isia|
 
-\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -mv -plastic -super -o eis2Iplastic|
+\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -ssa -plastic -super -o eis2Iplastic|
 
 
 [THIS PRODUCES TOO LITTLE SLIDING BUT IS ROUGHLY THE RIGHT INVOCATION.  PLAY WITH THE PARAMETERS IN THE BASAL YIELD STRESS MODEL?]
@@ -634,7 +634,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \verb|m| & maximum allowed $\Delta t$ applies; set with \verb|-maxdt| \\
 \verb|t| & maximum $\Delta t$ was \emph{t}emporarily set by a derived class; e.g.~see effect of deliverables \\
  & \verb|-time|$n$ in \verb|pisms -ismip H \time|$n$ \\
-\verb|u| & 2D CFL for mass conservation in Macayeal regions (where mass conservation is \emph{u}pwinded)\\
+\verb|u| & 2D CFL for mass conservation in SSA regions (where mass conservation is \emph{u}pwinded)\\
 \hline
 \normalsize
 \end{tabular}
@@ -774,7 +774,7 @@ A positive degree day model specific to the Greenland ice sheet is used in secti
 
 \subsection{Ideas} ``Verification'' is a crucial task for a code as complicated as PISM.  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  In particular, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
 
-See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the MacAyeal equations for ice streams using a plastic till assumption.  \cite{Roache} gives a broader discussion of verification and validation throughout computational fluid dynamics.
+See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  \cite{Roache} gives a broader discussion of verification and validation throughout computational fluid dynamics.
 
 In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical code which is verified by \verb|pismv| is, however, exactly the same lines of code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the core class \verb|IceModel|; all PISM executables run the core class.)
 
@@ -795,7 +795,7 @@ F & thermomechanically coupled SIA (mass &  compensatory accum & \cite{BB,BBL} \
 G & thermomechanically coupled SIA; as F  & ditto & \cite{BB,BBL} \\
  & but with oscillating accumulation &  &  \\
 H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
-I & velocity computation using MacAyeal eqns and plastic till &  & \cite{MacAyeal,SchoofStream} \\
+I & velocity computation using SSA eqns and plastic till &  & \cite{SchoofStream} \\
 L & isothermal SIA, steady, non-flat bed & numerical ODE soln & \cite{BuelerEquilSheets} \\
 \hline
 \normalsize
@@ -815,7 +815,7 @@ E & \verb|pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000|  \\
 F & \verb|pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000|  \\
 G & \verb|pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000|  \\
 H & \verb|pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso| \\
-I & \verb|pismv -test I -Mx 5 -My 500 -mv_rtol 1e-6 -ksp_rtol 1e-11| \\
+I & \verb|pismv -test I -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11| \\
 L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \hline
 \normalsize
@@ -875,6 +875,7 @@ Three example usages are \begin{itemize}
 \medskip
 Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
 
+FIXME: following is trivially out of date with ``mv\_rtol'' stuff
 \scriptsize\begin{quote}\begin{verbatim}
 $ verifynow.py -n 2 -l 3 -t CEGIL
  VERIFYNOW using 2 processor(s) and 3 level(s) of refinement
@@ -1498,7 +1499,7 @@ The following features are \emph{not} included in the continuum model, and would
 \item A moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \cite{Jenssen} change of variables is not used.
 \item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \cite{MortonMayers}.  As described  in  \cite{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including a diffusivity-based criteria for the explicit mass continuity scheme and a CFL criteria \cite{MortonMayers} for temperature/age advection.
 \item The local truncation error is generically first order (i.e.~$O(\Delta x,\Delta y,\Delta z,\Delta t)$).
-\item MacAyeal equations \cite{MacAyeal,SchoofStream} are used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{BrownPresentation,petsc-user-ref}.
+\item The shallow shelf approximation (SSA) \cite{WeisGreveHutter} is used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{BrownPresentation,petsc-user-ref}.
 \item The bed deformation model is implemented by a new Fourier collocation (spectral) method \cite{BLKfastearth}.
 \item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class.
 \end{itemize}
@@ -1510,7 +1511,7 @@ The following features are \emph{not} included in the continuum model, and would
 layout. This abstraction could be used to streamline transferring model data between
 different grids.
 \item \t{MaterialType}.  Various materials are derived from the class \t{MaterialType} which merely defines a couple physical constants. \t{IceType} is a derived class, but still an abstract class. which defines the physical properties of ice as a material.  Concrete classes derived from \t{IceType} are \t{ThermoGlenIce} (which uses the
-EISMINT constants) and \t{GKIce} as well as \t{HybridIce}, which implements the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt}.\footnote{Actually, it is difficult or impossible to implement a complete Goldsby-Kohlstedt \t{IceType} because the inverse constitutive relation is required for computation of MacAyeal-type ice shelf and dragging ice shelf \cite{MacAyeal} velocity fields. \t{HybridIce} is Goldsby-Kohlstedt ice in the interior of the ice sheet and Glen ice in ice streams and
+EISMINT constants) and \t{GKIce} as well as \t{HybridIce}, which implements the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt}.\footnote{Actually, it is difficult or impossible to implement a complete Goldsby-Kohlstedt \t{IceType} because the inverse constitutive relation is required for computation of SSA velocity fields. \t{HybridIce} is Goldsby-Kohlstedt ice in the interior of the ice sheet and Glen ice in ice streams and
 shelves.}  Similarly, there is \t{BedrockType} and \t{OceanType} which merely define
 associated physical constants.
 \item \t{IceModel} which contains myriad data structures, flags, PETSc \verb|Vec|s (below), and most of the methods and numerical methods of PISM.\end{itemize}
@@ -1550,7 +1551,7 @@ different processor) will be needed only along the coordinate axes while
 region surrounding each point.  The stencil width indicates how many points in each
 direction will be needed.  We never need a stencil width greater than 1 and only need BOX
 style stencils when gradient terms must be evaluated on a staggered grid ($h$ in SIA
-velocity and $\bar{u},\bar{v}$ in computation of effective viscosity in Macayeal
+velocity and $\bar{u},\bar{v}$ in computation of effective viscosity in SSA
 velocity).  Keeping all other two dimensional vectors on a STAR type stencil
 would reduce the necessary communication slightly, but would complicate the code.  For this
 reason, all two dimensional vectors are kept on a box type distributed array.
@@ -1594,7 +1595,7 @@ routines use the global indexing and can set values on any processor. The values
 cached until one calls \t{MatAssemblyBegin()} followed by \t{MatAssemblyEnd()} to
 communicate the values.
 
-In the Macayeal velocity computation, the solution and right hand side vectors are not DA
+In the SSA velocity computation, the solution and right hand side vectors are not DA
 based.
 
 The vector (field) components are interlaced and distributed. This seemed to be the
@@ -1661,7 +1662,7 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optrestrict{bif\und legacy}{pant}  The model can be ``bootstrapped'' from certain NetCDF files dealing with antarctica (\verb|init.nc|).
 
-\opt{constant\und hardness}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the MacAyeal-Morland equations for ice shelves and ice streams is
+\opt{constant\und hardness}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
@@ -1757,18 +1758,6 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{mu\und sliding}{3.17e-11}  The sliding law parameter in SIA regions of the ice.
 
-\opt{mv}  Use the MacAyeal-Morland equations  \cite{MacAyeal} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.
-
-\optdef{mv\und eps}{1.0e15}  The numerical scheme for the MacAyeal-Morland equations computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
-
-In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-mv_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|mv_eps| is set to zero automatically when running \verb|pismv -test I|.
-
-\optdef{mv\und rtol}{1.0e-4}  The numerical scheme for the MacAyeal-Morland equations does a nonlinear iteration wherein velocities (and temperatures) are used to compute a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
-
-In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
-	$$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{mv\und rtol}$$
-in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.
-
 \optdef{Mx}{61}  Number of grid points in x horizontal direction.
 
 \optdef{My}{61}  Number of grid points in y horizontal direction.
@@ -1822,6 +1811,18 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optdefrestrict{run}{ST}{pisms -ismip H}  ISMIP-HEINO has several run names: ST, T1, T2, B1, B2, S1, S2, S3.
 
 \optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
+
+\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|.
+
+\optdef{ssa\und eps}{1.0e15}  The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
+
+In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-ssa_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|ssa_eps| is set to zero automatically when running \verb|pismv -test I|.
+
+\optdef{ssa\und rtol}{1.0e-4}  The numerical scheme for the shallow shelf approximation \cite{WeisGreveHutter} does a nonlinear iteration wherein velocities (and temperatures) are used to compute a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
+
+In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
+	$$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{ssa\und rtol}$$
+in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.
 
 \optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:real}.
 
@@ -1901,7 +1902,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \opt{log\und summary}  At the end of the run gives a performance summary and also a synopsis of the PETSc configuration in use.
 
-\optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-mv_rtol 1e-7| \verb|-ksp_rtol 1e-12|).
+\optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-ssa_rtol 1e-7| \verb|-ksp_rtol 1e-12|).
 
 \opt{v}   Show version number of PETSc.
 

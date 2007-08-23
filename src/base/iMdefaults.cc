@@ -1,19 +1,19 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
@@ -59,18 +59,18 @@ const PetscScalar IceModel::DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/
 const PetscScalar IceModel::DEFAULT_ACCUMULATION_IN_OCEAN0 = -20.0 / secpera;   // -20.0 m/a
 
 //used in iMvelocity.C
-const PetscScalar IceModel::DEFAULT_MINH_MACAYEAL = 10.0;  // m; minimum thickness for MacAyeal velocity computation
-const PetscScalar IceModel::DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> MacAyeal
-const PetscScalar IceModel::DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch MacAyeal --> SIA
-const PetscScalar IceModel::DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch MacAyeal --> SIA
-const PetscScalar IceModel::DEFAULT_MAXSLOPE_MACAYEAL = 1.0e-3; // no units/pure number; cap to avoid bad behavior
-const PetscScalar IceModel::DEFAULT_EPSILON_MACAYEAL = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
-const PetscScalar IceModel::DEFAULT_EPSILON_MULTIPLIER_MACAYEAL = 4.0;  // no units/pure number; epsilon goes up by this ratio when
+const PetscScalar IceModel::DEFAULT_MINH_SSA = 10.0;  // m; minimum thickness for SSA velocity computation
+const PetscScalar IceModel::DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> SSA
+const PetscScalar IceModel::DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch SSA --> SIA
+const PetscScalar IceModel::DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch SSA --> SIA
+const PetscScalar IceModel::DEFAULT_MAXSLOPE_SSA = 1.0e-3; // no units/pure number; cap to avoid bad behavior
+const PetscScalar IceModel::DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
+const PetscScalar IceModel::DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;  // no units/pure number; epsilon goes up by this ratio when
 // previous value failed
-const PetscScalar IceModel::DEFAULT_VERT_VEL_MACAYEAL = 0.0;  // temp evolution uses this value; incompressibility not satisfied
+const PetscScalar IceModel::DEFAULT_VERT_VEL_SSA = 0.0;  // temp evolution uses this value; incompressibility not satisfied
 const PetscScalar IceModel::DEFAULT_MAX_VEL_FOR_CFL = 1000.0 / secpera;  // 10 km/a
-//const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
-const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_MACAYEAL = 4.0e9; // seems to work better
+//const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_SSA = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
+const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_SSA = 4.0e9; // seems to work better
 const PetscScalar IceModel::DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 //used in iMvelocity.C and iMutil.C
 const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
@@ -120,20 +120,20 @@ const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 100.0;
 
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 
-const PetscTruth  DEFAULT_USE_MACAYEAL_VELOCITY = PETSC_FALSE;
+const PetscTruth  DEFAULT_USE_SSA_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_SUPERPOSE = PETSC_FALSE;
-const PetscInt    DEFAULT_MAX_ITERATIONS_MACAYEAL = 150;
-const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL = PETSC_FALSE;
-const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL = PETSC_FALSE;
-const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_MACAYEAL = PETSC_FALSE;
+const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 150;
+const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_SSA = PETSC_FALSE;
+const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA = PETSC_FALSE;
+const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA = PETSC_FALSE;
  // for next value, compare Ritz et al (2001)
-const PetscScalar DEFAULT_CONSTANT_NU_FOR_MACAYEAL = 30.0 * 1.0e6 * secpera;
-const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+const PetscScalar DEFAULT_CONSTANT_NU_FOR_SSA = 30.0 * 1.0e6 * secpera;
+const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
 // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
 // appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
 const PetscScalar DEFAULT_REGULARIZING_VELOCITY_SCHOOF = 1.0 / secpera;  // 1 m/a is small vel for stream/shelf
 const PetscScalar DEFAULT_REGULARIZING_LENGTH_SCHOOF = 1000.0e3;         // 1000km is largish for dim of stream/shelf
-const PetscScalar DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE = 1.0e-4;
+const PetscScalar DEFAULT_SSA_RELATIVE_CONVERGENCE = 1.0e-4;
 
 const PetscScalar DEFAULT_TILL_C_0 = 5.0e3;  // Pa; 5kPa = 0.05 bar; cohesion of till
 const PetscScalar DEFAULT_TILL_MU = 0.2125565616700221;  // = tan(12^o); till friction angle
@@ -157,18 +157,20 @@ PetscErrorCode IceModel::setDefaults() {
   
   computeSIAVelocities = PETSC_TRUE;
   
-  setUseMacayealVelocity(DEFAULT_USE_MACAYEAL_VELOCITY);
+  setUseSSAVelocity(DEFAULT_USE_SSA_VELOCITY);
   setDoSuperpose(DEFAULT_DO_SUPERPOSE);
-  macayealMaxIterations = DEFAULT_MAX_ITERATIONS_MACAYEAL;
-  useConstantNuForMacAyeal = DEFAULT_USE_CONSTANT_NU_FOR_MACAYEAL;
-  useConstantHardnessForMacAyeal = DEFAULT_USE_CONSTANT_HARDNESS_FOR_MACAYEAL;
-  constantNuForMacAyeal = DEFAULT_CONSTANT_NU_FOR_MACAYEAL;
-  constantHardnessForMacAyeal = DEFAULT_CONSTANT_HARDNESS_FOR_MACAYEAL;
+  ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;
+  useConstantNuForSSA = DEFAULT_USE_CONSTANT_NU_FOR_SSA;
+  useConstantHardnessForSSA = DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA;
+  constantNuForSSA = DEFAULT_CONSTANT_NU_FOR_SSA;
+  constantHardnessForSSA = DEFAULT_CONSTANT_HARDNESS_FOR_SSA;
   setRegularizingVelocitySchoof(DEFAULT_REGULARIZING_VELOCITY_SCHOOF);
   setRegularizingLengthSchoof(DEFAULT_REGULARIZING_LENGTH_SCHOOF);
-  setMacayealRelativeTolerance(DEFAULT_MACAYEAL_RELATIVE_CONVERGENCE);
-  setMacayealEpsilon(DEFAULT_EPSILON_MACAYEAL);
-  computeSurfGradInwardMacAyeal = DEFAULT_COMPUTE_SURF_GRAD_INWARD_MACAYEAL;
+  setSSARelativeTolerance(DEFAULT_SSA_RELATIVE_CONVERGENCE);
+  setSSAEpsilon(DEFAULT_EPSILON_SSA);
+  computeSurfGradInwardSSA = DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA;
+  ssaSystemToASCIIMatlab = PETSC_FALSE;
+  strcpy(ssaMatlabFilePrefix, "pism_SSA");
 
   plastic_till_c_0 = DEFAULT_TILL_C_0;
   plastic_till_mu = DEFAULT_TILL_MU;

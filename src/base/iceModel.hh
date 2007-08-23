@@ -1,19 +1,19 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef __iceModel_hh
@@ -106,13 +106,13 @@ public:
   void setThermalBedrock(PetscTruth);
   void setOceanKill(PetscTruth);
   void setNoViewers();
-  void setUseMacayealVelocity(PetscTruth);
+  void setUseSSAVelocity(PetscTruth);
   void setDoSuperpose(PetscTruth);
-  void setConstantNuForMacAyeal(PetscScalar);
+  void setConstantNuForSSA(PetscScalar);
   void setRegularizingVelocitySchoof(PetscScalar);
   void setRegularizingLengthSchoof(PetscScalar);
-  void setMacayealEpsilon(PetscScalar);
-  void setMacayealRelativeTolerance(PetscScalar);
+  void setSSAEpsilon(PetscScalar);
+  void setSSARelativeTolerance(PetscScalar);
   void setIsDrySimulation(PetscTruth);
   void setEnhancementFactor(PetscScalar);
   void setMuSliding(PetscScalar);
@@ -181,21 +181,20 @@ protected:
    static const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING;
    static const PetscScalar DEFAULT_ACCUMULATION_IN_OCEAN0;
 
-  //used in iMvelocity.cc
-   static const PetscScalar DEFAULT_MINH_MACAYEAL;  // m; minimum thickness for MacAyeal velocity computation
-   static const PetscScalar DEFAULT_MIN_SHEET_TO_DRAGGING;   // m/a; critical SIA speed for switch SIA --> MacAyeal
-   static const PetscScalar DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET;  // m/a; crit Mac speed for switch MacAyeal --> SIA
-   static const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET;    // m/a; crit SIA speed for switch MacAyeal --> SIA
+  //used in iMvelocity.cc, iMsia.cc, iMssa.cc
+   static const PetscScalar DEFAULT_MINH_SSA;  // m; minimum thickness for SSA velocity computation
+   static const PetscScalar DEFAULT_MIN_SHEET_TO_DRAGGING;   // m/a; critical SIA speed for switch SIA --> SSA
+   static const PetscScalar DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET;  // m/a; crit SSA speed for switch SSA --> SIA
+   static const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET;    // m/a; crit SIA speed for switch SSA --> SIA
    static const PetscScalar DEFAULT_MAX_VEL_FOR_CFL;  // max velocity used in CFL calculation if velocity is not actually calculated  (which would be weird)
-   static const PetscScalar DEFAULT_MAXSLOPE_MACAYEAL; // no units/pure number; cap to avoid bad behavior
-   static const PetscScalar DEFAULT_EPSILON_MACAYEAL;  // units?;  initial amount of (denominator) regularization in
+   static const PetscScalar DEFAULT_MAXSLOPE_SSA; // no units/pure number; cap to avoid bad behavior
+   static const PetscScalar DEFAULT_EPSILON_SSA;  // units?;  initial amount of (denominator) regularization in
   // computation of effective viscosity
-   static const PetscScalar DEFAULT_EPSILON_MULTIPLIER_MACAYEAL;  // no units/pure number; epsilon goes up by this ratio when
+   static const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA;  // no units/pure number; epsilon goes up by this ratio when
   // previous value failed
-   static const PetscScalar DEFAULT_VERT_VEL_MACAYEAL;  // temp evolution uses this value; incompressibility not satisfied
-   static const PetscScalar DEFAULT_BASAL_DRAG_COEFF_MACAYEAL;
-  static const PetscScalar DEFAULT_TAUC;
-  //used in iMvelocity.C and iMutil.C
+   static const PetscScalar DEFAULT_VERT_VEL_SSA;  // temp evolution uses this value; incompressibility not satisfied
+   static const PetscScalar DEFAULT_BASAL_DRAG_COEFF_SSA;
+   static const PetscScalar DEFAULT_TAUC;
    static const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING;  // note less than ice.meltingTemp;
   // if above this value then decide to slide
    static const PetscScalar DEFAULT_INITIAL_AGE_YEARS;  // age for ice to start age computation
@@ -241,10 +240,10 @@ protected:
   PetscScalar maxdt, muSliding, enhancementFactor;
   PetscScalar dt, dtTempAge;    // current mass cont. and temp/age time steps in seconds
   PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
-  PetscScalar constantNuForMacAyeal, constantHardnessForMacAyeal,
+  PetscScalar constantNuForSSA, constantHardnessForSSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
-              macayealRelativeTolerance, macayealEpsilon;
-  PetscInt    macayealMaxIterations;
+              ssaRelativeTolerance, ssaEpsilon;
+  PetscInt    ssaMaxIterations;
   PetscScalar plastic_till_c_0, plastic_till_mu;
   PetscScalar startYear, endYear;
   PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
@@ -261,16 +260,17 @@ protected:
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation;
-  PetscTruth  useMacayealVelocity, doPlasticTill, doSuperpose, useConstantNuForMacAyeal, 
-              useConstantHardnessForMacAyeal, computeSurfGradInwardMacAyeal;
+  PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, useConstantNuForSSA, 
+              useConstantHardnessForSSA, computeSurfGradInwardSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
-  PetscTruth  showViewers, doTempSkip;
+  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, useIsothermalFlux;
   char        adaptReasonFlag;
 
   // viewer and sounding
-  char         diagnostic[PETSC_MAX_PATH_LEN], diagnosticBIG[PETSC_MAX_PATH_LEN];
+  char         diagnostic[PETSC_MAX_PATH_LEN], diagnosticBIG[PETSC_MAX_PATH_LEN],
+               ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
   PetscViewer  uvbarView[2], nuView[2], lognuView, NuView[2];
   PetscViewer  HView, hView, accumView, bedView, HmeltView, basalmeltView, maskView;
   PetscViewer  speedView, ubarView, vbarView, ghfView, upliftView, TsView;
@@ -398,20 +398,21 @@ protected:
   PetscErrorCode bedDefStepIfNeeded();
   PetscErrorCode bed_def_step_iso();
 
-  // see iMmacayeal.cc
-  PetscErrorCode velocityMacayeal();
+  // see iMssa.cc
+  PetscErrorCode velocitySSA();
 
-  PetscErrorCode setupForMacayeal(const PetscScalar minH);
-  PetscErrorCode cleanupAfterMacayeal(const PetscScalar minH);
+  PetscErrorCode setupForSSA(const PetscScalar minH);
+  PetscErrorCode cleanupAfterSSA(const PetscScalar minH);
   virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);
   PetscErrorCode testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2], PetscReal *, PetscReal *);
-  PetscErrorCode assembleMacayealMatrix(Vec vNu[2], Mat A);
-  PetscErrorCode assembleMacayealRhs(bool surfGradInward, Vec rhs);
+  PetscErrorCode assembleSSAMatrix(Vec vNu[2], Mat A);
+  PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   PetscErrorCode moveVelocityToDAVectors(Vec x);
-  PetscErrorCode broadcastMacayealVelocity();
+  PetscErrorCode broadcastSSAVelocity();
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
   PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
+  PetscErrorCode writeSSAsystemMatlab();
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
@@ -465,15 +466,15 @@ protected:
   PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
 
 private:
-  // Pieces of the Macayeal Velocity routine defined in iMmacayeal.cc.
+  // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details
   // of the linear system which uses these
-  KSP MacayealKSP;
-  Mat MacayealStiffnessMatrix;
-  Vec MacayealX, MacayealRHS;  // Global vectors for solution of the linear system
-  Vec MacayealXLocal; // We need a local copy of the solution to map back to a DA based vector
-  VecScatter MacayealScatterGlobalToLocal;
+  KSP SSAKSP;
+  Mat SSAStiffnessMatrix;
+  Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
+  Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
+  VecScatter SSAScatterGlobalToLocal;
 
 };
 

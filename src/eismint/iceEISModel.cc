@@ -53,7 +53,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   // apply eismint defaults settings; options may overwrite
   setThermalBedrock(PETSC_FALSE);
-  setUseMacayealVelocity(PETSC_FALSE);
+  setUseSSAVelocity(PETSC_FALSE);
   setIsDrySimulation(PETSC_TRUE);
   setDoGrainSize(PETSC_FALSE);
   setEnhancementFactor(1.0);

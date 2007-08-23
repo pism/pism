@@ -1,19 +1,19 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
@@ -303,14 +303,14 @@ PetscErrorCode IceExactStreamModel::run() {
   ierr = setInitStateAndBoundaryVels(); CHKERRQ(ierr);
 
   // set flags, parameters affecting solve of stream equations
-  useMacayealVelocity = PETSC_TRUE;
-  computeSurfGradInwardMacAyeal = PETSC_TRUE;  // so periodic grid works even though
+  useSSAVelocity = PETSC_TRUE;
+  computeSurfGradInwardSSA = PETSC_TRUE;  // so periodic grid works even though
                                                // h(-Lx,y) != h(Lx,y)
-  useConstantNuForMacAyeal = PETSC_FALSE;
-  useConstantHardnessForMacAyeal = PETSC_TRUE;
-  constantHardnessForMacAyeal = B_schoof;
-  macayealMaxIterations = 500;  
-  setMacayealEpsilon(0.0);  // don't use this lower bound
+  useConstantNuForSSA = PETSC_FALSE;
+  useConstantHardnessForSSA = PETSC_TRUE;
+  constantHardnessForSSA = B_schoof;
+  ssaMaxIterations = 500;  
+  setSSAEpsilon(0.0);  // don't use this lower bound
   // regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for ice stream?
   // regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 
@@ -342,7 +342,7 @@ PetscErrorCode IceExactStreamModel::run() {
     ierr = basal->printInfo(4, grid.com); CHKERRQ(ierr);
     // solve model equations
 
-    ierr = velocityMacayeal(); CHKERRQ(ierr);
+    ierr = velocitySSA(); CHKERRQ(ierr);
   }
 
   // report on result of computation (i.e. to standard out, to viewers, to Matlab file)

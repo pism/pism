@@ -1,19 +1,19 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
@@ -27,9 +27,9 @@ see options for Mx,My,Mz,Mbz,Lx,Ly,Lz,ys,ye,y. */
 
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscScalar my_maxdt, my_mu, macRTol, my_nu, maceps, regVelSchoof, 
+  PetscScalar my_maxdt, my_mu, ssaRTol, my_nu, ssaeps, regVelSchoof, 
               regLengthSchoof, my_barB;
-  PetscTruth  my_useMacayealVelocity, my_useConstantNu, macRTolSet, macepsSet,
+  PetscTruth  my_useSSAVelocity, my_useConstantNu, ssaRTolSet, ssaepsSet,
               maxdtSet, superpose, noBMRInVert, my_useConstantHardness,
               noMassConserve, noTemp, bedDefiso, bedDeflc, isoflux, muSet, 
               nospokesSet, oceanKillSet, tempskipSet, regVelSchoofSet, regLengthSchoofSet,
@@ -55,25 +55,27 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
   // user gives nu in MPa yr (e.g. Ritz value is 30.0)
   if (my_useConstantNu == PETSC_TRUE) {
-    setConstantNuForMacAyeal(my_nu  * 1.0e6 * secpera);
+    setConstantNuForSSA(my_nu  * 1.0e6 * secpera);
   }
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);
            CHKERRQ(ierr);
   // user gives \bar B in 
   if (my_useConstantHardness == PETSC_TRUE) {
-    useConstantHardnessForMacAyeal = PETSC_TRUE;
-    constantHardnessForMacAyeal = my_barB;
+    useConstantHardnessForSSA = PETSC_TRUE;
+    constantHardnessForSSA = my_barB;
   }
 
   // regular size viewers
-  ierr = PetscOptionsGetString(PETSC_NULL, "-d", diagnostic, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-d", diagnostic, PETSC_MAX_PATH_LEN, PETSC_NULL); 
+            CHKERRQ(ierr);
   if (showViewers == PETSC_FALSE) {
     strcpy(diagnostic, "\0");
   }
 
   // big viewers (which will override regular viewers)
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dbig", diagnosticBIG, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-dbig", diagnosticBIG, PETSC_MAX_PATH_LEN, PETSC_NULL); 
+            CHKERRQ(ierr);
   if (showViewers == PETSC_FALSE) {
     strcpy(diagnosticBIG, "\0");
   }
@@ -110,21 +112,6 @@ PetscErrorCode  IceModel::setFromOptions() {
     setMuSliding(my_mu);
   }
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-mv", &my_useMacayealVelocity); CHKERRQ(ierr);
-  if (my_useMacayealVelocity == PETSC_TRUE) {
-    setUseMacayealVelocity(my_useMacayealVelocity);
-  }
-  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-mv_eps", &maceps, &macepsSet); CHKERRQ(ierr);
-  if (macepsSet == PETSC_TRUE) {
-    setMacayealEpsilon(maceps);
-  }
-  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-mv_rtol", &macRTol, &macRTolSet); CHKERRQ(ierr);
-  if (macRTolSet == PETSC_TRUE) {
-    setMacayealRelativeTolerance(macRTol);
-  }
-  
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &my_Mx, &MxSet); CHKERRQ(ierr);
   if (MxSet == PETSC_TRUE)   grid.p->Mx = my_Mx;
 
@@ -187,8 +174,37 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &my_useSSAVelocity); CHKERRQ(ierr);
+  if (my_useSSAVelocity == PETSC_TRUE) {
+    setUseSSAVelocity(my_useSSAVelocity);
+  }
+  
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_eps", &ssaeps, &ssaepsSet); CHKERRQ(ierr);
+  if (ssaepsSet == PETSC_TRUE) {
+    setSSAEpsilon(ssaeps);
+  }
+  
+  // option to save linear system in Matlab-readable ASCII format at end of each
+  // numerical solution of SSA equations; can be given with or without filename prefix
+  // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get 
+  // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_matlab", &ssaSystemToASCIIMatlab); CHKERRQ(ierr);
+  if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
+    char tempPrefix[PETSC_MAX_PATH_LEN];
+    ierr = PetscOptionsGetString(PETSC_NULL, "-ssa_matlab", tempPrefix, 
+             PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
+    if (strlen(tempPrefix) > 0) {
+      strcpy(ssaMatlabFilePrefix, tempPrefix);
+    } // otherwise keep default prefix, whatever it was
+  }
+
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_rtol", &ssaRTol, &ssaRTolSet); CHKERRQ(ierr);
+  if (ssaRTolSet == PETSC_TRUE) {
+    setSSARelativeTolerance(ssaRTol);
+  }
+  
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
-  // MacAyeal equations where DRAGGING
+  // SSA equations where DRAGGING
   ierr = PetscOptionsHasName(PETSC_NULL, "-super", &superpose); CHKERRQ(ierr);
   setDoSuperpose(superpose);
 

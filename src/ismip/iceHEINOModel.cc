@@ -199,7 +199,7 @@ PetscErrorCode IceHEINOModel::applyDefaultsForExperiment() {
   PetscErrorCode   ierr;
   PetscScalar      **mask;
 
-  setUseMacayealVelocity(PETSC_FALSE);
+  setUseSSAVelocity(PETSC_FALSE);
   setIsDrySimulation(PETSC_TRUE);
   setDoGrainSize(PETSC_FALSE);
   setEnhancementFactor(3.0);
@@ -306,7 +306,6 @@ PetscErrorCode IceHEINOModel::fillintemps() {
   ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
   return 0;
 }
-
 
 
 bool IceHEINOModel::inSoftSediment(const PetscScalar x, const PetscScalar y) {

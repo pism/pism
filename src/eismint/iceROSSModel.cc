@@ -34,10 +34,10 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   computeSIAVelocities = PETSC_FALSE;
 
   // further settings for velocity computation 
-  useConstantNuForMacAyeal = PETSC_FALSE;
-  useConstantHardnessForMacAyeal = PETSC_TRUE;
-  setMacayealEpsilon(0.0);  // don't use this lower bound
-  constantHardnessForMacAyeal = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
+  useConstantNuForSSA = PETSC_FALSE;
+  useConstantHardnessForSSA = PETSC_TRUE;
+  setSSAEpsilon(0.0);  // don't use this lower bound
+  constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 }
@@ -122,7 +122,7 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
   Vec vNu[2] = {vWork2d[0], vWork2d[1]};
-  ierr = computeEffectiveViscosity(vNu, macayealEpsilon); CHKERRQ(ierr);
+  ierr = computeEffectiveViscosity(vNu, ssaEpsilon); CHKERRQ(ierr);
   ierr = updateNuViewers(vNu,vNu,false); CHKERRQ(ierr);
   
   PetscInt    pause_time = 0;

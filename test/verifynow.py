@@ -51,7 +51,7 @@ PREFIX = ''
 MPIDO = 'mpiexec'
 TESTS = 'CGI'
 KSPRTOL = 1e-12 # for test I
-MVRTOL = 5e-7   # ditto
+SSARTOL = 5e-7   # ditto
 
 ## tests and additional info for verification
 ## order here is for convenience and speed: generally do faster tests first
@@ -72,7 +72,7 @@ alltests = [
         'isothermal SIA w sliding',0,' -Mz 31 -y 25000.0',
         '(Mx=My=31,41,61,81,121 corresponds to dx=dy=53.3,40,26.7,20,13.3 km)'],
    ['I',[49,193,769,3073,12289],'plastic till ice stream',1,
-        ' -Mx 5 -mv_rtol ' + str(MVRTOL) + ' -ksp_rtol ' + str(KSPRTOL),
+        ' -Mx 5 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
         '(My=49,193,769,3073,12289 corresponds to dy=5000,1250,312.5,78.13,19.53 m)'],
    ['L',[31,61,91,121,181],
         'isothermal SIA w non-flat bed',0,' -Mz 31 -y 25000.0',

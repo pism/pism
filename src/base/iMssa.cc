@@ -1,27 +1,28 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
+#include <cstring>
 #include <petscda.h>
 #include "iceModel.hh"
 
 
-PetscErrorCode IceModel::setupForMacayeal(const PetscScalar minH) {
+PetscErrorCode IceModel::setupForSSA(const PetscScalar minH) {
   PetscErrorCode ierr;
   PetscScalar **h, **H, **mask, **ubar, **vbar;
   PetscScalar ***u, ***v;
@@ -59,7 +60,7 @@ PetscErrorCode IceModel::setupForMacayeal(const PetscScalar minH) {
   return 0;
 }
 
-PetscErrorCode IceModel::cleanupAfterMacayeal(const PetscScalar minH) {
+PetscErrorCode IceModel::cleanupAfterSSA(const PetscScalar minH) {
   PetscErrorCode  ierr;
   PetscScalar **h, **H, **mask;
 
@@ -86,13 +87,38 @@ PetscErrorCode IceModel::cleanupAfterMacayeal(const PetscScalar minH) {
   return 0;
 }
 
+
+//! Compute the product of the effective viscosity \f$\nu\f$ and ice thickness \f$H\f$.
+/*! 
+@cond CONTINUUM
+In PISM the product \f$\nu H\f$ can be (i) constant, (ii) can be computed with a constant ice hardness
+\f$\bar B\f$ (temperature-independent) but with dependence of the viscosity on the strain rates, or 
+(iii) it can depend on the strain rates and have a vertically-averaged ice hardness.
+
+The flow law in ice stream and ice shelf regions must, for now, be a temperature-dependent Glen
+law.  (That is, more general forms like Goldsby-Kohlstedt are not yet inverted.)
+
+The effective viscosity is
+   \f[ \nu = \frac{\bar B}{2} \left[\left(\frac{\partial u}{\partial x}\right)^2 + 
+                               \left(\frac{\partial v}{\partial y}\right)^2 + 
+                               \frac{\partial u}{\partial x} \frac{\partial v}{\partial y} + 
+                               \frac{1}{4} \left(\frac{\partial u}{\partial y}
+                                                 + \frac{\partial v}{\partial x}\right)^2
+                               \right]^{(1-n)/(2n)}                                                \f]
+where in the temperature-dependent case
+   \f[ \bar B = (\text{FIXME: SOME INTEGRAL})\f]
+@endcond
+@cond NUMERIC
+In the temperature dependent case the ice hardness is computed by the trapezoid rule.
+@endcond
+ */
 PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon) {
   PetscErrorCode ierr;
 
   // 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of 30 MPa yr
-  if (useConstantNuForMacAyeal == PETSC_TRUE) {
-    ierr = VecSet(vNu[0], constantNuForMacAyeal); CHKERRQ(ierr);
-    ierr = VecSet(vNu[1], constantNuForMacAyeal); CHKERRQ(ierr);
+  if (useConstantNuForSSA == PETSC_TRUE) {
+    ierr = VecSet(vNu[0], constantNuForSSA); CHKERRQ(ierr);
+    ierr = VecSet(vNu[1], constantNuForSSA); CHKERRQ(ierr);
     return 0;
   } else { // initialize for below
     ierr = VecSet(vNu[0], 0.0); CHKERRQ(ierr);
@@ -137,15 +163,16 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
           }
 
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-          if (useConstantHardnessForMacAyeal == PETSC_FALSE) { // usual temperature-dependent case
-            // "nu" is really "nu H"!
-            nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
-                                    myH,dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
-          } else { // constant \bar B case, i.e for EISMINT ROSS
-            // "nu" is really "nu H"!
-            nu[o][i][j] = myH * constantHardnessForMacAyeal * 0.5 *
+          if (useConstantHardnessForSSA == PETSC_TRUE) { 
+            // constant \bar B case, i.e for EISMINT ROSS; "nu" is really "nu H"!
+            // FIXME: assumes n=3; can be fixed by having new ice.effectiveViscosityConstant() method
+            nu[o][i][j] = myH * constantHardnessForSSA * 0.5 *
               pow(schoofReg + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
                   -(1.0/3.0));
+          } else { 
+            // usual temperature-dependent case; "nu" is really "nu H"!
+            nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
+                                    myH,dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
           }
 
           if (! finite(nu[o][i][j]) || false) {
@@ -175,12 +202,9 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   ierr = DALocalToLocalBegin(grid.da2, vNu[1], INSERT_VALUES, vNu[1]); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vNu[1], INSERT_VALUES, vNu[1]); CHKERRQ(ierr);
 
-/* use -constant_nu 300.0 if you want about these values:
-  ierr = VecSet(vNu[0], 1.0e16); CHKERRQ(ierr);
-  ierr = VecSet(vNu[1], 1.0e16); CHKERRQ(ierr);
-*/
   return 0;
 }
+
 
 PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
                                              PetscReal *norm, PetscReal *normChange) {
@@ -212,7 +236,47 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
 }
 
 
-PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
+//! Assemble the matrix (left-hand side) for the numerical approximation of the SSA equations.
+/*! 
+@cond CONTINUUM
+The SSA equations are in their clearest form
+    \f[ \frac{\partial T_{ij}}{\partial x_j} - \tau_{iz}|_{\text{z=0}} = - f_i \f]
+where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
+(i.e. equation (2.6) in (Schoof 2006), and following (Morland 1987)), 
+and \f$\tau_{iz}|_{\text{z=0}}\f$ are the components of the basal shear stress.  
+Also \f$f_i\f$ is the driving shear stress \f$f_i = - \rho g H \frac{\partial h}{\partial x_i}\f$.  
+These equations determine velocity in a more-or-less elliptic equation manner.  Here \f$H\f$ 
+is the ice thickness and \f$h\f$ is the elevation of the surface of the ice.
+
+More specifically, the SSA equations are
+    \f[ 2 \frac{\partial}{\partial x}\left[\nu H \left(2 \frac{\partial u}{\partial x}
+                                                       + \frac{\partial v}{\partial y}\right)\right]
+        + \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial y}
+                                                       + \frac{\partial v}{\partial x}\right)\right]
+        - \tau_{xz}|_{\text{z=0}}
+        = \rho g H \frac{\partial h}{\partial x}, \f]
+    \f[ \frac{\partial}{\partial x}\left[\nu H \left(\frac{\partial u}{\partial y}
+                                                       + \frac{\partial v}{\partial x}\right)\right]
+        + 2 \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial x}
+                                                         + 2 \frac{\partial v}{\partial y}\right)\right]
+        - \tau_{yz}|_{\text{z=0}}
+        = \rho g H \frac{\partial h}{\partial y}, \f]
+where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
+of the velocity.  Also \f$\nu\f$ is the effective viscosity of the ice which is a vertical 
+average of the pointwise effective viscosity, and \f$\tau_{\cdot z}|_{\text{z=0}}\f$ are the 
+components of the basal shear stress.  (The sign conventions in the above equations are the 
+same as in (Schoof 2006).)
+
+@endcond
+@cond NUMERIC
+Note that the basal shear stress appears on the \emph{left} side of the above system.  We believe this
+is crucial, because of its effect on the spectrum of the linear approximations of each stage.  This is 
+clearest in the linear basal resistance case (MacAyeal 1989).
+
+This method assembles the matrix for the left side of the SSA equations.  The numerical method is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
+@endcond
+ */
+PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
   const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
   const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
   const PetscScalar   one = 1.0;
@@ -338,7 +402,7 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
         /* Dragging ice experiences friction at the bed determined by the
         * basalDrag[x|y]() methods.  These may be a linear friction law or plastic. */
         if (intMask(mask[i][j]) == MASK_DRAGGING) {
-          // Dragging is done implicitly (i.e. on left side of MacAyeal eqns for u,v).
+          // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(beta, tauc, u, v, i, j);
           valV[7] += basalDragy(beta, tauc, u, v, i, j);
         }
@@ -362,7 +426,7 @@ PetscErrorCode IceModel::assembleMacayealMatrix(Vec vNu[2], Mat A) {
 }
 
 
-PetscErrorCode IceModel::assembleMacayealRhs(bool surfGradInward, Vec rhs) {
+PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   // surfGradInward == true then differentiate h(x,y) inward from edge of grid,
   // so that certain solutions make sense on period grid; Test I, for now
   const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
@@ -434,14 +498,14 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   const PetscInt  M = 2 * grid.p->My;
   PetscErrorCode  ierr;
   PetscScalar     **u, **v, *uv;
-  Vec             xLoc = MacayealXLocal;
+  Vec             xLoc = SSAXLocal;
 
   /* Move the solution onto a grid which can be accessed normally. Since the parallel
   * layout of the vector x does not in general have anything to do with the DA based
   * vectors, we must scatter the entire vector to all processors. */
-  ierr = VecScatterBegin(MacayealScatterGlobalToLocal, x, xLoc, 
+  ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(MacayealScatterGlobalToLocal, x, xLoc, 
+  ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
@@ -503,11 +567,11 @@ PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateN
   return 0;
 }
 
-PetscErrorCode IceModel::velocityMacayeal() {
+PetscErrorCode IceModel::velocitySSA() {
   PetscErrorCode ierr;
-  KSP ksp = MacayealKSP;
-  Mat A = MacayealStiffnessMatrix;
-  Vec x = MacayealX, rhs = MacayealRHS; // solve  A x = rhs
+  KSP ksp = SSAKSP;
+  Mat A = SSAStiffnessMatrix;
+  Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
   Vec vNu[2] = {vWork2d[0], vWork2d[1]};
   Vec vNuOld[2] = {vWork2d[2], vWork2d[3]};
   Vec vubarOld = vWork2d[4], vvbarOld = vWork2d[5];
@@ -519,27 +583,27 @@ PetscErrorCode IceModel::velocityMacayeal() {
   // restart the iteration with larger values of epsilon.
   ierr = VecCopy(vubar, vubarOld); CHKERRQ(ierr);
   ierr = VecCopy(vvbar, vvbarOld); CHKERRQ(ierr);
-  epsilon = macayealEpsilon;
+  epsilon = ssaEpsilon;
 
   ierr = verbPrintf(4,grid.com, 
-     "  [macayealEpsilon = %10.5e, macayealMaxIterations = %d\n",
-     macayealEpsilon, macayealMaxIterations); CHKERRQ(ierr);
+     "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d\n",
+     ssaEpsilon, ssaMaxIterations); CHKERRQ(ierr);
   ierr = verbPrintf(4,grid.com, 
      "   regularizingVelocitySchoof = %10.5e, regularizingLengthSchoof = %10.5e,\n",
      regularizingVelocitySchoof, regularizingLengthSchoof); CHKERRQ(ierr);
   ierr = verbPrintf(4,grid.com, 
-     "   constantHardnessForMacAyeal = %10.5e, macayealRelativeTolerance = %10.5e]\n",
-    constantHardnessForMacAyeal, macayealRelativeTolerance); CHKERRQ(ierr);
+     "   constantHardnessForSSA = %10.5e, ssaRelativeTolerance = %10.5e]\n",
+    constantHardnessForSSA, ssaRelativeTolerance); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
-    for (PetscInt k=0; k<macayealMaxIterations; ++k) {
+    for (PetscInt k=0; k<ssaMaxIterations; ++k) {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
-      ierr = assembleMacayealMatrix(vNu, A); CHKERRQ(ierr);
-      ierr = assembleMacayealRhs((computeSurfGradInwardMacAyeal == PETSC_TRUE), rhs); CHKERRQ(ierr);
+      ierr = assembleSSAMatrix(vNu, A); CHKERRQ(ierr);
+      ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
 #if 0
@@ -575,30 +639,72 @@ PetscErrorCode IceModel::velocityMacayeal() {
       /* extra diagnositic info */
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
-      if (norm == 0 || normChange / norm < macayealRelativeTolerance) goto done;
+      if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
     }
     if (epsilon > 0.0) {
        ierr = verbPrintf(1,grid.com,
                   "WARNING: Effective viscosity not converged after %d iterations\n"
                   "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
-                  macayealMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_MACAYEAL);
+                  ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
            CHKERRQ(ierr);
        ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
        ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
-       epsilon *= DEFAULT_EPSILON_MULTIPLIER_MACAYEAL;
+       epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        SETERRQ1(1, "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.\n", 
-                macayealMaxIterations);
+                ssaMaxIterations);
     }
   }
 
   done:
   ierr = verbPrintf(3,grid.com, " "); CHKERRQ(ierr);  // has to do with summary appearance
+
+  // check if user wants the matrix, rhs, and soln vector saved in Matlab readable format
+  if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
+    ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
+  }
   return 0;
 }
 
 
-PetscErrorCode IceModel::broadcastMacayealVelocity() {
+PetscErrorCode IceModel::writeSSAsystemMatlab() {
+  PetscErrorCode ierr;
+  PetscViewer    viewer;
+  char           file_name[PETSC_MAX_PATH_LEN], tempstr[PETSC_MAX_PATH_LEN], 
+                 yearappend[PETSC_MAX_PATH_LEN];
+
+  strcpy(file_name,ssaMatlabFilePrefix);
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_%.0f.m", grid.p->year);
+  strcat(file_name,yearappend);
+  ierr = verbPrintf(2, grid.com, 
+             "writing Matlab-readable file for SSA system A x = rhs to file `%s' ...\n",
+             file_name); CHKERRQ(ierr);
+  ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "%f\n", grid.p->year);
+
+  strcpy(tempstr,"\% PISM SSA linear system report for time step (model year) ");
+  strcat(tempstr,yearappend);
+  strcat(tempstr,"\%"); // fixes bizarre bug in PetscViewerASCIIPrintf()
+  ierr = PetscViewerASCIIPrintf(viewer, tempstr); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer," gives system A x = rhs at last (nonlinear) iteration of SSA\n");
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\%\%     (ice stream and ice shelf) equations\n\n\n"); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAStiffnessMatrix,"A"); CHKERRQ(ierr);
+  ierr = MatView(SSAStiffnessMatrix, viewer);CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSARHS,"rhs"); CHKERRQ(ierr);
+  ierr = VecView(SSARHS, viewer);CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAX,"x"); CHKERRQ(ierr);
+  ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
+
+  ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::broadcastSSAVelocity() {
   PetscErrorCode ierr;
   PetscScalar **mask, **b, **basalMeltRate, **ubar, **vbar, **ub, **vb;
   PetscScalar ***u, ***v, ***w, **uvbar[2];
@@ -709,7 +815,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
       if (modMask(mask[i][j]) == MASK_FLOATING) {
         Rb[i][j] = 0.0;
       }
-      if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useMacayealVelocity)) {
+      if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
         const PetscScalar beta_x = basalDragx(beta, tauc, ub, vb, i, j);
         const PetscScalar beta_y = basalDragy(beta, tauc, ub, vb, i, j);
         const PetscScalar basal_stress_x = - beta_x * ub[i][j];

@@ -26,8 +26,8 @@ executables= pismr pismd pismv pisms pgrn pant
 extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
 
 ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
-	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMmacayeal.cc iMoptions.cc iMpdd.cc\
-	iMregrid.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
+	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMoptions.cc iMpdd.cc\
+	iMregrid.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
 	iceModel.cc materials.cc nc_util.cc\
 	beddefLC.cc forcing.cc
 ice_csources= cubature.c pism_signal.c
@@ -125,7 +125,7 @@ gridL : gridL.o libtests.so
 
 .pismmakeremind :
 	@touch .pismmakeremind
-	@echo '*** Remember to "make install".  For now, new executables are "./pismv", etc. ****'
+	@echo '*** Remember to "make install".  For now executables are "./pismv" etc ***'
 
 showEnv :
 	@echo ${CLINKER}
