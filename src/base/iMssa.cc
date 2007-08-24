@@ -253,25 +253,32 @@ More specifically, the SSA equations are
                                                        + \frac{\partial v}{\partial y}\right)\right]
         + \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial y}
                                                        + \frac{\partial v}{\partial x}\right)\right]
-        - \tau_{xz}|_{\text{z=0}}
+        - \tau_{(b)x}
         = \rho g H \frac{\partial h}{\partial x}, \f]
     \f[ \frac{\partial}{\partial x}\left[\nu H \left(\frac{\partial u}{\partial y}
                                                        + \frac{\partial v}{\partial x}\right)\right]
         + 2 \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial x}
                                                          + 2 \frac{\partial v}{\partial y}\right)\right]
-        - \tau_{yz}|_{\text{z=0}}
+        - \tau_{(b)y}
         = \rho g H \frac{\partial h}{\partial y}, \f]
 where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
-of the velocity.  Also \f$\nu\f$ is the effective viscosity of the ice which is a vertical 
-average of the pointwise effective viscosity, and \f$\tau_{\cdot z}|_{\text{z=0}}\f$ are the 
-components of the basal shear stress.  (The sign conventions in the above equations are the 
-same as in (Schoof 2006).)
+of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity of the ice.  
+
+In these equations \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
+For ice shelves \f$\tau_{(b)i} = 0\f$ (MacAyeal et al 1996).  For ice streams with a basal 
+till modelled as a plastic material, \f$\tau_{(b)i} = \tau_c u_i/|\mathbf{u}|\f$ where 
+\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, and \f$\tau_c\f$ 
+is the yield stress of the till  (Schoof 2006).  For ice streams with a basal till modelled 
+as a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ is the basal
+drag (friction) parameter (Hulbe & MacAyeal 1999).
 
 @endcond
 @cond NUMERIC
-Note that the basal shear stress appears on the \emph{left} side of the above system.  We believe this
-is crucial, because of its effect on the spectrum of the linear approximations of each stage.  This is 
-clearest in the linear basal resistance case (MacAyeal 1989).
+Note that the basal shear stress appears on the \emph{left} side of the above system.  
+We believe this is crucial, because of its effect on the spectrum of the linear 
+approximations of each stage.  The effect on spectrum is clearest in the linearly-viscous
+till case (i.e. Hulbe & MacAyeal 1999) but there seems to be an analogous effect in the 
+plastic till case (Schoof 2006).
 
 This method assembles the matrix for the left side of the SSA equations.  The numerical method is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
 @endcond
@@ -651,8 +658,9 @@ PetscErrorCode IceModel::velocitySSA() {
        ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
-       SETERRQ1(1, "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.\n", 
-                ssaMaxIterations);
+       SETERRQ1(1, 
+         "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.\n", 
+         ssaMaxIterations);
     }
   }
 
@@ -670,35 +678,75 @@ PetscErrorCode IceModel::velocitySSA() {
 PetscErrorCode IceModel::writeSSAsystemMatlab() {
   PetscErrorCode ierr;
   PetscViewer    viewer;
-  char           file_name[PETSC_MAX_PATH_LEN], tempstr[PETSC_MAX_PATH_LEN], 
-                 yearappend[PETSC_MAX_PATH_LEN];
+  char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
+  Vec            vNu[2] = {vWork2d[0], vWork2d[1]};
 
   strcpy(file_name,ssaMatlabFilePrefix);
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_%.0f.m", grid.p->year);
   strcat(file_name,yearappend);
   ierr = verbPrintf(2, grid.com, 
-             "writing Matlab-readable file for SSA system A x = rhs to file `%s' ...\n",
+             "writing Matlab-readable file for SSA system A xsoln = rhs to file `%s' ...\n",
              file_name); CHKERRQ(ierr);
   ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
   ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
   ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
-  snprintf(yearappend, PETSC_MAX_PATH_LEN, "%f\n", grid.p->year);
 
-  strcpy(tempstr,"\% PISM SSA linear system report for time step (model year) ");
-  strcat(tempstr,yearappend);
-  strcat(tempstr,"\%"); // fixes bizarre bug in PetscViewerASCIIPrintf()
-  ierr = PetscViewerASCIIPrintf(viewer, tempstr); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer," gives system A x = rhs at last (nonlinear) iteration of SSA\n");
+  // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% PISM SSA linear system report.\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% Writes matrix A (sparse) and vectors xsoln, rhs for the linear system\n"); 
              CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\%\%     (ice stream and ice shelf) equations\n\n\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% (A xsoln = rhs) which was solved at the last step of the nonlinear iteration.\n");
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% Also writes the year, the coordinates x,y and their gridded versions xx,yy.\n"); 
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% Also thickness (H), surface elevation (h), i-offset (staggered grid) \n");
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% vertically-integrated viscosity (nu_0 = nu * H), and j-offset version\n");
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% of same thing (nu_1 = nu * H).\n\n");
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% The thickness can be plotted by\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%%   >> imagesc(x,y,flipud(H')), axis square, colorbar \n");
+             CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+             "%% for example. \n");
+             CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
   ierr = PetscObjectSetName((PetscObject) SSAStiffnessMatrix,"A"); CHKERRQ(ierr);
   ierr = MatView(SSAStiffnessMatrix, viewer);CHKERRQ(ierr);
   ierr = PetscObjectSetName((PetscObject) SSARHS,"rhs"); CHKERRQ(ierr);
   ierr = VecView(SSARHS, viewer);CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) SSAX,"x"); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAX,"xsoln"); CHKERRQ(ierr);
   ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
 
+  // save coordinates (for viewing, primarily)
+  ierr = PetscViewerASCIIPrintf(viewer,"year=%10.6f;\n",grid.p->year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+                                "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Lx,grid.p->dx,grid.p->Lx);
+  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+                                "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Ly,grid.p->dy,grid.p->Ly);
+  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
+
+  // also save thickness and effective viscosity
+  ierr = VecViewDA2Matlab(vH, viewer, "H"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vh, viewer, "h"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vNu[0], viewer, "nu_0"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vNu[1], viewer, "nu_1"); CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   return 0;
 }

@@ -22,12 +22,14 @@
 #include "iceModel.hh"
 
 
-PetscErrorCode  IceModel::LVecView(DA da, Vec l, Vec g, PetscViewer v) {
-  // note this is used by .m write (not just old .pb write)
+PetscErrorCode  IceModel::VecViewDA2Matlab(Vec l, PetscViewer v, const char *varname) {
   PetscErrorCode ierr;
   
-  ierr = DALocalToGlobal(da, l, INSERT_VALUES, g); CHKERRQ(ierr);
-  ierr = VecView(g, v); CHKERRQ(ierr);
+  ierr=PetscObjectSetName((PetscObject) g2, varname); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, l, INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = VecView(g2, v); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(v,"\n%s = reshape(%s,%d,%d);\n\n",
+             varname,varname,grid.p->Mx,grid.p->My); CHKERRQ(ierr);
   return 0;
 }
 
@@ -178,37 +180,13 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
 
-  ierr=PetscObjectSetName((PetscObject) g2,"h"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vh, g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nh = reshape(h,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vh, viewer, "h"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vH, viewer, "H"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vbed, viewer, "bed"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vMask, viewer, "mask"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vubar, viewer, "ubar"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vvbar, viewer, "vbar"); CHKERRQ(ierr);
 
-  ierr=PetscObjectSetName((PetscObject) g2,"H"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vH, g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nH = reshape(H,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"bed"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vbed, g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nbed = reshape(bed,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"mask"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vMask, g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nmask = reshape(mask,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"ubar"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vubar, g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nubar = reshape(ubar,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"vbar"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vvbar, g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nvbar = reshape(vbar,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
-
-  ierr = PetscObjectSetName((PetscObject) g2,"c"); CHKERRQ(ierr);  // vert-integrated hor speed in m/a
   ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
   ierr = VecPointwiseMult(vWork2d[1], vvbar, vvbar); CHKERRQ(ierr);
   ierr = VecAXPY(vWork2d[0], 1.0, vWork2d[1]); CHKERRQ(ierr);  // vWork2d[0] = ubar^2+vbar^2 = c^2 now
@@ -221,9 +199,7 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   }
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &c); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[0], g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nc = reshape(c,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "c"); CHKERRQ(ierr);
 
   PetscScalar     ***u, **ukd, ***v, **vkd, ***w, **wkd;
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
@@ -245,20 +221,9 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &ukd); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vkd); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &wkd); CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"ukd"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[0],  g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nukd = reshape(ukd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-    CHKERRQ(ierr);
-  ierr=PetscObjectSetName((PetscObject) g2,"vkd"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[1],  g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nvkd = reshape(vkd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-    CHKERRQ(ierr);
-  ierr=PetscObjectSetName((PetscObject) g2,"wkd"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[2],  g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nwkd = reshape(wkd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-    CHKERRQ(ierr);
-
+  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "ukd"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vWork2d[1], viewer, "vkd"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vWork2d[2], viewer, "wkd"); CHKERRQ(ierr);
 
   PetscScalar     ***T, **T2, **H, **pmMask;
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
@@ -278,16 +243,8 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &T2); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &pmMask); CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"Tkd"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[0],  g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nTkd = reshape(Tkd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
-
-  ierr=PetscObjectSetName((PetscObject) g2,"pmMaskkd"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[1],  g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\npmMaskkd = reshape(pmMaskkd,%d,%d);\n\n",grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "Tkd"); CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vWork2d[1], viewer, "pmMaskkd"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"Thomol = Tkd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
@@ -309,11 +266,7 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   }
   ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Sigma2); CHKERRQ(ierr);
-  ierr=PetscObjectSetName((PetscObject) g2,"Sigmakd"); CHKERRQ(ierr);
-  ierr = LVecView(grid.da2, vWork2d[0],  g2, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"\nSigmakd = reshape(Sigmakd,%d,%d);\n\n",
-        grid.p->Mx,grid.p->My);
-  CHKERRQ(ierr);
+  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "Sigmakd"); CHKERRQ(ierr);
 
   // make slice along y-axis of T; requires nontrivial transfer from 3D DA-based array into new
   // type of 2D DA-based array, I think
@@ -351,15 +304,17 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
     ierr = PetscViewerASCIIPrintf(viewer,"z=linspace(0,%12.3f,%d);\n",grid.p->Lz,grid.p->Mz);
         CHKERRQ(ierr);
 
-    ierr=PetscObjectSetName((PetscObject) gslice,"Tid"); CHKERRQ(ierr);
-    ierr = LVecView(daslice, vTid, gslice, viewer); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nTid = reshape(Tid,%d,%d);\n\n",grid.p->Mz,grid.p->My);
-        CHKERRQ(ierr);
+    ierr = PetscObjectSetName((PetscObject) gslice,"Tid"); CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, vTid, INSERT_VALUES, gslice); CHKERRQ(ierr);
+    ierr = VecView(gslice, viewer); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"\nTid = reshape(Tid,%d,%d);\n\n",
+              grid.p->Mz,grid.p->My); CHKERRQ(ierr);
 
     ierr=PetscObjectSetName((PetscObject) gslice,"Tjd"); CHKERRQ(ierr);
-    ierr = LVecView(daslice, vTjd, gslice, viewer); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nTjd = reshape(Tjd,%d,%d);\n\n",grid.p->Mz,grid.p->Mx);
-        CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, vTid, INSERT_VALUES, gslice); CHKERRQ(ierr);
+    ierr = VecView(gslice, viewer); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"\nTjd = reshape(Tjd,%d,%d);\n\n",
+              grid.p->Mz,grid.p->Mx); CHKERRQ(ierr);
 
     ierr = VecDestroy(gslice); CHKERRQ(ierr);
     ierr = VecDestroy(vTid); CHKERRQ(ierr);

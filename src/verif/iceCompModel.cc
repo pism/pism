@@ -855,10 +855,7 @@ PetscErrorCode IceCompModel::dumpToFile_Matlab(const char *fname) {
     }
     ierr = DAVecRestoreArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &SigmaC2); CHKERRQ(ierr);
-    ierr=PetscObjectSetName((PetscObject) g2,"SigmaCkd"); CHKERRQ(ierr);
-    ierr = LVecView(grid.da2, vWork2d[0],  g2, viewer); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nSigmaCkd = reshape(SigmaCkd,%d,%d);\n\n",
-          grid.p->Mx,grid.p->My);  CHKERRQ(ierr);
+    ierr = VecViewDA2Matlab(vWork2d[0], viewer, "SigmaCkd"); CHKERRQ(ierr);
 
     ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"\nSigmakd = Sigmakd - SigmaCkd; \n\n");  CHKERRQ(ierr);

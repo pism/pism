@@ -439,8 +439,7 @@ protected:
   
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
-  PetscErrorCode LVecView(DA da, Vec l, Vec g, PetscViewer v);
-  PetscErrorCode LVecLoad(DA da, Vec l, Vec g, PetscViewer v);
+  PetscErrorCode VecViewDA2Matlab(Vec l, PetscViewer v, const char *varname);
   PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
 
   // see iMIOnetcdf.cc

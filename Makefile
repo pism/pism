@@ -1,52 +1,53 @@
-SHELL = /bin/sh
-VPATH = src/:src/base/:src/tool/:src/num/:src/verif/:src/exact/:src/eismint/:src/ismip/
+SHELL := /bin/sh
+VPATH := src/:src/base/:src/tool/:src/num/:src/verif/:src/exact/:src/eismint/:src/ismip/
 ALL : all
 
 # get PETSc environment, rules:
 include ${PETSC_DIR}/bmake/common/base
 
 #FLAGS:
-PISM_PREFIX?=`pwd`
-MARGIN_TRICK?=0
-MARGIN_TRICK_TWO?=0
-WITH_FFTW?=1
-CFLAGS+= -DWITH_FFTW=${WITH_FFTW} \
+PISM_PREFIX ?= `pwd`
+MARGIN_TRICK ?= 0
+MARGIN_TRICK_TWO ?= 0
+WITH_FFTW ?= 1
+CFLAGS += -DWITH_FFTW=${WITH_FFTW} \
    -DMARGIN_TRICK=${MARGIN_TRICK} -DMARGIN_TRICK_TWO=${MARGIN_TRICK_TWO} -pipe
 
-TESTS_LIB_FLAGS= -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib\
+TESTS_LIB_FLAGS := -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib \
    -ltests -lm -lgsl -lgslcblas
-ICE_LIB_FLAGS= -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf 
+ICE_LIB_FLAGS := -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf 
 ifeq (${WITH_FFTW}, 1)
-	ICE_LIB_FLAGS+= -lfftw3
+	ICE_LIB_FLAGS += -lfftw3
 endif
 
 
 #VARIABLES:
-executables= pismr pismd pismv pisms pgrn pant
-extra_execs= simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
+executables := pismr pismd pismv pisms pgrn pant
+extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
 
-ice_sources= extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc\
-	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMoptions.cc iMpdd.cc\
-	iMregrid.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc\
-	iceModel.cc materials.cc nc_util.cc\
+ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc \
+	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMoptions.cc iMpdd.cc \
+	iMregrid.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
+	iceModel.cc materials.cc nc_util.cc \
 	beddefLC.cc forcing.cc
-ice_csources= cubature.c pism_signal.c
+ice_csources := cubature.c pism_signal.c
 
-tests_sources= exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
+tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
 
-other_sources= pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc\
-	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc\
-	iceCompModel.cc iCMthermo.cc shelf.cc\
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \
+	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc \
+	iceCompModel.cc iCMthermo.cc shelf.cc \
 	flowTable.cc tryLCbd.cc
-other_csources= simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
+other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
 
+#INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
 #include config/ryan_make
 
-TESTS_OBJS= $(tests_sources:.c=.o)
+TESTS_OBJS := $(tests_sources:.c=.o)
 
-ICE_OBJS= $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
+ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
-depfiles= $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
+depfiles := $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d)\
 	$(other_sources:.cc=.d) $(other_csources:.c=.d)
 
 all : depend libpism.so libtests.so $(executables) .pismmakeremind
