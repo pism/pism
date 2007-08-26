@@ -26,19 +26,17 @@
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, ThermoGlenArrIce &i);
+  IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest);
   virtual ~IceCompModel();
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
-  void setTest(char);
-  PetscErrorCode setExactOnly(PetscTruth);
   PetscErrorCode run();
   PetscErrorCode reportErrors();
   virtual PetscErrorCode dumpToFile_Matlab(const char *fname);
 
 protected:
   ThermoGlenArrIce &tgaIce;
-  PetscTruth       testchosen, exactOnly, compVecsCreated, compViewersCreated;
+  PetscTruth       exactOnly, compVecsCreated, compViewersCreated;
   char             testname;  
 
   // see iCMthermo.cc:

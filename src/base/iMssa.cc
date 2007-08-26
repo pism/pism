@@ -115,26 +115,21 @@ In the temperature dependent case the ice hardness is computed by the trapezoid 
 PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon) {
   PetscErrorCode ierr;
 
-  // 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of 30 MPa yr
   if (useConstantNuForSSA == PETSC_TRUE) {
     ierr = VecSet(vNu[0], constantNuForSSA); CHKERRQ(ierr);
     ierr = VecSet(vNu[1], constantNuForSSA); CHKERRQ(ierr);
     return 0;
-  } else { // initialize for below
-    ierr = VecSet(vNu[0], 0.0); CHKERRQ(ierr);
-    ierr = VecSet(vNu[1], 0.0); CHKERRQ(ierr);
   }
   
-  /*
-  * We need to compute integrated effective viscosity. It is locally determined by the
-  * strain rates and temperature field.
-  */
-  PetscScalar **mask, **H, ***T, **nu[2], **u, **v;
-  
-  // next constant is the form of regularization used by C. Schoof 2006 "A variational
+  // this constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
-  
+
+  // We need to compute integrated effective viscosity. It is locally determined by the
+  // strain rates and temperature field.
+  PetscScalar **mask, **H, ***T, **nu[2], **u, **v;  
+  ierr = VecSet(vNu[0], 0.0); CHKERRQ(ierr);
+  ierr = VecSet(vNu[1], 0.0); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr); CHKERRQ(ierr);
@@ -240,10 +235,10 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
 /*! 
 @cond CONTINUUM
 The SSA equations are in their clearest form
-    \f[ \frac{\partial T_{ij}}{\partial x_j} - \tau_{iz}|_{\text{z=0}} = - f_i \f]
+    \f[ \frac{\partial T_{ij}}{\partial x_j} - \tau_{(b)i} = - f_i \f]
 where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
 (i.e. equation (2.6) in (Schoof 2006), and following (Morland 1987)), 
-and \f$\tau_{iz}|_{\text{z=0}}\f$ are the components of the basal shear stress.  
+and \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
 Also \f$f_i\f$ is the driving shear stress \f$f_i = - \rho g H \frac{\partial h}{\partial x_i}\f$.  
 These equations determine velocity in a more-or-less elliptic equation manner.  Here \f$H\f$ 
 is the ice thickness and \f$h\f$ is the elevation of the surface of the ice.
@@ -264,7 +259,6 @@ More specifically, the SSA equations are
 where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
 of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity of the ice.  
 
-In these equations \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
 For ice shelves \f$\tau_{(b)i} = 0\f$ (MacAyeal et al 1996).  For ice streams with a basal 
 till modelled as a plastic material, \f$\tau_{(b)i} = \tau_c u_i/|\mathbf{u}|\f$ where 
 \f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, and \f$\tau_c\f$ 
@@ -508,8 +502,8 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   Vec             xLoc = SSAXLocal;
 
   /* Move the solution onto a grid which can be accessed normally. Since the parallel
-  * layout of the vector x does not in general have anything to do with the DA based
-  * vectors, we must scatter the entire vector to all processors. */
+   * layout of the vector x does not in general have anything to do with the DA based
+   * vectors, we must scatter the entire vector to all processors. */
   ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
@@ -612,15 +606,6 @@ PetscErrorCode IceModel::velocitySSA() {
       ierr = assembleSSAMatrix(vNu, A); CHKERRQ(ierr);
       ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
-
-#if 0
-        PetscReal vec_norm, mat_norm;
-        ierr = MatNorm(A, NORM_FROBENIUS, &mat_norm); CHKERRQ(ierr);
-        ierr = verbPrintf(3,grid.com, "\nNorm(A) = %e\n", mat_norm); CHKERRQ(ierr);
-        ierr = MatMult(A, rhs, x); CHKERRQ(ierr);
-        ierr = VecNorm(x, NORM_2, &vec_norm); CHKERRQ(ierr);
-        ierr = verbPrintf(3,grid.com, "Norm(A * rhs) = % e\n", vec_norm); CHKERRQ(ierr);
-#endif
 
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
       /* -ksp_type will set it; defaults to GMRES(30)

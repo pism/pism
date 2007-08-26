@@ -1,26 +1,27 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006 Ed Bueler
   
-   This file is part of Pism.
+   This file is part of PISM.
   
-   Pism is free software; you can redistribute it and/or modify it under the
+   PISM is free software; you can redistribute it and/or modify it under the
    terms of the GNU General Public License as published by the Free Software
    Foundation; either version 2 of the License, or (at your option) any later
    version.
   
-   Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+   PISM is distributed in the hope that it will be useful, but WITHOUT ANY
    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
    details.
   
    You should have received a copy of the GNU General Public License
-   along with Pism; if not, write to the Free Software
+   along with PISM; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
-#include "exactTestI.h"
+#include "exactTestIJ.h"
 
 int exactI(const double m, const double x, const double y, 
            double *bed, double *tauc, double *u, double *v) {
@@ -65,3 +66,47 @@ int exactI(const double m, const double x, const double y,
   *v = 0.0;  /* no transverse flow */
   return 0;
 }
+
+
+#define pi      3.14159265358979
+#define secpera 31556926.0        /* seconds per year; 365.2422 days */
+
+int exactJ(const double x, const double y, 
+           double *H, double *nu, double *u, double *v) {
+  // return 0 if successful
+  
+  const double L = 200.0e3;      /* 200 km half-width */
+  const double H0 = 500.0;       /* 500 m typical thickness */
+  /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
+  const double nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
+  const double rho_ice = 910.0;  /* kg/m^3 */
+  const double rho_sw = 1028.0;  /* kg/m^3 */
+  const double g = 9.81;         /* m/s^2  */
+  const double C = rho_ice * g * (1.0 - rho_ice/rho_sw) * H0 / (2.0 * nu0);
+  const double gamma[3][3] = {{1.0854, 0.108, 0.0027},
+                              {0.402 , 0.04 , 0.001 },
+                              {0.0402, 0.004, 0.0001}};
+  const double A = L / (4.0 * pi);
+  double       uu = 0.0, vv = 0.0, denom, trig, kx, ly, B;
+  int          k,l;
+ 
+  *H = H0 * (1.0 + 0.4 * cos(pi * x / L)) * (1.0 + 0.1 * cos(pi * y / L));
+  *nu = (nu0 * H0) / *H;     /* so \nu(x,y) H(x,y) = \nu_0 H_0 */
+  for (k=-2; k<=2; k++) {
+    for (l=-2; l<=2; l++) {
+      if ((k != 0) || (l != 0)) {  /* note alpha_00 = beta_00 = 0 */
+        denom = double(k * k + l * l);
+        kx = double(k) * pi * x / L;
+        ly = double(l) * pi * y / L;
+        trig = cos(kx) * sin(ly) + sin(kx) * cos(ly);
+        B = (A / denom) * (C * gamma[abs(k)][abs(l)]) * trig;
+        uu += B * double(k);
+        vv += B * double(l);
+      }
+    }
+  }
+  *u = uu;  *v = vv;
+  if ((fabs(x) > L) || (fabs(y) > L))  return 1; /* return code flags out-of-bounds */
+  return 0;
+}
+

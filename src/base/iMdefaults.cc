@@ -126,7 +126,7 @@ const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 150;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA = PETSC_FALSE;
- // for next value, compare Ritz et al (2001)
+// 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of 30 MPa yr
 const PetscScalar DEFAULT_CONSTANT_NU_FOR_SSA = 30.0 * 1.0e6 * secpera;
 const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
 // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which

@@ -18,16 +18,25 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/*  STANDARD DIALOGUE:
+/*  [NEEDS TO BE CONFIRMED AS standard] DIALOGUEs:
 
-user@home:~/pism$ obj/simpleI
-Enter  m, x, y  separated by space (or newline);
-    (units: pure, pure, km, km; e.g. 10 100 40):
-10 100 40
+user@home:~/pism$ simpleJ
+Enter  x, y  separated by space (or newline);
+    (units: km, km; e.g. 100 100):
+100 100
 
-Results from Test I:
-  bed =  -100.000 (m)     tau_c =     17.854 (kPa)
-  u   =   252.126 (m/a)   v     =      0.000 (m/a)
+Results from Test J:
+  H   =   500.000 (m)     nu    =     30.000 (MPa a)
+  u   =   109.160 (m/a)   v     =     28.921 (m/a)
+
+user@home:~/pism$ simpleJ
+Enter  x, y  separated by space (or newline);
+    (units: km, km; e.g. 100 100):
+0 0
+
+Results from Test J:
+  H   =   770.000 (m)     nu    =     19.481 (MPa a)
+  u   =     0.000 (m/a)   v     =      0.000 (m/a)
 
 */
 
@@ -36,17 +45,12 @@ Results from Test I:
 
 int main() {
 
-  double m, x, y, bed, tauc, u, v;
+  double x, y, u, v, H, nu;
   int    scanret;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   
-  printf("Enter  m, x, y  separated by space (or newline);\n");
-  printf("    (units: pure, km, km; e.g. 10 100 40):\n");
-  scanret = scanf("%lf",&m);
-  if (scanret != 1) {
-    printf("... input error; exiting\n"); 
-    return 1;
-  }
+  printf("Enter  x, y  separated by space (or newline);\n");
+  printf("    (units: km, km; e.g. 100 100):\n");
   scanret = scanf("%lf",&x);
   if (scanret != 1) {
     printf("... input error; exiting\n"); 
@@ -58,10 +62,10 @@ int main() {
     return 1;
   }
 
-  exactI(m,x*1000.0,y*1000.0, &bed, &tauc, &u, &v);
-
-  printf("\nResults from Test I:\n");
-  printf("  bed = %9.3f (m)     tau_c = %10.3f (kPa)\n",bed,tauc/1000.0);
+  exactJ(x*1000.0,y*1000.0, &H, &nu, &u, &v);
+           
+  printf("\nResults from Test J:\n");
+  printf("  H   = %9.3f (m)     nu    = %10.3f (MPa a)\n",H,(nu*1.0e-6)/secpera);
   printf("  u   = %9.3f (m/a)   v     = %10.3f (m/a)\n",u*secpera,v*secpera);
 
   return 0;

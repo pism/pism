@@ -661,7 +661,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   }
   
   if (! isInitialized()) {
-    SETERRQ(1,"Model has not been initialized.");
+    SETERRQ(1,"Model has not been initialized from a file or by a derived class.");
   }
   
   if (yearsStartRunEndDetermined == PETSC_FALSE) {

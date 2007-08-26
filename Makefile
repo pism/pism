@@ -23,7 +23,8 @@ endif
 
 #VARIABLES:
 executables := pismr pismd pismv pisms pgrn pant
-extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleL gridL flowTable tryLCbd
+extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
+   simpleL gridL flowTable tryLCbd
 
 ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc \
 	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMoptions.cc iMpdd.cc \
@@ -32,13 +33,14 @@ ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc \
 	beddefLC.cc forcing.cc
 ice_csources := cubature.c pism_signal.c
 
-tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestI.c exactTestL.c
+tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestIJ.c exactTestL.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \
 	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc \
-	iceCompModel.cc iCMthermo.cc shelf.cc \
+	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc shelf.cc \
 	flowTable.cc tryLCbd.cc
-other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c simpleL.c
+other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
+   simpleJ.c simpleL.c
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
 #include config/ryan_make
@@ -81,8 +83,8 @@ pismd : pismd.o iceROSSModel.o libpism.so
 pisms : iceEISModel.o iceHEINOModel.o pisms.o libpism.so
 	${CLINKER} iceEISModel.o iceHEINOModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
-pismv : iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o libpism.so libtests.so
-	${CLINKER} iCMthermo.o iceCompModel.o iceExactStreamModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
+pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
+	${CLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
 pant : pant.o libpism.so
 	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
@@ -112,6 +114,9 @@ simpleH : simpleH.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 simpleI : simpleI.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleJ : simpleJ.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 simpleL : simpleL.o libtests.so

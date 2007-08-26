@@ -1,23 +1,23 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-"Ice sheet driver for SIA verification.  Uses exact solutions to various coupled\n"
+"Ice sheet driver for SIA and SSA verification.  Uses exact solutions to various coupled\n"
 "subsystems.  Currently implements tests A, B, C, D, E, F, G, H, I, L.\n\n";
 
 #include <cstring>
@@ -25,8 +25,9 @@ static char help[] =
 #include <petscda.h>
 #include <petscbag.h>
 #include "base/grid.hh"
+#include "base/materials.hh"
 #include "verif/iceCompModel.hh"
-#include "verif/iceExactStreamModel.hh"
+#include "verif/iceExactSSAModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -41,67 +42,57 @@ int main(int argc, char *argv[]) {
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    IceGrid             g(com, rank, size);
+    IceGrid      g(com, rank, size);
+    IceType*     ice;
+    PetscInt     flowlawNumber = 1;  // use cold part of Paterson-Budd by default
+    char         testname[20];
+    PetscTruth   testchosen, dontReport;
 
-    IceType*            tempice;
-    PetscInt            flowlawNumber = 1;  // use cold part of Paterson-Budd by default
-
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1, com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
+    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     
-    ierr = getFlowLawFromUser(com, tempice, flowlawNumber); CHKERRQ(ierr);
-
-    // call constructors on both, but have a pointer for either
-    ThermoGlenArrIce*   ice = (ThermoGlenArrIce*) tempice;
-    IceCompModel        mComp(g, *ice);        // derived class of IceModel
-    IceExactStreamModel mStream(g, *tempice);  // ditto
-    IceModel*           m;
-
-    //  determine which derived class to initialize based on test name
-    char        testname[20];
-    PetscTruth  testchosen;
+    // determine test (and whether to report error)
     ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, &testchosen); CHKERRQ(ierr);
-    char temp = testname[0];
-    if (testchosen == PETSC_FALSE)     temp = 'A';           // default to test A
-    if ((temp >= 'a') && (temp <= 'z'))    temp += 'A'-'a';  // capitalize if lower    
-    if (((temp >= 'A') && (temp <= 'H')) || (temp == 'L')) {
+    char test = testname[0];  // only use the first letter
+    if (testchosen == PETSC_FALSE)     test = 'A';           // default to test A
+    if ((test >= 'a') && (test <= 'z'))    test += 'A'-'a';  // capitalize if lower    
+    ierr = PetscOptionsHasName(PETSC_NULL, "-no_report", &dontReport); CHKERRQ(ierr);
+
+    // actually construct and run one of the derived classes of IceModel
+    if (test == 'I') {
+      // run derived class (of IceModel) for plastic till ice stream
+      IceExactSSAModel mSSA(g, *ice, test);  
+      ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
+      ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
+      ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
+      if (dontReport == PETSC_FALSE) {
+        ierr = mSSA.reportErrors();  CHKERRQ(ierr);
+      }
+      ierr = mSSA.writeFiles("verify",PETSC_TRUE); CHKERRQ(ierr);
+    } else { // all other tests are compensatory; 
+             // if test is invalid then mComp.initFromOptions() will bonk
+      // run derived class (of IceModel) for compensatory source term cases 
+      // (i.e. compensatory accumulation or compensatory heating)
+      ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
+      IceCompModel        mComp(g, *tgaice, test);
       ierr = mComp.setFromOptions(); CHKERRQ(ierr);
       ierr = mComp.initFromOptions(); CHKERRQ(ierr);
-      m = (IceModel*) &mComp;
-    } else if (temp == 'I') {
-      ierr = mStream.setFromOptions(); CHKERRQ(ierr);
-      ierr = mStream.initFromOptions(); CHKERRQ(ierr);
-      m = (IceModel*) &mStream;
-    } else {
-      SETERRQ(1,"(pismv.cc) ERROR: desired test NOT IMPLEMENTED\n");
-    }
-
-    ierr = m->run(); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
-    
-    /* Whether to report error at end. */
-    PetscTruth dontReport;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-noreport", &dontReport); CHKERRQ(ierr);
-    if (dontReport == PETSC_FALSE) {
-      if (((temp >= 'A') && (temp <= 'H')) || (temp == 'L')) {
-        if ((flowlawNumber != 1) && ((temp == 'F') || (temp == 'G'))) {
-          ierr = verbPrintf(1,com, 
+      ierr = mComp.run(); CHKERRQ(ierr);
+      if (dontReport == PETSC_FALSE) {
+        if ((flowlawNumber != 1) && ((test == 'F') || (test == 'G'))) {
+            ierr = verbPrintf(1,com, 
                 "pismv WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
-                "   for reported errors in tests F and G to be meaningful!\n"); CHKERRQ(ierr);
+                "   for reported errors in test %c to be meaningful!\n", test);
+                CHKERRQ(ierr);
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
-      } else if (temp == 'I') {
-        ierr = mStream.reportErrors();  CHKERRQ(ierr);
-      } else {
-        SETERRQ(2,"(pismv.cc) ERROR: can not report error for desired test\n");
       }
+      ierr = mComp.writeFiles("verify",PETSC_FALSE); CHKERRQ(ierr);
     }
 
-    ierr = m->writeFiles("verify",(PetscTruth) (temp == 'I')); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, " ... done\n"); CHKERRQ(ierr);
   }
-
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

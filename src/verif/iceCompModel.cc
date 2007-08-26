@@ -30,9 +30,10 @@
 
 PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
-IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
+IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
   : IceModel(g, i), tgaIce(i) {
   
+  testname = mytest;
   // Override some defaults from parent class
   setEnhancementFactor(1.0);
   setThermalBedrock(PETSC_FALSE);
@@ -43,14 +44,15 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i)
   f = tgaIce.rho / bedrock.rho;
   
   // now make bedrock have same material properties as ice
-  // (note Mbz=1 also, by default, but want ice/rock interface to be pure ice)
+  // (note Mbz=1 also, by default, but want ice/rock interface to see
+  // pure ice from the point of view of applying geothermal boundary
+  // condition, especially)
   bedrock.rho = tgaIce.rho;
   bedrock.c_p = tgaIce.c_p;
   bedrock.k = tgaIce.k;
 
   // defaults for verification
-  setTest('A');
-  setExactOnly(PETSC_FALSE);
+  exactOnly = PETSC_FALSE;
   compVecsCreated = PETSC_FALSE;
   compViewersCreated = PETSC_FALSE;
   vHexactLCreated = PETSC_FALSE;
@@ -73,38 +75,10 @@ IceCompModel::~IceCompModel() {
 }
 
 
-void IceCompModel::setTest(char c) {
-  testname = c;
-}
-
-
-PetscErrorCode IceCompModel::setExactOnly(PetscTruth eo) {
-  exactOnly = eo;
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::setFromOptions() {
   PetscErrorCode ierr;
-  char temptestname[20];
-  char temp;
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
-
-  /* This option determines the single character name of a verification test
-  ("-test B", for example). */
-  ierr = PetscOptionsGetString(PETSC_NULL, "-test", temptestname, 1, &testchosen); CHKERRQ(ierr);
-  if (testchosen == PETSC_TRUE) {
-    temp = temptestname[0];
-    if ((temp >= 'a') && (temp <= 'z'))
-      temp += 'A'-'a';  // capitalize if lower
-    if ((temp < 'A') || (temp == 'I') || (temp == 'J') || (temp == 'K') || (temp > 'L')) {
-      SETERRQ(1,"IceCompModel ERROR: desired test NOT IMPLEMENTED (here)\n");
-    }
-  } else {
-    temp = 'A';
-  }
-  setTest(temp);
   
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
@@ -131,7 +105,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, "continuing from input file %s; using Test %c conditions during run ...\n",inFile,testname);  CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, 
+           "continuing from input file %s; using Test %c conditions during run ...\n",
+           inFile,testname);  CHKERRQ(ierr);
     ierr = createCompVecs(); CHKERRQ(ierr);
     if (yearsStartRunEndDetermined == PETSC_FALSE) {
       ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);

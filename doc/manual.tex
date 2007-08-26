@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{169}
+\newcommand{\PISMREV}{172}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1766,7 +1766,7 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \opt{no\und mass}  Forces PISM not to change the ice thickness.  No time steps of the mass conservation equation are computed.
 
-\optrestrict{noreport}{pismv}  Do not report errors at the end of a verification run.
+\optrestrict{no\und report}{pismv}  Do not report errors at the end of a verification run.
 
 \optdef{no\und spokes}{0}  The strain heating term can be smoothed by non-physical averaging the neighboring horizontal neighbors (those which are within the ice) \cite{BBL}.  The integer parameter controls the number of neighboring grid points over which the average is computed.  For instance, \verb|-no_spokes 0| is no smoothing while \verb|-no_spokes 3| is smoothing over the 3-neighborhood of horizontal grid points, that is, over a distance of \verb|3*dx|.
 

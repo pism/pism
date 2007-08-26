@@ -16,98 +16,75 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
 #include <cmath>
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../exact/exactTestI.h"
-#include "iceExactStreamModel.hh"
+#include "../exact/exactTestIJ.h"
+#include "iceExactSSAModel.hh"
 
-const PetscScalar IceExactStreamModel::m_schoof = 10; // (pure number)
-const PetscScalar IceExactStreamModel::L_schoof = 40e3; // meters
-const PetscScalar IceExactStreamModel::aspect_schoof = 0.05; // (pure)
-const PetscScalar IceExactStreamModel::H0_schoof = aspect_schoof * L_schoof; // = 2000 m THICKNESS
-const PetscScalar IceExactStreamModel::B_schoof = 3.7e8; // Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big?
-const PetscScalar IceExactStreamModel::p_schoof = 4.0/3.0; // = 1 + 1/n
+const PetscScalar IceExactSSAModel::m_schoof = 10; // (pure number)
+const PetscScalar IceExactSSAModel::L_schoof = 40e3; // meters
+const PetscScalar IceExactSSAModel::aspect_schoof = 0.05; // (pure)
+const PetscScalar IceExactSSAModel::H0_schoof = aspect_schoof * L_schoof; // = 2000 m THICKNESS
+const PetscScalar IceExactSSAModel::B_schoof = 3.7e8; // Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big?
+const PetscScalar IceExactSSAModel::p_schoof = 4.0/3.0; // = 1 + 1/n
 
 
-IceExactStreamModel::IceExactStreamModel(IceGrid &g, IceType &i)
-  : IceModel(g,i) {  // do nothing; note derived classes must have constructors
+IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType &i, char mytest)
+  : IceModel(g,i) {
+  test = mytest;
 }
 
 
-void IceExactStreamModel::setflowlawNumber(PetscInt law) {
-  flowlawNumber = law;
-}
-
-
-PetscInt IceExactStreamModel::getflowlawNumber() {
-  return flowlawNumber;
-}
-
-
-PetscErrorCode IceExactStreamModel::initFromOptions() {
+PetscErrorCode IceExactSSAModel::initFromOptions() {
   PetscErrorCode  ierr;
-  PetscTruth      sometestchosen, inFileSet;
-  char            inFile[PETSC_MAX_PATH_LEN], temptestname[20], temp;
+  PetscTruth      inFileSet, bifFileSet;
+  char            inFile[PETSC_MAX_PATH_LEN];
 
-  //   "-test I" should already have been chosen, but confirm
-  ierr = PetscOptionsGetString(PETSC_NULL, "-test", temptestname, 1, &sometestchosen); CHKERRQ(ierr);
-  if (sometestchosen == PETSC_TRUE) {
-    temp = temptestname[0];
-    if ((temp != 'i') && (temp != 'I')) {
-      SETERRQ(1,"IceExactStreamModel only does Test I for now!\n");
-    }
-  }
-  
-  /* This switch turns off actual numerical evolution and simply reports the
-     exact solution. */
+  // does user want to turn off actual numerical evolution and simply report the
+  //    exact solution ?
   ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
 
-  /* input file not allowed */
+  // input file not allowed
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  if (inFileSet == PETSC_TRUE) {
-    SETERRQ(2,"PISM input file not allowed for initialization of IceExactStreamModel");
+  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
+                               PETSC_MAX_PATH_LEN, &bifFileSet); CHKERRQ(ierr);
+  if ((inFileSet == PETSC_TRUE) || (bifFileSet == PETSC_TRUE)) {
+    SETERRQ(2,"PISM input file not allowed for initialization of IceExactSSAModel");
   }
   
   ierr = verbPrintf(2,grid.com,"initializing Test I ... \n"); CHKERRQ(ierr);
 
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
+  initialized_p = PETSC_TRUE;
+  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
   
   // set up 1000km by 240km by 3000m grid; note 240km = 6L where L = L_schoof
   // try -Mx 101 -My 25 for 10km x 10km grid
   ierr = grid.rescale(500e3, 120e3, 3000); CHKERRQ(ierr);
-  
-  ierr = fillinTemps();  CHKERRQ(ierr);
 
-  ierr = afterInitHook(); CHKERRQ(ierr);  // note this sets basal to ViscousBasalType
+  // fill in temperature and age; not critical I think
+  const PetscScalar T0 = 263.15;  // completely arbitrary
+  ierr = VecSet(vTs, T0); CHKERRQ(ierr);
+  ierr = VecSet(vT, T0); CHKERRQ(ierr);
+  ierr = VecSet(vTb, T0); CHKERRQ(ierr);
+  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age, not yield stress
 
-  // make sure we are using plastic till
+  // so make sure we are using plastic till
   if (createBasal_done == PETSC_TRUE) delete basal;
   basal = new PlasticBasalType;
   createBasal_done = PETSC_TRUE;
+  
   ierr = taucSet(); CHKERRQ(ierr);  // now fill vtauc with values for Schoof manufactured solution
   
   return 0;
 }
 
 
-PetscErrorCode IceExactStreamModel::fillinTemps() {
-  PetscErrorCode      ierr;
-  const PetscScalar T0 = 263.15;  // completely arbitrary
-  ierr = VecSet(vTs, T0); CHKERRQ(ierr);
-  ierr = VecSet(vT, T0); CHKERRQ(ierr);
-  ierr = VecSet(vTb, T0); CHKERRQ(ierr);
-  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age, not yield stress
-  return 0;
-}
-
-
-PetscErrorCode IceExactStreamModel::taucSet() {
-  // compare IceCompModel::mapcoords()
+PetscErrorCode IceExactSSAModel::taucSet() {
   PetscErrorCode ierr;
   PetscScalar **tauc;
 
@@ -129,26 +106,7 @@ PetscErrorCode IceExactStreamModel::taucSet() {
 }
 
 
-// reimplement basal drag as plastic law [THIS MAY OR MAY NOT WORK!!]
-#if 0
-PetscScalar IceExactStreamModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
-                                            PetscScalar **u, PetscScalar **v,
-                                            PetscInt i, PetscInt j) const {
-  //return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
-  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
-}
-
-
-// ditto
-PetscScalar IceExactStreamModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
-                                            PetscScalar **u, PetscScalar **v,
-                                            PetscInt i, PetscInt j) const {
-  // return taucGet(i,j) / sqrt(PetscSqr(plastic_regularize) + PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
-  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
-}
-#endif
-
-PetscErrorCode IceExactStreamModel::setInitStateAndBoundaryVels() {
+PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVels() {
   PetscErrorCode ierr;
   const PetscScalar    Mx = grid.p->Mx, My = grid.p->My;
   PetscScalar    **uvbar[2], **mask, **h, **bed;
@@ -178,8 +136,6 @@ PetscErrorCode IceExactStreamModel::setInitStateAndBoundaryVels() {
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(bed[i][j]), &junk, &myu, &myv); 
       h[i][j] = bed[i][j] + H0_schoof;
-//      bool edge = (   (i == 0) || (i == 1) || (i == Mx-2) || (i == Mx-1)
-//                   || (j == 0) || (j == 1) || (j == My-2) || (j == My-1) );
       bool edge = ( (j == 0) || (j == My-1) );
       if (edge) {
         // set boundary condition which will apply to finite difference system:
@@ -198,7 +154,7 @@ PetscErrorCode IceExactStreamModel::setInitStateAndBoundaryVels() {
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);    
 
-  // Communicate so that we can successfully differentiate surface and set boundary conditions
+  // Communicate so that we can differentiate surface and set boundary conditions
   ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
@@ -210,7 +166,7 @@ PetscErrorCode IceExactStreamModel::setInitStateAndBoundaryVels() {
 }
 
 
-PetscErrorCode IceExactStreamModel::reportErrors() {
+PetscErrorCode IceExactSSAModel::reportErrors() {
   PetscErrorCode  ierr;
   const PetscScalar    Mx = grid.p->Mx, My = grid.p->My;
   PetscScalar exactmaxu, maxvecerr = 0.0, avvecerr = 0.0, 
@@ -222,8 +178,6 @@ PetscErrorCode IceExactStreamModel::reportErrors() {
   ierr = verbPrintf(1,grid.com, 
           "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
 
-//  ierr = verbPrintf(2,grid.com, "  xs = %d, xs+xm = %d, ys = %d, ys+ym = %d, Mx * My = %d\n",
-//            grid.xs,grid.xs+grid.xm,grid.ys,grid.ys+grid.ym,grid.p->Mx*grid.p->My); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -258,15 +212,12 @@ PetscErrorCode IceExactStreamModel::reportErrors() {
   ierr = PetscGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
   
   ierr = PetscGlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
-//  gavuerr = avuerr;
   gavuerr = gavuerr/(grid.p->Mx*grid.p->My);
   ierr = PetscGlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
-//  gavuerr = avverr;
   gavverr = gavverr/(grid.p->Mx*grid.p->My);
 
   ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
-//  gavvecerr = avvecerr;
   gavvecerr = gavvecerr/(grid.p->Mx*grid.p->My);
 
   ierr = verbPrintf(1,grid.com, 
@@ -282,7 +233,7 @@ PetscErrorCode IceExactStreamModel::reportErrors() {
 }
 
 
-PetscErrorCode IceExactStreamModel::run() {
+PetscErrorCode IceExactSSAModel::diagnosticRun() {
   PetscErrorCode  ierr;
   PetscInt        pause_time;
   PetscTruth      pause_p;
@@ -299,20 +250,16 @@ PetscErrorCode IceExactStreamModel::run() {
   CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep!
 
-  ierr = fillinTemps(); CHKERRQ(ierr);
   ierr = setInitStateAndBoundaryVels(); CHKERRQ(ierr);
 
   // set flags, parameters affecting solve of stream equations
   useSSAVelocity = PETSC_TRUE;
-  computeSurfGradInwardSSA = PETSC_TRUE;  // so periodic grid works even though
-                                               // h(-Lx,y) != h(Lx,y)
+  computeSurfGradInwardSSA = PETSC_TRUE;  // so periodic grid works although h(-Lx,y) != h(Lx,y)
   useConstantNuForSSA = PETSC_FALSE;
   useConstantHardnessForSSA = PETSC_TRUE;
   constantHardnessForSSA = B_schoof;
   ssaMaxIterations = 500;  
   setSSAEpsilon(0.0);  // don't use this lower bound
-  // regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for ice stream?
-  // regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 
   if (exactOnly == PETSC_TRUE) { // just fill with exact solution
     PetscScalar **u, **v, **bed;
@@ -340,21 +287,19 @@ PetscErrorCode IceExactStreamModel::run() {
                       PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof));
     CHKERRQ(ierr);
     ierr = basal->printInfo(4, grid.com); CHKERRQ(ierr);
-    // solve model equations
 
+    // solve model equations
     ierr = velocitySSA(); CHKERRQ(ierr);
   }
 
-  // report on result of computation (i.e. to standard out, to viewers, to Matlab file)
+  // report on result of computation (i.e. to standard out and to viewers)
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   ierr = summary(true,true); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
-  // compare to EXACT ...
   
   if (pause_p == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
-
   return 0;
 }
