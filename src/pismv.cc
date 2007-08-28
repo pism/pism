@@ -18,7 +18,7 @@
 
 static char help[] =
 "Ice sheet driver for SIA and SSA verification.  Uses exact solutions to various coupled\n"
-"subsystems.  Currently implements tests A, B, C, D, E, F, G, H, I, L.\n\n";
+"subsystems.  Currently implements tests A, B, C, D, E, F, G, H, I, J, L.\n\n";
 
 #include <cstring>
 #include <cstdio>
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 
     // actually construct and run one of the derived classes of IceModel
     if ((test == 'I') || (test == 'J')) {
-      // run derived class (of IceModel) for plastic till ice stream
+      // run derived class for plastic till ice stream or linearized ice shelf
       IceExactSSAModel mSSA(g, *ice, test);  
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       ierr = mSSA.writeFiles("verify",PETSC_TRUE); CHKERRQ(ierr);
     } else { // all other tests are compensatory; 
              // if test is invalid then mComp.initFromOptions() will bonk
-      // run derived class (of IceModel) for compensatory source term cases 
+      // run derived class for compensatory source SIA solutions
       // (i.e. compensatory accumulation or compensatory heating)
       ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
       IceCompModel        mComp(g, *tgaice, test);

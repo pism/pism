@@ -54,9 +54,6 @@ PetscErrorCode IceModel::setupForSSA(const PetscScalar minH) {
   ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -83,7 +80,6 @@ PetscErrorCode IceModel::cleanupAfterSSA(const PetscScalar minH) {
   ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -199,7 +195,6 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   ierr = DALocalToLocalEnd(grid.da2, vNu[0], INSERT_VALUES, vNu[0]); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vNu[1], INSERT_VALUES, vNu[1]); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vNu[1], INSERT_VALUES, vNu[1]); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -229,7 +224,6 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
   ierr = VecNorm(g2, MY_NORM, &nuNorm[1]); CHKERRQ(ierr);
   nuNorm[1] *= area;
   *norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
-
   return 0;
 }
 
@@ -430,6 +424,28 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
 }
 
 
+//! Computes the right-hand side of the linear problem for the SSA equations.
+/*! 
+@cond CONTINUUM
+The right side of the SSA equations is just
+   \f[ \rho g H \nabla h \f]
+because, in particular, the basal stress is put on the left side of the system.  
+(See comment for assembleSSAMatrix().)  
+
+@endcond
+@cond NUMERIC
+The surface slope is computed by centered difference onto the regular grid,
+which may use periodic ghosting.  (Optionally the surface slope can be computed 
+by only differencing into the grid for points at the edge; see test I.)
+
+Note that the grid points with mask value MASK_SHEET correspond to the trivial 
+equations
+   \f \bar u_{ij} = \frac{uvbar[0][i-1][j] + uvbar[0][i][j]}{2}, \f]
+and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged horizontal
+velocity is already known for these points because it was computed (on the staggered
+grid) using the SIA.
+@endcond
+ */
 PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   // surfGradInward == true then differentiate h(x,y) inward from edge of grid,
   // so that certain solutions make sense on period grid; Test I, for now
@@ -480,7 +496,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
           h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
         }
-        const PetscScalar r = ice.rho * grav * H[i][j];  // CHANGE OF SIGN
+        const PetscScalar r = ice.rho * grav * H[i][j];
         ierr = VecSetValue(rhs, rowU, -r*h_x, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, -r*h_y, INSERT_VALUES); CHKERRQ(ierr);
       }
@@ -622,12 +638,12 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
 
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
       /* -ksp_type will set it; defaults to GMRES(30)
-       * -ksp_pc will set preconditioner; defaults to ILU
-       * If you want to test different KSP methods, it may be helpful to
+       * -ksp_pc will set preconditioner; defaults to ILU */
+      /* If you want to test different KSP methods, it may be helpful to
        * see how many iterations were necessary. Initial testing implies
-       * that CGS takes roughly half the iterations of GMRES(30)
-       * [default], but is not significantly faster. Furthermore, ILU
-       * [default] and BJACOBI seem roughly equivalent. */
+       * that CGS takes roughly half the iterations of GMRES(30), but is 
+       * not significantly faster. Furthermore, ILU and BJACOBI seem 
+       * roughly equivalent. */
       //ierr = KSPSetType(ksp, KSPCGS); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
@@ -731,10 +747,10 @@ PetscErrorCode IceModel::writeSSAsystemMatlab() {
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"year=%10.6f;\n",grid.p->year);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                                "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Lx,grid.p->dx,grid.p->Lx);
+            "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Lx,grid.p->dx,grid.p->Lx);
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                                "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Ly,grid.p->dy,grid.p->Ly);
+            "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Ly,grid.p->dy,grid.p->Ly);
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
 
@@ -778,27 +794,12 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
         
-        ub[i][j] = (addVels) ? ub[i][j] + ubar[i][j] : ubar[i][j];
-        vb[i][j] = (addVels) ? vb[i][j] + vbar[i][j] : vbar[i][j];
-        
         for (PetscInt k=0; k<grid.p->Mz; ++k) {
           u[i][j][k] = (addVels) ? u[i][j][k] + ubar[i][j] : ubar[i][j];
           v[i][j][k] = (addVels) ? v[i][j][k] + vbar[i][j] : vbar[i][j];
-/*
-          //  no reason to upwind in this context; compare treatment of "div(U)" in
-          //  massBalExplicitStep using expression div(Q) = U . grad H + div(U) H
-          const PetscScalar u_x = (ubar[i+1][j] - ubar[i-1][j]) / (2.0*grid.p->dx);
-          const PetscScalar v_y = (vbar[i][j+1] - vbar[i][j-1]) / (2.0*grid.p->dy);
-
-          // this vertical velocity is RELATIVE TO THE BED!  thus no contribution
-          // from moving or sloping bed
-          w[i][j][k] = (addVels) ? w[i][j][k] - k * grid.p->dz * (u_x + v_y)
-                                 : - k * grid.p->dz * (u_x + v_y);
-          if (includeBMRinContinuity == PETSC_TRUE) {
-            w[i][j][k] -= capBasalMeltRate(basalMeltRate[i][j]);
-          }
-*/
         }
+        ub[i][j] = (addVels) ? ub[i][j] + ubar[i][j] : ubar[i][j];
+        vb[i][j] = (addVels) ? vb[i][j] + vbar[i][j] : vbar[i][j];
         
         if (addVels) { // now update ubar,vbar by adding SIA contribution
           ubar[i][j] += 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
@@ -828,11 +829,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
     ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
   }
-
-  ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
 

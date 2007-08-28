@@ -106,7 +106,6 @@ int exactJ(const double x, const double y,
     }
   }
   *u = uu;  *v = vv;
-  if ((fabs(x) > L) || (fabs(y) > L))  return 1; /* return code indicates out-of-bounds */
   return 0;
 }
 

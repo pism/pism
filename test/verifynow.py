@@ -25,8 +25,9 @@ def verify(test):
          predo = mpi + ' -np ' + str(nproc) + ' '
       else:
          predo = ''
-      testdo = predo + pref + 'pismv -test ' + test[0] + gridopts + test[4] + ' -verbose 1'
+      testdo = predo + pref + 'pismv -test ' + test[0] + gridopts + test[4]
       print ' trying \"' + testdo + '\"'
+      testdo = testdo + ' -verbose 1'  # only need final errors anyway
       try:
          lasttime = time.time()
          (status,output) = commands.getstatusoutput(testdo)
@@ -74,6 +75,9 @@ alltests = [
    ['I',[49,193,769,3073,12289],'plastic till ice stream',1,
         ' -Mx 5 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
         '(My=49,193,769,3073,12289 corresponds to dy=5000,1250,312.5,78.13,19.53 m)'],
+   ['J',[41,81,161,201,321],'linearized, periodic ice shelf',0,
+        ' -Mz 11 -ksp_rtol ' + str(KSPRTOL),
+        '(My=41,81,161,201,321 corresponds to dx=dy=10,5,2.5,2,1.25 km)'],
    ['L',[31,61,91,121,181],
         'isothermal SIA w non-flat bed',0,' -Mz 31 -y 25000.0',
         '(Mx=My=31,61,91,121,181 corresponds to dx=dy=60,30,20,15,10 km)'],

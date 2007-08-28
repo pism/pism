@@ -31,18 +31,20 @@ public:
     virtual PetscErrorCode diagnosticRun();
     PetscErrorCode         reportErrors();
 
-private:
+protected:
     char       test;       // only 'I', 'J' supported
     PetscTruth exactOnly;
-    static const PetscScalar   
-               m_schoof, L_schoof, aspect_schoof, H0_schoof,
-               B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
     Vec*       vNuForJ;
           
     PetscErrorCode  fillFromExactSolution();
     PetscErrorCode  taucSetI();
     PetscErrorCode  setInitStateAndBoundaryVelsI();
     PetscErrorCode  setInitStateJ();
+
+private:
+    static const PetscScalar   
+               m_schoof, L_schoof, aspect_schoof, H0_schoof,
+               B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
 };
 
 #endif /* __iceExactSSAModel_hh */

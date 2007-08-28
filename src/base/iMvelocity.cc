@@ -168,25 +168,23 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       // compute w above base by trapezoid rule 
       // (note vertical variable is  z = zorig - b(x,y,t))
       PetscScalar OLDintegrand =   (u[i+1][j][0] - u[i-1][j][0]) / (2.0*dx)
-                                 + (v[i][j+1][0] - v[i][j-1][0]) / (2.0*dy)
-                                 - dbdx * (u[i][j][1] - u[i][j][0]) / dz
-                                 - dbdy * (v[i][j][1] - v[i][j][0]) / dz;
-      PetscScalar NEWintegrand;
-      PetscInt    k;
-      for (k = 1; k < Mz-1; ++k) {
-        NEWintegrand =   (u[i+1][j][k] - u[i-1][j][k]) / (2.0*dx)
-                       + (v[i][j+1][k] - v[i][j-1][k]) / (2.0*dy)
-                       - dbdx * (u[i][j][k+1] - u[i][j][k-1]) / (2.0*dz)
-                       - dbdy * (v[i][j][k+1] - v[i][j][k-1]) / (2.0*dz);
+                                 + (v[i][j+1][0] - v[i][j-1][0]) / (2.0*dy);
+      // at bottom, difference up:
+      OLDintegrand -= dbdx * (u[i][j][1] - u[i][j][0]) / dz
+                      + dbdy * (v[i][j][1] - v[i][j][0]) / dz;
+      for (PetscInt k = 1; k < Mz; ++k) {
+        PetscScalar NEWintegrand =   (u[i+1][j][k] - u[i-1][j][k]) / (2.0*dx)
+                                   + (v[i][j+1][k] - v[i][j-1][k]) / (2.0*dy);
+        if (k == Mz-1) { // at top, difference down:
+          NEWintegrand -= dbdx * (u[i][j][k] - u[i][j][k-1]) / dz
+                          + dbdy * (v[i][j][k] - v[i][j][k-1]) / dz;
+        } else { // usual case; central difference
+          NEWintegrand -= dbdx * (u[i][j][k+1] - u[i][j][k-1]) / (2.0*dz)
+                          + dbdy * (v[i][j][k+1] - v[i][j][k-1]) / (2.0*dz);
+        }
         w[i][j][k] = w[i][j][k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;
       }
-      k = Mz-1;
-      NEWintegrand =   (u[i+1][j][k] - u[i-1][j][k]) / (2.0*dx)
-                     + (v[i][j+1][k] - v[i][j-1][k]) / (2.0*dy)
-                     - dbdx * (u[i][j][k] - u[i][j][k-1]) / dz
-                     - dbdy * (v[i][j][k] - v[i][j][k-1]) / dz;
-      w[i][j][k] = w[i][j][k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
     }
   }
 

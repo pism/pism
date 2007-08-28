@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{172}
+\newcommand{\PISMREV}{174}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -257,7 +257,7 @@ Naturally, setting up PISM to model real ice sheets will generally require techn
 
 A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.   You can update your copy of PISM to the latest version by \verb|svn update| in the \verb|pism/| directory.  After doing so you will want to \verb|make| and \verb|make install| in order to rebuild the PISM executables using the updated source code files.
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Dependencies for PISM, listed alphabetically.  These are needed to build a fully-functional PISM from source and to do all the examples in the manual.}\label{tab:PISMdepends}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -281,7 +281,7 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 \end{table}
 
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Additional dependencies for PISM, listed alphabetically.  \protect{\emph{These are needed only for serious developers of PISM.}}}\label{tab:PISMdepends_superdev}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -393,7 +393,7 @@ At runtime, various viewers can be specified by options of the form \verb|-d |\e
 
 When a PISM run is finished the state of the model is output in NetCDF format.  The name can be specified by the option \verb|-o|, so \verb|-o foo| writes the NetCDF file \verb|foo.nc|.  NetCDF files can be viewed or modified with a variety of tools, some of which are mentioned in table \ref{tab:NetCDFview}.\footnote{The PISM developers find \t{ncview} to be the fastest routine way to look at PISM output files.}
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
 \begin{tabular}{@{}llll}\hline
@@ -589,7 +589,7 @@ mpiexec -n 8 pismr -bif_legacy init.nc -Mx 281 -My 281 -Mz 201 -Mbz 41 -gk -e 1.
 Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth the surface for a short 10 year run on a coarseer 40km grid.  Then we do a long simulation to complete 150,000 years on this coarse grid to approximate the temperature and age fields, assuming steady boundary conditions and fixed geometry.  Finally we do a brief 10 year run with evolving geometry on a finer 20km grid, but we go back to the original data for the ice thickness; this last stage involves regridding temperature but not thickness, in particular.
 
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Regriddable variables.  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
 \begin{tabular}{@{}llll}\hline
 \textbf{Flag} & \textbf{Variable} & \textbf{Comment}\\ \hline
@@ -622,7 +622,7 @@ Note that most of the time `\verb|N|' will be zero.  The exception is when the o
 
 Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-timestepping flag `\verb|$|'.
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Meaning of the adaptive time-stepping flag `\texttt{\$}' in `\texttt{(+    STEP[N\$])}'.}\label{tab:adaptiveflag}
 \begin{tabular}{@{}llll}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
@@ -709,7 +709,7 @@ If, as in the above situation, one wants to send all \verb|pismv| processes the 
 
 \newcommand\pid{\textsl{pid}}
 \newcommand\same{(\textsl{same})}
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Signalling PISM.  \pid~stands for the identifier of the running PISM process}\label{tab:signals}
 \begin{tabular}{@{}llll}\hline
 \textbf{Command}\phantom{bobbob} & \textbf{Signal}\phantom{bobbob} & \textbf{PISM behavior} \\ \hline
@@ -778,7 +778,7 @@ See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the is
 
 In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical code which is verified by \verb|pismv| is, however, exactly the same lines of code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the core class \verb|IceModel|; all PISM executables run the core class.)
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Exact solutions for verification.}\label{tab:tests}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -802,7 +802,7 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & \cite{BuelerEqui
 \end{tabular}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Running PISM to verify using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -875,7 +875,7 @@ Three example usages are \begin{itemize}
 \medskip
 Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
 
-FIXME: following is trivially out of date with ``mv\_rtol'' stuff
+FIXME: following is out of date; errors for surface values of w DO now decrease
 \scriptsize\begin{quote}\begin{verbatim}
 $ verifynow.py -n 2 -l 3 -t CEGIL
  VERIFYNOW using 2 processor(s) and 3 level(s) of refinement
@@ -1035,7 +1035,7 @@ The vertical grid is not specified in the EISMINT II writeup.  It seems that goo
 
 Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done in PISM.
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus the given options.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -1059,7 +1059,7 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 
 The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.  With the exception of ``\verb|-Lz|'', these options will only work if option ``\t{-eisII ?}'' is also set.
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Changing the default settings for the EISMINT II experiments in PISM.}\label{tab:eisIIoptions}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -1111,7 +1111,7 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 
 \noindent At the end of the above recipe the files [list] should appear.
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Options used in running ISMIP-HEINO in PISM.}\label{tab:heinooptions}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -1346,7 +1346,7 @@ Alternately one might want to change the hardness parameter from the default val
 \end{figure}
 
 \small
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Non-obvious options available and/or recommended with \texttt{pismd -ross}.}\label{tab:rossoptions}
 \begin{tabular}{@{}llll}\hline
 \textbf{Option} & \textbf{Explanation/Comments} \\ \hline
@@ -1392,7 +1392,7 @@ Chi^2 statistic for computed results compared to RIGGS is   5390.542
 Naturally, the question is ``does this $\chi^2$ value of $5390.5$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}.  The maximum computed horizontal ice speed above of $951.1$ m/a is lower than the maximum velocities reported by the other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (near the calving front, of course).
 
 \small
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Model performance index, $\chi^2$ (non-dimensional).  \protect{\textsl{(Reproduction of Table 1 in \cite{MacAyealetal}.)}}}\label{tab:chisqr}
 \begin{tabular}{@{}llll}\hline
 \textsl{Model} & $\chi^2$ & \textsl{Maximum velocity} \\
@@ -1679,7 +1679,7 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdefrestrict{datprefix}{PISM}{pisms -ismip H}  Specify base name for ISMIP-HEINO deliverable \verb|.dat| files.  See also \verb|-no_deliver|.
 
-\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Diagnostic viewers section.
+\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Appendix C.
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
@@ -1687,11 +1687,9 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
 
-\optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This option overrides the adaptime time-stepping and does $0.25$ year time steps anyway; \emph{will probably cause blowup so don't bother}.
-
 \optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:real}.
 
-\opt{full3Dout}  Save the model state with additional full velocity field within the three-dimensional computational box.  That is, save scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of roughly doubling the size of the output model state NetCDF file.
+\opt{full3Dout}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
 
 \optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
@@ -1700,8 +1698,6 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
 
 \opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
-
-\optdefrestrict{ismip}{H}{pisms}  Choose ISMIP simplified geometry experiment.  Only ``H'' for HEINO is allowed at this time.
 
 \opt{isoflux}  Isothermal runs can be done by two methods.  One may simply initialize with a constant temperature field and then turn off temperature evolution (see \verb|-no_temp|); in this case the horizontal velocity and the horizontal mass flux are computed by a vertical numerical integral.  If the option \verb|-isoflux| is used then the mass flux is computed by the usual isothermal, Glen formula without reference to the temperature field or the chosen flow law.
 
@@ -1715,7 +1711,7 @@ where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress d
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
 Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \verb|-law 4| (or \verb|-gk|).
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Choosing the flow law.}\label{tab:flowlaw}
 \small
 \begin{tabular}{@{}llll}\hline
@@ -1780,6 +1776,8 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{of}{n}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
 
+\optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
+
 \opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  See subsection \ref{subsect:pdd}.
 
 \optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
@@ -1794,8 +1792,6 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
-\optrestrict{pause}{pismd -ross,pismv -test I}    Pause for given number of seconds at the end of the run when the results are displayed.
-
 \optdefrestrict{plastic\und reg}{0.01 m/a}{pismv -test I}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  See \t{src/iceExactStreamModel.cc}.
 
 \opt{regrid}  See section \ref{sect:usage}.
@@ -1809,8 +1805,6 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
 
 \optrestrict{ross}{pisms}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
-
-\optdefrestrict{run}{ST}{pisms -ismip H}  ISMIP-HEINO has several run names: ST, T1, T2, B1, B2, S1, S2, S3.
 
 \optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
 
@@ -1834,15 +1828,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  A maximum value of \verb|-tempskip 5| is recommended to avoid too many CFL violations.
 
-\optdefrestrict{test}{A}{pismv}  Choose single character name of verification test.  Allowed values are A, B, C, D, E, F, G, H, I.  See the Verification section.
-
-\optrestrict{time1}{pisms -ismip H}  ISMIP-HEINO requires writing 2D planform \verb|.dat| files at four times in the interval $[150,200]\times 10^{3}$ years.  This specifies the time.  Note \verb|test/showheino.m| will compute the time from the other \verb|.dat| files.
-
-\optrestrict{time2}{pisms -ismip H}  See \verb|-time1| explanation.
-
-\optrestrict{time3}{pisms -ismip H}  See \verb|-time1| explanation.
-
-\optrestrict{time4}{pisms -ismip H}  See \verb|-time1| explanation.
+\optdefrestrict{test}{A}{pismv}  Choose single character name of verification test.  Current (PISM revision \PISMREV) allowed values are A, B, C, D, E, F, G, H, I, J, L.  See the Verification section.
 
 \optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
 
@@ -1875,6 +1861,23 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \opt{ye} Model year at which to end the run.
 
 \optdef{ys}{0} Model year at which to start the run.
+
+\begin{comment}
+% don't document ismip -H options
+ \optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This option overrides the adaptime time-stepping and does $0.25$ year time steps anyway; \emph{will probably cause blowup so don't bother}.
+
+\optdefrestrict{ismip}{H}{pisms}  Choose ISMIP simplified geometry experiment.  Only ``H'' for HEINO is allowed at this time.
+
+\optdefrestrict{run}{ST}{pisms -ismip H}  ISMIP-HEINO has several run names: ST, T1, T2, B1, B2, S1, S2, S3.
+
+\optrestrict{time1}{pisms -ismip H}  ISMIP-HEINO requires writing 2D planform \verb|.dat| files at four times in the interval $[150,200]\times 10^{3}$ years.  This specifies the time.  Note \verb|test/showheino.m| will compute the time from the other \verb|.dat| files.
+
+\optrestrict{time2}{pisms -ismip H}  See \verb|-time1| explanation.
+
+\optrestrict{time3}{pisms -ismip H}  See \verb|-time1| explanation.
+
+\optrestrict{time4}{pisms -ismip H}  See \verb|-time1| explanation.
+\end{comment}
 
 
 \clearpage\newpage
