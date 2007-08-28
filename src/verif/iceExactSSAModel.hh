@@ -32,13 +32,17 @@ public:
     PetscErrorCode         reportErrors();
 
 private:
-    char                       test;
-    PetscTruth                 exactOnly;
-    static const PetscScalar   m_schoof, L_schoof, aspect_schoof, H0_schoof,
-                               B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
-    
-    PetscErrorCode  taucSet();
-    PetscErrorCode  setInitStateAndBoundaryVels();
+    char       test;       // only 'I', 'J' supported
+    PetscTruth exactOnly;
+    static const PetscScalar   
+               m_schoof, L_schoof, aspect_schoof, H0_schoof,
+               B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
+    Vec*       vNuForJ;
+          
+    PetscErrorCode  fillFromExactSolution();
+    PetscErrorCode  taucSetI();
+    PetscErrorCode  setInitStateAndBoundaryVelsI();
+    PetscErrorCode  setInitStateJ();
 };
 
 #endif /* __iceExactSSAModel_hh */

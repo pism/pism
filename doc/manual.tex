@@ -1691,6 +1691,8 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:real}.
 
+\opt{full3Dout}  Save the model state with additional full velocity field within the three-dimensional computational box.  That is, save scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of roughly doubling the size of the output model state NetCDF file.
+
 \optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
 \optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:real}

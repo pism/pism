@@ -108,7 +108,7 @@ PetscErrorCode  IceModel::writeFiles(const char* basename) {
 }
 
   
-PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth fullDiagnostics) {
+PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth forceFullDiagnostics) {
   PetscErrorCode ierr;
 
   char b[PETSC_MAX_PATH_LEN];
@@ -139,10 +139,14 @@ PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth full
   if (strchr(fmt, 'n') != NULL) {
     strcpy(ncf, b);
     strcat(ncf, ".nc");
-    ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
-    if (fullDiagnostics == PETSC_TRUE) {
+    PetscTruth userWantsFull;
+    ierr = PetscOptionsHasName(PETSC_NULL, "-full3Dout", &userWantsFull); CHKERRQ(ierr);
+    if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
+      ierr = verbPrintf(1, grid.com, 
+            "Writing model state, with full 3D velocities, to file `%s'", ncf); CHKERRQ(ierr);
       ierr = dumpToFile_diagnostic_netCDF(ncf); CHKERRQ(ierr);
     } else {
+      ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
       ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
     }
   }
@@ -150,7 +154,7 @@ PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth full
   if (strchr(fmt, 'm') != NULL) {
     strcpy(mf, b);
     strcat(mf, ".m");
-    ierr = verbPrintf(1, grid.com, " ... dumping selected variables to Matlab file `%s'", mf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, " ... dumping certain variables to Matlab file `%s'", mf); CHKERRQ(ierr);
     ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
   }
   return 0;

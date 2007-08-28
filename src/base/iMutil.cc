@@ -685,6 +685,19 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     ierr = grid.rescale(grid.p->Lx, grid.p->Ly, my_Lz); CHKERRQ(ierr);
   }
 
+  // make sure the first vertical velocities do not use junk from uninitialized basal melt rate.
+  ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
+
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
+    
+  ierr = bedDefSetup(); CHKERRQ(ierr);
+
+  ierr = initPDDFromOptions(); CHKERRQ(ierr);
+
+  ierr = initSounding(); CHKERRQ(ierr);
+
+  tempskipCountDown = 0;
+
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);
   }
@@ -705,19 +718,6 @@ PetscErrorCode IceModel::afterInitHook() {
   }
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
-
-  // make sure the first vertical velocities do not use junk from uninitialized basal melt rate.
-  ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
-
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
-    
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-
-  ierr = initPDDFromOptions(); CHKERRQ(ierr);
-
-  ierr = setSoundingFromOptions(); CHKERRQ(ierr);
-  ierr = initSounding(); CHKERRQ(ierr);
-  tempskipCountDown = 0;
 
   // initialization should be done; report on starting state
   ierr = verbPrintf(2,grid.com, 

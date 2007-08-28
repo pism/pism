@@ -42,9 +42,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   PetscTruth      inFileSet, bifFileSet;
   char            inFile[PETSC_MAX_PATH_LEN];
 
-  // does user want to turn off actual numerical evolution and simply report the
-  //    exact solution ?
-  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"initializing Test %c ... \n",test); CHKERRQ(ierr);
 
   // input file not allowed
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
@@ -55,43 +53,87 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
     SETERRQ(2,"PISM input file not allowed for initialization of IceExactSSAModel");
   }
   
-  ierr = verbPrintf(2,grid.com,"initializing Test I ... \n"); CHKERRQ(ierr);
-
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
-  initialized_p = PETSC_TRUE;
-  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
-  
-  // set up 1000km by 240km by 3000m grid; note 240km = 6L where L = L_schoof
-  // try -Mx 101 -My 25 for 10km x 10km grid
-  ierr = grid.rescale(500e3, 120e3, 3000); CHKERRQ(ierr);
-
+    
   // fill in temperature and age; not critical I think
   const PetscScalar T0 = 263.15;  // completely arbitrary
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = VecSet(vT, T0); CHKERRQ(ierr);
   ierr = VecSet(vTb, T0); CHKERRQ(ierr);
-  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age, not yield stress
+  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age (not yield stress)
 
-  // so make sure we are using plastic till
-  if (createBasal_done == PETSC_TRUE) delete basal;
-  basal = new PlasticBasalType;
-  createBasal_done = PETSC_TRUE;
+  // set initial velocities in shelf (for start of iteration)
+  ierr = VecSet(vubar,0.0 / secpera); CHKERRQ(ierr);
+  ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
+  ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
+  ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
+  // clear 3D velocities too
+  ierr = VecSet(vu,0.0); CHKERRQ(ierr);
+  ierr = VecSet(vv,0.0); CHKERRQ(ierr);
+  ierr = VecSet(vw,0.0); CHKERRQ(ierr);
   
-  ierr = taucSet(); CHKERRQ(ierr);  // now fill vtauc with values for Schoof manufactured solution
-  
+  useSSAVelocity = PETSC_TRUE;
+  doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J
+  doSuperpose = PETSC_FALSE;
+  // do rest of base class initialization
+  initialized_p = PETSC_TRUE;
+  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
+
+  switch (test) {
+    case 'I':
+      // set up 1000km by 240km by 3000m grid; note 240km = 6L where L = L_schoof
+      // (so "-Mx 101 -My 25" gives 10km x 10km grid)
+      ierr = grid.rescale(500e3, 120e3, 3000); CHKERRQ(ierr);
+      // fill vtauc with values for Schoof solution:
+      ierr = taucSetI(); CHKERRQ(ierr);
+      // set up remaining stuff:
+      ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
+      // set flags, parameters affecting solve of stream equations
+      // so periodic grid works although h(-Lx,y) != h(Lx,y):
+      computeSurfGradInwardSSA = PETSC_TRUE;
+      useConstantNuForSSA = PETSC_FALSE;
+      useConstantHardnessForSSA = PETSC_TRUE;
+      constantHardnessForSSA = B_schoof;
+      ssaMaxIterations = 500;  
+      setSSAEpsilon(0.0);  // don't use this lower bound
+      break;
+    case 'J':
+      // first allocate space for nu (calculated from formula)
+      ierr = VecDuplicateVecs(vh, 2, &vNuForJ); CHKERRQ(ierr);
+      ierr = grid.rescale(200e3, 200e3, 1000); CHKERRQ(ierr);
+      ierr = setInitStateJ(); CHKERRQ(ierr);
+      leaveNuAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
+      computeSurfGradInwardSSA = PETSC_FALSE;
+      useConstantNuForSSA = PETSC_FALSE;
+      useConstantHardnessForSSA = PETSC_FALSE;
+      ssaMaxIterations = 500;
+      setSSAEpsilon(0.0);  // don't use this lower bound
+      break;
+    default:
+      SETERRQ(1,"Only tests I and J currently supported in IceExactSSAModel.");
+  }
+
+  // Communicate so that we can differentiate surface, and to set boundary conditions
+  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+
+  ierr = afterInitHook(); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode IceExactSSAModel::taucSet() {
+PetscErrorCode IceExactSSAModel::taucSetI() {
   PetscErrorCode ierr;
   PetscScalar **tauc;
 
   ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-
       const PetscScalar jfrom0
         = static_cast<PetscScalar>(j) - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
       const PetscScalar y = grid.p->dy * jfrom0;
@@ -101,21 +143,14 @@ PetscErrorCode IceExactSSAModel::taucSet() {
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  
   return 0;
 }
 
 
-PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVels() {
+PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   PetscErrorCode ierr;
-  const PetscScalar    Mx = grid.p->Mx, My = grid.p->My;
   PetscScalar    **uvbar[2], **mask, **h, **bed;
   
-  // set initial velocities in shelf for iteration
-  ierr = VecSet(vubar,0.0 / secpera); CHKERRQ(ierr);
-  ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
-  ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
-  ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
   ierr = VecSet(vMask,MASK_DRAGGING); CHKERRQ(ierr);
   ierr = VecSet(vH,H0_schoof); CHKERRQ(ierr);
 
@@ -130,13 +165,15 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVels() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk, myu, myv;
       const PetscScalar 
-                  ifrom0 = static_cast<PetscScalar>(i)-static_cast<PetscScalar>(Mx - 1)/2.0,
-                  jfrom0 = static_cast<PetscScalar>(j)-static_cast<PetscScalar>(My - 1)/2.0;
-      const PetscScalar myx = grid.p->dx*ifrom0, myy = grid.p->dy*jfrom0;
+                  ifrom0 = static_cast<PetscScalar>(i) 
+                           - static_cast<PetscScalar>(grid.p->Mx - 1)/2.0,
+                  jfrom0 = static_cast<PetscScalar>(j)
+                           - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
+      const PetscScalar myx = grid.p->dx * ifrom0, myy = grid.p->dy * jfrom0;
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(bed[i][j]), &junk, &myu, &myv); 
       h[i][j] = bed[i][j] + H0_schoof;
-      bool edge = ( (j == 0) || (j == My-1) );
+      bool edge = ( (j == 0) || (j == grid.p->My-1) );
       if (edge) {
         // set boundary condition which will apply to finite difference system:
         // staggered grid velocities at MASK_SHEET points at edges of grid
@@ -153,15 +190,66 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVels() {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);    
   ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);    
+  return 0;
+}
 
-  // Communicate so that we can differentiate surface and set boundary conditions
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
 
+PetscErrorCode IceExactSSAModel::setInitStateJ() {
+  PetscErrorCode ierr;
+  PetscScalar    **H, **h, **mask, **nu[2], **uvbar[2],
+                 ***u, ***v;
+  
+  ierr = VecSet(vbed,-5000.0); CHKERRQ(ierr); // assures shelf is floating
+  ierr = VecSet(vMask,MASK_FLOATING); CHKERRQ(ierr);
+
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);    
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);    
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
+  ierr = DAVecGetArray(grid.da2, vNuForJ[0], &nu[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vNuForJ[1], &nu[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar junk1, junk2, junk3, myu, myv;
+      const PetscScalar 
+                  ifrom0 = static_cast<PetscScalar>(i) 
+                           - static_cast<PetscScalar>(grid.p->Mx - 1)/2.0,
+                  jfrom0 = static_cast<PetscScalar>(j)
+                           - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
+      const PetscScalar myx = grid.p->dx * ifrom0, myy = grid.p->dy * jfrom0;
+      // set nu on staggered grid
+      exactJ(myx + 0.5*grid.p->dx, myy, &junk1, &nu[0][i][j], &junk2, &junk3);
+      exactJ(myx, myy + 0.5*grid.p->dy, &junk1, &nu[1][i][j], &junk2, &junk3);
+      // set H,h on regular grid
+      exactJ(myx, myy, &H[i][j], &junk1, &myu, &myv);
+      h[i][j] = (1.0 - ice.rho/ocean.rho) * H[i][j];
+      // special case at center point: here we indirectly set ubar,vbar 
+      // at (i,j) by marking this grid point as SHEET and setting staggered-grid
+      // version of ubar approriately; the average done in assembleSSARhs()
+      // for SHEET points puts our value of velocity onto regular grid point (i,j)
+      // and makes ubar=myu, vbar=myv there
+      if ( (i == floor((grid.p->Mx - 1)/2)) && (j == floor((grid.p->My - 1)/2)) ) {
+        mask[i][j] = MASK_SHEET;
+        uvbar[0][i-1][j] = myu;   uvbar[0][i][j] = myu;
+        uvbar[1][i][j-1] = myv;   uvbar[1][i][j] = myv;
+        for (PetscInt k=0; k<grid.p->Mz; k++) {
+          u[i][j][k] = 0.0;    v[i][j][k] = 0.0;
+        }
+      }
+    }
+  }  
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);    
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
+  ierr = DAVecRestoreArray(grid.da2, vNuForJ[0], &nu[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNuForJ[1], &nu[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
   return 0;
 }
 
@@ -175,6 +263,9 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
               gmaxuerr = 0.0, gmaxverr = 0.0;
   PetscScalar **u, **v;
 
+  if (test == 'J') {
+    ierr = verbPrintf(1,grid.com, "ERRORS NOT VALID FOR test J!!!\n"); CHKERRQ(ierr);
+  }
   ierr = verbPrintf(1,grid.com, 
           "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
 
@@ -221,85 +312,103 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   gavvecerr = gavvecerr/(grid.p->Mx*grid.p->My);
 
   ierr = verbPrintf(1,grid.com, 
-     "      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv\n");
+     "   maxvector   avvector  prcntavvec      maxu      maxv       avu       avv\n");
      CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, 
-            "    %11.4f%11.5f%12.5f%10.4f%10.4f%10.4f%10.4f\n", 
+            " %11.4f%11.5f%12.5f%10.4f%10.4f%10.4f%10.4f\n", 
             gmaxvecerr*secpera, gavvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
             gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, gavverr*secpera); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, 
+  ierr = verbPrintf(3,grid.com, 
      "(exact maximum of u is %11.4f (m/a))\n",exactmaxu*secpera); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
+  PetscErrorCode  ierr;
+  PetscScalar **ubar, **vbar, ***u, ***v;
+
+  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      PetscScalar junk1, junk2;
+      const PetscScalar 
+          ifrom0 = static_cast<PetscScalar>(i)
+                     - static_cast<PetscScalar>(grid.p->Mx - 1)/2.0,
+          jfrom0 = static_cast<PetscScalar>(j)
+                     - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
+      const PetscScalar myx = grid.p->dx * ifrom0, myy = grid.p->dy * jfrom0;
+      if (test == 'I') {
+        exactI(m_schoof, myx, myy, &junk1, &junk2, &ubar[i][j], &vbar[i][j]); 
+      } else if (test == 'J') {
+        exactJ(myx, myy, &junk1, &junk2, &ubar[i][j], &vbar[i][j]);
+      } else {
+        SETERRQ(1,"only tests I and J supported in IceExactSSAModel");
+      }
+      for (PetscInt k=0; k<grid.p->Mz; k++) {
+        u[i][j][k] = ubar[i][j];
+        v[i][j][k] = vbar[i][j];
+        // leave w alone for now; will be filled by call to broadcastSSAVelocity()
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode IceExactSSAModel::diagnosticRun() {
   PetscErrorCode  ierr;
-  PetscInt        pause_time;
-  PetscTruth      pause_p;
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, &pause_p); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "running Test %c ...\n", test); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "running Test I ...\n"); CHKERRQ(ierr);
+  // does user want to turn off actual numerical evolution (and save exact solution)?
+  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
   if (exactOnly == PETSC_TRUE) {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2,grid.com,
-  "$$$$$       YEAR (+     STEP[$]):     VOL    AREA    MELTF     THICK0     TEMP0\n");
-  CHKERRQ(ierr);
-  adaptReasonFlag = ' '; // no reason for no timestep!
-
-  ierr = setInitStateAndBoundaryVels(); CHKERRQ(ierr);
-
-  // set flags, parameters affecting solve of stream equations
-  useSSAVelocity = PETSC_TRUE;
-  computeSurfGradInwardSSA = PETSC_TRUE;  // so periodic grid works although h(-Lx,y) != h(Lx,y)
-  useConstantNuForSSA = PETSC_FALSE;
-  useConstantHardnessForSSA = PETSC_TRUE;
-  constantHardnessForSSA = B_schoof;
-  ssaMaxIterations = 500;  
-  setSSAEpsilon(0.0);  // don't use this lower bound
+  // print out some stats about input state
+  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0);
+           CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  adaptReasonFlag = ' '; // no reason for no timestep
+  tempskipCountDown = 0;
 
   if (exactOnly == PETSC_TRUE) { // just fill with exact solution
-    PetscScalar **u, **v, **bed;
-    ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        PetscScalar junk;
-        const PetscScalar 
-            ifrom0 = static_cast<PetscScalar>(i)
-                       - static_cast<PetscScalar>(grid.p->Mx - 1)/2.0,
-            jfrom0 = static_cast<PetscScalar>(j)
-                       - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
-        const PetscScalar myx = grid.p->dx * ifrom0, myy = grid.p->dy * jfrom0;
-        exactI(m_schoof, myx, myy, &bed[i][j], &junk, &u[i][j], &v[i][j]); 
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+    ierr = fillFromExactSolution(); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(4,grid.com,
-                      "  [using Schoof regularization constant = %10.5e (m^2/s^2)\n",
-                      PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof));
-    CHKERRQ(ierr);
-    ierr = basal->printInfo(4, grid.com); CHKERRQ(ierr);
-
-    // solve model equations
-    ierr = velocitySSA(); CHKERRQ(ierr);
+    // numerically solve ice shelf/stream equations
+    if (test == 'I') {
+      ierr = velocitySSA(); CHKERRQ(ierr);
+    } else if (test == 'J') {
+      ierr = velocitySSA(vNuForJ); CHKERRQ(ierr); // use locally allocated space w computed nu
+      ierr = VecDestroyVecs(vNuForJ, 2); CHKERRQ(ierr); // immediately de-allocate
+    }
   }
 
+  // fill in 3D velocities (u,v,w)
+  ierr = broadcastSSAVelocity(); CHKERRQ(ierr);
+  ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
+
   // report on result of computation (i.e. to standard out and to viewers)
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   ierr = summary(true,true); CHKERRQ(ierr);
-  ierr = updateViewers(); CHKERRQ(ierr);
   
-  if (pause_p == PETSC_TRUE) {
+  // update viewers and pause for a chance to view
+  ierr = updateViewers(); CHKERRQ(ierr);
+  PetscInt    pause_time = 0;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
+  if (pause_time > 0) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
   return 0;
 }
+

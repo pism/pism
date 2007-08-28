@@ -115,6 +115,9 @@ In the temperature dependent case the ice hardness is computed by the trapezoid 
 PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon) {
   PetscErrorCode ierr;
 
+  if (leaveNuAloneSSA == PETSC_TRUE) {
+    return 0;
+  }
   if (useConstantNuForSSA == PETSC_TRUE) {
     ierr = VecSet(vNu[0], constantNuForSSA); CHKERRQ(ierr);
     ierr = VecSet(vNu[1], constantNuForSSA); CHKERRQ(ierr);
@@ -568,12 +571,22 @@ PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateN
   return 0;
 }
 
+
 PetscErrorCode IceModel::velocitySSA() {
+  PetscErrorCode ierr;
+
+  Vec vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
+  ierr = velocitySSA(vNuDefault); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
+  // call this one directly if control over alloc of vNu[2] is needed (e.g. test J)
   PetscErrorCode ierr;
   KSP ksp = SSAKSP;
   Mat A = SSAStiffnessMatrix;
   Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
-  Vec vNu[2] = {vWork2d[0], vWork2d[1]};
   Vec vNuOld[2] = {vWork2d[2], vWork2d[3]};
   Vec vubarOld = vWork2d[4], vvbarOld = vWork2d[5];
   PetscReal   norm, normChange, epsilon;
@@ -738,23 +751,23 @@ PetscErrorCode IceModel::writeSSAsystemMatlab() {
 
 
 PetscErrorCode IceModel::broadcastSSAVelocity() {
+  // take ubar,vbar and update 3D horizontal velocities u,v
+  // (w gets update later from vertVelocityFromIncompressibility())
+
   PetscErrorCode ierr;
-  PetscScalar **mask, **b, **basalMeltRate, **ubar, **vbar, **ub, **vb;
-  PetscScalar ***u, ***v, ***w, **uvbar[2];
+  PetscScalar **mask, **ubar, **vbar, **ub, **vb;
+  PetscScalar ***u, ***v, **uvbar[2];
   PetscScalar locCFLmaxdt2D = maxdt;
   
   /* This updates the 3D velocity field so that, for example, the temperature eqn
      knows about the velocity in the non-SHEET regions.  Basal vels also get updated. */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
   if (doSuperpose == PETSC_TRUE) {
     ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
@@ -771,7 +784,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
         for (PetscInt k=0; k<grid.p->Mz; ++k) {
           u[i][j][k] = (addVels) ? u[i][j][k] + ubar[i][j] : ubar[i][j];
           v[i][j][k] = (addVels) ? v[i][j][k] + vbar[i][j] : vbar[i][j];
-
+/*
           //  no reason to upwind in this context; compare treatment of "div(U)" in
           //  massBalExplicitStep using expression div(Q) = U . grad H + div(U) H
           const PetscScalar u_x = (ubar[i+1][j] - ubar[i-1][j]) / (2.0*grid.p->dx);
@@ -784,6 +797,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
           if (includeBMRinContinuity == PETSC_TRUE) {
             w[i][j][k] -= capBasalMeltRate(basalMeltRate[i][j]);
           }
+*/
         }
         
         if (addVels) { // now update ubar,vbar by adding SIA contribution
@@ -798,20 +812,17 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
 
   if (doSuperpose == PETSC_TRUE) {
     ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-    // now communicate modified ubar, vbar
+    // now communicate modified ubar, vbar because modified
     ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
@@ -822,8 +833,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
   ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
 

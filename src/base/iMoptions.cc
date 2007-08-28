@@ -227,6 +227,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // -ys, -ye, -y options read in setStartRunEndYearsFromOptions()
  
+  ierr = setSoundingFromOptions(); CHKERRQ(ierr);
+
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }

@@ -151,6 +151,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     // all have no uplift or Hmelt
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
 
     ierr = createCompVecs(); CHKERRQ(ierr);
     if (yearsStartRunEndDetermined == PETSC_FALSE) {
@@ -173,7 +174,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
       case 'L':
         ierr = initTestL(); CHKERRQ(ierr);
         break;
-      default:  SETERRQ(1,"verify ERROR : desired test not implemented\n");
+      default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
     }
   }
 

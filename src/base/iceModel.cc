@@ -679,18 +679,20 @@ PetscErrorCode IceModel::diagnosticRun() {
 
   // print out some stats about input state
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
-  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0);
+           CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
-  ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
 
   // update basal till yield stress if appropriate; will modify and communicate mask
   if (doPlasticTill == PETSC_TRUE) {
     ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
   }
 
-  ierr = velocity(true); CHKERRQ(ierr);  // compute velocities (at depth); this is the point
+  ierr = velocity(true); CHKERRQ(ierr);  // compute velocities (at depth)
+
+  ierr = summary(true,true); CHKERRQ(ierr);
   
   // update viewers and pause for a chance to view
   ierr = updateViewers(); CHKERRQ(ierr);

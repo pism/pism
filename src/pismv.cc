@@ -60,12 +60,13 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsHasName(PETSC_NULL, "-no_report", &dontReport); CHKERRQ(ierr);
 
     // actually construct and run one of the derived classes of IceModel
-    if (test == 'I') {
+    if ((test == 'I') || (test == 'J')) {
       // run derived class (of IceModel) for plastic till ice stream
       IceExactSSAModel mSSA(g, *ice, test);  
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
         ierr = mSSA.reportErrors();  CHKERRQ(ierr);
       }
@@ -79,6 +80,7 @@ int main(int argc, char *argv[]) {
       ierr = mComp.setFromOptions(); CHKERRQ(ierr);
       ierr = mComp.initFromOptions(); CHKERRQ(ierr);
       ierr = mComp.run(); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
         if ((flowlawNumber != 1) && ((test == 'F') || (test == 'G'))) {
             ierr = verbPrintf(1,com, 
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
       ierr = mComp.writeFiles("verify",PETSC_FALSE); CHKERRQ(ierr);
     }
 
-    ierr = verbPrintf(2,com, " ... done\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, " ... done\n"); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

@@ -62,11 +62,10 @@ int main() {
     return 1;
   }
 
-  exactJ(x*1000.0,y*1000.0, &H, &nu, &u, &v);
-           
-  printf("\nResults from Test J:\n");
-  printf("  H   = %9.3f (m)     nu    = %10.3f (MPa a)\n",H,(nu*1.0e-6)/secpera);
-  printf("  u   = %9.3f (m/a)   v     = %10.3f (m/a)\n",u*secpera,v*secpera);
+  printf("\nResults from Test J (returned %d):\n", 
+         exactJ(x*1000.0,y*1000.0, &H, &nu, &u, &v));
+  printf("  H   = %10.3f (m)     nu    = %10.3f (MPa a)\n",H,(nu*1.0e-6)/secpera);
+  printf("  u   = %10.5f (m/a)   v     = %10.5f (m/a)\n",u*secpera,v*secpera);
 
   return 0;
 }
