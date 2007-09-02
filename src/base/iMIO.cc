@@ -272,6 +272,7 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Sigma2); CHKERRQ(ierr);
   ierr = VecViewDA2Matlab(vWork2d[0], viewer, "Sigmakd"); CHKERRQ(ierr);
 
+#if 0
   // make slice along y-axis of T; requires nontrivial transfer from 3D DA-based array into new
   // type of 2D DA-based array, I think
   { // explicit scoping to reduce chance of conflicts and memory leaks
@@ -325,6 +326,7 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
     ierr = VecDestroy(vTjd); CHKERRQ(ierr);
     ierr = DADestroy(daslice); CHKERRQ(ierr);
   }
+#endif
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
 
   ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);

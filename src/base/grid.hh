@@ -50,7 +50,11 @@ public:
   PetscErrorCode setCoordinatesDA();
   PetscErrorCode destroyDA();
   PetscErrorCode viewDA();
-  PetscErrorCode rescale(PetscScalar lx, PetscScalar ly, PetscScalar lz);
+  PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
+                         const PetscScalar lz);
+  PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
+                         const PetscScalar lz, const PetscTruth truelyPeriodic);
+  // OLD: PetscErrorCode rescale(PetscScalar lx, PetscScalar ly, PetscScalar lz);
 private:
   PetscTruth createDA_done;
 };

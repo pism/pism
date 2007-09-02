@@ -365,7 +365,7 @@ protected:
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
   PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
-  PetscErrorCode writeSSAsystemMatlab();
+  PetscErrorCode writeSSAsystemMatlab(Vec vNu[2]);
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();

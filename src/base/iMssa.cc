@@ -232,7 +232,7 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
 /*! 
 @cond CONTINUUM
 The SSA equations are in their clearest form
-    \f[ \frac{\partial T_{ij}}{\partial x_j} - \tau_{(b)i} = - f_i \f]
+    \f[ - \frac{\partial T_{ij}}{\partial x_j} + \tau_{(b)i} = f_i \f]
 where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
 (i.e. equation (2.6) in (Schoof 2006), and following (Morland 1987)), 
 and \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
@@ -241,18 +241,18 @@ These equations determine velocity in a more-or-less elliptic equation manner.  
 is the ice thickness and \f$h\f$ is the elevation of the surface of the ice.
 
 More specifically, the SSA equations are
-    \f[ 2 \frac{\partial}{\partial x}\left[\nu H \left(2 \frac{\partial u}{\partial x}
+    \f[ - 2 \frac{\partial}{\partial x}\left[\nu H \left(2 \frac{\partial u}{\partial x}
                                                        + \frac{\partial v}{\partial y}\right)\right]
-        + \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial y}
+        - \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial y}
                                                        + \frac{\partial v}{\partial x}\right)\right]
-        - \tau_{(b)x}
-        = \rho g H \frac{\partial h}{\partial x}, \f]
-    \f[ \frac{\partial}{\partial x}\left[\nu H \left(\frac{\partial u}{\partial y}
+        + \tau_{(b)x}
+        = - \rho g H \frac{\partial h}{\partial x}, \f]
+    \f[ - \frac{\partial}{\partial x}\left[\nu H \left(\frac{\partial u}{\partial y}
                                                        + \frac{\partial v}{\partial x}\right)\right]
-        + 2 \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial x}
+        - 2 \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial x}
                                                          + 2 \frac{\partial v}{\partial y}\right)\right]
-        - \tau_{(b)y}
-        = \rho g H \frac{\partial h}{\partial y}, \f]
+        + \tau_{(b)y}
+        = - \rho g H \frac{\partial h}{\partial y}, \f]
 where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
 of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity of the ice.  
 
@@ -428,7 +428,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
 /*! 
 @cond CONTINUUM
 The right side of the SSA equations is just
-   \f[ \rho g H \nabla h \f]
+   \f[ - \rho g H \nabla h \f]
 because, in particular, the basal stress is put on the left side of the system.  
 (See comment for assembleSSAMatrix().)  
 
@@ -683,17 +683,16 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
 
   // check if user wants the matrix, rhs, and soln vector saved in Matlab readable format
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
-    ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
+    ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
   }
   return 0;
 }
 
 
-PetscErrorCode IceModel::writeSSAsystemMatlab() {
+PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
   PetscErrorCode ierr;
   PetscViewer    viewer;
   char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
-  Vec            vNu[2] = {vWork2d[0], vWork2d[1]};
 
   strcpy(file_name,ssaMatlabFilePrefix);
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_%.0f.m", grid.p->year);

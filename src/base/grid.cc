@@ -200,7 +200,17 @@ PetscErrorCode IceGrid::destroyDA() {
 }
 
 
-PetscErrorCode IceGrid::rescale(PetscScalar lx, PetscScalar ly, PetscScalar lz) {
+PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly, 
+                                const PetscScalar lz) {
+  PetscErrorCode ierr;
+  
+  ierr = rescale(lx,ly,lz,PETSC_FALSE); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly, 
+                                const PetscScalar lz, const PetscTruth truelyPeriodic) {
   PetscErrorCode ierr;
 
   if (lx<=0) {
@@ -214,8 +224,14 @@ PetscErrorCode IceGrid::rescale(PetscScalar lx, PetscScalar ly, PetscScalar lz) 
   }
 
   p->Lx = lx; p->Ly = ly; p->Lz = lz;
-  p->dx = 2.0 * p->Lx / (p->Mx - 1);
-  p->dy = 2.0 * p->Ly / (p->My - 1);
+  if (truelyPeriodic == PETSC_TRUE) {
+    p->dx = 2.0 * p->Lx / (p->Mx);
+    p->dy = 2.0 * p->Ly / (p->My);
+  } else {
+    p->dx = 2.0 * p->Lx / (p->Mx - 1);
+    p->dy = 2.0 * p->Ly / (p->My - 1);
+  }
+
   p->dz = p->Lz / (p->Mz - 1);
   p->Lbz = p->dz * (p->Mbz - 1);
 

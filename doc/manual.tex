@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{174}
+\newcommand{\PISMREV}{175}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -747,11 +747,15 @@ As an example of this mechanism, first do
 
 \verb|pisms -eisII B -if foo.nc -y 40|
 
-\noindent In this 40 year run the ice sheet grows a bit.  Now observe how it behaves with the default positive degree day model:
+\noindent In this 40 year run the ice sheet grows a bit.  That is, the volume grows and the central thickness (``\verb|THICK0|'') grows.  
+
+Now observe how it the same saved ice sheet \verb|foo.nc| behaves with the default positive degree day model (which is not a part of EISMINT II, of course):
 
 \verb|pisms -eisII B -if foo.nc -y 40 -pdd|
 
-\noindent Note that this latter run is the same as
+\noindent The central thickness still grows, by nearly the same amount, but of course the center is in the accumlation zone and is not strongly affected by melting.  In this case with the positive degree day model the volume actually shrinks, however.
+
+Note that last run is the same as
 
 \verb|pisms -eisII B -if foo.nc -y 40 -pdd_summer_warming 15.0 -pdd_factor_snow 0.003 \|
 
@@ -761,6 +765,7 @@ As an example of this mechanism, first do
 
 A positive degree day model specific to the Greenland ice sheet is used in section \ref{sect:real}.
 
+[THE IDEAS IN \cite{CalovGreve05} ARE WORTHWHILE AND DESERVE IMPLEMENTATION.  WITH THESE IDEAS THERE WILL BE NO RESTRICTION TO HITTING THE INTEGER YEARS.  BUT THE TRUE RANDOMNESS WILL BE GONE; IT MAY BE WORTH KEEPING THE OLD VERSTION AS AN OPTION.]
 
 
 \clearpage\newpage

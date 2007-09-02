@@ -75,7 +75,7 @@ int exactJ(const double x, const double y,
            double *H, double *nu, double *u, double *v) {
   // return 0 if successful
   
-  const double L = 200.0e3;      /* 200 km half-width */
+  const double L = 300.0e3;      /* 300 km half-width */
   const double H0 = 500.0;       /* 500 m typical thickness */
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   const double nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */

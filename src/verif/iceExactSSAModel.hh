@@ -42,9 +42,12 @@ protected:
     PetscErrorCode  setInitStateJ();
 
 private:
+    // constants for I
     static const PetscScalar   
                m_schoof, L_schoof, aspect_schoof, H0_schoof,
                B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
+    // constants for J
+    static const PetscScalar LforJ;
 };
 
 #endif /* __iceExactSSAModel_hh */
