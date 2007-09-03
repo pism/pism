@@ -172,7 +172,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
           if (! finite(nu[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nu[%d][%d][%d] = %e\n", o, i, j, nu[o][i][j]);
             CHKERRQ(ierr); 
-            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", u_x, u_y, v_x, v_y);
+            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
+                               u_x, u_y, v_x, v_y);
             CHKERRQ(ierr);
           }
           

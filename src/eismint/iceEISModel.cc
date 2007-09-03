@@ -57,7 +57,8 @@ PetscErrorCode IceEISModel::setFromOptions() {
   setIsDrySimulation(PETSC_TRUE);
   setDoGrainSize(PETSC_FALSE);
   setEnhancementFactor(1.0);
-  setIncludeBMRinContinuity(PETSC_FALSE); // basal melt does not change computation of vertical velocity
+  setIncludeBMRinContinuity(PETSC_FALSE); // so basal melt does not change 
+                                          // computation of vertical velocity
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
   
   // make bedrock material properties into ice properties
@@ -68,7 +69,8 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example. */
-  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
+            CHKERRQ(ierr);
 
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
@@ -161,11 +163,19 @@ PetscErrorCode IceEISModel::initFromOptions() {
         ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
         break;
       default:  
-        SETERRQ(1,"option -eisII value not understood; EISMINT II experiment of given name may not exist.\n");
+        SETERRQ(1,"option -eisII value not understood;"
+                  " EISMINT II experiment of given name may not exist.\n");
     }
 
+    if ((expername == 'I') || (expername == 'J')) {
+      ierr = generateTroughTopography(); CHKERRQ(ierr);
+    } 
+    if ((expername == 'K') || (expername == 'L')) {
+      ierr = generateMoundTopography(); CHKERRQ(ierr);
+    } 
     ierr = initAccumTs(); CHKERRQ(ierr);
     ierr = fillintemps(); CHKERRQ(ierr);
+
     initialized_p = PETSC_TRUE;
   }
 
@@ -173,22 +183,6 @@ PetscErrorCode IceEISModel::initFromOptions() {
 
   if (infileused) {
     ierr = initAccumTs(); CHKERRQ(ierr); // just overwrite accum and Ts with EISMINT II vals
-  }
-
-  // get user-specified file name from which to read bed topography;
-  // this is allowed for any experiment, but makes sense for experiments I and K
-  // (noting J and L should -if the result of I and K, resp.)
-  PetscTruth      topoSet = PETSC_FALSE;
-  char            topoFile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-topo", topoFile,
-                               PETSC_MAX_PATH_LEN, &topoSet); CHKERRQ(ierr);
-  if (topoSet == PETSC_TRUE) {
-    ierr = getBedTopography(topoFile); CHKERRQ(ierr);
-  } else if ((expername == 'I') || (expername == 'K')) {
-    ierr = verbPrintf(2, grid.com, 
-           "WARNING: no option -topo set for EISMINT II experiment %c;\n"
-           "         continuing with current bed topography ...\n",expername); 
-           CHKERRQ(ierr);
   }
   
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
@@ -308,6 +302,68 @@ PetscErrorCode IceEISModel::fillintemps() {
 }
 
 
+PetscErrorCode IceEISModel::generateTroughTopography() {
+  PetscErrorCode  ierr;
+  // computation based on
+  //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
+  // by Tony Payne, 6 March 1997
+  
+  const PetscScalar    slope = -1.333e-3;
+  const PetscScalar    w = 200.0e3;  // trough width
+  const PetscScalar    L = 750.0e3;
+  const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
+  const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
+  PetscScalar          topg, **b;
+
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar nsd = i * dx, ewd = j *dy;
+      if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
+           && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
+        topg = 1000.0 + PetscMin(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
+      } else {
+        topg = 1000.0;
+      }
+      b[i][j] = topg;
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+
+  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceEISModel::generateMoundTopography() {
+  PetscErrorCode  ierr;
+  // computation based on
+  //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
+  // by Tony Payne, 6 March 1997
+  
+  const PetscScalar    slope = 250.0;
+  const PetscScalar    w = 150.0e3;  // mound width
+  const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
+  PetscScalar          topg, **b;
+
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar nsd = i * dx, ewd = j *dy;
+      topg = PetscAbs(slope * sin(pi * ewd / w) + slope * cos(pi * nsd / w));
+      b[i][j] = topg;
+    }
+  }
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+
+  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  return 0;
+}
+
+
+#if 0
 PetscErrorCode IceEISModel::getBedTopography(const char* topoFile) {
   PetscErrorCode  ierr;
   int             ncid, stat, bid;
@@ -347,6 +403,7 @@ PetscErrorCode IceEISModel::getBedTopography(const char* topoFile) {
   }
   return 0;
 }
+#endif
 
 
 // reimplement IceModel::basalVelocity() which is virtual; basalVelocity() is 

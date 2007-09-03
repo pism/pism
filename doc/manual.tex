@@ -467,25 +467,27 @@ Of course the statement ``attempt to'' maintain is important because PISM does n
 
 \subsection{The flow-type mask} \label{subsect:mask}  
 
-\subsection{Schoof's plastic till free boundary problem for ice streams}  We describe an example based on EISMINT II experiment I.  This experiment is documented in \cite{EISIIdescribe},\footnote{Experiment I is not discussed in \cite{EISMINT00} because the results of intercomparison for experiment I were ``straightforward results with little variability between groups''.} and it is identical to experiment A except for having ``trough'' bed topography.   As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.
+\subsection{Schoof's plastic till free boundary problem for ice streams}  In \cite{SchoofStream} Christian Schoof supposes a model for plastic failure of the basal till under ice sheets and generates an associated free boundary problem for the SSA.  This is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by the plastic failure of the till and the balance of (in-plane) stresses.
 
-The following run will start us off by building up the ice sheet for experiment I for 10,000 model years:
+To demonstrate PISM's implementation of Schoof's model we describe an example based on EISMINT II experiment I.  This experiment is documented in \cite{EISIIdescribe}, but experiment I is not discussed in the published intercomparison \cite{EISMINT00} because the results for experiment I were ``straightforward results with little variability between groups''.  Experiment I is identical to experiment A except for having ``trough'' bed topography.   As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  We use it to build an ice sheet which ``ought'' to have an ice stream.
 
-\verb|pisms -eisII I -Mx 61 -My 61 -Mz 201 -topo test/eisII/trough.nc \|
+The following run builds the ice sheet for experiment I for the first 10,000 model years, at which point it is of nearly maximum volume in the 200,000 year run specified in EISMINT II:
 
-\verb|    -y 10000 -o eis2I10k >> eis2I10k.out &|
+\verb|pisms -eisII I -Mx 61 -My 61 -Mz 201 -y 10000 -o eis2I10k|
 
 \noindent To view the resulting ice sheet one might do
 
 \verb|pisms -eisII I -if eis2I10k.nc -d bHh|
 
-\noindent to see the geometry (bed, thickness, surface elevation).  We see the trough bed topography and its effect on the horizontal extent of the ice sheet.  Also do
+\noindent (and kill or Ctrl-C this unneeded run when one has seen enough).  Thereby one sees the trough bed topography and its effect on the horizontal extent and thickness of the ice sheet.  Also do
 
 \verb|pisms -eisII I -if eis2I10k.nc -d 0cLT|
 
-\noindent to see the horizontal velocity (surface and vertically-averaged), effective thickness of the till water, and basal temperature.
+\noindent to see the (horizontal) speed of the ice, effective thickness of the till water, and the basal temperature.
 
-Note that a significant fraction of the base is at the pressure-melting temperature but that the effective thickness of the till water is zero.  This is because \verb|pisms -eisII| enforces zero stored melt water as a special simplification, for the EISMINT II tests \cite{EISMINT00}, of PISM's conservation of energy model.  On the other hand the yield stress of the till, in PISM's default plastic till model, is tied to the effective thickness of the basal water.  Therefore let us continue the run, but letting PISM's default energy model build up a nonzero amount of basal water:
+Note that a significant fraction of the base is at the pressure-melting temperature but that the effective thickness of the till water is zero.  This is because \verb|pisms -eisII| enforces zero stored melt water as a special simplification of PISM's default conservation of energy model for the EISMINT II tests \cite{EISMINT00}.
+
+On the other hand, the yield stress of the till in PISM's default plastic till model is tied to the effective thickness of the basal water.  Therefore we continue the run but let PISM's default energy model build up a nonzero amount of basal water:
 
 \verb|pisms -eisII I -if eis2I10k.nc -track_Hmelt -y 1000 -o eis2Iwmelt|
 
@@ -493,21 +495,20 @@ Note that a significant fraction of the base is at the pressure-melting temperat
 
 \verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0HLT|
 
-\noindent In particular we see that the effective thickness of the till water has increased to its maximum of 2 m in much of the area where the base is at the pressure-melting temperature.  In particular there is a layer of till water at the base of the ice in the trough part of the ice sheet.
-
-Now we turn on Schoof's plastic till ice stream model:
+\noindent In particular we see that the effective thickness of the till water has increased to its maximum of 2 m in much of the area where the base is at the pressure-melting temperature.  In particular there is a layer of till water at the base of the ice in the trough part of the ice sheet.  For comparison purposes we also continue with the next 1000 years of this run:
 
 \verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -o eis2Isia|
 
-\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -ssa -plastic -super -o eis2Iplastic|
+Now we turn on Schoof's plastic till ice stream model starting with the saved state \verb|eis2Iwmelt.nc|:
+
+\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 \|
+
+\verb|  -ssa -plastic -super -o eis2Iplastic|
 
 
 [THIS PRODUCES TOO LITTLE SLIDING BUT IS ROUGHLY THE RIGHT INVOCATION.  PLAY WITH THE PARAMETERS IN THE BASAL YIELD STRESS MODEL?]
 
-[NOTE eis2Iplastic.nc SHOWS SERIOUS ASYMMETRY.  LIKEWISE IF ONE DOES 
-
-\verb|ncpdq -a x,y trough.nc -o trough_swap.nc| TO ROTATE THE TROUGH, THERE IS STILL ASYMMETRY]
-
+\bigskip
 This kind of plastic till free boundary problem is also solved by test I in the verification suite.  Here is an example run with some viewers:
 
 \verb|pismv -test I -Mx 5 -My 500 -d ncqu -verbose|
@@ -1030,7 +1031,7 @@ As of August 2007, the PISM developers plan to participate in the upcoming ISMIP
 The experiments differ from each other in their various combinations of surface temperature and accumulation parameterizations.  Also, experiments H and G involve basal sliding, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
 
 In addition to the seven experiments published in \cite{EISMINT00}, there were an additional five experiments described in the EISMINT II intercomparison description 
-\cite{EISIIdescribe}, labeled E, I, J, K, and L.  These experiments share most features, itemized above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat topography.  Experiments K and L are similar to experiment C but with non-flat topography.  In the PISM directory the two needed topography files are at \verb|test/eisII/trough.nc| and \verb|test/eisII/mound.nc|.  See table \ref{tab:eisII} for how to run these experiments.
+\cite{EISIIdescribe}, labeled E, I, J, K, and L.  These experiments share most features, itemized above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat topography.  Experiments K and L are similar to experiment C but with non-flat topography.  See table \ref{tab:eisII} for how to run these experiments.
 
 The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.  Thus a reasonable experiment A run on one processor is
 
@@ -1053,11 +1054,9 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 \verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIG| & sliding (regardless of temperature) \\
 \verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH| & melt-temperature activated sliding \\ \hline
 \verb|-eisII E -if eisIIA.nc -y 2e5 -o eisIIE| & shifted accumulation/temperature maps \\
-\verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 \| & trough topography \\
-\verb|     -topo test/eisII/trough.nc -o eisIII| &  \\
+\verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIII| & trough topography \\
 \verb|-eisII J -if eisIII -y 2e5 -o eisIIJ| & trough topography and less snow \\
-\verb|-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 \| & mound topography \\
-\verb|     -topo test/eisII/mound.nc -o eisIIK| &  \\
+\verb|-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK| & mound topography \\
 \verb|-eisII L -if eisIIK -y 2e5 -o eisIIL| & mound topography and less snow \\
 \hline\normalsize
 \end{tabular}\end{table}
@@ -1075,8 +1074,6 @@ The EISMINT II experiments can be run with various modifications of the default 
 \verb|-ST| & $1.67 \times 10^{-2}$ [\emph{all}] & K/km & radial gradient of surface temperature\\
 \verb|-Tmin| & 238.15 [ACDEGHIJKL], & K & max of surface temperature \\
  & 243.15[B], 223.15[F] & & \\
-\verb|-topo| &  &  & give location of bed topography file  \\
- &  &  & (a NetCDF file with variable ``\t{b}'')  \\
 \verb|-track_Hmelt| &  &  & compute effective thickness of basal melt \\
  &  &  & water (override default for EISMINT II) \\
 \verb|-Lz| & 4500 [AE], 4000 [BCD], & m & height of the computational box \\
@@ -1834,6 +1831,12 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  A maximum value of \verb|-tempskip 5| is recommended to avoid too many CFL violations.
 
 \optdefrestrict{test}{A}{pismv}  Choose single character name of verification test.  Current (PISM revision \PISMREV) allowed values are A, B, C, D, E, F, G, H, I, J, L.  See the Verification section.
+
+\optdef{till\und cohesion}{5.0e3}  Cohesion used for computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Units of Pa; note 5\,kPa = 0.05\,bar.
+
+\optdef{till\und friction\und angle}{12}  Friction angle used for computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Units of degrees; note $12^\circ$ gives $\mu = \tan(12^\circ) = 0.21256$.
+
+\optdef{till\und pw\und fraction}{0.95}  Pore water pressure is this fraction of the overburden pressure when computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Pure number (no units).
 
 \optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
 

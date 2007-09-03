@@ -55,7 +55,6 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
 
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
-      // ierr = verticalVelocitySIARegular(); CHKERRQ(ierr);
     }
   }  // if computeSIAVelocities
 

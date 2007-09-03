@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
+#include <cmath>
 #include "iceModel.hh"
 
 // The order of precedence for setting parameters in PISM is:
@@ -135,8 +136,10 @@ const PetscScalar DEFAULT_REGULARIZING_VELOCITY_SCHOOF = 1.0 / secpera;  // 1 m/
 const PetscScalar DEFAULT_REGULARIZING_LENGTH_SCHOOF = 1000.0e3;         // 1000km is largish for dim of stream/shelf
 const PetscScalar DEFAULT_SSA_RELATIVE_CONVERGENCE = 1.0e-4;
 
+// pure number; pore water pressure is this fraction of overburden:
+const PetscScalar DEFAULT_TILL_PW_FRACTION = 0.95;  
 const PetscScalar DEFAULT_TILL_C_0 = 5.0e3;  // Pa; 5kPa = 0.05 bar; cohesion of till
-const PetscScalar DEFAULT_TILL_MU = 0.2125565616700221;  // = tan(12^o); till friction angle
+const PetscScalar DEFAULT_TILL_THETA = 12.0;  // pure number; tan(12^o) = 0.21256; till friction angle
 
 PetscErrorCode IceModel::setDefaults() {
 
@@ -173,8 +176,9 @@ PetscErrorCode IceModel::setDefaults() {
   leaveNuAloneSSA = PETSC_FALSE;
   strcpy(ssaMatlabFilePrefix, "pism_SSA");
 
+  plastic_till_pw_fraction = DEFAULT_TILL_PW_FRACTION;
   plastic_till_c_0 = DEFAULT_TILL_C_0;
-  plastic_till_mu = DEFAULT_TILL_MU;
+  plastic_till_mu = tan((pi/180.0)*DEFAULT_TILL_THETA);
 
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);

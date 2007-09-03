@@ -107,11 +107,15 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
       } else { // grounded
         mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
         const PetscScalar overburdenP = ice.rho * grav * H[i][j];
+#if 0
 //          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
 //          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
 //          const PetscScalar pw = porewater_gamma * overburdenP;
         const PetscScalar bedfrac = PetscMax(-bed[i][j],0.0) / 1000.0;
         const PetscScalar pw = (0.85 + 0.1 * PetscMin(bedfrac,1.0)) * overburdenP;
+#else
+        const PetscScalar pw = plastic_till_pw_fraction * overburdenP;
+#endif
         const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;  // note Hmelt[i][j]=0 if frozen
         tauc[i][j] = plastic_till_c_0 + plastic_till_mu * (overburdenP - lambda * pw);
       }

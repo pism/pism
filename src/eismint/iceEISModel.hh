@@ -42,8 +42,10 @@ private:
          const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
          const PetscScalar mu);
 
-    // for experiments I and K (also J,L indirectly): read NetCDF files for bed topography:
-    PetscErrorCode getBedTopography(const char* topoFile); 
+    // for experiments I,J and K,L, respectively:
+    PetscErrorCode generateTroughTopography();
+    PetscErrorCode generateMoundTopography();
+
 };
 
 #endif /* __iceEISModel_hh */

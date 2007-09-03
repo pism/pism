@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
+#include <cmath>
 #include "iceModel.hh"
 
 // Process command line options.  This is called by a driver
@@ -214,13 +215,21 @@ PetscErrorCode  IceModel::setFromOptions() {
     doTempSkip = PETSC_TRUE;
   }
 
-  // till cohesion c_0 and till friction angle are relevant in IceModel::updateYieldStressFromHmelt()
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_cohesion", &plastic_till_c_0, PETSC_NULL); CHKERRQ(ierr);
+  // till pw_fraction, till cohesion, and till friction angle are only relevant in
+  //   IceModel::updateYieldStressFromHmelt()
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_pw_fraction", &plastic_till_pw_fraction,
+           PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_friction_angle", &plastic_till_mu, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_cohesion", &plastic_till_c_0, PETSC_NULL);
+           CHKERRQ(ierr);
 
-//  ierr = verbPrintf(1,grid.com,"\n   [plastic_till_c_0 = %9.2f, plastic_till_mu = %9.6f]\n",
-//                    plastic_till_c_0, plastic_till_mu); CHKERRQ(ierr);
+  PetscScalar till_theta;
+  PetscTruth  till_thetaSet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_friction_angle", &till_theta, &till_thetaSet);
+           CHKERRQ(ierr);
+  if (till_thetaSet == PETSC_TRUE) {
+    plastic_till_mu = tan((pi/180.0)*till_theta);
+  }
 
   // verbosity options: more info to standard out.  see iMutil.cc
   ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
