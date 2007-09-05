@@ -72,28 +72,35 @@ PetscErrorCode IceModel::initBasalTillModel() {
 }
 
 
+//! Update the till yield stress for the plastic till model, based on pressure and stored till water.
+/*! 
+@cond CONTINUUM
+We implement formula (2.4) in C. Schoof 2006 "A variational approach to ice stream flow", J. Fluid Mech. vol 556 pp 227--251.  That formula is
+    \f[   \tau_c = \mu (\rho g H - p_w)\f]
+We modify it by:
+
+    (1) adding a small till cohesion \f$c_0\f$ (see Paterson 3rd ed table 8.1);
+
+    (2) replacing \f$p_w \to \lambda p_w\f$ where \f$\lambda =\f$ Hmelt / DEFAULT_MAX_HMELT;
+       thus \f$0 \le \lambda \le 1\f$ always while \f$\lambda = 0\f$ when the bed is frozen; and
+
+    (3) computing porewater pressure \f$p_w\f$ as a fixed fraction \f$\varphi\f$ of the overburden pressure \f$\rho g H\f$.
+
+With these replacements our formula looks like
+    \f[   \tau_c = c_0 + \mu \left(1 - \lambda \varphi\right) \rho g H \f]
+Note also that \f$\mu = \tan(\theta)\f$ where \f$\theta\f$ is a ``friction angle''.  The parameters \f$c_0\f$, \f$\varphi\f$, \f$\theta\f$ can be set by options -till_cohesion, -till_pw_fraction, and -till_friction_angle, respectively.
+
+@endcond
+ */
 PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   PetscErrorCode  ierr;
   // only makes sense when doPlasticTill == TRUE
-  // we implement formula (2.4) in C. Schoof 2006 "A variational approach to ice
-  // stream flow", J. Fluid Mech. vol 556 pp 227--251:
-  //  (2.4)   \tau_c = \mu (\rho g H - p_w)
-  // we modify it by:
-  //   1. adding a small till cohesion (see Paterson 3rd ed table 8.1)
-  //   2. replacing   p_w --> \lambda p_w   where \lambda = Hmelt / DEFAULT_MAX_HMELT;
-  //      thus 0 <= \lambda <= 1 and \lambda = 0 when bed is frozen 
-  //   3. computing a porewater pressure p_w which is the max of 0.95 * overburden
-  //      and the porewater pressure computed by formula (4) in 
+  //      (compare the porewater pressure computed by formula (4) in 
   //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964;
   //      the modification of this porewater pressure as in Lingle&Brown 1987 is not 
   //      implementable because the "elevation of the bed at the grounding line"
-  //      is at an unknowable location (we are not doing a flow line model!)
+  //      is at an unknowable location as we are not doing a flow line model!)
 
-//  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
-//  plastic_till_c_0 = 5.0e3;
-//  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
-//  plastic_till_mu = 0.2125565616700221;  // = tan(12^o); till friction angle
-    
   PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
@@ -108,6 +115,10 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
         mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
         const PetscScalar overburdenP = ice.rho * grav * H[i][j];
 #if 0
+//  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
+//  plastic_till_c_0 = 5.0e3;
+//  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
+//  plastic_till_mu = 0.2125565616700221;  // = tan(12^o); till friction angle
 //          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
 //          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
 //          const PetscScalar pw = porewater_gamma * overburdenP;
@@ -126,7 +137,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-  // communicate mask
+  // communicate possibly updated mask
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   return 0;

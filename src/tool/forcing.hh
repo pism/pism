@@ -36,8 +36,8 @@ For now, when using pgrn, for each of the -dTforcing and -dSLforcing options, a 
 #define DATA1D_CONST_PIECE_BCK_INTERP  1
 #define DATA1D_LINEAR_INTERP           2
 
-//! Class for reading and storing one-dimensional data on each processor.
-/*! This class is a general facility for reading one-dimensional data from a
+// Class for reading and storing one-dimensional data on each processor.
+/* This class is a general facility for reading one-dimensional data from a
     NetCDF file and putting a copy of it on each processor, and for accessing it
     either by integer index or by giving the value of the independent variable and
     interpolating.

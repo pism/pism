@@ -384,6 +384,8 @@ PetscScalar ViscousBasalType::drag(PetscScalar coeff, PetscScalar tauc,
   return coeff;
 }
 
+const PetscScalar PlasticBasalType::DEFAULT_PLASTIC_REGULARIZE = 0.01 / secpera; 
+
 PlasticBasalType::PlasticBasalType() {
   PetscErrorCode ierr;
   PetscTruth plasticRegSet;
@@ -410,6 +412,4 @@ PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
   return tauc / sqrt(PetscSqr(plastic_regularize)
                      + PetscSqr(vx) + PetscSqr(vy));
 }
-
-const PetscScalar PlasticBasalType::DEFAULT_PLASTIC_REGULARIZE = 0.01 / secpera; 
 

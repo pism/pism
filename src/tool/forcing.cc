@@ -45,8 +45,8 @@ Data1D::~Data1D() {
 }
 
 
-//! Read data from NetCDF file (specified by a file name) into a Data1D.
-/*! Takes NetCDF file name and names of variables for independent variable
+// Read data from NetCDF file (specified by a file name) into a Data1D.
+/* Takes NetCDF file name and names of variables for independent variable
     (e.g. time variable) and dependent variable (e.g. temperature anomaly in
     case of ice core data).  Creates instance of Data1D class.  Reads data on
     processor zero.  Allocates sequential Vec on each processor.  Broadcasts

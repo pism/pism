@@ -84,11 +84,7 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   top0ctx_created = PETSC_FALSE;
   createVecs_done = PETSC_FALSE;
   createViewers_done = PETSC_FALSE;
-  ierr = initIceParam(grid.com, &grid.p);
-  if (ierr != 0) {
-    verbPrintf(1,grid.com, "Error setting IceParams (in IceGrid).\n");
-    PetscEnd();
-  }        
+
   ierr = setDefaults();
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
@@ -115,6 +111,33 @@ IceModel::~IceModel() {
 
 
 //! Allocate all Vecs defined in IceModel.
+/*! Initialization of an IceModel is confusing.  Here is a description of the intended order:
+	\li 1. The constructor for IceModel.  Note IceModel has a member "grid", of class IceGrid. 
+	   Note grid.p, an IceParam, is also constructed; this sets 
+	   defaults for (grid.p->)Mx,My,Mz,Mbz,Lx,Ly,Lz,Lbz,dx,dy,dz,year.
+	\li [1.5] derivedClass::setFromOptions() to get options special to derived class
+	\li 2. setFromOptions() to get all options *including* Mx,My,Mz,Mbz
+	\li [2.5] initFromFile_netCDF() which reads Mx,My,Mz,Mbz from file and overwrites previous; if 
+	   this represents a change the user is warned
+	\li 3. createDA(), which uses only Mx,My,Mz,Mbz
+	\li 4. createVecs() uses DA to create/allocate Vecs
+	\li [4.5] derivedClass:createVecs() to create/allocate Vecs special to derived class
+	\li 5. afterInitHook() which changes Lx,Ly,Lz if set by user
+
+Note driver programs call only setFromOptions() and initFromOptions() (for IceModel 
+or derived class).
+
+Note IceModel::setFromOptions() should be called at the end of derivedClass:setFromOptions().
+
+Note 2.5, 3, and 4 are called from initFromFile() in IceModel.
+
+Note 3 and 4 are called from initFromOptions() in some derived classes (e.g. IceCompModel) 
+in cases where initFromFile() is not called.
+
+Note step 2.5 is skipped when bootstrapping (-bif and bootstrapFromFile_netCDF()) or in
+those derived classes which can start with no input files, e.g. IceCompModel and IceEISModel.
+That is, 2.5 is only done when starting from a saved model state.
+*/
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
 
@@ -179,6 +202,10 @@ PetscErrorCode IceModel::createVecs() {
 }
 
 
+//! De-allocate all Vecs defined in IceModel.
+/*! 
+Undoes the actions of createVecs().
+ */
 PetscErrorCode IceModel::destroyVecs() {
   PetscErrorCode ierr;
 
@@ -378,9 +405,20 @@ PetscTruth IceModel::isInitialized() const {
 }
 
 
+//! Update the surface elevation and the flow-type mask when the geometry has changed.
+/*!
+This procedure should be called whenever necessary to maintain consistency of geometry.
+For instance, it should be called when either ice thickness or bed elevation change. 
+In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
+other hand, we want the mask to reflect that the ice is floating if the floatation 
+criterion applies at a point.
+
+There is one difficult case.  When a point was floating and becomes grounded we generally
+do not know whether to mark it as \c MASK_SHEET so that the SIA applies or \c MASK_DRAGGING
+so that the SSA applies.  For now there is a vote-by-neighbors scheme (among the grounded 
+neighbors).  When the \c MASK_DRAGGING points have plastic till bases this is not an issue.
+ */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
-  // should be called when either ice thickness or bed elevation change, to 
-  // maintain consistency of geometry
   PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask, ***T;
   const int MASK_GROUNDED_TO_DETERMINE = 999;
@@ -469,6 +507,48 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 }
 
 
+/// Update the thickness from the velocity field and the surface and basal mass balance.
+/*! 
+@cond CONTINUUM
+The partial differential equation describing the conservation of mass in the map-plane
+(parallel to the geoid) is
+  \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
+where 
+  \f[ \mathbf{q} = \bar{\mathbf{U}} H.\f]
+In these equations \f$H\f$ is the ice thickness, 
+\f$M\f$ is the surface mass balance (accumulation or ablation), \f$S\f$ is the basal 
+mass balance (e.g. basal melt), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
+horizontal velocity of the ice.  Note \f$\bar{\mathbf{U}} = (\bar u, \bar v)\f$ in the 
+notation used here.  The map-plane flux of the ice \f$\mathbf{q}\f$ is defined by the 
+above formula.
+
+This procedure massBalExplicitStep() uses this conservation of mass equation to update 
+the ice thickness.
+@endcond
+
+@cond NUMERIC
+This method is first-order explicit in time.  The derivatives in \f$\nabla \cdot \mathbf{q}\f$ 
+are computed by centered finite difference 
+methods.  In the case of the SIA the value of \f$\bar{\mathbf{U}}\f$ is already stored on the 
+staggered grid by velocitySIAStaggered() and it is differenced in the obvious centered manner
+(with averaging of the thickness onto the staggered grid).
+
+In the case of SSA locations the \f$\nabla \cdot \mathbf{q}\f$
+term is computed by upwinding after expanding
+  \f[ \nabla\cdot \mathbf{q} = \bar{\mathbf{U}} \cdot \nabla H + (\nabla \cdot \bar{\mathbf{U}}) H.\f]
+That is, the mass conservation equation is regarded as an advection equation
+with source term,
+  \f[ \frac{\partial H}{\partial t} + \bar{\mathbf{U}} \cdot \nabla H 
+                             = M - S - (\nabla \cdot \bar{\mathbf{U}}) H.\f]
+The product of velocity and the gradient of thickness on the left is computed by first-order
+upwinding.  Note that the CFL condition for this advection scheme is checked; see 
+determineTimeStep().
+@endcond
+
+Note that if the point is flagged as \c MASK_FLOATING_OCEAN0 then the thickness is set to
+zero.  Note that the rate of thickness change \f$\partial H/\partial t\f$ is computed and saved,
+as is the rate of volume loss or gain.  Note updateSurfaceElevationAndMask() is called at the end.
+ */
 PetscErrorCode IceModel::massBalExplicitStep() {
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy;
   PetscErrorCode ierr;
@@ -519,10 +599,7 @@ PetscErrorCode IceModel::massBalExplicitStep() {
           + (uvbar[1][i][j] * 0.5*(H[i][j] + H[i][j+1])
              - uvbar[1][i][j-1] * 0.5*(H[i][j-1] + H[i][j])) / dy;
 #endif
-      } else { // upwinded, regular grid Div(Q), for Q = Ubar H, computed as
-               //     Div(Q) = U . grad H + Div(U) H
-               // note the CFL for "U . grad H" part of upwinding is checked; see
-               // broadcastSSAVelocity() and determineTimeStep()
+      } else { 
         divQ =
           u[i][j] * (u[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx
           + v[i][j] * (v[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy
@@ -576,6 +653,26 @@ PetscErrorCode IceModel::massBalExplicitStep() {
 }
 
 
+/// Do the time-stepping for an evolution run.
+/*! 
+This important routine can be replaced by derived classes; it is \c virtual.
+
+This procedure has the main loop.  The following actions are taken on each pass through the loop:
+\li the yield stress for the plastic till model is updated (if appropriate)
+\li the positive degree day model is invoked to compute the surface mass balance (if appropriate)
+\li a step of the bed deformation model is taken (if appropriate)
+\li the velocity field is updated; in some cases the whole three-dimensional field is updated 
+    and in some cases just the vertically-averaged horizontal velocity is updated; see velocity()
+\li the time step is determined according to a variety of stability criteria; 
+    see determineTimeStep()
+\li the temperature field is updated according to the conservation of energy model based 
+    (especially) on the new velocity field; see temperatureAgeStep()
+\li the thickness of the ice is updated according to the mass conservation model; see
+    massBalExplicitStep()
+\li there is various reporting to the user on the current state; see summary() and updateViewers()
+
+Note that at the beginning and ends of the loop there is a chance for derived classes to do extra work.  See additionalAtStartTimestep() and additionalAtEndTimestep().
+ */
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
@@ -660,9 +757,6 @@ PetscErrorCode IceModel::run() {
     
     ierr = summary(tempAgeStep,true); CHKERRQ(ierr);
 
-//    ierr = verbPrintf(2,grid.com, " tempskipCountDown=%d, dt_from_cfl=%10.5e, dt_from_diffus=%10.5e, CFLmaxdt=%10.5e\n",
-//                      tempskipCountDown, dt_from_cfl, dt_from_diffus, CFLmaxdt); CHKERRQ(ierr);
-     
     ierr = updateViewers(); CHKERRQ(ierr);
 
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
@@ -674,6 +768,16 @@ PetscErrorCode IceModel::run() {
 }
 
 
+/// Calls the necessary routines to do a diagnostic calculation of velocity.
+/*! 
+This important routine can be replaced by derived classes; it is \c virtual.
+
+This procedure has no loop but the following actions are taken:
+\li the yield stress for the plastic till model is updated (if appropriate)
+\li the velocity field is updated; in some cases the whole three-dimensional field is updated 
+    and in some cases just the vertically-averaged horizontal velocity is updated; see velocity()
+\li there is various reporting to the user on the current state; see summary() and updateViewers()
+ */
 PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 

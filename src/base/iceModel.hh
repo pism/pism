@@ -39,13 +39,10 @@
  */
 class IceModel {
 public:
+  // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, IceType &i);
-  virtual ~IceModel();
+  virtual ~IceModel(); // must be virtual merely because some members are virtual
 
-  // see iceModel.cc for implementation of constructor and destructor, and
-  // implementations of these:
-  virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode destroyVecs();
   void setDoTimeStep(PetscTruth);
   void setTimeStepYears(PetscScalar); // use a constant time step
   void setMaxTimeStepYears(PetscScalar); // use this value for adaptive stepping
@@ -202,7 +199,7 @@ protected:
               regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon;
   PetscInt    ssaMaxIterations;
-  PetscScalar plastic_till_c_0, plastic_till_mu;
+  PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction;
   PetscScalar startYear, endYear;
   PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
@@ -248,6 +245,8 @@ protected:
 
 protected:
   // see iceModel.cc
+  virtual PetscErrorCode createVecs();
+  virtual PetscErrorCode destroyVecs();
   PetscErrorCode updateSurfaceElevationAndMask();
   PetscErrorCode massBalExplicitStep();
   int intMask(PetscScalar);

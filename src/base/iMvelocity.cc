@@ -20,6 +20,11 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
+//! Manage the computation of velocity and do the necessary communication.
+/*!
+This procedure calls the important routines velocitySIAStaggered(), velocitySSA(),
+and vertVelocityFromIncompressibility() according to various flags. 
+ */
 PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;

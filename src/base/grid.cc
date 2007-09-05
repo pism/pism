@@ -1,85 +1,48 @@
 // Copyright (C) 2004-2007 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petscfix.h>
 #include <petscda.h>
 #include "grid.hh"
 
-// Note that choices herein may be overridden according to the input file.  
-// That is, the data always has highest precedence.  The user should be warned when their
-// command line options are overriden, but is not implemented at this time.  The
-// NetCDF file input respects the number of grid points, but not the physical extent.
 
-static const PetscScalar HALFWIDTH_X = 1500.0e3;  // domain width is 2.0*HALFWIDTH_X
-static const PetscScalar HALFWIDTH_Y = 1500.0e3;
-static const PetscScalar HEIGHT_Z = 4000.0;
-static const PetscInt GRIDPTS_X = 61;
-static const PetscInt GRIDPTS_Y = 61;
-static const PetscInt GRIDPTS_Z = 31;
+const PetscScalar IceParam::DEFAULT_ICEPARAM_Lx   = 1500.0e3,
+                  IceParam::DEFAULT_ICEPARAM_Ly   = 1500.0e3,
+                  IceParam::DEFAULT_ICEPARAM_Lz   = 4000.0, 
+                  IceParam::DEFAULT_ICEPARAM_year = 0.0;
+const PetscInt    IceParam::DEFAULT_ICEPARAM_Mx   = 61,
+                  IceParam::DEFAULT_ICEPARAM_My   = 61,
+                  IceParam::DEFAULT_ICEPARAM_Mz   = 31,
+                  IceParam::DEFAULT_ICEPARAM_Mbz  = 1;
 
-
-int initIceParam(MPI_Comm com, IceParam **param) {
-  IceParam* p = *param;
-
-  p->Lx = HALFWIDTH_X;
-  p->Ly = HALFWIDTH_Y;
-  p->Lz = HEIGHT_Z;
-  p->Mx = GRIDPTS_X;
-  p->My = GRIDPTS_Y;
-  p->Mz = GRIDPTS_Z;
-  p->dx = 2.0 * HALFWIDTH_X / (GRIDPTS_X - 1);
-  p->dy = 2.0 * HALFWIDTH_Y / (GRIDPTS_Y - 1);
-  p->dz = HEIGHT_Z / (GRIDPTS_Z - 1);
-  p->Mbz = 1;
-  p->Lbz = p->Mbz * p->dz;
-  p->year = 0.0;
-
-/*
-  PetscErrorCode ierr;
-  ierr = PetscBagRegisterString(b, &p.history, HISTORY_STRING_LENGTH, "\n", "history",
-                                "History of commands used to generate this file."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.Lx, HALFWIDTH_X, "Lx",
-                                "Half width of the ice model grid in x-direction (m).");  CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.Ly, HALFWIDTH_Y, "Ly",
-                                "Halfwidth of the ice model grid in y-direction (m).");  CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.Lz, HEIGHT_Z, "Lz",
-                                "Extent of the ice model grid in z-direction (m).");  CHKERRQ(ierr);
-  const PetscScalar init_dz = HEIGHT_Z / (GRIDPTS_Z - 1);
-  ierr = PetscBagRegisterScalar(b, &p.Lbz, GRIDPTS_Z * init_dz, "Lbz",
-           "Extent of the bedrock model grid in z-direction (m); DO NOT MODIFY; MOD OF Mbz OK.");  CHKERRQ(ierr);
-  ierr = PetscBagRegisterInt(b, &p.Mx, GRIDPTS_X, "Mx",
-                             "Number of grid points in x-direction."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterInt(b, &p.My, GRIDPTS_Y, "My",
-                             "Number of grid points in y-direction."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterInt(b, &p.Mz, GRIDPTS_Z, "Mz",
-                             "Number of ice grid points in z-direction."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterInt(b, &p.Mbz, 1, "Mbz",
-                             "Number of bedrock grid points in z-direction."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.dx, 2.0 * HALFWIDTH_X / (GRIDPTS_X - 1), "dx",
-                                "Grid spacing in x-direction (m); DO NOT MODIFY; MOD OF Lx,Mx OK."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.dy, 2.0 * HALFWIDTH_Y / (GRIDPTS_Y - 1), "dy",
-                                "Grid spacing in y-direction (m); DO NOT MODIFY; MOD OF Ly,My OK."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.dz, init_dz, "dz",
-                                "Grid spacing in z-direction (m); DO NOT MODIFY; MOD OF Lz,Mz OK."); CHKERRQ(ierr);
-  ierr = PetscBagRegisterScalar(b, &p.year, 0, "year",
-                                "Current time in years."); CHKERRQ(ierr);
-*/
-  return 0;
+IceParam::IceParam() {
+  Lx = DEFAULT_ICEPARAM_Lx;
+  Ly = DEFAULT_ICEPARAM_Ly;
+  Lz = DEFAULT_ICEPARAM_Lz;
+  year = DEFAULT_ICEPARAM_year;
+  Mx = DEFAULT_ICEPARAM_Mx;
+  My = DEFAULT_ICEPARAM_My;
+  Mz = DEFAULT_ICEPARAM_Mz;
+  Mbz = DEFAULT_ICEPARAM_Mbz;
+  dx = 2.0 * Lx / (Mx - 1);
+  dy = 2.0 * Ly / (My - 1);
+  dz = Lz / (Mz - 1);
+  Lbz = (Mbz - 1) * dz;
 }
 
 
@@ -104,40 +67,10 @@ IceGrid::~IceGrid() {
     PetscEnd();
   }
   delete p;
-/*
-  if (PetscBagDestroy(bag) != 0) {
-    PetscPrintf(com, "IceGrid destructor: invalid PetscBagDestroy() return; ENDING\n");
-    PetscEnd();
-  }
-*/
 }
 
 
-/* order of allocation and settings (for rev 113 and later, sans PetscBag):
-	1. initIceParam() which sets defaults for Mx,My,Mz,Mbz,Lx,Ly,Lz,Lbz,dx,dy,dz,year
-	[2]. derivedClass:setFromOptions() to get options special to derived class
-	3. setFromOptions() to get all options *including* Mx,My,Mz,Mbz
-	[4]. initFromFile_netCDF() which reads Mx,My,Mz,Mbz from file and overwrites previous; if 
-	   this represents a change the user should be warned
-	5. createDA() uses only Mx,MyMz,Mbz
-	6. createVecs() uses DA to create/allocate Vecs
-	[7]. derivedClass:createVecs() to create/allocate Vecs special to derived class
-	8. afterInitHook() which changes Lx,Ly,Lz if set by user
-
-	Note driver programs call only setFromOptions() and initFromOptions() (for IceModel or derived class).
-
-	initIceParam() is called by the constructor for IceModel.
-
-	IceModel::setFromOptions() should be called at the end of derivedClass:setFromOptions().
-
-	Note 4,5,6 are called from initFromFile() in IceModel *or* initFromOptions() in some derived classes
-	(e.g. IceCompModel) but not both.
-
-	Note step 4 is skipped when bootstrapping (-bif and bootstrapFromFile_netCDF() or in
-	those derived classes which can start with no input files, e.g. IceCompModel).  That is,
-	4 is only done when starting from a saved model state.
-*/
-
+//! Create the PETSc DAs for the grid specified in *p (a pointer to IceParam).
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
   PetscInt    M, N, m, n;
@@ -200,6 +133,15 @@ PetscErrorCode IceGrid::destroyDA() {
 }
 
 
+//! Rescale IceGrid based on new values for \c Lx, \c Ly, \c Lz (default version).
+/*! 
+This method computes \c dx, \c dy, \c dz, and \c Lbz based on the current values of \c Mx,
+\c My, \c Mz, \c Mbz and the input values of \c Lx, \c Ly, and \c Lz.  Note that \c dz
+is the vertical spacing both in the ice and in bedrock.  Thus <tt>Lbz = Mbz * dz</tt> 
+determines \c Lbz.
+
+See the comment for <tt>rescale(lx,ly,lz,truelyPeriodic)</tt>.
+ */
 PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly, 
                                 const PetscScalar lz) {
   PetscErrorCode ierr;
@@ -209,6 +151,21 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
 }
 
 
+//! Rescale IceGrid based on new values for \c Lx, \c Ly,\c Lz, but optionally allowing for periodicity.
+/*! 
+The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
+This means that the ghosted values <tt> foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]</tt>
+for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
+That is, they are available even if i,j is a point at the edge of the grid.  On the other
+hand, by default, \c dx  is the full width  <tt>2 * Lx</tt>  divided by  <tt>Mx - 1</tt>.
+This means that we conceive of the computational domain as starting at the <tt>i = 0</tt>
+grid location and ending at the  <tt>i = Mx - 1</tt>  grid location, in particular.  
+This idea is not quite compatible with the periodic nature of the grid.
+
+The upshot is that if one computes in a truely periodic way then the gap between the  
+<tt>i = 0</tt>  and  <tt>i = Mx - 1</tt>  grid points should \em also have width  \c dx.  
+Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
+*/
 PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly, 
                                 const PetscScalar lz, const PetscTruth truelyPeriodic) {
   PetscErrorCode ierr;

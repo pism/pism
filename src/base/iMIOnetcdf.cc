@@ -719,6 +719,12 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 }
 
 
+//! Read a complete saved PISM model state for initialization of an evolution or diagnostic run.
+/*! 
+When initializing from a NetCDF input file, the file determines 
+the number of grid points (Mx,My,Mz,Mbz) and the dimensions of the computational box.   
+The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" are overridden.  
+ */
 PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   size_t      dim[5];

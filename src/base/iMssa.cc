@@ -441,7 +441,7 @@ by only differencing into the grid for points at the edge; see test I.)
 
 Note that the grid points with mask value MASK_SHEET correspond to the trivial 
 equations
-   \f \bar u_{ij} = \frac{uvbar[0][i-1][j] + uvbar[0][i][j]}{2}, \f]
+   \f[ \bar u_{ij} = \frac{uvbar[0][i-1][j] + uvbar[0][i][j]}{2}, \f]
 and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged horizontal
 velocity is already known for these points because it was computed (on the staggered
 grid) using the SIA.
@@ -766,6 +766,7 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
 }
 
 
+//! At all SSA points, update the velocity field.
 PetscErrorCode IceModel::broadcastSSAVelocity() {
   // take ubar,vbar and update 3D horizontal velocities u,v
   // (w gets update later from vertVelocityFromIncompressibility())
@@ -836,6 +837,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
 }
 
 
+//! At SSA points, correct the previously-computed basal frictional heating.
 PetscErrorCode IceModel::correctBasalFrictionalHeating() {
   // recompute vRb in ice stream (MASK_DRAGGING) locations; zeros vRb in FLOATING
   PetscErrorCode  ierr;
@@ -876,6 +878,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 }
 
 
+//! At SSA points, correct the previously-computed volume strain-heating.
 PetscErrorCode IceModel::correctSigma() {
   // recompute vSigma in ice stream and shelf (DRAGGING,FLOATING) locations
   PetscErrorCode  ierr;

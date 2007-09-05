@@ -20,6 +20,35 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
+//!  Compute the vertically-averaged horizontal velocity according to the SIA.
+/*!
+See the comment for massBalExplicitStep() before reading the rest of this comment.
+
+Note that one may write 
+  \f[ \mathbf{q} = \bar{\mathbf{U}} H = D \nabla h + \mathbf{U}_b \cdot H\f]
+in shallow ice approximation (SIA) areas.  Here \f$h\f$ is the surface elevation of the ice
+\f$\mathbf{U}_b\f$ is the basal sliding velocity, and \f$D\f$ is the diffusivity (which 
+is computed in this method).
+
+The surface slope \f$\nabla h\f$ is needed on the staggered grid although the surface 
+elevation \f$h\f$ itself is known on the regular grid.  The scheme used for this is
+the one first proposed in the context of ice sheets by Mahaffy (1976).  That is, the method 
+is "type I" in the classification described in (Hindmarsh and Payne 1996).
+
+This routine also calls the part of the basal dynamical model applicable to the SIA; see 
+basalVelocity().  The result is that the basal sliding velocity is computed for all SIA 
+points.
+
+This routine also computes the basal frictional heating and the volume
+strain-heating.
+
+At the end of this routine the value of the vertically-integrated horizontal velocity is
+known at all staggered grid points.
+
+Note that the SIA is used at all points on the grid in this routine but that the resulting 
+vertically-averaged horizontal velocity is overwritten by different values at SSA points.
+See correctBasalFrictionalHeating() and correctSigma().
+ */
 PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
   // Vertically-integrated velocities (i.e. vuvbar) and basal sliding velocities
   // (vub, vvb) are *always* updated.  Diffusivity is only updated by vertical 
@@ -295,8 +324,14 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
 }
 
 
+//! Put the basal velocity onto the regular grid.
+/*!
+At the end of velocitySIAStaggered() the basal velocity is available on 
+the staggered grid.  This procedure averages it onto the regular grid.  Note that
+communication of ghosted values must occur between velocitySIAStaggered() and this 
+procedure for the averaging to work.
+ */
 PetscErrorCode IceModel::basalSIAConditionsToRegular() {
-  // compute vub, vvb, vRb by averaging from staggered onto regular grid
   PetscErrorCode  ierr;
   PetscScalar **ubreg, **vbreg, **ub[2], **vb[2];
 
@@ -325,6 +360,14 @@ PetscErrorCode IceModel::basalSIAConditionsToRegular() {
 }
 
 
+//! Put the basal frictional heating and the volume strain-heating onto the regular grid.
+/*!
+At the end of velocitySIAStaggered() the basal frictional heating and the volume 
+strain-heating are available on 
+the staggered grid.  This procedure averages them onto the regular grid.  Note that
+communication of ghosted values must occur between velocitySIAStaggered() and this 
+procedure for the averaging to work.
+ */
 PetscErrorCode IceModel::SigmaSIAToRegular() {
   // average Sigma onto regular grid for use in the temperature equation
   PetscErrorCode  ierr;
@@ -364,8 +407,16 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
 }
 
 
+//! Update regular grid horizontal velocities u,v at depth for SIA regions.
+/*! 
+In the current scheme the procedure velocitySIAStaggered() computes several scalar
+quantities at depth (the details of which are too complicated to explain).  That is,
+these quantities correspond to three-dimensional arrays.  This procedure takes those 
+quantities and computes the three-dimensional arrays for the horizontal components \f$u\f$ and 
+\f$v\f$ of the velocity field.  The vertical component \f$w\f$ of the velocity field 
+is computed by vertVelocityFromIncompressibility().
+ */
 PetscErrorCode IceModel::horizontalVelocitySIARegular() {
-  // update regular grid horizontal velocities u,v at depth
   PetscErrorCode  ierr;
   PetscScalar **h_x[2], **h_y[2], **ub, **vb;
   PetscScalar ***I[2], ***u, ***v;
@@ -404,7 +455,6 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   ierr = DAVecRestoreArray(grid.da3, vWork3d[1], &I[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-
   return 0;
 }
 
