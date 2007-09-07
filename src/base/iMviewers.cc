@@ -22,15 +22,21 @@
 #include <petscksp.h>
 #include "iceModel.hh"
 
-PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer, 
-                                   char name, const char* title) {
+
+PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer, const char singleCharName) {
+  return createOneViewerIfDesired(viewer, name, tn[int(name)-int('0')].title);
+}
+
+
+PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer, const char singleCharName,
+                                                  const char* title) {
   PetscErrorCode ierr;
   const int SIZE = 320, bigSIZE = 600;
   PetscScalar  yTOx = (PetscScalar)grid.p->My / (PetscScalar)grid.p->Mx;
   int size, x_dim, y_dim;
-  if (strchr(diagnosticBIG, name) != NULL) {
+  if (strchr(diagnosticBIG, singleCharName) != NULL) {
     size = bigSIZE;
-  } else if (strchr(diagnostic, name) != NULL) {
+  } else if (strchr(diagnostic, singleCharName) != NULL) {
     size = SIZE;
   } else {
     *viewer = PETSC_NULL;
@@ -56,62 +62,61 @@ PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer *viewer,
 
 PetscErrorCode IceModel::createViewers() {
   // It is important that the createVecs() has been called before we call this.
+  // See iMnames.cc and IceModel::tn for most short titles on viewers.
+
   PetscErrorCode ierr;
 
-  ierr = createOneViewerIfDesired(&surfHorSpeedView, '0',"hor. speed at surface (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&surfuView, '1',"u at surface (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&surfvView, '2',"v at surface (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&surfwView, '3',"w at surface (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&accumView, 'a',"M (surface accum rate; m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&bedView, 'b',"b (bed elev; m above sea level)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&betaView, 'B',"log(beta) (drag coeff; log_10(Pa s m^-1))");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&speedView, 'c',"log(speed) (log_10(m/a))");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&taucView, 'C',"tau_c (till yield stress; bar=10^5Pa)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&diffusView, 'D',"D (diffusivity; m^2/s)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&tauView, 'e',"age of ice (years) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&tauMapView, 'E',"age of ice (years) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&dhView, 'f',"thickening rate dH/dt (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&ghfView, 'F',"geothermal heat flux (mW/m^2)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&gsView, 'g',"grain size (mm) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&gsMapView, 'G',"grain size (mm) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&HView, 'H',"H (thickness; m)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&hView, 'h',"h (surface elev; m above sea level)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&nuView[0], 'i',"nu*H (I offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&nuView[1], 'j',"nu*H (J offset)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfHorSpeedView, '0');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfuView, '1');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfvView, '2');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&surfwView, '3');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&accumView, 'a');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&bedView, 'b');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&betaView, 'B');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&speedView, 'c');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&taucView, 'C');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&diffusView, 'D');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&tauView, 'e');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&tauMapView, 'E');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&dhView, 'f');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&ghfView, 'F');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&gsView, 'g');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&gsMapView, 'G');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&HView, 'H');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&hView, 'h');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&nuView[0], 'i');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&nuView[1], 'j');  CHKERRQ(ierr);
  
   if (strchr(diagnostic, 'k') != NULL) {
-    //ierr = KSPLGMonitorCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
-    //                          PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
     ierr = KSPMonitorLGCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
                               PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
-    //ierr = KSPSetMonitor(SSAKSP, KSPLGMonitor, kspLG, 0); CHKERRQ(ierr);
     ierr = KSPMonitorSet(SSAKSP, KSPMonitorLG, kspLG, 0); CHKERRQ(ierr);
   } else kspLG = PETSC_NULL;
 
-  ierr = createOneViewerIfDesired(&basalmeltView, 'l',"basal melt rate (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&HmeltView, 'L',"basal melt water thickness (m)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&maskView, 'm',"mask (1=SHEET, 2=DRAG, 3=FLOAT)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&lognuView, 'n',"log_10(nu*H)");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&basalmeltView, 'l');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&HmeltView, 'L');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&maskView, 'm');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&lognuView, 'n');  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&NuView[0], 'N',"(nu*H)_t (I offset)");  CHKERRQ(ierr);
   ierr = createOneViewerIfDesired(&NuView[1], 'N',"(nu*H)_t (J offset)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&upliftView, 'p',"bed uplift rate (m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&slidespeedView, 'q',"log(basal sliding speed) (log_10(m/a))");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&TsView, 'r',"suRface temperature (K)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&RbView, 'R',"basal frictional heating (mW/m^2)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&SigmaView, 's',"Sigma (strain heating; K/a) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&SigmaMapView, 'S',"Sigma (strain heating; K/a) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&TView, 't',"T (temperature; K) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&T2View, 'T',"T (temperature; K) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&uvbarView[0], 'U',"uvbar[0] (velocity on stag grid; m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&ubarView, 'u',"ubar (velocity; m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&uvbarView[1], 'V',"uvbar[1] (velocity on stag grid; m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&vbarView, 'v',"vbar (velocity; m/a)");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&uView, 'x',"u (velocity; m/a) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&umapView, 'X',"u (velocity; m/a) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&vView, 'y',"v (velocity; m/a) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&vmapView, 'Y',"v (velocity; m/a) at kd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&wView, 'z',"w (velocity; m/a) at id,jd");  CHKERRQ(ierr);
-  ierr = createOneViewerIfDesired(&wmapView, 'Z',"w (velocity; m/a) at kd");  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&upliftView, 'p');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&slidespeedView, 'q');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&TsView, 'r');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&RbView, 'R');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&SigmaView, 's');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&SigmaMapView, 'S');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&TView, 't');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&T2View, 'T');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&uvbarView[0], 'U');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&ubarView, 'u');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&uvbarView[1], 'V');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&vbarView, 'v');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&uView, 'x');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&umapView, 'X');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&vView, 'y');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&vmapView, 'Y');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&wView, 'z');  CHKERRQ(ierr);
+  ierr = createOneViewerIfDesired(&wmapView, 'Z');  CHKERRQ(ierr);
 
   createViewers_done = PETSC_TRUE;
   return 0;
@@ -316,9 +321,9 @@ PetscErrorCode IceModel::updateViewers() {
   // others updated elsewhere:
   // see IceModel::massBalExplicitStep() in iceModel.cc for  dHdtView  ("-d f")
   // see IceModel::computeMaxDiffusivity() in iMutil.cc for  diffusView ("-d D")
-  // see IceModel::velocityMacAyeal() in iMmacayeal.cc for   nuView  ("-d i" or "-d j")
-  //                                                   and   lognuView  ("-d n")
-  //                                                   and   NuView  ("-d N")
+  // see IceModel::velocitySSA() in iMssa.cc for   nuView  ("-d i" or "-d j")
+  //                                         and   lognuView  ("-d n")
+  //                                         and   NuView  ("-d N")
   // see iceCompModel.cc for compensatory Sigma viewer (and redo of Sigma viewer) "-d PS"
 
   PetscErrorCode ierr;

@@ -88,7 +88,7 @@
 \phantom{bob}
 \vspace{2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2007 Jed Brown and Ed Bueler and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2007 Ed Bueler and Jed Brown and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -118,6 +118,7 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 \newpage
 \section{Installation}\label{sect:install}
 
+\subsection{Installing prerequisities}\label{subsect:prereq}
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
 \item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.  To use the (recommended) graphical output of PISM you will need an X Windows server (\url{http://www.x.org/}).
@@ -181,12 +182,12 @@ Note that there is no PISM use of Fortran, and that it is sometimes convenient t
 \end{enumerate}
 \end{enumerate}
 
-\bigskip
+\medskip
 See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, including those mentioned so far.
 
-\medskip
+
+\subsection{Installing PISM itself}\label{subsect:installPISM}
 At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
-\bigskip
 
 \begin{enumerate}\setcounter{enumi}{5}
 \item \label{getPISMstep} Get the latest source for PISM using the Subversion version control system:
@@ -209,10 +210,12 @@ At this point you have configured the environment which PISM needs.  You are rea
 
 \verb|export PATH=/home/user/pism/bin/:/home/user/pism/test/:$PATH|
 \end{enumerate}
+\smallskip
 
-\bigskip
+
+\subsection{Quick tests of the installation}\label{subsect:quicktest}
 You are done with installation at this point.  The next few items are recommended as they allow you to observe that PISM is functioning correctly.
-\bigskip
+\medskip
 
 \begin{enumerate}\setcounter{enumi}{9}
 \item \label{serialpismvrun} Try a serial verification run of PISM:
@@ -245,17 +248,21 @@ You are done with installation at this point.  The next few items are recommende
 
 \verb|verifynow.py|
 
+\noindent or, on an $N$ processor machine,
+
+\verb|verifynow.py -n |$N$
+
 \noindent If you would like us to confirm that PISM is working as expected please save the one page or so of output from this script and send it to us (\verb|ffelb@uaf.edu|).  See section \ref{sect:verif} for more on PISM verification.
 \end{enumerate}
-\bigskip
-
-Have fun!
+\smallskip
 
 At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Subsection \ref{subsect:green} is an example of using PISM to model the Greenland ice sheet using freely-downloadable data.  Similarly one can model the Ross ice shelf using free data as described in subsection \ref{subsect:ross}.
 
 Naturally, setting up PISM to model real ice sheets will generally require techniques not be covered in this manual.  First of all one usual needs to convert ice sheet data to NetCDF format so that it can be read by PISM.  Actual modelling may also require the writing of additional source code.  As PISM is written in C++, this means writing a derived class of the base class.  (The base class \verb|IceModel| is defined in the source file \verb|pism/src/iceModel.hh|.)  Use of PISM for real ice sheet modelling is something we welcome questions about, and will attempt to help with, but we will not pretend it is routine.
 
 A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.   You can update your copy of PISM to the latest version by \verb|svn update| in the \verb|pism/| directory.  After doing so you will want to \verb|make| and \verb|make install| in order to rebuild the PISM executables using the updated source code files.
+
+Have fun!
 
 \begin{table}[ht]
 \caption{Dependencies for PISM, listed alphabetically.  These are needed to build a fully-functional PISM from source and to do all the examples in the manual.}\label{tab:PISMdepends}
@@ -467,18 +474,18 @@ The transition from SIA to SSA flow is an internal boundary within the model dom
 \end{enumerate}
 Of course the statement ``attempt to'' maintain is important because PISM does not have exact representations of any of the continuous functions but only their gridded numerical approximations.  See section \ref{sect:over} for additional comments and references on the continuum models and numerical schemes in PISM.
 
-\subsection{The flow-type mask} \label{subsect:mask}  PISM keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask at this time, shown in table \ref{tab:maskvals}.
-
+\subsection{The flow-type mask} \label{subsect:mask}  PISM keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask (at this time), shown in table \ref{tab:maskvals}.
 
 \begin{table}[ht]
-\caption{The PISM mask.}\label{tab:maskvals} 
+\caption{Values for the PISM mask.}\label{tab:maskvals} 
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Value} & \textbf{Name} & \textbf{Meaning}\\ \hline
-1 & \verb|MASK_SHEET| &  \\
-2 & \verb|MASK_DRAGGING| &  \\
-3 & \verb|MASK_FLOATING| &  \\
-7 & \verb|MASK_FLOATING_OCEAN0| &  \\
+1 & \verb|MASK_SHEET| & ice is grounded and the SIA is applied \\
+2 & \verb|MASK_DRAGGING| & ice is grounded and the SSA is applied if option \verb|-ssa| is given \\
+3 & \verb|MASK_FLOATING| & ice is floating and the SSA is applied if option \verb|-ssa| is given \\
+7 & \verb|MASK_FLOATING_OCEAN0| & same as \verb|MASK_FLOATING| but the point was ice free ocean at  \\
+ & & initialization of the model by \verb|-bif|  \\
 \hline\end{tabular}
 \normalsize
 \end{table}

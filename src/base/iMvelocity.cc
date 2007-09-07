@@ -63,25 +63,29 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     }
   }  // if computeSIAVelocities
 
+  if ( (!useSSAVelocity) || (firstTime) ) {
+     /* Note vertically averaged vels on regular grid (Vecs vubar and 
+      vvbar) are set by SSA procedures above, including (in a reasonable 
+      manner) within the MASK_SHEET regions.  Also vubar and vvbar are used 
+      to initialize the next step of SSA.  SO we want to NOT overwrite 
+      the just-computed regular grid velocities (as they will be needed to
+      initialize another step of SSA; note first time exception).
+      BUT if we don't call SSA in velocity() then
+      we need to get staggered onto regular for viewer and for summary(). */
+    ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
+  }
+  
   if (useSSAVelocity) { // communication happens within SSA
     ierr = setupForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
-    if (firstTime) {
-      ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr);  // comm here
-    }
     ierr = velocitySSA(); CHKERRQ(ierr); // comm here ...
     ierr = cleanupAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
     ierr = broadcastSSAVelocity(); CHKERRQ(ierr); // sets CFLmaxdt2D
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
-  } else { // Note vertically averaged vels on regular grid (Vecs vubar and 
-     // vvbar) are set by SSA procedures above, including (in a reasonable 
-     // manner) within the MASK_SHEET regions.  Also vubar and vvbar are used 
-     // to initialize the next step of SSA.  SO we want to NOT overwrite 
-     // the just-computed regular grid velocities (as they will be needed to
-     // initialize another step of SSA; note first time exception).
-     // BUT if we don't call SSA in velocity() then
-     // we need to get staggered onto regular for viewer and for summary().
-    ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr); // comm here
   }
 
   // finally update w
@@ -270,9 +274,12 @@ PetscErrorCode IceModel::smoothSigma() {
 }
 
 
-PetscErrorCode IceModel::vertAveragedVelocityToRegular() {
-  // only 2D regular grid velocities are updated here
-  
+//! Average staggered-grid vertically-averaged horizontal velocity onto regular grid.
+/*! 
+Only two-dimensional regular grid velocities are updated here.  The full 
+three-dimensional velocity field is not updated here.
+ */
+PetscErrorCode IceModel::vertAveragedVelocityToRegular() {  
   PetscErrorCode ierr;
   PetscScalar **ubar, **vbar, **uvbar[2];
 
@@ -280,28 +287,21 @@ PetscErrorCode IceModel::vertAveragedVelocityToRegular() {
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
       vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
     }
   }
-
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-
   return 0;
 }
 
 
+//! Compute the maximum velocities for time-stepping and reporting to user.
 PetscErrorCode IceModel::computeMax3DVelocities() {
   // computes max velocities in 3D grid and also sets CFLmaxdt by CFL condition
   PetscErrorCode ierr;
@@ -346,6 +346,5 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMin(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
-
   return 0;
 }

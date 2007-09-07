@@ -52,13 +52,13 @@ PetscErrorCode IceEISModel::setFromOptions() {
      or "-test D" */
 
   // apply eismint defaults settings; options may overwrite
-  setThermalBedrock(PETSC_FALSE);
-  setUseSSAVelocity(PETSC_FALSE);
-  setIsDrySimulation(PETSC_TRUE);
-  setDoGrainSize(PETSC_FALSE);
-  setEnhancementFactor(1.0);
-  setIncludeBMRinContinuity(PETSC_FALSE); // so basal melt does not change 
-                                          // computation of vertical velocity
+  thermalBedrock = PETSC_FALSE;
+  useSSAVelocity = PETSC_FALSE;
+  isDrySimulation = PETSC_TRUE;
+  doGrainSize = PETSC_FALSE;
+  enhancementFactor = 1.0;
+  includeBMRinContinuity = PETSC_FALSE; // so basal melt does not change 
+                                        // computation of vertical velocity
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
   
   // make bedrock material properties into ice properties

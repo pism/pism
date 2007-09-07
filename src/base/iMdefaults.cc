@@ -141,6 +141,7 @@ const PetscScalar DEFAULT_TILL_PW_FRACTION = 0.95;
 const PetscScalar DEFAULT_TILL_C_0 = 5.0e3;  // Pa; 5kPa = 0.05 bar; cohesion of till
 const PetscScalar DEFAULT_TILL_THETA = 12.0;  // pure number; tan(12^o) = 0.21256; till friction angle
 
+//! Assigns default values to the many parameters and flags in IceModel.
 PetscErrorCode IceModel::setDefaults() {
 
   //ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
@@ -149,28 +150,28 @@ PetscErrorCode IceModel::setDefaults() {
   // No X11 diagnostics by default, but allow them
   strcpy(diagnostic, "");
   strcpy(diagnosticBIG, "");
-  setShowViewers(PETSC_TRUE);
+  showViewers = PETSC_TRUE;
 
   setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);
   
-  setEnhancementFactor(DEFAULT_ENHANCEMENT_FACTOR);
-  setMuSliding(DEFAULT_MU_SLIDING);
-  setThermalBedrock(DEFAULT_THERMAL_BEDROCK);
-  setOceanKill(DEFAULT_OCEAN_KILL);
+  enhancementFactor = DEFAULT_ENHANCEMENT_FACTOR;
+  muSliding = DEFAULT_MU_SLIDING;
+  thermalBedrock = DEFAULT_THERMAL_BEDROCK;
+  doOceanKill = DEFAULT_OCEAN_KILL;
   
   computeSIAVelocities = PETSC_TRUE;
   
-  setUseSSAVelocity(DEFAULT_USE_SSA_VELOCITY);
-  setDoSuperpose(DEFAULT_DO_SUPERPOSE);
+  useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
+  doSuperpose = DEFAULT_DO_SUPERPOSE;
   ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;
   useConstantNuForSSA = DEFAULT_USE_CONSTANT_NU_FOR_SSA;
   useConstantHardnessForSSA = DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA;
   constantNuForSSA = DEFAULT_CONSTANT_NU_FOR_SSA;
   constantHardnessForSSA = DEFAULT_CONSTANT_HARDNESS_FOR_SSA;
-  setRegularizingVelocitySchoof(DEFAULT_REGULARIZING_VELOCITY_SCHOOF);
-  setRegularizingLengthSchoof(DEFAULT_REGULARIZING_LENGTH_SCHOOF);
-  setSSARelativeTolerance(DEFAULT_SSA_RELATIVE_CONVERGENCE);
-  setSSAEpsilon(DEFAULT_EPSILON_SSA);
+  regularizingVelocitySchoof = DEFAULT_REGULARIZING_VELOCITY_SCHOOF;
+  regularizingLengthSchoof = DEFAULT_REGULARIZING_LENGTH_SCHOOF;
+  ssaRelativeTolerance = DEFAULT_SSA_RELATIVE_CONVERGENCE;
+  ssaEpsilon = DEFAULT_EPSILON_SSA;
   computeSurfGradInwardSSA = DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA;
   ssaSystemToASCIIMatlab = PETSC_FALSE;
   leaveNuAloneSSA = PETSC_FALSE;
@@ -188,20 +189,20 @@ PetscErrorCode IceModel::setDefaults() {
   setEndYear(DEFAULT_RUN_YEARS);
   yearsStartRunEndDetermined = PETSC_FALSE;
 
-  setDoMassConserve(DEFAULT_DO_MASS_CONSERVE);
-  setDoTemp(DEFAULT_DO_TEMP);
+  doMassConserve = DEFAULT_DO_MASS_CONSERVE;
+  doTemp = DEFAULT_DO_TEMP;
   doTempSkip = DEFAULT_DO_TEMPSKIP;
   tempskipMax = DEFAULT_TEMPSKIP_MAX;
   
-  setIncludeBMRinContinuity(DEFAULT_INCLUDE_BMR_IN_CONTINUITY);
-  setDoGrainSize(DEFAULT_DO_GRAIN_SIZE);
-  setIsDrySimulation(DEFAULT_IS_DRY_SIMULATION);
+  includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
+  doGrainSize = DEFAULT_DO_GRAIN_SIZE;
+  isDrySimulation = DEFAULT_IS_DRY_SIMULATION;
   updateHmelt = PETSC_TRUE;
-  setGSIntervalYears(DEFAULT_GRAIN_SIZE_INTERVAL_YEARS);
-  setDoBedDef(DEFAULT_DO_BED_DEF);
-  setDoBedIso(DEFAULT_DO_BED_ISO);
-  setBedDefIntervalYears(DEFAULT_BED_DEF_INTERVAL_YEARS);
-  setNoSpokes(DEFAULT_NOSPOKESLEVEL);
+  gsIntervalYears = DEFAULT_GRAIN_SIZE_INTERVAL_YEARS;
+  doBedDef = DEFAULT_DO_BED_DEF;
+  doBedIso = DEFAULT_DO_BED_ISO;
+  bedDefIntervalYears = DEFAULT_BED_DEF_INTERVAL_YEARS;
+  noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
   doPDD = PETSC_FALSE;
 
   setIsothermalFlux(PETSC_FALSE, DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT,

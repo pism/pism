@@ -99,7 +99,11 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       computeSurfGradInwardSSA = PETSC_TRUE;
       useConstantHardnessForSSA = PETSC_TRUE;
       constantHardnessForSSA = B_schoof;
-      setSSAEpsilon(0.0);  // don't use this lower bound
+      ssaEpsilon = 0.0;  // don't use this lower bound
+      
+      ierr = verbPrintf(1,grid.com,
+      "\nIceExactSSAModel::initFromOptions:regularizingVelocitySchoof = %10.5e\n",
+      regularizingVelocitySchoof); CHKERRQ(ierr);
       }
       break;
     case 'J': {
@@ -111,7 +115,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       leaveNuAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
       computeSurfGradInwardSSA = PETSC_FALSE;
       useConstantHardnessForSSA = PETSC_FALSE;
-      setSSAEpsilon(0.0);  // don't use this lower bound
+      ssaEpsilon = 0.0;  // don't use this lower bound
       }
       break;
     default:

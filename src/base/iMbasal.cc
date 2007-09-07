@@ -20,22 +20,30 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-/*** for SIA regions (MASK_SHEET): ***/
+//! Compute the coefficient for the basal velocity in SIA regions.
+/*!
+In SIA regions a basal sliding law of the form
+  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
+is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of the ice
+(the "sliding velocity") and \f$h\f$ is the elevation of the ice surface.  This procedure 
+returns the \em positive coefficient \f$C\f$ in this relationship.  This coefficient can
+depend of the thickness, the basal temperature, and the horizontal location.
+
+This procedure is virtual and can be replaced by any derived class.
+
+The default version for IceModel here is location-independent pressure-melting-temperature-activated 
+linear sliding.
+  //                
+ */
 PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
 
-  //PetscErrorCode  ierr = PetscPrintf(grid.com, 
-  //        "   [IceModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
-  //        x,y,H,T,alpha);  CHKERRQ(ierr);
-
-  // This implements location-independent pressure-melting-temperature-activated
-  // linear sliding law.  Returns *positive* coefficient C in the law
-  //                U_b = <u_b,v_b> = - C grad h 
   if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
     return basal->velocity(mu, ice.rho * grav * H);
+  } else {
+    return 0;
   }
-  return 0;
 }
 
 

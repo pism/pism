@@ -36,7 +36,7 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   // further settings for velocity computation 
   useConstantNuForSSA = PETSC_FALSE;
   useConstantHardnessForSSA = PETSC_TRUE;
-  setSSAEpsilon(0.0);  // don't use this lower bound
+  ssaEpsilon = 0.0;  // don't use this lower bound
   constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27

@@ -70,10 +70,6 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
                              * pow(ice.rho * grav, isothermalFlux_n_exponent)
                              / (isothermalFlux_n_exponent + 2.0));
 
-#if (MARGIN_TRICK)
-  ierr = verbPrintf(4,grid.com,"  MARGIN_TRICK velocitySIAStaggered() ..."); CHKERRQ(ierr);
-#endif
-
   delta = new PetscScalar[grid.p->Mz];
   K = new PetscScalar[grid.p->Mz];
 
@@ -110,6 +106,8 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
   }
 
 #if (MARGIN_TRICK)
+  ierr = verbPrintf(4,grid.com,"  MARGIN_TRICK velocitySIAStaggered() ..."); CHKERRQ(ierr);
+
   PetscScalar **eta, **b;
   ierr = DAVecGetArray(grid.da2, vWork2d[8], &eta); CHKERRQ(ierr);
   const PetscScalar etapow = 8.0/3.0;  // FIXME: n=3 hard-coded for now
@@ -141,6 +139,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
             h_x[o][i][j] = 0.0;
             h_y[o][i][j] = 0.0;
           }
+          // now add bed slope to get actual h_x,h_y
           h_x[o][i][j] += (b[i+1][j] - b[i][j]) / dx;
           h_y[o][i][j] += (+ b[i+1][j+1] + b[i][j+1]
                            - b[i+1][j-1] - b[i][j-1]) / (4.0*dy);

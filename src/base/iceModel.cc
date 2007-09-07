@@ -277,7 +277,6 @@ void IceModel::setAdaptTimeStepRatio(PetscScalar c) {
 
 PetscErrorCode IceModel::setStartYear(PetscScalar y0) {
   startYear = y0;
-
   return 0;
 }
 
@@ -294,58 +293,10 @@ void  IceModel::setInitialAgeYears(PetscScalar d) {
   VecSet(vtau, d*secpera);
 }
 
-void IceModel::setShowViewers(PetscTruth show_viewers) {
-  showViewers = show_viewers;
-}
-
-void IceModel::setDoMassConserve(PetscTruth do_mb) {
-  doMassConserve = do_mb;
-}
-
-void IceModel::setDoTemp(PetscTruth do_temp) {
-  doTemp = do_temp;
-}
-
-void IceModel::setIncludeBMRinContinuity(PetscTruth includeit) {
-  includeBMRinContinuity = includeit;
-}
-
-void IceModel::setDoGrainSize(PetscTruth do_gs) {
-  doGrainSize = do_gs;
-}
-
-void IceModel::setDoBedDef(PetscTruth do_bd) {
-  doBedDef = do_bd;
-}
-
-void IceModel::setDoBedIso(PetscTruth do_iso) {
-  doBedIso = do_iso;
-}
-
-void IceModel::setIsDrySimulation(PetscTruth is_dry) {
-  isDrySimulation = is_dry;
-}
-
 void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
   gmaxu=uvw_for_cfl;
   gmaxv=uvw_for_cfl;
   gmaxw=uvw_for_cfl;
-}
-
-void IceModel::setThermalBedrock(PetscTruth tb) {
-  thermalBedrock = tb;
-}
-
-void IceModel::setOceanKill(PetscTruth ok) {
-  doOceanKill = ok;
-}
-
-void IceModel::setUseSSAVelocity(PetscTruth umv) {
-  useSSAVelocity = umv;
-}
-
-void IceModel::setDoSuperpose(PetscTruth ds) {
-  doSuperpose = ds;
 }
 
 void IceModel::setConstantNuForSSA(PetscScalar nu) {
@@ -353,48 +304,9 @@ void IceModel::setConstantNuForSSA(PetscScalar nu) {
   constantNuForSSA = nu;
 }
 
-void IceModel::setRegularizingVelocitySchoof(PetscScalar rvS) {
-  regularizingVelocitySchoof = rvS;
-}
-
-void IceModel::setRegularizingLengthSchoof(PetscScalar rLS) {
-  regularizingLengthSchoof = rLS;
-}
-
-void IceModel::setSSAEpsilon(PetscScalar meps) {
-  ssaEpsilon = meps;
-}
-
-void IceModel::setSSARelativeTolerance(PetscScalar mrc) {
-  ssaRelativeTolerance = mrc;
-}
-
-void IceModel::setEnhancementFactor(PetscScalar e) {
-  enhancementFactor = e;
-}
-
-void IceModel::setMuSliding(PetscScalar mu) {
-  muSliding = mu;
-}
-
-void IceModel::setGSIntervalYears(PetscScalar years) {
-  gsIntervalYears = years;
-}
-
-void IceModel::setBedDefIntervalYears(PetscScalar years) {
-  bedDefIntervalYears = years;
-}
-
-void IceModel::setIsothermalFlux(PetscTruth use) {
-  useIsothermalFlux = use;
-}
-
-void IceModel::setNoSpokes(PetscInt level) {
-  noSpokesLevel = level;
-}
 
 void IceModel::setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A) {
-  setIsothermalFlux(use);
+  useIsothermalFlux = use;
   isothermalFlux_n_exponent = n;
   isothermalFlux_A_softness = A;
 }
@@ -556,8 +468,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   PetscScalar **u, **v, **accum, **basalMeltRate, **mask;
   Vec vHnew = vWork2d[0];
 
-#if (MARGIN_TRICK)
-  ierr = verbPrintf(4,grid.com,"  MARGIN_TRICK massBalExplicitStep() ..."); CHKERRQ(ierr);
+#if (MARGIN_TRICK_TWO)
+  ierr = verbPrintf(4,grid.com,"  MARGIN_TRICK_TWO massBalExplicitStep() ..."); CHKERRQ(ierr);
 #endif
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -590,15 +502,14 @@ PetscErrorCode IceModel::massBalExplicitStep() {
                             : ( (H[i][j-1] > 0.0) ? 1.5*H[i][j-1] - 0.5*H[i][j] : H[i][j] );
         const PetscScalar Hs = (H[i][j-1] > 0.0) ? 0.5*(H[i][j-1] + H[i][j])
                             : ( (H[i][j+1] > 0.0) ? 1.5*H[i][j+1] - 0.5*H[i][j] : H[i][j] );
+#else
+        const PetscScalar He = 0.5*(H[i][j] + H[i+1][j]);
+        const PetscScalar Hw = 0.5*(H[i-1][j] + H[i][j]);
+        const PetscScalar Hn = 0.5*(H[i][j] + H[i][j+1]);
+        const PetscScalar Hs = 0.5*(H[i][j-1] + H[i][j]);
+#endif
         divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
               + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
-#else
-        divQ =
-          (uvbar[0][i][j] * 0.5*(H[i][j] + H[i+1][j])
-           - uvbar[0][i-1][j] * 0.5*(H[i-1][j] + H[i][j])) / dx
-          + (uvbar[1][i][j] * 0.5*(H[i][j] + H[i][j+1])
-             - uvbar[1][i][j-1] * 0.5*(H[i][j-1] + H[i][j])) / dy;
-#endif
       } else { 
         divQ =
           u[i][j] * (u[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx

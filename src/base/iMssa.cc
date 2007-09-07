@@ -266,7 +266,7 @@ drag (friction) parameter (Hulbe & MacAyeal 1999).
 
 @endcond
 @cond NUMERIC
-Note that the basal shear stress appears on the \emph{left} side of the above system.  
+Note that the basal shear stress appears on the \em left side of the above system.  
 We believe this is crucial, because of its effect on the spectrum of the linear 
 approximations of each stage.  The effect on spectrum is clearest in the linearly-viscous
 till case (i.e. Hulbe & MacAyeal 1999) but there seems to be an analogous effect in the 
@@ -515,15 +515,19 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
 }
 
 
+//! Move the solution to the SSA system into a \c Vec which is \c DA distributed.
+/*!
+Since the parallel layout of the vector \c x in the \c KSP representation of the 
+linear SSA system does not in general have anything to do with the \c DA-based
+vectors, for the rest of IceModel, we must scatter the entire vector to all 
+processors.
+ */
 PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   const PetscInt  M = 2 * grid.p->My;
   PetscErrorCode  ierr;
   PetscScalar     **u, **v, *uv;
   Vec             xLoc = SSAXLocal;
 
-  /* Move the solution onto a grid which can be accessed normally. Since the parallel
-   * layout of the vector x does not in general have anything to do with the DA based
-   * vectors, we must scatter the entire vector to all processors. */
   ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
@@ -589,6 +593,28 @@ PetscErrorCode IceModel::updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateN
 }
 
 
+//! Compute the vertically-averaged horizontal velocity from the shallow shelf approximation (SSA).
+/*!
+This is the main procedure implementing the SSA.  
+
+The outer loop (over index \c k) is the nonlinear iteration.  In this loop the effective 
+viscosity is computed by computeEffectiveViscosity() and then the linear system is 
+set up and solved.
+
+This procedure creates a PETSC \c KSP, it calls assembleSSAMatrix() and assembleSSARhs() 
+to store the linear system in the \c KSP, and calls the PETSc procedure KSPSolve() to solve
+the linear system.  Solving the linear system is also a loop, an iteration, but it occurs
+inside KSPSolve().  This inner loop is controlled by PETSc but the user can set the option 
+<tt>-ksp_rtol</tt>, in particular, and that tolerance controls when the inner loop terminates.
+
+The outer loop terminates when the effective viscosity is no longer changing much, according
+to the tolerance set by the option <tt>-ssa_rtol</tt>.  (The outer loop also terminates
+when a maximum number of iterations is exceeded.)
+
+In truth there is an outer outer loop (over index \c l).  This one manages an attempt to
+over-regularize the effective viscosity so that the nonlinear iteration (the "outer" loop 
+over \c k) has a chance to converge.
+ */
 PetscErrorCode IceModel::velocitySSA() {
   PetscErrorCode ierr;
 
@@ -638,14 +664,14 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-      /* -ksp_type will set it; defaults to GMRES(30)
-       * -ksp_pc will set preconditioner; defaults to ILU */
-      /* If you want to test different KSP methods, it may be helpful to
+      /* -ksp_type will set it which type of linear iterative method is used;
+       * it defaults to GMRES(30)
+       * -ksp_pc will set the preconditioner; defaults to ILU
+       * If you want to test different KSP methods, it may be helpful to
        * see how many iterations were necessary. Initial testing implies
        * that CGS takes roughly half the iterations of GMRES(30), but is 
        * not significantly faster. Furthermore, ILU and BJACOBI seem 
        * roughly equivalent. */
-      //ierr = KSPSetType(ksp, KSPCGS); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
@@ -658,7 +684,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
 
-      /* extra diagnositic info */
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
@@ -682,7 +707,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
   done:
   ierr = verbPrintf(3,grid.com, " "); CHKERRQ(ierr);  // has to do with summary appearance
 
-  // check if user wants the matrix, rhs, and soln vector saved in Matlab readable format
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
   }
@@ -690,6 +714,11 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
 }
 
 
+//! Write out the linear system of equations for the last nonlinear iteration (for SSA).
+/*!
+Writes out the matrix, the right-hand side, and the solution vector in a \em Matlab-readable
+format, a <tt>.m</tt> file.
+*/
 PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
   PetscErrorCode ierr;
   PetscViewer    viewer;
@@ -767,17 +796,27 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
 
 
 //! At all SSA points, update the velocity field.
-PetscErrorCode IceModel::broadcastSSAVelocity() {
-  // take ubar,vbar and update 3D horizontal velocities u,v
-  // (w gets update later from vertVelocityFromIncompressibility())
+/*!
+Once the vertically-averaged velocity field is computed by the SSA, this procedure
+updates the three-dimensional horizontal velocities \f$u\f$ and \f$v\f$.  (Note that
+\f$w\f$ gets update later by vertVelocityFromIncompressibility().)  The three-dimensional
+velocity field is needed, for example, so that the temperature equation can include advection.
+Basal velocities also get updated.
 
+Here is where the flag doSuperpose controlled by option <tt>-super</tt>  is relevant.  
+If doSuperpose is true then the result of the SIA computation, already done, is added
+to the result of SSA.
+
+This procedure also computes the maximum horizontal speed in the SSA areas so that
+the CFL condition for the upwinding (in massBalExplicitStep() and only for SSA points)
+can be computed.
+ */
+PetscErrorCode IceModel::broadcastSSAVelocity() {
   PetscErrorCode ierr;
   PetscScalar **mask, **ubar, **vbar, **ub, **vb;
   PetscScalar ***u, ***v, **uvbar[2];
   PetscScalar locCFLmaxdt2D = maxdt;
   
-  /* This updates the 3D velocity field so that, for example, the temperature eqn
-     knows about the velocity in the non-SHEET regions.  Basal vels also get updated. */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
@@ -832,7 +871,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
   }
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
-
   return 0;
 }
 

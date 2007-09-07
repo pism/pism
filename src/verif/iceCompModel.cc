@@ -35,11 +35,11 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
   
   testname = mytest;
   // Override some defaults from parent class
-  setEnhancementFactor(1.0);
-  setThermalBedrock(PETSC_FALSE);
-  setUseSSAVelocity(PETSC_FALSE);
-  setIsDrySimulation(PETSC_TRUE);
-  setIncludeBMRinContinuity(PETSC_FALSE);
+  enhancementFactor = 1.0;
+  thermalBedrock = PETSC_FALSE;
+  useSSAVelocity = PETSC_FALSE;
+  isDrySimulation = PETSC_TRUE;
+  includeBMRinContinuity = PETSC_FALSE;
 
   f = tgaIce.rho / bedrock.rho;
   
@@ -99,7 +99,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     CHKERRQ(ierr);
   }
   if ((testname == 'A') || (testname == 'E'))
-    setOceanKill(PETSC_TRUE);
+    doOceanKill = PETSC_TRUE;
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -248,7 +248,7 @@ PetscErrorCode IceCompModel::initTestISO() {
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
-  setMuSliding(0.0);  // note reimplementation of basalVelocity()
+  muSliding = 0.0;  // note reimplementation of basalVelocity()
 
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -325,7 +325,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
-  setMuSliding(0.0);  // note reimplementation of basalVelocity()
+  muSliding = 0.0;  // note reimplementation of basalVelocity()
 
 //  ierr = PetscPrintf(PETSC_COMM_SELF, "rank = %d;   grid.xs ys xm ym  =  %d %d %d %d\n",
 //                     grid.rank,grid.xs,grid.ys,grid.xm,grid.ym);  CHKERRQ(ierr);

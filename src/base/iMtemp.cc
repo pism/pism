@@ -21,6 +21,14 @@
 #include "iceModel.hh"
 
 
+//! Manages the time-stepping and parallel communication for the temperature and age equations.
+/*! 
+Note that both the temperature equation and the age equation involve advection and have a CFL
+condition (Morton & Mayers 1994).  By being slightly conservative we use the same CFL condition
+for both (Bueler and others, 2007. "Exact solutions ... thermomechanically-coupled ...," 
+J. Glaciol.).  We also report any CFL violations which can \em only occur when using the 
+<tt>-tempskip</tt> option.  This procedure manages that as well.
+ */
 PetscErrorCode IceModel::temperatureAgeStep() {
   // update temp and age fields
   PetscErrorCode  ierr;
@@ -43,37 +51,9 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 }
 
 
-bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
-                              PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE) {
-  const PetscScalar THIN = 100.0;  // thin = (at most 100m thick)
-  return (   (E < THIN) || (NE < THIN) || (N < THIN) || (NW < THIN)
-          || (W < THIN) || (SW < THIN) || (S < THIN) || (SE < THIN) );
-}
-
-
-//! Take a semi-implicit time-step for the temperature equation.
-/*! 
-@cond CONTINUUM
-The conservation of energy equation is
-    \f[ \rho c_p \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f] 
-where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
-of the full three-dimensional conservation of energy.  Here \f$\rho\f$ is the density of ice, 
-\f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.
-
-@endcond
-@cond NUMERIC
-The numerical method is first-order upwind for advection and centered-differences with
-semi-implicitness for the vertical conduction term.
-@endcond
- */
+// documentation for temperatureStep() is in pism/src/base/comments.hh
 PetscErrorCode IceModel::temperatureStep() {
   // update temp fields vTnew, vTb
-
-  // This procedure involves many choices.  See the "On the temperature problem in
-  //    a column of flowing, sliding ice over bedrock" section in the model notes 
-  //    eqns3D.tex.
-  // Note that we work from the bottom of the column upward in building the system 
-  //    to solve (in the semi-implicit time-stepping scheme).
   
   PetscErrorCode  ierr;
 
@@ -351,6 +331,7 @@ PetscErrorCode IceModel::temperatureStep() {
 }
 
 
+//! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
 PetscErrorCode IceModel::excessToFromBasalMeltLayer(
                 PetscScalar rho_c, PetscScalar z,
                 PetscScalar *Texcess, PetscScalar *Hmelt) {
@@ -405,13 +386,14 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 @cond CONTINUUM
 The age equation is\f$ \frac{d\tau}{dt} = 1\f$, that is,
     \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x} + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-where \f$\tau(t,x,y,z)\f$ is the age of the ice.  This equation is hyperbolic (purely advective).  
+where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
+velocity field.  This equation is hyperbolic (purely advective).  
 The boundary condition is that when the ice fell as snow it had age zero.  
-That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, and no boundary condition elsewhere
-(as the characteristics go outward elsewhere).  At this point the refreeze case, either grounded basal
-ice or marine basal ice, is not handled correctly.
-
+That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
+boundary condition elsewhere (as the characteristics go outward elsewhere).  At this point 
+the refreeze case, either grounded basal ice or marine basal ice, is not handled correctly.
 @endcond
+
 @cond NUMERIC
 The numerical method is first-order upwind.
 @endcond
@@ -486,9 +468,18 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
 }
 
 
+bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
+                              PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE) {
+  const PetscScalar THIN = 100.0;  // thin = (at most 100m thick)
+  return (   (E < THIN) || (NE < THIN) || (N < THIN) || (NW < THIN)
+          || (W < THIN) || (SW < THIN) || (S < THIN) || (SE < THIN) );
+}
+
+
 PetscErrorCode IceModel::solveTridiagonalSystem(
          const PetscScalar* L, const PetscScalar* D, const PetscScalar* U,
          PetscScalar* x, const PetscScalar* r, PetscScalar* a, const int n) const {
+  // modified slightly from Numerical Recipes version
 
   PetscScalar b;
   b = D[0];

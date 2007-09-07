@@ -131,9 +131,11 @@ PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth forc
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   if (strchr(fmt, 'p') != NULL) {
-    ierr = verbPrintf(1, grid.com, "WARNING: .pb format no longer supported; writing .nc"); CHKERRQ(ierr);
     strcat(b,"_pb");  // will write basename_pb.nc
     strcat(fmt,"n");
+    ierr = verbPrintf(1, grid.com, 
+       "\nWARNING: .pb format no longer supported; writing to NetCDF file %s.nc\n",b);
+       CHKERRQ(ierr);
   }
 
   if (strchr(fmt, 'n') != NULL) {
@@ -154,7 +156,8 @@ PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth forc
   if (strchr(fmt, 'm') != NULL) {
     strcpy(mf, b);
     strcat(mf, ".m");
-    ierr = verbPrintf(1, grid.com, " ... dumping certain variables to Matlab file `%s'", mf); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com, 
+       " ... dumping certain variables to Matlab file `%s'", mf); CHKERRQ(ierr);
     ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
   }
   return 0;
@@ -165,6 +168,9 @@ PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
   PetscErrorCode  ierr;
   PetscViewer  viewer;
 
+//  ierr = verbPrintf(1, grid.com, "\n\n tn['a'].title = %s, tn['a'].name = %s\n\n",
+//            tn[int('a')-int('0')].title, tn[int('a')-int('0')].name); CHKERRQ(ierr);
+            
   ierr = PetscViewerASCIIOpen(grid.com, fname, &viewer); CHKERRQ(ierr);
   ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
 

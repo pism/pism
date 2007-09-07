@@ -199,13 +199,12 @@ PetscErrorCode IceHEINOModel::applyDefaultsForExperiment() {
   PetscErrorCode   ierr;
   PetscScalar      **mask;
 
-  setUseSSAVelocity(PETSC_FALSE);
-  setIsDrySimulation(PETSC_TRUE);
-  setDoGrainSize(PETSC_FALSE);
-  setEnhancementFactor(3.0);
-//  setIncludeBMRinContinuity(PETSC_FALSE);
-  setIncludeBMRinContinuity(PETSC_TRUE);
-  setOceanKill(PETSC_TRUE);
+  useSSAVelocity = PETSC_FALSE;
+  isDrySimulation = PETSC_TRUE;
+  doGrainSize = PETSC_FALSE;
+  enhancementFactor = 3.0;
+  includeBMRinContinuity = PETSC_TRUE;
+  doOceanKill = PETSC_TRUE;
 
   // make bedrock material properties into ice properties
   // (note Mbz=0 always, but want ice/rock interface segment to be all ice)

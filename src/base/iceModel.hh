@@ -31,7 +31,7 @@
 // following simply unclutters iceModel.hh:
 #include "iceModelpreamble.hh" 
 
-//! The base class for PISM.  Contains all ice variables, parameters, and flags.
+//! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 /*!
 @cond VERTCHANGE
   FIXME: add text about change of vertical variable
@@ -50,32 +50,11 @@ public:
   PetscErrorCode setStartYear(PetscScalar);
   PetscErrorCode setEndYear(PetscScalar);
   void setInitialAgeYears(PetscScalar d);
-  void setShowViewers(PetscTruth);
-  void setDoMassConserve(PetscTruth);
-  void setDoTemp(PetscTruth);
-  void setIncludeBMRinContinuity(PetscTruth);
-  void setDoGrainSize(PetscTruth);
-  void setDoBedDef(PetscTruth);
-  void setDoBedIso(PetscTruth);
   void setAllGMaxVelocities(PetscScalar);
-  void setThermalBedrock(PetscTruth);
-  void setOceanKill(PetscTruth);
   void setNoViewers();
-  void setUseSSAVelocity(PetscTruth);
-  void setDoSuperpose(PetscTruth);
   void setConstantNuForSSA(PetscScalar);
-  void setRegularizingVelocitySchoof(PetscScalar);
-  void setRegularizingLengthSchoof(PetscScalar);
-  void setSSAEpsilon(PetscScalar);
-  void setSSARelativeTolerance(PetscScalar);
-  void setIsDrySimulation(PetscTruth);
-  void setEnhancementFactor(PetscScalar);
-  void setMuSliding(PetscScalar);
-  void setGSIntervalYears(PetscScalar);
-  void setBedDefIntervalYears(PetscScalar);
-  void setNoSpokes(PetscInt);
   void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
-  void setIsothermalFlux(PetscTruth);
+
   PetscTruth isInitialized() const;
 
   // see iceModel.cc
@@ -223,9 +202,14 @@ protected:
   PetscTruth  computeSIAVelocities, useIsothermalFlux;
   char        adaptReasonFlag;
 
+  // file names
+  char         ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
+
   // viewer and sounding
-  char         diagnostic[PETSC_MAX_PATH_LEN], diagnosticBIG[PETSC_MAX_PATH_LEN],
-               ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
+  static const titleNname tn[75];  // see iMnames.cc
+  char         diagnostic[PETSC_MAX_PATH_LEN], 
+               diagnosticBIG[PETSC_MAX_PATH_LEN],
+               matlabOut[PETSC_MAX_PATH_LEN];
   PetscViewer  uvbarView[2], nuView[2], lognuView, NuView[2];
   PetscViewer  HView, hView, accumView, bedView, HmeltView, basalmeltView, maskView;
   PetscViewer  speedView, ubarView, vbarView, ghfView, upliftView, TsView;
@@ -320,6 +304,8 @@ protected:
   PetscErrorCode cleanInputData_legacy();
   PetscErrorCode reconfigure_legacy_Mbz();
   PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
+
+  // see iMnames.cc; note tn is statically-initialized in iMnames.cc
 
   // see iMpdd.cc (positive degree day model for ablation)
   gsl_rng     *pddRandGen;
@@ -418,8 +404,9 @@ protected:
   PetscErrorCode initSounding();
   PetscErrorCode updateSoundings();
   PetscErrorCode updateViewers();  // it calls updateSoundings()
-  PetscErrorCode createOneViewerIfDesired(PetscViewer *viewer, 
-                                          char name, const char* title);
+  PetscErrorCode createOneViewerIfDesired(PetscViewer *viewer, const char singleCharName);
+  PetscErrorCode createOneViewerIfDesired(PetscViewer *viewer, const char singleCharName,
+                                          const char* title);
   PetscErrorCode createViewers();
   PetscErrorCode destroyViewers();
 

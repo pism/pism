@@ -868,7 +868,7 @@ PetscErrorCode IceDragYieldModel::computeBeta() {
   ierr = verbPrintf(2,grid.com, 
         "computing velocities (with SSA; including eff viscosity iteration) ...\n");
         CHKERRQ(ierr);
-  setUseSSAVelocity(PETSC_TRUE);
+  useSSAVelocity = PETSC_TRUE;
   doBetaxy = PETSC_FALSE; // so  IceDragYieldModel::basalDrag[x|y]()  have usual meaning
                           // {i.e. same meaning as  IceModel::basalDrag[x|y]() }
   ierr = velocity(true); CHKERRQ(ierr);
@@ -883,8 +883,8 @@ PetscErrorCode IceDragYieldModel::computeBeta() {
 
   ierr = verbPrintf(2,grid.com, "computing deformational velocities (w/o SSA) ...");
         CHKERRQ(ierr);
-  setUseSSAVelocity(PETSC_FALSE);
-  setMuSliding(0.0);  // for deformational, just assume frozen bed
+  useSSAVelocity = PETSC_FALSE;
+  muSliding = 0.0;  // for deformational, just assume frozen bed
 //  setEnhancementFactor(0.8);  //  reduce amount of deformation to ascribe more
 //                              //  of mass-balance velocities to sliding
   ierr = velocity(true); CHKERRQ(ierr);
@@ -897,8 +897,8 @@ PetscErrorCode IceDragYieldModel::computeBeta() {
   ierr = computeDragFromBalanceVelocity(); CHKERRQ(ierr);
 
   // restore state before putting draxy into da2 Vecs (and writing nc file and updating mask ...) 
-  setUseSSAVelocity(useSSAVelocitySAVE);
-  setMuSliding(muSlidingSAVE);
+  useSSAVelocity = useSSAVelocitySAVE;
+  muSliding = muSlidingSAVE;
   doBetaxy = doBetaxySAVE;
 
   ierr = moveDragxytoDAbetas(); CHKERRQ(ierr);
