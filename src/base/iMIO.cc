@@ -22,18 +22,6 @@
 #include "iceModel.hh"
 
 
-PetscErrorCode  IceModel::VecViewDA2Matlab(Vec l, PetscViewer v, const char *varname) {
-  PetscErrorCode ierr;
-  
-  ierr=PetscObjectSetName((PetscObject) g2, varname); CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, l, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr = VecView(g2, v); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(v,"\n%s = reshape(%s,%d,%d);\n\n",
-             varname,varname,grid.p->Mx,grid.p->My); CHKERRQ(ierr);
-  return 0;
-}
-
-
 bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
   int flen = strlen(fname);
   int slen = strlen(suffix);
@@ -45,6 +33,10 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
 }
 
 
+//! Initialize from a saved PISM model state (in NetCDF format).
+/*! 
+Calls initFromFile_netCDF() to do the actual work.
+ */
 PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscErrorCode  ierr;
 
@@ -102,33 +94,38 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
 }
 
   
-PetscErrorCode  IceModel::writeFiles(const char* basename) {
-  PetscErrorCode ierr = writeFiles(basename,PETSC_FALSE); CHKERRQ(ierr);
+PetscErrorCode  IceModel::writeFiles(const char* defaultbasename) {
+  PetscErrorCode ierr = writeFiles(defaultbasename,PETSC_FALSE); CHKERRQ(ierr);
   return 0;
 }
 
   
-PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth forceFullDiagnostics) {
+//! Save model state in NetCDF format (and save variables in Matlab format if desired).
+/*! 
+Optionally allows saving of full velocity field.
+
+Calls dumpToFile_netCDF(), dumpToFile_diagnostic_netCDF(), and writeMatlabVars() to do 
+the actual work.
+ */
+PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
+                                     const PetscTruth forceFullDiagnostics) {
   PetscErrorCode ierr;
 
   char b[PETSC_MAX_PATH_LEN];
   char fmt[PETSC_MAX_PATH_LEN] = "n";
   char ncf[PETSC_MAX_PATH_LEN]; // netCDF format
-  char mf[PETSC_MAX_PATH_LEN];  // Matlab format
 
   if (doPDD == PETSC_TRUE) { // want to save snow accumulation map, not net accumulation
     ierr = putBackSnowAccumPDD(); CHKERRQ(ierr);
   }
   
+  ierr = stampHistoryEnd(); CHKERRQ(ierr);
+
   // Use the defaults passed from the driver if not specified on command line.
   // We should leave space for a suffix and null byte
-  strncpy(b, basename, PETSC_MAX_PATH_LEN-4);
+  strncpy(b, defaultbasename, PETSC_MAX_PATH_LEN-4);
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", b, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-of", fmt, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-  // to write in both NetCDF and Matlab format, for instance:
-  //     '-o foo -of nm' will generate foo.nc and foo.m
-
-  ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   if (strchr(fmt, 'p') != NULL) {
     strcat(b,"_pb");  // will write basename_pb.nc
@@ -154,188 +151,27 @@ PetscErrorCode  IceModel::writeFiles(const char* basename, const PetscTruth forc
   }
 
   if (strchr(fmt, 'm') != NULL) {
-    strcpy(mf, b);
-    strcat(mf, ".m");
     ierr = verbPrintf(1, grid.com, 
-       " ... dumping certain variables to Matlab file `%s'", mf); CHKERRQ(ierr);
-    ierr = dumpToFile_Matlab(mf); CHKERRQ(ierr);
+       "\nWARNING: .m format no longer supported with '-o'; use '-mato' and '-matv'\n");
+       CHKERRQ(ierr);
   }
+
+  // write out individual variables out to Matlab file
+  char       matf[PETSC_MAX_PATH_LEN];
+  PetscTruth matoSet;
+  strcpy(matf, "\0");
+  ierr = PetscOptionsGetString(PETSC_NULL, "-mato", matf, PETSC_MAX_PATH_LEN, &matoSet); 
+           CHKERRQ(ierr);
+  strcpy(matlabOutVars, "\0");
+  ierr = PetscOptionsGetString(PETSC_NULL, "-matv", matlabOutVars, PETSC_MAX_PATH_LEN, PETSC_NULL); 
+            CHKERRQ(ierr);
+  if (matoSet == PETSC_TRUE) {
+    strcat(matf, ".m");
+    ierr = verbPrintf(1, grid.com, 
+       " ... writing variables %s to Matlab file `%s'", matlabOutVars, matf); CHKERRQ(ierr);
+    ierr = writeMatlabVars(matf); CHKERRQ(ierr); // see iMmatlab.cc
+  }
+
   return 0;
 }
 
-
-PetscErrorCode IceModel::dumpToFile_Matlab(const char *fname) {
-  PetscErrorCode  ierr;
-  PetscViewer  viewer;
-
-//  ierr = verbPrintf(1, grid.com, "\n\n tn['a'].title = %s, tn['a'].name = %s\n\n",
-//            tn[int('a')-int('0')].title, tn[int('a')-int('0')].name); CHKERRQ(ierr);
-            
-  ierr = PetscViewerASCIIOpen(grid.com, fname, &viewer); CHKERRQ(ierr);
-  ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer,"\n\ndisp('iceModel output:')\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-    "\nclear year x y z xx yy zz ubar vbar c h H bed mask Tkd pmMaskkd Tid Tjd Sigmakd\n");
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer,"year=%10.6f;\n",grid.p->year);  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Lx,grid.p->dx,grid.p->Lx);
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Ly,grid.p->dy,grid.p->Ly);
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
-
-  ierr = VecViewDA2Matlab(vh, viewer, "h"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vH, viewer, "H"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vbed, viewer, "bed"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vMask, viewer, "mask"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vubar, viewer, "ubar"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vvbar, viewer, "vbar"); CHKERRQ(ierr);
-
-  ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
-  ierr = VecPointwiseMult(vWork2d[1], vvbar, vvbar); CHKERRQ(ierr);
-  ierr = VecAXPY(vWork2d[0], 1.0, vWork2d[1]); CHKERRQ(ierr);  // vWork2d[0] = ubar^2+vbar^2 = c^2 now
-  PetscScalar     **c;
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &c); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      c[i][j] = sqrt(c[i][j]);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &c); CHKERRQ(ierr);
-  ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "c"); CHKERRQ(ierr);
-
-  PetscScalar     ***u, **ukd, ***v, **vkd, ***w, **wkd;
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &ukd); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &vkd); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[2], &wkd); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ukd[i][j] = u[i][j][kd];
-      vkd[i][j] = v[i][j][kd];
-      wkd[i][j] = w[i][j][kd];
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &ukd); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vkd); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &wkd); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "ukd"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[1], viewer, "vkd"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[2], viewer, "wkd"); CHKERRQ(ierr);
-
-  PetscScalar     ***T, **T2, **H, **pmMask;
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &T2); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &pmMask); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      T2[i][j] = T[i][j][kd];
-      if (T2[i][j] + ice.beta_CC_grad * H[i][j] >= DEFAULT_MIN_TEMP_FOR_SLIDING) {
-        pmMask[i][j] = 1.0;
-      } else {
-        pmMask[i][j] = 0.0;
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &T2); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &pmMask); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "Tkd"); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[1], viewer, "pmMaskkd"); CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"Thomol = Tkd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"hand1=figure;\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"imagesc(x,y,flipud(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"Tcmap = get(hand1,'ColorMap'); Tcmap(64,:)=[1 1 1];\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"set(hand1,'ColorMap',Tcmap)\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-       "title('temperature at z given by -kd (white = pressure-melting)')\n\n");  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
-  PetscScalar     ***Sigma, **Sigma2;
-  ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &Sigma2); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      Sigma2[i][j] = Sigma[i][j][kd];
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Sigma2); CHKERRQ(ierr);
-  ierr = VecViewDA2Matlab(vWork2d[0], viewer, "Sigmakd"); CHKERRQ(ierr);
-
-#if 0
-  // make slice along y-axis of T; requires nontrivial transfer from 3D DA-based array into new
-  // type of 2D DA-based array, I think
-  { // explicit scoping to reduce chance of conflicts and memory leaks
-    DA           daslice;
-    PetscInt     N,M,n,m;
-    Vec          vTid, vTjd, gslice;
-    PetscScalar  **Tid, **Tjd;
-
-    ierr = DAGetInfo(grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                     PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-    ierr = DACreate2d(grid.com, DA_XPERIODIC, DA_STENCIL_BOX,
-                      grid.p->Mz, grid.p->Mx, 1, m, 1, 1,
-                      PETSC_NULL, PETSC_NULL, &daslice); CHKERRQ(ierr);
-    ierr = DACreateLocalVector(daslice, &vTid); CHKERRQ(ierr);
-    ierr = DACreateLocalVector(daslice, &vTjd); CHKERRQ(ierr);
-    ierr = DACreateGlobalVector(daslice, &gslice); CHKERRQ(ierr);
-
-    ierr = DAVecGetArray(daslice, vTjd, &Tjd); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt k=0; k < grid.p->Mz; k++) {
-        Tjd[i][k] = T[i][jd][k];
-      }
-    }
-    ierr = DAVecRestoreArray(daslice, vTjd, &Tjd); CHKERRQ(ierr);
-
-    ierr = DAVecGetArray(daslice, vTid, &Tid); CHKERRQ(ierr);
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      for (PetscInt k=0; k < grid.p->Mz; k++) {
-        Tid[j][k] = T[id][j][k];
-      }
-    }
-    ierr = DAVecRestoreArray(daslice, vTid, &Tid); CHKERRQ(ierr);
-
-    ierr = PetscViewerASCIIPrintf(viewer,"z=linspace(0,%12.3f,%d);\n",grid.p->Lz,grid.p->Mz);
-        CHKERRQ(ierr);
-
-    ierr = PetscObjectSetName((PetscObject) gslice,"Tid"); CHKERRQ(ierr);
-    ierr = DALocalToGlobal(grid.da2, vTid, INSERT_VALUES, gslice); CHKERRQ(ierr);
-    ierr = VecView(gslice, viewer); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nTid = reshape(Tid,%d,%d);\n\n",
-              grid.p->Mz,grid.p->My); CHKERRQ(ierr);
-
-    ierr=PetscObjectSetName((PetscObject) gslice,"Tjd"); CHKERRQ(ierr);
-    ierr = DALocalToGlobal(grid.da2, vTid, INSERT_VALUES, gslice); CHKERRQ(ierr);
-    ierr = VecView(gslice, viewer); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nTjd = reshape(Tjd,%d,%d);\n\n",
-              grid.p->Mz,grid.p->Mx); CHKERRQ(ierr);
-
-    ierr = VecDestroy(gslice); CHKERRQ(ierr);
-    ierr = VecDestroy(vTid); CHKERRQ(ierr);
-    ierr = VecDestroy(vTjd); CHKERRQ(ierr);
-    ierr = DADestroy(daslice); CHKERRQ(ierr);
-  }
-#endif
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-
-  ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(viewer);
-  return 0;
-}

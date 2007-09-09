@@ -26,8 +26,8 @@ executables := pismr pismd pismv pisms pgrn pant
 extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
    simpleL gridL flowTable tryLCbd
 
-ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc \
-	iMgrainsize.cc iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMnames.cc iMoptions.cc iMpdd.cc \
+ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrainsize.cc \
+	iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
 	iMregrid.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
 	iceModel.cc materials.cc nc_util.cc \
 	beddefLC.cc forcing.cc

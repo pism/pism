@@ -88,7 +88,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
 
 PetscErrorCode IceCompModel::initFromOptions() {
-//  do this only after IceCompModel::setFromOptions()
+  //  do this only after IceCompModel::setFromOptions()
   PetscErrorCode ierr;
   PetscTruth inFileSet;
   char inFile[PETSC_MAX_PATH_LEN];
@@ -103,18 +103,11 @@ PetscErrorCode IceCompModel::initFromOptions() {
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  if (inFileSet == PETSC_TRUE) {
-    ierr = initFromFile(inFile); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, 
-           "continuing from input file %s; using Test %c conditions during run ...\n",
-           inFile,testname);  CHKERRQ(ierr);
-    ierr = createCompVecs(); CHKERRQ(ierr);
-    if (yearsStartRunEndDetermined == PETSC_FALSE) {
-      ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
-    }
-  } else {
+
+  if (inFileSet == PETSC_FALSE) {
     ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
+    ierr = createVecs(); CHKERRQ(ierr);
     switch (testname) {
       case 'A':
       case 'E':
@@ -142,7 +135,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
         break;
       default:  SETERRQ(1,"IceCompModel ERROR : desired test not implemented\n");
     }
-    ierr = createVecs(); CHKERRQ(ierr);
 
     // none use Goldsby-Kohlstedt or do age calc
     ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
@@ -154,9 +146,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
 
     ierr = createCompVecs(); CHKERRQ(ierr);
-    if (yearsStartRunEndDetermined == PETSC_FALSE) {
-      ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
-    }
 
     switch (testname) {
       case 'A':
@@ -176,9 +165,16 @@ PetscErrorCode IceCompModel::initFromOptions() {
         break;
       default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
     }
+
+    initialized_p = PETSC_TRUE;
   }
 
-  ierr = IceModel::afterInitHook(); CHKERRQ(ierr);
+  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
+
+  if (inFileSet == PETSC_TRUE) {
+    ierr = createCompVecs(); CHKERRQ(ierr);
+  }
+
   ierr = createCompViewers(); CHKERRQ(ierr);
   return 0;
 }
@@ -794,62 +790,6 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxvecerr*secpera, avvecerr*secpera, 
                   (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::dumpToFile_Matlab(const char *fname) {
-  PetscErrorCode  ierr;
-  PetscViewer  viewer;
-  char b[PETSC_MAX_PATH_LEN];  // for basename
-  char mcompf[PETSC_MAX_PATH_LEN];  // Matlab format for compensatory
-
-  ierr = IceModel::dumpToFile_Matlab(fname);  CHKERRQ(ierr);
-  
-  if ((testname == 'F') || (testname == 'G')) {
-    ierr = PetscOptionsGetString(PETSC_NULL, "-o", b, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-    strcpy(mcompf, b);
-    strcat(mcompf, "_comp.m");
-
-    ierr = verbPrintf(2,grid.com, "\n(also dumping Sigma_C to `%s'; also corrects Sigma)", mcompf); CHKERRQ(ierr);
-
-    ierr = PetscViewerASCIIOpen(grid.com, mcompf, &viewer); CHKERRQ(ierr);
-    ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-
-    ierr = PetscViewerASCIIPrintf(viewer,"\n\n\n\ndisp('iceCompModel output:')\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nclear SigmaCkd\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
-    PetscScalar     ***SigmaC, **SigmaC2;
-    ierr = DAVecGetArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vWork2d[0], &SigmaC2); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        SigmaC2[i][j] = SigmaC[i][j][kd];
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da3, vSigmaComp, &SigmaC); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &SigmaC2); CHKERRQ(ierr);
-    ierr = VecViewDA2Matlab(vWork2d[0], viewer, "SigmaCkd"); CHKERRQ(ierr);
-
-    ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"\nSigmakd = Sigmakd - SigmaCkd; \n\n");  CHKERRQ(ierr);
- 
-    ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"mesh(x,y,Sigmakd), colormap cool\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"title('TRUE strain heating \\Sigma at z given by -kd')\n\n");
-         CHKERRQ(ierr);
-
-    ierr = PetscViewerASCIIPrintf(viewer,"figure\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"mesh(x,y,SigmaCkd), colormap cool\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"title('compensatory heating \\Sigma_C at z given by -kd')\n\n");
-         CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
-
-    ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewer);
   }
   return 0;
 }

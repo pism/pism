@@ -266,9 +266,8 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
 
-  if (updateDiffusViewer && (diffusView != PETSC_NULL)) { // -f option: view diffusivity (m^2/s)
-    ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecView(g2, diffusView); CHKERRQ(ierr);
+  if (updateDiffusViewer) { // view diffusivity (m^2/s)
+    ierr = update2DViewer('D',vWork2d[0],1.0); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
@@ -302,7 +301,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
 
-  if ( (diffusView != PETSC_NULL) 
+  if ( (runtimeViewers[cIndex('D')] != PETSC_NULL) 
        || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
     ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   }

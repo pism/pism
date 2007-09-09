@@ -18,10 +18,28 @@
 
 #include "iceModel.hh"
 
-// note that by the ASCII-to-integer conversion, the title is
-//        tn[int(singleCharName) - int('0')].title 
-// and that the variable name (for NetCDF and Matlab) is 
-//        tn[int(singleCharName) - int('0')].name 
+
+int IceModel::cIndex(const char singleCharName) {
+  return int(singleCharName) - int('0');
+}
+
+
+//! Holds variable names (for NetCDF and Matlab files) and short titles (for graphical viewers).
+/*! 
+This array of strings holds names and titles.  These names and titles are for <i>views</i> of the
+internal state of PISM.  That is, they are \em not names and title for <i>parts</i> of the 
+internal state of PISM.  Thus, for example, there is \em no one-to-one correspondence between 
+the internal variables stored in PETSc Vecs and the entries in this array; it is more complicated 
+than that.  
+
+This array is used for both variable names \em and short titles in writeMatlabVars(), among
+other places.  It is accessed for short titles \em only in createViewers().
+
+This array is usually referenced by a single character.  Note that by the 
+ASCII-to-integer conversion, for instance, the variable name corresponding to the 
+single character name 'A' is <tt>tn[int('A') - int('0')].title</tt>.  Such
+indexing is facilitated by cIndex().
+ */
 const titleNname IceModel::tn[] = {
 {"hor. speed at surface (m/a)", "csurf"}, // '0'
 {"u at surface (m/a)", "usurf"}, // '1'
@@ -41,7 +59,7 @@ const titleNname IceModel::tn[] = {
 {}, // '?'
 {}, // '@'
 {}, // 'A'
-{"log(beta) (drag coeff; log_10(Pa s m^-1))", ""}, // 'B'
+{"log(beta) (drag coeff; log_10(Pa s m^-1))", "log_beta"}, // 'B'
 {"tau_c (till yield stress; bar=10^5Pa)", "tau_c"}, // 'C'
 {"D (diffusivity; m^2/s)", "D"}, // 'D'
 {"age of ice (years) at kd", "age_kd"}, // 'E'
@@ -57,11 +75,11 @@ const titleNname IceModel::tn[] = {
 {}, // 'O'
 {}, // 'P'
 {}, // 'Q'
-{"basal frictional heating (mW/m^2)", ""}, // 'R'
+{"basal frictional heating (mW/m^2)", "basal_heating"}, // 'R'
 {"Sigma (strain heating; K/a) at kd", "Sigma_kd"}, // 'S'
 {"T (temperature; K) at kd", "T_kd"}, // 'T'
-{"uvbar[0] (velocity on stag grid; m/a)", ""}, // 'U'
-{"uvbar[1] (velocity on stag grid; m/a)", ""}, // 'V'
+{"uvbar[0] (velocity on stag grid; m/a)", "ubar_staggered"}, // 'U'
+{"uvbar[1] (velocity on stag grid; m/a)", "vbar_staggered"}, // 'V'
 {}, // 'W'
 {"u (velocity; m/a) at kd", "u_kd"}, // 'X'
 {"v (velocity; m/a) at kd", "v_kd"}, // 'Y'
@@ -72,32 +90,31 @@ const titleNname IceModel::tn[] = {
 {}, // '^'
 {}, // '_'
 {}, // '`'
-{"M (surface accum rate; m/a)", "accum"}, // 'a'
-{"b (bed elev; m above sea level)", "bed"}, // 'b'
+{"ice surface mass balance (m/a)", "accum_pera"}, // 'a'
+{"b (bed elev; m above sea level)", "b"}, // 'b'
 {"log(speed) (log_10(m/a))", "cbar"}, // 'c'
 {}, // 'd'
-{"age of ice (years) at id,jd", ""}, // 'e'
+{"age of ice (years) at id,jd", "age_sounding"}, // 'e'
 {"thickening rate dH/dt (m/a)", "dHdt"}, // 'f'
-{"grain size (mm) at id,jd", ""}, // 'g'
+{"grain size (mm) at id,jd", "grain_size_sounding"}, // 'g'
 {"h (surface elev; m above sea level)", "h"}, // 'h'
-{"nu*H (I offset)", ""}, // 'i'
-{"nu*H (J offset)", ""}, // 'j'
+{"nu*H (I offset)", "nu_H_ioffset"}, // 'i'
+{"nu*H (J offset)", "nu_H_joffset"}, // 'j'
 {}, // 'k'  // currently in use so '-d k' gives same result as -ksp_monitor
-{"basal melt rate (m/a)", ""}, // 'l'
+{"basal melt rate (m/a)", "basal_melt_rate"}, // 'l'
 {"mask (1=SHEET, 2=DRAG, 3=FLOAT)", "mask"}, // 'm'
-{"log_10(nu*H)", ""}, // 'n'
+{"log_10(nu*H)", "log_nu_H"}, // 'n'
 {}, // 'o'
-{"bed uplift rate (m/a)", "dbdt"}, // 'p'
-{"log(basal sliding speed) (log_10(m/a))", ""}, // 'q'
+{"bed uplift rate (m/a)", "dbdt_pera"}, // 'p'
+{"log(basal sliding speed) (log_10(m/a))", "log_basal_sliding_speed"}, // 'q'
 {"suRface temperature (K)", "Ts"}, // 'r'
-{"Sigma (strain heating; K/a) at id,jd", ""}, // 's'
-{"T (temperature; K) at id,jd", ""}, // 't'
+{"Sigma (strain heating; K/a) at id,jd", "strain_heating"}, // 's'
+{"T (temperature; K) at id,jd", "T_sounding"}, // 't'
 {"ubar (velocity; m/a)", "ubar"}, // 'u'
 {"vbar (velocity; m/a)", "vbar"}, // 'v'
 {}, // 'w'
-{"u (velocity; m/a) at id,jd", ""}, // 'x'
-{"v (velocity; m/a) at id,jd", ""}, // 'y'
-{"w (velocity; m/a) at id,jd", ""}, // 'z'
+{"u (velocity; m/a) at id,jd", "u_sounding"}, // 'x'
+{"v (velocity; m/a) at id,jd", "v_sounding"}, // 'y'
+{"w (velocity; m/a) at id,jd", "w_sounding"}, // 'z'
 };  // end of static initialization of IceModel::tn
-
 

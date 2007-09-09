@@ -32,7 +32,6 @@ public:
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode run();
   PetscErrorCode reportErrors();
-  virtual PetscErrorCode dumpToFile_Matlab(const char *fname);
 
 protected:
   ThermoGlenArrIce &tgaIce;

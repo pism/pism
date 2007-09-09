@@ -83,6 +83,10 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   createBasal_done = PETSC_FALSE;
   top0ctx_created = PETSC_FALSE;
   createVecs_done = PETSC_FALSE;
+
+  for (PetscInt nn = 0; nn < tnN; nn++) {
+    runtimeViewers[nn] = PETSC_NULL;
+  }
   createViewers_done = PETSC_FALSE;
 
   ierr = setDefaults();

@@ -92,6 +92,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
 
+// note "-mato" caught in writeFiles() in iMIO.cc
+
+// note "-matv" caught in writeFiles() in iMIO.cc
+
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-maxdt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
   if (maxdtSet == PETSC_TRUE)    setMaxTimeStepYears(my_maxdt);
 

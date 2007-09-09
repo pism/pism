@@ -125,9 +125,9 @@ using namespace std;
  
 
 struct titleNname {
-  char title[60]; // this short title appears on PETSc graphical viewers and in Matlab output file
+  char title[100]; // this short title appears on PETSc graphical viewers and in Matlab output file
                   // (and as pism_short_title (?) attribute in NetCDF?)
-  char name[10];  // this name is for NetCDF vars and for Matlab (output) vars
+  char name[30];  // this name is for NetCDF vars and for Matlab (output) vars
 };
 
 struct MaskInterp {

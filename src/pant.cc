@@ -596,11 +596,11 @@ PetscErrorCode IceDragYieldModel::getEffectiveViscosityAllGrounded() {
   ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);  
 
   // view if  "-d n"
-  if (nuView[0] != PETSC_NULL && nuView[1] != PETSC_NULL) {
+  if (runtimeViewers[cIndex('i')] != PETSC_NULL && runtimeViewers[cIndex('j')] != PETSC_NULL) {
     ierr = DALocalToGlobal(grid.da2, vNu[0], INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecView(g2, nuView[0]); CHKERRQ(ierr);
+    ierr = VecView(g2, runtimeViewers[cIndex('i')]); CHKERRQ(ierr);
     ierr = DALocalToGlobal(grid.da2, vNu[1], INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecView(g2, nuView[1]); CHKERRQ(ierr);
+    ierr = VecView(g2, runtimeViewers[cIndex('j')]); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,"\n final viscosity; pausing for 10 seconds ... \n"); CHKERRQ(ierr);
     ierr = PetscSleep(10); CHKERRQ(ierr);
   }

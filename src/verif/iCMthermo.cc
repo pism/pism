@@ -47,14 +47,16 @@ PetscErrorCode IceCompModel::createCompViewers() {
 
   // must be called after IceModel::createViewers because diagnostic needs to be filled
   if ((testname=='F') || (testname=='G')) {
-    ierr = createOneViewerIfDesired(&SigmaCompView, 'P',"Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
+    ierr = createOneViewerIfDesired(&SigmaCompView, 'P',
+                   "Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
   } else SigmaCompView = PETSC_NULL;
   
   // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
-  if (SigmaMapView != PETSC_NULL) {
-    ierr = PetscViewerDestroy(SigmaMapView); CHKERRQ(ierr);
-    SigmaMapView = PETSC_NULL;
-    ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',"Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
+  if (runtimeViewers[cIndex('S')] != PETSC_NULL) {
+    ierr = PetscViewerDestroy(runtimeViewers[cIndex('S')]); CHKERRQ(ierr);
+    runtimeViewers[cIndex('S')] = PETSC_NULL;
+    ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',
+                   "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
   } else compSigmaMapView = PETSC_NULL;
    
   compViewersCreated = PETSC_TRUE;

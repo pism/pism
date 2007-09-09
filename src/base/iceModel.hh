@@ -81,9 +81,8 @@ public:
     
   // see iMIO.cc
   PetscErrorCode initFromFile(const char *);
-  virtual PetscErrorCode dumpToFile_Matlab(const char *);
-  PetscErrorCode writeFiles(const char* basename);
-  PetscErrorCode writeFiles(const char* basename, const PetscTruth forceFullDiagnostics);
+  PetscErrorCode writeFiles(const char* defaultbasename);
+  PetscErrorCode writeFiles(const char* defaultbasename, const PetscTruth forceFullDiagnostics);
 
   // see iMIOnetcdf.cc
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
@@ -206,17 +205,12 @@ protected:
   char         ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
 
   // viewer and sounding
-  static const titleNname tn[75];  // see iMnames.cc
-  char         diagnostic[PETSC_MAX_PATH_LEN], 
-               diagnosticBIG[PETSC_MAX_PATH_LEN],
-               matlabOut[PETSC_MAX_PATH_LEN];
-  PetscViewer  uvbarView[2], nuView[2], lognuView, NuView[2];
-  PetscViewer  HView, hView, accumView, bedView, HmeltView, basalmeltView, maskView;
-  PetscViewer  speedView, ubarView, vbarView, ghfView, upliftView, TsView;
-  PetscViewer  T2View, TView, uView, vView, wView, SigmaView, SigmaMapView;
-  PetscViewer  slidespeedView, RbView, gsView, gsMapView, betaView, taucView;
-  PetscViewer  dhView, diffusView, tauView, tauMapView, umapView, vmapView, wmapView;
-  PetscViewer  surfHorSpeedView, surfuView, surfvView, surfwView;
+  static const PetscInt   tnN = 75;
+  static const            titleNname tn[tnN];  // see iMnames.cc
+  PetscViewer             runtimeViewers[tnN]; // see iMviewers.cc
+  char         diagnostic[PETSC_MAX_PATH_LEN], // see iMviewers.cc
+               diagnosticBIG[PETSC_MAX_PATH_LEN], // see iMviewers.cc
+               matlabOutVars[PETSC_MAX_PATH_LEN]; // see iMmatlab.cc
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, gsd, taud;
@@ -280,7 +274,6 @@ protected:
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
-  PetscErrorCode VecViewDA2Matlab(Vec l, PetscViewer v, const char *varname);
   PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
 
   // see iMIOnetcdf.cc
@@ -305,7 +298,27 @@ protected:
   PetscErrorCode reconfigure_legacy_Mbz();
   PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
 
+  // see iMmatlab.cc
+  bool           matlabOutWanted(const char name);
+  PetscErrorCode VecView_g2ToMatlab(PetscViewer v, 
+                                    const char *varname, const char *shorttitle);
+  PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
+                                 Vec l2, const PetscScalar scale);
+  PetscErrorCode writeSliceToMatlab(PetscViewer v, const char singleCharName, 
+                                    Vec l3, const PetscScalar scale);
+  PetscErrorCode writeSurfaceValuesToMatlab(PetscViewer v, const char singleCharName, 
+                                            Vec l3, const PetscScalar scale);
+  PetscErrorCode writeSpeed2DToMatlab(PetscViewer v, const char scName, 
+                          Vec lu, Vec lv, const PetscScalar scale, 
+                          const PetscTruth doLog, const PetscScalar log_missing);
+  PetscErrorCode writeSpeedSurfaceValuesToMatlab(PetscViewer v, const char scName, 
+                          Vec lu, Vec lv, const PetscScalar scale, 
+                          const PetscTruth doLog, const PetscScalar log_missing);
+  PetscErrorCode writeMatlabVars(const char *fname);
+  PetscErrorCode writeSSAsystemMatlab(Vec vNu[2]);
+
   // see iMnames.cc; note tn is statically-initialized in iMnames.cc
+  int cIndex(const char singleCharName);
 
   // see iMpdd.cc (positive degree day model for ablation)
   gsl_rng     *pddRandGen;
@@ -349,8 +362,6 @@ protected:
   PetscErrorCode broadcastSSAVelocity();
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
-  PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
-  PetscErrorCode writeSSAsystemMatlab(Vec vNu[2]);
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
@@ -403,11 +414,21 @@ protected:
   int isViewer(char name);
   PetscErrorCode initSounding();
   PetscErrorCode updateSoundings();
-  PetscErrorCode updateViewers();  // it calls updateSoundings()
-  PetscErrorCode createOneViewerIfDesired(PetscViewer *viewer, const char singleCharName);
-  PetscErrorCode createOneViewerIfDesired(PetscViewer *viewer, const char singleCharName,
-                                          const char* title);
+  PetscErrorCode updateOneSounding(const char scName, Vec l, const PetscScalar scale);
+  PetscErrorCode createOneViewerIfDesired(const char singleCharName);
+  PetscErrorCode createOneViewerIfDesired(const char singleCharName, const char* title);
+  PetscErrorCode createOneViewerIfDesired(PetscViewer* v, 
+                                          const char singleCharName, const char* title);
   PetscErrorCode createViewers();
+  PetscErrorCode update2DViewer(const char scName, Vec l2, const PetscScalar scale);
+  PetscErrorCode updateSliceViewer(const char scName, Vec l3, const PetscScalar scale);
+  PetscErrorCode updateSurfaceValuesViewer(const char scName, Vec l3, const PetscScalar scale);
+  PetscErrorCode updateSpeed2DViewer(const char scName, Vec lu, Vec lv, 
+                   const PetscScalar scale, const PetscTruth doLog, const PetscScalar log_missing);
+  PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, Vec lu, Vec lv, 
+                   const PetscScalar scale, const PetscTruth doLog, const PetscScalar log_missing);
+  PetscErrorCode updateViewers();  // it calls updateSoundings()
+  PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
   PetscErrorCode destroyViewers();
 
 private:
