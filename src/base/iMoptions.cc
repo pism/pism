@@ -75,6 +75,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-gk" is in use for specifying Goldsby-Kohlstedt ice
 
+  ierr = PetscOptionsHasName(PETSC_NULL, "-grad_from_eta", &transformForSurfaceGradient); 
+            CHKERRQ(ierr);
+
 // note "-id" is in use for sounding location
 
 // note "-if" is in use for input file name

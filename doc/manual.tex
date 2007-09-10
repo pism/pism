@@ -42,10 +42,11 @@
 \newcommand{\Matlab}{\textsc{Matlab}\xspace}
 \newcommand{\bU}{\mathbf{U}}
 \newcommand{\eps}{\epsilon}
+\newcommand{\grad}{\nabla}
 
 \newcommand{\optoptdef}[3]{\vspace{1mm}\noindent \large\texttt{-#1},\,\,\texttt{--#2=}\normalsize\,\,[\textsl{#3}]:\quad}
 
-\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize}
+\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\normalsize}
 \newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
 \newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
 \newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
@@ -1719,6 +1720,10 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
+\opt{grad\und from\und eta}  The surface gradient is usually computed by simple centered-differences on the surface elevation.  With this option it is computed by first transforming the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
+	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
+Here $b$ is the bed elevation and $h$ is the surface elevation.  Note that only $n=3$ is used in this transformation regardless of the chosen flow law.  The transformation may have benefits in that the surface value of the vertical velocity may be better behaved near the margin, e.~.g.~as in EISMINT II experiments, but this is not yet clear.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
+
 \optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:real}
 
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
@@ -1773,6 +1778,10 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
 
 \opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sect:usage}.
+
+\optdef{mato}{pism\und views}  Specifies the name of the \Matlab-readable file in which to save the views.  Use with \verb|-matv|, to set which views to save; if \verb|-matv| is not set then \verb|-mato| has no effect.
+
+\opt{matv}  Specifies which \Matlab ``views'' to save at end of run.  See Appendix C for list of single character names of the views.  The default is for \emph{no} \Matlab views.  See \verb|-mato| for setting the name of the \Matlab-readable file in which to save the views.  Typically the user will write \verb|-mato foo -matv HT0c| to save four views in the \Matlab-readable ASCII file \verb|foo.m|.
 
 \optdef{maxdt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sect:usage}.
 
@@ -1949,17 +1958,34 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 
 \clearpage \newpage
-\section{PISM viewers}\label{sect:viewers}
+\section{PISM viewers: Graphical and \Matlab}\label{sect:viewers}
 
-Basic graphical views of the changing state of the ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
+\subsection{Viewing the PISM state}  Basic graphical views of the changing state of a PISM ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:
 
 \verb|$  pismv -test G -d hTf -dbig 0|
 
 \noindent shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of horizontal ice speed at the surface (``\t{0}'', i.e.~zero).
 
 The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows only two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
+\medskip
 
-The single character diagnostic viewer names are:
+The same views of the PISM model can be saved \emph{at the end of the run} to a \Matlab-readable ASCII file by the same single character names.  (At this point, \emph{most} of the names are allowed; see the list below.)  We will call these ``\Matlab views''.  For instance,
+
+\verb|$  pismv -test G -mato foo -matv hTf0|
+
+\noindent will save surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of horizontal ice speed at the surface (``\t{0}'') in an ASCII file \verb|foo.m|.  To use \verb|foo.m| at the \Matlab command line, make sure the \Matlab path includes the directory with \verb|foo.m|.  Then just do
+
+\verb|>> foo|
+
+\noindent You will be able to plot the surface elevation (for example) by
+
+\verb|>> imagesc(x,y,flipud(H')), axis square, colorbar|
+
+\noindent but you can also use the \Matlab tools \verb|contour|, \verb|surf|, and so on.  (\emph{The necessity to do} ``\verb|flipud(H')|'' \emph{to get the expected orientation, that is, the necessity of doing both do a transpose \emph{and} a} \verb|flipud|, \emph{is for various deep reasons too complicated to explain here.  Feel free to enquire, but \emph{sorry} in the meantime.})
+
+
+\subsection{Single character names (for each view)}  The single character diagnostic viewer and \Matlab views names are:
+\newcommand{\notMat}{(\emph{NOT available as a} \Matlab \emph{view}.)\xspace\xspace}
 
 \verb|0|:\quad Map-plane view of horizontal ice speed (magnitude of velocity) at the surface of the ice in meters per year.
 
@@ -1969,31 +1995,51 @@ The single character diagnostic viewer names are:
 
 \verb|3|:\quad Map-plane view of vertical ice velocity at the surface of the ice in meters per year; positive values are upward velocities.
 
+\verb|B|:\quad Map-plane view of basal drag coefficient $\beta$ for ice stream regions.  $\beta$ has units of Pa s $\text{m}^{-1}$.  Displayed as log base ten of $\beta$.
+
+\verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of bar (= $10^5$ Pa).
+
+\verb|D|:\quad \notMat Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
+
+\verb|E|:\quad Map-plane view of age of the ice, in years.
+
+\verb|F|:\quad Map-plane view of basal geothermal heat flux, in milliWatts per meter squared.
+
+\verb|G|:\quad Map-plane view of grain size, in millimeters.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|H|:\quad Map-plane view of thickness in meters.
+
+\verb|L|:\quad Map-plane view of basal melt water \emph{thickness} in meters.
+
+\verb|P|:\quad \notMat (\emph{ONLY available for }\t{pismv}.)  Map-plane view of comPensatory heating term $\Sigma_C$ in thermocoupled verification tests F and G.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|R|:\quad Map-plane view of basal frictional heating in milliWatts per meter squared.
+
+\verb|S|:\quad Map-plane view of strain heating term $\Sigma$ in temperature equation, in Kelvin per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|T|:\quad Map-plane view of absolute ice temperature in Kelvin.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|U|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction \emph{on the staggered grid} which is offset by positive one in $i$ direction;  in meters per year.  (\emph{Meaningful only in technical/numerical context}; use \verb|u| generally.)
+
+\verb|V|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction \emph{on the staggered grid} which is offset by positive one in $j$ direction;  in meters per year.  (\emph{Meaningful only in technical/numerical context}; use \verb|v| generally.)
+
+\verb|X|:\quad Map plane view of $x$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|Y|:\quad Map plane view of $y$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
 \verb|a|:\quad Map-plane view of accumulation in meters per year.
 
 \verb|b|:\quad Map-plane view of bed elevation in meters above sea level.
 
-\verb|B|:\quad Map-plane view of basal drag coefficient $\beta$ for ice stream regions.  $\beta$ has units of Pa s $\text{m}^{-1}$.  Displayed as log base ten of $\beta$.
-
 \verb|c|:\quad Map-plane view of horizontal speed, namely the absolute value of the vertically-averaged horizontal velocity.  Displayed as log base ten of speed in meters per year.
-
-\verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of bar (= $10^5$ Pa).
-
-\verb|D|:\quad Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
-
-\verb|E|:\quad Map-plane view of age of the ice, in years.
 
 \verb|e|:\quad Age in a vertical column (sounding); in years.  See \verb|-id|, \verb|-jd| to set sounding location.
 
-\verb|F|:\quad Map-plane view of basal geothermal heat flux, in milliWatts per meter squared.
-
 \verb|f|:\quad Map-plane view of thickening rate of the ice, in meters per year.
 
-\verb|G|:\quad Map-plane view of grain size, in millimeters.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
 \verb|g|:\quad Grain size in a vertical column (sounding); in millimeters.  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|H|:\quad Map-plane view of thickness in meters.
 
 \verb|h|:\quad Map-plane view of ice surface elevation in meters above sea level.
 
@@ -2001,55 +2047,35 @@ The single character diagnostic viewer names are:
 
 \verb|j|:\quad Map-plane view of vertically-averaged effective viscosity times thickness; on $i$ offset grid.  Only meaningful in ice streams and shelves.
 
-\verb|k|:\quad Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.  Has same effect as PETSc option \verb|-ksp_monitor_draw|.
-
-\verb|L|:\quad Map-plane view of basal melt water \emph{thickness} in meters.
+\verb|k|:\quad \notMat Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.  Has same effect as PETSc option \verb|-ksp_monitor_draw|.
 
 \verb|l|:\quad Map-plane view of basal melt \emph{rate} in meters per year.
 
 \verb|m|:\quad Map-plane view of mask for flow type:  \textbf{1} = grounded shallow ice sheet flow,  \textbf{2} = dragging ice shelf, \textbf{3} = floating ice shelf, \text{7} = ice free ocean (in original input file).
 
-\verb|N|:\quad Produces two viewers, namely the $i$ offset and $j$ offset grid versions of the rate of change of the vertically-averaged effective viscosity times thickness.  Only meaningful in ice streams and shelves.
+%\verb|N|:\quad Produces two viewers, namely the $i$ offset and $j$ offset grid versions of the rate of change of the vertically-averaged effective viscosity times thickness.  Only meaningful in ice streams and shelves.
 
 \verb|n|:\quad Map-plane view of the log base ten of the vertically-averaged effective viscosity times thickness on the regular grid.  Only meaningful in ice streams and shelves.
-
-\verb|P|:\quad \emph{ONLY AVAILABLE for }\t{pismv}.  Map-plane view of comPensatory heating term $\Sigma_C$ in thermocoupled verification tests F and G.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
 \verb|p|:\quad Map-plane view of bed uplift rate in meters per year.
 
 \verb|q|:\quad Map-plane view of basal sliding speed.  Displayed as log base ten of speed in meters per year.
 
-\verb|R|:\quad Map-plane view of basal frictional heating in milliWatts per meter squared.
-
 \verb|r|:\quad Map-plane view of surface temperature in Kelvin.
-
-\verb|S|:\quad Map-plane view of strain heating term $\Sigma$ in temperature equation, in Kelvin per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
 \verb|s|:\quad Strain heating term $\Sigma$ in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
-\verb|T|:\quad Map-plane view of absolute ice temperature in Kelvin.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
 \verb|t|:\quad Absolute ice temperature in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
-\verb|U|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction \emph{on the staggered grid} which is offset by positive one in $i$ direction;  in meters per year.  \emph{Meaningful only in technical/numerical context}; use \verb|u| generally.
-
 \verb|u|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction;  in meters per year.
-
-\verb|V|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction \emph{on the staggered grid} which is offset by positive one in $j$ direction;  in meters per year.  \emph{Meaningful only in technical/numerical context}; use \verb|v| generally.
 
 \verb|v|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction;  in meters per year.
 
 \verb|x|:\quad $x$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
-\verb|X|:\quad Map plane view of $x$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
 \verb|y|:\quad $y$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
-\verb|Y|:\quad Map plane view of $y$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
 \verb|z|:\quad Vertical velocity ($w$-component of velocity) in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
 
 %\printindex

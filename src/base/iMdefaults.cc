@@ -160,7 +160,8 @@ PetscErrorCode IceModel::setDefaults() {
   doOceanKill = DEFAULT_OCEAN_KILL;
   
   computeSIAVelocities = PETSC_TRUE;
-  
+  transformForSurfaceGradient = PETSC_FALSE;
+
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
   doSuperpose = DEFAULT_DO_SUPERPOSE;
   ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;

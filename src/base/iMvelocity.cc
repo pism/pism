@@ -30,34 +30,45 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   static PetscTruth firstTime = PETSC_TRUE;
 
   if (computeSIAVelocities == PETSC_TRUE) {
+    ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
+    // surface gradient temporarily stored in vWork2d[0 1 2 3] 
     ierr = velocitySIAStaggered(!updateVelocityAtDepth); CHKERRQ(ierr);
 
+    // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
     ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-    for (PetscInt k=4; k<8; ++k) { // communicate ub[o], vb[o] on staggered
+    // communicate ub[o], vb[o] on staggered for basalSIAConditionsToRegular()
+    for (PetscInt k=4; k<8; ++k) { 
       ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
     }
 
     ierr = basalSIAConditionsToRegular(); CHKERRQ(ierr);
   
-    if (updateVelocityAtDepth) {
-  
-      for (PetscInt k=0; k<6; ++k) { // communicate I[o], J[o], Sigma[o] on staggered
+    if (updateVelocityAtDepth) {  
+      ierr = frictionalHeatingSIAStaggered(); CHKERRQ(ierr);
+      // communicate I[o] on staggered for horizontalVelocitySIARegular()
+      for (PetscInt k=0; k<3; ++k) {
         ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
       }
-      for (PetscInt k=0; k<4; ++k) { // communicate h_x[o], h_y[o] on staggered
+      // communicate Sigma[o] on staggered for SigmaSIAToRegular()
+      for (PetscInt k=4; k<6; ++k) {
+        ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
+        ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
+      }
+      // communicate h_x[o], h_y[o] on staggered for horizontalVelocitySIARegular()
+      for (PetscInt k=0; k<4; ++k) { 
         ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       }
-      for (PetscInt k=8; k<10; ++k) { // communicate Rb[o] on staggered
+      // communicate Rb[0], Rb[1] on staggered for SigmaSIAToRegular()
+      for (PetscInt k=8; k<10; ++k) { 
         ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       }
-
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
     }
@@ -90,14 +101,17 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
 
   // finally update w
   if (updateVelocityAtDepth) {
+    // communicate u and v for vertVelocityFromIncompressibility()
     ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
+#if 0
     // is communication needed?
     ierr = DALocalToLocalBegin(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
+#endif
   }
   
   // smoothing Sigma is NOT RECOMMENDED, but do it here

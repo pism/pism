@@ -198,7 +198,7 @@ protected:
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
-  PetscTruth  computeSIAVelocities, useIsothermalFlux;
+  PetscTruth  computeSIAVelocities, transformForSurfaceGradient, useIsothermalFlux;
   char        adaptReasonFlag;
 
   // file names
@@ -314,6 +314,11 @@ protected:
   PetscErrorCode writeSpeedSurfaceValuesToMatlab(PetscViewer v, const char scName, 
                           Vec lu, Vec lv, const PetscScalar scale, 
                           const PetscTruth doLog, const PetscScalar log_missing);
+  PetscErrorCode writeLog2DToMatlab(PetscViewer v, const char scName, 
+                          Vec l, const PetscScalar scale, const PetscScalar thresh,
+                          const PetscScalar log_missing);
+  PetscErrorCode writeSoundingToMatlab(PetscViewer v, const char scName, Vec l,
+                          const PetscScalar scale, const PetscTruth doTandTb);
   PetscErrorCode writeMatlabVars(const char *fname);
   PetscErrorCode writeSSAsystemMatlab(Vec vNu[2]);
 
@@ -344,7 +349,9 @@ protected:
   PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMsia.cc
+  PetscErrorCode surfaceGradientSIA();
   PetscErrorCode velocitySIAStaggered(bool faststep);
+  PetscErrorCode frictionalHeatingSIAStaggered();
   PetscErrorCode basalSIAConditionsToRegular();
   PetscErrorCode SigmaSIAToRegular();
   PetscErrorCode horizontalVelocitySIARegular();
@@ -424,9 +431,14 @@ protected:
   PetscErrorCode updateSliceViewer(const char scName, Vec l3, const PetscScalar scale);
   PetscErrorCode updateSurfaceValuesViewer(const char scName, Vec l3, const PetscScalar scale);
   PetscErrorCode updateSpeed2DViewer(const char scName, Vec lu, Vec lv, 
-                   const PetscScalar scale, const PetscTruth doLog, const PetscScalar log_missing);
+                   const PetscScalar scale, const PetscTruth doLog, 
+                   const PetscScalar log_missing);
   PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, Vec lu, Vec lv, 
-                   const PetscScalar scale, const PetscTruth doLog, const PetscScalar log_missing);
+                   const PetscScalar scale, const PetscTruth doLog, 
+                   const PetscScalar log_missing);
+  PetscErrorCode updateLog2DViewer(const char scName, Vec l,
+                   const PetscScalar scale, const PetscScalar thresh, 
+                   const PetscScalar log_missing);
   PetscErrorCode updateViewers();  // it calls updateSoundings()
   PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
   PetscErrorCode destroyViewers();

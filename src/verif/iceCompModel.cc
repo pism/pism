@@ -147,6 +147,10 @@ PetscErrorCode IceCompModel::initFromOptions() {
 
     ierr = createCompVecs(); CHKERRQ(ierr);
 
+    if (yearsStartRunEndDetermined == PETSC_FALSE) {
+      ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
+    }
+
     switch (testname) {
       case 'A':
       case 'B':

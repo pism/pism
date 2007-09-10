@@ -232,13 +232,13 @@ PetscErrorCode IceModel::updateSoundings() {
   delete [] row;  // done with setting up soundings ...
 
   // actually view soundings:  
+  ierr = updateOneSounding('e',taud,1.0/secpera); CHKERRQ(ierr); // Display in years
+  ierr = updateOneSounding('g',gsd,1000.0); CHKERRQ(ierr); // Display in mm
+  ierr = updateOneSounding('s',Sigmad,secpera); CHKERRQ(ierr);
   ierr = updateOneSounding('t',Td,1.0); CHKERRQ(ierr);
   ierr = updateOneSounding('x',ud,secpera); CHKERRQ(ierr);
   ierr = updateOneSounding('y',vd,secpera); CHKERRQ(ierr);
   ierr = updateOneSounding('z',wd,secpera); CHKERRQ(ierr);
-  ierr = updateOneSounding('s',Sigmad,secpera); CHKERRQ(ierr);
-  ierr = updateOneSounding('g',gsd,1000.0); CHKERRQ(ierr); // Display in mm
-  ierr = updateOneSounding('e',taud,1.0/secpera); CHKERRQ(ierr); // Display in years
   return 0;
 }
 
@@ -337,6 +337,34 @@ PetscErrorCode IceModel::updateSpeedSurfaceValuesViewer(
 }
 
 
+PetscErrorCode IceModel::updateLog2DViewer(
+                     const char scName, Vec l, // a da2 Vec
+                     const PetscScalar scale, const PetscScalar thresh,
+                     const PetscScalar log_missing) {
+  PetscErrorCode ierr;
+  
+  if (runtimeViewers[cIndex(scName)] != PETSC_NULL) {
+    PetscScalar **a, **b;
+    ierr = DAVecGetArray(grid.da2, l, &a); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[0], &b); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (a[i][j] > thresh) {
+          b[i][j] = log10(scale * a[i][j]);
+        } else {
+          b[i][j] = log_missing;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &b); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, l, &a); CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView(g2, runtimeViewers[cIndex(scName)]); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
 //! Update the runtime graphical viewers.
 /*! At every time step the graphical viewers are updated.  The user specifies these viewers
 by the options <tt>-d</tt> \em list or <tt>-dbig</tt> \em list where \em list is a list of single
@@ -361,6 +389,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = updateSurfaceValuesViewer('2', vv, secpera); CHKERRQ(ierr);
   ierr = updateSurfaceValuesViewer('3', vw, secpera); CHKERRQ(ierr);
 
+  ierr = updateLog2DViewer('B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = update2DViewer('C', vtauc, 0.00001); CHKERRQ(ierr); // Display in bar
   ierr = updateSliceViewer('E', vtau, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
@@ -388,25 +417,6 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('r', vTs, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('u', vubar, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('v', vvbar, secpera); CHKERRQ(ierr);
-
-
-  if (runtimeViewers[cIndex('B')] != PETSC_NULL) {
-    PetscScalar   **a, **beta;
-    ierr = DAVecGetArray(grid.da2, g2, &a); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (beta[i][j] > 1.0e5) {
-          a[i][j] = log10(beta[i][j]);
-        } else {
-          a[i][j] = 5.0;
-        }
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, g2, &a); CHKERRQ(ierr);
-    ierr = VecView(g2, runtimeViewers[cIndex('B')]); CHKERRQ(ierr);
-  }
 
   return 0;
 }

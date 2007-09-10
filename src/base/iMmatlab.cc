@@ -144,9 +144,86 @@ PetscErrorCode IceModel::writeSpeedSurfaceValuesToMatlab(
 }
 
 
+PetscErrorCode IceModel::writeLog2DToMatlab(
+                     PetscViewer v, const char scName, Vec l, // a da2 Vec
+                     const PetscScalar scale, const PetscScalar thresh,
+                     const PetscScalar log_missing) {
+  PetscErrorCode ierr;
+  
+  if (matlabOutWanted(scName)) {
+    PetscScalar **a, **b;
+    ierr = DAVecGetArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, l, &b); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (a[i][j] > thresh) {
+          b[i][j] = log10(scale * a[i][j]);
+        } else {
+          b[i][j] = log_missing;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, l, &b); CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); 
+             CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceModel::writeSoundingToMatlab(
+                     PetscViewer v, const char scName, Vec l, // a da3 Vec
+                     const PetscScalar scale, const PetscTruth doTandTb) {
+  if (matlabOutWanted(scName)) {
+    PetscErrorCode   ierr;
+    PetscInt         rlen = grid.p->Mz;
+    PetscInt         *row;
+    Vec              m;
+
+    // row gives indices only
+    if (doTandTb == PETSC_TRUE)   rlen += grid.p->Mbz;
+    row = new PetscInt[rlen];
+    for (PetscInt k=0; k < rlen; k++)   row[k] = k;
+
+    ierr = VecCreateMPI(grid.com,PETSC_DECIDE, rlen, &m); CHKERRQ(ierr);
+
+    if (doTandTb == PETSC_TRUE) {
+      PetscScalar ***T, ***Tb;
+      ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+      ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+      ierr = VecSetValues(m, grid.p->Mbz, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], &T[id][jd][0], INSERT_VALUES);
+               CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+    } else {
+      PetscScalar      ***u;
+      ierr = DAVecGetArray(grid.da3, l, &u); CHKERRQ(ierr);
+      ierr = VecSetValues(m, rlen, row, &u[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = DAVecRestoreArray(grid.da3, l, &u); CHKERRQ(ierr);
+    }
+    
+    ierr = VecAssemblyBegin(m); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(m); CHKERRQ(ierr);
+    ierr = VecScale(m,scale); CHKERRQ(ierr);
+
+    // add Matlab comment before listing, using short title
+    ierr = PetscViewerASCIIPrintf(v, "\n%%%% %s = %s\n", tn[cIndex(scName)].name, 
+              tn[cIndex(scName)].title); CHKERRQ(ierr);
+    ierr = PetscObjectSetName((PetscObject) m, tn[cIndex(scName)].name); CHKERRQ(ierr);
+    ierr = VecView(m, v); CHKERRQ(ierr);
+    
+    ierr = VecDestroy(m); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
 //! Write out selected variables in Matlab \c .m format.
 /*!
-Writes out the independent variables \c year, \c x, and \c y.  Then writes out variables selected with option <tt>-matv</tt> using single character names.  See an appendix to the User's Manual.
+Writes out the independent variables \c year, \c x, and \c y.  Then writes out variables selected with option <tt>-matv</tt> using single character names.  See Appendix C of the User's Manual.
 
 Writes these to <tt>foo.m</tt> if option <tt>-mato foo</tt> is given.
 */
@@ -165,6 +242,12 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",
                                 grid.p->Ly,grid.p->dy,grid.p->Ly);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+                                "z=0.0:%12.3f:%12.3f;\n",
+                                grid.p->dz,grid.p->Lz);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+                                "zb=-%12.3f:%12.3f:0;\n",
+                                -grid.p->Lbz,grid.p->dz);  CHKERRQ(ierr);
 
   // now write the variables if they are wanted
   ierr = writeSpeedSurfaceValuesToMatlab(viewer, '0', vu, vv, secpera, PETSC_FALSE, 0.0);
@@ -172,18 +255,33 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSurfaceValuesToMatlab(viewer, '1', vu, secpera);  CHKERRQ(ierr);
   ierr = writeSurfaceValuesToMatlab(viewer, '2', vv, secpera);  CHKERRQ(ierr);
   ierr = writeSurfaceValuesToMatlab(viewer, '3', vw, secpera);  CHKERRQ(ierr);
+
+  ierr = writeLog2DToMatlab(viewer, 'B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'C', vtauc, 0.00001);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'E', vtau, 1.0/secpera);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'G', vgs, 1000.0);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'R', vRb, 1000.0);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'S', vSigma, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'T', vT, 1.0);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'U', vuvbar[0], secpera); CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'V', vuvbar[1], secpera); CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'X', vu, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'Y', vv, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'Z', vw, secpera);  CHKERRQ(ierr);
+
   ierr = write2DToMatlab(viewer, 'a', vAccum, secpera); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'b', vbed, 1.0); CHKERRQ(ierr);
   ierr = writeSpeed2DToMatlab(viewer, 'c', vubar, vvbar, secpera, PETSC_TRUE, -6.0);
            CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'C', vtauc, 0.00001);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'E', vtau, 1.0/secpera);  CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'e',vtau,1.0/secpera, PETSC_FALSE);
+           CHKERRQ(ierr); // Display in years
   ierr = write2DToMatlab(viewer, 'f', vdHdt, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'G', vgs, 1000.0);  CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'g',vgs,1000.0, PETSC_FALSE);
+           CHKERRQ(ierr); // Display in mm
   ierr = write2DToMatlab(viewer, 'h', vh, 1.0);  CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'l', vbasalMeltRate, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'm', vMask, 1.0);  CHKERRQ(ierr);
 // how to do log(nu H)?:
@@ -192,34 +290,50 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSpeed2DToMatlab(viewer, 'q', vub, vvb, secpera, PETSC_TRUE, -6.0);
            CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'r', vTs, 1.0);  CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'R', vRb, 1000.0);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'S', vSigma, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'T', vT, 1.0);  CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'s', vSigma, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'t', vT, 1.0, PETSC_TRUE); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'u', vubar, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'v', vvbar, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'X', vu, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'Y', vv, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'Z', vw, secpera);  CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'x', vu, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'y', vv, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'z', vw, secpera, PETSC_FALSE); CHKERRQ(ierr);
 
-  // now give advice in Matlab comments
+  // now give plotting advice in Matlab comments
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%% to produce a 2D color map of H (for instance) do\n");  CHKERRQ(ierr);
+           "%% to produce a 2D color map of a map-plane view like 'H' (for instance) do:\n");
+           CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%%    imagesc(x,y,flipud(H')), axis square, colorbar\n");  CHKERRQ(ierr);
-  if (matlabOutWanted('T')) {
+           "%%%%  >> imagesc(x,y,flipud(H')), axis square, colorbar\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+           "%% to produce a 1D plot of a sounding like 'e' (for instance) do:\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+           "%%%%  >> plot(z,age_sounding)\n");  CHKERRQ(ierr);
+  if (matlabOutWanted('t')) { // more advice for t
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%% note Thomol = Tkd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
+             "%% to produce a 1D plot of the sounding 't' do:\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%% to produce a 2D color map of homologous temp do\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"%%%% hand1=figure;\n");  CHKERRQ(ierr);
+             "%%%%  >> plot([zb(1:end-1) z],T_sounding)\n");  CHKERRQ(ierr);
+  }
+  if (matlabOutWanted('T')) { // more advice for T relative to pressure-melting
+    if (!matlabOutWanted('H')) { // write out 
+      ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
+      ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+    }
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%% imagesc(x,y,flipud(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
+           "%% to produce a 2D color map of homologous temp with white "
+           "for at pressure-melting do:\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%% Tcmap = get(hand1,'ColorMap'); Tcmap(64,:)=[1 1 1];\n");  CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"%%%% set(hand1,'ColorMap',Tcmap)\n");  CHKERRQ(ierr);
+           "%%%%  >> Thomol = T_kd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-       "%%%% title('temperature at z given by -kd (white = pressure-melting)')\n\n");  CHKERRQ(ierr);
+           "%%%%  >> hand1=figure;\n");  CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,
+           "%%%%  >> imagesc(x,y,flipud(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,
+           "%%%%  >> Tcmap = get(hand1,'ColorMap'); Tcmap(64,:)=[1 1 1];\n");  CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,
+           "%%%%  >> set(hand1,'ColorMap',Tcmap)\n");  CHKERRQ(ierr);
   }
   ierr = PetscViewerASCIIPrintf(viewer,"echo off\n");  CHKERRQ(ierr);
 

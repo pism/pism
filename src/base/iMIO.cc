@@ -158,14 +158,16 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
 
   // write out individual variables out to Matlab file
   char       matf[PETSC_MAX_PATH_LEN];
-  PetscTruth matoSet;
-  strcpy(matf, "\0");
+  PetscTruth matoSet, matvSet;
   ierr = PetscOptionsGetString(PETSC_NULL, "-mato", matf, PETSC_MAX_PATH_LEN, &matoSet); 
            CHKERRQ(ierr);
+  if (matoSet == PETSC_FALSE) {// put default name in matf; perhaps user set "-matv" only
+    strcpy(matf, "pism_views");
+  }
   strcpy(matlabOutVars, "\0");
-  ierr = PetscOptionsGetString(PETSC_NULL, "-matv", matlabOutVars, PETSC_MAX_PATH_LEN, PETSC_NULL); 
+  ierr = PetscOptionsGetString(PETSC_NULL, "-matv", matlabOutVars, PETSC_MAX_PATH_LEN, &matvSet); 
             CHKERRQ(ierr);
-  if (matoSet == PETSC_TRUE) {
+  if (matvSet == PETSC_TRUE) {
     strcat(matf, ".m");
     ierr = verbPrintf(1, grid.com, 
        " ... writing variables %s to Matlab file `%s'", matlabOutVars, matf); CHKERRQ(ierr);
