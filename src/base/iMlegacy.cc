@@ -184,11 +184,25 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   
   // NOTE!!: from here on we are using mass balance velocities in the 
   //   computation of the mask:
+  ierr = verbPrintf(2,grid.com, 
+                       "\nusing balvel in creation of modal mask ... "); CHKERRQ(ierr);
   
   // compute deformational velocities (i.e. SIA and no SSA)
   const PetscTruth  saveUseSSAVelocity = useSSAVelocity;
   useSSAVelocity = PETSC_FALSE;
+  computeSIAVelocities = PETSC_TRUE;
+  transformForSurfaceGradient = PETSC_FALSE;
+  doPlasticTill = PETSC_TRUE;  // just for initBasalTillModel here
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
+  if (yearsStartRunEndDetermined == PETSC_FALSE) {
+    ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
+    yearsStartRunEndDetermined = PETSC_TRUE;
+  }
+  ierr = verbPrintf(2,grid.com, 
+                       "\ncalling velocity(false) ... "); CHKERRQ(ierr);
   ierr = velocity(false); CHKERRQ(ierr);  // no need to update at depth; just
+  ierr = verbPrintf(2,grid.com, 
+                       "\n done calling velocity(false) ... "); CHKERRQ(ierr);
   // want ubar, vbar
   ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr); // communication here
   useSSAVelocity = saveUseSSAVelocity;
@@ -272,19 +286,19 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   int stat;
   char filename[PETSC_MAX_PATH_LEN];
 
-  verbPrintf(2, grid.com, "Bootstrapping from Legacy Option\n");
+  if (fname == NULL) { // This can be called from the driver for a default
+    strcpy(filename, "pre_init.nc");
+  } else {
+    strcpy(filename, fname);
+  }
+  ierr = verbPrintf(2, grid.com, "bootstrapping by PISM *legacy* method from file %s\n",fname); 
+           CHKERRQ(ierr);
 
   // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   // FIXME: following is clearly tied to antarctica only!
   ierr = grid.rescale(280 * 20e3 / 2, 280 * 20e3 / 2, 5000); CHKERRQ(ierr);
-
-  if (fname == NULL) { // This can be called from the driver for a default
-    strcpy(filename, "pre_init.nc");
-  } else {
-    strcpy(filename, fname);
-  }
 
   int ncid;
   int v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_gl, v_T, v_ghf, v_uplift, v_balvel;
@@ -342,6 +356,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));
   }
+
+  ierr = verbPrintf(2, grid.com, "done reading file %s\n",fname);  CHKERRQ(ierr);
   
   // At this point, the data still contains some missing data that we need to
   // fix.  Mostly, we will just fill in values.  Also some data has wrong units.
@@ -356,6 +372,9 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
 
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = putTempAtDepth(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, "done cleaning input data and setting temps at depth\n");
+     CHKERRQ(ierr);
 
 #if 0
   PetscReal   maxH, maxh;

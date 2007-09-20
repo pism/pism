@@ -28,7 +28,7 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 
 ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrainsize.cc \
 	iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
-	iMregrid.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
+	iMregrid.cc iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
 	iceModel.cc materials.cc nc_util.cc \
 	beddefLC.cc forcing.cc
 ice_csources := cubature.c pism_signal.c
@@ -43,7 +43,7 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
    simpleJ.c simpleL.c
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
-#include config/ryan_make
+include config/ryan_make
 
 TESTS_OBJS := $(tests_sources:.c=.o)
 

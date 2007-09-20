@@ -348,6 +348,26 @@ protected:
   PetscErrorCode regrid(const char *regridFile);
   PetscErrorCode regrid_netCDF(const char *fname);
 
+
+  // see iMreport.cc
+  // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()
+  // are all in iMreport.cc
+  PetscErrorCode computeFlowUbarStats
+                      (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
+                       PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
+                       PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
+                       PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac);
+  PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
+                            PetscScalar& gvolSIA, PetscScalar& gvolstream, 
+                            PetscScalar& gvolshelf);
+  virtual PetscErrorCode summary(bool,bool);
+  virtual PetscErrorCode summaryPrintLine(
+              const PetscTruth printPrototype, const PetscTruth tempAndAge,
+              const PetscScalar year, const PetscScalar dt, 
+              const PetscInt tempskipCount, const char adaptReason,
+              const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+              const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+
   // see iMsia.cc
   PetscErrorCode surfaceGradientSIA();
   PetscErrorCode velocitySIAStaggered(bool faststep);
@@ -389,24 +409,9 @@ protected:
   PetscErrorCode stampHistoryEnd();
   PetscErrorCode stampHistory(const char*);
   PetscErrorCode stampHistoryString(const char*);
-  PetscErrorCode computeFlowUbarStats
-                      (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
-                       PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
-                       PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
-                       PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac);
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
-  PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
-                            PetscScalar& gvolSIA, PetscScalar& gvolstream, 
-                            PetscScalar& gvolshelf);
-  virtual PetscErrorCode summary(bool,bool);
-  virtual PetscErrorCode summaryPrintLine(
-              const PetscTruth printPrototype, const PetscTruth tempAndAge,
-              const PetscScalar year, const PetscScalar dt, 
-              const PetscInt tempskipCount, const char adaptReason,
-              const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-              const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
   PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);
   PetscErrorCode getSurfaceValuesOf3D(Vec v3D, Vec &g2D);
 

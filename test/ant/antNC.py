@@ -17,8 +17,9 @@ NP = 8
 BINITFILE = 'init.nc'
 
 ## program prog is a list; elements of prog are:
-##     ['DESCRIPTION','EXECUTABLE',YEARS,INITFLAG,'OUTNAME','OTHER_OPTIONS'[,'REGRIDFILENAME','REGRIDVARS']]
-## note: INITFLAG == 0   <==>   '-bif BINITFILE'
+##     ['DESCRIPTION','EXECUTABLE',YEARS,INITFLAG,'OUTNAME',
+##                'OTHER_OPTIONS'[,'REGRIDFILENAME','REGRIDVARS']]
+## note: INITFLAG == 0   <==>   '-bif_legacy BINITFILE'
 ##       INITFLAG == -1   <==>   '-if [prev OUTNAME]'          {case of next}
 ##       INITFLAG < 0    <==>   '-if [OUTNAME from stage[current-|INITFLAG|]]'
 prog = [
@@ -50,7 +51,8 @@ prog = [
       'pant',      5,-4,'antlast14km_tauc',
       '-mv -ksp_rtol 1e-7 -ocean_kill -verbose -super -plastic -obasal taucmap14km']
 ]
-always_opts = '-gk -e 1.2'
+#always_opts = '-gk -e 1.2'
+always_opts = '-gk -e 1.2 -d uvmT -display :0'
 
 ## get options: -n for number of processors
 nproc = NP  ## default; will not use 'mpiexec' if equal to one
@@ -69,15 +71,15 @@ for stage in prog:
    stagedo += ' ' + stage[1] + (' -y %d' % stage[2]) 
    ## determine infile
    if stage[3] == 0:
-      stagedo += ' -bif ' + BINITFILE
+      stagedo += ' -bif_legacy ' + BINITFILE
    elif stage_count >= -stage[3]:
       stagedo += ' -if ' + prog[stage_count+stage[3]][4] + '.nc'
    else:
       print 'ERROR: only use previous outfile names if possible';  sys.exit(98)
    ## build rest of options
-   stagedo += ' ' + stage[5] + ' ' + always_opts
+   stagedo += ' ' + stage[5]
    if len(stage) > 6:  stagedo += ' -regrid ' + stage[6] + '.nc -regrid_vars ' + stage[7]
-   stagedo += ' -o ' + stage[4]
+   stagedo += ' -o ' + stage[4] + ' ' + always_opts
    ## try it with timing
    print '  trying \"' + stagedo + '\"'
    try:
