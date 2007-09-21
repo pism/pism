@@ -26,8 +26,8 @@
 Note that both the temperature equation and the age equation involve advection and have a CFL
 condition (Morton & Mayers 1994).  By being slightly conservative we use the same CFL condition
 for both (Bueler and others, 2007. "Exact solutions ... thermomechanically-coupled ...," 
-J. Glaciol.).  We also report any CFL violations which can \em only occur when using the 
-<tt>-tempskip</tt> option.  This procedure manages that as well.
+J. Glaciol.).  We also report any CFL violations; these can \em only occur when using the 
+<tt>-tempskip</tt> option.
  */
 PetscErrorCode IceModel::temperatureAgeStep() {
   // update temp and age fields
@@ -57,7 +57,7 @@ PetscErrorCode IceModel::temperatureStep() {
   
   PetscErrorCode  ierr;
 
-  const PetscInt      Mbz = grid.p->Mbz, Mz = grid.p->Mz, k0 = Mbz - 1;
+  const PetscInt      Mbz = grid.p->Mbz, Mz = grid.p->Mz;
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
   const PetscScalar   rho_c_I = ice.rho * ice.c_p;
   const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
@@ -71,6 +71,7 @@ PetscErrorCode IceModel::temperatureStep() {
   PetscScalar **Ts, **H, **b, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate;
   PetscScalar ***T, ***Tb, ***Tnew, ***u, ***v, ***w, ***Sigma;
 
+  const PetscInt  k0 = Mbz - 1;
   PetscScalar *Lp, *L, *D, *U, *x, *rhs, *work;  
   Lp = new PetscScalar[Mz+k0-1]; L = Lp-1; // ptr arith.; note L[0]=Lp[-1] not alloc
   D = new PetscScalar[Mz+k0];
@@ -95,7 +96,7 @@ PetscErrorCode IceModel::temperatureStep() {
   ierr = DAVecGetArray(grid.da3, vTnew, &Tnew); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
-  PetscInt myLowTempCount = 0;
+  PetscInt        myLowTempCount = 0;
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -122,10 +123,11 @@ PetscErrorCode IceModel::temperatureStep() {
       }
       
       // bottom part of ice (and top of bedrock in some cases): k=Mbz eqn
-      if (ks == 0) { // no ice; set T[i][j][0] to surface temp
+      if (ks == 0) { // no ice; set T[i][j][0] to surface temp if grounded
         if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
         D[k0] = 1.0; U[k0] = 0.0;
-        // if floating then top of bedrock sees ocean
+        // if floating and no ice then worry only about bedrock temps;
+        // top of bedrock sees ocean
         const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
         if (b[i][j] < floating_base - 1.0) {
           rhs[k0] = ice.meltingTemp;

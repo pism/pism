@@ -151,7 +151,7 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
       *    2 : Floating        3 : Rock outcrop
       * We lose information about "Grounded" vs "Rock outcrop"
       */
-      switch (intMask(mask[i][j])) {
+      switch (static_cast<int>(floor(mask[i][j]+0.5))) {
         case 0:
           mask[i][j] = MASK_FLOATING_OCEAN0;
           // FIXME: this ablation mechanism should be replaced by ocean model
@@ -170,12 +170,22 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
       }
     }
   }
-  // note ghosted values need to be communicated because of vote-by-neighbors
-  // in IceModel::updateSurfaceElevationAndMask()
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+
+  // note ghosted values need to be communicated because of vote-by-neighbors
+  // in IceModel::updateSurfaceElevationAndMask()
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+
+  // update viewers and pause for a chance to view
+  ierr = updateViewers(); CHKERRQ(ierr);
+  PetscInt    pause_time = 0;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
+  if (pause_time > 0) {
+    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  }
 
   if (balVelRule != PETSC_TRUE) {
     ierr = PetscPrintf(grid.com, "done\n"); CHKERRQ(ierr);
@@ -183,25 +193,22 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   }
   
   // NOTE!!: from here on we are using mass balance velocities in the 
-  //   computation of the mask:
-  ierr = verbPrintf(2,grid.com, 
-                       "\nusing balvel in creation of modal mask ... "); CHKERRQ(ierr);
+  //   computation of the mask
   
   // compute deformational velocities (i.e. SIA and no SSA)
   const PetscTruth  saveUseSSAVelocity = useSSAVelocity;
   useSSAVelocity = PETSC_FALSE;
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;
-  doPlasticTill = PETSC_TRUE;  // just for initBasalTillModel here
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
   if (yearsStartRunEndDetermined == PETSC_FALSE) {
     ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
     yearsStartRunEndDetermined = PETSC_TRUE;
   }
-  ierr = verbPrintf(2,grid.com, 
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com, 
                        "\ncalling velocity(false) ... "); CHKERRQ(ierr);
   ierr = velocity(false); CHKERRQ(ierr);  // no need to update at depth; just
-  ierr = verbPrintf(2,grid.com, 
+  ierr = verbPrintf(4,grid.com, 
                        "\n done calling velocity(false) ... "); CHKERRQ(ierr);
   // want ubar, vbar
   ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr); // communication here
@@ -297,6 +304,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   // The netCDF file has this physical extent
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
+  ierr = createViewers(); CHKERRQ(ierr);
   // FIXME: following is clearly tied to antarctica only!
   ierr = grid.rescale(280 * 20e3 / 2, 280 * 20e3 / 2, 5000); CHKERRQ(ierr);
 
@@ -341,7 +349,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   ierr = ncVarToDAVec(ncid, v_h, grid.da2, vh, g2, vzero);       CHKERRQ(ierr);
   ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero);       CHKERRQ(ierr);
   ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero);     CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_gl, grid.da2, vMask, g2, vzero);    CHKERRQ(ierr);
   ierr = ncVarToDAVec(ncid, v_T, grid.da2, vTs, g2, vzero);      CHKERRQ(ierr);
   ierr = ncVarToDAVec(ncid, v_ghf, grid.da2, vGhf, g2, vzero);     CHKERRQ(ierr);
   ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero);     CHKERRQ(ierr);
@@ -350,6 +357,16 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   ierr = VecDuplicate(vh,&vbalvel); CHKERRQ(ierr);
   ierr = ncVarToDAVec(ncid, v_balvel, grid.da2, vbalvel, g2, vzero);     CHKERRQ(ierr);
   
+  // for now, make sure "gl" comes in as integers
+  MaskInterp legmasktool;
+  legmasktool.number_allowed = 4;
+  legmasktool.allowed_levels[0] = 0; // these simply state the levels in "gl"; 
+                                     // no transformation will occur inside ncVarToDAVec
+  legmasktool.allowed_levels[1] = 1;
+  legmasktool.allowed_levels[2] = 2;
+  legmasktool.allowed_levels[3] = 3;
+  ierr = ncVarToDAVec(ncid, v_gl, grid.da2, vMask, g2, vzero,legmasktool);    CHKERRQ(ierr);
+
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
   ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
 
@@ -358,6 +375,22 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   }
 
   ierr = verbPrintf(2, grid.com, "done reading file %s\n",fname);  CHKERRQ(ierr);
+
+#if 1
+  PetscReal   maxH, maxh;
+  ierr = VecMax(vH, PETSC_NULL, &maxH); CHKERRQ(ierr);
+  ierr = VecMax(vh, PETSC_NULL, &maxh); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+                      "properties of input data: Max(H) = %12.3f, Max(h) = %12.3f\n", 
+                      maxH, maxh); CHKERRQ(ierr);
+
+  PetscReal   maxMask, minMask;
+  ierr = VecMax(vMask, PETSC_NULL, &maxMask); CHKERRQ(ierr);
+  ierr = VecMin(vMask, PETSC_NULL, &minMask); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+                      "properties of input data: Max(Mask) = %12.3f, Min(Mask) = %12.3f\n", 
+                      maxMask, minMask); CHKERRQ(ierr);
+#endif
   
   // At this point, the data still contains some missing data that we need to
   // fix.  Mostly, we will just fill in values.  Also some data has wrong units.
@@ -369,28 +402,11 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   // Temperature:     Celsius     -->  Kelvin
   // uplift:          meters / a  -->  meters / s
   ierr = cleanInputData_legacy(); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "done cleaning input data\n");  CHKERRQ(ierr);
 
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = putTempAtDepth(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com, "done cleaning input data and setting temps at depth\n");
-     CHKERRQ(ierr);
-
-#if 0
-  PetscReal   maxH, maxh;
-  ierr = VecMax(vH, PETSC_NULL, &maxH); CHKERRQ(ierr);
-  ierr = VecMax(vh, PETSC_NULL, &maxh); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com, 
-                      "properties of input data: Max(H) = %12.3f, Max(h) = %12.3f\n", 
-                      maxH, maxh); CHKERRQ(ierr);
-
-  PetscReal   maxMask, minMask;
-  ierr = VecMax(vMask, PETSC_NULL, &maxMask); CHKERRQ(ierr);
-  ierr = VecMin(vMask, PETSC_NULL, &minMask); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com, 
-                      "properties of input data: Max(Mask) = %12.3f, Min(Mask) = %12.3f\n", 
-                      maxMask, minMask); CHKERRQ(ierr);
-#endif
+  ierr = verbPrintf(2, grid.com, "done setting temps at depth\n");  CHKERRQ(ierr);
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
   setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
@@ -403,6 +419,27 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
 
   // for now: go ahead and create mask according to (balvel>cutoff) rule
   ierr = createMask_legacy(PETSC_TRUE); CHKERRQ(ierr);
+
+#if 1
+  ierr = VecMax(vH, PETSC_NULL, &maxH); CHKERRQ(ierr);
+  ierr = VecMax(vh, PETSC_NULL, &maxh); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+                      "properties              : Max(H) = %12.3f, Max(h) = %12.3f\n", 
+                      maxH, maxh); CHKERRQ(ierr);
+  ierr = VecMax(vMask, PETSC_NULL, &maxMask); CHKERRQ(ierr);
+  ierr = VecMin(vMask, PETSC_NULL, &minMask); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+                      "properties              : Max(Mask) = %12.3f, Min(Mask) = %12.3f\n", 
+                      maxMask, minMask); CHKERRQ(ierr);
+#endif
+  // update viewers and pause for a chance to view
+  ierr = updateViewers(); CHKERRQ(ierr);
+  PetscInt    pause_time = 0;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
+  if (pause_time > 0) {
+    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
+    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  }
   
   // vbalvel will not be used again ...
   ierr = VecDestroy(vbalvel); CHKERRQ(ierr);

@@ -102,12 +102,16 @@ Note also that \f$\mu = \tan(\theta)\f$ where \f$\theta\f$ is a ``friction angle
  */
 PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   PetscErrorCode  ierr;
-  // only makes sense when doPlasticTill == TRUE
   //      (compare the porewater pressure computed by formula (4) in 
   //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964;
   //      the modification of this porewater pressure as in Lingle&Brown 1987 is not 
   //      implementable because the "elevation of the bed at the grounding line"
   //      is at an unknowable location as we are not doing a flow line model!)
+
+  // only makes sense when doPlasticTill == TRUE
+  if (doPlasticTill == PETSC_FALSE) {
+    SETERRQ(1,"doPlasticTill == PETSC_FALSE but updateYieldStressFromHmelt() called");
+  }
 
   PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);

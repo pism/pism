@@ -424,7 +424,6 @@ protected:
   
   // see iMviewers.cc
   int isViewer(char name);
-  PetscErrorCode initSounding();
   PetscErrorCode updateSoundings();
   PetscErrorCode updateOneSounding(const char scName, Vec l, const PetscScalar scale);
   PetscErrorCode createOneViewerIfDesired(const char singleCharName);

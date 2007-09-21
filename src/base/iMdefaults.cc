@@ -122,6 +122,7 @@ const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 100.0;
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 
 const PetscTruth  DEFAULT_USE_SSA_VELOCITY = PETSC_FALSE;
+const PetscTruth  DEFAULT_DO_PLASTIC_TILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_SUPERPOSE = PETSC_FALSE;
 const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 150;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_SSA = PETSC_FALSE;
@@ -163,6 +164,7 @@ PetscErrorCode IceModel::setDefaults() {
   transformForSurfaceGradient = PETSC_FALSE;
 
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
+  doPlasticTill = DEFAULT_DO_PLASTIC_TILL;
   doSuperpose = DEFAULT_DO_SUPERPOSE;
   ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;
   useConstantNuForSSA = DEFAULT_USE_CONSTANT_NU_FOR_SSA;

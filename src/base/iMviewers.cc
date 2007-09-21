@@ -72,8 +72,10 @@ PetscErrorCode IceModel::createViewers() {
   // It is important that the createVecs() has been called before we call this.
   // See iMnames.cc and IceModel::tn for most short titles on viewers.
 
-  PetscErrorCode ierr;
+  if (createViewers_done == PETSC_TRUE)
+    return 0;
 
+  PetscErrorCode ierr;
   const int nv = 42; // number of viewers in use
   char viewsInUse[nv] = {'0','1','2','3',
                          'B','C','D','E','F','G','H','L','R','S',
@@ -94,6 +96,15 @@ PetscErrorCode IceModel::createViewers() {
 
 //  ierr = createOneViewerIfDesired(&NuView[0], 'N',"(nu*H)_t (I offset)");  CHKERRQ(ierr);
 //  ierr = createOneViewerIfDesired(&NuView[1], 'N',"(nu*H)_t (J offset)");  CHKERRQ(ierr);
+
+  // allocate space for soundings
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mbz + grid.p->Mz, &Td); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &ud); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &vd); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &wd); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &Sigmad); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &gsd); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &taud); CHKERRQ(ierr);
 
   createViewers_done = PETSC_TRUE;
   return 0;
@@ -138,21 +149,6 @@ PetscErrorCode IceModel::setSoundingFromOptions() {
   jd = myjd;
   kd = mykd;
   //  ierr = PetscPrintf(grid.com, "    !!! id,jd,kd = %3d,%3d,%3d !!!\n",id,jd,kd); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceModel::initSounding() {
-  // setup for diagnostic "sounding" views
-  PetscErrorCode  ierr;
-
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mbz + grid.p->Mz, &Td); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &ud); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &vd); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &wd); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &Sigmad); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &gsd); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &taud); CHKERRQ(ierr);
   return 0;
 }
 

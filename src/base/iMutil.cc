@@ -292,8 +292,6 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 
   ierr = initPDDFromOptions(); CHKERRQ(ierr);
 
-  ierr = initSounding(); CHKERRQ(ierr);
-
   tempskipCountDown = 0;
 
   if (doHook == PETSC_TRUE) {
