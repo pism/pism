@@ -65,9 +65,10 @@ PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ct
 
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **Ts, **Ghf, ***T, ***Tb;
+  PetscScalar     **H, **b, **Ts, **Ghf, ***T, ***Tb;
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
@@ -98,15 +99,23 @@ PetscErrorCode IceModel::putTempAtDepth() {
       }
       for (PetscInt k=0; k<ks; k++) {
         const PetscScalar depth = HH - static_cast<PetscScalar>(k) * grid.p->dz;
-        const PetscScalar depth2 = depth*depth;
-        T[i][j][k] = Ts[i][j] + alpha * depth2 + beta * depth2 * depth2;
+        const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
+        const PetscScalar d2 = depth*depth;
+        T[i][j][k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
       }
-      for (PetscInt kb=0; kb<grid.p->Mbz; kb++)
-        Tb[i][j][kb] = T[i][j][0] + (Ghf[i][j]/bedrock.k) * 
+      PetscScalar T_top_bed = T[i][j][0];
+      // if floating then top of bedrock sees ocean
+      const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
+      if (b[i][j] < floating_base - 1.0)
+        T_top_bed = ice.meltingTemp;
+      for (PetscInt kb=0; kb<grid.p->Mbz; kb++) {
+        Tb[i][j][kb] = T_top_bed + (Ghf[i][j]/bedrock.k) * 
           static_cast<PetscScalar>(grid.p->Mbz - kb - 1) * grid.p->dz;
+      }
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);

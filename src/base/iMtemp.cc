@@ -68,7 +68,7 @@ PetscErrorCode IceModel::temperatureStep() {
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dz); // only equal-spaced
 
   Vec     vTnew = vWork3d[0];  // will be communicated by temperatureAgeStep()
-  PetscScalar **Ts, **H, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate;
+  PetscScalar **Ts, **H, **b, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate;
   PetscScalar ***T, ***Tb, ***Tnew, ***u, ***v, ***w, ***Sigma;
 
   PetscScalar *Lp, *L, *D, *U, *x, *rhs, *work;  
@@ -81,6 +81,7 @@ PetscErrorCode IceModel::temperatureStep() {
 
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
@@ -124,7 +125,13 @@ PetscErrorCode IceModel::temperatureStep() {
       if (ks == 0) { // no ice; set T[i][j][0] to surface temp
         if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
         D[k0] = 1.0; U[k0] = 0.0;
-        rhs[k0] = Ts[i][j]; 
+        // if floating then top of bedrock sees ocean
+        const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
+        if (b[i][j] < floating_base - 1.0) {
+          rhs[k0] = ice.meltingTemp;
+        } else { // top of bedrock sees atmosphere
+          rhs[k0] = Ts[i][j];
+        }
       } else { // ks > 0; there is ice
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
@@ -273,7 +280,13 @@ PetscErrorCode IceModel::temperatureStep() {
       if (ks > 0) {
         Tb[i][j][k0] = Tnew[i][j][0];
       } else {
-        Tb[i][j][k0] = Ts[i][j];
+        // if floating then top of bedrock sees ocean
+        const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
+        if (b[i][j] < floating_base - 1.0) {
+          Tb[i][j][k0] = ice.meltingTemp;
+        } else { // top of bedrock sees atmosphere
+          Tb[i][j][k0] = Ts[i][j];
+        }
       }
       // check bedrock solution        
       for (PetscInt k=0; k <= k0; k++) {
@@ -314,6 +327,7 @@ PetscErrorCode IceModel::temperatureStep() {
 
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);

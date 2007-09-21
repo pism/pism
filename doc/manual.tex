@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{175}
+\newcommand{\PISMREV}{182}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -121,11 +121,9 @@ The NASA Cryospheric Sciences Program supported this research with grant NAG5-11
 
 Welcome to PISM!
 
-This \emph{User's Manual} describes how to download the PISM source code and install it.  It describes how to run it for certain simplified geometry situations and certain verification situations.  It also describes how to use PISM as a modest Greenland ice sheet model or a modest Ross ice shelf model.  And that is all.
+This \emph{User's Manual} describes how to download the PISM source code and install PISM.  It describes how to run it for certain simplified geometry situations and certain verification situations.  It describes how to use PISM as a modest Greenland ice sheet model or a modest Ross ice shelf model.  
 
-Therefore most users will need to go beyond what is described in this \emph{User's Manual} if they are to advance the science of ice sheets.
-
-Though this \emph{User's Manual} is the place to start, there are two additional documents to know about:
+But that is all.  Users who want to advance the science of ice sheets will need to go beyond what is described here.  For such users there are two additional documents to know about:
 \begin{enumerate}
  \item  The \emph{PISM Reference Manual} (\href{http://www.dms.uaf.edu/~bueler/refman.pdf}{\t{www.dms.uaf.edu/$\sim$bueler/refman.pdf}})
 describes the most important pieces of the source code.  It contains, or at least it is intended to contain, the minimum documentation of the PISM source code parts in order to include all the continuum models and numerical methods of PISM.
@@ -136,7 +134,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \vspace{1.5in}
 \large
 \begin{center}
- \emph{WARNING}:  PISM is an ongoing project.  Ice sheet modelling is complicated and not mature (in 2007, anyway).  Please don't trust the results of PISM (or any other ice sheet model, for that matter) without a fair amount of exploration.  Please don't expect all your questions to be answered here.  But please do write to us with questions: 
+ \emph{WARNING}:  PISM is an ongoing project.  Ice sheet modelling is complicated and not mature (in 2007, anyway).  Please don't trust the results of PISM (or any other ice sheet model) without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  But do write to us with questions: 
 
 \verb|ffelb@uaf.edu|.
 \end{center}
@@ -148,17 +146,16 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \subsubsection*{Installing prerequisities}
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
-\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need Python (\url{http://www.python.org/}) and Subversion (\url{http://subversion.tigris.org/}) installed, but these are included in all current Linux distributions.  To use the (recommended) graphical output of PISM you will need an X Windows server (\url{http://www.x.org/}).
+\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need \href{http://www.python.org/}{Python} and \href{http://subversion.tigris.org/}{Subversion} installed, but these are included in all current Linux distributions.  To use the (recommended) graphical output of PISM you will need an  (\href{http://www.x.org/}{X Windows server}.
+\item As PISM is currently under rapid development, we distribute it only as compilable source code.  On the other hand, there are several software libraries needed by PISM.  Therefore the ``header files'' for these libraries are required for building PISM.  In particular this means that the ``developer's versions'' of the libraries are needed if the libraries are downloaded from package repositories like Debian.  (In summary, \verb|xorg-dev|, \verb|netcdfg-dev|, \verb|libgsl0-dev|, and \verb|fftw3-dev| are the Debian packages we---the PISM developers---have used in compiling and linking PISM.)
 
-\item As PISM is currently under rapid development, we distribute it only as compilable source code.  On the other hand, in this Installation section we describe several software libraries needed by PISM.  Therefore the ``header files'' for these libraries are required at the stage of compiling PISM.  In particular this means that the ``developer's versions'' of the libraries are needed if the libraries are downloaded from package repositories like Debian.  (In summary, \verb|xorg-dev|, \verb|netcdfg-dev|, \verb|libgsl0-dev|, and \verb|fftw3-dev| are the Debian packages we---the PISM developers---have used in compiling and linking PISM.  That is, \verb|sudo apt-get install xorg-dev|, etc.)
+\item PISM uses \href{http://www.unidata.ucar.edu/software/netcdf/}{NetCDF (= \emph{network Common Data Form})} for an input and output file format.   If it is not already present, install it using the instructions at the webpage or using a package management system.
 
-\item PISM uses NetCDF (= \emph{network Common Data Form}; \url{http://www.unidata.ucar.edu/software/netcdf/}) for an input and output file format.   If it is not already present, install it using the instructions at the webpage or using a package management system.
+\item PISM uses the \href{http://www.gnu.org/software/gsl/}{GSL (= \emph{GNU Scientific Library})} for certain numerical calculations and special functions.  If it is not already present, install it using the instructions at the webpage or using a package management system.
 
-\item PISM uses the GSL (= \emph{GNU Scientific Library}; \url{http://www.gnu.org/software/gsl/}) for certain numerical calculations and special functions.  If it is not already present, install it using the instructions at the webpage or using a package management system.
+\item PISM optionally uses the \href{http://www.fftw.org/}{``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the West})} in approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.   If this library is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
 
-\item PISM optionally uses the ``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the West}; \url{http://www.fftw.org/}) in approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.   If this library is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
-
-\item You will need a version of MPI (= \emph{Message Passing Interface}; \url{http://www-unix.mcs.anl.gov/mpi/}).  Your system may have an existing MPI installation, in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download MPICH2 (\url{http://www-unix.mcs.anl.gov/mpi/mpich2/}) as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  For example, you can add it with the statement
+\item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (= \emph{Message Passing Interface})}.  Your system may have an existing MPI installation, in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download \href{http://www-unix.mcs.anl.gov/mpi/mpich2/}{MPICH2} as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  For example, you can add it with the statement
 
 \verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for \verb|bash| shell)
 
@@ -172,9 +169,11 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \centerline{\emph{From now on this manual will assume use of} bash.}
 \medskip
 
-\item PISM uses PETSc (= \emph{Portable Extensible Toolkit for Scientific computation}; \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}).  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}.  PISM requires a version of PETSc which is \texttt{\PETSCREV} or later.\footnote{A Debian package for PETSc may exist, but it should only be used if it is version \texttt{\PETSCREV} or later.}   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
+\item PISM uses   \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}{PETSc (= \emph{Portable Extensible Toolkit for Scientific computation})}.  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at  
+   \centerline{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}{\t{www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}}}
+PISM requires a version of PETSc which is \texttt{\PETSCREV} or later.\footnote{A Debian package for PETSc may exist, but it should only be used if it is version \texttt{\PETSCREV} or later.}   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
 
-You should configure and build PETSc \emph{essentially} as described on the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}, but it might be best to read the following comments on the PETSc configure and build process first:
+You should configure and build PETSc \emph{essentially} as described on the  \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}, but it might be best to read the following comments on the PETSc configure and build process first:
 
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
 \item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges.  Note that you will need to define the environment variable \verb|PETSC_DIR| before configuring PETSc (next).  For instance, once you have entered the PETSc directory just untarred, \verb|export PETSC_DIR=|$\phantom{!}^\backprime \mathtt{pwd}^\backprime$.  (Note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \verb|'|.)
@@ -189,7 +188,7 @@ Note that there is no PISM use of Fortran, and that it is sometimes convenient t
 
 \item On the other hand, it seems common that one needs to tell PETSc to download MPI into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
 
-\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \verb|--with-batch=1|.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the installation page \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/documentation/installation.html}.
+\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \verb|--with-batch=1|.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
 
 \item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \verb|PETSC_ARCH| will be reported at the end of the configure process; take note of this value.  (Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.)
 
@@ -223,7 +222,7 @@ At this point you have configured the environment which PISM needs.  You are rea
 
 \noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM.}
 
-\item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \t{ffelb} AT \t{uaf.edu}.}
+\item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \t{ffelb\@@uaf.edu}.}
 
 \verb|cd pism|
 
@@ -434,23 +433,25 @@ When a PISM run is finished the state of the model is output in NetCDF format.  
 \textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
 \verb|ncdump| & \emph{included with any NetCDF distribution} & dump as text file \\
 \verb|ncview| & \scriptsize\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}\small & quick graphical view \\
-\verb|ncBrowse| & \url{http://www.epic.noaa.gov/java/ncBrowse/} & quick graphical view \\
-\verb|IDV| & \url{http://www.unidata.ucar.edu/software/idv/} & more complete visualization \\
-MATLAB/netCDF & \scriptsize\url{http://www.marine.csiro.au/sw/matlab-netcdf.html}\small & read and write from MATLAB \\
+\verb|ncBrowse| & \href{http://www.epic.noaa.gov/java/ncBrowse/}{\t{www.epic.noaa.gov/java/ncBrowse/}} & quick graphical view \\
+\verb|IDV| & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
+MATLAB/netCDF & \href{http://www.marine.csiro.au/sw/matlab-netcdf.html}{\t{www.marine.csiro.au/sw/matlab-netcdf.html}} & read and write from MATLAB \\
 \quad interface & & \\
-\verb|NCO| = the NetCDF & \url{http://nco.sourceforge.net/} & sophisticated manipulations \\
+\verb|NCO| = the NetCDF & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & sophisticated manipulations \\
 \quad Operators & & \quad at command line\\
 \hline
-\multicolumn{3}{c}{See \url{http://www.unidata.ucar.edu/software/netcdf/docs/software.html} for additional tools.} \\
+\multicolumn{3}{c}{See \href{http://www.unidata.ucar.edu/software/netcdf/docs/software.html}{\t{www.unidata.ucar.edu/software/netcdf/docs/software.html}} for additional tools.} \\
 \end{tabular}
 \normalsize
 \end{table}
 
-\subsection{Evolution runs versus ``diagnostic'' runs}  The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time a similarly as possible to the modelled ice sheet.  Such a goal assumes one starts with the right initial conditions and that one has the right climate and other inputs at each time step (i.e.~boundary conditions).  All of this is natural because underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  We will describe this usual time-stepping behavior as an ``evolution run.''
+\subsection{Evolution runs versus ``diagnostic'' runs}  The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modelled ice sheet.  Such a goal assumes one starts with the right initial conditions and that one has the right climate and other inputs at each time step (i.e.~boundary conditions).  Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  The natural execution mode for a numerical ice sheet model is to take small time steps in approximating these differential equations; ``small time steps'' could mean several years, of course.  We will describe this usual time-stepping behavior as an ``evolution run.''
 
-Much of ice sheet, stream, and shelf modelling, however, requires ``diagnostic'' solution only of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid \cite{Fowler}.  (As explained in the next section, the ``shallow ice approximation'' which underlies the EISMINT II experiments is only one of two forms of the balance of momentum equations solved by PISM.  The other is the ``shallow shelf approximation''.)  On the other hand, in a diagnostic computation the temperature field and basal conditions like the yield stress of the till, for instance, are held fixed.
+Much of ice sheet, stream, and shelf modelling, however, requires ``diagnostic'' solution only of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid \cite{Fowler}.  (As explained in the next section, the ``shallow ice approximation'' which underlies the EISMINT II experiments is only one of two forms of the balance of momentum equations solved by PISM.  The other is the ``shallow shelf approximation''.)  In a diagnostic computation of this type the temperature field and certain basal conditions, like the yield stress of the till for instance, are held fixed.  In summary, the goal of a ``diagnostic run'' is to compute the velocity field; this will be the definition used from now on in this manual.
 
-In summary, the goal of a ``diagnostic run'' is to compute the velocity field.\footnote{In any case, from now on this defines ``diagnostic run'' in this manual.}  On the other hand, the NetCDF model state saved by PISM at the end of an evolution run does not contain the three-dimensional velocity field.  Instead, it contains those variables which are needed to restart the run, especially the geometry (e.g.~thickness and bed elevation) and the ice temperature field.  For these reasons there is a separate executable \verb|pismd| which only does a diagnostic computation of velocity and saves the full three-dimensional velocity field, but which does not do time-stepping.  For example,
+On the other hand, the NetCDF model state saved by PISM at the end of an evolution run does not contain the three-dimensional velocity field.  Instead, it contains those variables which are needed to restart the run, especially the geometry (thickness and bed elevation) and the ice temperature field.  For these reasons there is a separate executable \verb|pismd| which only does a diagnostic computation of velocity.  It saves the full three-dimensional velocity field but it does not do time-stepping.
+
+For example using the quantities already computed in this section, try
 
 \verb|pismd -if eisIIF200k.nc -o eisIIF200k_fullvels|
 
@@ -460,40 +461,38 @@ The velocity field saved by \verb|pismd| is the one which would be computed at t
 
 \verb|pisms -eisII F -if eisIIF200k.nc -y 0.1 -o eisIIF200k_plus|
 
-\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIF200k_fullvels.nc|.  
+\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIF200k_fullvels.nc|.\footnote{For this example, one can use a NetCDF Operator to check that the two saved NetCDF files really correspond to the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \verb|-full3Dout|.  Either way, saving the full velocity field roughly doubles the size of the output model state NetCDF file.
 
-For the above example, one can use the one of the NetCDF Operators (``the NCO'' from now on) to check that the two saved NetCDF files really correspond to the same horizontal velocity field.  In particular  \verb|ncdiff -v cbar,csurf eisIIF200k_plus.nc eisIIF200k_fullvels.nc foo.nc| produces a new NetCDF file \verb|foo.nc| which has the differences of the vertically-averaged and ice surface values of the horizontal velocity.  One can then see that these variables are identically zero in \verb|foo.nc| using \verb|ncview|, for instance.
+Subsection \ref{subsect:ross} describes the use of \verb|pismd| in modelling the Ross ice shelf.  Indeed, ``ice shelf modelling'' has historically meant diagnositic and not evolution computations \cite{MacAyealetal,HumbertGreveHutter}.
 
-Subsection \ref{subsect:ross} describes the use of \verb|pismd| in modelling the Ross ice shelf.  Indeed, ``ice shelf modelling'' usually means diagnositic and not evolution computations \cite{MacAyealetal,HumbertGreveHutter}.
 
-One can also force PISM to save the full velocity field at the end of any time-stepping run by addition the option \verb|-full3Dout|.  Adding this option has the effect of (roughly) doubling the size of the output model state NetCDF file.  (This option is not needed when using \verb|pismd| or \verb|pismv| for tests I though J as, for all of these diagnostic computations, saving the full three-dimensional velocity field is the default behavior.)
 
 
 \clearpage
 \newpage
 \section{Ice dynamics in PISM}\label{sect:dynamics}
 
-\subsection{Two models of ice flow: slow versus fast, but always shallow}  An important fact about PISM is that it can numerically solve two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice are included into balance of momentum equations to determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
+\subsection{Two models of ice flow: slow versus fast, but always shallow}  PISM can numerically solve two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice are included into balance of momentum equations to determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
 \item the shallow ice approximation (SIA) \cite{Hutter}, which describes ice flow as a function of the driving shear stresses of classical glaciology (i.e.~in planes parallel to the geoid) \cite{Paterson}, and
 \item the shallow shelf approximation (SSA) \cite{WeisGreveHutter}, which describes a membrane-type flow driven by longitudinal stress gradients \cite{Morland,MacAyeal,SchoofStream}.
 \end{itemize}
 PISM numerically solves both the SIA and SSA equations in parallel.  The SIA equations are, as a rule, easier and quicker to numerically solve than the SSA.  Certainly the SIA equations are easier to parallelize.
 
-The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock and the bed topography is relatively slowly-varying \cite{Fowler}.  These equations are also used with basal shear stress dependent sliding, but with decreasing validity as the contribution of the basal sliding to the total flow velocity increases.
+The SIA equations can confidently be applied to the grounded part of ice sheets for which the basal ice is frozen to the bedrock and the bed topography is relatively slowly-varying \cite{Fowler}.  PISM can solve these equations with additional basal shear stress dependent sliding, but this has decreasing validity as the contribution of the basal sliding to the total flow velocity increases.
 
-The SSA equations can confidently be applied to large floating ice shelves because such shelves have small depth-to-width ratio and because there is no (deviatoric) stress at the base of the (floating) ice \cite{Morland,MorlandZainuddin}.
+The SSA equations can confidently be applied to large floating ice shelves because such shelves have small depth-to-width ratio and because there is no shear stress at the base of the floating ice \cite{Morland,MorlandZainuddin}.
 
-Ice sheets have faster-flowing \emph{grounded} parts, however.  These are usually called ``ice streams'' or ``outlet glaciers'' in the context of the Greenland and Antarctic ice sheets \cite{BamberVaughanJoughin}.  Describing these faster-flowing grounded parts of ice sheets requires something more than the SIA.  Ultimately one might use the full Stokes equations which represent the balance of \emph{all} tensor components \cite{Fowler}.  Alternatively one might use a ``higher-order'' but still shallow stress balance \cite{Blatter}.
+Ice sheets have faster-flowing \emph{grounded} parts, however.  These are usually called ``ice streams'' or ``outlet glaciers''.  One other other types of fast flow appear at the margin of, and even well into the interior of, the Greenland \cite{Joughinetal2001} and Antarctic \cite{BamberVaughanJoughin} ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the SIA.  Ultimately one might use the full Stokes equations which represent the balance of \emph{all} tensor components \cite{Fowler}.  Alternatively one might use a ``higher-order'' but still shallow stress balance \cite{Blatter}.
 
-One may apply the SSA equations with additional basal resistance terms to grounded ice.  This was justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure under parts of an ice sheet; see also \cite{SchoofTill}.  These are the models PISM uses to describe faster-flowing ice, namely the SSA with either linearly-viscous or plastic till.
+Though they apply with greatest confidence to ice shelves, one may apply the SSA equations with additional basal resistance terms to grounded ice.  This was justified in the context of the Siple Coast ice streams of Antarctica by MacAyeal \cite{MacAyeal,HulbeMacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with essentially the same (SSA) balance equations is the Schoof \cite{SchoofStream} model of ice streams emerging from plastic till failure under parts of an ice sheet; see also \cite{SchoofTill}.  These are the models PISM uses to describe faster-flowing ice, namely the SSA with either linearly-viscous or plastic till.
 
-We again emphasize, however, that both the SIA and SSA models are \emph{shallow} approximations.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments, based on a small depth-to-width ratio, from the Stokes equations of a non-Newtonian fluid.  For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.\footnote{The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids serious discussion of continuum models.}
+As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments, based on a small depth-to-width ratio, from the Stokes equations of a non-Newtonian fluid.  For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.\footnote{The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids serious discussion of continuum models.}
 
 Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  Each horizontal grid point corresponds to a whole vertical column of grid points in the three-dimensional grid, so it is perhaps better to say that each vertical column of ice centered at a horizontal grid point is either SIA \emph{or} SSA.  When ice is floating (according to the usual floatation criterion \cite{WeisGreveHutter}), the horizontal grid point is automatically marked as SSA.
 
 The actual numerical solution of the SSA for SSA-marked points is not done by default for the executables \verb|pismr|, \verb|pismd|, or \verb|pisms|.  The user must add the flag \verb|-ssa|.
 
-In any case, one must decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  The rest of this section largely focuses on how the user can make this choice in practice when using PISM.  One way to make the choice is to specify a \emph{mask}.  Alternatively to the mask technique, we also describe how to use a plasticity assumption to determine the region of fast flow through the solution of a free boundary problem.
+In any case, one must decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  The rest of this section largely focuses on how the user makes this choice in practice when using PISM.  One way is to specify a \emph{mask}.  Alternatively one can make a plasticity assumption about the till and determine the region of fast flow through the solution of a free boundary problem \cite{SchoofStream}.
 
 The transition from SIA to SSA flow is an internal boundary within the model domain.  Along this boundary, the numerical schemes in PISM attempt to maintain these continuum facts:
 \renewcommand{\labelenumi}{\textbf{\roman{enumi})}~}
@@ -502,9 +501,9 @@ The transition from SIA to SSA flow is an internal boundary within the model dom
 \item conservation of mass \emph{in the map plane} across the SIA--SSA transition, and
 \item conservation of energy in three dimensions across the SIA--SSA transition.
 \end{enumerate}
-Of course the statement ``attempt to'' maintain is important because PISM does not have exact representations of any of the continuous functions but only their gridded numerical approximations.  See section \ref{sect:over} for additional comments and references on the continuum models and numerical schemes in PISM.
+Of course the statement ``attempt to'' maintain is important because PISM does not have exact representations of any continuous functions at all.  It only ``knows'' their gridded numerical approximations.  See section \ref{sect:over} of this manual, and the \emph{PISM Reference Manual}, for additional comments and references on the continuum models and numerical schemes in PISM.
 
-\subsection{The flow-type mask} \label{subsect:mask}  PISM keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask (at this time), shown in table \ref{tab:maskvals}.
+\subsection{The flow-type mask} \label{subsect:mask}  PISM always keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask (at this time), shown in table \ref{tab:maskvals}.
 
 \begin{table}[ht]
 \caption{Values for the PISM mask.}\label{tab:maskvals} 
@@ -2094,7 +2093,7 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 \verb|s|:\quad Strain heating term $\Sigma$ in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
-\verb|t|:\quad Absolute ice temperature in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+\verb|t|:\quad Absolute ice temperature in vertical column (sounding).  Note this sounding extends into the bedrock, unlike the other soundings (e.g.~\verb|-d egsxyz|).  See \verb|-id|, \verb|-jd| to set sounding location.
 
 \verb|u|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction;  in meters per year.
 
