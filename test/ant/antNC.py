@@ -33,26 +33,26 @@ prog = [
 ['running for another 3000 yrs to equilibriate temp on fine grid (steady geometry and SIA only) ',
       'pismr',  2990,-1,'ant158k_20km','-no_mass'],
 ['2 yrs to smooth (with MacAyeal)',
-      'pismr',     2,-1,'ant158k_20kmSMMV','-mv -ksp_rtol 1e-6 -ocean_kill -verbose'],
+      'pismr',     2,-1,'ant158k_20kmSMMV','-ssa -ksp_rtol 1e-6 -ocean_kill -verbose'],
 ['another 500 yrs to equilibriate temp (steady geometry with MacAyeal)',
-      'pismr',   498,-1,'ant158p5k_20km','-no_mass -mv -ksp_rtol 1e-6 -ocean_kill -verbose'],
+      'pismr',   498,-1,'ant158p5k_20km','-no_mass -ssa -ksp_rtol 1e-6 -ocean_kill -verbose'],
 ['regrid to 14km grid and smooth for 2 years',
       'pismr',     2,0,'ant158p5k_14km','-Mx 401 -My 401 -Mz 201 -Mbz 41 -gk -e 1.2 -verbose',
       'ant158p5k_20km','TBeL'],
 ['compute everything for 5 years on 14km grid',
-      'pismr',     5,-1,'ant158p5k_p5yr_14km','-mv -ksp_rtol 1e-7 -ocean_kill -verbose'],
+      'pismr',     5,-1,'ant158p5k_p5yr_14km','-ssa -ksp_rtol 1e-7 -ocean_kill -verbose'],
 ['pant using scalar beta on 14km grid',
       'pant',      5,-2,'antlast14km_beta',
-      '-mv -ksp_rtol 1e-7 -ocean_kill -verbose -beta -balvel init.nc -obasal betamap14km'],
+      '-ssa -ksp_rtol 1e-7 -ocean_kill -verbose -beta -balvel init.nc -obasal betamap14km'],
 ['pant using vector beta on 14km grid',
       'pant',      5,-3,'antlast14km_betaxy',
-      '-mv -ksp_rtol 1e-7 -ocean_kill -verbose -betaxy -balvel init.nc -obasal betamapxy14km'],
+      '-ssa -ksp_rtol 1e-7 -ocean_kill -verbose -betaxy -balvel init.nc -obasal betamapxy14km'],
 ['pant using plastic on 14km grid',
       'pant',      5,-4,'antlast14km_tauc',
-      '-mv -ksp_rtol 1e-7 -ocean_kill -verbose -super -plastic -obasal taucmap14km']
+      '-ssa -ksp_rtol 1e-7 -ocean_kill -verbose -super -plastic -obasal taucmap14km']
 ]
-#always_opts = '-gk -e 1.2'
-always_opts = '-gk -e 1.2 -d uvmT -display :0'
+always_opts = '-gk -e 1.2'
+#always_opts = '-gk -e 1.2 -d uvmT -display :0'
 
 ## get options: -n for number of processors
 nproc = NP  ## default; will not use 'mpiexec' if equal to one

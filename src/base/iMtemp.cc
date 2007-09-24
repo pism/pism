@@ -243,8 +243,8 @@ PetscErrorCode IceModel::temperatureStep() {
         }
         if (Tnew[i][j][k] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) generic segment temp at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
-              i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
+              "  [[too low (<200) generic segment temp T = %f at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
+              Tnew[i][j][k],i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       }
@@ -270,8 +270,8 @@ PetscErrorCode IceModel::temperatureStep() {
         }
         if (Tnew[i][j][0] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) ice/rock segment temp at %d,%d; proc %d; mask=%f; w=%f]]\n",
-              i,j,grid.rank,mask[i][j],w[i][j][0]*secpera); CHKERRQ(ierr);
+              "  [[too low (<200) ice/rock segment temp T = %f at %d,%d; proc %d; mask=%f; w=%f]]\n",
+              Tnew[i][j][0],i,j,grid.rank,mask[i][j],w[i][j][0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       } else {
@@ -294,8 +294,8 @@ PetscErrorCode IceModel::temperatureStep() {
       for (PetscInt k=0; k <= k0; k++) {
         if (Tb[i][j][k] < GlobalMinTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) bedrock temp at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
-              i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
+              "  [[too low (<200) bedrock temp T = %f at %d,%d,%d; proc %d; mask=%f]]\n",
+              Tb[i][j][k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
            myLowTempCount++;
         }
       }

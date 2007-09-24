@@ -183,7 +183,8 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       // basal w from basal kinematical equation
       const PetscScalar dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx),
                         dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
-      w[i][j][0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy;
+//      w[i][j][0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy;
+      w[i][j][0] = ub[i][j] * dbdx + vb[i][j] * dbdy;  // DEBUG: remove dbdt
       if (includeBMRinContinuity == PETSC_TRUE) {
         w[i][j][0] -= capBasalMeltRate(basalMeltRate[i][j]);
       }

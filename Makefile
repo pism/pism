@@ -43,7 +43,7 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
    simpleJ.c simpleL.c
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
-include config/ryan_make
+#include config/ryan_make
 
 TESTS_OBJS := $(tests_sources:.c=.o)
 
