@@ -50,12 +50,15 @@ PetscErrorCode  IceModel::setFromOptions() {
   if ((doBedIso == PETSC_TRUE) || (bedDeflc == PETSC_TRUE))    doBedDef = PETSC_TRUE;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
-  // user gives nu in MPa yr (e.g. Ritz value is 30.0)
-  if (my_useConstantNu == PETSC_TRUE)    setConstantNuForSSA(my_nu  * 1.0e6 * secpera);
+  // user gives nu in MPa yr (e.g. Ritz et al 2001 value is 30.0)
+  if (my_useConstantNu == PETSC_TRUE) {
+    useConstantNuForSSA = PETSC_TRUE;
+    setConstantNuForSSA(my_nu  * 1.0e6 * secpera);
+  }
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);
            CHKERRQ(ierr);
-  // user gives \bar B in 
+  // user gives \bar B in Pa s^{1/3}; typical value is 1.9e8 Pa s^{1/3} (MacAyeal et al 1996)
   if (my_useConstantHardness == PETSC_TRUE) {
     useConstantHardnessForSSA = PETSC_TRUE;
     constantHardnessForSSA = my_barB;
