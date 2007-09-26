@@ -42,11 +42,11 @@ indexing is facilitated by cIndex().
  */
 const titleNname IceModel::tn[] = {
 {"hor. speed at surface (m/a)", "csurf"}, // '0'
-{"u at surface (m/a)", "usurf"}, // '1'
-{"v at surface (m/a)", "vsurf"}, // '2'
-{"w at surface (m/a)", "wsurf"}, // '3'
-{}, // '4'
-{}, // '5'
+{"u at ice surface (m/a)", "usurf"}, // '1'
+{"v at ice surface (m/a)", "vsurf"}, // '2'
+{"w at ice surface (m/a)", "wsurf"}, // '3'
+{"u at ice base (m/a)", "ub"}, // '4'
+{"v at ice base (m/a)", "vb"}, // '5'
 {}, // '6'
 {}, // '7'
 {}, // '8'

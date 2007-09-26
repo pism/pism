@@ -211,7 +211,8 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
   ierr = verbPrintf(4,grid.com, 
                        "\n done calling velocity(false) ... "); CHKERRQ(ierr);
   // want ubar, vbar
-  ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr); // communication here
+  ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
+  // no need to communicate ubar and vbar; no stencil width
   useSSAVelocity = saveUseSSAVelocity;
   
   // remove deformational from balance velocity to give sliding

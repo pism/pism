@@ -41,7 +41,8 @@ int main(int argc, char *argv[]) {
   {
     IceType*   ice;
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PRYAN (perturbed accumulation EISMINT II mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PRYAN (mode for perturbed accumulation EISMINT II experiment H)\n");
+             CHKERRQ(ierr);
 
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);

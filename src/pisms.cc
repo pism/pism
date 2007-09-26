@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &ROSSchosen); CHKERRQ(ierr);
     
     if ((EISIIchosen == PETSC_TRUE) && (ISMIPchosen == PETSC_FALSE) && (ROSSchosen == PETSC_FALSE)) {
-      mEISII.setflowlawNumber(flowlawNumber);
+      mEISII.setFlowLawNumber(flowlawNumber);
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;

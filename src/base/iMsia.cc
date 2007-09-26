@@ -391,17 +391,24 @@ PetscErrorCode IceModel::frictionalHeatingSIAStaggered() {
 }
 
 
-//! Put the basal velocity onto the regular grid.
-/*!
-At the end of velocitySIAStaggered() the basal velocity is available on 
-the staggered grid.  This procedure averages it onto the regular grid.  Note that
+//! Average staggered-grid vertically-averaged horizontal velocity and basal velocity onto regular grid.
+/*! 
+At the end of velocitySIAStaggered() the vertically-averaged horizontal velocity 
+vuvbar[0],vuvbar[1] and the basal velocity ub,vb is available on 
+the staggered grid.  This procedure averages them onto the regular grid.  Note that
 communication of ghosted values must occur between velocitySIAStaggered() and this 
-procedure for the averaging to work.
+procedure for the averaging to work.  Only two-dimensional regular grid velocities 
+are updated here.  The full three-dimensional velocity field is not updated here
+but instead in horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
  */
-PetscErrorCode IceModel::basalSIAConditionsToRegular() {
-  PetscErrorCode  ierr;
-  PetscScalar **ubreg, **vbreg, **ub[2], **vb[2];
+PetscErrorCode IceModel::velocities2DSIAToRegular() {  
+  PetscErrorCode ierr;
+  PetscScalar **ubar, **vbar, **uvbar[2], **ub[2], **vb[2], **ubreg, **vbreg;
 
+  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[5], &ub[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[6], &vb[0]); CHKERRQ(ierr);
@@ -415,8 +422,20 @@ PetscErrorCode IceModel::basalSIAConditionsToRegular() {
                             ub[1][i][j] + ub[1][i][j-1]);
       vbreg[i][j] = 0.25 * (vb[0][i][j] + vb[0][i-1][j] +
                             vb[1][i][j] + vb[1][i][j-1]);
+      // compute ubar,vbar on regular grid by averaging deformational on staggered grid
+      // and adding basal on regular grid
+      ubar[i][j] = 0.5*((uvbar[0][i-1][j] - ub[0][i-1][j]) + (uvbar[0][i][j] - ub[0][i][j]))
+                   + ubreg[i][j];
+      vbar[i][j] = 0.5*((uvbar[1][i][j-1] - vb[1][i][j-1]) + (uvbar[1][i][j] - vb[1][i][j]))
+                   + vbreg[i][j];
+//      ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
+//      vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
     }
   }
+  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vub, &ubreg); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vbreg); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &ub[0]); CHKERRQ(ierr);

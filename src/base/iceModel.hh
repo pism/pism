@@ -372,7 +372,7 @@ protected:
   PetscErrorCode surfaceGradientSIA();
   PetscErrorCode velocitySIAStaggered(bool faststep);
   PetscErrorCode frictionalHeatingSIAStaggered();
-  PetscErrorCode basalSIAConditionsToRegular();
+  PetscErrorCode velocities2DSIAToRegular();
   PetscErrorCode SigmaSIAToRegular();
   PetscErrorCode horizontalVelocitySIARegular();
 
@@ -389,6 +389,8 @@ protected:
   PetscErrorCode broadcastSSAVelocity();
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
+  PetscErrorCode saveUVBarForSSA(const PetscTruth firstTime);
+  PetscErrorCode putSavedUVBarInUVBar();
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
@@ -419,7 +421,6 @@ protected:
   PetscErrorCode vertVelocityFromIncompressibility();
   PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   PetscErrorCode smoothSigma();
-  PetscErrorCode vertAveragedVelocityToRegular();
   PetscErrorCode computeMax3DVelocities();
   
   // see iMviewers.cc
@@ -452,6 +453,7 @@ private:
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details
   // of the linear system which uses these
+  Vec vubarSAVE, vvbarSAVE;
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system

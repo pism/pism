@@ -40,17 +40,6 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
 
-  void           setExperName_g(char);
-  void           setAccName(char);
-  void           setM_max_g(PetscScalar);
-  void           setS_b_g(PetscScalar);
-  void           setR_el_g(PetscScalar);
-  char           getExperName_g();
-  char           getAccName();
-  PetscScalar    getM_max_g();
-  PetscScalar    getS_b_g();
-  PetscScalar    getR_el_g();
-
 protected:
   RandomnessACML randomnessacml;
   PetscErrorCode initRandomnessACML();
@@ -63,9 +52,8 @@ protected:
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
 
 private:
-  char        expername_g;
   char        accname;
-  PetscScalar M_max_g, S_b_g, R_el_g;
+  PetscInt    mySeed;
 };
 
 #endif /* __iceRYANModel_hh */

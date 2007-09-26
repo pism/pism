@@ -76,8 +76,8 @@ PetscErrorCode IceModel::createViewers() {
     return 0;
 
   PetscErrorCode ierr;
-  const int nv = 42; // number of viewers in use
-  char viewsInUse[nv] = {'0','1','2','3',
+  const int nv = 44; // number of viewers in use
+  char viewsInUse[nv] = {'0','1','2','3','4','5',
                          'B','C','D','E','F','G','H','L','R','S',
                                  'T','U','V','X','Y','Z',
                          'a','b','c','e','f','g','h','i','j','l',
@@ -384,6 +384,8 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = updateSurfaceValuesViewer('1', vu, secpera); CHKERRQ(ierr);
   ierr = updateSurfaceValuesViewer('2', vv, secpera); CHKERRQ(ierr);
   ierr = updateSurfaceValuesViewer('3', vw, secpera); CHKERRQ(ierr);
+  ierr = update2DViewer('4', vub, secpera); CHKERRQ(ierr);
+  ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
   ierr = updateLog2DViewer('B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = update2DViewer('C', vtauc, 0.00001); CHKERRQ(ierr); // Display in bar
@@ -404,15 +406,22 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('a', vAccum, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('b', vbed, 1.0); CHKERRQ(ierr);
   ierr = updateSpeed2DViewer('c', vubar, vvbar, secpera, PETSC_TRUE, -6.0); CHKERRQ(ierr);
+  // 'e' is sounding
   ierr = update2DViewer('f', vdHdt, secpera); CHKERRQ(ierr);
+  // 'g' is sounding
   ierr = update2DViewer('h', vh, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('l', vbasalMeltRate, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('m', vMask, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('p', vuplift, secpera); CHKERRQ(ierr);
   ierr = updateSpeed2DViewer('q', vub, vvb, secpera, PETSC_TRUE, -6.0); CHKERRQ(ierr);
   ierr = update2DViewer('r', vTs, 1.0); CHKERRQ(ierr);
+  // 's' is sounding
+  // 't' is sounding
   ierr = update2DViewer('u', vubar, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('v', vvbar, secpera); CHKERRQ(ierr);
+  // 'x' is sounding
+  // 'y' is sounding
+  // 'z' is sounding
 
   return 0;
 }

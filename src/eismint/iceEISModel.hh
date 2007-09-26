@@ -24,17 +24,23 @@
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 
+//! This derived class does EISMINT II simplified geometry experiments.  
+/*!
+These experiments only involve the thermomechanically coupled shallow ice approximation.  See 
+A. J. Payne and ten others, 200. <em> Results from the EISMINT model intercomparison:
+the effects of thermomechanical coupling</em>.  J. Glaciol. 46(153), 227--238.
+ */
 class IceEISModel : public IceModel {
 public:
     IceEISModel(IceGrid &g, IceType &i);
-    void           setflowlawNumber(PetscInt);
-    PetscInt       getflowlawNumber();
+    void    setFlowLawNumber(PetscInt);
     virtual PetscErrorCode setFromOptions();
     virtual PetscErrorCode initFromOptions();
     
-private:
-    char       expername;
-    PetscInt   flowlawNumber;
+protected:
+    char        expername;
+    PetscInt    flowLawNumber;
+    PetscScalar M_max, R_el, T_min, S_b, S_T;
  
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
@@ -45,7 +51,6 @@ private:
     // for experiments I,J and K,L, respectively:
     PetscErrorCode generateTroughTopography();
     PetscErrorCode generateMoundTopography();
-
 };
 
 #endif /* __iceEISModel_hh */

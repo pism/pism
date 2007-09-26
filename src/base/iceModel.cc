@@ -185,6 +185,8 @@ PetscErrorCode IceModel::createVecs() {
 
   ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
   ierr = VecDuplicateVecs(vu, nWork3d, &vWork3d); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vubarSAVE); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vvbarSAVE); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
   ierr = DACreateGlobalVector(grid.da3, &g3); CHKERRQ(ierr);
@@ -249,6 +251,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroyVecs(vDf, 2); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork2d, nWork2d); CHKERRQ(ierr);
+  ierr = VecDestroy(vubarSAVE); CHKERRQ(ierr);
+  ierr = VecDestroy(vvbarSAVE); CHKERRQ(ierr);
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
   ierr = VecDestroy(g3); CHKERRQ(ierr);

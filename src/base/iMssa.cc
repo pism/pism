@@ -597,6 +597,10 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
+  // For SSA points we need to use previous SSA result and not SIA result which is
+  // currently stored in vubar,vvbar.
+  ierr = putSavedUVBarInUVBar(); CHKERRQ(ierr);
+  
   // We need to save the velocity from the last time step since we may have to
   // restart the iteration with larger values of epsilon.
   ierr = VecCopy(vubar, vubarOld); CHKERRQ(ierr);
@@ -671,6 +675,48 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
   }
+  return 0;
+}
+
+
+//! Save the values of vertically-averaged horizontal velocity for the first guess in the SSA iteration.
+PetscErrorCode IceModel::saveUVBarForSSA(const PetscTruth firstTime) {
+  PetscErrorCode ierr;
+  
+  if (firstTime == PETSC_TRUE) {
+    ierr = VecSet(vubarSAVE,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vvbarSAVE,0.0); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(vubar,vubarSAVE); CHKERRQ(ierr);
+    ierr = VecCopy(vvbar,vvbarSAVE); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+//! For all SSA points, put previous SSA velocities in vubar,vvbar.
+PetscErrorCode IceModel::putSavedUVBarInUVBar() {
+  PetscErrorCode ierr;
+  PetscScalar **mask, **ubar, **vbar, **ubarS, **vbarS;
+  
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubarSAVE, &ubarS); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbarSAVE, &vbarS); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (intMask(mask[i][j]) != MASK_SHEET) {
+        ubar[i][j] = ubarS[i][j];
+        vbar[i][j] = vbarS[i][j];
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSAVE, &ubarS); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSAVE, &vbarS); CHKERRQ(ierr);
   return 0;
 }
 

@@ -28,28 +28,13 @@ IceEISModel::IceEISModel(IceGrid &g, IceType &i)
 }
 
 
-void IceEISModel::setflowlawNumber(PetscInt law) {
-  flowlawNumber = law;
-}
-
-
-PetscInt IceEISModel::getflowlawNumber() {
-  return flowlawNumber;
+void IceEISModel::setFlowLawNumber(PetscInt law) {
+  flowLawNumber = law;
 }
 
 
 PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
-  char                temp, eisIIexpername[20];
-  PetscTruth          EISIIchosen;
-
-  /* this derived class only does EISMINT II experiments; for EISMINT ROSS
-     and for ISMIP HEINO see simplify.cc and the derived classes of IceModel
-     it uses */
-  /* note EISMINT I is NOT worth implementing; for fixed margin isothermal 
-     tests compare "pismv -test A" or "pismv -test E"; 
-     for moving margin isothermal tests compare "pismv -test B" or "-test C" 
-     or "-test D" */
 
   // apply eismint defaults settings; options may overwrite
   thermalBedrock = PETSC_FALSE;
@@ -59,8 +44,10 @@ PetscErrorCode IceEISModel::setFromOptions() {
   enhancementFactor = 1.0;
   includeBMRinContinuity = PETSC_FALSE; // so basal melt does not change 
                                         // computation of vertical velocity
+
+  // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
-  
+
   // make bedrock material properties into ice properties
   // (note Mbz=1 is default, but want ice/rock interface segment to see all ice)
   bedrock.rho = ice.rho;
@@ -68,21 +55,80 @@ PetscErrorCode IceEISModel::setFromOptions() {
   bedrock.c_p = ice.c_p;  
 
   /* This option determines the single character name of EISMINT II experiments:
-  "-eisII F", for example. */
+  "-eisII F", for example.   If not given then do exper A.  */
+  expername = 'A';
+  char                temp, eisIIexpername[20];
+  PetscTruth          EISIIchosen;
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
             CHKERRQ(ierr);
-
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
     if ((temp >= 'A') && (temp <= 'L')) {
       expername = temp;
     } else {
-      SETERRQ(2,"option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+      SETERRQ(1,"option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
     }
-  } else {
-    SETERRQ(1,"option -eisII must have a value\n");
   }
+
+  // EISMINT II specified values for parameters M_max, R_el, T_min, S_b, S_T
+  S_b = 1.0e-2 * 1e-3 / secpera;    // Grad of accum rate change
+  S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
+  switch (expername) {
+    case 'A':
+    case 'E':  // starts from end of A
+    case 'G':
+    case 'H':
+    case 'I':
+    case 'K':
+      // start with zero ice and:
+      M_max = 0.5 / secpera;  // Max accumulation
+      R_el = 450.0e3;           // Distance to equil line (accum=0)
+      T_min = 238.15;
+      break;
+    case 'B':
+      // supposed to start from end of experiment A and:
+      M_max = 0.5 / secpera;
+      R_el = 450.0e3;
+      T_min = 243.15;
+      break;
+    case 'C':
+    case 'J':
+    case 'L':
+      // supposed to start from end of experiment A (for C; resp I and K for J and L) and:
+      M_max = 0.25 / secpera;
+      R_el = 425.0e3;
+      T_min = 238.15;
+      break;
+    case 'D':
+      // supposed to start from end of experiment A and:
+      M_max = 0.5 / secpera;
+      R_el = 425.0e3;
+      T_min = 238.15;
+      break;
+    case 'F':
+      // start with zero ice and:
+      M_max = 0.5 / secpera;
+      R_el = 450.0e3;
+      T_min = 223.15;
+      break;
+    default:
+      SETERRQ(999,"\n HOW DID I GET HERE?\n");
+  }
+
+  // if user specifies Tmin, Mmax, Sb, ST, Rel, then use that (override above)
+  PetscScalar myTmin, myMmax, mySb, myST, myRel;
+  PetscTruth  paramSet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &myTmin, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     T_min = myTmin;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Mmax", &myMmax, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     M_max = myMmax / secpera;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Sb", &mySb, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     S_b = mySb * 1e-3 / secpera;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ST", &myST, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     S_T = myST * 1e-3;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
   return 0;
@@ -124,7 +170,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
     // note height of grid must be great enough to handle max thickness
-    const PetscScalar   L              = 750e3;      // Horizontal extent of grid
+    const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
     switch (expername) {
       case 'A':
       case 'E':
@@ -136,7 +182,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
         ierr = grid.rescale(L, L, 4000); CHKERRQ(ierr);
         break;
       case 'F':
-        switch (getflowlawNumber()) {
+        switch (flowLawNumber) {
           case 0:
           case 3:
             ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
@@ -163,8 +209,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
         ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
         break;
       default:  
-        SETERRQ(1,"option -eisII value not understood;"
-                  " EISMINT II experiment of given name may not exist.\n");
+        SETERRQ1(1,"EISMINT II experiment name %c not valid\n",expername);
     }
 
     if ((expername == 'I') || (expername == 'J')) {
@@ -173,6 +218,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
     if ((expername == 'K') || (expername == 'L')) {
       ierr = generateMoundTopography(); CHKERRQ(ierr);
     } 
+
     ierr = initAccumTs(); CHKERRQ(ierr);
     ierr = fillintemps(); CHKERRQ(ierr);
 
@@ -192,74 +238,14 @@ PetscErrorCode IceEISModel::initFromOptions() {
 
 
 PetscErrorCode IceEISModel::initAccumTs() {
-  PetscScalar       M_max,R_el,T_min;
   PetscErrorCode    ierr;
   PetscScalar       **accum, **Ts;
-
-  // EISMINT II specified values
-  PetscScalar       S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
-  PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
-  switch (expername) {
-    case 'A':
-    case 'E':  // starts from end of A
-    case 'G':
-    case 'H':
-    case 'I':
-    case 'K':
-      // start with zero ice and:
-      M_max = 0.5 / secpera;  // Max accumulation
-      R_el = 450e3;           // Distance to equil line (accum=0)
-      T_min = 238.15;
-      break;
-    case 'B':
-      // supposed to start from end of experiment A and:
-      M_max = 0.5 / secpera;
-      R_el = 450e3;
-      T_min = 243.15;
-      break;
-    case 'C':
-    case 'J':
-    case 'L':
-      // supposed to start from end of experiment A (for C; resp I and K for J and L) and:
-      M_max = 0.25 / secpera;
-      R_el = 425e3;
-      T_min = 238.15;
-      break;
-    case 'D':
-      // supposed to start from end of experiment A and:
-      M_max = 0.5 / secpera;
-      R_el = 425e3;
-      T_min = 238.15;
-      break;
-    case 'F':
-      // start with zero ice and:
-      M_max = 0.5 / secpera;
-      R_el = 450e3;
-      T_min = 223.15;
-      break;
-    default:
-      SETERRQ(1,"\n experiment name unknown in IceEISModel::initAccumTs()\n");
-  }
-
-  // if user specifies Tmin, Mmax, Sb, ST, Rel, then use that (overwrite above)
-  PetscScalar myTmin, myMmax, mySb, myST, myRel;
-  PetscTruth  paramSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &myTmin, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     T_min = myTmin;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Mmax", &myMmax, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     M_max = myMmax / secpera;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Sb", &mySb, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     S_b = mySb * 1e-3 / secpera;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ST", &myST, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     S_T = myST * 1e-3;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
 
   // now fill in accum and surface temp
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   PetscScalar cx = grid.p->Lx, cy = grid.p->Ly;
-  if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } 
+  if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // r is distance from center of grid; if E then center is shifted (above)
@@ -296,6 +282,7 @@ PetscErrorCode IceEISModel::fillintemps() {
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
+  // communicate T because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
   return 0;
@@ -330,6 +317,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   }
   ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
 
+  // communicate b because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   return 0;
@@ -357,6 +345,7 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   }
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
 
+  // communicate b because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   return 0;

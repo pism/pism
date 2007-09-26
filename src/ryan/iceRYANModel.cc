@@ -32,30 +32,39 @@ IceRYANModel::IceRYANModel(IceGrid &g, IceType &i)
 
 PetscErrorCode IceRYANModel::setFromOptions() {
   PetscErrorCode ierr;
-  char           temp, eisIIexpername[20], accname[20];
+  char           temp, eisIIexpername[20], longaccname[20];
   PetscTruth     eisIIchosen, accchosen;
 
   ierr = IceEISModel::setFromOptions(); CHKERRQ(ierr);
   
+  // user may optionally give "-eisII H" but this is not necessary
+  expername = 'H';  // set IceEISModel::expername directly
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &eisIIchosen); CHKERRQ(ierr);
   temp = eisIIexpername[0];
-  if ((eisIIchosen == PETSC_FALSE) || ((temp != 'h') && (temp != 'H'))) {
-    SETERRQ(3,"pryan must be run with option '-eisII H'\n");
+  if ((eisIIchosen == PETSC_TRUE) && ((temp != 'h') && (temp != 'H'))) {
+    SETERRQ(1,"pryan only runs EISMINT II experiment H; other experiments not allowed\n");
   }
-  
-  ierr = PetscOptionsGetString(PETSC_NULL, "-acc", accname, 1, &accchosen); CHKERRQ(ierr);
+
+  // option "-acc ?" for perturbation modes ?=A,B,C,D,E
+  // note "-acc A" *or* no given option "-acc" means plain vanilla EISMINT II H
+  accname = 'A';  
+  ierr = PetscOptionsGetString(PETSC_NULL, "-acc", longaccname, 1, &accchosen); CHKERRQ(ierr);
   if (accchosen == PETSC_TRUE) {
-      temp = accname[0];
+      temp = longaccname[0];
       if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-      if ((temp >= 'A') && (temp <= 'F')) {
-	     setAccName(temp);
+      if ((temp >= 'A') && (temp <= 'E')) {
+	     accname = temp;
       } else {
-	     SETERRQ(2,"option -acc must have value A, B, C, D, E or F.\n");
+	     SETERRQ(2,"option -acc must have value A, B, C, D, or E.\n");
       }
-  } else {
-    setAccName('A');  // default
-    //SETERRQ(1,"option -acc must have a value\n");
   }
+
+  mySeed = 17;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-ACMLseed", &mySeed, PETSC_NULL); CHKERRQ(ierr);
+
+  ierr = verbPrintf(4,grid.com,"accname = %c and mySeed = %d in IceRYANModel\n",accname,mySeed);
+          CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -65,21 +74,14 @@ PetscErrorCode IceRYANModel::initFromOptions() {
 
   ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);
 
-  // Ryan put this at the end of  IceEISModel::initAccumTs()
-  // these are the values that apply to  "case 'H':"
-      PetscScalar       S_b = 1e-2 * 1e-3 / secpera;    // Grad of accum rate change
-  //    PetscScalar       S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
-      PetscScalar M_max, R_el, T_min;
-      // start with zero ice and:
-      M_max = 0.5 / secpera;  // Max accumulation
-      R_el = 450e3;           // Distance to equil line (accum=0)
-      T_min = 238.15;
-  setM_max_g(M_max);
-  setS_b_g(S_b);
-  setR_el_g(R_el);
+  // set the parameters for IceEISModel just to be sure they have EISMINT II experiment H values
+  S_b = 1e-2 * 1e-3 / secpera, // Grad of accum rate change
+  M_max = 0.5 / secpera,       // Max accumulation (at center)
+  R_el = 450e3;                // Distance to equil line (accum=0)
   
   ierr = initRandomnessACML(); CHKERRQ(ierr);
 
+  ierr = verbPrintf(4,grid.com,"IceRYANModel initialized\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -103,47 +105,6 @@ PetscErrorCode IceRYANModel::summaryPrintLine(
 }
 
 
-void IceRYANModel::setExperName_g(char name) {
-  expername_g = name;
-}
-
-char IceRYANModel::getExperName_g() {
-  return expername_g;
-}
-
-void IceRYANModel::setAccName(char name) {
-  accname = name;
-}
-
-char IceRYANModel::getAccName() {
-  return accname;
-}
-
-void IceRYANModel::setM_max_g(PetscScalar M_max) {
-  M_max_g = M_max;
-}
-
-void IceRYANModel::setS_b_g(PetscScalar S_b) {
-  S_b_g = S_b;
-}
-
-void IceRYANModel::setR_el_g(PetscScalar R_el) {
-  R_el_g = R_el;
-}
-
-PetscScalar IceRYANModel::getM_max_g() {
-  return M_max_g;
-}
-
-PetscScalar IceRYANModel::getS_b_g() {
-  return S_b_g;
-}
-
-PetscScalar IceRYANModel::getR_el_g() {
-  return R_el_g;
-}
-
-
 PetscErrorCode IceRYANModel::initRandomnessACML() {
   PetscErrorCode ierr;
   PetscInt       *seed, *state;
@@ -160,11 +121,11 @@ PetscErrorCode IceRYANModel::initRandomnessACML() {
   
   // xmu and var from normal fit to 
   // log of positive values of Arthern/Vaughan's data
-  //lognormal_xmu = 4.858961;
   lognormal_xmu = -1.8405;
   lognormal_var = pow(1.227035, 2);
 
-  switch (getAccName()) {
+  switch (accname) {
+    case 'A': // set up randomness same for A and B; just don't *use* it for A
     case 'B':
       randomnessacml.n = grid.p->Mx * grid.p->My; // 1782225;
       randomnessacml.xmu = gauss_xmu;
@@ -189,7 +150,8 @@ PetscErrorCode IceRYANModel::initRandomnessACML() {
       randomnessacml.xmu = lognormal_xmu;
       randomnessacml.var = lognormal_var;
       break;
-    default: // This line should never be reached.
+    default:
+      SETERRQ(1,"accname invalid");
       break;
   }
   
@@ -211,13 +173,7 @@ PetscErrorCode IceRYANModel::initRandomnessACML() {
   ierr = ISGetIndices(randomnessacml.seed, &seed); CHKERRQ(ierr);
   ierr = ISGetIndices(randomnessacml.state, &state); CHKERRQ(ierr);
 
-  PetscScalar mySeed; // Always want to spread it.
-  PetscTruth  paramSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ACMLseed", &mySeed, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)
-    seed[0] = (PetscInt) mySeed;
-  else
-    seed[0] = 17;
+  seed[0] = mySeed;
   
   drandinitialize(randomnessacml.genid, randomnessacml.subid,
 		  seed, &randomnessacml.lseed,
@@ -236,7 +192,10 @@ PetscErrorCode IceRYANModel::initRandomnessACML() {
 
 PetscErrorCode IceRYANModel::additionalAtStartTimestep() {
   PetscErrorCode    ierr;
-  PetscScalar       M_max, S_b;
+  
+  if (accname == 'A')  // do nothing additional; just continue EISMINT II experiment H
+    return 0;
+
   PetscScalar       **accum, *x;
   PetscInt          *state, k;
 
@@ -244,69 +203,72 @@ PetscErrorCode IceRYANModel::additionalAtStartTimestep() {
   ierr = ISGetIndices(randomnessacml.state, &state); CHKERRQ(ierr);
   ierr = VecGetArray(randomnessacml.x, &x); CHKERRQ(ierr);
 
-  const PetscScalar R_el = getR_el_g();
-
-  switch (getAccName()) {
+  switch (accname) {
     case 'B':
     case 'C':
-      //printf("Normal Mmax acc.\n");
       drandgaussian(randomnessacml.n, 
 		    randomnessacml.xmu, randomnessacml.var,
 		    state, x, &randomnessacml.info);
       break;
     case 'D':
     case 'E':
-      //printf("Lognormal Mmax acc.\n");
       drandlognormal(randomnessacml.n, 
 		     randomnessacml.xmu, randomnessacml.var,
 		     state, x, &randomnessacml.info);
       break;
+    default:
+      SETERRQ(1,"accname invalid");
+      break;
   }
   if (randomnessacml.info != 0) {
-    SETERRQ(1,"Error in drandinitialize:  info != 0\n");
+    SETERRQ(2,"Error in drandinitialize:  info != 0\n");
   }
-  switch (getAccName()) {
+
+  switch (accname) {
     case 'B':
     case 'D':
       k = 0;
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	  // r is distance from center of grid
-	  const PetscScalar r = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
-				      + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
-	  if (r < R_el) {
-	    // set accumulation
-	    //accum[i][j] = 1.58444e-08;
-	    accum[i][j] = x[k] / secpera;
-	    k++;
-// 	    printf("%12.5e %12.5e %12.5e %12.5e %12.5e\n",
-// 		   getM_max_g(), x[k], M_max, S_b, accum[i][j]);
-	  }
-	}
+        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          // r is distance from center of grid
+          const PetscScalar r = sqrt(  PetscSqr(-grid.p->Lx + grid.p->dx*i)
+                                     + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
+          if (r < R_el) {
+            // set accumulation
+            accum[i][j] = x[k] / secpera;
+            k++;
+          }
+        }
       }
       break;
     case 'C':
     case 'E':
-      M_max = x[0] / secpera;
-      if (M_max < 0.0) M_max = 0.0;
-      S_b = getS_b_g() * M_max / getM_max_g();
+      PetscScalar my_M_max, my_S_b;
+      my_M_max = x[0] / secpera;  // apply randomness uniformly
+      if (my_M_max < 0.0)  my_M_max = 0.0;
+      my_S_b = S_b * my_M_max / M_max;
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	  // r is distance from center of grid
-	  const PetscScalar r = sqrt( PetscSqr(-grid.p->Lx + grid.p->dx*i)
-				      + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
-	  // set accumulation
-	  //accum[i][j] = 1.58444e-08;
-	  accum[i][j] = PetscMin(M_max, S_b * (R_el - r));  // formula (7) in (Payne et al 2000)
-	  //printf("%12.5e %12.5e %12.5e %12.5e %12.5e\n", getM_max_g(), x[0], M_max, S_b, accum[i][j]);
-	}
+        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          // r is distance from center of grid
+          const PetscScalar r = sqrt(  PetscSqr(-grid.p->Lx + grid.p->dx*i)
+                                     + PetscSqr(-grid.p->Ly + grid.p->dy*j) );
+          // set accumulation
+          accum[i][j] = PetscMin(my_M_max, my_S_b * (R_el - r));  // formula (7) in (Payne et al 2000)
+        }
       }
+      break;
+    default:
+      SETERRQ(3,"accname invalid");
       break;
   }
 
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = ISRestoreIndices(randomnessacml.state, &state); CHKERRQ(ierr);
   ierr = VecRestoreArray(randomnessacml.x, &x); CHKERRQ(ierr);
+
+  ierr = verbPrintf(4,grid.com,"additionalAtStartTimestep() in IceRYANModel done; "
+                               "accumulation set for accname = %c\n",accname); 
+            CHKERRQ(ierr);
   return 0;
 }
 

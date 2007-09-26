@@ -255,6 +255,8 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSurfaceValuesToMatlab(viewer, '1', vu, secpera);  CHKERRQ(ierr);
   ierr = writeSurfaceValuesToMatlab(viewer, '2', vv, secpera);  CHKERRQ(ierr);
   ierr = writeSurfaceValuesToMatlab(viewer, '3', vw, secpera);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, '4', vub, secpera);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, '5', vvb, secpera);  CHKERRQ(ierr);
 
   ierr = writeLog2DToMatlab(viewer, 'B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'C', vtauc, 0.00001);  CHKERRQ(ierr);

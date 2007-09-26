@@ -29,23 +29,38 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
+  // if we will use SSA then save current values of ubar, vbar; these are useful for
+  // speeding convergence of SSA
+  if (useSSAVelocity == PETSC_TRUE) {
+    ierr = saveUVBarForSSA(firstTime); CHKERRQ(ierr);
+  }
+  
   if (computeSIAVelocities == PETSC_TRUE) {
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
     ierr = velocitySIAStaggered(!updateVelocityAtDepth); CHKERRQ(ierr);
 
     // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
+    // and velocities2DSIAToRegular()
     ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-    // communicate ub[o], vb[o] on staggered for basalSIAConditionsToRegular()
+    // communicate ub[o], vb[o] on staggered for velocities2DSIAToRegular()
     for (PetscInt k=4; k<8; ++k) { 
       ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
     }
 
-    ierr = basalSIAConditionsToRegular(); CHKERRQ(ierr);
+    // now put staggered grid value of vertically-averaged horizontal velocity on regular grid
+    // (this makes ubar and vbar be just the result of SIA; note that for SSA
+    // we used *saved* ubar,vbar as first guess for iteration at SSA points)
+    // also put staggered value of basal velocity onto regular grid
+    ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
   
     if (updateVelocityAtDepth) {  
       ierr = frictionalHeatingSIAStaggered(); CHKERRQ(ierr);
@@ -74,21 +89,6 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     }
   }  // if computeSIAVelocities
 
-  if ( (!useSSAVelocity) || (firstTime) ) {
-     /* Note vertically averaged vels on regular grid (Vecs vubar and 
-      vvbar) are set by SSA procedures above, including (in a reasonable 
-      manner) within the MASK_SHEET regions.  Also vubar and vvbar are used 
-      to initialize the next step of SSA.  SO we want to NOT overwrite 
-      the just-computed regular grid velocities (as they will be needed to
-      initialize another step of SSA; note first time exception).
-      BUT if we don't call SSA in velocity() then
-      we need to get staggered onto regular for viewer and for summary(). */
-    ierr = vertAveragedVelocityToRegular(); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
-  }
   
   if (useSSAVelocity) { // communication happens within SSA
     ierr = setupForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
@@ -119,7 +119,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = smoothSigma(); CHKERRQ(ierr); // comm here
   }
 
-  if ((useSSAVelocity) || (updateVelocityAtDepth)) {
+  if ((useSSAVelocity == PETSC_TRUE) || (updateVelocityAtDepth == PETSC_TRUE)) {
     // communication here for global max; sets CFLmaxdt
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }
@@ -285,33 +285,6 @@ PetscErrorCode IceModel::smoothSigma() {
   
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
-  return 0;
-}
-
-
-//! Average staggered-grid vertically-averaged horizontal velocity onto regular grid.
-/*! 
-Only two-dimensional regular grid velocities are updated here.  The full 
-three-dimensional velocity field is not updated here.
- */
-PetscErrorCode IceModel::vertAveragedVelocityToRegular() {  
-  PetscErrorCode ierr;
-  PetscScalar **ubar, **vbar, **uvbar[2];
-
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-      vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   return 0;
 }
 
