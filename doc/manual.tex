@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{182}
+\newcommand{\PISMREV}{187}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -346,19 +346,20 @@ In EISMINT II all runs are for 200,000 model years.  Here we start with a short 
 \small\begin{quote}\begin{verbatim}
 $  pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
 PISMS (simplified geometry mode)
-initializing EISMINT II experiment F ...
+initializing EISMINT II experiment F ... 
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
-$$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
-$$$$$      0.00 (+  0.0000[0 ]):   0.000   0.000    0.000      0.000   223.150
-$v$tf     60.00 (+ 60.0000[0m]):   0.017   0.628    0.000     30.000   223.150
-$v$tf    120.00 (+ 60.0000[0m]):   0.034   0.628    0.000     60.000   223.538
-$v$tf    180.00 (+ 60.0000[0m]):   0.051   0.628    0.000     90.000   223.869
+            YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+$$$$$      0.000 (+  0.00000[0 ]):   0.000   0.000    0.000      0.000   223.150
+$$vtf     60.000 (+ 60.00000[0m]):   0.017   0.628    0.000     30.000   223.150
+$$vtf    120.000 (+ 60.00000[0m]):   0.034   0.628    0.000     60.000   223.538
+$$vtf    180.000 (+ 60.00000[0m]):   0.051   0.628    0.000     90.000   223.869
 ...
-$v$tf   1980.00 (+ 60.0000[0m]):   0.562   0.631    0.000    990.000   228.487
-$v$tf   2000.00 (+ 20.0000[0e]):   0.568   0.631    0.000   1000.000   228.520
-done with run ... Writing model state to file `simp_exper.nc' ... done.
+$$vtf   1980.000 (+ 60.00000[0m]):   0.562   0.631    0.000    990.000   228.487
+$$vtf   2000.000 (+ 20.00000[0e]):   0.568   0.631    0.000   1000.000   228.520
+done with run ...
+Writing model state to file `simp_exper.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
 \noindent This should have taken less than 30 seconds.
@@ -384,13 +385,14 @@ initializing from NetCDF format file  simp_exper.nc  ...
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
-$$$$$       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+            YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
 $$$$$   2000.000 (+  0.00000[0 ]):   0.568   0.631    0.000   1000.000   228.520
-$v$tf   2060.000 (+ 60.00000[0m]):   0.585   0.631    0.000   1030.000   228.616
-$v$tf   2120.000 (+ 60.00000[0m]):   0.602   0.631    0.000   1060.000   228.710
-$v$tf   2180.000 (+ 60.00000[0m]):   0.619   0.631    0.000   1090.000   228.804
-$v$tf   2200.000 (+ 20.00000[0e]):   0.625   0.631    0.000   1100.000   228.834
-done with run ... Writing model state to file `simp_exper.nc' ... done.
+$$vtf   2060.000 (+ 60.00000[0m]):   0.585   0.631    0.000   1030.000   228.616
+$$vtf   2120.000 (+ 60.00000[0m]):   0.602   0.631    0.000   1060.000   228.710
+$$vtf   2180.000 (+ 60.00000[0m]):   0.619   0.631    0.000   1090.000   228.804
+$$vtf   2200.000 (+ 20.00000[0e]):   0.625   0.631    0.000   1100.000   228.834
+done with run ... 
+Writing model state to file `simp_exper.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
 
@@ -410,7 +412,7 @@ When the full 200,000 year run finishes, one can continue the run and watch its 
 
 At each time step PISM shows a summary of the model state using a few numbers.  The format of the summary is
 
-\small\verb|$$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0|\normalsize
+\small\verb|           YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0|\normalsize
 
 \noindent The first five columns are flags telling the user which quantities are being updated at that time step.  A dollar sign appears if the quantity does not update.  From the left the positions are: [\t{b\$}] for bed elevation, [\t{vV\$}] for velocity, [\t{g\$}] for grain size, [\t{t\$}] for temperature and age (which are always updated together), and [\t{f\$}] for surface elevation.   (That is, an ``\verb|f|'' in the last column means a step of the flow or mass conservation equation has occurred.  Regarding the two possible velocity flags, a lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that only the vertically-averaged velocity, and the associated diffusivity, has been updated.)
 
@@ -664,7 +666,7 @@ Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth th
 
 \subsection{Understanding and controlling adaptive time-stepping} \label{subsect:adapt} Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
 \begin{verbatim}
-    $$$$$      YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+          YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
 \end{verbatim}
 Here we will explain what appears in the `\verb|(+    STEP[N$])|' part of this summary.
 
@@ -1267,7 +1269,7 @@ geothermal flux vGhf is being set to: 0.050000
 bueler@ubuntu 2007-08-06 00:10:07 AKDT : pgrn -bif eis_green_smoothedbed.nc 
 -Mx 83 -My 141 -Mz 101 -y 10 -o grn10yr_20km -verbose
             **************************
-$$$$$       YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+            YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
 $$$$$      0.000 (+  0.00000[0 ]):   2.825   1.671    0.207   3042.000   273.173
     (volume of ice which is SIA, stream, shelf:     2.825,     0.000,     0.000)
   d(volume)/dt of ice (km^3/a):           0.00

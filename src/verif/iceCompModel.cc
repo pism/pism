@@ -806,12 +806,12 @@ PetscErrorCode IceCompModel::run() {
   if (exactOnly == PETSC_TRUE) {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
-  ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"     ");  CHKERRQ(ierr);
   PetscTruth tempAge = ((doTemp == PETSC_TRUE) && ((testname == 'F') || (testname =='G'))) 
                        ? PETSC_TRUE : PETSC_FALSE;
   ierr = summaryPrintLine(PETSC_TRUE, tempAge,
                           0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,"$$$$");  CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"$$$$$");  CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
   ierr = summary(tempAge,false); CHKERRQ(ierr);  // report starting state
@@ -819,6 +819,7 @@ PetscErrorCode IceCompModel::run() {
   dtTempAge = 0.0;
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
+    ierr = verbPrintf(2,grid.com,"$");  CHKERRQ(ierr);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force or maxdt_temporary

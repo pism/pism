@@ -29,11 +29,8 @@ PetscErrorCode  IceModel::updateGrainSizeIfNeeded() {
   static PetscScalar lastGSUpdateYear = grid.p->year;  // only happens when first called?
 
   // If the current grain sizes are not expired, exit cleanly.
-  if (grid.p->year - lastGSUpdateYear < gsIntervalYears) {
-    ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
-  } else {
+  if (grid.p->year - lastGSUpdateYear >= gsIntervalYears) {
     ierr = updateGrainSizeNow(); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, "g"); CHKERRQ(ierr);
     lastGSUpdateYear = grid.p->year;
   }
   return 0;

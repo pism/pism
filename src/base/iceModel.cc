@@ -577,7 +577,7 @@ Note that at the beginning and ends of the loop there is a chance for derived cl
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
@@ -587,6 +587,7 @@ PetscErrorCode IceModel::run() {
   dtTempAge = 0.0;
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
+    ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
@@ -618,8 +619,6 @@ PetscErrorCode IceModel::run() {
     // now that velocity field is up to date, compute grain size
     if (doGrainSize == PETSC_TRUE) {
       ierr = updateGrainSizeIfNeeded(); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     // adapt time step using velocities and diffusivity, ..., just computed
@@ -683,7 +682,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 
   // print out some stats about input state
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
