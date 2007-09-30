@@ -98,7 +98,7 @@ PetscErrorCode IceModel::createViewers() {
 //  ierr = createOneViewerIfDesired(&NuView[1], 'N',"(nu*H)_t (J offset)");  CHKERRQ(ierr);
 
   // allocate space for soundings
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mbz + grid.p->Mz, &Td); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mbz + grid.p->Mz - 1, &Td); CHKERRQ(ierr);
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &ud); CHKERRQ(ierr);
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &vd); CHKERRQ(ierr);
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &wd); CHKERRQ(ierr);
@@ -168,7 +168,7 @@ PetscErrorCode IceModel::updateOneSounding(
 
 PetscErrorCode IceModel::updateSoundings() {
   PetscErrorCode ierr;
-  PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz;
+  PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz - 1;
   PetscInt   *row;
 
   // row gives indices only
@@ -181,8 +181,9 @@ PetscErrorCode IceModel::updateSoundings() {
       PetscScalar ***T, ***Tb;
       ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
       ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-      ierr = VecSetValues(Td, grid.p->Mbz, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz], &T[id][jd][0], INSERT_VALUES);
+      // note Tb[][][Mbz-1] duplicates T[][][0] and it should not be displayed twice
+      ierr = VecSetValues(Td, grid.p->Mbz - 1, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz - 1], &T[id][jd][0], INSERT_VALUES);
       CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);

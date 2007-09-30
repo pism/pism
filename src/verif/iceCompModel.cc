@@ -34,28 +34,40 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
   : IceModel(g, i), tgaIce(i) {
   
   testname = mytest;
+  
   // Override some defaults from parent class
   enhancementFactor = 1.0;
-  thermalBedrock = PETSC_FALSE;
   useSSAVelocity = PETSC_FALSE;
   isDrySimulation = PETSC_TRUE;
   includeBMRinContinuity = PETSC_FALSE;
 
-  f = tgaIce.rho / bedrock.rho;
+  f = tgaIce.rho / bedrock.rho;  // for simple isostasy
   
-  // now make bedrock have same material properties as ice
-  // (note Mbz=1 also, by default, but want ice/rock interface to see
-  // pure ice from the point of view of applying geothermal boundary
-  // condition, especially)
-  bedrock.rho = tgaIce.rho;
-  bedrock.c_p = tgaIce.c_p;
-  bedrock.k = tgaIce.k;
-
   // defaults for verification
   exactOnly = PETSC_FALSE;
   compVecsCreated = PETSC_FALSE;
   compViewersCreated = PETSC_FALSE;
   vHexactLCreated = PETSC_FALSE;
+  
+  if ((testname == 'A') || (testname == 'E'))
+    doOceanKill = PETSC_TRUE;
+
+  if (testname == 'K') {
+    allowAboveMelting = PETSC_FALSE;
+    thermalBedrock = PETSC_TRUE;
+    // also, for test K, just keep usual bedrock material properties
+  } else {
+    // note temps are generally allowed to go above pressure melting in verify
+    allowAboveMelting = PETSC_TRUE;
+    // now make bedrock have same material properties as ice
+    // (note Mbz=1 also, by default, but want ice/rock interface to see
+    // pure ice from the point of view of applying geothermal boundary
+    // condition, especially in tests F and G)
+    thermalBedrock = PETSC_FALSE;
+    bedrock.rho = tgaIce.rho;
+    bedrock.c_p = tgaIce.c_p;
+    bedrock.k = tgaIce.k;
+  }
 }
 
 
@@ -75,18 +87,6 @@ IceCompModel::~IceCompModel() {
 }
 
 
-PetscErrorCode IceCompModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
-  
-  /* This switch turns off actual numerical evolution and simply reports the
-     exact solution. */
-  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::initFromOptions() {
   //  do this only after IceCompModel::setFromOptions()
   PetscErrorCode ierr;
@@ -98,8 +98,10 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = verbPrintf(1,grid.com, "-bed_def_iso  for the reported errors to be correct.]\n");
     CHKERRQ(ierr);
   }
-  if ((testname == 'A') || (testname == 'E'))
-    doOceanKill = PETSC_TRUE;
+
+  /* This switch turns off actual numerical evolution and simply reports the
+     exact solution. */
+  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -120,6 +122,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
         break;
       case 'C':
       case 'D':
+      case 'K':
         // use 2000km by 2000km by 4000m rectangular domain
         ierr = grid.rescale(1000e3, 1000e3, 4000); CHKERRQ(ierr);
         break;
@@ -163,6 +166,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
       case 'F':
       case 'G':
         ierr = initTestFG(); CHKERRQ(ierr);  // see iCMthermo.cc
+        break;
+      case 'K':
+        ierr = initTestK(); CHKERRQ(ierr);
         break;
       case 'L':
         ierr = initTestL(); CHKERRQ(ierr);
@@ -569,10 +575,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
         case 'H':
           exactH(f,grid.p->year*secpera,r,&Hexact,&dummy);
           break;
+        case 'K':
+          Hexact = 3000.0;
+          break;
         case 'L':
           Hexact = HexactL[i][j];
           break;
-        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, or L");
+        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, K, or L");
       }
 
       if (Hexact > 0) {
@@ -807,7 +816,8 @@ PetscErrorCode IceCompModel::run() {
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,grid.com,"     ");  CHKERRQ(ierr);
-  PetscTruth tempAge = ((doTemp == PETSC_TRUE) && ((testname == 'F') || (testname =='G'))) 
+  PetscTruth tempAge = ((doTemp == PETSC_TRUE) 
+                        && ((testname == 'F') || (testname == 'G') || (testname == 'K'))) 
                        ? PETSC_TRUE : PETSC_FALSE;
   ierr = summaryPrintLine(PETSC_TRUE, tempAge,
                           0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
@@ -833,8 +843,7 @@ PetscErrorCode IceCompModel::run() {
 
     // always do vertically-averaged velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
-    bool updateAtDepth = (    (exactOnly == PETSC_FALSE)
-                          && (tempskipCountDown == 0));
+    bool updateAtDepth = (tempskipCountDown == 0);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
 
@@ -842,7 +851,8 @@ PetscErrorCode IceCompModel::run() {
     if (exactOnly == PETSC_TRUE)
       dt_force = maxdt;
     bool useCFLforTempAgeEqntoGetTimestep = 
-              ((doTemp == PETSC_TRUE) && ((testname == 'F') || (testname == 'G')));
+              ( (doTemp == PETSC_TRUE) 
+                && ((testname == 'F') || (testname == 'G') || (testname == 'K')) );
     ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
     dtTempAge += dt;
     grid.p->year += dt / secpera;  // adopt it
@@ -865,15 +875,16 @@ PetscErrorCode IceCompModel::run() {
       case 'G':
         ierr = updateTestFG(); CHKERRQ(ierr);
         break;
-      default: SETERRQ(1, "test must be A, B, C, D, E, F, G, H, or L\n");
+      case 'K':
+        ierr = updateTestK(); CHKERRQ(ierr);
+        break;
+      default: SETERRQ(1, "test must be A, B, C, D, E, F, G, H, K, or L\n");
     }
     
     bool tempAgeStep = ( (doTemp == PETSC_TRUE)
-                         && ((testname == 'F') || (testname =='G'))
+                         && ((testname == 'F') || (testname == 'G') || (testname == 'K'))
                          && updateAtDepth );
     if (tempAgeStep) {
-      // note temps are allowed to go above pressure melting in verify
-      allowAboveMelting = PETSC_TRUE;
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
       ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);

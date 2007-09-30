@@ -19,6 +19,7 @@
 #include <cmath>
 #include <petscda.h>
 #include "../exact/exactTestsFG.h" 
+#include "../exact/exactTestK.h" 
 #include "iceCompModel.hh"
 
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)
@@ -511,6 +512,80 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
   gavUerr = gavUerr/(grid.p->Mx*grid.p->My);
   ierr = PetscGlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
   gavWerr = gavWerr/(grid.p->Mx*grid.p->My);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::fillTempsFromTestK() {
+  PetscErrorCode    ierr;
+  const PetscInt    Mz = grid.p->Mz, Mbz = grid.p->Mbz; 
+  const PetscScalar dz = grid.p->dz;
+  PetscScalar       ***T, ***Tb;
+  PetscScalar       *Tcol, *Tbcol;
+
+  // evaluate exact solution in column; all columns are the same
+  Tcol = new PetscScalar[Mz];
+  Tbcol = new PetscScalar[Mbz];
+  for (PetscInt k=0; k<Mz; k++) {
+    // evaluate and store in Tcol and Tbcol
+    ierr = exactK(grid.p->year * secpera, k * dz, &Tcol[k]);  CHKERRQ(ierr);
+  }
+  for (PetscInt k=0; k<Mbz; k++) {
+    // evaluate and store in Tcol and Tbcol
+    const PetscScalar depth = ((Mbz-1) - k) * dz;
+    ierr = exactK(grid.p->year * secpera, -depth, &Tbcol[k]);  CHKERRQ(ierr);
+  }
+
+  // copy column values into 3D arrays
+  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      for (PetscInt k=0; k<Mz; k++) {
+        T[i][j][k] = Tcol[k];
+      }
+      for (PetscInt k=0; k<grid.p->Mbz; k++) {
+        Tb[i][j][k] = Tbcol[k];
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+
+  delete [] Tcol;  delete [] Tbcol;
+
+  // only communicate vT (as vTb will not be horizontally differentiated)
+  ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::initTestK() {
+  PetscErrorCode    ierr;
+
+  ierr = VecSet(vbed, 0.0); CHKERRQ(ierr);
+  ierr = VecSet(vAccum, 0.0); CHKERRQ(ierr);
+  ierr = VecSet(vTs, 223.15); CHKERRQ(ierr);
+  ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
+  ierr = VecSet(vGhf, 0.042); CHKERRQ(ierr);
+  ierr = VecSet(vH, 3000.0); CHKERRQ(ierr);
+  ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
+  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);
+  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+
+  ierr = fillTempsFromTestK(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::updateTestK() {
+  PetscErrorCode    ierr;
+
+  if (exactOnly == PETSC_TRUE) {
+    ierr = fillTempsFromTestK(); CHKERRQ(ierr);
+  }
+  // generally do nothing
   return 0;
 }
 

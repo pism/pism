@@ -33,14 +33,15 @@ ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrain
 	beddefLC.cc forcing.cc
 ice_csources := cubature.c pism_signal.c
 
-tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestIJ.c exactTestL.c
+tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestIJ.c \
+   exactTestK.c exactTestL.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \
 	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc \
 	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc shelf.cc \
 	flowTable.cc tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
-   simpleJ.c simpleL.c
+   simpleJ.c simpleK.c simpleL.c
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
 #include config/ryan_make
@@ -120,6 +121,9 @@ simpleJ : simpleJ.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 simpleL : simpleL.o libtests.so
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleK : simpleK.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 gridL : gridL.o libtests.so

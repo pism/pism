@@ -28,7 +28,6 @@ class IceCompModel : public IceModel {
 public:
   IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest);
   virtual ~IceCompModel();
-  virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode run();
   PetscErrorCode reportErrors();
@@ -89,6 +88,9 @@ private:
   PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
         PetscScalar &gmaxUerr, PetscScalar &gavUerr,  // 2D vector errors
         PetscScalar &gmaxWerr, PetscScalar &gavWerr); // scalar errors
+  PetscErrorCode initTestK();
+  PetscErrorCode updateTestK();
+  PetscErrorCode fillTempsFromTestK();
 
 private:
   static PetscScalar ablationRateOutside;
