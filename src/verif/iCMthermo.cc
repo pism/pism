@@ -328,6 +328,68 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(PetscScalar &gmaxTerr, Pet
 }
 
 
+PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
+                                PetscScalar &gmaxTerr, PetscScalar &gavTerr,
+                                PetscScalar &gmaxTberr, PetscScalar &gavTberr) {
+  PetscErrorCode ierr;
+
+  if (testname != 'K')
+    SETERRQ(1,"ice and bedrock temperature errors only computable for test K\n");
+
+  PetscScalar    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
+  PetscScalar    maxTberr = 0.0, avTberr = 0.0, avbcount = 0.0;
+  PetscScalar    ***T, ***Tb, *Tex, *Tbex;
+  const PetscInt    Mz = grid.p->Mz, Mbz = grid.p->Mbz;
+  const PetscScalar dz = grid.p->dz;
+ 
+  Tex = new PetscScalar[Mz];  Tbex = new PetscScalar[Mbz];
+
+  for (PetscInt k=0; k<Mz; k++) {
+    ierr = exactK(grid.p->year * secpera, k * dz, &Tex[k]);  CHKERRQ(ierr);
+  }
+  for (PetscInt k=0; k<Mbz; k++) {
+    const PetscScalar depth = ((Mbz-1) - k) * dz;
+    ierr = exactK(grid.p->year * secpera, -depth, &Tbex[k]);  CHKERRQ(ierr);
+  }
+    
+  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      for (PetscInt kb=0; kb<Mbz; kb++) { 
+        const PetscScalar Tberr = PetscAbs(Tb[i][j][kb] - Tbex[kb]);
+        maxTberr = PetscMax(maxTberr,Tberr);
+        avbcount += 1.0;
+        avTberr += Tberr;
+      }
+      for (PetscInt k=0; k<Mz; k++) { 
+        const PetscScalar Terr = PetscAbs(T[i][j][k] - Tex[k]);
+        maxTerr = PetscMax(maxTerr,Terr);
+        avcount += 1.0;
+        avTerr += Terr;
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+
+  delete [] Tex;  delete [] Tbex;
+  
+  ierr = PetscGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  PetscScalar  gavcount;
+  ierr = PetscGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
+
+  ierr = PetscGlobalMax(&maxTberr, &gmaxTberr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avTberr, &gavTberr, grid.com); CHKERRQ(ierr);
+  PetscScalar  gavbcount;
+  ierr = PetscGlobalSum(&avbcount, &gavbcount, grid.com); CHKERRQ(ierr);
+  gavTberr = gavTberr/PetscMax(gavbcount,1.0);  // avoid div by zero
+  return 0;
+}
+
+
 PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
       PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &centerTerr) {
 

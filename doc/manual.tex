@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{187}
+\newcommand{\PISMREV}{189}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -856,7 +856,9 @@ F & thermomechanically coupled SIA (mass &  compensatory accum & \cite{BB,BBL} \
 G & thermomechanically coupled SIA; as F  & ditto & \cite{BB,BBL} \\
  & but with oscillating accumulation &  &  \\
 H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
-I & velocity computation using SSA eqns and plastic till &  & \cite{SchoofStream} \\
+I & stream velocity computation using SSA (plastic till) &  & \cite{SchoofStream} \\
+J & shelf velocity computation using SSA  &  & [PREPRINT] \\
+K & pure conduction in ice and bedrock & & [PREPRINT] \\
 L & isothermal SIA, steady, non-flat bed & numerical ODE soln & \cite{BuelerEquilSheets} \\
 \hline
 \normalsize
@@ -877,6 +879,8 @@ F & \verb|pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000|  \\
 G & \verb|pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000|  \\
 H & \verb|pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso| \\
 I & \verb|pismv -test I -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11| \\
+J & \verb|pismv -test J -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12| \\
+K & \verb|pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000| \\
 L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \hline
 \normalsize
@@ -911,14 +915,14 @@ pismv -test G -maxdt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.
+produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
 
 \subsubsection*{\texttt{verifynow.py}}  This is the Python script in subdirectory \verb|pism/test/| which organizes the process of verifying PISM.  By default it runs Tests C, G, and I, because these tests exercise most of the numerical methods in PISM, and thus suffice for basic verification.
 
 Three example usages are \begin{itemize}
-\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGI|,
-\item ``\verb|verifynow.py -n 8 -l 1 --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do only one level of refinement, and
-\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIL|'' will use lots of processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you are prepared to wait.
+\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|
+\item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do five levels (the maximum) of refinement only on test J
+\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKL|'' will use lots of processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait
 \end{itemize}
 
 \noindent In fact, \verb|verifynow.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
@@ -931,7 +935,7 @@ Three example usages are \begin{itemize}
 
 \optoptdef{p}{prefix}{} where the PISM executable \verb|pismv| is located
 
-\optoptdef{t}{tests}{CGI} which tests to run
+\optoptdef{t}{tests}{CGIJ} which tests to run
 
 \medskip
 Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
@@ -1740,7 +1744,7 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
-\optrestrict{eo}{pismv}  See section \ref{sect:verif}.
+\optrestrict{eo}{pismv}  Only evaluate the exact solution (don't do numerical approximation at all).  See section \ref{sect:verif}.
 
 \optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
 
@@ -1897,7 +1901,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  A maximum value of \verb|-tempskip 5| is recommended to avoid too many CFL violations.
 
-\optdefrestrict{test}{A}{pismv}  Choose single character name of verification test.  Current (PISM revision \PISMREV) allowed values are A, B, C, D, E, F, G, H, I, J, L.  See the Verification section.
+\optdefrestrict{test}{A}{pismv}  Choose which verification test to run by giving its single character name.  See section \ref{sect:verif}.
 
 \optdef{till\und cohesion}{5.0e3}  Cohesion used for computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Units of Pa; note 5\,kPa = 0.05\,bar.
 

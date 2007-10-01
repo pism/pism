@@ -39,7 +39,8 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-/* compute the exact solution TT = T(t,z) */
+/* compute the exact solution TT = T(t,z); returns 0 for z >= -1000 m but returns
+   1 for z < -1000 m because eigenfunction is not valid there */
 int exactK(const double t, const double z, double *TT);
 
 /* find the alpha_k values for the eigenfunction expansion in the exact

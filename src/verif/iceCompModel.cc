@@ -122,7 +122,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
         break;
       case 'C':
       case 'D':
-      case 'K':
         // use 2000km by 2000km by 4000m rectangular domain
         ierr = grid.rescale(1000e3, 1000e3, 4000); CHKERRQ(ierr);
         break;
@@ -135,6 +134,10 @@ PetscErrorCode IceCompModel::initFromOptions() {
       case 'H':
         // use 1500km by 1500km by 4000m rectangular domain
         ierr = grid.rescale(1500e3, 1500e3, 4000); CHKERRQ(ierr);
+        break;
+      case 'K':
+        // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
+        ierr = grid.rescale(1000e3, 1000e3, 4000, PETSC_TRUE); CHKERRQ(ierr);
         break;
       default:  SETERRQ(1,"IceCompModel ERROR : desired test not implemented\n");
     }
@@ -746,19 +749,21 @@ PetscErrorCode IceCompModel::reportErrors() {
   PetscErrorCode  ierr;
   ierr = verbPrintf(1,grid.com, "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n"); CHKERRQ(ierr);
 
-  // geometry (thickness, vol) errors; area not reported as meaningless as computed
-  PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
-              maxetaerr, centerHerr;
-  ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
-                               volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
-     CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, 
-       "geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH\n");
-     CHKERRQ(ierr);
-  const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
-  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f%13.6f\n",
-                100*volerr/volexact, maxHerr, avHerr,
-                maxetaerr/pow(domeHexact,m), centerHerr); CHKERRQ(ierr);
+  // geometry (thickness, vol) errors if appropriate
+  if (testname != 'K') {
+    PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
+                maxetaerr, centerHerr;
+    ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
+                                 volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
+            CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+            "geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH\n");
+            CHKERRQ(ierr);
+    const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f%13.6f\n",
+                      100*volerr/volexact, maxHerr, avHerr,
+                      maxetaerr/pow(domeHexact,m), centerHerr); CHKERRQ(ierr);
+  }
 
   // temperature errors if appropriate
   if ((testname == 'F') || (testname == 'G')) {
@@ -769,6 +774,13 @@ PetscErrorCode IceCompModel::reportErrors() {
        "temp      :        maxT         avT    basemaxT     baseavT  basecenterT\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f%13.6f\n", 
                   maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr); CHKERRQ(ierr);
+  } else if (testname == 'K') {
+    PetscScalar maxTerr, avTerr, maxTberr, avTberr;
+    ierr = computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+       "temp      :        maxT         avT       maxTb        avTb\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+                  maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
   }
 
   // Sigma errors if appropriate

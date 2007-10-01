@@ -21,6 +21,10 @@ def verify(test):
          gridopts = ' -My ' + str(myMx)
       elif test[3] == 2:
          gridopts = ' -Mx ' + str(myMx) + ' -My ' + str(myMx) + ' -Mz ' + str(myMx)
+      elif test[3] == 3:
+         myMz = myMx
+         myMbz = (myMz - 1) / 4 + 1
+         gridopts = ' -Mz ' + str(myMz) + ' -Mbz ' + str(myMbz)
       if nproc > 1:
          predo = mpi + ' -np ' + str(nproc) + ' '
       else:
@@ -50,7 +54,7 @@ NP = 1
 LEVELS = 3
 PREFIX = ''
 MPIDO = 'mpiexec'
-TESTS = 'CGI'
+TESTS = 'CGIJ'
 KSPRTOL = 1e-12 # for test I
 SSARTOL = 5e-7   # ditto
 
@@ -78,6 +82,9 @@ alltests = [
    ['J',[30,60,120,180,240],'linearized, periodic ice shelf',0,
         ' -Mz 11 -ksp_rtol ' + str(KSPRTOL),
         '(My=30,60,120,180,240 corresponds to dx=dy=20,10,5,3.333,2.5 km)'],
+   ['K',[41,101,201,401,801],
+        'pure conduction problem in ice and bedrock',3,' -Mx 6 -My 6 -y 130000.0',
+        '(Mz=41,101,201,401,801 corresponds to dz=100,40,20,10,5 m)'],
    ['L',[31,61,91,121,181],
         'isothermal SIA w non-flat bed',0,' -Mz 31 -y 25000.0',
         '(Mx=My=31,61,91,121,181 corresponds to dx=dy=60,30,20,15,10 km)'],

@@ -48,6 +48,7 @@
 
 int exactK(const double t, const double z, double *TT) {
   int k;
+  bool belowB0;
   double ZZ, P, alpha, lambda, beta, gamma, XkSQR, Xk, theta, Ck, I1, I2, aH, bB, mI, mR;
   /* following constants were produced by calling print_alpha_k(30) (below) */
   double alf[Nsum] = {3.350087528822397e-04, 1.114576827617396e-03, 1.953590840303518e-03,
@@ -60,6 +61,12 @@ int exactK(const double t, const double z, double *TT) {
                       1.642470780103220e-02, 1.709475346624607e-02, 1.787248418996684e-02,
                       1.871188358061674e-02, 1.944434477688470e-02, 2.013010181370026e-02,
                       2.094721145334310e-02, 2.176730968036079e-02, 2.245631776169424e-02};
+
+  if (z > H0) {
+    *TT = Ts;
+    return 0;
+  }
+  belowB0 = (z < -B0);
 
   ZZ = sqrt((rho_BR * c_p_BR * k_ICE) / (rho_ICE * c_p_ICE * k_BR));
   mI = (G / k_ICE) - phi;     mR = (G / k_BR) - phi;
@@ -90,7 +97,9 @@ int exactK(const double t, const double z, double *TT) {
   }
   P = (z >= 0) ? (z / k_ICE) - (H0 / k_ICE) : (z / k_BR) - (H0 / k_ICE);
   *TT += Ts - G * P;
-  return 0; 
+
+  return ((belowB0) ? 1 : 0);
+
 }
 
 

@@ -83,6 +83,9 @@ private:
         PetscScalar &gmaxTerr, PetscScalar &gavTerr);
   PetscErrorCode computeBasalTemperatureErrors( // tests F and G
         PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &centerTerr);
+  PetscErrorCode computeIceBedrockTemperatureErrors( // test K only
+        PetscScalar &gmaxTerr, PetscScalar &gavTerr,
+        PetscScalar &gmaxTberr, PetscScalar &gavTberr);
   PetscErrorCode computeSigmaErrors(            // tests F and G
         PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr);
   PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
