@@ -31,23 +31,22 @@ using namespace std;
  
 
 struct titleNname {
-  char title[100]; // this short title appears on PETSc graphical viewers and in Matlab output file
-                  // (and as pism_short_title (?) attribute in NetCDF?)
-  char name[30];  // this name is for NetCDF vars and for Matlab (output) vars
+  char title[100]; // these short titles appear on PETSc graphical viewers and in Matlab output file
+  char name[30];   // these names are for Matlab output vars
 };
 
 
 struct MaskInterp {
   int number_allowed;
-  int allowed_levels[50];// must be strictly increasing
+  int allowed_levels[50]; // must be strictly increasing
 };
 
 
 struct PolarStereoParams {
   // these are "double" and not "float" ultimately because of how ncgen works
-  double svlfp; // straight_vertical_longitude_from_pole; defaults to 0
-  double lopo;  // latitude_of_projection_origin; defaults to 90
-  double sp;    // standard_parallel; defaults to -71
+  double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
+         lopo,  // latitude_of_projection_origin; defaults to 90
+         sp;    // standard_parallel; defaults to -71
 };
 
 

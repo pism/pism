@@ -33,14 +33,12 @@ PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
   : IceModel(g, i), tgaIce(i) {
   
+  // note lots of defaults are set by the IceModel constructor
+  
   testname = mytest;
   
   // Override some defaults from parent class
   enhancementFactor = 1.0;
-  useSSAVelocity = PETSC_FALSE;
-  isDrySimulation = PETSC_TRUE;
-  includeBMRinContinuity = PETSC_FALSE;
-
   f = tgaIce.rho / bedrock.rho;  // for simple isostasy
   
   // defaults for verification
@@ -48,22 +46,46 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
   compVecsCreated = PETSC_FALSE;
   compViewersCreated = PETSC_FALSE;
   vHexactLCreated = PETSC_FALSE;
-  
-  if ((testname == 'A') || (testname == 'E'))
-    doOceanKill = PETSC_TRUE;
 
-  if (testname == 'K') {
-    allowAboveMelting = PETSC_FALSE;
-    thermalBedrock = PETSC_TRUE;
-    // also, for test K, just keep usual bedrock material properties
+  // set values of flags in run() 
+  doMassConserve = PETSC_TRUE;
+  useSSAVelocity = PETSC_FALSE;
+  includeBMRinContinuity = PETSC_FALSE;
+  doPlasticTill = PETSC_FALSE;
+  doPDD = PETSC_FALSE;
+  doGrainSize = PETSC_FALSE;
+  if (testname == 'H') {
+    doBedDef = PETSC_TRUE;
+    doBedIso = PETSC_TRUE;
+  } else
+    doBedDef = PETSC_FALSE;  
+  if ((testname == 'F') || (testname == 'G') || (testname == 'K'))
+    doTemp = PETSC_TRUE;
+  else
+    doTemp = PETSC_FALSE; 
+  if ((testname == 'A') || (testname == 'E')) {
+    isDrySimulation = PETSC_TRUE;
+    doOceanKill = PETSC_TRUE;
   } else {
+    isDrySimulation = PETSC_TRUE;
+    doOceanKill = PETSC_FALSE;
+  }
+
+  // special considerations for K wrt thermal bedrock and pressure-melting
+  bedrock_is_ice_forK = PETSC_FALSE;
+  if (testname == 'K') {
+    thermalBedrock = PETSC_TRUE;
+    allowAboveMelting = PETSC_FALSE;
+    reportHomolTemps = PETSC_TRUE;
+  } else {
+    thermalBedrock = PETSC_FALSE;
     // note temps are generally allowed to go above pressure melting in verify
     allowAboveMelting = PETSC_TRUE;
+    reportHomolTemps = PETSC_FALSE;
     // now make bedrock have same material properties as ice
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    thermalBedrock = PETSC_FALSE;
     bedrock.rho = tgaIce.rho;
     bedrock.c_p = tgaIce.c_p;
     bedrock.k = tgaIce.k;
@@ -102,6 +124,26 @@ PetscErrorCode IceCompModel::initFromOptions() {
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
   ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
+
+  /* This switch turns changes Test K to make material properties for bedrock
+     the same as for the ice. */
+  PetscTruth biiSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bedrock_is_ice", &biiSet); CHKERRQ(ierr);
+  if (biiSet == PETSC_TRUE) {
+    if (testname == 'K') {
+      ierr = verbPrintf(1,grid.com,
+              "setting material properties of bedrock to those of ice in Test K\n");
+              CHKERRQ(ierr);
+      bedrock.rho = tgaIce.rho;
+      bedrock.c_p = tgaIce.c_p;
+      bedrock.k = tgaIce.k;
+      bedrock_is_ice_forK = PETSC_TRUE;
+    } else {
+      ierr = verbPrintf(1,grid.com,
+              "WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+              CHKERRQ(ierr);
+    }
+  }
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -164,14 +206,14 @@ PetscErrorCode IceCompModel::initFromOptions() {
       case 'D':
       case 'E':
       case 'H':
-        ierr = initTestISO(); CHKERRQ(ierr);
+        ierr = initTestABCDEH(); CHKERRQ(ierr);
         break;
       case 'F':
       case 'G':
         ierr = initTestFG(); CHKERRQ(ierr);  // see iCMthermo.cc
         break;
       case 'K':
-        ierr = initTestK(); CHKERRQ(ierr);
+        ierr = initTestK(); CHKERRQ(ierr);  // see iCMthermo.cc
         break;
       case 'L':
         ierr = initTestL(); CHKERRQ(ierr);
@@ -189,6 +231,11 @@ PetscErrorCode IceCompModel::initFromOptions() {
   }
 
   ierr = createCompViewers(); CHKERRQ(ierr);
+
+  if (exactOnly == PETSC_TRUE) {
+    ierr = verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
+             CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -242,7 +289,7 @@ PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar
 }
 
 
-PetscErrorCode IceCompModel::initTestISO() {
+PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, **mask, dummy1, dummy2, dummy3;
   const PetscScalar LforAE = 750e3; // m
@@ -336,9 +383,6 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
   muSliding = 0.0;  // note reimplementation of basalVelocity()
 
-//  ierr = PetscPrintf(PETSC_COMM_SELF, "rank = %d;   grid.xs ys xm ym  =  %d %d %d %d\n",
-//                     grid.rank,grid.xs,grid.ys,grid.xm,grid.ym);  CHKERRQ(ierr);
-
   // setup to evaluate test L; requires solving an ODE numerically
   const PetscInt  MM = grid.xm * grid.ym;
   double          *rr, *HH, *bb, *aa;
@@ -357,24 +401,11 @@ PetscErrorCode IceCompModel::initTestL() {
     }
   }
 
-//  if (grid.rank == 0) {
-//    for (PetscInt k = 0; k < MM; k++) 
-//       PetscPrintf(PETSC_COMM_SELF,"MM = %d   (i,j)=(%d,%d)   k = %d   rr = %f\n",
-//                   MM,ia[k],ja[k],k,rr[k]);
-//  }
   heapsort_double_2indfollow(rr,ia,ja,MM);  // sorts into ascending;  O(MM log MM) time
   for (PetscInt k = 0; k < MM; k++)   rr[k] = -rr[k];   // now descending
-//  if (grid.rank == 0) {
-//    for (PetscInt k = 0; k < MM; k++) 
-//       PetscPrintf(PETSC_COMM_SELF,"MM = %d   (i,j)=(%d,%d)   k = %d   rr = %f\n",
-//                   MM,ia[k],ja[k],k,rr[k]);
-//  }
 
   // get soln to test L at these points; solves ODE only once (on each processor)
-  ierr = exactL_list(rr, MM, HH, bb, aa);
-//  PetscPrintf(PETSC_COMM_SELF, "rank = %d;   stat returned by exactL_list() = %d\n",
-//                     grid.rank,ierr);
-  CHKERRQ(ierr);
+  ierr = exactL_list(rr, MM, HH, bb, aa);  CHKERRQ(ierr);
   
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -408,99 +439,132 @@ PetscErrorCode IceCompModel::initTestL() {
 }
 
 
-PetscErrorCode IceCompModel::updateTestISO() {
+PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **accum, dummy, dummy1, dummy2, dummy3;
+  PetscScalar     **accum, dummy;
 
   // before flow step, set accumulation from exact values;
-  // if exactOnly then also compute H here
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  if (exactOnly==PETSC_TRUE) {
-    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  }
-
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
       mapcoords(i,j,xx,yy,r);
-      if (exactOnly==PETSC_TRUE) {  // update H and accumulation
-        switch (testname) {
-          case 'A':
-            exactA(r,&H[i][j],&accum[i][j]);
-            break;
-          case 'B':
-            exactB(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
-            break;
-          case 'C':
-            exactC(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
-            break;
-          case 'D':
-            exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
-            break;
-          case 'E':
-            exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&dummy2,&dummy3);
-            break;
-          case 'H':
-            exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
-            break;
-          case 'L':
-            // do nothing here, but will copy vHexactL --> vH
-            break;
-          default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
-        }
-      } else { // real verification; only update accumulation
-        switch (testname) {
-          case 'A':
-            accum[i][j] = 0.3/secpera; // really could do nothing here as accum is steady ...
-            break;
-          case 'B':
-            accum[i][j] = 0.0; // ditto ...
-            break;
-          case 'C':
-            exactC(grid.p->year*secpera,r,&dummy,&accum[i][j]);
-            break;
-          case 'D':
-            exactD(grid.p->year*secpera,r,&dummy,&accum[i][j]);
-            break;
-          case 'E':
-            exactE(xx,yy,&dummy,&accum[i][j],&dummy1,&dummy2,&dummy3);
-            break;
-          case 'H':
-            exactH(f,grid.p->year*secpera,r,&dummy,&accum[i][j]);
-            break;
-          case 'L':
-            // do nothing as accum is steady
-            break;
-          default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
-        }
+      switch (testname) {
+        case 'C':
+          exactC(grid.p->year*secpera,r,&dummy,&accum[i][j]);
+          break;
+        case 'D':
+          exactD(grid.p->year*secpera,r,&dummy,&accum[i][j]);
+          break;
+        case 'H':
+          exactH(f,grid.p->year*secpera,r,&dummy,&accum[i][j]);
+          break;
+        default:  SETERRQ(1,"testname must be C, D, or H");
       }
     }
   }
-
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  if (exactOnly==PETSC_TRUE) {
-    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  }
+  return 0;
+}
 
-  if ((exactOnly==PETSC_TRUE) && (testname == 'L')) {
-//    ierr = DALocalToLocalBegin(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
-//    ierr = DALocalToLocalEnd(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
-    return 0;
-  }
 
-  if (exactOnly==PETSC_TRUE) {
-    ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-    if (testname == 'H') {
-      ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-      ierr = VecScale(vh,1-f); CHKERRQ(ierr);
-      ierr = VecCopy(vH,vbed); CHKERRQ(ierr);
-      ierr = VecScale(vbed,-f); CHKERRQ(ierr);
-    } else {
-      ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-      ierr = VecSet(vbed,0.0); CHKERRQ(ierr);
+PetscErrorCode IceCompModel::fillSolnTestABCDH() {
+  PetscErrorCode  ierr;
+  PetscScalar     **H, **accum;
+
+  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar r,xx,yy;
+      mapcoords(i,j,xx,yy,r);
+      switch (testname) {
+        case 'A':
+          exactA(r,&H[i][j],&accum[i][j]);
+          break;
+        case 'B':
+          exactB(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          break;
+        case 'C':
+          exactC(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          break;
+        case 'D':
+          exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          break;
+        case 'H':
+          exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          break;
+        default:  
+          SETERRQ(1,"test must be A, B, C, D, or H");
+          break;
+      }
     }
   }
+  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+
+  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+
+  if (testname == 'H') {
+    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+    ierr = VecScale(vh,1-f); CHKERRQ(ierr);
+    ierr = VecCopy(vH,vbed); CHKERRQ(ierr);
+    ierr = VecScale(vbed,-f); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+  }
+  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::fillSolnTestE() {
+  PetscErrorCode  ierr;
+  PetscScalar     **H, **accum, **ub, **vb, dummy;
+
+  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar r,xx,yy;
+      mapcoords(i,j,xx,yy,r);
+      exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&ub[i][j],&vb[i][j]);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+
+  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+
+  ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::fillSolnTestL() {
+  PetscErrorCode  ierr;
+
+  ierr = DALocalToLocalBegin(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
+
+  ierr = VecWAXPY(vh,1.0,vH,vbed); CHKERRQ(ierr);  // h = H + bed = 1 * H + bed
+  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+
+  // note bed was filled at initialization and hasn't changed
   return 0;
 }
 
@@ -820,105 +884,77 @@ PetscErrorCode IceCompModel::reportErrors() {
 }
 
 
-PetscErrorCode IceCompModel::run() {
-  PetscErrorCode  ierr;
+PetscErrorCode IceCompModel::additionalAtStartTimestep() {
+  PetscErrorCode    ierr;
   
-  ierr = verbPrintf(2,grid.com, "running test %c ...\n", testname); CHKERRQ(ierr);
-  if (exactOnly == PETSC_TRUE) {
-    ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com,
+               "additionalAtStartTimestep() in IceCompModel entered with test %c",
+               testname); CHKERRQ(ierr);
+
+  if (exactOnly == PETSC_TRUE)
+    dt_force = maxdt;
+
+  // these have no changing boundary conditions or comp sources:
+  if (strchr("ABEKL",testname) != NULL) 
+    return 0;
+
+  switch (testname) {
+    case 'C':
+    case 'D':
+    case 'H':
+      ierr = getCompSourcesTestCDH();
+      break;
+    case 'F':
+    case 'G':
+      ierr = getCompSourcesTestFG();  // see iCMthermo.cc
+      break;
+    default:
+      SETERRQ(1,"only tests CDHFG have comp source update at start time step\n");
+      break;
   }
-  ierr = verbPrintf(2,grid.com,"     ");  CHKERRQ(ierr);
-  PetscTruth tempAge = ((doTemp == PETSC_TRUE) 
-                        && ((testname == 'F') || (testname == 'G') || (testname == 'K'))) 
-                       ? PETSC_TRUE : PETSC_FALSE;
-  ierr = summaryPrintLine(PETSC_TRUE, tempAge,
-                          0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,"$$$$$");  CHKERRQ(ierr);
-  adaptReasonFlag = ' '; // no reason for no timestep
-  tempskipCountDown = 0;
-  ierr = summary(tempAge,false); CHKERRQ(ierr);  // report starting state
 
-  dtTempAge = 0.0;
-  // main loop for time evolution
-  for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
-    ierr = verbPrintf(2,grid.com,"$");  CHKERRQ(ierr);
-    dt_force = -1.0;
-    maxdt_temporary = -1.0;
-    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force or maxdt_temporary
+  return 0;
+}
 
-    // compute bed deformation, which only depends on current thickness and bed elevation
-    if (doBedDef == PETSC_TRUE) {
-      ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
 
-    // always do vertically-averaged velocity calculation; only update velocities at depth if
-    // needed for temp and age calculation
-    bool updateAtDepth = (tempskipCountDown == 0);
-    ierr = velocity(updateAtDepth); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
+PetscErrorCode IceCompModel::additionalAtEndTimestep() {
+  PetscErrorCode    ierr;
+  
+  ierr = verbPrintf(5,grid.com,
+               "additionalAtEndTimestep() in IceCompModel entered with test %c",testname);
+               CHKERRQ(ierr);
 
-    // adapt time step using velocities and diffusivity, ..., just computed
-    if (exactOnly == PETSC_TRUE)
-      dt_force = maxdt;
-    bool useCFLforTempAgeEqntoGetTimestep = 
-              ( (doTemp == PETSC_TRUE) 
-                && ((testname == 'F') || (testname == 'G') || (testname == 'K')) );
-    ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
-    dtTempAge += dt;
-    grid.p->year += dt / secpera;  // adopt it
-    // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
-    //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
-    //    criteria from derived class additionalAtStartTimestep(), and from 
-    //    "-tempskip" mechanism
+  // do nothing at the end of the time step unless the user has asked for the 
+  // exact solution to overwrite the numerical solution
+  if (exactOnly == PETSC_FALSE)  
+    return 0;
 
-    switch (testname) {
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-      case 'E':
-      case 'H':
-      case 'L':
-        ierr = updateTestISO(); CHKERRQ(ierr);
-        break;
-      case 'F':
-      case 'G':
-        ierr = updateTestFG(); CHKERRQ(ierr);
-        break;
-      case 'K':
-        ierr = updateTestK(); CHKERRQ(ierr);
-        break;
-      default: SETERRQ(1, "test must be A, B, C, D, E, F, G, H, K, or L\n");
-    }
-    
-    bool tempAgeStep = ( (doTemp == PETSC_TRUE)
-                         && ((testname == 'F') || (testname == 'G') || (testname == 'K'))
-                         && updateAtDepth );
-    if (tempAgeStep) {
-      ierr = temperatureAgeStep(); CHKERRQ(ierr);
-      dtTempAge = 0.0;
-      ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
-    
-    if ((exactOnly == PETSC_FALSE) && (doMassConserve == PETSC_TRUE)) {
-      ierr = massBalExplicitStep(); CHKERRQ(ierr);
-      if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
-        tempskipCountDown--;
-      ierr = verbPrintf(2,grid.com, "f"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
-
-    ierr = summary(tempAgeStep,false); CHKERRQ(ierr);
-    ierr = updateCompViewers(); CHKERRQ(ierr);
-    
-    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
-    if (endOfTimeStepHook() != 0) break;
-  }  //  for loop
+  // because user want exact solution, fill gridded values from exact formulas
+  switch (testname) {
+    case 'A':
+    case 'B':
+    case 'C':
+    case 'D':
+    case 'H':
+      ierr = fillSolnTestABCDH();
+      break;
+    case 'E':
+      ierr = fillSolnTestE();
+      break;
+    case 'F':
+    case 'G':
+      ierr = fillSolnTestFG();  // see iCMthermo.cc
+      break;
+    case 'K':
+      ierr = fillSolnTestK();  // see iCMthermo.cc
+      break;
+    case 'L':
+      ierr = fillSolnTestL();
+      break;
+    default:
+      SETERRQ(1,"unknown testname in IceCompModel");
+      break;
+  }
 
   return 0;
 }

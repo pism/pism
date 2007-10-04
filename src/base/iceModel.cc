@@ -487,6 +487,10 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   ierr = VecCopy(vH, vHnew); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vHnew, &Hnew); CHKERRQ(ierr);
 
+//ierr = verbPrintf(1,grid.com,
+//       "entering massBalExplicitStep() with doOceanKill = %d and mask[0,0] = %d\n",
+ //      doOceanKill,intMask(mask[0][0])); CHKERRQ(ierr);
+
   PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -512,12 +516,11 @@ PetscErrorCode IceModel::massBalExplicitStep() {
          Hnew[i][j] -= capBasalMeltRate(basalMeltRate[i][j]) * dt;
       }
 
+      // apply free boundary rule: negative thickness becomes zero
       if (Hnew[i][j] < 0)
-        // apply free boundary rule: negative thickness becomes zero
         Hnew[i][j] = 0.0;
-      if ( (doOceanKill == PETSC_TRUE) 
-           && (intMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
-        // force zero at ocean; "accumulation-zone" b.c.
+      // force zero at ocean; "accumulation-zone" b.c.
+      if ( (doOceanKill == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
         Hnew[i][j] = 0.0;
     }
   }
@@ -578,11 +581,11 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
-  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
-  ierr = summary(true,true); CHKERRQ(ierr);  // report starting state
+  ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
 
   dtTempAge = 0.0;
   // main loop for time evolution
@@ -638,7 +641,6 @@ PetscErrorCode IceModel::run() {
     
     bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
     if (tempAgeStep) { // do temperature and age
-      allowAboveMelting = PETSC_FALSE;
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
       ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
@@ -655,11 +657,11 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-    ierr = summary(tempAgeStep,true); CHKERRQ(ierr);
+    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+
+    ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
 
     ierr = updateViewers(); CHKERRQ(ierr);
-
-    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     if (endOfTimeStepHook() != 0) break;
   }

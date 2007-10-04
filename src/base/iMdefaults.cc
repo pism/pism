@@ -196,7 +196,8 @@ PetscErrorCode IceModel::setDefaults() {
   doTemp = DEFAULT_DO_TEMP;
   doTempSkip = DEFAULT_DO_TEMPSKIP;
   tempskipMax = DEFAULT_TEMPSKIP_MAX;
-  
+  reportHomolTemps = PETSC_TRUE;
+    
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
   doGrainSize = DEFAULT_DO_GRAIN_SIZE;
   isDrySimulation = DEFAULT_IS_DRY_SIMULATION;

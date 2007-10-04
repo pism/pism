@@ -59,9 +59,9 @@ public:
 
   // see iceModel.cc
   virtual PetscErrorCode run();
+  virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
-  virtual PetscErrorCode diagnosticRun();
 
   // see iMdefaults.cc
   virtual PetscErrorCode setDefaults();
@@ -196,7 +196,7 @@ protected:
   PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, useConstantNuForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
-  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip;
+  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, transformForSurfaceGradient, useIsothermalFlux;
   char        adaptReasonFlag;
@@ -348,7 +348,6 @@ protected:
   PetscErrorCode regrid(const char *regridFile);
   PetscErrorCode regrid_netCDF(const char *fname);
 
-
   // see iMreport.cc
   // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()
   // are all in iMreport.cc
@@ -360,7 +359,7 @@ protected:
   PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
                             PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                             PetscScalar& gvolshelf);
-  virtual PetscErrorCode summary(bool,bool);
+  virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
   virtual PetscErrorCode summaryPrintLine(
               const PetscTruth printPrototype, const PetscTruth tempAndAge,
               const PetscScalar year, const PetscScalar dt, 
@@ -394,7 +393,7 @@ protected:
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
-  PetscErrorCode temperatureStep();
+  virtual PetscErrorCode temperatureStep();
   PetscErrorCode ageStep(PetscScalar* CFLviol);
   PetscErrorCode solveTridiagonalSystem(
            const PetscScalar* L, const PetscScalar* D, const PetscScalar* U,
@@ -459,7 +458,6 @@ private:
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
   Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
   VecScatter SSAScatterGlobalToLocal;
-
 };
 
 #endif /* __iceModel_hh */

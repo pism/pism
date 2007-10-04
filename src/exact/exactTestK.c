@@ -19,37 +19,37 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_roots.h>
 #include "exactTestK.h"
 
-#define pi       3.1415926535897931
-#define SperA    31556926.0   /* seconds per year; 365.2422 days */
+#define pi             3.1415926535897931
+#define SperA          31556926.0   /* seconds per year; 365.2422 days */
 
-#define c_p_ICE  2009.0       /* J/(kg K)  specific heat capacity of ice */
-#define rho_ICE  910.0        /* kg/(m^3)  density of ice */
-#define k_ICE    2.10         /* J/(m K s) = W/(m K)  thermal conductivity of ice */
-#define c_p_BR   1000.0       /* J/(kg K)  specific heat capacity of bedrock */
-#define rho_BR   3300.0       /* kg/(m^3)  density of bedrock */
-#define k_BR     3.0          /* J/(m K s) = W/(m K)  thermal conductivity of bedrock */
+#define c_p_ICE        2009.0       /* J/(kg K)  specific heat capacity of ice */
+#define rho_ICE        910.0        /* kg/(m^3)  density of ice */
+#define k_ICE          2.10         /* J/(m K s) = W/(m K)  thermal conductivity of ice */
+#define c_p_BRdefault  1000.0       /* J/(kg K)  specific heat capacity of bedrock */
+#define rho_BRdefault  3300.0       /* kg/(m^3)  density of bedrock */
+#define k_BRdefault    3.0          /* J/(m K s) = W/(m K)  thermal conductivity of bedrock */
 
-#define H0       3000.0       /* m */
-#define B0       1000.0       /* m */
-#define Ts       223.15       /* m */
-#define G        0.042        /* W/(m^2) */
-#define phi      0.0125       /* K/m */
+#define H0             3000.0       /* m */
+#define B0             1000.0       /* m */
+#define Ts             223.15       /* m */
+#define G              0.042        /* W/(m^2) */
+#define phi            0.0125       /* K/m */
 
-#define Nsum     30           /* number of terms in eigenfunction expansion; the exact
-                                 solution is deliberately chosen to have finite expansion */
+#define Nsum           30           /* number of terms in eigenfunction expansion; the exact
+                                       solution is deliberately chosen to have finite expansion */
 
 
-int exactK(const double t, const double z, double *TT) {
+int exactK(const double t, const double z, double *TT, bool bedrockIsIce) {
   int k;
   bool belowB0;
   double ZZ, P, alpha, lambda, beta, gamma, XkSQR, Xk, theta, Ck, I1, I2, aH, bB, mI, mR;
+  double c_p_BR, rho_BR, k_BR;
   /* following constants were produced by calling print_alpha_k(30) (below) */
   double alf[Nsum] = {3.350087528822397e-04, 1.114576827617396e-03, 1.953590840303518e-03,
                       2.684088585781064e-03, 3.371114869333445e-03, 4.189442265117592e-03,
@@ -62,6 +62,18 @@ int exactK(const double t, const double z, double *TT) {
                       1.871188358061674e-02, 1.944434477688470e-02, 2.013010181370026e-02,
                       2.094721145334310e-02, 2.176730968036079e-02, 2.245631776169424e-02};
 
+  if (bedrockIsIce) {
+    c_p_BR = c_p_ICE;
+    rho_BR = rho_ICE;
+    k_BR = k_ICE;
+    for (k = 0; k < Nsum; k++) { /* overwrite alpha_k with ice-meets-ice values; see preprint */
+      alf[k] = (2.0 * k + 1.0) * pi / (2.0 * (H0 + B0));
+    }
+  } else {
+    c_p_BR = c_p_BRdefault;
+    rho_BR = rho_BRdefault;
+    k_BR = k_BRdefault;
+  }
   if (z > H0) {
     *TT = Ts;
     return 0;
@@ -106,12 +118,15 @@ int exactK(const double t, const double z, double *TT) {
 #define COMPUTE_ALPHA 0
 #if COMPUTE_ALPHA
 
-/* parameters needed for root problem */
+#define ALPHA_RELTOL   1.0e-14
+#define ITER_MAXED_OUT 999
+
+/* parameters needed for root problem: */
 struct coscross_params {
   double Afrac, HZBsum, HZBdiff;
 };
-   
-/* the root problem is to make this function zero */
+
+/* the root problem is to make this function zero: */
 double coscross(double alpha, void *params) {
   struct coscross_params *p = (struct coscross_params *) params;
   return cos(p->HZBsum * alpha) - p->Afrac * cos(p->HZBdiff * alpha);
@@ -128,8 +143,6 @@ int print_alpha_k(const int N) {
   const gsl_root_fsolver_type *solvT;
   gsl_root_fsolver *solv;
   gsl_function F;
-#define ALPHA_RELTOL   1.0e-14
-#define ITER_MAXED_OUT 999
   struct coscross_params params;
   
   Z = sqrt((rho_BR * c_p_BR * k_ICE) / (rho_ICE * c_p_ICE * k_BR));

@@ -66,7 +66,7 @@ int main() {
     return 1;
   }
 
-  exactK(t * secpera, z, &TT);
+  exactK(t * secpera, z, &TT, false);
 
   printf("Results from Test K:\n");
   printf("     T = %11.5f (K) = %11.5f (deg C)",TT,TT - 273.15);

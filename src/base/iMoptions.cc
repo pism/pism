@@ -33,8 +33,12 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  my_useConstantNu, MxSet, MySet, MzSet, MbzSet,
-              maxdtSet, my_useConstantHardness, noMassConserve, noTemp, bedDeflc; 
+  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet;
+  PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
+              mytransformForSurfaceGradient, myuseIsothermalFlux, myincludeBMRinContinuity,
+              mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
+              mydoSuperpose, mydoTempSkip;
+  PetscTruth  noMassConserve, noTemp; 
   PetscScalar my_maxdt, my_nu, regVelSchoof, my_barB;
   PetscInt    my_Mx, my_My, my_Mz, my_Mbz;
 
@@ -42,12 +46,27 @@ PetscErrorCode  IceModel::setFromOptions() {
   // allows users to set options using this.
   ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (in PISM)",PETSC_NULL); CHKERRQ(ierr);
 
+  /* 
+  note on pass-by-reference for options:
+     For the last argument "flag" to PetscOptionsXXXX(....,&flag), the flag always indicates
+     whether the option has been set.  Therefore "flag" is always set by the function call.
+     For other arguments "value" to PetscOptionsXXXX(....,&value,&flag), the value of "value"
+     is only set if the user specified the option.  Therefore "flag" should always be given a
+     local PetscTruth variable if we want to preserve previously set IceModel flags.  By 
+     contrast, for various parameters "value" we can use the IceModel class member itself
+     without fear of overwriting defaults unless, of course, the user wants them overwritten.
+     It is also o.k. to have a local variable for "value", and then proceed to set the IceModel
+     member accordingly.
+  */
+  
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &bedDeflc); CHKERRQ(ierr);  
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &doBedIso); CHKERRQ(ierr);
-  if ((doBedIso == PETSC_TRUE) || (bedDeflc == PETSC_TRUE))    doBedDef = PETSC_TRUE;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &mybedDeflc); CHKERRQ(ierr);  
+  if (mybedDeflc == PETSC_TRUE)   doBedIso = PETSC_FALSE;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &mydoBedIso); CHKERRQ(ierr);
+  if (mydoBedIso == PETSC_TRUE)   doBedIso = PETSC_TRUE;
+  if ((doBedIso == PETSC_TRUE) || (mybedDeflc == PETSC_TRUE))    doBedDef = PETSC_TRUE;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
   // user gives nu in MPa yr (e.g. Ritz et al 2001 value is 30.0)
@@ -67,19 +86,30 @@ PetscErrorCode  IceModel::setFromOptions() {
   // regular size viewers
   ierr = PetscOptionsGetString(PETSC_NULL, "-d", diagnostic, PETSC_MAX_PATH_LEN, PETSC_NULL); 
             CHKERRQ(ierr);
-  if (showViewers == PETSC_FALSE)    strcpy(diagnostic, "\0");
-
-  // big viewers (which will override regular viewers)
+  if (showViewers == PETSC_FALSE) {
+    ierr = verbPrintf(1,grid.com,
+       "WARNING: viewers requested with -d but showViewers is false, so none shown\n");
+       CHKERRQ(ierr);
+    strcpy(diagnostic, "\0");
+  }
+  
+  // big viewers (which have higher priority than regular viewers)
   ierr = PetscOptionsGetString(PETSC_NULL, "-dbig", diagnosticBIG, PETSC_MAX_PATH_LEN, PETSC_NULL); 
             CHKERRQ(ierr);
-  if (showViewers == PETSC_FALSE)    strcpy(diagnosticBIG, "\0");
+  if (showViewers == PETSC_FALSE)  {
+    ierr = verbPrintf(1,grid.com,
+       "WARNING: viewers requested with -dbig but showViewers is false, so none shown\n");
+       CHKERRQ(ierr);
+    strcpy(diagnosticBIG, "\0");
+  }
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
 // note "-gk" is in use for specifying Goldsby-Kohlstedt ice
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-grad_from_eta", &transformForSurfaceGradient); 
+  ierr = PetscOptionsHasName(PETSC_NULL, "-grad_from_eta", &mytransformForSurfaceGradient); 
             CHKERRQ(ierr);
+  if (mytransformForSurfaceGradient == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
 
 // note "-id" is in use for sounding location
 
@@ -90,7 +120,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   // thickness and the surface slope.  The Glen power n=3 and a fixed softness
   // parameter A = 10^{-16} Pa^{-3} a^{-1} are used.  These are set in
   // IceModel::setDefaults().
-  ierr = PetscOptionsHasName(PETSC_NULL, "-isoflux", &useIsothermalFlux); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-isoflux", &myuseIsothermalFlux); CHKERRQ(ierr);
+  if (myuseIsothermalFlux == PETSC_TRUE)   useIsothermalFlux = PETSC_TRUE;
 
 // note "-jd" is in use for sounding location
 
@@ -119,7 +150,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
   if (MbzSet == PETSC_TRUE)   grid.p->Mbz = my_Mbz;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_bmr_in_vert", &includeBMRinContinuity); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_bmr_in_vert", &myincludeBMRinContinuity); CHKERRQ(ierr);
+  if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
@@ -134,12 +166,14 @@ PetscErrorCode  IceModel::setFromOptions() {
 // note "-o" is in use for output file name
 
   // whether or not to kill ice if original condition was ice-free ocean
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &doOceanKill); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &mydoOceanKill); CHKERRQ(ierr);
+  if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
 
 // note "-of" is in use for output file format; see iMIO.cc
 
   // use a plastic basal till mechanical model
-  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &doPlasticTill); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &mydoPlasticTill); CHKERRQ(ierr);
+  if (mydoPlasticTill == PETSC_TRUE)   doPlasticTill = PETSC_TRUE;
 
   PetscTruth regVelSet;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &regVelSchoof, &regVelSet);
@@ -154,7 +188,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &useSSAVelocity); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &myuseSSAVelocity); CHKERRQ(ierr);
+  if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
   
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_eps", &ssaEpsilon, PETSC_NULL); CHKERRQ(ierr);
   
@@ -162,8 +197,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get 
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_matlab", &ssaSystemToASCIIMatlab); CHKERRQ(ierr);
-  if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_matlab", &myssaSystemToASCIIMatlab); CHKERRQ(ierr);
+  if (myssaSystemToASCIIMatlab == PETSC_TRUE)   ssaSystemToASCIIMatlab = PETSC_TRUE;
+  if (ssaSystemToASCIIMatlab == PETSC_TRUE) {  // now get the prefix if it was given by user
     char tempPrefix[PETSC_MAX_PATH_LEN];
     ierr = PetscOptionsGetString(PETSC_NULL, "-ssa_matlab", tempPrefix, 
              PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
@@ -177,10 +213,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
   // SSA equations where DRAGGING
-  ierr = PetscOptionsHasName(PETSC_NULL, "-super", &doSuperpose); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-super", &mydoSuperpose); CHKERRQ(ierr);
+  if (mydoSuperpose == PETSC_TRUE)   doSuperpose = PETSC_TRUE;
 
   /* This controls allows more than one mass continuity steps per temperature/age step */
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &doTempSkip); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &mydoTempSkip); CHKERRQ(ierr);
+  if (mydoTempSkip == PETSC_TRUE)   doTempSkip = PETSC_TRUE;
 
   // till pw_fraction, till cohesion, and till friction angle are only relevant in
   //   IceModel::updateYieldStressFromHmelt()

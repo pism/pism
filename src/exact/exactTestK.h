@@ -28,20 +28,20 @@ extern "C"
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! exactTestK is a C implementation of an exact solution to a time-dependent
-! pure conduction problem in a column of ice and bedrock in an incomplete
-! preprint
+! This a C implementation of an exact solution to a time-dependent
+! pure conduction problem in a column of ice and bedrock in the preprint
 !
-!    Ed Bueler (September 2007) "An exact solution to the temperature 
-!    equation in a column of ice and bedrock"
+!    Ed Bueler (2007).  "An exact solution to the temperature 
+!    equation in a column of ice and bedrock", preprint arXiv:????
 !
-! see also src/exact/simpleK.c
+! See also src/exact/simpleK.c.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
 /* compute the exact solution TT = T(t,z); returns 0 for z >= -1000 m but returns
-   1 for z < -1000 m because eigenfunction is not valid there */
-int exactK(const double t, const double z, double *TT);
+   1 for z < -1000 m because eigenfunction is not valid there;
+   normally use bedrockIsIce = false */
+int exactK(const double t, const double z, double *TT, bool bedrockIsIce);
 
 /* find the alpha_k values for the eigenfunction expansion in the exact
    solution; these values are found by rigorous (bracketed) numerical 
