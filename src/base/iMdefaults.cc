@@ -104,6 +104,8 @@ const PetscTruth  DEFAULT_DO_MASS_CONSERVE = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMP = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMPSKIP = PETSC_FALSE; // off by default
 const PetscInt    DEFAULT_TEMPSKIP_MAX = 10;
+const PetscScalar DEFAULT_GLOBAL_MIN_ALLOWED_TEMP = 200.0;
+const PetscInt    DEFAULT_MAX_LOW_TEMP_COUNT = 10;  // 
 
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
@@ -113,7 +115,6 @@ const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigm
 const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
 
 const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3.0;
-const PetscScalar DEFAULT_ISOTHERMAL_FLUX_A_SOFTNESS = 1.0e-16 / secpera; // Pa^{-3} s^{-1}
 
 const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
@@ -197,6 +198,8 @@ PetscErrorCode IceModel::setDefaults() {
   doTempSkip = DEFAULT_DO_TEMPSKIP;
   tempskipMax = DEFAULT_TEMPSKIP_MAX;
   reportHomolTemps = PETSC_TRUE;
+  globalMinAllowedTemp = DEFAULT_GLOBAL_MIN_ALLOWED_TEMP;
+  maxLowTempCount = DEFAULT_MAX_LOW_TEMP_COUNT;
     
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
   doGrainSize = DEFAULT_DO_GRAIN_SIZE;
@@ -209,7 +212,6 @@ PetscErrorCode IceModel::setDefaults() {
   noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
   doPDD = PETSC_FALSE;
 
-  setIsothermalFlux(PETSC_FALSE, DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT,
-                    DEFAULT_ISOTHERMAL_FLUX_A_SOFTNESS);
+  isothermalFlux_n_exponent = DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT;
   return 0;
 }

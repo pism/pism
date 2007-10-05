@@ -313,13 +313,6 @@ void IceModel::setConstantNuForSSA(PetscScalar nu) {
 }
 
 
-void IceModel::setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A) {
-  useIsothermalFlux = use;
-  isothermalFlux_n_exponent = n;
-  isothermalFlux_A_softness = A;
-}
-
-
 PetscTruth IceModel::isInitialized() const {
   return initialized_p;
 }

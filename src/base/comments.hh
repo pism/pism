@@ -134,6 +134,21 @@ assume when needed that it is rectangular in cross-section with cross-sectional 
 \image latex earlycols.png "Left: a general column of material.  Right: ice over bedrock." width=3in
 
 [FIXME: CONTINUE TO MINE eqns3D.tex FOR MORE]
+
+The application of the geothermal flux at the base of a column is a special case for which 
+we give a finite difference argument.  This scheme follows the equation (2.114) in 
+Morton and Mayers (2005).  We have the boundary condition
+	\f[  -k \frac{\partial T}{\partial z} = G(t,x,y) \f]
+where \f$G(t,x,y)\f$ is the applied geothermal flux, and it is applied at level \f$z=-B_0\f$ 
+in the bedrock (which is the only case considered here).  We <em> add a virtual lower grid 
+point </em> \f$z_{-1} = z_0 - \Delta  z\f$ and we approximate the above boundary condition 
+at $z_0$ by the centered-difference
+	\f[  -k \frac{T_{1} - T_{-1}}{2 \Delta z} = G. \f]
+Here \f$T_k = T_{ijk}^{l+1}\f$.  We also apply the discretized conduction equation at $z_0$.  These two combined equations 
+yield a simplified form
+	\f[(1 + 2 KR) T_0 - 2 K T_1 = T_0 + \frac{2\Delta t}{\rho c_p \Delta z} G \f]
+where \f$K = k \Delta t (\rho c \Delta z^2)^{-1}\f$.
+
 @endcond
  */
 

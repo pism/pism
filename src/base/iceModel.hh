@@ -186,8 +186,9 @@ protected:
                                     // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
-  PetscScalar isothermalFlux_n_exponent, isothermalFlux_A_softness;
-  PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel;
+  PetscScalar isothermalFlux_n_exponent;
+  PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel, maxLowTempCount;
+  PetscScalar globalMinAllowedTemp;
 
   // flags
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
@@ -198,7 +199,7 @@ protected:
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
-  PetscTruth  computeSIAVelocities, transformForSurfaceGradient, useIsothermalFlux;
+  PetscTruth  computeSIAVelocities, transformForSurfaceGradient;
   char        adaptReasonFlag;
 
   // file names

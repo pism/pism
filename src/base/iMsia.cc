@@ -169,11 +169,6 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
   // Vertically-integrated velocities (i.e. vuvbar) and basal sliding velocities
   // (vub, vvb) are *always* updated.  Diffusivity is only updated by vertical 
   // integration if !faststep.
-  // If (useIsothermalFlux) then vuvbar is computed by using
-  // isothermalFlux_A_softness and isothermalFlux_n_exponent with the Glen
-  // formula:
-  // vuvbar = U = - 2 A (rho g)^n (n+2)^{-1} H^{n+1} |\grad h|^{n-1} \grad h;
-  // Set (useIsothermalFlux) with setIsothermalFlux() or with `-isoflux'.
 
   const PetscScalar   dz=grid.p->dz;
   PetscErrorCode  ierr;
@@ -182,9 +177,6 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
   PetscScalar **h, **H, **Df[2], **uvbar[2];
   PetscScalar ***T, ***gs;
   PetscScalar *delta, *K;
-  const PetscScalar Gamma = (2.0 * isothermalFlux_A_softness
-                             * pow(ice.rho * grav, isothermalFlux_n_exponent)
-                             / (isothermalFlux_n_exponent + 2.0));
 
   delta = new PetscScalar[grid.p->Mz];
   K = new PetscScalar[grid.p->Mz];
@@ -265,12 +257,7 @@ PetscErrorCode IceModel::velocitySIAStaggered(bool faststep) {
             }  
 
             // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-            if (useIsothermalFlux) {
-              Df[o][i][j] = -Gamma * pow(thickness, isothermalFlux_n_exponent + 2)
-                                        * pow(alpha, isothermalFlux_n_exponent - 1);
-            } else { // usual thermocoupled case
-              Df[o][i][j] = J[o][i][j][ks] + (thickness - ks*dz) * I[o][i][j][ks];
-            }
+            Df[o][i][j] = J[o][i][j][ks] + (thickness - ks*dz) * I[o][i][j][ks];
           } // done with evals, calcs at depth, and those that affect temp eqn
 
           // basal velocity

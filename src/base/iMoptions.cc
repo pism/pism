@@ -35,7 +35,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
   PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet;
   PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
-              mytransformForSurfaceGradient, myuseIsothermalFlux, myincludeBMRinContinuity,
+              mytransformForSurfaceGradient, myincludeBMRinContinuity,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               mydoSuperpose, mydoTempSkip;
   PetscTruth  noMassConserve, noTemp; 
@@ -114,14 +114,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 // note "-id" is in use for sounding location
 
 // note "-if" is in use for input file name
-
-  // This switch turns off vertical integration in the isothermal case.  That
-  // is, the horizontal flux of ice is computed as an analytical function of the
-  // thickness and the surface slope.  The Glen power n=3 and a fixed softness
-  // parameter A = 10^{-16} Pa^{-3} a^{-1} are used.  These are set in
-  // IceModel::setDefaults().
-  ierr = PetscOptionsHasName(PETSC_NULL, "-isoflux", &myuseIsothermalFlux); CHKERRQ(ierr);
-  if (myuseIsothermalFlux == PETSC_TRUE)   useIsothermalFlux = PETSC_TRUE;
 
 // note "-jd" is in use for sounding location
 

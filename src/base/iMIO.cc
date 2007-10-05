@@ -170,7 +170,7 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
   if (matvSet == PETSC_TRUE) {
     strcat(matf, ".m");
     ierr = verbPrintf(1, grid.com, 
-       " ... writing variables %s to Matlab file `%s'", matlabOutVars, matf); CHKERRQ(ierr);
+       "\n ... writing variables %s to Matlab file `%s'", matlabOutVars, matf); CHKERRQ(ierr);
     ierr = writeMatlabVars(matf); CHKERRQ(ierr); // see iMmatlab.cc
   }
 

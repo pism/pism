@@ -25,9 +25,13 @@
 PetscErrorCode IceCompModel::temperatureStep() {
   PetscErrorCode  ierr;
 
-  ierr = VecAXPY(vSigma, 1.0, vSigmaComp); CHKERRQ(ierr);   // Sigma = Sigma + Sigma_c
-  ierr = IceModel::temperatureStep(); CHKERRQ(ierr);
-  ierr = VecAXPY(vSigma, -1.0, vSigmaComp); CHKERRQ(ierr);  // Sigma = Sigma - Sigma_c
+  if ((testname == 'F') || (testname == 'G')) {
+    ierr = VecAXPY(vSigma, 1.0, vSigmaComp); CHKERRQ(ierr);   // Sigma = Sigma + Sigma_c
+    ierr = IceModel::temperatureStep(); CHKERRQ(ierr);
+    ierr = VecAXPY(vSigma, -1.0, vSigmaComp); CHKERRQ(ierr);  // Sigma = Sigma - Sigma_c
+  } else {
+    ierr = IceModel::temperatureStep(); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -42,6 +46,7 @@ PetscScalar IceCompModel::ApforG = 200; // m
 
 PetscErrorCode IceCompModel::createCompVecs() {
   PetscErrorCode ierr = DACreateLocalVector(grid.da3, &vSigmaComp); CHKERRQ(ierr);
+  ierr = VecSet(vSigmaComp,0.0); CHKERRQ(ierr);
   compVecsCreated = PETSC_TRUE;
   return 0;
 }
@@ -380,11 +385,13 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   Tex = new PetscScalar[Mz];  Tbex = new PetscScalar[Mbz];
 
   for (PetscInt k=0; k<Mz; k++) {
-    ierr = exactK(grid.p->year * secpera, k * dz, &Tex[k],bedrock_is_ice_forK);  CHKERRQ(ierr);
+    ierr = exactK(grid.p->year * secpera, k * dz, &Tex[k],(bedrock_is_ice_forK==PETSC_TRUE));
+             CHKERRQ(ierr);
   }
   for (PetscInt k=0; k<Mbz; k++) {
     const PetscScalar depth = ((Mbz-1) - k) * dz;
-    ierr = exactK(grid.p->year * secpera, -depth, &Tbex[k],bedrock_is_ice_forK);  CHKERRQ(ierr);
+    ierr = exactK(grid.p->year * secpera, -depth, &Tbex[k],(bedrock_is_ice_forK==PETSC_TRUE));
+             CHKERRQ(ierr);
   }
     
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
@@ -620,12 +627,14 @@ PetscErrorCode IceCompModel::fillSolnTestK() {
   Tbcol = new PetscScalar[Mbz];
   for (PetscInt k=0; k<Mz; k++) {
     // evaluate and store in Tcol and Tbcol
-    ierr = exactK(grid.p->year * secpera, k * dz, &Tcol[k],bedrock_is_ice_forK);  CHKERRQ(ierr);
+    ierr = exactK(grid.p->year * secpera, k * dz, &Tcol[k],(bedrock_is_ice_forK==PETSC_TRUE));
+             CHKERRQ(ierr);
   }
   for (PetscInt k=0; k<Mbz; k++) {
     // evaluate and store in Tcol and Tbcol
     const PetscScalar depth = ((Mbz-1) - k) * dz;
-    ierr = exactK(grid.p->year * secpera, -depth, &Tbcol[k],bedrock_is_ice_forK);  CHKERRQ(ierr);
+    ierr = exactK(grid.p->year * secpera, -depth, &Tbcol[k],(bedrock_is_ice_forK==PETSC_TRUE));
+             CHKERRQ(ierr);
   }
 
   // copy column values into 3D arrays

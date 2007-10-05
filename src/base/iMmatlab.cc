@@ -189,22 +189,24 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
 
     ierr = VecCreateMPI(grid.com,PETSC_DECIDE, rlen, &m); CHKERRQ(ierr);
 
-    if (doTandTb == PETSC_TRUE) {
-      PetscScalar ***T, ***Tb;
-      ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-      ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-      ierr = VecSetValues(m, grid.p->Mbz, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], &T[id][jd][0], INSERT_VALUES);
-               CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-    } else {
-      PetscScalar      ***u;
-      ierr = DAVecGetArray(grid.da3, l, &u); CHKERRQ(ierr);
-      ierr = VecSetValues(m, rlen, row, &u[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, l, &u); CHKERRQ(ierr);
+    if ((id >= grid.xs) && (id < grid.xs+grid.xm) && (jd >= grid.ys) && (jd < grid.ys+grid.ym)) {
+      if (doTandTb == PETSC_TRUE) {
+        PetscScalar ***T, ***Tb;
+        ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+        ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+        ierr = VecSetValues(m, grid.p->Mbz, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], &T[id][jd][0], INSERT_VALUES);
+                 CHKERRQ(ierr);
+        ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+        ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+      } else {
+        PetscScalar      ***u;
+        ierr = DAVecGetArray(grid.da3, l, &u); CHKERRQ(ierr);
+        ierr = VecSetValues(m, rlen, row, &u[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
+        ierr = DAVecRestoreArray(grid.da3, l, &u); CHKERRQ(ierr);
+      }
     }
-    
+
     ierr = VecAssemblyBegin(m); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(m); CHKERRQ(ierr);
     ierr = VecScale(m,scale); CHKERRQ(ierr);
@@ -235,18 +237,18 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
 
   // these are tools to help actually *use* the Matlab output
-  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.p->year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear = %10.6f;\n",grid.p->year);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                                "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",
+                                "x = (-%12.3f:%12.3f:%12.3f)/1000.0;\n",
                                 grid.p->Lx,grid.p->dx,grid.p->Lx);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                                "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",
+                                "y = (-%12.3f:%12.3f:%12.3f)/1000.0;\n",
                                 grid.p->Ly,grid.p->dy,grid.p->Ly);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                                "z=0.0:%12.3f:%12.3f;\n",
+                                "z = 0.0:%12.3f:%12.3f;\n",
                                 grid.p->dz,grid.p->Lz);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                                "zb=-%12.3f:%12.3f:0;\n",
+                                "zb = %12.3f:%12.3f: 0.0;\n",
                                 -grid.p->Lbz,grid.p->dz);  CHKERRQ(ierr);
 
   // now write the variables if they are wanted

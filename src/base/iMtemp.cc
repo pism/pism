@@ -109,10 +109,16 @@ PetscErrorCode IceModel::temperatureStep() {
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
       
       if (Mbz > 1) { // bedrock present: build k=0:Mbz-1 eqns
+        /*
+        THIS OLD SCHEME SEEMS ONLY TO GIVE   O(\Delta t,\Delta z^1)  convergence:
         // basal condition (at bottom of bedrock when temp is modelled in bedrock)
         // {from FV (finite volume) across bedrock base z_0}
         D[0] = (1 + brR);  U[0] = -brR;  // note L[0] not an allocated location
         rhs[0] = Tb[i][j][0] + dtTempAge * Ghf[i][j] / (rho_c_br * dz);
+        */
+        // gives O(\Delta t,\Delta z^2) convergence in Test K
+        D[0] = (1.0 + 2.0 * brR);  U[0] = - 2.0 * brR;  // note L[0] not an allocated location
+        rhs[0] = Tb[i][j][0] + 2.0 * dtTempAge * Ghf[i][j] / (rho_c_br * dz);
       
         // bedrock only: pure vertical conduction problem
         // {from generic bedrock FV}
@@ -140,8 +146,8 @@ PetscErrorCode IceModel::temperatureStep() {
           // by ocean flux; note volume for which energy is being computed is 
           // *half* a segment
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
-          D[k0] = 1+iceR; U[k0] = -iceR;
-          rhs[k0] = T[i][j][0] + dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dz);
+          D[k0] = 1.0 + 2.0 * iceR; U[k0] = - 2.0 * iceR;
+          rhs[k0] = T[i][j][0] + 2.0 * dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dz);
           if (!isMarginal) {
             const PetscScalar UpTu = (u[i][j][0] < 0) ?
                 u[i][j][0] * (T[i+1][j][0] - T[i][j][0]) / dx :
@@ -172,18 +178,19 @@ PetscErrorCode IceModel::temperatureStep() {
           }
           const PetscScalar iceReff = ice.k * dtTempAge / (rho_c_av * dz * dz);
           const PetscScalar brReff = bedrock.k * dtTempAge / (rho_c_av * dz * dz);
-          if (k0 > 0) { // there is bedrock
+          if (Mbz > 1) { // there is bedrock; apply centered difference with 
+                         // jump in diffusivity coefficient
             L[k0] = - brReff; D[k0] = 1 + iceReff + brReff; U[k0] = - iceReff;
-          } else { // no bedrock
+          } else { // no bedrock; apply geothermal flux here
             // L[k0] = 0.0;  (note this is not an allocated location!) 
-            D[k0] = 1 + iceR; U[k0] = - iceR;
-            rhs[k0] += dtTempAge * Ghf[i][j] / (rho_c_I * dz);
+            D[k0] = 1.0 + 2.0 * iceR; U[k0] = - 2.0 * iceR;
+            rhs[k0] += 2.0 * dtTempAge * Ghf[i][j] / (rho_c_I * dz);
           }
         }
       }
 
       // generic ice segment: build k0+1:k0+ks-1 eqns
-      for (PetscInt k=1; k<ks; k++) {
+      for (PetscInt k = 1; k < ks; k++) {
         L[k0+k] = -iceR; D[k0+k] = 1+2*iceR; U[k0+k] = -iceR;
         rhs[k0+k] = T[i][j][k];
         if (!isMarginal) {
@@ -202,20 +209,22 @@ PetscErrorCode IceModel::temperatureStep() {
       
       // surface b.c.
       if (k0+ks>0) {
-        rhs[k0+ks-1] += iceR * Ts[i][j];
+        L[k0+ks] = 0;   D[k0+ks] = 1.0;   // ignor U[k0+ks]
+        rhs[k0+ks] = Ts[i][j];
+        //  HAD NO k0+ks eqn before, and:
+        //        rhs[k0+ks-1] += iceR * Ts[i][j];
         // U[k0+ks-1] = 0.0, but never actually eval'ed by tridiag solve
       }
 
       // solve system; melting not addressed yet
       if (k0+ks>0) {
-        ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks);
+        ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks+1);
+        // OLD:       ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks);
         if (ierr != 0) {
           SETERRQ3(1, "Tridiagonal solve failed at (%d,%d) with zero pivot in position %d.",
                i, j, ierr);
         }
       }
-
-      const PetscScalar GlobalMinTemp = 200.0;
 
       // insert bedrock solution; check for too low below
       for (PetscInt k=0; k < k0; k++) {
@@ -226,7 +235,8 @@ PetscErrorCode IceModel::temperatureStep() {
       PetscScalar Hmeltnew = Hmelt[i][j];
       
       // insert solution for generic ice segments
-      for (PetscInt k=1; k < ks; k++) {
+      for (PetscInt k=1; k <= ks; k++) {
+//      for (PetscInt k=1; k < ks; k++) {
         if (allowAboveMelting == PETSC_TRUE) {
           Tnew[i][j][k] = x[k0 + k];
         } else {
@@ -241,7 +251,7 @@ PetscErrorCode IceModel::temperatureStep() {
             Tnew[i][j][k] = x[k0 + k];
           }
         }
-        if (Tnew[i][j][k] < GlobalMinTemp) {
+        if (Tnew[i][j][k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) generic segment temp T = %f at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
               Tnew[i][j][k],i,j,k,grid.rank,mask[i][j],w[i][j][k]*secpera); CHKERRQ(ierr);
@@ -268,7 +278,7 @@ PetscErrorCode IceModel::temperatureStep() {
             SETERRQ(1,"updated temperature came out above Tpmp");
           }
         }
-        if (Tnew[i][j][0] < GlobalMinTemp) {
+        if (Tnew[i][j][0] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) ice/rock segment temp T = %f at %d,%d; proc %d; mask=%f; w=%f]]\n",
               Tnew[i][j][0],i,j,grid.rank,mask[i][j],w[i][j][0]*secpera); CHKERRQ(ierr);
@@ -292,7 +302,7 @@ PetscErrorCode IceModel::temperatureStep() {
       }
       // check bedrock solution        
       for (PetscInt k=0; k <= k0; k++) {
-        if (Tb[i][j][k] < GlobalMinTemp) {
+        if (Tb[i][j][k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) bedrock temp T = %f at %d,%d,%d; proc %d; mask=%f]]\n",
               Tb[i][j][k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
@@ -321,7 +331,7 @@ PetscErrorCode IceModel::temperatureStep() {
     } 
   }
   
-  if (myLowTempCount > 10) { SETERRQ(1,"too many low temps"); }
+  if (myLowTempCount > maxLowTempCount) { SETERRQ(1,"too many low temps"); }
 
   // note that in above code 4 scalar fields were modified: vHmelt, vbasalMeltRate, vTb, and vT
   // but (11/16/06) vHmelt, vbasalMeltRate and vTb will never need to communicate ghosted values

@@ -59,9 +59,12 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
     doBedIso = PETSC_TRUE;
   } else
     doBedDef = PETSC_FALSE;  
-  if ((testname == 'F') || (testname == 'G') || (testname == 'K'))
+  if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
     doTemp = PETSC_TRUE;
-  else
+    globalMinAllowedTemp = 0.0;  // essentially turn off run-time reporting of extremely
+    maxLowTempCount = 1000000;   // low computed temperatures; *they will be reported
+                                 // as errors* anyway
+  } else
     doTemp = PETSC_FALSE; 
   if ((testname == 'A') || (testname == 'E')) {
     isDrySimulation = PETSC_TRUE;
@@ -296,7 +299,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
-  A0 = isothermalFlux_A_softness;
+  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = VecSet(vT, T0); CHKERRQ(ierr);
@@ -373,7 +376,7 @@ PetscErrorCode IceCompModel::initTestL() {
   
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
-  A0 = isothermalFlux_A_softness;
+  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = VecSet(vT, T0); CHKERRQ(ierr);
