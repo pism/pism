@@ -310,18 +310,25 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   if (test == 'I') {
     PetscScalar junk1, junk2, junk3;
     exactI(m_schoof, 0.0, 0.0, &junk1, &junk2, &exactmaxu, &junk3);
+    ierr = verbPrintf(1,grid.com, 
+       "velocity  :  maxvector   prcntavvec      maxu       avu\n");
+       CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+            "           %11.4f%13.5f%10.4f%10.4f\n", 
+            gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
+            gmaxuerr*secpera, gavuerr*secpera); CHKERRQ(ierr);
   } else if (test == 'J') {
     // following from "pismv -test J -Mx 601 -My 601 -Mz 3 -verbose -eo"
     exactmaxu = 181.366 / secpera;  
+    ierr = verbPrintf(1,grid.com, 
+       "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
+       CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+            "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
+            gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
+            gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, gavverr*secpera); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(1,grid.com, 
-     "   maxvector   avvector  prcntavvec      maxu      maxv       avu       avv\n");
-     CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, 
-            " %11.4f%11.5f%12.5f%10.4f%10.4f%10.4f%10.4f\n", 
-            gmaxvecerr*secpera, gavvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
-            gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, gavverr*secpera); CHKERRQ(ierr);
 
   if (test == 'I') {
     // also print max of u

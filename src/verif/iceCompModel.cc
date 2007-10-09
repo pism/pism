@@ -855,7 +855,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     PetscScalar maxSigerr, avSigerr;
     ierr = computeSigmaErrors(maxSigerr, avSigerr); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, 
-       "Sigma (3D):         max          av\n"); CHKERRQ(ierr);
+       "Sigma (3D):      maxSig       avSig\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
                   maxSigerr*secpera*1.0e3, avSigerr*secpera*1.0e3); CHKERRQ(ierr);
   }
