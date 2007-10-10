@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{191}
+\newcommand{\PISMREV}{193}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -917,145 +917,43 @@ pismv -test G -maxdt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \normalsize\end{quote}
 produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
 
-\subsubsection*{\texttt{verifynow.py}}  This is the Python script in subdirectory \verb|pism/test/| which organizes the process of verifying PISM.  By default it runs Tests C, G, and I, because these tests exercise most of the numerical methods in PISM, and thus suffice for basic verification.
+\subsubsection*{Results}  Figures \ref{fig:thickerrsG} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.  These figures were produced more-or-less automatically using scripts \verb|pism/test/verifynow.py| and \verb|pism/test/vnreport.py|.  See appendix \ref{sect:scripts}.
 
-Three example usages are \begin{itemize}
-\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|
-\item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do five levels (the maximum) of refinement only on test J
-\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKL|'' will use lots of processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait
-\end{itemize}
+\begin{figure}[ht]
+\includegraphics[width=4.8in,keepaspectratio=true]{figs/thickerrs_C}
+\caption{Numerical thickness errors in test C.  Vertical axis is in meters. ``maxH error'' is the maximum thickness error anywhere on the grid, ``avH error'' is the average thickness error anywhere on the grid, and ``centerH error'' is the error at the center of the ice sheet.}
+\label{fig:thickerrsC}
+\end{figure}
 
-\noindent In fact, \verb|verifynow.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
+\begin{figure}[ht]
+\includegraphics[width=4.8in,keepaspectratio=true]{figs/thickerrs_G}
+\caption{Numerical thickness errors in test G.  Meaning exactly as in test C.}
+\label{fig:thickerrsG}
+\end{figure}
 
-\optoptdef{l}{levels}{3} specifies number of levels of refinement; $1,2,3,4,5$ are allowed values
+\begin{figure}[ht]
+\includegraphics[width=4.8in,keepaspectratio=true]{figs/temperrs_G}
+\caption{Numerical temperature errors in test G.  Vertical axis is in Kelvin.  ``maxT'' and ``basemaxT'' errors are maximum over all points within the ice and over all the basal points, respectively.  Similarly for ``avT'' and ``baseavT''; these are average errors.}
+\label{fig:temperrsG}
+\end{figure}
 
-\optoptdef{m}{mpido}{\texttt{mpiexec}} how to run PISM as an MPI program
+\begin{figure}[ht]
+\includegraphics[width=4.8in,keepaspectratio=true]{figs/surfvelerrs_G}
+\caption{Numerical errors in computed surface velocities in test G.  Vertical axis is in meters per year.}
+\label{fig:surfvelerrsG}
+\end{figure}
 
-\optoptdef{n}{nproc}{1} specify number of processors to use
+\begin{figure}[ht]
+\includegraphics[width=4.8in,keepaspectratio=true]{figs/velerrs_I}
+\caption{Numerical errors in horizontal velocities in test I, an ice stream.  Vertical axis is in meters per year.}
+\label{fig:velerrsI}
+\end{figure}
 
-\optoptdef{p}{prefix}{} where the PISM executable \verb|pismv| is located
-
-\optoptdef{t}{tests}{CGIJ} which tests to run
-
-\medskip
-Here is the result of three levels of refinement for tests C, E, G, I, and L.  Note that the errors generally decay, with the notable exception of the surface values of the vertical velocity in test G; compare \cite{SaitoMargin}.  The exact meaning of the various errors is currently only documented in the source files \verb|pism/src/iceCompModel.cc| and \verb|pism/src/iCMthermo.cc|.  Note that timing information is given, so performance, including parallel performance, can be assessed along with accuracy.
-
-FIXME: following is out of date; errors for surface values of w DO now decrease
-\scriptsize\begin{quote}\begin{verbatim}
-$ verifynow.py -n 2 -l 3 -t CEGIL
- VERIFYNOW using 2 processor(s) and 3 level(s) of refinement
- ++++ verifying isothermal SIA w moving margin using test C ++++
- (Mx=My=41,61,81,101,121 corresponds to dx=dy=50,33.3,25,20,16 km)
- trying "mpiexec -np 2 pismv -test C -Mx 41 -My 41 -Mz 31 -y 15208.0 -verbose 1"
- finished in  9.2709 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.718900  250.003494   12.015517    0.019159    10.040006
- trying "mpiexec -np 2 pismv -test C -Mx 61 -My 61 -Mz 31 -y 15208.0 -verbose 1"
- finished in 41.2792 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.126767  224.348860    7.129075    0.012296     4.401402
- trying "mpiexec -np 2 pismv -test C -Mx 81 -My 81 -Mz 31 -y 15208.0 -verbose 1"
- finished in 122.7838 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.197003  194.241335    4.131559    0.008131     2.126740
- ++++ verifying isothermal SIA w sliding using test E ++++
- (Mx=My=31,41,61,81,121 corresponds to dx=dy=53.3,40,26.7,20,13.3 km)
- trying "mpiexec -np 2 pismv -test E -Mx 31 -My 31 -Mz 31 -y 25000.0 -verbose 1"
- finished in 85.2384 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               6.144464  920.922943   85.952669    0.078342    47.073721
-  |base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-  |               12.4115    0.91501     1.80232   10.0374    7.5887
- trying "mpiexec -np 2 pismv -test E -Mx 41 -My 41 -Mz 31 -y 25000.0 -verbose 1"
- finished in 193.6552 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               4.481193  726.112323   63.817098    0.059375    36.149340
-  |base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-  |                8.7523    0.67766     1.33480    8.6051    5.2778
- trying "mpiexec -np 2 pismv -test E -Mx 61 -My 61 -Mz 31 -y 25000.0 -verbose 1"
- finished in 893.9928 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               2.804588  636.954964   40.564555    0.040141    21.534520
-  |base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-  |                7.1069    0.44876     0.88394    6.0500    4.3875
- ++++ verifying plastic till ice stream using test I ++++
- (My=49,193,769,3073,12289 corresponds to dy=5000,1250,312.5,78.13,19.53 m)
- trying "mpiexec -np 2 pismv -test I -My 49 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
- finished in  1.1180 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS in velocity relative to exact solution:
-  |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
-  |        23.3329    7.69421     0.98956   23.3329    0.0000    7.6942    0.0000
- trying "mpiexec -np 2 pismv -test I -My 193 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
- finished in  3.2881 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS in velocity relative to exact solution:
-  |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
-  |         1.3246    0.44147     0.05678    1.3246    0.0000    0.4415    0.0000
- trying "mpiexec -np 2 pismv -test I -My 769 -Mx 5 -mv_rtol 5e-07 -ksp_rtol 1e-12 -verbose 1"
- finished in 12.0152 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS in velocity relative to exact solution:
-  |      maxvector   avvector  prcntavvec      maxu      maxv       avu       avv
-  |         0.0923    0.03117     0.00401    0.0923    0.0000    0.0312    0.0000
- ++++ verifying isothermal SIA w non-flat bed using test L ++++
- (Mx=My=31,61,91,121,181 corresponds to dx=dy=60,30,20,15,10 km)
- trying "mpiexec -np 2 pismv -test L -Mx 31 -My 31 -Mz 31 -y 25000.0 -verbose 1"
- finished in 13.2488 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.152375  381.614581   15.555426    0.006689     6.533219
- trying "mpiexec -np 2 pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000.0 -verbose 1"
- finished in 169.4863 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.206286  359.083724    4.984371    0.002643     1.386802
- trying "mpiexec -np 2 pismv -test L -Mx 91 -My 91 -Mz 31 -y 25000.0 -verbose 1"
- finished in 821.1084 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.159108  306.654292    3.789676    0.001773     1.542505
- ++++ verifying thermocoupled SIA w variable accum using test G ++++
- (Mx=My=Mz=61,91,121,181,241 corresponds to dx=dy=30,20,15,10,7.5 km
- and dz=66.7,44.4,33.3,22.2,16.7 m)
- trying "mpiexec -np 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000.0 -verbose 1"
- finished in 120.9870 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               2.107584   64.364190   19.550635    0.017980     2.822391
-  |temp      :        maxT         avT    basemaxT     baseavT  basecenterT
-  |               1.920759    1.050554    1.533177    0.471904     0.069055
-  |Sigma (3D):         max          av
-  |               0.051570    0.002843
-  |surf vels :     maxUvec      avUvec        maxW         avW
-  |               0.263333    0.070287    0.022908    0.002659
- trying "mpiexec -np 2 pismv -test G -Mx 91 -My 91 -Mz 91 -y 25000.0 -verbose 1"
- finished in 882.4219 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.950808   29.790284    9.032937    0.007974     0.009471
-  |temp      :        maxT         avT    basemaxT     baseavT  basecenterT
-  |               1.108004    0.556731    0.962611    0.238721     0.025394
-  |Sigma (3D):         max          av
-  |               0.025978    0.001190
-  |surf vels :     maxUvec      avUvec        maxW         avW
-  |               0.129822    0.032835    0.035400    0.004319
- trying "mpiexec -np 2 pismv -test G -Mx 121 -My 121 -Mz 121 -y 25000.0 -verbose 1"
- finished in 3634.9651 seconds; reported numerical errors as follows:
-  |NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-  |geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
-  |               0.520703   28.348163    4.989002    0.004474     0.806247
-  |temp      :        maxT         avT    basemaxT     baseavT  basecenterT
-  |               0.810869    0.360046    0.781534    0.141099     0.009927
-  |Sigma (3D):         max          av
-  |               0.061469    0.000725
-  |surf vels :     maxUvec      avUvec        maxW         avW
-  |               0.089217    0.020179    0.046493    0.005915
-\end{verbatim}
-\end{quote}\normalsize
+\begin{figure}[ht]
+\includegraphics[width=4.8in,keepaspectratio=true]{figs/temperrs_K}
+\caption{Numerical temperature errors in test K, which tests the thermal bedrock model.  Vertical axis is in Kelvin.  ``maxT'' and ``avT'' are errors computed over all points within the ice while ``maxTb'' and ``avTb'' are computed over all grid points within the bedrock.}
+\label{fig:temperrsK}
+\end{figure}
 
 
 \clearpage\newpage
@@ -2112,6 +2010,65 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 \verb|y|:\quad $y$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
 
 \verb|z|:\quad Vertical velocity ($w$-component of velocity) in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
+
+
+
+\clearpage \newpage
+\section{Some scripts}\label{sect:scripts}
+
+The following scripts are found in subdirectory \verb|pism/test/|.
+
+\subsubsection*{\Large{\texttt{series.py}}}  This Python script postprocesses the standard output of \verb|pismr|, \verb|pisms|, or \verb|pgrn| (among others; output from \verb|pismd| and \verb|pismv| are not currently supported).
+
+\subsubsection*{\Large{\texttt{verifynow.py}}}  This Python script organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+
+Three example usages are \begin{itemize}
+\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|
+\item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do five levels (the maximum) of refinement only on test J
+\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKL|'' will use forty processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait
+\end{itemize}
+
+\verb|verifynow.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
+
+\optoptdef{l}{levels}{3} specifies number of levels of refinement; $1,2,3,4,5$ are allowed values
+
+\optoptdef{m}{mpido}{\texttt{mpiexec}} how to run PISM as an MPI program
+
+\optoptdef{n}{nproc}{1} specify number of processors to use
+
+\optoptdef{p}{prefix}{} where the PISM executable \verb|pismv| is located
+
+\optoptdef{t}{tests}{CGIJ} which tests to run
+
+\medskip
+Note that timing information is also given in the \verb|verifynow.py| output.  Therefore performance, including parallel performance, can be assessed along with accuracy.
+
+The exact meaning of the various errors reported by \verb|pismv|, which appear in a \verb|verifynow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
+
+
+\subsubsection*{\Large{\texttt{vnreport.py}}}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|gnuplot|.  Example graphs are Figures \ref{fig:thickerrsC} through \ref{fig:temperrsK} in section \ref{sect:verif}.
+
+The basic use is this:
+
+\verb|$  verifynow.py -n 2 -l 4 -t CGIK >> foo.txt|
+
+\verb|$  vnreport.py -f foo.txt -t C -e 'geometry' -o thickerrs|
+
+The \verb|verifynow.py| run will take a while.  The \verb|vnreport.py| run will (quickly) look at \verb|foo.txt| and extract the geometry (thickness) numerical errors and refinement path and build a \verb|.eps| (encapsulated Postscript) image like that in Figure \ref{fig:thickerrsC}.
+
+The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more example usages.  In fact, \verb|vnreport.py| is primarily used to automate the creation of this manual.  This \verb|Makefile| also shows how to use Ghostscript to convert the \verb|.eps| images to \verb|.png| (Portable Network Graphics) format.
+
+\verb|vnreport.py| takes the following options:
+
+\optoptdef{e}{error}{'geometry'} which kind of error to look for; for example, with test E the valid possibilities are \verb|'geometry'| and \verb|'base vels'|
+
+\optoptdef{f}{file}{foo.txt} name of the text file containing the \verb|verifynow.py| report
+
+\optoptdef{o}{out}{report} prefix of output file name; if ``\verb|-t G -o bar|'' then output file is named ``\verb|bar_G.eps|''
+
+\optoptdef{t}{test}{A} the test for which to find the \verb|verifynow.py| report; only one value allowed
+
+\optoptdef{x}{exclude}{} specify tags of errors to exclude from the figure
 
 
 %\printindex

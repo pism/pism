@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-## This script takes the standard out from verifynow.py and produces graphs.
+## This script takes the standard out from verifynow.py and produces graphs using gnuplot.
 
 import getopt
 import sys
@@ -10,20 +10,19 @@ import Gnuplot
 IN_FILE = 'foo.txt'
 OUT_FILE_START = 'report'
 TEST_NAME = 'A'
+EXCLUDE = ''
 
 ##### process command line arguments #####
-pref = ''
 infilename = IN_FILE
 outfilestart = OUT_FILE_START
 testname = TEST_NAME
 errtype = 'geometry'
+exclude = EXCLUDE
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:f:t:o:e:",
-                             ["prefix=", "file=", "test=", "out=", "error="])
+  opts, args = getopt.getopt(sys.argv[1:], "f:t:o:e:x:",
+                             ["file=", "test=", "out=", "error=", "exclude="])
   for opt, arg in opts:
-    if opt in ("-p", "--prefix"):
-      pref = arg
-    elif opt in ("-f", "--file"):
+    if opt in ("-f", "--file"):
       infilename = arg
     elif opt in ("-t", "--test"):
       testname = arg
@@ -31,6 +30,8 @@ try:
       outfilestart = arg
     elif opt in ("-e", "--error"):
       errtype = arg
+    elif opt in ("-x", "--exclude"):
+      exclude = arg
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -107,7 +108,7 @@ while len(titles) > NN:
     tags = tags[0:NN] + tags[NN+1:]
     vals = vals[0:NN] + vals[NN+1:]
 if NN == 0:
-  print 'FAILED: no errors of given type found'
+  print 'FAILED: no errors of type "' + errtype + '" found'
   sys.exit(5)
 
 # check that tags are consistent; then discard redundant tags
@@ -124,18 +125,25 @@ err = numpy.array(vals).transpose()
 print 'found ' + str(len(err)*len(err[0])) + \
       ' "' + errtype + '"-type  numerical error values for plotting'
 
-# plot to postscript files
+# plot to postscript (.eps) files
 g = Gnuplot.Gnuplot()
-g.title('numerical errors in test ' + testname + ' ' + titles[0])
 g('set data style linespoints')
+g('set pointsize 2')
 g('set logscale xy 10')
+g('set key top left')
 g.xlabel(dxname + '  (' + units + ')')
 for nn in range(len(tags)):
-  d = Gnuplot.Data(path[0:len(err[nn])], err[nn])
-  g.ylabel(tags[nn] + ' error')
-  g.plot(d)
-  outfilename = outfilestart + '_' + testname + '_' + tags[nn] + '.ps'
-  g.hardcopy(outfilename, enhanced=1, color=1)
-  print 'postscript file ' + outfilename + ' written'
+  if exclude.find(tags[nn]) < 0: # if the tag is not in the exclude string, then plot
+    d = Gnuplot.Data( path[0:len(err[nn])], err[nn], title=(tags[nn] + ' error') )
+    if nn == 0:
+      g.plot(d)
+    else:
+      g.replot(d)
+  else:
+    print 'excluding "' + tags[nn] + '" errors from plot'
+g.title(titles[0] + ' numerical errors in test ' + testname)
+outfilename = outfilestart + '_' + testname + '.eps'
+g.hardcopy(outfilename, mode='eps', enhanced=1, color=1)
+print 'postscript file ' + outfilename + ' written'
 # done
 

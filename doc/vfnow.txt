@@ -1,0 +1,93 @@
+[RUN WITH REVISION 192 ON 10/08/07; clearly would want a level five verification instead]
+bueler@ubuntu:~/pism$ verifynow.py -n 2 -l 3 -t CIKG
+ VERIFYNOW.PY using 2 processor(s) and 3 level(s) of refinement
+ ++++ verifying isothermal SIA w moving margin using **TEST C** ++++
+ (refinement path dx=50,33.33,25,20,16,km, dx=dy and Mx=My=41,61,81,101,121)
+ trying "mpiexec -np 2 pismv -test C -Mx 41 -My 41 -Mz 31 -y 15208.0"
+ finished in 10.2850 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+   |               0.217508  268.217069   10.726206    0.016549     6.243533
+ trying "mpiexec -np 2 pismv -test C -Mx 61 -My 61 -Mz 31 -y 15208.0"
+ finished in 44.7178 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+   |               0.121465  251.250329    6.668204    0.011134     2.498665
+ trying "mpiexec -np 2 pismv -test C -Mx 81 -My 81 -Mz 31 -y 15208.0"
+ finished in 133.7635 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+   |               0.050963  208.856378    4.010975    0.007570     1.004169
+ ++++ verifying plastic till ice stream using **TEST I** ++++
+ (refinement path dy=5000,1250,312.5,78.13,19.53,m, My=49,193,769,3073,12289)
+ trying "mpiexec -np 2 pismv -test I -My 49 -Mx 5 -ssa_rtol 5e-07 -ksp_rtol 1e-12"
+ finished in  1.4890 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS in velocity relative to exact solution:
+   #velocity  :  maxvector   prcntavvec      maxu       avu
+   |               23.3329      0.98956   23.3329    7.6942
+ trying "mpiexec -np 2 pismv -test I -My 193 -Mx 5 -ssa_rtol 5e-07 -ksp_rtol 1e-12"
+ finished in  3.3498 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS in velocity relative to exact solution:
+   #velocity  :  maxvector   prcntavvec      maxu       avu
+   |                1.3246      0.05678    1.3246    0.4415
+ trying "mpiexec -np 2 pismv -test I -My 769 -Mx 5 -ssa_rtol 5e-07 -ksp_rtol 1e-12"
+ finished in 12.6079 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS in velocity relative to exact solution:
+   #velocity  :  maxvector   prcntavvec      maxu       avu
+   |                0.0923      0.00401    0.0923    0.0312
+ ++++ verifying pure conduction problem in ice and bedrock using **TEST K** ++++
+ (refinement path dz=100,50,25,12.5,6.25,m, Mz=41,81,161,321,641)
+ trying "mpiexec -np 2 pismv -test K -Mz 41 -Mbz 11 -maxdt 400.0 -Mx 6 -My 6 -y 130000.0"
+ finished in  1.3775 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #temp      :        maxT         avT       maxTb        avTb
+   |               0.006006    0.002390    0.006576    0.006374
+ trying "mpiexec -np 2 pismv -test K -Mz 81 -Mbz 21 -maxdt 100.0 -Mx 6 -My 6 -y 130000.0"
+ finished in  6.2185 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #temp      :        maxT         avT       maxTb        avTb
+   |               0.001502    0.000596    0.001645    0.001595
+ trying "mpiexec -np 2 pismv -test K -Mz 161 -Mbz 41 -maxdt 25.0 -Mx 6 -My 6 -y 130000.0"
+ finished in 33.6833 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #temp      :        maxT         avT       maxTb        avTb
+   |               0.000376    0.000149    0.000411    0.000399
+ ++++ verifying thermocoupled SIA w variable accum using **TEST G** ++++
+ (refinement path dx=30,20,15,10,7.5,km, dx=dy and dz=66.67,44.44,33.33,22.22,16.67 m
+ and Mx=My=Mz=61,91,121,181,241)
+ trying "mpiexec -np 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000.0"
+ finished in 131.6716 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+   |               1.944809   59.044476   18.172067    0.017691    13.526382
+   #temp      :        maxT         avT    basemaxT     baseavT  basecenterT
+   |               1.483945    0.285864    1.454767    0.282250     1.052695
+   #Sigma (3D):      maxSig       avSig
+   |               0.187367    0.005555
+   #surf vels :     maxUvec      avUvec        maxW         avW
+   |               0.467491    0.121958    0.016198    0.002054
+ trying "mpiexec -np 2 pismv -test G -Mx 91 -My 91 -Mz 91 -y 25000.0"
+ finished in 978.0438 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+   |               0.876539   37.753259    8.667646    0.008407     7.028448
+   #temp      :        maxT         avT    basemaxT     baseavT  basecenterT
+   |               0.991898    0.128444    0.962611    0.139565     0.837310
+   #Sigma (3D):      maxSig       avSig
+   |               0.064944    0.001531
+   #surf vels :     maxUvec      avUvec        maxW         avW
+   |               0.163887    0.036038    0.009133    0.000567
+ trying "mpiexec -np 2 pismv -test G -Mx 121 -My 121 -Mz 121 -y 25000.0"
+ finished in 3921.8961 seconds; reported numerical errors as follows:
+    NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+   #geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH
+   |               0.503299   27.347926    4.953276    0.005003     4.522120
+   #temp      :        maxT         avT    basemaxT     baseavT  basecenterT
+   |               0.810869    0.091940    0.797639    0.086230     0.797639
+   #Sigma (3D):      maxSig       avSig
+   |               0.085586    0.001520
+   #surf vels :     maxUvec      avUvec        maxW         avW
+   |               0.182850    0.036114    0.009069    0.000741
+
+
+
