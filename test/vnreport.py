@@ -7,6 +7,7 @@ import numpy
 import Gnuplot
 
 # defaults
+PISM_REV = 193
 IN_FILE = 'foo.txt'
 OUT_FILE_START = 'report'
 TEST_NAME = 'A'
@@ -18,9 +19,10 @@ outfilestart = OUT_FILE_START
 testname = TEST_NAME
 errtype = 'geometry'
 exclude = EXCLUDE
+pismrev = PISM_REV
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "f:t:o:e:x:",
-                             ["file=", "test=", "out=", "error=", "exclude="])
+  opts, args = getopt.getopt(sys.argv[1:], "f:t:o:e:x:r:",
+                             ["file=", "test=", "out=", "error=", "exclude=", "pismrev="])
   for opt, arg in opts:
     if opt in ("-f", "--file"):
       infilename = arg
@@ -32,6 +34,8 @@ try:
       errtype = arg
     elif opt in ("-x", "--exclude"):
       exclude = arg
+    elif opt in ("-r", "--pismrev"):
+      pismrev = arg
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
@@ -141,7 +145,8 @@ for nn in range(len(tags)):
       g.replot(d)
   else:
     print 'excluding "' + tags[nn] + '" errors from plot'
-g.title(titles[0] + ' numerical errors in test ' + testname)
+g.title(titles[0] + ' numerical errors in test ' + testname + \
+  ' (PISM revision ' + str(pismrev) + ')')
 outfilename = outfilestart + '_' + testname + '.eps'
 g.hardcopy(outfilename, mode='eps', enhanced=1, color=1)
 print 'postscript file ' + outfilename + ' written'
