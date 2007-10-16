@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{194}
+\newcommand{\PISMREV}{196}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -509,7 +509,7 @@ The transition from SIA to SSA flow is an internal boundary within the model dom
 \end{enumerate}
 Of course the statement ``attempt to'' maintain is important because PISM does not have exact representations of any continuous functions at all.  It only ``knows'' their gridded numerical approximations.  See section \ref{sect:over} of this manual, and the \emph{PISM Reference Manual}, for additional comments and references on the continuum models and numerical schemes in PISM.
 
-\subsection{The flow-type mask} \label{subsect:mask}  PISM always keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask (at this time), shown in table \ref{tab:maskvals}.
+\subsection{The flow-type mask} \label{subsect:mask}  PISM always keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask (at this time), shown in Table \ref{tab:maskvals}.
 
 \begin{table}[ht]
 \caption{Values for the PISM mask.}\label{tab:maskvals} 
@@ -525,10 +525,27 @@ Of course the statement ``attempt to'' maintain is important because PISM does n
 \normalsize
 \end{table}
 
+\begin{figure}[ht]
+\includegraphics[height=3.2in,keepaspectratio=true]{figs/ant_mask}
+\caption{A mask for flow-type for Antarctica.  Red is for ice-free ocean (\t{MASK\_FLOATING\_OCEAN0}), purple is for ice shelves (\t{MASK\_FLOATING}), pale blue is for ice streams (\t{MASK\_DRAGGING}), and darker blue is for interior ice modeled by the SIA (\t{MASK\_SHEET}).}
+\label{fig:ant_mask}
+\end{figure}
 
-\subsection{Schoof's plastic till free boundary problem for ice streams} \label{subsect:plastic}    In \cite{SchoofStream} Christian Schoof proposes a model for plastic failure of the basal till under ice sheets and he describes an associated free boundary problem for the SSA.  This is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by the plastic failure of the till and the SSA approximation of the balance of momentum.
+An example mask is shown in Figure \ref{fig:ant_mask}.  The generation of such a mask must include a decision on where the grounded ice can be treated as an ice stream or outlet glacier.  In this case it has been generated using ``balance velocities'' computed from a certain highly simplified flow model \cite{BamberVaughanJoughin} and then a criterion on sliding sufficient to constitute streaming.   This process for generating such masks is not, for now, addressed in this manual.
 
-To demonstrate PISM's implementation of Schoof's model we describe an example based on EISMINT II experiment I.  This experiment is documented in \cite{EISIIdescribe}, but experiment I is not discussed in the published intercomparison \cite{EISMINT00} because the results for experiment I were ``straightforward results with little variability between groups''.  Experiment I is identical to experiment A except for having ``trough'' bed topography.   As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  We use it to build an ice sheet which ``ought'' to have an ice stream.
+
+\subsection{Schoof's plastic till free boundary problem for ice streams} \label{subsect:plastic}    In \cite{SchoofTill} C.~Schoof proposes a model for plastic failure of the basal till under flowing ice, and in \cite{SchoofStream} he recognizes this as a free boundary problem for the SSA.  The result is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.
+
+To demonstrate PISM's implementation of Schoof's model we describe an example based on EISMINT II experiment I.  This particular experiment is documented in \cite{EISIIdescribe}, but experiment I is not discussed in the published EISMINT II intercomparison because the results for experiment I were ``straightforward results with little variability between groups'' \cite{EISMINT00}.  Note that Section \ref{sect:simp} describes using PISM to perform all the EISMINT II experiments documented in \cite{EISIIdescribe}.
+
+Experiment I is identical to experiment A except for having ``trough'' bed topography, shown in Figure \ref{fig:eis2I}.   As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  However, we use it to build an ice sheet which ``ought'' to have an ice stream, that is, along the trough.
+
+\begin{figure}[ht]
+\includegraphics[height=2.6in,keepaspectratio=true]{figs/eis2Ibed}
+%\includegraphics[height=2.6in,keepaspectratio=true]{figs/cbar_eisI}
+\caption{Left: Bed elevation for EISMINT II experiment I.  Most of the bed is a plateau at 1000 m, but the trough descends to nearly zero elevation.  Right: The vertically-averaged horizontal velocity at the end of a ????? year run using EISMINT II experiment I boundary conditions, and starting from zero ice.}
+\label{fig:eis2I}
+\end{figure}
 
 The following run builds the ice sheet for experiment I for the first 10,000 model years, at which point it is of nearly maximum volume in the 200,000 year run specified in EISMINT II:
 
@@ -1660,6 +1677,8 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
 Here $b$ is the bed elevation and $h$ is the surface elevation.  Note that only $n=3$ is used in this transformation regardless of the chosen flow law.  The transformation may have benefits in that the surface value of the vertical velocity may be better behaved near the margin, e.~.g.~as in EISMINT II experiments, but this is not yet clear.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
 
+\opt{hold\und tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \verb|-ssa| and \verb|-plastic| are also set.  See documentation of option \verb|-plastic| for a description of the till yield stress model.
+
 \optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:real}
 
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
@@ -1761,17 +1780,37 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
-\opt{plastic}  Use Schoof's plastic till model for ice streams at all grounded points on the ice sheet.  Must be used along with \verb|-ssa| to turn on the solution of the SSA (shallow shelf approximation).  See subsection \ref{subsect:plastic}.  See options \verb|-plastic_reg|, \verb|-till_cohesion|, \verb|-till_friction_angle|, and \verb|-till_pw_fraction|, all of which control the plastic till model in various ways.
+\opt{plastic}  Use Schoof's plastic till model for ice streams at all grounded points on the ice sheet.  Must be used along with \verb|-ssa| to turn on the solution of the SSA (shallow shelf approximation).  See subsection \ref{subsect:plastic}.  See options \verb|-plastic_reg|, \verb|-plastic_c0|, \verb|-plastic_phi|, and \verb|-plastic_pwfrac|, all of which control the plastic till model in various ways.
+
+Indeed, we describe the role of the parameters for the plastic till model as follows: The effective pressure $N$ on the till is
+	$$N = P - p = (1 - (\mathtt{pwfrac}) \lambda) P$$
+where $P = \rho g H$ is the overburden or hydrostatic pressure at the base (see Paterson \cite{Paterson}, pp.~168--169) and $p = (\mathtt{pwfrac}) \lambda P$ is the pore water pressure in the till.  Here $\lambda$ is a pure number, $0\le \lambda \le 1$, measuring the amount of available basal water.  In particular, $\lambda = 0$ if the base is frozen, while $\lambda$ is a linear function of the stored basal melt water (see \verb|-d L|), up to the fixed maximum amount of stored basal melt water.  Thus our model says that when there is a lot (the maximum) amount of available basal water, $p= (\mathtt{pwfrac}) P$; the default value for $\mathtt{pwfrac}$ is 0.95.
+
+Note that Paterson gives this formula for the till yield stress
+	$$\tau_c = c_0 + \mu N, \qquad \mu = \tan \phi,$$
+while Schoof \cite{SchoofStream} formula (2.4) gives this one
+	$$\tau_c = \mu N,$$
+with zero till cohesion.  We allow a positive till cohesion, though the default is zero, and we describe $\mu$ as the tangent of the friction angle $\phi$.
+
+\optdef{plastic\und c0}{0.0}  Set the value of the till cohesion in the plastic till model.  The value is a pressure, given in kPa.  Only effective if used with \verb|-plastic| and \verb|-ssa|.
+
+Note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
+
+\optdef{plastic\und pwfrac}{0.95}  Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.  The value is a pure number.  Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
 \optdef{plastic\und reg}{0.01 m/a}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  Only effective if used with \verb|-plastic| and \verb|-ssa|.
+
+\optdef{plastic\und phi}{30.0}  Set the till friction angle.  The value is an angle $\phi$, given in degrees, and the coefficient $\mu$ in formula (2.4) in \cite{SchoofStream} is computed from $\theta$ by this formula:
+	$$\mu = \tan\left(\frac{\pi}{180} \theta\right).$$
+Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
 \opt{regrid}  See section \ref{sect:usage}.
 
 \opt{regrid\und vars}  See section \ref{sect:usage}.
 
-\optdef{reg\und length\und schoof}{1000 km}  Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-mv_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.
+\optdef{reg\und length\und schoof}{1000 km}  Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-ssa_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.
 
-\optdef{reg\und vel\und schoof}{1 m/a}  Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-mv_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.  Use \verb|-plastic_reg| above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}.
+\optdef{reg\und vel\und schoof}{1 m/a}  Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-ssa_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.  Use \verb|-plastic_reg| above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}.
 
 \optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
 
@@ -1783,7 +1822,9 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{ssa\und eps}{1.0e15}  The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
 
-In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-ssa_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|ssa_eps| is set to zero automatically when running \verb|pismv -test I|.
+In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-ssa_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|-ssa_eps| is set to zero automatically when running \verb|pismv -test I|.
+
+\optdef{ssa\und maxi}{300}  This option sets the maximum allowed number of nonlinear iterations in solving the shallow shelf approximation.  One should usually use option \verb|-ssa_rtol| to control convergence of the nonlinear iteration.
 
 \optdef{ssa\und rtol}{1.0e-4}  The numerical scheme for the shallow shelf approximation \cite{WeisGreveHutter} does a nonlinear iteration wherein velocities (and temperatures) are used to compute a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
 
@@ -1803,13 +1844,9 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdefrestrict{test}{A}{pismv}  Choose which verification test to run by giving its single character name.  See section \ref{sect:verif}.
 
-\optdef{till\und cohesion}{5.0e3}  Cohesion used for computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Units of Pa; note 5\,kPa = 0.05\,bar.
-
-\optdef{till\und friction\und angle}{12}  Friction angle used for computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Units of degrees; note $12^\circ$ gives $\mu = \tan(12^\circ) = 0.21256$.
-
-\optdef{till\und pw\und fraction}{0.95}  Pore water pressure is this fraction of the overburden pressure when computing the yield stress of the till in the plastic till model.  Only effective if used with option \verb|-plastic|.  Pure number (no units).
-
 \optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
+
+\optrestrict{track\und Hmelt}{pisms -eisII}    Turn on the part of the conservation of energy model which accumulates (tracks) locally-stored basal melt water.
 
 \opt{verbose}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
 
@@ -1935,7 +1972,7 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 \verb|B|:\quad Map-plane view of basal drag coefficient $\beta$ for ice stream regions.  $\beta$ has units of Pa s $\text{m}^{-1}$.  Displayed as log base ten of $\beta$.
 
-\verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of bar (= $10^5$ Pa).
+\verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of kPa.
 
 \verb|D|:\quad \notMat Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
 
@@ -1950,6 +1987,8 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 \verb|L|:\quad Map-plane view of basal melt water \emph{thickness} in meters.
 
 \verb|P|:\quad \notMat (\emph{ONLY available for }\t{pismv}.)  Map-plane view of comPensatory heating term $\Sigma_C$ in thermocoupled verification tests F and G.  Displayed at chosen elevation above base; see option \verb|-kd|.
+
+\verb|Q|:\quad Map-plane view of basal driving stress $f_{\text{basal}} = \rho g H |\grad h|$.  Units of kPa.  Note that this quantity is the effective shear stress at the base in the SIA.  It is also the (magnitude of the) driving source term in the SSA, for both ice streams and ice shelves.in Compare to \verb|-d C|, the till yield stress, when using the plastic till ice stream model.
 
 \verb|R|:\quad Map-plane view of basal frictional heating in milliWatts per meter squared.
 

@@ -80,6 +80,30 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 }
 
 
+PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
+  // puts   f_basal = \rho g H |\grad h|   into myVec; does not communicate ghosts
+  PetscErrorCode ierr;
+
+  PetscScalar **h, **H, **fbasal;
+
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, myVec, &fbasal); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar h_x = (h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
+      const PetscScalar h_y = (h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
+      const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
+      fbasal[i][j] = ice.rho * grav * H[i][j] * alpha;
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, myVec, &fbasal); CHKERRQ(ierr);
+  return 0;
+}
+
+
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   // note computeMaxDiffusivity() must be called before this to set gDmax
   // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 

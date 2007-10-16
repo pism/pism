@@ -1,8 +1,8 @@
-ALL : manual.pdf docs
+ALL : manual.pdf
 
 PISMREV ?= 193
 
-docs : refman browser
+doxydocs : refman browser
 
 refman : Doxyfile_tex
 	doxygen Doxyfile_tex
@@ -44,11 +44,11 @@ vfigs : vfnow.txt
 	   -sOutputFile=figs/temperrs_K.png figs/temperrs_K.eps
 	rm figs/temperrs_K.eps
 
-%.pdf : %.tex
-	pdflatex $*
-	bibtex $*
-	pdflatex $*
-	pdflatex $*
+manual.pdf : manual.tex figs/*.png
+	pdflatex manual.tex
+	bibtex manual
+	pdflatex manual.tex
+	pdflatex manual.tex
 
 clean :
 	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.log manual.out manual.ps manual.toc

@@ -63,19 +63,21 @@ PetscScalar IceModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
 
 PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
+  
   if (createBasal_done == PETSC_FALSE) {
     if (doPlasticTill == PETSC_TRUE) {
-      basal = new PlasticBasalType;
+      basal = new PlasticBasalType(plasticRegularization);
     } else {
       basal = new ViscousBasalType;
     }
+    createBasal_done = PETSC_TRUE;
   }
+
   if (useSSAVelocity == PETSC_TRUE) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
   ierr = VecSet(vtauc, DEFAULT_TAUC); CHKERRQ(ierr);
   ierr = VecSet(vbeta, DEFAULT_BASAL_DRAG_COEFF_SSA); CHKERRQ(ierr);
-  createBasal_done = PETSC_TRUE;
   return 0;
 }
 
@@ -113,43 +115,59 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
     SETERRQ(1,"doPlasticTill == PETSC_FALSE but updateYieldStressFromHmelt() called");
   }
 
-  PetscScalar **mask, **tauc, **H, **Hmelt, **bed; 
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
-        tauc[i][j] = 0.0;  
-      } else { // grounded
-        mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
-        const PetscScalar overburdenP = ice.rho * grav * H[i][j];
-#if 0
-//  const PetscScalar plastic_till_c_0 = 20.0e3;  // Pa; 20kPa = 0.2 bar; cohesion of till
-//  plastic_till_c_0 = 5.0e3;
-//  const PetscScalar plastic_till_mu = 0.466307658156;  // = tan(25^o); till friction angle
-//  plastic_till_mu = 0.2125565616700221;  // = tan(12^o); till friction angle
-//          const PetscScalar drivingP = - ocean.rho * grav * bed[i][j];
-//          const PetscScalar pw = PetscMax(porewater_gamma * overburdenP, drivingP);
-//          const PetscScalar pw = porewater_gamma * overburdenP;
-        const PetscScalar bedfrac = PetscMax(-bed[i][j],0.0) / 1000.0;
-        const PetscScalar pw = (0.85 + 0.1 * PetscMin(bedfrac,1.0)) * overburdenP;
-#else
-        const PetscScalar pw = plastic_till_pw_fraction * overburdenP;
-#endif
-        const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;  // note Hmelt[i][j]=0 if frozen
-        tauc[i][j] = plastic_till_c_0 + plastic_till_mu * (overburdenP - lambda * pw);
+  if (holdTillYieldStress == PETSC_TRUE) {  // don't modify tauc; use stored
+    PetscScalar **mask; 
+    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (modMask(mask[i][j]) != MASK_FLOATING) {
+          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything grounded is dragging,
+                                       // so force this
+        }
       }
     }
+    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  } else { // usual case: use Hmelt to determine tauc
+    PetscScalar **mask, **tauc, **H, **Hmelt, **bed, **tillphi; 
+    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          tauc[i][j] = 0.0;  
+        } else if (H[i][j] == 0.0) {
+          tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
+          mask[i][j] = MASK_DRAGGING;  // mark it this way anyway
+        } else { // grounded and there is some ice
+          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
+          const PetscScalar overburdenP = ice.rho * grav * H[i][j];
+          const PetscScalar pwP = plastic_till_pw_fraction * overburdenP;
+          // note Hmelt == 0 if frozen and  0 <= Hmelt <= DEFAULT_MAX_HMELT always
+          //   so  0 <= lambda <= 1 
+          const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;
+          const PetscScalar N = overburdenP - lambda * pwP;  // effective pressure on till
+          if (useConstantTillPhi == PETSC_TRUE) {
+            tauc[i][j] = plastic_till_c_0 + plastic_till_mu * N;
+          } else {
+            const PetscScalar mymu = tan((pi/180.0) * tillphi[i][j]);
+            tauc[i][j] = plastic_till_c_0 + mymu * N;
+          }
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-  // communicate possibly updated mask
+
+  // communicate possibly updated mask; tauc does not need communication
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   return 0;

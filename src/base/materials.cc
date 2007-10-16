@@ -384,21 +384,12 @@ PetscScalar ViscousBasalType::drag(PetscScalar coeff, PetscScalar tauc,
   return coeff;
 }
 
-const PetscScalar PlasticBasalType::DEFAULT_PLASTIC_REGULARIZE = 0.01 / secpera; 
 
-PlasticBasalType::PlasticBasalType() {
-  PetscErrorCode ierr;
-  PetscTruth plasticRegSet;
-  /* This parameter controls regularization of plastic basal sliding law. */
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_reg", &plastic_regularize,
-                               &plasticRegSet);
-  if (ierr != 0) PetscPrintf(MPI_COMM_WORLD, "Option failed: -plastic_reg\n");
-  if (plasticRegSet == PETSC_TRUE) {
-    plastic_regularize = plastic_regularize / secpera;
-  } else {
-    plastic_regularize = DEFAULT_PLASTIC_REGULARIZE;
-  }
+
+PlasticBasalType::PlasticBasalType(const PetscScalar pReg) {
+  plastic_regularize = pReg;
 }
+
 
 PetscErrorCode PlasticBasalType::printInfo(const int thresh, MPI_Comm com) {
   PetscErrorCode ierr;
@@ -406,6 +397,7 @@ PetscErrorCode PlasticBasalType::printInfo(const int thresh, MPI_Comm com) {
                     plastic_regularize * secpera); CHKERRQ(ierr);
   return 0;
 }
+
     
 PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
                                    PetscScalar vx, PetscScalar vy) {

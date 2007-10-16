@@ -60,7 +60,7 @@ const titleNname IceModel::tn[] = {
 {}, // '@'
 {}, // 'A'
 {"log(beta) (drag coeff; log_10(Pa s m^-1))", "log_beta"}, // 'B'
-{"tau_c (till yield stress; bar=10^5Pa)", "tau_c"}, // 'C'
+{"tau_c (till yield stress; kPa)", "tau_c"}, // 'C'
 {"D (diffusivity; m^2/s)", "D"}, // 'D'
 {"age of ice (years) at kd", "age_kd"}, // 'E'
 {"geothermal heat flux (mW/m^2)", "ghf"}, // 'F'
@@ -74,7 +74,7 @@ const titleNname IceModel::tn[] = {
 {"SPECIAL; NOT A TITLE", ""}, // 'N' // for both NuView[0] = "(nu*H)_t (I offset)" and NuView[1] = ...; special case!
 {}, // 'O'
 {}, // 'P'
-{}, // 'Q'
+{"basal driving stress (kPa)", "f_basal"}, // 'Q'
 {"basal frictional heating (mW/m^2)", "basal_heating"}, // 'R'
 {"Sigma (strain heating; K/a) at kd", "Sigma_kd"}, // 'S'
 {"T (temperature; K) at kd", "T_kd"}, // 'T'

@@ -231,6 +231,12 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = initAccumTs(); CHKERRQ(ierr); // just overwrite accum and Ts with EISMINT II vals
   }
   
+  if (infileused && ((expername == 'I') || (expername == 'J'))) {
+    // effect is to always regenerate topography (and basal till properties
+    //    for special modified experiment)
+    ierr = generateTroughTopography(); CHKERRQ(ierr); 
+  }
+  
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
              CHKERRQ(ierr);
   return 0;
@@ -320,6 +326,59 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   // communicate b because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+
+  // if option -plastic is set, then also generate a map of till friction angle
+  // phi, which puts phi smaller in 
+#define DEFAULT_TILL_PHI_STRONG   20.0
+#define DEFAULT_TILL_PHI_WEAK     5.0
+  PetscTruth  plasticSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &plasticSet); CHKERRQ(ierr);
+  
+  if (plasticSet == PETSC_TRUE) {
+    useConstantTillPhi = PETSC_FALSE;
+    PetscScalar  **tillphi;
+    ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        const PetscScalar nsd = i * dx, ewd = j *dy;
+        if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
+             && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
+          tillphi[i][j] = DEFAULT_TILL_PHI_WEAK;
+        } else {
+          tillphi[i][j] = DEFAULT_TILL_PHI_STRONG;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+  }
+
+#if 0
+  // if option -plastic is set, then also generate a map of till yield stress
+  // phi, which puts phi smaller in 
+#define DEFAULT_TILL_YIELD_STRESS_STRONG   30.0e3   // 30 kPa
+#define DEFAULT_TILL_YIELD_STRESS_WEAK      1.0e3   //  1 kPa
+  PetscTruth  plasticSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &plasticSet); CHKERRQ(ierr);
+  
+  if (plasticSet == PETSC_TRUE) {
+    ierr = verbPrintf(2,grid.com,"IceEISModel::generateTroughTopography(); plasticSet true so setting tauc"); CHKERRQ(ierr);
+    holdTillYieldStress = PETSC_TRUE;
+    PetscScalar  **tauc;
+    ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        const PetscScalar nsd = i * dx, ewd = j *dy;
+        if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
+             && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
+          tauc[i][j] = DEFAULT_TILL_YIELD_STRESS_WEAK;
+        } else {
+          tauc[i][j] = DEFAULT_TILL_YIELD_STRESS_STRONG;
+        }
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
+  }
+#endif
   return 0;
 }
 

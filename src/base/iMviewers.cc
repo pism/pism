@@ -76,9 +76,9 @@ PetscErrorCode IceModel::createViewers() {
     return 0;
 
   PetscErrorCode ierr;
-  const int nv = 44; // number of viewers in use
+  const int nv = 45; // number of viewers in use
   char viewsInUse[nv] = {'0','1','2','3','4','5',
-                         'B','C','D','E','F','G','H','L','R','S',
+                         'B','C','D','E','F','G','H','L','Q','R','S',
                                  'T','U','V','X','Y','Z',
                          'a','b','c','e','f','g','h','i','j','l',
                                  'm','n','p','q','r','s','t','u','v','x',
@@ -130,25 +130,6 @@ PetscErrorCode IceModel::destroyViewers() {
   if (gsd != PETSC_NULL) { ierr = VecDestroy(gsd); CHKERRQ(ierr); }
   if (taud != PETSC_NULL) { ierr = VecDestroy(taud); CHKERRQ(ierr); }
 
-  return 0;
-}
-
-
-PetscErrorCode IceModel::setSoundingFromOptions() {
-  PetscErrorCode ierr;
-  PetscInt myid, myjd, mykd;
-  PetscTruth idSet, jdSet, kdSet;
-  
-  myid = (grid.p->Mx - 1)/2;
-  myjd = (grid.p->My - 1)/2;
-  mykd = 0;
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-id", &myid, &idSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-jd", &myjd, &jdSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &mykd, &kdSet); CHKERRQ(ierr);
-  id = myid;
-  jd = myjd;
-  kd = mykd;
-  //  ierr = PetscPrintf(grid.com, "    !!! id,jd,kd = %3d,%3d,%3d !!!\n",id,jd,kd); CHKERRQ(ierr);
   return 0;
 }
 
@@ -389,12 +370,14 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
   ierr = updateLog2DViewer('B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
-  ierr = update2DViewer('C', vtauc, 0.00001); CHKERRQ(ierr); // Display in bar
+  ierr = update2DViewer('C', vtauc, 0.001); CHKERRQ(ierr); // display in kPa
   ierr = updateSliceViewer('E', vtau, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
   ierr = updateSliceViewer('G', vgs, 1000.0); CHKERRQ(ierr); // in mm
   ierr = update2DViewer('H', vH, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('L', vHmelt, 1.0); CHKERRQ(ierr);
+  ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
+  ierr = update2DViewer('Q', vWork2d[0], 0.001); CHKERRQ(ierr); // Display in kPa
   ierr = update2DViewer('R', vRb, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
   ierr = updateSliceViewer('S', vSigma, secpera); CHKERRQ(ierr);
   ierr = updateSliceViewer('T', vT, 1.0); CHKERRQ(ierr);
@@ -406,7 +389,7 @@ PetscErrorCode IceModel::updateViewers() {
 
   ierr = update2DViewer('a', vAccum, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('b', vbed, 1.0); CHKERRQ(ierr);
-  ierr = updateSpeed2DViewer('c', vubar, vvbar, secpera, PETSC_TRUE, -6.0); CHKERRQ(ierr);
+  ierr = updateSpeed2DViewer('c', vubar, vvbar, secpera, PETSC_TRUE, -3.0); CHKERRQ(ierr);
   // 'e' is sounding
   ierr = update2DViewer('f', vdHdt, secpera); CHKERRQ(ierr);
   // 'g' is sounding
@@ -414,7 +397,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('l', vbasalMeltRate, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('m', vMask, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('p', vuplift, secpera); CHKERRQ(ierr);
-  ierr = updateSpeed2DViewer('q', vub, vvb, secpera, PETSC_TRUE, -6.0); CHKERRQ(ierr);
+  ierr = updateSpeed2DViewer('q', vub, vvb, secpera, PETSC_TRUE, -3.0); CHKERRQ(ierr);
   ierr = update2DViewer('r', vTs, 1.0); CHKERRQ(ierr);
   // 's' is sounding
   // 't' is sounding

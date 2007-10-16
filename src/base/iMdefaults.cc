@@ -125,7 +125,7 @@ const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_SSA_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_PLASTIC_TILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_SUPERPOSE = PETSC_FALSE;
-const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 150;
+const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 300;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA = PETSC_FALSE;
@@ -134,14 +134,18 @@ const PetscScalar DEFAULT_CONSTANT_NU_FOR_SSA = 30.0 * 1.0e6 * secpera;
 const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
 // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
 // appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
+const PetscScalar DEFAULT_PLASTIC_REGULARIZATION = 0.01 / secpera;
 const PetscScalar DEFAULT_REGULARIZING_VELOCITY_SCHOOF = 1.0 / secpera;  // 1 m/a is small vel for stream/shelf
 const PetscScalar DEFAULT_REGULARIZING_LENGTH_SCHOOF = 1000.0e3;         // 1000km is largish for dim of stream/shelf
 const PetscScalar DEFAULT_SSA_RELATIVE_CONVERGENCE = 1.0e-4;
 
 // pure number; pore water pressure is this fraction of overburden:
 const PetscScalar DEFAULT_TILL_PW_FRACTION = 0.95;  
-const PetscScalar DEFAULT_TILL_C_0 = 5.0e3;  // Pa; 5kPa = 0.05 bar; cohesion of till
-const PetscScalar DEFAULT_TILL_THETA = 12.0;  // pure number; tan(12^o) = 0.21256; till friction angle
+const PetscScalar DEFAULT_TILL_C_0 = 0.0;  // Pa; cohesion of till; 
+            // note Schoof uses zero but Paterson pp 168--169 gives range 0 -- 40 kPa; but Paterson
+            // notes that "... all the pairs c_0 and phi in the table would give a yield stress
+            // for Ice Stream B that exceeds the basal shear stress there ..."
+const PetscScalar DEFAULT_TILL_PHI = 30.0;  // pure number; tan(30^o) = ; till friction angle
 
 //! Assigns default values to the many parameters and flags in IceModel.
 PetscErrorCode IceModel::setDefaults() {
@@ -183,7 +187,10 @@ PetscErrorCode IceModel::setDefaults() {
 
   plastic_till_pw_fraction = DEFAULT_TILL_PW_FRACTION;
   plastic_till_c_0 = DEFAULT_TILL_C_0;
-  plastic_till_mu = tan((pi/180.0)*DEFAULT_TILL_THETA);
+  plastic_till_mu = tan((pi/180.0)*DEFAULT_TILL_PHI);
+  plasticRegularization = DEFAULT_PLASTIC_REGULARIZATION;
+  holdTillYieldStress = PETSC_FALSE;
+  useConstantTillPhi = PETSC_TRUE;
 
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);
@@ -213,5 +220,10 @@ PetscErrorCode IceModel::setDefaults() {
   doPDD = PETSC_FALSE;
 
   isothermalFlux_n_exponent = DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT;
+  
+  // set default locations of soundings and slices
+  id = (grid.p->Mx - 1)/2;
+  jd = (grid.p->My - 1)/2;
+  kd = 0;
   return 0;
 }

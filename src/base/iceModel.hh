@@ -73,9 +73,6 @@ public:
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode initFromOptions(PetscTruth doHook);
 
-  // see iMviewers.cc
-  PetscErrorCode setSoundingFromOptions();
-
   // see iMvelocity.cc
   PetscErrorCode velocity(bool updateSIAVelocityAtDepth);
     
@@ -160,7 +157,7 @@ protected:
     vRb,                        // basal frictional heating on regular grid
     vubar, vvbar,               // vertically-averaged vels (u bar and v bar) on
                                 // standard grid
-    vtauc, vbeta;               // basal fields; plastic/viscous coefficients
+    vtauc, vtillphi, vbeta;     // basal fields; plastic/viscous coefficients
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
                                         //   u bar and v bar on staggered grid,
   Vec*         vDf;                     // vDf[0],vDf[1] are diffusivity on staggered grid
@@ -177,7 +174,7 @@ protected:
               regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon;
   PetscInt    ssaMaxIterations;
-  PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction;
+  PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization;
   PetscScalar startYear, endYear;
   PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
@@ -193,7 +190,7 @@ protected:
   // flags
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
-              isDrySimulation;
+              isDrySimulation, holdTillYieldStress, useConstantTillPhi;
   PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, useConstantNuForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
@@ -234,7 +231,7 @@ protected:
   // see iMbasal.cc (basal mechanical model: either linear viscosity or
   //                 perfectly plastic according to doPlasticTill) 
   PetscErrorCode initBasalTillModel();
-  PetscErrorCode updateYieldStressFromHmelt();
+  virtual PetscErrorCode updateYieldStressFromHmelt();
   virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y, 
        const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
        const PetscScalar mu);
@@ -412,6 +409,7 @@ protected:
   PetscErrorCode stampHistory(const char*);
   PetscErrorCode stampHistoryString(const char*);
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
+  PetscErrorCode computeBasalDrivingStress(Vec myVec);
   PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
   PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);

@@ -177,6 +177,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vdHdt); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vbeta); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vtauc); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vtillphi); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLatitude); CHKERRQ(ierr);
 
@@ -244,6 +245,7 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vdHdt); CHKERRQ(ierr);
   ierr = VecDestroy(vbeta); CHKERRQ(ierr);
   ierr = VecDestroy(vtauc); CHKERRQ(ierr);
+  ierr = VecDestroy(vtillphi); CHKERRQ(ierr);
   ierr = VecDestroy(vLongitude); CHKERRQ(ierr);
   ierr = VecDestroy(vLatitude); CHKERRQ(ierr);
 

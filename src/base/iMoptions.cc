@@ -37,19 +37,22 @@ PetscErrorCode  IceModel::setFromOptions() {
   PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
               mytransformForSurfaceGradient, myincludeBMRinContinuity,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
-              mydoSuperpose, mydoTempSkip;
+              mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet,
+              plasticc0Set, plasticphiSet, myholdTillYieldStress;
   PetscTruth  noMassConserve, noTemp; 
-  PetscScalar my_maxdt, my_nu, regVelSchoof, my_barB;
+  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB, 
+              myplastic_till_c_0, myplastic_phi, myPlasticRegularization;
   PetscInt    my_Mx, my_My, my_Mz, my_Mbz;
 
   // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
   // allows users to set options using this.
-  ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (in PISM)",PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (in PISM)",PETSC_NULL); 
+          CHKERRQ(ierr);
 
   /* 
   note on pass-by-reference for options:
      For the last argument "flag" to PetscOptionsXXXX(....,&flag), the flag always indicates
-     whether the option has been set.  Therefore "flag" is always set by the function call.
+     whether the option has been set.  Therefore "flag" is always set by this function call.
      For other arguments "value" to PetscOptionsXXXX(....,&value,&flag), the value of "value"
      is only set if the user specified the option.  Therefore "flag" should always be given a
      local PetscTruth variable if we want to preserve previously set IceModel flags.  By 
@@ -105,19 +108,24 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
+// note "-full3Dout" is read in writefiles() in iMIO.cc
+
 // note "-gk" is in use for specifying Goldsby-Kohlstedt ice
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-grad_from_eta", &mytransformForSurfaceGradient); 
             CHKERRQ(ierr);
   if (mytransformForSurfaceGradient == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
 
-// note "-id" is in use for sounding location
+  ierr = PetscOptionsHasName(PETSC_NULL, "-hold_tauc", &myholdTillYieldStress); CHKERRQ(ierr);
+  if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
 
-// note "-if" is in use for input file name
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-id", &id, PETSC_NULL); CHKERRQ(ierr);
 
-// note "-jd" is in use for sounding location
+// note "-if" is in use for input file name; see initFromOptions() in iMutil.cc
 
-// note "-kd" is in use for horizontal slicing (in viewers and dumpToFileMatlab)
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-jd", &jd, PETSC_NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
 
 // note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
 
@@ -155,7 +163,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_temp", &noTemp); CHKERRQ(ierr);
   if (noTemp == PETSC_TRUE)   doTemp = PETSC_FALSE;
 
-// note "-o" is in use for output file name
+// note "-o" is in use for output file name; see iMIO.cc
 
   // whether or not to kill ice if original condition was ice-free ocean
   ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &mydoOceanKill); CHKERRQ(ierr);
@@ -167,12 +175,43 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &mydoPlasticTill); CHKERRQ(ierr);
   if (mydoPlasticTill == PETSC_TRUE)   doPlasticTill = PETSC_TRUE;
 
-  PetscTruth regVelSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &regVelSchoof, &regVelSet);
+  // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
+  // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+  // option given in kPa so convert to Pa
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_c0", &myplastic_till_c_0, 
+     &plasticc0Set);  CHKERRQ(ierr);
+  if (plasticc0Set == PETSC_TRUE)   plastic_till_c_0 = myplastic_till_c_0 * 1.0e3;
+
+  // plastic_till_pw_fraction is a parameter in the computation of the till yield stress tau_c
+  // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+  // option a pure number (a fraction); no conversion
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_pwfrac", &plastic_till_pw_fraction, 
+     PETSC_NULL);  CHKERRQ(ierr);
+
+  // controls regularization of plastic basal sliding law
+  // option given in m/a so convert to m/s
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_reg", &myPlasticRegularization, 
+     &plasticRegSet);  CHKERRQ(ierr);
+  if (plasticRegSet == PETSC_TRUE)  plasticRegularization = myPlasticRegularization/secpera;
+
+  // plastic_till_mu is a parameter in the computation of the till yield stress tau_c
+  // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+  // option in degrees is the "friction angle"
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_phi", &myplastic_phi, 
+     &plasticphiSet);  CHKERRQ(ierr);
+  if (plasticphiSet == PETSC_TRUE)
+     plastic_till_mu = tan((pi/180.0) * myplastic_phi);
+
+  // a parameter in regularizing the computation of effective viscosity from strain rates;
+  // see computeEffectiveViscosity() in iMssa.cc
+  // option given in m/a so convert to m/s
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &myRegVelSchoof, &regVelSet);
            CHKERRQ(ierr);
-  if (regVelSet == PETSC_TRUE)   regularizingVelocitySchoof = regVelSchoof/secpera;
+  if (regVelSet == PETSC_TRUE)   regularizingVelocitySchoof = myRegVelSchoof/secpera;
     
-  
+  // a parameter in regularizing the computation of effective viscosity from strain rates;
+  // see computeEffectiveViscosity() in iMssa.cc
+  // option given in m; no conversion
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_length_schoof", &regularizingLengthSchoof,
            PETSC_NULL); CHKERRQ(ierr);
   
@@ -200,6 +239,9 @@ PetscErrorCode  IceModel::setFromOptions() {
     } // otherwise keep default prefix, whatever it was
   }
 
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-ssa_maxi", &ssaMaxIterations,
+           PETSC_NULL); CHKERRQ(ierr);
+           
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
            PETSC_NULL); CHKERRQ(ierr);
   
@@ -212,27 +254,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &mydoTempSkip); CHKERRQ(ierr);
   if (mydoTempSkip == PETSC_TRUE)   doTempSkip = PETSC_TRUE;
 
-  // till pw_fraction, till cohesion, and till friction angle are only relevant in
-  //   IceModel::updateYieldStressFromHmelt()
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_pw_fraction", &plastic_till_pw_fraction,
-           PETSC_NULL); CHKERRQ(ierr);
-
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_cohesion", &plastic_till_c_0, PETSC_NULL);
-           CHKERRQ(ierr);
-
-  PetscScalar till_theta;
-  PetscTruth  till_thetaSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-till_friction_angle", &till_theta, &till_thetaSet);
-           CHKERRQ(ierr);
-  if (till_thetaSet == PETSC_TRUE)    plastic_till_mu = tan((pi/180.0)*till_theta);
-
-  // verbosity options: more info to standard out.  see iMutil.cc
+  // verbosity options: more info to standard out; 
+  // includes -verbose, -vverbose, -vvverbose see iMreport.cc
   ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
 // note -ys, -ye, -y options are read in setStartRunEndYearsFromOptions()
  
-  ierr = setSoundingFromOptions(); CHKERRQ(ierr);
-
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }

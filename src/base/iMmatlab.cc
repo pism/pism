@@ -261,12 +261,14 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = write2DToMatlab(viewer, '5', vvb, secpera);  CHKERRQ(ierr);
 
   ierr = writeLog2DToMatlab(viewer, 'B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'C', vtauc, 0.00001);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'C', vtauc, 0.001);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'E', vtau, 1.0/secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'G', vgs, 1000.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
+  ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'Q', vWork2d[0], 0.001); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'R', vRb, 1000.0);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'S', vSigma, secpera);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'T', vT, 1.0);  CHKERRQ(ierr);
@@ -278,7 +280,7 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
 
   ierr = write2DToMatlab(viewer, 'a', vAccum, secpera); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'b', vbed, 1.0); CHKERRQ(ierr);
-  ierr = writeSpeed2DToMatlab(viewer, 'c', vubar, vvbar, secpera, PETSC_TRUE, -6.0);
+  ierr = writeSpeed2DToMatlab(viewer, 'c', vubar, vvbar, secpera, PETSC_TRUE, -3.0);
            CHKERRQ(ierr);
   ierr = writeSoundingToMatlab(viewer,'e',vtau,1.0/secpera, PETSC_FALSE);
            CHKERRQ(ierr); // Display in years
@@ -291,7 +293,7 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
 // how to do log(nu H)?:
 //  ierr = createOneViewerIfDesired(&lognuView, 'n',"log_10(nu*H)");  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'p', vuplift, secpera);  CHKERRQ(ierr);
-  ierr = writeSpeed2DToMatlab(viewer, 'q', vub, vvb, secpera, PETSC_TRUE, -6.0);
+  ierr = writeSpeed2DToMatlab(viewer, 'q', vub, vvb, secpera, PETSC_TRUE, -3.0);
            CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'r', vTs, 1.0);  CHKERRQ(ierr);
   ierr = writeSoundingToMatlab(viewer,'s', vSigma, secpera, PETSC_FALSE); CHKERRQ(ierr);

@@ -225,13 +225,11 @@ public:
 
 class PlasticBasalType : public ViscousBasalType {
 public:
-  PlasticBasalType();
+  PlasticBasalType(const PetscScalar pReg);
   virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
                            PetscScalar vx, PetscScalar vy);
-protected:
-  // 1 m/a is small in basalDrag[x|y] below
-  static const PetscScalar DEFAULT_PLASTIC_REGULARIZE;
+private:
   PetscScalar plastic_regularize;
 };
 

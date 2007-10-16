@@ -843,9 +843,10 @@ PetscErrorCode IceDragYieldModel::updateMaskFromBeta() {
 
 
 PetscErrorCode IceDragYieldModel::setupPlasticTauc() {
+  const PetscScalar DEFAULT_PLASTIC_REGULARIZATION = 0.01 / secpera;
 
   if (createBasal_done == PETSC_TRUE) delete basal;
-  basal = new PlasticBasalType;
+  basal = new PlasticBasalType(DEFAULT_PLASTIC_REGULARIZATION);
   createBasal_done = PETSC_TRUE;
  
   // see IceDragYieldModel::additionalAtStartTimeStep() for computation of tau_c
