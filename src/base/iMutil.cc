@@ -29,19 +29,22 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **ubar, **vbar, **D, **mask;
+  PetscScalar **h, **H, **ubar, **vbar, **ub, **vb, **D, **mask;
   PetscScalar Dmax = 0.0;
 
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
-        if ( (intMask(mask[i][j]) == MASK_SHEET) || (doSuperpose == PETSC_TRUE) ) {
+        if ( (intMask(mask[i][j]) == MASK_SHEET) || 
+             ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) != MASK_FLOATING)) ) {
           const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
           const PetscScalar h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
           const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
@@ -50,8 +53,12 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
           //    D = H Ubar / alpha
           // is the correct formula; note division by zero is avoided by
           // addition to alpha
-          const PetscScalar Ubarmag
-                            = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
+          PetscScalar Ubarmag;
+          if (doSuperpose == PETSC_TRUE) {
+            Ubarmag = sqrt(PetscSqr(ubar[i][j] - ub[i][j]) + PetscSqr(vbar[i][j] - vb[i][j]));
+          } else {
+            Ubarmag = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
+          }
           const PetscScalar d =
                H[i][j] * Ubarmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
           if (d > Dmax) Dmax = d;
@@ -69,6 +76,8 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
 
   if (updateDiffusViewer) { // view diffusivity (m^2/s)

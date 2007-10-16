@@ -248,7 +248,10 @@ PetscErrorCode  IceModel::setFromOptions() {
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
   // SSA equations where DRAGGING
   ierr = PetscOptionsHasName(PETSC_NULL, "-super", &mydoSuperpose); CHKERRQ(ierr);
-  if (mydoSuperpose == PETSC_TRUE)   doSuperpose = PETSC_TRUE;
+  if (mydoSuperpose == PETSC_TRUE) {
+    doSuperpose = PETSC_TRUE;
+    muSliding = 0.0;  // also turn off sliding law in SIA regions; SSA will do full job
+  }
 
   /* This controls allows more than one mass continuity steps per temperature/age step */
   ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &mydoTempSkip); CHKERRQ(ierr);

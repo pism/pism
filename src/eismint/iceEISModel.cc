@@ -341,8 +341,10 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscScalar nsd = i * dx, ewd = j *dy;
-        if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
+        if (    (nsd >= (29 - 1) * dx61) && (nsd <= (33 - 1) * dx61)
              && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
+//        if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
+//             && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
           tillphi[i][j] = DEFAULT_TILL_PHI_WEAK;
         } else {
           tillphi[i][j] = DEFAULT_TILL_PHI_STRONG;

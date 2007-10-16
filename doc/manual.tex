@@ -1838,7 +1838,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
 
-\opt{super}  Superpose the velocity fields.  That is, add the velocity fields which result from the SIA and SSA versions of the balance of momentum equations.  Only effective if used with \verb|-ssa|.
+\opt{super}  Superpose the velocity fields from the SIA and SSA models.  That is, add the velocity fields which result from the SIA and SSA versions of the balance of momentum equations.  Also has the effect of the option \verb|-mu_sliding 0.0|, that is, the SIA-type sliding law is set to zero so that all basal sliding is controlled by the SSA model.  Only effective if used with \verb|-ssa|.
 
 \optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  A maximum value of \verb|-tempskip 5| is recommended to avoid too many CFL violations.
 
