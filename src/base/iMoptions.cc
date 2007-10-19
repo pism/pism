@@ -108,7 +108,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
-// note "-full3Dout" is read in writefiles() in iMIO.cc
+// note "-f3d" is read in writefiles() in iMIO.cc
 
 // note "-gk" is in use for specifying Goldsby-Kohlstedt ice
 

@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{196}
+\newcommand{\PISMREV}{197}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -494,11 +494,11 @@ These are the models PISM uses to describe faster-flowing ice, namely the SSA wi
 
 As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments, based on a small depth-to-width ratio, from the Stokes equations of a non-Newtonian fluid.  For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.\footnote{The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids serious discussion of continuum models.}
 
-Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  Each horizontal grid point corresponds to a whole vertical column of grid points in the three-dimensional grid, so it is perhaps better to say that \emph{each vertical column} of ice, centered at a horizontal grid point, is either SIA or SSA.  When ice is floating (according to the usual floatation criterion \cite{WeisGreveHutter}), the horizontal grid point is automatically marked as SSA.
+The actual numerical solution of the SSA is not done by default for the executables \verb|pismr|, \verb|pismd|, or \verb|pisms|.  The user must add the flag \verb|-ssa|.
 
-The actual numerical solution of the SSA for SSA-marked points is not done by default for the executables \verb|pismr|, \verb|pismd|, or \verb|pisms|.  The user must add the flag \verb|-ssa|.
+One must generally decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  This is true for the linearly-viscous till model \cite{MacAyeal} but also in cases where Schoof's plastic-till model is only applied to part of the grounded ice sheet.  The rest of this section largely focuses on how the user makes this choice in practice when using PISM.
 
-One must generally decide which parts of the grounded ice sheet are modelled by the SIA and which by the SSA.  This is true for the linearly-viscous till model \cite{MacAyeal} but also in cases where Schoof's plastic-till model is only applied to part of the grounded ice sheet.  The rest of this section largely focuses on how the user makes this choice in practice when using PISM.  One way is to specify a \emph{mask}.
+One way is to specify a \emph{mask}.  Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  Each horizontal grid point corresponds to a whole vertical column of grid points in the three-dimensional grid, so it is perhaps better to say that \emph{each vertical column} of ice, centered at a horizontal grid point, is either SIA or SSA.  When ice is floating (according to the usual floatation criterion \cite{WeisGreveHutter}), the horizontal grid point is automatically marked as SSA.
 
 The transition from SIA to SSA flow is an internal boundary within the model domain.  Along this boundary, the numerical schemes in PISM attempt to maintain these continuum facts:
 \renewcommand{\labelenumi}{\textbf{\roman{enumi})}~}
@@ -531,65 +531,51 @@ Of course the statement ``attempt to'' maintain is important because PISM does n
 \label{fig:ant_mask}
 \end{figure}
 
-An example mask is shown in Figure \ref{fig:ant_mask}.  The generation of such a mask must include a decision on where the grounded ice can be treated as an ice stream or outlet glacier.  In this case it has been generated using ``balance velocities'' computed from a certain highly simplified flow model \cite{BamberVaughanJoughin} and then a criterion on sliding sufficient to constitute streaming.   This process for generating such masks is not, for now, addressed in this manual.
+An example mask is shown in Figure \ref{fig:ant_mask}.  The generation of such a mask must include a decision on where the grounded ice can be treated as an ice stream or outlet glacier.  In this case it has been generated using ``balance velocities'' computed from a certain highly simplified flow model \cite{BamberVaughanJoughin} and then a criterion on sliding sufficient to constitute streaming.
+
+Procedures for generating such masks are not, for now, documented.
 
 
 \subsection{Schoof's plastic till free boundary problem for ice streams} \label{subsect:plastic}    In \cite{SchoofTill} C.~Schoof proposes a model for plastic failure of the basal till under flowing ice, and in \cite{SchoofStream} he recognizes this as a free boundary problem for the SSA.  The result is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.
 
-To demonstrate PISM's implementation of Schoof's model we describe an example based on EISMINT II experiment I.  This particular experiment is documented in \cite{EISIIdescribe}, but experiment I is not discussed in the published EISMINT II intercomparison because the results for experiment I were ``straightforward results with little variability between groups'' \cite{EISMINT00}.  Note that Section \ref{sect:simp} describes using PISM to perform all the EISMINT II experiments documented in \cite{EISIIdescribe}.
+PISM implements Schoof's model as an alternative to the direct ``mask'' scheme described above.  The user gives the options \verb|-ssa -plastic| to turn on this model.  All grounded points are marked as SSA (i.e.~as \verb|MASK_DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See the description of option \verb|-plastic| in Appendix A for a detailed description of the yield stress computation.
 
-Experiment I is identical to experiment A except for having ``trough'' bed topography, shown in Figure \ref{fig:eis2I}.   As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  However, we use it to build an ice sheet which ``ought'' to have an ice stream, that is, along the trough.
+\subsubsection*{A plastic till modification of EISMINT II experiment I}  To demonstrate the implementation we describe an example based on EISMINT II experiment I.  This particular experiment is documented in \cite{EISIIdescribe}.  Experiment I was not, however, discussed in the published intercomparison because the results for experiment I were ``straightforward results with little variability between groups'' \cite{EISMINT00}.  Note that Section \ref{sect:simp} describes using PISM to perform all the EISMINT II experiments documented in \cite{EISIIdescribe}, including experiment I.
+
+Experiment I is identical to experiment A except for having ``trough'' bed topography.  This bed is shown in Figure \ref{fig:eis2I}.  As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  However, we use it to build an ice sheet which ``ought'' to have an ice stream, that is, along the trough.
 
 \begin{figure}[ht]
-\includegraphics[height=2.6in,keepaspectratio=true]{figs/eis2Ibed}
-%\includegraphics[height=2.6in,keepaspectratio=true]{figs/cbar_eisI}
-\caption{Left: Bed elevation for EISMINT II experiment I.  Most of the bed is a plateau at 1000 m, but the trough descends to nearly zero elevation.  Right: The vertically-averaged horizontal velocity at the end of a ????? year run using EISMINT II experiment I boundary conditions, and starting from zero ice.}
+\includegraphics[height=3.1in,keepaspectratio=true]{figs/eis2Ibed} \includegraphics[height=3.1in,keepaspectratio=true]{figs/cbar_eis2I}
+\caption{Left: Bed elevation for EISMINT II experiment I.  Most of the bed is a plateau at 1000 m (red), but the trough descends to zero elevation (blue).  Right: The vertically-averaged horizontal speeds at the end of a 200k year run using EISMINT II experiment I as specified, that is, with only the SIA for flow.  The grid is finer than is standard for EISMINT II (12.5 km instead of 25 km).  Speeds vary from 0 (blue) to 90 (red) m/a.}
 \label{fig:eis2I}
 \end{figure}
 
-The following run builds the ice sheet for experiment I for the first 10,000 model years, at which point it is of nearly maximum volume in the 200,000 year run specified in EISMINT II:
+The following runs take a while (hours to days).  There is a script \verb|test/eis2Iplastic.sh| which contains the following sequence and allows choice of the number of processors.
 
-\verb|pisms -eisII I -Mx 61 -My 61 -Mz 201 -y 10000 -o eis2I10k|
+First we build the ice sheet for experiment I for 180,000 model years on the standard EISMINT II grid, which is relatively coarse with horizontal spacing of $25$ km.  Note that this run and the next parallelize well, so they will go quickly on (for instance) 10 to 40 processors:
 
-\noindent To view the resulting ice sheet one might do
+\verb|pisms -eisII I -Mx 61 -My 61 -Mz 201 -y 180000 -o eis2I180k|
 
-\verb|pisms -eisII I -if eis2I10k.nc -d bHh|
+\noindent Note that a significant fraction of the base is at the pressure-melting temperature.   At this point the effective thickness of the basal water is zero because stored basal water is not part of the EISMINT II model.  So we now turn on the part of the thermodynamical model which keeps track of stored basal water.  Also we refine the grid to 12.5 km spacing, we run for the remaining 20,000 model years to complete the EISMINT II specified 200k year run, and we save full three-dimensional velocities at the end of the model run:
 
-\noindent (and kill or Ctrl-C this unneeded run when one has seen enough).  Thereby one sees the trough bed topography and its effect on the horizontal extent and thickness of the ice sheet.  Also do
+\verb|pisms -eisII I -Mx 121 -My 121 -Mz 301 -regrid eis2I180k.nc -regrid_vars TBHh \|
 
-\verb|pisms -eisII I -if eis2I10k.nc -d 0cLT|
+\verb|   -y 20000 -track_Hmelt -f3d -o eis2I_fine_wmelt|
 
-\noindent to see the (horizontal) speed of the ice, effective thickness of the till water, and the basal temperature.
+\noindent Through use of \verb|ncview| on the output file, for instance, we see that the effective thickness of the till water has increased to its maximum of 2 m in the area where the base is at the pressure-melting temperature.  In particular there is 2 m of stored basal water at the base of the ice in the majority of the trough part of the ice sheet.
 
-Note that a significant fraction of the base is at the pressure-melting temperature but that the effective thickness of the till water is zero.  This is because \verb|pisms -eisII| enforces zero stored melt water as a special simplification of PISM's default conservation of energy model for the EISMINT II tests \cite{EISMINT00}.
+Now we turn on Schoof's plastic till ice stream model.  Because we are solving the SSA this part is substantially slower (per model year) and it harder to parallelize; it probably should be run on at most 16 processors:
 
-On the other hand, the yield stress of the till in PISM's default plastic till model is tied to the effective thickness of the basal water.  Therefore we continue the run but let PISM's default energy model build up a nonzero amount of basal water:
+\verb|pisms -eisII I -if eis2I_fine_wmelt.nc -ssa -plastic -super -verbose \|
 
-\verb|pisms -eisII I -if eis2I10k.nc -track_Hmelt -y 1000 -o eis2Iwmelt|
-
-\noindent When this last run finishes, an interesting view of the result is
-
-\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0HLT|
-
-\noindent In particular we see that the effective thickness of the till water has increased to its maximum of 2 m in much of the area where the base is at the pressure-melting temperature.  In particular there is a layer of till water at the base of the ice in the trough part of the ice sheet.  For comparison purposes we also continue with the next 1000 years of this run:
-
-\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 -o eis2Isia|
-
-Now we turn on Schoof's plastic till ice stream model starting with the saved state \verb|eis2Iwmelt.nc|:
-
-\verb|pisms -eisII I -if eis2Iwmelt.nc -track_Hmelt -d 0cqL -y 1000 \|
-
-\verb|  -ssa -plastic -super -o eis2Iplastic|
+\verb|   -till_phi 20.0,5.0 -y 5 -f3d -o eis2I_plastic5|
 
 
-[THIS PRODUCES TOO LITTLE SLIDING BUT IS ROUGHLY THE RIGHT INVOCATION.  PLAY WITH THE PARAMETERS IN THE BASAL YIELD STRESS MODEL?]
-
-\bigskip
-This kind of plastic till free boundary problem is also solved by test I in the verification suite.  Here is an example run with some viewers:
+\subsubsection*{Test I is an exact solution}  PISM's solution of Schoof's plastic till free boundary problem is also solved by test I in the verification suite.  It is based on the exact solution published in \cite{SchoofStream}.  It is a single diagnostic computation of the velocity of a single highly-simplified ice stream.  Here is an example run with some viewers:
 
 \verb|pismv -test I -Mx 5 -My 500 -d ncqu -verbose|
 
-\noindent The boundary conditions are a uniform slab of ice on a bed with constant slope, but with a central low in the till yield stress.  Thus the center of the slab slides, and thus the ice flows under the SSA equations, because of the plastic failure, while at the margins the base of the ice does not slide.  That is, we have a single simplified ice stream.  But in this case we have the exact solution published in \cite{SchoofStream} with which to compare the diagnostically-computed velocities.  This test, and convergence of the numerical solution under grid refinement, are addressed in section \ref{sect:verif}.
+\noindent The boundary conditions are a uniform slab of ice on a bed with constant slope, but with a central low in the particular, defined distribution of till yield stress.  There is zero yield stress at the very center.  Thus the center of the slab slides, and thus the ice flows under the SSA equations, because of the plastic failure, while at the margins the base of the ice does not slide.  That is, we have a single simplified ice stream, and in fact the solution only has interesting variation in the $y$ direction (across slope).  PISM's job is to compute the width and speed of the ice stream, ``knowing'' only the ice thickness, bed slope, and yield stress distribution.  In this case we have the exact solution with which to compare the numerically-computed velocities.  This test, and convergence of PISM's numerical solution of it under grid refinement, are addressed in section \ref{sect:verif}.
 
 
 
@@ -878,9 +864,9 @@ G & thermomechanically coupled SIA; as F  & ditto & \cite{BB,BBL} \\
  & but with oscillating accumulation &  &  \\
 H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
 I & stream velocity computation using SSA (plastic till) &  & \cite{SchoofStream} \\
-J & shelf velocity computation using SSA  &  & [PREPRINT] \\
+J & shelf velocity computation using SSA  &  & [IN PREPARATION] \\
 K & pure conduction in ice and bedrock & & \cite{BuelerTestK} \\
-L & isothermal SIA, steady, non-flat bed & numerical ODE soln & \cite{BuelerEquilSheets} \\
+L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREPARATION] \\
 \hline
 \normalsize
 \end{tabular}
@@ -1453,11 +1439,11 @@ trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc
 
 \subsection{The continuum models in PISM}  Significant features of the continuum model approximated by the PISM include:\begin{itemize}
 \item The inland ice sheet is modeled with the thermocoupled shallow ice approximation equations \cite{Fowler}, and some temperature-activated basal sliding is allowed.
-\item Ice shelves and ice streams are modeled by shallow equations which describe flow by longitudinal strain rates and basal sliding.  These equations are different from the shallow ice approximation.  In shelves and streams the velocities are independent of depth within the ice.  The equations were originally established for ice shelves \cite{Morland,MorlandZainuddin,MacAyealetal}.  They were adapted for ice streams, as ``dragging ice shelves,'' by MacAyeal \cite{MacAyeal}; see also \cite{HulbeMacAyeal}.
+\item Ice shelves and ice streams are modeled by shallow equations which describe flow by longitudinal strain rates and basal sliding.  These equations are different from the shallow ice approximation.  In shelves and streams the velocities are independent of depth within the ice.  The equations were originally established for ice shelves \cite{Morland,MorlandZainuddin,MacAyealetal,WeisGreveHutter}.  They were adapted for ice streams, as ``dragging ice shelves,'' by MacAyeal \cite{MacAyeal}; see also \cite{HulbeMacAyeal,SchoofStream}.
 \item The regions of grounded ice in which the ice stream model is applied can be determined from mass balance velocities \cite{BamberVaughanJoughin}, from observed surface velocities, or from a plastic till assumption and the associated free boundary problem \cite{SchoofStream}.
 \item A three dimensional age field is computed.
 \item A temperature model for the bedrock under an ice sheet is included.
-\item Geothermal flux which varies in the map-plane can be used, for instance based on the new Antarctic results in \cite{ShapiroRitzwoller} and \cite{FoxMaule}.
+\item Geothermal flux which varies in the map-plane can be used.
 \item Within the shallow ice sheet regions the model can use the constitutive relation of Goldsby and Kohlstedt \cite{GoldsbyKohlstedt,Peltieretal}.  For inclusion in this flow law, grain size can be computed using a age-grain size relation from the Vostok core data \cite{VostokCore}, for example.
 \item The Lingle-Clark \cite{BLKfastearth,LingleClark} bed deformation model can be used.  It combines a spherical elastic earth and viscous half-space asthenosphere/mantle.  It generalizes the better known elastic lithosphere, relaxing asthenosphere (``ELRA'') model \cite{Greve2001}.  This model can be initialized by an observed bed uplift map \cite{BLKfastearth}, or even an uplift map computed by an external model like that in \cite{IvinsJames2005}.\end{itemize}
 
@@ -1465,21 +1451,21 @@ Many of the parts of the model described above are optional.  For instance, the 
 
 The following features are \emph{not} included in the continuum model, and would (or will) require major additions:
 \begin{itemize}
-\item Inclusion of all components of the stress tensor (i.e.~longitudinal stresses within the shallow ice approximation region and additional shear stress components in shelves/streams) through either an intermediate order scheme \cite{Blatter,Hindmarsh06,SaitoEISMINT} or the full Stokes equations \cite{Fowler}.
+\item Inclusion of all components of the stress tensor (i.e.~longitudinal stresses within the shallow ice approximation region and additional shear stress components in shelves/streams) through either an intermediate order scheme (e.g.~\cite{Blatter,Hindmarsh06}) or the full Stokes equations \cite{Fowler}.
 \item A model for water--content within the ice.  In the current model the ice is \emph{cold} and not \emph{polythermal}; compare \cite{Greve}.  On the other hand, in the current model the energy used to melt the ice within a given column, if any, is conserved.  In particular, a layer of basal melt water evolves by conservation of energy in the column.  This layer can activate basal sliding and its latent heat energy is available for refreezing.
 \item A model for basal water mass conservation in the map-plane; compare \cite{JohnsonFastook}.
-\item A fully spherical Earth deformation model, for example one descended from the Earth model of \cite{Peltier}, like the one used to estimate current Antarctic uplift in \cite{IvinsJames2005}.
+\item A fully spherical Earth deformation model, for example one descended from the Earth model of \cite{Peltier}.
 \end{itemize}
 
 
 \subsection{The numerical schemes in PISM}  Significant features of the numerical methods in PISM include:\begin{itemize}
-\item Verification \cite{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \cite{BLKCB}, thermocoupled sheet flow \cite{BB,BBL}, the earth deformation model \cite{BLKfastearth}, the coupled (ice flow)/(earth deformation) system in an isothermal and pointwise isostasy  case \cite{BLKfastearth}, and the MacAyeal equations for ice stream flow \cite{SchoofStream,BrownPresentation}.
+\item Verification \cite{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \cite{BLKCB}, thermocoupled sheet flow \cite{BB,BBL}, conservation in ice and bedrock \cite{BuelerTestK}, the earth deformation model \cite{BLKfastearth}, the coupled (ice flow)/(earth deformation) system in an isothermal and pointwise isostasy  case \cite{BLKfastearth}, ice shelf flow (preprint), and ice stream flow based on failing plastic bed \cite{SchoofStream}.
 \item The code is \emph{structurally} parallel.  In fact, the PETSc toolkit is used at all levels \cite{petsc-user-ref}.  PETSc manages the MPI-based communication between processors, and provides an interface to parallel numerical linear algebra and other numerical functions.
 \item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid.
 \item A moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \cite{Jenssen} change of variables is not used.
 \item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \cite{MortonMayers}.  As described  in  \cite{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including a diffusivity-based criteria for the explicit mass continuity scheme and a CFL criteria \cite{MortonMayers} for temperature/age advection.
 \item The local truncation error is generically first order (i.e.~$O(\Delta x,\Delta y,\Delta z,\Delta t)$).
-\item The shallow shelf approximation (SSA) \cite{WeisGreveHutter} is used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{BrownPresentation,petsc-user-ref}.
+\item The shallow shelf approximation (SSA) \cite{WeisGreveHutter} is used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{petsc-user-ref}.
 \item The bed deformation model is implemented by a new Fourier collocation (spectral) method \cite{BLKfastearth}.
 \item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class.
 \end{itemize}
@@ -1669,7 +1655,7 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:real}.
 
-\opt{full3Dout}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
+\opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
 
 \optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
@@ -1844,6 +1830,8 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \optdefrestrict{test}{A}{pismv}  Choose which verification test to run by giving its single character name.  See section \ref{sect:verif}.
 
+\optdefrestrict{till\und phi}{20.0,5.0}{pisms -eisII I -ssa -plastic}  Set the till friction angle map special to the modification of EISMINT II experiment I discussed in subsection \ref{subsect:plastic}.
+
 \optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
 
 \optrestrict{track\und Hmelt}{pisms -eisII}    Turn on the part of the conservation of energy model which accumulates (tracks) locally-stored basal melt water.
@@ -1988,7 +1976,7 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 \verb|P|:\quad \notMat (\emph{ONLY available for }\t{pismv}.)  Map-plane view of comPensatory heating term $\Sigma_C$ in thermocoupled verification tests F and G.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
-\verb|Q|:\quad Map-plane view of basal driving stress $f_{\text{basal}} = \rho g H |\grad h|$.  Units of kPa.  Note that this quantity is the effective shear stress at the base in the SIA.  It is also the (magnitude of the) driving source term in the SSA, for both ice streams and ice shelves.in Compare to \verb|-d C|, the till yield stress, when using the plastic till ice stream model.
+\verb|Q|:\quad Map-plane view of basal driving stress $f_{\text{basal}} = \rho g H |\grad h|$.  Units of kPa.  Note that this quantity is the effective shear stress at the base in the SIA.  It is also the (magnitude of the) driving source term in the SSA, for both ice streams and ice shelves.  Compare to \verb|-d C|, the view of the till yield stress, when using the plastic till ice stream model.
 
 \verb|R|:\quad Map-plane view of basal frictional heating in milliWatts per meter squared.
 

@@ -139,7 +139,7 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
     strcpy(ncf, b);
     strcat(ncf, ".nc");
     PetscTruth userWantsFull;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-full3Dout", &userWantsFull); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(PETSC_NULL, "-f3d", &userWantsFull); CHKERRQ(ierr);
     if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
       ierr = verbPrintf(1, grid.com, 
             "Writing model state, with full 3D velocities, to file `%s'", ncf); CHKERRQ(ierr);

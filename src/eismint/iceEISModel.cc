@@ -326,61 +326,50 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   // communicate b because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+               "trough bed topography stored by IceEISModel::generateTroughTopography()\n");
+               CHKERRQ(ierr);
 
   // if option -plastic is set, then also generate a map of till friction angle
   // phi, which puts phi smaller in 
 #define DEFAULT_TILL_PHI_STRONG   20.0
-#define DEFAULT_TILL_PHI_WEAK     5.0
-  PetscTruth  plasticSet;
+#define DEFAULT_TILL_PHI_WEAK      5.0
+  PetscScalar phi_list[2] = { DEFAULT_TILL_PHI_STRONG, DEFAULT_TILL_PHI_WEAK };
+  PetscInt    phi_list_length = 2;
+  PetscTruth  plasticSet, till_phiSet, phi_listSet;
   ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &plasticSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-till_phi", &till_phiSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-till_phi", phi_list, &phi_list_length,
+            &phi_listSet); CHKERRQ(ierr);
   
-  if (plasticSet == PETSC_TRUE) {
-    useConstantTillPhi = PETSC_FALSE;
-    PetscScalar  **tillphi;
-    ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscScalar nsd = i * dx, ewd = j *dy;
-        if (    (nsd >= (29 - 1) * dx61) && (nsd <= (33 - 1) * dx61)
-             && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-//        if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
-//             && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-          tillphi[i][j] = DEFAULT_TILL_PHI_WEAK;
-        } else {
-          tillphi[i][j] = DEFAULT_TILL_PHI_STRONG;
+  if ((phi_listSet == PETSC_TRUE) || (till_phiSet == PETSC_TRUE)) {
+    if (plasticSet == PETSC_FALSE) {
+      ierr = verbPrintf(1,grid.com,
+               "WARNING: option -till_phi read in IceEISModel but -plastic not set\n");
+               CHKERRQ(ierr);
+    } else { // proceed to fill in map of phi = friction angle for till
+             // based on option -till_phi or on defaults above
+      useConstantTillPhi = PETSC_FALSE;
+      PetscScalar  **tillphi;
+      ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          const PetscScalar nsd = i * dx, ewd = j *dy;
+          if (    (nsd >= (29 - 1) * dx61) && (nsd <= (33 - 1) * dx61)
+               && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
+            tillphi[i][j] = phi_list[1];
+          } else {
+            tillphi[i][j] = phi_list[0];
+          }
         }
       }
+      ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com,
+         "map of phi = (till friction angle) stored  IceEISModel::generateTroughTopography()\n");
+         CHKERRQ(ierr);
     }
-    ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
   }
 
-#if 0
-  // if option -plastic is set, then also generate a map of till yield stress
-  // phi, which puts phi smaller in 
-#define DEFAULT_TILL_YIELD_STRESS_STRONG   30.0e3   // 30 kPa
-#define DEFAULT_TILL_YIELD_STRESS_WEAK      1.0e3   //  1 kPa
-  PetscTruth  plasticSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &plasticSet); CHKERRQ(ierr);
-  
-  if (plasticSet == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,"IceEISModel::generateTroughTopography(); plasticSet true so setting tauc"); CHKERRQ(ierr);
-    holdTillYieldStress = PETSC_TRUE;
-    PetscScalar  **tauc;
-    ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscScalar nsd = i * dx, ewd = j *dy;
-        if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
-             && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-          tauc[i][j] = DEFAULT_TILL_YIELD_STRESS_WEAK;
-        } else {
-          tauc[i][j] = DEFAULT_TILL_YIELD_STRESS_STRONG;
-        }
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  }
-#endif
   return 0;
 }
 
@@ -409,6 +398,9 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   // communicate b because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+           "mound bed topography stored by IceEISModel::generateTroughTopography()\n");
+           CHKERRQ(ierr);
   return 0;
 }
 
