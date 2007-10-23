@@ -301,9 +301,10 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   // by Tony Payne, 6 March 1997
   
-  const PetscScalar    slope = -1.333e-3;
+  const PetscScalar    b0 = 1000.0;  // plateau elevation
+  const PetscScalar    L = 750.0e3;  // half-width of computational domain
   const PetscScalar    w = 200.0e3;  // trough width
-  const PetscScalar    L = 750.0e3;
+  const PetscScalar    slope = b0/L;
   const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
   const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
   PetscScalar          topg, **b;
@@ -314,7 +315,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
       const PetscScalar nsd = i * dx, ewd = j *dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-        topg = 1000.0 + PetscMin(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
+        topg = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
       } else {
         topg = 1000.0;
       }

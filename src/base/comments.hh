@@ -24,8 +24,8 @@
  * See the PISM Reference Manual (http://www.pism-docs.org/refman.pdf)
  * for a useful subset of this source browser
  * in PDF form.  The Reference Manual contains the minimum documentation 
- * of the PISM class structure in order to include all the important documentation 
- * of the continuum models and numerical methods of PISM.  (Such continuum model
+ * of the PISM class structure in order to document 
+ * the continuum models and numerical methods of PISM.  (Such continuum model
  * and numerical method documentation is widely scattered in this source browser.)
  *
  * There is also a source code <i>repository</i> browsing tool at the PISM download site
@@ -71,9 +71,8 @@
  * \em methods in PISM.  It is restricted to documenting the three classes MaterialType
  * (and its derived classes), IceGrid (and its associated class IceParam), and the main
  * PISM class IceModel.  The source files from which this Manual is drawn are limited to 
- * files in the <tt>pism/src/base/</tt> subdirectory.  Note that, by contrast, the source 
- * code browser describes \em all classes and 
- * \em all class members and \em all source files in PISM.
+ * files in the <tt>pism/src/base/</tt> subdirectory.  By contrast, the source 
+ * code browser describes all the classes, class members, and source files in PISM.
  *
  * Most users should start with the PISM User's Manual (http://www.pism-docs.org/manual.pdf) 
  * for help with installing and using PISM.

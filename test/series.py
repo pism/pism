@@ -1,14 +1,15 @@
 #! /usr/bin/env python
-## This script takes the standard out from pismr or pisms, extracts time series
-## for the quantities in the summary, and saves these in a NetCDF file.
+## This script takes the standard out from pismr, pisms, pgrn, or pismv.  It extracts
+## time series for the quantities in the summary, and saves these in a NetCDF file.
 ## For example,
-##   $ pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5qq000 >> eisIIA.out
+##   $ pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out
 ##   $ series.py -f eisIIA.out -o eisIIA_series.nc
 ##   $ ncview eisIIA_series.nc
-##
-## CURRENT LIMITATIONS:
-##   1. doesn't work for pismv or pismd output
-##   2. doesn't work for -verbose output
+## For *temperature-dependent* SIA pismv output (tests F,G,K) run as above.
+## For *isothermal* SIA pismv output (tests A,B,C,D,E,L) add the option -i:
+##   $ pismv -test C >> testC.out
+##   $ series.py -i -f testC.out -o testC_series.nc
+## CURRENT LIMITATION: doesn't work for pismd output
 
 from numpy import *
 from pycdf import *
@@ -21,25 +22,26 @@ IN_FILE = 'foo.txt'
 OUT_FILE = 'series_out.nc'
 
 ##### process command line arguments #####
-pref = ''
 infilename = IN_FILE
 outfilename = OUT_FILE
+ipismvout = False
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:f:o:",
-                             ["prefix=", "file=", "out="])
+  opts, args = getopt.getopt(sys.argv[1:], "i:f:o:",
+                             ["isopismv=", "file=", "out="])
   for opt, arg in opts:
-    if opt in ("-p", "--prefix"):
-      pref = arg
-    elif opt in ("-f", "--file"):
+    if opt in ("-f", "--file"):
       infilename = arg
     elif opt in ("-o", "--out"):
       outfilename = arg
+    elif opt in ("-i", "--isopismv"):
+      ipismvout = True
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
 
 # read file into an array of time and of vol
-print "reading PISM (pisms or pismr) standard output from ",infilename
+print "reading PISM (pismr, pisms, pgrn, or pismv) standard output from"
+print "    ",infilename
 try:
   infile = open(infilename, 'r');
 except IOError:
@@ -58,14 +60,26 @@ while True:
   myline = infile.readline()
   if not myline:
     break
-  if myline[0] == '$':
-    year.append(float(myline[5:16]))
-    step.append(float(myline[19:28]))
-    vol.append(float(myline[34:42]))
-    area.append(float(myline[42:50]))
-    meltf.append(float(myline[50:59]))
-    thick0.append(float(myline[59:70]))
-    temp0.append(float(myline[70:80]))
+  pos1 = myline.find(' (+ ')  # first string which marks a summary line
+  pos2 = myline.find(']):')   # second string which marks a summary line
+  posYEAR = myline.find('YEAR')
+  if ((pos1 >= 13) and (pos2 >= 25) and (posYEAR < 0)):  # clearly is a summary line
+    tokens = myline.split()
+    year.append(float(tokens[1]))
+    dtstr = tokens[3]
+    bracketpos = dtstr.find('[')
+    step.append(float(dtstr[:bracketpos]))
+    off = 0
+    if (tokens[4].find(']):') >= 0):
+      off = 1
+    vol.append(float(tokens[4 + off]))
+    area.append(float(tokens[5 + off]))
+    if (ipismvout):
+      thick0.append(float(tokens[6 + off]))
+    else:
+      meltf.append(float(tokens[6 + off]))
+      thick0.append(float(tokens[7 + off]))
+      temp0.append(float(tokens[8 + off]))
     count = count + 1
 print str(count) + ' summary lines read'
 infile.close()
@@ -87,23 +101,26 @@ setattr(volvar, 'interpolation', 'linear')
 areavar = ncfile.def_var('area', NC.FLOAT, (timedim,))
 setattr(areavar, 'units', '10^6 km^2')
 setattr(areavar, 'interpolation', 'linear')
-meltfvar = ncfile.def_var('meltf', NC.FLOAT, (timedim,))
-setattr(meltfvar, 'interpolation', 'linear')
 thick0var = ncfile.def_var('thick0', NC.FLOAT, (timedim,))
 setattr(thick0var, 'units', 'm')
 setattr(thick0var, 'interpolation', 'linear')
-temp0var = ncfile.def_var('temp0', NC.FLOAT, (timedim,))
-setattr(temp0var, 'units', 'K')
-setattr(temp0var, 'interpolation', 'linear')
+if (ipismvout == False):
+  meltfvar = ncfile.def_var('meltf', NC.FLOAT, (timedim,))
+  setattr(meltfvar, 'interpolation', 'linear')
+  temp0var = ncfile.def_var('temp0', NC.FLOAT, (timedim,))
+  setattr(temp0var, 'units', 'K')
+  setattr(temp0var, 'interpolation', 'linear')
 # write data 
 yearvar[:] = year
 stepvar[:] = step
 volvar[:] = vol
 areavar[:] = area
-meltfvar[:] = meltf
 thick0var[:] = thick0
-temp0var[:] = temp0
+if (ipismvout == False):
+  meltfvar[:] = meltf
+  temp0var[:] = temp0
 # close
 ncfile.close()
-print "time series for vol, area, etc. written into NetCDF file ",outfilename
+print "time series for vol, area, etc. written into NetCDF file"
+print "    ", outfilename
 

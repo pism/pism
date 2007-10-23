@@ -35,14 +35,14 @@ PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
   PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet;
   PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
-              mytransformForSurfaceGradient, myincludeBMRinContinuity,
+              mytransformForSurfaceGradient, myincludeBMRinContinuity, lowtempSet,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
-              mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet,
+              mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet, maxlowtempsSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress;
   PetscTruth  noMassConserve, noTemp; 
-  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB, 
+  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization;
-  PetscInt    my_Mx, my_My, my_Mz, my_Mbz;
+  PetscInt    my_Mx, my_My, my_Mz, my_Mbz, my_maxlowtemps;
 
   // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
   // allows users to set options using this.
@@ -127,6 +127,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
 
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-low_temp", &my_lowtemp, &lowtempSet); CHKERRQ(ierr);
+  if (lowtempSet == PETSC_TRUE)  globalMinAllowedTemp = my_lowtemp;
+
 // note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
 
 // note "-mato" caught in writeFiles() in iMIO.cc
@@ -135,6 +138,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-maxdt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
   if (maxdtSet == PETSC_TRUE)    setMaxTimeStepYears(my_maxdt);
+
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-max_low_temps", &my_maxlowtemps, &maxlowtempsSet); CHKERRQ(ierr);
+  if (maxlowtempsSet)    maxLowTempCount = my_maxlowtemps;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
 

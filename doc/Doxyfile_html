@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = "PISM (a Parallel Ice Sheet Model)"
-PROJECT_NUMBER         = beta
+PROJECT_NUMBER         = alpha
 OUTPUT_DIRECTORY       = /home/bueler/pism/doc/doxy
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
@@ -82,7 +82,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../src
+INPUT                  = ../src/base/ ../src/exact/ ../src/verif/ ../src/eismint/ ../src/netcdf/ ../src/tool/
+# ELB note:  src/num,ryan,embayment,ismip not currently documented by browser
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \

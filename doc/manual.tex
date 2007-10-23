@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{197}
+\newcommand{\PISMREV}{198}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1712,6 +1712,8 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \end{tabular}
 \end{table}
 
+\optdef{low\und temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that a numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated so that temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations.  See option \verb|-max_low_temps|.
+
 \opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
 
 \opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
@@ -1723,6 +1725,8 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \opt{matv}  Specifies which \Matlab ``views'' to save at end of run.  See Appendix C for list of single character names of the views.  The default is for \emph{no} \Matlab views.  See \verb|-mato| for setting the name of the \Matlab-readable file in which to save the views.  Typically the user will write \verb|-mato foo -matv HT0c| to save four views in the \Matlab-readable ASCII file \verb|foo.m|.
 
 \optdef{maxdt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sect:usage}.
+
+\optdef{max\und low\und temps}{10}  Give the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \verb|-verbose| is set.  Note that a numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated so that temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations.  See option \verb|-low_temp| for the cutoff low temperature.
 
 \optdef{Mbz}{1}  Number of grid points in the bedrock for the bedrock thermal model.  The highest grid point corresponds to the base of the ice $z=0$, and so \t{Mbz}$>1$ is required to actually have bedrock thermal model.  Note this option is unrelated to the bed deformation model (glacial isostasy model); see option \verb|-bed_def| for that.
 
@@ -2047,9 +2051,38 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 \clearpage \newpage
 \section{Some scripts}\label{sect:scripts}
 
-The following scripts are found in subdirectory \verb|pism/test/|.
+The following scripts, among others, are found in subdirectory \verb|pism/test/|.
 
-\subsubsection*{\Large{\texttt{series.py}}}  This Python script postprocesses the standard output of \verb|pismr|, \verb|pisms|, or \verb|pgrn| (among others; output from \verb|pismd| and \verb|pismv| are not currently supported).
+\subsubsection*{\Large{\texttt{series.py}}}  This Python script postprocesses the standard output of \verb|pismr|, \verb|pisms|, \verb|pgrn|, or \verb|pismv| if it is stored in a text file.  (That is, standard output from the PISM \emph{evolution} executables.  Output from \verb|pismd|, an executable for diagnostic runs, is not supported.)
+
+Time series are extracted from the text file containing the standard output.  Typically this means time series for ice sheet volume, area, melt fraction, thickness at the center of the grid, and temperature of the base of the ice at the center of the grid.  Also the time series for the time step length itself is extracted.  These time series are put into a one-dimensional NetCDF file.
+
+An example usage is
+
+\verb|$  pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out|
+
+\verb|$  series.py -f eisIIA.out -o eisIIA_series.nc|
+
+\verb|$  ncview eisIIA_series.nc|
+
+For temperature-dependent SIA \verb|pismv| output (tests F,G,K) run as above, but for isothermal SIA \verb|pismv| output (tests A,B,C,D,E,L) add the option ``\verb|-i|'':
+
+\verb|$  pismv -test C >> testC.out|
+
+\verb|$  series.py -i -f testC.out -o testC_series.nc|
+
+\noindent In this case \verb|series.py| only extracts time series for volume, area, and central thickness.
+
+Note that the small number of digits reported in the standard output from the PISM executables may limit the utility of the resulting time series.  That is, the time series may mostly show discrete steps which result from the small number of digits reported rather than from the (unreported) full precision volume, area, etc.
+
+\verb|series.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
+
+\optoptdef{f}{file}{foo.txt} Specify the name of the text file.
+
+\optoptdef{i}{isopismv}{False} If ``\verb|-i|'' is given then \verb|series.py| assumes the text file came from using \verb|pismv| on an isothermal SIA verification test.
+
+\optoptdef{o}{out}{series\und out.nc} Give the full name, including the \verb|.nc| extension, of the output NetCDF file.
+
 
 \subsubsection*{\Large{\texttt{verifynow.py}}}  This Python script organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 
