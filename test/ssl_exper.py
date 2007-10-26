@@ -10,16 +10,18 @@ import string
 
 # command line arguments
 num_proc=1
-stdout_file = "output_file"
-BOOT_IN_FILE = "eis_green_smoothedbed.nc"
+stdout_file = "out.txt"
+IN_FILE = "green20km_Tsteady.nc"
 steadyState = "-ssl2"
 out_end = "SSL2"
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "n:s", ["num_proc", "ssl3"])
+  opts, args = getopt.getopt(sys.argv[1:], "i:n:s", ["infile","num_proc", "ssl3"])
   for opt, arg in opts:
+    if opt in ("-i", "--infile"):
+      IN_FILE = arg
     if opt in ("-n", "--num_proc"):
-      num_proc=int(arg)
+      num_proc = int(arg)
     if opt in ("-s", "--ssl3"):
       steadyState = "-ssl3 -gk"
       out_end = "SSL3"
@@ -30,20 +32,11 @@ except getopt.GetoptError:
 
 print 'Running with ' + str(num_proc) + ' processors'
 
-# run pism setup stuff
+# run
 try:
-  print '1. trivial amount of surface smoothing'
-  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -bif ' + BOOT_IN_FILE + ' -Mx 83 -My 141 -Mz 201 -y 1 -ocean_kill -o green20km_smooth >> '+stdout_file
-  print cmd
-  (status, output)=commands.getstatusoutput(cmd)
-
-  print '2. 100k year run to get approximate temperature equilibrium (no surface change)'
-  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_smooth.nc -y 1e5 -no_mass -o green20km_Tequil >> '+stdout_file
-  print cmd
-  (status, output)=commands.getstatusoutput(cmd)
-
-  print '3. run for 100k years to head toward thermocoupled-geometry equil'
-  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if green20km_Tequil.nc -y 1e5 -ys 0 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >>'+stdout_file
+  print '1. run for 100k years to head toward geometry and thermocoupled steady state'
+  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if ' + IN_FILE 
+  cmd += ' -y 1e5 -ys 0 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >> ' + stdout_file
   print cmd
   (status, output)=commands.getstatusoutput(cmd)
 
@@ -62,7 +55,10 @@ prev_year=100
 while result > .0001:
   #run pism
   print 'running until '+str(curr_year)+'k years'
-  run_pism='mpiexec -n ' + str(num_proc) + ' pgrn ' + steadyState + ' -if green20km_'+out_end+str(prev_year)+'k.nc -y 1e4 -ocean_kill -tempskip 3 -o green20km_'+out_end+str(curr_year)+'k >> '+stdout_file
+  run_pism = 'mpiexec -n ' + str(num_proc) + ' pgrn ' + steadyState
+  run_pism += ' -if green20km_' + out_end + str(prev_year) + 'k.nc -y 1e4 -ocean_kill -tempskip 3 '
+  run_pism += ' -o green20km_' + out_end + str(curr_year) + 'k >> ' + stdout_file
+  print run_pism
   try:
     (status, output)=commands.getstatusoutput(run_pism)
   except KeyboardInterrupt:
@@ -98,4 +94,4 @@ while result > .0001:
   print 'percent difference is: '+str(result*100)+'%'
   prev_year=curr_year
   curr_year=curr_year+10
-  
+

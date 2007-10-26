@@ -402,7 +402,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
 
-  verbPrintf(2, grid.com, "bootstrapping done\n");
+  verbPrintf(2, grid.com, "bootstrapping by PISM default method done\n");
   initialized_p = PETSC_TRUE;
   return 0;
 }

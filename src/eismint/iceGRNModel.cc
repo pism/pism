@@ -56,11 +56,14 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   if (ssl3Set == PETSC_TRUE) {
     enhancementFactor = 1;
     if (gkSet == PETSC_FALSE && ((flowlawSet == PETSC_TRUE && lawNum != 4) || flowlawSet == PETSC_FALSE)) {
-      verbPrintf(1, grid.com, "WARNING: SSL3 specified, but not -gk\n");
+      ierr = verbPrintf(1, grid.com, "WARNING: SSL3 specified, but not -gk\n");  CHKERRQ(ierr);
     }
   } else {
     enhancementFactor = 3;
   }
+  
+  bedDiff = 0.0;
+  
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // note: user value for -e will override e=3
   return 0;
 }
@@ -73,7 +76,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // wait on init hook; possible regridding!
 
-  verbPrintf(3, grid.com,"geothermal flux vGhf is being set to: %f\n",
+  verbPrintf(2, grid.com,"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
              EISMINT_G_geothermal);
   ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
 
@@ -115,8 +118,15 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   } else if (bootFileSet == PETSC_TRUE) {
     // after we set the new temperatures, we need
     // to set the 3D temps again
+    ierr = verbPrintf(2, grid.com, 
+       "computing surface temperatures according to EISMINT-Greenland rule \n"
+       "   (uses surface elevation and latitude)\n");  CHKERRQ(ierr);
     ierr = updateTs(); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, 
+       "filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);
     ierr = putTempAtDepth(); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, 
+       "removing extra land (Ellesmere Island and Iceland) using EISMINT-Greenland rule\n"); CHKERRQ(ierr);
     ierr = cleanExtraLand(); CHKERRQ(ierr);
   } else {
     SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
@@ -191,7 +201,6 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     }
   }
 
-
   if (expernum == 4) {  // for GWL3 apply global warming temperature forcing
     PetscScalar t_increase;
     PetscScalar age = grid.p->year - startYear;
@@ -231,6 +240,8 @@ PetscErrorCode IceGRNModel::updateTs() {
   PetscScalar val;
   PetscScalar **Ts, **lat, **h;
   
+  ierr = verbPrintf(4, grid.com, 
+     "recomputing surface temperatures according to EISMINT-Greenland rule \n");  CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);

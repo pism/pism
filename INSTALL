@@ -1,3 +1,6 @@
+PETSc must be installed (and functioning) before PISM can be built.
+See http://www-unix.mcs.anl.gov/petsc/petsc-as/.
+
 Assuming PETSC_DIR and PETSC_ARCH are set properly, just run:
 
 $ make && make install   # This only installs to ./{lib,bin}
@@ -6,9 +9,14 @@ If FFTW is not available do
 
 $ export WITH_FFTW=0
 
-before make.  More complete installation information, including on installing
-PETSc and other libraries used by PISM, are in the first section of the PISM 
-user's manual: http://www.dms.uaf.edu/~bueler/manual.pdf
+before make.
+
+More complete installation information, including on installing
+PETSc and other libraries used by PISM, is in the first section of the PISM 
+User's Manual: http://www.pism-docs.org/manual.pdf
+
+
+-------------------------------------------------------------------------------------------
 
 An alternative is to use the SCons build process.  SCons is more intelligent
 about recompiling files and managing shared libraries, so it might be more
