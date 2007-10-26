@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{199}
+\newcommand{\PISMREV}{200}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1125,19 +1125,19 @@ Note that the script \verb|eis_green.py| accepts option \verb|--prefix=foo/| to 
 
 Now run
 
-\verb|  eis_green.py --prefix=foo/|
+\verb|$ eis_green.py --prefix=foo/|
 
 The NetCDF file \verb|eis_green20.nc| will be created from the data in \verb|grid20-EISMINT| and \verb|suaq20-EISMINT|.  It contains variables for the gridded latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|h|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can be viewed graphically with \verb|ncview| (or as \emph{long} text files with \verb|ncdump|).
 
 As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used on \verb|eis_green20.nc| to compare the putative ice surface elevation to the sum of the ice thickness and the bed elevation:
 
-\verb|  ncap -O -vs "check=h-(H+b)" eis_green20.nc eis_green_check.nc|
+\verb|$ ncap -O -vs "check=h-(H+b)" eis_green20.nc eis_green_check.nc|
 
 \noindent The variable \verb|check| in the output file holds the difference of \verb|h| and the sum $\verb|b|+\verb|H|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|h| is within 1 meter of $\verb|b|+\verb|H|$.  Thus the surface elevation \verb|h| is consistent.  It is also redundant: at bootstrapping, described below, PISM simply reads ice thickness \verb|H| and bed elevation \verb|b| and computes ice surface elevation as the sum of these two; the ice surface elevation variable \verb|h| is not actually read from the bootstrapping NetCDF file.
 
 The bed elevation in the original data effectively contains a missing value attribute of $0.0$, because in several places---deep fjords, mostly---the observed bed elevation was not measured or trusted.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions difficult.  We therefore suggest smoothing the bed elevations.  This can be done with another script named \verb|fill_missing.py|, found in directory \verb|pism/test/|. To use this script, the following command can be run:
 
-\verb|  fill_missing.py -i eis_green20.nc -v b -o eis_green_smoothed.nc|
+\verb|$ fill_missing.py -i eis_green20.nc -v b -o eis_green_smoothed.nc|
 
 \noindent Here, \verb|eis_green20.nc| is the input file, \verb|b| is the variable with missing values, and \verb|eis_green_|  \verb|smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors.  Multiple variables can be fixed at the same time by separating the variable names by commas.  (The script \verb|fill_missing.py| is a general tool for cleaning NetCDF files.  It is documented in Appendix D.)  
 
@@ -1151,7 +1151,7 @@ In addition to getting the EISMINT gridded data into NetCDF format and filling m
 
 We mentioned the script \verb|eis_core.py|.  Now we execute it, possibly giving the directory where the ice core and sea bed core data  are found, if that is not the current directory:
 
-\verb|  eis_core.py|
+\verb|$ eis_core.py|
 
 \noindent (If data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| are not found in the current directory but instead in \verb|/foo/|, add the option \verb|--prefix=foo/|.)  Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  Using \verb|ncview| on \verb|grip_dT.nc| gives the graph of temperature  shown in Figure \ref{fig:gripDeltaT}.
 
@@ -1221,7 +1221,7 @@ We do it by going back to the data, \verb|-bif|ing and running for only one year
 \verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady|
 \smallskip
 
-\noindent This last run takes a significant amount of computer time (at least hours).  It is a case where many more processors \emph{are} effective, up to perhaps 50 processors.
+\noindent This last run takes a significant amount of computer time (at least several hours).  It is a case where many more processors \emph{are} effective, up to perhaps 50 processors.
 
 \subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions, our first experiment is the steady state run ``SSL2'' which uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  This experiment is intended to be run until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines to mean a particular standard for a small volume change rate (less than a .01\% change in volume in 10,000 years).
 
@@ -1231,9 +1231,7 @@ There is a script that automates the process of checking the steady state condit
 
 [SHOW RESULT AND STATE TIME IT TOOK]
 
-One can also give a \verb|-ssl3 -gk| option to \verb|pgrn|, or a \verb|--ssl3| option to \verb|ssl_exper.py|.  This assigns a particular interpretation to the SSL3 experiment which is described in \cite{RitzEISMINT}, namely that the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0 will be used.  (There is no assertion that this choice is superior at this point.)
-
-There are several experiments that can be run using command line arguments with \verb|pgrn|.  Some of them require the use of more python scripts, while single line commands are sufficient for others.
+One can also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run our version of the EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|-ssl3 -gk| option to \verb|pgrn|.)  Our particular interpretation to the SSL3 experiment is that the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0 will be used.  There is no assertion that this is a superior modeling choice, and so SSL3 is given this interpretation merely for illustration.
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run (above) using the saved steady model state. 
 

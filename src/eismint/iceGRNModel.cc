@@ -62,9 +62,12 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     enhancementFactor = 3;
   }
   
+  muSliding = 0.0;  // document says "no sliding"!
+  
   bedDiff = 0.0;
   
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // note: user value for -e will override e=3
+  // note: user value for -e and -mu_sliding will override enhancementFactor, mu_sliding setting above
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
   return 0;
 }
 
