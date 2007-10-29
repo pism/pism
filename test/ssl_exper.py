@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # This script will run the EISMINT-Greenland SSL2 or SSL3 experiment. It runs pgrn
-# until there is less than a .01% change in volume in 10,000 years
+# until there is less than a .01% change in volume in 10,000 years (standard given by
+# EISMINT-Greenland)
 
 import sys
 import getopt
@@ -9,89 +10,102 @@ import commands
 import string
 
 # command line arguments
-num_proc=1
+nproc = 1
 stdout_file = "out.txt"
-IN_FILE = "green20km_Tsteady.nc"
+IN_FILE = "green20km_Tsteady.nc"  # this input file should contain credible temp field
 steadyState = "-ssl2"
-out_end = "SSL2"
+ending = "SSL2"
+criterion = 0.0001  # 0.01% is default criterion
+interval = 10 # 10k model years; option gives multiple of 1000 years
+prev_year = 0
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "i:n:s", ["infile","num_proc", "ssl3"])
+  opts, args = getopt.getopt(sys.argv[1:], "i:n:s:t:c:s:",
+         ["infile","nproc", "ssl3", "timeinterval", "criterion", "startyeark"])
   for opt, arg in opts:
     if opt in ("-i", "--infile"):
       IN_FILE = arg
-    if opt in ("-n", "--num_proc"):
-      num_proc = int(arg)
+    if opt in ("-n", "--nproc"):
+      nproc = int(arg)
     if opt in ("-s", "--ssl3"):
       steadyState = "-ssl3 -gk"
-      out_end = "SSL3"
-      print "Running SSL3 experiment"
+      ending = "SSL3"
+      print "  [running SSL3 experiment]"
+    if opt in ("-t", "--timeinterval"):
+      interval = int(arg)
+    if opt in ("-c", "--criterion"):
+      criterion = float(arg)
+    if opt in ("-s", "--startyeark"):
+      prev_year = int(arg)
 except getopt.GetoptError:
-  print 'Incorrect command line arguments'
+  print 'INCORRECT COMMAND LINE ARGUMENTS; EXITING'
   sys.exit(2)
 
-print 'Running with ' + str(num_proc) + ' processors'
+print "  [using " + str(nproc) + " processors]"
+print "  [using interval of " + str(interval) + "k years between volume measurements]"
+print "  [using criterion of " + str(criterion*100) + " percent change between volume measurements]"
 
-# run
-try:
-  print '1. run for 100k years to head toward geometry and thermocoupled steady state'
-  cmd = 'mpiexec -n '+str(num_proc)+' pgrn ' + steadyState + ' -if ' + IN_FILE 
-  cmd += ' -y 1e5 -ys 0 -ocean_kill -tempskip 3 -o green20km_' + out_end + '100k >> ' + stdout_file
-  print cmd
-  (status, output)=commands.getstatusoutput(cmd)
+# set up iteration and test
+curr_year = prev_year + interval
 
-except KeyboardInterrupt:
-  sys.exit(2)
-except:
-  print 'output: '+output
-  sys.exit(status)
-
-# set up the final section
-result = 1
-curr_year=110
-prev_year=100
-
-# build command
-while result > .0001:
-  #run pism
-  print 'running until '+str(curr_year)+'k years'
-  run_pism = 'mpiexec -n ' + str(num_proc) + ' pgrn ' + steadyState
-  run_pism += ' -if green20km_' + out_end + str(prev_year) + 'k.nc -y 1e4 -ocean_kill -tempskip 3 '
-  run_pism += ' -o green20km_' + out_end + str(curr_year) + 'k >> ' + stdout_file
-  print run_pism
+# iterate
+inname = IN_FILE
+count = 0
+while True:
+  print '  running from ' + str(prev_year) + 'k years until ' + str(curr_year) + 'k years ...'
+  outname = 'green_' + ending + '_' + str(curr_year) + 'k'
+  cmd = 'mpiexec -n ' + str(nproc) + ' pgrn ' + steadyState + ' -if ' + inname
+  cmd += ' -y ' + str(interval) + '000'
+  if (count == 0):
+    cmd += ' -ys 0'
+  cmd += ' -ocean_kill -tempskip 3 -o ' + outname + ' >> ' + stdout_file
+  print '  trying:  ' + cmd
   try:
-    (status, output)=commands.getstatusoutput(run_pism)
+    (status, output)=commands.getstatusoutput(cmd)
   except KeyboardInterrupt:
     sys.exit(2)
+  except:
+    print 'ERROR OUTPUT: ' + output
+    sys.exit(status)
 
-  # compute the change in "volume" it's actually the
-  # sum of the thicknesses, but since the grid is
-  # equally spaced, the result will be the same
+  # Compute the change in "volume".  Actually use the sum of the thicknesses, but since the grid is
+  # equally spaced, the result will be the same.  Use the NCO.
 
-  cmd1='ncwa -O -N -v H -a x,y green20km_'+out_end+str(prev_year)+'k.nc -o area_'+str(prev_year)+'k.nc'
-  cmd2='ncwa -O -N -v H -a x,y green20km_'+out_end+str(curr_year)+'k.nc -o area_'+str(curr_year)+'k.nc'
-  cmd3='ncks -O -s \'%f\n\' -C -v H area_'+str(prev_year)+'k.nc | tail -n 1'
-  cmd4='ncks -O -s \'%f\n\' -C -v H area_'+str(curr_year)+'k.nc | tail -n 1'
+  areaPrevName = 'area_' + str(prev_year) + 'k.nc'
+  areaCurrName = 'area_' + str(curr_year) + 'k.nc'
+  outnamefull = outname + '.nc'
+  cmd1='ncwa -O -N -v H -a x,y ' + inname + ' -o ' + areaPrevName
+  cmd2='ncwa -O -N -v H -a x,y ' + outnamefull + ' -o ' + areaCurrName
+  cmd3='ncks -O -s \'%f\n\' -C -v H ' + areaPrevName + ' | tail -n 1'
+  cmd4='ncks -O -s \'%f\n\' -C -v H ' + areaCurrName + ' | tail -n 1'
   try:
     (status, output)=commands.getstatusoutput(cmd1)
     (status, output)=commands.getstatusoutput(cmd2)
   except KeyboardInterrupt:
     sys.exit(2)
   except:
-    print output
+    print 'ERROR OUTPUT: ' + output
     sys.exit(status)
   try:  
     (status, area1)=commands.getstatusoutput(cmd3)
-    print 'Sum of H for '+str(prev_year)+'k: '+str(area1)
+    print '  sum of H for ' + str(prev_year) + 'k years: ' + str(area1)
     (status, area2)=commands.getstatusoutput(cmd4)
-    print 'Sum of H for '+str(curr_year)+'k: '+str(area2)
+    print '  sum of H for ' + str(curr_year) + 'k years: ' + str(area2)
   except KeyboardInterrupt:
     sys.exit(2)
   except:
-    print 'problem with areas'
+    print 'ERROR: PROBLEM WITH AREAS'
     sys.exit(status)
-  result=abs((float(area1)-float(area2))/float(area2))
-  print 'percent difference is: '+str(result*100)+'%'
-  prev_year=curr_year
-  curr_year=curr_year+10
+  result = abs((float(area1)-float(area2))/float(area2))
+  print '  percent difference is: ' + str(result*100) + '%'
+
+  if (result <= criterion):
+    print "  resulting volume difference less than criterion; ending"
+    break
+    
+  prev_year = curr_year
+  curr_year = curr_year + interval
+  inname = 'green_' + ending + '_' + str(prev_year) + 'k.nc'
+  count += 1
+  #end while True:
 

@@ -55,14 +55,15 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   if (ssl3Set == PETSC_TRUE) {
     enhancementFactor = 1;
+    const PetscScalar SSL3_MU_SLIDING = 1.585e-11;  // 50 m/a at 100kPa = 1 bar
+    muSliding = SSL3_MU_SLIDING; 
     if (gkSet == PETSC_FALSE && ((flowlawSet == PETSC_TRUE && lawNum != 4) || flowlawSet == PETSC_FALSE)) {
       ierr = verbPrintf(1, grid.com, "WARNING: SSL3 specified, but not -gk\n");  CHKERRQ(ierr);
     }
   } else {
     enhancementFactor = 3;
+    muSliding = 0.0;  // document says "no sliding"!
   }
-  
-  muSliding = 0.0;  // document says "no sliding"!
   
   bedDiff = 0.0;
   
@@ -78,10 +79,6 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   PetscTruth inFileSet, bootFileSet, dTforceSet, dSLforceSet, nopddSet;
   
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // wait on init hook; possible regridding!
-
-  verbPrintf(2, grid.com,"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
-             EISMINT_G_geothermal);
-  ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -119,8 +116,11 @@ PetscErrorCode IceGRNModel::initFromOptions() {
       ierr = verbPrintf(1, grid.com, "WARNING: -bif and -if given; using -if\n"); CHKERRQ(ierr);
     }
   } else if (bootFileSet == PETSC_TRUE) {
-    // after we set the new temperatures, we need
-    // to set the 3D temps again
+    // though default bootstrapping has set the new temperatures, we need to set the surface
+    // temp and geothermal flux at base and then set 3D temps again
+    ierr = verbPrintf(2, grid.com,"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
+               EISMINT_G_geothermal);
+    ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, 
        "computing surface temperatures according to EISMINT-Greenland rule \n"
        "   (uses surface elevation and latitude)\n");  CHKERRQ(ierr);
