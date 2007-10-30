@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{201}
+\newcommand{\PISMREV}{202}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1220,7 +1220,6 @@ We create this temperature field by running for 10000 years with non-evolving su
 
 \medskip
 \verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady|
-\smallskip
 
 \noindent This last run takes a significant amount of computer time (at least several hours).  In fact it should probably be done longer for serious modeling because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is probably about 100k years (or perhaps even more).
 
@@ -1234,23 +1233,80 @@ There is a script that automates the process of checking the steady state condit
 
 For illustration we do:
 
-\verb|  ssl_exper.py -n 2 -i green20km_Tsteady.nc -t 1 -c 0.01|
+\verb|$  ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01|
 
-\noindent Here we specify that the criterion for steady state is weak, namely only 1\% change (``\verb|-c 0.01|'') between 1000 year runs (``\verb|-t 1|'').
+\noindent Here we specify that the criterion for steady state is weak so that this illustration takes less computer time.  Namely we ask for only 1\% change (``\verb|-c 0.01|'') between 1000 year runs (``\verb|-t 1|'').  With 8 processors this illustrative run with weak steady state criterion completes in a couple of hours.  The actual EISMINT-Greenland run would be
 
-[SHOW RESULT AND STATE TIME IT TOOK]
+\verb|$  ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 10 -c 0.0001|
 
-One can also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run our version of the EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|-ssl3 -gk| option to \verb|pgrn|.)  Our particular interpretation to the SSL3 experiment is that the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0 will be used and that pressure-melting temperature dependent linear sliding with a sliding coefficient that gives 50 m/a sliding at 100 kPa (1 bar) is used.  There is no assertion that these are superior modeling choices.  We give SSL3 this interpretation merely for illustration.
+The illustrative run gives this output:
 
-\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run (above) using the saved steady model state. 
+\small\begin{quote}\begin{verbatim}
+$ ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01
+  [using 8 processors]
+  [using interval of 1k years between volume measurements]
+  [using criterion of 1.0 percent change between volume measurements]
+  running from 0k years until 1k years ...
+  trying:  mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 1000 -ys 0 -ocean_kill
+     -tempskip 3 -o green_SSL2_1k >> out.txt
+  sum of H for 0k, 1k years, resp.: 7063322.500000, 8002617.500000
+  volume change is: 11.7373471867%
+  running from 1k years until 2k years ...
+  trying:  mpiexec -n 8 pgrn -ssl2 -if green_SSL2_1k.nc -y 1000 -ocean_kill
+     -tempskip 3 -o green_SSL2_2k >> out.txt
+  sum of H for 1k, 2k years, resp.: 8002617.500000, 8598249.000000
+  volume change is: 6.92735811675%
+  running from 2k years until 3k years ...
+.
+.
+.
+  running from 7k years until 8k years ...
+  trying:  mpiexec -n 8 pgrn -ssl2 -if green_SSL2_7k.nc -y 1000 -ocean_kill
+     -tempskip 3 -o green_SSL2_8k >> out.txt
+  sum of H for 7k, 8k years, resp.: 9836617.000000, 9915852.000000
+  volume change is: 0.799074048302%
+  resulting volume change below criterion; ending
+\end{verbatim}
+\end{quote}\normalsize
+
+We see that the volume gradually increases but does settle down.  Inspection of the standard output of the run (e.g.~with \verb|less out.txt|) shows that the initial volume of $2.825 \times 10^{6}\,\text{km}^3$ grows to $3.966 \times 10^{6}\,\text{km}^3$ at $8000$ model years.  In fact, to see the behavior over time of the volume, area, basal melt fraction, and so on, use the Python script \verb|test/series.py| documented in Appendix D:
+
+\verb|$  series.py -f out.txt -o illust_series.nc|
+
+\noindent Then view the time series using \verb|ncview|, for instance.  One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume expected to be a bit more than $4 \times 10^{6}\,\text{km}^3$.
+
+In fact that is what happens.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then [STATE WHAT HAPPENS AND FINAL VOLUME].  The ice thickness and homologous basal temperature at the end [???WHEN] of the SSL2 run are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.
+
+\begin{figure}[ht]
+\includegraphics[height=3.7in,keepaspectratio=true]{figs/greenH_SSL2}\qquad\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
+\caption{Ice thickness (meters; left) and homologous basal temperature (degrees C below 0; right) at end [???WHEN] of EISMINT-Greenland SSL2 run; in temperature graph pressure-melting areas are white.}
+\label{fig:ssl2thickThomol}
+\end{figure}
+
+\begin{figure}[ht]
+\includegraphics[height=3.9in,keepaspectratio=true]{figs/greencbar_SSL2}
+\caption{Vertically-averaged horizontal velocity in meters per year at end [???WHEN] of EISMINT-Greenland SSL2 run.}
+\label{fig:ssl2cbar}
+\end{figure}
+
+One may also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run our version of the EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|-ssl3 -gk| option to \verb|pgrn|.)  Our particular interpretation to the SSL3 experiment is: \begin{itemize}
+\item use Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0, and
+\item allow pressure-melting temperature dependent linear sliding with a sliding coefficient that gives 50 m/a sliding at 100 kPa (1 bar).
+\end{itemize}
+There is no assertion that these are superior modeling choices, and we give ``SSL3'' this interpretation merely for illustration.  Note that because of the basal sliding, with sliding velocity proportional to the driving shear stress at the base, the volume time series never quite settles down (not shown).
+
+\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run above.
 
 Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:
 
-\verb|  pgrn -ccl3 -if green20_SSL3.nc -dTforcing grid_dT.nc \|
+\verb|  pgrn -ccl3 -if green_SSL2_100k.nc -dTforcing grid_dT.nc \|
 
 \verb|    -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green20_CCL3_y0|
+\smallskip
 
-\noindent EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing.  If \verb|pgrn -ccl3| is run past year 0, and thus past then end of the GRIP and SPECMAP data, this baseline run will occur by default.  So the previous command can be run for another 500 years, and the forcing can be omitted:
+[SHOW RESULT; give thickness??]
+
+EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing.  If \verb|pgrn -ccl3| is run past year 0, and thus past the end of the GRIP and SPECMAP data, this baseline run will occur by default.  So the previous command can be run for another 500 years, and the forcing can be omitted:
 
 \verb|  pgrn -ccl3 -if green20_CCL3_y0.nc -y 500 -o green20_CCL3_y500|
 

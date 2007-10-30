@@ -77,9 +77,17 @@ while True:
     if (ipismvout):
       thick0.append(float(tokens[6 + off]))
     else:
-      meltf.append(float(tokens[6 + off]))
+      meltfstr = tokens[6 + off];
+      if (meltfstr.find('same') >= 0):
+        meltf.append(meltf[-1])
+      else:
+        meltf.append(float(meltfstr))
       thick0.append(float(tokens[7 + off]))
-      temp0.append(float(tokens[8 + off]))
+      temp0str = tokens[8 + off];
+      if (temp0str.find('same') >= 0):
+        temp0.append(temp0[-1])
+      else:
+        temp0.append(float(temp0str))
     count = count + 1
 print str(count) + ' summary lines read'
 infile.close()

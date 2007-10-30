@@ -88,19 +88,19 @@ while True:
     sys.exit(status)
   try:  
     (status, area1)=commands.getstatusoutput(cmd3)
-    print '  sum of H for ' + str(prev_year) + 'k years: ' + str(area1)
     (status, area2)=commands.getstatusoutput(cmd4)
-    print '  sum of H for ' + str(curr_year) + 'k years: ' + str(area2)
+    print '  sum of H for ' + str(prev_year) + 'k, ' + str(curr_year) + 'k years, resp.: '
+          + str(area1) + ', ' + str(area2)
   except KeyboardInterrupt:
     sys.exit(2)
   except:
     print 'ERROR: PROBLEM WITH AREAS'
     sys.exit(status)
   result = abs((float(area1)-float(area2))/float(area2))
-  print '  percent difference is: ' + str(result*100) + '%'
+  print '  volume change is: ' + str(result*100) + '%'
 
   if (result <= criterion):
-    print "  resulting volume difference less than criterion; ending"
+    print "  resulting volume change below criterion; ending"
     break
     
   prev_year = curr_year
