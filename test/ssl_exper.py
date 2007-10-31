@@ -18,9 +18,10 @@ ending = "SSL2"
 criterion = 0.0001  # 0.01% is default criterion
 interval = 10 # 10k model years; option gives multiple of 1000 years
 prev_year = 0
+mpido = 'mpiexec'
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "i:n:s:t:c:s:",
+  opts, args = getopt.getopt(sys.argv[1:], "i:n:s:t:c:y:m:",
          ["infile","nproc", "ssl3", "timeinterval", "criterion", "startyeark"])
   for opt, arg in opts:
     if opt in ("-i", "--infile"):
@@ -35,8 +36,10 @@ try:
       interval = int(arg)
     if opt in ("-c", "--criterion"):
       criterion = float(arg)
-    if opt in ("-s", "--startyeark"):
+    if opt in ("-y", "--startyeark"):
       prev_year = int(arg)
+    if opt in ("-m", "--mpido"):
+      mpido = arg
 except getopt.GetoptError:
   print 'INCORRECT COMMAND LINE ARGUMENTS; EXITING'
   sys.exit(2)
@@ -54,7 +57,7 @@ count = 0
 while True:
   print '  running from ' + str(prev_year) + 'k years until ' + str(curr_year) + 'k years ...'
   outname = 'green_' + ending + '_' + str(curr_year) + 'k'
-  cmd = 'mpiexec -n ' + str(nproc) + ' pgrn ' + steadyState + ' -if ' + inname
+  cmd = mpido + ' -np ' + str(nproc) + ' pgrn ' + steadyState + ' -if ' + inname
   cmd += ' -y ' + str(interval) + '000'
   if (count == 0):
     cmd += ' -ys 0'

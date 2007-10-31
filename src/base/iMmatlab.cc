@@ -40,7 +40,7 @@ PetscErrorCode IceModel::VecView_g2ToMatlab(PetscViewer v,
   ierr = PetscObjectSetName((PetscObject) g2, varname); CHKERRQ(ierr);
   ierr = VecView(g2, v); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(v,"\n%s = reshape(%s,%d,%d);\n\n",
-             varname, varname, grid.p->Mx, grid.p->My); CHKERRQ(ierr);
+             varname, varname, grid.p->My, grid.p->Mx); CHKERRQ(ierr);
   return 0;
 }
 

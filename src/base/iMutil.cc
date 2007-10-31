@@ -511,7 +511,13 @@ PetscErrorCode  IceModel::stampHistoryString(const char* string) {
     strncpy(grid.p->history, string, sizeof(grid.p->history));
     grid.p->history[sizeof(grid.p->history) - 1] = '\0';
   } else { // We are safe, so we can just write it.
-    strcat(grid.p->history, string);
+    //OLD METHOD: append the latest command:    
+    // strcat(grid.p->history, string);
+    //NEW METHOD: prepend it; this matches NCO behavior so commands are in order
+    char tempstr[HISTORY_STRING_LENGTH];
+    strcpy(tempstr,string);
+    strcat(tempstr,grid.p->history);
+    strcpy(grid.p->history,tempstr);
   }
   
   return 0;
