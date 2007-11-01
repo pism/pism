@@ -1,5 +1,5 @@
 SHELL := /bin/sh
-VPATH := src/:src/base/:src/tool/:src/num/:src/verif/:src/exact/:src/eismint/:src/ismip/
+VPATH := src/:src/base/:src/num/:src/verif/:src/exact/:src/eismint/:src/ismip/
 ALL : all
 
 # get PETSc environment, rules:

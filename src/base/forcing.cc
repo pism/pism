@@ -20,7 +20,7 @@
 #include <cstring>
 #include <netcdf.h>
 // next is only needed for verbPrintF()
-#include "../base/iceModel.hh"
+#include "iceModelpreamble.hh"
 #include "forcing.hh"
 
 PetscErrorCode nc_check(int stat) {
@@ -313,7 +313,8 @@ PetscErrorCode IceSheetForcing::initStandardIceCoreIndex(PetscScalar curr_year) 
     }
   }    
   index = l;
-  printf("index found: %d\n", index);
+  ierr = verbPrintf(3, com, "index into forcing data %s found using current year: index = %d\n",
+          datavarname, index); CHKERRQ(ierr);
   // maybe we are already past our place.
   if (l >= len) {
     forcingActive = PETSC_FALSE;

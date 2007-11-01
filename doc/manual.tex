@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{202}
+\newcommand{\PISMREV}{204}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -282,7 +282,7 @@ You are done with installation at this point.  The next few items are recommende
 \end{enumerate}
 \smallskip
 
-At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Subsection \ref{subsect:green} is an example of using PISM to model the Greenland ice sheet using freely-downloadable data.  Similarly one can model the Ross ice shelf using free data as described in subsection \ref{subsect:ross}.
+At this stage you can do the EISMINT II simplified geometry experiments and run some verification tests without further downloads.  Subsection \ref{sect:green} is an example of using PISM to model the Greenland ice sheet using freely-downloadable data.  Similarly one can model the Ross ice shelf using free data as described in subsection \ref{sect:ross}.
 
 Naturally, setting up PISM to model real ice sheets will generally require techniques not be covered in this manual.  First of all one usual needs to convert ice sheet data to NetCDF format so that it can be read by PISM.  Actual modeling may also require the writing of additional source code.  As PISM is written in C++, this means writing a derived class of the base class.  (The base class \verb|IceModel| is defined in the source file \verb|pism/src/iceModel.hh|.)  Use of PISM for real ice sheet modeling is something we welcome questions about, and will attempt to help with, but we will not pretend it is routine.
 
@@ -305,10 +305,10 @@ Matlab & \href{http://www.mathworks.com/}{\t{www.mathworks.com}} & \emph{recomme
 & & & display of results \\
 MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
 NetCDF & \href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}} & \emph{required} & \\
-\texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
+\texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts in sections \ref{sect:green} and \ref{sect:ross}  \\
 PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
-\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts in section \ref{sect:real}  \\
+\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts in sections \ref{sect:green} and \ref{sect:ross}  \\
 Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\
 \hline
 \normalsize
@@ -337,7 +337,7 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 \clearpage\newpage
 \section{Getting started}\label{sect:start}
 
-\subsection{Running the EISMINT II tests}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:real} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.}  For now, in order to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
+\subsection{Running the EISMINT II tests}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.}  For now, in order to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
 
 In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction; note that the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.
 
@@ -467,7 +467,7 @@ The velocity field saved by \verb|pismd| is the one which would be computed at t
 
 \noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIF200k_fullvels.nc|.\footnote{For this example, one can use a NetCDF Operator to check that the two saved NetCDF files really correspond to the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \verb|-full3Dout|.  Either way, saving the full velocity field roughly doubles the size of the output model state NetCDF file.
 
-Subsection \ref{subsect:ross} describes the use of \verb|pismd| in modeling the Ross ice shelf.  Indeed, ``ice shelf modeling'' has historically meant diagnositic and not evolution computations \cite{MacAyealetal,HumbertGreveHutter}.
+Subsection \ref{sect:ross} describes the use of \verb|pismd| in modeling the Ross ice shelf.  Indeed, ``ice shelf modeling'' has historically meant diagnositic and not evolution computations \cite{MacAyealetal,HumbertGreveHutter}.
 
 
 
@@ -583,7 +583,7 @@ Now we turn on Schoof's plastic till ice stream model.  Because we are solving t
 
 %\clearpage
 %\newpage
-\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [THIS SECTION IS TO BE ADDED; see subsection \ref{subsect:green} as an example of bootstrapping;  note \cite{JoughinMacAyealTulaczyk} is a representative inverse modeling result which could be incorporated in a forward model when using the SSA for ice streams if the Schoof plastic till model is \emph{not} used]
+\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [THIS SECTION IS TO BE ADDED; see subsection \ref{sect:green} as an example of bootstrapping;  note \cite{JoughinMacAyealTulaczyk} is a representative inverse modeling result which could be incorporated in a forward model when using the SSA for ice streams if the Schoof plastic till model is \emph{not} used]
 
 
 \clearpage
@@ -636,7 +636,7 @@ Such ``regridding'' is done using the \verb|-regrid| and \verb|-regrid_vars| com
 
 \noindent Note one specifies ``\verb|HT|'' to indicate that the ice thickness and temperature values from the old grid should be interpolated onto the new grid.  See table \ref{tab:regridvar} for the regriddable variables.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment F description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:real}.  Here it is reasonable to have the sequence of commands, run on 8 processors,
+A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.  Here it is reasonable to have the sequence of commands, run on 8 processors,
 \small
 \begin{verbatim}
 mpiexec -n 8 pismr -bif_legacy init.nc -Mx 141 -My 141 -Mz 101 -Mbz 21 -gk -e 1.2 \
@@ -796,7 +796,7 @@ Ctrl-C & \same & same, but only for foreground processes  \\ \hline
 
 \subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation according to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
 
-A reasonable method for computing the melting of snowfall, optionally used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:real} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
+A reasonable method for computing the melting of snowfall, optionally used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:green} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
 
 The part of this cycle above $0\!\phantom{|}^\circ \text{C}$ is converted to positive degree days.  This number of positive degree days is multiplied by a coefficient (set by \verb|-pdd_factor_snow|) to compute the amount of snow melted.  Of this melted snow, a fraction (\verb|-pdd_refreeze|) is kept as ice.  This ice, plus all unmelted snow (measured as ice-equivalent) is applied as accumulation, unless the number of positive degree days exceeds that required to melt all of the snow-fall in the year.  In this latter case in which there are excess positive degree days available for melting, the number of excess positive degree days is multiplied by a coefficient (\verb|-pdd_factor_ice|) to compute how much ice is melted, so that net ablation occurs (at the given point).
 
@@ -826,7 +826,7 @@ Note that last run is the same as
 
 \noindent and that any of these options can be adjusted.
 
-A positive degree day model specific to the Greenland ice sheet is used in section \ref{sect:real}.
+A positive degree day model specific to the Greenland ice sheet is used in section \ref{sect:green}.
 
 [THE IDEAS IN \cite{CalovGreve05} ARE WORTHWHILE AND DESERVE IMPLEMENTATION.  WITH THESE IDEAS THERE WILL BE NO RESTRICTION TO HITTING THE INTEGER YEARS.  BUT THE TRUE RANDOMNESS WILL BE GONE; IT MAY BE WORTH KEEPING THE OLD VERSTION AS AN OPTION.]
 
@@ -1098,9 +1098,7 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 
 
 \clearpage\newpage
-\section{Realistic ice sheet and ice shelf modeling: two examples}\label{sect:real}
-
-\subsection{Modeling the Greenland ice sheet}\label{subsect:green}  In this subsection we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat out-of-date data, namely data for the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.\footnote{Indeed the reader is encouraged to use PISM to build a better Greenland ice sheet model!}  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.  
+\section{Example: Modeling the Greenland ice sheet}\label{sect:green}  In this subsection we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat out-of-date data, namely data for the ice sheet modelling experiment (intercomparison) known as EISMINT-Greenland \cite{RitzEISMINT}.\footnote{Indeed the reader is encouraged to use PISM to build a better Greenland ice sheet model!}  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.  
 
 As stated earlier, real data are not something we can freely distribute under the GNU Public License.  The data for performing this experiment are, however, freely available at
 \medskip
@@ -1166,7 +1164,7 @@ Two NetCDF files with one-dimensional (time series) data will be created, namely
 \end{figure}
 
 
-\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping is a form of inverse modeling, and we must inevitably do inverse modeling to do ice sheet modeling.}
+\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do ice sheet modeling.}
 
 The following one model year run is a basic version of ``bootstrapping''.  It is shown with \verb|-verbose| to suggest the many issues which arise.  Note that the EISMINT-Greenland specifies an 83 by 141 point grid, but you may use other numbers for \verb|-Mx| and \verb|-My| if desired.  Note that in PISM there is a uniform vertical grid.  Here, because the vertical dimension of the computational box is 4000 m, by specifying ``\verb|-Mz 201|'' we are choosing a 20 m spacing in the vertical.
 
@@ -1218,7 +1216,6 @@ Before seeking a good steady state for the entire thermomechanically-coupled ice
 
 We create this temperature field by running for 10000 years with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
-\medskip
 \verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady|
 
 \noindent This last run takes a significant amount of computer time (at least several hours).  In fact it should probably be done longer for serious modeling because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is probably about 100k years (or perhaps even more).
@@ -1229,17 +1226,19 @@ Because of the current PISM implementation of the positive degree day model spec
 
 \subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  This run is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines to mean a particular standard for a small volume change rate (less than a .01\% change in volume in 10,000 years).
 
-There is a script that automates the process of checking the steady state condition so that it is not necessary to manually check the changes in volume.  This script is called \verb|ssl_exper.py| and is in the \verb|pism/test| directory.  When run, it will continue, saving states every 10,000 years, until the change in volume, between runs with a specified time interval, is less than a specified criterion.  It uses the \href{http://nco.sourceforge.net/}{NCO} to compare the thicknesses in saved model states.  It can be used with multiple processors by setting the option \verb|-n|. 
+The PISM distribution includes a script that automates the process of checking the steady state condition.  Thus it is not necessary to manually check the changes in volume.  This script is called \verb|ssl_exper.py| and is in the \verb|pism/test| directory.  When run it will save states every 10,000 years (or other chosen interval), until the change in volume between saved states is less than a specified criterion.  It uses the \href{http://nco.sourceforge.net/}{NCO} to compare the thicknesses in saved model states.  It can be used with multiple processors by setting the option \verb|-n|; see Appendix D for documentation of the options.
 
 For illustration we do:
 
 \verb|$  ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01|
 
-\noindent Here we specify that the criterion for steady state is weak so that this illustration takes less computer time.  Namely we ask for only 1\% change (``\verb|-c 0.01|'') between 1000 year runs (``\verb|-t 1|'').  With 8 processors this illustrative run with weak steady state criterion completes in a couple of hours.  The actual EISMINT-Greenland run would be
+\noindent Here we specify that the criterion for steady state is weak so that our example takes less computer time; we ask for less than 1\% change (``\verb|-c 0.01|'') between 1000 year runs (``\verb|-t 1|'').  With 8 processors this example completes in several hours.  The actual EISMINT-Greenland run would be
 
 \verb|$  ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 10 -c 0.0001|
 
-The illustrative run gives this output:
+(With 80 processors this full run completed in 5 hours.  Efficiency is a concern for PISM, but functionality and correctness are coming first \dots)  
+
+The example run gives this output:
 
 \small\begin{quote}\begin{verbatim}
 $ ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01
@@ -1269,53 +1268,69 @@ $ ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01
 \end{verbatim}
 \end{quote}\normalsize
 
-We see that the volume gradually increases but does settle down.  Inspection of the standard output of the run (e.g.~with \verb|less out.txt|) shows that the initial volume of $2.825 \times 10^{6}\,\text{km}^3$ grows to $3.966 \times 10^{6}\,\text{km}^3$ at $8000$ model years.  In fact, to see the behavior over time of the volume, area, basal melt fraction, and so on, use the Python script \verb|test/series.py| documented in Appendix D:
+We see that the volume gradually increases but does settle down.  Inspection of the standard output of the run (e.g.~\verb|less out.txt|) shows that the initial volume of $2.825 \times 10^{6}\,\text{km}^3$ grows to $3.966 \times 10^{6}\,\text{km}^3$ at $8000$ model years.  In fact, to see the behavior over time of the volume, area, basal melt fraction, and so on, use the Python script \verb|test/series.py| documented in Appendix D:
 
 \verb|$  series.py -f out.txt -o illust_series.nc|
 
 \noindent Then view the time series using \verb|ncview|, for instance.  One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume expected to be a bit more than $4 \times 10^{6}\,\text{km}^3$.
 
-In fact that is what happens.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then [STATE WHAT HAPPENS AND FINAL VOLUME].  The ice thickness and homologous basal temperature at the end [???WHEN] of the SSL2 run are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.
+In fact that is what happens.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then the run ends at 110k years with a volume change of about 0.001\% between the 100k and 110k model states.  The final volume was $4.087 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping (above) was a very reasonable guess.
+
+\begin{figure}[ht]
+\includegraphics[width=6.0in,keepaspectratio=true]{figs/eisgrn_volseries}
+\caption{Volume time series for a 110k model year EISMINT-Greenland run; units of $10^{6}\,\text{km}^3$.}
+\label{fig:eisgrnvolseries}
+\end{figure}
+
+\begin{figure}[ht]
+\includegraphics[width=6.0in,keepaspectratio=true]{figs/eisgrn_meltfseries}
+\caption{Time series for the fraction of the base which is at the pressure-melting temperature from a 110k model year EISMINT-Greenland run.  See the right hand part of Figure \ref{fig:ssl2thickThomol} for a map of the basal temperature.}
+\label{fig:eisgrnmeltfseries}
+\end{figure}
+
+The final saved state is called \verb| green_SSL2_110k.nc|; we will use this NetCDF file to continue the EISMINT-Greenland experiments below.  The saved ice thickness and homologous basal temperature maps are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.  
 
 \begin{figure}[ht]
 \includegraphics[height=3.7in,keepaspectratio=true]{figs/greenH_SSL2}\qquad\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
-\caption{Ice thickness (meters; left) and homologous basal temperature (degrees C below 0; right) at end [???WHEN] of EISMINT-Greenland SSL2 run; in temperature graph pressure-melting areas are white.}
+\caption{Ice thickness (meters; left) and homologous basal temperature (degrees C below 0; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
 \label{fig:ssl2thickThomol}
 \end{figure}
 
 \begin{figure}[ht]
 \includegraphics[height=3.9in,keepaspectratio=true]{figs/greencbar_SSL2}
-\caption{Vertically-averaged horizontal velocity in meters per year at end [???WHEN] of EISMINT-Greenland SSL2 run.}
+\caption{Vertically-averaged horizontal velocity in meters per year at the end (110k model years) of a EISMINT-Greenland SSL2 run.}
 \label{fig:ssl2cbar}
 \end{figure}
 
-One may also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run our version of the EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|-ssl3 -gk| option to \verb|pgrn|.)  Our particular interpretation to the SSL3 experiment is: \begin{itemize}
+One may also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run an EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|-ssl3 -gk| option to \verb|pgrn|.)  The PISM interpretation of the SSL3 experiment happens to be: \begin{itemize}
 \item use Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0, and
 \item allow pressure-melting temperature dependent linear sliding with a sliding coefficient that gives 50 m/a sliding at 100 kPa (1 bar).
 \end{itemize}
-There is no assertion that these are superior modeling choices, and we give ``SSL3'' this interpretation merely for illustration.  Note that because of the basal sliding, with sliding velocity proportional to the driving shear stress at the base, the volume time series never quite settles down (not shown).
+There is no assertion that these are superior modeling choices.  We give ``SSL3'' this interpretation merely for illustration.  Note that because of the basal sliding, with sliding velocity proportional to the driving shear stress at the base, the volume time series never quite settles down (not shown).
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run above.
 
 Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:
 
-\verb|  pgrn -ccl3 -if green_SSL2_100k.nc -dTforcing grid_dT.nc \|
+\verb|$  pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
 
-\verb|    -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green20_CCL3_y0|
-\smallskip
+\verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y0|
 
-[SHOW RESULT; give thickness??]
+[SHOW RESULT; new Thomol map and difference in thickness from SSL2 endstate ??]
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing.  If \verb|pgrn -ccl3| is run past year 0, and thus past the end of the GRIP and SPECMAP data, this baseline run will occur by default.  So the previous command can be run for another 500 years, and the forcing can be omitted:
 
-\verb|  pgrn -ccl3 -if green20_CCL3_y0.nc -y 500 -o green20_CCL3_y500|
+\verb|$  pgrn -ccl3 -if green_CCL3_y0.nc -y 500 -o green_CCL3_y500|
 
-\subsubsection*{A greenhouse warming scenario}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It uses the model state obtained for present day from the CCL3 run.  Using the previous commands, this is the file named \verb|green20_CCL3_y0.nc|.  The GWL3 experiment (option \verb|-gwl3|) is intended to be run for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
+\subsubsection*{A greenhouse warming scenario}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It uses the model state obtained for present day from the CCL3 run.  The GWL3 experiment (option \verb|-gwl3|) runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\verb|  pgrn -gwl3 -if green20_CCL3_y0.nc -y 500 -o green20_GWL3|
+\verb|$  pgrn -gwl3 -if green_CCL3_y0.nc -y 500 -o green_GWL3_y500|
+
+[SHOW RESULT; give thickness difference between \verb|green_CCL3_y500.nc| and \verb|green_GWL3_y500.nc|]
 
 
-\subsection{Validation of PISM as a flow model for the Ross ice shelf}\label{subsect:ross}  Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
+\clearpage\newpage
+\section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross}  Recall that we use the term ``validation'' to describe the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed.  Roughly speaking, in validation the observations or data are better than the model, so the comparison tells one about the quality of the model and not the quality or incompleteness of the data.
 
 As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} performed a validation of several ice shelf numerical models using the Ross ice shelf as an example.  We will refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS1,RIGGS2}.  The RIGGS data were acquired in the period 1973--1978.   In particular, the RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rossmatlab} below for an indicaiton of these positions.
 
@@ -1694,7 +1709,7 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.
 
-\optrestrict{bif}{pismr, pgrn}  The model can be ``bootstrapped'' from certain NetCDF files with just the right information.  See section \ref{sect:real}.  Compare \verb|-if|.
+\optrestrict{bif}{pismr, pgrn}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-if|.
 
 \optrestrict{bif\und legacy}{pant}  The model can be ``bootstrapped'' from certain NetCDF files dealing with antarctica (\verb|init.nc|).
 
@@ -1709,7 +1724,7 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdef{constant\und nu}{30.0}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant viscosity $\nu$; see the option \verb|-constant_hardness| above.  Generally the viscosity is computed by a nonlinear iteration.  With option \verb|-constant_nu|, this iteration does not occur.  If \verb|-constant_nu| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
-\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:real}
+\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:green}
 
 \opt{d}  Specifies diagnostic (X Windows) viewers.  See Appendix C.
 
@@ -1723,7 +1738,7 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
 
-\optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:real}.
+\optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:green} for an example.
 
 \opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
 
@@ -1735,7 +1750,7 @@ Here $b$ is the bed elevation and $h$ is the surface elevation.  Note that only 
 
 \opt{hold\und tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \verb|-ssa| and \verb|-plastic| are also set.  See documentation of option \verb|-plastic| for a description of the till yield stress model.
 
-\optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:real}
+\optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:green}.
 
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
 
@@ -1892,9 +1907,9 @@ In particular, the nonlinear part of the iteration requires that successive valu
 	$$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{ssa\und rtol}$$
 in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.
 
-\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:real}.
+\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:green}.
 
-\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.  See section \ref{sect:real}.
+\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.  See section \ref{sect:green}.
 
 \optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
 
@@ -2119,7 +2134,7 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 
 \clearpage \newpage
-\section{Some scripts}\label{sect:scripts}
+\section{Python scripts for PISM modeling}\label{sect:scripts}
 
 The following scripts, among others, are found in subdirectory \verb|pism/test/|.
 
@@ -2157,6 +2172,12 @@ Note that the small number of digits reported in the standard output from the PI
 \optoptdef{i}{isopismv}{False} If ``\verb|-i|'' is given then \verb|series.py| assumes the text file came from using \verb|pismv| on an isothermal SIA verification test.
 
 \optoptdef{o}{out}{series\und out.nc} Give the full name, including the \verb|.nc| extension, of the output NetCDF file.
+
+
+
+\subsubsection*{\Large{\texttt{ssl\und exper.py}}}  This Python script is actually special to the EISMINT-Greenland experiment described in section \ref{sect:green}.  It is worth documenting here in part because it is an example of using scripts with \href{http://nco.sourceforge.net/}{NCO}, and in part because we need to document its options to help readers of section \ref{sect:green}.
+
+[FIXME: DOCUMENT THE OPTIONS!]
 
 
 \subsubsection*{\Large{\texttt{verifynow.py}}}  This Python script organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.

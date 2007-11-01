@@ -19,7 +19,7 @@
 #include <petscda.h>
 #include <cmath>
 #include "../num/extrasGSL.hh"
-#include "../tool/beddefLC.hh"
+#include "beddefLC.hh"
 #include "iceModel.hh"
 
 /* the following is from the PETSc FAQ page:

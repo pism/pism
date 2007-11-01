@@ -26,7 +26,7 @@
 #include <petscksp.h>
 #include "grid.hh"
 #include "materials.hh"
-#include "../tool/beddefLC.hh"
+#include "beddefLC.hh"
 
 // following simply unclutters iceModel.hh:
 #include "iceModelpreamble.hh" 

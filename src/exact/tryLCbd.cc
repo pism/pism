@@ -24,7 +24,7 @@ static char help[] =
 #include <petscvec.h>
 #include <petscda.h>
 #include "../base/materials.hh"
-#include "../tool/beddefLC.hh"
+#include "../base/beddefLC.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

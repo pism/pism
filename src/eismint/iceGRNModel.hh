@@ -23,7 +23,7 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../tool/forcing.hh"
+#include "../base/forcing.hh"
 
 class IceGRNModel : public IceModel {
 
