@@ -1,6 +1,6 @@
-ALL : manual.pdf
+ALL : manual.pdf doxydocs
 
-PISMREV ?= 193
+PISMREV ?= 205
 
 doxydocs : refman browser
 

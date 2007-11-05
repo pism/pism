@@ -82,7 +82,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../src/base/ ../src/exact/ ../src/verif/ ../src/eismint/ ../src/netcdf/ ../src/tool/
+INPUT                  = ../src/base/ ../src/exact/ ../src/verif/ ../src/eismint/ ../src/netcdf/
 # ELB note:  src/num,ryan,embayment,ismip not currently documented by browser
 FILE_PATTERNS          = *.c \
                          *.cc \

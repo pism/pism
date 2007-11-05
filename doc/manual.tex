@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{204}
+\newcommand{\PISMREV}{205}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1310,13 +1310,19 @@ There is no assertion that these are superior modeling choices.  We give ``SSL3'
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run above.
 
-Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:
+Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:\footnote{Actually this is in error relative to the EISMINT-Greenland description \cite{RitzEISMINT,HuybrechtsEISMINT}.  In particular, ``isostatic response should be modelled also''.  Also it should be with SSL3 parameterizations.  Thus the run should really add the options \texttt{-bed\und def\und lc -gk}.  Such a run would have the bed deformation (here modelled using the methods in \cite{BLKfastearth,LingleClark}) affect the sea level and thus the boundary condition of the ice sheet.}
 
 \verb|$  pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
 
 \verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y0|
 
-[SHOW RESULT; new Thomol map and difference in thickness from SSL2 endstate ??]
+The resulting thickness difference, relative to the end of the SSL2 run, and the homologous basal temperature, are shown in Figure \ref{fig:cclthickThomol}.
+
+\begin{figure}[ht]
+\includegraphics[height=3.7in,keepaspectratio=true]{figs/Hdiff_CCLSSL}\qquad\includegraphics[height=3.7in,width=2.9in]{figs/Thomol_CCL}
+\caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice homologous basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickThomol}.}
+\label{fig:cclthickThomol}
+\end{figure}
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing.  If \verb|pgrn -ccl3| is run past year 0, and thus past the end of the GRIP and SPECMAP data, this baseline run will occur by default.  So the previous command can be run for another 500 years, and the forcing can be omitted:
 
@@ -1326,7 +1332,6 @@ EISMINT-Greenland also calls for a baseline run for another 500 years which star
 
 \verb|$  pgrn -gwl3 -if green_CCL3_y0.nc -y 500 -o green_GWL3_y500|
 
-[SHOW RESULT; give thickness difference between \verb|green_CCL3_y500.nc| and \verb|green_GWL3_y500.nc|]
 
 
 \clearpage\newpage
