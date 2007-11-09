@@ -390,20 +390,19 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   }
 
   // print out some stats about input state
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
 
   if (exactOnly == PETSC_TRUE) { // just fill with exact solution
     ierr = fillFromExactSolution(); CHKERRQ(ierr);
   } else { // numerically solve ice shelf/stream equations
+    PetscInt numiter;
     if (test == 'I') {
-      ierr = velocitySSA(); CHKERRQ(ierr);
+      ierr = velocitySSA(&numiter); CHKERRQ(ierr);
     } else if (test == 'J') {
-      ierr = velocitySSA(vNuForJ); CHKERRQ(ierr); // use locally allocated space for (computed) nu
+      ierr = velocitySSA(vNuForJ,&numiter); CHKERRQ(ierr); // use locally allocated space for (computed) nu
       ierr = VecDestroyVecs(vNuForJ, 2); CHKERRQ(ierr); // immediately de-allocate
     }
   }

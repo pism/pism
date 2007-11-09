@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{205}
+\newcommand{\PISMREV}{206}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -305,10 +305,12 @@ Matlab & \href{http://www.mathworks.com/}{\t{www.mathworks.com}} & \emph{recomme
 & & & display of results \\
 MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
 NetCDF & \href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}} & \emph{required} & \\
-\texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts in sections \ref{sect:green} and \ref{sect:ross}  \\
+\texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts  \\
+ &  &  & in sections \ref{sect:green} and \ref{sect:ross}  \\
 PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
-\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts in sections \ref{sect:green} and \ref{sect:ross}  \\
+\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts  \\
+ &  &  & in sections \ref{sect:green} and \ref{sect:ross}  \\
 Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\
 \hline
 \normalsize
@@ -346,21 +348,22 @@ We choose the standard 25km grid in the horizontal and use 201 grid points in th
 In EISMINT II all runs are for 200,000 model years.  Here we start with a short 2000 year run for a quicker illustration.  The executable is ``\t{pisms}'', a name which has trailing ``\t{s}'' for the ``simplifed geometry mode'' of PISM:
 
 \small\begin{quote}\begin{verbatim}
-$  pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
+$ pisms -eisII F -Mx 61 -My 61 -Mz 201 -y 2000
 PISMS (simplified geometry mode)
 initializing EISMINT II experiment F ... 
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
-            YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
-$$$$$      0.000 (+  0.00000[0 ]):   0.000   0.000    0.000      0.000   223.150
-$$vtf     60.000 (+ 60.00000[0m]):   0.017   0.628    0.000     30.000   223.150
-$$vtf    120.000 (+ 60.00000[0m]):   0.034   0.628    0.000     60.000   223.538
-$$vtf    180.000 (+ 60.00000[0m]):   0.051   0.628    0.000     90.000   223.869
-...
-$$vtf   1980.000 (+ 60.00000[0m]):   0.562   0.631    0.000    990.000   228.487
-$$vtf   2000.000 (+ 20.00000[0e]):   0.568   0.631    0.000   1000.000   228.520
-done with run ...
+%ydbp SIA SSA  # vgath
+%       YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0
+ $$$$            $$$$$
+S      0.000 (+  0.00000[0 ]):  0.00000  0.0000   0.0000      0.000  223.1500
+ $$$$ SIA        v$ath
+S     60.000 (+ 60.00000[0m]):  0.01704  0.6281   0.0000     30.000  223.1500
+. . .
+ $$$$ SIA        v$ath
+S   2000.000 (+ 20.00000[0e]):  0.56790  0.6306   0.0000   1000.000  228.7242
+done with run ... 
 Writing model state to file `simp_exper.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
@@ -378,27 +381,33 @@ This run will take at least an hour on a four processor computer.  The file \ver
 
 If one wants a view of the model state in the midst of this (or any other PISM) run, one can send all running \verb|pisms| processes a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc| using the year at that time step.  On the other hand, if one terminates the run with \verb|pkill -TERM pisms| then the run will stop and save the model state using the \verb|-o| specified name even though it will not be the state at the end of a completed run.\footnote{Indeed, if the reader is impatient or has a single processor machine and doesn't want to wait more than an hour, the experiment F run can be terminated by \t{pkill -TERM pisms} after about 50,000 model years and the basic model result will be similar to that at 200,000 years.}  (See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.)
 
-While the four process run continues in the background, let's view the model state during a few time steps by starting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:
+While the four process run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:
 
 \small\begin{quote}\begin{verbatim}
-$  pisms -eisII F -if simp_exper.nc -y 200 -d HTt
+$ pisms -eisII F -if simp_exper.nc -y 200 -d HTt
 PISMS (simplified geometry mode)
 initializing from NetCDF format file  simp_exper.nc  ...
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
-            YEAR (+     STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
-$$$$$   2000.000 (+  0.00000[0 ]):   0.568   0.631    0.000   1000.000   228.520
-$$vtf   2060.000 (+ 60.00000[0m]):   0.585   0.631    0.000   1030.000   228.616
-$$vtf   2120.000 (+ 60.00000[0m]):   0.602   0.631    0.000   1060.000   228.710
-$$vtf   2180.000 (+ 60.00000[0m]):   0.619   0.631    0.000   1090.000   228.804
-$$vtf   2200.000 (+ 20.00000[0e]):   0.625   0.631    0.000   1100.000   228.834
+%ydbp SIA SSA  # vgath
+%       YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0
+ $$$$            $$$$$
+S   2000.000 (+  0.00000[0 ]):  0.56790  0.6306   0.0000   1000.000  228.7242
+ $$$$ SIA        v$ath
+S   2060.000 (+ 60.00000[0m]):  0.58494  0.6306   0.0000   1030.000  228.8210
+ $$$$ SIA        v$ath
+S   2120.000 (+ 60.00000[0m]):  0.60198  0.6306   0.0000   1060.000  228.9162
+ $$$$ SIA        v$ath
+S   2180.000 (+ 60.00000[0m]):  0.61901  0.6306   0.0000   1090.000  229.0100
+ $$$$ SIA        v$ath
+S   2200.000 (+ 20.00000[0e]):  0.62469  0.6306   0.0000   1100.000  229.0411
 done with run ... 
 Writing model state to file `simp_exper.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
 
-Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.  
+Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.
 
 When the full 200,000 year run finishes, one can continue the run and watch its evolving state by
 
@@ -412,15 +421,21 @@ When the full 200,000 year run finishes, one can continue the run and watch its 
 \label{fig:screenshot}
 \end{figure}
 
-At each time step PISM shows a summary of the model state using a few numbers.  The format of the summary is
+At each time step PISM shows a summary of the model state using a flags and a few numbers.  The format of the summary is
 
-\small\verb|           YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0|\normalsize
+\small
+\verb| ydbp SIA SSA  # vgath|
 
-\noindent The first five columns are flags telling the user which quantities are being updated at that time step.  A dollar sign appears if the quantity does not update.  From the left the positions are: [\t{b\$}] for bed elevation, [\t{vV\$}] for velocity, [\t{g\$}] for grain size, [\t{t\$}] for temperature and age (which are always updated together), and [\t{f\$}] for surface elevation.   (That is, an ``\verb|f|'' in the last column means a step of the flow or mass conservation equation has occurred.  Regarding the two possible velocity flags, a lower case ``\texttt{v}'' indicates that the 3D velocity field has been updated, e.g.~as needed for the advection of temperature, while uppercase ``\texttt{V}'' indicates that only the vertically-averaged velocity, and the associated diffusivity, has been updated.)
+\verb|        YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0|
+\normalsize
+
+\noindent The first line shows various flags which indicate which physical models ran at the given time step.  Therefore this line indirectly indicates which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first four positions are: \t{y} for basal yield stress model, \t{d} for positive degree day model, \t{b} for bed deformation model, and \t{p} for plastic till form of SSA.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and the ``\verb|SSA|'' flag is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then a \t{v} or \t{V} appears for velocity; the large \t{V} is used when the velocities are not updated at depth, though they generally are.  Then there are four more positions: \t{g} for grain size model, \t{a} for age equation, \t{t} for temperature equation, and \t{h} for mass continuity (which updates surface elevation and thickness).
 
 The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.\footnote{At the beginning of the EISMINT II experiment F run the ice has small thickness so the time step is 60 years because that is the default maximum time step.  Later in the experiment F run, after 5000 years, for instance, the time step is made smaller by the adaptive time-stepping mechanism in PISM.  See subsection \ref{subsect:adapt} for more on adaptive time-stepping.}  A small whole number and a single character flag appear in square brackets after the time step, and these explain what part of the adaptive time-stepping scheme was used to determine the time step.  For instance, ``\t{m}'' means that the step was the maximum allowed, ``\t{e}'' means that the time step was shortened to hit the end of the specified run, ``\t{d}'' means the step was determined by the diffusivity of the flow equation \cite{BBL}, and ``\t{c}'' means the CFL condition limited the time step \cite{BBL,MortonMayers}.  The small integer before this single character flag is related to the \verb|-tempskip| mechanism; see sections \ref{sect:options} and \ref{sect:simp} for further description and examples of this mechanism.
 
-The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the triple point).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometime useful for comparison.  This summary of the model state can be made more verbose by using the option \verb|-verbose|.
+The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal homologous temperature is above $273.0$ (i.e.~slightly lower than the triple point).  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometime useful for comparison.
+
+The summary of the model state can be made more verbose by using the option \verb|-verbose|.
 
 For more on the EISMINT II experiments see section \ref{sect:simp}.
 
@@ -679,7 +694,7 @@ Here we will explain what appears in the `\verb|(+    STEP[N$])|' part of this s
 
 \verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This requires that PISM have adaptive time-stepping for stability in the shallow ice approximation regions.  Other issues like numerically approximating transport of temperature and age require adaptivity too \cite{BBL}.
 
-Note that most of the time `\verb|N|' will be zero.  The exception is when the option \verb|-tempskip| is used.  If \verb|-tempskip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do: 
+Note that most of the time `\verb|N|' will be zero.  The exception is when the option \verb|-tempskip| is used.  If \verb|-tempskip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do:
 
 \verb|$  pismv -test G -Mx 141 -My 141 -Mz 51 -tempskip 4|
 
@@ -715,21 +730,17 @@ If we want to observe the run without stopping it we send the \verb|USR1| signal
 
 \verb|kill -USR1 8920|
 
-\noindent where ``\verb|8920|'' happened to be the \verb|pid| of the running PISM process.  It happens that we caught the run at year 31871.5 or so because a NetCDF file \verb|pism-31871.495239.nc| is produced.  This intermediate state file can be viewed by \verb|ncview pism-31871.495239.nc|.  Note also that in the standard out log file \verb|log.txt| the lines
+\noindent where ``\verb|8920|'' happened to be the \verb|pid| of the running PISM process.  It happens that we caught the run at year 31871.5 or so because a NetCDF file \verb|pism-31871.495239.nc| is produced.  This intermediate state file can be viewed by \verb|ncview pism-31871.495239.nc|.  Note also that in the standard out log file \verb|log.txt| the line
 
 \verb|...|
-
-\verb|$vtf  31871.495 (+ 30.84701[0d]):   2.985   1.747    0.000   2997.637   272.236|
 
 \verb|Caught signal SIGUSR1: Writing intermediate file `pism-31871.495239.nc'.|
 
-\verb|$vtf  31904.021 (+ 32.52611[0d]):   2.997   1.747    0.000   2997.641   272.235|
-
 \verb|...|
 
-\noindent appear.
+\noindent appears around time step (i.e.~\verb|YEAR|) 31900.
 
-Suppose, on the other hand, that the run needs to be stopped.  One may use the interrupt ``\verb|kill -KILL 8920|'' for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method, which a process cannot catch or block, stops the process but does not allow it  time to save the model state, which is necessary to restart at the same place, or to inspect the model state more thoroughly.  If one wants the possibility of restarting then one should used the \verb|TERM| signal, 
+Suppose, on the other hand, that the run needs to be stopped.  One may use the interrupt ``\verb|kill -KILL 8920|'' for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method, which a process cannot catch or block, stops the process but does not allow it  time to save the model state.  Therefore one will not be able to restart at the same place, nor inspect the model state more thoroughly.  If one wants the possibility of restarting then one should used the \verb|TERM| signal,
 
 \verb|kill -TERM 8920|
 

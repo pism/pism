@@ -374,8 +374,8 @@ protected:
   PetscErrorCode horizontalVelocitySIARegular();
 
   // see iMssa.cc
-  PetscErrorCode velocitySSA();
-  PetscErrorCode velocitySSA(Vec vNu[2]);
+  PetscErrorCode velocitySSA(PetscInt *numiter);
+  PetscErrorCode velocitySSA(Vec vNu[2], PetscInt *numiter);
   PetscErrorCode setupForSSA(const PetscScalar minH);
   PetscErrorCode cleanupAfterSSA(const PetscScalar minH);
   virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);

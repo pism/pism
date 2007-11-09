@@ -24,7 +24,7 @@
 PetscErrorCode  IceModel::updateGrainSizeIfNeeded() {
   // This is a front end to the grain size update system.  It initializes the
   // first time it is called and then performs an update no more often than
-  // ageIntervalYears.
+  // gsIntervalYears.
   PetscErrorCode ierr;
   static PetscScalar lastGSUpdateYear = grid.p->year;  // only happens when first called?
 
@@ -32,6 +32,9 @@ PetscErrorCode  IceModel::updateGrainSizeIfNeeded() {
   if (grid.p->year - lastGSUpdateYear >= gsIntervalYears) {
     ierr = updateGrainSizeNow(); CHKERRQ(ierr);
     lastGSUpdateYear = grid.p->year;
+    ierr = verbPrintf(2,grid.com, "g"); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
   }
   return 0;
 }

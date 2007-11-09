@@ -575,17 +575,16 @@ Note that at the beginning and ends of the loop there is a chance for derived cl
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "%%ydbp SIA SSA  # vgath"); CHKERRQ(ierr);  // prototype for flags
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
+  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$"); CHKERRQ(ierr);  // prototype for flags
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
-
   dtTempAge = 0.0;
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
-    ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
@@ -593,17 +592,23 @@ PetscErrorCode IceModel::run() {
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (doPlasticTill == PETSC_TRUE) {
       ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "y"); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     // compute PDD; generates net accumulation, with possible ablation area, using snow accumulation
     // might set maxdt_temporary 
     if ((doPDD == PETSC_TRUE) && IsIntegralYearPDD()) {
       ierr = updateNetAccumFromPDD();  CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "d"); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
-      ierr = bedDefStepIfNeeded(); CHKERRQ(ierr);
+      ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
@@ -611,12 +616,15 @@ PetscErrorCode IceModel::run() {
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
     bool updateAtDepth = (tempskipCountDown == 0);
+    ierr = verbPrintf(2,grid.com, doPlasticTill ? "p" : "$" ); CHKERRQ(ierr);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
 
     // now that velocity field is up to date, compute grain size
     if (doGrainSize == PETSC_TRUE) {
-      ierr = updateGrainSizeIfNeeded(); CHKERRQ(ierr);
+      ierr = updateGrainSizeIfNeeded(); CHKERRQ(ierr); // prints "g" or "$" as appropriate
+    } else {
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
     // adapt time step using velocities and diffusivity, ..., just computed
@@ -638,16 +646,16 @@ PetscErrorCode IceModel::run() {
     if (tempAgeStep) { // do temperature and age
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
-      ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "at"); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
     
     if (doMassConserve == PETSC_TRUE) {
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
       if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
         tempskipCountDown--;
-      ierr = verbPrintf(2,grid.com, "f"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "h"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
@@ -679,10 +687,8 @@ PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 
   // print out some stats about input state
-  ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, "$$$$$"); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
 

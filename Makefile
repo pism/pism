@@ -22,9 +22,9 @@ endif
 
 
 #VARIABLES:
-executables := pismr pismd pismv pisms pgrn pant
+executables := pismr pismd pismv pisms pgrn
 extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
-   simpleL gridL flowTable tryLCbd
+   simpleL gridL flowTable tryLCbd pant
 
 ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrainsize.cc \
 	iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \

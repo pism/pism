@@ -576,16 +576,16 @@ In truth there is an outer outer loop (over index \c l).  This one manages an at
 over-regularize the effective viscosity so that the nonlinear iteration (the "outer" loop 
 over \c k) has a chance to converge.
  */
-PetscErrorCode IceModel::velocitySSA() {
+PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
 
   Vec vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
-  ierr = velocitySSA(vNuDefault); CHKERRQ(ierr);
+  ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
+PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   // call this one directly if control over alloc of vNu[2] is needed (e.g. test J)
   PetscErrorCode ierr;
   KSP ksp = SSAKSP;
@@ -616,10 +616,11 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
   ierr = verbPrintf(4,grid.com, 
      "   constantHardnessForSSA = %10.5e, ssaRelativeTolerance = %10.5e]\n",
     constantHardnessForSSA, ssaRelativeTolerance); CHKERRQ(ierr);
-
+  
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
+      *numiter = k;
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
@@ -670,7 +671,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2]) {
   }
 
   done:
-  ierr = verbPrintf(3,grid.com, " "); CHKERRQ(ierr);  // has to do with summary appearance
 
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);

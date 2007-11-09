@@ -64,7 +64,7 @@ def verify(test):
 
 ## default settings
 NP = 1
-LEVELS = 3
+LEVELS = 2
 PREFIX = ''
 MPIDO = 'mpiexec'
 TESTS = 'CGIJ'

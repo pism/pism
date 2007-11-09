@@ -36,6 +36,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   }
   
   if (computeSIAVelocities == PETSC_TRUE) {
+    ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
     ierr = velocitySIAStaggered(!updateVelocityAtDepth); CHKERRQ(ierr);
@@ -87,16 +88,21 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
     }
-  }  // if computeSIAVelocities
-
+  } else { // if computeSIAVelocities
+    ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
+  }
   
   if (useSSAVelocity) { // communication happens within SSA
+    PetscInt numSSAiter;
     ierr = setupForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
-    ierr = velocitySSA(); CHKERRQ(ierr); // comm here ...
+    ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
     ierr = cleanupAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
     ierr = broadcastSSAVelocity(); CHKERRQ(ierr); // sets CFLmaxdt2D
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
 
   // finally update w

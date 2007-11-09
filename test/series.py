@@ -60,10 +60,8 @@ while True:
   myline = infile.readline()
   if not myline:
     break
-  pos1 = myline.find(' (+ ')  # first string which marks a summary line
-  pos2 = myline.find(']):')   # second string which marks a summary line
-  posYEAR = myline.find('YEAR')
-  if ((pos1 >= 13) and (pos2 >= 25) and (posYEAR < 0)):  # clearly is a summary line
+  posbracketplus = myline.find('(+')  # second marker of a summary line
+  if ((myline[0] == 'S') and (posbracketplus >= 0)):  # clearly is a summary line
     tokens = myline.split()
     year.append(float(tokens[1]))
     dtstr = tokens[3]
