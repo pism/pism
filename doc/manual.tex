@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{207}
+\newcommand{\PISMREV}{208}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -567,26 +567,15 @@ Experiment I is identical to experiment A except for having ``trough'' bed topog
 \label{fig:eis2I}
 \end{figure}
 
-The following runs take a while (hours to days).  There is a script \verb|test/eis2Iplastic.sh| which contains the following sequence and allows choice of the number of processors.
+The script \verb|test/eis2Iplastic.sh| gives a sequence which starts with the plain experiment I on a standard EISMINT II grid and builds an ice sheet modeled by SIA in then turns on the plastic till SSA and superposes the velocity fields.  This experiment is more fully documented in \cite{BuelerBrownSuper}, which is in preparation.  The following describes what the script does.
 
-First we build the ice sheet for experiment I for 180,000 model years on the standard EISMINT II grid, which is relatively coarse with horizontal spacing of $25$ km.  Note that this run and the next parallelize well, so they will go quickly on (for instance) 10 to 40 processors:
+\medskip
+\scriptsize
+In fact, we first build the ice sheet for experiment I for 180,000 model years on the standard EISMINT II grid, which is relatively coarse with horizontal spacing of $25$ km.  Note that this run and the next parallelize well, so they will go quickly on (for instance) 10 to 40 processors.  Note that a significant fraction of the base is at the pressure-melting temperature.  At this point the effective thickness of the basal water is zero because stored basal water is not part of the EISMINT II model.  So we now turn on the part of the thermodynamical model which keeps track of stored basal water and run for 10k more model years.  Then we refine the grid to 12.5 km spacing, we run for the remaining 10k model years to complete the EISMINT II specified 200k year run, and we save full three-dimensional velocities at the end of the model run.  Through use of \verb|ncview| on the output file, for instance, we see that the effective thickness of the till water has increased to its maximum of 2 m in the area where the base is at the pressure-melting temperature.  In particular there is 2 m of stored basal water at the base of the ice in the majority of the trough part of the ice sheet.
 
-\verb|pisms -eisII I -Mx 61 -My 61 -Mz 201 -y 180000 -o eis2I180k|
-
-\noindent Note that a significant fraction of the base is at the pressure-melting temperature.   At this point the effective thickness of the basal water is zero because stored basal water is not part of the EISMINT II model.  So we now turn on the part of the thermodynamical model which keeps track of stored basal water.  Also we refine the grid to 12.5 km spacing, we run for the remaining 20,000 model years to complete the EISMINT II specified 200k year run, and we save full three-dimensional velocities at the end of the model run:
-
-\verb|pisms -eisII I -Mx 121 -My 121 -Mz 301 -regrid eis2I180k.nc -regrid_vars TBHh \|
-
-\verb|   -y 20000 -track_Hmelt -f3d -o eis2I_fine_wmelt|
-
-\noindent Through use of \verb|ncview| on the output file, for instance, we see that the effective thickness of the till water has increased to its maximum of 2 m in the area where the base is at the pressure-melting temperature.  In particular there is 2 m of stored basal water at the base of the ice in the majority of the trough part of the ice sheet.
-
-Now we turn on Schoof's plastic till ice stream model.  Because we are solving the SSA this part is substantially slower (per model year) and it harder to parallelize; it probably should be run on at most 16 processors:
-
-\verb|pisms -eisII I -if eis2I_fine_wmelt.nc -ssa -plastic -super -verbose \|
-
-\verb|   -till_phi 20.0,5.0 -y 5 -f3d -o eis2I_plastic5|
-
+Now we turn on Schoof's plastic till ice stream model.  Because we are solving the SSA this part is substantially slower (per model year) and it harder to parallelize; it probably should be run on at most 16 processors. \emph{And etc.; see the script itself.}
+\normalsize
+\medskip
 
 \subsubsection*{Test I is an exact solution}  PISM's solution of Schoof's plastic till free boundary problem is also solved by test I in the verification suite.  It is based on the exact solution published in \cite{SchoofStream}.  It is a single diagnostic computation of the velocity of a single highly-simplified ice stream.  Here is an example run with some viewers:
 
