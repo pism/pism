@@ -112,7 +112,8 @@ const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
 const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
 const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
-const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
+//const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
+const PetscScalar DEFAULT_MU_SLIDING = 0.0;
 
 const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3.0;
 
@@ -125,6 +126,7 @@ const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_SSA_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_PLASTIC_TILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_SUPERPOSE = PETSC_FALSE;
+const PetscTruth  DEFAULT_PURE_SUPERPOSE = PETSC_FALSE;
 const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 300;
 const PetscTruth  DEFAULT_USE_CONSTANT_NU_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA = PETSC_FALSE;
@@ -171,6 +173,7 @@ PetscErrorCode IceModel::setDefaults() {
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
   doPlasticTill = DEFAULT_DO_PLASTIC_TILL;
   doSuperpose = DEFAULT_DO_SUPERPOSE;
+  pureSuperpose = DEFAULT_PURE_SUPERPOSE;
   ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;
   useConstantNuForSSA = DEFAULT_USE_CONSTANT_NU_FOR_SSA;
   useConstantHardnessForSSA = DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA;

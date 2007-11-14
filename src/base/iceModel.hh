@@ -191,7 +191,7 @@ protected:
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi;
-  PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, useConstantNuForSSA, 
+  PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, pureSuperpose, useConstantNuForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;

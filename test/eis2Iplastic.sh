@@ -1,14 +1,16 @@
 #!/bin/bash
 # script to play with EISMINT II experiment I and plastic till; for rev 195 and later
 
-NN=8
+NN=2
 
-mpiexec -n $NN pisms -eisII I -Mx 61 -My 61 -Mz 201 -y 100000 -o eis2I100k
+#mpiexec -n $NN pisms -eisII I -Mx 61 -My 61 -Mz 201 -y 100000 -o eis2I100k
 
-mpiexec -n $NN pisms -eisII I -if eis2I100k.nc -y 80000 -o eis2I180k
+#mpiexec -n $NN pisms -eisII I -if eis2I100k.nc -y 80000 -o eis2I180k
 
-mpiexec -n $NN pisms -eisII I -Mx 121 -My 121 -Mz 301 -regrid eis2I180k.nc -regrid_vars TBHh \
-   -y 20000 -track_Hmelt -f3d -o eis2I_fine_wmelt
+mpiexec -n $NN pisms -eisII I -if eis2I180k.nc -y 10000 -track_Hmelt -f3d -o eis2I190k
+
+mpiexec -n $NN pisms -eisII I -Mx 121 -My 121 -Mz 301 -regrid eis2I190k.nc -regrid_vars TBHh \
+   -y 10000 -track_Hmelt -f3d -o eis2I_fine_wmelt
 
 mpiexec -n $NN pisms -eisII I -if eis2I_fine_wmelt.nc -ssa -plastic -super -verbose \
    -till_phi 20.0,5.0 -y 5 -f3d -o eis2I_plastic5

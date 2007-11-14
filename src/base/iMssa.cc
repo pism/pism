@@ -620,7 +620,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
-      *numiter = k;
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
@@ -652,6 +651,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
+      *numiter = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
     }
     if (epsilon > 0.0) {
@@ -730,8 +730,14 @@ velocity field is needed, for example, so that the temperature equation can incl
 Basal velocities also get updated.
 
 Here is where the flag doSuperpose controlled by option <tt>-super</tt>  is relevant.  
-If doSuperpose is true then the result of the SIA computation, already done, is added
-to the result of SSA.
+If doSuperpose is true then the just-computed velocity \f$v\f$ from the SSA is added to a multiple of
+the stored velocity \f$u\f$ from the SIA computation:
+   \f[U = f(|v|)\, u + v.\f]
+Here
+	\f[ f(|v|) = 1 - (2/\pi) \arctan(10^{-4} |v|^2) \f]
+is a function which decreases smoothly from 1 for \f$|v| = 0\f$ to 0 as \f$|v|\f$ becomes 
+significantly larger than 100 m/a.  (Actually, if the flag pureSuperpose is true 
+then \f$f(|v|)=1\f$.)
 
 This procedure also computes the maximum horizontal speed in the SSA areas so that
 the CFL condition for the upwinding (in massBalExplicitStep() and only for SSA points)
@@ -759,17 +765,22 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
       if (intMask(mask[i][j]) != MASK_SHEET) {
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
-        
-        for (PetscInt k=0; k<grid.p->Mz; ++k) {
-          u[i][j][k] = (addVels) ? u[i][j][k] + ubar[i][j] : ubar[i][j];
-          v[i][j][k] = (addVels) ? v[i][j][k] + vbar[i][j] : vbar[i][j];
+        PetscScalar fv = 1.0;
+        if (pureSuperpose == PETSC_FALSE) {
+          const PetscScalar c2peryear = PetscSqr(ubar[i][j]*secpera)
+                                           + PetscSqr(vbar[i][j]*secpera);
+          fv = 1.0 - (2.0/pi) * atan(1.0e-4 * c2peryear);
         }
-        ub[i][j] = (addVels) ? ub[i][j] + ubar[i][j] : ubar[i][j];
-        vb[i][j] = (addVels) ? vb[i][j] + vbar[i][j] : vbar[i][j];
+        for (PetscInt k=0; k<grid.p->Mz; ++k) {
+          u[i][j][k] = (addVels) ? fv * u[i][j][k] + ubar[i][j] : ubar[i][j];
+          v[i][j][k] = (addVels) ? fv * v[i][j][k] + vbar[i][j] : vbar[i][j];
+        }
+        ub[i][j] = (addVels) ? fv * ub[i][j] + ubar[i][j] : ubar[i][j];
+        vb[i][j] = (addVels) ? fv * vb[i][j] + vbar[i][j] : vbar[i][j];
         
-        if (addVels) { // now update ubar,vbar by adding SIA contribution
-          ubar[i][j] += 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-          vbar[i][j] += 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        if (addVels) { // also update ubar,vbar by adding SIA contribution
+          ubar[i][j] += fv * 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
+          vbar[i][j] += fv * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
         }
 
         PetscScalar denom = PetscAbs(ubar[i][j])/grid.p->dx + PetscAbs(vbar[i][j])/grid.p->dy;

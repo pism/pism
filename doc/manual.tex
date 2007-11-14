@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{206}
+\newcommand{\PISMREV}{207}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -339,7 +339,7 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 \clearpage\newpage
 \section{Getting started}\label{sect:start}
 
-\subsection{Running the EISMINT II tests}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.}  For now, in order to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
+\subsection{Running an EISMINT simplified geometry experiment}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} available on the web as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet or Ross ice shelf flow model using the EISMINT data sets.}  For now, in order to avoid issues of data formats (and data flaws) in a first use of PISM, this section describes how to use PISM for experiment F in the EISMINT II simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.  Unfortunately one happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field \cite{BBL,PayneBaldwin,SaitoEISMINT}.
 
 In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction; note that the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.
 
@@ -421,15 +421,17 @@ When the full 200,000 year run finishes, one can continue the run and watch its 
 \label{fig:screenshot}
 \end{figure}
 
-At each time step PISM shows a summary of the model state using a flags and a few numbers.  The format of the summary is
+\subsection{PISM's standard output}   As illustrated already, at each time step PISM shows a summary of the model state using a flags and a few numbers.  The format of the summary is
 
+\medskip
 \small
 \verb| ydbp SIA SSA  # vgath|
 
 \verb|        YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0|
 \normalsize
+\medskip
 
-\noindent The first line shows various flags which indicate which physical models ran at the given time step.  Therefore this line indirectly indicates which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first four positions are: \t{y} for basal yield stress model, \t{d} for positive degree day model, \t{b} for bed deformation model, and \t{p} for plastic till form of SSA.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and the ``\verb|SSA|'' flag is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then a \t{v} or \t{V} appears for velocity; the large \t{V} is used when the velocities are not updated at depth, though they generally are.  Then there are four more positions: \t{g} for grain size model, \t{a} for age equation, \t{t} for temperature equation, and \t{h} for mass continuity (which updates surface elevation and thickness).
+\noindent The first line shows various flags which indicate which physical models ran at the given time step.  Therefore this line indirectly indicates which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first four positions are: \t{y} for basal yield stress model, \t{d} for positive degree day model, \t{b} for bed deformation model, and \t{p} for plastic till form of SSA.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and the if the ``\verb|SSA|'' flag is present it is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then a \t{v} or \t{V} appears for velocity; the large \t{V} is used when the velocities are not updated at depth, though they generally are.  Then there are four more positions: \t{g} for grain size model, \t{a} for age equation, \t{t} for temperature equation, and \t{h} for mass continuity (which updates surface elevation and thickness).
 
 The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.\footnote{At the beginning of the EISMINT II experiment F run the ice has small thickness so the time step is 60 years because that is the default maximum time step.  Later in the experiment F run, after 5000 years, for instance, the time step is made smaller by the adaptive time-stepping mechanism in PISM.  See subsection \ref{subsect:adapt} for more on adaptive time-stepping.}  A small whole number and a single character flag appear in square brackets after the time step, and these explain what part of the adaptive time-stepping scheme was used to determine the time step.  For instance, ``\t{m}'' means that the step was the maximum allowed, ``\t{e}'' means that the time step was shortened to hit the end of the specified run, ``\t{d}'' means the step was determined by the diffusivity of the flow equation \cite{BBL}, and ``\t{c}'' means the CFL condition limited the time step \cite{BBL,MortonMayers}.  The small integer before this single character flag is related to the \verb|-tempskip| mechanism; see sections \ref{sect:options} and \ref{sect:simp} for further description and examples of this mechanism.
 
@@ -1833,7 +1835,7 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optrestrict{Mmax}{pisms -eisII}  Set value of $M_{\text{max}}$ for EISMINT II.
 
-\optdef{mu\und sliding}{3.17e-11}  The sliding law parameter in SIA regions of the ice.
+\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
 
 \optdef{Mx}{61}  Number of grid points in x horizontal direction.
 
