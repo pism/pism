@@ -103,22 +103,37 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     } else {
       ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
     }
-    // now we still need to use stored SSA velocities to get 3D velocity field, basal velocities,
-    // basal frictional heating, strain dissipation heating
+    // even if velocitySSA() did not run, we still need to use stored SSA velocities 
+    // to get 3D velocity field, basal velocities, basal frictional heating, 
+    // and strain dissipation heating
     ierr = broadcastSSAVelocity(); CHKERRQ(ierr); // sets CFLmaxdt2D
-    ierr = correctSigma(); CHKERRQ(ierr);
-    ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
 
-  // finally update w
-  if (updateVelocityAtDepth) {
-    // communicate u and v for vertVelocityFromIncompressibility()
+  // now communicate modified velocity fields
+  ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+  if (updateVelocityAtDepth || useSSAVelocity) {  // in latter case u,v are modified by broacastSSAVelocity()
     ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
+  }
+
+  if (useSSAVelocity) {
+    ierr = correctSigma(); CHKERRQ(ierr);  // note correctSigma() differences ub,vb in horizontal
+    ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
+  }
+
+  // finally update w
+  if (updateVelocityAtDepth) {
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
     // no communication needed for w, which is only differenced in the column
   }
