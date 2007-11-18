@@ -29,12 +29,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
-  // if we will use SSA then save current values of ubar, vbar; these are useful for
-  // speeding convergence of SSA
-  if (useSSAVelocity == PETSC_TRUE) {
-    ierr = saveUVBarForSSA(firstTime); CHKERRQ(ierr);
-  }
-  
+  // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
@@ -92,15 +87,27 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
   
+  // do SSA
+  static PetscScalar lastSSAUpdateYear = grid.p->year;  // only set when first called
+  if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
+    ierr = initSSA(); CHKERRQ(ierr);
+  }
   if (useSSAVelocity) { // communication happens within SSA
-    PetscInt numSSAiter;
-    ierr = setupForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
-    ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
-    ierr = cleanupAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
+    if ((firstTime == PETSC_TRUE) || (grid.p->year - lastSSAUpdateYear >= ssaIntervalYears)) {
+      PetscInt numSSAiter;
+      ierr = setupGeometryForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
+      ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
+      ierr = cleanupGeometryAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
+      lastSSAUpdateYear = grid.p->year;
+      ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
+    }
+    // now we still need to use stored SSA velocities to get 3D velocity field, basal velocities,
+    // basal frictional heating, strain dissipation heating
     ierr = broadcastSSAVelocity(); CHKERRQ(ierr); // sets CFLmaxdt2D
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
@@ -113,11 +120,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
-#if 0
-    // is communication needed?
-    ierr = DALocalToLocalBegin(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
-#endif
+    // no communication needed for w, which is only differenced in the column
   }
   
   // smoothing Sigma is NOT RECOMMENDED, but do it here

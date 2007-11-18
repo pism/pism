@@ -176,7 +176,7 @@ protected:
   PetscInt    ssaMaxIterations;
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization;
   PetscScalar startYear, endYear;
-  PetscScalar gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
+  PetscScalar ssaIntervalYears, gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
   PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax;
   PetscScalar gmaxu, gmaxv, gmaxw;  // global maximums on 3D grid for abs value 
@@ -374,10 +374,11 @@ protected:
   PetscErrorCode horizontalVelocitySIARegular();
 
   // see iMssa.cc
+  PetscErrorCode initSSA();
   PetscErrorCode velocitySSA(PetscInt *numiter);
   PetscErrorCode velocitySSA(Vec vNu[2], PetscInt *numiter);
-  PetscErrorCode setupForSSA(const PetscScalar minH);
-  PetscErrorCode cleanupAfterSSA(const PetscScalar minH);
+  PetscErrorCode setupGeometryForSSA(const PetscScalar minH);
+  PetscErrorCode cleanupGeometryAfterSSA(const PetscScalar minH);
   virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);
   PetscErrorCode testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2], PetscReal *, PetscReal *);
   PetscErrorCode assembleSSAMatrix(Vec vNu[2], Mat A);
@@ -386,8 +387,6 @@ protected:
   PetscErrorCode broadcastSSAVelocity();
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
-  PetscErrorCode saveUVBarForSSA(const PetscTruth firstTime);
-  PetscErrorCode putSavedUVBarInUVBar();
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
@@ -451,7 +450,7 @@ private:
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details
   // of the linear system which uses these
-  Vec vubarSAVE, vvbarSAVE;
+  Vec vubarSSA, vvbarSSA;
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system

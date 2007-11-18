@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "... done\n"); CHKERRQ(ierr);
 
     // provide a default base name if no -o option.
-    ierr = m->writeFiles("allfields",PETSC_TRUE); CHKERRQ(ierr);
+    ierr = m->writeFiles("unnamed_diag",PETSC_TRUE); CHKERRQ(ierr);
 
     if (doRoss == PETSC_TRUE) {
       ierr = mRoss.finishROSS(); CHKERRQ(ierr);

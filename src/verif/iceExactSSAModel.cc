@@ -399,6 +399,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
     ierr = fillFromExactSolution(); CHKERRQ(ierr);
   } else { // numerically solve ice shelf/stream equations
     PetscInt numiter;
+    ierr = initSSA(); CHKERRQ(ierr);
     if (test == 'I') {
       ierr = velocitySSA(&numiter); CHKERRQ(ierr);
     } else if (test == 'J') {
@@ -415,9 +416,6 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
   ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
-  // is this communication needed?:
-  ierr = DALocalToLocalBegin(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vw, INSERT_VALUES, vw); CHKERRQ(ierr);
 
   // report on result of computation (i.e. to standard out and to viewers)
   ierr = computeMax3DVelocities(); CHKERRQ(ierr); 

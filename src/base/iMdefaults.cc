@@ -171,6 +171,7 @@ PetscErrorCode IceModel::setDefaults() {
   transformForSurfaceGradient = PETSC_FALSE;
 
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
+  ssaIntervalYears = -1.0;  // i.e. the default is to do an update every time step
   doPlasticTill = DEFAULT_DO_PLASTIC_TILL;
   doSuperpose = DEFAULT_DO_SUPERPOSE;
   pureSuperpose = DEFAULT_PURE_SUPERPOSE;

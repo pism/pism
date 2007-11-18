@@ -87,7 +87,7 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   // temp in column equals temp at surface
   ierr = fillinTemps();  CHKERRQ(ierr);
 
-  // zeros out vuvbar; not SIA velocities will not be computed so this will stay
+  // zeros out vuvbar; SIA velocities will not be computed so this will stay
   ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
   ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
 

@@ -186,8 +186,8 @@ PetscErrorCode IceModel::createVecs() {
 
   ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
   ierr = VecDuplicateVecs(vu, nWork3d, &vWork3d); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vubarSAVE); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vvbarSAVE); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vubarSSA); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vvbarSSA); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
   ierr = DACreateGlobalVector(grid.da3, &g3); CHKERRQ(ierr);
@@ -253,8 +253,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroyVecs(vDf, 2); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork2d, nWork2d); CHKERRQ(ierr);
-  ierr = VecDestroy(vubarSAVE); CHKERRQ(ierr);
-  ierr = VecDestroy(vvbarSAVE); CHKERRQ(ierr);
+  ierr = VecDestroy(vubarSSA); CHKERRQ(ierr);
+  ierr = VecDestroy(vvbarSSA); CHKERRQ(ierr);
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
   ierr = VecDestroy(g3); CHKERRQ(ierr);
@@ -556,7 +556,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
 /*! 
 This important routine can be replaced by derived classes; it is \c virtual.
 
-This procedure has the main loop.  The following actions are taken on each pass through the loop:
+This procedure has the main time-stepping loop.  The following actions are taken on each pass 
+through the loop:
 \li the yield stress for the plastic till model is updated (if appropriate)
 \li the positive degree day model is invoked to compute the surface mass balance (if appropriate)
 \li a step of the bed deformation model is taken (if appropriate)
@@ -570,7 +571,8 @@ This procedure has the main loop.  The following actions are taken on each pass 
     massBalExplicitStep()
 \li there is various reporting to the user on the current state; see summary() and updateViewers()
 
-Note that at the beginning and ends of the loop there is a chance for derived classes to do extra work.  See additionalAtStartTimestep() and additionalAtEndTimestep().
+Note that at the beginning and ends of each pass throught the loop there is a chance for 
+derived classes to do extra work.  See additionalAtStartTimestep() and additionalAtEndTimestep().
  */
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
@@ -579,7 +581,7 @@ PetscErrorCode IceModel::run() {
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
-  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$"); CHKERRQ(ierr);  // prototype for flags
+  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$"); CHKERRQ(ierr);  // flags for first do-nothing time step
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
   // main loop for time evolution

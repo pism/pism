@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-## ELB 8/6/07
+## ELB 8/6/07; 11/17/07
 
 import sys
 import getopt
@@ -32,8 +32,8 @@ for hard in [1.5, 1.6, 1.7, 1.8, 1.9, 2.0]:
    if nproc > 1:
      rossdo += 'mpiexec -n ' + str(nproc) + ' '
    rossdo += 'pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc'
-   rossdo += ' -ksp_rtol ' + str(KSPRTOL) + ' -mv_rtol ' + str(MVRTOL) 
-   rossdo += ' -Mx 147 -My 147 -Mz 11 -mv -constant_hardness ' + str(hard) + 'e8'
+   rossdo += ' -ksp_rtol ' + str(KSPRTOL) + ' -ssa_rtol ' + str(MVRTOL) 
+   rossdo += ' -Mx 147 -My 147 -Mz 11 -ssa -constant_hardness ' + str(hard) + 'e8'
    print 'trying \"' + rossdo + '\"'
    try:
       lasttime = time.time()

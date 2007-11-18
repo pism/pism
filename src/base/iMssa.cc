@@ -22,18 +22,22 @@
 #include "iceModel.hh"
 
 
-PetscErrorCode IceModel::setupForSSA(const PetscScalar minH) {
+//! Each step of SSA uses previously saved values to start iteration; zero them here to start.
+PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
-  PetscScalar **h, **H, **mask, **ubar, **vbar;
-  PetscScalar ***u, ***v;
+  ierr = VecSet(vubarSSA,0.0); CHKERRQ(ierr);
+  ierr = VecSet(vvbarSSA,0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::setupGeometryForSSA(const PetscScalar minH) {
+  PetscErrorCode ierr;
+  PetscScalar **h, **H, **mask;
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] < minH) {
@@ -45,10 +49,6 @@ PetscErrorCode IceModel::setupForSSA(const PetscScalar minH) {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
 
   ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
@@ -57,7 +57,7 @@ PetscErrorCode IceModel::setupForSSA(const PetscScalar minH) {
   return 0;
 }
 
-PetscErrorCode IceModel::cleanupAfterSSA(const PetscScalar minH) {
+PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
   PetscErrorCode  ierr;
   PetscScalar **h, **H, **mask;
 
@@ -134,8 +134,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &u);
-  ierr = DAVecGetArray(grid.da2, vvbar, &v);
+  ierr = DAVecGetArray(grid.da2, vubarSSA, &u);
+  ierr = DAVecGetArray(grid.da2, vvbarSSA, &v);
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -188,8 +188,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr); CHKERRQ(ierr);
 
   // Some communication
   ierr = DALocalToLocalBegin(grid.da2, vNu[0], INSERT_VALUES, vNu[0]); CHKERRQ(ierr);
@@ -286,8 +286,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
 
   /* matrix assembly loop */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
@@ -412,8 +412,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
@@ -533,8 +533,8 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       u[i][j] = uv[i*M + 2*j];
@@ -542,14 +542,14 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
     }
   }
   ierr = VecRestoreArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
 
-  // Communicate so that we have stencil width for geometry evolution
-  ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+  // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
+  ierr = DALocalToLocalBegin(grid.da2, vubarSSA, INSERT_VALUES, vubarSSA); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vubarSSA, INSERT_VALUES, vubarSSA); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vvbarSSA, INSERT_VALUES, vvbarSSA); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vvbarSSA, INSERT_VALUES, vvbarSSA); CHKERRQ(ierr);
   return 0;
 }
 
@@ -597,14 +597,10 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
-  // For SSA points we need to use previous SSA result and not SIA result which is
-  // currently stored in vubar,vvbar.
-  ierr = putSavedUVBarInUVBar(); CHKERRQ(ierr);
-  
   // We need to save the velocity from the last time step since we may have to
   // restart the iteration with larger values of epsilon.
-  ierr = VecCopy(vubar, vubarOld); CHKERRQ(ierr);
-  ierr = VecCopy(vvbar, vvbarOld); CHKERRQ(ierr);
+  ierr = VecCopy(vubarSSA, vubarOld); CHKERRQ(ierr);
+  ierr = VecCopy(vvbarSSA, vvbarOld); CHKERRQ(ierr);
   epsilon = ssaEpsilon;
 
   ierr = verbPrintf(4,grid.com, 
@@ -679,48 +675,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 }
 
 
-//! Save the values of vertically-averaged horizontal velocity for the first guess in the SSA iteration.
-PetscErrorCode IceModel::saveUVBarForSSA(const PetscTruth firstTime) {
-  PetscErrorCode ierr;
-  
-  if (firstTime == PETSC_TRUE) {
-    ierr = VecSet(vubarSAVE,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vvbarSAVE,0.0); CHKERRQ(ierr);
-  } else {
-    ierr = VecCopy(vubar,vubarSAVE); CHKERRQ(ierr);
-    ierr = VecCopy(vvbar,vvbarSAVE); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-//! For all SSA points, put previous SSA velocities in vubar,vvbar.
-PetscErrorCode IceModel::putSavedUVBarInUVBar() {
-  PetscErrorCode ierr;
-  PetscScalar **mask, **ubar, **vbar, **ubarS, **vbarS;
-  
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubarSAVE, &ubarS); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbarSAVE, &vbarS); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (intMask(mask[i][j]) != MASK_SHEET) {
-        ubar[i][j] = ubarS[i][j];
-        vbar[i][j] = vbarS[i][j];
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSAVE, &ubarS); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSAVE, &vbarS); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! At all SSA points, update the velocity field.
 /*!
 Once the vertically-averaged velocity field is computed by the SSA, this procedure
@@ -745,13 +699,15 @@ can be computed.
  */
 PetscErrorCode IceModel::broadcastSSAVelocity() {
   PetscErrorCode ierr;
-  PetscScalar **mask, **ubar, **vbar, **ub, **vb;
+  PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb;
   PetscScalar ***u, ***v, **uvbar[2];
   PetscScalar locCFLmaxdt2D = maxdt;
   
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
@@ -767,17 +723,19 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
         bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
         PetscScalar fv = 1.0;
         if (pureSuperpose == PETSC_FALSE) {
-          const PetscScalar c2peryear = PetscSqr(ubar[i][j]*secpera)
-                                           + PetscSqr(vbar[i][j]*secpera);
+          const PetscScalar c2peryear = PetscSqr(ubarssa[i][j]*secpera)
+                                           + PetscSqr(vbarssa[i][j]*secpera);
           fv = 1.0 - (2.0/pi) * atan(1.0e-4 * c2peryear);
         }
         for (PetscInt k=0; k<grid.p->Mz; ++k) {
-          u[i][j][k] = (addVels) ? fv * u[i][j][k] + ubar[i][j] : ubar[i][j];
-          v[i][j][k] = (addVels) ? fv * v[i][j][k] + vbar[i][j] : vbar[i][j];
+          u[i][j][k] = (addVels) ? fv * u[i][j][k] + ubarssa[i][j] : ubarssa[i][j];
+          v[i][j][k] = (addVels) ? fv * v[i][j][k] + vbarssa[i][j] : vbarssa[i][j];
         }
-        ub[i][j] = (addVels) ? fv * ub[i][j] + ubar[i][j] : ubar[i][j];
-        vb[i][j] = (addVels) ? fv * vb[i][j] + vbar[i][j] : vbar[i][j];
+        ub[i][j] = (addVels) ? fv * ub[i][j] + ubarssa[i][j] : ubarssa[i][j];
+        vb[i][j] = (addVels) ? fv * vb[i][j] + vbarssa[i][j] : vbarssa[i][j];
         
+        ubar[i][j] = ubarssa[i][j];
+        vbar[i][j] = vbarssa[i][j];
         if (addVels) { // also update ubar,vbar by adding SIA contribution
           ubar[i][j] += fv * 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
           vbar[i][j] += fv * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
@@ -792,6 +750,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
@@ -800,12 +760,13 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
   if (doSuperpose == PETSC_TRUE) {
     ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-    // now communicate modified ubar, vbar because modified
-    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
   }
+
+  // now communicate modified ubar, vbar because modified
+  ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
   return 0;

@@ -2,12 +2,12 @@
 % data.  
 %    Assumes foo.m, the result of PISM Ross computation, has already been
 % run (i.e. "$ pismd -ross -o foo -of m" and then do ">> foo" in Matlab), so variables 
-% c,ubar,vbar,H,mask,x,y are defined.  Reads RIGGS data from riggs_ELBclean.dat.
+% cbar,ubar,vbar,H,mask,x,y are defined.  Reads RIGGS data from riggs_ELBclean.dat.
 % Compare figures 3 from (Bently 1984) and figures 11 and 14 from 
 % (Thomas et al 1984) and figures in (MacAyeal et al 1996).
 %    Reports final values 'ChiSqr' and 'max_computed_speed' which can (I think)
 % be compared to Table 1 in (MacAyeal et al 1996).
-% ELB 2/4/07; 2/11/07
+% ELB 2/4/07; 2/11/07; 11/17/07
 
 % see 111by147.dat for these ranges
 dlat = (-5.42445 - (-12.3325))/110;
@@ -20,7 +20,7 @@ RIGGS=riggs_clean;
 clear riggs_clean;
 
 % show computed speed as color
-cforplot=c;  cforplot(H<20) = -20; cforplot(mask==1) = -20;
+cforplot=cbar;  cforplot(H<20) = -20; cforplot(mask==1) = -20;
 figure
 imagesc(gridlon,gridlatext,cforplot'), colorbar
 h=get(gcf,'CurrentAxes');  set(h, 'YDir', 'normal')
@@ -61,3 +61,4 @@ max_computed_speed = max(max(c))
 figure
 plot(sqrt(uATrig.^2 + vATrig.^2),sqrt(rigu.^2 + rigv.^2),'.k','Markersize',12)
 hold on, plot([0 1000],[0 1000],'LineWidth',2), hold off
+
