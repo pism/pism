@@ -25,6 +25,9 @@
 
 IceEISModel::IceEISModel(IceGrid &g, IceType &i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
+  expername = 'A';
+  infileused = false;
+  flowLawNumber = 0;
 }
 
 
@@ -49,14 +52,14 @@ PetscErrorCode IceEISModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
 
   // make bedrock material properties into ice properties
-  // (note Mbz=1 is default, but want ice/rock interface segment to see all ice)
+  // (note Mbz=1 is default, but want ice/rock interface segment to 
+  // have geothermal flux applied directly to ice)
   bedrock.rho = ice.rho;
   bedrock.k = ice.k;
   bedrock.c_p = ice.c_p;  
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */
-  expername = 'A';
   char                temp, eisIIexpername[20];
   PetscTruth          EISIIchosen;
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
@@ -71,6 +74,9 @@ PetscErrorCode IceEISModel::setFromOptions() {
     }
   }
 
+  ierr = verbPrintf(2,grid.com, 
+              "setting parameters for EISMINT II experiment %c ... \n", 
+              expername); CHKERRQ(ierr);
   // EISMINT II specified values for parameters M_max, R_el, T_min, S_b, S_T
   S_b = 1.0e-2 * 1e-3 / secpera;    // Grad of accum rate change
   S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
@@ -137,16 +143,11 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
 PetscErrorCode IceEISModel::initFromOptions() {
   PetscErrorCode      ierr;
-  PetscTruth          inFileSet, bootFileSet;
-  bool                infileused;
-  char                inFile[PETSC_MAX_PATH_LEN], bootFile[PETSC_MAX_PATH_LEN];
+  PetscTruth          inFileSet;
 
   // check if input file was used
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", bootFile,
-                               PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
+  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &inFileSet); CHKERRQ(ierr);
+  infileused = (inFileSet == PETSC_TRUE);
   
   if (!infileused) { 
     // initialize from EISMINT II formulas
@@ -231,9 +232,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = initAccumTs(); CHKERRQ(ierr); // just overwrite accum and Ts with EISMINT II vals
   }
   
-  if (infileused && ((expername == 'I') || (expername == 'J'))) {
-    // effect is to always regenerate topography (and basal till properties
-    //    for special modified experiment)
+  if (infileused && ((expername == 'I') || (expername == 'J'))) { // always regenerate topography
     ierr = generateTroughTopography(); CHKERRQ(ierr); 
   }
   
@@ -330,47 +329,6 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   ierr = verbPrintf(3,grid.com,
                "trough bed topography stored by IceEISModel::generateTroughTopography()\n");
                CHKERRQ(ierr);
-
-  // if option -plastic is set, then also generate a map of till friction angle
-  // phi, which puts phi smaller in 
-#define DEFAULT_TILL_PHI_STRONG   20.0
-#define DEFAULT_TILL_PHI_WEAK      5.0
-  PetscScalar phi_list[2] = { DEFAULT_TILL_PHI_STRONG, DEFAULT_TILL_PHI_WEAK };
-  PetscInt    phi_list_length = 2;
-  PetscTruth  plasticSet, till_phiSet, phi_listSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &plasticSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-till_phi", &till_phiSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-till_phi", phi_list, &phi_list_length,
-            &phi_listSet); CHKERRQ(ierr);
-  
-  if ((phi_listSet == PETSC_TRUE) || (till_phiSet == PETSC_TRUE)) {
-    if (plasticSet == PETSC_FALSE) {
-      ierr = verbPrintf(1,grid.com,
-               "WARNING: option -till_phi read in IceEISModel but -plastic not set\n");
-               CHKERRQ(ierr);
-    } else { // proceed to fill in map of phi = friction angle for till
-             // based on option -till_phi or on defaults above
-      useConstantTillPhi = PETSC_FALSE;
-      PetscScalar  **tillphi;
-      ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          const PetscScalar nsd = i * dx, ewd = j *dy;
-          if (    (nsd >= (29 - 1) * dx61) && (nsd <= (33 - 1) * dx61)
-               && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-            tillphi[i][j] = phi_list[1];
-          } else {
-            tillphi[i][j] = phi_list[0];
-          }
-        }
-      }
-      ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
-      ierr = verbPrintf(3,grid.com,
-         "map of phi = (till friction angle) stored  IceEISModel::generateTroughTopography()\n");
-         CHKERRQ(ierr);
-    }
-  }
-
   return 0;
 }
 
@@ -404,49 +362,6 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
            CHKERRQ(ierr);
   return 0;
 }
-
-
-#if 0
-PetscErrorCode IceEISModel::getBedTopography(const char* topoFile) {
-  PetscErrorCode  ierr;
-  int             ncid, stat, bid;
-  PetscInt        bExists = 0;
-
-  // open NetCDF file and see if "b" variable is present
-  if (grid.rank == 0) {
-    stat = nc_open(topoFile, 0, &ncid); CHKERRQ(nc_check(stat));
-    stat = nc_inq_varid(ncid, "b", &bid); bExists = stat == NC_NOERR;
-  }
-  ierr = MPI_Bcast(&bExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-  if (!bExists) {
-    ierr = verbPrintf(2, grid.com, 
-           "WARNING: variable b not found in -topo file for EISMINT II experiment %c;\n"
-           "         continuing with current bed topography ...\n",expername); 
-           CHKERRQ(ierr);
-    return 0;
-  }
-
-  ierr = verbPrintf(2, grid.com, 
-         "reading bed topography found from file %s ...\n",topoFile); 
-         CHKERRQ(ierr);                              
-  // see comments in IceModel::bootstrapFromFile_netCDF() 
-  Vec vzero;
-  VecScatter ctx;
-  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
-  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
-
-  // move NetCDF variable bid into PETSc Vec vbed using DA to control distribution
-  // across processors
-  ierr = ncVarToDAVec(ncid, bid, grid.da2, vbed, g2, vzero); CHKERRQ(ierr);
-
-  ierr = VecDestroy(vzero); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
-  if (grid.rank == 0) {
-    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
-  }
-  return 0;
-}
-#endif
 
 
 // reimplement IceModel::basalVelocity() which is virtual; basalVelocity() is 

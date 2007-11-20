@@ -1,5 +1,6 @@
 #!/bin/bash
-# script to play with EISMINT II experiment I and plastic till SSA and superposition
+# script to play with plastic till SSA and superposition modification of
+# EISMINT II experiment I
 
 NN=8
 
@@ -13,17 +14,22 @@ mpiexec -n $NN pisms -eisII I -Mx 121 -My 121 -Mz 301 \
    -regrid eis2I190k.nc -regrid_vars TBHh \
    -y 10000 -track_Hmelt -f3d -o eis2I_fine_wmelt
 
-mpiexec -n $NN pisms -eisII I -if eis2I_fine_wmelt.nc -ssa -plastic -super \
-    -track_Hmelt -till_phi 20.0,5.0 -max_low_temps 200 -y 5 -f3d -o eis2I_plastic5
+mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 10 -f3d -o eis2Ipl10
 
-mpiexec -n $NN pisms -eisII I -if eis2I_plastic5.nc -ssa -plastic -super \
-    -track_Hmelt -till_phi 20.0,5.0 -max_low_temps 200 -y 5 -f3d -o eis2I_plastic10
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl10.nc -y 90 -f3d -o eis2Ipl100
 
-mpiexec -n $NN pisms -eisII I -if eis2I_plastic10.nc -ssa -plastic -super \
-    -track_Hmelt -till_phi 20.0,5.0 -max_low_temps 200 -y 10 -f3d -o eis2I_plastic20
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl100.nc -y 900 -f3d -o eis2Ipl1000
+    -mato eis2Ipl1000 -matv bcYTHLCQ0345
 
-mpiexec -n $NN pisms -eisII I -if eis2I_plastic20.nc -ssa -plastic -super \
-    -track_Hmelt -till_phi 20.0,5.0 -max_low_temps 200 -y 80 -f3d -o eis2I_plastic100 \
-    -mato eis2I_plastic100 -matv bcYTHLCQ0345
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl1000.nc -y 1000 -f3d -o eis2Ipl2000
+    -mato eis2Ipl2000 -matv bcYTHLCQ0345
+
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl2000.nc -y 3000 -f3d -o eis2Ipl5000
+    -mato eis2Ipl5000 -matv bcYTHLCQ0345
+
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl5000.nc -y 5000 -f3d -o eis2Ipl10k
+    -mato eis2Ipl10k -matv bcYTHLCQ0345
+
+# pisms -eis2Ipl -if eis2I190k.nc -till_phi 0.0,20.0,5.0,0.0 -y 100 -o eis2I190kpl_lakep100
 
 

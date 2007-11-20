@@ -26,6 +26,7 @@ static char help[] =
 #include "base/materials.hh"
 #include "base/iceModel.hh"
 #include "eismint/iceEISModel.hh"
+#include "eismint/iceEISplModel.hh"
 #include "ismip/iceHEINOModel.hh"
 
 int main(int argc, char *argv[]) {
@@ -52,37 +53,44 @@ int main(int argc, char *argv[]) {
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     
     // call constructors on all three, but m will point to the one we use
-    IceEISModel   mEISII(g, *ice);
-    IceHEINOModel mHEINO(g, *ice);
-    IceModel*     m;
+    IceEISModel    mEISII(g, *ice);
+    IceHEINOModel  mHEINO(g, *ice);
+    IceEISplModel  mEISpl(g, *ice);
+    IceModel*      m;
 
-    char        expername[20]; //ignored here; see IceEISModel,IceHEINOModel::initFromOptions
-    PetscTruth  EISIIchosen, ISMIPchosen, ROSSchosen;
+    PetscTruth  EISIIchosen, ISMIPchosen, EISplchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
-    ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", expername, 1, &EISIIchosen);
+    ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
+              CHKERRQ(ierr);
+    /* This option chooses plastic till modification of EISMINT II experiment I. */
+    ierr = PetscOptionsHasName(PETSC_NULL, "-eis2Ipl", &EISplchosen);
               CHKERRQ(ierr);
     /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO and none others are implemented */
-    ierr = PetscOptionsGetString(PETSC_NULL, "-ismip", expername, 1, &ISMIPchosen);
+    ierr = PetscOptionsHasName(PETSC_NULL, "-ismip", &ISMIPchosen);
               CHKERRQ(ierr);
-    /* This option chooses EISMINT ROSS; "-ross" */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &ROSSchosen); CHKERRQ(ierr);
     
-    if ((EISIIchosen == PETSC_TRUE) && (ISMIPchosen == PETSC_FALSE) && (ROSSchosen == PETSC_FALSE)) {
+    if ( (EISIIchosen == PETSC_TRUE) && (ISMIPchosen == PETSC_FALSE)
+         && (EISplchosen == PETSC_FALSE) ) {
       mEISII.setFlowLawNumber(flowlawNumber);
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
-    } else if ((ISMIPchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE) && (ROSSchosen == PETSC_FALSE)) {
+    } else if ( (ISMIPchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE)
+                && (EISplchosen == PETSC_FALSE) ) {
       mHEINO.setflowlawNumber(flowlawNumber);
       ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
       ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mHEINO;
-    } else if ((ROSSchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE) && (ISMIPchosen == PETSC_FALSE)) {
-        ierr = PetscPrintf(com, "pisms no longer runs EISMINT ROSS; use pismd\nending ... \n"); CHKERRQ(ierr);
-        PetscEnd();      
+    } else if ( (EISplchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE)
+                && (ISMIPchosen == PETSC_FALSE) ) {
+      mEISpl.setFlowLawNumber(flowlawNumber);
+      ierr = mEISpl.setFromOptions(); CHKERRQ(ierr);
+      ierr = mEISpl.initFromOptions(); CHKERRQ(ierr);
+      m = (IceModel*) &mEISpl;
     } else {
-      SETERRQ(1,"PISMS called with invalid, contradictory, or no experiment chosen");
+      SETERRQ(1,
+        "PISMS called with invalid, contradictory, or no simplified geometry experiment chosen");
     }
 
     ierr = m->run(); CHKERRQ(ierr);

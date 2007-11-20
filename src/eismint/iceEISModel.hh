@@ -39,6 +39,7 @@ public:
     
 protected:
     char        expername;
+    bool        infileused;
     PetscInt    flowLawNumber;
     PetscScalar M_max, R_el, T_min, S_b, S_T;
  
