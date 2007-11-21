@@ -27,6 +27,7 @@ static char help[] =
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "verif/iceCompModel.hh"
+#include "verif/iceUpwindCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
 
 int main(int argc, char *argv[]) {
@@ -71,15 +72,22 @@ int main(int argc, char *argv[]) {
         ierr = mSSA.reportErrors();  CHKERRQ(ierr);
       }
       ierr = mSSA.writeFiles("verify",PETSC_TRUE); CHKERRQ(ierr);
-    } else { // all other tests are compensatory; 
-             // if test is invalid then mComp.initFromOptions() will bonk
-      // run derived class for compensatory source SIA solutions
-      // (i.e. compensatory accumulation or compensatory heating)
+    } else { // run derived class for compensatory source SIA solutions
+             // (i.e. compensatory accumulation or compensatory heating)
       ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
-      IceCompModel        mComp(g, *tgaice, test);
-      ierr = mComp.setFromOptions(); CHKERRQ(ierr);
-      ierr = mComp.initFromOptions(); CHKERRQ(ierr);
-      ierr = mComp.run(); CHKERRQ(ierr);
+      PetscTruth upwindSet;
+      ierr = PetscOptionsHasName(PETSC_NULL, "-upwind", &upwindSet); CHKERRQ(ierr);
+      IceCompModel*      mComp;
+      IceCompModel       mComp_standard(g, *tgaice, test);
+      IceUpwindCompModel mComp_upwind(g, *tgaice, test);
+      if (upwindSet == PETSC_TRUE) {
+        mComp = (IceCompModel*) &mComp_upwind;
+      } else {
+        mComp = (IceCompModel*) &mComp_standard;
+      }
+      ierr = mComp->setFromOptions(); CHKERRQ(ierr);
+      ierr = mComp->initFromOptions(); CHKERRQ(ierr);
+      ierr = mComp->run(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
         if ((flowlawNumber != 1) && ((test == 'F') || (test == 'G'))) {
@@ -88,11 +96,10 @@ int main(int argc, char *argv[]) {
                 "   for reported errors in test %c to be meaningful!\n", test);
                 CHKERRQ(ierr);
         }
-        ierr = mComp.reportErrors();  CHKERRQ(ierr);
+        ierr = mComp->reportErrors();  CHKERRQ(ierr);
       }
-      ierr = mComp.writeFiles("verify",PETSC_FALSE); CHKERRQ(ierr);
+      ierr = mComp->writeFiles("verify",PETSC_FALSE); CHKERRQ(ierr);
     }
-
     ierr = verbPrintf(1,com, " ... done\n"); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);

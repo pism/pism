@@ -60,6 +60,7 @@ public:
   // see iceModel.cc
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
+  PetscScalar maxdt_temporary; // might be set by additionalAt??Timestep()
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -74,7 +75,7 @@ public:
   virtual PetscErrorCode initFromOptions(PetscTruth doHook);
 
   // see iMvelocity.cc
-  PetscErrorCode velocity(bool updateSIAVelocityAtDepth);
+  virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);
     
   // see iMIO.cc
   PetscErrorCode initFromFile(const char *);
@@ -169,7 +170,7 @@ protected:
   // parameters
   PetscScalar maxdt, muSliding, enhancementFactor;
   PetscScalar dt, dtTempAge;    // current mass cont. and temp/age time steps in seconds
-  PetscScalar dt_force, maxdt_temporary; // might be set by additionalAt??Timestep()
+  PetscScalar dt_force;
   PetscScalar constantNuForSSA, constantHardnessForSSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon;

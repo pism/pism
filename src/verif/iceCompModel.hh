@@ -20,6 +20,7 @@
 #define __iceCompModel_hh
 
 #include <petscda.h>
+#include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 
