@@ -290,21 +290,31 @@ PetscErrorCode IceCompModel::updateCompViewers() {
   PetscErrorCode ierr;
 
   ierr = updateViewers();  CHKERRQ(ierr);
+
+  Vec myg2;
+  ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
+  Vec* myvWork2d;
+  ierr = VecDuplicateVecs(vh, 3, &myvWork2d); CHKERRQ(ierr);
+  
   if (SigmaCompView != PETSC_NULL) {
-    ierr = getHorSliceOf3D(vSigmaComp, g2, kd);
-    ierr = VecScale(g2, secpera); CHKERRQ(ierr);
-    ierr = VecView(g2, SigmaCompView); CHKERRQ(ierr);
+    ierr = getHorSliceOf3D(vSigmaComp, myg2, kd);
+    ierr = VecScale(myg2, secpera); CHKERRQ(ierr);
+    ierr = VecView(myg2, SigmaCompView); CHKERRQ(ierr);
   }  
   // now redraw Sigma view to be just the strain-heating, not the sum of strain-heating 
   //      and compensatory
   if (compSigmaMapView != PETSC_NULL) {
-    ierr = getHorSliceOf3D(vSigma, vWork2d[0], kd);
-    ierr = getHorSliceOf3D(vSigmaComp, vWork2d[1], kd);
-    ierr = VecWAXPY(vWork2d[2],-1.0,vWork2d[1],vWork2d[0]); CHKERRQ(ierr);  // Work2d[2] = Sigma - SigmaComp
-    ierr = DALocalToGlobal(grid.da2, vWork2d[2], INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecScale(g2, secpera); CHKERRQ(ierr);
-    ierr = VecView(g2, compSigmaMapView); CHKERRQ(ierr);
+    ierr = getHorSliceOf3D(vSigma, myvWork2d[0], kd);
+    ierr = getHorSliceOf3D(vSigmaComp, myvWork2d[1], kd);
+    // Work2d[2] = Sigma - SigmaComp:
+    ierr = VecWAXPY(myvWork2d[2],-1.0,myvWork2d[1],myvWork2d[0]); CHKERRQ(ierr);
+    ierr = DALocalToGlobal(grid.da2, myvWork2d[2], INSERT_VALUES, myg2); CHKERRQ(ierr);
+    ierr = VecScale(myg2, secpera); CHKERRQ(ierr);
+    ierr = VecView(myg2, compSigmaMapView); CHKERRQ(ierr);
   }
+
+  ierr = VecDestroyVecs(myvWork2d, 3); CHKERRQ(ierr);
+  ierr = VecDestroy(myg2); CHKERRQ(ierr);
   return 0;
 }
 

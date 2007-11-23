@@ -136,6 +136,13 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 }
 
 
+//! Use various stability criteria to determine the time step for an evolution run.
+/*! 
+The main loop in run() approximates many physical processes.  Several of these approximations,
+including the mass continuity and temperature equations in particular, involve stability
+criteria.  This procedure builds the length of the next time step by using these criteria and 
+by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived classes.
+ */
 PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
 

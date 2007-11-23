@@ -121,9 +121,13 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = verbPrintf(4,grid.com, "showing EISMINT ROSS observed velocities"); CHKERRQ(ierr);
   ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
-  Vec vNu[2] = {vWork2d[0], vWork2d[1]};
-  ierr = computeEffectiveViscosity(vNu, ssaEpsilon); CHKERRQ(ierr);
-  ierr = updateNuViewers(vNu,vNu,false); CHKERRQ(ierr);
+  
+  //  Vec vNu[2] = {vWork2d[0], vWork2d[1]};
+  Vec*  myvNu;
+  ierr = VecDuplicateVecs(vh, 2, &myvNu); CHKERRQ(ierr);
+  ierr = computeEffectiveViscosity(myvNu, ssaEpsilon); CHKERRQ(ierr);
+  ierr = updateNuViewers(myvNu,myvNu,false); CHKERRQ(ierr);
+  ierr = VecDestroyVecs(myvNu, 2); CHKERRQ(ierr);
   
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
@@ -191,9 +195,11 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
 
   // compare comment in bootstrapFromFile_netCDF 
   Vec vzero;
+  Vec myg2;
+  ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
   VecScatter ctx;
-  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
-  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
+  ierr = VecScatterCreateToZero(myg2, &ctx, &vzero); CHKERRQ(ierr);  
+  ierr = getIndZero(grid.da2, myg2, vzero, ctx); CHKERRQ(ierr);
   // compare comment in bootstrapFromFile_netCDF 
   if (accExists) {
     MaskInterp masklevs;
@@ -201,17 +207,17 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
     masklevs.allowed_levels[0] = accMiss;
     masklevs.allowed_levels[1] = 0;
     masklevs.allowed_levels[2] = 1;
-    ierr = ncVarToDAVec(ncid, accid, grid.da2, obsAccurate, g2, vzero, masklevs); CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, accid, grid.da2, obsAccurate, myg2, vzero, masklevs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"accur does not exist but need to call ncVarToDAVec on it");
   }
   if (magExists) {
-    ierr = ncVarToDAVec(ncid, magid, grid.da2, obsMagnitude, g2, vzero); CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, magid, grid.da2, obsMagnitude, myg2, vzero); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"mag does not exist but need to call ncVarToDAVec on it");
   }
   if (aziExists) {
-    ierr = ncVarToDAVec(ncid, aziid, grid.da2, obsAzimuth, g2, vzero); CHKERRQ(ierr);
+    ierr = ncVarToDAVec(ncid, aziid, grid.da2, obsAzimuth, myg2, vzero); CHKERRQ(ierr);
   } else {
     SETERRQ(3,"azi does not exist but need to call ncVarToDAVec on it");
   }
@@ -219,6 +225,7 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
   // done with scatter context
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
   ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
+  ierr = VecDestroy(myg2); CHKERRQ(ierr);
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));
   }

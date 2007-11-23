@@ -422,9 +422,8 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 }
 
 
-/// Update the thickness from the velocity field and the surface and basal mass balance.
+/// Update the thickness from the horizontal velocity and the surface and basal mass balance.
 /*! 
-@cond CONTINUUM
 The partial differential equation describing the conservation of mass in the map-plane
 (parallel to the geoid) is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
@@ -432,43 +431,42 @@ where
   \f[ \mathbf{q} = \bar{\mathbf{U}} H.\f]
 In these equations \f$H\f$ is the ice thickness, 
 \f$M\f$ is the surface mass balance (accumulation or ablation), \f$S\f$ is the basal 
-mass balance (e.g. basal melt), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
-horizontal velocity of the ice.  Note \f$\bar{\mathbf{U}} = (\bar u, \bar v)\f$ in the 
-notation used here.  The map-plane flux of the ice \f$\mathbf{q}\f$ is defined by the 
-above formula.
+mass balance (e.g. basal melt or freeze-on), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
+horizontal velocity of the ice.  This procedure uses conservation of mass to update the ice thickness.
 
-This procedure massBalExplicitStep() uses this conservation of mass equation to update 
-the ice thickness.
-@endcond
+The map-plane flux of the ice \f$\mathbf{q}\f$ is defined by the above formula.  Nonetheless
+the mass flux is split into the parts caused by non-sliding SIA-type deformation and 
+caused by a nonzero basal sliding velocity:
+  \f[ \mathbf{q} = D \nabla h + \mathbf{U}_b H.\f]
+Here \f$D\f$ is the effective diffusivity of the SIA and \f$\mathbf{U}_b\f$ is the basal sliding
+(horizontal) velocity.
 
-@cond NUMERIC
-This method is first-order explicit in time.  The derivatives in \f$\nabla \cdot \mathbf{q}\f$ 
-are computed by centered finite difference 
-methods.  In the case of the SIA the value of \f$\bar{\mathbf{U}}\f$ is already stored on the 
-staggered grid by velocitySIAStaggered() and it is differenced in the obvious centered manner
-(with averaging of the thickness onto the staggered grid).
+The methods used are first-order explicit in time.  The derivatives in 
+\f$\nabla \cdot \mathbf{q}\f$ are computed by centered finite difference methods.  In the case 
+of the SIA contribution, the value of \f$D \nabla h\f$ is already stored in 
+\c Vec \c vuvbar on the staggered grid by velocitySIAStaggered().  It is differenced in 
+the standard centered manner (with averaging of the thickness onto the staggered grid).
 
-In the case of SSA locations the \f$\nabla \cdot \mathbf{q}\f$
-term is computed by upwinding after expanding
-  \f[ \nabla\cdot \mathbf{q} = \bar{\mathbf{U}} \cdot \nabla H + (\nabla \cdot \bar{\mathbf{U}}) H.\f]
-That is, the mass conservation equation is regarded as an advection equation
-with source term,
-  \f[ \frac{\partial H}{\partial t} + \bar{\mathbf{U}} \cdot \nabla H 
-                             = M - S - (\nabla \cdot \bar{\mathbf{U}}) H.\f]
+Basal sliding may come from SSA or from a sliding law in SIA (the latter is usually inferior as a
+physical model).  The divergence of \f$\mathbf{U}_b H\f$ is computed by upwinding after expanding
+  \f[ \nabla\cdot (\mathbf{U}_b H) = \mathbf{U}_B \cdot \nabla H + (\nabla \cdot \mathbf{U}_B) H.\f]
+That is, in the case of pure basal sliding the mass conservation equation is regarded as an 
+advection equation with source term,
+  \f[ \frac{\partial H}{\partial t} + \mathbf{U}_b \cdot \nabla H 
+                             = M - S - (\nabla \cdot \mathbf{U}_b) H.\f]
 The product of velocity and the gradient of thickness on the left is computed by first-order
 upwinding.  Note that the CFL condition for this advection scheme is checked; see 
-determineTimeStep().
-@endcond
+computeMax2DSlidingSpeed() and determineTimeStep().
 
-Note that if the point is flagged as \c MASK_FLOATING_OCEAN0 then the thickness is set to
+Note that if the point is flagged as \c FLOATING_OCEAN0 then the thickness is set to
 zero.  Note that the rate of thickness change \f$\partial H/\partial t\f$ is computed and saved,
-as is the rate of volume loss or gain.  Note updateSurfaceElevationAndMask() is called at the end.
+as is the rate of volume loss or gain.
  */
 PetscErrorCode IceModel::massBalExplicitStep() {
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy;
   PetscErrorCode ierr;
   PetscScalar **H, **Hnew, **uvbar[2];
-  PetscScalar **u, **v, **accum, **basalMeltRate, **mask;
+  PetscScalar **ub, **vb, **accum, **basalMeltRate, **mask;
   Vec vHnew = vWork2d[0];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -477,22 +475,32 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = VecCopy(vH, vHnew); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vHnew, &Hnew); CHKERRQ(ierr);
-
-//ierr = verbPrintf(1,grid.com,
-//       "entering massBalExplicitStep() with doOceanKill = %d and mask[0,0] = %d\n",
- //      doOceanKill,intMask(mask[0][0])); CHKERRQ(ierr);
 
   PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0)  icecount++;
       PetscScalar divQ;
+#if 1
+      // staggered grid Div(Q) for SIA (non-sliding) deformation part; Q = D grad h
+      const PetscScalar He = 0.5*(H[i][j] + H[i+1][j]);
+      const PetscScalar Hw = 0.5*(H[i-1][j] + H[i][j]);
+      const PetscScalar Hn = 0.5*(H[i][j] + H[i][j+1]);
+      const PetscScalar Hs = 0.5*(H[i][j-1] + H[i][j]);
+      divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
+            + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
+      // *add* basal sliding part using upwinding
+      divQ +=
+        ub[i][j] * (ub[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx
+        + vb[i][j] * (vb[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy
+        + H[i][j] * ((ub[i+1][j]-ub[i-1][j])/(2*dx) + (vb[i][j+1]-vb[i][j-1])/(2*dy));
+#else
+      // here u=ubar, v=vbar
       if (intMask(mask[i][j]) == MASK_SHEET) { 
-        // staggered grid Div(Q) for Q = D grad h
         const PetscScalar He = 0.5*(H[i][j] + H[i+1][j]);
         const PetscScalar Hw = 0.5*(H[i-1][j] + H[i][j]);
         const PetscScalar Hn = 0.5*(H[i][j] + H[i][j+1]);
@@ -505,6 +513,7 @@ PetscErrorCode IceModel::massBalExplicitStep() {
           + v[i][j] * (v[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy
           + H[i][j] * ((u[i+1][j]-u[i-1][j])/(2*dx) + (v[i][j+1]-v[i][j-1])/(2*dy));
       }
+#endif
 
       Hnew[i][j] += (accum[i][j] - divQ) * dt;
       if (includeBMRinContinuity == PETSC_TRUE) {
@@ -525,8 +534,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vHnew, &Hnew); CHKERRQ(ierr);
 
@@ -545,9 +554,6 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   // finally copy vHnew into vH (and communicate ghosted values at same time)
   ierr = DALocalToLocalBegin(grid.da2, vHnew, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vHnew, INSERT_VALUES, vH); CHKERRQ(ierr);
-
-  // update h and mask
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -654,7 +660,10 @@ PetscErrorCode IceModel::run() {
     }
     
     if (doMassConserve == PETSC_TRUE) {
+      // update H
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
+      // update h and mask
+      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
       if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
         tempskipCountDown--;
       ierr = verbPrintf(2,grid.com, "h"); CHKERRQ(ierr);

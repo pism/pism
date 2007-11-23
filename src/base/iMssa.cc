@@ -692,12 +692,8 @@ Here
 is a function which decreases smoothly from 1 for \f$|v| = 0\f$ to 0 as \f$|v|\f$ becomes 
 significantly larger than 100 m/a.  (Actually, if the flag pureSuperpose is true 
 then \f$f(|v|)=1\f$.)
-
-This procedure also computes the maximum horizontal speed in the SSA areas so that
-the CFL condition for the upwinding (in massBalExplicitStep() and only for SSA points)
-can be computed.
  */
-PetscErrorCode IceModel::broadcastSSAVelocity() {
+PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb;
   PetscScalar ***u, ***v, **uvbar[2];
@@ -727,9 +723,11 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
                                            + PetscSqr(vbarssa[i][j]*secpera);
           fv = 1.0 - (2.0/pi) * atan(1.0e-4 * c2peryear);
         }
-        for (PetscInt k=0; k<grid.p->Mz; ++k) {
-          u[i][j][k] = (addVels) ? fv * u[i][j][k] + ubarssa[i][j] : ubarssa[i][j];
-          v[i][j][k] = (addVels) ? fv * v[i][j][k] + vbarssa[i][j] : vbarssa[i][j];
+        if (updateVelocityAtDepth) {
+          for (PetscInt k=0; k<grid.p->Mz; ++k) {
+            u[i][j][k] = (addVels) ? fv * u[i][j][k] + ubarssa[i][j] : ubarssa[i][j];
+            v[i][j][k] = (addVels) ? fv * v[i][j][k] + vbarssa[i][j] : vbarssa[i][j];
+          }
         }
         ub[i][j] = (addVels) ? fv * ub[i][j] + ubarssa[i][j] : ubarssa[i][j];
         vb[i][j] = (addVels) ? fv * vb[i][j] + vbarssa[i][j] : vbarssa[i][j];
@@ -740,10 +738,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
           ubar[i][j] += fv * 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
           vbar[i][j] += fv * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
         }
-
-        PetscScalar denom = PetscAbs(ubar[i][j])/grid.p->dx + PetscAbs(vbar[i][j])/grid.p->dy;
-        denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
-        locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
       }
     }
   }
@@ -762,7 +756,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity() {
     ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   }
 
-  ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -847,6 +840,7 @@ PetscErrorCode IceModel::correctSigma() {
           const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
           const PetscScalar mvSigma = CC * ice.effectiveViscosity(schoofReg,
                                                u_x,u_y,v_x,v_y,T[i][j][k],pressure);
+          // FIXME: what is the right thing here?  surely should be weighted by f(|v|) factor
           Sigma[i][j][k] = (addVels) ? Sigma[i][j][k] + mvSigma : mvSigma;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {

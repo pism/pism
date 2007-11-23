@@ -409,7 +409,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   }
 
   // fill in 3D velocities (u,v,w)
-  ierr = broadcastSSAVelocity(); CHKERRQ(ierr);
+  ierr = broadcastSSAVelocity(true); CHKERRQ(ierr);
   // finally update w
   ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);

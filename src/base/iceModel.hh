@@ -214,12 +214,6 @@ protected:
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, gsd, taud;
 
-  // working space (a convenience)
-  Vec g2, g3, g3b;    // Global work vectors
-  Vec* vWork3d;
-  Vec* vWork2d;
-  static const PetscInt nWork3d=6, nWork2d=10;
-
 protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
@@ -368,8 +362,8 @@ protected:
 
   // see iMsia.cc
   PetscErrorCode surfaceGradientSIA();
-  PetscErrorCode velocitySIAStaggered(bool faststep);
-  PetscErrorCode frictionalHeatingSIAStaggered();
+  PetscErrorCode velocitySIAStaggered();
+  PetscErrorCode basalSIA();
   PetscErrorCode velocities2DSIAToRegular();
   PetscErrorCode SigmaSIAToRegular();
   PetscErrorCode horizontalVelocitySIARegular();
@@ -385,7 +379,7 @@ protected:
   PetscErrorCode assembleSSAMatrix(Vec vNu[2], Mat A);
   PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   PetscErrorCode moveVelocityToDAVectors(Vec x);
-  PetscErrorCode broadcastSSAVelocity();
+  PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
   PetscErrorCode correctSigma();
   PetscErrorCode correctBasalFrictionalHeating();
 
@@ -420,6 +414,7 @@ protected:
   PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   PetscErrorCode smoothSigma();
   PetscErrorCode computeMax3DVelocities();
+  PetscErrorCode computeMax2DSlidingSpeed();
   
   // see iMviewers.cc
   int isViewer(char name);
@@ -447,6 +442,12 @@ protected:
   PetscErrorCode destroyViewers();
 
 private:
+  // working space (a convenience)
+  Vec g2, g3, g3b;    // Global work vectors
+  Vec* vWork3d;
+  Vec* vWork2d;
+  static const PetscInt nWork3d=6, nWork2d=10;
+
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details

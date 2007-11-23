@@ -34,7 +34,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
-    ierr = velocitySIAStaggered(!updateVelocityAtDepth); CHKERRQ(ierr);
+    ierr = velocitySIAStaggered(); CHKERRQ(ierr);
 
     // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
     // and velocities2DSIAToRegular()
@@ -42,11 +42,14 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-    // communicate ub[o], vb[o] on staggered for velocities2DSIAToRegular()
-    for (PetscInt k=4; k<8; ++k) { 
-      ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-    }
+
+    // compute (and initialize values in) ub,vb and Rb; zero everything where floating
+    ierr = basalSIA(); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr); 
+    // no need to communicate vRb since not differenced in horizontal
 
     // now put staggered grid value of vertically-averaged horizontal velocity on regular grid
     // (this makes ubar and vbar be just the result of SIA; note that for SSA
@@ -59,26 +62,16 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
   
     if (updateVelocityAtDepth) {  
-      ierr = frictionalHeatingSIAStaggered(); CHKERRQ(ierr);
-      // communicate I[o] on staggered for horizontalVelocitySIARegular()
-      for (PetscInt k=0; k<3; ++k) {
-        ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-        ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-      }
-      // communicate Sigma[o] on staggered for SigmaSIAToRegular()
-      for (PetscInt k=4; k<6; ++k) {
-        ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-        ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-      }
       // communicate h_x[o], h_y[o] on staggered for horizontalVelocitySIARegular()
       for (PetscInt k=0; k<4; ++k) { 
         ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       }
-      // communicate Rb[0], Rb[1] on staggered for SigmaSIAToRegular()
-      for (PetscInt k=8; k<10; ++k) { 
-        ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-        ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+      // communicate I[o],J[o] on staggered for horizontalVelocitySIARegular()
+      //   and also communicate Sigma[o] on staggered for SigmaSIAToRegular()
+      for (PetscInt k=0; k<6; ++k) {
+        ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
+        ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
       }
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
@@ -88,10 +81,10 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   }
   
   // do SSA
-  static PetscScalar lastSSAUpdateYear = grid.p->year;  // only set when first called
   if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
     ierr = initSSA(); CHKERRQ(ierr);
   }
+  static PetscScalar lastSSAUpdateYear = grid.p->year;  // only set when first called
   if (useSSAVelocity) { // communication happens within SSA
     if ((firstTime == PETSC_TRUE) || (grid.p->year - lastSSAUpdateYear >= ssaIntervalYears)) {
       PetscInt numSSAiter;
@@ -106,7 +99,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     // even if velocitySSA() did not run, we still need to use stored SSA velocities 
     // to get 3D velocity field, basal velocities, basal frictional heating, 
     // and strain dissipation heating
-    ierr = broadcastSSAVelocity(); CHKERRQ(ierr); // sets CFLmaxdt2D
+    ierr = broadcastSSAVelocity(updateVelocityAtDepth); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
@@ -142,6 +135,9 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   if (noSpokesLevel > 0) {
     ierr = smoothSigma(); CHKERRQ(ierr); // comm here
   }
+
+  // communication here for global max; sets CFLmaxdt2D
+  ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
 
   if ((useSSAVelocity == PETSC_TRUE) || (updateVelocityAtDepth == PETSC_TRUE)) {
     // communication here for global max; sets CFLmaxdt
@@ -360,3 +356,32 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = PetscGlobalMin(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
   return 0;
 }
+
+
+//! Because the map-plane mass continuity is advective in sliding case, compute CFL.
+/*!
+This procedure computes the maximum horizontal speed in the SSA areas so that
+the CFL condition for the upwinding (in massBalExplicitStep() and only for 
+basal component of mass flux) can be computed.
+ */
+PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
+  PetscErrorCode ierr;
+  PetscScalar **ub, **vb;
+  PetscScalar locCFLmaxdt2D = maxdt;
+  
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar denom = PetscAbs(ub[i][j])/grid.p->dx + PetscAbs(vb[i][j])/grid.p->dy;
+      denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+      locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
