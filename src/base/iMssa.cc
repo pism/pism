@@ -84,17 +84,25 @@ PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
 }
 
 
-//! Compute the product of the effective viscosity \f$\nu\f$ and ice thickness \f$H\f$.
+//! Compute the product of the effective viscosity \f$\nu\f$ and ice thickness \f$H\f$ for the SSA model.
 /*! 
-@cond CONTINUUM
 In PISM the product \f$\nu H\f$ can be (i) constant, (ii) can be computed with a constant ice hardness
 \f$\bar B\f$ (temperature-independent) but with dependence of the viscosity on the strain rates, or 
 (iii) it can depend on the strain rates and have a vertically-averaged ice hardness.
 
 The flow law in ice stream and ice shelf regions must, for now, be a temperature-dependent Glen
-law.  (That is, more general forms like Goldsby-Kohlstedt are not yet inverted.)
+law because these are the only ones we know how to convert to ``viscosity form''.  (More general 
+forms like Goldsby-Kohlstedt are not yet inverted.)  The viscosity form is
+   \f[ \nu(T^*,D) = \frac{1}{2} B(T^*) D^{(1/n)-1}\, D_{ij} \f]
+where 
+   \f[  D_{ij} = \frac{1}{2} \left(\frac{\partial U_i}{\partial x_j} +
+                                   \frac{\partial U_j}{\partial x_i}\right) \f]
+is the strain rate tensor and \f$B\f$ is an ice hardness related to 
+the ice softness \f$A(T^*)\f$ by
+   \f[ B(T^*)=A(T^*)^{-1/n}  \f]
+in the case of a temperature dependent Glen-type law.  (Here \f$T^*\f$ is the homologous temperature.)
 
-The effective viscosity is
+The effective viscosity is then
    \f[ \nu = \frac{\bar B}{2} \left[\left(\frac{\partial u}{\partial x}\right)^2 + 
                                \left(\frac{\partial v}{\partial y}\right)^2 + 
                                \frac{\partial u}{\partial x} \frac{\partial v}{\partial y} + 
@@ -102,11 +110,8 @@ The effective viscosity is
                                                  + \frac{\partial v}{\partial x}\right)^2
                                \right]^{(1-n)/(2n)}                                                \f]
 where in the temperature-dependent case
-   \f[ \bar B = (\text{FIXME: SOME INTEGRAL})\f]
-@endcond
-@cond NUMERIC
-In the temperature dependent case the ice hardness is computed by the trapezoid rule.
-@endcond
+   \f[ \bar B = \frac{1}{H}\,\int_b^h B(T^*)\,dz\f]
+This integral is approximately computed by the trapezoid rule.
  */
 PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon) {
   PetscErrorCode ierr;
@@ -231,7 +236,8 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
 
 //! Assemble the matrix (left-hand side) for the numerical approximation of the SSA equations.
 /*! 
-@cond CONTINUUM
+COMMENT FIXME:  Read plastic till paper first.  Then fix these to match.
+
 The SSA equations are in their clearest form
     \f[ - \frac{\partial T_{ij}}{\partial x_j} + \tau_{(b)i} = f_i \f]
 where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
@@ -264,16 +270,14 @@ is the yield stress of the till  (Schoof 2006).  For ice streams with a basal ti
 as a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ is the basal
 drag (friction) parameter (Hulbe & MacAyeal 1999).
 
-@endcond
-@cond NUMERIC
 Note that the basal shear stress appears on the \em left side of the above system.  
 We believe this is crucial, because of its effect on the spectrum of the linear 
 approximations of each stage.  The effect on spectrum is clearest in the linearly-viscous
 till case (i.e. Hulbe & MacAyeal 1999) but there seems to be an analogous effect in the 
 plastic till case (Schoof 2006).
 
-This method assembles the matrix for the left side of the SSA equations.  The numerical method is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
-@endcond
+This method assembles the matrix for the left side of the SSA equations.  The numerical method 
+is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
 PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
   const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
@@ -427,14 +431,11 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
 
 //! Computes the right-hand side of the linear problem for the SSA equations.
 /*! 
-@cond CONTINUUM
 The right side of the SSA equations is just
    \f[ - \rho g H \nabla h \f]
 because, in particular, the basal stress is put on the left side of the system.  
 (See comment for assembleSSAMatrix().)  
 
-@endcond
-@cond NUMERIC
 The surface slope is computed by centered difference onto the regular grid,
 which may use periodic ghosting.  (Optionally the surface slope can be computed 
 by only differencing into the grid for points at the edge; see test I.)
@@ -445,7 +446,6 @@ equations
 and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged horizontal
 velocity is already known for these points because it was computed (on the staggered
 grid) using the SIA.
-@endcond
  */
 PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   // surfGradInward == true then differentiate h(x,y) inward from edge of grid,
@@ -519,7 +519,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
 /*!
 Since the parallel layout of the vector \c x in the \c KSP representation of the 
 linear SSA system does not in general have anything to do with the \c DA-based
-vectors, for the rest of IceModel, we must scatter the entire vector to all 
+vectors, for the rest of \c IceModel, we must scatter the entire vector to all 
 processors.
  */
 PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
@@ -697,7 +697,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb;
   PetscScalar ***u, ***v, **uvbar[2];
-  PetscScalar locCFLmaxdt2D = maxdt;
   
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);

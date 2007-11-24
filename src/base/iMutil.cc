@@ -23,61 +23,61 @@
 
 #include <petscvec.h>
 
+//! Compute the maximum diffusivity associated to the SIA deformational velocity.
+/*! 
+The time-stepping scheme for mass continuity is explicit.  For the non-sliding,
+deformational part of the vertically-integrated horizontal mass flux \f$\mathbf{q}\f$,
+the partial differential equation is diffusive.  Thus there is a stability criterion 
+(Morton and Mayers, 2005) which depends on the diffusivity coefficient.  Of course,
+because the PDE is nonlinear, this diffusivity changes at every time step.  This 
+procedure computes the maximum of the diffusivity on the grid.
+
+See determineTimeStep() and massBalExplicitStep().
+ */
 PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
-  // NOTE:  Assumes IceModel::vubar, vvbar holds correct 
-  // and up-to-date values of velocities
+  // assumes vuvbar holds correct deformational values of velocities
 
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **ubar, **vbar, **ub, **vb, **D, **mask;
+  PetscScalar **h, **H, **uvbar[2], **D;
   PetscScalar Dmax = 0.0;
 
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
-        if ( (intMask(mask[i][j]) == MASK_SHEET) || 
-             ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) != MASK_FLOATING)) ) {
-          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
-          const PetscScalar h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
-          const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
+        if (computeSIAVelocities == PETSC_TRUE) {
           // note: when basal sliding is proportional to surface slope, as
           // it usually will be when sliding occurs in a MASK_SHEET area, then
           //    D = H Ubar / alpha
           // is the correct formula; note division by zero is avoided by
           // addition to alpha
-          PetscScalar Ubarmag;
-          if (doSuperpose == PETSC_TRUE) {
-            Ubarmag = sqrt(PetscSqr(ubar[i][j] - ub[i][j]) + PetscSqr(vbar[i][j] - vb[i][j]));
-          } else {
-            Ubarmag = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
-          }
+          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx),
+                            h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy),
+                            alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
+          const PetscScalar udef = 0.5 * (uvbar[0][i][j] + uvbar[0][i-1][j]),
+                            vdef = 0.5 * (uvbar[1][i][j] + uvbar[1][i][j-1]),
+                            Ubarmag = sqrt(PetscSqr(udef) + PetscSqr(vdef));
           const PetscScalar d =
                H[i][j] * Ubarmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
           if (d > Dmax) Dmax = d;
           D[i][j] = d;
         } else {
-          D[i][j] = 0.0; // no diffusivity in non-SIA regions
+          D[i][j] = 0.0; // no diffusivity if no SIA
         }
       } else {
         D[i][j] = 0.0; // no diffusivity if no ice
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
 
   if (updateDiffusViewer) { // view diffusivity (m^2/s)

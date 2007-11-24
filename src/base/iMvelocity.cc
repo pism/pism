@@ -34,7 +34,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
-    ierr = velocitySIAStaggered(); CHKERRQ(ierr);
+    ierr = velocitySIAStaggered(); CHKERRQ(ierr);  // fills vWork3d[0 1 2 3]
 
     // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
     // and velocities2DSIAToRegular()
@@ -67,14 +67,15 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
         ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       }
-      // communicate I[o],J[o] on staggered for horizontalVelocitySIARegular()
+      // communicate I[o] on staggered for horizontalVelocitySIARegular()
       //   and also communicate Sigma[o] on staggered for SigmaSIAToRegular()
-      for (PetscInt k=0; k<6; ++k) {
+      for (PetscInt k=0; k<4; ++k) {
         ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
       }
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
+      // done with vWork2d[0 1 2 3] and vWork3d[0 1 2 3]
     }
   } else { // if computeSIAVelocities
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
@@ -269,7 +270,7 @@ PetscErrorCode IceModel::smoothSigma() {
 
   for (int count=0; count < noSpokesLevel; ++count) {
     ierr = DAVecGetArray(grid.da3, vSigma, &S); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vWork3d[4], &Snew); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
@@ -296,11 +297,11 @@ PetscErrorCode IceModel::smoothSigma() {
       }
     }
     ierr = DAVecRestoreArray(grid.da3, vSigma, &S); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3, vWork3d[4], &Snew); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
       
     // communicate ghosted values *and* transfer Snew to vSigma
-    ierr = DALocalToLocalBegin(grid.da3, vWork3d[4], INSERT_VALUES, vSigma); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vWork3d[4], INSERT_VALUES, vSigma); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da3, vWork3d[0], INSERT_VALUES, vSigma); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da3, vWork3d[0], INSERT_VALUES, vSigma); CHKERRQ(ierr);
   } // for
   
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);

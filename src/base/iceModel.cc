@@ -181,7 +181,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLatitude); CHKERRQ(ierr);
 
-  ierr = VecDuplicateVecs(vh, 2, &vDf); CHKERRQ(ierr);
   ierr = VecDuplicateVecs(vh, 2, &vuvbar); CHKERRQ(ierr);
 
   ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
@@ -250,7 +249,6 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vLatitude); CHKERRQ(ierr);
 
   ierr = VecDestroyVecs(vuvbar, 2); CHKERRQ(ierr);
-  ierr = VecDestroyVecs(vDf, 2); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork2d, nWork2d); CHKERRQ(ierr);
   ierr = VecDestroy(vubarSSA); CHKERRQ(ierr);
@@ -484,8 +482,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0)  icecount++;
+
       PetscScalar divQ;
-#if 1
       // staggered grid Div(Q) for SIA (non-sliding) deformation part; Q = D grad h
       const PetscScalar He = 0.5*(H[i][j] + H[i+1][j]);
       const PetscScalar Hw = 0.5*(H[i-1][j] + H[i][j]);
@@ -498,23 +496,8 @@ PetscErrorCode IceModel::massBalExplicitStep() {
         ub[i][j] * (ub[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx
         + vb[i][j] * (vb[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy
         + H[i][j] * ((ub[i+1][j]-ub[i-1][j])/(2*dx) + (vb[i][j+1]-vb[i][j-1])/(2*dy));
-#else
-      // here u=ubar, v=vbar
-      if (intMask(mask[i][j]) == MASK_SHEET) { 
-        const PetscScalar He = 0.5*(H[i][j] + H[i+1][j]);
-        const PetscScalar Hw = 0.5*(H[i-1][j] + H[i][j]);
-        const PetscScalar Hn = 0.5*(H[i][j] + H[i][j+1]);
-        const PetscScalar Hs = 0.5*(H[i][j-1] + H[i][j]);
-        divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
-              + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
-      } else { 
-        divQ =
-          u[i][j] * (u[i][j] < 0 ? H[i+1][j]-H[i][j] : H[i][j]-H[i-1][j]) / dx
-          + v[i][j] * (v[i][j] < 0 ? H[i][j+1]-H[i][j] : H[i][j]-H[i][j-1]) / dy
-          + H[i][j] * ((u[i+1][j]-u[i-1][j])/(2*dx) + (v[i][j+1]-v[i][j-1])/(2*dy));
-      }
-#endif
 
+      // time step to get new H
       Hnew[i][j] += (accum[i][j] - divQ) * dt;
       if (includeBMRinContinuity == PETSC_TRUE) {
          Hnew[i][j] -= capBasalMeltRate(basalMeltRate[i][j]) * dt;

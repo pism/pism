@@ -161,7 +161,6 @@ protected:
     vtauc, vtillphi, vbeta;     // basal fields; plastic/viscous coefficients
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
                                         //   u bar and v bar on staggered grid,
-  Vec*         vDf;                     // vDf[0],vDf[1] are diffusivity on staggered grid
   Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
                vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
   Vec          vTb;                     // 3D bed: Mx x My x Mbz
@@ -446,7 +445,7 @@ private:
   Vec g2, g3, g3b;    // Global work vectors
   Vec* vWork3d;
   Vec* vWork2d;
-  static const PetscInt nWork3d=6, nWork2d=10;
+  static const PetscInt nWork3d=4, nWork2d=6;
 
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made

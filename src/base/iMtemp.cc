@@ -334,7 +334,7 @@ PetscErrorCode IceModel::temperatureStep() {
   if (myLowTempCount > maxLowTempCount) { SETERRQ(1,"too many low temps"); }
 
   // note that in above code 4 scalar fields were modified: vHmelt, vbasalMeltRate, vTb, and vT
-  // but (11/16/06) vHmelt, vbasalMeltRate and vTb will never need to communicate ghosted values
+  // but vHmelt, vbasalMeltRate and vTb will never need to communicate ghosted values
   // (i.e. horizontal stencil neighbors);  vT is communicated by temperatureAgeStep()
 
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
