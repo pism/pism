@@ -19,6 +19,7 @@
 #ifndef __iceEISplModel_hh
 #define __iceEISplModel_hh
 
+#include <petsc.h>
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "iceEISModel.hh"
@@ -31,7 +32,16 @@ public:
   virtual PetscErrorCode initFromOptions();
     
 protected:
-  PetscScalar*    phi_list;
+  PetscScalar              stream_width;
+  static const PetscScalar DEFAULT_STREAM_WIDTH;
+
+  static const PetscInt    phi_list_length; // = 5
+  PetscScalar*             phi_list; // list of phi_list_length
+  static const PetscScalar DEFAULT_TILL_PHI_LAKE;
+  static const PetscScalar DEFAULT_TILL_PHI_STRONG;
+  static const PetscScalar DEFAULT_TILL_PHI_UPSTREAM;
+  static const PetscScalar DEFAULT_TILL_PHI_DOWNSTREAM;
+  static const PetscScalar DEFAULT_TILL_PHI_OCEAN;
 
   PetscErrorCode resetAccum();
   PetscErrorCode setTillProperties();

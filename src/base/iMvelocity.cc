@@ -152,7 +152,6 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
 
 //! Compute vertical velocity using basal conditions and incompressibility of the ice.
 /*! 
-@cond CONTINUUM
 The original statement of incompressibility is
    \f[ \nabla\cdot\mathbf{U} + \frac{\partial w}{\partial z} = 0. \f]
 This is immediately equivalent to the integral
@@ -164,7 +163,6 @@ The basal kinematic equation is
 where \f$S\f$ is the basal melt rate.  (The inclusion of the basal melt rate is optional.)  
 This equation determines the vertical velocity of the ice at the base (\f$w_b\f$), 
 which is needed in the incompressibility integral.
-@endcond
 
 @cond VERTCHANGE
 Note we do a change of vertical coordinate \f$\tilde z = z - b(x,y,t)\f$.  Thus all 
@@ -178,9 +176,7 @@ derivatives, with respect to any variable \f$x,y,z,t\f$, change accordingly
                            + w_b(x,y,t). \f]
 @endcond
 
-@cond NUMERIC
 The vertical integral is computed by the trapezoid rule.
-@endcond
  */
 PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   
