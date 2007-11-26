@@ -21,15 +21,19 @@ mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl10.nc -y 90 -f3d -o eis2Ipl100
 mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl100.nc -y 900 -f3d -o eis2Ipl1000
     -mato eis2Ipl1000 -matv bcYTHLCQ0345
 
-mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl1000.nc -y 1000 -f3d -o eis2Ipl2000
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl1000.nc -y 1000 -f3d -o eis2Ipl2000 \
     -mato eis2Ipl2000 -matv bcYTHLCQ0345
 
-mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl2000.nc -y 3000 -f3d -o eis2Ipl5000
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl2000.nc -y 3000 -f3d -o eis2Ipl5000 \
     -mato eis2Ipl5000 -matv bcYTHLCQ0345
 
-mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl5000.nc -y 5000 -f3d -o eis2Ipl10k
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl5000.nc -y 5000 -f3d -o eis2Ipl10k \
     -mato eis2Ipl10k -matv bcYTHLCQ0345
+
+# on marmaduke, with 8 cores, the last 5000 model year run took about 14 hours, so about 
+#    2.8 hours/(1000 model years)
 
 # pisms -eis2Ipl -if eis2I190k.nc -till_phi 0.0,20.0,5.0,0.0 -y 100 -o eis2I190kpl_lakep100
 
+# mpiexec -n 8 ./pisms -eis2Ipl -if eis2Iplrev213/eis2Ipl10.nc -y 90 -f3d -o eis2Ipl100_bmr -bmr_in_cont -d Llfc -display :0
 

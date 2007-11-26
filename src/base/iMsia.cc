@@ -176,14 +176,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   J[0] = new PetscScalar[grid.p->Mz];
   J[1] = new PetscScalar[grid.p->Mz];
 
-  PetscScalar **h_x[2], **h_y[2], **h, **H, **uvbar[2];
+  PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
   PetscScalar ***I[2], ***Sigma[2], ***T, ***gs;
 
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
@@ -222,7 +221,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           I[o][i][j][0] = 0;   J[o][0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   s = k * dz;
-            const PetscScalar   pressure = ice.rho * grav * (thickness-s);
+            const PetscScalar   pressure = ice.rho * grav * (thickness - s);
             delta[k] = (2 * pressure * enhancementFactor
                         * ice.flow(alpha * pressure,
                                    0.5 * (T[i][j][k] + T[i+oi][j+oj][k]), pressure,
@@ -245,7 +244,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
           const PetscScalar
-            Dfoffset = J[o][ks] + (thickness - ks*dz) * I[o][i][j][ks];
+            Dfoffset = J[o][ks] + (thickness - ks * dz) * I[o][i][j][ks];
           // vertically-averaged velocity; note uvbar[0][i][j] is  u  at right staggered
           // point (i+1/2,j) but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
           // here we use stale (old) diffusivity if faststep
@@ -262,7 +261,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
     } // j
   } // i
 
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
@@ -277,8 +275,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = DAVecRestoreArray(grid.da3, vWork3d[2], &Sigma[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vWork3d[3], &Sigma[1]); CHKERRQ(ierr);
 
-  delete [] delta; delete [] K; 
-  delete [] J[0]; delete [] J[1];
+  delete [] delta;   delete [] K;   delete [] J[0];   delete [] J[1];
   return 0;
 }
 
@@ -288,7 +285,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 case.  I.e. basalVelocity().  The basal sliding velocity is computed for all SIA 
 points.  This routine also computes the basal frictional heating.  
 
-The basal velocity \c Vec\ s \c vub and \c vvb and the frictional heating \c Vec are all
+The basal velocity \c Vecs \c vub and \c vvb and the frictional heating \c Vec are all
 fully over-written by this routine.  Where the ice is floating, they all have value zero.
 
 See correctBasalFrictionalHeating().
@@ -325,9 +322,8 @@ PetscErrorCode IceModel::basalSIA() {
                                  + h_x[1][i][j] + h_x[1][i][j-1]),
                   myhy = 0.25 * (  h_y[0][i][j] + h_y[0][i-1][j]
                                  + h_y[1][i][j] + h_y[1][i][j-1]),
-                  alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
-          const PetscScalar basalC =
-            basalVelocity(myx, myy, H[i][j], T[i][j][0], alpha, muSliding);
+                  alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy)),
+                  basalC = basalVelocity(myx, myy, H[i][j], T[i][j][0], alpha, muSliding);
           ub[i][j] = - basalC * myhx;
           vb[i][j] = - basalC * myhy;
         
@@ -423,7 +419,7 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
       const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
       for (PetscInt k=0; k<ks; ++k) {
         Sigmareg[i][j][k] = 0.25 * (Sigma[0][i][j][k] + Sigma[0][i-1][j][k] +
-                                  Sigma[1][i][j][k] + Sigma[1][i][j-1][k]);
+                                    Sigma[1][i][j][k] + Sigma[1][i][j-1][k]);
       }
       for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
         Sigmareg[i][j][k] = 0.0;

@@ -26,7 +26,7 @@ def verify(test):
          myMz = myMx
          myMbz = (myMz - 1) / 4 + 1
          mymaxdt = 40000.0 / (float((myMbz - 1) * (myMbz - 1)))
-         gridopts = ' -Mz ' + str(myMz) + ' -Mbz ' + str(myMbz) + ' -maxdt ' + str(mymaxdt)
+         gridopts = ' -Mz ' + str(myMz) + ' -Mbz ' + str(myMbz) + ' -max_dt ' + str(mymaxdt)
       if nproc > 1:
          predo = mpi + ' -np ' + str(nproc) + ' '
       else:

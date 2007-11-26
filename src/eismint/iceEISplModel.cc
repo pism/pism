@@ -33,6 +33,8 @@ PetscErrorCode IceEISplModel::initFromOptions() {
   doSuperpose = PETSC_TRUE;
   pureSuperpose = PETSC_FALSE;
   doPlasticTill = PETSC_TRUE;
+
+  // these are different from EISMINT I conventions
   updateHmelt = PETSC_TRUE;
 
   ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  

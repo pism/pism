@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{209}
+\newcommand{\PISMREV}{215}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1707,6 +1707,8 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 \optrestrict{bif}{pismr, pgrn}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-if|.
 
 \optrestrict{bif\und legacy}{pant}  The model can be ``bootstrapped'' from certain NetCDF files dealing with antarctica (\verb|init.nc|).
+
+\optrestrict{bmr\und in\und cont}{pisms -eisII}  By default \verb|pisms -eisII| does not include the basal melt rate in the continuity equation because EISMINT II specifies that it should not be included.  This option makes \verb|pisms -eisII| behave like the generic PISM cases (e.g.~\verb|pismr|).
 
 \opt{constant\und hardness}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$

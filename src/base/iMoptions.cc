@@ -67,9 +67,13 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &mybedDeflc); CHKERRQ(ierr);  
   if (mybedDeflc == PETSC_TRUE)   doBedIso = PETSC_FALSE;
+
   ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &mydoBedIso); CHKERRQ(ierr);
   if (mydoBedIso == PETSC_TRUE)   doBedIso = PETSC_TRUE;
   if ((doBedIso == PETSC_TRUE) || (mybedDeflc == PETSC_TRUE))    doBedDef = PETSC_TRUE;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
+  if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
   // user gives nu in MPa yr (e.g. Ritz et al 2001 value is 30.0)
@@ -155,9 +159,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
   if (MbzSet == PETSC_TRUE)   grid.p->Mbz = my_Mbz;
-
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_bmr_in_vert", &myincludeBMRinContinuity); CHKERRQ(ierr);
-  if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;

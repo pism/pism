@@ -210,16 +210,14 @@ verbPrintf(1,grid.com,
 }
 
 
+//! Does nothing in \c IceModel, but allows derived classes to do more per-step computation.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
-  // does nothing; allows derived classes to do more per-step computation,
-  // reporting and checking, etc.
   return 0;
 }
 
 
+//! Does nothing in \c IceModel, but allows derived classes to do more per-step computation.
 PetscErrorCode IceModel::additionalAtEndTimestep() {
-  // does nothing; allows derived classes to do more per-step computation,
-  // reporting and checking, etc.
   return 0;
 }
 
@@ -267,6 +265,7 @@ PetscErrorCode IceModel::getSurfaceValuesOf3D(Vec v3D, Vec &gsurf) {
 }
 
 
+//! Manages the actual initialization of IceModel, especially from input file options.
 PetscErrorCode IceModel::initFromOptions() {
   PetscErrorCode ierr;
 
@@ -341,6 +340,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 }
 
 
+//! Complete initialization: regrid if desired, report grid, create viewers.
 PetscErrorCode IceModel::afterInitHook() {
   PetscErrorCode ierr;
   PetscTruth     regridFileSet = PETSC_FALSE;
@@ -388,6 +388,7 @@ PetscErrorCode IceModel::afterInitHook() {
 }
 
 
+//! Catch signals.
 int IceModel::endOfTimeStepHook() {
 
   // SIGTERM makes PISM end, saving state under original -o name

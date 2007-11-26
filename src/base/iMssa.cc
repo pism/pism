@@ -236,7 +236,7 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
 
 //! Assemble the matrix (left-hand side) for the numerical approximation of the SSA equations.
 /*! 
-COMMENT FIXME:  Read plastic till paper first.  Then fix these to match.
+COMMENT FIXME:  Finish plastic till paper first.  Then fix these comments to match.
 
 The SSA equations are in their clearest form
     \f[ - \frac{\partial T_{ij}}{\partial x_j} + \tau_{(b)i} = f_i \f]
