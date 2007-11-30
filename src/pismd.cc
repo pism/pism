@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
     IceType*   ice;
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     
-    ierr = verbPrintf(1,com, "PISMD (diagnositic velocity computation mode)\n"); CHKERRQ(ierr);
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMD (diagnositic velocity computation mode)\n"); CHKERRQ(ierr);
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
 
     IceModel*      m;

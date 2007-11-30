@@ -18,7 +18,7 @@ mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 10 -f3d -o eis2Ipl10
 
 mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl10.nc -y 90 -f3d -o eis2Ipl100
 
-mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl100.nc -y 900 -f3d -o eis2Ipl1000
+mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl100.nc -y 900 -f3d -o eis2Ipl1000 \
     -mato eis2Ipl1000 -matv bcYTHLCQ0345
 
 mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl1000.nc -y 1000 -f3d -o eis2Ipl2000 \

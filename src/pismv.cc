@@ -49,8 +49,8 @@ int main(int argc, char *argv[]) {
     char         testname[20];
     PetscTruth   testchosen, dontReport;
 
-    ierr = verbPrintf(1, com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    ierr = verbPrintf(1, com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
     
     // determine test (and whether to report error)

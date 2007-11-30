@@ -566,11 +566,11 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com, "%%ydbp SIA SSA  # vgath"); CHKERRQ(ierr);  // prototype for flags
+  ierr = verbPrintf(2,grid.com, "%%ydbp SIA SSA  # vgath\n"); CHKERRQ(ierr);  // prototype for flags
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
-  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$"); CHKERRQ(ierr);  // flags for first do-nothing time step
+  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$\n"); CHKERRQ(ierr);  // flags for first do-nothing time step
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
   // main loop for time evolution
@@ -654,6 +654,7 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+    ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);  // end the flag line
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);

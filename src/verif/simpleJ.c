@@ -41,7 +41,7 @@ Results from Test J:
 */
 
 #include <stdio.h>
-#include "exactTestIJ.h"
+#include "exactTestsIJ.h"
 
 int main() {
 

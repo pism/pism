@@ -20,10 +20,10 @@
 #include <cstring>
 #include <petscda.h>
 
-#include "../exact/exactTestsABCDE.h"
-#include "../exact/exactTestsFG.h" 
-#include "../exact/exactTestH.h" 
-#include "../exact/exactTestL.h" 
+#include "exactTestsABCDE.h"
+#include "exactTestsFG.h" 
+#include "exactTestH.h" 
+#include "exactTestL.h" 
 #include "../num/extrasGSL.hh"
 
 #include "iceCompModel.hh"
@@ -763,25 +763,25 @@ PetscErrorCode IceCompModel::summaryPrintLine(
   if (printPrototype == PETSC_TRUE) {
     if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
       ierr = verbPrintf(2,grid.com,
-               "\n%%        YEAR (+     STEP[N$]):       VOL     AREA MELTFabs    THICK0     TEMP0\n");
+               "%%        YEAR (+     STEP[N$]):       VOL     AREA MELTFabs    THICK0     TEMP0\n");
                CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com,
-               "\n%%        YEAR (+     STEP[N$]):       VOL     AREA    THICK0\n"); CHKERRQ(ierr);
+               "%%        YEAR (+     STEP[N$]):       VOL     AREA    THICK0\n"); CHKERRQ(ierr);
     }
   } else {
     if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
       if (tempAndAge == PETSC_TRUE) {
-        ierr = verbPrintf(2,grid.com, "\nS %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f %8.4f %9.3f %9.4f",
+        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f %8.4f %9.3f %9.4f",
                        year, dt/secpera, tempskipCount, adaptReason, 
                        volume_kmcube/1.0e6,area_kmsquare/1.0e6,meltfrac,H0,T0); CHKERRQ(ierr);
       } else {
-        ierr = verbPrintf(2,grid.com, "\nS %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f   <same> %9.3f    <same>",
+        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f   <same> %9.3f    <same>",
                        year, dt/secpera, tempskipCount, adaptReason, 
                        volume_kmcube/1.0e6,area_kmsquare/1.0e6,H0); CHKERRQ(ierr);
       }
     } else {
-        ierr = verbPrintf(2,grid.com, "\nS %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f %9.3f",
+        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f %9.3f",
            year, dt/secpera, tempskipCount, adaptReason, 
            volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
     }

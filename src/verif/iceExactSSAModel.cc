@@ -20,7 +20,7 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../exact/exactTestIJ.h"
+#include "exactTestsIJ.h"
 #include "iceExactSSAModel.hh"
 
 const PetscScalar IceExactSSAModel::m_schoof = 10; // (pure number)
@@ -87,9 +87,13 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
 
   switch (test) {
     case 'I': {
-      // set up 1000km by 240km by 3000m grid; note 240km = 6L where L = L_schoof
-      // (so "-Mx 101 -My 25" gives 10km x 10km grid)
-      ierr = grid.rescale(500e3, 120e3, 3000); CHKERRQ(ierr);
+      // set up X km by 240 km by 3000 m grid; note 240km = 6L where L = L_schoof
+      // find dimension X so that pixels are square but for some unknown reason there are convergence
+      //    problems when x dimension Lx is significantly smaller than y dimension Ly
+      // note we assume Mx,My have been set by options, but not others
+      const PetscScalar testI_Ly = 120.0e3,
+                        testI_Lx = PetscMax(60.0e3, ((grid.p->Mx - 1) / 2) * (2.0 * testI_Ly / (grid.p->My - 1)) );
+      ierr = grid.rescale(testI_Lx, testI_Ly, 3000.0); CHKERRQ(ierr);
       // fill vtauc with values for Schoof solution:
       ierr = taucSetI(); CHKERRQ(ierr);
       // set up remaining stuff:
@@ -101,8 +105,8 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       constantHardnessForSSA = B_schoof;
       ssaEpsilon = 0.0;  // don't use this lower bound
       
-      ierr = verbPrintf(1,grid.com,
-      "\nIceExactSSAModel::initFromOptions:regularizingVelocitySchoof = %10.5e\n",
+      ierr = verbPrintf(3,grid.com,
+      "IceExactSSAModel::initFromOptions:regularizingVelocitySchoof = %10.5e\n",
       regularizingVelocitySchoof); CHKERRQ(ierr);
       }
       break;

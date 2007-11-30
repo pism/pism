@@ -405,14 +405,14 @@ PetscErrorCode IceModel::summaryPrintLine(
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "\n%%       YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0\n");
+      "%%       YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0\n");
   } else {
     if (tempAndAge == PETSC_FALSE) {
-      ierr = verbPrintf(2,grid.com, "\nS %10.3f (+ %8.5f[%d%c]): %8.5f %7.4f   <same> %10.3f    <same>",
+      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f[%d%c]): %8.5f %7.4f   <same> %10.3f    <same>",
                          year, dt/secpera, tempskipCount, adaptReason, 
                          volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
     } else { // general case
-      ierr = verbPrintf(2,grid.com, "\nS %10.3f (+ %8.5f[%d%c]): %8.5f %7.4f %8.4f %10.3f %9.4f",
+      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f[%d%c]): %8.5f %7.4f %8.4f %10.3f %9.4f",
                          year, dt/secpera, tempskipCount, adaptReason, 
                          volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
                          H0,T0); CHKERRQ(ierr);

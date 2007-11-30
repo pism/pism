@@ -32,7 +32,7 @@ Results from Test I:
 */
 
 #include <stdio.h>
-#include "exactTestIJ.h"
+#include "exactTestsIJ.h"
 
 int main() {
 

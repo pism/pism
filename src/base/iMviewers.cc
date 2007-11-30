@@ -35,12 +35,41 @@ PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName,
 }
 
 
+PetscErrorCode IceModel::getViewerDims(const PetscInt target_size, const PetscScalar Lx, const PetscScalar Ly,
+                                       PetscInt *xdim, PetscInt *ydim)                             {
+
+  // aim for smaller dimension equal to target, larger dimension larger by Ly/Lx or Lx/Ly proportion
+  const double  yTOx = Ly / Lx;
+  if (Ly > Lx) {
+    *xdim = target_size; 
+    *ydim = (PetscInt) ((double)target_size * yTOx); 
+  } else {
+    *ydim = target_size; 
+    *xdim = (PetscInt) ((double)target_size / yTOx);
+  }
+  
+  // if either dimension is larger than twice the target, shrink appropriately
+  if (*xdim > 2 * target_size) {
+    *ydim = (PetscInt) ( (double)(*ydim) * (2.0 * (double)target_size / (double)(*xdim)) );
+    *xdim = 2 * target_size;
+  } else if (*ydim > 2 * target_size) {
+    *xdim = (PetscInt) ( (double)(*xdim) * (2.0 * (double)target_size / (double)(*ydim)) );
+    *ydim = 2 * target_size;
+  }
+  
+  // make sure minimum dimension is sufficient to see
+  if (*xdim < 20)   *xdim = 20;
+  if (*ydim < 20)   *ydim = 20;
+  return 0;
+}
+
+
 PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer* v, const char singleCharName,
                                                   const char* title) {
   PetscErrorCode ierr;
-  const int SIZE = 320, bigSIZE = 600;
-  PetscScalar  yTOx = (PetscScalar)grid.p->My / (PetscScalar)grid.p->Mx;
-  int size, x_dim, y_dim;
+
+  const PetscInt SIZE = 320, bigSIZE = 600;
+  PetscInt size;
   if (strchr(diagnosticBIG, singleCharName) != NULL) {
     size = bigSIZE;
   } else if (strchr(diagnostic, singleCharName) != NULL) {
@@ -49,18 +78,17 @@ PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer* v, const char sin
     *v = PETSC_NULL;
     return 0;
   }
-  if (grid.p->My > grid.p->Mx) {
-    x_dim = size; y_dim = (PetscInt) ((PetscScalar) size * yTOx); 
-  } else {
-    y_dim = size; x_dim = (PetscInt) ((PetscScalar) size / yTOx);
-  } 
+  
+  // viewer dims need to be determined esp. in nonsquare cases
+  PetscInt x_dim, y_dim;
+  ierr = getViewerDims(size, grid.p->Lx, grid.p->Ly, &x_dim, &y_dim); CHKERRQ(ierr);
+
   // note we reverse x_dim <-> y_dim; see IceGrid::createDA() for original reversal
   ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
-           PETSC_DECIDE, PETSC_DECIDE, y_dim, x_dim, 
-           v);  CHKERRQ(ierr);
+           PETSC_DECIDE, PETSC_DECIDE, y_dim, x_dim, v);  CHKERRQ(ierr);
   
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
-  // there is a no-titles bug
+  // there is a no titles bug
   PetscDraw draw;
   ierr = PetscViewerDrawGetDraw(*v,0,&draw); CHKERRQ(ierr);
   ierr = PetscDrawSetTitle(draw,title); CHKERRQ(ierr);

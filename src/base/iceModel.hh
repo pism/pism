@@ -419,6 +419,8 @@ protected:
   int isViewer(char name);
   PetscErrorCode updateSoundings();
   PetscErrorCode updateOneSounding(const char scName, Vec l, const PetscScalar scale);
+  PetscErrorCode getViewerDims(const PetscInt target_size, const PetscScalar Lx, const PetscScalar Ly,
+                               PetscInt *xdim, PetscInt *ydim);
   PetscErrorCode createOneViewerIfDesired(const char singleCharName);
   PetscErrorCode createOneViewerIfDesired(const char singleCharName, const char* title);
   PetscErrorCode createOneViewerIfDesired(PetscViewer* v, 

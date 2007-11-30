@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "exactTestIJ.h"
+#include "exactTestsIJ.h"
 
 int exactI(const double m, const double x, const double y, 
            double *bed, double *tauc, double *u, double *v) {

@@ -1,5 +1,5 @@
 SHELL := /bin/sh
-VPATH := src/:src/base/:src/num/:src/verif/:src/exact/:src/eismint/:src/ismip/
+VPATH := src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/
 ALL : all
 
 # get PETSc environment, rules:
@@ -33,7 +33,7 @@ ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrain
 	beddefLC.cc forcing.cc
 ice_csources := cubature.c pism_signal.c
 
-tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestIJ.c \
+tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
    exactTestK.c exactTestL.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \

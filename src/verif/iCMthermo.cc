@@ -18,8 +18,8 @@
 
 #include <cmath>
 #include <petscda.h>
-#include "../exact/exactTestsFG.h" 
-#include "../exact/exactTestK.h" 
+#include "exactTestsFG.h" 
+#include "exactTestK.h" 
 #include "iceCompModel.hh"
 
 PetscErrorCode IceCompModel::temperatureStep() {
