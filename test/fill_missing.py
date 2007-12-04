@@ -124,7 +124,10 @@ for varName in variables:
     bad_value = vMissing.get(NC.FLOAT)
     print "Smoothing "+ varName + " with missing value: " + str(bad_value)
     print "Goal is   |change| < " + str(eps)
-    b = var[:]
+    # b = var[:]
+    b = asarray(var[:])  # "explicit is better than implicit" says M. Luthi; 
+                         # i.e. copy of sequence values (from CDFVar type) should be explicitly converted to
+                         # a numpy array type
     num = laplace(b, float(bad_value), eps)
     var[:] = b
     print "Number of missing values for "+ varName + ": " + str(num)
