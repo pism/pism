@@ -566,11 +566,12 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com, "%%ydbp SIA SSA  # vgath\n"); CHKERRQ(ierr);  // prototype for flags
-  ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
-  adaptReasonFlag = ' '; // no reason for no timestep
+  ierr = verbPrintf(2,grid.com, "%%ydbp SIA SSA  # vgath Nr\n"); CHKERRQ(ierr);  // prototype for flags
+  ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;
-  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$\n"); CHKERRQ(ierr);  // flags for first do-nothing time step
+  // flags for first do-nothing time step
+  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$ $$\n"); CHKERRQ(ierr); 
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
   // main loop for time evolution
@@ -654,9 +655,10 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-    ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);  // end the flag line
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
+    // end the flag line and report a summary
+    ierr = verbPrintf(2,grid.com, " %d%c\n", tempskipCountDown, adaptReasonFlag); CHKERRQ(ierr);
     ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
 
     ierr = updateViewers(); CHKERRQ(ierr);
@@ -682,7 +684,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 
   // print out some stats about input state
-  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0, ' ', 0.0, 0.0, 0.0, 0.0, 0.0);
+  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;

@@ -335,13 +335,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //    temp at base at divide (K)  (not homologous),
   // NOTE DERIVED CLASSES MAY HAVE OTHER DISPLAYED QUANTITIES
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.p->year,dt,
-                          tempskipCountDown,adaptReasonFlag,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
 
-  if (CFLviolcount > 0.5) { // report any CFL violations at end of line
+  if (CFLviolcount > 0.5) { // report any CFL violations on new line
     ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f]\n",CFLviolcount); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
   }
   
   if (verbosityLevel >= 3) {
@@ -398,22 +395,23 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 PetscErrorCode IceModel::summaryPrintLine(
     const PetscTruth printPrototype, const PetscTruth tempAndAge,
     const PetscScalar year, const PetscScalar dt, 
-    const PetscInt tempskipCount, const char adaptReason,
     const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
 
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "%%       YEAR (+     STEP[N$]):      VOL    AREA    MELTF     THICK0     TEMP0\n");
+      "P       YEAR (+     STEP )      VOL    AREA    MELTF     THICK0     TEMP0\n");
+    ierr = verbPrintf(2,grid.com,
+      "U      years       years  10^6_km^3 10^6_km^2 (none)          m         K\n");
   } else {
     if (tempAndAge == PETSC_FALSE) {
-      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f[%d%c]): %8.5f %7.4f   <same> %10.3f    <same>",
-                         year, dt/secpera, tempskipCount, adaptReason, 
+      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f   <same> %10.3f    <same>\n",
+                         year, dt/secpera,
                          volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
     } else { // general case
-      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f[%d%c]): %8.5f %7.4f %8.4f %10.3f %9.4f",
-                         year, dt/secpera, tempskipCount, adaptReason, 
+      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %8.4f %10.3f %9.4f\n",
+                         year, dt/secpera, 
                          volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
                          H0,T0); CHKERRQ(ierr);
     }

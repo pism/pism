@@ -42,7 +42,6 @@ protected:
   virtual PetscErrorCode 
                summaryPrintLine(const PetscTruth printPrototype, const PetscTruth tempAndAge,
                   const PetscScalar year, const PetscScalar dt, 
-                  const PetscInt tempskipCount, const char adaptReason,
                   const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
                   const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
   virtual PetscErrorCode 

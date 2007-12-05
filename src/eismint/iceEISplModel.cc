@@ -170,3 +170,65 @@ PetscErrorCode IceEISplModel::setTillProperties() {
   return 0;
 }
 
+
+
+PetscErrorCode IceEISplModel::summaryPrintLine(
+    const PetscTruth printPrototype, const PetscTruth tempAndAge,
+    const PetscScalar year, const PetscScalar dt, 
+    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
+
+  PetscErrorCode ierr;
+
+  PetscScalar     **H, **ubar, **vbar, **ub, **vb;
+  // these are in MKS; sans "g" are local to the processore; with "g" are global
+  PetscScalar     maxcbar = 0.0, maxcb = 0.0, avcb = 0.0, Nhaveice = 0.0;
+  PetscScalar     gmaxcbar, gmaxcb, gavcb, gNhaveice;
+  
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0) {
+        Nhaveice += 1.0;
+        const PetscScalar cbar = sqrt( PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]) ),
+                          cb   = sqrt( PetscSqr(ub[i][j])   + PetscSqr(vb[i][j])   );
+        if (cbar > maxcbar)  maxcbar = cbar;
+        if (cb > maxcb)      maxcb = cb;
+        avcb += cb;
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMax(&maxcbar, &gmaxcbar, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&maxcb,   &gmaxcb,   grid.com); CHKERRQ(ierr);
+  
+  ierr = PetscGlobalSum(&Nhaveice,&gNhaveice,grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avcb,    &gavcb,    grid.com); CHKERRQ(ierr);
+  if (gNhaveice > 0) { // area_kmsquare must already have been globalized
+    gavcb = gavcb / gNhaveice;
+  } else {  // some kind of degenerate case
+    gavcb = 0.0;
+  }
+
+  if (printPrototype == PETSC_TRUE) {
+    ierr = verbPrintf(2,grid.com,
+      "P       YEAR (+     STEP )      VOL    AREA   MELTF   MAXCBAR     MAXCB     AVCB\n");
+    ierr = verbPrintf(2,grid.com,
+      "U      years       years  10^6_km^3 10^6_km^2 (none)      m/a       m/a      m/a\n");
+  } else {
+    ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %7.4f %9.2f %9.2f %8.2f\n",
+                      year, dt/secpera, 
+                      volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
+                      gmaxcbar*secpera,gmaxcb*secpera,gavcb*secpera); CHKERRQ(ierr);
+  }
+  return 0;
+}

@@ -13,11 +13,11 @@ mpiexec -n $NN pisms -eisII I -if eis2I180k.nc -y 10000 -track_Hmelt \
 
 mpiexec -n $NN pisms -eisII I -Mx 121 -My 121 -Mz 251 \
    -regrid eis2I190k.nc -regrid_vars LTBHh \
-   -y 10000 -track_Hmelt -f3d -o eis2I_fine_wmelt \
+   -y 10000 -track_Hmelt -f3d -o eis2I_final \
    -mato eis2Iend -matv bcYTHLCQ0345
 
 # starting basic experiment P1
-mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 10 -f3d \
+mpiexec -n $NN pisms -eis2Ipl -if eis2I_final.nc -y 10 -f3d \
     -o eis2Ipl10 -mato eis2Ipl10 -matv bcYTHLCQ0345
 
 mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl10.nc -y 90 -f3d \
@@ -41,17 +41,17 @@ mpiexec -n $NN pisms -eis2Ipl -if eis2Ipl2000.nc -y 3000 -f3d \
 # continuing with experiments P2,P3,P4:
 
 # result eis2IplP2.[nc|m] is experiment P2 (narrower stream):
-mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2Ipl -if eis2I_final.nc -y 5000 -f3d \
     -stream_width 50.0 -o eis2IplP2 \
     -mato eis2IplP2 -matv bcYTHLCQ0345
 
 # result eis2IplP3.[nc|m] is experiment P3 (stronger downstream till):
-mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2Ipl -if eis2I_final.nc -y 5000 -f3d \
     -till_phi 20.0,20.0,5.0,8.0,0.0 -o eis2IplP3 \
     -mato eis2IplP3 -matv bcYTHLCQ0345
 
 # result eis2IplP4.[nc|m] is experiment P4 (lake):
-mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2Ipl -if eis2I_final.nc -y 5000 -f3d \
     -till_phi 0.0,20.0,5.0,5.0,0.0 -o eis2IplP4 \
     -mato eis2IplP4 -matv bcYTHLCQ0345
 
@@ -61,17 +61,17 @@ mpiexec -n $NN pisms -eis2Ipl -if eis2I_fine_wmelt.nc -y 5000 -f3d \
 
 # result eis2IplP6.[nc|m] is experiment P6 (coarser horizontal grid):
 mpiexec -n $NN pisms -eis2Ipl -Mx 61 -My 61 -Mz 251 -y 5000 -f3d \
-    -regrid eis2I_fine_wmelt.nc -regrid_vars HTBL -o eis2IplP6 \
+    -regrid eis2I_final.nc -regrid_vars HTBL -o eis2IplP6 \
     -mato eis2IplP6 -matv bcYTHLCQ0345
 
 # result eis2IplP7.[nc|m] is experiment P7 (finer horizontal 7.5km grid):
 mpiexec -n $NN pisms -eis2Ipl -Mx 201 -My 201 -Mz 251 -y 5000 -f3d \
-    -regrid eis2I_fine_wmelt.nc -regrid_vars HTBL -o eis2IplP7 \
+    -regrid eis2I_final.nc -regrid_vars HTBL -o eis2IplP7 \
     -mato eis2IplP7 -matv bcYTHLCQ0345
 
 # result eis2IplP8.[nc|m] is experiment P8 (finer vertical grid):
 mpiexec -n $NN pisms -eis2Ipl -Mx 121 -My 121 -Mz 501 -y 5000 -f3d \
-    -regrid eis2I_fine_wmelt.nc -regrid_vars HTBL -o eis2IplP8 \
+    -regrid eis2I_final.nc -regrid_vars HTBL -o eis2IplP8 \
     -mato eis2IplP8 -matv bcYTHLCQ0345
 
 # possible stopping point 

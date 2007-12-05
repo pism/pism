@@ -45,6 +45,11 @@ protected:
 
   PetscErrorCode resetAccum();
   PetscErrorCode setTillProperties();
+  virtual PetscErrorCode summaryPrintLine(
+              const PetscTruth printPrototype, const PetscTruth tempAndAge,
+              const PetscScalar year, const PetscScalar dt, 
+              const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+              const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
 
 };
 

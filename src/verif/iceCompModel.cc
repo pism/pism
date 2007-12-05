@@ -755,7 +755,6 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
 PetscErrorCode IceCompModel::summaryPrintLine(
     const PetscTruth printPrototype, const PetscTruth tempAndAge,
     const PetscScalar year, const PetscScalar dt, 
-    const PetscInt tempskipCount, const char adaptReason,
     const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
 
@@ -763,26 +762,30 @@ PetscErrorCode IceCompModel::summaryPrintLine(
   if (printPrototype == PETSC_TRUE) {
     if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
       ierr = verbPrintf(2,grid.com,
-               "%%        YEAR (+     STEP[N$]):       VOL     AREA MELTFabs    THICK0     TEMP0\n");
+               "P        YEAR (+     STEP )       VOL     AREA MELTFabs    THICK0     TEMP0\n");
                CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,
+               "U       years       years   10^6_km^3 10^6_km^2  (none)         m         K\n");
     } else {
       ierr = verbPrintf(2,grid.com,
-               "%%        YEAR (+     STEP[N$]):       VOL     AREA    THICK0\n"); CHKERRQ(ierr);
+               "P        YEAR (+     STEP )       VOL     AREA    THICK0\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,
+               "U       years       years   10^6_km^3 10^6_km^2        m\n");
     }
   } else {
     if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
       if (tempAndAge == PETSC_TRUE) {
-        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f %8.4f %9.3f %9.4f",
-                       year, dt/secpera, tempskipCount, adaptReason, 
+        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f ) %9.5f %8.4f %8.4f %9.3f %9.4f\n",
+                       year, dt/secpera,
                        volume_kmcube/1.0e6,area_kmsquare/1.0e6,meltfrac,H0,T0); CHKERRQ(ierr);
       } else {
-        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f   <same> %9.3f    <same>",
-                       year, dt/secpera, tempskipCount, adaptReason, 
+        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f ) %9.5f %8.4f   <same> %9.3f    <same>\n",
+                       year, dt/secpera, 
                        volume_kmcube/1.0e6,area_kmsquare/1.0e6,H0); CHKERRQ(ierr);
       }
     } else {
-        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f[%d%c]): %9.5f %8.4f %9.3f",
-           year, dt/secpera, tempskipCount, adaptReason, 
+        ierr = verbPrintf(2,grid.com, "S %11.4f (+ %8.4f ) %9.5f %8.4f %9.3f\n",
+           year, dt/secpera, 
            volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
     }
   }
