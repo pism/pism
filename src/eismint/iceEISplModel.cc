@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -25,17 +25,17 @@ const PetscScalar IceEISplModel::DEFAULT_STREAM_WIDTH = 100.0e3; // 100 km
 // default case has no lake and has the upstream and downstream part of the ice
 //   stream have the same till strength
 const PetscInt    IceEISplModel::phi_list_length = 5;
-const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_LAKE        = 20.0;
+const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_LAKE        = 20.0;  // no lake
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_STRONG      = 20.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_UPSTREAM    =  5.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_DOWNSTREAM  =  5.0;
-const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_OCEAN       =  0.0;
+const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_OCEAN       = 20.0;  // no ocean
 
 
 IceEISplModel::IceEISplModel(IceGrid &g, IceType &i)
   : IceEISModel(g,i) {  // do nothing; note derived classes must have constructors
 
-  expername = 'I';
+  // expername = 'I';
 }
 
 
@@ -53,6 +53,12 @@ PetscErrorCode IceEISplModel::initFromOptions() {
   includeBMRinContinuity = PETSC_TRUE;
 
   ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
+
+  PetscTruth  troughSet;  
+  ierr = PetscOptionsHasName(PETSC_NULL, "-trough", &troughSet); CHKERRQ(ierr);
+  if (troughSet == PETSC_TRUE) {
+    ierr = generateTroughTopography(); CHKERRQ(ierr);
+  }
   
   stream_width = DEFAULT_STREAM_WIDTH;
   PetscTruth  stream_widthSet;  
@@ -225,10 +231,12 @@ PetscErrorCode IceEISplModel::summaryPrintLine(
     ierr = verbPrintf(2,grid.com,
       "U      years       years  10^6_km^3 10^6_km^2 (none)      m/a       m/a      m/a\n");
   } else {
-    ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %7.4f %9.2f %9.2f %8.2f\n",
+    ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %7.4f %9.2f %9.2f %8.3f\n",
                       year, dt/secpera, 
                       volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
                       gmaxcbar*secpera,gmaxcb*secpera,gavcb*secpera); CHKERRQ(ierr);
   }
   return 0;
 }
+
+

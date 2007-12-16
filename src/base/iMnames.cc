@@ -24,7 +24,7 @@ int IceModel::cIndex(const char singleCharName) {
 }
 
 
-//! Holds variable names (for NetCDF and Matlab files) and short titles (for graphical viewers).
+//! Holds short titles for graphical viewers, which are also names used in output Matlab files.
 /*! 
 This array of strings holds names and titles.  These names and titles are for <i>views</i> of the
 internal state of PISM.  That is, they are \em not names and title for <i>parts</i> of the 

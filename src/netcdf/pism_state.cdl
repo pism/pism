@@ -96,70 +96,70 @@ variables: // The names of variables are magic in PISM source.
 
 // 2-dimensional integer mask
   byte mask(t,x,y);
-    mask:long_name = "grounded_dragging_floating_integer_mask";
+    mask:long_name = "grounded_dragging_floating integer mask";
     mask:pism_intent = "model_state";
 
 // 2-dimensional model quantities
-  float H(t,x,y);
-    H:long_name = "land_ice_thickness";
-    H:standard_name = "land_ice_thickness";
-    H:units = "m";
-    H:pism_intent = "model_state";
-  float Hmelt(t,x,y);
-    Hmelt:long_name = "thickness_of_subglacial_melt_water";
-    Hmelt:units = "m";
-    Hmelt:pism_intent = "model_state";
-  float b(t,x,y);
-    b:long_name = "bedrock_altitude";
-    b:standard_name = "bedrock_altitude";
-    b:units = "m";
-    b:pism_intent = "model_state";
+  float thk(t,x,y);
+    thk:long_name = "land ice thickness";
+    thk:standard_name = "land_ice_thickness";
+    thk:units = "m";
+    thk:pism_intent = "model_state";
+  float bwat(t,x,y);
+    bwat:long_name = "effective thickness of subglacial melt water";
+    bwat:units = "m";
+    bwat:pism_intent = "model_state";
+  float topg(t,x,y);
+    topg:long_name = "bedrock surface elevation";
+    topg:standard_name = "bedrock_altitude";
+    topg:units = "m";
+    topg:pism_intent = "model_state";
   float dbdt(t,x,y);
-    dbdt:long_name = "uplift_rate";
+    dbdt:long_name = "bedrock uplift rate";
     dbdt:standard_name = "tendency_of_bedrock_altitude";
     dbdt:units = "m s-1";
     dbdt:pism_intent = "model_state";  // note LC bed model treats as model state
 
 // 3-dimensional model quantities
-  float T(t,x,y,z);
-    T:long_name = "land_ice_temperature";
-    T:standard_name = "land_ice_temperature";
-    T:units = "K";
-    T:pism_intent = "model_state";
-  float Tb(t,x,y,zb);
-    Tb:long_name = "bedrock_temperature";
-    Tb:standard_name = "bedrock_temperature";
-    Tb:units = "K";
-    Tb:pism_intent = "model_state";
+  float temp(t,x,y,z);
+    temp:long_name = "ice temperature";
+    temp:standard_name = "land_ice_temperature";
+    temp:units = "K";
+    temp:pism_intent = "model_state";
+  float litho_temp(t,x,y,zb);
+    litho_temp:long_name = "bedrock temperature";
+    litho_temp:standard_name = "bedrock_temperature";
+    litho_temp:units = "K";
+    litho_temp:pism_intent = "model_state";
   float age(t,x,y,z);
-    age:long_name = "land_ice_age";
+    age:long_name = "age of ice";
     age:standard_name = "land_ice_age";
     age:units = "s";
     age:pism_intent = "model_state";
 
 // 2-dimensional climate quantities
-  float Ts(t,x,y);
-    Ts:long_name = "surface_temperature";
-    Ts:standard_name = "surface_temperature";
-    Ts:units = "K";
-    Ts:pism_intent = "climate_steady";  // at this point; change to default "climate_snapshot" according
+  float artm(t,x,y);
+    artm:long_name = "annual mean air temperature at ice surface";
+    artm:standard_name = "surface_temperature";
+    artm:units = "K";
+    artm:pism_intent = "climate_steady";  // at this point; change to default "climate_snapshot" according
                                         // to -forcing?
-  float ghf(t,x,y);
-    ghf:long_name = "upward_geothermal_flux";
-    ghf:units = "W m-2";
-    ghf:pism_intent = "climate_steady";  // at this point; ditto
-  float accum(t,x,y);
-    accum:long_name = "mean annual net ice equivalent accumulation rate";
-    accum:standard_name = "land_ice_surface_specific_mass_balance";
-    accum:units = "m s-1";
-    accum:pism_intent = "climate_steady";  // at this point; ditto
+  float bheatflx(t,x,y);
+    bheatflx:long_name = "upward geothermal flux at bedrock surface";
+    bheatflx:units = "W m-2";
+    bheatflx:pism_intent = "climate_steady";  // at this point; ditto
+  float acab(t,x,y);
+    acab:long_name = "mean annual net ice equivalent accumulation (ablation) rate";
+    acab:standard_name = "land_ice_surface_specific_mass_balance";
+    acab:units = "m s-1";
+    acab:pism_intent = "climate_steady";  // at this point; ditto
 
 // 2-dimensional diagnostic quantities
-  float h(t,x,y);
-    h:long_name = "surface_altitude";
-    h:standard_name = "surface_altitude";
-    h:units = "m";
-    h:pism_intent = "diagnostic";  // because h = H + b; H and b are model_state
+  float usurf(t,x,y);
+    usurf:long_name = "ice upper surface elevation";
+    usurf:standard_name = "surface_altitude";
+    usurf:units = "m";
+    usurf:pism_intent = "diagnostic";  // because h = H + b; H and b are model_state
   float dHdt(t,x,y);
     dHdt:long_name = "rate of change of ice thickness";
     dHdt:units = "m year-1";
@@ -173,7 +173,7 @@ variables: // The names of variables are magic in PISM source.
     csurf:units = "m year-1";
     csurf:pism_intent = "diagnostic";
   float wsurf(t,x,y);
-    wsurf:long_name = "magnitude of vertical velocity of ice at ice surface";
+    wsurf:long_name = "vertical velocity of ice at ice surface";
     wsurf:units = "m year-1";
     wsurf:pism_intent = "diagnostic";
 

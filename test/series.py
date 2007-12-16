@@ -14,7 +14,6 @@ from pycdf import *
 import getopt
 import sys
 
-
 # defaults
 IN_FILE = 'foo.txt'
 OUT_FILE = 'series_out.nc'
@@ -32,15 +31,15 @@ try:
     elif opt in ("-o", "--out"):
       outfilename = arg
 except getopt.GetoptError:
-  print 'Incorrect command line arguments'
+  print 'ERROR: incorrect command line arguments'
   sys.exit(2)
 
 # read file into an array of time and of vol
-print "reading PISM evolution run standard output from ",infilename
+print " reading PISM evolution run standard output from ",infilename
 try:
   infile = open(infilename, 'r');
 except IOError:
-  print 'ERROR: File: ' + infilename + ' could not be found.'
+  print 'ERROR: file ' + infilename + ' could not be found.'
   sys.exit(2)
 
 names=[]
@@ -51,28 +50,37 @@ step=[]
 vals=[]
 count = 0
 prototypeFound = False
+unitsFound = False
+ptokens = []
 while True:
   myline = infile.readline()
   if not myline:
     break
   posbracketplus = myline.find('(+')  # second marker of a prototype or summary line
   if ((myline[0] == 'P') and (myline[1] == ' ')
-      and (posbracketplus >= 0) and (prototypeFound == True)):
-    print 'second prototype line found; stopping'
-    break
-  if ((myline[0] == 'P') and (myline[1] == ' ')
-      and (posbracketplus >= 0) and (prototypeFound == False)):
+      and (posbracketplus >= 0)):
     # clearly a prototype line
     tokens = myline.split()
-    # expect: tokens[0] == 'S', tokens[1] == (the year), tokens[2] == '(', 
-    #         tokens[3] == (the step), tokens[4] == '[N$])'
+    # expect: tokens[0] == 'P', tokens[1] == (the year), tokens[2] == '(+', 
+    #         tokens[3] == (the step), tokens[4] == ')'
     #print tokens
-    Nnames = len(tokens) - 5;
-    for j in range(Nnames):
-      names.append(tokens[5 + j])
-      vals.append([])
-    #print 'prototype line found, with names = '
-    #print names
+    if (prototypeFound == True):
+      # compare names and stop if different
+      for j in range(Nnames):
+        if names[j] != tokens[5 + j]:
+          print 'ERROR: another prototype line found with conflicting name'
+          print '  ("' + str(tokens[5+j]) + '" versus "' + str(names[j]) + '")'
+          print 'stopping'
+          sys.exit(2)
+      print ' another prototype line found with identical names; continuing'
+    else:
+      prototypeFound = True
+      Nnames = len(tokens) - 5;
+      for j in range(Nnames):
+        names.append(tokens[5 + j])
+        vals.append([])
+      print ' prototype line found; names=' + str(names)
+      #print names
   if ((myline[0] == 'U') and (myline[1] == ' ')):
     # clearly a units line
     tokens = myline.split()
@@ -99,7 +107,7 @@ while True:
     for j in range(Nnames):
       vals[j].append(float(tokens[5 + j]))
     count = count + 1
-print str(count) + ' summary lines read'
+print ' ' + str(count) + ' summary lines read'
 infile.close()
 
 # open a NetCDF file to write to
@@ -130,5 +138,5 @@ for j in range(Nnames):
 
 # close
 ncfile.close()
-print "time series written into NetCDF file ",outfilename
+print " time series written into NetCDF file ",outfilename
 

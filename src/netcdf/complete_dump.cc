@@ -52,34 +52,34 @@
   // 2-D model quantities
   ierr = put_local_var(&grid, ncid, mask_id, NC_BYTE, grid.da2, vMask, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, H_id, NC_FLOAT, grid.da2, vH, g2,
+  ierr = put_local_var(&grid, ncid, thk_id, NC_FLOAT, grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, Hmelt_id, NC_FLOAT, grid.da2, vHmelt, g2,
+  ierr = put_local_var(&grid, ncid, bwat_id, NC_FLOAT, grid.da2, vHmelt, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, b_id, NC_FLOAT, grid.da2, vbed, g2,
+  ierr = put_local_var(&grid, ncid, topg_id, NC_FLOAT, grid.da2, vbed, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, dbdt_id, NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
-  ierr = put_local_var(&grid, ncid, T_id, NC_FLOAT, grid.da3, vT, g3,
+  ierr = put_local_var(&grid, ncid, temp_id, NC_FLOAT, grid.da3, vT, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, Tb_id, NC_FLOAT, grid.da3b, vTb, g3b,
+  ierr = put_local_var(&grid, ncid, litho_temp_id, NC_FLOAT, grid.da3b, vTb, g3b,
                        s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, age_id, NC_FLOAT, grid.da3, vtau, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D climate quantities
-  ierr = put_local_var(&grid, ncid, Ts_id, NC_FLOAT, grid.da2, vTs, g2,
+  ierr = put_local_var(&grid, ncid, artm_id, NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, ghf_id, NC_FLOAT, grid.da2, vGhf, g2,
+  ierr = put_local_var(&grid, ncid, bheatflx_id, NC_FLOAT, grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, accum_id, NC_FLOAT, grid.da2, vAccum, g2,
+  ierr = put_local_var(&grid, ncid, acab_id, NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 2-D diagnostic quantities
   // note h is diagnostic because it is recomputed by h=H+b at each time step
   // these are not written in MKS units because they are intended to be viewed,
   // not read by programs; IS THIS THE RIGHT CHOICE?
-  ierr = put_local_var(&grid, ncid, h_id, NC_FLOAT, grid.da2, vh, g2,
+  ierr = put_local_var(&grid, ncid, usurf_id, NC_FLOAT, grid.da2, vh, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = VecCopy(vdHdt,vWork2d[0]); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);

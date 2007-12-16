@@ -710,11 +710,11 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 #include "../netcdf/complete_dump.cc"
 
   // now write additional 3-D diagnostic quantities
-  ierr = put_local_var(&grid, ncid, u_id, NC_FLOAT, grid.da3, vu, g3,
+  ierr = put_local_var(&grid, ncid, uvel_id, NC_FLOAT, grid.da3, vu, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, v_id, NC_FLOAT, grid.da3, vv, g3,
+  ierr = put_local_var(&grid, ncid, vvel_id, NC_FLOAT, grid.da3, vv, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, w_id, NC_FLOAT, grid.da3, vw, g3,
+  ierr = put_local_var(&grid, ncid, wvel_id, NC_FLOAT, grid.da3, vw, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   
   // We are done with these buffers
@@ -813,27 +813,27 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   // 2-D model quantities
   ierr = get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, s, c, 3,
                        a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "h", NC_FLOAT, grid.da2, vh, g2,
+  ierr = get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "H", NC_FLOAT, grid.da2, vH, g2,
+  ierr = get_local_var(&grid, ncid, "thk", NC_FLOAT, grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "Hmelt", NC_FLOAT, grid.da2, vHmelt, g2,
+  ierr = get_local_var(&grid, ncid, "bwat", NC_FLOAT, grid.da2, vHmelt, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "b", NC_FLOAT, grid.da2, vbed, g2,
+  ierr = get_local_var(&grid, ncid, "topg", NC_FLOAT, grid.da2, vbed, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "dbdt", NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D climate quantities
-  ierr = get_local_var(&grid, ncid, "Ts", NC_FLOAT, grid.da2, vTs, g2,
+  ierr = get_local_var(&grid, ncid, "artm", NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "ghf", NC_FLOAT, grid.da2, vGhf, g2,
+  ierr = get_local_var(&grid, ncid, "bheatflx", NC_FLOAT, grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "accum", NC_FLOAT, grid.da2, vAccum, g2,
+  ierr = get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
-  ierr = get_local_var(&grid, ncid, "T", NC_FLOAT, grid.da3, vT, g3,
+  ierr = get_local_var(&grid, ncid, "temp", NC_FLOAT, grid.da3, vT, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "Tb", NC_FLOAT, grid.da3b, vTb, g3b,
+  ierr = get_local_var(&grid, ncid, "litho_temp", NC_FLOAT, grid.da3b, vTb, g3b,
                        s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "age", NC_FLOAT, grid.da3, vtau, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);

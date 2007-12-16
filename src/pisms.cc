@@ -63,8 +63,8 @@ int main(int argc, char *argv[]) {
     "-eisII F", for example. */
     ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
               CHKERRQ(ierr);
-    /* This option chooses plastic till modification of EISMINT II experiment I. */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-eis2Ipl", &EISplchosen);
+    /* This option chooses plastic till modification of EISMINT II experiment A or I. */
+    ierr = PetscOptionsHasName(PETSC_NULL, "-eis2pl", &EISplchosen);
               CHKERRQ(ierr);
     /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO and none others are implemented */
     ierr = PetscOptionsHasName(PETSC_NULL, "-ismip", &ISMIPchosen);
