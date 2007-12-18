@@ -77,10 +77,10 @@ while True:
   areaPrevName = 'area_' + str(prev_year) + 'k.nc'
   areaCurrName = 'area_' + str(curr_year) + 'k.nc'
   outnamefull = outname + '.nc'
-  cmd1='ncwa -O -N -v H -a x,y ' + inname + ' -o ' + areaPrevName
-  cmd2='ncwa -O -N -v H -a x,y ' + outnamefull + ' -o ' + areaCurrName
-  cmd3='ncks -O -s \'%f\n\' -C -v H ' + areaPrevName + ' | tail -n 1'
-  cmd4='ncks -O -s \'%f\n\' -C -v H ' + areaCurrName + ' | tail -n 1'
+  cmd1='ncwa -O -N -v thk -a x,y ' + inname + ' -o ' + areaPrevName
+  cmd2='ncwa -O -N -v thk -a x,y ' + outnamefull + ' -o ' + areaCurrName
+  cmd3='ncks -O -s \'%f\n\' -C -v thk ' + areaPrevName + ' | tail -n 1'
+  cmd4='ncks -O -s \'%f\n\' -C -v thk ' + areaCurrName + ' | tail -n 1'
   try:
     (status, output)=commands.getstatusoutput(cmd1)
     (status, output)=commands.getstatusoutput(cmd2)
@@ -92,7 +92,7 @@ while True:
   try:  
     (status, area1)=commands.getstatusoutput(cmd3)
     (status, area2)=commands.getstatusoutput(cmd4)
-    print '  sum of H for ' + str(prev_year) + 'k, ' + str(curr_year) + 'k years, resp.: '
+    print '  sum of thk for ' + str(prev_year) + 'k, ' + str(curr_year) + 'k years, resp.: '
           + str(area1) + ', ' + str(area2)
   except KeyboardInterrupt:
     sys.exit(2)

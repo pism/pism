@@ -32,17 +32,22 @@ public:
   virtual PetscErrorCode initFromOptions();
     
 protected:
+  static const PetscScalar DEFAULT_EXTERIOR_RADIUS;
+  static const PetscScalar DEFAULT_EXTERIOR_ABLATION_RATE;
+
   PetscScalar              stream_width;
   static const PetscScalar DEFAULT_STREAM_WIDTH;
 
   static const PetscInt    phi_list_length; // = 5
-  PetscScalar*             phi_list; // list of phi_list_length
+  PetscScalar*             phi_list; // list of 5 numbers, with following as defaults:
   static const PetscScalar DEFAULT_TILL_PHI_LAKE;
   static const PetscScalar DEFAULT_TILL_PHI_STRONG;
   static const PetscScalar DEFAULT_TILL_PHI_UPSTREAM;
   static const PetscScalar DEFAULT_TILL_PHI_DOWNSTREAM;
-  static const PetscScalar DEFAULT_TILL_PHI_OCEAN;
+  static const PetscScalar DEFAULT_TILL_PHI_FJORD;
 
+  PetscInt       tillRegionCode(PetscInt i, PetscInt j);
+  
   PetscErrorCode resetAccum();
   PetscErrorCode setTillProperties();
   virtual PetscErrorCode summaryPrintLine(

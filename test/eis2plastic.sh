@@ -1,6 +1,8 @@
 #!/bin/bash
 # script for plastic till SSA and superposition modification of
-# EISMINT II experiment A (and experiment I)
+# EISMINT II experiment I
+
+FIXME: replace "-eisII A" with "-eisII I", etc.
 
 NN=8
 

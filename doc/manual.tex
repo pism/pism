@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{221}
+\newcommand{\PISMREV}{223}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -1136,21 +1136,19 @@ Run
 
 \verb|$ eis_green.py|
 
-The NetCDF file \verb|eis_green20.nc| will be created from the data in \verb|grid20-EISMINT| and \verb|suaq20-EISMINT|.  It contains variables for the gridded latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (\verb|h|), bedrock altitude (\verb|b|), and ice thickness (\verb|H|).  These values can be viewed graphically with \verb|ncview| (or as \emph{long} text files with \verb|ncdump|).
-
-Note that the script \verb|eis_green.py| accepts option \verb|--prefix=foo/| to specify that the downloaded data is in directory \verb|foo/|.  (\verb|eis_core.py| below also takes this option.)  \verb|eis_green.py| also has option \verb|-g| to specify the grid spacing.  Use \verb|-g 40| if you downloaded \verb|grid40-EISMINT| and \verb|suaq40-EISMINT| 40 km data; use either \verb|-g 20| or no option to specify the 20 km data.
+The NetCDF file \verb|eis_green20.nc| will be created from the data in \verb|grid20-EISMINT| and \verb|suaq20-EISMINT|.  It contains variables for the gridded latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (``\verb|usurf|'' for \emph{u}pper \emph{surf}ace elevation), bedrock altitude (\verb|topg|), and ice thickness (\verb|thk|).  These values can be viewed graphically with \verb|ncview| or as (\emph{rather large}) text files with \verb|ncdump|.  Note that the script \verb|eis_green.py| accepts option \verb|--prefix=foo/| to specify that the downloaded data is in directory \verb|foo/|; \verb|eis_core.py| below also takes this option.  The script \verb|eis_green.py| also has option \verb|-g| to specify the grid spacing.  Use \verb|-g 40| if you downloaded \verb|grid40-EISMINT| and \verb|suaq40-EISMINT| 40 km data; ``\verb|-g 20|'' or no option specifies 20 km grid.
 
 As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used on \verb|eis_green20.nc| to compare the putative ice surface elevation to the sum of the ice thickness and the bed elevation:
 
-\verb|$ ncap -O -vs "check=h-(H+b)" eis_green20.nc eis_green_check.nc|
+\verb|$ ncap -O -vs "check=usurf-(thk+topg)" eis_green20.nc eis_green_check.nc|
 
-\noindent The variable \verb|check| in the output file holds the difference of \verb|h| and the sum $\verb|b|+\verb|H|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|h| is within 1 meter of $\verb|b|+\verb|H|$.  Thus the surface elevation \verb|h| is consistent.  It is also redundant: at bootstrapping, described below, PISM simply reads ice thickness \verb|H| and bed elevation \verb|b| and computes ice surface elevation as the sum of these two; the ice surface elevation variable \verb|h| is not actually read from the bootstrapping NetCDF file.
+\noindent The variable \verb|check| in the output file holds the difference of \verb|usurf| and the sum $\verb|topg|+\verb|thk|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|usurf| is within 1 meter of $\verb|topg|+\verb|thk|$.  Thus the surface elevation \verb|usurf| is consistent.  It is also redundant because at bootstrapping, described below, PISM reads ice thickness and bed elevation and computes ice surface elevation as the sum of these two.
 
 The bed elevation in the original data effectively contains a missing value attribute of $0.0$, because in several places---deep fjords, mostly---the observed bed elevation was not measured or the measured value was not trusted.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions difficult.  We therefore suggest smoothing the bed elevations.  This can be done with another script named \verb|fill_missing.py|, found in directory \verb|pism/test/|. To use this script, the following command can be run:
 
-\verb|$ fill_missing.py -i eis_green20.nc -v b -o eis_green_smoothed.nc|
+\verb|$ fill_missing.py -i eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
-\noindent Here, \verb|eis_green20.nc| is the input file, \verb|b| is the variable with missing values, and \verb|eis_green_|  \verb|smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors.  Multiple variables can be fixed at the same time by separating the variable names by commas.  (The script \verb|fill_missing.py| is a general tool for cleaning NetCDF files.  It is documented in Appendix D.)  
+\noindent Here, \verb|eis_green20.nc| is the input file, \verb|topg| is the variable with missing values, and \verb|eis_green_smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors.  Multiple variables can be fixed at the same time by separating the variable names by commas.  Note that the script \verb|fill_missing.py| is a general tool for smoothly removing missing values NetCDF files; see Appendix D.
 
 \begin{figure}[ht]
 \includegraphics[width=2.8in,keepaspectratio=true]{figs/EISgreen_thick}\qquad\includegraphics[width=3.0in,keepaspectratio=true]{figs/EISgreen_bed}
@@ -1164,9 +1162,7 @@ We mentioned the script \verb|eis_core.py|.  Now we execute it:
 
 \verb|$ eis_core.py|
 
-\noindent If data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| are not found in the current directory but instead in \verb|/foo/|, add the option \verb|--prefix=foo/|.
-
-Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  Using \verb|ncview| on \verb|grip_dT.nc| gives the graph of temperature  shown in Figure \ref{fig:gripDeltaT}.
+\noindent This script converts the data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| to  PISM readable NetCDF form.  Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  The executable \verb|pgrn| will be called with an option \verb|-forcing| for the ``CCL3'' run below, which will make PISM read these two NetCDF files for the climate forcing.  Using \verb|ncview| on \verb|grip_dT.nc| gives the graph of temperature shown in Figure \ref{fig:gripDeltaT}.
 
 \begin{figure}[ht]
 \includegraphics[width=5.6in,keepaspectratio=true]{figs/gripDeltaT}
@@ -1175,23 +1171,27 @@ Two NetCDF files with one-dimensional (time series) data will be created, namely
 \end{figure}
 
 
-\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do ice sheet modeling.}
+\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
-The following one model year run is a basic version of ``bootstrapping''.  It is shown with \verb|-verbose| to suggest the many issues which arise.  Note that the EISMINT-Greenland specifies an 83 by 141 point grid, but you may use other numbers for \verb|-Mx| and \verb|-My| if desired.  Note that in PISM there is a uniform vertical grid.  Here, because the vertical dimension of the computational box is 4000 m, by specifying ``\verb|-Mz 201|'' we are choosing a 20 m spacing in the vertical.
+The command
 
-\small\begin{quote}\begin{verbatim}
-$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -y 1 -verbose -o green20km_y1
+does a one model year run which starts by ``bootstrapping''.  The result is shown in Table \ref{bootstrapEISgreen}.  
+
+\begin{table}\label{bootstrapEISgreen}
+\scriptsize
+\begin{quote}
+\begin{verbatim}
+$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -y 1 -o green20km_y1
 PGRN (EISMINT Greenland mode)
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   polar stereographic found: svlfp = -41.14, lopo =  71.65, sp =  71.00
   time t found in bootstrap file; using to set current year
   using default value Lz=4000.000000 for vertical extent of computational box for ice
-  WARNING: ignoring values found for surface elevation h and using h = b + H
-  WARNING: surface temperature Ts not found; using default  263.15 K
-  WARNING: geothermal flux ghf not found; using default  0.042 W/m^2
-  uplift not found. Filling with zero
-  Hmelt not found. Filling with zero
-  done reading .nc file
+  WARNING: ignoring values found for surface elevation; using usurf = topg + thk
+  WARNING: surface temperature artm not found; using default  263.15 K
+  WARNING: geothermal flux bheatflx not found; using default  0.042 W/m^2
+  WARNING: uplift rate dbdt not found. Filling with zero
+  WARNING: effective thickness of basal melt water bwat not found. Filling with zero
   determining mask by floating criterion; grounded ice marked as SIA (=1)
   setting accumulation in ice shelf-free ocean to default value -20.00 m/a
   filling in temperatures at depth using surface temperatures and quartic guess
@@ -1203,41 +1203,58 @@ filling in temperatures at depth using surface temperatures and quartic guess
 removing extra land (Ellesmere Island and Iceland) using EISMINT-Greenland rule
   [computational box for ice: ( 1640.00 km) x ( 2800.00 km) x ( 4000.00 m)]
   [grid cell dimensions     : (   20.00 km) x (   20.00 km) x (   20.00 m)]
-  IceParam: Mx = 83, My = 141, Mz = 201, Mbz = 1,
-            Lx = 820.00 km, Ly = 1400.00 m, Lz = 4000.00 m, Lbz =   0.00 m,
-            dx = 20.000 km, dy = 20.000 km, dz = 20.000 m, year =   0.0000,
-.
-.
-.
+%ydbp SIA SSA  # vgath Nr
+P       YEAR (+     STEP )      VOL    AREA    MELTF     THICK0     TEMP0
+U      years       years  10^6_km^3 10^6_km^2 (none)          m         K
+ $$$$            $$$$$ $$
+S      0.000 (+  0.00000 )  2.82500  1.6708   0.2071   3042.000  270.5156
+ $d$$ SIA        v$ath 0d
+S      0.183 (+  0.18317 )  2.82506  1.7064   0.2030   3041.887  270.5156
+ $$$$ SIA        v$ath 0d
+S      0.419 (+  0.23546 )  2.82514  1.7052   0.2031   3041.702  270.5157
+ $$$$ SIA        v$ath 0d
+S      0.688 (+  0.26953 )  2.82524  1.7048   0.2032   3041.456  270.5159
+ $$$$ SIA        v$ath 0d
+S      0.987 (+  0.29921 )  2.82534  1.7040   0.2035   3041.171  270.5161
+ $$$$ SIA        v$ath 0t
+S      1.000 (+  0.01262 )  2.82535  1.7040   0.2035   3041.160  270.5163
+done with run ... 
 Writing model state to file `green20km_y1.nc' ... done.
 \end{verbatim}
-\end{quote}\normalsize
+\end{quote}
+\normalsize
+\bigskip
 
-\noindent Let's explain what has happened.  The EISMINT-Greenland data, as with \emph{all} real ice sheet data, does not contain certain variables necessary to initialize PISM in the sense of initial values for the relevant partial differential equations.  For instance, the data do not include the temperature of the ice anywhere but at the surface.  The data also do not include the amount of water stored in the till, for instance.  So PISM fills in the unknown initial conditions based on some default guesses; this is the section above bracketed by \verb|bootstrapping by PISM default method|\dots and \verb|bootstrapping| \verb|by PISM default| \verb|method done|. 
+\caption{Bootstrapping from the EISMINT-Greenland data and running for one model year.}
+\end{table}
 
-The option ``\verb|-bif|'' stands for ``bootstrapping input file''.  (This option is an alternative to ``\verb|-if|'', standing for ``input file'', which is used for a file which has full initial conditions.  In practice, ``\verb|-if|'' is only used with a NetCDF file which was previously saved by PISM.)
+\noindent Let's explain what has happened.  The EISMINT-Greenland data, as with \emph{all} real ice sheet data, does not contain certain variables necessary to initialize PISM in the sense of initial values for time-dependent partial differential equations.  For instance, the data do not include the temperature of the ice anywhere but at the surface.  The data also do not include the amount of water stored in the till, for instance.  So PISM fills in the unknown initial conditions based on some default guesses; this is the section above bracketed by \verb|bootstrapping by PISM default method|\dots and \verb|bootstrapping| \verb|by PISM default| \verb|method done|. 
 
-Regarding the temperature within the ice, bootstrapping applies an interpolation scheme to the surface temperatures and geothermal fluxes.  It is based on a heuristic for the amount of downward flow in a column, to create a temperature field at depth.  %See the Reference Manual.
+Note that EISMINT-Greenland specifies an 83 by 141 point grid, but you may use other numbers for \verb|-Mx| and \verb|-My| if desired and the data will be linearly interpolated onto your grid.  Also, in PISM there is a uniform vertical grid.  Here, because the vertical dimension of the computational box defaults to 4000 m, by specifying ``\verb|-Mz 201|'' we are choosing a 20 m spacing in the vertical.
 
-In fact this bootstrapping mode fills in several default values.  For instance, the variables \verb|ghf|, \verb|uplift|, and \verb|Hmelt| were not found in the \verb|-bif| file, whereas they would be in a saved PISM model state (which would be loaded with option \verb|-if|).  Thus, these variables were filled with defaults \verb|0.042| $\text{mW}/\text{m}^2$, \verb|0| $\text{m}/\text{s}$, and \verb|0| m respectively.  Also, recall that the EISMINT Greenland data had redundant surface elevation (\verb|h|) values.  We see that in PISM's default bootstrapping the variable \verb|h| is ignored and PISM uses the sum of bed elevation and ice thickness ``\verb|h = b + H|''.
+The option ``\verb|-bif|'' stands for ``bootstrapping input file''.  This option is an alternative to ``\verb|-if|'', standing for ``input file'', which is used for a file which has full initial conditions.  In practice, ``\verb|-if|'' is only used with a NetCDF file which was previously saved by PISM.
 
-Continuing with the above output, after default bootstrapping there are additional settings special to EISMINT-Greenland.  For instance, at the surface there is a formula which determines the temperature as a function of altitude and latitude.  (There is no EISMINT-Greenland gridded data set for surface temperature; see \cite{RitzEISMINT}.)  The executable \verb|pgrn| knows this formula and uses it.  Also, the constant value for geothermal flux is reset, and the Ellesmere Island issue is resolved.
+Regarding the temperature within the ice, bootstrapping applies an interpolation scheme to the surface temperatures and geothermal fluxes.  It is based on a heuristic for the amount of downward flow in a column, to create a temperature field at depth.  See the PISM \emph{Reference Manual}.
 
-Before seeking a good steady state for the entire thermomechanically-coupled ice sheet, it is helpful to do a better job of filling the temperatures within the ice than has already been done.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model, but while holding the (free) ice surface stationary.  This is a continuation of the ``bootstrapping'' idea, because the effect is to replace the heuristic temperature field applied above by one which includes horizontal advection.  The resulting temperature field is still not the fully physical temperature field because it comes from a steadiness assumption about position of the surface of the ice.
+In fact this bootstrapping mode fills in several default values.  For instance, the variables \verb|bheatflx| (geothermal flux), \verb|dbdt| (bed uplift rate), and \verb|bwat| (effective thickness of basal water) were not found in the \verb|-bif| file, whereas they would be in a saved PISM model state (which would be loaded with option \verb|-if|).  Thus, these variables were filled with defaults \verb|0.042| $\text{mW}/\text{m}^2$, \verb|0| $\text{m}/\text{s}$, and \verb|0| m respectively.  Also, note that the EISMINT Greenland data had redundant surface elevation values because PISM bootstrapping includes the computation ``\verb|usurf = topg + thk|'' of the surface elevation from the ice thickness and the bed elevation.
+
+Continuing with the above output, after default bootstrapping there are additional settings special to EISMINT-Greenland.  For instance, because there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}, at the surface there is a formula which determines the temperature as a function of altitude and latitude.  The executable \verb|pgrn| knows this formula and uses it.  Also, the constant value for geothermal flux is reset, and the above-mentioned Ellesmere Island issue is resolved.
+
+\subsubsection*{Relaxing the temperature field}  Before seeking a good steady state for the entire thermomechanically-coupled ice sheet, it is helpful to do a better job of filling in the temperatures within the ice than is done by the heuristic formula used in bootstrapping.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model, but while holding the upper ice surface stationary.  This is really a continuation of the ``bootstrapping'' idea, because the effect is to replace the heuristic temperature field applied above by one which is approximately stationary with respect to advection and conduction.  The resulting temperature field is still not the fully physical temperature field, however, because it comes from a steadiness assumption about position of the surface of the ice.
 
 We create this temperature field by running for 10000 years with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
 \verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady|
 
-\noindent This last run takes a significant amount of computer time (at least several hours).  In fact it should probably be done longer for serious modeling because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is probably about 100k years (or perhaps even more).
+\noindent This last run takes a significant amount of computer time (at least several hours).  In fact a much longer run should be done for serious modeling because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is probably about 100k years.
 
-This is a case where many more processors \emph{are} effective, up to perhaps 40 to 80 processors for the 83 by 141 grid.  (Finer grids allow good parallel performance for more processors.)
+This is a case where many more processors \emph{are} effective, up to perhaps peak real time speed with 40 to 80 processors for the 83 by 141 grid.  Finer grids give peak parallel performance for more processors, naturally.
 
 Because of the current PISM implementation of the positive degree day model specified by EISMINT-Greenland, the time steps are of at most one model year.  (This is one of several efficiency issues which should be resolved in the future; note reference \cite{CalovGreve05}.)
 
-\subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  This run is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines to mean a particular standard for a small volume change rate (less than a .01\% change in volume in 10,000 years).
+\subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  This run is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
 
-The PISM distribution includes a script that automates the process of checking the steady state condition.  Thus it is not necessary to manually check the changes in volume.  This script is called \verb|ssl_exper.py| and is in the \verb|pism/test| directory.  When run it will save states every 10,000 years (or other chosen interval), until the change in volume between saved states is less than a specified criterion.  It uses the \href{http://nco.sourceforge.net/}{NCO} to compare the thicknesses in saved model states.  It can be used with multiple processors by setting the option \verb|-n|; see Appendix D for documentation of the options.
+PISM includes a script that automates the process of checking the steady state condition.  Thus it is not necessary to manually check the changes in volume.  This script is called \verb|ssl_exper.py| and is in the \verb|pism/test| directory.  It will save states every 10,000 years (or other chosen interval), until the change in volume between saved states is less than a specified criterion.  It uses the \href{http://nco.sourceforge.net/}{NCO} to compare the thicknesses in saved model states.  It can be used with multiple processors by setting the option \verb|-n|; see Appendix D for documentation of the options.
 
 For illustration we do:
 
@@ -1245,9 +1262,9 @@ For illustration we do:
 
 \noindent Here we specify that the criterion for steady state is weak so that our example takes less computer time; we ask for less than 1\% change (``\verb|-c 0.01|'') between 1000 year runs (``\verb|-t 1|'').  With 8 processors this example completes in several hours.  The actual EISMINT-Greenland run would be
 
-\verb|$  ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 10 -c 0.0001|
+\verb|$  ssl_exper.py -n 80 -i green20km_Tsteady.nc -t 10 -c 0.0001|
 
-(With 80 processors this full run completed in 5 hours.  Efficiency is a concern for PISM, but functionality and correctness are coming first \dots)  
+\noindent With 80 processors this full run completed in 5 hours.  Efficiency when solving the thermomechanically coupled SIA is a concern for PISM.  On the other hand, the first efficiency concern for PISM in the use of the SSA for fast sliding.
 
 The example run gives this output:
 
@@ -1259,12 +1276,12 @@ $ ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01
   running from 0k years until 1k years ...
   trying:  mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 1000 -ys 0 -ocean_kill
      -tempskip 3 -o green_SSL2_1k >> out.txt
-  sum of H for 0k, 1k years, resp.: 7063322.500000, 8002617.500000
+  sum of thk for 0k, 1k years, resp.: 7063322.500000, 8002617.500000
   volume change is: 11.7373471867%
   running from 1k years until 2k years ...
   trying:  mpiexec -n 8 pgrn -ssl2 -if green_SSL2_1k.nc -y 1000 -ocean_kill
      -tempskip 3 -o green_SSL2_2k >> out.txt
-  sum of H for 1k, 2k years, resp.: 8002617.500000, 8598249.000000
+  sum of thk for 1k, 2k years, resp.: 8002617.500000, 8598249.000000
   volume change is: 6.92735811675%
   running from 2k years until 3k years ...
 .
@@ -1273,13 +1290,13 @@ $ ssl_exper.py -n 8 -i green20km_Tsteady.nc -t 1 -c 0.01
   running from 7k years until 8k years ...
   trying:  mpiexec -n 8 pgrn -ssl2 -if green_SSL2_7k.nc -y 1000 -ocean_kill
      -tempskip 3 -o green_SSL2_8k >> out.txt
-  sum of H for 7k, 8k years, resp.: 9836617.000000, 9915852.000000
+  sum of thk for 7k, 8k years, resp.: 9836617.000000, 9915852.000000
   volume change is: 0.799074048302%
   resulting volume change below criterion; ending
 \end{verbatim}
 \end{quote}\normalsize
 
-We see that the volume gradually increases but does settle down.  Inspection of the standard output of the run (e.g.~\verb|less out.txt|) shows that the initial volume of $2.825 \times 10^{6}\,\text{km}^3$ grows to $3.966 \times 10^{6}\,\text{km}^3$ at $8000$ model years.  In fact, to see the behavior over time of the volume, area, basal melt fraction, and so on, use the Python script \verb|test/series.py| documented in Appendix D:
+We see that the volume gradually increases but levels out.  Inspection of the standard output of the run (e.g.~\verb|less out.txt|) shows that the initial volume of $2.825 \times 10^{6}\,\text{km}^3$ grows to $3.966 \times 10^{6}\,\text{km}^3$ at $8000$ model years.  In fact, to see the behavior over time of the volume, area, basal melt fraction, and so on, use the Python script \verb|test/series.py| documented in Appendix D:
 
 \verb|$  series.py -f out.txt -o illust_series.nc|
 
@@ -1299,7 +1316,7 @@ In fact that is what happens.  If we run the SSL2 experiment with the specified 
 \label{fig:eisgrnmeltfseries}
 \end{figure}
 
-The final saved state is called \verb| green_SSL2_110k.nc|; we will use this NetCDF file to continue the EISMINT-Greenland experiments below.  The saved ice thickness and homologous basal temperature maps are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.  
+The final saved state is called \verb|green_SSL2_110k.nc|; we will use this NetCDF file to continue the EISMINT-Greenland experiments below.  The saved ice thickness and homologous basal temperature maps are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.
 
 \begin{figure}[ht]
 \includegraphics[height=3.7in,keepaspectratio=true]{figs/greenH_SSL2}\qquad\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
@@ -1315,13 +1332,13 @@ The final saved state is called \verb| green_SSL2_110k.nc|; we will use this Net
 
 One may also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run an EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|-ssl3 -gk| option to \verb|pgrn|.)  The PISM interpretation of the SSL3 experiment happens to be: \begin{itemize}
 \item use Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0, and
-\item allow pressure-melting temperature dependent linear sliding with a sliding coefficient that gives 50 m/a sliding at 100 kPa (1 bar).
+\item allow pressure-melting temperature dependent linear sliding with a sliding coefficient that gives 50 m/a sliding at 100 kPa (1 bar).\footnote{FIXME:  Turn off this evil kind of sliding.  For this particular SSL3 experiment we should do no sliding but add isostatic adjustment.  Addition of the plastic till SSA is then absolutely appropriate, but outside the scope of using EISMINT-Greenland as a tutorial example.}
 \end{itemize}
 There is no assertion that these are superior modeling choices.  We give ``SSL3'' this interpretation merely for illustration.  Note that because of the basal sliding, with sliding velocity proportional to the driving shear stress at the base, the volume time series never quite settles down (not shown).
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the steady state run above.
 
-Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:\footnote{Actually this is in error relative to the EISMINT-Greenland description \cite{RitzEISMINT,HuybrechtsEISMINT}.  In particular, ``isostatic response should be modelled also''.  Also it should be with SSL3 parameterizations.  Thus the run should really add the options \texttt{-bed\und def\und lc -gk}.  Such a run would have the bed deformation (here modelled using the methods in \cite{BLKfastearth,LingleClark}) affect the sea level and thus the boundary condition of the ice sheet.}
+Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' run \cite{RitzEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:\footnote{FIXME:  This is in error relative to the EISMINT-Greenland description \cite{RitzEISMINT,HuybrechtsEISMINT}.  In particular, ``isostatic response should be modelled also''.  Also it should be with SSL3 parameterizations.  Thus the run should really add the options \texttt{-bed\und def\und lc -gk}.  Such a run would have the bed deformation (here modelled using the methods in \cite{BLKfastearth,LingleClark}) affect the sea level and thus the boundary condition of the ice sheet.}
 
 \verb|$  pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
 

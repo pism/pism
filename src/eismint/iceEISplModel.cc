@@ -20,22 +20,29 @@
 #include <petsc.h>
 #include "iceEISplModel.hh"
 
-const PetscScalar IceEISplModel::DEFAULT_STREAM_WIDTH = 100.0e3; // 100 km
-
-// default case has no lake and has the upstream and downstream part of the ice
-//   stream have the same till strength
+// default: no lake, the upstream and downstream part of the ice
+//   stream have the same till strength, "fjord" is just more weak till
 const PetscInt    IceEISplModel::phi_list_length = 5;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_LAKE        = 20.0;  // no lake
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_STRONG      = 20.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_UPSTREAM    =  5.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_DOWNSTREAM  =  5.0;
-const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_OCEAN       = 20.0;  // no ocean
+const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       =  5.0;  // no floating tongue
+
+const PetscScalar IceEISplModel::DEFAULT_STREAM_WIDTH = 100.0e3; // 100 km
+
+// 10 m/yr of surface ablation outside of original EISMINT II experiment A
+//    equilibrium ice cap; keeps ice stream from advancing to edge of computational grid
+const PetscScalar IceEISplModel::DEFAULT_EXTERIOR_RADIUS = 650.0e3;     // m
+const PetscScalar IceEISplModel::DEFAULT_EXTERIOR_ABLATION_RATE = 10.0; // m/year
+
+
 
 
 IceEISplModel::IceEISplModel(IceGrid &g, IceType &i)
   : IceEISModel(g,i) {  // do nothing; note derived classes must have constructors
 
-  // expername = 'I';
+  expername = 'I';
 }
 
 
@@ -54,12 +61,17 @@ PetscErrorCode IceEISplModel::initFromOptions() {
 
   ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
 
-  PetscTruth  troughSet;  
-  ierr = PetscOptionsHasName(PETSC_NULL, "-trough", &troughSet); CHKERRQ(ierr);
-  if (troughSet == PETSC_TRUE) {
-    ierr = generateTroughTopography(); CHKERRQ(ierr);
+  PetscTruth  notroughSet;  
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_trough", &notroughSet); CHKERRQ(ierr);
+  if (notroughSet == PETSC_TRUE) {
+    ierr = VecSet(vbed,0.0); CHKERRQ(ierr);
+    expername = 'A';
   }
   
+  ierr = verbPrintf(2,grid.com, 
+           "setting up plastic till SSA modification of EISMINT II experiment %c ...\n",
+           expername);  CHKERRQ(ierr);
+
   stream_width = DEFAULT_STREAM_WIDTH;
   PetscTruth  stream_widthSet;  
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-stream_width", &stream_width,
@@ -73,7 +85,7 @@ PetscErrorCode IceEISplModel::initFromOptions() {
              DEFAULT_TILL_PHI_STRONG,
              DEFAULT_TILL_PHI_UPSTREAM, 
              DEFAULT_TILL_PHI_DOWNSTREAM, 
-             DEFAULT_TILL_PHI_OCEAN };
+             DEFAULT_TILL_PHI_FJORD };
   phi_list = (PetscScalar*) default_phi_list;
   PetscTruth  phi_listSet;
   PetscInt    input_phi_list_length = phi_list_length;
@@ -90,15 +102,15 @@ PetscErrorCode IceEISplModel::initFromOptions() {
   }
   ierr = verbPrintf(2,grid.com, 
            "till friction angles are LAKE = %5.2f, STRONG = %5.2f,\n"
-           "   UPSTREAM = %5.2f, DOWNSTREAM = %5.2f, OCEAN = %5.2f]\n",
+           "   UPSTREAM = %5.2f, DOWNSTREAM = %5.2f, FJORD = %5.2f]\n",
            phi_list[0],phi_list[1],phi_list[2],phi_list[3],phi_list[4]); CHKERRQ(ierr);
   
   ierr = setTillProperties(); CHKERRQ(ierr);
   ierr = resetAccum(); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, 
-           "running plastic till SSA modification of EISMINT II experiment I ...\n");
-           CHKERRQ(ierr);
+           "running plastic till SSA modification of EISMINT II experiment %c ...\n",
+           expername);  CHKERRQ(ierr);
   return 0;
 }
 
@@ -114,7 +126,7 @@ PetscErrorCode IceEISplModel::resetAccum() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // r is distance from center of grid
       const PetscScalar r = sqrt( PetscSqr(-cx + grid.p->dx*i) + PetscSqr(-cy + grid.p->dy*j) );
-      if (r > 650.0e3)   accum[i][j] = -10.0 / secpera;
+      if (r > DEFAULT_EXTERIOR_RADIUS)   accum[i][j] = - DEFAULT_EXTERIOR_ABLATION_RATE / secpera;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
@@ -122,11 +134,11 @@ PetscErrorCode IceEISplModel::resetAccum() {
 }
 
 
-//! Set the till friction angle to five values: LAKE, STRONG, UPSTREAM, DOWNSTREAM, OCEAN.
-PetscErrorCode IceEISplModel::setTillProperties() {
-  PetscErrorCode  ierr;
+//! Determine in which region is a grid point: 0,..,4 are LAKE, STRONG, UPSTREAM, DOWNSTREAM, FJORD.
+PetscInt IceEISplModel::tillRegionCode(PetscInt i, PetscInt j) {
+  PetscInt  code = 1;    // STRONG
   
-  const PetscScalar    L = 750.0e3;  // half-width of computational domain
+  const PetscScalar    L = 750.0e3;  // half-width of EISMINT II computational domain; may not be Lx or Ly
   const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
   const PetscScalar    dx61 = (2.0 * L) / 60.0; // = 25.0e3
   
@@ -139,45 +151,55 @@ PetscErrorCode IceEISplModel::setTillProperties() {
                      lakeRight    = lakeLeft + lakeWidth,
                      upDownDivide = (49 - 1) * dx61,
                      groundLine   = (57 - 1) * dx61;
+/*
   ierr = verbPrintf(2,grid.com,
          "[streamBegin = %9.2f, streamTop = %9.2f, streamBottom = %9.2f,\n"
          "    lakeWidth = %9.2f, lakeLeft = %9.2f,  lakeRight = %9.2f,\n"
          "    upDownDivide = %9.2f,  groundLine = %9.2f]\n",
          streamBegin,streamTop,streamBottom,lakeWidth,lakeLeft,lakeRight,
          upDownDivide,groundLine); CHKERRQ(ierr);
+*/
                        
+  const PetscScalar nsd = i * dx, ewd = j * dy;  // north-south and east-west distances
+  if ( (nsd >= streamBottom) && (nsd <= streamTop) && (ewd >= streamBegin) ) { // in strip
+    if (ewd >= groundLine) {
+      code = 4;  // FJORD
+    } else if (ewd >= upDownDivide) {
+      code = 3;  // DOWNSTREAM
+    } else {
+      code = 2;  // UPSTREAM
+    }
+  } else if (    (nsd >= streamTop) && (nsd <= streamTop + lakeWidth) 
+              && (ewd >= lakeLeft) && (ewd <= lakeRight) )     { // in lake
+    code = 0;    // LAKE
+  }
+
+  return code;
+}
+
+
+//! Set the till friction angle to value for region (LAKE, STRONG, UPSTREAM, DOWNSTREAM, FJORD).
+PetscErrorCode IceEISplModel::setTillProperties() {
+  PetscErrorCode  ierr;
+  
   // fill in map of phi = friction angle for till
   useConstantTillPhi = PETSC_FALSE;
   PetscScalar  **tillphi;
   ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * dx, ewd = j * dy;  // north-south and east-west distances
-      if (    (nsd >= streamBottom) && (nsd <= streamTop) && (ewd >= streamBegin) ) { // in strip
-        if (ewd >= groundLine) {
-          tillphi[i][j] = phi_list[4];  // OCEAN
-        } else if (ewd >= upDownDivide) {
-          tillphi[i][j] = phi_list[3];  // DOWNSTREAM
-        } else {
-          tillphi[i][j] = phi_list[2];  // UPSTREAM
-        }
-      } else if (    (nsd >= streamTop) && (nsd <= streamTop + lakeWidth) 
-                  && (ewd >= lakeLeft) && (ewd <= lakeRight) )     { // in lake
-        tillphi[i][j] = phi_list[0];    // LAKE
-      } else {
-        tillphi[i][j] = phi_list[1];    // STRONG
-      }
+      tillphi[i][j] = phi_list[tillRegionCode(i,j)];
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-         "[map of phi = (till friction angle) stored by IceEISplModel]\n"); CHKERRQ(ierr);
+         "map of phi = (till friction angle) stored by IceEISplModel ...\n"); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-
+//! Replace IceModel default summary with one which gives velocities etc.
 PetscErrorCode IceEISplModel::summaryPrintLine(
     const PetscTruth printPrototype, const PetscTruth tempAndAge,
     const PetscScalar year, const PetscScalar dt, 
@@ -187,9 +209,11 @@ PetscErrorCode IceEISplModel::summaryPrintLine(
   PetscErrorCode ierr;
 
   PetscScalar     **H, **ubar, **vbar, **ub, **vb;
-  // these are in MKS; sans "g" are local to the processore; with "g" are global
-  PetscScalar     maxcbar = 0.0, maxcb = 0.0, avcb = 0.0, Nhaveice = 0.0;
-  PetscScalar     gmaxcbar, gmaxcb, gavcb, gNhaveice;
+  // these are in MKS; sans "g" are local to the processor; with "g" are global across all processors
+  PetscScalar     maxcbar = 0.0, avcbar = 0.0, avcbupstream = 0.0, avcbdownstream = 0.0, 
+                  Nhaveice = 0.0, Nupstream = 0.0, Ndownstream;
+  PetscScalar     gmaxcbar, gavcbar, gavcbupstream, gavcbdownstream,
+                  gNhaveice, gNupstream, gNdownstream;
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
@@ -200,11 +224,20 @@ PetscErrorCode IceEISplModel::summaryPrintLine(
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
         Nhaveice += 1.0;
-        const PetscScalar cbar = sqrt( PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]) ),
-                          cb   = sqrt( PetscSqr(ub[i][j])   + PetscSqr(vb[i][j])   );
+        const PetscScalar cbar = sqrt( PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]) );
         if (cbar > maxcbar)  maxcbar = cbar;
-        if (cb > maxcb)      maxcb = cb;
-        avcb += cb;
+        avcbar += cbar;
+        const PetscInt code = tillRegionCode(i,j);
+        if ((code == 2) || (code == 3)) {
+          const PetscScalar cb = sqrt( PetscSqr(ub[i][j])+ PetscSqr(vb[i][j]));
+          if (code == 2) {
+            Nupstream += 1.0;
+            avcbupstream += cb;
+          } else {
+            Ndownstream += 1.0;
+            avcbdownstream += cb;
+          }
+        }
       }
     }
   }
@@ -215,26 +248,34 @@ PetscErrorCode IceEISplModel::summaryPrintLine(
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxcbar, &gmaxcbar, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxcb,   &gmaxcb,   grid.com); CHKERRQ(ierr);
   
-  ierr = PetscGlobalSum(&Nhaveice,&gNhaveice,grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avcb,    &gavcb,    grid.com); CHKERRQ(ierr);
-  if (gNhaveice > 0) { // area_kmsquare must already have been globalized
-    gavcb = gavcb / gNhaveice;
-  } else {  // some kind of degenerate case
-    gavcb = 0.0;
-  }
+  ierr = PetscGlobalSum(&Nhaveice, &gNhaveice, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&Nupstream, &gNupstream, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&Ndownstream, &gNdownstream, grid.com); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&avcbar, &gavcbar, grid.com); CHKERRQ(ierr);
+  if (gNhaveice > 0)   gavcbar = gavcbar / gNhaveice;
+  else                 gavcbar = 0.0;  // degenerate case
+    
+  ierr = PetscGlobalSum(&avcbupstream, &gavcbupstream, grid.com); CHKERRQ(ierr);
+  if (gNupstream > 0)  gavcbupstream = gavcbupstream / gNupstream;
+  else                 gavcbupstream = 0.0;  // degenerate case
+
+  ierr = PetscGlobalSum(&avcbdownstream, &gavcbdownstream, grid.com); CHKERRQ(ierr);
+  if (gNdownstream > 0)  gavcbdownstream = gavcbdownstream / gNdownstream;
+  else                   gavcbdownstream = 0.0;  // degenerate case
 
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P       YEAR (+     STEP )      VOL    AREA   MELTF   MAXCBAR     MAXCB     AVCB\n");
+      "P       YEAR (+     STEP )      VOL    AREA   MELTF   MAXCBAR   AVCBAR AVCBupstr AVCBdnstr\n");
     ierr = verbPrintf(2,grid.com,
-      "U      years       years  10^6_km^3 10^6_km^2 (none)      m/a       m/a      m/a\n");
+      "U      years       years  10^6_km^3 10^6_km^2 (none)      m/a      m/a     m/a     m/a\n");
   } else {
-    ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %7.4f %9.2f %9.2f %8.3f\n",
+    ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %7.4f %9.2f %8.4f %8.3f %8.3f\n",
                       year, dt/secpera, 
                       volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
-                      gmaxcbar*secpera,gmaxcb*secpera,gavcb*secpera); CHKERRQ(ierr);
+                      gmaxcbar*secpera, gavcbar*secpera, 
+                      gavcbupstream*secpera, gavcbdownstream*secpera); CHKERRQ(ierr);
   }
   return 0;
 }
