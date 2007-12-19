@@ -175,7 +175,8 @@ PetscErrorCode IceEISModel::initFromOptions() {
     switch (expername) {
       case 'A':
       case 'E':
-        ierr = grid.rescale(L, L, 4500); CHKERRQ(ierr);
+      case 'I':
+        ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
         break;
       case 'B':
       case 'C':
@@ -203,7 +204,6 @@ PetscErrorCode IceEISModel::initFromOptions() {
         ierr = grid.rescale(L, L, 3000); CHKERRQ(ierr);
         break;
       case 'H':
-      case 'I':
       case 'J':
       case 'K':
       case 'L':
