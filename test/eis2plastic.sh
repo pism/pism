@@ -1,6 +1,6 @@
 #!/bin/bash
 # script for plastic till SSA and superposition modification of
-# EISMINT II experiment I (and A)
+# EISMINT II experiment I (and A); note this includes bedrock thermal, unlike EIS II
 # see preprint Bueler and Brown 2007, "A model of an ice sheet with one ice stream"
 
 # re speed: on experiment P0, marmaduke.gi.alaska.edu (8 cores) took about
@@ -10,7 +10,7 @@
 NN=8
 
 # run without trough on coarse 25km grid for 100k years:
-mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 100000 -track_Hmelt \
+mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 251 -Mbz 51 -y 100000 -track_Hmelt \
    -o eis2A100k
 
 #continue WITHOUT trough
@@ -18,7 +18,7 @@ mpiexec -n $NN pisms -eisII A -if eis2A100k.nc -y 90000 -track_Hmelt \
    -o eis2A190k
 
    # refine to 12.5km grid, run 10k, save lots:
-mpiexec -n $NN pisms -eisII A -Mx 121 -My 121 -Mz 251 \
+mpiexec -n $NN pisms -eisII A -Mx 121 -My 121 -Mz 251 -Mbz 51 \
    -regrid eis2A190k.nc -regrid_vars LTBHh \
    -y 10000 -track_Hmelt -f3d -o eis2A_final \
    -mato eis2A_final -matv bcYTHLCQ0345
@@ -28,7 +28,7 @@ mpiexec -n $NN pisms -eisII I -if eis2I100k.nc -y 90000 -track_Hmelt \
    -o eis2I190k
 
    # refine to 12.5km grid, run 10k, save lots:
-mpiexec -n $NN pisms -eisII I -Mx 121 -My 121 -Mz 251 \
+mpiexec -n $NN pisms -eisII I -Mx 121 -My 121 -Mz 251 -Mbz 51 \
    -regrid eis2I190k.nc -regrid_vars LTBHh \
    -y 10000 -track_Hmelt -f3d -o eis2I_final \
    -mato eis2I_final -matv bcYTHLCQ0345
@@ -79,27 +79,27 @@ mpiexec -n $NN pisms -eis2pl -if eis2I_final.nc -ys 0 -y 5000 -f3d \
 
 
 # experiment P6 (coarser horizontal 25km grid):
-mpiexec -n $NN pisms -eis2pl -Mx 61 -My 61 -Mz 251 -ys 0 -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2pl -Mx 61 -My 61 -Mz 251 -Mbz 51 -ys 0 -y 5000 -f3d \
     -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP6 \
     -mato eis2plP6 -matv bcYTHLCQ0345
 
 # experiment P7 (finer horizontal *7.5km* grid):
-mpiexec -n $NN pisms -eis2pl -Mx 201 -My 201 -Mz 251 -ys 0 -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2pl -Mx 201 -My 201 -Mz 251 -Mbz 51 -ys 0 -y 5000 -f3d \
     -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP7 \
     -mato eis2plP7 -matv bcYTHLCQ0345
 
 # experiment P8 (finer horizontal **5km** grid):
-mpiexec -n $NN pisms -eis2pl -Mx 301 -My 301 -Mz 251 -ys 0 -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2pl -Mx 301 -My 301 -Mz 251 -Mbz 51 -ys 0 -y 5000 -f3d \
     -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP8 \
     -mato eis2plP8 -matv bcYTHLCQ0345
 
 # experiment P9 (finer vertical 10m grid):
-mpiexec -n $NN pisms -eis2pl -Mx 121 -My 121 -Mz 501 -ys 0 -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2pl -Mx 121 -My 121 -Mz 501 -Mbz 101 -ys 0 -y 5000 -f3d \
     -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP9 \
     -mato eis2plP9 -matv bcYTHLCQ0345
 
 # experiment P10 (finer vertical *5m* grid):
-mpiexec -n $NN pisms -eis2pl -Mx 121 -My 121 -Mz 1001 -ys 0 -y 5000 -f3d \
+mpiexec -n $NN pisms -eis2pl -Mx 121 -My 121 -Mz 1001 -Mbz 201 -ys 0 -y 5000 -f3d \
     -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP10 \
     -mato eis2plP10 -matv bcYTHLCQ0345
 
