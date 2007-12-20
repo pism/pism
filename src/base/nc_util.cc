@@ -372,7 +372,7 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
     return 0;
   }
 
-  ierr = verbPrintf(2, grid.com, "regridding `%c' from `%s' ... ", c, name); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "\n   %c: regridding `%s' ... ", c, name); CHKERRQ(ierr);
 
   /* {
     printf("fstart = %10.2e %10.2e %10.2e\n", lic.fstart[0], lic.fstart[1], lic.fstart[2]);

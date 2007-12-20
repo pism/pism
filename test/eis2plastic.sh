@@ -9,6 +9,10 @@
 
 NN=8
 
+#uncomment these (and "#fi" at end) and move around to bypass completed stuff:
+#if [ ]; then
+#else   # put this before restart location
+  
 # run without trough on coarse 25km grid for 100k years:
 mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 251 -Mbz 51 -y 100000 -track_Hmelt \
    -o eis2A100k
@@ -137,4 +141,6 @@ mpiexec -n $NN pisms -eis2pl -if eis2pl80k.nc -y 10000 \
 
 mpiexec -n $NN pisms -eis2pl -if eis2pl90k.nc -y 10000 -f3d \
     -o eis2plP0cont -mato eis2plP0cont -matv bcYTHLCQ0345
+
+#fi
 

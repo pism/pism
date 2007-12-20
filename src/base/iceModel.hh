@@ -279,6 +279,7 @@ protected:
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
   PetscErrorCode setAccumInOcean();
+  PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMIOlegacy.cc
   // these are used in legacy pant and pismr runs and apply to "init.nc" which has non-standard
@@ -335,10 +336,6 @@ protected:
   PetscErrorCode updateNetAccumFromPDD();
   PetscErrorCode putBackSnowAccumPDD();
   PetscErrorCode PDDCleanup();
-  
-  // see iMregrid.cc (these use nc_util.cc heavily)
-  PetscErrorCode regrid(const char *regridFile);
-  PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMreport.cc
   // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()

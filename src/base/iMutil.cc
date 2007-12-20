@@ -349,7 +349,7 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
                                &regridFileSet); CHKERRQ(ierr);
   if (regridFileSet == PETSC_TRUE) {
-    ierr = regrid(regridFile); CHKERRQ(ierr);
+    ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
   }
 

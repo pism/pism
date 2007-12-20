@@ -401,7 +401,7 @@ PetscErrorCode IceModel::summaryPrintLine(
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P       YEAR (+     STEP )      VOL    AREA    MELTF     THICK0     TEMP0\n");
+      "P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0\n");
     ierr = verbPrintf(2,grid.com,
       "U      years       years  10^6_km^3 10^6_km^2 (none)          m         K\n");
   } else {

@@ -267,7 +267,7 @@ PetscErrorCode IceEISplModel::summaryPrintLine(
 
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P       YEAR (+     STEP )      VOL    AREA   MELTF   MAXCBAR   AVCBAR AVCBupstr AVCBdnstr\n");
+      "P       YEAR (+     STEP )     ivol   iarea   meltf   maxcbar   avcbar avcbUpS avcbDownS\n");
     ierr = verbPrintf(2,grid.com,
       "U      years       years  10^6_km^3 10^6_km^2 (none)      m/a      m/a     m/a     m/a\n");
   } else {
