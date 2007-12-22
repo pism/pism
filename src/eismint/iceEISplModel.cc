@@ -27,7 +27,9 @@ const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_LAKE        = 20.0;  // no lak
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_STRONG      = 20.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_UPSTREAM    =  5.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_DOWNSTREAM  =  5.0;
-const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       =  5.0;  // no floating tongue
+//const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       =  5.0;  // no floating tongue
+// make fjord region *strong*
+const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       = 20.0;  
 
 const PetscScalar IceEISplModel::DEFAULT_STREAM_WIDTH = 100.0e3; // 100 km
 
@@ -106,7 +108,9 @@ PetscErrorCode IceEISplModel::initFromOptions() {
            phi_list[0],phi_list[1],phi_list[2],phi_list[3],phi_list[4]); CHKERRQ(ierr);
   
   ierr = setTillProperties(); CHKERRQ(ierr);
-  ierr = resetAccum(); CHKERRQ(ierr);
+
+// DON'T change accumulation
+//  ierr = resetAccum(); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, 
            "running plastic till SSA modification of EISMINT II experiment %c ...\n",

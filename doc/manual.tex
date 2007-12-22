@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{223}
+\newcommand{\PISMREV}{228}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -317,7 +317,7 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 
 
 \begin{table}[ht]
-\caption{Additional dependencies for PISM, \protect{\emph{needed only for serious developers of PISM}}, listed alphabetically.  }\label{tab:PISMdepends_superdev}
+\caption{Additional dependencies for PISM \protect{\emph{needed only for serious developers of PISM}}, listed alphabetically.  }\label{tab:PISMdepends_superdev}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Library} & \textbf{Site} & \textbf{Comment} \\
@@ -350,7 +350,7 @@ initializing EISMINT II experiment F ...
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
 %ydbp SIA SSA  # vgath Nr
-P       YEAR (+     STEP )      VOL    AREA    MELTF     THICK0     TEMP0
+P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0
 U      years       years  10^6_km^3 10^6_km^2 (none)          m         K
  $$$$            $$$$$ $$
 S      0.000 (+  0.00000 )  0.00000  0.0000   0.0000      0.000  223.1500
@@ -388,7 +388,7 @@ initializing from NetCDF format file  simp_exper.nc  ...
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
 %ydbp SIA SSA  # vgath Nr
-P       YEAR (+     STEP )      VOL    AREA    MELTF     THICK0     TEMP0
+P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0
 U      years       years  10^6_km^3 10^6_km^2 (none)          m         K
  $$$$            $$$$$ $$
 S   2000.000 (+  0.00000 )  0.56790  0.6306   0.0000   1000.000  228.7242
@@ -425,7 +425,7 @@ When the full 200,000 year run finishes, one watch its evolving state by
 \small
 \verb|%ydbp SIA SSA  # vgath Nr|
 
-\verb|P       YEAR (+     STEP )      VOL    AREA    MELTF     THICK0     TEMP0|
+\verb|P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0|
 
 \verb|U      years       years  10^6_km^3 10^6_km^2 (none)          m         K|
 \normalsize
@@ -435,7 +435,7 @@ When the full 200,000 year run finishes, one watch its evolving state by
 
 The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.  The runs above show what can happen because the time-stepping adapts in order to maintain stability for the mostly explicit methods in PISM.  At the beginning of the EISMINT II experiment F run, for instance, the ice has small thickness so the time step is 60 years, simply because that is the default maximum time step.  Later in the experiment F run, after 5000 years, for instance, the time step is made smaller in essense because the flow is faster.
 
-The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal temperature is at the pressure-melting temperature.  The next two columns ``\texttt{THICK0}'' and ``\texttt{TEMP0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometimes useful for comparison.  The summary of the model state can be made more verbose by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.
+The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal temperature is at the pressure-melting temperature.  The next two columns ``\texttt{thick0}'' and ``\texttt{temp0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometimes useful for comparison.  The summary of the model state can be made more verbose by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.
 
 \subsection{Visualizing the results}  There are four basic methods for visualizing the various quantities in PISM, namely \renewcommand{\labelenumi}{\arabic{enumi})~}  \begin{enumerate}
 \item runtime viewers under Xwindows, 
@@ -668,40 +668,41 @@ Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth th
 
 
 \begin{table}[ht]
-\caption{Regriddable variables.  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
+\caption{Regriddable variables.  ``\texttt{.nc} \textbf{Name}'' gives the name of the variable in a PISM output NetCDF file.  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
 \begin{tabular}{@{}llll}\hline
-\textbf{Flag} & \textbf{Variable} & \textbf{Comment}\\ \hline
-\verb|a| & (net annual) accumulation & \emph{climate data}; usually not regridded \\
-\verb|b| & bed elevation & \\
-\verb|B| & temperature in bedrock & \\
-\verb|e| & age of the ice & \\
-\verb|g| & geothermal flux & \emph{climate data}; usually not regridded \\
-\verb|H| & thickness & \\
-\verb|L| & thickness of basal melt water (stored in till) & \\
-\verb|s| & ice surface temperature & \emph{climate data}; usually not regridded\\
-\verb|T| & ice temperature & \\
+\textbf{Flag} & \texttt{.nc} \textbf{Name} & \textbf{Variable} & \textbf{Comment}\\ \hline
+\verb|a| & \texttt{acab}       & (net annual) accumulation & \emph{climate}; usually not regridded \\
+\verb|b| & \texttt{topg}       & bed elevation & \\
+\verb|B| & \texttt{litho\und temp} & temperature in bedrock & \\
+\verb|e| & \texttt{age}        & age of the ice & \\
+\verb|g| & \texttt{bheatflx}   & geothermal flux & \emph{climate}; usually not regridded \\
+\verb|H| & \texttt{thk}        & thickness & \\
+\verb|L| & \texttt{bwat}       & thickness of basal melt water & \\
+\verb|s| & \texttt{artm}       & ice surface temperature & \emph{climate}; usually not regridded\\
+\verb|T| & \texttt{temp}       & ice temperature & \\
 \hline
 \normalsize
 \end{tabular}
 \end{table}
 
 
-\subsection{Understanding and controlling adaptive time-stepping} \label{subsect:adapt} Recall that at each time step we get a summary of the model state using a few numbers.  The format of the summary is
+\subsection{Understanding and controlling adaptive time-stepping} \label{subsect:adapt} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers.:
 \begin{verbatim}
-          YEAR (+    STEP[N$]):     VOL    AREA    MELTF     THICK0     TEMP0
+%ydbp SIA SSA  # vgath Nr
+P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0
 \end{verbatim}
-Here we will explain what appears in the `\verb|(+    STEP[N$])|' part of this summary.
+Here we explain what `\verb|Nr|' in the flag line means, and also `\verb|STEP|' in the summary.
 
-\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This requires that PISM have adaptive time-stepping for stability in the shallow ice approximation regions.  Other issues like numerically approximating transport of temperature and age require adaptivity too \cite{BBL}.
+\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of advection \cite{BBL}, requires and adaptive time-stepping scheme.
 
-Note that most of the time `\verb|N|' will be zero.  The exception is when the option \verb|-tempskip| is used.  If \verb|-tempskip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do:
+Note that most of the time `\verb|N|' in the flag line will be zero.  The exception is when the option \verb|-tempskip| is used.  If \verb|-tempskip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do:
 
 \verb|$  pismv -test G -Mx 141 -My 141 -Mz 51 -tempskip 4|
 
-Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-timestepping flag `\verb|$|'.
+Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-timestepping flag `\verb|r|'.
 
 \begin{table}[ht]
-\caption{Meaning of the adaptive time-stepping flag `\texttt{\$}' in `\texttt{(+    STEP[N\$])}'.}\label{tab:adaptiveflag}
+\caption{Meaning of the adaptive time-stepping flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{@{}llll}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
 \verb|c| & 3D CFL for temperature/age advection \cite{BBL} \\
