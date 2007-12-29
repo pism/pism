@@ -320,7 +320,7 @@ protected:
 
   // see iMpdd.cc (positive degree day model for ablation)
   gsl_rng     *pddRandGen;
-  PetscTruth  doPDD, pddStuffCreated;
+  PetscTruth  doPDD, doPDDTrueRand, pddStuffCreated, pddRandStuffCreated;
   PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, pddSummerWarming;
   static const PetscScalar DEFAULT_PDD_STD_DEV;
   static const PetscScalar DEFAULT_PDD_FACTOR_SNOW;
@@ -328,14 +328,16 @@ protected:
   static const PetscScalar DEFAULT_PDD_REFREEZE_FRAC;
   static const PetscScalar DEFAULT_PDD_SUMMER_WARMING;
   PetscErrorCode initPDDFromOptions();
-  bool IsIntegralYearPDD();
+  PetscErrorCode setMaxdtTempPDD();
+  bool           IsIntegralYearPDD();
   virtual PetscScalar getTemperatureFromYearlyCycle(
-                  const PetscScalar summer_warming, const PetscScalar Ta, const int day) const;
+                  const PetscScalar summer_warming, const PetscScalar Ta, const PetscScalar day) const;
   virtual PetscScalar getSummerWarming(
                   const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const;
   PetscErrorCode updateNetAccumFromPDD();
   PetscErrorCode putBackSnowAccumPDD();
   PetscErrorCode PDDCleanup();
+  double         CalovGreveIntegrand(const double T);
 
   // see iMreport.cc
   // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()

@@ -401,18 +401,16 @@ PetscErrorCode IceModel::summaryPrintLine(
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0\n");
+      "P         YEAR:     ivol   iarea    meltf     thick0     temp0\n");
     ierr = verbPrintf(2,grid.com,
-      "U      years       years  10^6_km^3 10^6_km^2 (none)          m         K\n");
+      "U        years 10^6_km^3 10^6_km^2 (none)          m         K\n");
   } else {
     if (tempAndAge == PETSC_FALSE) {
-      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f   <same> %10.3f    <same>\n",
-                         year, dt/secpera,
-                         volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "S %12.5f: %8.5f %7.4f   <same> %10.3f    <same>\n",
+                         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
     } else { // general case
-      ierr = verbPrintf(2,grid.com, "S %10.3f (+ %8.5f ) %8.5f %7.4f %8.4f %10.3f %9.4f\n",
-                         year, dt/secpera, 
-                         volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
+      ierr = verbPrintf(2,grid.com, "S %12.5f: %8.5f %7.4f %8.4f %10.3f %9.4f\n",
+                         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
                          H0,T0); CHKERRQ(ierr);
     }
   }

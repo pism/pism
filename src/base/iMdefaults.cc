@@ -84,9 +84,9 @@ const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
 const PetscScalar IceModel::DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
 
 // see iMpdd.cc
-const PetscScalar IceModel::DEFAULT_PDD_STD_DEV = 0.0;  // K
-const PetscScalar IceModel::DEFAULT_PDD_FACTOR_SNOW = 0.003;  // (m ice-equivalent) day^-1 K^-1
-const PetscScalar IceModel::DEFAULT_PDD_FACTOR_ICE  = 0.008;  // (m ice-equivalent) day^-1 K^-1
+const PetscScalar IceModel::DEFAULT_PDD_STD_DEV = 5.0;  // K
+const PetscScalar IceModel::DEFAULT_PDD_FACTOR_SNOW = 0.003;  // (m ice-equivalent) day^-1 (deg C)^-1
+const PetscScalar IceModel::DEFAULT_PDD_FACTOR_ICE  = 0.008;  // (m ice-equivalent) day^-1 (deg C)^-1
 const PetscScalar IceModel::DEFAULT_PDD_REFREEZE_FRAC = 0.6;  // [pure fraction]
 const PetscScalar IceModel::DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
      // re SUMMER_WARMING:  (30.38 - 0.006277 * 1000.0 - 0.3262 * 75.0)
@@ -222,6 +222,7 @@ PetscErrorCode IceModel::setDefaults() {
   bedDefIntervalYears = DEFAULT_BED_DEF_INTERVAL_YEARS;
   noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
   doPDD = PETSC_FALSE;
+  doPDDTrueRand = PETSC_FALSE;
 
   isothermalFlux_n_exponent = DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT;
   

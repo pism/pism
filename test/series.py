@@ -46,7 +46,7 @@ names=[]
 units=[]
 Nnames = 0
 year=[]
-step=[]
+step=[0]
 vals=[]
 count = 0
 prototypeFound = False
@@ -56,44 +56,41 @@ while True:
   myline = infile.readline()
   if not myline:
     break
-  posbracketplus = myline.find('(+')  # second marker of a prototype or summary line
-  if ((myline[0] == 'P') and (myline[1] == ' ')
-      and (posbracketplus >= 0)):
+  if ((myline[0] == 'P') and (myline[1] == ' ')):
     # clearly a prototype line
     tokens = myline.split()
-    # expect: tokens[0] == 'P', tokens[1] == (the year), tokens[2] == '(+', 
-    #         tokens[3] == (the step), tokens[4] == ')'
+    # expect: tokens[0] == 'P', tokens[1] == (the year): 
     #print tokens
     if (prototypeFound == True):
       # compare names and stop if different
       for j in range(Nnames):
-        if names[j] != tokens[5 + j]:
+        if names[j] != tokens[2 + j]:
           print 'ERROR: another prototype line found with conflicting name'
-          print '  ("' + str(tokens[5+j]) + '" versus "' + str(names[j]) + '")'
+          print '  ("' + str(tokens[2+j]) + '" versus "' + str(names[j]) + '")'
           print 'stopping'
           sys.exit(2)
       print ' another prototype line found with identical names; continuing'
     else:
       prototypeFound = True
-      Nnames = len(tokens) - 5;
+      Nnames = len(tokens) - 2;
       for j in range(Nnames):
-        names.append(tokens[5 + j])
+        names.append(tokens[2 + j])
         vals.append([])
       print ' prototype line found; names=' + str(names)
       #print names
   if ((myline[0] == 'U') and (myline[1] == ' ')):
-    # clearly a units line
+    # a units line
     tokens = myline.split()
-    # expect: tokens[0] == 'U', tokens[1] == 'years', tokens[2] == 'years'
+    # expect: tokens[0] == 'U', tokens[1] == 'years'
     #print tokens
     if (Nnames == 0):
       print 'ERROR: units line found but no names defined; prototype must precede units.'
       sys.exit(2)
     for j in range(Nnames):
-      units.append(tokens[3 + j])
+      units.append(tokens[2 + j])
     #print 'units line found, with units = '
     #print units
-  if ((myline[0] == 'S') and (posbracketplus >= 0)):  # clearly is a summary line
+  if ((myline[0] == 'S') and (myline[1] == ' ')):  # a summary line
     if (len(vals) == 0):
       print """ERROR: summary line found but no value sequences defined;\n
                prototype must precede summaries."""
@@ -102,10 +99,13 @@ while True:
       print 'ERROR: summary line found but value sequences wrong length\n'
       sys.exit(2)
     tokens = myline.split()
-    year.append(float(tokens[1]))
-    step.append(float(tokens[3]))
+    # print tokens
+    yeartext = tokens[1]
+    year.append(float(yeartext[0:-1]))  # remove trailing colon
+    if (len(year) > 1):
+      step.append(year[-1] - year[-2])
     for j in range(Nnames):
-      vals[j].append(float(tokens[5 + j]))
+      vals[j].append(float(tokens[2 + j]))
     count = count + 1
 print ' ' + str(count) + ' summary lines read'
 infile.close()

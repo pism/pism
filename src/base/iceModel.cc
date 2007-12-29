@@ -89,6 +89,9 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   }
   createViewers_done = PETSC_FALSE;
 
+  pddStuffCreated = PETSC_FALSE;
+  pddRandStuffCreated = PETSC_FALSE;
+
   ierr = setDefaults();
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
@@ -566,7 +569,7 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com, "%%ydbp SIA SSA  # vgath Nr\n"); CHKERRQ(ierr);  // prototype for flags
+  ierr = verbPrintf(2,grid.com, "%%ybp SIA SSA  # vgatdh Nr  +STEP\n"); CHKERRQ(ierr);  // prototype for flags
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;
@@ -581,6 +584,9 @@ PetscErrorCode IceModel::run() {
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
     
+    // set maxdt_temporary if needed by random PDD method
+//    ierr = setMaxdtTempPDD(); CHKERRQ(ierr);
+    
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (doPlasticTill == PETSC_TRUE) {
       ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
@@ -589,15 +595,6 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-    // compute PDD; generates net accumulation, with possible ablation area, using snow accumulation
-    // might set maxdt_temporary 
-    if ((doPDD == PETSC_TRUE) && IsIntegralYearPDD()) {
-      ierr = updateNetAccumFromPDD();  CHKERRQ(ierr);
-      ierr = verbPrintf(2,grid.com, "d"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
-
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
@@ -642,6 +639,14 @@ PetscErrorCode IceModel::run() {
     } else {
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
+
+    // compute PDD; generates surface mass balance, with appropriate ablation area, using snow accumulation
+    if (doPDD == PETSC_TRUE) {
+      ierr = updateNetAccumFromPDD();  CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "d"); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
+    }
     
     if (doMassConserve == PETSC_TRUE) {
       // update H
@@ -658,7 +663,8 @@ PetscErrorCode IceModel::run() {
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     // end the flag line and report a summary
-    ierr = verbPrintf(2,grid.com, " %d%c\n", tempskipCountDown, adaptReasonFlag); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", tempskipCountDown, adaptReasonFlag,
+                      dt / secpera); CHKERRQ(ierr);
     ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
 
     ierr = updateViewers(); CHKERRQ(ierr);

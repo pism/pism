@@ -62,7 +62,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     }
   } else {
     enhancementFactor = 3;
-    muSliding = 0.0;  // document says "no sliding"!
+    muSliding = 0.0;  // EISMINT-GREENLAND document says "no sliding"!
   }
   
   bedDiff = 0.0;

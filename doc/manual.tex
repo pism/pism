@@ -18,7 +18,7 @@
 
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{228}
+\newcommand{\PISMREV}{230}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -806,7 +806,9 @@ Ctrl-C & \same & same, but only for foreground processes  \\ \hline
 \end{table}
 
 
-\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net annual accumulation.  If the input data is actually annual snow-fall (measured as ice-equivalent) then one must \emph{compute} the net annual accumulation according to some mode of how much of the snow is melted in each model year.  The mass conservation equation for the ice sheet requires the net annual accumulation, in any case.  Also note that the surface temperature map in PISM is the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
+\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net surface mass balance.  The mass conservation equation for the ice sheet requires this surface mass balance.  Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, so without an additional model or input there is no yearly temperature cycle.
+
+If the input data actually includes the annual snow-fall accumulation then one must \emph{compute} the surface mass balance according to some model of how much of the snow is melted in each model year.  Note that, in any case, the snow accumulation and the surface mass balance are measured as ice-equivalent thickness.
 
 A reasonable method for computing the melting of snowfall, optionally used by PISM, first assumes a sinusoidal temperature cycle over the course of the year.  The amount of summer warming is the difference between the peak of this temperature cycle and its mean.  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  See section \ref{sect:green} for an alternative model.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
 
@@ -832,7 +834,7 @@ Now observe how it the same saved ice sheet \verb|foo.nc| behaves with the defau
 
 Note that last run is the same as
 
-\verb|pisms -eisII B -if foo.nc -y 40 -pdd_summer_warming 15.0 -pdd_factor_snow 0.003 \|
+\verb|pisms -eisII B -if foo.nc -y 40 -pdd -pdd_summer_warming 15.0 -pdd_factor_snow 0.003 \|
 
 \verb|  -pdd_factor_ice 0.008 -pdd_refreeze 0.6 -pdd_std_dev 0.0|
 
@@ -1867,15 +1869,17 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  See subsection \ref{subsect:pdd}.
 
+\opt{pdd\und rand}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|), and uses the actually random model, based on a random number generator, as opposed to the default ``integrated'' version based on \cite{CalovGreve05}, which is more efficient and doesn't restrict the time step.  In fact, one side effect of setting this option is to reduce the time step so that each integer year is ``hit.''  Note that if \verb|-pdd_std_dev 0.0| is set then the additional randomness is not active.  See subsection \ref{subsect:pdd}.
+
+\opt{pdd\und rand\und repeatable}  Same effect as \verb|pdd_rand| but additionally sets the ``seed'' for the random number generator to a default.  This makes runs based on the actually random model repeatable.
+
 \optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
 
 \optdef{pdd\und factor\und snow}{0.003}  The amount of snow, measured in meters ice-equivalent, which is melted per positive degree day.  In units of $\text{m}\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
 
 \optdef{pdd\und refreeze}{0.6}  Fraction of melted snow, from positive degree day melting, which locally refreezes as ice (and therefore adds to accumulation).  See subsection \ref{subsect:pdd}.
 
-\opt{pdd\und repeatable}  Base the randomness specified by \verb|pdd_std_dev| on a predictable seed.  Makes no difference if \verb|pdd_std_dev| is 0.0.  Allows runs with positive \verb|pdd_std_dev| to be identically repeated.  See subsection \ref{subsect:pdd}.
-
-\optdef{pdd\und std\und dev}{0.0}  Standard deviation of temperature increment added each day to temperature cycle in positive degree day model.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
+\optdef{pdd\und std\und dev}{5.0}  Standard deviation of temperature increment added each day to temperature cycle in positive degree day model.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
 \optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
