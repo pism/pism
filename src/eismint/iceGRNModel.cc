@@ -50,22 +50,28 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-gwl3", &gwl3Set); CHKERRQ(ierr);
   if (gwl3Set == PETSC_TRUE)   expernum = 4;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &gkSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &lawNum, &flowlawSet); CHKERRQ(ierr);
-
-  if (ssl3Set == PETSC_TRUE) {
+  if ((ssl3Set == PETSC_TRUE) || (ccl3Set == PETSC_TRUE) || (gwl3Set == PETSC_TRUE)) {
+    // use Goldsby-Kohlstedt with enhancement factor of 1; user will have to give "-gk"
     enhancementFactor = 1;
-    const PetscScalar SSL3_MU_SLIDING = 1.585e-11;  // 50 m/a at 100kPa = 1 bar
-    muSliding = SSL3_MU_SLIDING; 
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &gkSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &lawNum, &flowlawSet); CHKERRQ(ierr);
     if (gkSet == PETSC_FALSE && ((flowlawSet == PETSC_TRUE && lawNum != 4) || flowlawSet == PETSC_FALSE)) {
-      ierr = verbPrintf(1, grid.com, "WARNING: SSL3 specified, but not -gk\n");  CHKERRQ(ierr);
+      ierr = verbPrintf(1, grid.com, "WARNING: SSL3 or CCL3 or GWL3 specified, but not -gk\n");
+              CHKERRQ(ierr);
     }
+    // use Lingle-Clark bed deformation model
+    doBedDef = PETSC_TRUE;
+    doBedIso = PETSC_FALSE;
+    /*  BAD SLIDING!  NO DONUT!:
+      const PetscScalar SSL3_MU_SLIDING = 1.585e-11;  // 50 m/a at 100kPa = 1 bar
+      muSliding = SSL3_MU_SLIDING; 
+    */
   } else {
     enhancementFactor = 3;
-    muSliding = 0.0;  // EISMINT-GREENLAND document says "no sliding"!
   }
   
-  bedDiff = 0.0;
+  muSliding = 0.0;  // no sliding in any case; perhaps develop an SSA variant??
+  bedDiff = 0.0; // related to sea level forcing, not bed deformation
   
   // note: user value for -e and -mu_sliding will override enhancementFactor, mu_sliding setting above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
@@ -144,8 +150,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta T data from forcing file %s ...\n", dTFile); CHKERRQ(ierr);
-    ierr = dTforcing.readStandardIceCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,
-                                             ISF_DELTA_T);  CHKERRQ(ierr);
+    ierr = dTforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,ISF_DELTA_T);
+         CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(5, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta T forcing data\n");
   }
@@ -159,8 +165,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta sea level data from forcing file %s ...\n", dSLFile); CHKERRQ(ierr);
-    ierr = dSLforcing.readStandardIceCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,
-                                              ISF_DELTA_SEA_LEVEL); CHKERRQ(ierr);
+    ierr = dSLforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,ISF_DELTA_SEA_LEVEL);
+         CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
   }
@@ -191,8 +197,8 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
   if (expernum == 3) {  // for CCL3 get delta Temperature and delta Sea Level
                         // from ice code/ sea bed core data
     PetscScalar TsChange, seaLevelChange;
-    ierr = dTforcing.updateFromStandardIceCoreData(grid.p->year,&TsChange); CHKERRQ(ierr);
-    ierr = dSLforcing.updateFromStandardIceCoreData(grid.p->year,&seaLevelChange); CHKERRQ(ierr);
+    ierr = dTforcing.updateFromCoreClimateData(grid.p->year,&TsChange); CHKERRQ(ierr);
+    ierr = dSLforcing.updateFromCoreClimateData(grid.p->year,&seaLevelChange); CHKERRQ(ierr);
     ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
     ierr = VecShift(vbed,bedDiff - seaLevelChange); CHKERRQ(ierr);
     bedDiff = seaLevelChange;
@@ -221,7 +227,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
 
 
 PetscErrorCode IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val) {
-  //EISMINT surface temperature model
+  // EISMINT-Greenland surface temperature model
   PetscScalar Z = PetscMax(h, 20 * (lat - 65));
   *val = 49.13 - 0.007992 * Z - 0.7576 * (lat);
   return 0;
@@ -231,7 +237,7 @@ PetscErrorCode IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat, 
 PetscScalar IceGRNModel::getSummerWarming(
        const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const {
   // this is virtual in IceModel
-  // EISMINT summer surface temperature model (expressed as warming above mean annual)
+  // EISMINT-Greenland summer surface temperature model (expressed as warming above mean annual)
   // Ta, Ts in degrees C; Ta is mean annual, Ts is summer peak
   const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
   return Ts - Ta;

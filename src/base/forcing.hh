@@ -36,8 +36,8 @@ For now, when using pgrn, for each of the -dTforcing and -dSLforcing options, a 
 #define DATA1D_CONST_PIECE_BCK_INTERP  1
 #define DATA1D_LINEAR_INTERP           2
 
-// Class for reading and storing one-dimensional data on each processor.
-/* This class is a general facility for reading one-dimensional data from a
+//! Class for reading and storing one-dimensional data on each processor.
+/*! This class is a general facility for reading one-dimensional data from a
     NetCDF file and putting a copy of it on each processor, and for accessing it
     either by integer index or by giving the value of the independent variable and
     interpolating.
@@ -73,21 +73,26 @@ private:
 };
 
 
-// codes for datatype in call to IceSheetForcing::readStandardClimateData()
+// codes for datatype in call to IceSheetForcing::readCoreClimateData()
 #define ISF_DELTA_T          0
 #define ISF_DELTA_SEA_LEVEL  1
 
+//! Class for reading and storing data ice or seabed core climate data from NetCDF file.
+/*! This derived class of Data1D maintains an additional index into the time series data
+    based on a current year.  The method updateFromCoreClimateData() returns the change in 
+    value from the previous value.
+ */
 class IceSheetForcing : public Data1D {
 public:
   IceSheetForcing();
   ~IceSheetForcing();
   
-  PetscErrorCode readStandardIceCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
+  PetscErrorCode readCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
                              int ncid, PetscScalar curr_year, PetscInt datatype);
-  PetscErrorCode updateFromStandardIceCoreData(PetscScalar curr_year, PetscScalar *change);
+  PetscErrorCode updateFromCoreClimateData(PetscScalar curr_year, PetscScalar *change);
 
 protected:
-  PetscErrorCode initStandardIceCoreIndex(PetscScalar curr_year);
+  PetscErrorCode initIndexCoreClimateData(PetscScalar curr_year);
   PetscInt     index;
   Vec          vtimeinyears;
   PetscTruth   forcingActive;

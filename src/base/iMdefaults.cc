@@ -57,7 +57,6 @@ const PetscScalar IceModel::DEFAULT_BED_VALUE_MISSING = -5000.0;
 const PetscScalar IceModel::DEFAULT_ACCUM_VALUE_MISSING = -0.5/ secpera;
 const PetscScalar IceModel::DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
 const PetscScalar IceModel::DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
-const PetscScalar IceModel::DEFAULT_ACCUMULATION_IN_OCEAN0 = -20.0 / secpera;   // -20.0 m/a
 
 //used in iMvelocity.C
 const PetscScalar IceModel::DEFAULT_MINH_SSA = 10.0;  // m; minimum thickness for SSA velocity computation
@@ -93,10 +92,11 @@ const PetscScalar IceModel::DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
      //                    - (49.13 - 0.007992 * 1000.0 -0.7576 * 75.0)
      //                   =  15.32   K
      // is result of EISMINT-GREENLAND formulas for h=1000.0 m and lat=75.0 deg N
+const PetscScalar IceModel::DEFAULT_PDD_SUMMER_PEAK_DAY = 243.0;  //  Julian day; August 1st
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
-const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 60.0;
+const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 10.0;
 const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
@@ -119,7 +119,7 @@ const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3.0;
 
 const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
-const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 100.0;
+const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 10.0;  // model is so cheap you might as well update frequently
 
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 

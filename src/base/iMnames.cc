@@ -58,7 +58,7 @@ const titleNname IceModel::tn[] = {
 {}, // '>'
 {}, // '?'
 {}, // '@'
-{}, // 'A'
+{"snow accumulation rate (ice equivalent m/a)", "snow_accum_pera"}, // 'A'
 {"log(beta) (drag coeff; log_10(Pa s m^-1))", "log_beta"}, // 'B'
 {"tau_c (till yield stress; kPa)", "tau_c"}, // 'C'
 {"D (diffusivity; m^2/s)", "D"}, // 'D'

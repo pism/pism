@@ -22,6 +22,14 @@
 #include "nc_util.hh"
 #include "iceModel.hh"
 
+
+int nc_check(int stat) {
+  if (stat)
+    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
+  return 0;
+}
+
+
 int check_err(const int stat, const int line, const char *file) {
   if (stat != NC_NOERR) {
     (void) fprintf(stderr, "line %d of %s: %s\n", line, file, nc_strerror(stat));

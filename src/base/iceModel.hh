@@ -110,7 +110,6 @@ protected:
    static const PetscScalar DEFAULT_ACCUM_VALUE_MISSING;
    static const PetscScalar DEFAULT_SURF_TEMP_VALUE_MISSING;
    static const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING;
-   static const PetscScalar DEFAULT_ACCUMULATION_IN_OCEAN0;
 
   //used in iMvelocity.cc, iMsia.cc, iMssa.cc
    static const PetscScalar DEFAULT_MINH_SSA;  // m; minimum thickness for SSA velocity computation
@@ -271,14 +270,12 @@ protected:
   // see iMIOnetcdf.cc
   PetscErrorCode putTempAtDepth();
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
-  PetscErrorCode nc_check(int stat);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero, MaskInterp masktool);
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
-  PetscErrorCode setAccumInOcean();
   PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMIOlegacy.cc
@@ -321,23 +318,25 @@ protected:
   // see iMpdd.cc (positive degree day model for ablation)
   gsl_rng     *pddRandGen;
   PetscTruth  doPDD, doPDDTrueRand, pddStuffCreated, pddRandStuffCreated;
-  PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, pddSummerWarming;
+  PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, 
+              pddSummerWarming, pddSummerPeakDay;
   static const PetscScalar DEFAULT_PDD_STD_DEV;
   static const PetscScalar DEFAULT_PDD_FACTOR_SNOW;
   static const PetscScalar DEFAULT_PDD_FACTOR_ICE;
   static const PetscScalar DEFAULT_PDD_REFREEZE_FRAC;
   static const PetscScalar DEFAULT_PDD_SUMMER_WARMING;
+  static const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY;
   PetscErrorCode initPDDFromOptions();
-  PetscErrorCode setMaxdtTempPDD();
-  bool           IsIntegralYearPDD();
-  virtual PetscScalar getTemperatureFromYearlyCycle(
-                  const PetscScalar summer_warming, const PetscScalar Ta, const PetscScalar day) const;
-  virtual PetscScalar getSummerWarming(
-                  const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const;
   PetscErrorCode updateNetAccumFromPDD();
   PetscErrorCode putBackSnowAccumPDD();
   PetscErrorCode PDDCleanup();
   double         CalovGreveIntegrand(const double T);
+  virtual PetscScalar getTemperatureFromYearlyCycle(
+                  const PetscScalar summer_warming, const PetscScalar Ta, const PetscScalar day) const;
+  virtual PetscScalar getSummerWarming(
+                  const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const;
+  virtual double getSurfaceBalanceFromSnowAndPDD(
+                     const double snowrate, const double mydt, const double pdds);
 
   // see iMreport.cc
   // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()

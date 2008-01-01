@@ -32,7 +32,9 @@ struct LocalInterpCtx {
   int ncid;
 };
 
+int nc_check(int stat);
 int check_err(const int stat, const int line, const char *file);
+
 PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
                              DA da, Vec v, Vec g, const int *s, const int *c,
                              int dims, void *a_mpi, int a_size);

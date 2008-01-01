@@ -104,9 +104,9 @@ PetscErrorCode IceModel::createViewers() {
     return 0;
 
   PetscErrorCode ierr;
-  const int nv = 45; // number of viewers in use
+  const int nv = 46; // number of viewers in use
   char viewsInUse[nv] = {'0','1','2','3','4','5',
-                         'B','C','D','E','F','G','H','L','Q','R','S',
+                         'A','B','C','D','E','F','G','H','L','Q','R','S',
                                  'T','U','V','X','Y','Z',
                          'a','b','c','e','f','g','h','i','j','l',
                                  'm','n','p','q','r','s','t','u','v','x',
@@ -397,6 +397,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('4', vub, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
+  ierr = update2DViewer('A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, secpera); CHKERRQ(ierr);
   ierr = updateLog2DViewer('B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = update2DViewer('C', vtauc, 0.001); CHKERRQ(ierr); // display in kPa
   ierr = updateSliceViewer('E', vtau, 1.0/secpera); CHKERRQ(ierr); // display in years

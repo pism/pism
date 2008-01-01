@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2007 Ed Bueler and Nathan Shemonski
 //
 // This file is part of PISM.
 //
@@ -19,21 +19,11 @@
 #include <ctime>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf.h>       // for erfc()
+#include <gsl/gsl_sf.h>       // for erfc() in CalovGreveIntegrand()
 #include <petscda.h>
 #include "iceModel.hh"
 
-// implementation of default positive degree day model for melting
-// note defaults "DEFAULT_PDD_..." are defined in iMdefaults.cc
-
-// "Calov-Greve" method from R Calov and R Greve (2005), "Correspondence: A semi-analytical 
-// solution for the positive degree-day model with stochastic temperature variations,"
-// J. Glaciol. 51 (172), pp 173--175.
-
-// FIXME:
-//   3. for EISMINT-GREENLAND, summer_warming = Ts - Ta is *not* constant;
-//      need alternative determined from flag?
-
+//! Initialize the positive degree day (PDD) model, either deterministic (the default) or actually stochastic.
 PetscErrorCode IceModel::initPDDFromOptions() {
   PetscErrorCode  ierr;
 
@@ -43,16 +33,13 @@ PetscErrorCode IceModel::initPDDFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_rand_repeatable", &pddRepeatableSet); CHKERRQ(ierr);
 
   // if any of the above options are turned on, then a PDD model will be used
-  doPDDTrueRand = PETSC_FALSE;
-  if ( (pddRandSet == PETSC_TRUE) || (pddRepeatableSet == PETSC_TRUE) ) {
-    doPDDTrueRand = PETSC_TRUE;
-  }
   if ( (doPDD == PETSC_TRUE) || (pddSet == PETSC_TRUE) || (doPDDTrueRand == PETSC_TRUE) ) {
     doPDD = PETSC_TRUE;
   } else {
     doPDD = PETSC_FALSE;
   }
 
+  doPDDTrueRand = PETSC_FALSE;
 
   if (doPDD == PETSC_TRUE) {
 
@@ -65,9 +52,9 @@ PetscErrorCode IceModel::initPDDFromOptions() {
     }
 
     if ( (pddRandSet == PETSC_TRUE) || (pddRepeatableSet == PETSC_TRUE) ) {
+      doPDDTrueRand = PETSC_TRUE;
       if (pddRandStuffCreated == PETSC_TRUE) {
-        SETERRQ(2, 
-          "ERROR: initPDDFromOptions() called with -pdd_rand[_repeatable] pddRandStuffCreated == TRUE\n");
+        SETERRQ(2, "ERROR: initPDDFromOptions() called with -pdd_rand and pddRandStuffCreated == TRUE\n");
       }
       // initialize the random number generator: use GSL's recommended default random
       // number generator, which seems to be "mt19937" and is DIEHARD
@@ -78,45 +65,24 @@ PetscErrorCode IceModel::initPDDFromOptions() {
       pddRandStuffCreated = PETSC_FALSE;
     }
 
+    // see iMdefaults.cc for values of DEFAULT_PDD_...
     pddFactorSnow = DEFAULT_PDD_FACTOR_SNOW;
     pddFactorIce = DEFAULT_PDD_FACTOR_ICE;
     pddRefreezeFrac = DEFAULT_PDD_REFREEZE_FRAC;
+    pddSummerPeakDay = DEFAULT_PDD_SUMMER_PEAK_DAY;
     pddSummerWarming = DEFAULT_PDD_SUMMER_WARMING;
     pddStdDev = DEFAULT_PDD_STD_DEV;
+
     PetscTruth   pSet;
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_snow", &pddFactorSnow, &pSet); CHKERRQ(ierr);
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_ice", &pddFactorIce, &pSet); CHKERRQ(ierr);
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_refreeze", &pddRefreezeFrac, &pSet); CHKERRQ(ierr);
-    ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_summer_warming", &pddSummerWarming, &pSet); CHKERRQ(ierr);
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_std_dev", &pddStdDev, &pSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_summer_peak_day", &pddSummerPeakDay, &pSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_summer_warming", &pddSummerWarming, &pSet); CHKERRQ(ierr);
   }
   
   return 0;
-}
-
-
-PetscErrorCode IceModel::setMaxdtTempPDD() {
-
-  if (doPDDTrueRand == PETSC_TRUE) {  // for PDD based on randomness, go to next integral year
-    PetscScalar   mydt;
-    if (grid.p->year < 0) {
-      mydt = fmod(fabs(grid.p->year), 1.0) * secpera;
-    } else {
-      mydt = (1.0 - fmod(fabs(grid.p->year), 1.0)) * secpera;
-    }
-    maxdt_temporary = (maxdt_temporary < 0.0) ? mydt : PetscMin(maxdt_temporary,mydt);
-  }
-  return 0;
-}
-
-
-bool IceModel::IsIntegralYearPDD() {
-
-  if (doPDDTrueRand == PETSC_TRUE) {  // for PDD based on randomness,
-    return ((fmod(grid.p->year, 1.0) + 5e-6) < 1e-5); // return boolean for whether current year is integral
-  } else {
-    return true; // if default Calov-Greve model, will always compute PDD from integral
-  }
 }
 
 
@@ -157,10 +123,29 @@ PetscScalar IceModel::getTemperatureFromYearlyCycle(
   // NOTE: Ta = mean annual temperature (at location on surface) in degrees C
   //       summer_warming = difference between peak summer temperature and Ta
   //       day = day on 365.0 day calendar
-  const PetscScalar  summer_offset  = 243.0; // approximately August 1st
-  const PetscScalar  rad_per_day    = 2.0 * PETSC_PI / 365.0;  // treat year as exactly 365 days
-  const PetscScalar  days_from_summer = day - summer_offset;
-  return summer_warming * cos(rad_per_day * days_from_summer) + Ta;
+  const PetscScalar  rad_per_day    = 2.0 * PETSC_PI / 365.24;
+  return summer_warming * cos(rad_per_day * (day - pddSummerPeakDay)) + Ta;
+}
+
+
+double IceModel::getSurfaceBalanceFromSnowAndPDD(
+                     const double snowrate, const double mydt, const double pdds) {
+
+  if (snowrate < 0.0) {
+    return snowrate - (pdds * pddFactorIce / mydt);  // snowrate interpreted as ablation
+  } else {
+    const PetscScalar snow = snowrate * mydt;  // units of m of ice-equivalent (in time mydt)
+    const PetscScalar snow_melted = pdds * pddFactorSnow;  // m of ice-equivalent
+    if (snow_melted <= snow) {  // this case is never active if snowrate < 0
+      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / mydt;
+    } else { // it is snowing, but all the snow melts and refreezes; this ice is
+             // then removed, plus possibly more of the underlying ice
+      const PetscScalar ice_created = snow * pddRefreezeFrac;
+      const PetscScalar excess_pdds = pdds - (snow / pddFactorSnow); // definitely positive
+      const PetscScalar ice_melted = excess_pdds * pddFactorIce;
+      return (ice_created - ice_melted) / mydt;
+    }
+  }
 }
 
 
@@ -173,126 +158,93 @@ double IceModel::CalovGreveIntegrand(const double T) {
 }
 
 
+//! Compute the surface mass balance from the PDD model and the stored map of snow rate. 
+/*!
+PISM implements two positive degree day models for computing surface mass balance from a stored 
+map of snow fall rate.  There is a deterministic default method and an actually random (stochastic) method.  
+Both methods conceptually include daily variability according to a normally distributed random temperature 
+change whose standard deviation can be controlled by option <tt>-pdd_std_dev</tt>.  The deterministic method
+computes only the expected amount of melting, while the stochastic method uses pseudo-random numbers to
+simulate the melting.
+
+Both models implement the basic positive degree day scheme described in C. Ritz, 
+"EISMINT Intercomparison Experiment: Comparison of existing Greenland models,"
+<tt>http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html</tt>, 1997.
+
+PISM assumes a yearly temperature cycle with average surface temperature determined by the
+2D Vec <tt>vTs</tt>.  The default has a constant choice for summer warming, the difference
+between the peak summer temperature and the mean of the yearly cycle.  That is, the daily mean 
+temperature is
+   \f[T(t) = Ts[i][j] + A \cos(2\pi (t - B) / 365.24)\f]
+where \f$t\f$ gives the Julian day, \f$A\f$ is the number of degrees of summer warming and \f$B\f$ is the
+Julian day of the peak summer temperature.
+
+The amount of summer warming can also be a function of elevation, latitude, and mean annual surface 
+temperature.  The derived class <tt>IceGRNModel</tt> includes an example.
+
+The date of peak summer warming can be controlled by option <tt>-pdd_summer_peak</tt> with a given Julian day.
+The magnitude of the yearly cycle by <tt>-pdd_summer_warming</tt> with a temperature change in degrees C.
+
+PISM uses a constant rate of melting for snow, per positive degree day.  It is controlled by option
+<tt>-pdd_factor_snow</tt>.  A fraction of the melted snow refreezes; the fraction is controlled by
+<tt>-pdd_refreeze</tt>.  If the rate of snowfall is negative then the rate is interpreted as an ice-equivalent 
+(direct) ablation rate.  If the number of positive degree days exceeds those needed to melt all of the
+snow then the excess number are used to melt both the ice that came from refreeze and perhaps ice which is
+already present.  In either case, ice melts at a constant rate per positive degree day, and this rate can be
+controlled by option <tt>-pdd_factor_ice</tt>.
+
+The default model only computes the expected number of positive degree days, so it is deterministic.  
+It is chosen by option <tt>-pdd</tt>.  For more detail, see R. Calov and R. Greve (2005),
+"Correspondence: A semi-analytical solution for the positive degree-day model with stochastic 
+temperature variations," J. Glaciol. 51 (172), pp 173--175.
+
+The alternative method, chosen by either <tt>-pdd_rand</tt> or <tt>-pdd_rand_repeatable</tt>, computes
+a pseudorandom amount of temperature change for each day at each grid point.  The random amount of daily
+variablility is independent and normally distributed.  (Clearly a more realistic pattern for the 
+variability would have correlation with some spatial range and some temporal range.)
+ */
 PetscErrorCode IceModel::updateNetAccumFromPDD() {
   PetscErrorCode ierr;
 
-  // do nothing if PDD not turned on
-  if (doPDD == PETSC_FALSE)  return 0;
+  PetscScalar **accum, **Ts, **snow_accum, **h, **lat;
+  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
 
-  // do nothing if PDD random model turned on but its not an integral year
-//  if ((doPDDTrueRand == PETSC_TRUE) && (IsIntegralYearPDD() == false))  return 0;
+  const PetscScalar     start = grid.p->year - dt / secpera;  // note grid.p->year has *end* of step
+  const PetscScalar     startday = 365.24 * (start - floor(start));
 
-  if (doPDDTrueRand == PETSC_TRUE) {
+  // set up for Calov-Greve method; use Simpson's rule to do integral; therefore number
+  // of evaluations of integrand always odd; at least 13 evals per year; at least 3 in any case:
+  PetscInt              pddsumcount = 12 * ((int) ceil(dt / secpera)) + 1;
+  if (pddsumcount < 3)  pddsumcount = 3;
+  const PetscScalar     pddsumstep = dt / pddsumcount;     // seconds
+  const PetscScalar     pddsumstepdays = (365.24 / secpera) * pddsumstep; // days
 
-    //  verbPrintf(1,grid.com," true=%d, false=%d, doPDD=%d, doPDDTrueRand=%d, IsIntegralYearPDD()=%d\n",
-    //             PETSC_TRUE, PETSC_FALSE, doPDD, doPDDTrueRand, IsIntegralYearPDD());
+  // set up for actually stochastic model
+  const PetscInt        intstartday = (int) ceil(startday);
+  const PetscInt        num_days = (int) ceil(365.24 * (dt / secpera));
 
-/*
-    // Calculate and store a random number for each day in the year. 
-    // The same numbers will be used for all points on the grid
-    // Note option -pdd_rand_repeatable sets pddRandGen to fixed value at start of run
-    PetscScalar rand_values[365];
-    if (pddStdDev > 0.0) {
-      for (int day=0; day<365; day++) {
-        rand_values[day] = (PetscScalar) gsl_ran_gaussian(pddRandGen, pddStdDev);
-      }
-    } else { // no need to waste time generating random numbers
-      for (int day=0; day<365; day++) {
-        rand_values[day] = 0.0;
-      }
-    }
+  // run through (processor owned) grid and compute PDDs and then surface balance at each point
+  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar mean_annual = Ts[i][j] - ice.meltingTemp;  // in deg C
+      const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
 
-    //  verbPrintf(1,grid.com," rand_values[0..3] = %f %f %f %f\n",
-    //               rand_values[0],rand_values[1],rand_values[2],rand_values[3]);
-*/
-               
-    // compute net accumulation vAccum using surface temperature vTs and PDD model
-    PetscScalar **accum, **Ts, **snow_accum, **h, **lat;
-    ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-
-    const PetscScalar   start = grid.p->year - dt / secpera;  // note grid.p->year has *end* of step
-    const PetscInt      intstartday = (int) ceil(365.24 * (start - floor(start)));
-    const PetscInt      num_days = (int) ceil(365.24 * (dt / secpera));
-
-    PetscScalar temp, summer_warming;
-    for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-        PetscScalar pdd_sum = 0.0;  // units of day^-1 K-1
-        
-//        for (PetscInt day=0; day<365; day++){ // compute # of pos deg day
+      PetscScalar pdd_sum = 0.0;  // units of day^-1 (deg C)-1
+      
+      // use one of the two methods for computing the number of positive degree days
+      // at the given i,j grid point for the duration of time step (=dt)
+      if (doPDDTrueRand == PETSC_TRUE) { // actually stochastic
         for (PetscInt day = intstartday; day < num_days; day++){ // compute # of pos deg day
-          summer_warming = getSummerWarming(h[i][j],lat[i][j],Ts[i][j]-ice.meltingTemp);
-          temp = getTemperatureFromYearlyCycle(summer_warming,Ts[i][j]-ice.meltingTemp,
-                                               (PetscScalar) day);
+          PetscScalar temp = getTemperatureFromYearlyCycle(summer_warming, mean_annual, 
+                                                           (PetscScalar) day);
           temp += (PetscScalar) gsl_ran_gaussian(pddRandGen, pddStdDev);
-          //temp += rand_values[day];
-          if (temp > 0.0) {
-            pdd_sum += temp;
-          }
+          if (temp > 0.0)   pdd_sum += temp;
         }
-        //const PetscScalar dt_pdd = secpera;  // this random model only runs once per year
-        const PetscScalar dt_pdd = dt;
-        const PetscScalar snow = snow_accum[i][j] * dt_pdd;  // units of m of ice-equivalent (in a year)
-        const PetscScalar snow_melted = pdd_sum * pddFactorSnow;  // ditto
-        if (snow_melted <= snow) {  // this case is never active if snow_accum[i][j] < 0; e.g. rain
-          accum[i][j] = ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt_pdd;
-        } else {
-          const PetscScalar excess_pdd_sum = pdd_sum - (snow / pddFactorSnow);
-          const PetscScalar ice_melted = excess_pdd_sum * pddFactorIce;
-          accum[i][j] = - ice_melted / dt_pdd;
-        }
-
-
-/*
-      if ((i == id) && (j == jd)) {
-        verbPrintf(1,grid.com,
-              "at id,jd:  h = %8.2f, Ts = %8.2f, pdd_sum = %8.2f, snow_accum = %8.4f, accum = %8.4f\n"
-              "           num_days = %d, intstartday = %d,\n",
-              h[id][jd],Ts[id][jd],pdd_sum,snow_accum[id][jd]*secpera,accum[id][jd]*secpera,
-              num_days, intstartday);
-      }
-*/
-
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-    
-  } else {
-  
-    // usual case: use Calov-Greve method
-    PetscScalar **accum, **Ts, **snow_accum, **h, **lat;
-    ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-    // use Simpson's rule to do integral; therefore number of evaluations of integrand always odd; 
-    // at least 13 evals per year; at least 3 in any case:
-    PetscInt              pddsumcount = 12 * ((int) ceil(dt / secpera)) + 1;
-    if (pddsumcount < 3)  pddsumcount = 3;
-    const PetscScalar     pddsumstep = dt / pddsumcount;     // seconds
-    const PetscScalar     pddsumstepdays = (365.24 / secpera) * pddsumstep; // days
-    const PetscScalar     start = grid.p->year - dt / secpera;  // note grid.p->year has *end* of step
-    const PetscScalar     startday = 365.24 * (start - floor(start));
-    
-//    ierr = verbPrintf(1,grid.com,
-//            "\npddsumcount = %d, pddsumstep = %6.0f s = %6.5f a = %6.1f days, startday = %6.1f\n",
-//            pddsumcount,pddsumstep,pddsumstep/secpera,pddsumstepdays,startday); CHKERRQ(ierr);
-
-    for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-
-        const PetscScalar mean_annual = Ts[i][j] - ice.meltingTemp;  // in deg C
-        const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
-        PetscScalar pdd_sum = 0.0;  // units of day^-1 (deg C)^-1
+      } else { // default Calov-Greve method; apply Simpson's rule for integral
         for (PetscInt m = 0; m < pddsumcount; ++m) {
           PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
           if (m == 0)  coeff = 1.0;   if (m == (pddsumcount - 1))  coeff = 1.0;
@@ -301,37 +253,27 @@ PetscErrorCode IceModel::updateNetAccumFromPDD() {
           pdd_sum += coeff * CalovGreveIntegrand(temp);
         }
         pdd_sum = pdd_sum * (pddsumstepdays / 3.0);
-
-        const PetscScalar snow = snow_accum[i][j] * dt;  // units of m of ice-equivalent
-        const PetscScalar snow_melted = pdd_sum * pddFactorSnow;  // m of ice-equivalent
-        if (snow_melted <= snow) {  // note this case is never active if snow_accum[i][j] < 0; e.g. rain
-          accum[i][j] = ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt;
-        } else { // in this case more snow melted than fell, so some additional (old) ice also melted
-          const PetscScalar excess_pdd_sum = pdd_sum - (snow / pddFactorSnow);
-          const PetscScalar ice_melted = excess_pdd_sum * pddFactorIce;  // m of ice-equivalent
-          accum[i][j] = - ice_melted / dt;
-        }
-
-/*
-        if ((i == id) && (j == jd)) {
-          verbPrintf(1,grid.com,
-                "at id,jd:  h = %8.2f, Ts = %8.2f, pdd_sum = %8.2f, snow_accum = %8.4f,\n"
-                "           accum = %8.4f, snow = %8.4f, snow_melted = %8.4f\n",
-                h[id][jd],Ts[id][jd],pdd_sum,snow_accum[id][jd]*secpera,accum[id][jd]*secpera,
-                snow, snow_melted);
-        }
-*/
-
       }
-    }
-    ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
 
+      // now that we have number of PDDs, compute mass balance from snow rate
+      accum[i][j] = getSurfaceBalanceFromSnowAndPDD(snow_accum[i][j], dt, pdd_sum);
+
+      if ((i == id) && (j == jd)) {
+        ierr = verbPrintf(4,grid.com,
+              "\nat id,jd:  h = %6.2f, Ts = %5.2f, pdd_sum = %5.2f, snow_accum = %5.4f,\n"
+              "           accum = %5.4f, num_days = %d, intstartday = %d\n",
+              h[id][jd],Ts[id][jd],pdd_sum,snow_accum[id][jd]*secpera,accum[id][jd]*secpera,
+              num_days, intstartday); CHKERRQ(ierr);
+      }
+
+    }
   }
 
+  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   return 0;
 }
 

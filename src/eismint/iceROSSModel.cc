@@ -23,6 +23,7 @@
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "../base/forcing.hh"
+#include "../base/nc_util.hh"
 #include "iceROSSModel.hh"
 
 

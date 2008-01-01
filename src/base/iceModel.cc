@@ -584,9 +584,6 @@ PetscErrorCode IceModel::run() {
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
     
-    // set maxdt_temporary if needed by random PDD method
-//    ierr = setMaxdtTempPDD(); CHKERRQ(ierr);
-    
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (doPlasticTill == PETSC_TRUE) {
       ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);

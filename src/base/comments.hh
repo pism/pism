@@ -35,7 +35,7 @@
  * about source code files as text files and generally ignors their semantics.
  *
  * <i>
- * Copyright (C) 2007 Ed Bueler
+ * Copyright (C) 2008 Ed Bueler
  *
  * This document is part of PISM.
  *
@@ -71,10 +71,9 @@
  * doxygen (http://www.doxygen.org/) from comments in the PISM source code.
  *
  * This Manual documents the \em continuum \em models and the \em numerical
- * \em methods in PISM.  It is restricted to documenting the three classes MaterialType
- * (and its derived classes), IceGrid (and its associated class IceParam), and the main
- * PISM class IceModel.  The source files from which this Manual is drawn are limited to 
- * files in the <tt>pism/src/base/</tt> subdirectory.  By contrast, the source 
+ * \em methods in PISM.  It is restricted to documenting the classes which are
+ * also documented in the user manual.  Most of the source files from which this Manual
+ * is created are in the <tt>pism/src/base/</tt> subdirectory.  By contrast, the source 
  * code browser describes all the classes, class members, and source files in PISM.
  *
  * Most users should start with the PISM User's Manual
@@ -84,7 +83,7 @@
  * for help with installing and using PISM.
  *
  * <i>
- * Copyright (C) 2007 Ed Bueler
+ * Copyright (C) 2008 Ed Bueler
  *
  * This document is part of PISM.
  *

@@ -65,12 +65,23 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &mybedDeflc); CHKERRQ(ierr);  
-  if (mybedDeflc == PETSC_TRUE)   doBedIso = PETSC_FALSE;
-
   ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &mydoBedIso); CHKERRQ(ierr);
-  if (mydoBedIso == PETSC_TRUE)   doBedIso = PETSC_TRUE;
-  if ((doBedIso == PETSC_TRUE) || (mybedDeflc == PETSC_TRUE))    doBedDef = PETSC_TRUE;
+  if (mydoBedIso == PETSC_TRUE) {
+    doBedDef = PETSC_TRUE;
+    doBedIso = PETSC_TRUE;
+  }
+
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &mybedDeflc); CHKERRQ(ierr);  
+  if (mybedDeflc == PETSC_TRUE) {
+    doBedDef = PETSC_TRUE;
+    doBedIso = PETSC_FALSE;
+  }
+
+  if ((mydoBedIso == PETSC_TRUE) && (mybedDeflc == PETSC_TRUE))  {
+    ierr = verbPrintf(1,grid.com,
+       "WARNING: both options -bed_def_iso and -bed_def_lc set; using Lingle & Clark model\n");
+       CHKERRQ(ierr);
+  }
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;

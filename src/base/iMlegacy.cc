@@ -155,7 +155,7 @@ PetscErrorCode IceModel::createMask_legacy(PetscTruth balVelRule) {
         case 0:
           mask[i][j] = MASK_FLOATING_OCEAN0;
           // FIXME: this ablation mechanism should be replaced by ocean model
-          accum[i][j] = DEFAULT_ACCUMULATION_IN_OCEAN0;
+          accum[i][j] = -20.0 / secpera;
           break;
         case 2:
           mask[i][j] = MASK_FLOATING;

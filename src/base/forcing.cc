@@ -21,14 +21,8 @@
 #include <netcdf.h>
 // next is only needed for verbPrintF()
 #include "iceModelpreamble.hh"
+#include "nc_util.hh"
 #include "forcing.hh"
-
-PetscErrorCode nc_check(int stat) {
-  if (stat)
-    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
-  return 0;
-}
-
 
 Data1D::Data1D() {
   vecsAllocated = PETSC_FALSE;
@@ -271,7 +265,7 @@ IceSheetForcing::~IceSheetForcing() {
 }
 
 
-PetscErrorCode IceSheetForcing::readStandardIceCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
+PetscErrorCode IceSheetForcing::readCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
         int ncid, PetscScalar curr_year, PetscInt datatype) {
   PetscErrorCode ierr;
   
@@ -288,12 +282,12 @@ PetscErrorCode IceSheetForcing::readStandardIceCoreClimateData(MPI_Comm mycom, P
   // times are positive (years b.p.) in data; change to negative (years *after* present)
   vtimeinyears = vindep;
   ierr = VecScale(vtimeinyears,-1.0); CHKERRQ(ierr);
-  ierr = initStandardIceCoreIndex(curr_year); CHKERRQ(ierr);
+  ierr = initIndexCoreClimateData(curr_year); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode IceSheetForcing::initStandardIceCoreIndex(PetscScalar curr_year) {
+PetscErrorCode IceSheetForcing::initIndexCoreClimateData(PetscScalar curr_year) {
   PetscErrorCode ierr;
   PetscInt       len;
   PetscScalar    *timeinyears;
@@ -330,7 +324,7 @@ PetscErrorCode IceSheetForcing::initStandardIceCoreIndex(PetscScalar curr_year) 
 }
 
 
-PetscErrorCode IceSheetForcing::updateFromStandardIceCoreData(PetscScalar curr_year, PetscScalar *change) {
+PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year, PetscScalar *change) {
   PetscErrorCode ierr;
   PetscScalar *timeinyears, *data;
   PetscInt    len;

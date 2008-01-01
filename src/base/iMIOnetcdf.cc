@@ -130,33 +130,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
 }
 
 
-PetscErrorCode IceModel::setAccumInOcean() {
-  PetscErrorCode ierr;
-  PetscScalar **mask, **accum;
-
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask[i][j] == MASK_FLOATING_OCEAN0) {
-        accum[i][j] = DEFAULT_ACCUMULATION_IN_OCEAN0;
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  // no communication needed for accum
-  return 0;
-}
-
-
-PetscErrorCode IceModel::nc_check(int stat) {
-  if (stat)
-    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
-  return 0;
-}
-
-
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   int stat;
@@ -259,36 +232,33 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = getFirstLast(ncid, v_x, &first, &last); CHKERRQ(ierr);
     x_scale = (last - first) / 2.0;
   } else {
-    ierr = verbPrintf(2, grid.com,"  WARNING: variable x(x) not found in bootstrap file."
-         " Proceeding with default interval [-Lx,Lx] = [-%f,%f]\n",x_scale,x_scale); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com,"  WARNING: variable x(x) not found in bootstrap file.\n");
+             CHKERRQ(ierr);
   }
   if (yExists) {
     ierr = getFirstLast(ncid, v_y, &first, &last); CHKERRQ(ierr);
     y_scale = (last - first) / 2.0;
   } else {
-    ierr = verbPrintf(2, grid.com,"  WARNING: variable y(y) not found in bootstrap file."
-         " Proceeding with default interval [-Ly,Ly] = [-%f,%f]\n",y_scale,y_scale); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com,"  WARNING: variable y(y) not found in bootstrap file.\n");
+             CHKERRQ(ierr);
   }
-  ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
+
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
   PetscTruth LxSet, LySet, LzSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &x_scale, &LxSet); CHKERRQ(ierr);
-  if (LxSet == PETSC_TRUE) {
-    ierr = grid.rescale(x_scale*1000.0, grid.p->Ly, grid.p->Lz); CHKERRQ(ierr);
-  }  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &y_scale, &LySet); CHKERRQ(ierr);
-  if (LySet == PETSC_TRUE) {
-    ierr = grid.rescale(grid.p->Lx, y_scale*1000.0, grid.p->Lz); CHKERRQ(ierr);
-  }  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &z_scale, &LzSet); CHKERRQ(ierr);
-  if (LzSet == PETSC_TRUE) {
-    ierr = grid.rescale(grid.p->Lx, grid.p->Ly, z_scale); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, 
-         "  using default value Lz=%f for vertical extent of computational box for ice\n",
-         z_scale); CHKERRQ(ierr);
-  }
+  PetscScalar  x_scale_in, y_scale_in, z_scale_in;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &x_scale_in, &LxSet); CHKERRQ(ierr);
+  if (LxSet == PETSC_TRUE)   x_scale = x_scale_in * 1000.0;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &y_scale_in, &LySet); CHKERRQ(ierr);
+  if (LySet == PETSC_TRUE)   y_scale = y_scale_in * 1000.0;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &z_scale_in, &LzSet); CHKERRQ(ierr);
+  if (LzSet == PETSC_TRUE)   z_scale = z_scale_in;
+    
+  ierr = verbPrintf(2, grid.com, 
+         "  rescaling computational box *for ice* from defaults, -bif file, and user options\n"
+         "     to dimensions [-%7.2f km,%7.2f km] x [-%7.2f km,%7.2f km] x [0 m,%7.2f m]\n",
+         x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
+  ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
   // COMMENT FIXME:  Next block of code uses a sequential Vec ("vzero") on processor 
   //   zero to take a NetCDF variable, which is a one-dimensional array representing 
@@ -392,10 +362,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
             "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
             CHKERRQ(ierr);
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com, 
-             "  setting accumulation in ice shelf-free ocean to default value %6.2f m/a\n",
-             DEFAULT_ACCUMULATION_IN_OCEAN0 * secpera); CHKERRQ(ierr);
-  ierr = setAccumInOcean(); CHKERRQ(ierr);
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 

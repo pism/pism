@@ -105,7 +105,11 @@ while True:
     if (len(year) > 1):
       step.append(year[-1] - year[-2])
     for j in range(Nnames):
-      vals[j].append(float(tokens[2 + j]))
+      samepos = tokens[2 + j].find('<same>')
+      if samepos >= 0:
+        vals[j].append(vals[j][-1])
+      else:
+        vals[j].append(float(tokens[2 + j]))
     count = count + 1
 print ' ' + str(count) + ' summary lines read'
 infile.close()
