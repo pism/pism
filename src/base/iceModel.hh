@@ -327,14 +327,14 @@ protected:
   static const PetscScalar DEFAULT_PDD_SUMMER_WARMING;
   static const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY;
   PetscErrorCode initPDDFromOptions();
-  PetscErrorCode updateNetAccumFromPDD();
+  PetscErrorCode updateSurfaceBalanceFromPDD();
   PetscErrorCode putBackSnowAccumPDD();
   PetscErrorCode PDDCleanup();
-  double         CalovGreveIntegrand(const double T);
+  double         CalovGreveIntegrand(const double Tac);
   virtual PetscScalar getTemperatureFromYearlyCycle(
-                  const PetscScalar summer_warming, const PetscScalar Ta, const PetscScalar day) const;
+                  const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day) const;
   virtual PetscScalar getSummerWarming(
-                  const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const;
+                  const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) const;
   virtual double getSurfaceBalanceFromSnowAndPDD(
                      const double snowrate, const double mydt, const double pdds);
 

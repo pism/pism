@@ -72,7 +72,7 @@
  *
  * This Manual documents the \em continuum \em models and the \em numerical
  * \em methods in PISM.  It is restricted to documenting the classes which are
- * also documented in the user manual.  Most of the source files from which this Manual
+ * also documented in the User's Manual.  Most of the source files from which this Manual
  * is created are in the <tt>pism/src/base/</tt> subdirectory.  By contrast, the source 
  * code browser describes all the classes, class members, and source files in PISM.
  *

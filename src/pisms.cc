@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for EISMINT II, ISMIP-HEINO, and other simplified geometry\n"
-  "ice sheet simulations.\n";
+  "Ice sheet driver for EISMINT II, MISMIP, and other simplified geometry\n"
+  "and intercomparison simulations.\n";
 
 #include <cstring>
 #include <petscbag.h>
@@ -28,6 +28,7 @@ static char help[] =
 #include "eismint/iceEISModel.hh"
 #include "eismint/iceEISplModel.hh"
 #include "ismip/iceHEINOModel.hh"
+#include "ismip/iceMISMIPModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

@@ -37,7 +37,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
    exactTestK.c exactTestL.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \
-	iceEISModel.cc iceHEINOModel.cc iceROSSModel.cc iceGRNModel.cc \
+	iceEISModel.cc iceHEINOModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
 	iceEISplModel.cc iceCompModel.cc iceUpwindCompModel.cc iceExactSSAModel.cc iCMthermo.cc \
 	shelf.cc flowTable.cc tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
@@ -81,8 +81,8 @@ pismr : pismr.o libpism.so
 pismd : pismd.o iceROSSModel.o libpism.so
 	${CLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : iceEISModel.o iceHEINOModel.o iceEISplModel.o pisms.o libpism.so
-	${CLINKER} iceEISModel.o iceHEINOModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
+pisms : iceEISModel.o iceHEINOModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
+	${CLINKER} iceEISModel.o iceHEINOModel.o iceMISMIPModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
 pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
 	${CLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@

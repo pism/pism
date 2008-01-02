@@ -255,8 +255,9 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   if (LzSet == PETSC_TRUE)   z_scale = z_scale_in;
     
   ierr = verbPrintf(2, grid.com, 
-         "  rescaling computational box *for ice* from defaults, -bif file, and user options\n"
-         "     to dimensions [-%7.2f km,%7.2f km] x [-%7.2f km,%7.2f km] x [0 m,%7.2f m]\n",
+         "  rescaling computational box *for ice* from defaults, -bif file, and\n"
+         "    user options to dimensions:\n"
+         "      [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
   ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
@@ -337,14 +338,14 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: uplift rate dbdt not found. Filling with zero\n");  CHKERRQ(ierr);
+       "  WARNING: uplift rate dbdt not found; filling with zero\n");  CHKERRQ(ierr);
     ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
   }
   if (HmeltExists) {
     ierr = ncVarToDAVec(ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-        "  WARNING: effective thickness of basal melt water bwat not found. Filling with zero\n"); 
+        "  WARNING: effective thickness of basal melt water bwat not found; filling with zero\n"); 
         CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }

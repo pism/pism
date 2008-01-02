@@ -639,7 +639,7 @@ PetscErrorCode IceModel::run() {
 
     // compute PDD; generates surface mass balance, with appropriate ablation area, using snow accumulation
     if (doPDD == PETSC_TRUE) {
-      ierr = updateNetAccumFromPDD();  CHKERRQ(ierr);
+      ierr = updateSurfaceBalanceFromPDD();  CHKERRQ(ierr);
       ierr = verbPrintf(2,grid.com, "d"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);

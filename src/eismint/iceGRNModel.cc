@@ -26,7 +26,6 @@
 #include "../base/forcing.hh"
 #include "iceGRNModel.hh"
 
-const PetscScalar DEFAULT_ABLATION_IN_OCEAN0 = 20.0;   // m/a
 const PetscScalar EISMINT_G_geothermal   = 0.050;      // J/m^2 s; geo. heat flux
 
 

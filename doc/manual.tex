@@ -1,24 +1,6 @@
-% Copyright (C) 2004-2007 Jed Brown and Ed Bueler and Nathan Shemonski
-%
-% This file is part of PISM.
-%
-% PISM is free software; you can redistribute it and/or modify it under the
-% terms of the GNU General Public License as published by the Free Software
-% Foundation; either version 2 of the License, or (at your option) any later
-% version.
-%
-% PISM is distributed in the hope that it will be useful, but WITHOUT ANY
-% WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-% details.
-%
-% You should have received a copy of the GNU General Public License
-% along with PISM; if not, write to the Free Software
-% Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{230}
+\newcommand{\PISMREV}{231}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -89,7 +71,7 @@
 \phantom{bob}
 \vspace{2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2007 Ed Bueler and Jed Brown and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2008 Ed Bueler and Jed Brown and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -109,7 +91,7 @@
 \centerline{\textsc{Acknowledgements}}
 \bigskip
 
-The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Martin Truffer, Kent Overstreet, and Art Mahoney for helpful comments on the manual and the installation process.  We also want to thank several PISM users whose questions and comments have contributed to improving PISM and this manual.
+The NASA Cryospheric Sciences Program supported this research with grant NAG5-11371.  Dave Covey and Don Bahls have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Martin Truffer, Kent Overstreet, Art Mahoney, Ryan Woodard, and other PISM users for helpful comments and questions on PISM, the installation process, and this Manual.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -134,7 +116,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \vspace{1.5in}
 \large
 \begin{center}
- \emph{WARNING}:  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2007, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  But do write to us with questions: 
+ \emph{WARNING}:  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  But do write to us with questions: 
 
 \verb|ffelb@uaf.edu|.
 \end{center}
@@ -688,10 +670,10 @@ Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth th
 
 \subsection{Understanding and controlling adaptive time-stepping} \label{subsect:adapt} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers.:
 \begin{verbatim}
-%ydbp SIA SSA  # vgath Nr
-P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0
+%ybp SIA SSA  # vgatdh Nr  +STEP
+P         YEAR:     ivol   iarea    meltf     thick0     temp0
 \end{verbatim}
-Here we explain what `\verb|Nr|' in the flag line means, and also `\verb|STEP|' in the summary.
+Here we explain what `\verb|Nr|' and `\verb|STEP|'in the flag line mean.
 
 \verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of advection \cite{BBL}, requires and adaptive time-stepping scheme.
 
@@ -785,64 +767,57 @@ If, as in the above situation, one wants to send all \verb|pismv| processes the 
 \newcommand\pid{\textsl{pid}}
 \newcommand\same{(\textsl{same})}
 \begin{table}[ht]
-\caption{Signalling PISM.  \pid~stands for the identifier of the running PISM process}\label{tab:signals}
+\caption{Signalling PISM.  \pid~stands for list of all identifiers of the running PISM processes.}\label{tab:signals}
 \begin{tabular}{@{}llll}\hline
 \textbf{Command}\phantom{bobbob} & \textbf{Signal}\phantom{bobbob} & \textbf{PISM behavior} \\ \hline
 \texttt{kill -KILL} \pid & \texttt{SIGKILL} & terminate with extreme prejudice; PISM cannot catch it \\
  & & and no state is saved \\
 \texttt{kill} -9 \pid & \same & \same \\
-Ctrl-C & \same & same, but only for foreground processes  \\ \hline
-\texttt{kill -TERM} \pid & \texttt{SIGTERM} & end process but save the last model state \\
+Ctrl-C & \same & same, but only for foreground process(es)  \\ \hline
+\texttt{kill -TERM} \pid & \texttt{SIGTERM} & end process(es) but save the last model state \\
  &  & using the user-given \verb|-o| name or the default name \\
 \texttt{kill} -15 \pid & \same & \same \\
 \texttt{kill} \pid & \same & \same \\
-\texttt{pkill -TERM pismv} & \same & (\emph{same}, assuming one wants \emph{all} running \verb|pismv| processes \\ 
+\texttt{pkill -TERM pismv} & \same & \same; most convenient for MPI runs \\ 
  &  & to terminate and save) \\ \hline
-\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & allow process to continue but save model state \\
+\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & allow process(es) to continue but save model state \\
  &  & at current time using name \texttt{pism-}\textsl{year}\texttt{.nc} \\
-\texttt{pkill -USR1 pismv} & \same & (as above for \verb|pkill|) \\
+\texttt{pkill -USR1 pismv} & \same & \same; most convenient for MPI runs \\
 \hline\normalsize
 \end{tabular}
 \end{table}
 
 
-\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation map in PISM is treated as net surface mass balance.  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.  Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
+\subsection{Using the positive degree-day model}  \label{subsect:pdd}  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
 
-If the input data actually includes the annual snow-fall accumulation then one must \emph{compute} the surface mass balance according to some model of how much of the snow is melted in each model year.
+Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
 
-The surface temperature model used by PISM in computing the amount of melting first assumes a sinusoidal temperature cycle over the course of the year, where the difference between the peak of this temperature cycle and its mean (average) is called the ``summer warming.''  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point in the default case.  Also, note that, by default, the peak of the cycle occurs on August 1, but we do not believe that the specific date for ``mid-summer'' matters detectably to whole ice sheet dynamics or simulations thereof.
+If the input data actually includes the annual snow-fall accumulation then one must \emph{compute} the surface mass balance according to some model of how much of the snow is melted in each model year and according to a yearly temperature cycle.  We call such a model a \emph{positive degree day} model \cite{CalovGreve}.
 
-The part of this cycle above $0\!\phantom{|}^\circ \text{C}$ is converted to positive degree days.  This number of positive degree days is multiplied by a coefficient (set by \verb|-pdd_factor_snow|) to compute the amount of snow melted.  Of this melted snow, a fraction (\verb|-pdd_refreeze|) is kept as ice.  This ice, plus all unmelted snow (measured as ice-equivalent) is applied as accumulation, unless the number of positive degree days exceeds that required to melt all of the snow-fall in the year.  In this latter case in which there are excess positive degree days available for melting, the number of excess positive degree days is multiplied by a coefficient (\verb|-pdd_factor_ice|) to compute how much ice is melted, so that net ablation occurs (at the given point).
+The model used by PISM in computing the amount of melting first assumes a sinusoidal temperature cycle over the course of the year, where the difference between the peak of this temperature cycle and its mean (average) is called the ``summer warming.''  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point (in this default case).  The peak of the cycle occurs on August 1, which is Julian day 243, but the option \verb|-pdd_summer_peak_day| can override this.
 
-As an additional feature one may add ``white noise'' to the temperature cycle.  More precisely, a normally-distributed, mean zero random temperature increment is added (or subtracted) from the temperature for each day.  These increments are independent over the days of the year, though of course we only have pseudo-randomness \dots, but they are the same over the whole sheet.  Their standard deviation is controlled by \verb|-pdd_std_dev|.  If one wants runs with repeatable randomness, add the option \verb|-pdd_repeatable|.
+It is common to add ``white noise'' to the temperature cycle to simulate both the daily temperature cycle and additional variability associated to the vagaries of weather.  More precisely, a normally-distributed, mean zero random temperature increment is added (or subtracted) from the temperature for each day.  These increments are independent over the days of the year, though of course we only have pseudo-randomness \dots, but they are the same over the whole sheet.  Their standard deviation is controlled by \verb|-pdd_std_dev|.
 
-As an example of this mechanism, first do
+The number of positive degree days, denoted PDD, is computed as the sum of the product of the amount by which this temperature cycle, including the white noise variability, exceeds $0\!\phantom{|}^\circ \text{C}$ times the time (in days) during which it is above zero.  In PISM there are two methods for computing PDD.  The first is the expected value computed by the method described in \cite{CalovGreve05}; this option is chosen by \verb|-pdd|.  The second is a monte carlo simulation of the white noise itself, chosen by \verb|-pdd_rand|.  (If one wants runs with repeatable randomness, use \verb|-pdd_repeatable| instead of \verb|-pdd_rand|.)
 
-\verb|pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 8000 -o foo|
+The PDD is multiplied by a coefficient (set by \verb|-pdd_factor_snow|) to compute the amount of snow melted.  Of this melted snow, a fraction (\verb|-pdd_refreeze|) is kept as ice.  This ice, plus all unmelted snow (measured as ice-equivalent) is added to the mass balance unless the PDD exceeds that required to melt all of the snow-fall in the year.  In this latter case, in which there are excess PDD available for melting, the excess PDD is multiplied by a coefficient (\verb|-pdd_factor_ice|) to compute how much ice is melted.  In this latter case, ablation occurs at that location.
 
-\noindent to get an ice sheet which is large enough to have spread significantly into the ablation zone.  Next observe how it behaves in a warmer ``climate'' \emph{without} the positive degree day model; note that the peak surface temperature in EISMINT II experiment B is 5.0 degrees warmer than that in experiment A \cite{EISMINT00}:
+The PDD model is applied in section \ref{sect:green} to modeling the Greenland ice sheet.  
 
-\verb|pisms -eisII B -if foo.nc -y 40|
+To directly compare the two methods, try
 
-\noindent In this 40 year run the ice sheet grows a bit.  That is, the volume grows and the central thickness (``\verb|THICK0|'') grows.  
+\verb|$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \|
 
-Now observe how it the same saved ice sheet \verb|foo.nc| behaves with the default positive degree day model (which is not a part of EISMINT II, of course):
+\verb|    -ocean_kill -y 50 -o green_50yr_pdd -d Aa|
 
-\verb|pisms -eisII B -if foo.nc -y 40 -pdd|
+\noindent versus
 
-\noindent The central thickness still grows, by nearly the same amount, but of course the center is in the accumlation zone and is not strongly affected by melting.  In this case with the positive degree day model the volume actually shrinks, however.
+\verb|$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \|
 
-Note that last run is the same as
+\verb|    -ocean_kill -y 50 -o green_50yr_pdd_rand -pdd_rand -d Aa|
 
-\verb|pisms -eisII B -if foo.nc -y 40 -pdd -pdd_summer_warming 15.0 -pdd_factor_snow 0.003 \|
+\noindent (See section \ref{sect:green} on how to create the file \verb|eis_green_smoothed.nc| from publically available data.  See the same section for the meaning of ``\verb|-bif|''.)
 
-\verb|  -pdd_factor_ice 0.008 -pdd_refreeze 0.6 -pdd_std_dev 0.0|
-
-\noindent and that any of these options can be adjusted.
-
-A positive degree day model specific to the Greenland ice sheet is used in section \ref{sect:green}.
-
-[THE IDEAS IN \cite{CalovGreve05} ARE WORTHWHILE AND DESERVE IMPLEMENTATION.  WITH THESE IDEAS THERE WILL BE NO RESTRICTION TO HITTING THE INTEGER YEARS.  BUT THE TRUE RANDOMNESS WILL BE GONE; IT MAY BE WORTH KEEPING THE OLD VERSTION AS AN OPTION.]
 
 
 \clearpage\newpage
@@ -1180,7 +1155,7 @@ We mentioned the script \verb|eis_core.py|.  Now we execute it:
 
 Table \ref{bootstrapEISgreen} shows the PISM output for a one model year run using option \verb|-bif| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|
 
-\verb|$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -y 1 -o green20km_y1|
+\verb|$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -ocean_kill -y 1 -o green20km_y1|
 
 \noindent The run takes a few seconds of real time.
 
@@ -1188,7 +1163,7 @@ Table \ref{bootstrapEISgreen} shows the PISM output for a one model year run usi
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -y 1 -o green20km_y1
+$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -ocean_kill -y 1 -o green20km_y1
 PGRN (EISMINT Greenland mode)
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   polar stereographic found: svlfp = -41.14, lopo =  71.65, sp =  71.00
@@ -1913,11 +1888,11 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
 
-\opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  See subsection \ref{subsect:pdd}.
+\opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use the method described in \cite{CalovGreve05}, which computes the expected number of positive degree days.  See subsection \ref{subsect:pdd}.
 
-\opt{pdd\und rand}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|), and uses the actually random model, based on a random number generator, as opposed to the default ``integrated'' version based on \cite{CalovGreve05}, which is more efficient and doesn't restrict the time step.  In fact, one side effect of setting this option is to reduce the time step so that each integer year is ``hit.''  Note that if \verb|-pdd_std_dev 0.0| is set then the additional randomness is not active.  See subsection \ref{subsect:pdd}.
+\opt{pdd\und rand}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use a monte carlo method based on a random number generator.  Note that if \verb|-pdd_std_dev 0.0| is set then the additional randomness is not active.  See subsection \ref{subsect:pdd}.
 
-\opt{pdd\und rand\und repeatable}  Same effect as \verb|pdd_rand| but additionally sets the ``seed'' for the random number generator to a default.  This makes runs based on the actually random model repeatable.
+\opt{pdd\und rand\und repeatable}  Same effect as \verb|pdd_rand| but additionally sets the ``seed'' for the random number generator to a default.  This makes runs based on the monte carlo method repeatable.
 
 \optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
 
@@ -1927,7 +1902,9 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{pdd\und std\und dev}{5.0}  Standard deviation of temperature increment added each day to temperature cycle in positive degree day model.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
 
-\optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
+\optdef{pdd\und summer\und peak\und day}{243.0}  Julian day of peak summer temperature.  Default of August 1st is clearly not appropriate to Antarctica!  See subsection \ref{subsect:pdd}.
+
+\optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.  Note \verb|pgrn| ignors this option; see section \ref{sect:green}.
 
 \opt{plastic}  Use Schoof's plastic till model for ice streams at all grounded points on the ice sheet.  Must be used along with \verb|-ssa| to turn on the solution of the SSA (shallow shelf approximation).  See subsection \ref{subsect:plastic}.  See options \verb|-plastic_reg|, \verb|-plastic_c0|, \verb|-plastic_phi|, and \verb|-plastic_pwfrac|, all of which control the plastic till model in various ways.
 
