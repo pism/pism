@@ -77,7 +77,6 @@ public:
   virtual PetscScalar exponent() const;
 protected:
   static PetscInt n;
-private:
   static PetscScalar hardness_a;
   static PetscScalar softness_A;
 };

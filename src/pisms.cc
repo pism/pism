@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
   {
     IceGrid    g(com, rank, size);
     IceType*   ice;
+    MISMIPIce  mismipice;
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
@@ -57,9 +58,10 @@ int main(int argc, char *argv[]) {
     IceEISModel    mEISII(g, *ice);
     IceHEINOModel  mHEINO(g, *ice);
     IceEISplModel  mEISpl(g, *ice);
+    IceMISMIPModel mMISMIP(g, mismipice, mismipice);
     IceModel*      m;
 
-    PetscTruth  EISIIchosen, ISMIPchosen, EISplchosen;
+    PetscTruth  EISIIchosen, ISMIPchosen, EISplchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
@@ -70,28 +72,38 @@ int main(int argc, char *argv[]) {
     /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO and none others are implemented */
     ierr = PetscOptionsHasName(PETSC_NULL, "-ismip", &ISMIPchosen);
               CHKERRQ(ierr);
+    /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
+    ierr = PetscOptionsHasName(PETSC_NULL, "-mismip", &MISMIPchosen);
+              CHKERRQ(ierr);
     
-    if ( (EISIIchosen == PETSC_TRUE) && (ISMIPchosen == PETSC_FALSE)
-         && (EISplchosen == PETSC_FALSE) ) {
+    int  choiceSum = (int) EISIIchosen + (int) EISplchosen + (int) ISMIPchosen + (int) MISMIPchosen;
+    if (choiceSum == 0) {
+      SETERRQ(1,"PISMS called with no simplified geometry experiment chosen");
+    } else if (choiceSum > 1) {
+      SETERRQ(2,"PISMS called with more than one simplified geometry experiment chosen");
+    }
+    
+    if (EISIIchosen == PETSC_TRUE) {
       mEISII.setFlowLawNumber(flowlawNumber);
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
-    } else if ( (ISMIPchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE)
-                && (EISplchosen == PETSC_FALSE) ) {
+    } else if (ISMIPchosen == PETSC_TRUE) {
       mHEINO.setflowlawNumber(flowlawNumber);
       ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
       ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mHEINO;
-    } else if ( (EISplchosen == PETSC_TRUE) && (EISIIchosen == PETSC_FALSE)
-                && (ISMIPchosen == PETSC_FALSE) ) {
+    } else if (EISplchosen == PETSC_TRUE) {
       mEISpl.setFlowLawNumber(flowlawNumber);
       ierr = mEISpl.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISpl.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISpl;
+    } else if (MISMIPchosen == PETSC_TRUE) {
+      ierr = mMISMIP.setFromOptions(); CHKERRQ(ierr);
+      ierr = mMISMIP.initFromOptions(); CHKERRQ(ierr);
+      m = (IceModel*) &mMISMIP;
     } else {
-      SETERRQ(1,
-        "PISMS called with invalid, contradictory, or no simplified geometry experiment chosen");
+      SETERRQ(3,"PISMS: how did I get here?");
     }
 
     ierr = m->run(); CHKERRQ(ierr);

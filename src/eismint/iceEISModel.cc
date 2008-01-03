@@ -143,11 +143,12 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
 PetscErrorCode IceEISModel::initFromOptions() {
   PetscErrorCode      ierr;
-  PetscTruth          inFileSet;
+  PetscTruth          inFileSet, bootFileSet;
 
   // check if input file was used
   ierr = PetscOptionsHasName(PETSC_NULL, "-if", &inFileSet); CHKERRQ(ierr);
-  infileused = (inFileSet == PETSC_TRUE);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bootFileSet); CHKERRQ(ierr);
+  infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
   
   if (!infileused) { 
     // initialize from EISMINT II formulas

@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{231}
+\newcommand{\PISMREV}{232}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -331,23 +331,23 @@ initializing EISMINT II experiment F ...
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
   [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
 running EISMINT II experiment F ...
-%ydbp SIA SSA  # vgath Nr
-P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0
-U      years       years  10^6_km^3 10^6_km^2 (none)          m         K
+%ybp SIA SSA  # vgatdh Nr  +STEP
+P         YEAR:     ivol   iarea    meltf     thick0     temp0
+U        years 10^6_km^3 10^6_km^2 (none)          m         K
  $$$$            $$$$$ $$
-S      0.000 (+  0.00000 )  0.00000  0.0000   0.0000      0.000  223.1500
- $$$$ SIA        v$ath 0m
-S     60.000 (+ 60.00000 )  0.01704  0.6281   0.0000     30.000  223.1500
+S      0.00000:  0.00000  0.0000   0.0000      0.000  223.1500
+ $$$ SIA        v$at$h 0m  +60.00000
+S     60.00000:  0.01704  0.6281   0.0000     30.000  223.1500
 . . .
- $$$$ SIA        v$ath 0e
-S   2000.000 (+ 20.00000 )  0.56790  0.6306   0.0000   1000.000  228.7242
+ $$$ SIA        v$at$h 0e  +20.00000
+S   2000.00000:  0.56790  0.6306   0.0000   1000.000  228.7242
 done with run ... 
 Writing model state to file `simp_exper.nc' ... done.
 \end{verbatim}
 \end{quote}\normalsize
 \noindent This should have taken less than 30 seconds.
 
-In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\texttt{simp\underline{ }exper.nc}''.  The next run will use a ``\verb|-o|'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a four processor machine.  (The following should also work fine on a single processor machine but there is no speed-up, naturally.)  Let's also run things in the background so we can continue to experiment:
+In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\verb|simp_exper.nc|''.  The next run will use a ``\verb|-o|'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a four processor machine.  (The following should also work fine on a single processor machine but there is no speed-up, naturally.)  Let's also run things in the background so we can continue to experiment:
 
 \small\begin{quote}\begin{verbatim}
 $  mpiexec -n 4 pisms -eisII F -if simp_exper.nc -y 198000 \
@@ -361,31 +361,7 @@ If one wants a view of the model state in the midst of this (or any other PISM) 
 
 While the four process run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:
 
-\small\begin{quote}\begin{verbatim}
-$ pisms -eisII F -if simp_exper.nc -y 200 -d HTt
-PISMS (simplified geometry mode)
-setting parameters for EISMINT II experiment F ... 
-initializing from NetCDF format file  simp_exper.nc  ...
-  [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
-  [grid cell dimensions     : (   25.00 km) x (   25.00 km) x (   25.00 m)]
-running EISMINT II experiment F ...
-%ydbp SIA SSA  # vgath Nr
-P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0
-U      years       years  10^6_km^3 10^6_km^2 (none)          m         K
- $$$$            $$$$$ $$
-S   2000.000 (+  0.00000 )  0.56790  0.6306   0.0000   1000.000  228.7242
- $$$$ SIA        v$ath 0m
-S   2060.000 (+ 60.00000 )  0.58494  0.6306   0.0000   1030.000  228.8210
- $$$$ SIA        v$ath 0m
-S   2120.000 (+ 60.00000 )  0.60198  0.6306   0.0000   1060.000  228.9162
- $$$$ SIA        v$ath 0m
-S   2180.000 (+ 60.00000 )  0.61901  0.6306   0.0000   1090.000  229.0100
- $$$$ SIA        v$ath 0e
-S   2200.000 (+ 20.00000 )  0.62469  0.6306   0.0000   1100.000  229.0411
-done with run ... 
-Writing model state to file `simp_exper.nc' ... done.
-\end{verbatim}
-\end{quote}\normalsize
+\verb|$ pisms -eisII F -if simp_exper.nc -y 1000 -d HTt|
 
 Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.
 
@@ -403,36 +379,37 @@ When the full 200,000 year run finishes, one watch its evolving state by
 
 \subsection{PISM's standard output}   As illustrated already, at each time step PISM shows a summary of the model state using a flags and a few numbers.  The format of the summary is suggested by the three mysterious lines near the beginning of the run:
 
-\medskip
-\small
-\verb|%ydbp SIA SSA  # vgath Nr|
+\small\begin{quote}\begin{verbatim}
+%ybp SIA SSA  # vgatdh Nr  +STEP
+P         YEAR:     ivol   iarea    meltf     thick0     temp0
+U        years 10^6_km^3 10^6_km^2 (none)          m         K
+\end{verbatim}
+\end{quote}\normalsize
 
-\verb|P       YEAR (+     STEP )     ivol   iarea    meltf     thick0     temp0|
+\noindent The first line gives flags which indicate which physical models ran at the given time step, so it shows which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first three positions are: \t{y} for basal yield stress model, \t{b} for bed deformation model, and \t{p} for plastic till yield stress.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and the if the ``\verb|SSA|'' flag is present it is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then there are six more positions: \t{v} for velocity updates (by SIA or SSA), \t{g} for grain size model, \t{a} for age equation, \t{t} for temperature equation, \t{d} for positive degree day model, and \t{h} for mass continuity (which updates surface elevation and thickness).  
 
-\verb|U      years       years  10^6_km^3 10^6_km^2 (none)          m         K|
-\normalsize
-\medskip
+Finally an integer \t{N} appears (it is most frequently zero), and another single character flag \t{r}.  Then the time step itself is given (\t{STEP}).  These all related to the decisions of the adaptive time-stepping scheme; described in subsection \ref{subsect:adapt}.
 
-\noindent The first line gives flags which indicate which physical models ran at the given time step.  This line indicates which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first four positions are: \t{y} for basal yield stress model, \t{d} for positive degree day model, \t{b} for bed deformation model, and \t{p} for plastic till form of SSA.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and the if the ``\verb|SSA|'' flag is present it is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then there are five more positions: \t{v} for velocity updates (by SIA or SSA), \t{g} for grain size model, \t{a} for age equation, \t{t} for temperature equation, and \t{h} for mass continuity (which updates surface elevation and thickness).  Finally an integer appears (most frequently zero), and another single digit flag.  These have to do with the decisions of the adaptive time-stepping scheme; described in subsection \ref{subsect:adapt}.
+The next line starting with ``\t{P}'' is the prototype for the summary which appears at each time step.  The third line starting with ``\t{U}'' is the units for this summary; it appears just once at the beginning of the run.
 
-The time (``\t{YEAR}'') and time step (``\t{STEP}'') are in years.  The runs above show what can happen because the time-stepping adapts in order to maintain stability for the mostly explicit methods in PISM.  At the beginning of the EISMINT II experiment F run, for instance, the ice has small thickness so the time step is 60 years, simply because that is the default maximum time step.  Later in the experiment F run, after 5000 years, for instance, the time step is made smaller in essense because the flow is faster.
+The time step \t{STEP} and the model year \t{YEAR}, which is the first entry in the summary line, are in units of years.  The 200k year run above illustrates how the time-stepping in PISM adapts in order to maintain stability for its (mostly) explicit methods.  At the beginning of the EISMINT II experiment F run, for instance, the ice has small thickness so the time step is 60 years, simply because that is the default maximum time step.  Later in that run, after about 5000 years, the time step is made smaller because the flow is faster.
 
-The next three columns in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal temperature is at the pressure-melting temperature.  The next two columns ``\texttt{thick0}'' and ``\texttt{temp0}'' are values at the center of the computational domain of the map plane, namely the thickness in meters and the basal absolute temperature in Kelvin.  These five numbers are also the ones reported in the tables in \cite{EISMINT00}, which is sometimes useful for comparison.  The summary of the model state can be made more verbose by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.
+The next three entries in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal temperature is at the pressure-melting temperature.  The next two columns ``\texttt{thick0}'' and ``\texttt{temp0}'' are values at the center of the computational domain of the map plane, namely the ice thickness in meters and the absolute temperature of the ice at its base, in Kelvin.  These five numbers are the ones reported in the tables in \cite{EISMINT00}.  The summary of the model state can be made more verbose by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.
 
 \subsection{Visualizing the results}  There are four basic methods for visualizing the various quantities in PISM, namely \renewcommand{\labelenumi}{\arabic{enumi})~}  \begin{enumerate}
-\item runtime viewers under Xwindows, 
-\item examining final output model state NetCDF files, 
-\item using \Matlab to view individual variables in the final output, and 
-\item turning the PISM standard output described above into time series and viewing graphs of those.
+\item runtime viewers under Xwindows,
+\item visualizing model state NetCDF files from the end of a run,
+\item using \Matlab to view individual variables at the end of a run, and 
+\item turning the PISM standard output (above) into time series and viewing graphs of those.
 \end{enumerate}
 
 As shown by the ``\verb|-d HTt|'' option illustrated above, runtime viewers can be specified by options of the form \verb|-d |\emph{letters} or \verb|-dbig |\emph{letters}.  The latter option shows larger windows but is otherwise identical.  See Appendix C for the possible single letter names of each runtime viewer.  These viewers are updated at each step.  As they work under Xwindows, MPI must be told how to send data to the window, so PISM options are usually followed by ``\verb|-display :0|'' when PISM is run under MPI and runtime viewers are desired.
 
-The format is limited by the style of PETSc viewers, but these viewers frequently suffice for visualizing an ongoing PISM run.  Note that some diagnostic viewers show slices of three-dimensional quantities in slices parallel to the bed.  They are controlled by the option \verb|-kd|.  Those which show ``soundings'' are controlled by the options \verb|-id|, \verb|-jd|; see Appendices \ref{sect:options} and \ref{sect:viewers}.
+The format is limited by the style of PETSc viewers, but these viewers often suffice for visualizing an ongoing PISM run.  Note that some diagnostic viewers show slices of three-dimensional quantities in slices parallel to the bed.  They are controlled by the option \verb|-kd|.  Those which show ``soundings'' are controlled by the options \verb|-id|, \verb|-jd|; see Appendices \ref{sect:options} and \ref{sect:viewers}.
 
 Regarding method 2), when a PISM run is finished the state of the model is output in NetCDF format.  The name can be specified by the option \verb|-o|, so \verb|-o foo| writes the NetCDF file \verb|foo.nc|.  NetCDF files can be viewed or modified with a variety of tools, some of which are mentioned in table \ref{tab:NetCDFview}.  The PISM developers find \t{ncview} to be the fastest way to look at PISM output files, but \verb|ncview| is not as sophisticated as many other scientific visualization programs which handle NetCDF files, such as IDV.
 
-Regarding method 3), when a PISM run is finished \emph{and if the user has specified options of the form} \verb|-mato foo| and \verb|-matv |\emph{letters}, PISM saves the variables named by the letters in a \Matlab-readable file \verb|foo.m|.  The single letter arguments to \verb|-d| and \verb|-matv| are generally the same.  See Appendix \ref{sect:viewers}.
+Regarding method 3), the user can add options of the form \verb|-mato foo| and \verb|-matv |\emph{letters} to save certain variables in \Matlab-readable ASCII form at the end of the run.  In particular, the saved file \verb|foo.m| is a standard \Matlab script.  The single letter arguments to \verb|-d| and \verb|-matv| are generally the same.  See Appendix \ref{sect:viewers}.
 
 Appendix \ref{sect:scripts} describes a Python script \verb|series.py| which can post-process the standard output from a PISM run into a NetCDF file with the time series for the quantities listed in PISM standard output.
 
@@ -453,38 +430,40 @@ Appendix \ref{sect:scripts} describes a Python script \verb|series.py| which can
 \normalsize
 \end{table}
 
-\subsection{Evolution runs versus ``diagnostic'' runs}  The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one starts with the right initial conditions and that one has the right climate and other inputs at each time step (i.e.~boundary conditions).  Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  The natural execution mode for a numerical ice sheet model is to take small time steps in approximating these differential equations; ``small time steps'' could mean several model years, of course.  We will describe this usual time-stepping behavior as an ``evolution run.''
+\subsection{Evolution runs versus ``diagnostic'' runs}  The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one starts with the right initial conditions and that one has the right climate and other inputs at each time step.  Underlying an ice sheet model like PISM are evolution-in-time partial differential equations, and the obvious mode for a numerical ice sheet model is to take small time steps in approximating these differential equations; ``small time steps'' could mean several model years, of course.  We will describe this usual time-stepping behavior as an ``evolution run.''
 
-Much of ice sheet, stream, and shelf modeling, however, requires ``diagnostic'' solution only of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid \cite{Fowler}.  As explained in the next section, the ``shallow ice approximation'', on which the EISMINT II experiments are based, is only one of two forms of the balance of momentum equations solved by PISM.  The other is the ``shallow shelf approximation''.  (These are described in the next section.)  In a diagnostic computation the temperature field and certain basal conditions, such as the yield stress of the till for instance, are held fixed.  In summary, the goal of a ``diagnostic run'' is to compute the velocity field; this will be the definition used from now on in this manual.
+Much of ice sheet, stream, and shelf modeling, however, requires only ``diagnostic'' solution of the partial differential equations which determine the velocity field.  These are the balance of momentum equations for a slowly flowing fluid, and shallow approximations thereof \cite{Fowler}.  In a diagnostic computation the temperature field and certain basal conditions, such as the yield stress of the till for instance, are held fixed.  The goal of a ``diagnostic run'' is to compute the velocity field; this will be the definition used from now on in this manual.
 
-The NetCDF model state saved by PISM at the end of an evolution run does not, by default, contain the three-dimensional velocity field.  Instead, it contains those variables which are needed to restart the run, especially the geometry (thickness and bed elevation) and the ice temperature field.  For this and other reasons there is a separate executable \verb|pismd| which only does a diagnostic computation of velocity.  It saves the full three-dimensional velocity field but it does no time-stepping.
+Note that, as explained in the next section, the ``shallow ice approximation'' (SIA), on which the EISMINT II experiments are based, is only one of two forms of the balance of momentum equations solved by PISM.  The other is the ``shallow shelf approximation'' (SSA).  Both of these models can be solved in either evolution or diagnostic mode.
 
-For example, using the quantities already computed in this section, try
+As a diagnostic example, using the quantities already computed in this section, try
 
-\verb|pismd -if eisIIF200k.nc -o eisIIF200k_fullvels|
+\verb|pismd -if eisIIF200k.nc -o eisIIF200k_diag|
 
-\noindent The result of this command is a NetCDF file \verb|eisIIF200k_fullvels.nc| which contains the full three-dimensional velocity field in the scalar NetCDF variables \verb|uvel|, \verb|vvel|, and \verb|wvel|.
+\noindent The result of this command is a NetCDF file \verb|eisIIF200k_diag.nc| which contains the full three-dimensional velocity field in the scalar NetCDF variables \verb|uvel|, \verb|vvel|, and \verb|wvel|.
 
 The velocity field saved by \verb|pismd| is the one which would be computed at the \emph{next} time step in an evolution run.  That is, if we also run
 
-\verb|pisms -eisII F -if eisIIF200k.nc -y 0.1 -o eisIIF200k_plus|
+\verb|pisms -eisII F -if eisIIF200k.nc -y 0.001 -o eisIIF200k_plus|
 
-\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIF200k_fullvels.nc|.\footnote{For this example, one can use a NetCDF Operator to check that the two saved NetCDF files really correspond to the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \verb|-f3d|.  Either way, saving the full velocity field roughly doubles the size of the output model state NetCDF file.
+\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIF200k_diag.nc|.\footnote{For this example, one can use a NetCDF Operator to check that the two saved NetCDF files contain essentially the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}
 
-Subsection \ref{sect:ross} describes the use of \verb|pismd| in modeling the Ross ice shelf.  Indeed, ``ice shelf modeling'' has historically meant diagnositic and not evolution computations \cite{MacAyealetal,HumbertGreveHutter}.
+This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes the use of \verb|pismd| in modeling the Ross ice shelf \cite{MacAyealetal}.
 
-
+Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \verb|-f3d|.  The diagnostic executable \verb|pismd| saves the full three-dimensional velocity field by default.  Either way, saving the full velocity field roughly doubles the size of the saved NetCDF file.
 
 
 \clearpage
 \newpage
 \section{Ice dynamics in PISM}\label{sect:dynamics}
 
-\subsection{Two models of ice flow: slow versus fast, but always shallow}  PISM can numerically solve two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice are included into balance of momentum equations to determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
-\item the shallow ice approximation (SIA) \cite{Hutter}, which describes ice flow as a function of the driving shear stresses of classical glaciology (i.e.~in planes parallel to the geoid) \cite{Paterson}, and
-\item the shallow shelf approximation (SSA) \cite{WeisGreveHutter}, which describes a membrane-type flow driven by longitudinal stress gradients \cite{Morland,MacAyeal,SchoofStream}.
+\subsection{Two different shallow models of ice flow}  PISM can numerically solve two significantly different sets of equations which determine the velocity field within the ice.  In both cases the geometry of the ice, the temperature field within the ice, and the stress condition at the base of the ice are included into balance of momentum equations to determine the flow.  But there are two different versions of the balance of momentum equations:\begin{itemize}
+\item the shallow ice approximation (SIA) \cite{Hutter}, which describes ice flowing by shear in planes parallel to the geoid, with such shearing a local function of the driving stresses of classical glaciology \cite{Paterson}, and
+\item the shallow shelf approximation (SSA) \cite{WeisGreveHutter}, which describes a membrane-type flow with the ice floating or sliding over a weak base \cite{Morland,MacAyeal,SchoofStream}.
 \end{itemize}
-PISM numerically solves both the SIA and SSA equations in parallel.  The SIA equations are, as a rule, easier and quicker to numerically solve than the SSA.  The SIA equations are also easier to parallelize.
+PISM numerically solves both the SIA and SSA equations in parallel.  Time-stepping is allowed for both models.
+
+The SIA equations are, as a rule, easier and quicker to numerically solve than the SSA.  The SIA equations are also easier to parallelize.
 
 The SIA equations can confidently be applied to those grounded parts of ice sheets for which the basal ice is frozen to the bedrock and the bed topography is relatively slowly-varying the map-plane \cite{Fowler}.  We recommend only solving the SIA with a nonsliding base because the addition of a ``sliding law'' tends to have deeply undesirable numerical consequences.
 
@@ -496,77 +475,60 @@ Though they apply with greatest confidence to ice shelves, one may apply the SSA
 
 These SSA equations with additional basal resistance are the models PISM uses to describe faster-flowing grounded ice, namely the SSA with either linearly-viscous or plastic till.  In the former case the balance of momentum equations are solved as a fixed-boundary problem (at a particular time step), and thus the locations and extent of ice streams must be determined by some other criterion.  In the latter case the locations of ice streams is determined as part of the free boundary problem (for the balance of momentum equations).  In fact we believe that the plastic till SSA of Schoof should be regarded as the best currently implementable ``sliding law'' for the SIA.
 
-As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments, based on a small depth-to-width ratio, from the Stokes equations of a non-Newtonian fluid.  For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.\footnote{The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual naturally avoids serious discussion of continuum models.}
+As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the partial differential equations in these two approximations come by (different) small-parameter arguments, based on a small depth-to-width ratio, from the Stokes equations of a non-Newtonian fluid.  For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see the appendices of \cite{SchoofStream}.\footnote{The references are, of course, the right place to examine the continuum equations and their physical motivation.  This manual avoids serious discussion of continuum ice dynamics.}
 
-PISM does not do the numerical solution of the SSA by default for the executables \verb|pismr|, \verb|pismd|, or \verb|pisms|.  The user must add the flag \verb|-ssa|.
-
-
-\subsection{Schoof's plastic till free boundary problem for ice streams} \label{subsect:plastic}    In \cite{SchoofTill} C.~Schoof proposes a model for plastic failure of the basal till under flowing ice, and in \cite{SchoofStream} he recognizes this as a free boundary problem for the SSA.  The result is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.
-
-PISM implements Schoof's model as an alternative to the direct ``mask'' scheme described above.  The user gives the options \verb|-ssa -plastic| to turn on this model.  All grounded points are marked as SSA (i.e.~as \verb|MASK_DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See the description of option \verb|-plastic| in Appendix A for a detailed description of the yield stress computation.
+By default, PISM does not numerically solve the SSA when using the executables \verb|pismr|, \verb|pismd|, or \verb|pisms|.  The user must add the flag \verb|-ssa|.
 
 
-\begin{comment}
-\subsection{The flow-type mask} \label{subsect:mask}  One must generally decide which parts of the grounded ice sheet are modeled by the SIA and which by the SSA.  This is true for the linearly-viscous till model \cite{MacAyeal} but also in cases where Schoof's plastic-till model is only applied to part of the grounded ice sheet.  The rest of this section largely focuses on how the user makes this choice in practice when using PISM.
+\subsection{Tradition: Evolutionary SIA ice sheet versus diagnostic SSA ice shelf modeling} \label{subsect:basicmodes}  Sections \ref{sect:green} and \ref{sect:ross} illustrate the two traditional ice flow models, namely a time-stepping SIA-only model for the Greenland ice sheet and a diagnostic SSA model for the Ross ice shelf.  
 
-One way is to specify a \emph{mask}.  Within PISM, each grid point in the horizontal grid is either SIA \emph{or} SSA.  Each horizontal grid point corresponds to a whole vertical column of grid points in the three-dimensional grid, so it is perhaps better to say that \emph{each vertical column} of ice, centered at a horizontal grid point, is either SIA or SSA.  When ice is floating (according to the usual floatation criterion \cite{WeisGreveHutter}), the horizontal grid point is automatically marked as SSA.
+Note Tests A, B, C, D, E, F, G, H, and L in the verification suite are evolutionary runs using only the SIA.  Tests I and J are diagnostic calculations using the SSA.  See section \ref{sect:verif}.
 
-When using a mask, the transition from SIA to SSA flow is an internal boundary within the model domain.  Along this boundary, the numerical schemes in PISM attempt to maintain these continuum facts:
-\renewcommand{\labelenumi}{\textbf{\roman{enumi})}~}
-\begin{enumerate}
-\item continuity of the \emph{vertically-averaged} horizontal velocity field across the SIA--SSA transition,
-\item conservation of mass \emph{in the map plane} across the SIA--SSA transition, and
-\item conservation of energy in three dimensions across the SIA--SSA transition.
-\end{enumerate}
-Of course the statement ``attempt to'' maintain is important because PISM does not have exact representations of any continuous functions at all.  It only ``knows'' their gridded numerical approximations.  See section \ref{sect:over} of this manual, and the \emph{PISM Reference Manual}, for additional comments and references on the continuum models and numerical schemes in PISM.
+All of the ``EISMINT II'' experiments documented in section \ref{sect:simp} are evolutionary runs using only the SIA.
 
-PISM always keeps track of a ``flag'' for flow-type at each point in the map-plane (two-dimensional) grid.  This flow-type flag can potentially change at each time step.  We call the array in which this flow-type flag is stored the ``mask''.  There are four valid values for the mask (at this time), shown in Table \ref{tab:maskvals}.
+
+\subsection{The floating-grounded mask} \label{subsect:mask}  The most basic decision about ice dynamics made internally by PISM is to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.\footnote{See \cite{WeisGreveHutter} for a definition and discussion of this criterion.}  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
+
+The possible values of the \t{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \verb|MASK_FLOATING| or \verb|MASK_FLOATING_OCEAN0|) the usual choice for ice dynamics is SSA, but the user can choose not to do so by leaving off the option \verb|-ssa| (to the executable \verb|pismr|, for instance).
 
 \begin{table}[ht]
-\caption{Values for the PISM mask.}\label{tab:maskvals} 
+\caption{Values for the PISM mask.  The mask \emph{plus user options} determines the dynamical model.}\label{tab:maskvals} 
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Value} & \textbf{Name} & \textbf{Meaning}\\ \hline
 1 & \verb|MASK_SHEET| & ice is grounded and the SIA is applied \\
 2 & \verb|MASK_DRAGGING| & ice is grounded and the SSA is applied if option \verb|-ssa| is given \\
 3 & \verb|MASK_FLOATING| & ice is floating and the SSA is applied if option \verb|-ssa| is given \\
-7 & \verb|MASK_FLOATING_OCEAN0| & same as \verb|MASK_FLOATING| but the point was ice free ocean at  \\
- & & initialization of the model by \verb|-bif|  \\
+7 & \verb|MASK_FLOATING_OCEAN0| & same as \verb|MASK_FLOATING|, but the grid point was ice free   \\
+ & & ocean at initialization of the model by \verb|-bif|;  \\
+ & & ice with \verb|MASK_FLOATING_OCEAN0| will calve off  \\
+ & & if option \verb|-ocean_kill| is given.\\
 \hline\end{tabular}
 \normalsize
 \end{table}
 
-\begin{figure}[ht]
-\includegraphics[height=3.2in,keepaspectratio=true]{figs/ant_mask}
-\caption{A mask for flow-type for Antarctica.  Red is for ice-free ocean (\t{MASK\_FLOATING\_OCEAN0}), purple is for ice shelves (\t{MASK\_FLOATING}), pale blue is for ice streams (\t{MASK\_DRAGGING}), and darker blue is for interior ice modeled by the SIA (\t{MASK\_SHEET}).}
-\label{fig:ant_mask}
-\end{figure}
 
-An example mask is shown in Figure \ref{fig:ant_mask}.  The generation of such a mask must include a decision on where the grounded ice can be treated as an ice stream or outlet glacier.  In this case it has been generated using ``balance velocities'' computed from a certain highly simplified flow model \cite{BamberVaughanJoughin} and then a criterion on sliding sufficient to constitute streaming.
+\subsection{Schoof's plastic till free boundary problem for ice streams} \label{subsect:plastic}    In \cite{SchoofTill} C.~Schoof proposes a model for plastic failure of the basal till under flowing ice, and in \cite{SchoofStream} he recognizes this as a free boundary problem for the SSA.  The result is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.
 
-Procedures for generating such masks are not, for now, documented.
-\end{comment}
+PISM implements Schoof's model.  The user gives the options \verb|-ssa -plastic| to turn it on.  All grounded points are marked as SSA (i.e.~as \verb|MASK_DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See the description of option \verb|-plastic| in Appendix A for a detailed description of the yield stress computation.
 
 
-\subsubsection*{A plastic till modification of EISMINT II experiment I}  To demonstrate the implementation we describe an example based on EISMINT II experiment I.  This particular experiment is documented in \cite{EISIIdescribe}.  Experiment I was not, however, discussed in the published intercomparison because the results for experiment I were ``straightforward results with little variability between groups'' \cite{EISMINT00}.  Note that Section \ref{sect:simp} describes using PISM to perform all the EISMINT II experiments documented in \cite{EISIIdescribe}, including experiment I.
+\subsubsection*{A plastic till modification of EISMINT II experiment I}  To demonstrate the Schoof model we describe an example based on EISMINT II experiment I.  This EISMINT experiment is only documented in \cite{EISIIdescribe}, but not, however, in the published intercomparison \cite{EISMINT00}.\footnote{The latter reference says that for experiment I were ``straightforward results with little variability between groups'' but also that the results were ``difficult to interpret'' \cite{EISMINT00}.}  Note that Section \ref{sect:simp} describes using PISM to perform all the EISMINT II experiments documented in \cite{EISIIdescribe}, including experiment I.
 
-Experiment I is identical to experiment A except for having ``trough'' bed topography.  This bed is shown in Figure \ref{fig:eis2I}.  As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  However, we use it to build an ice sheet which ``ought'' to have an ice stream, that is, along the trough.
+Experiment I is identical to experiment A except for having ``trough'' bed topography.  
+%This bed is shown in Figure \ref{fig:eis2I}.  
+As specified, experiment I has nothing to do with the SSA equations or plastic till failure, and indeed there is no basal motion at all.  However, we use it to build an ice sheet which ``ought'' to have an ice stream, that is, along the trough.  The script \verb|test/eis2plastic.sh| gives a sequence which starts with the plain experiment I on a standard EISMINT II grid and builds an ice sheet modeled by SIA.  It then turns on the plastic till SSA and superposes the velocity fields.
 
+\begin{comment}
 \begin{figure}[ht]
 \includegraphics[height=3.1in,keepaspectratio=true]{figs/eis2Ibed} \includegraphics[height=3.1in,keepaspectratio=true]{figs/cbar_eis2I}
 \caption{Left: Bed elevation for EISMINT II experiment I.  Most of the bed is a plateau at 1000 m (red), but the trough descends to zero elevation (blue).  Right: The vertically-averaged horizontal speeds at the end of a 200k year run using EISMINT II experiment I as specified, that is, with only the SIA for flow.  The grid is finer than is standard for EISMINT II (12.5 km instead of 25 km).  Speeds vary from 0 (blue) to 90 (red) m/a.}
 \label{fig:eis2I}
 \end{figure}
+\end{comment}
 
-The script \verb|test/eis2Iplastic.sh| gives a sequence which starts with the plain experiment I on a standard EISMINT II grid and builds an ice sheet modeled by SIA in then turns on the plastic till SSA and superposes the velocity fields.  This experiment is more fully documented in \cite{BuelerBrownSuper}, which is in preparation.  The following describes what the script does.
+\emph{This experiment is for now only documented in \cite{BuelerBrownSuper}, in preparation.}
 
-\medskip
-\scriptsize
-In fact, we first build the ice sheet for experiment I for 180,000 model years on the standard EISMINT II grid, which is relatively coarse with horizontal spacing of $25$ km.  Note that this run and the next parallelize well, so they will go quickly on (for instance) 10 to 40 processors.  Note that a significant fraction of the base is at the pressure-melting temperature.  At this point the effective thickness of the basal water is zero because stored basal water is not part of the EISMINT II model.  So we now turn on the part of the thermodynamical model which keeps track of stored basal water and run for 10k more model years.  Then we refine the grid to 12.5 km spacing, we run for the remaining 10k model years to complete the EISMINT II specified 200k year run, and we save full three-dimensional velocities at the end of the model run.  Through use of \verb|ncview| on the output file, for instance, we see that the effective thickness of the till water has increased to its maximum of 2 m in the area where the base is at the pressure-melting temperature.  In particular there is 2 m of stored basal water at the base of the ice in the majority of the trough part of the ice sheet.
-
-Now we turn on Schoof's plastic till ice stream model.  Because we are solving the SSA this part is substantially slower (per model year) and it harder to parallelize; it probably should be run on at most 16 processors. \emph{And etc.; see the script itself.}
-\normalsize
-\medskip
 
 \subsubsection*{Test I is an exact solution}  PISM's solution of Schoof's plastic till free boundary problem is also solved by test I in the verification suite.  It is based on the exact solution published in \cite{SchoofStream}.  It is a single diagnostic computation of the velocity of a single highly-simplified ice stream.  Here is an example run with some viewers:
 
@@ -578,9 +540,11 @@ Now we turn on Schoof's plastic till ice stream model.  Because we are solving t
 
 
 
-%\clearpage
-%\newpage
-\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [THIS SECTION IS TO BE ADDED; see subsection \ref{sect:green} as an example of bootstrapping;  note \cite{JoughinMacAyealTulaczyk} is a representative inverse modeling result which could be incorporated in a forward model when using the SSA for ice streams if the Schoof plastic till model is \emph{not} used]
+\clearpage
+\newpage
+\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [THIS SECTION IS TO BE ADDED; see subsection \ref{sect:green} as an example of bootstrapping]
+
+[Note \cite{JoughinMacAyealTulaczyk} is a representative inverse modeling result which could be incorporated in a forward model when using the SSA for ice streams.]
 
 
 \clearpage
@@ -792,7 +756,7 @@ Ctrl-C & \same & same, but only for foreground process(es)  \\ \hline
 
 Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
 
-If the input data actually includes the annual snow-fall accumulation then one must \emph{compute} the surface mass balance according to some model of how much of the snow is melted in each model year and according to a yearly temperature cycle.  We call such a model a \emph{positive degree day} model \cite{CalovGreve}.
+If the input data actually includes the annual snow-fall accumulation then one must \emph{compute} the surface mass balance according to some model of how much of the snow is melted in each model year and according to a yearly temperature cycle.  We call such a model a \emph{positive degree day} model \cite{CalovGreve05}.
 
 The model used by PISM in computing the amount of melting first assumes a sinusoidal temperature cycle over the course of the year, where the difference between the peak of this temperature cycle and its mean (average) is called the ``summer warming.''  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \verb|-pdd_summer_warming|.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point (in this default case).  The peak of the cycle occurs on August 1, which is Julian day 243, but the option \verb|-pdd_summer_peak_day| can override this.
 
@@ -955,19 +919,20 @@ produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs r
 \clearpage\newpage
 \section{Simplified geometry experiments}\label{sect:simp}
 
-\subsection{Historical note}  There have been at least three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s.
+\subsection{Historical note}  There have been three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s.
 
-EISMINT I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  (``EISMINT'' stands for European Ice Sheet Modeling INiTiative.)  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  
+EISMINT\footnote{``EISMINT'' stands for European Ice Sheet Modeling INiTiative.  
 
-EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.
+See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.
 
 EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models (as evidenced by their behavior on EISMINT II experiments).  PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
-The ISMIP round of intercomparisons are ongoing at the time of this writing (2007); ``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  At this time there are two components of ISMIP partially completed, namely HOM = Higher Order Models and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
+The ISMIP\footnote{``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  
 
-Of these ISMIP experiments, PISM currently only supports HEINO, but the results from PISM for HEINO are not regarded by the PISM authors as meaningful.  (ISMIP-HEINO support in PISM is an \emph{un}documented feature.)  We believe the continuum problem described by HEINO to not be easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  This is a problem regardless of the details of the numerical schemes or even (roughly speaking) of the shallowness of the continuum model.
+See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.} round of intercomparisons are ongoing at the time of this writing (January 2008).  There are two components of ISMIP partially completed, namely HOM = Higher Order Models and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.  Of these ISMIP experiments, PISM has supported HEINO, but this ability is unmaintained (for reasons described in the next paragraph).  There is no current plan to support HOM.  The PISM developers plan to participate in the upcoming Marine Ice Sheet Model Intercomparison Project (MISMIP) and ISMIP-POLICE exercises.
 
-As of August 2007, the PISM developers plan to participate in the upcoming ISMIP-POLICE and Marine Ice Sheet Intercomparison exercises.
+The results from PISM for HEINO are not regarded by the PISM authors as meaningful.   We believe the continuum problem described by HEINO to not be easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The same problem applies to EISMINT II experiment H.  This is a problem regardless of the details of the numerical schemes or even (roughly speaking) of the shallowness of the continuum model.
+
 
 \subsection{EISMINT II in PISM}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}. They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
@@ -995,7 +960,7 @@ The vertical grid is not specified in the EISMINT II writeup.  It seems that goo
 Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done in PISM.
 
 \begin{table}[ht]
-\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus the given options.}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM; the command is ``\t{pisms}'' plus the given options.  Experiments below the horizontal line are only documented in \cite{EISIIdescribe}.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms}'' $+$} & \textbf{Relation to experiment A} \\ \hline
@@ -1423,7 +1388,7 @@ The NetCDF file \verb|ross.nc| contains ice thickness, bed elevations, surface t
 
 At the end of this run the computed velocity field is compared to the interpolated data on observed velocities in the file \verb|ross.nc|.  (In particular, that NetCDF file contains a variable \verb|accur| which identifies the region in which the observed velocities are valid.  The observed (interpolated) velocities themselves are stored in variables \verb|mag_obs| and \verb|azi_obs|.)  We see that the largest computed velocity in the ice shelf is just under a thousand meters per year, and that errors in the vector values of velocity are roughly 10\% in a sum of squares average sense.  (There is more on viewing the results, on measuring the correspondence with measurements, and on tuning the hardness parameter to fit the data, below.)
 
-There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding diagnositic viewers and a more complete (verbose) report to standard out:
+There are many variations on this basic ``\verb|pismd -ross|'' run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:
 
 \verb|   pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 11 -ssa \|
 
@@ -1805,7 +1770,7 @@ Here $b$ is the bed elevation and $h$ is the surface elevation.  Note that only 
 
 \opt{jd}  Sets the y grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{My}}-1$.  The default is $(\text{\t{My}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -jd 10|.
 
-\optdef{kd}{0}  Sets the z grid index at which map-plane diagnositic views are shown.  Compare \verb|pismv -test G -Mz 101 -d T| and \verb|pismv -test G -Mz 101 -d T -kd 50|.  See section \ref{sect:viewers}.
+\optdef{kd}{0}  Sets the z grid index at which map-plane diagnostic views are shown.  Compare \verb|pismv -test G -Mz 101 -d T| and \verb|pismv -test G -Mz 101 -d T -kd 50|.  See section \ref{sect:viewers}.
 
 \optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
@@ -2065,7 +2030,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \noindent shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of horizontal ice speed at the surface (``\t{0}'', i.e.~zero).
 
-The option \t{-d} is followed by a space and then a list of single-character names of the diagnositic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows only two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
+The option \t{-d} is followed by a space and then a list of single-character names of the diagnostic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows only two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
 \medskip
 
 The same views of the PISM model can be saved \emph{at the end of the run} to a \Matlab-readable ASCII file by the same single character names.  (At this point, \emph{most} of the names are allowed; see the list below.)  We will call these ``\Matlab views''.  For instance,
