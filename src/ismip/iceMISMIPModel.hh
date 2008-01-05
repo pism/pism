@@ -62,13 +62,23 @@ protected:
 };
 
 
+struct routineStatsType {
+  PetscScalar xg, hxg, maxubar, avubarG, avubarF;
+};
+
+
+struct mismipStatsType {
+  PetscScalar dxgdt, x1, x2, x3, h1, h2, h3, b1, b2, b3, q1, q2, q3;
+};
+
+
 class IceMISMIPModel : public IceModel {
 
 public:
   IceMISMIPModel(IceGrid &g, IceType &i, MISMIPIce &mismip_i);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
-  PetscErrorCode         setMISMIPBed();
+  PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
   virtual PetscErrorCode summaryPrintLine(const PetscTruth printPrototype, const PetscTruth tempAndAge,
                            const PetscScalar year, const PetscScalar dt, 
@@ -82,6 +92,13 @@ protected:
   PetscScalar runtimeyears;
   char        initials[PETSC_MAX_PATH_LEN];
 
+  routineStatsType  rstats;
+  mismipStatsType   mstats;
+
+  PetscErrorCode  setMISMIPBed();
+  PetscErrorCode  setMISMIPMask();
+  PetscErrorCode  getMISMIPStats();
+  PetscErrorCode  getRoutineStats();
 };
 
 #endif  // __iceMISMIPModel_hh

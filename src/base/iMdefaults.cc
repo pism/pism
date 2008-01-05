@@ -59,7 +59,7 @@ const PetscScalar IceModel::DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
 const PetscScalar IceModel::DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
 
 //used in iMvelocity.C
-const PetscScalar IceModel::DEFAULT_MINH_SSA = 10.0;  // m; minimum thickness for SSA velocity computation
+const PetscScalar IceModel::DEFAULT_MINH_SSA = 5.0;  // m; minimum thickness for SSA velocity computation
 const PetscScalar IceModel::DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> SSA
 const PetscScalar IceModel::DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch SSA --> SIA
 const PetscScalar IceModel::DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch SSA --> SIA

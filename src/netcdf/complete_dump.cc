@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2007--2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -104,6 +104,10 @@
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, cbar_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // compute cflx = cbar .* thk and save it
+  ierr = VecPointwiseMult(vWork2d[1], vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
   ierr = getSurfaceValuesOf3D(vu,vWork2d[0]); CHKERRQ(ierr);

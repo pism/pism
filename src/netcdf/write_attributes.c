@@ -44,6 +44,7 @@
    int cbar_id;
    int csurf_id;
    int wsurf_id;
+   int cflx_id;
 
    /* rank (number of dimensions) for each variable */
 #  define RANK_polar_stereographic 0
@@ -70,6 +71,7 @@
 #  define RANK_cbar 3
 #  define RANK_csurf 3
 #  define RANK_wsurf 3
+#  define RANK_cflx 3
 
    /* variable shapes */
    int x_dims[RANK_x];
@@ -95,6 +97,7 @@
    int cbar_dims[RANK_cbar];
    int csurf_dims[RANK_csurf];
    int wsurf_dims[RANK_wsurf];
+   int cflx_dims[RANK_cflx];
 
    double polar_stereographic_straight_vertical_longitude_from_pole[1];
    double polar_stereographic_latitude_of_projection_origin[1];
@@ -249,6 +252,12 @@ if (grid.rank == 0) {
    wsurf_dims[1] = x_dim;
    wsurf_dims[2] = y_dim;
    stat = nc_def_var(ncid, "wsurf", NC_FLOAT, RANK_wsurf, wsurf_dims, &wsurf_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   cflx_dims[0] = t_dim;
+   cflx_dims[1] = x_dim;
+   cflx_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "cflx", NC_FLOAT, RANK_cflx, cflx_dims, &cflx_id);
    check_err(stat,__LINE__,__FILE__);
 
    /* assign attributes */
@@ -442,6 +451,12 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, wsurf_id, "units", 8, "m year-1");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, wsurf_id, "pism_intent", 10, "diagnostic");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cflx_id, "long_name", 57, "magnitude of vertically-integrated horizontal flux of ice");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cflx_id, "units", 9, "m2 year-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cflx_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", 6, "CF-1.0");
    check_err(stat,__LINE__,__FILE__);

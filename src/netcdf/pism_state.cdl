@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Jed Brown and Ed Bueler
+// Copyright (C) 2007--2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -176,6 +176,10 @@ variables: // The names of variables are magic in PISM source.
     wsurf:long_name = "vertical velocity of ice at ice surface";
     wsurf:units = "m year-1";
     wsurf:pism_intent = "diagnostic";
+  float cflx(t,x,y);
+    cflx:long_name = "magnitude of vertically-integrated horizontal flux of ice";
+    cflx:units = "m2 year-1";
+    cflx:pism_intent = "diagnostic";
 
 // global attributes
     :Conventions = "CF-1.0";

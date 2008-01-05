@@ -45,6 +45,7 @@
    int cbar_id;
    int csurf_id;
    int wsurf_id;
+   int cflx_id;
    int uvel_id;
    int vvel_id;
    int wvel_id;
@@ -74,6 +75,7 @@
 #  define RANK_cbar 3
 #  define RANK_csurf 3
 #  define RANK_wsurf 3
+#  define RANK_cflx 3
 #  define RANK_uvel 4
 #  define RANK_vvel 4
 #  define RANK_wvel 4
@@ -102,6 +104,7 @@
    int cbar_dims[RANK_cbar];
    int csurf_dims[RANK_csurf];
    int wsurf_dims[RANK_wsurf];
+   int cflx_dims[RANK_cflx];
    int uvel_dims[RANK_uvel];
    int vvel_dims[RANK_vvel];
    int wvel_dims[RANK_wvel];
@@ -259,6 +262,12 @@ if (grid.rank == 0) {
    wsurf_dims[1] = x_dim;
    wsurf_dims[2] = y_dim;
    stat = nc_def_var(ncid, "wsurf", NC_FLOAT, RANK_wsurf, wsurf_dims, &wsurf_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   cflx_dims[0] = t_dim;
+   cflx_dims[1] = x_dim;
+   cflx_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "cflx", NC_FLOAT, RANK_cflx, cflx_dims, &cflx_id);
    check_err(stat,__LINE__,__FILE__);
 
    uvel_dims[0] = t_dim;
@@ -473,6 +482,12 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, wsurf_id, "units", 8, "m year-1");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, wsurf_id, "pism_intent", 10, "diagnostic");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cflx_id, "long_name", 57, "magnitude of vertically-integrated horizontal flux of ice");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cflx_id, "units", 9, "m2 year-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, cflx_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, uvel_id, "long_name", 63, "horizontal velocity of ice in projection_x_coordinate direction");
    check_err(stat,__LINE__,__FILE__);
