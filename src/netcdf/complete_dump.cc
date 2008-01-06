@@ -61,12 +61,12 @@
   ierr = put_local_var(&grid, ncid, dbdt_id, NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
-  ierr = put_local_var(&grid, ncid, temp_id, NC_FLOAT, grid.da3, vT, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = T3.setVaridNC(temp_id); CHKERRQ(ierr);
+  ierr = T3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, litho_temp_id, NC_FLOAT, grid.da3b, vTb, g3b,
                        s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, age_id, NC_FLOAT, grid.da3, vtau, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = tau3.setVaridNC(age_id); CHKERRQ(ierr);
+  ierr = tau3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D climate quantities
   ierr = put_local_var(&grid, ncid, artm_id, NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -110,8 +110,8 @@
   ierr = put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
-  ierr = getSurfaceValuesOf3D(vu,vWork2d[0]); CHKERRQ(ierr);
-  ierr = getSurfaceValuesOf3D(vv,vWork2d[1]); CHKERRQ(ierr);
+  ierr = u3.getSurfaceValuesVec2d(vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = v3.getSurfaceValuesVec2d(vWork2d[1], vH); CHKERRQ(ierr);
   PetscScalar **us, **vs;
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
@@ -127,7 +127,7 @@
   ierr = put_local_var(&grid, ncid, csurf_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute wsurf, the surface values of vertical velocity
-  ierr = getSurfaceValuesOf3D(vw,vWork2d[0]); CHKERRQ(ierr);
+  ierr = w3.getSurfaceValuesVec2d(vWork2d[0], vH); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);

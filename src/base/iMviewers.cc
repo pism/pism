@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -178,64 +178,70 @@ PetscErrorCode IceModel::updateOneSounding(
 PetscErrorCode IceModel::updateSoundings() {
   PetscErrorCode ierr;
   PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz - 1;
-  PetscInt   *row;
 
   // row gives indices only
+  PetscInt   *row;
   row = new PetscInt[Mzsum];
   for (PetscInt k=0; k < Mzsum; k++)   row[k] = k;
+  
+  PetscScalar *izz, *ivals;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  ivals = new PetscScalar[grid.p->Mz];
   
   // transfer data in [id][jd] column to soundings Vec
   if (id>=grid.xs && id<grid.xs+grid.xm && jd>=grid.ys && jd<grid.ys+grid.ym) {
     if (runtimeViewers[cIndex('t')] != PETSC_NULL) {
-      PetscScalar ***T, ***Tb;
-      ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+      PetscScalar ***Tb;
+      ierr = T3.needAccessToVals(); CHKERRQ(ierr);
       ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
       // note Tb[][][Mbz-1] duplicates T[][][0] and it should not be displayed twice
       ierr = VecSetValues(Td, grid.p->Mbz - 1, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz - 1], &T[id][jd][0], INSERT_VALUES);
-      CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+      ierr = T3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz - 1], ivals, INSERT_VALUES);
+               CHKERRQ(ierr);
+      ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
       ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('x')] != PETSC_NULL) {
-      PetscScalar ***u;
-      ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-      ierr = VecSetValues(ud, grid.p->Mz, row, &u[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
+      ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+      ierr = u3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(ud, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('y')] != PETSC_NULL) {
-      PetscScalar ***v;
-      ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-      ierr = VecSetValues(vd, grid.p->Mz, row, &v[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
+      ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+      ierr = v3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(vd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('z')] != PETSC_NULL) {
-      PetscScalar ***w;
-      ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
-      ierr = VecSetValues(wd, grid.p->Mz, row, &w[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
+      ierr = w3.needAccessToVals(); CHKERRQ(ierr);
+      ierr = w3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(wd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('s')] != PETSC_NULL) {
-      PetscScalar ***Sigma;
-      ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
-      ierr = VecSetValues(Sigmad, grid.p->Mz, row, &Sigma[id][jd][0], INSERT_VALUES);
-      CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
+      ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
+      ierr = Sigma3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(Sigmad, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('g')] != PETSC_NULL) {
-      PetscScalar ***gs;
-      ierr = DAVecGetArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
-      ierr = VecSetValues(gsd, grid.p->Mz, row, &gs[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vgs, &gs); CHKERRQ(ierr);
+      ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
+      ierr = gs3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(gsd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('e')] != PETSC_NULL) {
-      PetscScalar ***Tau;
-      ierr = DAVecGetArray(grid.da3, vtau, &Tau); CHKERRQ(ierr);
-      ierr = VecSetValues(gsd, grid.p->Mz, row, &Tau[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3, vtau, &Tau); CHKERRQ(ierr);
+      ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
+      ierr = tau3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+      ierr = VecSetValues(taud, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
     }
   }
-  delete [] row;  // done with setting up soundings ...
+  
+  delete [] row; delete [] izz; delete [] ivals;  // done with setting up soundings ...
 
   // actually view soundings:  
   ierr = updateOneSounding('e',taud,1.0/secpera); CHKERRQ(ierr); // Display in years
@@ -262,12 +268,15 @@ PetscErrorCode IceModel::update2DViewer(const char scName, Vec l2, // a da2 Vec
 }
 
 
-PetscErrorCode IceModel::updateSliceViewer(const char scName, Vec l3, // a da3 Vec
+PetscErrorCode IceModel::updateSliceViewer(const char scName, IceModelVec3 imv3,
                                            const PetscScalar scale) {
   PetscErrorCode ierr;
   
   if (runtimeViewers[cIndex(scName)] != PETSC_NULL) {
-    ierr = getHorSliceOf3D(l3, g2, kd);
+    ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3.getHorSlice(g2, kd * grid.p->dz); CHKERRQ(ierr);
+    ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
+
     ierr = VecScale(g2, scale); CHKERRQ(ierr);
     ierr = VecView(g2, runtimeViewers[cIndex(scName)]); CHKERRQ(ierr);
   }
@@ -275,12 +284,14 @@ PetscErrorCode IceModel::updateSliceViewer(const char scName, Vec l3, // a da3 V
 }
 
 
-PetscErrorCode IceModel::updateSurfaceValuesViewer(const char scName, Vec l3, // a da3 Vec
+PetscErrorCode IceModel::updateSurfaceValuesViewer(const char scName, IceModelVec3 imv3,
                                                    const PetscScalar scale) {
   PetscErrorCode ierr;
   
   if (runtimeViewers[cIndex(scName)] != PETSC_NULL) {
-    ierr = getSurfaceValuesOf3D(l3,g2); CHKERRQ(ierr);
+    ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3.getSurfaceValuesVec2d(g2, vH); CHKERRQ(ierr);
+    ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = VecScale(g2, scale); CHKERRQ(ierr);
     ierr = VecView(g2, runtimeViewers[cIndex(scName)]); CHKERRQ(ierr);
   }
@@ -330,13 +341,16 @@ PetscErrorCode IceModel::updateSpeed2DViewer(
 
 
 PetscErrorCode IceModel::updateSpeedSurfaceValuesViewer(
-                   const char scName, Vec lu, Vec lv, // two da3 Vecs
+                   const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v,
                    const PetscScalar scale, const PetscTruth doLog,
                    const PetscScalar log_missing) {
   PetscErrorCode ierr;
-  
-  ierr = getSurfaceValuesOf3D(lu,vWork2d[2]); CHKERRQ(ierr);
-  ierr = getSurfaceValuesOf3D(lv,vWork2d[3]); CHKERRQ(ierr);
+  ierr = imv3_u.needAccessToVals(); CHKERRQ(ierr);
+  ierr = imv3_v.needAccessToVals(); CHKERRQ(ierr);
+  ierr = imv3_u.getSurfaceValuesVec2d(vWork2d[2], vH); CHKERRQ(ierr);
+  ierr = imv3_v.getSurfaceValuesVec2d(vWork2d[3], vH); CHKERRQ(ierr);  
+  ierr = imv3_u.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = imv3_v.doneAccessToVals(); CHKERRQ(ierr);
   ierr = updateSpeed2DViewer(scName, vWork2d[2], vWork2d[3], 
             scale, doLog, log_missing); CHKERRQ(ierr);
   return 0;
@@ -390,31 +404,31 @@ PetscErrorCode IceModel::updateViewers() {
   // start by updating soundings:
   ierr = updateSoundings(); CHKERRQ(ierr);
   
-  ierr = updateSpeedSurfaceValuesViewer('0', vu, vv, secpera, PETSC_FALSE, 0.0); CHKERRQ(ierr);
-  ierr = updateSurfaceValuesViewer('1', vu, secpera); CHKERRQ(ierr);
-  ierr = updateSurfaceValuesViewer('2', vv, secpera); CHKERRQ(ierr);
-  ierr = updateSurfaceValuesViewer('3', vw, secpera); CHKERRQ(ierr);
+  ierr = updateSpeedSurfaceValuesViewer('0', u3, v3, secpera, PETSC_FALSE, 0.0); CHKERRQ(ierr);
+  ierr = updateSurfaceValuesViewer('1', u3, secpera); CHKERRQ(ierr);
+  ierr = updateSurfaceValuesViewer('2', v3, secpera); CHKERRQ(ierr);
+  ierr = updateSurfaceValuesViewer('3', w3, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('4', vub, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
   ierr = update2DViewer('A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, secpera); CHKERRQ(ierr);
   ierr = updateLog2DViewer('B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = update2DViewer('C', vtauc, 0.001); CHKERRQ(ierr); // display in kPa
-  ierr = updateSliceViewer('E', vtau, 1.0/secpera); CHKERRQ(ierr); // display in years
+  ierr = updateSliceViewer('E', tau3, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
-  ierr = updateSliceViewer('G', vgs, 1000.0); CHKERRQ(ierr); // in mm
+  ierr = updateSliceViewer('G', gs3, 1000.0); CHKERRQ(ierr); // in mm
   ierr = update2DViewer('H', vH, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('L', vHmelt, 1.0); CHKERRQ(ierr);
   ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
   ierr = update2DViewer('Q', vWork2d[0], 0.001); CHKERRQ(ierr); // Display in kPa
   ierr = update2DViewer('R', vRb, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
-  ierr = updateSliceViewer('S', vSigma, secpera); CHKERRQ(ierr);
-  ierr = updateSliceViewer('T', vT, 1.0); CHKERRQ(ierr);
+  ierr = updateSliceViewer('S', Sigma3, secpera); CHKERRQ(ierr);
+  ierr = updateSliceViewer('T', T3, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('U', vuvbar[0], secpera); CHKERRQ(ierr);
   ierr = update2DViewer('V', vuvbar[1], secpera); CHKERRQ(ierr);
-  ierr = updateSliceViewer('X', vu, secpera); CHKERRQ(ierr);
-  ierr = updateSliceViewer('Y', vv, secpera); CHKERRQ(ierr);
-  ierr = updateSliceViewer('Z', vw, secpera); CHKERRQ(ierr);
+  ierr = updateSliceViewer('X', u3, secpera); CHKERRQ(ierr);
+  ierr = updateSliceViewer('Y', v3, secpera); CHKERRQ(ierr);
+  ierr = updateSliceViewer('Z', w3, secpera); CHKERRQ(ierr);
 
   ierr = update2DViewer('a', vAccum, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('b', vbed, 1.0); CHKERRQ(ierr);

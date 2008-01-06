@@ -65,13 +65,18 @@ PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ct
 
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **b, **Ts, **Ghf, ***T, ***Tb;
+  PetscScalar     **H, **b, **Ts, **Ghf, ***Tb;
+
+  PetscScalar *izz, *T;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  T = new PetscScalar[grid.p->Mz];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -95,15 +100,16 @@ PetscErrorCode IceModel::putTempAtDepth() {
         * (g / (2.0 * ice.k * HH * HH * HH));
       const PetscScalar alpha = (g / (2.0 * HH * ice.k)) - 2.0 * HH * HH * beta;
       for (PetscInt k=ks; k<grid.p->Mz; k++) {
-        T[i][j][k] = Ts[i][j];
+        T[k] = Ts[i][j];
       }
       for (PetscInt k=0; k<ks; k++) {
         const PetscScalar depth = HH - static_cast<PetscScalar>(k) * grid.p->dz;
         const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
         const PetscScalar d2 = depth*depth;
-        T[i][j][k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
+        T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
       }
-      PetscScalar T_top_bed = T[i][j][0];
+      ierr = T3.setValColumn(i,j,grid.p->Mz,izz,T); CHKERRQ(ierr);
+      PetscScalar T_top_bed = T[0];
       // if floating then top of bedrock sees ocean
       const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
       if (b[i][j] < floating_base - 1.0)
@@ -118,11 +124,13 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
+  delete [] izz; delete [] T;
+  
+  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = T3.endGhostComm(); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da3b, vTb, INSERT_VALUES, vTb); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da3b, vTb, INSERT_VALUES, vTb); CHKERRQ(ierr);
 
@@ -677,16 +685,16 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
 // complete the output file as in usual dump
-// ("u_id", "v_id", "w_id" defined in included file)
+// ("uvel_id", "vvel_id", "wvel_id" defined in included file)
 #include "../netcdf/complete_dump.cc"
 
   // now write additional 3-D diagnostic quantities
-  ierr = put_local_var(&grid, ncid, uvel_id, NC_FLOAT, grid.da3, vu, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, vvel_id, NC_FLOAT, grid.da3, vv, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, wvel_id, NC_FLOAT, grid.da3, vw, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = u3.setVaridNC(uvel_id); CHKERRQ(ierr);
+  ierr = u3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = v3.setVaridNC(vvel_id); CHKERRQ(ierr);
+  ierr = v3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = w3.setVaridNC(wvel_id); CHKERRQ(ierr);
+  ierr = w3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   
   // We are done with these buffers
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
@@ -802,11 +810,11 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
-  ierr = get_local_var(&grid, ncid, "temp", NC_FLOAT, grid.da3, vT, g3,
+  ierr = get_local_var(&grid, ncid, "temp", NC_FLOAT, grid.da3, T3.v, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "litho_temp", NC_FLOAT, grid.da3b, vTb, g3b,
                        s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "age", NC_FLOAT, grid.da3, vtau, g3,
+  ierr = get_local_var(&grid, ncid, "age", NC_FLOAT, grid.da3, tau3.v, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
 
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
@@ -1018,11 +1026,13 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'T', "temp", 3, lic, grid, grid.da3, vT, g3);
+  ierr = regrid_local_var(regridVars, 'T', "temp", 3, lic, grid, grid.da3, T3.v, g3);
   CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'B', "litho_temp", 4, lic, grid, grid.da3b, vTb, g3b);
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, vtau, g3);
+//  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, vtau, g3);
+//  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, tau3.v, g3);
   CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
   CHKERRQ(ierr);

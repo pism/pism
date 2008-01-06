@@ -456,7 +456,7 @@ PetscErrorCode IceModel::reconfigure_legacy_Mbz() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-legacy_nc_Mbz", &legacy_nc_Mbz); CHKERRQ(ierr);
   if (legacy_nc_Mbz == PETSC_TRUE) {
     PetscInt    M, N, m, n;
-    PetscScalar ***T, ***Tb, ***newTb;
+    PetscScalar ***Tb, ***newTb;
     DA _da3b;
     Vec _vTb, _g3b;
 
@@ -468,7 +468,7 @@ PetscErrorCode IceModel::reconfigure_legacy_Mbz() {
     ierr = DACreateLocalVector(_da3b, &_vTb); CHKERRQ(ierr);
     ierr = DACreateGlobalVector(_da3b, &_g3b); CHKERRQ(ierr);
 
-    ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    ierr = T3.needAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
     ierr = DAVecGetArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i < grid.xs + grid.xm; i++) {
@@ -476,10 +476,10 @@ PetscErrorCode IceModel::reconfigure_legacy_Mbz() {
         for (PetscInt k = 0; k < grid.p->Mbz - 1; k++) {
           newTb[i][j][k] = Tb[i][j][k];
         }
-        newTb[i][j][grid.p->Mbz - 1] = T[i][j][0];
+        newTb[i][j][grid.p->Mbz - 1] = T3.getValZ(i,j,0.0);
       }
     }
-    ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+    ierr = T3.needAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
     DADestroy(grid.da3b); grid.da3b = _da3b;

@@ -144,18 +144,19 @@ PetscErrorCode IceROSSModel::finishROSS() {
 
 PetscErrorCode IceROSSModel::fillinTemps() {
   PetscErrorCode      ierr;
-  PetscScalar         **Ts, ***T, ***Tb, ***tau;
+  PetscScalar         **Ts, ***T, ***Tb;
 
+//  ierr = VecSet(vtau,0.0); CHKERRQ(ierr);
+  ierr = VecSet(tau3.v,0.0); CHKERRQ(ierr);
+  
   // fill in all temps with Ts
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vtau, &tau); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       for (PetscInt k=0; k<grid.p->Mz; k++) {
         T[i][j][k] = Ts[i][j];
-        tau[i][j][k] = 0.0;
       }
       for (PetscInt k=0; k<grid.p->Mbz; k++)
         Tb[i][j][k] = Ts[i][j];
@@ -163,7 +164,6 @@ PetscErrorCode IceROSSModel::fillinTemps() {
   }
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vtau, &tau); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
   return 0;
 }

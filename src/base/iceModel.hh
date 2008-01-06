@@ -27,6 +27,7 @@
 #include "grid.hh"
 #include "materials.hh"
 #include "beddefLC.hh"
+#include "iceModelVec.hh"
 
 // following simply unclutters iceModel.hh:
 #include "iceModelpreamble.hh" 
@@ -58,6 +59,9 @@ public:
   PetscTruth isInitialized() const;
 
   // see iceModel.cc
+  
+  PetscErrorCode testIceModelVec();
+
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   PetscScalar maxdt_temporary; // might be set by additionalAt??Timestep()
@@ -160,10 +164,12 @@ protected:
     vtauc, vtillphi, vbeta;     // basal fields; plastic/viscous coefficients
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
                                         //   u bar and v bar on staggered grid,
-  Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
-               vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
+//  Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
+//               vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
   Vec          vTb;                     // 3D bed: Mx x My x Mbz
   Vec          vLongitude, vLatitude;
+
+  IceModelVec3  u3, v3, w3, Sigma3, T3, gs3, tau3;
 
   // parameters
   PetscScalar maxdt, muSliding, enhancementFactor;
@@ -295,19 +301,19 @@ protected:
   PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
                                  Vec l2, const PetscScalar scale);
   PetscErrorCode writeSliceToMatlab(PetscViewer v, const char singleCharName, 
-                                    Vec l3, const PetscScalar scale);
+                                    IceModelVec3 imv3, const PetscScalar scale);
   PetscErrorCode writeSurfaceValuesToMatlab(PetscViewer v, const char singleCharName, 
-                                            Vec l3, const PetscScalar scale);
+                                            IceModelVec3 imv3, const PetscScalar scale);
   PetscErrorCode writeSpeed2DToMatlab(PetscViewer v, const char scName, 
                           Vec lu, Vec lv, const PetscScalar scale, 
                           const PetscTruth doLog, const PetscScalar log_missing);
   PetscErrorCode writeSpeedSurfaceValuesToMatlab(PetscViewer v, const char scName, 
-                          Vec lu, Vec lv, const PetscScalar scale, 
+                          IceModelVec3 imv3_u, IceModelVec3 imv3_v, const PetscScalar scale, 
                           const PetscTruth doLog, const PetscScalar log_missing);
   PetscErrorCode writeLog2DToMatlab(PetscViewer v, const char scName, 
                           Vec l, const PetscScalar scale, const PetscScalar thresh,
                           const PetscScalar log_missing);
-  PetscErrorCode writeSoundingToMatlab(PetscViewer v, const char scName, Vec l,
+  PetscErrorCode writeSoundingToMatlab(PetscViewer v, const char scName, IceModelVec3 imv3,
                           const PetscScalar scale, const PetscTruth doTandTb);
   PetscErrorCode writeMatlabVars(const char *fname);
   PetscErrorCode writeSSAsystemMatlab(Vec vNu[2]);
@@ -402,8 +408,6 @@ protected:
   PetscErrorCode computeBasalDrivingStress(Vec myVec);
   PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
-  PetscErrorCode getHorSliceOf3D(Vec v3D, Vec &gslice, PetscInt k);
-  PetscErrorCode getSurfaceValuesOf3D(Vec v3D, Vec &g2D);
 
   // see iMvelocity.cc
   PetscErrorCode vertVelocityFromIncompressibility();
@@ -424,12 +428,12 @@ protected:
                                           const char singleCharName, const char* title);
   PetscErrorCode createViewers();
   PetscErrorCode update2DViewer(const char scName, Vec l2, const PetscScalar scale);
-  PetscErrorCode updateSliceViewer(const char scName, Vec l3, const PetscScalar scale);
-  PetscErrorCode updateSurfaceValuesViewer(const char scName, Vec l3, const PetscScalar scale);
+  PetscErrorCode updateSliceViewer(const char scName, IceModelVec3 imv3, const PetscScalar scale);
+  PetscErrorCode updateSurfaceValuesViewer(const char scName, IceModelVec3 imv3, const PetscScalar scale);
   PetscErrorCode updateSpeed2DViewer(const char scName, Vec lu, Vec lv, 
                    const PetscScalar scale, const PetscTruth doLog, 
                    const PetscScalar log_missing);
-  PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, Vec lu, Vec lv, 
+  PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v, 
                    const PetscScalar scale, const PetscTruth doLog, 
                    const PetscScalar log_missing);
   PetscErrorCode updateLog2DViewer(const char scName, Vec l,

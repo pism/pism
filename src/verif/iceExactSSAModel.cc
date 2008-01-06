@@ -62,7 +62,8 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = VecSet(vT, T0); CHKERRQ(ierr);
   ierr = VecSet(vTb, T0); CHKERRQ(ierr);
-  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age (not yield stress)
+//  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);  // age (not yield stress)
+  ierr = VecSet(tau3.v, 0.0); CHKERRQ(ierr);  // age (not yield stress)
 
   // set initial velocities in shelf (for start of iteration)
   ierr = VecSet(vubar,0.0); CHKERRQ(ierr);

@@ -60,12 +60,13 @@ PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName,
 
 
 PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName, 
-                                  Vec l3, // a da3 Vec
-                                  const PetscScalar scale) {
+                                  IceModelVec3 imv3, const PetscScalar scale) {
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
-    ierr = getHorSliceOf3D(l3, g2, kd);
+    ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3.getHorSlice(g2, kd * grid.p->dz); CHKERRQ(ierr);
+    ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = VecScale(g2,scale); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
   }
@@ -74,12 +75,13 @@ PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName,
 
 
 PetscErrorCode IceModel::writeSurfaceValuesToMatlab(PetscViewer v, const char scName, 
-                                  Vec l3, // a da3 Vec
-                                  const PetscScalar scale) {
+                                  IceModelVec3 imv3, const PetscScalar scale) {
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
-    ierr = getSurfaceValuesOf3D(l3,g2); CHKERRQ(ierr);
+    ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3.getSurfaceValuesVec2d(g2, vH); CHKERRQ(ierr);
+    ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = VecScale(g2,scale); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
   }
@@ -129,14 +131,18 @@ PetscErrorCode IceModel::writeSpeed2DToMatlab(
 
 
 PetscErrorCode IceModel::writeSpeedSurfaceValuesToMatlab(
-                   PetscViewer v, const char scName, Vec lu, Vec lv, // two da3 Vecs
+                   PetscViewer v, const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v, 
                    const PetscScalar scale, const PetscTruth doLog,
                    const PetscScalar log_missing) {
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
-    ierr = getSurfaceValuesOf3D(lu,vWork2d[2]); CHKERRQ(ierr);
-    ierr = getSurfaceValuesOf3D(lv,vWork2d[3]); CHKERRQ(ierr);
+    ierr = imv3_u.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3_v.needAccessToVals(); CHKERRQ(ierr); 
+    ierr = imv3_u.getSurfaceValuesVec2d(vWork2d[2], vH); CHKERRQ(ierr);
+    ierr = imv3_v.getSurfaceValuesVec2d(vWork2d[3], vH); CHKERRQ(ierr);  
+    ierr = imv3_u.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3_v.doneAccessToVals(); CHKERRQ(ierr);
     ierr = writeSpeed2DToMatlab(v, scName, vWork2d[2], vWork2d[3], 
               scale, doLog, log_missing); CHKERRQ(ierr);
   }
@@ -174,13 +180,19 @@ PetscErrorCode IceModel::writeLog2DToMatlab(
 
 
 PetscErrorCode IceModel::writeSoundingToMatlab(
-                     PetscViewer v, const char scName, Vec l, // a da3 Vec
+                     PetscViewer v, const char scName, IceModelVec3 imv3,
                      const PetscScalar scale, const PetscTruth doTandTb) {
   if (matlabOutWanted(scName)) {
     PetscErrorCode   ierr;
     PetscInt         rlen = grid.p->Mz;
     PetscInt         *row;
     Vec              m;
+    PetscScalar *izz, *ivals;
+
+    izz = new PetscScalar[grid.p->Mz];
+    for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+
+    ivals = new PetscScalar[grid.p->Mz];
 
     // row gives indices only
     if (doTandTb == PETSC_TRUE)   rlen += grid.p->Mbz;
@@ -191,21 +203,24 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
 
     if ((id >= grid.xs) && (id < grid.xs+grid.xm) && (jd >= grid.ys) && (jd < grid.ys+grid.ym)) {
       if (doTandTb == PETSC_TRUE) {
-        PetscScalar ***T, ***Tb;
-        ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+        ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+        ierr = T3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+        PetscScalar ***Tb;
         ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
         ierr = VecSetValues(m, grid.p->Mbz, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], &T[id][jd][0], INSERT_VALUES);
+        ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], ivals, INSERT_VALUES);
                  CHKERRQ(ierr);
-        ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+        ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
         ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
       } else {
-        PetscScalar      ***u;
-        ierr = DAVecGetArray(grid.da3, l, &u); CHKERRQ(ierr);
-        ierr = VecSetValues(m, rlen, row, &u[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
-        ierr = DAVecRestoreArray(grid.da3, l, &u); CHKERRQ(ierr);
+        ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+        ierr = imv3.getValColumn(id, jd, rlen, izz, ivals); CHKERRQ(ierr);
+        ierr = VecSetValues(m, rlen, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+        ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
       }
     }
+
+    delete [] row; delete [] izz; delete [] ivals;  // done with setting up soundings ...
 
     ierr = VecAssemblyBegin(m); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(m); CHKERRQ(ierr);
@@ -252,11 +267,11 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
                                 -grid.p->Lbz,grid.p->dz);  CHKERRQ(ierr);
 
   // now write the variables if they are wanted
-  ierr = writeSpeedSurfaceValuesToMatlab(viewer, '0', vu, vv, secpera, PETSC_FALSE, 0.0);
+  ierr = writeSpeedSurfaceValuesToMatlab(viewer, '0', u3, v3, secpera, PETSC_FALSE, 0.0);
            CHKERRQ(ierr);
-  ierr = writeSurfaceValuesToMatlab(viewer, '1', vu, secpera);  CHKERRQ(ierr);
-  ierr = writeSurfaceValuesToMatlab(viewer, '2', vv, secpera);  CHKERRQ(ierr);
-  ierr = writeSurfaceValuesToMatlab(viewer, '3', vw, secpera);  CHKERRQ(ierr);
+  ierr = writeSurfaceValuesToMatlab(viewer, '1', u3, secpera);  CHKERRQ(ierr);
+  ierr = writeSurfaceValuesToMatlab(viewer, '2', v3, secpera);  CHKERRQ(ierr);
+  ierr = writeSurfaceValuesToMatlab(viewer, '3', w3, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, '4', vub, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, '5', vvb, secpera);  CHKERRQ(ierr);
 
@@ -264,30 +279,30 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
                          secpera); CHKERRQ(ierr);
   ierr = writeLog2DToMatlab(viewer, 'B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'C', vtauc, 0.001);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'E', vtau, 1.0/secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'E', tau3, 1.0/secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'G', vgs, 1000.0);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'G', gs3, 1000.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
   ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'Q', vWork2d[0], 0.001); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'R', vRb, 1000.0);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'S', vSigma, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'T', vT, 1.0);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'S', Sigma3, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'T', T3, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'U', vuvbar[0], secpera); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'V', vuvbar[1], secpera); CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'X', vu, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'Y', vv, secpera);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'Z', vw, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'X', u3, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'Y', v3, secpera);  CHKERRQ(ierr);
+  ierr = writeSliceToMatlab(viewer, 'Z', w3, secpera);  CHKERRQ(ierr);
 
   ierr = write2DToMatlab(viewer, 'a', vAccum, secpera); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'b', vbed, 1.0); CHKERRQ(ierr);
   ierr = writeSpeed2DToMatlab(viewer, 'c', vubar, vvbar, secpera, PETSC_TRUE, -3.0);
            CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'e',vtau,1.0/secpera, PETSC_FALSE);
+  ierr = writeSoundingToMatlab(viewer,'e',tau3,1.0/secpera, PETSC_FALSE);
            CHKERRQ(ierr); // Display in years
   ierr = write2DToMatlab(viewer, 'f', vdHdt, secpera);  CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'g',vgs,1000.0, PETSC_FALSE);
+  ierr = writeSoundingToMatlab(viewer,'g',gs3,1000.0, PETSC_FALSE);
            CHKERRQ(ierr); // Display in mm
   ierr = write2DToMatlab(viewer, 'h', vh, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'l', vbasalMeltRate, secpera);  CHKERRQ(ierr);
@@ -298,13 +313,13 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSpeed2DToMatlab(viewer, 'q', vub, vvb, secpera, PETSC_TRUE, -3.0);
            CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'r', vTs, 1.0);  CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'s', vSigma, secpera, PETSC_FALSE); CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'t', vT, 1.0, PETSC_TRUE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'s', Sigma3, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'t', T3, 1.0, PETSC_TRUE); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'u', vubar, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'v', vvbar, secpera);  CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'x', vu, secpera, PETSC_FALSE); CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'y', vv, secpera, PETSC_FALSE); CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'z', vw, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'x', u3, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'y', v3, secpera, PETSC_FALSE); CHKERRQ(ierr);
+  ierr = writeSoundingToMatlab(viewer,'z', w3, secpera, PETSC_FALSE); CHKERRQ(ierr);
 
   // now give plotting advice in Matlab comments
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);

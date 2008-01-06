@@ -29,38 +29,46 @@
 class IceModelVec {
 public:
   IceModelVec();
-  ~IceModelVec();
+  virtual ~IceModelVec();
 
-  virtual PetscErrorCode  create(IceGrid* mygrid);
+  virtual PetscErrorCode  create(IceGrid &mygrid);
   virtual PetscErrorCode  destroy();
 
-  virtual PetscErrorCode  setidNC(int my_ncid);
-  virtual PetscErrorCode  setAttrsNC(
+  virtual PetscErrorCode  setVaridNC(const int my_varid);
+  virtual PetscErrorCode  setAttrsNC(const int my_varid, const char my_varname[],
              const char my_long_name[], const char my_units[], const char my_pism_intent[]);
-  virtual PetscErrorCode  setAttrsCFstandardNC(
+  virtual PetscErrorCode  setAttrsCFstandardNC(const int my_varid, const char my_varname[],
              const char my_long_name[], const char my_units[], const char my_pism_intent[],
              const char my_standard_name[]);
-  virtual PetscErrorCode  readFromNC();
-  virtual PetscErrorCode  writeToNC();
 
-  virtual PetscErrorCode  needAccessVals();
-  virtual PetscErrorCode  doneAccessVals();
-  virtual PetscErrorCode  beginComm();
-  virtual PetscErrorCode  endComm();
+  virtual PetscErrorCode  readVecNC(const int ncid, PetscTruth *exists);
 
+  virtual PetscErrorCode  writeAttrsNC(const int ncid);
+  virtual PetscErrorCode  putVecNC(const int ncid, Vec g, const int *s, const int *c, int dims, 
+                                   void *a_mpi, int a_size);
+
+  virtual PetscErrorCode  needAccessToVals();
+  virtual PetscErrorCode  doneAccessToVals();
+  virtual PetscErrorCode  beginGhostComm();
+  virtual PetscErrorCode  endGhostComm();
+
+  virtual PetscErrorCode  setToConstant(const PetscScalar c);
+ 
   // FIXME:  make this protected once IceModelVec fully implemented!
   Vec          v;
 
 protected:
-  char         long_name[PETSC_MAX_PATH_LEN],
+  char         varname_nc[PETSC_MAX_PATH_LEN],
+               long_name[PETSC_MAX_PATH_LEN],
                standard_name[PETSC_MAX_PATH_LEN],
                units[PETSC_MAX_PATH_LEN],
-               intent[PETSC_MAX_PATH_LEN];
+               pism_intent[PETSC_MAX_PATH_LEN];
   PetscTruth   allocated, has_standard_name;
   
   IceGrid      *grid;
-  DA           da;
-  int          ncid;
+  DA           *da;
+  
+  int          varid_nc;
 
   virtual PetscErrorCode  checkAllocated();
   virtual PetscErrorCode  checkHaveArray();
@@ -71,29 +79,47 @@ protected:
 };
 
 
+struct planeStar {
+  PetscScalar ij, ip1, im1, jp1, jm1;
+};
+
+
+//  NOTE: apply following abstraction to *age*, i.e. vtau, first
+
 //! Class for a 3d DA-based Vec for ice scalar quantities in IceModel.
 class IceModelVec3 : public IceModelVec {
 public:
   IceModelVec3();
   virtual PetscErrorCode  destroy();
-  virtual PetscErrorCode  create(IceGrid* mygrid);
+  virtual PetscErrorCode  create(IceGrid &mygrid);
+
+  virtual PetscErrorCode  needAccessToVals();
+  virtual PetscErrorCode  doneAccessToVals();
 
 public:
-  PetscScalar     getValZ(const PetscInt i, const PetscInt j, const PetscScalar z);
-  PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
-                               PetscScalar *levels, PetscScalar *vals);
+  // call needAccessToVals() before setValColumn() or get???(); call doneAccessToVals() afterward
   PetscErrorCode  setValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
-                               PetscScalar *levels, PetscScalar *vals);
+                               PetscScalar *levelsIN, PetscScalar *valsIN);
 
+  PetscScalar     getValZ(const PetscInt i, const PetscInt j, const PetscScalar z);
+  PetscErrorCode  getPlaneStarZ(const PetscInt i, const PetscInt j, const PetscScalar z,
+                                planeStar *star);
+  PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+                               PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z);
-  PetscErrorCode  getSurfaceValues(Vec &gsurf, PetscScalar **H);
- 
+  PetscErrorCode  getSurfaceValuesVec2d(Vec &gsurf, Vec myH);
+  PetscErrorCode  getSurfaceValuesArray2d(Vec &gsurf, PetscScalar **H);
+
 protected:
   PetscScalar     ***array;
   PetscInt        Mz;
-  PetscScalar     dz, *levels;
+  PetscScalar     Lz, dz, *levels;
   
-  PetscErrorCode  isLegalLevel(const PetscScalar z);
+  virtual PetscErrorCode checkHaveArray();
+  PetscErrorCode         isLegalLevel(const PetscScalar z);
+
+  PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscInt *nlevels, 
+                                    PetscScalar **levelsOUT, PetscScalar **valsOUT);
 };
 
 

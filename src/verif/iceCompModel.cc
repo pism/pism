@@ -188,7 +188,8 @@ PetscErrorCode IceCompModel::initFromOptions() {
     }
 
     // none use Goldsby-Kohlstedt or do age calc
-    ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
+//    ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
+    ierr = VecSet(tau3.v, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
     setConstantGrainSize(DEFAULT_GRAIN_SIZE);
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
     // all have no uplift or Hmelt

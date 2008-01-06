@@ -682,7 +682,8 @@ PetscErrorCode IceCompModel::initTestK() {
   ierr = VecSet(vGhf, 0.042); CHKERRQ(ierr);
   ierr = VecSet(vH, 3000.0); CHKERRQ(ierr);
   ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
-  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);
+//  ierr = VecSet(vtau, 0.0); CHKERRQ(ierr);
+  ierr = VecSet(tau3.v, 0.0); CHKERRQ(ierr);
   ierr = VecCopy(vH,vh); CHKERRQ(ierr);
 
   ierr = fillSolnTestK(); CHKERRQ(ierr);

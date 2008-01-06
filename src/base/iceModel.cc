@@ -152,13 +152,13 @@ PetscErrorCode IceModel::createVecs() {
     ierr = destroyVecs(); CHKERRQ(ierr);
   }
   
-  ierr = DACreateLocalVector(grid.da3, &vu); CHKERRQ(ierr);
-  ierr = VecDuplicate(vu, &vv); CHKERRQ(ierr);
-  ierr = VecDuplicate(vu, &vw); CHKERRQ(ierr);
-  ierr = VecDuplicate(vu, &vSigma); CHKERRQ(ierr);
-  ierr = VecDuplicate(vu, &vT); CHKERRQ(ierr);
-  ierr = VecDuplicate(vu, &vtau); CHKERRQ(ierr);
-  ierr = VecDuplicate(vu, &vgs); CHKERRQ(ierr);
+  ierr = u3.create(grid); CHKERRQ(ierr);
+  ierr = v3.create(grid); CHKERRQ(ierr);
+  ierr = w3.create(grid); CHKERRQ(ierr);
+  ierr = Sigma3.create(grid); CHKERRQ(ierr);
+  ierr = T3.create(grid); CHKERRQ(ierr);
+  ierr = gs3.create(grid); CHKERRQ(ierr);
+  ierr = tau3.create(grid); CHKERRQ(ierr);
 
   ierr = DACreateLocalVector(grid.da3b, &vTb); CHKERRQ(ierr);
 
@@ -187,7 +187,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicateVecs(vh, 2, &vuvbar); CHKERRQ(ierr);
 
   ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
-  ierr = VecDuplicateVecs(vu, nWork3d, &vWork3d); CHKERRQ(ierr);
+  ierr = VecDuplicateVecs(u3.v, nWork3d, &vWork3d); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vubarSSA); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vvbarSSA); CHKERRQ(ierr);
 
@@ -221,13 +221,13 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = bedDefCleanup(); CHKERRQ(ierr);
   ierr = PDDCleanup(); CHKERRQ(ierr);
 
-  ierr = VecDestroy(vu); CHKERRQ(ierr);
-  ierr = VecDestroy(vv); CHKERRQ(ierr);
-  ierr = VecDestroy(vw); CHKERRQ(ierr);
-  ierr = VecDestroy(vSigma); CHKERRQ(ierr);
-  ierr = VecDestroy(vT); CHKERRQ(ierr);
-  ierr = VecDestroy(vtau); CHKERRQ(ierr);
-  ierr = VecDestroy(vgs); CHKERRQ(ierr);
+  ierr = u3.destroy(); CHKERRQ(ierr);
+  ierr = v3.destroy(); CHKERRQ(ierr);
+  ierr = w3.destroy(); CHKERRQ(ierr);
+  ierr = Sigma3.destroy(); CHKERRQ(ierr);
+  ierr = T3.destroy(); CHKERRQ(ierr);
+  ierr = gs3.destroy(); CHKERRQ(ierr);
+  ierr = tau3.destroy(); CHKERRQ(ierr);
 
   ierr = VecDestroy(vh); CHKERRQ(ierr);
   ierr = VecDestroy(vH); CHKERRQ(ierr);
@@ -301,7 +301,7 @@ PetscErrorCode IceModel::setEndYear(PetscScalar ye) {
 }
 
 void  IceModel::setInitialAgeYears(PetscScalar d) {
-  VecSet(vtau, d*secpera);
+  tau3.setToConstant(d*secpera);
 }
 
 void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
@@ -336,14 +336,18 @@ neighbors).  When the \c MASK_DRAGGING points have plastic till bases this is no
  */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
-  PetscScalar **h, **bed, **H, **mask, ***T;
+  PetscScalar **h, **bed, **H, **mask, **Tbase;
   const int MASK_GROUNDED_TO_DETERMINE = 999;
 
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.getHorSlice(vWork2d[0],0.0); CHKERRQ(ierr);  // values of T(x,y,z) at z=0.0
+  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -383,7 +387,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
             mask[i][j] = MASK_SHEET;
           } else {
             // if frozen to bed or essentially frozen to bed then make it SHEET
-            if (T[i][j][0] + ice.beta_CC_grad * H[i][j] 
+            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] 
                          < DEFAULT_MIN_TEMP_FOR_SLIDING) { 
               mask[i][j] = MASK_SHEET;
             } else {
@@ -409,7 +413,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);

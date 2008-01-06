@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -129,14 +129,20 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
 
+  PetscScalar *izz, *Tij, *Toffset;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  Tij = new PetscScalar[grid.p->Mz];
+  Toffset = new PetscScalar[grid.p->Mz];
+
   // We need to compute integrated effective viscosity. It is locally determined by the
   // strain rates and temperature field.
-  PetscScalar **mask, **H, ***T, **nu[2], **u, **v;  
+  PetscScalar **mask, **H, **nu[2], **u, **v;  
   ierr = VecSet(vNu[0], 0.0); CHKERRQ(ierr);
   ierr = VecSet(vNu[1], 0.0); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubarSSA, &u);
@@ -170,8 +176,10 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
                   -(1.0/3.0));
           } else { 
             // usual temperature-dependent case; "nu" is really "nu H"!
+            ierr = T3.getValColumn(i,j,grid.p->Mz,izz,Tij); CHKERRQ(ierr);
+            ierr = T3.getValColumn(i+oi,j+oj,grid.p->Mz,izz,Toffset); CHKERRQ(ierr);
             nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
-                                    myH,dz, u_x, u_y, v_x, v_y, T[i][j], T[i+oi][j+oj]);
+                                    myH, dz, u_x, u_y, v_x, v_y, Tij, Toffset);
           }
 
           if (! finite(nu[o][i][j]) || false) {
@@ -188,13 +196,15 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
+
+  delete [] izz; delete [] Tij; delete [] Toffset;
 
   // Some communication
   ierr = DALocalToLocalBegin(grid.da2, vNu[0], INSERT_VALUES, vNu[0]); CHKERRQ(ierr);
@@ -695,8 +705,13 @@ then \f$f(|v|)=1\f$.)
  */
 PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
-  PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb;
-  PetscScalar ***u, ***v, **uvbar[2];
+  PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb, **uvbar[2];
+
+  PetscScalar *izz, *u, *v;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  u = new PetscScalar[grid.p->Mz];
+  v = new PetscScalar[grid.p->Mz];
   
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
@@ -705,8 +720,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = DAVecGetArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
   if (doSuperpose == PETSC_TRUE) {
     ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
@@ -723,10 +738,14 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
           fv = 1.0 - (2.0/pi) * atan(1.0e-4 * c2peryear);
         }
         if (updateVelocityAtDepth) {
+          ierr = u3.getValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
+          ierr = v3.getValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
           for (PetscInt k=0; k<grid.p->Mz; ++k) {
-            u[i][j][k] = (addVels) ? fv * u[i][j][k] + ubarssa[i][j] : ubarssa[i][j];
-            v[i][j][k] = (addVels) ? fv * v[i][j][k] + vbarssa[i][j] : vbarssa[i][j];
+            u[k] = (addVels) ? fv * u[k] + ubarssa[i][j] : ubarssa[i][j];
+            v[k] = (addVels) ? fv * v[k] + vbarssa[i][j] : vbarssa[i][j];
           }
+          ierr = u3.setValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
+          ierr = v3.setValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
         }
         ub[i][j] = (addVels) ? fv * ub[i][j] + ubarssa[i][j] : ubarssa[i][j];
         vb[i][j] = (addVels) ? fv * vb[i][j] + vbarssa[i][j] : vbarssa[i][j];
@@ -747,9 +766,11 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
+  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
 
+  delete [] izz; delete [] u; delete [] v;
+  
   if (doSuperpose == PETSC_TRUE) {
     ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
@@ -802,16 +823,22 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
 //! At SSA points, correct the previously-computed volume strain-heating.
 PetscErrorCode IceModel::correctSigma() {
-  // recompute vSigma in ice stream and shelf (DRAGGING,FLOATING) locations
+  // recompute Sigma in ice stream and shelf (DRAGGING,FLOATING) locations
   PetscErrorCode  ierr;
-  PetscScalar **H, **mask, ***Sigma, **ub, **vb, ***T;
+  PetscScalar **H, **mask, **ub, **vb;
 
-  ierr = DAVecGetArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
+  PetscScalar *izz, *Sigma, *T;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  Sigma = new PetscScalar[grid.p->Mz];
+  T = new PetscScalar[grid.p->Mz];
+
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
 
   const PetscScalar dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
   // next constant is the form of regularization used by C. Schoof 2006 "A variational
@@ -833,28 +860,34 @@ PetscErrorCode IceModel::correctSigma() {
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
 
+        ierr = Sigma3.getValColumn(i,j,grid.p->Mz,izz,Sigma); CHKERRQ(ierr);
+        ierr = T3.getValColumn(i,j,grid.p->Mz,izz,T); CHKERRQ(ierr);
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
           const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
           const PetscScalar mvSigma = CC * ice.effectiveViscosity(schoofReg,
-                                               u_x,u_y,v_x,v_y,T[i][j][k],pressure);
+                                               u_x,u_y,v_x,v_y,T[k],pressure);
           // FIXME: what is the right thing here?  surely should be weighted by f(|v|) factor
-          Sigma[i][j][k] = (addVels) ? Sigma[i][j][k] + mvSigma : mvSigma;
+          Sigma[k] = (addVels) ? Sigma[k] + mvSigma : mvSigma;
         }
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
-          Sigma[i][j][k] = 0.0;
+          Sigma[k] = 0.0;
         }
+        ierr = Sigma3.setValColumn(i,j,grid.p->Mz,izz,Sigma); CHKERRQ(ierr);
       }
       // otherwise leave SIA-computed value alone
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vSigma, &Sigma); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+
+  delete [] izz; delete [] Sigma; delete [] T;
+
   return 0;
 }

@@ -27,7 +27,7 @@ static char help[] =
 #include "base/iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/iceEISplModel.hh"
-#include "ismip/iceHEINOModel.hh"
+// #include "ismip/iceHEINOModel.hh"
 #include "ismip/iceMISMIPModel.hh"
 
 int main(int argc, char *argv[]) {
@@ -56,12 +56,12 @@ int main(int argc, char *argv[]) {
     
     // call constructors on all three, but m will point to the one we use
     IceEISModel    mEISII(g, *ice);
-    IceHEINOModel  mHEINO(g, *ice);
+//    IceHEINOModel  mHEINO(g, *ice);
     IceEISplModel  mEISpl(g, *ice);
     IceMISMIPModel mMISMIP(g, mismipice, mismipice);
     IceModel*      m;
 
-    PetscTruth  EISIIchosen, ISMIPchosen, EISplchosen, MISMIPchosen;
+    PetscTruth  EISIIchosen, EISplchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
@@ -70,13 +70,13 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsHasName(PETSC_NULL, "-eis2pl", &EISplchosen);
               CHKERRQ(ierr);
     /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO and none others are implemented */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-ismip", &ISMIPchosen);
-              CHKERRQ(ierr);
+//    ierr = PetscOptionsHasName(PETSC_NULL, "-ismip", &ISMIPchosen);
+//              CHKERRQ(ierr);
     /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
     ierr = PetscOptionsHasName(PETSC_NULL, "-mismip", &MISMIPchosen);
               CHKERRQ(ierr);
     
-    int  choiceSum = (int) EISIIchosen + (int) EISplchosen + (int) ISMIPchosen + (int) MISMIPchosen;
+    int  choiceSum = (int) EISIIchosen + (int) EISplchosen + (int) MISMIPchosen;
     if (choiceSum == 0) {
       SETERRQ(1,"PISMS called with no simplified geometry experiment chosen");
     } else if (choiceSum > 1) {
@@ -88,11 +88,11 @@ int main(int argc, char *argv[]) {
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
-    } else if (ISMIPchosen == PETSC_TRUE) {
-      mHEINO.setflowlawNumber(flowlawNumber);
-      ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
-      ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
-      m = (IceModel*) &mHEINO;
+//    } else if (ISMIPchosen == PETSC_TRUE) {
+//      mHEINO.setflowlawNumber(flowlawNumber);
+//      ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
+//      ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
+//      m = (IceModel*) &mHEINO;
     } else if (EISplchosen == PETSC_TRUE) {
       mEISpl.setFlowLawNumber(flowlawNumber);
       ierr = mEISpl.setFromOptions(); CHKERRQ(ierr);
@@ -110,9 +110,9 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
     
-    if (ISMIPchosen == PETSC_TRUE) {
-      ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
-    }
+//    if (ISMIPchosen == PETSC_TRUE) {
+//      ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
+//    }
     ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }
 

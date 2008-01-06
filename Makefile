@@ -29,7 +29,7 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMdefaults.cc iMgrainsize.cc \
 	iMIO.cc iMIOnetcdf.cc iMlegacy.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
 	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
-	iceModel.cc materials.cc nc_util.cc \
+	iceModel.cc materials.cc nc_util.cc iceModelVec.cc \
 	beddefLC.cc forcing.cc
 ice_csources := cubature.c pism_signal.c
 
@@ -37,9 +37,9 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
    exactTestK.c exactTestL.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \
-	iceEISModel.cc iceHEINOModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
+	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
 	iceEISplModel.cc iceCompModel.cc iceUpwindCompModel.cc iceExactSSAModel.cc iCMthermo.cc \
-	shelf.cc flowTable.cc tryLCbd.cc
+	flowTable.cc tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
    simpleJ.c simpleK.c simpleL.c
 
@@ -81,8 +81,8 @@ pismr : pismr.o libpism.so
 pismd : pismd.o iceROSSModel.o libpism.so
 	${CLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : iceEISModel.o iceHEINOModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
-	${CLINKER} iceEISModel.o iceHEINOModel.o iceMISMIPModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
+pisms : iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
+	${CLINKER} iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
 pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
 	${CLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
