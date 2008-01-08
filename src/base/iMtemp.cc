@@ -566,12 +566,14 @@ PetscErrorCode IceModel::testIceModelVec()    {
   PetscErrorCode ierr;
   IceModelVec3 test3;
 
-  ierr = test3.create(grid); CHKERRQ(ierr);
+  ierr = test3.create(grid,"testMe"); CHKERRQ(ierr);
 
+  ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3; setting to constant %f",
+                    60402.70804); CHKERRQ(ierr);
   ierr = test3.setToConstant(60402.70804); CHKERRQ(ierr);
 
   ierr = test3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3::getValZ();  value is %f",
+  ierr = verbPrintf(1,grid.com,"\n\nIceModelVec3::getValZ() says value is %f",
                     test3.getValZ(grid.xs,grid.ys,0.0) ); CHKERRQ(ierr);
   ierr = test3.doneAccessToVals(); CHKERRQ(ierr);
 

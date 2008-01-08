@@ -23,6 +23,7 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
+#include "../base/iceModelVec.hh"
 
 class IceCompModel : public IceModel {
 
@@ -89,7 +90,9 @@ protected:
   PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
                    PetscScalar &gmaxUerr, PetscScalar &gavUerr,  // 2D vector errors
                    PetscScalar &gmaxWerr, PetscScalar &gavWerr); // scalar errors
-  Vec            vSigmaComp;     // 3-D vector:   Mx x My x Mz
+  
+  IceModelVec3   SigmaComp3;
+
   PetscViewer    SigmaCompView, compSigmaMapView;
   PetscTruth     compVecsCreated, compViewersCreated;
   PetscErrorCode createCompVecs();

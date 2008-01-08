@@ -59,6 +59,7 @@ public:
   IceParam    *p;
   DA          da2, da3, da3b;
   PetscInt    xs, xm, ys, ym;
+  PetscScalar *zlevels;
 
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, IceParam *p);

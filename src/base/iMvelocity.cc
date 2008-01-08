@@ -114,11 +114,12 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+
   if (updateVelocityAtDepth || useSSAVelocity) {  // in latter case u,v are modified by broacastSSAVelocity()
-    ierr = DALocalToLocalBegin(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vu, INSERT_VALUES, vu); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vv, INSERT_VALUES, vv); CHKERRQ(ierr);
+    ierr = u3.beginGhostComm(); CHKERRQ(ierr);
+    ierr = u3.endGhostComm(); CHKERRQ(ierr);
+    ierr = v3.beginGhostComm(); CHKERRQ(ierr);
+    ierr = v3.endGhostComm(); CHKERRQ(ierr);
   }
 
   if (useSSAVelocity) {
@@ -184,11 +185,18 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   const PetscInt      Mz = grid.p->Mz;
   PetscErrorCode  ierr;
   PetscScalar **ub, **vb, **basalMeltRate, **b, **dbdt;
-  PetscScalar ***u, ***v, ***w;
 
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  PetscScalar *izz, *u, *v, *w;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  u = new PetscScalar[grid.p->Mz];
+  v = new PetscScalar[grid.p->Mz];
+  w = new PetscScalar[grid.p->Mz];
+
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
+
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
@@ -200,42 +208,52 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       // basal w from basal kinematical equation
       const PetscScalar dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx),
                         dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
-//      w[i][j][0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy;
-      w[i][j][0] = ub[i][j] * dbdx + vb[i][j] * dbdy;  // DEBUG: remove dbdt
+//      w[0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy;
+      w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;  // DEBUG: remove dbdt
       if (includeBMRinContinuity == PETSC_TRUE) {
-        w[i][j][0] -= capBasalMeltRate(basalMeltRate[i][j]);
+        w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
       }
+
+      ierr = u3.getValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
+      ierr = v3.getValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
+
       // compute w above base by trapezoid rule 
-      // (note vertical variable is  z = zorig - b(x,y,t))
-      PetscScalar OLDintegrand =   (u[i+1][j][0] - u[i-1][j][0]) / (2.0*dx)
-                                 + (v[i][j+1][0] - v[i][j-1][0]) / (2.0*dy);
+      planeStar uss, vss;
+      ierr = u3.getPlaneStarZ(i,j,0.0,&uss);
+      ierr = v3.getPlaneStarZ(i,j,0.0,&vss);
+      PetscScalar OLDintegrand = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
       // at bottom, difference up:
-      OLDintegrand -= dbdx * (u[i][j][1] - u[i][j][0]) / dz
-                      + dbdy * (v[i][j][1] - v[i][j][0]) / dz;
+      OLDintegrand -= dbdx * (u[1] - u[0]) / dz + dbdy * (v[1] - v[0]) / dz;
+
       for (PetscInt k = 1; k < Mz; ++k) {
-        PetscScalar NEWintegrand =   (u[i+1][j][k] - u[i-1][j][k]) / (2.0*dx)
-                                   + (v[i][j+1][k] - v[i][j-1][k]) / (2.0*dy);
+        const PetscScalar zk = k * dz;
+        ierr = u3.getPlaneStarZ(i,j,zk,&uss);
+        ierr = v3.getPlaneStarZ(i,j,zk,&vss);
+        PetscScalar NEWintegrand = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
         if (k == Mz-1) { // at top, difference down:
-          NEWintegrand -= dbdx * (u[i][j][k] - u[i][j][k-1]) / dz
-                          + dbdy * (v[i][j][k] - v[i][j][k-1]) / dz;
+          NEWintegrand -= dbdx * (u[k] - u[k-1]) / dz + dbdy * (v[k] - v[k-1]) / dz;
         } else { // usual case; central difference
-          NEWintegrand -= dbdx * (u[i][j][k+1] - u[i][j][k-1]) / (2.0*dz)
-                          + dbdy * (v[i][j][k+1] - v[i][j][k-1]) / (2.0*dz);
+          NEWintegrand -= dbdx * (u[k+1] - u[k-1]) / (2.0*dz) + dbdy * (v[k+1] - v[k-1]) / (2.0*dz);
         }
-        w[i][j][k] = w[i][j][k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
+        w[k] = w[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;
       }
+      
+      ierr = w3.setValColumn(i,j,grid.p->Mz,izz,w); CHKERRQ(ierr);      
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuplift, &dbdt); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
+  
+  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
+
+  delete [] izz;  delete [] u;  delete [] v;  delete [] w;
   return 0;
 }
 
@@ -256,7 +274,7 @@ PetscErrorCode IceModel::smoothSigma() {
   // does iterated smoothing of Sigma on regular grid; uses box stencil of width one
   // not exactly recommended; it is rather nonphysical; compare Bueler, Brown, and Lingle 2007
   PetscErrorCode  ierr;
-  PetscScalar ***S, ***Snew, **H;
+  PetscScalar ***Snew, **H;
   // following is [0.35 0.30 0.35] outer product w itself; ref conversation with Orion L.:
   const PetscScalar c[3][3] = {{0.1225, 0.105,  0.1225},
                                {0.105,  0.09,   0.105},
@@ -265,16 +283,19 @@ PetscErrorCode IceModel::smoothSigma() {
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
   for (int count=0; count < noSpokesLevel; ++count) {
-    ierr = DAVecGetArray(grid.da3, vSigma, &S); CHKERRQ(ierr);
+    ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
         for (PetscInt k=0; k<ks; ++k) {
-          // note S[neighbor_i][neighbor_j][k] will be zero if outside of ice
-          const PetscScalar SS =  c[0][0]*S[i-1][j-1][k] + c[0][1]*S[i-1][j][k] + c[0][2]*S[i-1][j+1][k]
-            + c[1][0]*S[i][j-1][k]   + c[1][1]*S[i][j][k]   + c[1][2]*S[i][j+1][k]
-            + c[2][0]*S[i+1][j-1][k] + c[2][1]*S[i+1][j][k] + c[2][2]*S[i+1][j+1][k];
+          // note Sigma[neighbor][neighbor][k] will be zero if outside of ice
+          planeBox Sbb;
+          ierr = Sigma3.getPlaneBoxZ(i,j,k * grid.p->dz,&Sbb);
+          const PetscScalar SS =  
+              c[0][0]*Sbb.im1jm1 + c[0][1]*Sbb.im1 + c[0][2]*Sbb.im1jp1
+            + c[1][0]*Sbb.jm1    + c[1][1]*Sbb.ij  + c[1][2]*Sbb.jp1
+            + c[2][0]*Sbb.ip1jm1 + c[2][1]*Sbb.ip1 + c[2][2]*Sbb.ip1jp1;
           const PetscScalar myz = k * grid.p->dz;
           PetscScalar active = 0.0;  // build sum of coeffs for neighbors with ice at or above curr depth
           if (H[i-1][j-1] >= myz) { active += c[0][0]; } 
@@ -292,12 +313,12 @@ PetscErrorCode IceModel::smoothSigma() {
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da3, vSigma, &S); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
-      
+    ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
+
     // communicate ghosted values *and* transfer Snew to vSigma
-    ierr = DALocalToLocalBegin(grid.da3, vWork3d[0], INSERT_VALUES, vSigma); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vWork3d[0], INSERT_VALUES, vSigma); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da3, vWork3d[0], INSERT_VALUES, Sigma3.v); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da3, vWork3d[0], INSERT_VALUES, Sigma3.v); CHKERRQ(ierr);
   } // for
   
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -310,13 +331,20 @@ PetscErrorCode IceModel::smoothSigma() {
 PetscErrorCode IceModel::computeMax3DVelocities() {
   // computes max velocities in 3D grid and also sets CFLmaxdt by CFL condition
   PetscErrorCode ierr;
-  PetscScalar ***u, ***v, ***w, **H;
+  PetscScalar **H;
   PetscScalar locCFLmaxdt = maxdt;
 
-  ierr = DAVecGetArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  PetscScalar *izz, *u, *v, *w;
+  izz = new PetscScalar[grid.p->Mz];
+  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  u = new PetscScalar[grid.p->Mz];
+  v = new PetscScalar[grid.p->Mz];
+  w = new PetscScalar[grid.p->Mz];
+
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
@@ -325,15 +353,18 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
       const PetscInt      ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
+      ierr = u3.getValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
+      ierr = v3.getValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
+      ierr = w3.getValColumn(i,j,grid.p->Mz,izz,w); CHKERRQ(ierr);
       for (PetscInt k=0; k<ks; ++k) {
-        const PetscScalar au = PetscAbs(u[i][j][k]);
-        const PetscScalar av = PetscAbs(v[i][j][k]);
+        const PetscScalar au = PetscAbs(u[k]);
+        const PetscScalar av = PetscAbs(v[k]);
         maxu = PetscMax(maxu,au);
         maxv = PetscMax(maxv,av);
         PetscScalar tempdenom = (0.001/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
         tempdenom += PetscAbs(au/grid.p->dx) + PetscAbs(av/grid.p->dy);
         if (!isMarginal) {
-          const PetscScalar aw = PetscAbs(w[i][j][k]);
+          const PetscScalar aw = PetscAbs(w[k]);
           maxw = PetscMax(maxw,aw);
           tempdenom += PetscAbs(aw/grid.p->dz);
         }
@@ -342,10 +373,12 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da3, vu, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vv, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vw, &w); CHKERRQ(ierr);
+  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+
+  delete [] izz;  delete [] u;  delete [] v;  delete [] w;
 
   ierr = PetscGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);

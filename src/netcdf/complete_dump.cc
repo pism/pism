@@ -110,8 +110,12 @@
   ierr = put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
   ierr = u3.getSurfaceValuesVec2d(vWork2d[0], vH); CHKERRQ(ierr);
   ierr = v3.getSurfaceValuesVec2d(vWork2d[1], vH); CHKERRQ(ierr);
+  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
   PetscScalar **us, **vs;
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
@@ -127,7 +131,9 @@
   ierr = put_local_var(&grid, ncid, csurf_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute wsurf, the surface values of vertical velocity
+  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   ierr = w3.getSurfaceValuesVec2d(vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
   ierr = put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);

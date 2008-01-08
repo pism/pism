@@ -106,7 +106,7 @@ IceCompModel::~IceCompModel() {
     compVecsCreated = PETSC_FALSE;
   }
   if (vHexactLCreated == PETSC_TRUE) {
-    VecDestroy(vSigmaComp);
+    SigmaComp3.destroy();
     vHexactLCreated = PETSC_FALSE;
   }
 }
@@ -188,8 +188,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     }
 
     // none use Goldsby-Kohlstedt or do age calc
-//    ierr = VecSet(vtau, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
-    ierr = VecSet(tau3.v, DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
+    ierr = tau3.setToConstant(DEFAULT_INITIAL_AGE_YEARS); CHKERRQ(ierr);
     setConstantGrainSize(DEFAULT_GRAIN_SIZE);
     setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
     // all have no uplift or Hmelt
@@ -303,7 +302,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
-  ierr = VecSet(vT, T0); CHKERRQ(ierr);
+  ierr = T3.setToConstant(T0); CHKERRQ(ierr);
   ierr = VecSet(vTb, T0); CHKERRQ(ierr);
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
@@ -380,7 +379,7 @@ PetscErrorCode IceCompModel::initTestL() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
-  ierr = VecSet(vT, T0); CHKERRQ(ierr);
+  ierr = T3.setToConstant(T0); CHKERRQ(ierr);
   ierr = VecSet(vTb, T0); CHKERRQ(ierr);
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   

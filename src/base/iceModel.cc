@@ -152,13 +152,13 @@ PetscErrorCode IceModel::createVecs() {
     ierr = destroyVecs(); CHKERRQ(ierr);
   }
   
-  ierr = u3.create(grid); CHKERRQ(ierr);
-  ierr = v3.create(grid); CHKERRQ(ierr);
-  ierr = w3.create(grid); CHKERRQ(ierr);
-  ierr = Sigma3.create(grid); CHKERRQ(ierr);
-  ierr = T3.create(grid); CHKERRQ(ierr);
-  ierr = gs3.create(grid); CHKERRQ(ierr);
-  ierr = tau3.create(grid); CHKERRQ(ierr);
+  ierr = u3.create(grid,"uvel"); CHKERRQ(ierr);
+  ierr = v3.create(grid,"vvel"); CHKERRQ(ierr);
+  ierr = w3.create(grid,"wvel"); CHKERRQ(ierr);
+  ierr = Sigma3.create(grid,"Sigma"); CHKERRQ(ierr);
+  ierr = T3.create(grid,"temp"); CHKERRQ(ierr);
+  ierr = gs3.create(grid,"grainsize"); CHKERRQ(ierr);
+  ierr = tau3.create(grid,"age"); CHKERRQ(ierr);
 
   ierr = DACreateLocalVector(grid.da3b, &vTb); CHKERRQ(ierr);
 
@@ -573,6 +573,12 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
+//#include "petsclog.h"
+int velEVENT, massbalEVENT, tempEVENT;
+PetscLogEventRegister(&velEVENT,    "velocity calc",0);
+PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
+PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
+
   ierr = verbPrintf(2,grid.com, "%%ybp SIA SSA  # vgatdh Nr  +STEP\n"); CHKERRQ(ierr);  // prototype for flags
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
@@ -603,12 +609,16 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
+PetscLogEventBegin(velEVENT,0,0,0,0);
+
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
     bool updateAtDepth = (tempskipCountDown == 0);
     ierr = verbPrintf(2,grid.com, doPlasticTill ? "p" : "$" ); CHKERRQ(ierr);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
+
+PetscLogEventEnd(velEVENT,0,0,0,0);
 
     // now that velocity field is up to date, compute grain size
     if (doGrainSize == PETSC_TRUE) {
@@ -631,6 +641,8 @@ PetscErrorCode IceModel::run() {
     //           "\n[rank=%d, year=%f, dt=%f, startYear=%f, endYear=%f]",
     //           grid.rank, grid.p->year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
+
+PetscLogEventBegin(tempEVENT,0,0,0,0);
     
     bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
     if (tempAgeStep) { // do temperature and age
@@ -641,6 +653,8 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
 
+PetscLogEventEnd(tempEVENT,0,0,0,0);
+
     // compute PDD; generates surface mass balance, with appropriate ablation area, using snow accumulation
     if (doPDD == PETSC_TRUE) {
       ierr = updateSurfaceBalanceFromPDD();  CHKERRQ(ierr);
@@ -649,6 +663,8 @@ PetscErrorCode IceModel::run() {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+PetscLogEventBegin(massbalEVENT,0,0,0,0);
+
     if (doMassConserve == PETSC_TRUE) {
       // update H
       ierr = massBalExplicitStep(); CHKERRQ(ierr);
@@ -660,6 +676,8 @@ PetscErrorCode IceModel::run() {
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
+
+PetscLogEventEnd(massbalEVENT,0,0,0,0);
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 

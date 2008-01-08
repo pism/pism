@@ -31,13 +31,13 @@ public:
   IceModelVec();
   virtual ~IceModelVec();
 
-  virtual PetscErrorCode  create(IceGrid &mygrid);
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[]);
   virtual PetscErrorCode  destroy();
 
   virtual PetscErrorCode  setVaridNC(const int my_varid);
-  virtual PetscErrorCode  setAttrsNC(const int my_varid, const char my_varname[],
+  virtual PetscErrorCode  setAttrsNC(const int my_varid,
              const char my_long_name[], const char my_units[], const char my_pism_intent[]);
-  virtual PetscErrorCode  setAttrsCFstandardNC(const int my_varid, const char my_varname[],
+  virtual PetscErrorCode  setAttrsCFstandardNC(const int my_varid,
              const char my_long_name[], const char my_units[], const char my_pism_intent[],
              const char my_standard_name[]);
 
@@ -58,11 +58,12 @@ public:
   Vec          v;
 
 protected:
-  char         varname_nc[PETSC_MAX_PATH_LEN],
-               long_name[PETSC_MAX_PATH_LEN],
-               standard_name[PETSC_MAX_PATH_LEN],
-               units[PETSC_MAX_PATH_LEN],
-               pism_intent[PETSC_MAX_PATH_LEN];
+  char         varname[PETSC_MAX_PATH_LEN],       // usually the name of the NetCDF variable (unless
+                                                  //   there is no corresponding NetCDF var)
+               long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
+               units[PETSC_MAX_PATH_LEN],         // NetCDF attribute
+               pism_intent[PETSC_MAX_PATH_LEN],   // NetCDF attribute
+               standard_name[PETSC_MAX_PATH_LEN]; // NetCDF attribute; sometimes specified in CF convention
   PetscTruth   allocated, has_standard_name;
   
   IceGrid      *grid;
@@ -83,6 +84,10 @@ struct planeStar {
   PetscScalar ij, ip1, im1, jp1, jm1;
 };
 
+struct planeBox {
+  PetscScalar ij, ip1, im1, jp1, jm1, ip1jp1, im1jp1, ip1jm1, im1jm1;
+};
+
 
 //  NOTE: apply following abstraction to *age*, i.e. vtau, first
 
@@ -91,29 +96,34 @@ class IceModelVec3 : public IceModelVec {
 public:
   IceModelVec3();
   virtual PetscErrorCode  destroy();
-  virtual PetscErrorCode  create(IceGrid &mygrid);
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[]);
 
   virtual PetscErrorCode  needAccessToVals();
   virtual PetscErrorCode  doneAccessToVals();
 
 public:
-  // call needAccessToVals() before setValColumn() or get???(); call doneAccessToVals() afterward
+  // call needAccessToVals() before set???() or get???() *and* call doneAccessToVals() afterward
   PetscErrorCode  setValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
                                PetscScalar *levelsIN, PetscScalar *valsIN);
+  PetscErrorCode  setToConstantColumn(const PetscInt i, const PetscInt j,
+                                      const PetscScalar c);
 
   PetscScalar     getValZ(const PetscInt i, const PetscInt j, const PetscScalar z);
+
   PetscErrorCode  getPlaneStarZ(const PetscInt i, const PetscInt j, const PetscScalar z,
                                 planeStar *star);
+  PetscErrorCode  getPlaneBoxZ(const PetscInt i, const PetscInt j, const PetscScalar z,
+                               planeBox *box);
+
   PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
                                PetscScalar *levelsIN, PetscScalar *valsOUT);
+
   PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z);
   PetscErrorCode  getSurfaceValuesVec2d(Vec &gsurf, Vec myH);
   PetscErrorCode  getSurfaceValuesArray2d(Vec &gsurf, PetscScalar **H);
 
 protected:
   PetscScalar     ***array;
-  PetscInt        Mz;
-  PetscScalar     Lz, dz, *levels;
   
   virtual PetscErrorCode checkHaveArray();
   PetscErrorCode         isLegalLevel(const PetscScalar z);

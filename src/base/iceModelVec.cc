@@ -32,7 +32,7 @@ IceModelVec::IceModelVec() {
   da = PETSC_NULL;
   grid = PETSC_NULL;
 
-  strcpy(varname_nc,"UNKNOWN NetCDF varname");
+  strcpy(varname,"*****UNKNOWN**** NetCDF varname_nc");
   strcpy(long_name,"UNKNOWN long_name");
   strcpy(units,"UNKNOWN units");
   strcpy(pism_intent,"UNKNOWN pism_intent");
@@ -46,12 +46,13 @@ IceModelVec::IceModelVec() {
 
 IceModelVec::~IceModelVec() {
 
-  destroy();
+//  destroy();
 };
 
 
-PetscErrorCode  IceModelVec::create(IceGrid &mygrid) {
-  SETERRQ(1,"not implemented")
+PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_varname[]) {
+  SETERRQ(1,"not implemented");
+  return 0;
 }
 
 
@@ -71,10 +72,9 @@ PetscErrorCode  IceModelVec::setVaridNC(const int my_varid) {
 }
 
 
-PetscErrorCode  IceModelVec::setAttrsNC(const int my_varid, const char my_varname[],
+PetscErrorCode  IceModelVec::setAttrsNC(const int my_varid,
              const char my_long_name[], const char my_units[], const char my_pism_intent[]) {
   varid_nc = my_varid;
-  strcpy(varname_nc,my_varname);
   strcpy(long_name,my_long_name);
   strcpy(units,my_units);
   strcpy(pism_intent,my_pism_intent);
@@ -83,11 +83,10 @@ PetscErrorCode  IceModelVec::setAttrsNC(const int my_varid, const char my_varnam
 }
 
 
-PetscErrorCode  IceModelVec::setAttrsCFstandardNC(const int my_varid, const char my_varname[],
+PetscErrorCode  IceModelVec::setAttrsCFstandardNC(const int my_varid,
              const char my_long_name[], const char my_units[], const char my_pism_intent[],
              const char my_standard_name[]) {
   varid_nc = my_varid;
-  strcpy(varname_nc,my_varname);
   strcpy(long_name,my_long_name);
   strcpy(units,my_units);
   strcpy(pism_intent,my_pism_intent);
@@ -98,12 +97,13 @@ PetscErrorCode  IceModelVec::setAttrsCFstandardNC(const int my_varid, const char
 
 
 PetscErrorCode  IceModelVec::writeAttrsNC(const int ncid) {
-  SETERRQ(1,"not implemented")
+  SETERRQ(1,"not YET implemented");
+  return 0;
 }
 
 
 PetscErrorCode  IceModelVec::readVecNC(const int ncid, PetscTruth *exists) {
-  SETERRQ(1,"not implemented")
+  SETERRQ(1,"not YET implemented");
 /*
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -119,41 +119,43 @@ PetscErrorCode  IceModelVec::readVecNC(const int ncid, PetscTruth *exists) {
     ierr = ncVarToDAVec(ncid, varid_nc, *da, v, g2, vzero); CHKERRQ(ierr);
   }
 */
+  return 0;
 }
 
 
 PetscErrorCode IceModelVec::putVecNC(const int ncid, Vec g, const int *s, const int *c, int dims, 
                                           void *a_mpi, int a_size) {
   PetscErrorCode ierr;
-  if (grid->rank == 0) {
-    ierr = put_local_var(grid, ncid, varid_nc, NC_FLOAT, *da, v, g,
+  ierr = put_local_var(grid, ncid, varid_nc, NC_FLOAT, *da, v, g,
                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
-  }
   return 0;
 }
 
 
 PetscErrorCode  IceModelVec::needAccessToVals() {
-  SETERRQ(1,"virtual; not implemented")
+  SETERRQ(1,"virtual; not implemented");
+  return 0;
 }
 
 
 PetscErrorCode  IceModelVec::doneAccessToVals() {
-  SETERRQ(1,"virtual; not implemented")
+  SETERRQ(1,"virtual; not implemented");
+  return 0;
 }
 
 
 PetscErrorCode  IceModelVec::checkAllocated() {
   if (allocated == PETSC_FALSE) {
-    SETERRQ1(1,"IceModelVec ERROR: IceModelVec NOT allocated (long_name = %s)\n",
-             long_name);
+    SETERRQ1(1,"IceModelVec ERROR: IceModelVec with varname='%s' NOT allocated\n",
+             varname);
   }
   return 0;
 }
 
 
 PetscErrorCode  IceModelVec::checkHaveArray() {
-  SETERRQ(1,"virtual; not implemented")
+  SETERRQ(1,"virtual; not implemented");
+  return 0;
 }
 
 
@@ -168,20 +170,26 @@ PetscErrorCode  IceModelVec::checkSelfOwnsIt(const PetscInt i, const PetscInt j)
 */
 
 PetscErrorCode  IceModelVec::beginGhostComm() {
-  CHKERRQ(checkAllocated());
-  return DALocalToLocalBegin(*da, v, INSERT_VALUES, v);
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(*da, v, INSERT_VALUES, v);  CHKERRQ(ierr);
+  return 0;
 }
 
 
 PetscErrorCode  IceModelVec::endGhostComm() {
-  CHKERRQ(checkAllocated());
-  return DALocalToLocalEnd(*da, v, INSERT_VALUES, v);
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(*da, v, INSERT_VALUES, v); CHKERRQ(ierr);
+  return 0;
 }
 
 
 PetscErrorCode  IceModelVec::setToConstant(const PetscScalar c) {
-  CHKERRQ(checkAllocated());
-  return VecSet(v,c);
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = VecSet(v,c); CHKERRQ(ierr);
+  return 0;
 }
 
 
@@ -189,86 +197,72 @@ PetscErrorCode  IceModelVec::setToConstant(const PetscScalar c) {
 /****************** 3d Vecs ********************/
 
 IceModelVec3::IceModelVec3() : IceModelVec() {
-  Mz = -1;
-  dz = -1.0;
-  Lz = -1.0;
-  levels = PETSC_NULL;
-  
   array = PETSC_NULL;
 };
 
 
 PetscErrorCode  IceModelVec3::destroy() {
-  if (Mz > 0) {
-    delete [] levels;
-    levels = PETSC_NULL;
-    Mz = -1;
-    dz = -1.0;
-    Lz = -1.0;
-  }
   PetscErrorCode ierr = IceModelVec::destroy(); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode  IceModelVec3::create(IceGrid &mygrid) {
+PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_varname[]) {
   if (allocated == PETSC_TRUE) {
-    SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 already allocated; has long_name = %s\n",
-             long_name);
+    SETERRQ1(1,"IceModelVec3 with varname='%s' already allocated\n",
+             varname);
   }
   
   grid = &mygrid;
-  da = &(grid->da3);
-  Mz = (grid->p)->Mz;
-  dz = (grid->p)->dz;
-  Lz = (grid->p)->Lz;
-
-  levels = new PetscScalar[Mz];
-  for (PetscInt k=0; k < Mz; k++) {
-    levels[k] = dz * ((PetscScalar) k);
-  }
-  
-  if (PetscAbs(levels[Mz - 1] - Lz) > 1.0e-6) {
-    SETERRQ(2,"IceModelVec3 ERROR: Lz does not agree with top level to within 10^-6 meters; why?");
-  }
-  levels[Mz - 1] = Lz;
+  da = &(mygrid.da3);
   
   PetscErrorCode ierr = DACreateLocalVector(*da, &v); CHKERRQ(ierr);
   allocated = PETSC_TRUE;
+
+  strcpy(varname,my_varname);
   return 0;
 }
 
 
 PetscErrorCode  IceModelVec3::needAccessToVals() {
-  CHKERRQ(checkAllocated());
-  PetscErrorCode ierr = DAVecGetArray(*da, v, &array); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = DAVecGetArray(*da, v, &array); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode  IceModelVec3::doneAccessToVals() {
-  CHKERRQ(checkAllocated());
-  PetscErrorCode ierr = DAVecRestoreArray(*da, v, &array); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(*da, v, &array); CHKERRQ(ierr);
+  array = PETSC_NULL;
   return 0;
 }
 
 
 PetscErrorCode  IceModelVec3::checkHaveArray() {
-  CHKERRQ(checkAllocated());
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
   if (array == PETSC_NULL) {
-    SETERRQ(1,"IceModelVec3 ERROR: array not available\n"
-              "  (REMEMBER TO RUN needAccessToVals() before access and doneAccessToVals after access)\n");
+    SETERRQ1(1,"array for IceModelVec3 with varname='%s' not available\n"
+               "  (REMEMBER TO RUN needAccessToVals() before access and doneAccessToVals after access)\n",
+               varname);
   }
   return 0;
 }
 
 
 PetscErrorCode  IceModelVec3::isLegalLevel(const PetscScalar z) {
-  if (z < 0.0) {
-    SETERRQ(1,"IceModelVec3 ERROR: level z is below base of ice (z must be nonnegative); ENDING!\n");
+  if (z < 0.0 - 1.0e-6) {
+    SETERRQ2(1,"level z = %5.4f is below base of ice (z must be nonnegative);\n"
+               "  IceModelVec3 has varname='%s'; ENDING!\n",
+              z,varname);
   }
-  if (z > Lz) {
-    SETERRQ(2,"IceModelVec3 ERROR: level z is above top of computational grid for ice; ENDING!\n");
+  if (z > (grid->p)->Lz + 1.0e-6) {
+    SETERRQ3(2,"level z = %20.18f is above top of computational grid Lz = %20.18f;\n"
+               "  IceModelVec3 has varname='%s'; ENDING!\n",
+              z, (grid->p)->Lz,varname);
   }
   return 0;
 }
@@ -290,34 +284,52 @@ PetscErrorCode  IceModelVec3::setValColumn(
                      const PetscInt nlevels, PetscScalar *levelsIN,
                      PetscScalar *valsIN) {
 
-  if (levelsIN[0] > 0.0) {
-    SETERRQ(1,"IceModelVec3 ERROR: levelsIN[0] is above base of ice at z=0 so *interpolation*\n"
-              "   is impossible; ENDING!\n");
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  // check if in ownership ?
+
+  if (levelsIN[0] > 0.0 + 1.0e-3) {
+    SETERRQ2(1,"levelsIN[0]=%10.9f is above base of ice at z=0 so *interpolation*\n"
+              "   is impossible; IceModelVec3 has varname='%s';  ENDING!\n",
+              levelsIN[0],varname);
   }
-  if (levelsIN[nlevels - 1] < Lz) {
-    SETERRQ1(2,"IceModelVec3 ERROR: levelsIN[nlevels-1] is below top of computational domain\n"
-               "   at z=Lz=%f, so *interpolation* is impossible; ENDING!\n",Lz);
+  if (levelsIN[nlevels - 1] < (grid->p)->Lz - 1.0e-3) {
+    SETERRQ3(2,"levelsIN[nlevels-1] = %10.9f is below top of computational domain\n"
+               "   at z=Lz=%10.9f, so *interpolation* is impossible;\n"
+               "   IceModelVec3 has varname='%s';  ENDING!\n",
+               levelsIN[nlevels-1],(grid->p)->Lz,varname);
   }
   for (PetscInt k=0; k < nlevels - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
-      SETERRQ1(3,"IceModelVec3 ERROR: levelsIN not *strictly increasing* at index %d; ENDING!\n",k);
+      SETERRQ2(3,"levelsIN not *strictly increasing* at index %d;\n"
+                 "    IceModelVec3 has varname='%s';  ENDING!\n",
+                 k,varname);
     }
   }
 
+  PetscScalar *levels;
+  levels = grid->zlevels;
   PetscInt mcurr = 0;
-  for (PetscInt k=0; k < Mz; k++) {
+  for (PetscInt k=0; k < (grid->p)->Mz; k++) {
     while (levelsIN[mcurr+1] < levels[k]) {
       mcurr++;
     }
-    if (mcurr+1 > nlevels - 1) {
-      SETERRQ(4,"how did I get here?\n");
-    }
-    // check that [ levelsIN[mcurr], levelsIN[mcurr+1] ] is a bracket for levels[k]:
-    if (!( (levelsIN[mcurr] <= levels[k]) && (levels[k] <= levelsIN[mcurr+1]) )) {
-      SETERRQ2(5,"not a bracket; k=%d, mcurr=%d\n",k,mcurr);
-    }
     const PetscScalar increment = (levels[k] - levelsIN[mcurr]) / (levelsIN[mcurr+1] - levelsIN[mcurr]);
     array[i][j][k] = valsIN[mcurr] +  increment * (valsIN[mcurr+1] - valsIN[mcurr]);
+  }
+
+  return 0;
+}
+
+
+PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscInt j, 
+                                                  const PetscScalar c) {
+
+  PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
+  // check if in ownership ?
+
+  for (PetscInt k=0; k < (grid->p)->Mz; k++) {
+    array[i][j][k] = c;
   }
 
   return 0;
@@ -329,31 +341,40 @@ PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const 
   // use linear interpolation
   checkHaveArray();
   isLegalLevel(z);
-  if (z == Lz)
-    return array[i][j][Mz - 1];
-  const PetscInt     kbz = static_cast<PetscInt>(floor(z/dz));  // k value just below z
+  if (z >= (grid->p)->Lz)
+    return array[i][j][(grid->p)->Mz - 1];
+  else if (z <= 0.0)
+    return array[i][j][0];
+  const PetscScalar  dz = (grid->p)->dz;
+  const PetscInt     kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
   const PetscScalar  val_kbz = array[i][j][kbz];
-  return val_kbz + ( (z - levels[kbz]) / dz ) * (array[i][j][kbz + 1] - val_kbz);
+  return val_kbz + ( (z - (grid->zlevels)[kbz]) / dz ) * (array[i][j][kbz + 1] - val_kbz);
 }
 
 
 //! Return values on planar star stencil of scalar quantity at level z.
 PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j, const PetscScalar z,
-                                            planeStar *star) {
+                                             planeStar *star) {
+  PetscErrorCode ierr;
   // use linear interpolation
-  CHKERRQ(checkHaveArray());
-  CHKERRQ(isLegalLevel(z));
+  ierr = checkHaveArray();  CHKERRQ(ierr);
+  ierr = isLegalLevel(z);  CHKERRQ(ierr);
   // check ownership here?
-  if (z == Lz) {
-    star->ij = array[i][j][Mz - 1];
-    star->ip1 = array[i+1][j][Mz - 1];
-    star->im1 = array[i-1][j][Mz - 1];
-    star->jp1 = array[i][j+1][Mz - 1];
-    star->jm1 = array[i][j-1][Mz - 1];
-    return 0;
+
+  const PetscScalar dz = (grid->p)->dz;
+  PetscInt     kbz;
+  PetscScalar  incr;
+  if (z >= (grid->p)->Lz) {
+    kbz = (grid->p)->Mz - 1;
+    incr = 0.0;
+  } else if (z <= 0.0) {
+    kbz = 0;
+    incr = 0.0;
+  } else {
+    kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
+    incr = ( (z - (grid->zlevels)[kbz]) / dz );
   }
-  const PetscInt     kbz = static_cast<PetscInt>(floor(z/dz));  // k value just below z
-  const PetscScalar  incr = ( (z - levels[kbz]) / dz );
+
   star->ij = array[i][j][kbz] + incr * (array[i][j][kbz + 1] - array[i][j][kbz]);
   star->ip1 = array[i+1][j][kbz] + incr * (array[i+1][j][kbz + 1] - array[i+1][j][kbz]);
   star->im1 = array[i-1][j][kbz] + incr * (array[i-1][j][kbz + 1] - array[i-1][j][kbz]);
@@ -363,20 +384,82 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
 }
 
 
+//! Return values on planar box stencil of scalar quantity at level z.
+PetscErrorCode   IceModelVec3::getPlaneBoxZ(const PetscInt i, const PetscInt j, const PetscScalar z,
+                                            planeBox *box) {
+  // use linear interpolation
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = isLegalLevel(z); CHKERRQ(ierr);
+  // check ownership here?
+
+  const PetscScalar dz = (grid->p)->dz;
+  PetscInt     kbz;
+  PetscScalar  incr;
+  if (z >= (grid->p)->Lz) {
+    kbz = (grid->p)->Mz - 1;
+    incr = 0.0;
+  } else if (z <= 0.0) {
+    kbz = 0;
+    incr = 0.0;
+  } else {
+    kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
+    incr = ( (z - (grid->zlevels)[kbz]) / dz );
+  }
+
+  box->ij = array[i][j][kbz] + incr * (array[i][j][kbz + 1] - array[i][j][kbz]);
+  box->ip1 = array[i+1][j][kbz] + incr * (array[i+1][j][kbz + 1] - array[i+1][j][kbz]);
+  box->im1 = array[i-1][j][kbz] + incr * (array[i-1][j][kbz + 1] - array[i-1][j][kbz]);
+  box->jp1 = array[i][j+1][kbz] + incr * (array[i][j+1][kbz + 1] - array[i][j+1][kbz]);
+  box->jm1 = array[i][j-1][kbz] + incr * (array[i][j-1][kbz + 1] - array[i][j-1][kbz]);
+  box->ip1jp1 = array[i+1][j+1][kbz] + incr * (array[i+1][j+1][kbz + 1] - array[i+1][j+1][kbz]);
+  box->im1jp1 = array[i-1][j+1][kbz] + incr * (array[i-1][j+1][kbz + 1] - array[i-1][j+1][kbz]);
+  box->ip1jm1 = array[i+1][j-1][kbz] + incr * (array[i+1][j-1][kbz + 1] - array[i+1][j-1][kbz]);
+  box->im1jm1 = array[i-1][j-1][kbz] + incr * (array[i-1][j-1][kbz + 1] - array[i-1][j-1][kbz]);
+
+  return 0;
+}
+
+
 //! Return values of scalar quantity at given levels (m) above base of ice (by interpolation).
 /*!
 Input array \c levelsIN must be an allocated array of \c nlevels scalars (i.e. \c PetscScalar).
-Likewise, return array \c vals must be an allocated array of \c nlevels scalars (i.e. \c PetscScalar).
-Upon return, \c vals will be filled with values of scalar quantity at the \c levels.
+
+\c levelsIN must be strictly increasing and in the range \f$0 < z < \mathtt{grid.p->Lz}\f$.
+
+Likewise, return array \c valsOUT must be an allocated array of \c nlevels scalars (i.e. \c PetscScalar).
+Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.
  */
 PetscErrorCode  IceModelVec3::getValColumn(
                      const PetscInt i, const PetscInt j, 
-                     const PetscInt nlevels, PetscScalar *levelsIN,
+                     const PetscInt nlevelsIN, PetscScalar *levelsIN,
                      PetscScalar *valsOUT) {
   
-  for (PetscInt k=0;  k < nlevels; k++) {
-    valsOUT[k] = getValZ(i,j,levelsIN[k]);
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  // check if in ownership ?
+
+  ierr = isLegalLevel(levelsIN[0]); CHKERRQ(ierr);
+  ierr = isLegalLevel(levelsIN[nlevelsIN - 1]); CHKERRQ(ierr);
+  for (PetscInt k=0; k < nlevelsIN - 1; k++) {
+    if (levelsIN[k] >= levelsIN[k+1]) {
+      SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
+                 "    (IceModelVec3 with varname='%s')  ENDING!\n",k,varname);
+    }
   }
+
+  PetscScalar* levels = grid->zlevels;
+  
+  PetscInt mcurr = 0;
+  for (PetscInt k = 0; k < nlevelsIN; k++) {
+    while (levels[mcurr+1] < levelsIN[k]) {
+      mcurr++;
+    }
+    const PetscScalar incr = (levelsIN[k] - levels[mcurr]) / (levels[mcurr+1] - levels[mcurr]);
+    const PetscScalar valm = array[i][j][mcurr];
+    valsOUT[k] = valm + incr * (array[i][j][mcurr+1] - valm);
+  }
+
   return 0;
 }
 
@@ -423,11 +506,9 @@ PetscErrorCode  IceModelVec3::getInternalColumn(
                      const PetscInt i, const PetscInt j, PetscInt *nlevels,
                      PetscScalar **levelsOUT, PetscScalar **valsOUT) {
   
-  *nlevels = Mz;
-  *levelsOUT = levels;
+  *nlevels = (grid->p)->Mz;
+  *levelsOUT = grid->zlevels;
   *valsOUT = array[i][j];
   return 0;
 }
-
-
 

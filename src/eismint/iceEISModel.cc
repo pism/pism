@@ -270,27 +270,26 @@ PetscErrorCode IceEISModel::initAccumTs() {
 
 PetscErrorCode IceEISModel::fillintemps() {
   PetscErrorCode      ierr;
-  PetscScalar         **Ts, ***T, ***Tb;
+  PetscScalar         **Ts, ***Tb;
 
   // fill in all temps with Ts
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      for (PetscInt k=0; k<grid.p->Mz; k++)
-        T[i][j][k] = Ts[i][j];
+      ierr = T3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.p->Mbz; k++)
         Tb[i][j][k] = Ts[i][j];
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vT, &T); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
 
   // communicate T because it will be horizontally differentiated
-  ierr = DALocalToLocalBegin(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vT, INSERT_VALUES, vT); CHKERRQ(ierr);
+  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = T3.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

@@ -51,6 +51,7 @@ IceGrid::IceGrid(MPI_Comm c,
                  PetscMPIInt s):
   com(c), rank(r), size(s), createDA_done(PETSC_FALSE) { 
   p = new IceParam;
+  zlevels = PETSC_NULL;
 }
 
 
@@ -67,6 +68,10 @@ IceGrid::~IceGrid() {
     PetscEnd();
   }
   delete p;
+  if (zlevels != PETSC_NULL) {
+    delete [] zlevels;
+    zlevels = PETSC_NULL;
+  }
 }
 
 
@@ -184,6 +189,11 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
 
   p->dz = p->Lz / (p->Mz - 1);
   p->Lbz = p->dz * (p->Mbz - 1);
+
+  zlevels = new PetscScalar[p->Mz];
+  for (PetscInt k=0; k < p->Mz; k++) {
+    zlevels[k] = p->dz * ((PetscScalar) k);
+  }
 
   ierr = setCoordinatesDA(); CHKERRQ(ierr);
   return 0;
