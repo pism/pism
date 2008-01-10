@@ -192,6 +192,9 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
   p->dz = p->Lz / (p->Mz - 1);
   p->Lbz = p->dz * (p->Mbz - 1);
 
+  // length of zlevels will change if Mz is reset:
+  delete [] zlevels;
+  zlevels = new PetscScalar[p->Mz];
   for (PetscInt k=0; k < p->Mz; k++) {
     zlevels[k] = p->dz * ((PetscScalar) k);
   }
