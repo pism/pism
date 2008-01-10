@@ -61,7 +61,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   const PetscScalar T0 = 263.15;  // completely arbitrary
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = T3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = VecSet(vTb, T0); CHKERRQ(ierr);
+  ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
 
   ierr = tau3.setToConstant(0.0); CHKERRQ(ierr);  // age (not yield stress)
 

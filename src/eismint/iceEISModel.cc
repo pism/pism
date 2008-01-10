@@ -270,22 +270,21 @@ PetscErrorCode IceEISModel::initAccumTs() {
 
 PetscErrorCode IceEISModel::fillintemps() {
   PetscErrorCode      ierr;
-  PetscScalar         **Ts, ***Tb;
+  PetscScalar         **Ts;
 
   // fill in all temps with Ts
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = T3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.p->Mbz; k++)
-        Tb[i][j][k] = Ts[i][j];
+      ierr = Tb3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
 
   // communicate T because it will be horizontally differentiated
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);

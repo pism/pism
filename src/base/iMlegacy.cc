@@ -450,13 +450,14 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
 }
 
 
+/*
 PetscErrorCode IceModel::reconfigure_legacy_Mbz() {
   PetscErrorCode  ierr;
   PetscTruth legacy_nc_Mbz;
   ierr = PetscOptionsHasName(PETSC_NULL, "-legacy_nc_Mbz", &legacy_nc_Mbz); CHKERRQ(ierr);
   if (legacy_nc_Mbz == PETSC_TRUE) {
     PetscInt    M, N, m, n;
-    PetscScalar ***Tb, ***newTb;
+    PetscScalar ***newTb;
     DA _da3b;
     Vec _vTb, _g3b;
 
@@ -469,7 +470,7 @@ PetscErrorCode IceModel::reconfigure_legacy_Mbz() {
     ierr = DACreateGlobalVector(_da3b, &_g3b); CHKERRQ(ierr);
 
     ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+    ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecGetArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i < grid.xs + grid.xm; i++) {
       for (PetscInt j = grid.ys; j < grid.ys + grid.ym; j++) {
@@ -479,13 +480,16 @@ PetscErrorCode IceModel::reconfigure_legacy_Mbz() {
         newTb[i][j][grid.p->Mbz - 1] = T3.getValZ(i,j,0.0);
       }
     }
-    ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+    ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(_da3b, _vTb, &newTb); CHKERRQ(ierr);
-    DADestroy(grid.da3b); grid.da3b = _da3b;
-    VecDestroy(vTb); vTb = _vTb;
+    
+    DADestroy(grid.da3b); 
+    grid.da3b = _da3b;
+    VecDestroy(vTb); 
+    vTb = _vTb;
     VecDestroy(g3b); g3b = _g3b;
-    // We never need the ghosted values of vTb, so we don't need LocalToLocal() here
   }
   return 0;
 }
+*/

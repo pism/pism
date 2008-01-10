@@ -347,7 +347,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no bed deformation
     ierr = VecSet(vTs, ice.meltingTemp); CHKERRQ(ierr);
     ierr = T3.setToConstant(ice.meltingTemp); CHKERRQ(ierr);
-    ierr = VecSet(vTb, ice.meltingTemp); CHKERRQ(ierr);
+    ierr = Tb3.setToConstant(ice.meltingTemp); CHKERRQ(ierr);
 
     ierr = VecSet(vAccum, 0.3/secpera); CHKERRQ(ierr);
 

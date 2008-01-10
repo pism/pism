@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Jed Brown and Ed Bueler
+// Copyright (C) 2007-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,17 @@ int check_err(const int stat, const int line, const char *file) {
 PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
                              DA da, Vec v, Vec g, const int *s, const int *c,
                              int dims, void *a_mpi, int a_size) {
+
+  PetscErrorCode ierr;
+  ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
+  ierr = put_global_var(grid, ncid, var_id, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+                              DA da, Vec g, const int *s, const int *c,
+                              int dims, void *a_mpi, int a_size) {
   const int lim_tag = 1; // MPI tag for limits block
   const int var_tag = 2; // MPI tag for data block
   const int sc_size = 8;
@@ -69,7 +80,7 @@ PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc
   int b_len = 1;
   for (int i = 0; i < dims; i++) b_len *= c[i];
   
-  ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
+//  ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
   for (int i = 0; i < b_len; i++) {
@@ -212,6 +223,18 @@ PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[], double *bdy_t
 PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
                              DA da, Vec v, Vec g, const int *s, const int *c,
                              int dims, void *a_mpi, int a_size) {
+
+  PetscErrorCode ierr;
+  ierr = get_global_var(grid, ncid, name, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
+                             DA da, Vec g, const int *s, const int *c,
+                             int dims, void *a_mpi, int a_size) {
   const int req_tag = 1; // MPI tag for request block
   const int var_tag = 2; // MPI tag for data block
   const int sc_size = 8;
@@ -305,8 +328,8 @@ PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc
   
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
-  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+//  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+//  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
   return 0;
 }
@@ -367,6 +390,18 @@ PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[
 PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
                                 int dim_flag, LocalInterpCtx &lic,
                                 IceGrid &grid, DA da, Vec vec, Vec g) {
+  PetscErrorCode ierr;
+  ierr = regrid_global_var(vars, c, name, dim_flag, lic, grid, da, g); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
+  return 0;
+}
+
+
+
+PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
+                                int dim_flag, LocalInterpCtx &lic,
+                                IceGrid &grid, DA da, Vec g) {
   // dim_flag : 2 for 2-D quantities, 3 for 3-D ice quantities, 4 for 3-D bedrock quantities
   const int req_tag = 1; // MPI tag for request block
   const int var_tag = 2; // MPI tag for data block
@@ -537,8 +572,9 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
   }
   
   ierr = VecRestoreArray(g, &vec_a); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
+
+//  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
+//  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
 
   return 0;
 }

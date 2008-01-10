@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -303,7 +303,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = T3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = VecSet(vTb, T0); CHKERRQ(ierr);
+  ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
@@ -380,7 +380,7 @@ PetscErrorCode IceCompModel::initTestL() {
   T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = T3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = VecSet(vTb, T0); CHKERRQ(ierr);
+  ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);

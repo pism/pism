@@ -205,13 +205,14 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
       if (doTandTb == PETSC_TRUE) {
         ierr = T3.needAccessToVals(); CHKERRQ(ierr);
         ierr = T3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
-        PetscScalar ***Tb;
-        ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-        ierr = VecSetValues(m, grid.p->Mbz, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
+        ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+        PetscScalar *ibvals;
+        ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
+        ierr = VecSetValues(m, grid.p->Mbz, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], ivals, INSERT_VALUES);
                  CHKERRQ(ierr);
-        ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
-        ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+        ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+        ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
       } else {
         ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
         ierr = imv3.getValColumn(id, jd, rlen, izz, ivals); CHKERRQ(ierr);

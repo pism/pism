@@ -62,11 +62,13 @@
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
   ierr = T3.setVaridNC(temp_id); CHKERRQ(ierr);
-  ierr = T3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, litho_temp_id, NC_FLOAT, grid.da3b, vTb, g3b,
-                       s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = T3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = Tb3.setVaridNC(litho_temp_id); CHKERRQ(ierr);
+  ierr = Tb3.putVecNC(ncid, s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+//  ierr = put_local_var(&grid, ncid, litho_temp_id, NC_FLOAT, grid.da3b, Tb3.v, g3b,
+//                       s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = tau3.setVaridNC(age_id); CHKERRQ(ierr);
-  ierr = tau3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = tau3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D climate quantities
   ierr = put_local_var(&grid, ncid, artm_id, NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);

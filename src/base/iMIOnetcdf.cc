@@ -77,7 +77,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar HH = H[i][j];
@@ -125,14 +125,14 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+  ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
 
   delete [] izz; delete [] T;
   
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = Tb3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da3b, vTb, INSERT_VALUES, vTb); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3b, vTb, INSERT_VALUES, vTb); CHKERRQ(ierr);
+  ierr = Tb3.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -690,11 +690,11 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 
   // now write additional 3-D diagnostic quantities
   ierr = u3.setVaridNC(uvel_id); CHKERRQ(ierr);
-  ierr = u3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = u3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = v3.setVaridNC(vvel_id); CHKERRQ(ierr);
-  ierr = v3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = v3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = w3.setVaridNC(wvel_id); CHKERRQ(ierr);
-  ierr = w3.putVecNC(ncid, g3, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = w3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   
   // We are done with these buffers
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
@@ -810,12 +810,17 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
+/*
   ierr = get_local_var(&grid, ncid, "temp", NC_FLOAT, grid.da3, T3.v, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "litho_temp", NC_FLOAT, grid.da3b, vTb, g3b,
+  ierr = get_local_var(&grid, ncid, "litho_temp", NC_FLOAT, grid.da3b, Tb3.v, g3b,
                        s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = get_local_var(&grid, ncid, "age", NC_FLOAT, grid.da3, tau3.v, g3,
                        s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+*/
+  ierr = T3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = Tb3.getVecNC(ncid, s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = tau3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
 
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
 
@@ -851,7 +856,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
 
-  ierr = reconfigure_legacy_Mbz(); CHKERRQ(ierr);
+//  ierr = reconfigure_legacy_Mbz(); CHKERRQ(ierr);
 
   initialized_p = PETSC_TRUE;
   return 0;
@@ -1026,16 +1031,20 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'T', "temp", 3, lic, grid, grid.da3, T3.v, g3);
-  CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'B', "litho_temp", 4, lic, grid, grid.da3b, vTb, g3b);
-  CHKERRQ(ierr);
-//  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, vtau, g3);
-//  CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, tau3.v, g3);
-  CHKERRQ(ierr);
   ierr = regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
   CHKERRQ(ierr);
+
+  ierr = T3.regridVecNC(regridVars, 'T', 3, lic);  CHKERRQ(ierr);
+  ierr = Tb3.regridVecNC(regridVars, 'B', 4, lic);  CHKERRQ(ierr);
+  ierr = tau3.regridVecNC(regridVars, 'e', 3, lic);  CHKERRQ(ierr);
+/*
+  ierr = regrid_local_var(regridVars, 'T', "temp", 3, lic, grid, grid.da3, T3.v, g3);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'B', "litho_temp", 4, lic, grid, grid.da3b, Tb3.v, g3b);
+  CHKERRQ(ierr);
+  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, tau3.v, g3);
+  CHKERRQ(ierr);
+*/
 
   ierr = PetscFree(lic.a); CHKERRQ(ierr);
   

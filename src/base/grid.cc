@@ -51,7 +51,10 @@ IceGrid::IceGrid(MPI_Comm c,
                  PetscMPIInt s):
   com(c), rank(r), size(s), createDA_done(PETSC_FALSE) { 
   p = new IceParam;
-  zlevels = PETSC_NULL;
+  zlevels = new PetscScalar[p->Mz];
+  for (PetscInt k=0; k < p->Mz; k++) {
+    zlevels[k] = p->dz * ((PetscScalar) k);
+  }
 }
 
 
@@ -68,18 +71,15 @@ IceGrid::~IceGrid() {
     PetscEnd();
   }
   delete p;
-  if (zlevels != PETSC_NULL) {
-    delete [] zlevels;
-    zlevels = PETSC_NULL;
-  }
+  p = PETSC_NULL;
+  delete [] zlevels;
+  zlevels = PETSC_NULL;
 }
 
 
 //! Create the PETSc DAs for the grid specified in *p (a pointer to IceParam).
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
-  PetscInt    M, N, m, n;
-  DALocalInfo info;
 
   if (createDA_done == PETSC_TRUE) {
     ierr = destroyDA(); CHKERRQ(ierr);
@@ -88,6 +88,8 @@ PetscErrorCode IceGrid::createDA() {
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     p->My, p->Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+
+  PetscInt    M, N, m, n;
   ierr = DAGetInfo(da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, p->Mz, N, M, 1, n, m, 1, 1,
@@ -95,11 +97,11 @@ PetscErrorCode IceGrid::createDA() {
   ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, p->Mbz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3b); CHKERRQ(ierr);
 
+  DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
 
-//  ierr = setCoordinatesDA(); CHKERRQ(ierr);
   ierr = rescale(p->Lx,p->Ly,p->Lz); CHKERRQ(ierr);
   createDA_done = PETSC_TRUE;
   return 0;
@@ -111,12 +113,12 @@ PetscErrorCode IceGrid::setCoordinatesDA() {
 
   ierr = DASetUniformCoordinates(da2, -p->Ly, p->Ly, -p->Lx, p->Lx,
                                  PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DASetUniformCoordinates(da3, 0, p->Lz,
-                                 -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
-  if (p->Mbz > 1) {
-    ierr = DASetUniformCoordinates(da3b, -p->Lbz, 0.0,
-                                   -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
-  }
+//  ierr = DASetUniformCoordinates(da3, 0, p->Lz,
+//                                 -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
+//  if (p->Mbz > 1) {
+//    ierr = DASetUniformCoordinates(da3b, -p->Lbz, 0.0,
+//                                   -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
+//  }
   return 0;
 }
 
@@ -190,7 +192,6 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
   p->dz = p->Lz / (p->Mz - 1);
   p->Lbz = p->dz * (p->Mbz - 1);
 
-  zlevels = new PetscScalar[p->Mz];
   for (PetscInt k=0; k < p->Mz; k++) {
     zlevels[k] = p->dz * ((PetscScalar) k);
   }

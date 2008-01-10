@@ -67,15 +67,26 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
         ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
       }
-      // communicate I[o] on staggered for horizontalVelocitySIARegular()
-      //   and also communicate Sigma[o] on staggered for SigmaSIAToRegular()
+      // communicate I on staggered for horizontalVelocitySIARegular()
+      //   and also communicate Sigma on staggered for SigmaSIAToRegular()
+/*
       for (PetscInt k=0; k<4; ++k) {
         ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
         ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
       }
+*/
+      ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Sigmastag3[1].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[0].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[1].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Sigmastag3[0].endGhostComm(); CHKERRQ(ierr);
+      ierr = Sigmastag3[1].endGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[0].endGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[1].endGhostComm(); CHKERRQ(ierr);
+
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
-      // done with vWork2d[0 1 2 3] and vWork3d[0 1 2 3]
+// done with vWork2d[0 1 2 3] and vWork3d[0 1 2 3]
     }
   } else { // if computeSIAVelocities
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
@@ -115,10 +126,10 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
 
-  if (updateVelocityAtDepth || useSSAVelocity) {  // in latter case u,v are modified by broacastSSAVelocity()
+  if (updateVelocityAtDepth || useSSAVelocity) {  // in latter case u,v are modified by broadcastSSAVelocity()
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
-    ierr = u3.endGhostComm(); CHKERRQ(ierr);
     ierr = v3.beginGhostComm(); CHKERRQ(ierr);
+    ierr = u3.endGhostComm(); CHKERRQ(ierr);
     ierr = v3.endGhostComm(); CHKERRQ(ierr);
   }
 
@@ -133,10 +144,12 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     // no communication needed for w, which is only differenced in the column
   }
   
+/* REMOVED TO AVOID STENCIL_BOX COMMUNICATION FOR 3D Vecs: 
   // smoothing Sigma is NOT RECOMMENDED, but do it here
   if (noSpokesLevel > 0) {
     ierr = smoothSigma(); CHKERRQ(ierr); // comm here
   }
+*/
 
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
@@ -270,6 +283,10 @@ PetscScalar IceModel::capBasalMeltRate(const PetscScalar bMR) {
 }
 
 
+/* 
+THIS IS THE ONLY PLACE WHERE STENCIL_*BOX* COMMUNICATION IS REQUIRED FOR A 3D Vec IS REQUIRED
+REMOVING IT THEREFORE HAS A BENEFIT FOR COMMUNICATION
+
 PetscErrorCode IceModel::smoothSigma() {
   // does iterated smoothing of Sigma on regular grid; uses box stencil of width one
   // not exactly recommended; it is rather nonphysical; compare Bueler, Brown, and Lingle 2007
@@ -325,6 +342,7 @@ PetscErrorCode IceModel::smoothSigma() {
 
   return 0;
 }
+*/
 
 
 //! Compute the maximum velocities for time-stepping and reporting to user.

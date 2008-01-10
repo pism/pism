@@ -59,9 +59,6 @@ public:
   PetscTruth isInitialized() const;
 
   // see iceModel.cc
-  
-  PetscErrorCode testIceModelVec();
-
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   PetscScalar maxdt_temporary; // might be set by additionalAt??Timestep()
@@ -73,6 +70,9 @@ public:
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
+
+  // see iMtemp.cc
+  PetscErrorCode testIceModelVec();
 
   // see iMutil.cc
   virtual PetscErrorCode initFromOptions();
@@ -164,12 +164,10 @@ protected:
     vtauc, vtillphi, vbeta;     // basal fields; plastic/viscous coefficients
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
                                         //   u bar and v bar on staggered grid,
-//  Vec          vu, vv, vw,              // 3D: standard grid, Mx x My x Mz
-//               vSigma, vT, vgs, vtau;   //   strain-heating, temp, grain size, age
-  Vec          vTb;                     // 3D bed: Mx x My x Mbz
   Vec          vLongitude, vLatitude;
 
-  IceModelVec3  u3, v3, w3, Sigma3, T3, gs3, tau3;
+  IceModelVec3        u3, v3, w3, Sigma3, T3, gs3, tau3;
+  IceModelVec3Bedrock Tb3;
 
   // parameters
   PetscScalar maxdt, muSliding, enhancementFactor;
@@ -291,7 +289,7 @@ protected:
   PetscErrorCode cleanJustNan_legacy();
   PetscErrorCode createMask_legacy(PetscTruth balVelRule);
   PetscErrorCode cleanInputData_legacy();
-  PetscErrorCode reconfigure_legacy_Mbz();
+//  PetscErrorCode reconfigure_legacy_Mbz();
   PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
 
   // see iMmatlab.cc
@@ -412,10 +410,10 @@ protected:
   // see iMvelocity.cc
   PetscErrorCode vertVelocityFromIncompressibility();
   PetscScalar    capBasalMeltRate(const PetscScalar bMR);
-  PetscErrorCode smoothSigma();
   PetscErrorCode computeMax3DVelocities();
   PetscErrorCode computeMax2DSlidingSpeed();
-  
+  // REMOVED TO AVOID STENCIL_BOX COMMUNICATION FOR 3D Vecs: PetscErrorCode smoothSigma();
+    
   // see iMviewers.cc
   int isViewer(char name);
   PetscErrorCode updateSoundings();
@@ -445,11 +443,18 @@ protected:
 
 private:
   // working space (a convenience)
+/*
+  static const PetscInt nWork3d=4, nWork2d=6;
   Vec g2, g3, g3b;    // Global work vectors
   Vec* vWork3d;
+*/
+  static const PetscInt nWork2d=6;
+  Vec g2;    // Global work vector
   Vec* vWork2d;
-  static const PetscInt nWork3d=4, nWork2d=6;
 
+  IceModelVec3 Tnew3, taunew3;
+  IceModelVec3 *Sigmastag3, *Istag3;
+  
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details

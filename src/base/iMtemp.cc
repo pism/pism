@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -41,12 +41,17 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   ierr = temperatureStep(); CHKERRQ(ierr);  // puts vTnew in vWork3d[0]
 
   // no communication done in ageStep(), temperatureStep(); all done here:
-  // this communication not implemented by begin[end]GhostCom()
-  ierr = DALocalToLocalBegin(grid.da3, vWork3d[0], INSERT_VALUES, T3.v); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vWork3d[0], INSERT_VALUES, T3.v); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da3, vWork3d[1], INSERT_VALUES, tau3.v); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da3, vWork3d[1], INSERT_VALUES, tau3.v); CHKERRQ(ierr);
-  
+/*
+  ierr = DALocalToLocalBegin(grid.da3, Tnew3.v, INSERT_VALUES, T3.v); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da3, Tnew3.v, INSERT_VALUES, T3.v); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da3, taunew3.v, INSERT_VALUES, tau3.v); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da3, taunew3.v, INSERT_VALUES, tau3.v); CHKERRQ(ierr);
+*/
+  ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+  ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+  ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
+
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
   return 0;
@@ -55,12 +60,18 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 
 // documentation for temperatureStep() is in pism/src/base/comments.hh
 PetscErrorCode IceModel::temperatureStep() {
-  // update temp fields vTnew, vTb
+  // update temp fields Tnew, Tb
   
   PetscErrorCode  ierr;
 
-  const PetscInt      Mbz = grid.p->Mbz, Mz = grid.p->Mz;
-  const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
+  const PetscInt      Mbz = grid.p->Mbz, 
+                      Mz = grid.p->Mz,
+                      k0 = Mbz - 1;
+
+  const PetscScalar   dx = grid.p->dx, 
+                      dy = grid.p->dy, 
+                      dz = grid.p->dz;
+
   const PetscScalar   rho_c_I = ice.rho * ice.c_p;
   const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
   const PetscScalar   rho_c_av = (rho_c_I + rho_c_br) / 2.0;// only applies for equal-spaced!
@@ -69,11 +80,10 @@ PetscErrorCode IceModel::temperatureStep() {
   const PetscScalar   brK = bedrock.k / rho_c_br;
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dz); // only equal-spaced
 
-  Vec     vTnew = vWork3d[0];  // will be communicated by temperatureAgeStep()
+  PetscScalar *Tb, *Tbnew;
   PetscScalar **Ts, **H, **b, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate;
-  PetscScalar ***Tb, ***Tnew;
 
-  PetscScalar *izz, *u, *v, *w, *Sigma, *T;
+  PetscScalar *izz, *u, *v, *w, *Sigma, *T, *Tnew;
   izz = new PetscScalar[grid.p->Mz];
   for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
   u = new PetscScalar[grid.p->Mz];
@@ -81,8 +91,10 @@ PetscErrorCode IceModel::temperatureStep() {
   w = new PetscScalar[grid.p->Mz];
   Sigma = new PetscScalar[grid.p->Mz];
   T = new PetscScalar[grid.p->Mz];
+  Tnew = new PetscScalar[grid.p->Mz];
 
-  const PetscInt  k0 = Mbz - 1;
+  Tbnew = new PetscScalar[grid.p->Mbz];
+
   PetscScalar *Lp, *L, *D, *U, *x, *rhs, *work;  
   Lp = new PetscScalar[Mz+k0-1]; L = Lp-1; // ptr arith.; note L[0]=Lp[-1] not alloc
   D = new PetscScalar[Mz+k0];
@@ -100,14 +112,14 @@ PetscErrorCode IceModel::temperatureStep() {
   ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
   
-  ierr = DAVecGetArray(grid.da3, vTnew, &Tnew); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
-
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
   ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = Tnew3.needAccessToVals(); CHKERRQ(ierr);
+
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
 
   PetscInt        myLowTempCount = 0;
 
@@ -121,6 +133,8 @@ PetscErrorCode IceModel::temperatureStep() {
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
       
+      ierr = Tb3.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+
       if (Mbz > 1) { // bedrock present: build k=0:Mbz-1 eqns
         /*
         THIS OLD SCHEME SEEMS ONLY TO GIVE   O(\Delta t,\Delta z^1)  convergence:
@@ -131,13 +145,13 @@ PetscErrorCode IceModel::temperatureStep() {
         */
         // gives O(\Delta t,\Delta z^2) convergence in Test K
         D[0] = (1.0 + 2.0 * brR);  U[0] = - 2.0 * brR;  // note L[0] not an allocated location
-        rhs[0] = Tb[i][j][0] + 2.0 * dtTempAge * Ghf[i][j] / (rho_c_br * dz);
+        rhs[0] = Tb[0] + 2.0 * dtTempAge * Ghf[i][j] / (rho_c_br * dz);
       
         // bedrock only: pure vertical conduction problem
         // {from generic bedrock FV}
         for (PetscInt k=1; k < k0; k++) {
           L[k] = -brR; D[k] = 1+2*brR; U[k] = -brR;
-          rhs[k] = Tb[i][j][k];
+          rhs[k] = Tb[k];
         }
       }
       
@@ -236,7 +250,7 @@ PetscErrorCode IceModel::temperatureStep() {
 
       // insert bedrock solution; check for too low below
       for (PetscInt k=0; k < k0; k++) {
-        Tb[i][j][k] = x[k];
+        Tbnew[k] = x[k];
       }
 
       // prepare for melting/refreezing
@@ -246,23 +260,23 @@ PetscErrorCode IceModel::temperatureStep() {
       for (PetscInt k=1; k <= ks; k++) {
 //      for (PetscInt k=1; k < ks; k++) {
         if (allowAboveMelting == PETSC_TRUE) {
-          Tnew[i][j][k] = x[k0 + k];
+          Tnew[k] = x[k0 + k];
         } else {
           const PetscScalar depth = H[i][j] - k * dz;
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
           if (x[k0 + k] > Tpmp) {
-            Tnew[i][j][k] = Tpmp;
+            Tnew[k] = Tpmp;
             PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
             excessToFromBasalMeltLayer(rho_c_I, k * dz, &Texcess, &Hmeltnew);
             // Texcess  will always come back zero here; ignor it
           } else {
-            Tnew[i][j][k] = x[k0 + k];
+            Tnew[k] = x[k0 + k];
           }
         }
-        if (Tnew[i][j][k] < globalMinAllowedTemp) {
+        if (Tnew[k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) generic segment temp T = %f at %d,%d,%d; proc %d; mask=%f; w=%f]]\n",
-              Tnew[i][j][k],i,j,k,grid.rank,mask[i][j],w[k]*secpera); CHKERRQ(ierr);
+              Tnew[k],i,j,k,grid.rank,mask[i][j],w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       }
@@ -270,7 +284,7 @@ PetscErrorCode IceModel::temperatureStep() {
       // insert solution for ice/rock interface (or base of ice shelf) segment
       if (ks > 0) {
         if (allowAboveMelting == PETSC_TRUE) {
-          Tnew[i][j][0] = x[k0];
+          Tnew[0] = x[k0];
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * H[i][j];
           PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
@@ -281,15 +295,15 @@ PetscErrorCode IceModel::temperatureStep() {
           } else {
              excessToFromBasalMeltLayer(rho_c_av, 0.0, &Texcess, &Hmeltnew);
           }
-          Tnew[i][j][0] = Tpmp + Texcess;
-          if (Tnew[i][j][0] > (Tpmp + 0.00001)) {
+          Tnew[0] = Tpmp + Texcess;
+          if (Tnew[0] > (Tpmp + 0.00001)) {
             SETERRQ(1,"updated temperature came out above Tpmp");
           }
         }
-        if (Tnew[i][j][0] < globalMinAllowedTemp) {
+        if (Tnew[0] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) ice/rock segment temp T = %f at %d,%d; proc %d; mask=%f; w=%f]]\n",
-              Tnew[i][j][0],i,j,grid.rank,mask[i][j],w[0]*secpera); CHKERRQ(ierr);
+              Tnew[0],i,j,grid.rank,mask[i][j],w[0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
       } else {
@@ -298,30 +312,36 @@ PetscErrorCode IceModel::temperatureStep() {
       
       // we must agree on redundant values T(z=0) at top of bedrock and at bottom of ice
       if (ks > 0) {
-        Tb[i][j][k0] = Tnew[i][j][0];
+        Tbnew[k0] = Tnew[0];
       } else {
         // if floating then top of bedrock sees ocean
         const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
         if (b[i][j] < floating_base - 1.0) {
-          Tb[i][j][k0] = ice.meltingTemp;
+          Tbnew[k0] = ice.meltingTemp;
         } else { // top of bedrock sees atmosphere
-          Tb[i][j][k0] = Ts[i][j];
+          Tbnew[k0] = Ts[i][j];
         }
       }
       // check bedrock solution        
       for (PetscInt k=0; k <= k0; k++) {
-        if (Tb[i][j][k] < globalMinAllowedTemp) {
+        if (Tbnew[k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) bedrock temp T = %f at %d,%d,%d; proc %d; mask=%f]]\n",
-              Tb[i][j][k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+              Tbnew[k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
            myLowTempCount++;
         }
       }
-      
+
+      // transfer column into Tb3; neighboring columns will not reference!
+      ierr = Tb3.setInternalColumn(i,j,Tbnew); CHKERRQ(ierr);
+
       // set to air temp above ice
       for (PetscInt k=ks; k<Mz; k++) {
-        Tnew[i][j][k] = Ts[i][j];
+        Tnew[k] = Ts[i][j];
       }
+
+      // transfer column into Tnew3; communication later
+      ierr = Tnew3.setValColumn(i,j,Mz,izz,Tnew); CHKERRQ(ierr);
 
       // basaMeltRate[][] is rate of change of Hmelt[][]; thus it can be negative
       basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
@@ -353,18 +373,19 @@ PetscErrorCode IceModel::temperatureStep() {
   ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vTnew, &Tnew); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
 
   ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = Tnew3.doneAccessToVals(); CHKERRQ(ierr);
   
   delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
-
   delete [] izz;  delete [] u;  delete [] v;  delete [] w;  delete [] Sigma;  delete [] T;
+  delete [] Tbnew;  delete [] Tnew;
 
   return 0;
 }
@@ -438,30 +459,30 @@ The numerical method is first-order upwind.
 @endcond
  */
 PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
-  // update age field vtaunew
+  // update age field taunew3
   PetscErrorCode  ierr;
 
   const PetscInt      Mz = grid.p->Mz;
   const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
   const PetscScalar   cflx = dx/dtTempAge, cfly = dy/dtTempAge, cflz = dz/dtTempAge;
 
-  Vec     vtaunew = vWork3d[1];  // will be communicated by temperatureAgeStep()
-  PetscScalar ***taunew, **H;
+  PetscScalar **H;
 
-  PetscScalar *izz, *tau, *u, *v, *w;
+  PetscScalar *izz, *tau, *u, *v, *w, *taunew;
   izz = new PetscScalar[grid.p->Mz];
   for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
   tau = new PetscScalar[grid.p->Mz];
   u = new PetscScalar[grid.p->Mz];
   v = new PetscScalar[grid.p->Mz];
   w = new PetscScalar[grid.p->Mz];
+  taunew = new PetscScalar[grid.p->Mz];
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
   ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da3, vtaunew, &taunew); CHKERRQ(ierr);
+  ierr = taunew3.needAccessToVals(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -505,11 +526,13 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
                                : w[k] * (tau[k] - tau[k-1]) / dz;
           }
         }
-        taunew[i][j][k] = tau[k] + dtTempAge * (1.0 - rtau);
+        taunew[k] = tau[k] + dtTempAge * (1.0 - rtau);
       }      
       for (PetscInt k=ks; k<Mz; k++) {
-        taunew[i][j][k] = 0.0;  // age of ice above (and at) surface is zero years
+        taunew[k] = 0.0;  // age of ice above (and at) surface is zero years
       }
+      
+      ierr = taunew3.setValColumn(i,j,grid.p->Mz,izz,taunew); CHKERRQ(ierr);
     }
   }
 
@@ -518,9 +541,9 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   ierr = u3.doneAccessToVals();  CHKERRQ(ierr);
   ierr = v3.doneAccessToVals();  CHKERRQ(ierr);
   ierr = w3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da3, vtaunew, &taunew); CHKERRQ(ierr);
+  ierr = taunew3.doneAccessToVals();  CHKERRQ(ierr);
 
-  delete [] izz;  delete [] tau;  delete [] u;  delete [] v;  delete [] w;
+  delete [] izz;  delete [] tau;  delete [] u;  delete [] v;  delete [] w;  delete [] taunew;
   
   return 0;
 }
@@ -566,7 +589,7 @@ PetscErrorCode IceModel::testIceModelVec()    {
   PetscErrorCode ierr;
   IceModelVec3 test3;
 
-  ierr = test3.create(grid,"testMe"); CHKERRQ(ierr);
+  ierr = test3.create(grid,"testMe",false); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3; setting to constant %f",
                     60402.70804); CHKERRQ(ierr);

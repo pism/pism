@@ -152,15 +152,15 @@ PetscErrorCode IceModel::createVecs() {
     ierr = destroyVecs(); CHKERRQ(ierr);
   }
   
-  ierr = u3.create(grid,"uvel"); CHKERRQ(ierr);
-  ierr = v3.create(grid,"vvel"); CHKERRQ(ierr);
-  ierr = w3.create(grid,"wvel"); CHKERRQ(ierr);
-  ierr = Sigma3.create(grid,"Sigma"); CHKERRQ(ierr);
-  ierr = T3.create(grid,"temp"); CHKERRQ(ierr);
-  ierr = gs3.create(grid,"grainsize"); CHKERRQ(ierr);
-  ierr = tau3.create(grid,"age"); CHKERRQ(ierr);
+  ierr = u3.create(grid,"uvel",true); CHKERRQ(ierr);
+  ierr = v3.create(grid,"vvel",true); CHKERRQ(ierr);
+  ierr = w3.create(grid,"wvel",false); CHKERRQ(ierr);        // never diff'ed in hor dirs
+  ierr = Sigma3.create(grid,"Sigma",false); CHKERRQ(ierr);   // never diff'ed in hor dirs
+  ierr = T3.create(grid,"temp",true); CHKERRQ(ierr);
+  ierr = gs3.create(grid,"grainsize",true); CHKERRQ(ierr);// note velocitySIAStaggered() does average it in hor.!
+  ierr = tau3.create(grid,"age",true); CHKERRQ(ierr);
 
-  ierr = DACreateLocalVector(grid.da3b, &vTb); CHKERRQ(ierr);
+  ierr = Tb3.create(grid,"litho_temp",false); CHKERRQ(ierr);
 
   ierr = DACreateLocalVector(grid.da2, &vh); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vH); CHKERRQ(ierr);
@@ -187,13 +187,22 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicateVecs(vh, 2, &vuvbar); CHKERRQ(ierr);
 
   ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
-  ierr = VecDuplicateVecs(u3.v, nWork3d, &vWork3d); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vubarSSA); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vvbarSSA); CHKERRQ(ierr);
 
+//  ierr = VecDuplicateVecs(u3.v, nWork3d, &vWork3d); CHKERRQ(ierr);
+  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
+  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
+  Sigmastag3 = new IceModelVec3[2];
+  ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
+  Istag3 = new IceModelVec3[2];
+  ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
+  ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
+
   ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
-  ierr = DACreateGlobalVector(grid.da3, &g3); CHKERRQ(ierr);
-  ierr = DACreateGlobalVector(grid.da3b, &g3b); CHKERRQ(ierr);
+//  ierr = DACreateGlobalVector(grid.da3, &g3); CHKERRQ(ierr);
+//  ierr = DACreateGlobalVector(grid.da3b, &g3b); CHKERRQ(ierr);
 
   const PetscInt M = 2 * grid.p->Mx * grid.p->My;
   ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
@@ -229,6 +238,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = gs3.destroy(); CHKERRQ(ierr);
   ierr = tau3.destroy(); CHKERRQ(ierr);
 
+  ierr = Tb3.destroy(); CHKERRQ(ierr);
+
   ierr = VecDestroy(vh); CHKERRQ(ierr);
   ierr = VecDestroy(vH); CHKERRQ(ierr);
   ierr = VecDestroy(vbed); CHKERRQ(ierr);
@@ -252,14 +263,23 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vLatitude); CHKERRQ(ierr);
 
   ierr = VecDestroyVecs(vuvbar, 2); CHKERRQ(ierr);
-  ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
   ierr = VecDestroyVecs(vWork2d, nWork2d); CHKERRQ(ierr);
   ierr = VecDestroy(vubarSSA); CHKERRQ(ierr);
   ierr = VecDestroy(vvbarSSA); CHKERRQ(ierr);
 
+//  ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
+  ierr = Tnew3.destroy(); CHKERRQ(ierr);
+  ierr = taunew3.destroy(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].destroy(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].destroy(); CHKERRQ(ierr);
+  delete [] Sigmastag3;
+  ierr = Istag3[0].destroy(); CHKERRQ(ierr);
+  ierr = Istag3[1].destroy(); CHKERRQ(ierr);
+  delete [] Istag3;
+
   ierr = VecDestroy(g2); CHKERRQ(ierr);
-  ierr = VecDestroy(g3); CHKERRQ(ierr);
-  ierr = VecDestroy(g3b); CHKERRQ(ierr);
+//  ierr = VecDestroy(g3); CHKERRQ(ierr);
+//  ierr = VecDestroy(g3b); CHKERRQ(ierr);
 
   ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
   ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);

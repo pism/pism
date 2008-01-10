@@ -192,16 +192,17 @@ PetscErrorCode IceModel::updateSoundings() {
   // transfer data in [id][jd] column to soundings Vec
   if (id>=grid.xs && id<grid.xs+grid.xm && jd>=grid.ys && jd<grid.ys+grid.ym) {
     if (runtimeViewers[cIndex('t')] != PETSC_NULL) {
-      PetscScalar ***Tb;
       ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = DAVecGetArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+      ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+      PetscScalar *ibvals;
+      ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
+      ierr = VecSetValues(Td, grid.p->Mbz - 1, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
       // note Tb[][][Mbz-1] duplicates T[][][0] and it should not be displayed twice
-      ierr = VecSetValues(Td, grid.p->Mbz - 1, row, &Tb[id][jd][0], INSERT_VALUES); CHKERRQ(ierr);
       ierr = T3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
       ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz - 1], ivals, INSERT_VALUES);
                CHKERRQ(ierr);
       ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-      ierr = DAVecRestoreArray(grid.da3b, vTb, &Tb); CHKERRQ(ierr);
+      ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('x')] != PETSC_NULL) {
       ierr = u3.needAccessToVals(); CHKERRQ(ierr);
