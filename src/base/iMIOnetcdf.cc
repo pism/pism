@@ -62,15 +62,44 @@ PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ct
   return 0;
 }
 
+//! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
+/*!
+In bootstrapping we need to guess about the temperature within the ice and bedrock if surface temperature
+and geothermal flux maps are given.  This rule is heuristic but seems to work well anyway.  Full 
+bootstrapping will start from the temperature computed by this procedure and then run for a long time 
+(e.g. \f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically coupled equilibrium.
+See the part of the <i>User's Manual</i> on EISMINT-Greenland.
 
+Consider a horizontal grid point <tt>i,j</tt>.  Suppose the surface temperature \f$T_s\f$ and the geothermal
+flux \f$g\f$ are given at that grid point.  Within the corresponding column, denote the temperature
+by \f$T(z)\f$ for some elevation \f$z\f$ above the base of the ice.  (Note ice corresponds to \f$z>0\f$ while
+bedrock has \f$z<0\f$.)  Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice (at 
+\f$z=H\f$).  
+
+Within the ice, set
+	\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
+where \f$\alpha,\beta\f$ are chosen so that
+	\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
+and 
+   \f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
+The point of the second condition is our observation that, in observed ice, the rate of decrease 
+in ice temperature with elevation is significantly decreased at only one quarter of the ice thickness above 
+the base.  
+
+The temperature within the ice is not allowed to exceed the pressure-melting temperature.
+
+Note that the above heuristic rule for ice determines \f$T(0)\f$.  Within the bedrock our rule is that 
+the rate of change with depth is exactly the geothermal flux:
+   \f[T(z) = T(0) - \frac{g}{k_r} z.\f]
+Note that \f$z\f$ here is negative, so the temperature increases as one goes down into the bed.
+ */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **b, **Ts, **Ghf, ***Tb;
+  PetscScalar     **H, **b, **Ts, **Ghf;
 
-  PetscScalar *izz, *T;
-  izz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  PetscScalar *T, *Tb;
   T = new PetscScalar[grid.p->Mz];
+  Tb = new PetscScalar[grid.p->Mbz];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
@@ -81,43 +110,35 @@ PetscErrorCode IceModel::putTempAtDepth() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar HH = H[i][j];
-      const PetscInt    ks = static_cast<PetscInt>(floor(HH/grid.p->dz));
-      if (ks >= grid.p->Mz) {
-        ierr = verbPrintf(1,grid.com,
-                 "[[error LOCATION: i, j, ks, H = %5d %5d %5d %10.2f]]\n",
-                 i, j, ks, H[i][j]);  CHKERRQ(ierr); 
-        SETERRQ(1,"Vertical grid exceeded");
-      }
+      const PetscInt    ks = grid.kBelowHeight(HH);
+      
+      // within ice
       const PetscScalar g = Ghf[i][j];
-      // apply rule:  T(k) = Ts              above k=ks
-      //              T(k) = Ts + alpha (H-z(k))^2 + beta (H-z(k))^4
-      //                                  at k=0,1,...,ks
-      //              Tb(l) = T(0) + (g/bedrock.k) * (Mbz - l) * dz
-      //                                  at l=0,1,...,Mbz-1 
-      // where alpha, beta are chosen so that dT/dz(z=0) = -g / ice.k,
-      // and dT/dz(z=H/4) = -g / (2 ice.k)
-      const PetscScalar beta = (4.0/21.0)
-        * (g / (2.0 * ice.k * HH * HH * HH));
+      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice.k * HH * HH * HH));
       const PetscScalar alpha = (g / (2.0 * HH * ice.k)) - 2.0 * HH * HH * beta;
-      for (PetscInt k=ks; k<grid.p->Mz; k++) {
-        T[k] = Ts[i][j];
-      }
-      for (PetscInt k=0; k<ks; k++) {
-        const PetscScalar depth = HH - static_cast<PetscScalar>(k) * grid.p->dz;
+      for (PetscInt k = 0; k < ks; k++) {
+        const PetscScalar depth = HH - grid.zlevels[k];
         const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
-        const PetscScalar d2 = depth*depth;
+        const PetscScalar d2 = depth * depth;
         T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
       }
-      ierr = T3.setValColumn(i,j,grid.p->Mz,izz,T); CHKERRQ(ierr);
+
+      // above ice
+      for (PetscInt k = ks; k < grid.p->Mz; k++)
+        T[k] = Ts[i][j];
+
+      ierr = T3.setValColumn(i,j,grid.p->Mz,grid.zlevels,T); CHKERRQ(ierr);
+      
+      // within bedrock
       PetscScalar T_top_bed = T[0];
-      // if floating then top of bedrock sees ocean
+      // if floating then top of bedrock sees ocean:
       const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
       if (b[i][j] < floating_base - 1.0)
         T_top_bed = ice.meltingTemp;
-      for (PetscInt kb=0; kb<grid.p->Mbz; kb++) {
-        Tb[i][j][kb] = T_top_bed + (Ghf[i][j]/bedrock.k) * 
-          static_cast<PetscScalar>(grid.p->Mbz - kb - 1) * grid.p->dz;
-      }
+      for (PetscInt kb = 0; kb < grid.p->Mbz; kb++)
+        Tb[kb] = T_top_bed - (Ghf[i][j]/bedrock.k) * grid.zblevels[kb];
+
+      ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -127,12 +148,10 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] izz; delete [] T;
+  delete [] T;  delete [] Tb;
   
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = Tb3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
-  ierr = Tb3.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -645,10 +664,12 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
   int cb[] = {1, grid.xm, grid.ym, grid.p->Mbz}; // Count local block: bed
 
-  // Allocate some memory.  We will assume that vectors based on grid.da3 are the largest.
+//  // Allocate some memory.  We will assume that 3d ice vectors (Mx x My x Mz) are the largest.
+  // Allocate some memory.
   void *a_mpi;
   int a_len, max_a_len;
-  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
+//  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
+  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.p->Mz, grid.p->Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
@@ -677,10 +698,12 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
   int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
   int cb[] = {1, grid.xm, grid.ym, grid.p->Mbz}; // Count local block: bed
 
-  // Allocate some memory.  We will assume that vectors based on grid.da3 are the largest.
+//  // Allocate some memory.  We will assume that vectors based on grid.da3 are the largest.
+  // Allocate some memory.
   void *a_mpi;
   int a_len, max_a_len;
-  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
+//  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
+  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.p->Mz, grid.p->Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 

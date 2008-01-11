@@ -47,8 +47,14 @@ void  IceModel::setConstantGrainSize(PetscScalar d) {
 
 PetscErrorCode  IceModel::updateGrainSizeNow() {
   PetscErrorCode ierr;
+
+  if (!grid.equalVertSpacing()) {
+    SETERRQ(604,"only implemented for equal dz spacing in vertical\n");
+  }
+
+  PetscScalar dz = grid.dzEQ;
   PetscScalar **H;
-  PetscScalar *age, *gs, *w, *zz;
+  PetscScalar *age, *gs, *w;
 
   // "age" here is a pseudo-age computed using vertical velocity; compare vtau which 
   //   is updated by temperatureStep()
@@ -56,21 +62,16 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
   gs = new PetscScalar[grid.p->Mz];
   w = new PetscScalar[grid.p->Mz];
   
-  zz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k = 0; k < grid.p->Mz; k++) {
-    zz[k] = k * grid.p->dz;
-  }
-  
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
   ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; i++) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; j++) {
       // get column of w vals
-      ierr = w3.getValColumn(i,j,grid.p->Mz,zz,w); CHKERRQ(ierr); 
+      ierr = w3.getValColumn(i,j,grid.p->Mz,grid.zlevelsEQ,w); CHKERRQ(ierr); 
    
       // compute age in column from vertical velocity
-      const PetscInt ks = static_cast<PetscInt>(floor(H[i][j] / grid.p->dz));
+      const PetscInt ks = static_cast<PetscInt>(floor(H[i][j] / dz));
       for (PetscInt k = grid.p->Mz-1; k >= 0; k--) {
         if (k >= ks-1) {        // At the top of the ice
           age[k] = 0.0;
@@ -83,11 +84,11 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
           // a(z) = a(0) + (1/w') \log \frac{w_0 + w'z}{w_0}
           // a(z) = a(0) + (z/w_0) \frac{\log (1 + x)}{x}  where x = \frac{w' z}{w_0}
           // log(1 + x)/x = 1 - x/2 + x^2/3 - x^3/4 + ...
-          const PetscScalar w_prime = (w[k] - w[k+1]) / grid.p->dz;
-          const PetscScalar x = w_prime * grid.p->dz / w[k];
+          const PetscScalar w_prime = (w[k] - w[k+1]) / dz;
+          const PetscScalar x = w_prime * dz / w[k];
           // This is second order approximation since computing \frac{\log(1 + x)}{x}
           // has problems as x \to 0
-          age[k] = age[k+1] - (grid.p->dz / w[k+1]) * (1.0 - x / 2.0);
+          age[k] = age[k+1] - (dz / w[k+1]) * (1.0 - x / 2.0);
         }
       }
 
@@ -97,12 +98,12 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
       }
 
       // put in gs3
-      ierr = gs3.setValColumn(i,j,grid.p->Mz,zz,gs); CHKERRQ(ierr); 
+      ierr = gs3.setValColumn(i,j,grid.p->Mz,grid.zlevelsEQ,gs); CHKERRQ(ierr); 
       
     }
   }
 
-  delete [] age;  delete [] gs;  delete [] w;  delete [] zz;
+  delete [] age;  delete [] gs;  delete [] w;
 
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);

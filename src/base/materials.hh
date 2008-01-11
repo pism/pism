@@ -63,7 +63,8 @@ public:
                            const PetscScalar temp, const PetscScalar pressure) const;
   // this one returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
   virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
@@ -97,7 +98,8 @@ public:
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const;
   virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;

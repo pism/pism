@@ -129,9 +129,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
 
-  PetscScalar *izz, *Tij, *Toffset;
-  izz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  PetscScalar *Tij, *Toffset;
   Tij = new PetscScalar[grid.p->Mz];
   Toffset = new PetscScalar[grid.p->Mz];
 
@@ -152,7 +150,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscInt      oi = 1-o, oj=o;
         if (intMask(mask[i][j]) != MASK_SHEET || intMask(mask[i+oi][j+oj]) != MASK_SHEET) {
-          const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
+          const PetscScalar   dx = grid.p->dx, 
+                              dy = grid.p->dy;
           PetscScalar u_x, u_y, v_x, v_y;
           // Check the offset to determine how to differentiate velocity
           if (o == 0) {
@@ -176,10 +175,13 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
                   -(1.0/3.0));
           } else { 
             // usual temperature-dependent case; "nu" is really "nu H"!
-            ierr = T3.getValColumn(i,j,grid.p->Mz,izz,Tij); CHKERRQ(ierr);
-            ierr = T3.getValColumn(i+oi,j+oj,grid.p->Mz,izz,Toffset); CHKERRQ(ierr);
+            ierr = T3.getValColumn(i,j,grid.p->Mz,grid.zlevels,Tij); CHKERRQ(ierr);
+            ierr = T3.getValColumn(i+oi,j+oj,grid.p->Mz,grid.zlevels,Toffset); CHKERRQ(ierr);
+//            nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
+//                                    myH, dz, u_x, u_y, v_x, v_y, Tij, Toffset);
             nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
-                                    myH, dz, u_x, u_y, v_x, v_y, Tij, Toffset);
+                                    myH, grid.kBelowHeight(myH), grid.p->Mz, grid.zlevels, 
+                                    u_x, u_y, v_x, v_y, Tij, Toffset);
           }
 
           if (! finite(nu[o][i][j]) || false) {
@@ -204,7 +206,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
 
-  delete [] izz; delete [] Tij; delete [] Toffset;
+  delete [] Tij; delete [] Toffset;
 
   // Some communication
   ierr = DALocalToLocalBegin(grid.da2, vNu[0], INSERT_VALUES, vNu[0]); CHKERRQ(ierr);
@@ -707,9 +709,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb, **uvbar[2];
 
-  PetscScalar *izz, *u, *v;
-  izz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  PetscScalar *u, *v;
   u = new PetscScalar[grid.p->Mz];
   v = new PetscScalar[grid.p->Mz];
   
@@ -738,14 +738,14 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
           fv = 1.0 - (2.0/pi) * atan(1.0e-4 * c2peryear);
         }
         if (updateVelocityAtDepth) {
-          ierr = u3.getValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
-          ierr = v3.getValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
+          ierr = u3.getValColumn(i,j,grid.p->Mz,grid.zlevels,u); CHKERRQ(ierr);
+          ierr = v3.getValColumn(i,j,grid.p->Mz,grid.zlevels,v); CHKERRQ(ierr);
           for (PetscInt k=0; k<grid.p->Mz; ++k) {
             u[k] = (addVels) ? fv * u[k] + ubarssa[i][j] : ubarssa[i][j];
             v[k] = (addVels) ? fv * v[k] + vbarssa[i][j] : vbarssa[i][j];
           }
-          ierr = u3.setValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
-          ierr = v3.setValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
+          ierr = u3.setValColumn(i,j,grid.p->Mz,grid.zlevels,u); CHKERRQ(ierr);
+          ierr = v3.setValColumn(i,j,grid.p->Mz,grid.zlevels,v); CHKERRQ(ierr);
         }
         ub[i][j] = (addVels) ? fv * ub[i][j] + ubarssa[i][j] : ubarssa[i][j];
         vb[i][j] = (addVels) ? fv * vb[i][j] + vbarssa[i][j] : vbarssa[i][j];
@@ -769,7 +769,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] izz; delete [] u; delete [] v;
+  delete [] u; delete [] v;
   
   if (doSuperpose == PETSC_TRUE) {
     ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
@@ -827,9 +827,7 @@ PetscErrorCode IceModel::correctSigma() {
   PetscErrorCode  ierr;
   PetscScalar **H, **mask, **ub, **vb;
 
-  PetscScalar *izz, *Sigma, *T;
-  izz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  PetscScalar *Sigma, *T;
   Sigma = new PetscScalar[grid.p->Mz];
   T = new PetscScalar[grid.p->Mz];
 
@@ -840,7 +838,8 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
 
-  const PetscScalar dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
+  const PetscScalar dx = grid.p->dx, 
+                    dy = grid.p->dy;
   // next constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
@@ -854,18 +853,20 @@ PetscErrorCode IceModel::correctSigma() {
                           v_y = (vb[i][j+1] - vb[i][j-1])/(2*dy);
         const PetscScalar beta = PetscSqr(u_x) + PetscSqr(v_y)
                            + u_x * v_y + PetscSqr(0.5*(u_y + v_x));
-        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+//        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+        const PetscInt ks = grid.kBelowHeight(H[i][j]);
         const PetscScalar CC = 4 * beta / (ice.rho * ice.c_p);
 
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
 
-        ierr = Sigma3.getValColumn(i,j,grid.p->Mz,izz,Sigma); CHKERRQ(ierr);
-        ierr = T3.getValColumn(i,j,grid.p->Mz,izz,T); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,grid.p->Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
+        ierr = T3.getValColumn(i,j,grid.p->Mz,grid.zlevels,T); CHKERRQ(ierr);
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
-          const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
+//          const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
+          const PetscScalar pressure = ice.rho * grav * (H[i][j] - grid.zlevels[k]);
           const PetscScalar mvSigma = CC * ice.effectiveViscosity(schoofReg,
                                                u_x,u_y,v_x,v_y,T[k],pressure);
           // FIXME: what is the right thing here?  surely should be weighted by f(|v|) factor
@@ -874,7 +875,7 @@ PetscErrorCode IceModel::correctSigma() {
         for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
           Sigma[k] = 0.0;
         }
-        ierr = Sigma3.setValColumn(i,j,grid.p->Mz,izz,Sigma); CHKERRQ(ierr);
+        ierr = Sigma3.setValColumn(i,j,grid.p->Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
       }
       // otherwise leave SIA-computed value alone
     }
@@ -887,7 +888,7 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] izz; delete [] Sigma; delete [] T;
+  delete [] Sigma; delete [] T;
 
   return 0;
 }

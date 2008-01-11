@@ -41,8 +41,8 @@ IceParam::IceParam() {
   Mbz = DEFAULT_ICEPARAM_Mbz;
   dx = 2.0 * Lx / (Mx - 1);
   dy = 2.0 * Ly / (My - 1);
-  dz = Lz / (Mz - 1);
-  Lbz = (Mbz - 1) * dz;
+//  dz = Lz / (Mz - 1);
+  Lbz = (Mbz - 1) * (Lz / (Mz - 1));
 }
 
 
@@ -52,9 +52,12 @@ IceGrid::IceGrid(MPI_Comm c,
   com(c), rank(r), size(s), createDA_done(PETSC_FALSE) { 
   p = new IceParam;
   zlevels = new PetscScalar[p->Mz];
-  for (PetscInt k=0; k < p->Mz; k++) {
-    zlevels[k] = p->dz * ((PetscScalar) k);
-  }
+  zblevels = new PetscScalar[p->Mbz];
+  zlevelsEQ = new PetscScalar[p->Mz];
+  zblevelsEQ = new PetscScalar[p->Mbz];
+
+  setLevelsFromLsMs();
+  equally_spaced = PETSC_TRUE;
 }
 
 
@@ -74,7 +77,39 @@ IceGrid::~IceGrid() {
   p = PETSC_NULL;
   delete [] zlevels;
   zlevels = PETSC_NULL;
+  delete [] zblevels;
+  zblevels = PETSC_NULL;
+  delete [] zlevelsEQ;
+  zlevelsEQ = PETSC_NULL;
+  delete [] zblevelsEQ;
+  zlevelsEQ = PETSC_NULL;
 }
+
+
+PetscErrorCode  IceGrid::setLevelsFromLsMs() {
+
+  // note lengths of these arrays can change at a rescale
+  delete [] zlevels;
+  delete [] zblevels;
+  delete [] zlevelsEQ;
+  delete [] zblevelsEQ;
+  zlevels = new PetscScalar[p->Mz];
+  zblevels = new PetscScalar[p->Mbz];
+  zlevelsEQ = new PetscScalar[p->Mz];
+  zblevelsEQ = new PetscScalar[p->Mbz];
+
+// EQUAL FOR NOW:
+  for (PetscInt k=0; k < p->Mz; k++) {
+    zlevelsEQ[k] = dzEQ * ((PetscScalar) k);
+    zlevels[k] = zlevelsEQ[k];
+  }
+  for (PetscInt kb=0; kb < p->Mbz; kb++) {
+    zblevelsEQ[kb] = - p->Lbz + dzbEQ * ((PetscScalar) kb);
+    zblevels[kb] = zblevelsEQ[kb];
+  }
+  return 0;
+}
+
 
 
 //! Create the PETSc DAs for the grid specified in *p (a pointer to IceParam).
@@ -89,6 +124,7 @@ PetscErrorCode IceGrid::createDA() {
                     p->My, p->Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
 
+/* see IceModelVec3:
   PetscInt    M, N, m, n;
   ierr = DAGetInfo(da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
@@ -96,6 +132,7 @@ PetscErrorCode IceGrid::createDA() {
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3); CHKERRQ(ierr);
   ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, p->Mbz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3b); CHKERRQ(ierr);
+*/
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
@@ -108,28 +145,47 @@ PetscErrorCode IceGrid::createDA() {
 }
 
 
-PetscErrorCode IceGrid::setCoordinatesDA() {
-  PetscErrorCode ierr;
-
-  ierr = DASetUniformCoordinates(da2, -p->Ly, p->Ly, -p->Lx, p->Lx,
-                                 PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-//  ierr = DASetUniformCoordinates(da3, 0, p->Lz,
-//                                 -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
-//  if (p->Mbz > 1) {
-//    ierr = DASetUniformCoordinates(da3b, -p->Lbz, 0.0,
-//                                   -p->Ly, p->Ly, -p->Lx, p->Lx); CHKERRQ(ierr);
-//  }
-  return 0;
-}
-
-
 PetscErrorCode IceGrid::destroyDA() {
   PetscErrorCode ierr;
 
   ierr = DADestroy(da2); CHKERRQ(ierr);
-  ierr = DADestroy(da3); CHKERRQ(ierr);
-  ierr = DADestroy(da3b); CHKERRQ(ierr);
   return 0;
+}
+
+
+bool IceGrid::equalVertSpacing() {
+  return (equally_spaced == PETSC_TRUE);
+}
+
+  
+PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
+  if (height < 0.0 - 1.0e-6) {
+    SETERRQ1(1,"height = %5.4f is below base of ice (height must be nonnegative)\n",
+             height);
+  }
+  if (height > p->Lz + 1.0e-6) {
+    SETERRQ2(2,"height = %20.18f is above top of computational grid Lz = %20.18f\n",
+             height,p->Lz);
+  }
+  PetscInt mcurr = 0;
+  while (zlevels[mcurr+1] < height) {
+    mcurr++;
+  }
+  return mcurr;
+}
+
+
+PetscInt IceGrid::kBelowHeightEQ(const PetscScalar height) {
+  if (height < 0.0 - 1.0e-6) {
+    SETERRQ1(1,"height = %5.4f is below base of ice (height must be nonnegative)\n",
+             height);
+  }
+  const PetscInt ks = static_cast<PetscInt>(floor(height/dzEQ));
+  if (ks >= p->Mz) {
+    SETERRQ2(2,"height = %20.18f is more than dzEQ above top of computational grid Lz = %20.18f\n",
+             height,p->Lz);
+  }
+  return ks;
 }
 
 
@@ -189,16 +245,14 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
     p->dy = 2.0 * p->Ly / (p->My - 1);
   }
 
-  p->dz = p->Lz / (p->Mz - 1);
-  p->Lbz = p->dz * (p->Mbz - 1);
+  dzEQ = p->Lz / (p->Mz - 1);
+  dzbEQ = dzEQ;
+  p->Lbz = dzbEQ * (p->Mbz - 1);
 
-  // length of zlevels will change if Mz is reset:
-  delete [] zlevels;
-  zlevels = new PetscScalar[p->Mz];
-  for (PetscInt k=0; k < p->Mz; k++) {
-    zlevels[k] = p->dz * ((PetscScalar) k);
-  }
+  ierr = setLevelsFromLsMs(); CHKERRQ(ierr);
 
-  ierr = setCoordinatesDA(); CHKERRQ(ierr);
+  // it is not known if the following has any effect:
+  ierr = DASetUniformCoordinates(da2, -p->Ly, p->Ly, -p->Lx, p->Lx,
+                                 PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   return 0;
 }

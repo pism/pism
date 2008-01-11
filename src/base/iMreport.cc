@@ -259,7 +259,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   PetscScalar     gmelt, gdivideH, gdivideT, gorig, gvolume, garea;
   PetscScalar     gvolSIA, gvolstream, gvolshelf;
   PetscScalar     meltfrac, origfrac;
-  PetscScalar     *tau, *zz;
+  PetscScalar     *tau;
 
   ierr = volumeArea(gvolume,garea,gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
   
@@ -271,13 +271,11 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
     ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
-    zz = new PetscScalar[grid.p->Mz];
-    for (PetscInt k=0; k < grid.p->Mz; k++)   zz[k] = ((PetscScalar) k) * grid.p->dz;
     tau = new PetscScalar[grid.p->Mz];
     melt = 0; divideT = 0; orig = 0;
   }
   const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
-  const PetscScalar   v = a * grid.p->dz * 1e-3;  // volume unit (km^3)
+//  const PetscScalar   v = a * grid.p->dz * 1e-3;  // volume unit (km^3)
   const PetscScalar   currtime = grid.p->year * secpera;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -297,12 +295,15 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
         if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
           divideT = Tbase[i][j];
         }
-        const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
-        ierr = tau3.getValColumn(i,j,grid.p->Mz,zz,tau); CHKERRQ(ierr);
+//        const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+        const PetscInt  ks = grid.kBelowHeight(H[i][j]);
+        ierr = tau3.getValColumn(i,j,grid.p->Mz,grid.zlevels,tau); CHKERRQ(ierr);
         for (PetscInt k=1; k<=ks; k++) {
           // ice is original if it is at least one year older than current time
-          if (tau[k] > currtime + secpera)
-            orig += v;
+//          if (tau[k] > currtime + secpera)
+//            orig += v;
+          if (0.5*(tau[k-1]+tau[k]) > currtime + secpera)
+            orig += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
         }
       }
     }
@@ -313,7 +314,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   if (tempAndAge || (verbosityLevel >= 3)) {
     ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
     ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
-    delete [] zz; delete [] tau;
+    delete [] tau;
     ierr = PetscGlobalSum(&melt, &gmelt, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&orig, &gorig, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalMax(&divideT, &gdivideT, grid.com); CHKERRQ(ierr);

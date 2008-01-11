@@ -32,11 +32,15 @@ class IceParam {
 public:
   IceParam();
   char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this file
+
   PetscScalar Lx, Ly;  // half width of the ice model grid in x-direction, y-direction (m)
-  PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
   PetscInt    Mx, My; // number of grid points in x-direction, y-direction
+  PetscScalar dx, dy; // spacing of grid
+
+  PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
   PetscInt    Mz, Mbz; // number of grid points in z-direction (ice), z-direction (bedrock).
-  PetscScalar dx, dy, dz; // spacing of grid
+//  PetscScalar dx, dy, dz; // spacing of grid [PREVIOUSLY WAS equal spaced in vert]
+
   PetscScalar year;       // current time; units of years
   
 protected:
@@ -54,27 +58,37 @@ protected:
  */
 class IceGrid {
 public:
-  MPI_Comm    com;
-  PetscMPIInt rank, size;
-  IceParam    *p;
-  DA          da2, da3, da3b;
-  PetscInt    xs, xm, ys, ym;
-  PetscScalar *zlevels;
-
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, IceParam *p);
   ~IceGrid();
+
   PetscErrorCode createDA();
-  PetscErrorCode setCoordinatesDA();
   PetscErrorCode destroyDA();
-  PetscErrorCode viewDA();
+//  PetscErrorCode viewDA();
+
   PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
                          const PetscScalar lz);
   PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
                          const PetscScalar lz, const PetscTruth truelyPeriodic);
 
+  bool        equalVertSpacing();
+  PetscInt    kBelowHeight(const PetscScalar height);
+  PetscInt    kBelowHeightEQ(const PetscScalar height);
+  
+  MPI_Comm    com;
+  PetscMPIInt rank, size;
+  IceParam    *p;
+  DA          da2;
+  PetscInt    xs, xm, ys, ym;
+
+  PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock, internally stored and represented in 3d Vecs
+
+  PetscScalar dzEQ, *zlevelsEQ;    // for equal spacing on [0,p->Lz]
+  PetscScalar dzbEQ, *zblevelsEQ;  //  "    "      "    "  [-p->Lbz,0]
+
 private:
-  PetscTruth createDA_done;
+  PetscTruth createDA_done, equally_spaced;
+  PetscErrorCode  setLevelsFromLsMs();
 };
 
 #endif	/* __grid_hh */

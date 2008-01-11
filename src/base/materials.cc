@@ -65,7 +65,8 @@ PetscScalar IceType::effectiveViscosity(const PetscScalar regularization,
 }
 
 PetscScalar IceType::effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
@@ -115,27 +116,34 @@ PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar regularization,
 }
 
 PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
   // DESPITE NAME, does *not* return effective viscosity.
   // The result is \nu_e H, i.e. viscosity times thickness.
   // B is really hardness times thickness.
-  const PetscInt  ks = static_cast<PetscInt>(floor(H/dz));
+//  const PetscInt  ks = static_cast<PetscInt>(floor(H/dz));
   // Integrate the hardness parameter using the trapezoid rule.
   PetscScalar B = 0;
-  for (PetscInt m=1; m<ks; m++) {
-    B += dz * hardnessParameter(0.5 * (T1[m] + T2[m]) + beta_CC_grad * (H - k*dz));
-  }
-  if (ks > 0) {
+  if (kbelowH > 0) {
+    PetscScalar dz = zlevels[1] - zlevels[0];
     B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[ks] + T2[ks]) + beta_CC_grad * (H - ks*dz));
+    for (PetscInt m=1; m < kbelowH; m++) {
+      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
+      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m]) + beta_CC_grad * (H - zlevels[m]));
+      dz = dzNEXT;
+    }
+    // use last dz
+    B += 0.5 * dz * hardnessParameter(0.5 * (T1[kbelowH] + T2[kbelowH])
+                                      + beta_CC_grad * (H - zlevels[kbelowH]));
   }
   const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
                              + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
   return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n));
 }
+
 
 PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
   if (T < crit_temp) {

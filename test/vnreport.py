@@ -63,12 +63,12 @@ if foundmytest == False:
 
 # the next line will contain the refinement path
 myline = infile.readline()
-pos = myline.find('path ')
+pos = myline.find('refine ')
 if pos < 0:
   print 'FAILED: refinement path not found in expected spot'
   sys.exit(5)
-dxname = myline[pos+5:pos+7]
-myline = myline[pos+8:]
+dxname = myline[pos+7:pos+9]
+myline = myline[pos+10:]
 strpath = myline.split(',')  # split on COMMAS!
 path = []
 for kk in range(5):  # expect exactly 5 pts on refinement path!

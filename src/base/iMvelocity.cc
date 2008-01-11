@@ -193,15 +193,18 @@ derivatives, with respect to any variable \f$x,y,z,t\f$, change accordingly
 The vertical integral is computed by the trapezoid rule.
  */
 PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
-  
-  const PetscScalar   dx = grid.p->dx, dy = grid.p->dy, dz = grid.p->dz;
+  // equally-spaced method; getValColumn() and setValColumn() are used, so
+  //   interpolation to and from unequally-spaced storage grid
+  // central difference is used for   grad b . du/dz   terms
+  // vertical integral is by trapezoid rule
+  const PetscScalar   dx = grid.p->dx, 
+                      dy = grid.p->dy, 
+                      dz = grid.dzEQ;
   const PetscInt      Mz = grid.p->Mz;
   PetscErrorCode  ierr;
   PetscScalar **ub, **vb, **basalMeltRate, **b, **dbdt;
 
-  PetscScalar *izz, *u, *v, *w;
-  izz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  PetscScalar *u, *v, *w;
   u = new PetscScalar[grid.p->Mz];
   v = new PetscScalar[grid.p->Mz];
   w = new PetscScalar[grid.p->Mz];
@@ -227,8 +230,8 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
         w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
       }
 
-      ierr = u3.getValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
-      ierr = v3.getValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
+      ierr = u3.getValColumn(i,j,grid.p->Mz,grid.zlevelsEQ,u); CHKERRQ(ierr);
+      ierr = v3.getValColumn(i,j,grid.p->Mz,grid.zlevelsEQ,v); CHKERRQ(ierr);
 
       // compute w above base by trapezoid rule 
       planeStar uss, vss;
@@ -239,9 +242,8 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       OLDintegrand -= dbdx * (u[1] - u[0]) / dz + dbdy * (v[1] - v[0]) / dz;
 
       for (PetscInt k = 1; k < Mz; ++k) {
-        const PetscScalar zk = k * dz;
-        ierr = u3.getPlaneStarZ(i,j,zk,&uss);
-        ierr = v3.getPlaneStarZ(i,j,zk,&vss);
+        ierr = u3.getPlaneStarZ(i,j,grid.zlevelsEQ[k],&uss);
+        ierr = v3.getPlaneStarZ(i,j,grid.zlevelsEQ[k],&vss);
         PetscScalar NEWintegrand = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
         if (k == Mz-1) { // at top, difference down:
           NEWintegrand -= dbdx * (u[k] - u[k-1]) / dz + dbdy * (v[k] - v[k-1]) / dz;
@@ -252,7 +254,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
         OLDintegrand = NEWintegrand;
       }
       
-      ierr = w3.setValColumn(i,j,grid.p->Mz,izz,w); CHKERRQ(ierr);      
+      ierr = w3.setValColumn(i,j,grid.p->Mz,grid.zlevelsEQ,w); CHKERRQ(ierr);      
     }
   }
 
@@ -266,7 +268,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] izz;  delete [] u;  delete [] v;  delete [] w;
+  delete [] u;  delete [] v;  delete [] w;
   return 0;
 }
 
@@ -347,14 +349,13 @@ PetscErrorCode IceModel::smoothSigma() {
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
 PetscErrorCode IceModel::computeMax3DVelocities() {
+  // based on idea of equally-spaced in vertical upwinding
   // computes max velocities in 3D grid and also sets CFLmaxdt by CFL condition
   PetscErrorCode ierr;
   PetscScalar **H;
   PetscScalar locCFLmaxdt = maxdt;
 
-  PetscScalar *izz, *u, *v, *w;
-  izz = new PetscScalar[grid.p->Mz];
-  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
+  PetscScalar *u, *v, *w;
   u = new PetscScalar[grid.p->Mz];
   v = new PetscScalar[grid.p->Mz];
   w = new PetscScalar[grid.p->Mz];
@@ -368,23 +369,23 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt      ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+      const PetscInt      ks = grid.kBelowHeight(H[i][j]);
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
-      ierr = u3.getValColumn(i,j,grid.p->Mz,izz,u); CHKERRQ(ierr);
-      ierr = v3.getValColumn(i,j,grid.p->Mz,izz,v); CHKERRQ(ierr);
-      ierr = w3.getValColumn(i,j,grid.p->Mz,izz,w); CHKERRQ(ierr);
+      ierr = u3.getValColumn(i,j,grid.p->Mz,grid.zlevels,u); CHKERRQ(ierr);
+      ierr = v3.getValColumn(i,j,grid.p->Mz,grid.zlevels,v); CHKERRQ(ierr);
+      ierr = w3.getValColumn(i,j,grid.p->Mz,grid.zlevels,w); CHKERRQ(ierr);
       for (PetscInt k=0; k<ks; ++k) {
         const PetscScalar au = PetscAbs(u[k]);
         const PetscScalar av = PetscAbs(v[k]);
         maxu = PetscMax(maxu,au);
         maxv = PetscMax(maxv,av);
-        PetscScalar tempdenom = (0.001/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+        PetscScalar tempdenom = (0.001/secpera) / (grid.p->dx + grid.p->dy);  // make sure it's pos.
         tempdenom += PetscAbs(au/grid.p->dx) + PetscAbs(av/grid.p->dy);
         if (!isMarginal) {
           const PetscScalar aw = PetscAbs(w[k]);
           maxw = PetscMax(maxw,aw);
-          tempdenom += PetscAbs(aw/grid.p->dz);
+          tempdenom += PetscAbs(aw / grid.dzEQ);
         }
         locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
       }
@@ -396,7 +397,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
-  delete [] izz;  delete [] u;  delete [] v;  delete [] w;
+  delete [] u;  delete [] v;  delete [] w;
 
   ierr = PetscGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);

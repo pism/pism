@@ -223,10 +223,22 @@ PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const 
     return arr[i][j][(grid->p)->Mz - 1];
   else if (z <= 0.0)
     return arr[i][j][0];
+
+/*
   const PetscScalar  dz = (grid->p)->dz;
   const PetscInt     kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
   const PetscScalar  val_kbz = arr[i][j][kbz];
   return val_kbz + ( (z - (grid->zlevels)[kbz]) / dz ) * (arr[i][j][kbz + 1] - val_kbz);
+*/
+  // this implementation does not assume equal spacing
+  PetscScalar* levels = grid->zlevels;
+  PetscInt mcurr = 0;
+  while (levels[mcurr+1] < z) {
+    mcurr++;
+  }
+  const PetscScalar incr = (z - levels[mcurr]) / (levels[mcurr+1] - levels[mcurr]);
+  const PetscScalar valm = arr[i][j][mcurr];
+  return valm + incr * (arr[i][j][mcurr+1] - valm);
 }
 
 
@@ -243,7 +255,7 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
              varname);
   }
 
-  const PetscScalar dz = (grid->p)->dz;
+//  const PetscScalar dz = (grid->p)->dz;
   PetscInt     kbz;
   PetscScalar  incr;
   if (z >= (grid->p)->Lz) {
@@ -253,8 +265,15 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
     kbz = 0;
     incr = 0.0;
   } else {
-    kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
-    incr = ( (z - (grid->zlevels)[kbz]) / dz );
+//    kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
+//    incr = ( (z - (grid->zlevels)[kbz]) / dz );
+    // implement so that we don't assume equal spacing
+    PetscScalar* levels = grid->zlevels;
+    kbz = 0;
+    while (levels[kbz+1] < z) {
+      kbz++;
+    }
+    incr = (z - levels[kbz]) / (levels[kbz+1] - levels[kbz]);
   }
 
   PetscScalar ***arr = (PetscScalar***) array;

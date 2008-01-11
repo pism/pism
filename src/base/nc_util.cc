@@ -402,6 +402,11 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
 PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
                                 int dim_flag, LocalInterpCtx &lic,
                                 IceGrid &grid, DA da, Vec g) {
+                                
+  if (!grid.equalVertSpacing()) {
+    SETERRQ(604,"only implemented for equal dz spacing in vertical\n");
+  }
+  
   // dim_flag : 2 for 2-D quantities, 3 for 3-D ice quantities, 4 for 3-D bedrock quantities
   const int req_tag = 1; // MPI tag for request block
   const int var_tag = 2; // MPI tag for data block
@@ -529,7 +534,7 @@ PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
         
         const float x = -grid.p->Lx + i * grid.p->dx;
         const float y = -grid.p->Ly + j * grid.p->dy;
-        const float z = k * grid.p->dz + bottom;
+        const float z = k * grid.dzEQ + bottom;
 
         const float ic = (x - lic.fstart[1]) / lic.delta[1];
         const float jc = (y - lic.fstart[2]) / lic.delta[2];

@@ -300,6 +300,11 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 //! Complete initialization: regrid if desired, report grid, create viewers.
 PetscErrorCode IceModel::afterInitHook() {
   PetscErrorCode ierr;
+
+  if (!grid.equalVertSpacing()) {
+    SETERRQ(604,"only implemented for equal dz spacing in vertical\n");
+  }
+
   PetscTruth     regridFileSet = PETSC_FALSE;
   char           regridFile[PETSC_MAX_PATH_LEN];
 
@@ -325,7 +330,7 @@ PetscErrorCode IceModel::afterInitHook() {
   }
   ierr = verbPrintf(2,grid.com, 
            "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
-           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz); CHKERRQ(ierr);
+           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.dzEQ); CHKERRQ(ierr);
 
   // if -verbose then actually list all of IceParam
   ierr = verbPrintf(3,grid.com,"  IceParam: Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
@@ -334,8 +339,8 @@ PetscErrorCode IceModel::afterInitHook() {
            "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
            grid.p->Lx/1000.0,grid.p->Ly/1000.0,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
-           "            dx = %6.3f km, dy = %6.3f km, dz = %6.3f m, year = %8.4f,\n",
-           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->dz,grid.p->year); CHKERRQ(ierr);
+           "            dx = %6.3f km, dy = %6.3f km, grid.dzEQ = %6.3f m, year = %8.4f,\n",
+           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.dzEQ,grid.p->year); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
      "            history = ****************\n%s            **************************\n"
      ,grid.p->history); CHKERRQ(ierr);

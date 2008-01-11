@@ -65,7 +65,8 @@ PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName,
   
   if (matlabOutWanted(scName)) {
     ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
-    ierr = imv3.getHorSlice(g2, kd * grid.p->dz); CHKERRQ(ierr);
+//    ierr = imv3.getHorSlice(g2, kd * grid.p->dz); CHKERRQ(ierr);
+    ierr = imv3.getHorSlice(g2, grid.zlevels[kd]); CHKERRQ(ierr);
     ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = VecScale(g2,scale); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
@@ -187,11 +188,7 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
     PetscInt         rlen = grid.p->Mz;
     PetscInt         *row;
     Vec              m;
-    PetscScalar *izz, *ivals;
-
-    izz = new PetscScalar[grid.p->Mz];
-    for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
-
+    PetscScalar      *ivals;
     ivals = new PetscScalar[grid.p->Mz];
 
     // row gives indices only
@@ -204,7 +201,7 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
     if ((id >= grid.xs) && (id < grid.xs+grid.xm) && (jd >= grid.ys) && (jd < grid.ys+grid.ym)) {
       if (doTandTb == PETSC_TRUE) {
         ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-        ierr = T3.getValColumn(id, jd, grid.p->Mz, izz, ivals); CHKERRQ(ierr);
+        ierr = T3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
         ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
         PetscScalar *ibvals;
         ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
@@ -215,13 +212,13 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
         ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
       } else {
         ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
-        ierr = imv3.getValColumn(id, jd, rlen, izz, ivals); CHKERRQ(ierr);
+        ierr = imv3.getValColumn(id, jd, rlen, grid.zlevels, ivals); CHKERRQ(ierr);
         ierr = VecSetValues(m, rlen, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
         ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
       }
     }
 
-    delete [] row; delete [] izz; delete [] ivals;  // done with setting up soundings ...
+    delete [] row; delete [] ivals;  // done with setting up soundings ...
 
     ierr = VecAssemblyBegin(m); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(m); CHKERRQ(ierr);
@@ -260,12 +257,25 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "y = (-%12.3f:%12.3f:%12.3f)/1000.0;\n",
                                 grid.p->Ly,grid.p->dy,grid.p->Ly);  CHKERRQ(ierr);
+/*
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "z = 0.0:%12.3f:%12.3f;\n",
                                 grid.p->dz,grid.p->Lz);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "zb = %12.3f:%12.3f: 0.0;\n",
                                 -grid.p->Lbz,grid.p->dz);  CHKERRQ(ierr);
+*/
+  ierr = PetscViewerASCIIPrintf(viewer,"z = [\n");  CHKERRQ(ierr);
+  for (PetscInt k = 0; k < grid.p->Mz; k++) {
+    ierr = PetscViewerASCIIPrintf(viewer,"  %14.5f\n",grid.zlevels[k]);  CHKERRQ(ierr);
+  } 
+  ierr = PetscViewerASCIIPrintf(viewer,"];\n\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"zb = [\n");  CHKERRQ(ierr);
+  for (PetscInt k = 0; k < grid.p->Mbz; k++) {
+    ierr = PetscViewerASCIIPrintf(viewer,"  %14.5f\n",grid.zblevels[k]);  CHKERRQ(ierr);
+  } 
+  ierr = PetscViewerASCIIPrintf(viewer,"];\n\n");  CHKERRQ(ierr);
+  
 
   // now write the variables if they are wanted
   ierr = writeSpeedSurfaceValuesToMatlab(viewer, '0', u3, v3, secpera, PETSC_FALSE, 0.0);
