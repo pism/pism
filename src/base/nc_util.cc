@@ -79,8 +79,8 @@ PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, n
 
   int b_len = 1;
   for (int i = 0; i < dims; i++) b_len *= c[i];
-  
-//  ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
+
+  // convert IceModel Vec containing PetscScalar to array of float or char for NetCDF
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
   for (int i = 0; i < b_len; i++) {
@@ -94,7 +94,8 @@ PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, n
   }
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
-  if (grid->rank == 0) {
+  if (grid->rank == 0) { // on rank 0 processor, receive messages from every other 
+                         //    processor, then write it out to the NC file
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
         MPI_Recv(sc, sc_size, MPI_INT, proc, lim_tag, grid->com, &mpi_stat);
@@ -126,7 +127,7 @@ PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, n
       }
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
     }
-  } else {
+  } else {  // all other processors send to rank 0 processor
     MPI_Send(sc, 2 * dims, MPI_INT, 0, lim_tag, grid->com);
     if (type == NC_FLOAT) {
       MPI_Send(a_float, a_size, MPI_FLOAT, 0, var_tag, grid->com);
@@ -152,6 +153,21 @@ PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, f
   stat = nc_put_var_float(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   ierr = PetscFree(v); CHKERRQ(ierr);
 
+  return 0;
+}
+
+
+PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
+  PetscErrorCode ierr;
+  int stat;
+  float *v;
+
+  ierr = PetscMalloc(len * sizeof(float), &v); CHKERRQ(ierr);
+  for (int i = 0; i < len; i++) {
+    v[i] = (float)vals[i];
+  }
+  stat = nc_put_var_float(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = PetscFree(v); CHKERRQ(ierr);
   return 0;
 }
 
@@ -327,10 +343,6 @@ PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name, n
   }
   
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
-
-//  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
-//  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
-
   return 0;
 }
 

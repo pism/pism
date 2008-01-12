@@ -34,12 +34,8 @@
     ierr = put_dimension_regular(ncid, x_id, x_len, -grid.p->Lx, grid.p->dx); CHKERRQ(ierr);
     ierr = put_dimension_regular(ncid, y_id, y_len, -grid.p->Ly, grid.p->dy); CHKERRQ(ierr);
     
-    if ((grid.equalVertSpacing()) && (grid.dzEQ == grid.dzbEQ)) {
-      ierr = put_dimension_regular(ncid, z_id, z_len, 0, grid.dzEQ); CHKERRQ(ierr);
-      ierr = put_dimension_regular(ncid, zb_id, zb_len, -grid.p->Lbz, grid.dzbEQ); CHKERRQ(ierr);
-    } else {
-      SETERRQ(604,"not yet implemented for non-equally spaced vertical or dz not equal to dzb");
-    }
+    ierr = put_dimension(ncid, z_id, z_len, grid.zlevels); CHKERRQ(ierr);
+    ierr = put_dimension(ncid, zb_id, zb_len, grid.zblevels); CHKERRQ(ierr);
 
     stat = nc_put_att_double(ncid, polar_stereographic_id, "straight_vertical_longitude_from_pole",
                             NC_DOUBLE, 1, &psParams.svlfp); CHKERRQ(nc_check(stat));

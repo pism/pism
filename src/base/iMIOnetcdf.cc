@@ -97,9 +97,8 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **b, **Ts, **Ghf;
 
-  PetscScalar *T, *Tb;
+  PetscScalar *T;
   T = new PetscScalar[grid.p->Mz];
-  Tb = new PetscScalar[grid.p->Mbz];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
@@ -122,23 +121,16 @@ PetscErrorCode IceModel::putTempAtDepth() {
         const PetscScalar d2 = depth * depth;
         T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
       }
-
-      // above ice
-      for (PetscInt k = ks; k < grid.p->Mz; k++)
+      for (PetscInt k = ks; k < grid.p->Mz; k++) // above ice
         T[k] = Ts[i][j];
-
       ierr = T3.setValColumn(i,j,grid.p->Mz,grid.zlevels,T); CHKERRQ(ierr);
       
-      // within bedrock
-      PetscScalar T_top_bed = T[0];
-      // if floating then top of bedrock sees ocean:
+      // set temp within bedrock; if floating then top of bedrock sees ocean,
+      //   otherwise it sees the temperature of the base of the ice
       const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
-      if (b[i][j] < floating_base - 1.0)
-        T_top_bed = ice.meltingTemp;
-      for (PetscInt kb = 0; kb < grid.p->Mbz; kb++)
-        Tb[kb] = T_top_bed - (Ghf[i][j]/bedrock.k) * grid.zblevels[kb];
-
-      ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
+      const PetscScalar T_top_bed = (b[i][j] < floating_base)
+                                         ? ice.meltingTemp : T[0];
+      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j]); CHKERRQ(ierr);
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -148,7 +140,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] T;  delete [] Tb;
+  delete [] T;
   
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
@@ -157,6 +149,30 @@ PetscErrorCode IceModel::putTempAtDepth() {
 }
 
 
+//! Set the temperatures in a column of bedrock based on a temperature at the top and a geothermal flux.
+/*! 
+This procedure sets the temperatures in the bedrock that would be correct for our model in steady state.
+In steady state there would be a temperature at the top of the bed and a flux condition at the bottom
+and the temperatures would be linear in between.
+
+Call <tt>Tb3.needAccessToVals()</tt> before and <tt>Tb3.doneAccessToVals()</tt> after this routine.
+ */
+PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
+                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux) {
+  PetscScalar *Tb;
+  Tb = new PetscScalar[grid.p->Mbz];
+  for (PetscInt kb = 0; kb < grid.p->Mbz; kb++)
+    Tb[kb] = Ttopbedrock - (geothermflux / bedrock.k) * grid.zblevels[kb];
+  PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
+  delete [] Tb;
+  return 0;
+}
+
+
+//! Use heuristics to set up ice sheet fields needed for actual initialization.
+/*! 
+This procedure is called when option <tt>-bif</tt> is used.
+ */
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
   int stat;
@@ -730,10 +746,10 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 }
 
 
-//! Read a complete saved PISM model state for initialization of an evolution or diagnostic run.
+//! Read a saved PISM model state (for complete initialization of an evolution or diagnostic run).
 /*! 
-When initializing from a NetCDF input file, the file determines 
-the number of grid points (Mx,My,Mz,Mbz) and the dimensions of the computational box.   
+When initializing from a NetCDF input file, the input file determines 
+the number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.   
 The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" are overridden.  
  */
 PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
@@ -833,14 +849,6 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
-/*
-  ierr = get_local_var(&grid, ncid, "temp", NC_FLOAT, grid.da3, T3.v, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "litho_temp", NC_FLOAT, grid.da3b, Tb3.v, g3b,
-                       s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "age", NC_FLOAT, grid.da3, tau3.v, g3,
-                       s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-*/
   ierr = T3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = Tb3.getVecNC(ncid, s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = tau3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -1060,14 +1068,6 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   ierr = T3.regridVecNC(regridVars, 'T', 3, lic);  CHKERRQ(ierr);
   ierr = Tb3.regridVecNC(regridVars, 'B', 4, lic);  CHKERRQ(ierr);
   ierr = tau3.regridVecNC(regridVars, 'e', 3, lic);  CHKERRQ(ierr);
-/*
-  ierr = regrid_local_var(regridVars, 'T', "temp", 3, lic, grid, grid.da3, T3.v, g3);
-  CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'B', "litho_temp", 4, lic, grid, grid.da3b, Tb3.v, g3b);
-  CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'e', "age", 3, lic, grid, grid.da3, tau3.v, g3);
-  CHKERRQ(ierr);
-*/
 
   ierr = PetscFree(lic.a); CHKERRQ(ierr);
   

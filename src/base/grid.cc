@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -98,7 +98,7 @@ PetscErrorCode  IceGrid::setLevelsFromLsMs() {
   zlevelsEQ = new PetscScalar[p->Mz];
   zblevelsEQ = new PetscScalar[p->Mbz];
 
-// EQUAL FOR NOW:
+// EQUAL:
   for (PetscInt k=0; k < p->Mz; k++) {
     zlevelsEQ[k] = dzEQ * ((PetscScalar) k);
     zlevels[k] = zlevelsEQ[k];

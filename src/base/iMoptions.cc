@@ -38,7 +38,7 @@ PetscErrorCode  IceModel::setFromOptions() {
               mytransformForSurfaceGradient, myincludeBMRinContinuity, lowtempSet,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet, maxlowtempsSet,
-              plasticc0Set, plasticphiSet, myholdTillYieldStress;
+              plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet;
   PetscTruth  noMassConserve, noTemp; 
   PetscScalar my_maxdt, myssaDt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization;
@@ -221,6 +221,11 @@ PetscErrorCode  IceModel::setFromOptions() {
      &plasticphiSet);  CHKERRQ(ierr);
   if (plasticphiSet == PETSC_TRUE)
      plastic_till_mu = tan((pi/180.0) * myplastic_phi);
+
+  // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
+  // computing grainsize through Vostok core correlation
+  ierr = PetscOptionsHasName(PETSC_NULL, "-real_age_grainsize", &realageSet); CHKERRQ(ierr);
+  if (realageSet == PETSC_TRUE)   realAgeForGrainSize = PETSC_TRUE;
 
   // a parameter in regularizing the computation of effective viscosity from strain rates;
   // see computeEffectiveViscosity() in iMssa.cc

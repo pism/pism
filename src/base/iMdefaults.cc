@@ -109,6 +109,7 @@ const PetscInt    DEFAULT_MAX_LOW_TEMP_COUNT = 10;  //
 
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
+const PetscTruth  DEFAULT_REAL_AGE_FOR_GRAIN_SIZE = PETSC_FALSE;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
 const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
 const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
@@ -214,6 +215,7 @@ PetscErrorCode IceModel::setDefaults() {
     
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
   doGrainSize = DEFAULT_DO_GRAIN_SIZE;
+  realAgeForGrainSize = DEFAULT_REAL_AGE_FOR_GRAIN_SIZE;
   isDrySimulation = DEFAULT_IS_DRY_SIMULATION;
   updateHmelt = PETSC_TRUE;
   gsIntervalYears = DEFAULT_GRAIN_SIZE_INTERVAL_YEARS;

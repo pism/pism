@@ -197,6 +197,7 @@ protected:
   PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, pureSuperpose, useConstantNuForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
+  PetscTruth  realAgeForGrainSize;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, transformForSurfaceGradient;
@@ -273,6 +274,8 @@ protected:
 
   // see iMIOnetcdf.cc
   PetscErrorCode putTempAtDepth();
+  PetscErrorCode bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
+                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux);
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
                               Vec vecg, Vec vindzero);

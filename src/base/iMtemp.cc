@@ -451,7 +451,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 //! Take an explicit time-step for the age equation.  Also check the CFL for advection.
 /*! 
 @cond CONTINUUM
-The age equation is\f$ \frac{d\tau}{dt} = 1\f$, that is,
+The age equation is\f$d\tau/dt = 1\f$, that is,
     \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x} + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
 where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
 velocity field.  This equation is hyperbolic (purely advective).  
@@ -459,6 +459,11 @@ The boundary condition is that when the ice fell as snow it had age zero.
 That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
 boundary condition elsewhere (as the characteristics go outward elsewhere).  At this point 
 the refreeze case, either grounded basal ice or marine basal ice, is not handled correctly.
+
+By default, when computing the grain size for the Goldsby-Kohlstedt flow law, the age \f$\tau\f$ is not used.
+Instead a pseudo age is computed by updateGrainSizeNow().  If you want the age computed by this routine to be
+used for the grain size estimation, from the Vostok core relation as in grainSizeVostok(), add 
+option <tt>-real_age_grainsize</tt>.
 @endcond
 
 @cond NUMERIC

@@ -271,15 +271,18 @@ PetscErrorCode IceEISModel::initAccumTs() {
 PetscErrorCode IceEISModel::fillintemps() {
   PetscErrorCode      ierr;
   PetscScalar         **Ts;
+  const PetscScalar   G_geothermal   = 0.042; // J/m^2 s; geo. heat flux; only matters if
+                                              // (nonstandard case) bedrock is present
 
-  // fill in all temps with Ts
+  // fill in all ice temps with Ts and then have bedrock (if present despite EISMINT
+  //   standard) temperatures reflect default geothermal rate
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
   ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = T3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
-      ierr = Tb3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
+      ierr = bootstrapSetBedrockColumnTemp(i,j,Ts[i][j],G_geothermal); CHKERRQ(ierr);
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
