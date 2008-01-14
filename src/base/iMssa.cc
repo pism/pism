@@ -177,8 +177,6 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
             // usual temperature-dependent case; "nu" is really "nu H"!
             ierr = T3.getValColumn(i,j,grid.p->Mz,grid.zlevels,Tij); CHKERRQ(ierr);
             ierr = T3.getValColumn(i+oi,j+oj,grid.p->Mz,grid.zlevels,Toffset); CHKERRQ(ierr);
-//            nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
-//                                    myH, dz, u_x, u_y, v_x, v_y, Tij, Toffset);
             nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
                                     myH, grid.kBelowHeight(myH), grid.p->Mz, grid.zlevels, 
                                     u_x, u_y, v_x, v_y, Tij, Toffset);
@@ -853,7 +851,6 @@ PetscErrorCode IceModel::correctSigma() {
                           v_y = (vb[i][j+1] - vb[i][j-1])/(2*dy);
         const PetscScalar beta = PetscSqr(u_x) + PetscSqr(v_y)
                            + u_x * v_y + PetscSqr(0.5*(u_y + v_x));
-//        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         const PetscScalar CC = 4 * beta / (ice.rho * ice.c_p);
 
@@ -865,7 +862,6 @@ PetscErrorCode IceModel::correctSigma() {
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
-//          const PetscScalar pressure = ice.rho * grav * (H[i][j] - k * dz);
           const PetscScalar pressure = ice.rho * grav * (H[i][j] - grid.zlevels[k]);
           const PetscScalar mvSigma = CC * ice.effectiveViscosity(schoofReg,
                                                u_x,u_y,v_x,v_y,T[k],pressure);

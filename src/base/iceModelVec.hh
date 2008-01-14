@@ -98,7 +98,7 @@ struct planeBox {
 };
 
 
-//! Class for a 2d DA-based Vec, with STAR stencil, for ice scalar quantities in IceModel.
+// Class for a 2d DA-based Vec, with STAR stencil, for ice scalar quantities in IceModel.
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
@@ -114,7 +114,7 @@ protected:
 };
 
 
-//! Class for a 2d DA-based Vec, with BOX stencil, for ice scalar quantities in IceModel.
+// Class for a 2d DA-based Vec, with BOX stencil, for ice scalar quantities in IceModel.
 class IceModelVec2Box : public IceModelVec2 {
 public:
   IceModelVec2Box();

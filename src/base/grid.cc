@@ -98,6 +98,9 @@ PetscErrorCode  IceGrid::setLevelsFromLsMs() {
   zlevelsEQ = new PetscScalar[p->Mz];
   zblevelsEQ = new PetscScalar[p->Mbz];
 
+  dzEQ = p->Lz / (p->Mz - 1);
+  dzbEQ = p->Lbz / (p->Mbz - 1);
+
 // EQUAL:
   for (PetscInt k=0; k < p->Mz; k++) {
     zlevelsEQ[k] = dzEQ * ((PetscScalar) k);
@@ -226,17 +229,36 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
                                 const PetscScalar lz, const PetscTruth truelyPeriodic) {
   PetscErrorCode ierr;
 
-  if (lx<=0) {
-    SETERRQ(1, "rescale: error, lx must be positive\n");
-  }
-  if (ly<=0) {
-    SETERRQ(1, "rescale: error, ly must be positive\n");
-  }
   if (lz<=0) {
     SETERRQ(1, "rescale: error, lz must be positive\n");
   }
 
-  p->Lx = lx; p->Ly = ly; p->Lz = lz;
+  p->Lz = lz;
+  if (p->Mz <= 1) {
+    SETERRQ(2, "rescale: error, Mz must be at least 2 (i.e. computational domain must have thickness)\n");
+  }
+  p->Lbz = ( p->Lz / (p->Mz - 1) ) * (p->Mbz - 1);  // make dz in bed equal to dz in ice; gives Lbz=0 if Mbz=1
+  
+  ierr = setLevelsFromLsMs(); CHKERRQ(ierr);
+
+  ierr = rescale_using_zlevels(lx, ly, truelyPeriodic); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
+PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
+                                              const PetscTruth truelyPeriodic) {
+  PetscErrorCode ierr;
+
+  if (lx<=0) {
+    SETERRQ(1, "rescale: error, lx must be positive\n");
+  }
+  if (ly<=0) {
+    SETERRQ(2, "rescale: error, ly must be positive\n");
+  }
+
+  p->Lx = lx; p->Ly = ly;
   if (truelyPeriodic == PETSC_TRUE) {
     p->dx = 2.0 * p->Lx / (p->Mx);
     p->dy = 2.0 * p->Ly / (p->My);
@@ -245,14 +267,47 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
     p->dy = 2.0 * p->Ly / (p->My - 1);
   }
 
-  dzEQ = p->Lz / (p->Mz - 1);
-  dzbEQ = dzEQ;
-  p->Lbz = dzbEQ * (p->Mbz - 1);
+  if ( (!isIncreasing(p->Mz, zlevels)) || (PetscAbs(zlevels[0]) > 1.0e-10) ) {
+    SETERRQ(3, "rescale: zlevels invalid; must be strictly increasing and start with z=0\n");
+  }
+  zlevels[0] = 0.0;
+  if ( (!isIncreasing(p->Mbz, zblevels)) || (PetscAbs(zblevels[p->Mbz-1]) > 1.0e-10) ) {
+    SETERRQ(3, "rescale: zlevels invalid; must be strictly increasing and start with z=0\n");
+  }
+  zblevels[p->Mbz-1] = 0.0;
+  
+  p->Lz = zlevels[p->Mz-1];
+  p->Lbz = - zblevels[0];
 
-  ierr = setLevelsFromLsMs(); CHKERRQ(ierr);
+  dzEQ = p->Lz / (p->Mz - 1);
+  if (p->Mbz > 1) {
+    dzbEQ = p->Lbz / (p->Mbz - 1);
+  } else {
+    dzbEQ = dzEQ;  // FIXME: to avoid problem in temperatureStep()
+  }
+
+  delete [] zlevelsEQ;
+  delete [] zblevelsEQ;
+  zlevelsEQ = new PetscScalar[p->Mz];
+  zblevelsEQ = new PetscScalar[p->Mbz];
+  for (PetscInt k=0; k < p->Mz; k++) {
+    zlevelsEQ[k] = dzEQ * ((PetscScalar) k);
+  }
+  for (PetscInt kb=0; kb < p->Mbz; kb++) {
+    zblevelsEQ[kb] = - p->Lbz + dzbEQ * ((PetscScalar) kb);
+  }
 
   // it is not known if the following has any effect:
   ierr = DASetUniformCoordinates(da2, -p->Ly, p->Ly, -p->Lx, p->Lx,
                                  PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   return 0;
 }
+
+
+bool IceGrid::isIncreasing(const PetscInt len, PetscScalar *vals) {
+  for (PetscInt k = 0; k < len-1; k++) {
+    if (vals[k] >= vals[k+1])  return false;
+  }
+  return true;
+}
+

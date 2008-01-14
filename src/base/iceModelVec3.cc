@@ -33,6 +33,7 @@ IceModelVec3::IceModelVec3() : IceModelVec() {
 };
 
 
+//! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_varname[], bool local) {
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec3 with varname='%s' already allocated\n",varname);
@@ -60,6 +61,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_varname[], b
 }
 
 
+//! Allocate a DA and a Vec from information in IceGrid; use an existing DA from an existing IceModelVec3.
 PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
                                            IceGrid &mygrid, const char my_varname[], bool local) {
   if (v != PETSC_NULL) {
@@ -200,6 +202,7 @@ PetscErrorCode  IceModelVec3::setValColumn(
 }
 
 
+//! Set all values of scalar quantity to given a single value in a particular column.
 PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscInt j, 
                                                   const PetscScalar c) {
 
@@ -224,13 +227,6 @@ PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const 
   else if (z <= 0.0)
     return arr[i][j][0];
 
-/*
-  const PetscScalar  dz = (grid->p)->dz;
-  const PetscInt     kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
-  const PetscScalar  val_kbz = arr[i][j][kbz];
-  return val_kbz + ( (z - (grid->zlevels)[kbz]) / dz ) * (arr[i][j][kbz + 1] - val_kbz);
-*/
-  // this implementation does not assume equal spacing
   PetscScalar* levels = grid->zlevels;
   PetscInt mcurr = 0;
   while (levels[mcurr+1] < z) {
@@ -255,7 +251,6 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
              varname);
   }
 
-//  const PetscScalar dz = (grid->p)->dz;
   PetscInt     kbz;
   PetscScalar  incr;
   if (z >= (grid->p)->Lz) {
@@ -265,9 +260,6 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
     kbz = 0;
     incr = 0.0;
   } else {
-//    kbz = static_cast<PetscInt>(floor( z / dz ));  // k value just below z
-//    incr = ( (z - (grid->zlevels)[kbz]) / dz );
-    // implement so that we don't assume equal spacing
     PetscScalar* levels = grid->zlevels;
     kbz = 0;
     while (levels[kbz+1] < z) {

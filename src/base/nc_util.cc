@@ -40,9 +40,15 @@ int check_err(const int stat, const int line, const char *file) {
 }
 
 
-PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
-                             DA da, Vec v, Vec g, const int *s, const int *c,
-                             int dims, void *a_mpi, int a_size) {
+//! Nothin' here because NCTool is a class created so that doxygen can document it.
+NCTool::NCTool() {
+}
+
+
+//! Put a \c DA -managed local \c Vec \c v into a variable in a NetCDF file; a global \c Vec \c g is used for storage space.
+PetscErrorCode NCTool::put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+                                     DA da, Vec v, Vec g, const int *s, const int *c,
+                                     int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
   ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
@@ -51,9 +57,10 @@ PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc
 }
 
 
-PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
-                              DA da, Vec g, const int *s, const int *c,
-                              int dims, void *a_mpi, int a_size) {
+//! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.
+PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+                                      DA da, Vec g, const int *s, const int *c,
+                                      int dims, void *a_mpi, int a_size) {
   const int lim_tag = 1; // MPI tag for limits block
   const int var_tag = 2; // MPI tag for data block
   const int sc_size = 8;
@@ -141,7 +148,8 @@ PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, n
 }
 
 
-PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, float delta) {
+//! Put the variable for a dimension in a NetCDF file.  Uses starting value and a spacing for regularly-spaced values.
+PetscErrorCode NCTool::put_dimension_regular(int ncid, int v_id, int len, float start, float delta) {
   PetscErrorCode ierr;
   int stat;
   float *v;
@@ -157,7 +165,8 @@ PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, f
 }
 
 
-PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
+//! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
+PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
   PetscErrorCode ierr;
   int stat;
   float *v;
@@ -172,8 +181,17 @@ PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
 }
 
 
-PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[], double *bdy_time, 
-                              MPI_Comm com) {
+//! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Also read final time.
+/*!
+Correspondence between the parameters to this procedure and the values in \c IceGrid:
+  - <tt>bdy[0]</tt> is current time and becomes <tt>grid.p->year</tt>
+  - <tt>-bdy[1]</tt>=<tt>bdy[2]</tt> is \f$x\f$ half-length of computational domain and becomes <tt>grid.p->Lx</tt>
+  - <tt>-bdy[3]</tt>=<tt>bdy[4]</tt> is \f$y\f$ half-length of computational domain and becomes <tt>grid.p->Ly</tt>
+  - <tt>-bdy[5]</tt> is thickness (positive) of bedrock layer (for thermal model); becomes <tt>grid.p->Lbz</tt>
+  - <tt>bdy[6]</tt> is thickness (positive) of ice layer and becomes <tt>grid.p->Lz</tt>
+ */
+PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], float bdy[], double *bdy_time, 
+                                               MPI_Comm com) {
   PetscErrorCode ierr;
   PetscMPIInt rank;
   int stat;
@@ -236,9 +254,39 @@ PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[], double *bdy_t
 }
 
 
-PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
-                             DA da, Vec v, Vec g, const int *s, const int *c,
-                             int dims, void *a_mpi, int a_size) {
+//! Read in the variables \c z and \c zb from the NetCDF file; don't assume they are equally-spaced.
+PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len, 
+                                         float z_read[], float zb_read[], MPI_Comm com) {
+  PetscErrorCode ierr;
+  PetscMPIInt rank;
+  int stat;
+  int z_id, zb_id;
+  size_t zeroST  = 0, 
+         zlenST  = (size_t) z_len,
+         zblenST = (size_t) zb_len;
+
+  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
+
+  if (rank == 0) {
+    stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    
+    stat = nc_get_vara_float(ncid, z_id, &zeroST, &zlenST, z_read);
+             CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_vara_float(ncid, zb_id, &zeroST, &zblenST, zb_read);
+             CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  
+  MPI_Bcast(z_read, z_len, MPI_FLOAT, 0, com);
+  MPI_Bcast(zb_read, zb_len, MPI_FLOAT, 0, com);
+  return 0;
+}
+
+
+//! Read from a variable in a NetCDF file into a \c DA -managed local \c Vec \c v; a global \c Vec \c g is used for storage.
+PetscErrorCode NCTool::get_local_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
+                                     DA da, Vec v, Vec g, const int *s, const int *c,
+                                     int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
   ierr = get_global_var(grid, ncid, name, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
@@ -248,9 +296,10 @@ PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc
 }
 
 
-PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
-                             DA da, Vec g, const int *s, const int *c,
-                             int dims, void *a_mpi, int a_size) {
+//! Read from a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.
+PetscErrorCode NCTool::get_global_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
+                                      DA da, Vec g, const int *s, const int *c,
+                                      int dims, void *a_mpi, int a_size) {
   const int req_tag = 1; // MPI tag for request block
   const int var_tag = 2; // MPI tag for data block
   const int sc_size = 8;
@@ -347,8 +396,13 @@ PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name, n
 }
 
 
-PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
-                                  LocalInterpCtx &lic, IceGrid &grid) {
+//! The "local interpolation context" holds various parameters describing the source NetCDF file for regridding.
+/*! 
+This procedure merely puts various information into a struct.
+ */
+PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
+                                           const float zlevsIN[], const float zblevsIN[],
+                                           LocalInterpCtx &lic, IceGrid &grid) {
   PetscErrorCode ierr;
   const float Lx = grid.p->Lx;
   const float Ly = grid.p->Ly;
@@ -372,12 +426,13 @@ PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[
   lic.delta[0] = NAN; // Delta probably will never make sense in the time dimension.
   lic.delta[1] = (bdy[2] - bdy[1]) / (dim[1] - 1);
   lic.delta[2] = (bdy[4] - bdy[3]) / (dim[2] - 1);
-  lic.delta[3] = bdy[6] / (dim[3] - 1);
+  lic.delta[3] = bdy[6] / (dim[3] - 1);  // corresponds to grid.dzEQ and grid.dzbEQ; IGNOR!
   
   lic.start[0] = dim[0] - 1; // We use the latest time
   lic.start[1] = (int)floor((xbdy[0] - bdy[1]) / lic.delta[1]);
   lic.start[2] = (int)floor((ybdy[0] - bdy[3]) / lic.delta[2]);
   lic.start[3] = 0; // We start at the bed.
+// replace:  lic.start[4] = regridFile.kbBelowHeight(zbdy[0]), so to speak
   lic.start[4] = (int)floor((zbdy[0] - bdy[5]) / lic.delta[3]);
   
   lic.timestart = bdy_time;
@@ -388,8 +443,19 @@ PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[
   lic.count[0] = 1; // Only take one time.
   lic.count[1] = (int)ceil((xbdy[1] - lic.fstart[1]) / lic.delta[1] + 1);
   lic.count[2] = (int)ceil((ybdy[1] - lic.fstart[2]) / lic.delta[2] + 1);
+// replace: lic.count[3] = regridFile.kBelowHeight(zbdy[1]) - lic.start[3] + 1;
   lic.count[3] = (int)ceil(Lz / lic.delta[3] + 1);
   lic.count[4] = dim[4] - lic.start[4];
+
+  ierr = PetscMalloc(dim[3] * sizeof(float), &(lic.zlevs)); CHKERRQ(ierr);
+  for (size_t k = 0; k < dim[3]; k++) {
+    lic.zlevs[k] = zlevsIN[k];
+  }
+
+  ierr = PetscMalloc(dim[4] * sizeof(float), &(lic.zblevs)); CHKERRQ(ierr);
+  for (size_t k = 0; k < dim[4]; k++) {
+    lic.zblevs[k] = zblevsIN[k];
+  }
 
   int a_len = lic.a_len = lic.count[1] * lic.count[2] * lic.count[3];
   MPI_Reduce(&a_len, &(lic.a_len), 1, MPI_INT, MPI_MAX, 0, grid.com);
@@ -399,9 +465,13 @@ PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[
 }
 
 
-PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
-                                int dim_flag, LocalInterpCtx &lic,
-                                IceGrid &grid, DA da, Vec vec, Vec g) {
+//! Find a 2D or 3D variable in a NetCDF file and regrid it onto the current grid; a global \c Vec is used for storage.
+/*!
+Simply calls regrid_global_var() after transferring the local \c Vec to a global \c Vec.
+ */
+PetscErrorCode NCTool::regrid_local_var(const char *vars, char c, const char *name,
+                                        int dim_flag, LocalInterpCtx &lic,
+                                        IceGrid &grid, DA da, Vec vec, Vec g) {
   PetscErrorCode ierr;
   ierr = regrid_global_var(vars, c, name, dim_flag, lic, grid, da, g); CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
@@ -410,40 +480,53 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name,
 }
 
 
+//! Find a 2D or 3D variable in a NetCDF file and regrid it onto the current grid.
+/*! 
+We need to move a local vector from within a NetCDF file, with its "source" grid, to the
+current grid, the "target" grid.  The source grid may be coarser or finer than the target 
+grid, and it may even be coarser in one dimension and finer in another.  We do require,
+however, that the source grid have greater extent than the target.  That is, the values
+of the \c IceParam parameters \c Lx, \c Ly, \c Lz, and \c Lbz must exceed those of the 
+target grid.
+    
+Regarding the \c DA ordering, things are really ugly in any ordering other than the
+`natural' ordering, so we move local -> global -> natural with the source
+data.  We must have defined a weighting matrix which operates on this source
+natural vector to produce a target natural vector.  Currently, we use
+three point linear interpolation for functions of two variables.  
+After applying the matrix, we move the target vector
+back to a local vector: natural -> global -> local.  It is theoretically
+possible to make the matrix operate on vectors in the Petsc global ordering,
+but that seems like a mess.  In particular, since the matrix is not square,
+we cannot use DAGetMatrix() or the like.
 
-PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
-                                int dim_flag, LocalInterpCtx &lic,
-                                IceGrid &grid, DA da, Vec g) {
+Note that the procedure checks whether the single character flag \c c is in the string
+\c vars.
+
+Note that \c dim_flag is 2 for 2-D quantities, 3 for 3-D ice quantities, and 4 for 3-D 
+bedrock quantities.
+ */
+PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *name,
+                                         int dim_flag, LocalInterpCtx &lic,
+                                         IceGrid &grid, DA da, Vec g) {
+  PetscErrorCode ierr;
                                 
   if (!grid.equalVertSpacing()) {
     SETERRQ(604,"only implemented for equal dz spacing in vertical\n");
   }
-  
-  // dim_flag : 2 for 2-D quantities, 3 for 3-D ice quantities, 4 for 3-D bedrock quantities
-  const int req_tag = 1; // MPI tag for request block
-  const int var_tag = 2; // MPI tag for data block
-  const int sc_len = 8;
-  PetscErrorCode ierr;
-  MPI_Status mpi_stat;
-  int stat, dims;
-  int sc[sc_len];
 
   if (! strchr(vars, c)) {
     return 0;
   }
-
   ierr = verbPrintf(2, grid.com, "\n   %c: regridding `%s' ... ", c, name); CHKERRQ(ierr);
-
-  /* {
-    printf("fstart = %10.2e %10.2e %10.2e\n", lic.fstart[0], lic.fstart[1], lic.fstart[2]);
-    printf("delta  = %10.2e %10.2e %10.2e %10.2e\n", lic.delta[0], lic.delta[1],
-           lic.delta[2], lic.delta[3]);
-    printf("start  = %5d %5d %5d %5d %5d\n", lic.start[0], lic.start[1], lic.start[2],
-           lic.start[3], lic.start[4]);
-    printf("count  = %5d %5d %5d %5d %5d\n", lic.count[0], lic.count[1], lic.count[2],
-           lic.count[3], lic.count[4]);
-  } */
   
+  const int req_tag = 1; // MPI tag for request block
+  const int var_tag = 2; // MPI tag for data block
+  const int sc_len = 8;
+  MPI_Status mpi_stat;
+  int stat, dims;
+  int sc[sc_len];
+
   switch (dim_flag) {
     case 2:
       dims = 3; // time, x, y
@@ -482,17 +565,11 @@ PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
       stat = nc_inq_varid(lic.ncid, name, &var_id);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-      /* {
-        printf("reading sc = ");
-        for (int i = 0; i < sc_len; i++) printf("%4d", sc_nc[i]);
-        printf("\n");
-      } */
-
       stat = nc_get_vara_float(lic.ncid, var_id, &sc_nc[0], &sc_nc[4], lic.a);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       /* {
-        printf("ncid, var_id = %d %d\n", lic.ncid, var_id);
+        printf("lic.ncid, var_id = %d %d\n", lic.ncid, var_id);
         printf("a[] ni {%f %f %f %f}\n", lic.a[50], lic.a[150], lic.a[250], lic.a[350]);
 
         const int blen = 9;
@@ -521,7 +598,6 @@ PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
   PetscScalar *vec_a;
   ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
 
-  //const int xcount = lic.count[1];
   const int ycount = lic.count[2];
   for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
     for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
@@ -536,8 +612,10 @@ PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
         zcount = lic.count[3];
       } else if (dim_flag == 4) {
         myMz = grid.p->Mbz;
+// replace: remove bottom
         bottom = -grid.p->Lbz;
         zcount = lic.count[4];
+// replace: zfstart = regridFile.zblevel[(regridFile.Mbz - 1) - (zcount - 1)], so to speak
         zfstart = -(zcount - 1) * lic.delta[3];
       }
 
@@ -546,11 +624,13 @@ PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
         
         const float x = -grid.p->Lx + i * grid.p->dx;
         const float y = -grid.p->Ly + j * grid.p->dy;
+// replace:  const float z = (dim_flag == 4) ? grid.zlevels[k] : grid.zblevels[k];
         const float z = k * grid.dzEQ + bottom;
 
         const float ic = (x - lic.fstart[1]) / lic.delta[1];
         const float jc = (y - lic.fstart[2]) / lic.delta[2];
         if (dim_flag == 3 || dim_flag == 4) {
+// replace: ???
           const float kc = (z - zfstart) / lic.delta[3];
 
           int mmm = ((int)floor(ic) * ycount + (int)floor(jc)) * zcount + (int)floor(kc);
@@ -589,9 +669,6 @@ PetscErrorCode regrid_global_var(const char *vars, char c, const char *name,
   }
   
   ierr = VecRestoreArray(g, &vec_a); CHKERRQ(ierr);
-
-//  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
-//  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
 
   return 0;
 }

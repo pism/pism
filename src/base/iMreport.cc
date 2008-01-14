@@ -275,7 +275,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     melt = 0; divideT = 0; orig = 0;
   }
   const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
-//  const PetscScalar   v = a * grid.p->dz * 1e-3;  // volume unit (km^3)
   const PetscScalar   currtime = grid.p->year * secpera;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -295,7 +294,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
         if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
           divideT = Tbase[i][j];
         }
-//        const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
         const PetscInt  ks = grid.kBelowHeight(H[i][j]);
         ierr = tau3.getValColumn(i,j,grid.p->Mz,grid.zlevels,tau); CHKERRQ(ierr);
         for (PetscInt k=1; k<=ks; k++) {

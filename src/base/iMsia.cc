@@ -169,7 +169,6 @@ case and is put in a workspace \c Vec.  See correctSigma().
 PetscErrorCode IceModel::velocitySIAStaggered() {
   PetscErrorCode  ierr;
 
-//  const PetscScalar   dz=grid.p->dz;
   PetscScalar *delta, *I, *J, *K, *Sigma;
   delta = new PetscScalar[grid.p->Mz];
   I = new PetscScalar[grid.p->Mz];
@@ -214,22 +213,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           ierr = gs3.getValColumn(i,j,grid.p->Mz,grid.zlevels,gsij); CHKERRQ(ierr);
           ierr = gs3.getValColumn(i+oi,j+oj,grid.p->Mz,grid.zlevels,gsoffset); CHKERRQ(ierr);
 
-//          const PetscInt      ks = static_cast<PetscInt>(floor(thickness/dz));
           const PetscInt      ks = grid.kBelowHeight(thickness);  // does validity check for thickness
-/*
-          if (ks > grid.p->Mz) {
-            ierr = PetscPrintf(grid.com,
-                 "[[error LOCATION: i, j, ks, H = %5d %5d %5d %10.2f]]\n",i, j, ks, H[i][j]); 
-            SETERRQ(1, "thickness overflow in SIA velocity: ks>Mz");
-          }
-*/
 
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
-//            const PetscScalar   s = k * dz;
             const PetscScalar   s = grid.zlevels[k];
             const PetscScalar   pressure = ice.rho * grav * (thickness - s);
 
@@ -446,7 +436,6 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
         // horizontally average Sigma onto regular grid
-//        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         ierr = Sigmastag3[0].getValColumn(i,j,grid.p->Mz,izz,SigmaEAST); CHKERRQ(ierr);
         ierr = Sigmastag3[0].getValColumn(i-1,j,grid.p->Mz,izz,SigmaWEST); CHKERRQ(ierr);
@@ -492,8 +481,6 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   PetscScalar **h_x[2], **h_y[2], **ub, **vb;
 
   PetscScalar *u, *v;
-//  izz = new PetscScalar[grid.p->Mz];
-//  for (PetscInt k=0; k < grid.p->Mz; k++)   izz[k] = ((PetscScalar) k) * grid.p->dz;
   u = new PetscScalar[grid.p->Mz];
   v = new PetscScalar[grid.p->Mz];
 

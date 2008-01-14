@@ -128,49 +128,55 @@ PetscErrorCode  IceModelVec::findVecNC(const int ncid, PetscTruth *exists) {
 }
 
 
+//! Calls the appropriate NCTool method to read a NetCDF variable into the IceModelVec.
 PetscErrorCode IceModelVec::getVecNC(const int ncid, const int *s, const int *c, int dims, 
                                      void *a_mpi, int a_size) {           
   PetscErrorCode ierr;
+  NCTool nct;
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = get_local_var(grid, ncid, varname, NC_FLOAT, da, v, g,
+    ierr = nct.get_local_var(grid, ncid, varname, NC_FLOAT, da, v, g,
                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = get_global_var(grid, ncid, varname, NC_FLOAT, da, v,
+    ierr = nct.get_global_var(grid, ncid, varname, NC_FLOAT, da, v,
                           s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
   }
   return 0;
 }
 
 
+//! Calls the appropriate NCTool method to save the IceModelVec into a NetCDF variable.
 PetscErrorCode IceModelVec::putVecNC(const int ncid, const int *s, const int *c, int dims, 
                                           void *a_mpi, int a_size) {
   PetscErrorCode ierr;
+  NCTool nct;
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = put_local_var(grid, ncid, varid_nc, NC_FLOAT, da, v, g,
+    ierr = nct.put_local_var(grid, ncid, varid_nc, NC_FLOAT, da, v, g,
                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = put_global_var(grid, ncid, varid_nc, NC_FLOAT, da, v,
+    ierr = nct.put_global_var(grid, ncid, varid_nc, NC_FLOAT, da, v,
                           s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
   }
   return 0;
 }
 
 
+//! Calls the appropriate NCTool method to regrid a NetCDF variable from some file into the IceModelVec.
 PetscErrorCode  IceModelVec::regridVecNC(const char *vars, char c, int dim_flag, LocalInterpCtx &lic)  {
   PetscErrorCode ierr;
+  NCTool nct;
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = regrid_local_var(vars, c, varname, dim_flag, lic, *grid, da, v, g); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(vars, c, varname, dim_flag, lic, *grid, da, v, g); CHKERRQ(ierr);
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = regrid_global_var(vars, c, varname, dim_flag, lic, *grid, da, v); CHKERRQ(ierr);
+    ierr = nct.regrid_global_var(vars, c, varname, dim_flag, lic, *grid, da, v); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -299,7 +305,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], 
 }
 
 
-//! Return value of ice scalar quantity stored in an IceModelVec2.
+// Return value of ice scalar quantity stored in an IceModelVec2.
 PetscScalar     IceModelVec2::getVal(const PetscInt i, const PetscInt j) {
   checkHaveArray();
   PetscScalar **arr = (PetscScalar**) array;
@@ -307,7 +313,7 @@ PetscScalar     IceModelVec2::getVal(const PetscInt i, const PetscInt j) {
 }
 
 
-//! Return values on planar star stencil of ice scalar quantity stored in an IceModelVec2.
+// Return values on planar star stencil of ice scalar quantity stored in an IceModelVec2.
 PetscErrorCode   IceModelVec2::getPlaneStar(const PetscInt i, const PetscInt j, planeStar *star) {
   PetscErrorCode ierr;
   ierr = checkHaveArray();  CHKERRQ(ierr);
@@ -351,7 +357,7 @@ PetscErrorCode  IceModelVec2Box::create(IceGrid &my_grid, const char my_varname[
 }
 
 
-//! Return values on planar BOX stencil of ice scalar quantity stored in an IceModelVec2Box.
+// Return values on planar BOX stencil of ice scalar quantity stored in an IceModelVec2Box.
 PetscErrorCode   IceModelVec2Box::getPlaneBox(const PetscInt i, const PetscInt j, planeBox *box) {
   PetscErrorCode ierr;
   ierr = checkHaveArray();  CHKERRQ(ierr);
@@ -383,6 +389,7 @@ IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {
 };
 
 
+//! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_varname[], bool local) {
 
   strcpy(varname,my_varname);

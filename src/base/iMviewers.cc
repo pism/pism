@@ -273,7 +273,6 @@ PetscErrorCode IceModel::updateSliceViewer(const char scName, IceModelVec3 imv3,
   
   if (runtimeViewers[cIndex(scName)] != PETSC_NULL) {
     ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
-//    ierr = imv3.getHorSlice(g2, kd * grid.p->dz); CHKERRQ(ierr);
     ierr = imv3.getHorSlice(g2, grid.zlevels[kd]); CHKERRQ(ierr);
     ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
 

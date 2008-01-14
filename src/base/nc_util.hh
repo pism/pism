@@ -30,14 +30,23 @@ struct LocalInterpCtx {
   float *a;
   int a_len;
   int ncid;
+  float *zlevs, *zblevs;
 };
 
 int nc_check(int stat);
 int check_err(const int stat, const int line, const char *file);
 
+//! Holds methods for parallel interface from IceModel (and IceModelVec) to NetCDF file.
+class NCTool {
+
+public:
+NCTool();
+
 PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
 PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, float delta);
-PetscErrorCode get_dimensions(int ncid, size_t dim[], float bdy[], double *bdy_time, MPI_Comm com);
+PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], float bdy[], double *bdy_time, MPI_Comm com);
+PetscErrorCode get_vertical_dims(int ncid, int z_len, int zb_len, 
+                                 float z_read[], float zb_read[], MPI_Comm com);
 
 PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
                              DA da, Vec v, Vec g, const int *s, const int *c,
@@ -57,7 +66,9 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name, int 
                                 LocalInterpCtx &lic, IceGrid &grid, DA da, Vec vec, Vec g);
 PetscErrorCode regrid_global_var(const char *vars, char c, const char *name, int dim_flag,
                                  LocalInterpCtx &lic, IceGrid &grid, DA da, Vec g);
-PetscErrorCode get_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
-                                  LocalInterpCtx &lic, IceGrid &grid);
+PetscErrorCode form_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
+                                   const float zlev[], const float zblev[],
+                                   LocalInterpCtx &lic, IceGrid &grid);
+};
 
 #endif // __nc_util_hh

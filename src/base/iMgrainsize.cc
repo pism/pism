@@ -159,7 +159,7 @@ where \f$x = (w' z)/w_0\f$.  Note
 /*! 
 A data set is interpolated.  The data is from 
 
-EPICA community members (2004), \emph{Eight glacial cycles from an Antarctic ice core}, Nature \textbf{429},
+EPICA community members (2004), <i>Eight glacial cycles from an Antarctic ice core</i>, Nature 429,
 623--628.
  */
 PetscScalar IceModel::grainSizeVostok(PetscScalar age) const {

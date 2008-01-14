@@ -65,7 +65,6 @@ PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName,
   
   if (matlabOutWanted(scName)) {
     ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
-//    ierr = imv3.getHorSlice(g2, kd * grid.p->dz); CHKERRQ(ierr);
     ierr = imv3.getHorSlice(g2, grid.zlevels[kd]); CHKERRQ(ierr);
     ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = VecScale(g2,scale); CHKERRQ(ierr);
@@ -257,14 +256,6 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "y = (-%12.3f:%12.3f:%12.3f)/1000.0;\n",
                                 grid.p->Ly,grid.p->dy,grid.p->Ly);  CHKERRQ(ierr);
-/*
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "z = 0.0:%12.3f:%12.3f;\n",
-                                grid.p->dz,grid.p->Lz);  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "zb = %12.3f:%12.3f: 0.0;\n",
-                                -grid.p->Lbz,grid.p->dz);  CHKERRQ(ierr);
-*/
   ierr = PetscViewerASCIIPrintf(viewer,"z = [\n");  CHKERRQ(ierr);
   for (PetscInt k = 0; k < grid.p->Mz; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,"  %14.5f\n",grid.zlevels[k]);  CHKERRQ(ierr);

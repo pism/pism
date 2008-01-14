@@ -147,6 +147,8 @@ protected:
   BedrockType    bedrock;
   SeaWaterType   ocean;
   FreshWaterType porewater;
+  
+  NCTool         nct;
 
   // state variables
   Vec vh, vH, vbed,             // 2D vectors; Mx x My
@@ -283,6 +285,7 @@ protected:
                               Vec vecg, Vec vindzero, MaskInterp masktool);
   PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
   PetscErrorCode setMaskSurfaceElevation_bootstrap();
+  PetscErrorCode warnUserOptionsIgnored(const char *fname);
   PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMIOlegacy.cc
@@ -395,8 +398,9 @@ protected:
            PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
   bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
-  PetscErrorCode excessToFromBasalMeltLayer(PetscScalar rho_c, PetscScalar z,
-                                            PetscScalar *Texcess, PetscScalar *Hmelt);
+  PetscErrorCode excessToFromBasalMeltLayer(
+                      const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
+                      PetscScalar *Texcess, PetscScalar *Hmelt);
 
   // see iMutil.cc
   virtual int endOfTimeStepHook();

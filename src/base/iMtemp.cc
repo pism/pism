@@ -81,7 +81,9 @@ PetscErrorCode IceModel::temperatureStep() {
 
   const PetscScalar   rho_c_I = ice.rho * ice.c_p;
   const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
-  const PetscScalar   rho_c_av = (rho_c_I + rho_c_br) / 2.0;// only applies for equal-spaced!
+//  const PetscScalar   rho_c_av = (rho_c_I + rho_c_br) / 2.0;// only applies for equal-spaced!
+  const PetscScalar   rho_c_av = (grid.dzEQ * rho_c_I + grid.dzbEQ * rho_c_br)
+                                 / (grid.dzEQ + grid.dzbEQ);
   const PetscScalar   iceK = ice.k / rho_c_I;
   const PetscScalar   iceR = iceK * dtTempAge / PetscSqr(grid.dzEQ);
   const PetscScalar   brK = bedrock.k / rho_c_br;
@@ -178,7 +180,6 @@ PetscErrorCode IceModel::temperatureStep() {
           rhs[k0] = Ts[i][j];
         }
       } else { // ks > 0; there is ice
-        const PetscScalar dz = grid.dzEQ;
         planeStar ss;
         ierr = T3.getPlaneStarZ(i,j,0.0,&ss);
         const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
@@ -186,33 +187,34 @@ PetscErrorCode IceModel::temperatureStep() {
         const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
                                               v[0] * (ss.ij  - ss.jm1) / dy;
         // for w, always upwind *up* from base
-        const PetscScalar UpTw = w[0] * (T[1] - T[0]) / dz;
+        const PetscScalar UpTw = w[0] * (T[1] - T[0]) / grid.dzEQ;
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
           // by ocean flux; note volume for which energy is being computed is 
           // *half* a segment
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
           D[k0] = 1.0 + 2.0 * iceR; U[k0] = - 2.0 * iceR;
-          rhs[k0] = T[0] + 2.0 * dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dz);
+          rhs[k0] = T[0] + 2.0 * dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * grid.dzEQ);
           if (!isMarginal) {
             rhs[k0] += dtTempAge * (Sigma[0] - UpTu - UpTv - UpTw) / 2;
           }
         } else { // there is *grounded* ice; ice/bedrock interface; from FV across interface
           const PetscScalar rho_c_ratio = rho_c_I / rho_c_av;
-          rhs[k0] = T[0] + dtTempAge * (Rb[i][j] / (rho_c_av * dz));
+          const PetscScalar dzav = 0.5 * (grid.dzEQ + grid.dzbEQ);
+          rhs[k0] = T[0] + dtTempAge * (Rb[i][j] / (rho_c_av * dzav));
           if (!isMarginal) {
             rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[0];
-            rhs[k0] -= dtTempAge * rho_c_ratio * (0.5 * (UpTu + UpTv + UpTw) + T[0] * w[0] / dz);
+            rhs[k0] -= dtTempAge * rho_c_ratio * (0.5 * (UpTu + UpTv + UpTw) + T[0] * w[0] / grid.dzEQ);
           }
-          const PetscScalar iceReff = ice.k * dtTempAge / (rho_c_av * dz * dz);
-          const PetscScalar brReff = bedrock.k * dtTempAge / (rho_c_av * dz * dz);
+          const PetscScalar iceReff = ice.k * dtTempAge / (rho_c_av * grid.dzEQ * grid.dzEQ);
+          const PetscScalar brReff = bedrock.k * dtTempAge / (rho_c_av * grid.dzbEQ * grid.dzbEQ);
           if (Mbz > 1) { // there is bedrock; apply centered difference with 
                          // jump in diffusivity coefficient
             L[k0] = - brReff; D[k0] = 1 + iceReff + brReff; U[k0] = - iceReff;
           } else { // no bedrock; apply geothermal flux here
             // L[k0] = 0.0;  (note this is not an allocated location!) 
             D[k0] = 1.0 + 2.0 * iceR; U[k0] = - 2.0 * iceR;
-            rhs[k0] += 2.0 * dtTempAge * Ghf[i][j] / (rho_c_I * dz);
+            rhs[k0] += 2.0 * dtTempAge * Ghf[i][j] / (rho_c_I * grid.dzEQ);
           }
         }
       }
@@ -268,13 +270,12 @@ PetscErrorCode IceModel::temperatureStep() {
         if (allowAboveMelting == PETSC_TRUE) {
           Tnew[k] = x[k0 + k];
         } else {
-          const PetscScalar dz = grid.dzEQ;
-          const PetscScalar depth = H[i][j] - k * dz;
+          const PetscScalar depth = H[i][j] - grid.zlevelsEQ[k];
           const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
           if (x[k0 + k] > Tpmp) {
             Tnew[k] = Tpmp;
             PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
-            excessToFromBasalMeltLayer(rho_c_I, k * dz, &Texcess, &Hmeltnew);
+            excessToFromBasalMeltLayer(rho_c_I, grid.zlevelsEQ[k], grid.dzEQ, &Texcess, &Hmeltnew);
             // Texcess  will always come back zero here; ignor it
           } else {
             Tnew[k] = x[k0 + k];
@@ -298,9 +299,9 @@ PetscErrorCode IceModel::temperatureStep() {
           if (modMask(mask[i][j]) == MASK_FLOATING) {
              // when floating, only half a segment has had its temperature raised
              // above Tpmp
-             excessToFromBasalMeltLayer(rho_c_I/2, 0.0, &Texcess, &Hmeltnew);
+             excessToFromBasalMeltLayer(rho_c_I/2, 0.0, grid.dzEQ, &Texcess, &Hmeltnew);
           } else {
-             excessToFromBasalMeltLayer(rho_c_av, 0.0, &Texcess, &Hmeltnew);
+             excessToFromBasalMeltLayer(rho_c_av, 0.0, grid.dzEQ, &Texcess, &Hmeltnew);
           }
           Tnew[0] = Tpmp + Texcess;
           if (Tnew[0] > (Tpmp + 0.00001)) {
@@ -400,11 +401,11 @@ PetscErrorCode IceModel::temperatureStep() {
 
 //! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
 PetscErrorCode IceModel::excessToFromBasalMeltLayer(
-                PetscScalar rho_c, PetscScalar z,
+                const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
                 PetscScalar *Texcess, PetscScalar *Hmelt) {
 
   const PetscScalar darea = grid.p->dx * grid.p->dy;
-  const PetscScalar dvol = darea * grid.dzEQ;
+  const PetscScalar dvol = darea * dz;
   const PetscScalar dE = rho_c * (*Texcess) * dvol;
   const PetscScalar massmelted = dE / ice.latentHeat;
 
@@ -438,7 +439,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
         *Texcess = 0.0;
       } else { // only refreeze Hmelt thickness of water; update Texcess
         *Hmelt = 0.0;
-        const PetscScalar dTemp = ice.latentHeat * ice.rho * (*Hmelt) / (rho_c * grid.dzEQ);
+        const PetscScalar dTemp = ice.latentHeat * ice.rho * (*Hmelt) / (rho_c * dz);
         *Texcess += dTemp;
       }
     } 

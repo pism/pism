@@ -746,34 +746,12 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 }
 
 
-//! Read a saved PISM model state (for complete initialization of an evolution or diagnostic run).
-/*! 
-When initializing from a NetCDF input file, the input file determines 
-the number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.   
-The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" are overridden.  
- */
-PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
-  PetscErrorCode  ierr;
-  size_t      dim[5];
-  float       bdy[7];
-  double 	  bdy_time;
-  int         ncid, stat;
-  PetscInt    ignor;
-  PetscTruth  M_Set;
+//! When reading a saved PISM model state, warn the user if options <tt>-Mx,-My,-Mz,-Mbz</tt> have been ignored.
+PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
+  PetscErrorCode ierr;
+  PetscInt       ignor;
+  PetscTruth     M_Set;
 
-  if (grid.rank == 0) {
-    stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-
-  ierr = get_dimensions(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);
-
-  // grid.p->year = bdy[0] / secpera;
-  grid.p->year = bdy_time / secpera;
-  grid.p->Mx = dim[1];
-  grid.p->My = dim[2];
-  grid.p->Mz = dim[3];
-  grid.p->Mbz = dim[4];
-  // options read simply to warn user that they have been ignored
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
@@ -794,26 +772,69 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     ierr = verbPrintf(1,grid.com,
               "WARNING: user option -Mbz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
   }
+  return 0;
+}
+
+
+//! Read a saved PISM model state (for complete initialization of an evolution or diagnostic run).
+/*! 
+When initializing from a NetCDF input file, the input file determines 
+the number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.   
+The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" are overridden.  
+ */
+PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
+  PetscErrorCode  ierr;
+  size_t      dim[5];
+  float       bdy[7];
+  double 	  bdy_time;
+  int         ncid, stat;
+
+  if (grid.rank == 0) {
+    stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
+  //   this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);
+  // grid.p->year = bdy[0] / secpera;  // this was the float version; bdy_time is the double version
+  grid.p->year = bdy_time / secpera;
+  grid.p->Mx = dim[1];
+  grid.p->My = dim[2];
+  grid.p->Mz = dim[3];
+  grid.p->Mbz = dim[4];
   
+  float *zlevs, *zblevs;
+  zlevs = new float[grid.p->Mz];
+  zblevs = new float[grid.p->Mbz];
+  ierr = nct.get_vertical_dims(ncid, grid.p->Mz, grid.p->Mbz, zlevs, zblevs, grid.com); CHKERRQ(ierr);
+
+  // re-allocate and fill grid.zlevels & zblevels with read values
+  delete [] grid.zlevels;
+  delete [] grid.zblevels;
+  grid.zlevels = new PetscScalar[grid.p->Mz];
+  grid.zblevels = new PetscScalar[grid.p->Mbz];
+  for (PetscInt k = 0; k < grid.p->Mz; k++) {
+    grid.zlevels[k] = (PetscScalar) zlevs[k];
+  }
+  for (PetscInt k = 0; k < grid.p->Mbz; k++) {
+    grid.zblevels[k] = (PetscScalar) zblevs[k];
+  }
+  delete [] zlevs;  delete [] zblevs;  // done with these
+  
+  // set DA and create vecs; we have enough already to do so
+  ierr = warnUserOptionsIgnored(fname); CHKERRQ(ierr);  
   ierr = grid.createDA(); CHKERRQ(ierr);
+  // FIXME: note we *can* determine from the input file whether the hor. dims are truely periodic,
+  // but this has not been done; here we simply require it is not periodic
+  ierr = grid.rescale_using_zlevels(-bdy[1], -bdy[3], PETSC_FALSE); CHKERRQ(ierr);  // must go after createDA() ...
   ierr = createVecs(); CHKERRQ(ierr);
-
-  ierr = grid.rescale(-bdy[1], -bdy[3], bdy[6]); CHKERRQ(ierr);
-  // These lines remain only to confirm the use of the fields.  If we have a
-  // more flexible gridding capability, the information in the unused fields may
-  // be useful.
-  //   grid.p->Lx = -bdy[1]; // == bdy[2]
-  //   grid.p->Ly = -bdy[3]; // == bdy[4]
-  //   grid.p->Lbz = -bdy[5];
-  //   grid.p->Lz = bdy[6];
-  // note user setting of -Lx,-Ly,-Lz will overwrite these settings from file
-
+  
   // set IceModel::startYear, IceModel::endYear, grid.p->year, but respecting grid.p->year
   // which came from -if file, _unless_ -ys set by user
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
 
   // Time to compute what we need.
-  int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent
+  int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent; dim[0] is the number of t vals in file
   int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
   int cb[] = {1, grid.xm, grid.ym, grid.p->Mbz}; // Count local block: bed
 
@@ -824,29 +845,29 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
   // these are treated like 2-D constant quantities
-  ierr = get_local_var(&grid, ncid, "lon", NC_FLOAT, grid.da2, vLongitude, g2,
+  ierr = nct.get_local_var(&grid, ncid, "lon", NC_FLOAT, grid.da2, vLongitude, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "lat", NC_FLOAT, grid.da2, vLatitude, g2,
+  ierr = nct.get_local_var(&grid, ncid, "lat", NC_FLOAT, grid.da2, vLatitude, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D model quantities
-  ierr = get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, s, c, 3,
+  ierr = nct.get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, s, c, 3,
                        a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,
+  ierr = nct.get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "thk", NC_FLOAT, grid.da2, vH, g2,
+  ierr = nct.get_local_var(&grid, ncid, "thk", NC_FLOAT, grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "bwat", NC_FLOAT, grid.da2, vHmelt, g2,
+  ierr = nct.get_local_var(&grid, ncid, "bwat", NC_FLOAT, grid.da2, vHmelt, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "topg", NC_FLOAT, grid.da2, vbed, g2,
+  ierr = nct.get_local_var(&grid, ncid, "topg", NC_FLOAT, grid.da2, vbed, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "dbdt", NC_FLOAT, grid.da2, vuplift, g2,
+  ierr = nct.get_local_var(&grid, ncid, "dbdt", NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D climate quantities
-  ierr = get_local_var(&grid, ncid, "artm", NC_FLOAT, grid.da2, vTs, g2,
+  ierr = nct.get_local_var(&grid, ncid, "artm", NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "bheatflx", NC_FLOAT, grid.da2, vGhf, g2,
+  ierr = nct.get_local_var(&grid, ncid, "bheatflx", NC_FLOAT, grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
+  ierr = nct.get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
   ierr = T3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -1004,84 +1025,83 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
 }
 
 
-//! Find a 2D or 3D variable in a NetCDF and regrid it onto the current grid.
-/*! 
-We need to move a local vector from a coarse grid to a fine grid
-(there is no requirement that the `coarse' grid need actually be coarser than
-the `fine' grid).  Things are really ugly in any ordering other than the
-`natural' ordering, so we move local -> global -> natural with the coarse
-data.  We must have defined a weighting matrix which operates on this coarse
-natural vector to produce a fine natural vector.  Currently, we use
-tri-linear interpolation.  After applying the matrix, we move the fine vector
-back to a local vector: natural -> global -> local.  It is theoretically
-possible to make the matrix operate on vectors in the Petsc global ordering,
-but that seems like a mess.  In particular, since the matrix is not square,
-we cannot use DAGetMatrix() or the like.
+//! Manage regridding based on user options.  Call regrid_local_var() to do each selected variable.
+/*!
+For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from 
+the NetCDF file specified by <tt>-regrid</tt>.
+
+
+The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3 dimensional 
+quantities \c tau3, \c T3, \c Tb3.  This is consistent with one standard purpose of 
+regridding, which is to stick with current geometry through the downscaling procedure.  
+Most of the time the user should carefully specify which variables to regrid.
  */
 PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet;
   char regridVars[PETSC_MAX_PATH_LEN];
 
+  if (!hasSuffix(regridFile, ".nc")) {
+    SETERRQ(1,"regridding is only possible if the source file has NetCDF format and extension '.nc'");
+  }
+
+  ierr = verbPrintf(1,grid.com,
+          "WARNING: regrid_netCDF() CURRENTLY assumes the regrid file has evenly spaced vertical coordinate!\n");
+          CHKERRQ(ierr); 
+
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
                                PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
   if (regridVarsSet == PETSC_FALSE) {
-    // As a default, we only regrid the 3 dimensional quantities.  This
-    // is consistent with one standard purpose which is to stick with current
-    // geometry through the downscaling procedure.
     strcpy(regridVars, "TBe");
   }
+  ierr = verbPrintf(2,grid.com, "regridding variables with single character flags `%s' from NetCDF file `%s'", 
+                    regridVars,regridFile); CHKERRQ(ierr);
 
-  if (hasSuffix(regridFile, ".nc")) {
-    ierr = verbPrintf(2,grid.com, "regridding variable list `%s' from NetCDF file `%s'", 
-             regridVars,regridFile); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"unable to regrid non-NetCDF file");
-  }
-
+  // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
   size_t dim[5];
   float bdy[7];
   double bdy_time;
   int ncid, stat;
 
+  // create "local interpolation context" from dimensions, limits, and lengths extracted from regridFile,
+  //   and from information about the part of the grid owned by this processor
   if (grid.rank == 0) {
     stat = nc_open(regridFile, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-
-  ierr = get_dimensions(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);  // see nc_util.cc
-
-  // Get Local Interpolation Context
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  // from regridFile: Mz = dim[3], Mbz = dim[4]  
+  float *zlevs, *zblevs;
+  zlevs = new float[dim[3]];
+  zblevs = new float[dim[4]];
+  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], zlevs, zblevs, grid.com); CHKERRQ(ierr);
   LocalInterpCtx lic;
-  ierr = get_LocalInterpCtx(ncid, dim, bdy, bdy_time, lic, grid); CHKERRQ(ierr);  // see nc_util.cc
+  ierr = nct.form_LocalInterpCtx(ncid, dim, bdy, bdy_time, zlevs, zblevs, lic, grid); CHKERRQ(ierr);  // see nc_util.cc
+  delete [] zlevs;  delete [] zblevs;
 
-  ierr = regrid_local_var(regridVars, 'h', "usurf", 2, lic, grid, grid.da2, vh, g2);  // see nc_util.cc
+  // do each variable
+  ierr = nct.regrid_local_var(regridVars, 'h', "usurf", 2, lic, grid, grid.da2, vh, g2);  // see nc_util.cc
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'H', "thk", 2, lic, grid, grid.da2, vH, g2);
+  ierr = nct.regrid_local_var(regridVars, 'H', "thk", 2, lic, grid, grid.da2, vH, g2);
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'L', "bwat", 2, lic, grid, grid.da2, vHmelt, g2);
+  ierr = nct.regrid_local_var(regridVars, 'L', "bwat", 2, lic, grid, grid.da2, vHmelt, g2);
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
+  ierr = nct.regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
   CHKERRQ(ierr);
-  ierr = regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
+  ierr = nct.regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
   CHKERRQ(ierr);
-
-  ierr = T3.regridVecNC(regridVars, 'T', 3, lic);  CHKERRQ(ierr);
-  ierr = Tb3.regridVecNC(regridVars, 'B', 4, lic);  CHKERRQ(ierr);
+  ierr = T3.regridVecNC(  regridVars, 'T', 3, lic);  CHKERRQ(ierr);
   ierr = tau3.regridVecNC(regridVars, 'e', 3, lic);  CHKERRQ(ierr);
+  ierr = Tb3.regridVecNC( regridVars, 'B', 4, lic);  CHKERRQ(ierr);
 
-  ierr = PetscFree(lic.a); CHKERRQ(ierr);
-  
+  ierr = PetscFree(lic.zlevs); CHKERRQ(ierr);  
+  ierr = PetscFree(lic.zblevs); CHKERRQ(ierr);  
+  ierr = PetscFree(lic.a); CHKERRQ(ierr);  
   if (grid.rank == 0) {
-    // If we want history from the regridded file, we can get it here and broadcast it.
-    // stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
-    // CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
   ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);
-
   return 0;
 }
 

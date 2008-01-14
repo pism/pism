@@ -31,11 +31,11 @@
     size_t zero = 0;
     stat = nc_put_var1_double(ncid, t_id, &zero, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    ierr = put_dimension_regular(ncid, x_id, x_len, -grid.p->Lx, grid.p->dx); CHKERRQ(ierr);
-    ierr = put_dimension_regular(ncid, y_id, y_len, -grid.p->Ly, grid.p->dy); CHKERRQ(ierr);
+    ierr = nct.put_dimension_regular(ncid, x_id, x_len, -grid.p->Lx, grid.p->dx); CHKERRQ(ierr);
+    ierr = nct.put_dimension_regular(ncid, y_id, y_len, -grid.p->Ly, grid.p->dy); CHKERRQ(ierr);
     
-    ierr = put_dimension(ncid, z_id, z_len, grid.zlevels); CHKERRQ(ierr);
-    ierr = put_dimension(ncid, zb_id, zb_len, grid.zblevels); CHKERRQ(ierr);
+    ierr = nct.put_dimension(ncid, z_id, z_len, grid.zlevels); CHKERRQ(ierr);
+    ierr = nct.put_dimension(ncid, zb_id, zb_len, grid.zblevels); CHKERRQ(ierr);
 
     stat = nc_put_att_double(ncid, polar_stereographic_id, "straight_vertical_longitude_from_pole",
                             NC_DOUBLE, 1, &psParams.svlfp); CHKERRQ(nc_check(stat));
@@ -46,47 +46,47 @@
   }
 
   // these are treated like 2-D constant quantities
-  ierr = put_local_var(&grid, ncid, lon_id, NC_FLOAT, grid.da2, vLongitude, g2,
+  ierr = nct.put_local_var(&grid, ncid, lon_id, NC_FLOAT, grid.da2, vLongitude, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, lat_id, NC_FLOAT, grid.da2, vLatitude, g2,
+  ierr = nct.put_local_var(&grid, ncid, lat_id, NC_FLOAT, grid.da2, vLatitude, g2,
                        &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D model quantities
-  ierr = put_local_var(&grid, ncid, mask_id, NC_BYTE, grid.da2, vMask, g2,
+  ierr = nct.put_local_var(&grid, ncid, mask_id, NC_BYTE, grid.da2, vMask, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, thk_id, NC_FLOAT, grid.da2, vH, g2,
+  ierr = nct.put_local_var(&grid, ncid, thk_id, NC_FLOAT, grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, bwat_id, NC_FLOAT, grid.da2, vHmelt, g2,
+  ierr = nct.put_local_var(&grid, ncid, bwat_id, NC_FLOAT, grid.da2, vHmelt, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, topg_id, NC_FLOAT, grid.da2, vbed, g2,
+  ierr = nct.put_local_var(&grid, ncid, topg_id, NC_FLOAT, grid.da2, vbed, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, dbdt_id, NC_FLOAT, grid.da2, vuplift, g2,
+  ierr = nct.put_local_var(&grid, ncid, dbdt_id, NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // 3-D model quantities
   ierr = T3.setVaridNC(temp_id); CHKERRQ(ierr);
   ierr = T3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = Tb3.setVaridNC(litho_temp_id); CHKERRQ(ierr);
   ierr = Tb3.putVecNC(ncid, s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-//  ierr = put_local_var(&grid, ncid, litho_temp_id, NC_FLOAT, grid.da3b, Tb3.v, g3b,
+//  ierr = nct.put_local_var(&grid, ncid, litho_temp_id, NC_FLOAT, grid.da3b, Tb3.v, g3b,
 //                       s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = tau3.setVaridNC(age_id); CHKERRQ(ierr);
   ierr = tau3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D climate quantities
-  ierr = put_local_var(&grid, ncid, artm_id, NC_FLOAT, grid.da2, vTs, g2,
+  ierr = nct.put_local_var(&grid, ncid, artm_id, NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, bheatflx_id, NC_FLOAT, grid.da2, vGhf, g2,
+  ierr = nct.put_local_var(&grid, ncid, bheatflx_id, NC_FLOAT, grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, acab_id, NC_FLOAT, grid.da2, vAccum, g2,
+  ierr = nct.put_local_var(&grid, ncid, acab_id, NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 2-D diagnostic quantities
   // note h is diagnostic because it is recomputed by h=H+b at each time step
   // these are not written in MKS units because they are intended to be viewed,
   // not read by programs; IS THIS THE RIGHT CHOICE?
-  ierr = put_local_var(&grid, ncid, usurf_id, NC_FLOAT, grid.da2, vh, g2,
+  ierr = nct.put_local_var(&grid, ncid, usurf_id, NC_FLOAT, grid.da2, vh, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = VecCopy(vdHdt,vWork2d[0]); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, dHdt_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+  ierr = nct.put_local_var(&grid, ncid, dHdt_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute cbar = sqrt(ubar^2 + vbar^2) and save it
   ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
@@ -106,11 +106,11 @@
   }
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, cbar_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+  ierr = nct.put_local_var(&grid, ncid, cbar_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute cflx = cbar .* thk and save it
   ierr = VecPointwiseMult(vWork2d[1], vWork2d[0], vH); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
+  ierr = nct.put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
@@ -131,13 +131,13 @@
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, csurf_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
+  ierr = nct.put_local_var(&grid, ncid, csurf_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute wsurf, the surface values of vertical velocity
   ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   ierr = w3.getSurfaceValuesVec2d(vWork2d[0], vH); CHKERRQ(ierr);
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
-  ierr = put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+  ierr = nct.put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 

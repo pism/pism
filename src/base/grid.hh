@@ -70,6 +70,8 @@ public:
                          const PetscScalar lz);
   PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
                          const PetscScalar lz, const PetscTruth truelyPeriodic);
+  PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
+                                       const PetscTruth truelyPeriodic);
 
   bool        equalVertSpacing();
   PetscInt    kBelowHeight(const PetscScalar height);
@@ -87,8 +89,9 @@ public:
   PetscScalar dzbEQ, *zblevelsEQ;  //  "    "      "    "  [-p->Lbz,0]
 
 private:
-  PetscTruth createDA_done, equally_spaced;
+  PetscTruth      createDA_done, equally_spaced;
   PetscErrorCode  setLevelsFromLsMs();
+  bool            isIncreasing(const PetscInt len, PetscScalar *vals);
 };
 
 #endif	/* __grid_hh */
