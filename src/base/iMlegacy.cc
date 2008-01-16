@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -344,19 +344,19 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   // is put into an array on proc 0 then vzero is used to get the indices which
   // put the array into the scratch global Vec g2 and then the usual DA-based
   // global (g2) to local (vAccum, etc.) is done
-  ierr = ncVarToDAVec(ncid, v_lon, grid.da2, vLongitude, g2, vzero);   CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_lat, grid.da2, vLatitude, g2, vzero);   CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_accum, grid.da2, vAccum, g2, vzero);   CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_h, grid.da2, vh, g2, vzero);       CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_H, grid.da2, vH, g2, vzero);       CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_bed, grid.da2, vbed, g2, vzero);     CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_T, grid.da2, vTs, g2, vzero);      CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_ghf, grid.da2, vGhf, g2, vzero);     CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_uplift, grid.da2, vuplift, g2, vzero);     CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_lon, grid.da2, vLongitude, g2, vzero);   CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_lat, grid.da2, vLatitude, g2, vzero);   CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_accum, grid.da2, vAccum, g2, vzero);   CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_h, grid.da2, vh, g2, vzero);       CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_H, grid.da2, vH, g2, vzero);       CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_bed, grid.da2, vbed, g2, vzero);     CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_T, grid.da2, vTs, g2, vzero);      CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_ghf, grid.da2, vGhf, g2, vzero);     CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_uplift, grid.da2, vuplift, g2, vzero);     CHKERRQ(ierr);
 
   // balvel is only locally used, so create and destroy here
   ierr = VecDuplicate(vh,&vbalvel); CHKERRQ(ierr);
-  ierr = ncVarToDAVec(ncid, v_balvel, grid.da2, vbalvel, g2, vzero);     CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_balvel, grid.da2, vbalvel, g2, vzero);     CHKERRQ(ierr);
   
   // for now, make sure "gl" comes in as integers
   MaskInterp legmasktool;
@@ -366,7 +366,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF_legacyAnt(const char *fname) {
   legmasktool.allowed_levels[1] = 1;
   legmasktool.allowed_levels[2] = 2;
   legmasktool.allowed_levels[3] = 3;
-  ierr = ncVarToDAVec(ncid, v_gl, grid.da2, vMask, g2, vzero,legmasktool);    CHKERRQ(ierr);
+  ierr = nct.var_to_da_vec(grid, ncid, v_gl, grid.da2, vMask, g2, vzero,legmasktool);    CHKERRQ(ierr);
 
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
   ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);

@@ -36,12 +36,6 @@ struct titleNname {
 };
 
 
-struct MaskInterp {
-  int number_allowed;
-  int allowed_levels[50]; // must be strictly increasing
-};
-
-
 struct PolarStereoParams {
   // these are "double" and not "float" ultimately because of how ncgen works
   double svlfp, // straight_vertical_longitude_from_pole; defaults to 0

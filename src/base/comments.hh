@@ -107,8 +107,7 @@
 
 /*! \fn PetscErrorCode IceModel::temperatureStep()
     \brief Takes a semi-implicit time-step for the temperature equation.
-    
-@cond CONTINUUM
+
 In summary, the conservation of energy equation is
     \f[ \rho c_p \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f] 
 where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
@@ -116,16 +115,22 @@ of the full three-dimensional conservation of energy.  Note \f$dT/dt\f$ stands f
 derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
 strain heating.
-@endcond
 
-@cond NUMERIC
 In summary, the numerical method is first-order upwind for advection and centered-differences with
-semi-implicitness for the vertical conduction term.  Note that we work from the bottom 
+semi-implicitness for the vertical conduction term.  We work from the bottom 
 of the column upward in building the system to solve (in the semi-implicit time-stepping scheme).
-Note that the excess energy above pressure melting is converted to melt-water, and that a fraction 
+The excess energy above pressure melting is converted to melt-water, and that a fraction 
 of this melt water is transported to the base according to the scheme in excessToFromBasalMeltLayer().
-@endcond
 
+The method uses equally-spaced calculation but the methods getValColumn(), setValColumn() interpolate 
+back and forth from this equally-spaced calculational grid to the (usually) non-equally space storage 
+grid.
+
+In this procedure four scalar fields are modified: vHmelt, vbasalMeltRate, Tb3, and Tnew3.
+But vHmelt, vbasalMeltRate and Tb3 will never need to communicate ghosted values (i.e. horizontal 
+stencil neighbors.  The ghosted values for T3 are updated from the values in Tnew3 in the
+communication done by temperatureAgeStep().
+ 
 @cond REFMAN
 Here is a more complete discussion and derivation.
 

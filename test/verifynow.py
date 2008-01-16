@@ -32,6 +32,8 @@ def verify(test):
       else:
          predo = ''
       testdo = predo + pref + 'pismv -test ' + test[0] + gridopts + test[4]
+      if (cheb == 1):
+        testdo = testdo + ' -cheb'
       print ' trying \"' + testdo + '\"'
       testdo = testdo + ' -verbose 1'  # only need final errors anyway
       try:
@@ -115,14 +117,16 @@ alltests = [
 ##   -n for number of processors
 ##   -p for prefix on pismv executable
 ##   -t for which tests to use
+##   -c to add "-cheb"
 nproc = NP  ## default; will not use 'mpiexec' if equal to one
 levs = LEVELS
 mpi = MPIDO
 pref = PREFIX
 letters = TESTS
+cheb = 0
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:m:n:l:t:",
-                             ["prefix=", "mpido=", "nproc=", "levels=", "tests="])
+  opts, args = getopt.getopt(sys.argv[1:], "p:m:n:l:t:c:",
+                             ["prefix=", "mpido=", "nproc=", "levels=", "tests=", "cheb="])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
       pref = arg
@@ -134,6 +138,8 @@ try:
       levs = string.atoi(arg)
     elif opt in ("-t", "--tests"):
       letters = arg
+    elif opt in ("-c", "--cheb"):
+      cheb = 1
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)

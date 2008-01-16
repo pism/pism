@@ -441,7 +441,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
 
 //! Computes the right-hand side of the linear problem for the SSA equations.
 /*! 
-The right side of the SSA equations is just
+The right side of the SSA equations is just the driving stress term
    \f[ - \rho g H \nabla h \f]
 because, in particular, the basal stress is put on the left side of the system.  
 (See comment for assembleSSAMatrix().)  
@@ -456,10 +456,12 @@ equations
 and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged horizontal
 velocity is already known for these points because it was computed (on the staggered
 grid) using the SIA.
+
+Regarding the first argument, if \c surfGradInward == \c true then we differentiate
+the surface \f$h(x,y)\f$ inward from edge of grid at the edge of the grid.  This allows 
+certain to make sense on a period grid.  This applies to Test I and Test J, in particular.
  */
 PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
-  // surfGradInward == true then differentiate h(x,y) inward from edge of grid,
-  // so that certain solutions make sense on period grid; Test I, for now
   const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
   const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
   PetscErrorCode  ierr;
@@ -530,7 +532,8 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
 Since the parallel layout of the vector \c x in the \c KSP representation of the 
 linear SSA system does not in general have anything to do with the \c DA-based
 vectors, for the rest of \c IceModel, we must scatter the entire vector to all 
-processors.
+processors.  In particular, this procedure runs once for each outer iteration
+in order to put the velocities where needed to compute effective viscosity.
  */
 PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   const PetscInt  M = 2 * grid.p->My;
@@ -573,10 +576,28 @@ viscosity is computed by computeEffectiveViscosity() and then the linear system 
 set up and solved.
 
 This procedure creates a PETSC \c KSP, it calls assembleSSAMatrix() and assembleSSARhs() 
-to store the linear system in the \c KSP, and calls the PETSc procedure KSPSolve() to solve
-the linear system.  Solving the linear system is also a loop, an iteration, but it occurs
+to store the linear system in the \c KSP, and then calls the PETSc procedure KSPSolve() to solve
+the linear system.  
+
+Solving the linear system is also a loop, an iteration, but it occurs
 inside KSPSolve().  This inner loop is controlled by PETSc but the user can set the option 
 <tt>-ksp_rtol</tt>, in particular, and that tolerance controls when the inner loop terminates.
+
+Note that <tt>-ksp_type</tt> can be used to choose the \c KSP.  This will set which type of 
+linear iterative method is used.  The KSP is important because the eigenvalues of the linearized
+SSA are not well understood, but they determine the convergence of this linear, inner, iteration.
+The default KSP is GMRES(30).
+
+Note that <tt>-ksp_pc</tt> will set which preconditioner to use; the default is ILU.  A well-chosen
+preconditioner can put the eigenvalues in the right place so that the KSP can converge quickly.  The 
+preconditioner is also important because it will behave differently on different numbers of processors.
+If the user wants the results of SSA calculations to be independent of the number of processors, then
+<tt>-ksp_pc none</tt> should be used.
+
+If you want to test different KSP methods, it may be helpful to see how many iterations were 
+necessary.  Use <tt>-ksp_monitor</tt> or <tt>-d k</tt>.  Initial testing implies that CGS 
+takes roughly half the iterations of GMRES(30), but is not significantly faster because the iterations
+are each roughly twice as slow.  Furthermore, ILU and BJACOBI seem roughly equivalent as preconditioners.
 
 The outer loop terminates when the effective viscosity is no longer changing much, according
 to the tolerance set by the option <tt>-ssa_rtol</tt>.  (The outer loop also terminates
@@ -585,6 +606,10 @@ when a maximum number of iterations is exceeded.)
 In truth there is an outer outer loop (over index \c l).  This one manages an attempt to
 over-regularize the effective viscosity so that the nonlinear iteration (the "outer" loop 
 over \c k) has a chance to converge.
+
+  // We need to save the velocity from the last time step since we may have to
+  // restart the iteration with larger values of epsilon.
+
  */
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
@@ -595,8 +620,8 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
 }
 
 
+//! Call this one directly if control over allocation of vNu[2] is needed (e.g. test J); otherwise use velocitySSA(PetscInt*).
 PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
-  // call this one directly if control over alloc of vNu[2] is needed (e.g. test J)
   PetscErrorCode ierr;
   KSP ksp = SSAKSP;
   Mat A = SSAStiffnessMatrix;
@@ -607,8 +632,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
-  // We need to save the velocity from the last time step since we may have to
-  // restart the iteration with larger values of epsilon.
   ierr = VecCopy(vubarSSA, vubarOld); CHKERRQ(ierr);
   ierr = VecCopy(vvbarSSA, vvbarOld); CHKERRQ(ierr);
   epsilon = ssaEpsilon;
@@ -635,16 +658,10 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-      /* -ksp_type will set it which type of linear iterative method is used;
-       * it defaults to GMRES(30)
-       * -ksp_pc will set the preconditioner; defaults to ILU
-       * If you want to test different KSP methods, it may be helpful to
-       * see how many iterations were necessary. Initial testing implies
-       * that CGS takes roughly half the iterations of GMRES(30), but is 
-       * not significantly faster. Furthermore, ILU and BJACOBI seem 
-       * roughly equivalent. */
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
+
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "S:%d,%d: ", its, reason); CHKERRQ(ierr);
@@ -693,7 +710,7 @@ updates the three-dimensional horizontal velocities \f$u\f$ and \f$v\f$.  (Note 
 velocity field is needed, for example, so that the temperature equation can include advection.
 Basal velocities also get updated.
 
-Here is where the flag doSuperpose controlled by option <tt>-super</tt>  is relevant.  
+Here is where the flag doSuperpose controlled by option <tt>-super</tt>  applies.  
 If doSuperpose is true then the just-computed velocity \f$v\f$ from the SSA is added to a multiple of
 the stored velocity \f$u\f$ from the SIA computation:
    \f[U = f(|v|)\, u + v.\f]

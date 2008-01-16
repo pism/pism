@@ -237,18 +237,15 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   char inFile[PETSC_MAX_PATH_LEN];
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet);
-  CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &inFileSet);  CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
-                               PETSC_MAX_PATH_LEN, &bootstrapSet);
-  CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &bootstrapSet);  CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif_legacy", inFile,
-                               PETSC_MAX_PATH_LEN, &bootstrapSetLegacy);
-  CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &bootstrapSetLegacy);  CHKERRQ(ierr);
   
   if (bootstrapSet == PETSC_TRUE) {
     ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
-  } else if(bootstrapSetLegacy == PETSC_TRUE) {
+  } else if (bootstrapSetLegacy == PETSC_TRUE) {
     ierr = bootstrapFromFile_netCDF_legacyAnt(inFile); CHKERRQ(ierr);
   } else if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);
@@ -338,12 +335,13 @@ PetscErrorCode IceModel::afterInitHook() {
            grid.p->dx/1000.0,grid.p->dy/1000.0); CHKERRQ(ierr);
     const PetscInt Mz=grid.p->Mz, Mbz = grid.p->Mbz;
     ierr = verbPrintf(2,grid.com, 
-           "  [vertical spacing in ice    : %8.2f m < dz < %8.2f m]\n",
+           "  [vertical spacing in ice not equal;  %8.2f m < dz < %8.2f m]\n",
            grid.zlevels[1]-grid.zlevels[0],grid.zlevels[Mz-1]-grid.zlevels[Mz-2]); CHKERRQ(ierr);
-    // FIXME: what should be assumed about spacing in bedrock?
-    ierr = verbPrintf(2,grid.com, 
-           "  [vertical spacing in bedrock: %8.2f m < dz < %8.2f m]\n",
-           grid.zblevels[1]-grid.zblevels[0],grid.zblevels[Mbz-1]-grid.zblevels[Mbz-2]); CHKERRQ(ierr);
+    if (grid.p->Mbz > 1) {
+      ierr = verbPrintf(2,grid.com, 
+         "  [vertical spacing in bedrock: dz = %8.2f m for bottom layer and dz = %8.2f m for top layer]\n",
+         grid.zblevels[1]-grid.zblevels[0],grid.zblevels[Mbz-1]-grid.zblevels[Mbz-2]); CHKERRQ(ierr);
+    }
   }
 
   // if -verbose then actually list all of IceParam
@@ -376,7 +374,7 @@ int IceModel::endOfTimeStepHook() {
   // SIGUSR1 makes PISM save state under filename based on the current year
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%f.nc", grid.p->year);
+    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%5.3f.nc", grid.p->year);
     verbPrintf(1, grid.com, "Caught signal SIGUSR1: Writing intermediate file `%s'.\n",
                file_name);
     pism_signal = 0;

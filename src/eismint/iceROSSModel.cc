@@ -202,17 +202,17 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
     masklevs.allowed_levels[0] = accMiss;
     masklevs.allowed_levels[1] = 0;
     masklevs.allowed_levels[2] = 1;
-    ierr = ncVarToDAVec(ncid, accid, grid.da2, obsAccurate, myg2, vzero, masklevs); CHKERRQ(ierr);
+    ierr = nct.var_to_da_vec(grid, ncid, accid, grid.da2, obsAccurate, myg2, vzero, masklevs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"accur does not exist but need to call ncVarToDAVec on it");
   }
   if (magExists) {
-    ierr = ncVarToDAVec(ncid, magid, grid.da2, obsMagnitude, myg2, vzero); CHKERRQ(ierr);
+    ierr = nct.var_to_da_vec(grid, ncid, magid, grid.da2, obsMagnitude, myg2, vzero); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"mag does not exist but need to call ncVarToDAVec on it");
   }
   if (aziExists) {
-    ierr = ncVarToDAVec(ncid, aziid, grid.da2, obsAzimuth, myg2, vzero); CHKERRQ(ierr);
+    ierr = nct.var_to_da_vec(grid, ncid, aziid, grid.da2, obsAzimuth, myg2, vzero); CHKERRQ(ierr);
   } else {
     SETERRQ(3,"azi does not exist but need to call ncVarToDAVec on it");
   }

@@ -219,8 +219,16 @@ PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscI
 //! Return value of scalar quantity at level z (m) above base of ice (by interpolation).
 PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const PetscScalar z) {
   // use linear interpolation
-  checkHaveArray();
-  isLegalLevel(z);
+  if (checkHaveArray() != 0) {
+    PetscPrintf(PETSC_COMM_SELF, 
+       "IceModelVec3 getValZ(): array was not allocated (so says IceModelVec::checkHaveArray())\n");
+    PetscEnd();
+  }
+  if (isLegalLevel(z) != 0) {
+    PetscPrintf(PETSC_COMM_SELF, 
+       "IceModelVec3 getValZ(): level was not equal (so says isLegalLevel())\n");
+    PetscEnd();
+  }
   PetscScalar ***arr = (PetscScalar***) array;
   if (z >= (grid->p)->Lz)
     return arr[i][j][(grid->p)->Mz - 1];

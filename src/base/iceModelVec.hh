@@ -134,6 +134,11 @@ public:
   PetscErrorCode  setToConstantColumn(const PetscInt i, const PetscInt j,
                                       const PetscScalar c);
   PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsOUT);
+
+  PetscErrorCode  setValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+                               PetscScalar *levelsIN, PetscScalar *valsIN);
+  PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+                               PetscScalar *levelsIN, PetscScalar *valsOUT);
 };
 
 

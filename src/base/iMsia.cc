@@ -215,13 +215,20 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           const PetscInt      ks = grid.kBelowHeight(thickness);  // does validity check for thickness
 
+/*
+if ((i == id) && (j == jd)) {
+  ierr = verbPrintf(1,grid.com, 
+     "  [[at (id,jd)=(%d,%d) staggered %d:  ks = %d, zlevels[ks] = %6.2f, [ks+1] = %6.2f, H = %6.2f]]\n",
+     id,jd,o,ks,grid.zlevels[ks],grid.zlevels[ks+1],thickness); CHKERRQ(ierr);
+}
+*/
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
-            const PetscScalar   s = grid.zlevels[k];
-            const PetscScalar   pressure = ice.rho * grav * (thickness - s);
+//            const PetscScalar   s = grid.zlevels[k];
+            const PetscScalar   pressure = ice.rho * grav * (thickness - grid.zlevels[k]);
 
             // apply flow law; delta[] is on staggered grid so need two neighbors from reg 
             // grid to evaluate T and grain size
@@ -236,25 +243,28 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             if (k>0) { // trapezoid rule for I[k] and K[k]
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
               I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
-              K[k] = K[k-1] + 0.5 * dz * ((s-dz)*delta[k-1] + s*delta[k]);
-              J[k] = s * I[k] - K[k];
+//              K[k] = K[k-1] + 0.5 * dz * ((s-dz)*delta[k-1] + s*delta[k]);
+              K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1] + grid.zlevels[k] * delta[k]);
+//              J[k] = s * I[k] - K[k];
+              J[k] = grid.zlevels[k] * I[k] - K[k];
             }
           }
           for (PetscInt k=ks+1; k<grid.p->Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
-            J[k] = k * (grid.zlevels[k] - grid.zlevels[k-1]) * I[ks]; // = J[ks];
+//            J[k] = k * (grid.zlevels[k] - grid.zlevels[k-1]) * I[ks]; // = J[ks];  SURELY WRONG!
+            J[k] = grid.zlevels[k] * I[ks]; //???
           }  
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-          const PetscScalar  dzABOVEks = (ks+1 < grid.p->Mz)
-                                         ? grid.zlevels[ks+1] - grid.zlevels[ks]
-                                         : grid.zlevels[grid.p->Mz-1] - grid.zlevels[grid.p->Mz-2];
-          const PetscScalar  Dfoffset = J[ks] + (thickness - ks * dzABOVEks) * I[ks];
+//          const PetscScalar  dzABOVEks = (ks+1 < grid.p->Mz)
+//                                         ? grid.zlevels[ks+1] - grid.zlevels[ks]
+//                                         : grid.zlevels[grid.p->Mz-1] - grid.zlevels[grid.p->Mz-2];
+//          const PetscScalar  Dfoffset = J[ks] + (thickness - ks * dzABOVEks) * I[ks];
+          const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
 
           // vertically-averaged velocity; note uvbar[0][i][j] is  u  at right staggered
           // point (i+1/2,j) but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
-          // here we use stale (old) diffusivity if faststep
           uvbar[o][i][j] = - Dfoffset * slope / thickness;
          
           ierr = Istag3[o].setValColumn(i,j,grid.p->Mz,grid.zlevels,I); CHKERRQ(ierr);
@@ -419,8 +429,7 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
   PetscErrorCode  ierr;
   PetscScalar **H;
 
-  PetscScalar *izz, *Sigmareg, *SigmaEAST, *SigmaWEST, *SigmaNORTH, *SigmaSOUTH;
-  izz = grid.zlevels;
+  PetscScalar *Sigmareg, *SigmaEAST, *SigmaWEST, *SigmaNORTH, *SigmaSOUTH;
   Sigmareg = new PetscScalar[grid.p->Mz];
   SigmaEAST = new PetscScalar[grid.p->Mz];
   SigmaWEST = new PetscScalar[grid.p->Mz];
@@ -437,17 +446,17 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
       if (H[i][j] > 0.0) {
         // horizontally average Sigma onto regular grid
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        ierr = Sigmastag3[0].getValColumn(i,j,grid.p->Mz,izz,SigmaEAST); CHKERRQ(ierr);
-        ierr = Sigmastag3[0].getValColumn(i-1,j,grid.p->Mz,izz,SigmaWEST); CHKERRQ(ierr);
-        ierr = Sigmastag3[1].getValColumn(i,j,grid.p->Mz,izz,SigmaNORTH); CHKERRQ(ierr);
-        ierr = Sigmastag3[1].getValColumn(i,j-1,grid.p->Mz,izz,SigmaSOUTH); CHKERRQ(ierr);
+        ierr = Sigmastag3[0].getValColumn(i,j,grid.p->Mz,grid.zlevels,SigmaEAST); CHKERRQ(ierr);
+        ierr = Sigmastag3[0].getValColumn(i-1,j,grid.p->Mz,grid.zlevels,SigmaWEST); CHKERRQ(ierr);
+        ierr = Sigmastag3[1].getValColumn(i,j,grid.p->Mz,grid.zlevels,SigmaNORTH); CHKERRQ(ierr);
+        ierr = Sigmastag3[1].getValColumn(i,j-1,grid.p->Mz,grid.zlevels,SigmaSOUTH); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; ++k) {
           Sigmareg[k] = 0.25 * (SigmaEAST[k] + SigmaWEST[k] + SigmaNORTH[k] + SigmaSOUTH[k]);
         }
         for (PetscInt k = ks+1; k < grid.p->Mz; ++k) {
           Sigmareg[k] = 0.0;
         }
-        ierr = Sigma3.setValColumn(i,j,grid.p->Mz,izz,Sigmareg); CHKERRQ(ierr);
+        ierr = Sigma3.setValColumn(i,j,grid.p->Mz,grid.zlevels,Sigmareg); CHKERRQ(ierr);
       } else { // zero thickness case
         ierr = Sigma3.setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
       }
@@ -460,7 +469,6 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
   
   delete [] Sigmareg;
   delete [] SigmaEAST;  delete [] SigmaWEST;  delete [] SigmaNORTH;  delete [] SigmaSOUTH;
-
   return 0;
 }
 
@@ -533,7 +541,6 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
 
   delete [] u;  delete [] v;
   delete [] IEAST;  delete [] IWEST;  delete [] INORTH;  delete [] ISOUTH;  
-
   return 0;
 }
 

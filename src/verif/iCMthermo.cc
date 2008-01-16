@@ -294,16 +294,10 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
   ierr = u3.beginGhostComm(); CHKERRQ(ierr);
   ierr = v3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = w3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = Sigma3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = SigmaComp3.beginGhostComm(); CHKERRQ(ierr);
 
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
   ierr = u3.endGhostComm(); CHKERRQ(ierr);
   ierr = v3.endGhostComm(); CHKERRQ(ierr);
-  ierr = w3.endGhostComm(); CHKERRQ(ierr);
-  ierr = Sigma3.endGhostComm(); CHKERRQ(ierr);
-  ierr = SigmaComp3.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -640,6 +634,8 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
         }
         const PetscScalar uex = (xx/r) * radialUex;
         const PetscScalar vex = (yy/r) * radialUex;
+        // note that because getValZ does linear interpolation and H[i][j] is not exactly at
+        // a grid point, this causes nonzero errors even with option -eo
         const PetscScalar Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H[i][j]) - uex)
                                       + PetscSqr(v3.getValZ(i,j,H[i][j]) - vex));
         maxUerr = PetscMax(maxUerr,Uerr);

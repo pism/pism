@@ -56,8 +56,8 @@ IceGrid::IceGrid(MPI_Comm c,
   zlevelsEQ = new PetscScalar[p->Mz];
   zblevelsEQ = new PetscScalar[p->Mbz];
 
+  spacing_type = 1;
   setLevelsFromLsMs();
-  equally_spaced = PETSC_TRUE;
 }
 
 
@@ -86,36 +86,102 @@ IceGrid::~IceGrid() {
 }
 
 
-PetscErrorCode  IceGrid::setLevelsFromLsMs() {
-
-  // note lengths of these arrays can change at a rescale
-  delete [] zlevels;
-  delete [] zblevels;
-  delete [] zlevelsEQ;
-  delete [] zblevelsEQ;
-  zlevels = new PetscScalar[p->Mz];
-  zblevels = new PetscScalar[p->Mbz];
-  zlevelsEQ = new PetscScalar[p->Mz];
-  zblevelsEQ = new PetscScalar[p->Mbz];
+PetscErrorCode  IceGrid::setEqualLevels() {
 
   dzEQ = p->Lz / (p->Mz - 1);
-  dzbEQ = p->Lbz / (p->Mbz - 1);
-
-// EQUAL:
+  if (p->Mbz > 1) {
+    dzbEQ = p->Lbz / (p->Mbz - 1);
+  } else {
+    dzbEQ = dzEQ;  // dzbEQ might as well have this value; see also temperatureStep()
+  }
+  delete [] zlevelsEQ;
+  delete [] zblevelsEQ;
+  zlevelsEQ = new PetscScalar[p->Mz];
+  zblevelsEQ = new PetscScalar[p->Mbz];
   for (PetscInt k=0; k < p->Mz; k++) {
     zlevelsEQ[k] = dzEQ * ((PetscScalar) k);
-    zlevels[k] = zlevelsEQ[k];
   }
   for (PetscInt kb=0; kb < p->Mbz; kb++) {
     zblevelsEQ[kb] = - p->Lbz + dzbEQ * ((PetscScalar) kb);
-    zblevels[kb] = zblevelsEQ[kb];
   }
   return 0;
 }
 
 
+PetscErrorCode  IceGrid::setLevelsFromLsMs() {
+  PetscErrorCode ierr;
+  
+  if ((spacing_type == 0) || (spacing_type > 2)) {
+    SETERRQ(1,"invalid spacing_type\n");
+  }
+  if (p->Mz < 2) {
+    SETERRQ(2,"p->Mz must be at least 2 for setLevelFromLsMs to work\n");
+  }
+
+  // note lengths of these arrays can change at a rescale
+  delete [] zlevels;
+  delete [] zblevels;
+  zlevels = new PetscScalar[p->Mz];
+  zblevels = new PetscScalar[p->Mbz];
+
+  // always record equal spacing for given Lz and Lbz
+  ierr = setEqualLevels(); CHKERRQ(ierr);
+
+  if (spacing_type == 1) { 
+    // equally-spaced in ice
+    for (PetscInt k=0; k < p->Mz; k++) {
+      zlevels[k] = zlevelsEQ[k];
+    }
+    // equally-spaced in bedrock
+    for (PetscInt kb=0; kb < p->Mbz; kb++) {
+      zblevels[kb] = zblevelsEQ[kb];
+    }
+    dzMIN = dzEQ;
+    dzMAX = dzEQ;
+  } else if (spacing_type == 2) { 
+    // Spaced according to the Chebyshev extreme points in the interval [0,1], with 1 being 
+    // the base of the ice.  That is, we take original Chebyshev extreme points x_j = cos(pi*j/N), 
+    // with N = 2 Mz - 1 but choosing only j=0,1,...,Mz-1 (and not j=0,1,...,N).  These satisfy
+    // 0 <= x_j <= 1 and they are clustered near x=1.  Then we flip and scale:
+    //   z_j = Lz * (1 - x_z).
+    // Note that the smallest spacing is a factor proportional to Mz smaller than dzEQ
+    // (i.e. z_1 = C Lz / (Mz^2) while dzEQ = Lz/(Mz-1)).   Near the top the spacing is 
+    // to very good approximation equal to pi * dzEQ.
+    for (PetscInt k=0; k < p->Mz; k++) {
+      zlevels[k] = p->Lz * ( 1.0 - cos((pi/2.0) * k / (p->Mz-1)) );
+    }
+    dzMIN = zlevels[1] - zlevels[0];
+    dzMAX = zlevels[p->Mz-1] - zlevels[p->Mz-2];
+    // again, *equally-spaced in bedrock*
+    for (PetscInt kb=0; kb < p->Mbz; kb++) {
+      zblevels[kb] = zblevelsEQ[kb];
+    }
+  }
+
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::chooseEquallySpacedVertical() {
+  spacing_type = 1;
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::chooseChebyshevSpacedVertical() {
+  spacing_type = 2;
+  return 0;
+}
+
 
 //! Create the PETSc DAs for the grid specified in *p (a pointer to IceParam).
+/*!
+An important principle about PISM initialization is that this procedure should only be called 
+after the parameters describing the computational box (Lx,Ly,Lz) and the parameters for the grid
+(Mx,My,Mz,Mzb) are already determined.  In particular, the input file (either \c -if or \c -bif) 
+and user options (like \c -Mx) must have already been read to determine the parameters, and any
+conflicts must have been resolved.
+ */
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
 
@@ -127,7 +193,7 @@ PetscErrorCode IceGrid::createDA() {
                     p->My, p->Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
 
-/* see IceModelVec3:
+/* see IceModelVec3; we no longer need da3 and da3b
   PetscInt    M, N, m, n;
   ierr = DAGetInfo(da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
@@ -157,18 +223,22 @@ PetscErrorCode IceGrid::destroyDA() {
 
 
 bool IceGrid::equalVertSpacing() {
-  return (equally_spaced == PETSC_TRUE);
+  return (spacing_type == 1);
 }
 
   
 PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
-    SETERRQ1(1,"height = %5.4f is below base of ice (height must be nonnegative)\n",
-             height);
+    PetscPrintf(com, 
+       "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be nonnegative)\n",
+       height);
+    PetscEnd();
   }
   if (height > p->Lz + 1.0e-6) {
-    SETERRQ2(2,"height = %20.18f is above top of computational grid Lz = %20.18f\n",
-             height,p->Lz);
+    PetscPrintf(com, 
+       "IceGrid kBelowHeight(): height = %20.18f is above top of computational grid Lz = %20.18f\n",
+       height,p->Lz);
+    PetscEnd();
   }
   PetscInt mcurr = 0;
   while (zlevels[mcurr+1] < height) {
@@ -180,13 +250,17 @@ PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
 
 PetscInt IceGrid::kBelowHeightEQ(const PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
-    SETERRQ1(1,"height = %5.4f is below base of ice (height must be nonnegative)\n",
-             height);
+    PetscPrintf(com, 
+       "IceGrid kBelowHeightEQ(): height = %5.4f is below base of ice (height must be nonnegative)\n",
+       height);
+    PetscEnd();
   }
   const PetscInt ks = static_cast<PetscInt>(floor(height/dzEQ));
   if (ks >= p->Mz) {
-    SETERRQ2(2,"height = %20.18f is more than dzEQ above top of computational grid Lz = %20.18f\n",
-             height,p->Lz);
+    PetscPrintf(com, 
+       "IceGrid kBelowHeightEQ(): height = %20.18f is more than dzEQ above top of computational grid Lz = %20.18f\n",
+       height,p->Lz);
+    PetscEnd();
   }
   return ks;
 }
@@ -195,9 +269,9 @@ PetscInt IceGrid::kBelowHeightEQ(const PetscScalar height) {
 //! Rescale IceGrid based on new values for \c Lx, \c Ly, \c Lz (default version).
 /*! 
 This method computes \c dx, \c dy, \c dz, and \c Lbz based on the current values of \c Mx,
-\c My, \c Mz, \c Mbz and the input values of \c Lx, \c Ly, and \c Lz.  Note that \c dz
-is the vertical spacing both in the ice and in bedrock.  Thus <tt>Lbz = Mbz * dz</tt> 
-determines \c Lbz.
+\c My, \c Mz, \c Mbz and the input values of \c lx, \c ly, and \c lz.  It also sets \c Lx = \c lx, etc.
+
+Note that \c Lbz is determined by <tt>Lbz = Mbz * dzEQ</tt> where <tt>dzEQ = Lz / (Mz - 1)</tt>.
 
 See the comment for <tt>rescale(lx,ly,lz,truelyPeriodic)</tt>.
  */
@@ -247,6 +321,10 @@ PetscErrorCode IceGrid::rescale(const PetscScalar lx, const PetscScalar ly,
 
 
 //! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
+/*! 
+Before calling this, always make sure zlevels[], zblevels[], dzMIN, and dzMAX are all correctly set
+and consistent.
+ */
 PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                               const PetscTruth truelyPeriodic) {
   PetscErrorCode ierr;
@@ -279,23 +357,7 @@ PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscS
   p->Lz = zlevels[p->Mz-1];
   p->Lbz = - zblevels[0];
 
-  dzEQ = p->Lz / (p->Mz - 1);
-  if (p->Mbz > 1) {
-    dzbEQ = p->Lbz / (p->Mbz - 1);
-  } else {
-    dzbEQ = dzEQ;  // FIXME: to avoid problem in temperatureStep()
-  }
-
-  delete [] zlevelsEQ;
-  delete [] zblevelsEQ;
-  zlevelsEQ = new PetscScalar[p->Mz];
-  zblevelsEQ = new PetscScalar[p->Mbz];
-  for (PetscInt k=0; k < p->Mz; k++) {
-    zlevelsEQ[k] = dzEQ * ((PetscScalar) k);
-  }
-  for (PetscInt kb=0; kb < p->Mbz; kb++) {
-    zblevelsEQ[kb] = - p->Lbz + dzbEQ * ((PetscScalar) kb);
-  }
+  ierr = setEqualLevels(); CHKERRQ(ierr);
 
   // it is not known if the following has any effect:
   ierr = DASetUniformCoordinates(da2, -p->Ly, p->Ly, -p->Lx, p->Lx,

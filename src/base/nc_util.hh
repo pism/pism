@@ -33,6 +33,11 @@ struct LocalInterpCtx {
   float *zlevs, *zblevs;
 };
 
+struct MaskInterp {
+  int number_allowed;
+  int allowed_levels[50]; // must be strictly increasing
+};
+
 int nc_check(int stat);
 int check_err(const int stat, const int line, const char *file);
 
@@ -44,7 +49,10 @@ NCTool();
 
 PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
 PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, float delta);
+
 PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], float bdy[], double *bdy_time, MPI_Comm com);
+PetscErrorCode get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast, MPI_Comm com);
+
 PetscErrorCode get_vertical_dims(int ncid, int z_len, int zb_len, 
                                  float z_read[], float zb_read[], MPI_Comm com);
 
@@ -61,6 +69,11 @@ PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc
 PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
                               DA da, Vec g, const int *s, const int *c,
                               int dims, void *a_mpi, int a_size);
+
+PetscErrorCode var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Vec vecl,
+                             Vec vecg, Vec vindzero);
+PetscErrorCode var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Vec vecl,
+                             Vec vecg, Vec vindzero, MaskInterp masktool);
 
 PetscErrorCode regrid_local_var(const char *vars, char c, const char *name, int dim_flag,
                                 LocalInterpCtx &lic, IceGrid &grid, DA da, Vec vec, Vec g);

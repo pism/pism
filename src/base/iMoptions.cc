@@ -33,7 +33,7 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet;
+  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet, chebSet;
   PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
               mytransformForSurfaceGradient, myincludeBMRinContinuity, lowtempSet,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
@@ -85,6 +85,12 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, "-cheb", &chebSet); CHKERRQ(ierr);
+  if (chebSet == PETSC_TRUE) {
+    userWantsChebVertGrid = PETSC_TRUE;
+    ierr = grid.chooseChebyshevSpacedVertical(); CHKERRQ(ierr);
+  }
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
   // user gives nu in MPa yr (e.g. Ritz et al 2001 value is 30.0)

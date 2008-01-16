@@ -20,7 +20,8 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-//! Manage the computation of velocity and do the necessary communication.
+
+//! Manage the computation of velocity and do the necessary parallel communication.
 /*!
 This procedure calls the important routines velocitySIAStaggered(), velocitySSA(),
 and vertVelocityFromIncompressibility() according to various flags. 
@@ -34,7 +35,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
-    ierr = velocitySIAStaggered(); CHKERRQ(ierr);  // fills vWork3d[0 1 2 3]
+    ierr = velocitySIAStaggered(); CHKERRQ(ierr);
 
     // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
     // and velocities2DSIAToRegular()
@@ -69,12 +70,6 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
       }
       // communicate I on staggered for horizontalVelocitySIARegular()
       //   and also communicate Sigma on staggered for SigmaSIAToRegular()
-/*
-      for (PetscInt k=0; k<4; ++k) {
-        ierr = DALocalToLocalBegin(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-        ierr = DALocalToLocalEnd(grid.da3, vWork3d[k], INSERT_VALUES, vWork3d[k]); CHKERRQ(ierr);
-      }
-*/
       ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
       ierr = Sigmastag3[1].beginGhostComm(); CHKERRQ(ierr);
       ierr = Istag3[0].beginGhostComm(); CHKERRQ(ierr);
@@ -86,7 +81,6 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
 
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
-// done with vWork2d[0 1 2 3] and vWork3d[0 1 2 3]
     }
   } else { // if computeSIAVelocities
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
@@ -190,15 +184,14 @@ derivatives, with respect to any variable \f$x,y,z,t\f$, change accordingly
                            + w_b(x,y,t). \f]
 @endcond
 
-The vertical integral is computed by the trapezoid rule.
+The vertical integral is computed by the trapezoid rule.  There is no assumption about equal
+spacing.
  */
 PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
-  // NOT equally-spaced method
-  // vertical integral is by trapezoid rule
+  PetscErrorCode  ierr;
   const PetscScalar   dx = grid.p->dx, 
                       dy = grid.p->dy;
   const PetscInt      Mz = grid.p->Mz;
-  PetscErrorCode  ierr;
   PetscScalar **ub, **vb, **basalMeltRate, **b, **dbdt;
 
   PetscScalar *u, *v, *w;

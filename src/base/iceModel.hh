@@ -33,11 +33,6 @@
 #include "iceModelpreamble.hh" 
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
-/*!
-@cond VERTCHANGE
-  FIXME: add text about change of vertical variable
-@endcond
- */
 class IceModel {
 public:
   // see iceModel.cc for implementation of constructor and destructor:
@@ -65,8 +60,9 @@ public:
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
-  // see iMdefaults.cc
-  virtual PetscErrorCode setDefaults();
+  // see iMbootstrap.cc 
+  PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
+  PetscErrorCode readShelfStreamBCFromFile_netCDF(const char *fname);
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -78,20 +74,10 @@ public:
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode initFromOptions(PetscTruth doHook);
 
-  // see iMvelocity.cc
-  virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);
-    
   // see iMIO.cc
   PetscErrorCode initFromFile(const char *);
   PetscErrorCode writeFiles(const char* defaultbasename);
   PetscErrorCode writeFiles(const char* defaultbasename, const PetscTruth forceFullDiagnostics);
-
-  // see iMIOnetcdf.cc
-  PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
-  PetscErrorCode initFromFile_netCDF(const char *fname);
-  PetscErrorCode readShelfStreamBCFromFile_netCDF(const char *fname);
-  PetscErrorCode dumpToFile_netCDF(const char *fname);
-  PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
 
 protected:
    static const int MASK_SHEET;
@@ -203,6 +189,7 @@ protected:
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, transformForSurfaceGradient;
+  PetscTruth  userWantsChebVertGrid;
   char        adaptReasonFlag;
 
   // file names
@@ -264,6 +251,15 @@ protected:
   PetscErrorCode bedDefStepIfNeeded();
   PetscErrorCode bed_def_step_iso();
 
+  // see iMbootstrap.cc 
+  PetscErrorCode putTempAtDepth();
+  PetscErrorCode bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
+                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux);
+  PetscErrorCode setMaskSurfaceElevation_bootstrap();
+
+  // see iMdefaults.cc
+  virtual PetscErrorCode setDefaults();
+
   // see iMgrainsize.cc
   PetscErrorCode updateGrainSizeIfNeeded();
   PetscErrorCode updateGrainSizeNow();
@@ -272,20 +268,12 @@ protected:
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
-  PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
-
-  // see iMIOnetcdf.cc
-  PetscErrorCode putTempAtDepth();
-  PetscErrorCode bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
-                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux);
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
-  PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
-                              Vec vecg, Vec vindzero);
-  PetscErrorCode ncVarToDAVec(int ncid, int vid, DA da, Vec vecl,
-                              Vec vecg, Vec vindzero, MaskInterp masktool);
-  PetscErrorCode getFirstLast(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast);
-  PetscErrorCode setMaskSurfaceElevation_bootstrap();
   PetscErrorCode warnUserOptionsIgnored(const char *fname);
+  PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
+  PetscErrorCode initFromFile_netCDF(const char *fname);
+  PetscErrorCode dumpToFile_netCDF(const char *fname);
+  PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
   PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMIOlegacy.cc
@@ -415,6 +403,7 @@ protected:
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
 
   // see iMvelocity.cc
+  virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
   PetscErrorCode vertVelocityFromIncompressibility();
   PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   PetscErrorCode computeMax3DVelocities();

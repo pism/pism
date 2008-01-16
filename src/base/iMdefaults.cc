@@ -168,6 +168,8 @@ PetscErrorCode IceModel::setDefaults() {
   thermalBedrock = DEFAULT_THERMAL_BEDROCK;
   doOceanKill = DEFAULT_OCEAN_KILL;
   
+  userWantsChebVertGrid = PETSC_FALSE;
+  
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;
 
