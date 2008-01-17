@@ -21,6 +21,8 @@
 #include "iceModel.hh"
 
 
+#define cheb_to_equal_factor 2.0
+
 //! Manages the time-stepping and parallel communication for the temperature and age equations.
 /*! 
 Note that both the temperature equation and the age equation involve advection and have a CFL
@@ -76,24 +78,27 @@ PetscErrorCode IceModel::temperatureStep() {
   } else {
     // internally in temperatureStep() we do computation on a fine and equally-spaced grid;
     //   mapping to the storage grid occurs in getValColumn(), setValColumn()
-    const PetscScalar cheb_to_equal_factor = 1.0;
     dzEQ = cheb_to_equal_factor * grid.dzMIN;
-    Mz = static_cast<PetscInt>(ceil(grid.p->Lz / dzEQ));
+    Mz = 1 + static_cast<PetscInt>(ceil(grid.p->Lz / dzEQ));
+    dzEQ = grid.p->Lz / ((PetscScalar) Mz);  // exactly Mz-1 steps for [0,Lz]
     zlevEQ = new PetscScalar[Mz];
-    for (PetscInt k = 0; k < Mz; k++) {
+    for (PetscInt k = 0; k < Mz-1; k++) {
       zlevEQ[k] = ((PetscScalar) k) * dzEQ;
     }
+    zlevEQ[Mz-1] = grid.p->Lz;  // make sure it is right on
     dzbEQ = dzEQ;
-    Mbz = static_cast<PetscInt>(ceil(grid.p->Lbz / dzbEQ));
+    Mbz = 1 + static_cast<PetscInt>(ceil(grid.p->Lbz / dzbEQ));
+    dzbEQ = grid.p->Lbz / ((PetscScalar) Mbz);  // exactly Mbz-1 steps for [-Lbz,0]
     zblevEQ = new PetscScalar[Mbz];
-    for (PetscInt kb = 0; kb < Mbz; kb++) {
+    for (PetscInt kb = 0; kb < Mbz-1; kb++) {
       zblevEQ[kb] = - grid.p->Lbz + dzbEQ * ((PetscScalar) kb);
     }
+    zblevEQ[Mbz-1] = 0.0;  // make sure it is right on
   }
 
-  ierr = verbPrintf(1,grid.com,
-           "\n  [entering temperatureStep(); Mz = %d, dzEQ = %5.3f, Mbz = %d, dzbEQ = %5.3f]");
-           CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com,
+           "\n  [entering temperatureStep(); Mz = %d, dzEQ = %5.3f, Mbz = %d, dzbEQ = %5.3f]",
+           Mz, dzEQ, Mbz, dzbEQ); CHKERRQ(ierr);
 
                       
   const PetscInt      k0 = Mbz - 1;
@@ -497,18 +502,20 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
     dzEQ = grid.dzEQ;
     zlevEQ = grid.zlevelsEQ;
   } else {
-    // internally in temperatureStep() we do computation on a fine and equally-spaced grid;
+    // internally in ageStep() we do computation on a fine and equally-spaced grid;
     //   mapping to the storage grid occurs in getValColumn(), setValColumn()
-    const PetscScalar cheb_to_equal_factor = 1.0;
     dzEQ = cheb_to_equal_factor * grid.dzMIN;
-    Mz = static_cast<PetscInt>(ceil(grid.p->Lz / dzEQ));
+    Mz = 1 + static_cast<PetscInt>(ceil(grid.p->Lz / dzEQ));
+    dzEQ = grid.p->Lz / ((PetscScalar) Mz);  // exactly Mz-1 steps for [0,Lz]
     zlevEQ = new PetscScalar[Mz];
-    for (PetscInt k = 0; k < Mz; k++) {
-      zlevEQ[k] = ((PetscScalar) k) *  dzEQ;
+    for (PetscInt k = 0; k < Mz-1; k++) {
+      zlevEQ[k] = ((PetscScalar) k) * dzEQ;
     }
+    zlevEQ[Mz-1] = grid.p->Lz;  // make sure it is right on
   }
 
-  ierr = verbPrintf(1,grid.com, "\n  [entering ageStep(); Mz = %d, dzEQ = %5.3f]", Mz, dzEQ);
+  ierr = verbPrintf((grid.equalVertSpacing()) ? 5 : 2,grid.com, 
+           "\n  [entering ageStep(); Mz = %d, dzEQ = %5.3f]", Mz, dzEQ);
            CHKERRQ(ierr);
 
   const PetscScalar   dx = grid.p->dx, 

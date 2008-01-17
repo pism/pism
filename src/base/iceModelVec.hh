@@ -139,6 +139,9 @@ public:
                                PetscScalar *levelsIN, PetscScalar *valsIN);
   PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
                                PetscScalar *levelsIN, PetscScalar *valsOUT);
+
+protected:  
+  PetscErrorCode  isLegalLevel(const PetscScalar z);
 };
 
 

@@ -461,5 +461,115 @@ PetscErrorCode  IceModelVec3Bedrock::getInternalColumn(const PetscInt i, const P
 }
 
 
+//! From given values, set a bedrock scalar quantity in a given column by piecewise linear interpolation.
+/*!
+Input arrays \c levelsIN and \c valsIN must be allocated arrays of \c nlevels scalars
+(\c PetscScalar).  Upon completion, internal storage will hold values derived from 
+linearly interpolating the input values.
+
+\c levelsIN must be strictly increasing.
+
+Piecewise linear interpolation is used and the input values must span a sufficient range
+of \f$z\f$ values so that all stored values, at heights in \c zlevels, can be determined 
+by interpolation; extrapolation is not allowed.  Therefore <tt>(levelsIN[0] <= -Lbz)</tt> 
+and <tt>(levelsIN[nlevels-1] >= 0.0)</tt> must both be true.
+ */
+PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscInt j, 
+                     const PetscInt nlevels, PetscScalar *levelsIN, PetscScalar *valsIN) {
+
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  // check if in ownership ?
+
+  if (levelsIN[0] > -(grid->p)->Lbz + 1.0e-3) {
+    SETERRQ3(1,"levelsIN[0]=%10.9f is above base of bedrock at z=-%10.9f so *interpolation*\n"
+              "   is impossible; IceModelVec3Bedrock has varname='%s';  ENDING!\n",
+              levelsIN[0],(grid->p)->Lbz,varname);
+  }
+  if (levelsIN[nlevels - 1] < 0.0 - 1.0e-3) {
+    SETERRQ2(2,"levelsIN[nlevels-1] = %10.9f is below z=0, so *interpolation* is impossible;\n"
+               "   IceModelVec3Bedrock has varname='%s';  ENDING!\n",
+               levelsIN[nlevels-1],varname);
+  }
+  for (PetscInt k=0; k < nlevels - 1; k++) {
+    if (levelsIN[k] >= levelsIN[k+1]) {
+      SETERRQ2(3,"levelsIN not *strictly increasing* at index %d;\n"
+                 "    IceModelVec3Bedrock has varname='%s';  ENDING!\n",
+                 k,varname);
+    }
+  }
+
+  PetscScalar *levels;
+  levels = grid->zblevels;
+  PetscScalar ***arr = (PetscScalar***) array;
+  
+  PetscInt mcurr = 0;
+  for (PetscInt k=0; k < (grid->p)->Mbz; k++) {
+    while (levelsIN[mcurr+1] < levels[k]) {
+      mcurr++;
+    }
+    const PetscScalar increment = (levels[k] - levelsIN[mcurr]) / (levelsIN[mcurr+1] - levelsIN[mcurr]);
+    arr[i][j][k] = valsIN[mcurr] +  increment * (valsIN[mcurr+1] - valsIN[mcurr]);
+  }
+  return 0;
+}
+
+
+PetscErrorCode  IceModelVec3Bedrock::isLegalLevel(const PetscScalar z) {
+  if (z < -(grid->p)->Lbz - 1.0e-6) {
+    SETERRQ3(1,
+       "level z = %10.8f is below bottom of bedrock at -Lbz = %10.8f; IceModelVec3Bedrock has varname='%s'; ENDING!\n",
+       z,-(grid->p)->Lbz,varname);
+  }
+  if (z > 0.0 + 1.0e-6) {
+    SETERRQ2(2,"level z = %10.8f is above top of bedrock at z=0; IceModelVec3Bedrock has varname='%s'; ENDING!\n",
+              z,varname);
+  }
+  return 0;
+}
+
+
+//! At given levels, return values of bedrock scalar quantity in a given column using piecewise linear interpolation.
+/*!
+Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
+
+\c levelsIN must be strictly increasing and in the range \f$-\mathtt{grid.p->Lbz} <= z <= 0.0\f$.
+
+Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
+Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.
+ */
+PetscErrorCode  IceModelVec3Bedrock::getValColumn(const PetscInt i, const PetscInt j, 
+                     const PetscInt nlevelsIN, PetscScalar *levelsIN, PetscScalar *valsOUT) {
+  
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  // check if in ownership ?
+
+  ierr = isLegalLevel(levelsIN[0]); CHKERRQ(ierr);
+  ierr = isLegalLevel(levelsIN[nlevelsIN - 1]); CHKERRQ(ierr);
+  for (PetscInt k=0; k < nlevelsIN - 1; k++) {
+    if (levelsIN[k] >= levelsIN[k+1]) {
+      SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
+                 "    (IceModelVec3Bedrock with varname='%s')  ENDING!\n",k,varname);
+    }
+  }
+
+  PetscScalar* levels = grid->zblevels;
+  PetscScalar ***arr = (PetscScalar***) array;
+  
+  PetscInt mcurr = 0;
+  for (PetscInt k = 0; k < nlevelsIN; k++) {
+    while (levels[mcurr+1] < levelsIN[k]) {
+      mcurr++;
+    }
+    const PetscScalar incr = (levelsIN[k] - levels[mcurr]) / (levels[mcurr+1] - levels[mcurr]);
+    const PetscScalar valm = arr[i][j][mcurr];
+    valsOUT[k] = valm + incr * (arr[i][j][mcurr+1] - valm);
+  }
+
+  return 0;
+}
+
+
 /********* IceModelVec3:    SEE SEPARATE FILE  iceModelVec3.cc    **********/
 

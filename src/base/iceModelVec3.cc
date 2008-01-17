@@ -130,7 +130,6 @@ PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 imv3_source) {
 }
 
 
-
 PetscErrorCode  IceModelVec3::isLegalLevel(const PetscScalar z) {
   if (z < 0.0 - 1.0e-6) {
     SETERRQ2(1,"level z = %5.4f is below base of ice (z must be nonnegative);\n"
@@ -138,7 +137,7 @@ PetscErrorCode  IceModelVec3::isLegalLevel(const PetscScalar z) {
               z,varname);
   }
   if (z > (grid->p)->Lz + 1.0e-6) {
-    SETERRQ3(2,"level z = %20.18f is above top of computational grid Lz = %20.18f;\n"
+    SETERRQ3(2,"level z = %10.8f is above top of computational grid Lz = %10.8f;\n"
                "  IceModelVec3 has varname='%s'; ENDING!\n",
               z, (grid->p)->Lz,varname);
   }
@@ -146,16 +145,18 @@ PetscErrorCode  IceModelVec3::isLegalLevel(const PetscScalar z) {
 }
 
 
-//! Set values of scalar quantity by linear <i>interpolation</i> from given values in a given column.
+//! Set values of an ice scalar quantity by linear <i>interpolation</i> from given values in a given column.
 /*!
-Input arrays \c levelsIN and \c valsIN must be an allocated array of \c nlevels scalars
-(i.e. \c PetscScalar).  Upon completion, internal storage will hold values derived from 
+Input arrays \c levelsIN and \c valsIN must be allocated arrays of \c nlevels scalars
+(\c PetscScalar).  Upon completion, internal storage will hold values derived from 
 linearly interpolating the input values.
 
 \c levelsIN must be strictly increasing.
 
-Only interpolation is used.  Therefore <tt>(levelsIN[0] == 0.0)</tt> and <tt>(levelsIN[nlevels-1] >= Lz)</tt>
-must both be true.
+Piecewise linear interpolation is used and the input values must span a sufficient range
+of \f$z\f$ values so that all stored values, at heights in \c zlevels, can be determined 
+by interpolation; extrapolation is not allowed.  Therefore <tt>(levelsIN[0] <= 0.0)</tt> 
+and <tt>(levelsIN[nlevels-1] >= Lz)</tt> must both be true.
  */
 PetscErrorCode  IceModelVec3::setValColumn(
                      const PetscInt i, const PetscInt j, 
@@ -287,19 +288,17 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
 }
 
 
-//! Return values of scalar quantity at given levels (m) above base of ice (by interpolation).
+//! Return values of ice scalar quantity at given levels (m) above base of ice, using piecewise linear interpolation.
 /*!
-Input array \c levelsIN must be an allocated array of \c nlevels scalars (i.e. \c PetscScalar).
+Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range \f$0 < z < \mathtt{grid.p->Lz}\f$.
+\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.p->Lz}\f$.
 
-Likewise, return array \c valsOUT must be an allocated array of \c nlevels scalars (i.e. \c PetscScalar).
+Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
 Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.
  */
-PetscErrorCode  IceModelVec3::getValColumn(
-                     const PetscInt i, const PetscInt j, 
-                     const PetscInt nlevelsIN, PetscScalar *levelsIN,
-                     PetscScalar *valsOUT) {
+PetscErrorCode  IceModelVec3::getValColumn(const PetscInt i, const PetscInt j, 
+                     const PetscInt nlevelsIN, PetscScalar *levelsIN, PetscScalar *valsOUT) {
   
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
