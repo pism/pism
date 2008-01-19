@@ -32,8 +32,10 @@ def verify(test):
       else:
          predo = ''
       testdo = predo + pref + 'pismv -test ' + test[0] + gridopts + test[4]
-      if (cheb == 1):
-        testdo = testdo + ' -cheb'
+      if (uneq == 1):
+        testdo = testdo + ' -quadZ'
+      elif (uneq == 2):
+        testdo = testdo + ' -chebZ'
       print ' trying \"' + testdo + '\"'
       testdo = testdo + ' -verbose 1'  # only need final errors anyway
       try:
@@ -117,16 +119,16 @@ alltests = [
 ##   -n for number of processors
 ##   -p for prefix on pismv executable
 ##   -t for which tests to use
-##   -c to add "-cheb"
+##   -u to add unequal spaced vertical (-u 1 for "-quadZ", -u 2 for "-chebZ")
 nproc = NP  ## default; will not use 'mpiexec' if equal to one
 levs = LEVELS
 mpi = MPIDO
 pref = PREFIX
 letters = TESTS
-cheb = 0
+uneq = 0
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:m:n:l:t:c:",
-                             ["prefix=", "mpido=", "nproc=", "levels=", "tests=", "cheb="])
+  opts, args = getopt.getopt(sys.argv[1:], "p:m:n:l:t:u:",
+                             ["prefix=", "mpido=", "nproc=", "levels=", "tests=", "unequal="])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
       pref = arg
@@ -138,8 +140,8 @@ try:
       levs = string.atoi(arg)
     elif opt in ("-t", "--tests"):
       letters = arg
-    elif opt in ("-c", "--cheb"):
-      cheb = 1
+    elif opt in ("-u", "--uneq"):
+      uneq = arg
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)

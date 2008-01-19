@@ -41,7 +41,6 @@ IceParam::IceParam() {
   Mbz = DEFAULT_ICEPARAM_Mbz;
   dx = 2.0 * Lx / (Mx - 1);
   dy = 2.0 * Ly / (My - 1);
-//  dz = Lz / (Mz - 1);
   Lbz = (Mbz - 1) * (Lz / (Mz - 1));
 }
 
@@ -108,10 +107,28 @@ PetscErrorCode  IceGrid::setEqualLevels() {
 }
 
 
+PetscErrorCode IceGrid::chooseEquallySpacedVertical() {
+  spacing_type = 1;
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::chooseChebyshevSpacedVertical() {
+  spacing_type = 2;
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::chooseQuadraticSpacedVertical() {
+  spacing_type = 3;
+  return 0;
+}
+
+
 PetscErrorCode  IceGrid::setLevelsFromLsMs() {
   PetscErrorCode ierr;
   
-  if ((spacing_type == 0) || (spacing_type > 2)) {
+  if ((spacing_type == 0) || (spacing_type > 3)) {
     SETERRQ(1,"invalid spacing_type\n");
   }
   if (p->Mz < 2) {
@@ -156,20 +173,21 @@ PetscErrorCode  IceGrid::setLevelsFromLsMs() {
     for (PetscInt kb=0; kb < p->Mbz; kb++) {
       zblevels[kb] = zblevelsEQ[kb];
     }
+  } else if (spacing_type == 3) { 
+    // This is an attempt to be less extreme in the fineness near the base.
+    const PetscScalar  ll = 3.0;
+    for (PetscInt k=0; k < p->Mz; k++) {
+      const PetscScalar zeta = ((PetscScalar) k) / ((PetscScalar) p->Mz - 1);
+      zlevels[k] = p->Lz * ( (zeta / ll) * (1.0 + (ll - 1.0) * zeta) );
+    }
+    dzMIN = zlevels[1] - zlevels[0];
+    dzMAX = zlevels[p->Mz-1] - zlevels[p->Mz-2];
+    // again, *equally-spaced in bedrock*
+    for (PetscInt kb=0; kb < p->Mbz; kb++) {
+      zblevels[kb] = zblevelsEQ[kb];
+    }
   }
 
-  return 0;
-}
-
-
-PetscErrorCode IceGrid::chooseEquallySpacedVertical() {
-  spacing_type = 1;
-  return 0;
-}
-
-
-PetscErrorCode IceGrid::chooseChebyshevSpacedVertical() {
-  spacing_type = 2;
   return 0;
 }
 

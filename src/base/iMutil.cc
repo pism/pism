@@ -233,24 +233,28 @@ PetscErrorCode IceModel::initFromOptions() {
 
 PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
-  PetscTruth inFileSet, bootstrapSet, bootstrapSetLegacy;
+  PetscTruth inFileSet, bootstrapSet; // bootstrapSetLegacy;
   char inFile[PETSC_MAX_PATH_LEN];
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet);  CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootstrapSet);  CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif_legacy", inFile,
-                               PETSC_MAX_PATH_LEN, &bootstrapSetLegacy);  CHKERRQ(ierr);
+//  ierr = PetscOptionsGetString(PETSC_NULL, "-bif_legacy", inFile,
+//                               PETSC_MAX_PATH_LEN, &bootstrapSetLegacy);  CHKERRQ(ierr);
   
-  if (bootstrapSet == PETSC_TRUE) {
-    ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
-  } else if (bootstrapSetLegacy == PETSC_TRUE) {
-    ierr = bootstrapFromFile_netCDF_legacyAnt(inFile); CHKERRQ(ierr);
-  } else if (inFileSet == PETSC_TRUE) {
-    ierr = initFromFile(inFile); CHKERRQ(ierr);
+  if ((inFileSet == PETSC_TRUE) && (bootstrapSet == PETSC_TRUE)) {
+    SETERRQ(2,"both options '-if' and '-bif' set; not allowed");
   }
-  
+
+  if (inFileSet == PETSC_TRUE) {
+    ierr = initFromFile_netCDF(inFile); CHKERRQ(ierr);
+  } else if (bootstrapSet == PETSC_TRUE) {
+    ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
+  }
+//  } else if (bootstrapSetLegacy == PETSC_TRUE) {
+//    ierr = bootstrapFromFile_netCDF_legacyAnt(inFile); CHKERRQ(ierr);
+
   if (! isInitialized()) {
     SETERRQ(1,"Model has not been initialized from a file or by a derived class.");
   }
@@ -327,20 +331,25 @@ PetscErrorCode IceModel::afterInitHook() {
   // report on grid cell dims
   if (grid.equalVertSpacing()) {
     ierr = verbPrintf(2,grid.com, 
-           "  [grid cell dimensions     : (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
+           "  [grid cell dims (equal dz): (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
            grid.p->dx/1000.0,grid.p->dy/1000.0,grid.dzEQ); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
            "  [hor. grid cell dimensions: (%8.2f km) x (%8.2f km)]\n",
            grid.p->dx/1000.0,grid.p->dy/1000.0); CHKERRQ(ierr);
-    const PetscInt Mz=grid.p->Mz, Mbz = grid.p->Mbz;
     ierr = verbPrintf(2,grid.com, 
-           "  [vertical spacing in ice not equal;  %8.2f m < dz < %8.2f m]\n",
-           grid.zlevels[1]-grid.zlevels[0],grid.zlevels[Mz-1]-grid.zlevels[Mz-2]); CHKERRQ(ierr);
+           "  [storage grid vertical spacing in ice not equal;  %8.2f m < dz < %8.2f m]\n",
+           grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
+    PetscInt    myMz, dummyM;
+    ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, 
+           "  [fine equal spacing used in temperatureStep():  Mz = %d,  dzEQ = %8.2f m]\n",
+           myMz,grid.p->Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
     if (grid.p->Mbz > 1) {
       ierr = verbPrintf(2,grid.com, 
          "  [vertical spacing in bedrock: dz = %8.2f m for bottom layer and dz = %8.2f m for top layer]\n",
-         grid.zblevels[1]-grid.zblevels[0],grid.zblevels[Mbz-1]-grid.zblevels[Mbz-2]); CHKERRQ(ierr);
+         grid.zblevels[1]-grid.zblevels[0],grid.zblevels[grid.p->Mbz-1]-grid.zblevels[grid.p->Mbz-2]);
+         CHKERRQ(ierr);
     }
   }
 
@@ -362,7 +371,7 @@ PetscErrorCode IceModel::afterInitHook() {
 }
 
 
-//! Catch signals.
+//! Catch signals -USR1 and -TERM; in the former case save and continue; in the latter, save and stop.
 int IceModel::endOfTimeStepHook() {
 
   // SIGTERM makes PISM end, saving state under original -o name

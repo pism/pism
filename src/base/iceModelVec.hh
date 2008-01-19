@@ -159,10 +159,11 @@ public:
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 imv3_source);
   virtual PetscErrorCode  endGhostCommTransfer(IceModelVec3 imv3_source);
 
-  // call needAccessToVals() before set???() or get???() *and* call doneAccessToVals() afterward
-  PetscErrorCode  setValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+  // need call needAccessToVals() before set...() or get...() *and* need call doneAccessToVals() afterward
+  PetscErrorCode  setValColumnPL(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
                                PetscScalar *levelsIN, PetscScalar *valsIN);
   PetscErrorCode  setToConstantColumn(const PetscInt i, const PetscInt j, const PetscScalar c);
+  PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
 
   PetscScalar     getValZ(const PetscInt i, const PetscInt j, const PetscScalar z);
 
@@ -175,8 +176,11 @@ public:
 //                                      const PetscInt nlevels, PetscScalar *levelsIN, 
 //                                      PetscScalar *avOUT);
 
-  PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
-                               PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnPL(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+                                 PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnQUAD(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+                                   PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsPTR);
 
   PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z);
   PetscErrorCode  getSurfaceValuesVec2d(Vec &gsurf, Vec myH);
@@ -184,8 +188,6 @@ public:
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);
-  PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscInt *nlevels, 
-                                    PetscScalar **levelsOUT, PetscScalar **valsOUT);
 };
 
 #endif /* __IceModelVec_hh */

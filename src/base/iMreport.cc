@@ -271,7 +271,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
     ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
-    tau = new PetscScalar[grid.p->Mz];
     melt = 0; divideT = 0; orig = 0;
   }
   const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
@@ -295,7 +294,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
           divideT = Tbase[i][j];
         }
         const PetscInt  ks = grid.kBelowHeight(H[i][j]);
-        ierr = tau3.getValColumn(i,j,grid.p->Mz,grid.zlevels,tau); CHKERRQ(ierr);
+        ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
         for (PetscInt k=1; k<=ks; k++) {
           // ice is original if it is at least one year older than current time
 //          if (tau[k] > currtime + secpera)
@@ -312,7 +311,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   if (tempAndAge || (verbosityLevel >= 3)) {
     ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
     ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
-    delete [] tau;
     ierr = PetscGlobalSum(&melt, &gmelt, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&orig, &gorig, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalMax(&divideT, &gdivideT, grid.com); CHKERRQ(ierr);
@@ -321,7 +319,14 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     if (garea>0) meltfrac=gmelt/garea;
     else meltfrac=0.0;
   }
- 
+
+  if (CFLviolcount > 0.5) { // report any CFL violations at end of flag line
+    ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
+              CFLviolcount,100.0 * CFLviolcount/(grid.p->Mx * grid.p->Mz * grid.p->Mz)); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
+  }
+   
   // give summary data a la EISMINT II:
   //    year (+ dt[NR]) (years),
   //       [ note 
@@ -343,10 +348,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   // NOTE DERIVED CLASSES MAY HAVE OTHER DISPLAYED QUANTITIES
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.p->year,dt,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
-
-  if (CFLviolcount > 0.5) { // report any CFL violations on new line
-    ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f]\n",CFLviolcount); CHKERRQ(ierr);
-  }
   
   if (verbosityLevel >= 3) {
     // show additional info

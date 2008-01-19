@@ -82,9 +82,8 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
   const PetscInt  Mz = grid.p->Mz;
   PetscScalar **H;
   PetscScalar *age, *gs, *w;
-  age = new PetscScalar[Mz];
   gs = new PetscScalar[Mz];
-  w = new PetscScalar[Mz];
+  age = new PetscScalar[Mz];
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
@@ -94,7 +93,7 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; j++) {
       if (realAgeForGrainSize == PETSC_FALSE) {  // default case
         // compute pseudo age in column from vertical velocity
-        ierr = w3.getValColumn(i,j,Mz,grid.zlevels,w); CHKERRQ(ierr); 
+        ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr); 
         const PetscScalar  old_ice = 1.0e6 * secpera; // A million years
         const PetscInt     ks = grid.kBelowHeight(H[i][j]);
         bool               downward = true;
@@ -114,18 +113,19 @@ PetscErrorCode  IceModel::updateGrainSizeNow() {
           }
         }
       } else {
-        ierr = tau3.getValColumn(i,j,Mz,grid.zlevels,age); CHKERRQ(ierr); 
+        // transfers values into age
+        ierr = tau3.getValColumnPL(i,j,Mz,grid.zlevels,age); CHKERRQ(ierr); 
       }
       
       // convert age or pseudo-age to grainsize and put in gs3
       for (PetscInt k = 0; k < Mz; k++) {
         gs[k] = grainSizeVostok(age[k]);
       }
-      ierr = gs3.setValColumn(i,j,Mz,grid.zlevels,gs); CHKERRQ(ierr); 
+      ierr = gs3.setInternalColumn(i,j,gs); CHKERRQ(ierr); 
     }
   }
 
-  delete [] age;  delete [] gs;  delete [] w;
+  delete [] gs;  delete [] age;
 
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);

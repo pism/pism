@@ -593,9 +593,12 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-//#include "petsclog.h"
-int velEVENT, massbalEVENT, tempEVENT;
-PetscLogEventRegister(&velEVENT,    "velocity calc",0);
+PetscLogEventRegister(&siaEVENT,    "sia velocity",0);
+PetscLogEventRegister(&ssaEVENT,    "ssa velocity",0);
+PetscLogEventRegister(&velmiscEVENT,"misc vel calc",0);
+PetscLogEventRegister(&beddefEVENT, "bed deform",0);
+PetscLogEventRegister(&grainsizeEVENT,"grain size",0);
+PetscLogEventRegister(&pddEVENT,    "pos deg day",0);
 PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
 PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 
@@ -622,23 +625,25 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+PetscLogEventBegin(beddefEVENT,0,0,0,0);
+
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
-
-PetscLogEventBegin(velEVENT,0,0,0,0);
+    
+PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
     bool updateAtDepth = (tempskipCountDown == 0);
     ierr = verbPrintf(2,grid.com, doPlasticTill ? "p" : "$" ); CHKERRQ(ierr);
-    ierr = velocity(updateAtDepth); CHKERRQ(ierr);
+    ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
 
-PetscLogEventEnd(velEVENT,0,0,0,0);
+PetscLogEventBegin(grainsizeEVENT,0,0,0,0);
 
     // now that velocity field is up to date, compute grain size
     if (doGrainSize == PETSC_TRUE) {
@@ -646,6 +651,8 @@ PetscLogEventEnd(velEVENT,0,0,0,0);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
+
+PetscLogEventEnd(grainsizeEVENT,0,0,0,0);
     
     // adapt time step using velocities and diffusivity, ..., just computed
     bool useCFLforTempAgeEqntoGetTimestep = (doTemp == PETSC_TRUE);
@@ -674,6 +681,7 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
     }
 
 PetscLogEventEnd(tempEVENT,0,0,0,0);
+PetscLogEventBegin(pddEVENT,0,0,0,0);
 
     // compute PDD; generates surface mass balance, with appropriate ablation area, using snow accumulation
     if (doPDD == PETSC_TRUE) {
@@ -683,6 +691,7 @@ PetscLogEventEnd(tempEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+PetscLogEventEnd(pddEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
     if (doMassConserve == PETSC_TRUE) {
@@ -702,7 +711,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     // end the flag line and report a summary
-    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", tempskipCountDown, adaptReasonFlag,
+    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f", tempskipCountDown, adaptReasonFlag,
                       dt / secpera); CHKERRQ(ierr);
     ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
 

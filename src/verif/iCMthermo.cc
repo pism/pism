@@ -132,7 +132,7 @@ PetscErrorCode IceCompModel::initTestFG() {
                      &H[i][j],&accum[i][j],T,dummy1,dummy2,dummy3,dummy4);
         }
       }
-      ierr = T3.setValColumn(i,j,Mz,grid.zlevels,T); CHKERRQ(ierr);
+      ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
 
       // fill with basal temp increased by geothermal flux
       for (PetscInt k = 0; k < grid.p->Mbz; k++)
@@ -194,7 +194,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
           bothexact(grid.p->year*secpera,r,grid.zlevels,Mz,ApforG,
                     &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
         }
-        ierr = SigmaComp3.setValColumn(i,j,Mz,grid.zlevels,SigmaC); CHKERRQ(ierr);
+        ierr = SigmaComp3.setInternalColumn(i,j,SigmaC); CHKERRQ(ierr);
       }
     }
   }
@@ -262,12 +262,12 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
           u[k] = Uradial[k]*(xx/r);
           v[k] = Uradial[k]*(yy/r);
         }
-        ierr = T3.setValColumn(i,j,Mz,grid.zlevels,T); CHKERRQ(ierr);
-        ierr = u3.setValColumn(i,j,Mz,grid.zlevels,u); CHKERRQ(ierr);
-        ierr = v3.setValColumn(i,j,Mz,grid.zlevels,v); CHKERRQ(ierr);
-        ierr = w3.setValColumn(i,j,Mz,grid.zlevels,w); CHKERRQ(ierr);
-        ierr = Sigma3.setValColumn(i,j,Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
-        ierr = SigmaComp3.setValColumn(i,j,Mz,grid.zlevels,SigmaC); CHKERRQ(ierr);
+        ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
+        ierr = u3.setInternalColumn(i,j,u); CHKERRQ(ierr);
+        ierr = v3.setInternalColumn(i,j,v); CHKERRQ(ierr);
+        ierr = w3.setInternalColumn(i,j,w); CHKERRQ(ierr);
+        ierr = Sigma3.setInternalColumn(i,j,Sigma); CHKERRQ(ierr);
+        ierr = SigmaComp3.setInternalColumn(i,j,SigmaC); CHKERRQ(ierr);
       }      
     }
   }
@@ -357,7 +357,6 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(PetscScalar &gmaxTerr, Pet
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
 
   PetscScalar *T;
-  T = new PetscScalar[Mz];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
@@ -365,7 +364,7 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(PetscScalar &gmaxTerr, Pet
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r,xx,yy;
       mapcoords(i,j,xx,yy,r);
-      ierr = T3.getValColumn(i,j,Mz,grid.zlevels,T); CHKERRQ(ierr);
+      ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         switch (testname) {
@@ -392,7 +391,7 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(PetscScalar &gmaxTerr, Pet
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] Tex;  delete [] T;
+  delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   
   ierr = PetscGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
@@ -419,7 +418,6 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   PetscScalar    *Tex, *Tbex, *T;
   Tex = new PetscScalar[Mz];  
   Tbex = new PetscScalar[Mbz];
-  T = new PetscScalar[Mz];
 
   PetscScalar *Tb;
 
@@ -443,7 +441,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
         avbcount += 1.0;
         avTberr += Tberr;
       }
-      ierr = T3.getValColumn(i,j,Mz,grid.zlevels,T); CHKERRQ(ierr);
+      ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
       for (PetscInt k = 0; k < Mz; k++) { 
         const PetscScalar Terr = PetscAbs(T[k] - Tex[k]);
         maxTerr = PetscMax(maxTerr,Terr);
@@ -456,7 +454,6 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
 
   delete [] Tex;  delete [] Tbex;
-  delete [] T;
   
   ierr = PetscGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
@@ -554,7 +551,6 @@ PetscErrorCode IceCompModel::computeSigmaErrors(PetscScalar &gmaxSigmaerr, Petsc
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
 
   PetscScalar *Sig;
-  Sig = new PetscScalar[Mz];
     
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
@@ -576,7 +572,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(PetscScalar &gmaxSigmaerr, Petsc
           default:  SETERRQ(1,"strain-heating (Sigma) errors only computable for tests F and G\n");
         }
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        ierr = Sigma3.getValColumn(i,j,Mz,grid.zlevels,Sig); CHKERRQ(ierr);
+        ierr = Sigma3.getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
           const PetscScalar Sigerr = PetscAbs(Sig[k] - Sigex[k]);
           maxSigerr = PetscMax(maxSigerr,Sigerr);
@@ -589,7 +585,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(PetscScalar &gmaxSigmaerr, Petsc
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] Sig;  delete [] Sigex;
+  delete [] Sigex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   
   ierr = PetscGlobalMax(&maxSigerr, &gmaxSigmaerr, grid.com); CHKERRQ(ierr);
@@ -685,7 +681,7 @@ PetscErrorCode IceCompModel::fillSolnTestK() {
   ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setValColumn(i,j,Mz,grid.zlevels,Tcol); CHKERRQ(ierr);
+      ierr = T3.setInternalColumn(i,j,Tcol); CHKERRQ(ierr);
       ierr = Tb3.setInternalColumn(i,j,Tbcol); CHKERRQ(ierr);
     }
   }

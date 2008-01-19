@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
       SETERRQ(3,"PISMS: how did I get here?");
     }
 
-    //ierr = m->testIceModelVec(); CHKERRQ(ierr);
+//    ierr = m->testIceModelVec(); CHKERRQ(ierr);
 
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);

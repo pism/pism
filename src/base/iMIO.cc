@@ -77,29 +77,6 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
 }
 
 
-//! Initialize from a saved PISM model state (in NetCDF format).
-/*! 
-Calls initFromFile_netCDF() to do the actual work.
- */
-PetscErrorCode IceModel::initFromFile(const char *fname) {
-  PetscErrorCode  ierr;
-
-  if (hasSuffix(fname, ".pb") == true) {
-    SETERRQ1(1,"ERROR: .pb format no longer supported; cannot initialize from file %s", fname);
-  }
-  
-  if (hasSuffix(fname, ".nc") == false) {
-    ierr = verbPrintf(1,grid.com,
-       "WARNING:  Unknown file format for %s.  Trying to read as NetCDF.\n",fname); CHKERRQ(ierr);
-  }
-
-  ierr = verbPrintf(2,grid.com,"initializing from NetCDF format file  %s  ...\n",
-                     fname); CHKERRQ(ierr);
-  ierr = initFromFile_netCDF(fname); CHKERRQ(ierr);
-  return 0;
-}
-
-
 PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID) {
   PetscErrorCode ierr;
 
@@ -328,7 +305,8 @@ PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
 }
 
 
-//! Read a saved PISM model state (for complete initialization of an evolution or diagnostic run).
+
+//! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
 /*! 
 When initializing from a NetCDF input file, the input file determines 
 the number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.   
@@ -340,6 +318,18 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   float       bdy[7];
   double 	  bdy_time;
   int         ncid, stat;
+
+  if (hasSuffix(fname, ".pb") == true) {
+    SETERRQ1(1,"ERROR: .pb format not supported; cannot initialize from file %s", fname);
+  }
+  
+  if (hasSuffix(fname, ".nc") == false) {
+    ierr = verbPrintf(1,grid.com,
+       "WARNING:  Unknown file format for %s.  Trying to read as NetCDF.\n",fname); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2,grid.com,"initializing from NetCDF format file  %s  ...\n",
+                     fname); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
     stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));

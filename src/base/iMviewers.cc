@@ -185,7 +185,6 @@ PetscErrorCode IceModel::updateSoundings() {
   for (PetscInt k=0; k < Mzsum; k++)   row[k] = k;
   
   PetscScalar *ivals;
-  ivals = new PetscScalar[grid.p->Mz];
   
   // transfer data in [id][jd] column to soundings Vec
   if (id>=grid.xs && id<grid.xs+grid.xm && jd>=grid.ys && jd<grid.ys+grid.ym) {
@@ -196,7 +195,7 @@ PetscErrorCode IceModel::updateSoundings() {
       ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
       ierr = VecSetValues(Td, grid.p->Mbz - 1, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
       // note Tb[][][Mbz-1] duplicates T[][][0] and it should not be displayed twice
-      ierr = T3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = T3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz - 1], ivals, INSERT_VALUES);
                CHKERRQ(ierr);
       ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
@@ -204,43 +203,43 @@ PetscErrorCode IceModel::updateSoundings() {
     }
     if (runtimeViewers[cIndex('x')] != PETSC_NULL) {
       ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = u3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = u3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(ud, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('y')] != PETSC_NULL) {
       ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = v3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(vd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('z')] != PETSC_NULL) {
       ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = w3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = w3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(wd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('s')] != PETSC_NULL) {
       ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = Sigma3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = Sigma3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(Sigmad, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('g')] != PETSC_NULL) {
       ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = gs3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = gs3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(gsd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('e')] != PETSC_NULL) {
       ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = tau3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+      ierr = tau3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
       ierr = VecSetValues(taud, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
     }
   }
   
-  delete [] row; delete [] ivals;  // done with setting up soundings ...
+  delete [] row;
 
   // actually view soundings:  
   ierr = updateOneSounding('e',taud,1.0/secpera); CHKERRQ(ierr); // Display in years

@@ -30,6 +30,8 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
+PetscLogEventBegin(siaEVENT,0,0,0,0);
+
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
@@ -85,6 +87,9 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   } else { // if computeSIAVelocities
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
+
+PetscLogEventEnd(siaEVENT,0,0,0,0);
+PetscLogEventBegin(ssaEVENT,0,0,0,0);
   
   // do SSA
   if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
@@ -109,6 +114,9 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   } else {
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
+
+PetscLogEventEnd(ssaEVENT,0,0,0,0);
+PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 
   // now communicate modified velocity fields
   ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
@@ -152,6 +160,8 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
     // communication here for global max; sets CFLmaxdt
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }
+
+PetscLogEventEnd(velmiscEVENT,0,0,0,0);
   
   firstTime = PETSC_FALSE;
   return 0;
@@ -193,11 +203,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
                       dy = grid.p->dy;
   const PetscInt      Mz = grid.p->Mz;
   PetscScalar **ub, **vb, **basalMeltRate, **b, **dbdt;
-
   PetscScalar *u, *v, *w;
-  u = new PetscScalar[grid.p->Mz];
-  v = new PetscScalar[grid.p->Mz];
-  w = new PetscScalar[grid.p->Mz];
 
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
@@ -211,6 +217,10 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
     
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
+      ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
+
       // basal w from basal kinematical equation
       const PetscScalar dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx),
                         dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
@@ -219,9 +229,6 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       if (includeBMRinContinuity == PETSC_TRUE) {
         w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
       }
-
-      ierr = u3.getValColumn(i,j,grid.p->Mz,grid.zlevels,u); CHKERRQ(ierr);
-      ierr = v3.getValColumn(i,j,grid.p->Mz,grid.zlevels,v); CHKERRQ(ierr);
 
       // compute w above base by trapezoid rule 
       planeStar uss, vss;
@@ -246,8 +253,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
         w[k] = w[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;
       }
-      
-      ierr = w3.setValColumn(i,j,grid.p->Mz,grid.zlevels,w); CHKERRQ(ierr);      
+      // no need to call w3.setInternalColumn; already set
     }
   }
 
@@ -261,7 +267,6 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
 
-  delete [] u;  delete [] v;  delete [] w;
   return 0;
 }
 
@@ -341,17 +346,20 @@ PetscErrorCode IceModel::smoothSigma() {
 
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
+/*!
+Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.  Then sets
+\c CFLmaxdt, the maximum time step allowed under the Courant-Friedrichs-Lewy condition on the 
+advection scheme for age and for temperature.
+ */
 PetscErrorCode IceModel::computeMax3DVelocities() {
-  // computes max velocities in 3D grid and also sets CFLmaxdt by CFL condition for upwinding
   PetscErrorCode ierr;
-  PetscScalar **H;
+  PetscScalar **H, *u, *v, *w;
   PetscScalar locCFLmaxdt = maxdt;
-  const PetscInt Mz = grid.p->Mz;
 
-  PetscScalar *u, *v, *w;
-  u = new PetscScalar[Mz];
-  v = new PetscScalar[Mz];
-  w = new PetscScalar[Mz];
+  // compute dzEQ which will be used inside temperatureStep() and ageStep()
+  PetscInt    Mz_for_dzEQ, dummyM;
+  ierr = getMzMbzForTempAge(Mz_for_dzEQ,dummyM); CHKERRQ(ierr);
+  const PetscScalar dzEQ = grid.p->Lz / ((PetscScalar) (Mz_for_dzEQ - 1));
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
@@ -365,9 +373,9 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
       const PetscInt      ks = grid.kBelowHeight(H[i][j]);
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
-      ierr = u3.getValColumn(i,j,Mz,grid.zlevels,u); CHKERRQ(ierr);
-      ierr = v3.getValColumn(i,j,Mz,grid.zlevels,v); CHKERRQ(ierr);
-      ierr = w3.getValColumn(i,j,Mz,grid.zlevels,w); CHKERRQ(ierr);
+      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
+      ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
       for (PetscInt k=0; k<ks; ++k) {
         const PetscScalar au = PetscAbs(u[k]);
         const PetscScalar av = PetscAbs(v[k]);
@@ -378,9 +386,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
         if (!isMarginal) {
           const PetscScalar aw = PetscAbs(w[k]);
           maxw = PetscMax(maxw,aw);
-          PetscScalar mydz = (k > 0) ? grid.zlevels[k] - grid.zlevels[k-1] : grid.zlevels[k+1] - grid.zlevels[k];
-          mydz = (k < Mz-1) ? PetscMin(grid.zlevels[k+1] - grid.zlevels[k], mydz) : mydz;
-          tempdenom += PetscAbs(aw / mydz);
+          tempdenom += PetscAbs(aw / dzEQ);
         }
         locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
       }
@@ -391,8 +397,6 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-
-  delete [] u;  delete [] v;  delete [] w;
 
   ierr = PetscGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);

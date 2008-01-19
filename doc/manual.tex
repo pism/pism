@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{232}
+\newcommand{\PISMREV}{244}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -595,23 +595,11 @@ Such ``regridding'' is done using the \verb|-regrid| and \verb|-regrid_vars| com
 
 \verb|     -regrid foo.nc -regrid_vars HT -o bar|
 
-\noindent Note one specifies ``\verb|HT|'' to indicate that the ice thickness and temperature values from the old grid should be interpolated onto the new grid.  See table \ref{tab:regridvar} for the regriddable variables.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment F description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
+\noindent By specifying regridded variables ``\verb|HT|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment F description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.  Here it is reasonable to have the sequence of commands, run on 8 processors,
-\small
-\begin{verbatim}
-mpiexec -n 8 pismr -bif_legacy init.nc -Mx 141 -My 141 -Mz 101 -Mbz 21 -gk -e 1.2 \
-   -verbose -y 10 -o ant10yr_40km -of n
+See table \ref{tab:regridvar} for the regriddable variables.
 
-mpiexec -n 8 pismr -if ant10yr_40km.nc -gk -e 1.2 -no_mass -y 149990 \
-   -o ant150k_40km -of n
-
-mpiexec -n 8 pismr -bif_legacy init.nc -Mx 281 -My 281 -Mz 201 -Mbz 41 -gk -e 1.2 \
-   -regrid ant150k_40km.nc -regrid_vars TBeL -verbose -y 10 -o ant150k_20km -of n
-\end{verbatim}
-\normalsize
-Here we bootstrap from an incomplete set of data in \verb|init.nc| and smooth the surface for a short 10 year run on a coarseer 40km grid.  Then we do a long simulation to complete 150,000 years on this coarse grid to approximate the temperature and age fields, assuming steady boundary conditions and fixed geometry.  Finally we do a brief 10 year run with evolving geometry on a finer 20km grid, but we go back to the original data for the ice thickness; this last stage involves regridding temperature but not thickness, in particular.
-
+A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
 
 \begin{table}[ht]
 \caption{Regriddable variables.  ``\texttt{.nc} \textbf{Name}'' gives the name of the variable in a PISM output NetCDF file.  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
@@ -1720,8 +1708,6 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 \opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.
 
 \optrestrict{bif}{pismr, pgrn}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-if|.
-
-\optrestrict{bif\und legacy}{pant}  The model can be ``bootstrapped'' from certain NetCDF files dealing with antarctica (\verb|init.nc|).
 
 \optrestrict{bmr\und in\und cont}{pisms -eisII}  By default \verb|pisms -eisII| does not include the basal melt rate in the continuity equation because EISMINT II specifies that it should not be included.  This option makes \verb|pisms -eisII| behave like the generic PISM cases (e.g.~\verb|pismr|).
 

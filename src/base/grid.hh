@@ -74,6 +74,7 @@ public:
 
   PetscErrorCode chooseEquallySpacedVertical();
   PetscErrorCode chooseChebyshevSpacedVertical();
+  PetscErrorCode chooseQuadraticSpacedVertical();
 
   PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
                          const PetscScalar lz);

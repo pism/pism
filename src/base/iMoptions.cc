@@ -86,9 +86,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-cheb", &chebSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-chebZ", &chebSet); CHKERRQ(ierr);
   if (chebSet == PETSC_TRUE) {
-    userWantsChebVertGrid = PETSC_TRUE;
     ierr = grid.chooseChebyshevSpacedVertical(); CHKERRQ(ierr);
   }
 
@@ -227,6 +226,11 @@ PetscErrorCode  IceModel::setFromOptions() {
      &plasticphiSet);  CHKERRQ(ierr);
   if (plasticphiSet == PETSC_TRUE)
      plastic_till_mu = tan((pi/180.0) * myplastic_phi);
+
+  ierr = PetscOptionsHasName(PETSC_NULL, "-quadZ", &chebSet); CHKERRQ(ierr);
+  if (chebSet == PETSC_TRUE) {
+    ierr = grid.chooseQuadraticSpacedVertical(); CHKERRQ(ierr);
+  }
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation

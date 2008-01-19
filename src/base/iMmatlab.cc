@@ -188,7 +188,6 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
     PetscInt         *row;
     Vec              m;
     PetscScalar      *ivals;
-    ivals = new PetscScalar[grid.p->Mz];
 
     // row gives indices only
     if (doTandTb == PETSC_TRUE)   rlen += grid.p->Mbz;
@@ -200,7 +199,7 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
     if ((id >= grid.xs) && (id < grid.xs+grid.xm) && (jd >= grid.ys) && (jd < grid.ys+grid.ym)) {
       if (doTandTb == PETSC_TRUE) {
         ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-        ierr = T3.getValColumn(id, jd, grid.p->Mz, grid.zlevels, ivals); CHKERRQ(ierr);
+        ierr = T3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
         ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
         PetscScalar *ibvals;
         ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
@@ -211,13 +210,13 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
         ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
       } else {
         ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
-        ierr = imv3.getValColumn(id, jd, rlen, grid.zlevels, ivals); CHKERRQ(ierr);
+        ierr = imv3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
         ierr = VecSetValues(m, rlen, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
         ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
       }
     }
 
-    delete [] row; delete [] ivals;  // done with setting up soundings ...
+    delete [] row;
 
     ierr = VecAssemblyBegin(m); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(m); CHKERRQ(ierr);

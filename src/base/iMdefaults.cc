@@ -152,7 +152,8 @@ const PetscScalar DEFAULT_TILL_PHI = 30.0;  // pure number; tan(30^o) = ; till f
 
 //! Assigns default values to the many parameters and flags in IceModel.
 PetscErrorCode IceModel::setDefaults() {
-
+  PetscErrorCode ierr;
+  
   //ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
   initialized_p = PETSC_FALSE;
 
@@ -168,7 +169,7 @@ PetscErrorCode IceModel::setDefaults() {
   thermalBedrock = DEFAULT_THERMAL_BEDROCK;
   doOceanKill = DEFAULT_OCEAN_KILL;
   
-  userWantsChebVertGrid = PETSC_FALSE;
+  ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
   
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;

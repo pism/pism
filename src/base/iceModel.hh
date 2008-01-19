@@ -75,7 +75,7 @@ public:
   virtual PetscErrorCode initFromOptions(PetscTruth doHook);
 
   // see iMIO.cc
-  PetscErrorCode initFromFile(const char *);
+  PetscErrorCode initFromFile_netCDF(const char *);
   PetscErrorCode writeFiles(const char* defaultbasename);
   PetscErrorCode writeFiles(const char* defaultbasename, const PetscTruth forceFullDiagnostics);
 
@@ -189,7 +189,6 @@ protected:
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, transformForSurfaceGradient;
-  PetscTruth  userWantsChebVertGrid;
   char        adaptReasonFlag;
 
   // file names
@@ -271,7 +270,6 @@ protected:
   PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode warnUserOptionsIgnored(const char *fname);
   PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
-  PetscErrorCode initFromFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
   PetscErrorCode regrid_netCDF(const char *fname);
@@ -389,6 +387,10 @@ protected:
   PetscErrorCode excessToFromBasalMeltLayer(
                       const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
                       PetscScalar *Texcess, PetscScalar *Hmelt);
+  PetscErrorCode getMzMbzForTempAge(PetscInt &ta_Mz, PetscInt &ta_Mbz);
+  PetscErrorCode getVertLevsForTempAge(const PetscInt ta_Mz, const PetscInt ta_Mbz,
+                                       PetscScalar &ta_dzEQ, PetscScalar &ta_dzbEQ, 
+                                       PetscScalar *ta_zlevEQ, PetscScalar *ta_zblevEQ);
 
   // see iMutil.cc
   virtual int endOfTimeStepHook();
@@ -439,18 +441,18 @@ protected:
 
 private:
   // working space (a convenience)
-/*
-  static const PetscInt nWork3d=4, nWork2d=6;
-  Vec g2, g3, g3b;    // Global work vectors
-  Vec* vWork3d;
-*/
   static const PetscInt nWork2d=6;
   Vec g2;    // Global work vector
   Vec* vWork2d;
 
+  // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, taunew3;
   IceModelVec3 *Sigmastag3, *Istag3;
   
+  // for event logging; see run() and velocity()
+  int siaEVENT, ssaEVENT, velmiscEVENT, 
+      beddefEVENT, grainsizeEVENT, pddEVENT, massbalEVENT, tempEVENT;
+
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details
