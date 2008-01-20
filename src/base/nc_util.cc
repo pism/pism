@@ -149,16 +149,19 @@ PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int v
 
 
 //! Put the variable for a dimension in a NetCDF file.  Uses starting value and a spacing for regularly-spaced values.
-PetscErrorCode NCTool::put_dimension_regular(int ncid, int v_id, int len, float start, float delta) {
+/*!
+Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
+ */
+PetscErrorCode NCTool::put_dimension_regular(int ncid, int v_id, int len, double start, double delta) {
   PetscErrorCode ierr;
   int stat;
-  float *v;
+  double *v;
 
-  ierr = PetscMalloc(len * sizeof(float), &v); CHKERRQ(ierr);
+  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
   for (int i = 0; i < len; i++) {
     v[i] = start + i * delta;
   }
-  stat = nc_put_var_float(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_var_double(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   ierr = PetscFree(v); CHKERRQ(ierr);
 
   return 0;
@@ -166,16 +169,19 @@ PetscErrorCode NCTool::put_dimension_regular(int ncid, int v_id, int len, float 
 
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
+/*!
+Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
+ */
 PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
   PetscErrorCode ierr;
   int stat;
-  float *v;
+  double *v;
 
-  ierr = PetscMalloc(len * sizeof(float), &v); CHKERRQ(ierr);
+  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
   for (int i = 0; i < len; i++) {
-    v[i] = (float)vals[i];
+    v[i] = (double)vals[i];
   }
-  stat = nc_put_var_float(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_var_double(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   ierr = PetscFree(v); CHKERRQ(ierr);
   return 0;
 }
@@ -184,14 +190,13 @@ PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *v
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Also read final time.
 /*!
 Correspondence between the parameters to this procedure and the values in \c IceGrid:
-  - <tt>bdy[0]</tt> is current time and becomes <tt>grid.p->year</tt>
-  - <tt>-bdy[1]</tt>=<tt>bdy[2]</tt> is \f$x\f$ half-length of computational domain and becomes <tt>grid.p->Lx</tt>
-  - <tt>-bdy[3]</tt>=<tt>bdy[4]</tt> is \f$y\f$ half-length of computational domain and becomes <tt>grid.p->Ly</tt>
-  - <tt>-bdy[5]</tt> is thickness (positive) of bedrock layer (for thermal model); becomes <tt>grid.p->Lbz</tt>
-  - <tt>bdy[6]</tt> is thickness (positive) of ice layer and becomes <tt>grid.p->Lz</tt>
+  - <tt>bdy[0]</tt> is current time and becomes <tt>grid.year</tt>
+  - <tt>-bdy[1]</tt>=<tt>bdy[2]</tt> is \f$x\f$ half-length of computational domain and becomes <tt>grid.Lx</tt>
+  - <tt>-bdy[3]</tt>=<tt>bdy[4]</tt> is \f$y\f$ half-length of computational domain and becomes <tt>grid.Ly</tt>
+  - <tt>-bdy[5]</tt> is thickness (positive) of bedrock layer (for thermal model); becomes <tt>grid.Lbz</tt>
+  - <tt>bdy[6]</tt> is thickness (positive) of ice layer and becomes <tt>grid.Lz</tt>
  */
-PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], float bdy[], double *bdy_time, 
-                                               MPI_Comm com) {
+PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bdy[], MPI_Comm com) {
   PetscErrorCode ierr;
   PetscMPIInt rank;
   int stat;
@@ -229,26 +234,16 @@ PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], float bdy
     size_t y_bdy[] = {0, y_len - 1};
     size_t z_bdy[] = {0, z_len - 1}; // Start at 0 in `zb', end at z_len - 1 of `z'
 
-    //stat = nc_get_var1_float(ncid, t_id, &t_end, &bdy[0]);
-    stat = nc_get_var1_double(ncid, t_id, &t_end, bdy_time);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    bdy[0] = *bdy_time;  // bdy[0] has original meaning: time in seconds as a float
-    stat = nc_get_var1_float(ncid, x_id, &x_bdy[0], &bdy[1]);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_float(ncid, x_id, &x_bdy[1], &bdy[2]);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_float(ncid, y_id, &y_bdy[0], &bdy[3]);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_float(ncid, y_id, &y_bdy[1], &bdy[4]);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_float(ncid, zb_id, &z_bdy[0], &bdy[5]);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_float(ncid, z_id, &z_bdy[1], &bdy[6]);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));    
+    stat = nc_get_var1_double(ncid, t_id, &t_end, &bdy[0]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_var1_double(ncid, x_id, &x_bdy[0], &bdy[1]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_var1_double(ncid, x_id, &x_bdy[1], &bdy[2]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_var1_double(ncid, y_id, &y_bdy[0], &bdy[3]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_var1_double(ncid, y_id, &y_bdy[1], &bdy[4]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_var1_double(ncid, zb_id, &z_bdy[0], &bdy[5]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));    
   }
   MPI_Bcast(dim, 5, MPI_LONG, 0, com);
-  MPI_Bcast(bdy, 7, MPI_FLOAT, 0, com);
-  MPI_Bcast(bdy_time, 1, MPI_DOUBLE, 0, com);
+  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, com);
 
   return 0;
 }
@@ -317,7 +312,7 @@ PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, P
 
 //! Read in the variables \c z and \c zb from the NetCDF file; don't assume they are equally-spaced.
 PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len, 
-                                         float z_read[], float zb_read[], MPI_Comm com) {
+                                         double z_read[], double zb_read[], MPI_Comm com) {
   PetscErrorCode ierr;
   PetscMPIInt rank;
   int stat;
@@ -332,14 +327,14 @@ PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len,
     stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     
-    stat = nc_get_vara_float(ncid, z_id, &zeroST, &zlenST, z_read);
+    stat = nc_get_vara_double(ncid, z_id, &zeroST, &zlenST, z_read);
              CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_vara_float(ncid, zb_id, &zeroST, &zblenST, zb_read);
+    stat = nc_get_vara_double(ncid, zb_id, &zeroST, &zblenST, zb_read);
              CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
   
-  MPI_Bcast(z_read, z_len, MPI_FLOAT, 0, com);
-  MPI_Bcast(zb_read, zb_len, MPI_FLOAT, 0, com);
+  MPI_Bcast(z_read, z_len, MPI_DOUBLE, 0, com);
+  MPI_Bcast(zb_read, zb_len, MPI_DOUBLE, 0, com);
   return 0;
 }
 
@@ -523,22 +518,22 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
         SETERRQ1(1, "var_to_da_vec: NC_VAR `%s' not of type NC_INT or NC_FLOAT.\n", name);
     }
 
-    ierr = VecGetArray2d(vindzero, grid.p->Mx, grid.p->My, 0, 0, &ind); CHKERRQ(ierr);
+    ierr = VecGetArray2d(vindzero, grid.Mx, grid.My, 0, 0, &ind); CHKERRQ(ierr);
     
     // netCDF concepts of $\Delta x$ and $\Delta y$
     // We have rescaled the grid early in bootstrapFromFile_netCDF() to match the 
     // physical extent of the netCDF file.
-    const float ncdx = 2 * grid.p->Lx / (M - 1);
-    const float ncdy = 2 * grid.p->Ly / (N - 1);
+    const float ncdx = 2 * grid.Lx / (M - 1);
+    const float ncdy = 2 * grid.Ly / (N - 1);
 
-    for (PetscInt i=0; i < grid.p->Mx; i++) {
-      for (PetscInt j=0; j < grid.p->My; j++) {
-        const float x = grid.p->dx * (i - grid.p->Mx/2);
-        const float y = grid.p->dy * (j - grid.p->My/2);
-        if (PetscAbs(x) > grid.p->Lx) {
+    for (PetscInt i=0; i < grid.Mx; i++) {
+      for (PetscInt j=0; j < grid.My; j++) {
+        const float x = grid.dx * (i - grid.Mx/2);
+        const float y = grid.dy * (j - grid.My/2);
+        if (PetscAbs(x) > grid.Lx) {
           SETERRQ1(2, "var_to_da_vec: x=%f not in bounds.  Grid corrupted.\n", x);
         }
-        if (PetscAbs(y) > grid.p->Ly) {
+        if (PetscAbs(y) > grid.Ly) {
           SETERRQ1(3, "var_to_da_vec: y=%f not in bounds.  Grid corrupted.\n", y);
         }
             
@@ -592,14 +587,14 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
         // The backward indexing is merely to make the plots look upright with
         // the default plotting methods.  When I can make the axes work in a
         // sane manner, this can be improved.
-        ierr = VecSetValue(vecg, (PetscInt) ind[grid.p->Mx - 1 - i][j],
+        ierr = VecSetValue(vecg, (PetscInt) ind[grid.Mx - 1 - i][j],
                            val, INSERT_VALUES); CHKERRQ(ierr);
       }
     }
    
     if (f != NULL) delete [] f;
     if (g != NULL) delete [] g;
-    ierr = VecRestoreArray2d(vindzero, grid.p->Mx, grid.p->My, 0, 0, &ind); CHKERRQ(ierr);
+    ierr = VecRestoreArray2d(vindzero, grid.Mx, grid.My, 0, 0, &ind); CHKERRQ(ierr);
   }
 
   ierr = VecAssemblyBegin(vecg); CHKERRQ(ierr);
@@ -614,22 +609,20 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
 /*! 
 This procedure merely puts various information into a struct; it doesn't extract new information or do communication.
  */
-PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
-                                           const float zlevsIN[], const float zblevsIN[],
+PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const double bdy[],
+                                           const double zlevsIN[], const double zblevsIN[],
                                            LocalInterpCtx &lic, IceGrid &grid) {
   PetscErrorCode ierr;
-  const float Lx = grid.p->Lx;
-  const float Ly = grid.p->Ly;
-  const float Lz = grid.p->Lz;
-  const float Lbz = grid.p->Lbz;
-  const float dx = grid.p->dx;
-  const float dy = grid.p->dy;
+  const double Lx = grid.Lx,
+               Ly = grid.Ly, 
+               Lz = grid.Lz, 
+               Lbz = grid.Lbz,
+               dx = grid.dx,
+               dy = grid.dy;
   
-  float xbdy[2] = {-Lx + dx * grid.xs,
-                   -Lx + dx * (grid.xs + grid.xm - 1)};
-  float ybdy[2] = {-Ly + dy * grid.ys,
-                   -Ly + dy * (grid.ys + grid.ym - 1)};
-  float zbdy[2] = {-Lbz, Lz};
+  double xbdy[2] = {-Lx + dx * grid.xs, -Lx + dx * (grid.xs + grid.xm - 1)};
+  double ybdy[2] = {-Ly + dy * grid.ys, -Ly + dy * (grid.ys + grid.ym - 1)};
+  double zbdy[2] = {-Lbz, Lz};
 
   if (bdy[1] > -Lx || bdy[2] < Lx || bdy[3] > -Ly || bdy[4] < Ly
       || -bdy[5] < Lbz || bdy[6] < Lz)
@@ -649,8 +642,7 @@ PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const f
 // replace:  lic.start[4] = regridFile.kbBelowHeight(zbdy[0]), so to speak
   lic.start[4] = (int)floor((zbdy[0] - bdy[5]) / lic.delta[3]);
   
-  lic.timestart = bdy_time;
-  lic.fstart[0] = bdy[0];  // this value is a float; use lic.timestart instead
+  lic.fstart[0] = bdy[0];
   lic.fstart[1] = bdy[1] + lic.start[1] * lic.delta[1];
   lic.fstart[2] = bdy[3] + lic.start[2] * lic.delta[2];
 
@@ -661,12 +653,12 @@ PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const f
   lic.count[3] = (int)ceil(Lz / lic.delta[3] + 1);
   lic.count[4] = dim[4] - lic.start[4];
 
-  ierr = PetscMalloc(dim[3] * sizeof(float), &(lic.zlevs)); CHKERRQ(ierr);
+  ierr = PetscMalloc(dim[3] * sizeof(double), &(lic.zlevs)); CHKERRQ(ierr);
   for (size_t k = 0; k < dim[3]; k++) {
     lic.zlevs[k] = zlevsIN[k];
   }
 
-  ierr = PetscMalloc(dim[4] * sizeof(float), &(lic.zblevs)); CHKERRQ(ierr);
+  ierr = PetscMalloc(dim[4] * sizeof(double), &(lic.zblevs)); CHKERRQ(ierr);
   for (size_t k = 0; k < dim[4]; k++) {
     lic.zblevs[k] = zblevsIN[k];
   }
@@ -674,7 +666,7 @@ PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const f
   int a_len = lic.a_len = lic.count[1] * lic.count[2] * lic.count[3];
   MPI_Reduce(&a_len, &(lic.a_len), 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(lic.a_len * sizeof(float), &(lic.a)); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -719,7 +711,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
                                          IceGrid &grid, DA da, Vec g) {
   PetscErrorCode ierr;
                                 
-  if (!grid.equalVertSpacing()) {
+  if (!grid.isEqualVertSpacing()) {
     SETERRQ(604,"only implemented for grids with equal dz spacing in vertical\n");
   }
 
@@ -816,12 +808,12 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
         myMz = 1;
         zcount = 1;
       } else if (dim_flag == 3) {
-        myMz = grid.p->Mz;
+        myMz = grid.Mz;
         zcount = lic.count[3];
       } else if (dim_flag == 4) {
-        myMz = grid.p->Mbz;
+        myMz = grid.Mbz;
 // replace: remove bottom
-        bottom = -grid.p->Lbz;
+        bottom = -grid.Lbz;
         zcount = lic.count[4];
 // replace: zfstart = regridFile.zblevel[(regridFile.Mbz - 1) - (zcount - 1)], so to speak
         zfstart = -(zcount - 1) * lic.delta[3];
@@ -830,10 +822,10 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
       for (int k = 0; k < myMz; k++) {
         float a_mm, a_mp, a_pm, a_pp;
         
-        const float x = -grid.p->Lx + i * grid.p->dx;
-        const float y = -grid.p->Ly + j * grid.p->dy;
+        const float x = -grid.Lx + i * grid.dx;
+        const float y = -grid.Ly + j * grid.dy;
 // replace:  const float z = (dim_flag == 4) ? grid.zlevels[k] : grid.zblevels[k];
-        const float z = k * grid.dzEQ + bottom;
+        const float z = k * grid.dzMIN + bottom;  // assumes grid.dzMIN = grid.dzMAX, for now
 
         const float ic = (x - lic.fstart[1]) / lic.delta[1];
         const float jc = (y - lic.fstart[2]) / lic.delta[2];

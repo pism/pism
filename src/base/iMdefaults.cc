@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -232,8 +232,8 @@ PetscErrorCode IceModel::setDefaults() {
   isothermalFlux_n_exponent = DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT;
   
   // set default locations of soundings and slices
-  id = (grid.p->Mx - 1)/2;
-  jd = (grid.p->My - 1)/2;
+  id = (grid.Mx - 1)/2;
+  jd = (grid.My - 1)/2;
   kd = 0;
   return 0;
 }

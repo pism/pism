@@ -407,7 +407,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_varn
   PetscErrorCode ierr;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.p->Mbz, N, M, 1, n, m, 1, 1,
+  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mbz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
   IOwnDA = true;
 
@@ -420,14 +420,14 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_varn
 
 //! Set values of bedrock scalar quantity at internal levels determined by IceGrid.
 /*!
-Array \c valsIN must be an allocated array of \c (grid->p)->Mbz \c PetscScalar s.
+Array \c valsIN must be an allocated array of \c grid->Mbz \c PetscScalar s.
  */
 PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(const PetscInt i, const PetscInt j, 
                                                        PetscScalar *valsIN) {
   
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k = 0; k < (grid->p)->Mbz; k++) {
+  for (PetscInt k = 0; k < grid->Mbz; k++) {
     arr[i][j][k] = valsIN[k];
   }
   return 0;
@@ -440,7 +440,7 @@ PetscErrorCode  IceModelVec3Bedrock::setToConstantColumn(
 
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k = 0; k < (grid->p)->Mbz; k++) {
+  for (PetscInt k = 0; k < grid->Mbz; k++) {
     arr[i][j][k] = c;
   }
   return 0;
@@ -449,7 +449,7 @@ PetscErrorCode  IceModelVec3Bedrock::setToConstantColumn(
 
 //! Return values of bedrock scalar quantity at internal levels determined by IceGrid.
 /*!
-Return array \c valsOUT is an allocated array of \c (grid->p)->Mbz \c PetscScalar s.
+Return array \c valsOUT is an allocated array of \c grid->Mbz \c PetscScalar s.
  */
 PetscErrorCode  IceModelVec3Bedrock::getInternalColumn(const PetscInt i, const PetscInt j, 
                                                        PetscScalar **valsOUT) {
@@ -481,10 +481,10 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscI
   ierr = checkAllocated(); CHKERRQ(ierr);
   // check if in ownership ?
 
-  if (levelsIN[0] > -(grid->p)->Lbz + 1.0e-3) {
+  if (levelsIN[0] > -grid->Lbz + 1.0e-3) {
     SETERRQ3(1,"levelsIN[0]=%10.9f is above base of bedrock at z=-%10.9f so *interpolation*\n"
               "   is impossible; IceModelVec3Bedrock has varname='%s';  ENDING!\n",
-              levelsIN[0],(grid->p)->Lbz,varname);
+              levelsIN[0],grid->Lbz,varname);
   }
   if (levelsIN[nlevels - 1] < 0.0 - 1.0e-3) {
     SETERRQ2(2,"levelsIN[nlevels-1] = %10.9f is below z=0, so *interpolation* is impossible;\n"
@@ -504,7 +504,7 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscI
   PetscScalar ***arr = (PetscScalar***) array;
   
   PetscInt mcurr = 0;
-  for (PetscInt k=0; k < (grid->p)->Mbz; k++) {
+  for (PetscInt k=0; k < grid->Mbz; k++) {
     while (levelsIN[mcurr+1] < levels[k]) {
       mcurr++;
     }
@@ -516,10 +516,10 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscI
 
 
 PetscErrorCode  IceModelVec3Bedrock::isLegalLevel(const PetscScalar z) {
-  if (z < -(grid->p)->Lbz - 1.0e-6) {
+  if (z < -grid->Lbz - 1.0e-6) {
     SETERRQ3(1,
        "level z = %10.8f is below bottom of bedrock at -Lbz = %10.8f; IceModelVec3Bedrock has varname='%s'; ENDING!\n",
-       z,-(grid->p)->Lbz,varname);
+       z,-grid->Lbz,varname);
   }
   if (z > 0.0 + 1.0e-6) {
     SETERRQ2(2,"level z = %10.8f is above top of bedrock at z=0; IceModelVec3Bedrock has varname='%s'; ENDING!\n",
@@ -533,7 +533,7 @@ PetscErrorCode  IceModelVec3Bedrock::isLegalLevel(const PetscScalar z) {
 /*!
 Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range \f$-\mathtt{grid.p->Lbz} <= z <= 0.0\f$.
+\c levelsIN must be strictly increasing and in the range \f$-\mathtt{grid.Lbz} <= z <= 0.0\f$.
 
 Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
 Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet, chebSet;
+  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet;
   PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
               mytransformForSurfaceGradient, myincludeBMRinContinuity, lowtempSet,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
@@ -86,10 +86,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-chebZ", &chebSet); CHKERRQ(ierr);
-  if (chebSet == PETSC_TRUE) {
-    ierr = grid.chooseChebyshevSpacedVertical(); CHKERRQ(ierr);
-  }
+// "-chebZ" read in determineSpacingTypeFromOptions()
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
   // user gives nu in MPa yr (e.g. Ritz et al 2001 value is 30.0)
@@ -165,16 +162,16 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &my_Mx, &MxSet); CHKERRQ(ierr);
-  if (MxSet == PETSC_TRUE)   grid.p->Mx = my_Mx;
+  if (MxSet == PETSC_TRUE)   grid.Mx = my_Mx;
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &my_My, &MySet); CHKERRQ(ierr);
-  if (MySet == PETSC_TRUE)   grid.p->My = my_My;
+  if (MySet == PETSC_TRUE)   grid.My = my_My;
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &my_Mz, &MzSet); CHKERRQ(ierr);
-  if (MzSet == PETSC_TRUE)   grid.p->Mz = my_Mz;
+  if (MzSet == PETSC_TRUE)   grid.Mz = my_Mz;
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
-  if (MbzSet == PETSC_TRUE)   grid.p->Mbz = my_Mbz;
+  if (MbzSet == PETSC_TRUE)   grid.Mbz = my_Mbz;
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
@@ -227,10 +224,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   if (plasticphiSet == PETSC_TRUE)
      plastic_till_mu = tan((pi/180.0) * myplastic_phi);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-quadZ", &chebSet); CHKERRQ(ierr);
-  if (chebSet == PETSC_TRUE) {
-    ierr = grid.chooseQuadraticSpacedVertical(); CHKERRQ(ierr);
-  }
+// "-quadZ" read in determineSpacingTypeFromOptions()
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
@@ -311,7 +305,27 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note -ys, -ye, -y options are read in setStartRunEndYearsFromOptions()
  
+  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);  // reads "-quadZ" and "-chebZ"
+  
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
+
+
+//! Read options -quadZ or -chebZ or nothing; good to call this before rescaling.
+PetscErrorCode IceModel::determineSpacingTypeFromOptions() {
+  PetscErrorCode ierr;
+  PetscTruth quadSet, chebSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-quadZ", &quadSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-chebZ", &chebSet); CHKERRQ(ierr);
+  if (quadSet == PETSC_TRUE) {
+    ierr = grid.chooseQuadraticSpacedVertical(); CHKERRQ(ierr);
+  } else if (chebSet == PETSC_TRUE) {
+    ierr = grid.chooseChebyshevSpacedVertical(); CHKERRQ(ierr);
+  } else {
+    ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
 

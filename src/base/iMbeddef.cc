@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Ed Bueler
+// Copyright (C) 2004-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -102,7 +102,7 @@ PetscErrorCode IceModel::bedDefSetup() {
     ierr = VecCopy(vH,vHlast); CHKERRQ(ierr);
     ierr = VecDuplicate(vbed,&vbedlast); CHKERRQ(ierr);
     ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
-    lastBedDefUpdateYear = grid.p->year;
+    lastBedDefUpdateYear = grid.year;
     
     if (doBedIso == PETSC_TRUE) {
       ierr = verbPrintf(2, grid.com,"using pointwise isostasy Earth deformation model\n");
@@ -131,7 +131,7 @@ PetscErrorCode IceModel::bedDefSetup() {
 
       if (grid.rank == 0) {
         ierr = bdLC.settings(PETSC_FALSE, // turn off elastic model for now
-                       grid.p->Mx,grid.p->My,grid.p->dx,grid.p->dy,
+                       grid.Mx,grid.My,grid.dx,grid.dy,
                        2,                 // use Z = 2 for now
                        ice.rho, bedrock.rho, bedrock.eta, bedrock.D,
                        &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0); CHKERRQ(ierr);
@@ -177,7 +177,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
     //ierr = PetscPrintf(grid.com, " [lastBedDefUpdateYear = %10.3f]\n",
     //           lastBedDefUpdateYear); CHKERRQ(ierr);
     // If the bed elevations are not expired, exit cleanly.
-    const PetscScalar dtBedDefYears = grid.p->year - lastBedDefUpdateYear;
+    const PetscScalar dtBedDefYears = grid.year - lastBedDefUpdateYear;
     if (dtBedDefYears >= bedDefIntervalYears) {
       if (doBedIso == PETSC_TRUE) { // pointwise isostasy model: in parallel
         ierr = bed_def_step_iso(); CHKERRQ(ierr);
@@ -185,7 +185,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
         ierr = putLocalOnProcZero(vH,Hp0); CHKERRQ(ierr);
         ierr = putLocalOnProcZero(vbed,bedp0); CHKERRQ(ierr);
         if (grid.rank == 0) {  // only processor zero does the step
-          ierr = bdLC.step(dtBedDefYears, grid.p->year - startYear); CHKERRQ(ierr);
+          ierr = bdLC.step(dtBedDefYears, grid.year - startYear); CHKERRQ(ierr);
         }
         ierr = getLocalFromProcZero(bedp0, vbed); CHKERRQ(ierr);
         ierr = DALocalToLocalBegin(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
@@ -198,7 +198,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
       ierr = VecCopy(vH,vHlast); CHKERRQ(ierr);
       ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-      lastBedDefUpdateYear = grid.p->year;
+      lastBedDefUpdateYear = grid.year;
       ierr = PetscPrintf(grid.com, "b"); CHKERRQ(ierr);
     } else {
       ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);

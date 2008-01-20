@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -54,8 +54,8 @@ PetscErrorCode IceUpwindCompModel::velocity(bool updateSIAVelocityAtDepth) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET) {
-        PetscScalar denom = PetscAbs(ubar[i][j])/grid.p->dx + PetscAbs(vbar[i][j])/grid.p->dy;
-        denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+        PetscScalar denom = PetscAbs(ubar[i][j])/grid.dx + PetscAbs(vbar[i][j])/grid.dy;
+        denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
         locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
       }
     }

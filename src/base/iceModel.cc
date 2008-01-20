@@ -120,8 +120,8 @@ IceModel::~IceModel() {
 //! Allocate all Vecs defined in IceModel.
 /*! Initialization of an IceModel is confusing.  Here is a description of the intended order:
 	\li 1. The constructor for IceModel.  Note IceModel has a member "grid", of class IceGrid. 
-	   Note grid.p, an IceParam, is also constructed; this sets 
-	   defaults for (grid.p->)Mx,My,Mz,Mbz,Lx,Ly,Lz,Lbz,dx,dy,dz,year.
+	   The IceGrid constructor sets 
+	   defaults for (grid.)Mx,My,Mz,Mbz,Lx,Ly,Lz,Lbz,dx,dy,dz,year.
 	\li [1.5] derivedClass::setFromOptions() to get options special to derived class
 	\li 2. setFromOptions() to get all options *including* Mx,My,Mz,Mbz
 	\li [2.5] initFromFile_netCDF() which reads Mx,My,Mz,Mbz from file and overwrites previous; if 
@@ -157,7 +157,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = w3.create(grid,"wvel",false); CHKERRQ(ierr);        // never diff'ed in hor dirs
   ierr = Sigma3.create(grid,"Sigma",false); CHKERRQ(ierr);   // never diff'ed in hor dirs
   ierr = T3.create(grid,"temp",true); CHKERRQ(ierr);
-  ierr = gs3.create(grid,"grainsize",true); CHKERRQ(ierr);// note velocitySIAStaggered() does average it in hor.!
+  ierr = gs3.create(grid,"grainsize",true); CHKERRQ(ierr);// note velocitySIAStaggered() 
+                                                          // averages grain size in horizontal
   ierr = tau3.create(grid,"age",true); CHKERRQ(ierr);
 
   ierr = Tb3.create(grid,"litho_temp",false); CHKERRQ(ierr);
@@ -204,7 +205,7 @@ PetscErrorCode IceModel::createVecs() {
 //  ierr = DACreateGlobalVector(grid.da3, &g3); CHKERRQ(ierr);
 //  ierr = DACreateGlobalVector(grid.da3b, &g3b); CHKERRQ(ierr);
 
-  const PetscInt M = 2 * grid.p->Mx * grid.p->My;
+  const PetscInt M = 2 * grid.Mx * grid.My;
   ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
                          13, PETSC_NULL, 13, PETSC_NULL,
                          &SSAStiffnessMatrix); CHKERRQ(ierr);
@@ -488,7 +489,7 @@ zero.  Note that the rate of thickness change \f$\partial H/\partial t\f$ is com
 as is the rate of volume loss or gain.
  */
 PetscErrorCode IceModel::massBalExplicitStep() {
-  const PetscScalar   dx = grid.p->dx, dy = grid.p->dy;
+  const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
   PetscScalar **H, **Hnew, **uvbar[2];
   PetscScalar **ub, **vb, **accum, **basalMeltRate, **mask;
@@ -558,7 +559,7 @@ PetscErrorCode IceModel::massBalExplicitStep() {
   ierr = PetscGlobalSum(&icecount, &gicecount, grid.com); CHKERRQ(ierr);
   ierr = DALocalToGlobal(grid.da2, vdHdt, INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr = VecSum(g2, &gdHdtav); CHKERRQ(ierr);
-  dvoldt = gdHdtav * grid.p->dx * grid.p->dy;  // m^3/s
+  dvoldt = gdHdtav * grid.dx * grid.dy;  // m^3/s
   gdHdtav = gdHdtav / gicecount; // m/s
 
   // finally copy vHnew into vH (and communicate ghosted values at same time)
@@ -658,15 +659,15 @@ PetscLogEventEnd(grainsizeEVENT,0,0,0,0);
     bool useCFLforTempAgeEqntoGetTimestep = (doTemp == PETSC_TRUE);
     ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
     dtTempAge += dt;
-    grid.p->year += dt / secpera;  // adopt it
-    // IceModel::dt,dtTempAge,grid.p->year are now set correctly according to
+    grid.year += dt / secpera;  // adopt it
+    // IceModel::dt,dtTempAge,grid.year are now set correctly according to
     //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
     //    criteria from derived class additionalAtStartTimestep(), and from 
     //    "-tempskip" mechanism
 
     // ierr = PetscPrintf(PETSC_COMM_SELF,
     //           "\n[rank=%d, year=%f, dt=%f, startYear=%f, endYear=%f]",
-    //           grid.rank, grid.p->year, dt/secpera, startYear, endYear);
+    //           grid.rank, grid.year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
 
 PetscLogEventBegin(tempEVENT,0,0,0,0);

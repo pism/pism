@@ -155,34 +155,50 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
+    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
     switch (testname) {
       case 'A':
       case 'E':
         // use 1600km by 1600km by 4000m rectangular domain
-        ierr = grid.rescale(800e3, 800e3, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(800e3, 800e3, 4000); CHKERRQ(ierr);
         break;
       case 'B':
         // use 2400km by 2400km by 4000m rectangular domain
-        ierr = grid.rescale(1200e3, 1200e3, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(1200e3, 1200e3, 4000); CHKERRQ(ierr);
         break;
       case 'C':
       case 'D':
         // use 2000km by 2000km by 4000m rectangular domain
-        ierr = grid.rescale(1000e3, 1000e3, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(1000e3, 1000e3, 4000); CHKERRQ(ierr);
         break;
       case 'F':
       case 'G':
       case 'L':
         // use 1800km by 1800km by 4000m rectangular domain
-        ierr = grid.rescale(900e3, 900e3, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(900e3, 900e3, 4000); CHKERRQ(ierr);
         break;
       case 'H':
         // use 1500km by 1500km by 4000m rectangular domain
-        ierr = grid.rescale(1500e3, 1500e3, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(1500e3, 1500e3, 4000); CHKERRQ(ierr);
         break;
       case 'K':
         // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-        ierr = grid.rescale(1000e3, 1000e3, 4000, PETSC_TRUE); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(1000e3, 1000e3, 4000, PETSC_TRUE); CHKERRQ(ierr);
+        // now, if unequal spaced vertical then run special code to set bedrock vertical 
+        //   levels so geothermal boundary condition is imposed at exact depth 1000m
+        if (grid.Mbz == 1) {
+          SETERRQ(1,"grid.Mbz must be at least two in Test K");
+        }
+        if (!grid.isEqualVertSpacing()) {
+          ierr = verbPrintf(2,grid.com,"setting vertical levels so bottom at -1000 m ...\n"); 
+             CHKERRQ(ierr);
+          grid.Lbz = 1000.0;
+          const PetscScalar dzbEQ = grid.Lbz / ((PetscScalar) grid.Mbz - 1);
+          for (PetscInt kb=0; kb < grid.Mbz; kb++) {
+            grid.zblevels[kb] = -grid.Lbz + dzbEQ * ((PetscScalar) kb);
+          }
+          grid.zblevels[grid.Mbz - 1] = 0.0;
+        }
         break;
       default:  SETERRQ(1,"IceCompModel ERROR : desired test not implemented\n");
     }
@@ -248,10 +264,10 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
   // compute x,y,r on grid from i,j
   PetscScalar ifrom0, jfrom0;
 
-  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.p->Mx - 1)/2.0;
-  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.p->My - 1)/2.0;
-  x=grid.p->dx*ifrom0;
-  y=grid.p->dy*jfrom0;
+  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
+  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+  x=grid.dx*ifrom0;
+  y=grid.dy*jfrom0;
   r = sqrt(PetscSqr(x) + PetscSqr(y));
 }
 
@@ -325,13 +341,13 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
             mask[i][j] = MASK_FLOATING_OCEAN0;
           break;
         case 'B':
-          exactB(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         case 'C':
-          exactC(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactC(grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         case 'D':
-          exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactD(grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         case 'E':
           exactE(xx,yy,&H[i][j],&accum[i][j],&dummy1,&dummy2,&dummy3);
@@ -339,7 +355,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
             mask[i][j] = MASK_FLOATING_OCEAN0;
           break;
         case 'H':
-          exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
       }
@@ -454,13 +470,13 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
       mapcoords(i,j,xx,yy,r);
       switch (testname) {
         case 'C':
-          exactC(grid.p->year*secpera,r,&dummy,&accum[i][j]);
+          exactC(grid.year*secpera,r,&dummy,&accum[i][j]);
           break;
         case 'D':
-          exactD(grid.p->year*secpera,r,&dummy,&accum[i][j]);
+          exactD(grid.year*secpera,r,&dummy,&accum[i][j]);
           break;
         case 'H':
-          exactH(f,grid.p->year*secpera,r,&dummy,&accum[i][j]);
+          exactH(f,grid.year*secpera,r,&dummy,&accum[i][j]);
           break;
         default:  SETERRQ(1,"testname must be C, D, or H");
       }
@@ -486,16 +502,16 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
           exactA(r,&H[i][j],&accum[i][j]);
           break;
         case 'B':
-          exactB(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         case 'C':
-          exactC(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactC(grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         case 'D':
-          exactD(grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactD(grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         case 'H':
-          exactH(f,grid.p->year*secpera,r,&H[i][j],&accum[i][j]);
+          exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
         default:  
           SETERRQ(1,"test must be A, B, C, D, or H");
@@ -596,7 +612,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
   Herr = 0; avHerr=0; etaerr = 0;
 
   // area of grid square in square km:
-  const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3;
+  const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3;
   const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -611,13 +627,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           exactA(r,&Hexact,&dummy);
           break;
         case 'B':
-          exactB(grid.p->year*secpera,r,&Hexact,&dummy);
+          exactB(grid.year*secpera,r,&Hexact,&dummy);
           break;
         case 'C':
-          exactC(grid.p->year*secpera,r,&Hexact,&dummy);
+          exactC(grid.year*secpera,r,&Hexact,&dummy);
           break;
         case 'D':
-          exactD(grid.p->year*secpera,r,&Hexact,&dummy);
+          exactD(grid.year*secpera,r,&Hexact,&dummy);
           break;
         case 'E':
           exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
@@ -638,12 +654,12 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           } else {
             r=PetscMax(r,1.0);
             z=0.0;
-            bothexact(grid.p->year*secpera,r,&z,1,ApforG,
+            bothexact(grid.year*secpera,r,&z,1,ApforG,
                       &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
           }
           break;
         case 'H':
-          exactH(f,grid.p->year*secpera,r,&Hexact,&dummy);
+          exactH(f,grid.year*secpera,r,&Hexact,&dummy);
           break;
         case 'K':
           Hexact = 3000.0;
@@ -658,7 +674,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
         areaexact += a;
         volexact += a * Hexact * 1e-3;
       }
-      if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
+      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
         domeH = H[i][j];
         domeHexact = Hexact;
       }
@@ -688,7 +704,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
 
   ierr = PetscGlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
-  gavHerr = gavHerr/(grid.p->Mx*grid.p->My);
+  gavHerr = gavHerr/(grid.Mx*grid.My);
   ierr = PetscGlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
   
   ierr = PetscGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
@@ -741,7 +757,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
 
   ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
-  gavvecerr = gavvecerr/(grid.p->Mx*grid.p->My);
+  gavvecerr = gavvecerr/(grid.Mx*grid.My);
   
   const PetscScalar pi = 3.14159265358979;
   const PetscScalar xpeak = 450e3 * cos(25.0*(pi/180.0)),

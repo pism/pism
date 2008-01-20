@@ -148,8 +148,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscInt      oi = 1-o, oj=o;
         if (intMask(mask[i][j]) != MASK_SHEET || intMask(mask[i+oi][j+oj]) != MASK_SHEET) {
-          const PetscScalar   dx = grid.p->dx, 
-                              dy = grid.p->dy;
+          const PetscScalar   dx = grid.dx, 
+                              dy = grid.dy;
           PetscScalar u_x, u_y, v_x, v_y;
           // Check the offset to determine how to differentiate velocity
           if (o == 0) {
@@ -176,7 +176,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
             ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
             ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
             nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
-                                    myH, grid.kBelowHeight(myH), grid.p->Mz, grid.zlevels, 
+                                    myH, grid.kBelowHeight(myH), grid.Mz, grid.zlevels, 
                                     u_x, u_y, v_x, v_y, Tij, Toffset);
           }
 
@@ -215,7 +215,7 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
                                              PetscReal *norm, PetscReal *normChange) {
   PetscErrorCode  ierr;
   PetscReal nuNorm[2], nuChange[2];
-  const PetscScalar area = grid.p->dx * grid.p->dy;
+  const PetscScalar area = grid.dx * grid.dy;
 #define MY_NORM     NORM_2
 
   // Test for change in nu
@@ -286,8 +286,8 @@ This method assembles the matrix for the left side of the SSA equations.  The nu
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
 PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
-  const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
-  const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
+  const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
+  const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
   PetscScalar     **mask, **nu[2], **u, **v, **beta, **tauc;
@@ -458,8 +458,8 @@ the surface \f$h(x,y)\f$ inward from edge of grid at the edge of the grid.  This
 certain to make sense on a period grid.  This applies to Test I and Test J, in particular.
  */
 PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
-  const PetscInt  Mx=grid.p->Mx, My=grid.p->My, M=2*My;
-  const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
+  const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
+  const PetscScalar   dx=grid.dx, dy=grid.dy;
   PetscErrorCode  ierr;
   PetscScalar     **mask, **h, **H, **uvbar[2];
 
@@ -532,7 +532,7 @@ processors.  In particular, this procedure runs once for each outer iteration
 in order to put the velocities where needed to compute effective viscosity.
  */
 PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
-  const PetscInt  M = 2 * grid.p->My;
+  const PetscInt  M = 2 * grid.My;
   PetscErrorCode  ierr;
   PetscScalar     **u, **v, *uv;
   Vec             xLoc = SSAXLocal;
@@ -749,7 +749,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
         if (updateVelocityAtDepth) {
           ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
           ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
-          for (PetscInt k=0; k<grid.p->Mz; ++k) {
+          for (PetscInt k=0; k<grid.Mz; ++k) {
             u[k] = (addVels) ? fv * u[k] + ubarssa[i][j] : ubarssa[i][j];
             v[k] = (addVels) ? fv * v[k] + vbarssa[i][j] : vbarssa[i][j];
           }
@@ -841,8 +841,8 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
 
-  const PetscScalar dx = grid.p->dx, 
-                    dy = grid.p->dy;
+  const PetscScalar dx = grid.dx, 
+                    dy = grid.dy;
   // next constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
@@ -873,7 +873,7 @@ PetscErrorCode IceModel::correctSigma() {
           // FIXME: what is the right thing here?  surely should be weighted by f(|v|) factor
           Sigma[k] = (addVels) ? Sigma[k] + mvSigma : mvSigma;
         }
-        for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
+        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
           Sigma[k] = 0.0;
         }
         // no need to call Sigma3.setInternalColumn(); already set!

@@ -205,6 +205,9 @@ protected:
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, gsd, taud;
 
+  char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this 
+                                       // instance of IceModel
+  
 protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
@@ -274,6 +277,7 @@ protected:
   PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
   PetscErrorCode regrid_netCDF(const char *fname);
 
+/*
   // see iMIOlegacy.cc
   // these are used in legacy pant and pismr runs and apply to "init.nc" which has non-standard
   // bootstrap conventions
@@ -283,6 +287,7 @@ protected:
   PetscErrorCode cleanInputData_legacy();
 //  PetscErrorCode reconfigure_legacy_Mbz();
   PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
+*/
 
   // see iMmatlab.cc
   bool           matlabOutWanted(const char name);
@@ -310,6 +315,9 @@ protected:
 
   // see iMnames.cc; note tn is statically-initialized in iMnames.cc
   int cIndex(const char singleCharName);
+
+  // see iMoptions.cc
+  PetscErrorCode determineSpacingTypeFromOptions();
 
   // see iMpdd.cc (positive degree day model for ablation)
   gsl_rng     *pddRandGen;

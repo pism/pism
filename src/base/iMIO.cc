@@ -81,7 +81,7 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   PetscErrorCode ierr;
 
   // read options about year of start, year of end, number of run years;
-  // note grid.p->year has already been set from input file
+  // note grid.year has already been set from input file
   PetscScalar usrStartYear, usrEndYear, usrRunYears;
   PetscTruth ysSet, yeSet, ySet;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
@@ -90,9 +90,9 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   if (ysSet == PETSC_TRUE) {
     // user option overwrites data
     ierr = setStartYear(usrStartYear); CHKERRQ(ierr);
-    grid.p->year = usrStartYear;
+    grid.year = usrStartYear;
   } else if (grid_p_year_VALID == PETSC_TRUE) {
-    ierr = setStartYear(grid.p->year); CHKERRQ(ierr);
+    ierr = setStartYear(grid.year); CHKERRQ(ierr);
   } // else do nothing; defaults are set
   if (yeSet == PETSC_TRUE) {
     if (usrEndYear < startYear) {
@@ -206,15 +206,15 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
 #include "../netcdf/write_attributes.c"
 
   int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
-  int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
-  int cb[] = {1, grid.xm, grid.ym, grid.p->Mbz}; // Count local block: bed
+  int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
+  int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
 //  // Allocate some memory.  We will assume that 3d ice vectors (Mx x My x Mz) are the largest.
   // Allocate some memory.
   void *a_mpi;
   int a_len, max_a_len;
-//  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
-  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.p->Mz, grid.p->Mbz);
+//  max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
+  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
@@ -240,15 +240,15 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 #include "../netcdf/write_diag_attributes.c"
 
   int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
-  int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
-  int cb[] = {1, grid.xm, grid.ym, grid.p->Mbz}; // Count local block: bed
+  int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
+  int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
 //  // Allocate some memory.  We will assume that vectors based on grid.da3 are the largest.
   // Allocate some memory.
   void *a_mpi;
   int a_len, max_a_len;
-//  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
-  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.p->Mz, grid.p->Mbz);
+//  max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
+  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
@@ -314,9 +314,6 @@ The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" a
  */
 PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
-  size_t      dim[5];
-  float       bdy[7];
-  double 	  bdy_time;
   int         ncid, stat;
 
   if (hasSuffix(fname, ".pb") == true) {
@@ -335,30 +332,32 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
+  size_t      dim[5];
+  double      bdy[7];
   // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
   //   this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);
-  // grid.p->year = bdy[0] / secpera;  // this was the float version; bdy_time is the double version
-  grid.p->year = bdy_time / secpera;
-  grid.p->Mx = dim[1];
-  grid.p->My = dim[2];
-  grid.p->Mz = dim[3];
-  grid.p->Mbz = dim[4];
-  
-  float *zlevs, *zblevs;
-  zlevs = new float[grid.p->Mz];
-  zblevs = new float[grid.p->Mbz];
-  ierr = nct.get_vertical_dims(ncid, grid.p->Mz, grid.p->Mbz, zlevs, zblevs, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  grid.year = bdy[0] / secpera;
+  grid.Mx = dim[1];
+  grid.My = dim[2];
+  grid.Mz = dim[3];
+  grid.Mbz = dim[4];
+  // grid.Lx, grid.Ly set from bdy[1], bdy[3] below in call to grid.rescale_using_zlevels()
+
+  double *zlevs, *zblevs;
+  zlevs = new double[grid.Mz];
+  zblevs = new double[grid.Mbz];
+  ierr = nct.get_vertical_dims(ncid, grid.Mz, grid.Mbz, zlevs, zblevs, grid.com); CHKERRQ(ierr);
 
   // re-allocate and fill grid.zlevels & zblevels with read values
   delete [] grid.zlevels;
   delete [] grid.zblevels;
-  grid.zlevels = new PetscScalar[grid.p->Mz];
-  grid.zblevels = new PetscScalar[grid.p->Mbz];
-  for (PetscInt k = 0; k < grid.p->Mz; k++) {
+  grid.zlevels = new PetscScalar[grid.Mz];
+  grid.zblevels = new PetscScalar[grid.Mbz];
+  for (PetscInt k = 0; k < grid.Mz; k++) {
     grid.zlevels[k] = (PetscScalar) zlevs[k];
   }
-  for (PetscInt k = 0; k < grid.p->Mbz; k++) {
+  for (PetscInt k = 0; k < grid.Mbz; k++) {
     grid.zblevels[k] = (PetscScalar) zblevs[k];
   }
   delete [] zlevs;  delete [] zblevs;  // done with these
@@ -368,21 +367,22 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = grid.createDA(); CHKERRQ(ierr);
   // FIXME: note we *can* determine from the input file whether the hor. dims are truely periodic,
   // but this has not been done; here we simply require it is not periodic
-  ierr = grid.rescale_using_zlevels(-bdy[1], -bdy[3], PETSC_FALSE); CHKERRQ(ierr);  // must go after createDA() ...
+  ierr = grid.rescale_using_zlevels(-bdy[1], -bdy[3], PETSC_FALSE); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   
-  // set IceModel::startYear, IceModel::endYear, grid.p->year, but respecting grid.p->year
+  // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
   // which came from -if file, _unless_ -ys set by user
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
 
   // Time to compute what we need.
-  int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent; dim[0] is the number of t vals in file
-  int c[] = {1, grid.xm, grid.ym, grid.p->Mz};   // Count local block: t dependent
-  int cb[] = {1, grid.xm, grid.ym, grid.p->Mbz}; // Count local block: bed
+  int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent; 
+                                                 //   dim[0] is the number of t vals in file
+  int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
+  int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
   void *a_mpi;
   int a_len, max_a_len;
-  max_a_len = a_len = grid.xm * grid.ym * grid.p->Mz;
+  max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
@@ -439,17 +439,16 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   // read the history *and* close the file
   int history_len;
   if (grid.rank == 0) {
-    stat = nc_get_att_text(ncid, NC_GLOBAL, "history", grid.p->history);
+    stat = nc_get_att_text(ncid, NC_GLOBAL, "history", history);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    history_len = strnlen(grid.p->history, HISTORY_STRING_LENGTH);
+    history_len = strnlen(history, HISTORY_STRING_LENGTH);
   }
   MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
-  MPI_Bcast(grid.p->history, history_len, MPI_CHAR, 0, grid.com);
+  MPI_Bcast(history, history_len, MPI_CHAR, 0, grid.com);
 
-  setConstantGrainSize(DEFAULT_GRAIN_SIZE);
-
+  setConstantGrainSize(DEFAULT_GRAIN_SIZE); // since it is never read ...
 //  ierr = reconfigure_legacy_Mbz(); CHKERRQ(ierr);
 
   initialized_p = PETSC_TRUE;
@@ -490,8 +489,7 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
 
   // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
   size_t dim[5];
-  float bdy[7];
-  double bdy_time;
+  double bdy[7];
   int ncid, stat;
 
   // create "local interpolation context" from dimensions, limits, and lengths extracted from regridFile,
@@ -499,14 +497,14 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   if (grid.rank == 0) {
     stat = nc_open(regridFile, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, &bdy_time, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
   // from regridFile: Mz = dim[3], Mbz = dim[4]  
-  float *zlevs, *zblevs;
-  zlevs = new float[dim[3]];
-  zblevs = new float[dim[4]];
+  double *zlevs, *zblevs;
+  zlevs = new double[dim[3]];
+  zblevs = new double[dim[4]];
   ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], zlevs, zblevs, grid.com); CHKERRQ(ierr);
   LocalInterpCtx lic;
-  ierr = nct.form_LocalInterpCtx(ncid, dim, bdy, bdy_time, zlevs, zblevs, lic, grid); CHKERRQ(ierr);  // see nc_util.cc
+  ierr = nct.form_LocalInterpCtx(ncid, dim, bdy, zlevs, zblevs, lic, grid); CHKERRQ(ierr);  // see nc_util.cc
   delete [] zlevs;  delete [] zblevs;
 
   // do each variable

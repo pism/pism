@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -173,42 +173,43 @@ PetscErrorCode IceEISModel::initFromOptions() {
 
     // note height of grid must be great enough to handle max thickness
     const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
+    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
     switch (expername) {
       case 'A':
       case 'E':
       case 'I':
-        ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
         break;
       case 'B':
       case 'C':
       case 'D':
-        ierr = grid.rescale(L, L, 4000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(L, L, 4000); CHKERRQ(ierr);
         break;
       case 'F':
         switch (flowLawNumber) {
           case 0:
           case 3:
-            ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
+            ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
             break;
           case 1:
           case 4:
           case 5:
-            ierr = grid.rescale(L, L, 6000); CHKERRQ(ierr);
+            ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
             break;
           case 2:
-            ierr = grid.rescale(L, L, 7000); CHKERRQ(ierr);
+            ierr = grid.rescale_and_set_zlevels(L, L, 7000); CHKERRQ(ierr);
             break;
           default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
         }
         break;
       case 'G':
-        ierr = grid.rescale(L, L, 3000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(L, L, 3000); CHKERRQ(ierr);
         break;
       case 'H':
       case 'J':
       case 'K':
       case 'L':
-        ierr = grid.rescale(L, L, 5000); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
         break;
       default:  
         SETERRQ1(1,"EISMINT II experiment name %c not valid\n",expername);
@@ -250,12 +251,12 @@ PetscErrorCode IceEISModel::initAccumTs() {
   // now fill in accum and surface temp
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  PetscScalar cx = grid.p->Lx, cy = grid.p->Ly;
+  PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // r is distance from center of grid; if E then center is shifted (above)
-      const PetscScalar r = sqrt( PetscSqr(-cx + grid.p->dx*i) + PetscSqr(-cy + grid.p->dy*j) );
+      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i) + PetscSqr(-cy + grid.dy*j) );
       // set accumulation
       accum[i][j] = PetscMin(M_max, S_b * (R_el-r));  // formula (7) in (Payne et al 2000)
       // set surface temperature
@@ -306,7 +307,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   const PetscScalar    L = 750.0e3;  // half-width of computational domain
   const PetscScalar    w = 200.0e3;  // trough width
   const PetscScalar    slope = b0/L;
-  const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
+  const PetscScalar    dx = grid.dx, dy = grid.dy;
   const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
   PetscScalar          topg, **b;
 
@@ -343,7 +344,7 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   
   const PetscScalar    slope = 250.0;
   const PetscScalar    w = 150.0e3;  // mound width
-  const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
+  const PetscScalar    dx = grid.dx, dy = grid.dy;
   PetscScalar          topg, **b;
 
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);

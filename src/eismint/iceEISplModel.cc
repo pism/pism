@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Ed Bueler
+// Copyright (C) 2004-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -125,11 +125,11 @@ PetscErrorCode IceEISplModel::resetAccum() {
   PetscScalar       **accum;
 
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  PetscScalar cx = grid.p->Lx, cy = grid.p->Ly;
+  PetscScalar cx = grid.Lx, cy = grid.Ly;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // r is distance from center of grid
-      const PetscScalar r = sqrt( PetscSqr(-cx + grid.p->dx*i) + PetscSqr(-cy + grid.p->dy*j) );
+      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i) + PetscSqr(-cy + grid.dy*j) );
       if (r > DEFAULT_EXTERIOR_RADIUS)   accum[i][j] = - DEFAULT_EXTERIOR_ABLATION_RATE / secpera;
     }
   }
@@ -143,7 +143,7 @@ PetscInt IceEISplModel::tillRegionCode(PetscInt i, PetscInt j) {
   PetscInt  code = 1;    // STRONG
   
   const PetscScalar    L = 750.0e3;  // half-width of EISMINT II computational domain; may not be Lx or Ly
-  const PetscScalar    dx = grid.p->dx, dy = grid.p->dy;
+  const PetscScalar    dx = grid.dx, dy = grid.dy;
   const PetscScalar    dx61 = (2.0 * L) / 60.0; // = 25.0e3
   
   // distances are based on 61 x 61 grid because came from EISMINT II experiment I

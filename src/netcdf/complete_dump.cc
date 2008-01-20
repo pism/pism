@@ -21,18 +21,18 @@
 
   if (grid.rank == 0) {
     stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
-                           strlen(grid.p->history), grid.p->history);
+                           strlen(history), history);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
     
     stat = nc_enddef (ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    double t = grid.p-> year * secpera;
+    double t = grid.year * secpera;
     size_t zero = 0;
     stat = nc_put_var1_double(ncid, t_id, &zero, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    ierr = nct.put_dimension_regular(ncid, x_id, x_len, -grid.p->Lx, grid.p->dx); CHKERRQ(ierr);
-    ierr = nct.put_dimension_regular(ncid, y_id, y_len, -grid.p->Ly, grid.p->dy); CHKERRQ(ierr);
+    ierr = nct.put_dimension_regular(ncid, x_id, x_len, -grid.Lx, grid.dx); CHKERRQ(ierr);
+    ierr = nct.put_dimension_regular(ncid, y_id, y_len, -grid.Ly, grid.dy); CHKERRQ(ierr);
     
     ierr = nct.put_dimension(ncid, z_id, z_len, grid.zlevels); CHKERRQ(ierr);
     ierr = nct.put_dimension(ncid, zb_id, zb_len, grid.zblevels); CHKERRQ(ierr);

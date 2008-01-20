@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -95,14 +95,14 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
   if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
     ierr = initSSA(); CHKERRQ(ierr);
   }
-  static PetscScalar lastSSAUpdateYear = grid.p->year;  // only set when first called
+  static PetscScalar lastSSAUpdateYear = grid.year;  // only set when first called
   if (useSSAVelocity) { // communication happens within SSA
-    if ((firstTime == PETSC_TRUE) || (grid.p->year - lastSSAUpdateYear >= ssaIntervalYears)) {
+    if ((firstTime == PETSC_TRUE) || (grid.year - lastSSAUpdateYear >= ssaIntervalYears)) {
       PetscInt numSSAiter;
       ierr = setupGeometryForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
       ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
       ierr = cleanupGeometryAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
-      lastSSAUpdateYear = grid.p->year;
+      lastSSAUpdateYear = grid.year;
       ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
@@ -199,9 +199,9 @@ spacing.
  */
 PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   PetscErrorCode  ierr;
-  const PetscScalar   dx = grid.p->dx, 
-                      dy = grid.p->dy;
-  const PetscInt      Mz = grid.p->Mz;
+  const PetscScalar   dx = grid.dx, 
+                      dy = grid.dy;
+  const PetscInt      Mz = grid.Mz;
   PetscScalar **ub, **vb, **basalMeltRate, **b, **dbdt;
   PetscScalar *u, *v, *w;
 
@@ -304,16 +304,16 @@ PetscErrorCode IceModel::smoothSigma() {
     ierr = DAVecGetArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.p->dz));
+        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.dz));
         for (PetscInt k=0; k<ks; ++k) {
           // note Sigma[neighbor][neighbor][k] will be zero if outside of ice
           planeBox Sbb;
-          ierr = Sigma3.getPlaneBoxZ(i,j,k * grid.p->dz,&Sbb);
+          ierr = Sigma3.getPlaneBoxZ(i,j,k * grid.dz,&Sbb);
           const PetscScalar SS =  
               c[0][0]*Sbb.im1jm1 + c[0][1]*Sbb.im1 + c[0][2]*Sbb.im1jp1
             + c[1][0]*Sbb.jm1    + c[1][1]*Sbb.ij  + c[1][2]*Sbb.jp1
             + c[2][0]*Sbb.ip1jm1 + c[2][1]*Sbb.ip1 + c[2][2]*Sbb.ip1jp1;
-          const PetscScalar myz = k * grid.p->dz;
+          const PetscScalar myz = k * grid.dz;
           PetscScalar active = 0.0;  // build sum of coeffs for neighbors with ice at or above curr depth
           if (H[i-1][j-1] >= myz) { active += c[0][0]; } 
           if (H[i-1][j] >= myz) { active += c[0][1]; } 
@@ -325,7 +325,7 @@ PetscErrorCode IceModel::smoothSigma() {
           if (H[i+1][j+1] >= myz) { active += c[2][2]; } 
           Snew[i][j][k] = SS / (active + c[1][1]);  // ensures all heating goes into ice not outside it
         }
-        for (PetscInt k=ks+1; k<grid.p->Mz; ++k) {
+        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
           Snew[i][j][k] = 0;
         }
       }
@@ -359,7 +359,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   // compute dzEQ which will be used inside temperatureStep() and ageStep()
   PetscInt    Mz_for_dzEQ, dummyM;
   ierr = getMzMbzForTempAge(Mz_for_dzEQ,dummyM); CHKERRQ(ierr);
-  const PetscScalar dzEQ = grid.p->Lz / ((PetscScalar) (Mz_for_dzEQ - 1));
+  const PetscScalar dzEQ = grid.Lz / ((PetscScalar) (Mz_for_dzEQ - 1));
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
@@ -381,8 +381,8 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
         const PetscScalar av = PetscAbs(v[k]);
         maxu = PetscMax(maxu,au);
         maxv = PetscMax(maxv,av);
-        PetscScalar tempdenom = (0.001/secpera) / (grid.p->dx + grid.p->dy);  // make sure it's pos.
-        tempdenom += PetscAbs(au/grid.p->dx) + PetscAbs(av/grid.p->dy);
+        PetscScalar tempdenom = (0.001/secpera) / (grid.dx + grid.dy);  // make sure it's pos.
+        tempdenom += PetscAbs(au/grid.dx) + PetscAbs(av/grid.dy);
         if (!isMarginal) {
           const PetscScalar aw = PetscAbs(w[k]);
           maxw = PetscMax(maxw,aw);
@@ -421,8 +421,8 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar denom = PetscAbs(ub[i][j])/grid.p->dx + PetscAbs(vb[i][j])/grid.p->dy;
-      denom += (0.01/secpera)/(grid.p->dx + grid.p->dy);  // make sure it's pos.
+      PetscScalar denom = PetscAbs(ub[i][j])/grid.dx + PetscAbs(vb[i][j])/grid.dy;
+      denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
       locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
     }
   }

@@ -236,7 +236,7 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
 
-  const PetscScalar     start = grid.p->year - dt / secpera;  // note grid.p->year has *end* of step
+  const PetscScalar     start = grid.year - dt / secpera;  // note grid.year has *end* of step
   const PetscScalar     startday = 365.24 * (start - floor(start));
 
   // set up for Calov-Greve method; use Simpson's rule to do integral, so number

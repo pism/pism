@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -211,7 +211,7 @@ PetscErrorCode IceModel::computeFlowUbarStats
     *gstreamgridfrac = 0.0;
   }
  
-  *gicegridfrac = gicecount / ((PetscScalar) (grid.p->Mx * grid.p->My));
+  *gicegridfrac = gicecount / ((PetscScalar) (grid.Mx * grid.My));
   return 0;
 }
 
@@ -228,7 +228,7 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
+  const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
@@ -273,11 +273,11 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
     melt = 0; divideT = 0; orig = 0;
   }
-  const PetscScalar   a = grid.p->dx * grid.p->dy * 1e-3 * 1e-3; // area unit (km^2)
-  const PetscScalar   currtime = grid.p->year * secpera;
+  const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
+  const PetscScalar   currtime = grid.year * secpera;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
+      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
         divideH = H[i][j];
       }
       if (tempAndAge || (verbosityLevel >= 3)) {
@@ -290,7 +290,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
               melt += a;
           }
         }
-        if (i == (grid.p->Mx - 1)/2 && j == (grid.p->My - 1)/2) {
+        if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
           divideT = Tbase[i][j];
         }
         const PetscInt  ks = grid.kBelowHeight(H[i][j]);
@@ -322,7 +322,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 
   if (CFLviolcount > 0.5) { // report any CFL violations at end of flag line
     ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
-              CFLviolcount,100.0 * CFLviolcount/(grid.p->Mx * grid.p->Mz * grid.p->Mz)); CHKERRQ(ierr);
+              CFLviolcount,100.0 * CFLviolcount/(grid.Mx * grid.Mz * grid.Mz)); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
   }
@@ -346,7 +346,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   //    divide thickness (m),
   //    temp at base at divide (K)  (not homologous),
   // NOTE DERIVED CLASSES MAY HAVE OTHER DISPLAYED QUANTITIES
-  ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.p->year,dt,
+  ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
   
   if (verbosityLevel >= 3) {

@@ -43,7 +43,7 @@ The optional method is to directly differentiate the surface elevation \f$h\f$ b
 PetscErrorCode IceModel::surfaceGradientSIA() {
   PetscErrorCode  ierr;
 
-  const PetscScalar   dx=grid.p->dx, dy=grid.p->dy;
+  const PetscScalar   dx=grid.dx, dy=grid.dy;
   PetscScalar **h_x[2], **h_y[2];
 
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
@@ -170,11 +170,11 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   PetscErrorCode  ierr;
 
   PetscScalar *delta, *I, *J, *K, *Sigma;
-  delta = new PetscScalar[grid.p->Mz];
-  I = new PetscScalar[grid.p->Mz];
-  J = new PetscScalar[grid.p->Mz];
-  K = new PetscScalar[grid.p->Mz];
-  Sigma = new PetscScalar[grid.p->Mz];
+  delta = new PetscScalar[grid.Mz];
+  I = new PetscScalar[grid.Mz];
+  J = new PetscScalar[grid.Mz];
+  K = new PetscScalar[grid.Mz];
+  Sigma = new PetscScalar[grid.Mz];
 
   PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
 
@@ -236,7 +236,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               J[k] = grid.zlevels[k] * I[k] - K[k];
             }
           }
-          for (PetscInt k=ks+1; k<grid.p->Mz; ++k) { // above the ice
+          for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
 //            J[k] = k * (grid.zlevels[k] - grid.zlevels[k-1]) * I[ks]; // = J[ks];  SURELY WRONG!
@@ -244,9 +244,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           }  
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-//          const PetscScalar  dzABOVEks = (ks+1 < grid.p->Mz)
+//          const PetscScalar  dzABOVEks = (ks+1 < grid.Mz)
 //                                         ? grid.zlevels[ks+1] - grid.zlevels[ks]
-//                                         : grid.zlevels[grid.p->Mz-1] - grid.zlevels[grid.p->Mz-2];
+//                                         : grid.zlevels[grid.Mz-1] - grid.zlevels[grid.Mz-2];
 //          const PetscScalar  Dfoffset = J[ks] + (thickness - ks * dzABOVEks) * I[ks];
           const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
 
@@ -254,8 +254,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           // point (i+1/2,j) but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
           uvbar[o][i][j] = - Dfoffset * slope / thickness;
          
-          ierr = Istag3[o].setValColumnPL(i,j,grid.p->Mz,grid.zlevels,I); CHKERRQ(ierr);
-          ierr = Sigmastag3[o].setValColumnPL(i,j,grid.p->Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
+          ierr = Istag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,I); CHKERRQ(ierr);
+          ierr = Sigmastag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
         } else {  // zero thickness case
           uvbar[o][i][j] = 0;
           ierr = Istag3[o].setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
@@ -321,8 +321,8 @@ PetscErrorCode IceModel::basalSIA() {
         } else { 
           // basal velocity
           const PetscScalar
-                  myx = -grid.p->Lx + grid.p->dx * i, 
-                  myy = -grid.p->Ly + grid.p->dy * j,
+                  myx = -grid.Lx + grid.dx * i, 
+                  myy = -grid.Ly + grid.dy * j,
                   myhx = 0.25 * (  h_x[0][i][j] + h_x[0][i-1][j]
                                  + h_x[1][i][j] + h_x[1][i][j-1]),
                   myhy = 0.25 * (  h_y[0][i][j] + h_y[0][i-1][j]
@@ -435,7 +435,7 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
         for (PetscInt k = 0; k < ks; ++k) {
           Sigmareg[k] = 0.25 * (SigmaEAST[k] + SigmaWEST[k] + SigmaNORTH[k] + SigmaSOUTH[k]);
         }
-        for (PetscInt k = ks+1; k < grid.p->Mz; ++k) {
+        for (PetscInt k = ks+1; k < grid.Mz; ++k) {
           Sigmareg[k] = 0.0;
         }
         // no need to call Sigma3.setInternalColumn(); already set!
@@ -490,7 +490,7 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
       ierr = Istag3[0].getInternalColumn(i-1,j,&IWEST); CHKERRQ(ierr);
       ierr = Istag3[1].getInternalColumn(i,j,&INORTH); CHKERRQ(ierr);
       ierr = Istag3[1].getInternalColumn(i,j-1,&ISOUTH); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.p->Mz; ++k) {
+      for (PetscInt k=0; k<grid.Mz; ++k) {
         u[k] =  ub[i][j] - 0.25 * ( IEAST[k] * h_x[0][i][j] + IWEST[k] * h_x[0][i-1][j] +
                                     INORTH[k] * h_x[1][i][j] + ISOUTH[k] * h_x[1][i][j-1] );
         v[k] =  vb[i][j] - 0.25 * ( IEAST[k] * h_y[0][i][j] + IWEST[k] * h_y[0][i-1][j] +

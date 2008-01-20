@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2007-2008 Nathan Shemonski and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -149,7 +149,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta T data from forcing file %s ...\n", dTFile); CHKERRQ(ierr);
-    ierr = dTforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,ISF_DELTA_T);
+    ierr = dTforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.year,ISF_DELTA_T);
          CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(5, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta T forcing data\n");
@@ -164,7 +164,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta sea level data from forcing file %s ...\n", dSLFile); CHKERRQ(ierr);
-    ierr = dSLforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.p->year,ISF_DELTA_SEA_LEVEL);
+    ierr = dSLforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.year,ISF_DELTA_SEA_LEVEL);
          CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
@@ -196,8 +196,8 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
   if (expernum == 3) {  // for CCL3 get delta Temperature and delta Sea Level
                         // from ice code/ sea bed core data
     PetscScalar TsChange, seaLevelChange;
-    ierr = dTforcing.updateFromCoreClimateData(grid.p->year,&TsChange); CHKERRQ(ierr);
-    ierr = dSLforcing.updateFromCoreClimateData(grid.p->year,&seaLevelChange); CHKERRQ(ierr);
+    ierr = dTforcing.updateFromCoreClimateData(grid.year,&TsChange); CHKERRQ(ierr);
+    ierr = dSLforcing.updateFromCoreClimateData(grid.year,&seaLevelChange); CHKERRQ(ierr);
     ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
     ierr = VecShift(vbed,bedDiff - seaLevelChange); CHKERRQ(ierr);
     bedDiff = seaLevelChange;
@@ -211,7 +211,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
 
   if (expernum == 4) {  // for GWL3 apply global warming temperature forcing
     PetscScalar t_increase;
-    PetscScalar age = grid.p->year - startYear;
+    PetscScalar age = grid.year - startYear;
     if (age <= 80.0) {
       t_increase = age * 0.035;
     } else if (age <= 500.0) {

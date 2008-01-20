@@ -24,13 +24,12 @@
 #include "grid.hh"
 
 struct LocalInterpCtx {
-  float fstart[3], delta[4];
-  double timestart;
+  double fstart[3], delta[4];
   int start[5], count[5];    // Indices in netCDF file.
   float *a;
   int a_len;
   int ncid;
-  float *zlevs, *zblevs;
+  double *zlevs, *zblevs;
 };
 
 struct MaskInterp {
@@ -48,13 +47,13 @@ public:
 NCTool();
 
 PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
-PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, float start, float delta);
+PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, double start, double delta);
 
-PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], float bdy[], double *bdy_time, MPI_Comm com);
+PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], double bdy[], MPI_Comm com);
 PetscErrorCode get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast, MPI_Comm com);
 
 PetscErrorCode get_vertical_dims(int ncid, int z_len, int zb_len, 
-                                 float z_read[], float zb_read[], MPI_Comm com);
+                                 double z_read[], double zb_read[], MPI_Comm com);
 
 PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
                              DA da, Vec v, Vec g, const int *s, const int *c,
@@ -79,9 +78,10 @@ PetscErrorCode regrid_local_var(const char *vars, char c, const char *name, int 
                                 LocalInterpCtx &lic, IceGrid &grid, DA da, Vec vec, Vec g);
 PetscErrorCode regrid_global_var(const char *vars, char c, const char *name, int dim_flag,
                                  LocalInterpCtx &lic, IceGrid &grid, DA da, Vec g);
-PetscErrorCode form_LocalInterpCtx(int ncid, const size_t dim[], const float bdy[], const double bdy_time,
-                                   const float zlev[], const float zblev[],
+PetscErrorCode form_LocalInterpCtx(int ncid, const size_t dim[], const double bdy[],
+                                   const double zlev[], const double zblev[],
                                    LocalInterpCtx &lic, IceGrid &grid);
 };
 
 #endif // __nc_util_hh
+

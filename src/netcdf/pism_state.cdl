@@ -52,33 +52,35 @@ variables: // The names of variables are magic in PISM source.
     polar_stereographic:latitude_of_projection_origin = 90.0;
     polar_stereographic:standard_parallel = -71.0;
     polar_stereographic:pism_intent = "mapping";
-  float x(x);
+  // note accuracy desirable for the locations of the points of the grid
+  // accuracy is desirable for t(t) even for long runs (e.g. day accuracy for 1e6 year runs
+  // so that PDD method works; also note appearance of year at each restart)
+  double x(x);
     x:axis = "X";
     x:long_name = "x-coordinate in Cartesian system";
     x:standard_name = "projection_x_coordinate";
     x:units = "m";
     x:pism_intent = "mapping";
-  float y(y);
+  double y(y);
     y:axis = "Y";
     y:long_name = "y-coordinate in Cartesian system";
     y:standard_name = "projection_y_coordinate";
     y:units = "m";
     y:pism_intent = "mapping";
-  float z(z);
+  double z(z);
     z:axis = "Z";
     z:long_name = "z-coordinate in Cartesian system";
     z:standard_name = "projection_z_coordinate";
     z:units = "m";
     z:positive = "up";
     z:pism_intent = "mapping";
-  float zb(zb);
+  double zb(zb);
     zb:long_name = "z-coordinate in bedrock";
     zb:standard_name = "projection_z_coordinate_in_bedrock";
     zb:units = "m";
     zb:positive = "up";
     zb:pism_intent = "mapping";
-  double t(t); // note accuracy desirable even for long runs (e.g. day accuracy for 1e6 year runs
-               // so that PDD method works; also note appearance of year at each restart)
+  double t(t);
     t:long_name = "time";
     t:units = "seconds since 2007-01-01 00:00:00";
     t:calendar = "none";

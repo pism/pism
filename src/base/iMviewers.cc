@@ -81,7 +81,7 @@ PetscErrorCode IceModel::createOneViewerIfDesired(PetscViewer* v, const char sin
   
   // viewer dims need to be determined esp. in nonsquare cases
   PetscInt x_dim, y_dim;
-  ierr = getViewerDims(size, grid.p->Lx, grid.p->Ly, &x_dim, &y_dim); CHKERRQ(ierr);
+  ierr = getViewerDims(size, grid.Lx, grid.Ly, &x_dim, &y_dim); CHKERRQ(ierr);
 
   // note we reverse x_dim <-> y_dim; see IceGrid::createDA() for original reversal
   ierr = PetscViewerDrawOpen(grid.com, PETSC_NULL, title,
@@ -126,13 +126,13 @@ PetscErrorCode IceModel::createViewers() {
 //  ierr = createOneViewerIfDesired(&NuView[1], 'N',"(nu*H)_t (J offset)");  CHKERRQ(ierr);
 
   // allocate space for soundings
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mbz + grid.p->Mz - 1, &Td); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &ud); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &vd); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &wd); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &Sigmad); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &gsd); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.p->Mz, &taud); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mbz + grid.Mz - 1, &Td); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &ud); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &vd); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &wd); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &Sigmad); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &gsd); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &taud); CHKERRQ(ierr);
 
   createViewers_done = PETSC_TRUE;
   return 0;
@@ -177,7 +177,7 @@ PetscErrorCode IceModel::updateOneSounding(
 
 PetscErrorCode IceModel::updateSoundings() {
   PetscErrorCode ierr;
-  PetscInt   Mzsum = grid.p->Mbz + grid.p->Mz - 1;
+  PetscInt   Mzsum = grid.Mbz + grid.Mz - 1;
 
   // row gives indices only
   PetscInt   *row;
@@ -193,10 +193,10 @@ PetscErrorCode IceModel::updateSoundings() {
       ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
       PetscScalar *ibvals;
       ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
-      ierr = VecSetValues(Td, grid.p->Mbz - 1, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(Td, grid.Mbz - 1, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
       // note Tb[][][Mbz-1] duplicates T[][][0] and it should not be displayed twice
       ierr = T3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(Td, grid.p->Mz, &row[grid.p->Mbz - 1], ivals, INSERT_VALUES);
+      ierr = VecSetValues(Td, grid.Mz, &row[grid.Mbz - 1], ivals, INSERT_VALUES);
                CHKERRQ(ierr);
       ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
       ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
@@ -204,37 +204,37 @@ PetscErrorCode IceModel::updateSoundings() {
     if (runtimeViewers[cIndex('x')] != PETSC_NULL) {
       ierr = u3.needAccessToVals(); CHKERRQ(ierr);
       ierr = u3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(ud, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(ud, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('y')] != PETSC_NULL) {
       ierr = v3.needAccessToVals(); CHKERRQ(ierr);
       ierr = v3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(vd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(vd, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('z')] != PETSC_NULL) {
       ierr = w3.needAccessToVals(); CHKERRQ(ierr);
       ierr = w3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(wd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(wd, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('s')] != PETSC_NULL) {
       ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
       ierr = Sigma3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(Sigmad, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(Sigmad, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('g')] != PETSC_NULL) {
       ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
       ierr = gs3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(gsd, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(gsd, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);
     }
     if (runtimeViewers[cIndex('e')] != PETSC_NULL) {
       ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
       ierr = tau3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(taud, grid.p->Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(taud, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
     }
   }

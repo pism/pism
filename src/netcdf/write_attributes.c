@@ -13,10 +13,10 @@
    int t_dim;
 
    /* dimension lengths */
-   size_t x_len = grid.p->Mx;
-   size_t y_len = grid.p->My;
-   size_t z_len = grid.p->Mz;
-   size_t zb_len = grid.p->Mbz;
+   size_t x_len = grid.Mx;
+   size_t y_len = grid.My;
+   size_t z_len = grid.Mz;
+   size_t zb_len = grid.Mbz;
    size_t t_len = NC_UNLIMITED;
 
    /* variable ids */
@@ -126,19 +126,19 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
 
    x_dims[0] = x_dim;
-   stat = nc_def_var(ncid, "x", NC_FLOAT, RANK_x, x_dims, &x_id);
+   stat = nc_def_var(ncid, "x", NC_DOUBLE, RANK_x, x_dims, &x_id);
    check_err(stat,__LINE__,__FILE__);
 
    y_dims[0] = y_dim;
-   stat = nc_def_var(ncid, "y", NC_FLOAT, RANK_y, y_dims, &y_id);
+   stat = nc_def_var(ncid, "y", NC_DOUBLE, RANK_y, y_dims, &y_id);
    check_err(stat,__LINE__,__FILE__);
 
    z_dims[0] = z_dim;
-   stat = nc_def_var(ncid, "z", NC_FLOAT, RANK_z, z_dims, &z_id);
+   stat = nc_def_var(ncid, "z", NC_DOUBLE, RANK_z, z_dims, &z_id);
    check_err(stat,__LINE__,__FILE__);
 
    zb_dims[0] = zb_dim;
-   stat = nc_def_var(ncid, "zb", NC_FLOAT, RANK_zb, zb_dims, &zb_id);
+   stat = nc_def_var(ncid, "zb", NC_DOUBLE, RANK_zb, zb_dims, &zb_id);
    check_err(stat,__LINE__,__FILE__);
 
    t_dims[0] = t_dim;

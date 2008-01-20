@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -56,8 +56,8 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
           //    D = H Ubar / alpha
           // is the correct formula; note division by zero is avoided by
           // addition to alpha
-          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx),
-                            h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy),
+          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.dx),
+                            h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.dy),
                             alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
           const PetscScalar udef = 0.5 * (uvbar[0][i][j] + uvbar[0][i-1][j]),
                             vdef = 0.5 * (uvbar[1][i][j] + uvbar[1][i][j-1]),
@@ -100,8 +100,8 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
   ierr = DAVecGetArray(grid.da2, myVec, &fbasal); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar h_x = (h[i+1][j]-h[i-1][j])/(2.0*grid.p->dx);
-      const PetscScalar h_y = (h[i][j+1]-h[i][j-1])/(2.0*grid.p->dy);
+      const PetscScalar h_x = (h[i+1][j]-h[i-1][j])/(2.0*grid.dx);
+      const PetscScalar h_y = (h[i][j+1]-h[i][j-1])/(2.0*grid.dy);
       const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
       fbasal[i][j] = ice.rho * grav * H[i][j] * alpha;
     }
@@ -119,7 +119,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
   // reference: Morton & Mayers 2nd ed. pp 62--63
   const PetscScalar  
-          gridfactor = 1.0/(grid.p->dx*grid.p->dx) + 1.0/(grid.p->dy*grid.p->dy);
+          gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
@@ -150,7 +150,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
        || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
     ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   }
-  const PetscScalar timeToEnd = (endYear-grid.p->year) * secpera;
+  const PetscScalar timeToEnd = (endYear-grid.year) * secpera;
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';
@@ -197,8 +197,8 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
 
 /*
 verbPrintf(1,grid.com,
-   "\n   leaving determineTimeStep();\n     endYear, grid.p->year, dt_force = %f,%f,%e\n",
-   endYear, grid.p->year, dt_force);
+   "\n   leaving determineTimeStep();\n     endYear, grid.year, dt_force = %f,%f,%e\n",
+   endYear, grid.year, dt_force);
 verbPrintf(1,grid.com,
    "     maxdt, CFLmaxdt, maxdt_temporary, gDmax = %e,%e,%e,%e\n",
    maxdt, CFLmaxdt, maxdt_temporary, gDmax);
@@ -240,8 +240,6 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
                                PETSC_MAX_PATH_LEN, &inFileSet);  CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootstrapSet);  CHKERRQ(ierr);
-//  ierr = PetscOptionsGetString(PETSC_NULL, "-bif_legacy", inFile,
-//                               PETSC_MAX_PATH_LEN, &bootstrapSetLegacy);  CHKERRQ(ierr);
   
   if ((inFileSet == PETSC_TRUE) && (bootstrapSet == PETSC_TRUE)) {
     SETERRQ(2,"both options '-if' and '-bif' set; not allowed");
@@ -252,8 +250,6 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   } else if (bootstrapSet == PETSC_TRUE) {
     ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
   }
-//  } else if (bootstrapSetLegacy == PETSC_TRUE) {
-//    ierr = bootstrapFromFile_netCDF_legacyAnt(inFile); CHKERRQ(ierr);
 
   if (! isInitialized()) {
     SETERRQ(1,"Model has not been initialized from a file or by a derived class.");
@@ -269,15 +265,19 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   PetscScalar    my_Lx, my_Ly, my_Lz;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &my_Lx, &LxSet); CHKERRQ(ierr);
   if (LxSet == PETSC_TRUE) {
-    ierr = grid.rescale(my_Lx*1000.0, grid.p->Ly, grid.p->Lz); CHKERRQ(ierr);
+    ierr = grid.rescale_using_zlevels(my_Lx*1000.0, grid.Ly); CHKERRQ(ierr);
   }  
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &my_Ly, &LySet); CHKERRQ(ierr);
   if (LySet == PETSC_TRUE) {
-    ierr = grid.rescale(grid.p->Lx, my_Ly*1000.0, grid.p->Lz); CHKERRQ(ierr);
+    ierr = grid.rescale_using_zlevels(grid.Lx, my_Ly*1000.0); CHKERRQ(ierr);
   }  
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &my_Lz, &LzSet); CHKERRQ(ierr);
   if (LzSet == PETSC_TRUE) {
-    ierr = grid.rescale(grid.p->Lx, grid.p->Ly, my_Lz); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com,
+      "WARNING: '-Lz' set by user; resetting vertical levels using user options and grid.rescale_and_set_zlevels()\n");
+      CHKERRQ(ierr);
+    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+    ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);
   }
 
   // make sure the first vertical velocities do not use junk from uninitialized basal melt rate.
@@ -298,7 +298,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 }
 
 
-//! Complete initialization: regrid if desired, report grid, create viewers.
+//! Complete initialization: regrid if desired, report on computational domain and grid, create viewers.
 PetscErrorCode IceModel::afterInitHook() {
   PetscErrorCode ierr;
 
@@ -319,52 +319,57 @@ PetscErrorCode IceModel::afterInitHook() {
   // report on computational box
   ierr = verbPrintf(2,grid.com, 
            "  [computational box for ice: (%8.2f km) x (%8.2f km)",
-           2*grid.p->Lx/1000.0,2*grid.p->Ly/1000.0); CHKERRQ(ierr);
-  if (grid.p->Mbz > 1) {
+           2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
+  if (grid.Mbz > 1) {
     ierr = verbPrintf(2,grid.com,
          "\n                                 x (%8.2f m + %7.2f m bedrock)]\n"
-         ,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
+         ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,grid.com," x (%8.2f m)]\n",grid.p->Lz); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com," x (%8.2f m)]\n",grid.Lz); CHKERRQ(ierr);
   }
   
   // report on grid cell dims
-  if (grid.equalVertSpacing()) {
+  if (grid.isEqualVertSpacing()) {
     ierr = verbPrintf(2,grid.com, 
            "  [grid cell dims (equal dz): (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
-           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.dzEQ); CHKERRQ(ierr);
+           grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
            "  [hor. grid cell dimensions: (%8.2f km) x (%8.2f km)]\n",
-           grid.p->dx/1000.0,grid.p->dy/1000.0); CHKERRQ(ierr);
+           grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, 
-           "  [storage grid vertical spacing in ice not equal;  %8.2f m < dz < %8.2f m]\n",
+           "  [vertical grid spacing in ice not equal: %8.6f m < dz < %8.6f m]\n",
            grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
     PetscInt    myMz, dummyM;
     ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
+    if (myMz > 1000) {
+      ierr = verbPrintf(1,grid.com,
+                 "\n\n WARNING: Using more than 1000 vertical levels internally in temperatureStep()!\n\n");
+                 CHKERRQ(ierr);
+    }
     ierr = verbPrintf(2,grid.com, 
            "  [fine equal spacing used in temperatureStep():  Mz = %d,  dzEQ = %8.2f m]\n",
-           myMz,grid.p->Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
-    if (grid.p->Mbz > 1) {
+           myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
+    if (grid.Mbz > 1) {
       ierr = verbPrintf(2,grid.com, 
-         "  [vertical spacing in bedrock: dz = %8.2f m for bottom layer and dz = %8.2f m for top layer]\n",
-         grid.zblevels[1]-grid.zblevels[0],grid.zblevels[grid.p->Mbz-1]-grid.zblevels[grid.p->Mbz-2]);
+         "  [vertical spacing in bedrock: dz = %8.6f m for bottom layer and dz = %8.6f m for top layer]\n",
+         grid.zblevels[1]-grid.zblevels[0],grid.zblevels[grid.Mbz-1]-grid.zblevels[grid.Mbz-2]);
          CHKERRQ(ierr);
     }
   }
 
   // if -verbose then actually list all of IceParam
   ierr = verbPrintf(3,grid.com,"  IceParam: Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
-                    grid.p->Mx,grid.p->My,grid.p->Mz,grid.p->Mbz); CHKERRQ(ierr);
+                    grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
            "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
-           grid.p->Lx/1000.0,grid.p->Ly/1000.0,grid.p->Lz,grid.p->Lbz); CHKERRQ(ierr);
+           grid.Lx/1000.0,grid.Ly/1000.0,grid.Lz,grid.Lbz); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
            "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
-           grid.p->dx/1000.0,grid.p->dy/1000.0,grid.p->year); CHKERRQ(ierr);
+           grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
      "            history = ****************\n%s            **************************\n"
-     ,grid.p->history); CHKERRQ(ierr);
+     ,history); CHKERRQ(ierr);
   
   ierr = createViewers(); CHKERRQ(ierr);
   return 0;
@@ -383,7 +388,7 @@ int IceModel::endOfTimeStepHook() {
   // SIGUSR1 makes PISM save state under filename based on the current year
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%5.3f.nc", grid.p->year);
+    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%5.3f.nc", grid.year);
     verbPrintf(1, grid.com, "Caught signal SIGUSR1: Writing intermediate file `%s'.\n",
                file_name);
     pism_signal = 0;
@@ -491,24 +496,24 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
 PetscErrorCode  IceModel::stampHistoryString(const char* string) {
   PetscErrorCode ierr;
 
-  PetscInt historyLength = strlen(grid.p->history);
+  PetscInt historyLength = strlen(history);
   PetscInt stringLength = strlen(string);
 
-  if (stringLength + historyLength > (int)sizeof(grid.p->history) - 1) {
+  if (stringLength + historyLength > (int)sizeof(history) - 1) {
     ierr = PetscPrintf(grid.com, "Warning: History string overflow.  Truncating history.\n");
     CHKERRQ(ierr);
 
     // Don't overflow the buffer and null terminate.
-    strncpy(grid.p->history, string, sizeof(grid.p->history));
-    grid.p->history[sizeof(grid.p->history) - 1] = '\0';
+    strncpy(history, string, sizeof(history));
+    history[sizeof(history) - 1] = '\0';
   } else { // We are safe, so we can just write it.
     //OLD METHOD: append the latest command:    
-    // strcat(grid.p->history, string);
+    // strcat(history, string);
     //NEW METHOD: prepend it; this matches NCO behavior so commands are in order
     char tempstr[HISTORY_STRING_LENGTH];
     strcpy(tempstr,string);
-    strcat(tempstr,grid.p->history);
-    strcpy(grid.p->history,tempstr);
+    strcat(tempstr,history);
+    strcpy(history,tempstr);
   }
   
   return 0;

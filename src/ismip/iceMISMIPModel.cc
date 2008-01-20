@@ -338,7 +338,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     const PetscScalar   L = 1700.0e3;      // Horizontal half-width of grid
     // NOTE: y takes place of x!!!
     // NOTE: put calving front at 1600.0e3  ??
-    ierr = grid.rescale(200.0e3, L, 4000.0); CHKERRQ(ierr);  // what to put for thickness?
+    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+    ierr = grid.rescale_and_set_zlevels(200.0e3, L, 4000.0); CHKERRQ(ierr);  // what to put for thickness?
 
     // all of these relate to models which should be turned off ...
     ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
@@ -372,9 +373,9 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
       ierr = verbPrintf(2,grid.com,
         "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specification)\n",
         runtimeyears); CHKERRQ(ierr);
-      grid.p->year = 0.0;
-      ierr = setStartYear(grid.p->year); CHKERRQ(ierr);
-      ierr = setEndYear(grid.p->year + runtimeyears); CHKERRQ(ierr);
+      grid.year = 0.0;
+      ierr = setStartYear(grid.year); CHKERRQ(ierr);
+      ierr = setEndYear(grid.year + runtimeyears); CHKERRQ(ierr);
       yearsStartRunEndDetermined = PETSC_TRUE;
     }
 
@@ -407,8 +408,8 @@ PetscErrorCode IceMISMIPModel::setMISMIPBed() {
     
       // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
       const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.p->My - 1)/2.0;
-      const PetscScalar y = grid.p->dy * jfrom0;
+               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+      const PetscScalar y = grid.dy * jfrom0;
       const PetscScalar xs = PetscAbs(y) / 750.0e3;  // scaled and symmetrical x coord
 
       if ((exper == 1) || (exper == 2)) {
@@ -446,8 +447,8 @@ PetscErrorCode IceMISMIPModel::setMISMIPMask() {
     
       // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
       const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.p->My - 1)/2.0;
-      const PetscScalar y = grid.p->dy * jfrom0;
+               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+      const PetscScalar y = grid.dy * jfrom0;
       if (PetscAbs(y) >= 1600.0e3) {
         mask[i][j] = MASK_FLOATING_OCEAN0;
       } else {
@@ -472,7 +473,7 @@ PetscErrorCode IceMISMIPModel::additionalAtStartTimestep() {
   // this is called at the beginning of each pass through time-stepping loop in IceModel::run()
 
   // go to next multiple of 50 years
-  const PetscScalar tonext50 = (50.0 - fmod(grid.p->year, 50.0)) * secpera;
+  const PetscScalar tonext50 = (50.0 - fmod(grid.year, 50.0)) * secpera;
   if (maxdt_temporary < 0.0) {  // it has not been set
     maxdt_temporary = tonext50;
   } else {
@@ -517,7 +518,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.p->My - 1)/2.0;
+               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
 
       // grounding line xg is largest  y  so that  mask[i][j] != FLOATING and mask[i][j+1] == FLOATING
       if ( (jfrom0 > 0.0) && (H[i][j] > 0.0) 
@@ -545,8 +546,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
   ierr = PetscGlobalMax(&jg, &gjg, grid.com); CHKERRQ(ierr);
   const PetscScalar gjgfrom0 =
-          gjg - static_cast<PetscScalar>(grid.p->My - 1)/2.0;
-  rstats.xg = gjgfrom0 * grid.p->dy;
+          gjg - static_cast<PetscScalar>(grid.My - 1)/2.0;
+  rstats.xg = gjgfrom0 * grid.dy;
   
   PetscScalar myhxg = 0.0;
   if ( (gjg >= grid.ys) && (gjg < grid.ys + grid.ym)

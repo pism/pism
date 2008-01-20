@@ -45,7 +45,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_varname[], b
   PetscErrorCode ierr;
   ierr = DAGetInfo(mygrid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(mygrid.com, DA_YZPERIODIC, DA_STENCIL_STAR, mygrid.p->Mz, N, M, 1, n, m, 1, 1,
+  ierr = DACreate3d(mygrid.com, DA_YZPERIODIC, DA_STENCIL_STAR, mygrid.Mz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
   IOwnDA = true;
 
@@ -136,10 +136,10 @@ PetscErrorCode  IceModelVec3::isLegalLevel(const PetscScalar z) {
                "  IceModelVec3 has varname='%s'; ENDING!\n",
               z,varname);
   }
-  if (z > (grid->p)->Lz + 1.0e-6) {
+  if (z > grid->Lz + 1.0e-6) {
     SETERRQ3(2,"level z = %10.8f is above top of computational grid Lz = %10.8f;\n"
                "  IceModelVec3 has varname='%s'; ENDING!\n",
-              z, (grid->p)->Lz,varname);
+              z, grid->Lz,varname);
   }
   return 0;
 }
@@ -172,11 +172,11 @@ PetscErrorCode  IceModelVec3::setValColumnPL(
               "   is impossible; IceModelVec3 has varname='%s';  ENDING!\n",
               levelsIN[0],varname);
   }
-  if (levelsIN[nlevels - 1] < (grid->p)->Lz - 1.0e-3) {
+  if (levelsIN[nlevels - 1] < grid->Lz - 1.0e-3) {
     SETERRQ3(2,"levelsIN[nlevels-1] = %10.9f is below top of computational domain\n"
                "   at z=Lz=%10.9f, so *interpolation* is impossible;\n"
                "   IceModelVec3 has varname='%s';  ENDING!\n",
-               levelsIN[nlevels-1],(grid->p)->Lz,varname);
+               levelsIN[nlevels-1],grid->Lz,varname);
   }
   for (PetscInt k=0; k < nlevels - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
@@ -191,7 +191,7 @@ PetscErrorCode  IceModelVec3::setValColumnPL(
   PetscScalar ***arr = (PetscScalar***) array;
   
   PetscInt mcurr = 0;
-  for (PetscInt k=0; k < (grid->p)->Mz; k++) {
+  for (PetscInt k=0; k < grid->Mz; k++) {
     while (levelsIN[mcurr+1] < levels[k]) {
       mcurr++;
     }
@@ -210,7 +210,7 @@ PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscI
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   // check if in ownership ?
   PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k=0; k < (grid->p)->Mz; k++) {
+  for (PetscInt k=0; k < grid->Mz; k++) {
     arr[i][j][k] = c;
   }
   return 0;
@@ -231,8 +231,8 @@ PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const 
     PetscEnd();
   }
   PetscScalar ***arr = (PetscScalar***) array;
-  if (z >= (grid->p)->Lz)
-    return arr[i][j][(grid->p)->Mz - 1];
+  if (z >= grid->Lz)
+    return arr[i][j][grid->Mz - 1];
   else if (z <= 0.0)
     return arr[i][j][0];
 
@@ -262,8 +262,8 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
 
   PetscInt     kbz;
   PetscScalar  incr;
-  if (z >= (grid->p)->Lz) {
-    kbz = (grid->p)->Mz - 1;
+  if (z >= grid->Lz) {
+    kbz = grid->Mz - 1;
     incr = 0.0;
   } else if (z <= 0.0) {
     kbz = 0;
@@ -292,7 +292,7 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
 /*!
 Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.p->Lz}\f$.
+\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.Lz}\f$.
 
 Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
 
@@ -334,7 +334,7 @@ PetscErrorCode  IceModelVec3::getValColumnPL(const PetscInt i, const PetscInt j,
 /*!
 Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.p->Lz}\f$.
+\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.Lz}\f$.
 
 Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
 
@@ -366,7 +366,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(const PetscInt i, const PetscInt 
     }
     const PetscScalar z0 = levels[mcurr],
                       f0 = arr[i][j][mcurr];
-    if (mcurr >= (grid->p)->Mz - 2) {
+    if (mcurr >= grid->Mz - 2) {
       // just do linear interpolation at top of grid
       const PetscScalar incr = (levelsIN[k] - z0) / (levels[mcurr+1] - z0);
       valsOUT[k] = f0 + incr * (arr[i][j][mcurr+1] - f0);
@@ -435,7 +435,7 @@ PetscErrorCode  IceModelVec3::getInternalColumn(const PetscInt i, const PetscInt
 PetscErrorCode  IceModelVec3::setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN) {
   
   PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k = 0; k < (grid->p)->Mz; k++) {
+  for (PetscInt k = 0; k < grid->Mz; k++) {
     arr[i][j][k] = valsIN[k];
   }
   return 0;

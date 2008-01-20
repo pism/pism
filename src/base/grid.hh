@@ -22,20 +22,48 @@
 #include <petscda.h>
 #include "pism_const.hh"
 
-//! Collects the parameters for the grid and computational domain.
+
+//! Describes the PISM grid and the distribution of data across processors.
 /*! 
-Note that the default choices made when constructing an instance of IceParam will be overridden 
-by PISM runtime options, by the input file (if an input file is used), and frequently 
-by derived classes (of IceModel).
+This class holds parameters describing the grid, including the vertical spacing and which part
+of the horizontal grid is owned by the processor.  It contains the dimensions of the PISM computational box.
 
-The class is not essential and is DEPRECATED.  It would be more natural to move history to IceModel
-and to move the rest of the parameters to IceGrid itself, perhaps as private data members thereof.
+It creates and destroys a two dimensional \c PETSc \c DA (distributed array).  The creation of this
+\c DA is the point at which PISM gets distributed across multiple processors.
  */
-class IceParam {
+class IceGrid {
 public:
-  IceParam();
-  char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this file
+  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
+  ~IceGrid();
 
+  PetscErrorCode createDA();
+  PetscErrorCode destroyDA();
+
+  PetscErrorCode chooseEquallySpacedVertical();
+  PetscErrorCode chooseChebyshevSpacedVertical();
+  PetscErrorCode chooseQuadraticSpacedVertical();
+
+  PetscErrorCode rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
+                                         const PetscScalar lz);
+  PetscErrorCode rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
+                                         const PetscScalar lz, const PetscTruth truelyPeriodic);
+  PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly);
+  PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
+                                       const PetscTruth truelyPeriodic);
+
+  bool        isEqualVertSpacing();
+  PetscInt    kBelowHeight(const PetscScalar height);
+  
+  MPI_Comm    com;
+  PetscMPIInt rank, size;
+  DA          da2;
+  PetscInt    xs, xm, ys, ym;
+
+  PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
+                                   // which are represented in 3d Vecs
+  PetscScalar dzMIN, dzMAX;
+
+  // FORMERLY IN IceParam:
   PetscScalar Lx, Ly;  // half width of the ice model grid in x-direction, y-direction (m)
   PetscInt    Mx, My; // number of grid points in x-direction, y-direction
   PetscScalar dx, dy; // spacing of grid
@@ -50,64 +78,15 @@ protected:
                            DEFAULT_ICEPARAM_year;
   static const PetscInt    DEFAULT_ICEPARAM_Mx, DEFAULT_ICEPARAM_My, DEFAULT_ICEPARAM_Mz,
                            DEFAULT_ICEPARAM_Mbz;
-};
-
-
-//! Describes the PISM grid and the distribution of data across processors.
-/*! 
-This class holds parameters describing the grid, including the vertical spacing and which part
-of the horizontal grid is owned by the processor.  It contains the dimensions of the PISM computational box.
-
-It creates and destroys a two dimensional \c PETSc \c DA (distributed array).  The creation of this
-\c DA is the point at which PISM gets distributed across multiple processors.
-
-
- */
-class IceGrid {
-public:
-  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
-  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, IceParam *p);
-  ~IceGrid();
-
-  PetscErrorCode createDA();
-  PetscErrorCode destroyDA();
-
-  PetscErrorCode chooseEquallySpacedVertical();
-  PetscErrorCode chooseChebyshevSpacedVertical();
-  PetscErrorCode chooseQuadraticSpacedVertical();
-
-  PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
-                         const PetscScalar lz);
-  PetscErrorCode rescale(const PetscScalar lx, const PetscScalar ly, 
-                         const PetscScalar lz, const PetscTruth truelyPeriodic);
-  PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                       const PetscTruth truelyPeriodic);
-
-  bool        equalVertSpacing();
-  PetscInt    kBelowHeight(const PetscScalar height);
-  PetscInt    kBelowHeightEQ(const PetscScalar height);
-  
-  MPI_Comm    com;
-  PetscMPIInt rank, size;
-  IceParam    *p;
-  DA          da2;
-  PetscInt    xs, xm, ys, ym;
-
-  PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
-                                   // which are represented in 3d Vecs
-  PetscScalar dzMIN, dzMAX;
-
-  PetscScalar dzEQ, *zlevelsEQ;    // for equal spacing on [0,p->Lz]
-  PetscScalar dzbEQ, *zblevelsEQ;  //  "    "      "    "  [-p->Lbz,0]
 
 private:
-  PetscInt        spacing_type;  // 0 = for now, an error code, but in future will be whatever was the input file
-                                 //     spacing, assuming it was not equally spaced
-                                 // 1 = equally spaced,
-                                 // 2 = Chebyshev spaced
+  PetscInt        spacing_type;  // 0 = unknown spacing but not equally spaced
+                                 // 1 = equally spaced
+                                 // 2 = Chebyshev spaced (very fine near base of ice)
+                                 // 3 = quadratic spaced (fairly fine near base of ice)
   PetscTruth      createDA_done;
-  PetscErrorCode  setEqualLevels();
-  PetscErrorCode  setLevelsFromLsMs();
+  PetscErrorCode  setVertLevels();
+  PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
   bool            isIncreasing(const PetscInt len, PetscScalar *vals);
 };
 

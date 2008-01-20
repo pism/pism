@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Ed Bueler
+// Copyright (C) 2006-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -72,8 +72,8 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   // set Lz to 1000.0 m by default; note max thickness in data is 800.0 m
   PetscTruth LzSet;
   ierr = PetscOptionsHasName(PETSC_NULL, "-Lz", &LzSet); CHKERRQ(ierr);
-  if (LzSet == PETSC_FALSE) {
-    ierr = grid.rescale(grid.p->Lx, grid.p->Ly, 1000.0); CHKERRQ(ierr);
+  if (LzSet == PETSC_FALSE) { // usual case
+    ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, 1000.0); CHKERRQ(ierr);
   }
 
   // allocate observed velocity space
@@ -236,7 +236,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
                accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
   PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
   
-  const PetscScalar pi = 3.14159265358979, area = grid.p->dx * grid.p->dy;
+  const PetscScalar pi = 3.14159265358979, area = grid.dx * grid.dy;
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);    
   ierr = DAVecGetArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
@@ -388,9 +388,9 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
         //gridlon = linspace(-5.26168,3.72207,147);
         const PetscScalar origdlat = (-5.42445 - (-12.3325)) / 110.0;
         const PetscScalar lowlat = -12.3325 - origdlat * 46.0;
-        const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.p->Mx - 1);        
+        const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.Mx - 1);        
         const PetscScalar lowlon = -5.26168;
-        const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.p->My - 1);
+        const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.My - 1);
         const int         ci = (int) floor((lat - lowlat) / dlat);
         const int         cj = (int) floor((lon - lowlon) / dlon);
         if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {

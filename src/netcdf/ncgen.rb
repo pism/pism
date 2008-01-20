@@ -1,6 +1,6 @@
 #!/usr/bin/ruby -w
 
-# Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+# Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 #
 # This file is part of Pism.
 #
@@ -72,10 +72,10 @@ oa.puts autogen_warning
 s.each do |l|
   break if l =~ /attribute vectors/
   ov << l;
-  l.sub!(/91/, 'grid.p->Mx')
-  l.sub!(/92/, 'grid.p->My')
-  l.sub!(/93/, 'grid.p->Mz')
-  l.sub!(/94/, 'grid.p->Mbz')
+  l.sub!(/91/, 'grid.Mx')
+  l.sub!(/92/, 'grid.My')
+  l.sub!(/93/, 'grid.Mz')
+  l.sub!(/94/, 'grid.Mbz')
   oa << l
 end
 ov.close
@@ -106,10 +106,10 @@ oad.puts autogen_warning_diag;
 sd.each do |l|
   break if l =~ /attribute vectors/
   ovd << l;
-  l.sub!(/91/, 'grid.p->Mx')
-  l.sub!(/92/, 'grid.p->My')
-  l.sub!(/93/, 'grid.p->Mz')
-  l.sub!(/94/, 'grid.p->Mbz')
+  l.sub!(/91/, 'grid.Mx')
+  l.sub!(/92/, 'grid.My')
+  l.sub!(/93/, 'grid.Mz')
+  l.sub!(/94/, 'grid.Mbz')
   oad << l
 end
 ovd.close

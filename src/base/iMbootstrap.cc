@@ -60,7 +60,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscScalar     **H, **b, **Ts, **Ghf;
 
   PetscScalar *T;
-  T = new PetscScalar[grid.p->Mz];
+  T = new PetscScalar[grid.Mz];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
@@ -83,9 +83,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
         const PetscScalar d2 = depth * depth;
         T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
       }
-      for (PetscInt k = ks; k < grid.p->Mz; k++) // above ice
+      for (PetscInt k = ks; k < grid.Mz; k++) // above ice
         T[k] = Ts[i][j];
-      ierr = T3.setValColumnPL(i,j,grid.p->Mz,grid.zlevels,T); CHKERRQ(ierr);
+      ierr = T3.setValColumnPL(i,j,grid.Mz,grid.zlevels,T); CHKERRQ(ierr);
       
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice
@@ -122,8 +122,8 @@ Call <tt>Tb3.needAccessToVals()</tt> before and <tt>Tb3.doneAccessToVals()</tt> 
 PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
                             const PetscScalar Ttopbedrock, const PetscScalar geothermflux) {
   PetscScalar *Tb;
-  Tb = new PetscScalar[grid.p->Mbz];
-  for (PetscInt kb = 0; kb < grid.p->Mbz; kb++)
+  Tb = new PetscScalar[grid.Mbz];
+  for (PetscInt kb = 0; kb < grid.Mbz; kb++)
     Tb[kb] = Ttopbedrock - (geothermflux / bedrock.k) * grid.zblevels[kb];
   PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
   delete [] Tb;
@@ -215,15 +215,15 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
                psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
   }
 
-  // set time (i.e. grid.p->year, IceModel::startYear, and IceModel::endYear)
+  // set time (i.e. grid.year, IceModel::startYear, and IceModel::endYear)
   if (tExists) {
     const size_t idx = 0;
-    float begin_t;
+    double begin_t;
     if (grid.rank == 0) {
-      nc_get_var1_float(ncid, v_t, &idx, &begin_t);
+      nc_get_var1_double(ncid, v_t, &idx, &begin_t);
     }
-    ierr = MPI_Bcast(&begin_t, 1, MPI_FLOAT, 0, grid.com); CHKERRQ(ierr);
-    grid.p->year = begin_t / secpera;
+    ierr = MPI_Bcast(&begin_t, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
+    grid.year = begin_t / secpera;
     ierr = verbPrintf(2, grid.com, 
             "  time t found in bootstrap file; using to set current year\n"); CHKERRQ(ierr);
     ierr = setStartRunEndYearsFromOptions(PETSC_TRUE); CHKERRQ(ierr);
@@ -266,7 +266,11 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
          "    user options to dimensions:\n"
          "      [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
-  ierr = grid.rescale(x_scale, y_scale, z_scale); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+         "  resetting vertical levels using user options and grid.rescale_and_set_zlevels()\n");
+         CHKERRQ(ierr);
+  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+  ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
   // COMMENT FIXME:  Next block of code uses a sequential Vec ("vzero") on processor 
   //   zero to take a NetCDF variable, which is a one-dimensional array representing 
@@ -364,7 +368,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   }
   ierr = verbPrintf(3, grid.com, "  done reading .nc file\n"); CHKERRQ(ierr);
 
-  ierr = cleanJustNan_legacy(); CHKERRQ(ierr);  // needed for ant_init.nc; should be harmless for other
+//  ierr = cleanJustNan_legacy(); CHKERRQ(ierr);  // needed for ant_init.nc; should be harmless for other
 
   ierr = verbPrintf(2, grid.com, 
             "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");

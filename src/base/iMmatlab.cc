@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ PetscErrorCode IceModel::VecView_g2ToMatlab(PetscViewer v,
   ierr = PetscObjectSetName((PetscObject) g2, varname); CHKERRQ(ierr);
   ierr = VecView(g2, v); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(v,"\n%s = reshape(%s,%d,%d);\n\n",
-             varname, varname, grid.p->My, grid.p->Mx); CHKERRQ(ierr);
+             varname, varname, grid.My, grid.Mx); CHKERRQ(ierr);
   return 0;
 }
 
@@ -184,13 +184,13 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
                      const PetscScalar scale, const PetscTruth doTandTb) {
   if (matlabOutWanted(scName)) {
     PetscErrorCode   ierr;
-    PetscInt         rlen = grid.p->Mz;
+    PetscInt         rlen = grid.Mz;
     PetscInt         *row;
     Vec              m;
     PetscScalar      *ivals;
 
     // row gives indices only
-    if (doTandTb == PETSC_TRUE)   rlen += grid.p->Mbz;
+    if (doTandTb == PETSC_TRUE)   rlen += grid.Mbz;
     row = new PetscInt[rlen];
     for (PetscInt k=0; k < rlen; k++)   row[k] = k;
 
@@ -203,8 +203,8 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
         ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
         PetscScalar *ibvals;
         ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
-        ierr = VecSetValues(m, grid.p->Mbz, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValues(m, grid.p->Mz, &row[grid.p->Mbz], ivals, INSERT_VALUES);
+        ierr = VecSetValues(m, grid.Mbz, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(m, grid.Mz, &row[grid.Mbz], ivals, INSERT_VALUES);
                  CHKERRQ(ierr);
         ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
         ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
@@ -248,20 +248,20 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
 
   // these are tools to help actually *use* the Matlab output
-  ierr = PetscViewerASCIIPrintf(viewer,"\nyear = %10.6f;\n",grid.p->year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear = %10.6f;\n",grid.year);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "x = (-%12.3f:%12.3f:%12.3f)/1000.0;\n",
-                                grid.p->Lx,grid.p->dx,grid.p->Lx);  CHKERRQ(ierr);
+                                grid.Lx,grid.dx,grid.Lx);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "y = (-%12.3f:%12.3f:%12.3f)/1000.0;\n",
-                                grid.p->Ly,grid.p->dy,grid.p->Ly);  CHKERRQ(ierr);
+                                grid.Ly,grid.dy,grid.Ly);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"z = [\n");  CHKERRQ(ierr);
-  for (PetscInt k = 0; k < grid.p->Mz; k++) {
+  for (PetscInt k = 0; k < grid.Mz; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,"  %14.5f\n",grid.zlevels[k]);  CHKERRQ(ierr);
   } 
   ierr = PetscViewerASCIIPrintf(viewer,"];\n\n");  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"zb = [\n");  CHKERRQ(ierr);
-  for (PetscInt k = 0; k < grid.p->Mbz; k++) {
+  for (PetscInt k = 0; k < grid.Mbz; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,"  %14.5f\n",grid.zblevels[k]);  CHKERRQ(ierr);
   } 
   ierr = PetscViewerASCIIPrintf(viewer,"];\n\n");  CHKERRQ(ierr);
@@ -378,7 +378,7 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
   char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
 
   strcpy(file_name,ssaMatlabFilePrefix);
-  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_%.0f.m", grid.p->year);
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_%.0f.m", grid.year);
   strcat(file_name,yearappend);
   ierr = verbPrintf(2, grid.com, 
              "writing Matlab-readable file for SSA system A xsoln = rhs to file `%s' ...\n",
@@ -427,12 +427,12 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
   ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
-  ierr = PetscViewerASCIIPrintf(viewer,"year=%10.6f;\n",grid.p->year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"year=%10.6f;\n",grid.year);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-            "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Lx,grid.p->dx,grid.p->Lx);
+            "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.Lx,grid.dx,grid.Lx);
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-            "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.p->Ly,grid.p->dy,grid.p->Ly);
+            "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.Ly,grid.dy,grid.Ly);
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
 

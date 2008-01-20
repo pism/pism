@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,12 +26,12 @@ PetscErrorCode  IceModel::updateGrainSizeIfNeeded() {
   // first time it is called and then performs an update no more often than
   // gsIntervalYears.
   PetscErrorCode ierr;
-  static PetscScalar lastGSUpdateYear = grid.p->year;  // only happens when first called
+  static PetscScalar lastGSUpdateYear = grid.year;  // only happens when first called
 
   // If the current grain sizes are not expired, exit cleanly.
-  if (grid.p->year - lastGSUpdateYear >= gsIntervalYears) {
+  if (grid.year - lastGSUpdateYear >= gsIntervalYears) {
     ierr = updateGrainSizeNow(); CHKERRQ(ierr);
-    lastGSUpdateYear = grid.p->year;
+    lastGSUpdateYear = grid.year;
     ierr = verbPrintf(2,grid.com, "g"); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
@@ -79,7 +79,7 @@ This has second order truncation error (at \f$z_{k+1/2}\f$) whether or not verti
 PetscErrorCode  IceModel::updateGrainSizeNow() {
   PetscErrorCode ierr;
 
-  const PetscInt  Mz = grid.p->Mz;
+  const PetscInt  Mz = grid.Mz;
   PetscScalar **H;
   PetscScalar *age, *gs, *w;
   gs = new PetscScalar[Mz];
