@@ -191,7 +191,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vubarSSA); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vvbarSSA); CHKERRQ(ierr);
 
-//  ierr = VecDuplicateVecs(u3.v, nWork3d, &vWork3d); CHKERRQ(ierr);
   ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
   ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
   Sigmastag3 = new IceModelVec3[2];
@@ -202,8 +201,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
-//  ierr = DACreateGlobalVector(grid.da3, &g3); CHKERRQ(ierr);
-//  ierr = DACreateGlobalVector(grid.da3b, &g3b); CHKERRQ(ierr);
 
   const PetscInt M = 2 * grid.Mx * grid.My;
   ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
@@ -268,7 +265,6 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vubarSSA); CHKERRQ(ierr);
   ierr = VecDestroy(vvbarSSA); CHKERRQ(ierr);
 
-//  ierr = VecDestroyVecs(vWork3d, nWork3d); CHKERRQ(ierr);
   ierr = Tnew3.destroy(); CHKERRQ(ierr);
   ierr = taunew3.destroy(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].destroy(); CHKERRQ(ierr);
@@ -279,8 +275,6 @@ PetscErrorCode IceModel::destroyVecs() {
   delete [] Istag3;
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
-//  ierr = VecDestroy(g3); CHKERRQ(ierr);
-//  ierr = VecDestroy(g3b); CHKERRQ(ierr);
 
   ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
   ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);

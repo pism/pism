@@ -53,6 +53,7 @@ public:
 
   bool        isEqualVertSpacing();
   PetscInt    kBelowHeight(const PetscScalar height);
+
   
   MPI_Comm    com;
   PetscMPIInt rank, size;

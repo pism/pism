@@ -219,15 +219,17 @@ PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscI
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const PetscScalar z) {
-  // use linear interpolation
+
   if (checkHaveArray() != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
-       "IceModelVec3 getValZ(): array was not allocated (so says IceModelVec::checkHaveArray())\n");
+       "IceModelVec3 getValZ(): array was not allocated (so says IceModelVec::checkHaveArray());\n"
+       " varname = %s\n", varname);
     PetscEnd();
   }
   if (isLegalLevel(z) != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
-       "IceModelVec3 getValZ(): level was not equal (so says isLegalLevel())\n");
+       "IceModelVec3 getValZ(): isLegalLevel() says level %f was not legal; varname = %s\n",
+       z, varname);
     PetscEnd();
   }
   PetscScalar ***arr = (PetscScalar***) array;
@@ -251,7 +253,6 @@ PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const 
 PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j, const PetscScalar z,
                                              planeStar *star) {
   PetscErrorCode ierr;
-  // use linear interpolation
   ierr = checkHaveArray();  CHKERRQ(ierr);
   ierr = isLegalLevel(z);  CHKERRQ(ierr);
   // check ownership here?

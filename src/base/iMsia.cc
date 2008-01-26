@@ -326,8 +326,9 @@ PetscErrorCode IceModel::basalSIA() {
                   myhx = 0.25 * (  h_x[0][i][j] + h_x[0][i-1][j]
                                  + h_x[1][i][j] + h_x[1][i][j-1]),
                   myhy = 0.25 * (  h_y[0][i][j] + h_y[0][i-1][j]
-                                 + h_y[1][i][j] + h_y[1][i][j-1]),
-                  alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy)),
+                                 + h_y[1][i][j] + h_y[1][i][j-1]);
+          const PetscScalar alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
+          const PetscScalar
                   basalC = basalVelocity(myx, myy, H[i][j], T3.getValZ(i,j,0.0), 
                                          alpha, muSliding);
           ub[i][j] = - basalC * myhx;
