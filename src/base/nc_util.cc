@@ -101,7 +101,7 @@ PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int v
   }
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
-  if (grid->rank == 0) { // on rank 0 processor, receive messages from every other 
+  if (grid->rank == 0) { // on rank 0 processor, receive messages from every other
                          //    processor, then write it out to the NC file
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
@@ -226,7 +226,7 @@ PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bd
     stat = nc_inq_varid(ncid, "y", &y_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    
+
     size_t t_end = t_len - 1;
     // get extent of grid by looking for last and first of variables x,y;
     // for z get first of zb and last of z
@@ -240,7 +240,7 @@ PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bd
     stat = nc_get_var1_double(ncid, y_id, &y_bdy[0], &bdy[3]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_get_var1_double(ncid, y_id, &y_bdy[1], &bdy[4]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_get_var1_double(ncid, zb_id, &z_bdy[0], &bdy[5]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));    
+    stat = nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
   MPI_Bcast(dim, 5, MPI_LONG, 0, com);
   MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, com);
@@ -249,7 +249,7 @@ PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bd
 }
 
 
-PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast, 
+PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast,
                                        MPI_Comm com) {
   PetscErrorCode ierr;
   int stat;
@@ -303,7 +303,7 @@ PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, P
     first = 1.0e30;
     last = -1.0e30;
   }
-  
+
   ierr = PetscGlobalMin(&first,gfirst,com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&last,glast,com); CHKERRQ(ierr);
   return 0;
@@ -311,13 +311,13 @@ PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, P
 
 
 //! Read in the variables \c z and \c zb from the NetCDF file; don't assume they are equally-spaced.
-PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len, 
+PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len,
                                          double z_read[], double zb_read[], MPI_Comm com) {
   PetscErrorCode ierr;
   PetscMPIInt rank;
   int stat;
   int z_id, zb_id;
-  size_t zeroST  = 0, 
+  size_t zeroST  = 0,
          zlenST  = (size_t) z_len,
          zblenST = (size_t) zb_len;
 
@@ -326,13 +326,13 @@ PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len,
   if (rank == 0) {
     stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    
+
     stat = nc_get_vara_double(ncid, z_id, &zeroST, &zlenST, z_read);
              CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_get_vara_double(ncid, zb_id, &zeroST, &zblenST, zb_read);
              CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  
+
   MPI_Bcast(z_read, z_len, MPI_DOUBLE, 0, com);
   MPI_Bcast(zb_read, zb_len, MPI_DOUBLE, 0, com);
   return 0;
@@ -446,7 +446,7 @@ PetscErrorCode NCTool::get_global_var(const IceGrid *grid, int ncid, const char 
       SETERRQ(1, "Unsupported type.");
     }
   }
-  
+
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
   return 0;
 }
@@ -456,7 +456,7 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
                                      Vec vecg, Vec vindzero) {
   PetscErrorCode  ierr;
   MaskInterp defaultmasktool;
-  
+
   defaultmasktool.number_allowed = 4;
   //FIXME: these need to come from IceModel, not be hard coded
   defaultmasktool.allowed_levels[0] = 1;  // MASK_SHEET
@@ -477,7 +477,7 @@ directly use MPI calls for parallel communication.
 This procedure is only called by IceModel::bootstrapFromFile_netCDF() and IceModel::readShelfStreamBCFromFile_netCDF().
 
 A special ability appears here, namely the ability to take floating point values on one grid, for what is actually an
-integer mask (in the NetCDF file), and then produce an integer mask, with certain allowed values, in the target 
+integer mask (in the NetCDF file), and then produce an integer mask, with certain allowed values, in the target
 \c DA -managed \c Vec.  This ability is not available in get_local_var().
  */
 PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Vec vecl,
@@ -504,7 +504,7 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
     size_t M, N;
     stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
     stat = nc_inq_dimlen(ncid, dimids[1], &N); CHKERRQ(nc_check(stat));
-    
+
     switch (xtype) {
       case NC_FLOAT:
         f = new float[M*N];
@@ -519,9 +519,9 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
     }
 
     ierr = VecGetArray2d(vindzero, grid.Mx, grid.My, 0, 0, &ind); CHKERRQ(ierr);
-    
+
     // netCDF concepts of $\Delta x$ and $\Delta y$
-    // We have rescaled the grid early in bootstrapFromFile_netCDF() to match the 
+    // We have rescaled the grid early in bootstrapFromFile_netCDF() to match the
     // physical extent of the netCDF file.
     const float ncdx = 2 * grid.Lx / (M - 1);
     const float ncdy = 2 * grid.Ly / (N - 1);
@@ -536,7 +536,7 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
         if (PetscAbs(y) > grid.Ly) {
           SETERRQ1(3, "var_to_da_vec: y=%f not in bounds.  Grid corrupted.\n", y);
         }
-            
+
         const float ii = M / 2 + x / ncdx;
         const float jj = N / 2 + y / ncdy;
         // These live in [0,1)
@@ -560,9 +560,9 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
           if ((masktool.number_allowed == 1) || (val <= (float)masktool.allowed_levels[0])) {
             val = (float)masktool.allowed_levels[0];
           } else {
-            int k=1;        
+            int k=1;
             while (k < masktool.number_allowed) {
-              float mid = ( (float)masktool.allowed_levels[k-1] 
+              float mid = ( (float)masktool.allowed_levels[k-1]
                             + (float)masktool.allowed_levels[k] ) / 2.0;
               if (val < mid) {
                 val = (float)masktool.allowed_levels[k-1];
@@ -583,7 +583,7 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
         } else {
           SETERRQ(4, "var_to_da_vec: this should not happen");
         }
-        
+
         // The backward indexing is merely to make the plots look upright with
         // the default plotting methods.  When I can make the axes work in a
         // sane manner, this can be improved.
@@ -591,7 +591,7 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
                            val, INSERT_VALUES); CHKERRQ(ierr);
       }
     }
-   
+
     if (f != NULL) delete [] f;
     if (g != NULL) delete [] g;
     ierr = VecRestoreArray2d(vindzero, grid.Mx, grid.My, 0, 0, &ind); CHKERRQ(ierr);
@@ -606,7 +606,7 @@ PetscErrorCode NCTool::var_to_da_vec(IceGrid &grid, int ncid, int vid, DA da, Ve
 
 
 //! The "local interpolation context" holds various parameters describing the source NetCDF file for regridding.
-/*! 
+/*!
 This procedure merely puts various information into a struct; it doesn't extract new information or do communication.
  */
 PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const double bdy[],
@@ -614,12 +614,57 @@ PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const d
                                            LocalInterpCtx &lic, IceGrid &grid) {
   PetscErrorCode ierr;
   const double Lx = grid.Lx,
-               Ly = grid.Ly, 
-               Lz = grid.Lz, 
+               Ly = grid.Ly,
+               Lz = grid.Lz,
                Lbz = grid.Lbz,
                dx = grid.dx,
                dy = grid.dy;
-  
+
+/* The local interpolation context contains the details of how the CPU's block
+of the new new computational domain fits into the domain of the netCDF file.
+
+For any particular dimension, we have a new computational domain [a,b] with
+spacing h so there are n = (b - a) / h interior cells, indexed by {i_0 ... i_n}.
+The local processor owns a range {i_m ... i_m'}.  Suppose the netCDF file has
+domain [A,B] with N = (B - A) / H.  In order to interpolate onto these points,
+we need the indices {I_m ... I_m'} of the netCDF file so that
+
+  [x(i_m), x(i_m')]  is a subset of  [x(I_m), x(I_m')]
+
+We have obtained the netCDF bounds x(I_0) and x(I_N) in the bdy array and the
+number of elements (N+1) in the dim array.
+
+In the code, xbdy[2] = {x(i_m), x(i_m')}.
+
+  I_m = floor((x(i_m) - A) / H)                       lic.start
+  I_m' - I_m = ceil((x(i_m') - X(I_m)) / H            lic.count - 1
+  X(I_m)                                              lic.fstart
+  H                                                   lic.delta
+
+In the vertical dimension, fstart is different depending on whether we are in
+the bedrock or ice.  It is also less useful since we have a base-line at z=0, so
+we treat this case specially.  The arrays lic.start and lic.count have 5
+entries, corresponding to: t, x, y, z, zb
+
+To make this work with unequal spacing, we have some choices.  Suppose a PU
+(processing unit) owns indices {i_m ... i_m'} and we know nothing about the
+spacing.
+
+    To find the interpolated value at x(j) where i_m <= j <= i_m' we need the
+    index J such that X(J) <= x(j) <= X(J+1).
+
+Note that we could just loop through an array of X(.) to find J, and it would
+not be a performance bottleneck.  It would also be more general.  Of course, for
+a special case like Chebyshev-Gauss-Lobatto we can compute the indices.  A good
+approach would be to have a structure representing the layout in each dimension.
+Then we can have a function which takes a floating point value and returns the
+largest index which is not greater than that valie.
+
+Note that lic.start and lic.count is all that is necessary to pull the correct
+data from the netCDF file, so if we implement this general scheme, the fstart
+and delta entries in the struct will not be meaningful.
+*/
+
   double xbdy[2] = {-Lx + dx * grid.xs, -Lx + dx * (grid.xs + grid.xm - 1)};
   double ybdy[2] = {-Ly + dy * grid.ys, -Ly + dy * (grid.ys + grid.ym - 1)};
   double zbdy[2] = {-Lbz, Lz};
@@ -629,19 +674,21 @@ PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const d
     SETERRQ(1, "Grid not a subset");
 
   lic.ncid = ncid;
-  
+
+  // Distance between entries in the netCDF file (floating point).
   lic.delta[0] = NAN; // Delta probably will never make sense in the time dimension.
   lic.delta[1] = (bdy[2] - bdy[1]) / (dim[1] - 1);
   lic.delta[2] = (bdy[4] - bdy[3]) / (dim[2] - 1);
   lic.delta[3] = bdy[6] / (dim[3] - 1);  // corresponds to grid.dzEQ and grid.dzbEQ; IGNOR it in general!
-  
+
+  // Index of the first needed entry in the netCDF file (int).
   lic.start[0] = dim[0] - 1; // We use the latest time
   lic.start[1] = (int)floor((xbdy[0] - bdy[1]) / lic.delta[1]);
   lic.start[2] = (int)floor((ybdy[0] - bdy[3]) / lic.delta[2]);
   lic.start[3] = 0; // We start at the bed.
 // replace:  lic.start[4] = regridFile.kbBelowHeight(zbdy[0]), so to speak
-  lic.start[4] = (int)floor((zbdy[0] - bdy[5]) / lic.delta[3]);
-  
+  lic.start[4] = (int)floor((zbdy[0] - bdy[5]) / lic.delta[3]);  // The deepest level we need
+
   lic.fstart[0] = bdy[0];
   lic.fstart[1] = bdy[1] + lic.start[1] * lic.delta[1];
   lic.fstart[2] = bdy[3] + lic.start[2] * lic.delta[2];
@@ -663,6 +710,9 @@ PetscErrorCode NCTool::form_LocalInterpCtx(int ncid, const size_t dim[], const d
     lic.zblevs[k] = zblevsIN[k];
   }
 
+  // We need a buffer for the local data, but node 0 needs to have as much
+  // storage as the node with the largest block (which may be anywhere), hence
+  // we perform a reduce so that node 0 has the maximum value.
   int a_len = lic.a_len = lic.count[1] * lic.count[2] * lic.count[3];
   MPI_Reduce(&a_len, &(lic.a_len), 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(lic.a_len * sizeof(float), &(lic.a)); CHKERRQ(ierr);
@@ -687,15 +737,15 @@ PetscErrorCode NCTool::regrid_local_var(const char *vars, char c, const char *na
 
 
 //! Find a 2D or 3D variable in a NetCDF file and regrid it onto the current grid.
-/*! 
+/*!
 We need to move a 2D or 3D variable from within a NetCDF file, with its "source" grid, to the
-current grid, the "target" grid.  The target grid is spread across all processors.  The variable 
+current grid, the "target" grid.  The target grid is spread across all processors.  The variable
 on the source grid is only read from processor zero.
 
-The source grid may be coarser or finer than the target 
+The source grid may be coarser or finer than the target
 grid, and it may even be coarser in one dimension and finer in another.  We do require,
 however, that the source grid have greater extent than the target.  That is, the values
-of the \c IceParam parameters \c Lx, \c Ly, \c Lz, and \c Lbz must exceed those of the 
+of the \c IceParam parameters \c Lx, \c Ly, \c Lz, and \c Lbz must exceed those of the
 target grid.
 
 We interpolate as needed for functions of two or three variables.  For two variables we take values
@@ -703,14 +753,14 @@ We interpolate as needed for functions of two or three variables.  For two varia
 
 
 Note that the procedure checks whether the single character flag \c c is in the string
-\c vars.  Note that \c dim_flag is 2 for 2-D quantities, 3 for 3-D ice quantities, and 4 for 3-D 
+\c vars.  Note that \c dim_flag is 2 for 2-D quantities, 3 for 3-D ice quantities, and 4 for 3-D
 bedrock quantities.
  */
 PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *name,
                                          int dim_flag, LocalInterpCtx &lic,
                                          IceGrid &grid, DA da, Vec g) {
   PetscErrorCode ierr;
-                                
+
   if (!grid.isEqualVertSpacing()) {
     SETERRQ(604,"only implemented for grids with equal dz spacing in vertical\n");
   }
@@ -719,7 +769,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
     return 0;
   }
   ierr = verbPrintf(2, grid.com, "\n   %c: regridding `%s' ... ", c, name); CHKERRQ(ierr);
-  
+
   const int req_tag = 1; // MPI tag for request block
   const int var_tag = 2; // MPI tag for data block
   const int sc_len = 8;
@@ -738,33 +788,50 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
     default:
       SETERRQ(1, "Invalid value for `dim_flag'.");
   }
-        
+
+  // pack start and count into a single buffer
   for (int i = 0; i < 4; i++) sc[i] = lic.start[i];
   for (int i = 0; i < 4; i++) sc[4 + i] = lic.count[i];
 
-  // At this point, sc[] is set up correctly for ice 3-D quantities.
+  // At this point, sc[] is set up correctly for ice 3-D quantities.  In order
+  // to avoid duplicating lots of code below, we play some tricks here.
   if (dim_flag == 2) { // 2-D quantity
+    // Treat it as a 3-D quantity with extent 1 in the z-direction.  The netCDF
+    // read actually will not use this information (it is passed in, but it
+    // won't index these entries in the array, because it knows how many
+    // dimensions it there are), but sc[7] will be used when node 0 computes how
+    // much data it has to send back.  sc[3] should never be used in this case.
     sc[3] = 0; sc[7] = 1;
   } else if (dim_flag == 4) { // Bedrock quantity
+    // Just fill in the appropriate values
     sc[3] = lic.start[4]; sc[7] = lic.count[4];
   }
-  
+
   if (grid.rank == 0) {
+    // Node 0 will service all the other nodes before itself.  We need to save
+    // sc[] so that it knows how to get its block at the end.
     int sc0[sc_len];
     for (int i = 0; i < sc_len; i++) sc0[i] = sc[i];
+
     for (int proc = grid.size - 1; proc >= 0; proc--) {
-      if (proc == 0) {
+      if (proc == 0) {// Get the bounds.
         for (int i = 0; i < sc_len; i++) sc[i] = sc0[i];
       } else {
         MPI_Recv(sc, sc_len, MPI_INT, proc, req_tag, grid.com, &mpi_stat);
       }
-      
+
+      // It is not safe to cast memory.  In particular on amd64 int and size_t are
+      // different sizes.  Since netCDF uses size_t for the offsets, we need to 
       size_t sc_nc[sc_len];
       for (int i = 0; i < sc_len; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
+
+      // Finding the varid could be lifted out of this loop, but it doesn't hurt
+      // to leave it here.
       int var_id;
       stat = nc_inq_varid(lic.ncid, name, &var_id);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
+      // Actually read the block into the buffer.
       stat = nc_get_vara_float(lic.ncid, var_id, &sc_nc[0], &sc_nc[4], lic.a);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
@@ -783,28 +850,35 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
         free(buf);
       } */
 
+      // Find out how big the buffer actually is.  Remember that node 0 has a
+      // buffer that will only be filled by if the process it is serving has a
+      // maximal sized local domain.
       int a_len = 1;
       for (int i = 0; i < dims; i++) a_len *= sc[4 + i];
 
+      // Send the result back
       if (proc != 0) {
         MPI_Send(lic.a, a_len, MPI_FLOAT, proc, var_tag, grid.com);
       }
     }
-  } else {
+  } else { // Not process 0
     MPI_Send(sc, sc_len, MPI_INT, 0, req_tag, grid.com);
     MPI_Recv(lic.a, lic.a_len, MPI_FLOAT, 0, var_tag, grid.com, &mpi_stat);
   }
-  
+
+  // We'll work with the raw storage here so that the array we are filling is
+  // indexed the same way as the buffer we are pulling from (lic.a)
   PetscScalar *vec_a;
   ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
 
-  const int ycount = lic.count[2];
+  const int ycount = lic.count[2]; // We need this for indexing
   for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
     for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
       int myMz, zcount;
       float bottom = 0.0;
       float zfstart = 0.0;
       if (dim_flag == 2) {
+        // Indexing trick so that we don't have to duplicate code for the 2-D case.
         myMz = 1;
         zcount = 1;
       } else if (dim_flag == 3) {
@@ -821,18 +895,41 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
 
       for (int k = 0; k < myMz; k++) {
         float a_mm, a_mp, a_pm, a_pp;
-        
+
+        // Location in physical space
         const float x = -grid.Lx + i * grid.dx;
         const float y = -grid.Ly + j * grid.dy;
 // replace:  const float z = (dim_flag == 4) ? grid.zlevels[k] : grid.zblevels[k];
         const float z = k * grid.dzMIN + bottom;  // assumes grid.dzMIN = grid.dzMAX, for now
 
+        // We need to know how the point (x,y,z) sits within the local block we
+        // pulled from the netCDF file.  This part is specialized to a regular
+        // grid.  In particular floor(ic) is the index of the 'left neighbor'
+        // and ceil(ic) is the index of the 'right neighbor'.  For the irregular
+        // case, we would also need the physical locations of these points, so
+        // that we could compute ii,jj,kk (described below).  We should just
+        // compute the 'left index' and 'right index' explicitly (but in the
+        // same way as we find the domain bounds; see note below)
         const float ic = (x - lic.fstart[1]) / lic.delta[1];
         const float jc = (y - lic.fstart[2]) / lic.delta[2];
         if (dim_flag == 3 || dim_flag == 4) {
 // replace: ???
           const float kc = (z - zfstart) / lic.delta[3];
 
+          // We pretend that there are always 8 neighbors.  And compute the
+          // indices into the buffer for those neighbors.  It is important to
+          // note that floor(ic) + 1 = ceil(ic) does not hold when ic is an
+          // integer.  Computation of the domain (in form_LocalInterpCtx, note
+          // that lic.count uses ceil) must be done in a compatible way,
+          // otherwise we can index improperly here.  When it is in the
+          // interior, it should not matter (since the coefficient of the
+          // erroneous point will be 0), but if it occurs at the end of the
+          // buffer, it will index off the array, possibly causing a
+          // segmentation fault.
+          //
+          // In light of this degenerate case, we observe that not all of these
+          // neighbors are necessarily unique, but doing it this way enables us
+          // to not handle all the cases explicitly.
           int mmm = ((int)floor(ic) * ycount + (int)floor(jc)) * zcount + (int)floor(kc);
           int mmp = ((int)floor(ic) * ycount + (int)floor(jc)) * zcount + (int)ceil(kc);
           int mpm = ((int)floor(ic) * ycount + (int)ceil(jc)) * zcount + (int)floor(kc);
@@ -842,7 +939,16 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
           int ppm = ((int)ceil(ic) * ycount + (int)ceil(jc)) * zcount + (int)floor(kc);
           int ppp = ((int)ceil(ic) * ycount + (int)ceil(jc)) * zcount + (int)ceil(kc);
 
+          // We know how to index the neighbors, but we don't yet know where the
+          // point lies within this box.  This is represented by kk in [0,1].
+          // For the irregular case, with left index km and right index kp, we
+          // would have
+          //   kk = (km == kp) ? 0.0 : (z - Z(km)) / (Z(kp) - Z(km))
+          // where Z(.) are the physical coordinates on the input grid.  Note
+          // that any value in [0,1] would be okay when km == kp.
           const float kk = kc - floor(kc);
+
+          // This is the linear interpolation in the z-direction.
           a_mm = lic.a[mmm] * (1.0 - kk) + lic.a[mmp] * kk;
           a_mp = lic.a[mpm] * (1.0 - kk) + lic.a[mpp] * kk;
           a_pm = lic.a[pmm] * (1.0 - kk) + lic.a[pmp] * kk;
@@ -851,6 +957,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
           // printf("indices = %d %d %d %d\n", mmp, mpp, pmp, ppp);
           // printf("values  = %f %f %f %f\n", a_mm, a_mp, a_pm, a_pp);
         } else {
+          // We don't need to interpolate the z-variance for the 2-D case.
           a_mm = lic.a[(int)floor(ic) * ycount + (int)floor(jc)];
           a_mp = lic.a[(int)floor(ic) * ycount + (int)ceil(jc)];
           a_pm = lic.a[(int)ceil(ic) * ycount + (int)floor(jc)];
@@ -858,18 +965,21 @@ PetscErrorCode NCTool::regrid_global_var(const char *vars, char c, const char *n
         }
 
         const float jj = jc - floor(jc);
+
+        // Interpolate the y-variance
         const float a_m = a_mm * (1.0 - jj) + a_mp * jj;
         const float a_p = a_pm * (1.0 - jj) + a_pp * jj;
-        
+
         const float ii = ic - floor(ic);
         int index = ((i - grid.xs) * grid.ym + (j - grid.ys)) * myMz + k;
+
+        // Index into the new array and interpolate the x-variance.
         vec_a[index] = a_m * (1.0 - ii) + a_p * ii;
       }
     }
   }
-  
+
   ierr = VecRestoreArray(g, &vec_a); CHKERRQ(ierr);
 
   return 0;
 }
-
