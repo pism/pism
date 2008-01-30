@@ -209,11 +209,9 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
   int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
-//  // Allocate some memory.  We will assume that 3d ice vectors (Mx x My x Mz) are the largest.
   // Allocate some memory.
   void *a_mpi;
   int a_len, max_a_len;
-//  max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
   max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
@@ -243,11 +241,9 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
   int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
   int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
-//  // Allocate some memory.  We will assume that vectors based on grid.da3 are the largest.
   // Allocate some memory.
   void *a_mpi;
   int a_len, max_a_len;
-//  max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
   max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
@@ -449,7 +445,6 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   MPI_Bcast(history, history_len, MPI_CHAR, 0, grid.com);
 
   setConstantGrainSize(DEFAULT_GRAIN_SIZE); // since it is never read ...
-//  ierr = reconfigure_legacy_Mbz(); CHKERRQ(ierr);
 
   initialized_p = PETSC_TRUE;
   return 0;
@@ -475,17 +470,14 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
     SETERRQ(1,"regridding is only possible if the source file has NetCDF format and extension '.nc'");
   }
 
-  ierr = verbPrintf(1,grid.com,
-          "WARNING: regrid_netCDF() CURRENTLY assumes the regrid file has evenly spaced vertical coordinate!\n");
-          CHKERRQ(ierr); 
-
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
                                PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
   if (regridVarsSet == PETSC_FALSE) {
     strcpy(regridVars, "TBe");
   }
-  ierr = verbPrintf(2,grid.com, "regridding variables with single character flags `%s' from NetCDF file `%s'", 
-                    regridVars,regridFile); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+           "regridding variables with single character flags `%s' from NetCDF file `%s':", 
+           regridVars,regridFile); CHKERRQ(ierr);
 
   // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
   size_t dim[5];
@@ -503,33 +495,33 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   zlevs = new double[dim[3]];
   zblevs = new double[dim[4]];
   ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], zlevs, zblevs, grid.com); CHKERRQ(ierr);
-  LocalInterpCtx lic;
-  ierr = nct.form_LocalInterpCtx(ncid, dim, bdy, zlevs, zblevs, lic, grid); CHKERRQ(ierr);  // see nc_util.cc
+
+  { // explicit scoping means destructor will be called for lic
+    LocalInterpCtx lic(ncid, dim, bdy, zlevs, zblevs, grid);
+    //ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
+    
+    // do each variable
+    ierr = nct.regrid_local_var(regridVars, 'h', "usurf", 2, lic, grid, grid.da2, vh, g2);  // see nc_util.cc
+       CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(regridVars, 'H', "thk", 2, lic, grid, grid.da2, vH, g2);
+       CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(regridVars, 'L', "bwat", 2, lic, grid, grid.da2, vHmelt, g2);
+       CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
+       CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
+       CHKERRQ(ierr);
+    ierr = T3.regridVecNC(  regridVars, 'T', 3, lic);  CHKERRQ(ierr);
+    ierr = tau3.regridVecNC(regridVars, 'e', 3, lic);  CHKERRQ(ierr);
+    ierr = Tb3.regridVecNC( regridVars, 'B', 4, lic);  CHKERRQ(ierr);
+  }
+  
   delete [] zlevs;  delete [] zblevs;
 
-  // do each variable
-  ierr = nct.regrid_local_var(regridVars, 'h', "usurf", 2, lic, grid, grid.da2, vh, g2);  // see nc_util.cc
-  CHKERRQ(ierr);
-  ierr = nct.regrid_local_var(regridVars, 'H', "thk", 2, lic, grid, grid.da2, vH, g2);
-  CHKERRQ(ierr);
-  ierr = nct.regrid_local_var(regridVars, 'L', "bwat", 2, lic, grid, grid.da2, vHmelt, g2);
-  CHKERRQ(ierr);
-  ierr = nct.regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
-  CHKERRQ(ierr);
-  ierr = nct.regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
-  CHKERRQ(ierr);
-  ierr = T3.regridVecNC(  regridVars, 'T', 3, lic);  CHKERRQ(ierr);
-  ierr = tau3.regridVecNC(regridVars, 'e', 3, lic);  CHKERRQ(ierr);
-  ierr = Tb3.regridVecNC( regridVars, 'B', 4, lic);  CHKERRQ(ierr);
-
-  ierr = PetscFree(lic.zlevs); CHKERRQ(ierr);  
-  ierr = PetscFree(lic.zblevs); CHKERRQ(ierr);  
-  ierr = PetscFree(lic.a); CHKERRQ(ierr);  
   if (grid.rank == 0) {
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-
   ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);
   return 0;
 }

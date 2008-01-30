@@ -184,7 +184,7 @@ PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
   }
   if (height > Lz + 1.0e-6) {
     PetscPrintf(com, 
-       "IceGrid kBelowHeight(): height = %20.18f is above top of computational grid Lz = %20.18f\n",
+       "IceGrid kBelowHeight(): height = %5.4f is above top of computational grid Lz = %5.4f\n",
        height,Lz);
     PetscEnd();
   }
