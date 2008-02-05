@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Ed Bueler
+   Copyright (C) 2007-2008 Ed Bueler
   
    This file is part of PISM.
   
@@ -73,7 +73,7 @@ int exactI(const double m, const double x, const double y,
 
 int exactJ(const double x, const double y, 
            double *H, double *nu, double *u, double *v) {
-  // return 0 if successful
+  /* return 0 if successful */
   
   const double L = 300.0e3;      /* 300 km half-width */
   const double H0 = 500.0;       /* 500 m typical thickness */
@@ -95,13 +95,13 @@ int exactJ(const double x, const double y,
   for (k=-2; k<=2; k++) {
     for (l=-2; l<=2; l++) {
       if ((k != 0) || (l != 0)) {  /* note alpha_00 = beta_00 = 0 */
-        denom = double(k * k + l * l);
-        kx = double(k) * pi * x / L;
-        ly = double(l) * pi * y / L;
+        denom = (double)(k * k + l * l);
+        kx = (double)(k) * pi * x / L;
+        ly = (double)(l) * pi * y / L;
         trig = cos(kx) * sin(ly) + sin(kx) * cos(ly);
         B = (A / denom) * (C * gamma[abs(k)][abs(l)]) * trig;
-        uu += B * double(k);
-        vv += B * double(l);
+        uu += B * (double)(k);
+        vv += B * (double)(l);
       }
     }
   }

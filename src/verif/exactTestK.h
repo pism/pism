@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007 Ed Bueler
+   Copyright (C) 2007-2008 Ed Bueler
   
    This file is part of PISM.
   
@@ -40,8 +40,8 @@ extern "C"
 
 /* compute the exact solution TT = T(t,z); returns 0 for z >= -1000 m but returns
    1 for z < -1000 m because eigenfunction is not valid there;
-   normally use bedrockIsIce = false */
-int exactK(const double t, const double z, double *TT, bool bedrockIsIce);
+   normally use bedrockIsIce_p = 0 (false) */
+int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p);
 
 /* find the alpha_k values for the eigenfunction expansion in the exact
    solution; these values are found by rigorous (bracketed) numerical 

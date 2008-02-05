@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007 Ed Bueler
+   Copyright (C) 2007--2008 Ed Bueler
   
    This file is part of PISM.
   
@@ -75,10 +75,10 @@ int main() {
   }
 
   if (t >= 0) {
-    exactK(t * secpera, z, &TT, false);
+    exactK(t * secpera, z, &TT, 0);    /* bedrock and ice have different material properties */
   } else {
-    exactK(- t * secpera, z, &TT, true);  /* use bedrock material constants equal to those of ice 
-                                             if t is negative */
+    exactK(- t * secpera, z, &TT, 1);  /* dumb trick to help test:  use negative t values to choose
+                                          bedrock material constants equal to those of ice */
   }
 
   printf("Results from Test K:\n");

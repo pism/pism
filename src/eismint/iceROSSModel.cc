@@ -188,38 +188,58 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
   ierr = MPI_Bcast(&magMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&aziMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
 
+/*
   // compare comment in bootstrapFromFile_netCDF 
   Vec vzero;
-  Vec myg2;
-  ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
   VecScatter ctx;
   ierr = VecScatterCreateToZero(myg2, &ctx, &vzero); CHKERRQ(ierr);  
   ierr = getIndZero(grid.da2, myg2, vzero, ctx); CHKERRQ(ierr);
   // compare comment in bootstrapFromFile_netCDF 
+*/
+
+  Vec myg2;
+  ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
+
+  // create "local interpolation context" from dimensions, limits, and lengths extracted from
+  //    file and from information about the part of the grid owned by this processor
+  size_t dim[5];  // dimensions in NetCDF file
+  double bdy[7];  // limits and lengths in NetCDF file
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in NetCDF file, and use current grid info
+  dim[4] = grid.Mbz;  
+  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);
+
   if (accExists) {
     MaskInterp masklevs;
     masklevs.number_allowed = 3;
     masklevs.allowed_levels[0] = accMiss;
     masklevs.allowed_levels[1] = 0;
     masklevs.allowed_levels[2] = 1;
-    ierr = nct.var_to_da_vec(grid, ncid, accid, grid.da2, obsAccurate, myg2, vzero, masklevs); CHKERRQ(ierr);
+    ierr = nct.set_MaskInterp(&masklevs); CHKERRQ(ierr);
+    //ierr = nct.var_to_da_vec(grid, ncid, accid, grid.da2, obsAccurate, myg2, vzero, masklevs); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("accur", 2, lic, grid, grid.da2, obsAccurate, myg2, true); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"accur does not exist but need to call ncVarToDAVec on it");
+    SETERRQ(1,"'accur' does not exist");
   }
   if (magExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, magid, grid.da2, obsMagnitude, myg2, vzero); CHKERRQ(ierr);
+    //ierr = nct.var_to_da_vec(grid, ncid, magid, grid.da2, obsMagnitude, myg2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("mag_obs", 2, lic, grid, grid.da2, obsMagnitude, myg2, true); CHKERRQ(ierr);
   } else {
-    SETERRQ(2,"mag does not exist but need to call ncVarToDAVec on it");
+    SETERRQ(2,"'mag_obs' does not exist");
   }
   if (aziExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, aziid, grid.da2, obsAzimuth, myg2, vzero); CHKERRQ(ierr);
+    //ierr = nct.var_to_da_vec(grid, ncid, aziid, grid.da2, obsAzimuth, myg2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("azi_obs", 2, lic, grid, grid.da2, obsAzimuth, myg2, true); CHKERRQ(ierr);
   } else {
-    SETERRQ(3,"azi does not exist but need to call ncVarToDAVec on it");
+    SETERRQ(3,"'azi_obs' does not exist");
   }
-  
+
+/*
   // done with scatter context
   ierr = VecDestroy(vzero); CHKERRQ(ierr);
   ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
+*/
+
   ierr = VecDestroy(myg2); CHKERRQ(ierr);
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));

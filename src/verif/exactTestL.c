@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007 Ed Bueler
+   Copyright (C) 2007--2008 Ed Bueler
   
    This file is part of PISM.
   
@@ -28,23 +28,25 @@
 #include "exactTestL.h"
 
 #define pi       3.1415926535897931
-#define SperA    31556926.0    // seconds per year; 365.2422 days
+#define SperA    31556926.0    /* seconds per year; 365.2422 days */
 
-#define L        750.0e3       // m;    i.e. 750 km
-#define b0       500.0         // m
+#define L        750.0e3       /* m;    i.e. 750 km */
+#define b0       500.0         /* m */
 #define z0       1.2
 #define g        9.81
 #define rho      910.0
-#define n        3.0           // Glen power
+#define n        3.0           /* Glen power */
 
 int func(double r, const double u[], double f[], void *params) {
-  // RHS for differential equation:
-  //    du                  5/8   / a_0  r  (L^2 - r^2) \ 1/3
-  //    -- = - (8/3) b'(r) u    - |---------------------|       
-  //    dr                        \ 2 L^2 \tilde\Gamma  /
-
+  /*
+  RHS for differential equation:
+      du                  5/8   / a_0  r  (L^2 - r^2) \ 1/3
+      -- = - (8/3) b'(r) u    - |---------------------|       
+      dr                        \ 2 L^2 \tilde\Gamma  /
+  */
+  
   const double Lsqr = L * L;
-  const double a0 = 0.3 / SperA;   // m/s;  i.e. 0.3 m/a
+  const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
   const double A = 1.0e-16 / SperA;  /* = 3.17e-24  1/(Pa^3 s); EISMINT I flow law parameter */
   const double Gamma = 2 * pow(rho * g,n) * A / (n+2);
   const double tilGamma = Gamma * pow(n,n) / (pow(2.0 * n + 2.0, n));
@@ -55,7 +57,7 @@ int func(double r, const double u[], double f[], void *params) {
     f[0] =  - (8.0/3.0) * bprime * pow(u[0], 5.0/8.0)
             - pow(C * r * (Lsqr - r * r), 1.0/3.0);
   } else {
-    f[0] = 0.0;  // no changes outside of defined interval
+    f[0] = 0.0;  /* no changes outside of defined interval */
   }
   return GSL_SUCCESS;
 }
@@ -65,14 +67,14 @@ int func(double r, const double u[], double f[], void *params) {
 #define NOT_DECREASING 8967
 #define INVALID_METHOD 8968
 
-// combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
-// believed to be predictable and accurate
+/* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
+   is believed to be predictable and accurate */
 int getU(double *r, int N, double *u, 
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
-   // solves ODE for u(r)=H(r)^{8/3}, 0 <= r <= L, for test L
-   // r and u must be allocated vectors of length N; r[] must be decreasing
+   /* solves ODE for u(r)=H(r)^{8/3}, 0 <= r <= L, for test L
+      r and u must be allocated vectors of length N; r[] must be decreasing */
 
-   // check r is decreasing first
+   /* check r is decreasing first */
    int i;
    for (i = 1; i<N; i++) {
      if (r[i] > r[i-1]) {
@@ -81,8 +83,8 @@ int getU(double *r, int N, double *u,
      }
    }
 
-   // setup for GSL ODE solver; following step choices don't need Jacobian,
-   // but should we chose one that does?
+   /* setup for GSL ODE solver; following step choices don't need Jacobian,
+      but should we chose one that does?  */
 	const gsl_odeiv_step_type* T;
    switch (ode_method) {
      case 1:
@@ -101,12 +103,12 @@ int getU(double *r, int N, double *u,
        printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
        return INVALID_METHOD;
    }
-	gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     // one scalar ode
+	gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     /* one scalar ode */
 	gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-	gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    // one scalar ode
-	gsl_odeiv_system sys = {func, NULL, 1, NULL};  // Jac-free method and no params
+	gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    /* one scalar ode */
+	gsl_odeiv_system sys = {func, NULL, 1, NULL};  /* Jac-free method and no params */
 
-   // initial conditions: (r,u) = (L,0);  r decreases from L
+   /* initial conditions: (r,u) = (L,0);  r decreases from L */
 	double rr = L, step;
    int status = NOT_DONE;
    int count  = 0;
@@ -114,14 +116,14 @@ int getU(double *r, int N, double *u,
      if (count == 0) {
        u[count] = 0;
      } else {
-       u[count] = u[count-1];  // use value at end of last interval as initial
+       u[count] = u[count-1];  /* use value at end of last interval as initial */
      }
      while (rr > r[count]) {
        step = r[count] - rr;
        status = gsl_odeiv_evolve_apply(e, c, s, &sys, &rr, r[count], &step, &u[count]);
 	    if (status != GSL_SUCCESS)   break;
 	  }
-     // printf ("%d  %d  %d  %.5e %.5e\n", status, GSL_SUCCESS, count, r[count], u[count]);
+     /* printf ("%d  %d  %d  %.5e %.5e\n", status, GSL_SUCCESS, count, r[count], u[count]); */
 	}
 
 	gsl_odeiv_evolve_free(e);
@@ -139,23 +141,23 @@ int exactL(double r, double *H, double *b, double *a,
   *H = pow(u[0],3.0/8.0);
   *b = - b0 * cos(z0 * pi * r / L);
   const double Lsqr = L * L;
-  const double a0 = 0.3 / SperA;   // m/s;  i.e. 0.3 m/a
+  const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
   *a = a0 * (1.0 - (2.0 * r * r / Lsqr));
   return 0;
 }
 
 
 int exactL_list(double *r, int N, double *H, double *b, double *a) {
-  // N values r[0] > r[1] > ... > r[N-1]  (decreasing)
-  // assumes r, H, b, a are allocated length N arrays
+  /* N values r[0] > r[1] > ... > r[N-1]  (decreasing)
+     assumes r, H, b, a are allocated length N arrays  */
    
   const double Lsqr = L * L;
-  const double a0 = 0.3 / SperA;   // m/s;  i.e. 0.3 m/a
+  const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
   double *u;
-  u = (double *) malloc(N * sizeof(double)); // temporary arrays
+  u = (double *) malloc(N * sizeof(double)); /* temporary arrays */
   
-  // combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
-  // believed to be predictable and accurate
+  /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
+     believed to be predictable and accurate */
   int stat = getU(r,N,u,1.0e-12,0.0,1); 
   if (stat != GSL_SUCCESS) {
     return stat;
@@ -171,5 +173,4 @@ int exactL_list(double *r, int N, double *H, double *b, double *a) {
   free(u);
   return 0;
 }
-
 

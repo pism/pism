@@ -22,50 +22,6 @@
 #include "iceModel.hh"
 
 
-//! Build the VecScatter and indexing scheme, from processor zero to others, used in NetCDF IO.
-/*!
-This procedure is used for NetCDF input and output but does not actually refer to any 
-NetCDF constructs.  Only addresses the scatter from processor zero.  It could, 
-potentially, be used by other code which 
-does the same scatter to processor zero.
- */
-PetscErrorCode IceModel::getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx) {
-  PetscErrorCode ierr;
-  PetscInt low, high, n;
-  PetscInt *ida;
-  PetscScalar *a;
-  PetscInt xs, ys, xm, ym, My, Mx;
-  ierr = DAGetCorners(da, &ys, &xs, PETSC_NULL, &ym, &xm, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DAGetInfo(da, PETSC_NULL, &My, &Mx, PETSC_NULL, PETSC_NULL, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = VecGetOwnershipRange(vind, &low, &high); CHKERRQ(ierr);
-
-  ida = new PetscInt[xm * ym];
-  a = new PetscScalar[xm * ym];
-  n = 0;
-  for (PetscInt i = xs; i < xs + xm; i++) {
-    for (PetscInt j = ys; j < ys + ym; j++) {
-      ida[n] = i * My + j;
-      a[n] = low + (i - xs) * ym + (j - ys);
-      n++;
-    }
-  }
-  if (n != high - low) {
-    SETERRQ(1, "This should not happen");
-  }
-    
-  ierr = VecSetValues(vind, n, ida, a, INSERT_VALUES); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(vind); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(vind); CHKERRQ(ierr);
-
-  delete [] ida;
-  delete [] a;
-  ierr = VecScatterBegin(ctx, vind, vindzero, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx, vind, vindzero, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  return 0;
-}
-
-
 bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
   int flen = strlen(fname);
   int slen = strlen(suffix);
@@ -465,7 +421,10 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet;
   char regridVars[PETSC_MAX_PATH_LEN];
-
+  
+  const int  npossible = 8;
+  const char possible[20] = "hHLbaTeB";
+  
   if (!hasSuffix(regridFile, ".nc")) {
     SETERRQ(1,"regridding is only possible if the source file has NetCDF format and extension '.nc'");
   }
@@ -498,22 +457,47 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
 
   { // explicit scoping means destructor will be called for lic
     LocalInterpCtx lic(ncid, dim, bdy, zlevs, zblevs, grid);
-    //ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
+    // ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
     
-    // do each variable
-    ierr = nct.regrid_local_var(regridVars, 'h', "usurf", 2, lic, grid, grid.da2, vh, g2);  // see nc_util.cc
-       CHKERRQ(ierr);
-    ierr = nct.regrid_local_var(regridVars, 'H', "thk", 2, lic, grid, grid.da2, vH, g2);
-       CHKERRQ(ierr);
-    ierr = nct.regrid_local_var(regridVars, 'L', "bwat", 2, lic, grid, grid.da2, vHmelt, g2);
-       CHKERRQ(ierr);
-    ierr = nct.regrid_local_var(regridVars, 'b', "topg", 2, lic, grid, grid.da2, vbed, g2);
-       CHKERRQ(ierr);
-    ierr = nct.regrid_local_var(regridVars, 'a', "acab", 2, lic, grid, grid.da2, vAccum, g2);
-       CHKERRQ(ierr);
-    ierr = T3.regridVecNC(  regridVars, 'T', 3, lic);  CHKERRQ(ierr);
-    ierr = tau3.regridVecNC(regridVars, 'e', 3, lic);  CHKERRQ(ierr);
-    ierr = Tb3.regridVecNC( regridVars, 'B', 4, lic);  CHKERRQ(ierr);
+    for (PetscInt k = 0; k < npossible; k++) {
+      if (strchr(regridVars, possible[k])) {
+       switch (possible[k]) {
+         case 'h':
+           ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... "); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("usurf", 2, lic, grid, grid.da2, vh, g2, false); CHKERRQ(ierr);
+           break;
+         case 'H':
+           ierr = verbPrintf(2, grid.com, "\n   H: regridding 'thk' ... "); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false); CHKERRQ(ierr);
+           break;
+         case 'L':
+           ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... "); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
+           break;
+         case 'b':
+           ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... "); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false); CHKERRQ(ierr);
+           break;
+         case 'a':
+           ierr = verbPrintf(2, grid.com, "\n   a: regridding 'acab' ... "); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false); CHKERRQ(ierr);
+           break;
+         case 'T':
+           ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... "); CHKERRQ(ierr);
+           ierr = T3.regridVecNC(3, lic);  CHKERRQ(ierr);
+           break;
+         case 'e':
+           ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... "); CHKERRQ(ierr);
+           ierr = tau3.regridVecNC(3, lic);  CHKERRQ(ierr);
+           break;
+         case 'B':
+           ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... "); CHKERRQ(ierr);
+           ierr = Tb3.regridVecNC(4, lic);  CHKERRQ(ierr);
+           break;
+       }
+      }
+    }
+
   }
   
   delete [] zlevs;  delete [] zblevs;

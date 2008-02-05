@@ -135,7 +135,7 @@ PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const P
 /*! 
 This procedure is called when option <tt>-bif</tt> is used.
 
-Note this procedure uses var_to_da_vec() which is DEPRECATED.
+We read only 2D information from the bootstrap file.
  */
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
@@ -158,6 +158,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   int v_ps, v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
       v_balvel, v_x, v_y, v_Hmelt, v_t;
   if (grid.rank == 0) {
+    // use nc_inq_varid to determine whether variable exists in bootstrap file
+    // in most cases, the varid itself is discarded
     stat = nc_open(fname, 0, &ncid); CHKERRQ(nc_check(stat));
     stat = nc_inq_varid(ncid, "polar_stereographic", &v_ps); psExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "x", &v_x); xExists = stat == NC_NOERR;
@@ -192,8 +194,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&balvelExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&HmeltExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
-  // if polar_stereographic variable exists, then store attributes for writing out 
-  // at end of run
+  // if polar_stereographic variable exists, then read them
   if (psExists) {
     if (grid.rank == 0) {
       stat = nc_get_att_double(ncid, v_ps, "straight_vertical_longitude_from_pole",
@@ -217,15 +218,12 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   // set time (i.e. grid.year, IceModel::startYear, and IceModel::endYear)
   if (tExists) {
-    const size_t idx = 0;
-    double begin_t;
-    if (grid.rank == 0) {
-      nc_get_var1_double(ncid, v_t, &idx, &begin_t);
-    }
-    ierr = MPI_Bcast(&begin_t, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-    grid.year = begin_t / secpera;
+    double last_t;
+    ierr = nct.get_last_time(ncid, &last_t, grid.com); CHKERRQ(ierr);
+    grid.year = last_t / secpera;
     ierr = verbPrintf(2, grid.com, 
-            "  time t found in bootstrap file; using to set current year\n"); CHKERRQ(ierr);
+            "  time t = %5.4f years found in bootstrap file; setting current year to this value\n",
+            grid.year); CHKERRQ(ierr);
     ierr = setStartRunEndYearsFromOptions(PETSC_TRUE); CHKERRQ(ierr);
   } else {
     // set the current year from options or defaults only
@@ -234,7 +232,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   // set grid x,y,z from bootstrap file
   PetscScalar first, last;
-  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 4000.0; // just defaults
+  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 4000.0; // merely defaults
   if (xExists) {
     ierr = nct.get_ends_1d_var(ncid, v_x, &first, &last, grid.com); CHKERRQ(ierr);
     x_scale = (last - first) / 2.0;
@@ -272,103 +270,93 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
-  // COMMENT FIXME:  Next block of code uses a sequential Vec ("vzero") on processor 
-  //   zero to take a NetCDF variable, which is a one-dimensional array representing 
-  //   a two-dimensional (map-plane) quantity to the correct two-dimensional DA-based 
-  //   Vec in IceModel.  A "scatter" to vector zero is needed because the entire 1D
-  //   NetCDF variable is put into memory from the NetCDF variable on processor zero.
-  //   Then on processor zero the VecSetValues puts the values in the global vec g2
-  //   using the scatter context.  Then the values of g are put into local variables.
-  //   All of the actual transfers, after the creation of the scatter context ctx, are
-  //   done in ncVarToDAVec. 
-  Vec vzero;
-  VecScatter ctx;
-  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
-  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
-  // Now vzero contains indices to put processor zero quantities into
-  // distributed global vectors.  These use g2 for scratch: the NetCDF variable
-  // is put into an array on proc 0 then vzero is used to get the indices which
-  // put the array into the scratch global Vec g2 and then the usual DA-based
-  // global (g2) to local (vAccum, etc.) is done
+  // create "local interpolation context" from dimensions, limits, and lengths extracted from
+  //   bootstrap file and from information about the part of the grid owned by this processor
+  size_t dim[5];  // dimensions *bootstrap* NetCDF file
+  double bdy[7];  // limits and lengths for *bootstrap* NetCDF file
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in *bootstrap* NetCDF file, and use current grid info
+  dim[4] = grid.Mbz;  
+  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);  // destructor is called at exit from
+                                                                          // bootstrapFromFile_netCDF()
+
   if (lonExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_lon, grid.da2, vLongitude, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("lon", 2, lic, grid, grid.da2, vLongitude, g2, false); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2, grid.com, "  WARNING: longitude lon not found; continuing without it\n");  CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "  WARNING: longitude 'lon' not found; continuing without setting it\n");
+      CHKERRQ(ierr);
   }
   if (latExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_lat, grid.da2, vLatitude, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("lat", 2, lic, grid, grid.da2, vLatitude, g2, false); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2, grid.com, "  WARNING: latitude lat not found; continuing without it\n");  CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "  WARNING: latitude 'lat' not found; continuing without setting it\n");
+      CHKERRQ(ierr);
   }
   if (accumExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_accum, grid.da2, vAccum, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-               "  WARNING: accumulation rate acab not found; using default %7.2f m/a\n",
+               "  WARNING: accumulation rate 'acab' not found; using default %7.2f m/a\n",
                DEFAULT_ACCUM_VALUE_MISSING * secpera);  CHKERRQ(ierr);
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (HExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_H, grid.da2, vH, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-               "  WARNING: thickness thk not found; using default %8.2f\n",
+               "  WARNING: thickness 'thk' not found; using default %8.2f\n",
                DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
   }
   if (bExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_bed, grid.da2, vbed, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-             "  WARNING: bedrock elevation topg not found; using default %f\n",
+             "  WARNING: bedrock elevation 'topg' not found; using default %5.4f\n",
              DEFAULT_BED_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-          "  WARNING: ignoring values found for surface elevation; using usurf = topg + thk\n");
+          "  WARNING: ignoring values found for surface elevation 'usurf'; using usurf = topg + thk\n");
           CHKERRQ(ierr);
   }
   if (TsExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_Ts, grid.da2, vTs, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
-             "  WARNING: surface temperature artm not found; using default %7.2f K\n",
+             "  WARNING: surface temperature 'artm' not found; using default %7.2f K\n",
              DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (ghfExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_ghf, grid.da2, vGhf, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("bheatflx", 2, lic, grid, grid.da2, vGhf, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-             "  WARNING: geothermal flux bheatflx not found; using default %6.3f W/m^2\n",
+             "  WARNING: geothermal flux 'bheatflx' not found; using default %6.3f W/m^2\n",
              DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (upliftExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_uplift, grid.da2, vuplift, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("dbdt", 2, lic, grid, grid.da2, vuplift, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: uplift rate dbdt not found; filling with zero\n");  CHKERRQ(ierr);
+       "  WARNING: uplift rate 'dbdt' not found; filling with zero\n");  CHKERRQ(ierr);
     ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
   }
   if (HmeltExists) {
-    ierr = nct.var_to_da_vec(grid, ncid, v_Hmelt, grid.da2, vHmelt, g2, vzero); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-        "  WARNING: effective thickness of basal melt water bwat not found; filling with zero\n"); 
+        "  WARNING: effective thickness of basal melt water 'bwat' not found; filling with zero\n"); 
         CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }
-  // done with scatter context
-  ierr = VecDestroy(vzero); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
+
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));
   }
   ierr = verbPrintf(3, grid.com, "  done reading .nc file\n"); CHKERRQ(ierr);
-
-//  ierr = cleanJustNan_legacy(); CHKERRQ(ierr);  // needed for ant_init.nc; should be harmless for other
 
   ierr = verbPrintf(2, grid.com, 
             "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
@@ -379,6 +367,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = verbPrintf(2, grid.com, 
              "  filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
+
   // fill in other 3D fields
   setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
   setConstantGrainSize(DEFAULT_GRAIN_SIZE);
@@ -445,8 +434,6 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
 //! Read certain boundary conditions from a NetCDF file, especially for diagnostic SSA calculations.
 /*!
 This is not really a bootstrap procedure, but it has to go somewhere.
-
-Note this procedure uses var_to_da_vec() which is DEPRECATED.
  */
 PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
@@ -478,33 +465,38 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   }
   ierr = VecDuplicate(vh, &vbcflag); CHKERRQ(ierr);
 
-  // put read ubar,vbar into da2 Vecs
-  // re VecScatter: compare comments in bootstrapFromFile_netCDF()
-  Vec vzero;
-  VecScatter ctx;
-  ierr = VecScatterCreateToZero(g2, &ctx, &vzero); CHKERRQ(ierr);  
-  ierr = getIndZero(grid.da2, g2, vzero, ctx); CHKERRQ(ierr);
+  // create "local interpolation context" from dimensions, limits, and lengths extracted from
+  //    file and from information about the part of the grid owned by this processor
+  size_t dim[5];  // dimensions in NetCDF file
+  double bdy[7];  // limits and lengths in NetCDF file
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in NetCDF file, and use current grid info
+  dim[4] = grid.Mbz;  
+  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);  // destructor is called at exit from
+                                                                          // readShelfStreamBCFromFile_netCDF()
 
   if (maskExists) {
     MaskInterp masklevs;
     masklevs.number_allowed = 2;
     masklevs.allowed_levels[0] = MASK_SHEET;
     masklevs.allowed_levels[1] = MASK_FLOATING;
-    ierr = nct.var_to_da_vec(grid, ncid, maskid, grid.da2, vMask, g2, vzero, masklevs); CHKERRQ(ierr);
+    ierr = nct.set_MaskInterp(&masklevs); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("mask", 2, lic, grid, grid.da2, vMask, g2, true); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(3, grid.com, "  mask not found.  Using current values.\n");
+    ierr = verbPrintf(3, grid.com, "  mask not found; leaving current values alone ...\n");
                CHKERRQ(ierr);
   }
-  ierr = nct.var_to_da_vec(grid, ncid, ubarid, grid.da2, vubar, g2, vzero); CHKERRQ(ierr);
-  ierr = nct.var_to_da_vec(grid, ncid, vbarid, grid.da2, vvbar, g2, vzero); CHKERRQ(ierr);
+  ierr = nct.regrid_local_var("ubar", 2, lic, grid, grid.da2, vubar, g2, false); CHKERRQ(ierr);
+  ierr = nct.regrid_local_var("vbar", 2, lic, grid, grid.da2, vvbar, g2, false); CHKERRQ(ierr);
+
+  // we have already checked if "bcflag" exists, so just read it
   MaskInterp bclevs;
   bclevs.number_allowed = 2;
   bclevs.allowed_levels[0] = 0;
   bclevs.allowed_levels[1] = 1;
-  ierr = nct.var_to_da_vec(grid, ncid, bcflagid, grid.da2, vbcflag, g2, vzero, bclevs); CHKERRQ(ierr);
+  ierr = nct.set_MaskInterp(&bclevs); CHKERRQ(ierr);
+  ierr = nct.regrid_local_var("bcflag", 2, lic, grid, grid.da2, vbcflag, g2, true); CHKERRQ(ierr);
 
-  ierr = VecDestroy(vzero); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));
   }

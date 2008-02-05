@@ -167,16 +167,19 @@ PetscErrorCode IceModelVec::putVecNC(const int ncid, const int *s, const int *c,
 
 
 //! Calls the appropriate NCTool method to regrid a NetCDF variable from some file into the IceModelVec.
-PetscErrorCode  IceModelVec::regridVecNC(const char *vars, char c, int dim_flag, LocalInterpCtx &lic)  {
+PetscErrorCode  IceModelVec::regridVecNC(int dim_flag, LocalInterpCtx &lic)  {
   PetscErrorCode ierr;
   NCTool nct;
+  // FIXME: a flag for whether the IceModelVec is really integer-valued should be checked; if so 
+  // then regrid_local|global_var() should be called w last arg "true", after setting the MaskInterp
+  // for NCTool
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nct.regrid_local_var(vars, c, varname, dim_flag, lic, *grid, da, v, g); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(varname, dim_flag, lic, *grid, da, v, g, false); CHKERRQ(ierr);
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = nct.regrid_global_var(vars, c, varname, dim_flag, lic, *grid, da, v); CHKERRQ(ierr);
+    ierr = nct.regrid_global_var(varname, dim_flag, lic, *grid, da, v, false); CHKERRQ(ierr);
   }
   return 0;
 }

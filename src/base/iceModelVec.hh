@@ -51,7 +51,7 @@ public:
   virtual PetscErrorCode  putVecNC(const int ncid, const int *s, const int *c, int dims, 
                                    void *a_mpi, int a_size);
 
-  virtual PetscErrorCode  regridVecNC(const char *vars, char c, int dim_flag, LocalInterpCtx &lic);
+  virtual PetscErrorCode  regridVecNC(int dim_flag, LocalInterpCtx &lic);
 
   virtual PetscErrorCode  needAccessToVals();
   virtual PetscErrorCode  doneAccessToVals();

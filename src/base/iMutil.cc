@@ -305,15 +305,6 @@ PetscErrorCode IceModel::afterInitHook() {
   PetscTruth     regridFileSet = PETSC_FALSE;
   char           regridFile[PETSC_MAX_PATH_LEN];
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
-                               &regridFileSet); CHKERRQ(ierr);
-  if (regridFileSet == PETSC_TRUE) {
-    ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
-    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-  }
-
-  ierr = stampHistoryCommand(); CHKERRQ(ierr);
-
   // initialization should be done by here!
   
   // report on computational box
@@ -358,8 +349,9 @@ PetscErrorCode IceModel::afterInitHook() {
     }
   }
 
-  // if -verbose then actually list all of IceParam
-  ierr = verbPrintf(3,grid.com,"  IceParam: Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
+  // if -verbose then actually list all members of grid
+  ierr = verbPrintf(3,grid.com,
+           "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
                     grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
            "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
@@ -367,11 +359,23 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = verbPrintf(3,grid.com,
            "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
            grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
+  ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
   ierr = verbPrintf(3,grid.com,
      "            history = ****************\n%s            **************************\n"
      ,history); CHKERRQ(ierr);
   
+  // miscellaneous
+  ierr = stampHistoryCommand(); CHKERRQ(ierr);
   ierr = createViewers(); CHKERRQ(ierr);
+
+  // read new values from regrid file, and overwrite current, if desired
+  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
+                               &regridFileSet); CHKERRQ(ierr);
+  if (regridFileSet == PETSC_TRUE) {
+    ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 

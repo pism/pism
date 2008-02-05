@@ -270,7 +270,7 @@ protected:
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
-  PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
+//  PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode warnUserOptionsIgnored(const char *fname);
   PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
   PetscErrorCode dumpToFile_netCDF(const char *fname);

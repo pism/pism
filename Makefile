@@ -68,39 +68,44 @@ local_install : depend libpism.so libtests.so $(executables)
 	@echo 'PISM executables installed in ' ${PISM_PREFIX}'/bin/'
 	@rm .pismmakeremind
 
+CXXLINKER=${CLINKER}
+## PETSc has trouble choosing a linker which can link C++.  PISM is C++.
+## If you have problems, comment out the CXXLINKER definition above and uncomment this one:
+#CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
+
 libpism.so : ${ICE_OBJS}
-	${CLINKER} -shared ${ICE_OBJS} -o $@
+	${CXXLINKER} -shared ${ICE_OBJS} -o $@
 #for static-linking:  ar cru -s libpism.a ${ICE_OBJS}   etc
 
 libtests.so : ${TESTS_OBJS}
 	${CLINKER} -shared ${TESTS_OBJS} -o $@
 
 pismr : pismr.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 pismd : pismd.o iceROSSModel.o libpism.so
-	${CLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
 pisms : iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
-	${CLINKER} iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
 
 pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
-	${CLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
 pant : pant.o libpism.so
-	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 pgrn : iceGRNModel.o pgrn.o libpism.so
-	${CLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
 
 #shelf : shelf.o libpism.so
-#	${CLINKER} $< ${ICE_LIB_FLAGS} -o $@
+#	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 flowTable : flowTable.o materials.o
-	${CLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
 
 tryLCbd : tryLCbd.o beddefLC.o materials.o
-	${CLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
 
 simpleABCD : simpleABCD.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
@@ -139,10 +144,12 @@ gridL : gridL.o libtests.so
 
 showEnv :
 	@echo ${CLINKER}
+	@echo ${CXXLINKER}
 	@echo ${PETSC_DIR}
 	@echo ${PETSC_LIB}
 	@echo ${ICE_LIB_FLAGS}
 	@echo ${TESTS_LIB_FLAGS}
+	@echo ${ICE_OBJS}
 
 # Emacs style tags
 .PHONY: tags TAGS

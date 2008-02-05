@@ -51,8 +51,9 @@ public:
   PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                        const PetscTruth truelyPeriodic);
 
-  bool        isEqualVertSpacing();
-  PetscInt    kBelowHeight(const PetscScalar height);
+  PetscErrorCode printVertLevels(const int verbosity); 
+  bool           isEqualVertSpacing();
+  PetscInt       kBelowHeight(const PetscScalar height);
 
   
   MPI_Comm    com;

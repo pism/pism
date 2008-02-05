@@ -45,9 +45,9 @@
                                        solution is deliberately chosen to have finite expansion */
 
 
-int exactK(const double t, const double z, double *TT, bool bedrockIsIce) {
+int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p) {
   int k;
-  bool belowB0;
+  int belowB0;
   double ZZ, P, alpha, lambda, beta, gamma, XkSQR, Xk, theta, Ck, I1, I2, aH, bB, mI, mR;
   double c_p_BR, rho_BR, k_BR;
   /* following constants were produced by calling print_alpha_k(30) (below) */
@@ -62,7 +62,7 @@ int exactK(const double t, const double z, double *TT, bool bedrockIsIce) {
                       1.871188358061674e-02, 1.944434477688470e-02, 2.013010181370026e-02,
                       2.094721145334310e-02, 2.176730968036079e-02, 2.245631776169424e-02};
 
-  if (bedrockIsIce) {
+  if (bedrockIsIce_p) {
     c_p_BR = c_p_ICE;
     rho_BR = rho_ICE;
     k_BR = k_ICE;
@@ -110,7 +110,7 @@ int exactK(const double t, const double z, double *TT, bool bedrockIsIce) {
   P = (z >= 0) ? (z / k_ICE) - (H0 / k_ICE) : (z / k_BR) - (H0 / k_ICE);
   *TT += Ts - G * P;
 
-  return ((belowB0) ? 1 : 0);
+  return belowB0;
 
 }
 

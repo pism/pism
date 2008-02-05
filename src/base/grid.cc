@@ -19,7 +19,7 @@
 #include <petscfix.h>
 #include <petscda.h>
 #include "grid.hh"
-
+#include "iceModelpreamble.hh"  // just for verbPrintf()
 
 const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lx   = 1500.0e3,
                   IceGrid::DEFAULT_ICEPARAM_Ly   = 1500.0e3,
@@ -166,6 +166,23 @@ PetscErrorCode  IceGrid::setVertLevels() {
     SETERRQ(4,"Mbz must be at least one");
   }
 
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(verbosity,com,  "    printing vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz);
+     CHKERRQ(ierr);
+  for (PetscInt k=0; k < Mz; k++) {
+    ierr = verbPrintf(verbosity,com," %5.4f,",zlevels[k]); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(verbosity,com,"\n    printing vertical levels in bedrock (Mbz=%d,Lbz=%5.4f): ",Mbz,Lbz);
+     CHKERRQ(ierr);
+  for (PetscInt kb=0; kb < Mbz; kb++) {
+    ierr = verbPrintf(verbosity,com," %5.4f,",zblevels[kb]); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(verbosity,com,"\n"); CHKERRQ(ierr);
   return 0;
 }
 
