@@ -258,7 +258,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   PetscScalar     melt, divideH, divideT, orig;
   PetscScalar     gmelt, gdivideH, gdivideT, gorig, gvolume, garea;
   PetscScalar     gvolSIA, gvolstream, gvolshelf;
-  PetscScalar     meltfrac, origfrac;
+  PetscScalar     meltfrac = 0.0, origfrac = 0.0;
   PetscScalar     *tau;
 
   ierr = volumeArea(gvolume,garea,gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);

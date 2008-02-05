@@ -602,7 +602,7 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
   adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;
   // flags for first do-nothing time step
-  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$ $$\n"); CHKERRQ(ierr); 
+  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$ $$"); CHKERRQ(ierr); 
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
   // main loop for time evolution

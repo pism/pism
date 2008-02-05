@@ -189,7 +189,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
         switch (flowLawNumber) {
           case 0:
           case 3:
-            ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
+            ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
             break;
           case 1:
           case 4:

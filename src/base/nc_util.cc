@@ -916,21 +916,16 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
   // (not extrapolation) onto the local processor's part of the target grid is possible.
   //ierr = lic.printArray(grid.com); CHKERRQ(ierr);
   
-  // indexing parameters for vertical grid
-  int myMz, zcount;
-  if (dim_flag == 2) {
-    // Indexing trick so that we don't have to duplicate code for the 2-D case.
-    myMz = 1;
-    zcount = 1;
-  } else if (dim_flag == 3) {
+  // indexing parameters
+  const int ycount = lic.count[2];
+  int myMz = 1, zcount = 1; // indexing trick so that we don't have to duplicate code for the 2-D case.
+  if (dim_flag == 3) {
     myMz = grid.Mz;
     zcount = lic.count[3];
   } else if (dim_flag == 4) {
     myMz = grid.Mbz;
     zcount = lic.count[4];
   }
-
-  const int ycount = lic.count[2]; // convenience for indexing horizontal
 
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (lic.a)
