@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{250}
+\newcommand{\PISMREV}{251}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -361,25 +361,23 @@ $ mpiexec -n 4 pisms -eisII A -if simp_exper.nc -tempskip 5 -y 198000 \
 \end{verbatim}
 \end{quote}\normalsize
 
-This run will take ???FIXME??? at least four processor-hours and then generate a NetCDF file \verb|eisIIA200k.nc| at the end.  One can view the redirected standard output by \verb|less eisIIA.out| as the job is running in the background.  Note \t{top} is a convenient Linux tool to see processor usage during the run.
+This run will take at least four processor-hours.  It generates a NetCDF file \verb|eisIIA200k.nc| at the end.  The standard output in \verb|eisIIA.out| can be tracked as the job is running in the background using \verb|less|, for instance; \t{top} is a Linux tool to watch CPU and memory usage during the run.
 
-If one wants a view of the model state in the midst of this (or any other PISM) run, one can send all running \verb|pisms| processes a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc| using the year at that time step.  On the other hand, if one terminates the run with \verb|pkill -TERM pisms| then the run will stop and save the model state using the \verb|-o| specified name even though it will not be the state at the end of a completed run.\footnote{Indeed, if the reader is impatient or has a single processor machine and doesn't want to wait more than an hour, this run can be terminated by \t{pkill -TERM pisms} after about 50,000 model years and the basic model result will be similar to that at 200,000 years.}  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
+To get the model state in the midst of a PISM run, send all running \verb|pisms| processes (that's the executable in this case) a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc|, using the year at that time step.  On the other hand, terminatating the run with \verb|pkill -TERM pisms| will will cause PISM to stop, but only after saving the model state using the \verb|-o| specified name (though it will not hold the result of the completed run).  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
 
-While the four process run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:
+While the four processor \verb|pisms| run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:
 
 \verb|$ pisms -eisII A -if simp_exper.nc -y 1000 -d HTt|
 
-Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.
+Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.  When the full 200,000 year run finishes, one may watch its evolving state, including the ice flow speed, by
 
-When the full 200,000 year run finishes, one may watch its evolving state by
+\verb|pisms -eisII A -if eisIIA200k.nc -d HTc|
 
-\verb|pisms -eisII A -if eisIIA200k.nc -d HTt|
-
-\noindent A result like that shown in figure \ref{fig:screenshot} will appear.
+\noindent for example.  Figure \ref{fig:screenshot} will appear.
 
 \begin{figure}[ht]
-%\includegraphics[height=3.2in,keepaspectratio=true]{figs/eisIIFshot}
-\caption{Diagnostic figures at the end of a 200,000 year EISMINT II experiment A run.}
+\includegraphics[height=3.5in,keepaspectratio=true]{figs/eisIIAshot}
+\caption{Screenshot of diagnostic figures for an EISMINT II experiment A run.}
 \label{fig:screenshot}
 \end{figure}
 
@@ -548,9 +546,42 @@ As specified, experiment I has nothing to do with the SSA equations or plastic t
 
 \clearpage
 \newpage
-\section{Initialization and inverse problems: ``bootstrapping'' PISM}\label{sect:boot}  [THIS SECTION IS TO BE ADDED; see subsection \ref{sect:green} as an example of bootstrapping]
+\section{Initialization and ``bootstrapping''}\label{sect:boot}  
 
-[Note \cite{JoughinMacAyealTulaczyk} is a representative inverse modeling result which could be incorporated in a forward model when using the SSA for ice streams.]
+\subsection{Initialization from a saved model state}  This phrase has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\verb|-o|'' then that file will contain complete initial conditions for continuing the run.  In that case the old file can be loaded with ``\verb|-if|''.  Thus the second of these two commands starts PISM by ``(full) initialization from an input file'' (in the language of this manual):
+
+\verb|$ pisms -eisII A -y 100 -o foo|
+
+\verb|$ pisms -eisII A -if foo.nc -y 100 bar|
+
+\noindent Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all.  They initialize from formulas in the source code, but they can be continued from saved model states using \verb|-if|.
+
+\subsection{Bootstrapping}  ``Bootstrapping'' PISM means giving it less than complete data, and letting it fill in the needed data according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option ``\verb|-bif|''.
+
+In some sense, bootstrapping is unprincipled inverse modelling.  It is possible, for instance, to estimate the sliding state of the base of the ice through inverse models (\cite{JoughinMacAyealTulaczyk} is an example\footnote{The PISM authors are eager to work with principled (or at least, serious) inverse modelers.  In particular, we would like to inverse-model-derived basal shear stresses to constrain a PISM forward model which would use both SIA and SSA models of ice flow.}).  It is also possible to use observed ``isochrones'' from ice-penetrating radar to estimate the velocity of ice \cite{Eisen06draft}.
+
+But most ice sheet modeling done using forward models like PISM would do something like this to get ``reasonable'' temperature and velocity fields within the ice: \begin{enumerate}
+\item start from only the more-directly observable quantities of surface elevation, ice thickness, and ice surface temperature,
+\item ``bootstrap'' as described in this section, to fill in temperatures at depth, and
+\item \emph{either} do a long run holding the current geometry and surface temperature steady,  to evolve toward a ``more physical'' steady state which will have both a temperature field and velocities,
+\item \emph{or} do a long run using an additional spatially-imprecise historical record from an ice core or a sea bed core (or both), to add apply forcing to the surface temperature or sea level (for instance), but with the same functional result of filling in a temperature and velocity fields.
+\end{enumerate}
+
+Subsection \ref{sect:green} does EISMINT-Greenland \cite{RitzEISMINT,HuybrechtsEISMINT} as an example of bootstrapping.  That section shows examples of long runs of both types (3) and (4).
+
+\subsection{Input file formats} The NetCDF format of a PISM output model state file is described by the CDL file
+\begin{center}\verb|pism/src/netcdf/pism_state.cdl|\end{center}
+\noindent The file used with ``\verb|-if|'' must have this format, but this is no difficulty for the user, as it will have been produced by a previous PISM run.
+
+The allowed formats for a bootstrapping file are now relatively simple to describe.  The NetCDF dimensions \verb|t,x,y,z,zb| and corresponding variables must be present and match the choices in \verb|pism_state.cdl|, or in a PISM output file.  But any of the other two dimensional variables (depending on \verb|t,x,y|) may be missing, and for those missing values some heuristic will be applied.  All three dimensional variables (depending on \verb|t,x,y,z| or \verb|t,x,y,z|) will be ignored in bootstrapping.
+
+The heuristics themselves are, for now, only documented in the source code:
+\begin{center}\verb|pism/src/base/iMbootstrap.cc|\end{center}
+\noindent Also see the \emph{PISM Reference Manual}.  Serious modeling is likely to start with the default bootstrapping method in \verb|iMbootstrap.cc|, called by the option ``\verb|-bif|'', but then add additional source code to add information.  This additional source code is likely to be a derived class of \verb|IceModel|.  The code in 
+\begin{center}\verb|pism/src/eismint/iceGRNModel.hh|\end{center}
+\noindent and
+\begin{center}\verb|pism/src/eismint/iceGRNModel.cc|\end{center}
+\noindent is an example of such a derived class; it does EISMINT-Greenland, as noted.  Its function is fully documented in section \ref{sect:green}.
 
 
 \clearpage
@@ -1110,9 +1141,11 @@ We mentioned the script \verb|eis_core.py|.  Now we execute it:
 
 \subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
-Table \ref{bootstrapEISgreen} shows the PISM output for a one model year run using option \verb|-bif| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|
+Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-bif| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|
 
-\verb|$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -ocean_kill -y 1 -o green20km_y1|
+\verb|$ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 81 -quadZ \|
+
+\verb|  -ocean_kill -y 1 -o green20km_y1|
 
 \noindent The run takes a few seconds of real time.
 
@@ -1120,43 +1153,49 @@ Table \ref{bootstrapEISgreen} shows the PISM output for a one model year run usi
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -ocean_kill -y 1 -o green20km_y1
+$  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 81 -quadZ -ocean_kill -y 1 -o green20km_y1
 PGRN (EISMINT Greenland mode)
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   polar stereographic found: svlfp = -41.14, lopo =  71.65, sp =  71.00
-  time t found in bootstrap file; using to set current year
-  using default value Lz=4000.000000 for vertical extent of computational box for ice
-  WARNING: ignoring values found for surface elevation; using usurf = topg + thk
-  WARNING: surface temperature artm not found; using default  263.15 K
-  WARNING: geothermal flux bheatflx not found; using default  0.042 W/m^2
-  WARNING: uplift rate dbdt not found. Filling with zero
-  WARNING: effective thickness of basal melt water bwat not found. Filling with zero
-  determining mask by floating criterion; grounded ice marked as SIA (=1)
-  setting accumulation in ice shelf-free ocean to default value -20.00 m/a
+  time t = 0.0000 years found in bootstrap file; setting current year to this value
+  rescaling computational box *for ice* from defaults, -bif file, and
+    user options to dimensions:
+      [-1400.00 km, 1400.00 km] x [-820.00 km, 820.00 km] x [0 m, 4000.00 m]
+  WARNING: vertical  dimension of target computational domain not a subset of
+    source (in NetCDF file) computational domain;  either  -bdy[5] = 0.0000 < Lbz = 0.0000
+    or  bdy[6] = -0.0000 < Lz = -0.0000; ALLOWING ONLY 2D REGRIDDING ...
+  WARNING: ignoring values found for surface elevation 'usurf'; using usurf = topg + thk
+  WARNING: surface temperature 'artm' not found; using default  263.15 K
+  WARNING: geothermal flux 'bheatflx' not found; using default  0.042 W/m^2
+  WARNING: uplift rate 'dbdt' not found; filling with zero
+  WARNING: effective thickness of basal melt water 'bwat' not found; filling with zero
+  determining mask by floating criterion; grounded ice marked as 1; floating ice as 7
   filling in temperatures at depth using surface temperatures and quartic guess
 bootstrapping by PISM default method done
+WARNING: '-Lz' set by user; resetting vertical levels ...
 geothermal flux set to EISMINT-Greenland value 0.050000 W/m^2
-computing surface temperatures according to EISMINT-Greenland rule 
-   (uses surface elevation and latitude)
+computing surface temperatures by EISMINT-Greenland elevation-latitude rule 
 filling in temperatures at depth using surface temperatures and quartic guess
 removing extra land (Ellesmere Island and Iceland) using EISMINT-Greenland rule
-  [computational box for ice: ( 1640.00 km) x ( 2800.00 km) x ( 4000.00 m)]
-  [grid cell dimensions     : (   20.00 km) x (   20.00 km) x (   20.00 m)]
+  [computational box for ice: ( 2800.00 km) x ( 1640.00 km) x ( 4000.00 m)]
+  [hor. grid cell dimensions: (   20.00 km) x (   20.00 km)]
+  [vertical grid spacing in ice not equal: 17.083333 m < dz < 82.916667 m]
+  [fine equal spacing used in temperatureStep():  Mz = 236,  dzEQ =    17.02 m]
 %ybp SIA SSA  # vgatdh Nr  +STEP
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
 U        years 10^6_km^3 10^6_km^2 (none)          m         K
  $$$$            $$$$$ $$
 S      0.00000:  2.82500  1.6708   0.2071   3042.000  270.5156
- $$$ SIA        v$atdh 0d  +0.18317
-S      0.18317:  2.82515  2.2300   0.1683   3041.888  270.5156
- $$$ SIA        v$atdh 0d  +0.23546
-S      0.41864:  2.82534  2.2300   0.1683   3041.702  270.5157
- $$$ SIA        v$atdh 0d  +0.26954
-S      0.68818:  2.82522  1.6852   0.2056   3041.457  270.5159
- $$$ SIA        v$atdh 0d  +0.29922
-S      0.98739:  2.82527  1.6840   0.2055   3041.172  270.5161
- $$$ SIA        v$atdh 0e  +0.01261
-S      1.00000:  2.82528  2.2232   0.1659   3041.161  270.5163
+ $$$ SIA        v$atdh 0d  +0.18299
+S      0.18299:  2.82515  2.2300   0.1683   3041.888  270.5156
+ $$$ SIA        v$atdh 0d  +0.23544
+S      0.41843:  2.82534  2.2296   0.1681   3041.703  270.5157
+ $$$ SIA        v$atdh 0d  +0.26963
+S      0.68806:  2.82521  1.6836   0.2057   3041.457  270.5159
+ $$$ SIA        v$atdh 0d  +0.29947
+S      0.98754:  2.82525  1.6840   0.2055   3041.174  270.5161
+ $$$ SIA        v$atdh 0e  +0.01246
+S      1.00000:  2.82526  2.2288   0.1680   3041.163  270.5163
 done with run ... 
 Writing model state to file `green20km_y1.nc' ... done.
 \end{verbatim}
@@ -1167,11 +1206,17 @@ Writing model state to file `green20km_y1.nc' ... done.
 \caption{Bootstrapping from the EISMINT-Greenland data and running for one model year.}
 \end{table}
 
-\noindent Let's explain what has happened.  The EISMINT-Greenland data, as with \emph{all} real ice sheet data, does not contain certain variables necessary to initialize PISM in the sense of initial values for time-dependent partial differential equations.  For instance, the data do not include the temperature of the ice anywhere but at the surface.  The data also do not include the amount of water stored in the till, for instance.  So PISM fills in the unknown initial conditions based on some default guesses; this is the section above bracketed by \verb|bootstrapping by PISM default method|\dots and \verb|bootstrapping| \verb|by PISM default| \verb|method done|.
+\noindent Let's explain what has happened.  The EISMINT-Greenland data, as with \emph{all} real ice sheet data, does not contain certain variables necessary to initialize PISM in the sense of complete initial values for time-dependent partial differential equations.  For instance, the data do not include the temperature of the ice anywhere but at the surface.  The data also do not include the amount of water stored in the till, for instance.  These are not omissions from the data sets but rather inevitable facts; one cannot observe ice sheets as fluids very well.
 
-Note that EISMINT-Greenland specifies an 83 by 141 point grid, but you may use other numbers for \verb|-Mx| and \verb|-My| if desired.  (In which case the data will be linearly interpolated onto your grid.)  Also, in PISM there is a uniform vertical grid.  Here, because the vertical dimension of the computational box defaults to 4000 m, by specifying ``\verb|-Mz 201|'' we are choosing a 20 m spacing in the vertical.
+Therefore PISM fills in the unknown initial conditions based on some default guesses, as indicated by the messages to standard out.
 
-The option ``\verb|-bif|'' stands for ``bootstrapping input file''.  This option is an alternative to ``\verb|-if|'', standing for ``input file'', which is used for a file which has full initial conditions.  In practice, ``\verb|-if|'' is only used with a NetCDF file which was previously saved by PISM.  That is, \verb|-if| is used to continue a run.
+Note that EISMINT-Greenland specifies an 83 by 141 point grid.  But there is a transpose: In order to make the diagnostic viewers described in Appendix C have the correct orientation, the x and y axes are switched internally in PISM.  Of course the physics approximated by PISM does not care about orientation.  The consequence of using ``\verb|-Mx 83 -My 141|'', instead of the correct pair shown, would be to have grid cells which are far from square, and to have squashed viewers.
+
+You may use other numbers for \verb|-Mx| and \verb|-My| if desired.  In such cases the data will be linearly interpolated onto your grid.
+
+Note the choice of the height of the computational box (``\verb|-Lz 4000|''), of the number of vertical levels (``\verb|-Mz 81|''), and of a not-equally-spaced grid (``\verb|-quadZ|''; currently UNDOCUMENTED OPTION).  The messages to standard out show that the vertical spacing is less than 20 m near the base and more than 80 m at the top of the computational box (where it matters little).
+
+The option \verb|-bif| stands for ``bootstrapping input file''.  This option is an alternative to \verb|-if| (stands for ``input file'') which is used for a file which has full initial conditions.  In practice, \verb|-if| is only used with a NetCDF file which was previously saved by PISM; that is, \verb|-if| is used to continue a run.
 
 Regarding the temperature within the ice, bootstrapping applies an interpolation scheme to the surface temperatures and geothermal fluxes.  It is based on a heuristic for the amount of downward flow in a column.  Thus bootstrapping creates a temperature field at depth.  See the PISM \emph{Reference Manual}.
 

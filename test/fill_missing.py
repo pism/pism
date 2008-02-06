@@ -128,7 +128,10 @@ for varName in variables:
     b = asarray(var[:])  # "explicit is better than implicit" says M. Luthi; 
                          # i.e. copy of sequence values (from CDFVar type) should be explicitly converted to
                          # a numpy array type
-    num = laplace(b, float(bad_value), eps)
+    bshape = shape(b)  # "shape", "squeeze", "reshape" all have to do with dropping the length one t dimension *if present*
+    bs = squeeze(b)
+    num = laplace(bs, float(bad_value), eps)
+    b = reshape(bs, bshape)
     var[:] = b
     print "Number of missing values for "+ varName + ": " + str(num)
   except CDFError,err:

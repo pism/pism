@@ -338,14 +338,13 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
-  // these are treated like 2-D constant quantities
-  ierr = nct.get_local_var(&grid, ncid, "lon", NC_FLOAT, grid.da2, vLongitude, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "lat", NC_FLOAT, grid.da2, vLatitude, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D model quantities
-  ierr = nct.get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, s, c, 3,
-                       a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = nct.get_local_var(&grid, ncid, "lon", NC_FLOAT, grid.da2, vLongitude, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = nct.get_local_var(&grid, ncid, "lat", NC_FLOAT, grid.da2, vLatitude, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = nct.get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, 
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "thk", NC_FLOAT, grid.da2, vH, g2,

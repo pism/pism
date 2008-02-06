@@ -194,18 +194,6 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       if (tempskipCountDown > 1) tempskipCountDown = 1; 
     }
   }    
-
-/*
-verbPrintf(1,grid.com,
-   "\n   leaving determineTimeStep();\n     endYear, grid.year, dt_force = %f,%f,%e\n",
-   endYear, grid.year, dt_force);
-verbPrintf(1,grid.com,
-   "     maxdt, CFLmaxdt, maxdt_temporary, gDmax = %e,%e,%e,%e\n",
-   maxdt, CFLmaxdt, maxdt_temporary, gDmax);
-verbPrintf(1,grid.com,
-   "     dt, dt/secpera = %e, %f\n",
-   dt, dt/secpera);
-*/
   return 0;
 }
 
@@ -274,7 +262,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &my_Lz, &LzSet); CHKERRQ(ierr);
   if (LzSet == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
-      "WARNING: '-Lz' set by user; resetting vertical levels using user options and grid.rescale_and_set_zlevels()\n");
+      "WARNING: '-Lz' set by user; resetting vertical levels ...\n");
       CHKERRQ(ierr);
     ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);

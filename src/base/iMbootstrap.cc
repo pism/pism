@@ -150,6 +150,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     SETERRQ(1, "No file name given for bootstrapping\n");
   }
 
+  // when bootstrapFromFile_netCDF() is called the dimensions (i.e. Mx,My,Mz,Mbz) must already be set
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
@@ -216,37 +217,26 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
                psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
   }
 
-  // set time (i.e. grid.year, IceModel::startYear, and IceModel::endYear)
-  if (tExists) {
-    double last_t;
-    ierr = nct.get_last_time(ncid, &last_t, grid.com); CHKERRQ(ierr);
-    grid.year = last_t / secpera;
-    ierr = verbPrintf(2, grid.com, 
-            "  time t = %5.4f years found in bootstrap file; setting current year to this value\n",
-            grid.year); CHKERRQ(ierr);
-    ierr = setStartRunEndYearsFromOptions(PETSC_TRUE); CHKERRQ(ierr);
-  } else {
-    // set the current year from options or defaults only
-    ierr = setStartRunEndYearsFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-  }
+  // will create "local interpolation context" from dimensions, limits, and lengths extracted from
+  //   bootstrap file and from information about the part of the grid owned by this processor;
+  //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and equal to zero
+  size_t dim[5];  // dimensions in bootstrap NetCDF file
+  double bdy[7];  // limits and lengths for bootstrap NetCDF file
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
+  double *z_bif, *zb_bif;
+  z_bif = new double[dim[3]];
+  zb_bif = new double[dim[4]];
+  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
+  
+  grid.year = bdy[0] / secpera;
+  ierr = verbPrintf(2, grid.com, 
+          "  time t = %5.4f years found in bootstrap file; setting current year to this value\n",
+          grid.year); CHKERRQ(ierr);
+  ierr = setStartRunEndYearsFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
-  // set grid x,y,z from bootstrap file
-  PetscScalar first, last;
-  PetscScalar x_scale = 750.0e3, y_scale = 750.0e3, z_scale = 4000.0; // merely defaults
-  if (xExists) {
-    ierr = nct.get_ends_1d_var(ncid, v_x, &first, &last, grid.com); CHKERRQ(ierr);
-    x_scale = (last - first) / 2.0;
-  } else {
-    ierr = verbPrintf(2, grid.com,"  WARNING: variable x(x) not found in bootstrap file.\n");
-             CHKERRQ(ierr);
-  }
-  if (yExists) {
-    ierr = nct.get_ends_1d_var(ncid, v_y, &first, &last, grid.com); CHKERRQ(ierr);
-    y_scale = (last - first) / 2.0;
-  } else {
-    ierr = verbPrintf(2, grid.com,"  WARNING: variable y(y) not found in bootstrap file.\n");
-             CHKERRQ(ierr);
-  }
+  PetscScalar x_scale = (bdy[2] - bdy[1]) / 2.0,
+              y_scale = (bdy[4] - bdy[3]) / 2.0,
+              z_scale = bdy[6];
 
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
@@ -257,28 +247,25 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &y_scale_in, &LySet); CHKERRQ(ierr);
   if (LySet == PETSC_TRUE)   y_scale = y_scale_in * 1000.0;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &z_scale_in, &LzSet); CHKERRQ(ierr);
-  if (LzSet == PETSC_TRUE)   z_scale = z_scale_in;
+  if (LzSet == PETSC_TRUE) {
+    z_scale = z_scale_in;
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+         "  WARNING: option -Lz should usually be used to set vertical when bootstrapping ...\n"); CHKERRQ(ierr);
+  }
     
   ierr = verbPrintf(2, grid.com, 
          "  rescaling computational box *for ice* from defaults, -bif file, and\n"
          "    user options to dimensions:\n"
          "      [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,
-         "  resetting vertical levels using user options and grid.rescale_and_set_zlevels()\n");
-         CHKERRQ(ierr);
   ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
 
-  // create "local interpolation context" from dimensions, limits, and lengths extracted from
-  //   bootstrap file and from information about the part of the grid owned by this processor
-  size_t dim[5];  // dimensions *bootstrap* NetCDF file
-  double bdy[7];  // limits and lengths for *bootstrap* NetCDF file
-  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
-  dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in *bootstrap* NetCDF file, and use current grid info
-  dim[4] = grid.Mbz;  
-  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);  // destructor is called at exit from
-                                                                          // bootstrapFromFile_netCDF()
+  LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
+
+  delete z_bif;
+  delete zb_bif;
 
   if (lonExists) {
     ierr = nct.regrid_local_var("lon", 2, lic, grid, grid.da2, vLongitude, g2, false); CHKERRQ(ierr);
@@ -321,6 +308,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
           "  WARNING: ignoring values found for surface elevation 'usurf'; using usurf = topg + thk\n");
           CHKERRQ(ierr);
   }
+  ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);
   if (TsExists) {
     ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false); CHKERRQ(ierr);
   } else {
@@ -359,7 +347,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = verbPrintf(3, grid.com, "  done reading .nc file\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
-            "  determining mask by floating criterion; grounded ice marked as SIA (=1)\n");
+            "  determining mask by floating criterion; grounded ice marked as 1; floating ice as 7\n");
             CHKERRQ(ierr);
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   

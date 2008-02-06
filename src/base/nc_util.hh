@@ -57,7 +57,6 @@ The arrays \c start and \c count have 5 integer entries, corresponding to the di
  */
 class LocalInterpCtx {
 public:
-//  double fstart[3], delta[4];
   double fstart[3], delta[3];
   int start[5], count[5];    // Indices in netCDF file.
   float *a;
@@ -65,6 +64,7 @@ public:
   int ncid;
   int nz, nzb;
   double *zlevs, *zblevs;
+  bool regrid_2d_only;
 
 public:
   LocalInterpCtx(int ncid, const size_t dim[], const double bdy[],
@@ -101,7 +101,7 @@ PetscErrorCode get_last_time(int ncid, double *time, MPI_Comm com);
 PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], double bdy[], MPI_Comm com);
 PetscErrorCode get_dims_limits_lengths_2d(int ncid, size_t dim[], double bdy[], MPI_Comm com);
 PetscErrorCode get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast, MPI_Comm com);
-PetscErrorCode get_vertical_dims(int ncid, int z_len, int zb_len, 
+PetscErrorCode get_vertical_dims(int ncid, const int z_len, const int zb_len, 
                                  double z_read[], double zb_read[], MPI_Comm com);
 
 PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,

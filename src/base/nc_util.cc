@@ -40,6 +40,8 @@ int check_err(const int stat, const int line, const char *file) {
 }
 
 
+//FIXME:  put a flag in LocalInterpCtx to indicate that only 2d stuff can be regridded; then change warning below
+
 //! Construct a local interpolation context from arrays of parameters.
 /*!
 This method constructs a class from existing information already read from a NetCDF file and stored
@@ -55,11 +57,32 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
                dx = grid.dx,
                dy = grid.dy;
 
-  if (bdy[1] > -Lx || bdy[2] < Lx || bdy[3] > -Ly || bdy[4] < Ly
-      || -bdy[5] < Lbz || bdy[6] < Lz) {
+  if (bdy[1] > -Lx || bdy[2] < Lx) {
     PetscPrintf(grid.com,
-        "target computational domain not a subset of source (in NetCDF file) computational domain\n");
+        "target computational domain not a subset of source (in NetCDF file) computational domain:\n");
+    PetscPrintf(grid.com,
+        "    need  [-Lx,Lx] contained in [bdy[1],bdy[2]],  but Lx = %5.4f km while\n"
+        "    [bdy[1],bdy[2]]=[%5.4f,%5.4f] km;  ENDING ...\n",
+        Lx,bdy[1],bdy[2]);
     PetscEnd();
+  }
+  if (bdy[3] > -Ly || bdy[4] < Ly) {
+    PetscPrintf(grid.com,
+        "target computational domain not a subset of source (in NetCDF file) computational domain:\n");
+    PetscPrintf(grid.com,
+        "    need  [-Ly,Ly] contained in [bdy[3],bdy[4]],  but Ly = %5.4f km while\n"
+        "    [bdy[3],bdy[4]]=[%5.4f,%5.4f] km;  ENDING ...\n",
+        Ly,bdy[3],bdy[4]);
+    PetscEnd();
+  }
+  if (-bdy[5] < Lbz || bdy[6] < Lz) {
+    verbPrintf(2,grid.com,
+        "  WARNING: vertical  dimension of target computational domain not a subset of\n"
+        "    source (in NetCDF file) computational domain;  either  -bdy[5] = %5.4f < Lbz = %5.4f\n"
+        "    or  bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n");
+    regrid_2d_only = true;
+  } else {
+    regrid_2d_only = false;
   }
 
   // limits of the processor's part of the target computational domain
@@ -594,7 +617,12 @@ PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, P
 
 
 //! Read in the variables \c z and \c zb from the NetCDF file; <i>do not</i> assume they are equally-spaced.
-PetscErrorCode NCTool::get_vertical_dims(int ncid, int z_len, int zb_len,
+/*!
+Arrays z_read[] and zb_read[] must be pre-allocated arrays of length at least z_len, zb_len, respectively.
+
+Get values of z_len, zb_len by using get_dims_limits_lengths() before this routine; z_len = dim[3] and zb_len = dim[4].
+ */
+PetscErrorCode NCTool::get_vertical_dims(int ncid, const int z_len, const int zb_len,
                                          double z_read[], double zb_read[], MPI_Comm com) {
   PetscErrorCode ierr;
   PetscMPIInt rank;
@@ -830,6 +858,9 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
     case 3:
     case 4:
       dims = 4; // time, x, y, {z|zb}
+      if (lic.regrid_2d_only) {
+        SETERRQ(2, "regrid_2d_only is set, so dim_flag == 3 or 4 is not allowed");
+      }
       break;
     default:
       SETERRQ(1, "Invalid value for `dim_flag'.");
@@ -1035,7 +1066,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
         vec_a[index] = a_m * (1.0 - ii) + a_p * ii;
         if (useMaskInterp) {
           if (myMaskInterp == PETSC_NULL) {
-            SETERRQ(1,"NCTool::myMaskInterp needed, but not initialized correctly");
+            SETERRQ(3,"NCTool::myMaskInterp needed, but not initialized correctly");
           }
           double val = vec_a[index];
           if (   (myMaskInterp->number_allowed == 1)

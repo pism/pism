@@ -85,12 +85,12 @@ variables: // The names of variables are magic in PISM source.
     t:units = "seconds since 2007-01-01 00:00:00";
     t:calendar = "none";
     t:axis = "T";
-  float lon(x,y);
+  float lon(t,x,y);
     lon:long_name = "longitude";
     lon:standard_name = "longitude";
     lon:units = "degrees_east";
     lon:pism_intent = "mapping";
-  float lat(x,y);
+  float lat(t,x,y);
     lat:long_name = "latitude";
     lat:standard_name = "latitude";
     lat:units = "degrees_north";

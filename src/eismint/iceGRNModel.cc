@@ -127,8 +127,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
                EISMINT_G_geothermal);
     ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, 
-       "computing surface temperatures according to EISMINT-Greenland rule \n"
-       "   (uses surface elevation and latitude)\n");  CHKERRQ(ierr);
+       "computing surface temperatures by EISMINT-Greenland elevation-latitude rule \n");  CHKERRQ(ierr);
     ierr = updateTs(); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, 
        "filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);

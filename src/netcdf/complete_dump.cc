@@ -45,12 +45,11 @@
                             NC_DOUBLE, 1, &psParams.sp); CHKERRQ(nc_check(stat));
   }
 
-  // these are treated like 2-D constant quantities
-  ierr = nct.put_local_var(&grid, ncid, lon_id, NC_FLOAT, grid.da2, vLongitude, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.put_local_var(&grid, ncid, lat_id, NC_FLOAT, grid.da2, vLatitude, g2,
-                       &s[1], &c[1], 2, a_mpi, max_a_len); CHKERRQ(ierr);
   // 2-D model quantities
+  ierr = nct.put_local_var(&grid, ncid, lon_id, NC_FLOAT, grid.da2, vLongitude, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = nct.put_local_var(&grid, ncid, lat_id, NC_FLOAT, grid.da2, vLatitude, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, mask_id, NC_BYTE, grid.da2, vMask, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, thk_id, NC_FLOAT, grid.da2, vH, g2,

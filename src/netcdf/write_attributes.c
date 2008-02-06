@@ -53,8 +53,8 @@
 #  define RANK_z 1
 #  define RANK_zb 1
 #  define RANK_t 1
-#  define RANK_lon 2
-#  define RANK_lat 2
+#  define RANK_lon 3
+#  define RANK_lat 3
 #  define RANK_mask 3
 #  define RANK_thk 3
 #  define RANK_bwat 3
@@ -145,13 +145,15 @@ if (grid.rank == 0) {
    stat = nc_def_var(ncid, "t", NC_DOUBLE, RANK_t, t_dims, &t_id);
    check_err(stat,__LINE__,__FILE__);
 
-   lon_dims[0] = x_dim;
-   lon_dims[1] = y_dim;
+   lon_dims[0] = t_dim;
+   lon_dims[1] = x_dim;
+   lon_dims[2] = y_dim;
    stat = nc_def_var(ncid, "lon", NC_FLOAT, RANK_lon, lon_dims, &lon_id);
    check_err(stat,__LINE__,__FILE__);
 
-   lat_dims[0] = x_dim;
-   lat_dims[1] = y_dim;
+   lat_dims[0] = t_dim;
+   lat_dims[1] = x_dim;
+   lat_dims[2] = y_dim;
    stat = nc_def_var(ncid, "lat", NC_FLOAT, RANK_lat, lat_dims, &lat_id);
    check_err(stat,__LINE__,__FILE__);
 
