@@ -261,8 +261,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
   ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
+  //DEBUG:  ierr = grid.printVertLevels(2); CHKERRQ(ierr);
 
   LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
+  //DEBUG:  ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
 
   delete z_bif;
   delete zb_bif;
@@ -379,7 +381,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // take this opportunity to check that H[i][j] >= 0
       if (H[i][j] < 0.0) {
-        SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
+        SETERRQ3(1,"Thickness H=%5.4f is negative at point i=%d, j=%d",H[i][j],i,j);
       }
       
       if (H[i][j] < 0.001) {  // if no ice

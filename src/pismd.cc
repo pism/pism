@@ -81,35 +81,25 @@ int main(int argc, char *argv[]) {
     PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMD (diagnositic velocity computation mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMD (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
     ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
 
     IceModel*      m;
     IceModel       mPlain(g, *ice);
     IceROSSModel   mRoss(g, *ice);
 
-    PetscTruth  doRoss, ssaBCset;
-    char        ssaBCfile[PETSC_MAX_PATH_LEN];
-    // re next option, see:
+    // re this option, see  src/eismint/iceROSSModel.hh|cc and:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
     //     Ross ice shelf," Ann. Glaciol. 23, 46--51
+    PetscTruth  doRoss;
     ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &doRoss); CHKERRQ(ierr);
-    ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
-                                 PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
+
     if (doRoss == PETSC_TRUE) {
-      ierr = verbPrintf(2,com, 
-            "PISMD: initializing EISMINT Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
       m = (IceModel*) &mRoss;
     } else 
       m = (IceModel*) &mPlain;
     ierr = m->setFromOptions(); CHKERRQ(ierr);
     ierr = m->initFromOptions(); CHKERRQ(ierr);
-
-    if (ssaBCset == PETSC_TRUE) {
-       ierr = verbPrintf(2, com,"reading SSA boundary condition file %s and setting bdry conds\n",
-             ssaBCfile); CHKERRQ(ierr);
-       ierr = m->readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
-    }
 
     ierr = verbPrintf(2,com, "computing velocity field (diagnostically) ...\n"); CHKERRQ(ierr);
     ierr = m->diagnosticRun(); CHKERRQ(ierr);

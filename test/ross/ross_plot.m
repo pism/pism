@@ -7,7 +7,7 @@
 % (Thomas et al 1984) and figures in (MacAyeal et al 1996).
 %    Reports final values 'ChiSqr' and 'max_computed_speed' which can (I think)
 % be compared to Table 1 in (MacAyeal et al 1996).
-% ELB 2/4/07; 2/11/07; 11/17/07
+% ELB 2/4/07; 2/11/07; 11/17/07; 2/7/08
 
 % see 111by147.dat for these ranges
 dlat = (-5.42445 - (-12.3325))/110;
@@ -20,7 +20,7 @@ RIGGS=riggs_clean;
 clear riggs_clean;
 
 % show computed speed as color
-cforplot=cbar;  cforplot(H<20) = -20; cforplot(mask==1) = -20;
+cforplot=10.^cbar;  cforplot(H<20) = -20; cforplot(mask==1) = -20;
 figure
 imagesc(gridlon,gridlatext,cforplot'), colorbar
 h=get(gcf,'CurrentAxes');  set(h, 'YDir', 'normal')
@@ -44,21 +44,20 @@ rigv = cos((pi/180)*rig(:,13)) .* rig(:,11);
 quiver(riglon,riglat,rigu,rigv,1,'k');
 
 % quiver the computed velocities at the same points; note reversal of u,v in model
-spera = 31556926;
-uATrig = spera * griddata(gridlon,gridlatext,vbar',riglon,riglat,'linear');
-vATrig = spera * griddata(gridlon,gridlatext,ubar',riglon,riglat,'linear');
-quiver(riglon,riglat,uATrig,vATrig,max(max(c))/max(max(sqrt(rigu.^2 + rigv.^2))),'r');
-%quiver([riglon riglon],[riglat riglat],[rigu uATrig],[rigv vATrig],'k');
+uATrig = griddata(gridlon,gridlatext,vbar',riglon,riglat,'linear');
+vATrig = griddata(gridlon,gridlatext,ubar',riglon,riglat,'linear');
+quiver(riglon,riglat,uATrig,vATrig,max(max(cforplot))/max(max(sqrt(rigu.^2 + rigv.^2))),'r');
 hold off
 title('Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.')
 
 % report results comparable to Table 1 in (MacAyeal et al 1996)
 ChiSqrActual = sum( ((uATrig - rigu).^2 + (vATrig - rigv).^2) / (30^2) );
 ChiSqr = ChiSqrActual * (156/132)
-max_computed_speed = max(max(c))
+max_computed_speed = max(max(cforplot))
 
 % show observed versus computed scatter plot as in Figure 2 in (MacAyeal et al 1996)
 figure
 plot(sqrt(uATrig.^2 + vATrig.^2),sqrt(rigu.^2 + rigv.^2),'.k','Markersize',12)
 hold on, plot([0 1000],[0 1000],'LineWidth',2), hold off
-
+xlabel('PISM computed speed (m/a)')
+ylabel('RIGGS observed speed (m/a)')

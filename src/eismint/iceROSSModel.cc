@@ -35,9 +35,9 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
   computeSIAVelocities = PETSC_FALSE;
 
   // further settings for velocity computation 
-  useConstantNuForSSA = PETSC_FALSE;
-  useConstantHardnessForSSA = PETSC_TRUE;
-  ssaEpsilon = 0.0;  // don't use this lower bound
+  useConstantNuForSSA = PETSC_FALSE;       // compute the effective viscosity by including shear-thinning ...
+  useConstantHardnessForSSA = PETSC_TRUE;  // but don't include thermocoupling
+  ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
   constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
@@ -67,6 +67,9 @@ PetscErrorCode IceROSSModel::destroyROSSVecs() {
 PetscErrorCode IceROSSModel::initFromOptions() {
   PetscErrorCode  ierr;
 
+  ierr = verbPrintf(2,grid.com, 
+    "initializing EISMINT Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
+
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
   // set Lz to 1000.0 m by default; note max thickness in data is 800.0 m
@@ -75,6 +78,11 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   if (LzSet == PETSC_FALSE) { // usual case
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, 1000.0); CHKERRQ(ierr);
   }
+
+  PetscTruth  ssaBCset;
+  char        ssaBCfile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
+                               PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
 
   // allocate observed velocity space
   ierr = createROSSVecs(); CHKERRQ(ierr);
@@ -96,6 +104,12 @@ PetscErrorCode IceROSSModel::initFromOptions() {
               PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
 
   ierr = afterInitHook(); CHKERRQ(ierr);
+
+  if (ssaBCset == PETSC_TRUE) {
+     ierr = verbPrintf(2, grid.com,"reading SSA boundary condition file %s and setting bdry conds\n",
+                       ssaBCfile); CHKERRQ(ierr);
+     ierr = readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
+  }
 
   ierr = verbPrintf(2,grid.com, "running EISMINT ROSS ...\n"); CHKERRQ(ierr);
   return 0;
@@ -123,7 +137,6 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
   
-  //  Vec vNu[2] = {vWork2d[0], vWork2d[1]};
   Vec*  myvNu;
   ierr = VecDuplicateVecs(vh, 2, &myvNu); CHKERRQ(ierr);
   ierr = computeEffectiveViscosity(myvNu, ssaEpsilon); CHKERRQ(ierr);
@@ -188,26 +201,21 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
   ierr = MPI_Bcast(&magMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&aziMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
 
-/*
-  // compare comment in bootstrapFromFile_netCDF 
-  Vec vzero;
-  VecScatter ctx;
-  ierr = VecScatterCreateToZero(myg2, &ctx, &vzero); CHKERRQ(ierr);  
-  ierr = getIndZero(grid.da2, myg2, vzero, ctx); CHKERRQ(ierr);
-  // compare comment in bootstrapFromFile_netCDF 
-*/
-
   Vec myg2;
   ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
 
-  // create "local interpolation context" from dimensions, limits, and lengths extracted from
-  //    file and from information about the part of the grid owned by this processor
-  size_t dim[5];  // dimensions in NetCDF file
-  double bdy[7];  // limits and lengths in NetCDF file
-  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
-  dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in NetCDF file, and use current grid info
-  dim[4] = grid.Mbz;  
-  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);
+  // will create "local interpolation context" from dimensions, limits, and lengths extracted from
+  //   bootstrap file and from information about the part of the grid owned by this processor;
+  //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and equal to zero
+  size_t dim[5];  // dimensions in bootstrap NetCDF file
+  double bdy[7];  // limits and lengths for bootstrap NetCDF file
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
+  double *z_bif, *zb_bif;
+  z_bif = new double[dim[3]];
+  zb_bif = new double[dim[4]];
+  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
+
+  LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
 
   if (accExists) {
     MaskInterp masklevs;
@@ -216,30 +224,23 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
     masklevs.allowed_levels[1] = 0;
     masklevs.allowed_levels[2] = 1;
     ierr = nct.set_MaskInterp(&masklevs); CHKERRQ(ierr);
-    //ierr = nct.var_to_da_vec(grid, ncid, accid, grid.da2, obsAccurate, myg2, vzero, masklevs); CHKERRQ(ierr);
     ierr = nct.regrid_local_var("accur", 2, lic, grid, grid.da2, obsAccurate, myg2, true); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"'accur' does not exist");
   }
   if (magExists) {
-    //ierr = nct.var_to_da_vec(grid, ncid, magid, grid.da2, obsMagnitude, myg2, vzero); CHKERRQ(ierr);
     ierr = nct.regrid_local_var("mag_obs", 2, lic, grid, grid.da2, obsMagnitude, myg2, true); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"'mag_obs' does not exist");
   }
   if (aziExists) {
-    //ierr = nct.var_to_da_vec(grid, ncid, aziid, grid.da2, obsAzimuth, myg2, vzero); CHKERRQ(ierr);
     ierr = nct.regrid_local_var("azi_obs", 2, lic, grid, grid.da2, obsAzimuth, myg2, true); CHKERRQ(ierr);
   } else {
     SETERRQ(3,"'azi_obs' does not exist");
   }
 
-/*
-  // done with scatter context
-  ierr = VecDestroy(vzero); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(ctx); CHKERRQ(ierr);
-*/
-
+  delete z_bif;
+  delete zb_bif;
   ierr = VecDestroy(myg2); CHKERRQ(ierr);
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));
@@ -274,9 +275,13 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
           accArea += area;
           const PetscScalar vobs = mag[i][j] * sin((pi/180.0) * azi[i][j]);
           const PetscScalar uobs = mag[i][j] * cos((pi/180.0) * azi[i][j]);
-          // compare from readme.txt:
+          // compare from readme.txt
           // uxbar(i0,j0) = magvel(i0,j0)* sin(3.1415926/180.*azvel(i0,j0))
           // uybar(i0,j0) = magvel(i0,j0)* cos(3.1415926/180.*azvel(i0,j0))
+          // the difference is the fundamental transpose in IceGrid::createDA()
+          // debug:
+          //verbPrintf(1,grid.com,"i,j=%d,%d:  observed = (%5.4f,%5.4f),   computed =  (%5.4f,%5.4f)\n",
+          //           i,j,uobs*secpera,vobs*secpera,ubar[i][j]*secpera,vbar[i][j]*secpera);
           const PetscScalar Dv = PetscAbs(vobs - vbar[i][j]);
           const PetscScalar Du = PetscAbs(uobs - ubar[i][j]);
           verr += Dv;
@@ -349,8 +354,7 @@ PetscErrorCode IceROSSModel::putObservedVelsCartesian() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       vbar[i][j] = acc[i][j] * mag[i][j] * sin((pi/180.0) * azi[i][j]);
       ubar[i][j] = acc[i][j] * mag[i][j] * cos((pi/180.0) * azi[i][j]);
-      // uxbar(i0,j0) = magvel(i0,j0)* sin(3.1415926/180.*azvel(i0,j0))
-      // uybar(i0,j0) = magvel(i0,j0)* cos(3.1415926/180.*azvel(i0,j0))
+      // see comment above in computeErrorsInAccurateRegion()
     }
   }
   ierr = DAVecRestoreArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
@@ -372,7 +376,7 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
   if (riggsSet == PETSC_FALSE) {
     return 0;
   } else {
-      ierr = verbPrintf(2,grid.com,"comparing to RIGGS is data in %s ...\n",
+      ierr = verbPrintf(2,grid.com,"comparing to RIGGS data in %s ...\n",
              riggsfile); CHKERRQ(ierr);
 
       Data1D      latdata, londata, magdata, udata, vdata;
@@ -402,10 +406,6 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
         ierr = verbPrintf(4,grid.com,
                  " RIGGS[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                  k,lat,lon,mag,u,v); CHKERRQ(ierr); 
-        //from Matlab file ross_plot.m:
-        //dlat = (-5.42445 - (-12.3325))/110;
-        //gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
-        //gridlon = linspace(-5.26168,3.72207,147);
         const PetscScalar origdlat = (-5.42445 - (-12.3325)) / 110.0;
         const PetscScalar lowlat = -12.3325 - origdlat * 46.0;
         const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.Mx - 1);        

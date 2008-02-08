@@ -648,6 +648,10 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
+      if (verbosityLevel < 3) {
+        ierr = verbPrintf(2,grid.com,
+                 (k == 0) ? "%3d" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%3d",k); CHKERRQ(ierr);
+      }
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
       ierr = assembleSSAMatrix(vNu, A); CHKERRQ(ierr);
       ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
@@ -665,6 +669,9 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
       ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNu, vNuOld, &norm, &normChange); CHKERRQ(ierr);
+      if (verbosityLevel < 3) {
+        ierr = verbPrintf(2,grid.com,"%12.3e",normChange/norm); CHKERRQ(ierr);
+      }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
 
@@ -676,7 +683,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
     if (epsilon > 0.0) {
        ierr = verbPrintf(1,grid.com,
                   "WARNING: Effective viscosity not converged after %d iterations\n"
-                  "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
+                  "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.                  \n",
                   ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
            CHKERRQ(ierr);
        ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
@@ -684,13 +691,16 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        SETERRQ1(1, 
-         "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.\n", 
+         "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.                \n", 
          ssaMaxIterations);
     }
   }
 
   done:
 
+  if (verbosityLevel < 3) {
+    ierr = verbPrintf(2,grid.com,"\b\b\b\b\b\b\b\b\b\b\b\b"); CHKERRQ(ierr);
+  }
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
   }

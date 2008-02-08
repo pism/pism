@@ -40,12 +40,26 @@ int check_err(const int stat, const int line, const char *file) {
 }
 
 
-//FIXME:  put a flag in LocalInterpCtx to indicate that only 2d stuff can be regridded; then change warning below
-
 //! Construct a local interpolation context from arrays of parameters.
 /*!
 This method constructs a class from existing information already read from a NetCDF file and stored
-in arrays.  It doesn't extract new information from the NetCDF file or do communication.
+in arrays.  
+
+The essential quantities to compute are where each processor should start within the NetCDF file grid
+(<tt>start[]</tt>) and how many grid points, from the starting place, the processor has.  The resulting
+portion of the grid is stored in array \c a (a field of the \c LocalInterCtx).
+
+We make conservative choices about \c start[] and \c count[].  In particular, the portions owned by 
+processors \e must overlap at one point in the NetCDF file grid, but they \e may overlap more than that
+(as computed here).
+
+Note this constructor doesn't extract new information from the NetCDF file or do communication.
+The information from the NetCDF file must already be extracted, validly stored in preallocated arrays 
+\c dim[], \c bdy[], \c zlevsIN[], \c zblevsIN[], and each processor must have the same values for 
+all of these arrays.
+
+The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
+information will be interpolated) are owned by each processor.
  */
 LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[],
                                const double zlevsIN[], const double zblevsIN[], IceGrid &grid) {
@@ -79,7 +93,8 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
     verbPrintf(2,grid.com,
         "  WARNING: vertical  dimension of target computational domain not a subset of\n"
         "    source (in NetCDF file) computational domain;  either  -bdy[5] = %5.4f < Lbz = %5.4f\n"
-        "    or  bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n");
+        "    or  bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
+        -bdy[5], Lbz, bdy[6], Lz);
     regrid_2d_only = true;
   } else {
     regrid_2d_only = false;
@@ -88,10 +103,10 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
   // limits of the processor's part of the target computational domain
   double xbdy_tgt[2] = {-Lx + dx * grid.xs, -Lx + dx * (grid.xs + grid.xm - 1)};
   double ybdy_tgt[2] = {-Ly + dy * grid.ys, -Ly + dy * (grid.ys + grid.ym - 1)};
-//  double zbdy_tgt[2] = {-Lbz, Lz};
 
 /*
-To make this work with unequal spacing <i>in the horizontal dimension</i>, we have some choices.
+To make this work with unequal spacing <i>in the horizontal dimension</i>, IF EVER NEEDED,
+we have some choices.
 Suppose a processor owns indices \f$\{i_m, \dots, i_{m'}\}\f$ and we know nothing about the
 spacing.  Then to find the interpolated value at \f$x(j)\f$ where \f$i_m \le j \le i_{m'}\f$
 we need the index \f$J\f$ such that \f$X(J) \le x(j) \le X(J+1)\f$.
@@ -115,10 +130,15 @@ and \c delta entries in the struct will not be meaningful.
   delta[1] = (bdy[2] - bdy[1]) / (dim[1] - 1);
   delta[2] = (bdy[4] - bdy[3]) / (dim[2] - 1);
 
-  // Index of the first needed entry in the source netCDF file; int type.
+  // start[i] = index of the first needed entry in the source netCDF file; start[i] is of type int
   start[0] = dim[0] - 1; // We use the latest time
-  start[1] = (int)floor((xbdy_tgt[0] - bdy[1]) / delta[1]);
-  start[2] = (int)floor((ybdy_tgt[0] - bdy[3]) / delta[2]);
+  start[1] = (int)floor((xbdy_tgt[0] - bdy[1]) / delta[1] - 0.5);
+  start[2] = (int)floor((ybdy_tgt[0] - bdy[3]) / delta[2] - 0.5);
+  // be sure the start[] are not too small:
+  for (int m = 1; m < 3; m++) {
+    if (start[m] < 0)
+      start[m] = 0;
+  }
   start[3] = 0; // start at base of ice
   start[4] = 0;  // start at lowest bedrock level
 
@@ -127,8 +147,13 @@ and \c delta entries in the struct will not be meaningful.
   fstart[2] = bdy[3] + start[2] * delta[2];
 
   count[0] = 1; // Only take one time.
-  count[1] = (int)ceil((xbdy_tgt[1] - fstart[1]) / delta[1] + 1);
-  count[2] = (int)ceil((ybdy_tgt[1] - fstart[2]) / delta[2] + 1);
+  count[1] = 1 + (int)ceil((xbdy_tgt[1] - fstart[1]) / delta[1]);
+  count[2] = 1 + (int)ceil((ybdy_tgt[1] - fstart[2]) / delta[2]);
+  // make count[] smaller if start[]+count[] would go past end of range:
+  for (int m = 1; m < 3; m++) {  
+    while (start[m]+count[m] > (int)(dim[m]))
+      count[m]--;
+  }
   count[3] = dim[3];
   count[4] = dim[4];
 
@@ -152,9 +177,11 @@ and \c delta entries in the struct will not be meaningful.
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(a_len * sizeof(float), &(a)); //CHKERRQ(ierr);
 
+  //return 0;  // can't return; its a constructor
 }
 
 
+//! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
   PetscErrorCode ierr;
   ierr = PetscFree(zlevs); 
@@ -267,154 +294,6 @@ int LocalInterpCtx::kbBelowHeight(const double elevation, MPI_Comm com) {
 NCTool::NCTool() {
   //FIXME: does there need to be a default MaskInterp?
   myMaskInterp = PETSC_NULL;
-}
-
-
-PetscErrorCode NCTool::set_MaskInterp(MaskInterp *mi_in) {
-  myMaskInterp = mi_in;
-  return 0;
-}
-
-
-//! Put a \c DA -managed local \c Vec \c v into a variable in a NetCDF file; a global \c Vec \c g is used for storage space.
-PetscErrorCode NCTool::put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
-                                     DA da, Vec v, Vec g, const int *s, const int *c,
-                                     int dims, void *a_mpi, int a_size) {
-
-  PetscErrorCode ierr;
-  ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
-  ierr = put_global_var(grid, ncid, var_id, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
-PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
-                                      DA da, Vec g, const int *s, const int *c,
-                                      int dims, void *a_mpi, int a_size) {
-  const int lim_tag = 1; // MPI tag for limits block
-  const int var_tag = 2; // MPI tag for data block
-  const int sc_size = 8;
-  PetscErrorCode ierr;
-  MPI_Status mpi_stat;
-  int stat;
-  int sc[sc_size]; // buffer to hold both `s' and `c'
-  size_t sc_nc[sc_size];
-  float *a_float = NULL;
-  unsigned char *a_uchar = NULL;
-
-  if (type == NC_FLOAT) {
-    a_float = (float *)a_mpi;
-  } else if (type == NC_BYTE) {
-    a_uchar = (unsigned char *)a_mpi;
-  } else {
-    SETERRQ(1, "Unsupported type.");
-  }
-
-  for (int i = 0; i < 2 * dims; i++) {
-    sc[i] = (i < dims) ? s[i] : c[i - dims];
-  }
-
-  int b_len = 1;
-  for (int i = 0; i < dims; i++) b_len *= c[i];
-
-  // convert IceModel Vec containing PetscScalar to array of float or char for NetCDF
-  PetscScalar *a_petsc;
-  ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
-  for (int i = 0; i < b_len; i++) {
-    if (type == NC_FLOAT) {
-      a_float[i] = (float)a_petsc[i];
-    } else if (type == NC_BYTE) {
-      a_uchar[i] = (unsigned char)a_petsc[i];
-    } else {
-      SETERRQ(1, "Unsupported type.");
-    }
-  }
-  ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
-
-  if (grid->rank == 0) { // on rank 0 processor, receive messages from every other
-                         //    processor, then write it out to the NC file
-    for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
-      if (proc != 0) {
-        MPI_Recv(sc, sc_size, MPI_INT, proc, lim_tag, grid->com, &mpi_stat);
-        if (type == NC_FLOAT) {
-          MPI_Recv(a_float, a_size, MPI_FLOAT, proc, var_tag, grid->com, &mpi_stat);
-        } else if (type == NC_BYTE) {
-          MPI_Recv(a_uchar, a_size, MPI_UNSIGNED_CHAR, proc, var_tag, grid->com, &mpi_stat);
-        } else {
-          SETERRQ(1, "Unsupported type.");
-        }
-      }
-
-      /* {
-        printf("[%1d] writing %4d [", proc, var_id);
-        for (int i = 0; i < 2 * dims; i++) {
-          if (i == dims) printf("] [");
-          printf("%5d", sc[i]);
-        }
-        printf("]\n");
-      } */
-
-      for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
-      if (type == NC_FLOAT) {
-        stat = nc_put_vara_float(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_float);
-      } else if (type == NC_BYTE) {
-        stat = nc_put_vara_uchar(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_uchar);
-      } else {
-        SETERRQ(1, "Unsupported type.");
-      }
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    }
-  } else {  // all other processors send to rank 0 processor
-    MPI_Send(sc, 2 * dims, MPI_INT, 0, lim_tag, grid->com);
-    if (type == NC_FLOAT) {
-      MPI_Send(a_float, a_size, MPI_FLOAT, 0, var_tag, grid->com);
-    } else if (type == NC_BYTE) {
-      MPI_Send(a_uchar, a_size, MPI_UNSIGNED_CHAR, 0, var_tag, grid->com);
-    } else {
-      SETERRQ(1, "Unsupported type.");
-    }
-  }
-  return 0;
-}
-
-
-//! Put the variable for a dimension in a NetCDF file.  Uses starting value and a spacing for regularly-spaced values.
-/*!
-Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
- */
-PetscErrorCode NCTool::put_dimension_regular(int ncid, int v_id, int len, double start, double delta) {
-  PetscErrorCode ierr;
-  int stat;
-  double *v;
-
-  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
-  for (int i = 0; i < len; i++) {
-    v[i] = start + i * delta;
-  }
-  stat = nc_put_var_double(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  ierr = PetscFree(v); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-//! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
-/*!
-Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
- */
-PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
-  PetscErrorCode ierr;
-  int stat;
-  double *v;
-
-  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
-  for (int i = 0; i < len; i++) {
-    v[i] = (double)vals[i];
-  }
-  stat = nc_put_var_double(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  ierr = PetscFree(v); CHKERRQ(ierr);
-  return 0;
 }
 
 
@@ -554,68 +433,6 @@ PetscErrorCode NCTool::get_last_time(int ncid, double *time, MPI_Comm com) {
 }
 
 
-// FIXME: shouldn't this be expecting type double, not type float, for dimensions?  or checking?
-PetscErrorCode NCTool::get_ends_1d_var(int ncid, int vid, PetscScalar *gfirst, PetscScalar *glast,
-                                       MPI_Comm com) {
-  PetscErrorCode ierr;
-  int stat;
-  PetscScalar first, last;
-  float       *f = NULL;
-  int         *g = NULL;
-
-  PetscMPIInt rank;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-
-  if (rank == 0) {
-    int dimids[NC_MAX_VAR_DIMS];
-    int ndims, natts;
-    nc_type xtype;
-    char name[NC_MAX_NAME+1];
-    stat = nc_inq_var(ncid, vid, name, &xtype, &ndims, dimids, &natts); CHKERRQ(nc_check(stat));
-    if (ndims != 1) {
-      SETERRQ2(1, "getFirstLast: number of dimensions = %d for %s\n",
-               ndims, name);
-    }
-
-    // In the netCDF file,
-    // we index 0:M in the x direction and 0:N in the y direction.  A
-    // location $(i,j) \in [0,M] \times [0,N]$ is addressed as [i*N + j]
-    size_t M;
-    stat = nc_inq_dimlen(ncid, dimids[0], &M); CHKERRQ(nc_check(stat));
-
-    switch (xtype) {
-      case NC_INT:
-        g = new int[M];
-        stat = nc_get_var_int(ncid, vid, g); CHKERRQ(nc_check(stat));
-        break;
-      case NC_FLOAT:
-        f = new float[M];
-        stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
-        break;
-      default:
-        SETERRQ1(1, "NC_VAR `%s' not of type NC_INT or NC_FLOAT.\n", name);
-    }
-
-    if (g != NULL) {
-      first = g[0];
-      last = g[M-1];
-    } else if (f != NULL) {
-      first = f[0];
-      last = f[M-1];
-    } else {
-      SETERRQ(1, "This should not happen.\n");
-    }
-  } else {
-    first = 1.0e30;
-    last = -1.0e30;
-  }
-
-  ierr = PetscGlobalMin(&first,gfirst,com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&last,glast,com); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Read in the variables \c z and \c zb from the NetCDF file; <i>do not</i> assume they are equally-spaced.
 /*!
 Arrays z_read[] and zb_read[] must be pre-allocated arrays of length at least z_len, zb_len, respectively.
@@ -650,7 +467,49 @@ PetscErrorCode NCTool::get_vertical_dims(int ncid, const int z_len, const int zb
 }
 
 
+//! Put the variable for a dimension in a NetCDF file.  Uses starting value and a spacing for regularly-spaced values.
+/*!
+Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
+ */
+PetscErrorCode NCTool::put_dimension_regular(int ncid, int v_id, int len, double start, double delta) {
+  PetscErrorCode ierr;
+  int stat;
+  double *v;
+
+  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
+  for (int i = 0; i < len; i++) {
+    v[i] = start + i * delta;
+  }
+  stat = nc_put_var_double(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = PetscFree(v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
+/*!
+Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
+ */
+PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *vals) {
+  PetscErrorCode ierr;
+  int stat;
+  double *v;
+
+  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
+  for (int i = 0; i < len; i++) {
+    v[i] = (double)vals[i];
+  }
+  stat = nc_put_var_double(ncid, v_id, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = PetscFree(v); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Read a NetCDF variable into a \c DA -managed local \c Vec \c v; a global \c Vec \c g is used for storage.
+/*!
+Just calls get_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
+ */
 PetscErrorCode NCTool::get_local_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
                                      DA da, Vec v, Vec g, const int *s, const int *c,
                                      int dims, void *a_mpi, int a_size) {
@@ -759,6 +618,119 @@ PetscErrorCode NCTool::get_global_var(const IceGrid *grid, int ncid, const char 
   }
 
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Put a \c DA -managed local \c Vec \c v into a variable in a NetCDF file; a global \c Vec \c g is used for storage space.
+/*!
+Just calls put_global_var(), after transfering the local \c Vec called \c vec into the global \c Vec \c g.
+ */
+PetscErrorCode NCTool::put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+                                     DA da, Vec v, Vec g, const int *s, const int *c,
+                                     int dims, void *a_mpi, int a_size) {
+
+  PetscErrorCode ierr;
+  ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
+  ierr = put_global_var(grid, ncid, var_id, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
+PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+                                      DA da, Vec g, const int *s, const int *c,
+                                      int dims, void *a_mpi, int a_size) {
+  const int lim_tag = 1; // MPI tag for limits block
+  const int var_tag = 2; // MPI tag for data block
+  const int sc_size = 8;
+  PetscErrorCode ierr;
+  MPI_Status mpi_stat;
+  int stat;
+  int sc[sc_size]; // buffer to hold both `s' and `c'
+  size_t sc_nc[sc_size];
+  float *a_float = NULL;
+  unsigned char *a_uchar = NULL;
+
+  if (type == NC_FLOAT) {
+    a_float = (float *)a_mpi;
+  } else if (type == NC_BYTE) {
+    a_uchar = (unsigned char *)a_mpi;
+  } else {
+    SETERRQ(1, "Unsupported type.");
+  }
+
+  for (int i = 0; i < 2 * dims; i++) {
+    sc[i] = (i < dims) ? s[i] : c[i - dims];
+  }
+
+  int b_len = 1;
+  for (int i = 0; i < dims; i++) b_len *= c[i];
+
+  // convert IceModel Vec containing PetscScalar to array of float or char for NetCDF
+  PetscScalar *a_petsc;
+  ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
+  for (int i = 0; i < b_len; i++) {
+    if (type == NC_FLOAT) {
+      a_float[i] = (float)a_petsc[i];
+    } else if (type == NC_BYTE) {
+      a_uchar[i] = (unsigned char)a_petsc[i];
+    } else {
+      SETERRQ(1, "Unsupported type.");
+    }
+  }
+  ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
+
+  if (grid->rank == 0) { // on rank 0 processor, receive messages from every other
+                         //    processor, then write it out to the NC file
+    for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
+      if (proc != 0) {
+        MPI_Recv(sc, sc_size, MPI_INT, proc, lim_tag, grid->com, &mpi_stat);
+        if (type == NC_FLOAT) {
+          MPI_Recv(a_float, a_size, MPI_FLOAT, proc, var_tag, grid->com, &mpi_stat);
+        } else if (type == NC_BYTE) {
+          MPI_Recv(a_uchar, a_size, MPI_UNSIGNED_CHAR, proc, var_tag, grid->com, &mpi_stat);
+        } else {
+          SETERRQ(1, "Unsupported type.");
+        }
+      }
+
+      /* {
+        printf("[%1d] writing %4d [", proc, var_id);
+        for (int i = 0; i < 2 * dims; i++) {
+          if (i == dims) printf("] [");
+          printf("%5d", sc[i]);
+        }
+        printf("]\n");
+      } */
+
+      for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
+      if (type == NC_FLOAT) {
+        stat = nc_put_vara_float(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_float);
+      } else if (type == NC_BYTE) {
+        stat = nc_put_vara_uchar(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_uchar);
+      } else {
+        SETERRQ(1, "Unsupported type.");
+      }
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    }
+  } else {  // all other processors send to rank 0 processor
+    MPI_Send(sc, 2 * dims, MPI_INT, 0, lim_tag, grid->com);
+    if (type == NC_FLOAT) {
+      MPI_Send(a_float, a_size, MPI_FLOAT, 0, var_tag, grid->com);
+    } else if (type == NC_BYTE) {
+      MPI_Send(a_uchar, a_size, MPI_UNSIGNED_CHAR, 0, var_tag, grid->com);
+    } else {
+      SETERRQ(1, "Unsupported type.");
+    }
+  }
+  return 0;
+}
+
+
+//! Call this before calling regrid_local_var() or regrid_global_var() with argument useMaskInterp = true.
+PetscErrorCode NCTool::set_MaskInterp(MaskInterp *mi_in) {
+  myMaskInterp = mi_in;
   return 0;
 }
 
@@ -973,15 +945,31 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
                      z = (dim_flag == 3) ? grid.zlevels[k] : grid.zblevels[k];
 
         // We need to know how the point (x,y,z) sits within the local block we
-        // pulled from the netCDF file.  This part is specialized to a regular
+        // pulled from the netCDF file.  This part is special to a regular
         // grid.  In particular floor(ic) is the index of the 'left neighbor'
-        // and ceil(ic) is the index of the 'right neighbor'.  For the irregular
-        // case, we would also need the physical locations of these points, so
-        // that we could compute ii,jj,kk (described below).  We should just
-        // compute the 'left index' and 'right index' explicitly (but in the
-        // same way as we find the domain bounds; see note below)
-        const double ic = (x - lic.fstart[1]) / lic.delta[1];
-        const double jc = (y - lic.fstart[2]) / lic.delta[2];
+        // and ceil(ic) is the index of the 'right neighbor'.
+        double ic = (x - lic.fstart[1]) / lic.delta[1];
+        double jc = (y - lic.fstart[2]) / lic.delta[2];
+
+        // bounds checking on ic and jc; cases where this is essential *have* been observed
+        if ((int)floor(ic) < 0) {
+          ic = 0.0;
+          //SETERRQ2(101,"(int)floor(ic) < 0      [%d < 0; ic = %16.15f]",(int)floor(ic),ic);
+        }
+        if ((int)floor(jc) < 0) {
+          jc = 0.0;
+          //SETERRQ2(102,"(int)floor(jc) < 0      [%d < 0; jc = %16.15f]",(int)floor(jc),jc);
+        }
+        if ((int)ceil(ic) > lic.count[1]-1) {
+          ic = (double)(lic.count[1]-1);
+          //SETERRQ3(103,"(int)ceil(ic) > lic.count[1]-1      [%d > %d; ic = %16.15f]",
+          //     (int)ceil(ic), lic.count[1]-1, ic);
+        }
+        if ((int)ceil(jc) > lic.count[2]-1) {
+          jc = (double)(lic.count[2]-1);
+          //SETERRQ3(104,"(int)ceil(jc) > lic.count[2]-1      [%d > %d; jc = %16.15f]",
+          //     (int)ceil(jc), lic.count[2]-1, jc);
+        }
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
@@ -992,8 +980,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
 
           // We pretend that there are always 8 neighbors.  And compute the
           // indices into the buffer for those neighbors.  
-          // It is important to
-          // note that floor(ic) + 1 = ceil(ic) does not hold when ic is an
+          // Note that floor(ic) + 1 = ceil(ic) does not hold when ic is an
           // integer.  Computation of the domain (in constructor of LocalInterpCtx; note
           // that lic.count uses ceil) must be done in a compatible way,
           // otherwise we can index improperly here.  When it is in the

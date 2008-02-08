@@ -261,8 +261,8 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   }  
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &my_Lz, &LzSet); CHKERRQ(ierr);
   if (LzSet == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,
-      "WARNING: '-Lz' set by user; resetting vertical levels ...\n");
+    ierr = verbPrintf(2,grid.com,
+      "resetting vertical levels base on options and user option -Lz ...\n");
       CHKERRQ(ierr);
     ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);

@@ -367,6 +367,9 @@ PetscErrorCode IceGrid::createDA() {
     ierr = destroyDA(); CHKERRQ(ierr);
   }
 
+  // this line contains the fundamental transpose: My,Mx instead of "Mx,My";
+  // this transpose allows us to index the Vecs by "[i][j]" but display them correctly in PETSc viewers
+  // changing this to untransposed should *only* change that viewer behavior
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);

@@ -103,12 +103,14 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
   static PetscScalar lastSSAUpdateYear = grid.year;  // only set when first called
   if (useSSAVelocity) { // communication happens within SSA
     if ((firstTime == PETSC_TRUE) || (grid.year - lastSSAUpdateYear >= ssaIntervalYears)) {
+      ierr = verbPrintf(2,grid.com, "SSA"); CHKERRQ(ierr);
       PetscInt numSSAiter;
       ierr = setupGeometryForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
       ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
       ierr = cleanupGeometryAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
       lastSSAUpdateYear = grid.year;
-      ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com," "); CHKERRQ(ierr);
+//      ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
     }

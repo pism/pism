@@ -33,7 +33,7 @@ for hard in [1.5, 1.6, 1.7, 1.8, 1.9, 2.0]:
      rossdo += 'mpiexec -n ' + str(nproc) + ' '
    rossdo += 'pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc'
    rossdo += ' -ksp_rtol ' + str(KSPRTOL) + ' -ssa_rtol ' + str(MVRTOL) 
-   rossdo += ' -Mx 147 -My 147 -Mz 11 -ssa -constant_hardness ' + str(hard) + 'e8'
+   rossdo += ' -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa -constant_hardness ' + str(hard) + 'e8'
    print 'trying \"' + rossdo + '\"'
    try:
       lasttime = time.time()
