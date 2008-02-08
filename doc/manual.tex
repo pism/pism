@@ -1589,162 +1589,41 @@ We see that hardnesses $\bar B = 1.8,1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/
 
 
 \clearpage\newpage
-\section{Inside PISM: overviews of models, schemes, and sources}\label{sect:over}
+\section{Inside PISM: overviews of continuum models and numerical schemes}\label{sect:over}
+
+This section is an executive summary.  Technical documentation of the continuum models, numerical methods, and the source code structure is in the \emph{PISM Reference Manual}.
 
 \subsection{The continuum models in PISM}  Significant features of the continuum model approximated by the PISM include:\begin{itemize}
-\item The inland ice sheet is modeled with the thermocoupled shallow ice approximation equations \cite{Fowler}, and some temperature-activated basal sliding is allowed.
-\item Ice shelves and ice streams are modeled by shallow equations which describe flow by longitudinal strain rates and basal sliding.  These equations are different from the shallow ice approximation.  In shelves and streams the velocities are independent of depth within the ice.  The equations were originally established for ice shelves \cite{Morland,MorlandZainuddin,MacAyealetal,WeisGreveHutter}.  They were adapted for ice streams, as ``dragging ice shelves,'' by MacAyeal \cite{MacAyeal}; see also \cite{HulbeMacAyeal,SchoofStream}.
-\item The regions of grounded ice in which the ice stream model is applied can be determined from mass balance velocities \cite{BamberVaughanJoughin}, from observed surface velocities, or from a plastic till assumption and the associated free boundary problem \cite{SchoofStream}.
+\item The thermocoupled shallow ice approximation equations \cite{Fowler} is verifiably \cite{BLKCB,BBL} solved.
+\item Ice shelves and ice streams are modeled by shallow equations which describe flow by longitudinal strain rates and basal sliding.  These equations are different from the shallow ice approximation.  In shelves and streams the velocities are independent of depth within the ice.  The equations were originally established for ice shelves \cite{Morland,MorlandZainuddin,MacAyealetal,WeisGreveHutter}.  They were adapted for ice streams, as ``dragging ice shelves,'' by MacAyeal \cite{MacAyeal}; see also \cite{HulbeMacAyeal,SchoofStream}.  The solution is verifiable using ice stream and ice shelf exact solutions.
+\item The regions of grounded ice in which the ice stream model is applied can be determined from a plastic till assumption and the associated free boundary problem \cite{SchoofStream}.
 \item A three dimensional age field is computed.
-\item A temperature model for the bedrock under an ice sheet is included.
-\item Geothermal flux which varies in the map-plane can be used.
+\item A temperature model for the bedrock under an ice sheet is included and geothermal flux which varies in the map-plane can be used.
 \item Within the shallow ice sheet regions the model can use the constitutive relation of Goldsby and Kohlstedt \cite{GoldsbyKohlstedt,Peltieretal}.  For inclusion in this flow law, grain size can be computed using a age-grain size relation from the Vostok core data \cite{VostokCore}, for example.
-\item The Lingle-Clark \cite{BLKfastearth,LingleClark} bed deformation model can be used.  It combines a spherical elastic earth and viscous half-space asthenosphere/mantle.  It generalizes the better known elastic lithosphere, relaxing asthenosphere (``ELRA'') model \cite{Greve2001}.  This model can be initialized by an observed bed uplift map \cite{BLKfastearth}, or even an uplift map computed by an external model like that in \cite{IvinsJames2005}.\end{itemize}
+\item The Lingle-Clark \cite{BLKfastearth,LingleClark} bed deformation model can be used.  It generalizes the better known elastic lithosphere, relaxing asthenosphere (``ELRA'') model \cite{Greve2001}.  This model can be initialized by an observed bed uplift map \cite{BLKfastearth}, or even an uplift map computed by an external model like that in \cite{IvinsJames2005}.\end{itemize}
 
-Many of the parts of the model described above are optional.  For instance, the Paterson-Budd-Glen \cite{PatersonBudd} flow can replace the Goldsby-Kohlstedt law, a simple isostasy model can be substituted for the more sophisticated one, and so on.  Options can be chosen at the command line as described in section \ref{sect:options} above.
+Many of the parts of the model described above are optional.  For instance, options can choose between five different flow laws; see Appendix A and B for options.
 
 The following features are \emph{not} included in the continuum model, and would (or will) require major additions:
 \begin{itemize}
-\item Inclusion of all components of the stress tensor (i.e.~longitudinal stresses within the shallow ice approximation region and additional shear stress components in shelves/streams) through either an intermediate order scheme (e.g.~\cite{Blatter,Hindmarsh06}) or the full Stokes equations \cite{Fowler}.
-\item A model for water--content within the ice.  In the current model the ice is \emph{cold} and not \emph{polythermal}; compare \cite{Greve}.  On the other hand, in the current model the energy used to melt the ice within a given column, if any, is conserved.  In particular, a layer of basal melt water evolves by conservation of energy in the column.  This layer can activate basal sliding and its latent heat energy is available for refreezing.
+\item Inclusion of all components of the stress tensor through either an intermediate order scheme (e.g.~\cite{Blatter,Hindmarsh06,Pattyn03}) or the full Stokes equations \cite{Fowler}.
+\item A model for water--content within the ice.  In the current model the ice is \emph{cold} and not \emph{polythermal}; compare \cite{Greve}.  (On the other hand, in the current model the energy used to melt the ice within a given column, if any, is conserved.  In particular, a layer of basal melt water evolves by conservation of energy in the column.  This layer can activate basal sliding and its latent heat energy is available for refreezing.)
 \item A model for basal water mass conservation in the map-plane; compare \cite{JohnsonFastook}.
 \item A fully spherical Earth deformation model, for example one descended from the Earth model of \cite{Peltier}.
 \end{itemize}
 
 
 \subsection{The numerical schemes in PISM}  Significant features of the numerical methods in PISM include:\begin{itemize}
-\item Verification \cite{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \cite{BLKCB}, thermocoupled sheet flow \cite{BB,BBL}, conservation in ice and bedrock \cite{BuelerTestK}, the earth deformation model \cite{BLKfastearth}, the coupled (ice flow)/(earth deformation) system in an isothermal and pointwise isostasy  case \cite{BLKfastearth}, ice shelf flow (preprint), and ice stream flow based on failing plastic bed \cite{SchoofStream}.
-\item The code is \emph{structurally} parallel.  In fact, the PETSc toolkit is used at all levels \cite{petsc-user-ref}.  PETSc manages the MPI-based communication between processors, and provides an interface to parallel numerical linear algebra and other numerical functions.
-\item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid.
+\item Verification \cite{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \cite{BLKCB}, thermocoupled sheet flow \cite{BB,BBL}, conservation in ice and bedrock \cite{BuelerTestK}, the earth deformation model \cite{BLKfastearth}, the coupled (ice flow)/(earth deformation) system in an isothermal and pointwise isostasy  case \cite{BLKfastearth}, ice shelf flow (preprint), and ice stream flow based on a plastic bed \cite{SchoofStream}.
+\item The code is \emph{structurally} parallel because the PETSc toolkit is used at all levels \cite{petsc-user-ref}.  PETSc manages the MPI-based communication between processors.  It provides an interface to parallel numerical linear algebra.
+\item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid or vice versa.
 \item A moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \cite{Jenssen} change of variables is not used.
-\item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \cite{MortonMayers}.  As described  in  \cite{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including a diffusivity-based criteria for the explicit mass continuity scheme and a CFL criteria \cite{MortonMayers} for temperature/age advection.
+\item The shallow shelf approximation (SSA) \cite{WeisGreveHutter} is used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{petsc-user-ref}, choosable at the command line.
+\item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \cite{MortonMayers}.  As described  in  \cite{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including a diffusivity-based criteria for the explicit mass continuity scheme and a CFL criteria \cite{MortonMayers} for temperature/age advection.  The contributions to mass continuity from sliding of the base, including essentially all of the flow in the ice shelves, is approximated by an upwinding scheme.
 \item The local truncation error is generically first order (i.e.~$O(\Delta x,\Delta y,\Delta z,\Delta t)$).
-\item The shallow shelf approximation (SSA) \cite{WeisGreveHutter} is used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{petsc-user-ref}.
 \item The bed deformation model is implemented by a new Fourier collocation (spectral) method \cite{BLKfastearth}.
-\item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class.
+\item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class of the base class.  Also EISMINT II, EISMINT-Greenland, and EISMINT-Ross are each derived classes.
 \end{itemize}
-
-
-\subsection{The PISM source code} This ice sheet model is implemented as a collection of C++ object classes, the most central of which is \t{IceModel}.  Actually there are three basic classes to know about, all of which are in \verb|pism/src/base/|:
-\begin{itemize}
-\item \t{IceGrid}, which describes the shape of the grid and parallel
-layout. This abstraction could be used to streamline transferring model data between
-different grids.
-\item \t{MaterialType}.  Various materials are derived from the class \t{MaterialType} which merely defines a couple physical constants. \t{IceType} is a derived class, but still an abstract class. which defines the physical properties of ice as a material.  Concrete classes derived from \t{IceType} are \t{ThermoGlenIce} (which uses the
-EISMINT constants) and \t{GKIce} as well as \t{HybridIce}, which implements the Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt}.\footnote{Actually, it is difficult or impossible to implement a complete Goldsby-Kohlstedt \t{IceType} because the inverse constitutive relation is required for computation of SSA velocity fields. \t{HybridIce} is Goldsby-Kohlstedt ice in the interior of the ice sheet and Glen ice in ice streams and
-shelves.}  Similarly, there is \t{BedrockType} and \t{OceanType} which merely define
-associated physical constants.
-\item \t{IceModel} which contains myriad data structures, flags, PETSc \verb|Vec|s (below), and most of the methods and numerical methods of PISM.\end{itemize}
-
-The methods for \t{IceModel} are many, as noted.  In addition to numerics, they initialize the model (from input data files or from formulas describing various exact solutions), they read user options, they allocate arrays in a distributed manner under PETSc (below), they control diagnostic viewers, they run the adaptive time-stepping mechanism, they report the state of PISM to the user, and they write out the model state to files.
-
-A derived class of \t{IceModel} called \t{IceCompModel} is used for verification.  It has additional structures which allows \t{IceModel} to have compensatory sources and compute initial conditions from, and especially to report errors relative to, known exact solutions \cite{BLKCB,BBL,BB}.  Another derived class used for verification is \t{IceExactStreamModel}, which implements the exact solution described in \cite{SchoofStream}.
-
-Other derived classes of \t{IceModel} are \t{IceEISModel}, \t{IceGRNModel}, and \t{IceROSSModel}.  These correspond to simplified geometry experiments, the EISMINT-Greenland, and the EISMINT-Ross ice shelf models described in this manual.
-
-There are five established drivers which in essense just call constructors and destructors for \t{IceModel} or a derived class thereof, and tell it to go.  These are in the source files \verb|pgrn.cc|, \verb|pismd.cc|, \verb|pismr.cc|, \verb|pisms.cc|, and \verb|pismv.cc|.  These correspond to the executables \verb|pgrn|, \verb|pismd|, \verb|pismr|, \verb|pisms|, and \verb|pismv|, respectively.  These drivers do no computation but differ in which derived class is constructed and in how certain options are handled.  The driver \verb|pismr.cc| and its executable \verb|pismr| only use the base class \verb|IceModel|; it requires a pre-existing saved PISM model state to start.
-
-The different derived classes generally invoke the same numerical procedures to handle the various partial differential equations of the continuum model.  In the case of \t{IceCompModel}, this fact is at the heart of the verification mechanism.
-
-\subsection{PETSc: An overview for PISM users}  The PETSc library \cite{petsc-user-ref,petsc-efficient} provides essential support for distributed arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for ``Portable, Extensible Toolkit for Scientific Computation.''  It is a suite of data structures and routines in C for the scalable parallel solution of partial differential equations and their scientific applications.  Large parts of PETSc relate especially to finite-difference-type regular, rectangular grids but PETSc has been used for unstructured grids as well.  Documentation for PETSc is available from the web site at \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/}.  PETSc employs the MPI standard for all message-passing communication.  PETSc is deliberately at a higher level of abstraction than MPI; PETSc protects the programmer from explicit consideration of message passing.
-
-Most variables in a PETSc program are of newly-defined distributed types including
-\begin{verbatim}
-DA   da;
-Vec  v;
-KSP  ksp;
-\end{verbatim}
-In fact most of the PETSc types merely declare pointers but they should be regarded as objects (abstract data types).  The objects must be created with calls to functions like \t{DACreate2d()}, \t{VecCreate()}, etc.  They should be destroyed when they are not needed with calls to corresponding \t{Destroy()} functions.
-
-\subsubsection*{Distributed arrays and vectors} PETSc has an abstract date type called a Distributed Array (DA). Objects of type DA contain
-information about the grid and stencil. They can have information about coordinates, but
-the code does not use this feature at present. Vectors are created with
-\texttt{DAVecCreate()} and similar. These vectors will be distributed across the
-processors as indicated by the distributed array.
-
-There are two parameters of note: stencil type and stencil width.  The stencil types are
-\verb|DA_STENCIL_STAR| and \verb|DA_STENCIL_BOX|.  They are generalizations of the five
-point and nine point stencils typical of two dimensional discretizations respectively.  In
-particular, \verb|DA_STENCIL_STAR| indicates that ghosted points (information owned by a
-different processor) will be needed only along the coordinate axes while
-\verb|DA_STENCIL_BOX| indicates that ghosted points will be needed in the box shaped
-region surrounding each point.  The stencil width indicates how many points in each
-direction will be needed.  We never need a stencil width greater than 1 and only need BOX
-style stencils when gradient terms must be evaluated on a staggered grid ($h$ in SIA
-velocity and $\bar{u},\bar{v}$ in computation of effective viscosity in SSA
-velocity).  Keeping all other two dimensional vectors on a STAR type stencil
-would reduce the necessary communication slightly, but would complicate the code.  For this
-reason, all two dimensional vectors are kept on a box type distributed array.
-
-The three dimensional distributed arrays are aligned so that they have the same horizontal
-extent as the associated two dimensional distributed array, but have complete vertical
-extent. One point of confusion is the redefinition of the $x,y,z$ axes. Contrary to the
-PETSc default, our $z$ axis changes most rapidly through memory while the $x$ axis changes
-most slowly. That is, our C style arrays will be addressed as \texttt{u[i][j][k]} where
-$\texttt{i,j,k}$ are the coordinate indices in the directions $x,y,z$ respectively.
-
-DA-based vectors can be accessed by \texttt{DAVecGetArray()} and restored with
-\texttt{DAVecRestoreArray()}. The resulting pointer should be addressed using normal
-multidimensional array indexing where values range over the global array.
-
-PETSc DA based vectors can be ``local'' or ``global''. Local vectors include space for the
-ghosted points. That is, when \texttt{DAVecGetArray()} is called, the resulting array can
-be indexed on all the ghosted points. However, all vector operations act only on the local
-portion. \texttt{DALocalToLocalBegin()} and then \texttt{DALocalToLocalEnd()} should be
-called to update the ghost points before they will be needed. Global vectors do not hold
-ghosted values, but array operations will act on the entire vector. Hence local vectors
-typically need to be mapped to global vectors before viewing or using in a linear system.
-This is achieved with \texttt{DALocalToGlobal()}.
-
-\subsubsection*{Solving linear systems}
-PETSc is designed for solving large, sparse systems in a distributed environment.
-Iterative methods are the name of the game and especially Krylov subspace methods such as
-conjugate gradients and GMRES. For consistency, all methods use the Krylov subspace
-interface. For this, the user declares an object of type \texttt{KSP}. Various options can
-be set and the preconditioner context can be extracted. PETSc has an options database
-which holds command line options. To allow these options to influence the \t{KSP}, one
-should call \t{KSPSetFromOptions()} prior to solving the system. The default method is
-GMRES(30) with ILU preconditioning.
-
-To solve the system, a matrix must be attached to the \t{KSP}. The first time
-\t{KSPSolve()} is called, the matrix will be factored by the preconditioner and reused
-when the system is called for additional right hand sides. The default matrix format is
-similar to the Matlab \t{sparse} format. Each processor owns a range of rows. Elements in
-matrices and vectors can be set using \t{MatSetValues()} and \t{VecSetValues()}. These
-routines use the global indexing and can set values on any processor. The values are
-cached until one calls \t{MatAssemblyBegin()} followed by \t{MatAssemblyEnd()} to
-communicate the values.
-
-In the SSA velocity computation, the solution and right hand side vectors are not DA
-based.
-
-The vector (field) components are interlaced and distributed. This seemed to be the
-most straightforward method to solve the system (as opposed to using more advanced
-features intended for multiple degrees of freedom on DA based vectors). This also allows
-the matrix to have an optimal parallel layout.
-
-\subsubsection*{PETSc utility functions}
-The \t{PetscViewer} interface allows PETSc objects to be displayed. This can be in binary
-to disk, in plain text to the terminal, in graphical form to an X server, to a running
-instance of Matlab, etc. Typically, one will want to view an entire vector, not just the
-local portion, so DA based local vectors are mapped to global vectors before viewing.
-
-When viewing multiprocessor jobs, the display may have to be set on the command line, for instance as
-\t{-display :0} or similar; this must be given as the final option.  For example,
-
-\verb|mpiexec -n 2 pismv -test C -Mx 101 -My 101 -Mz 31 -y 1000 -d HT -display :0|
-
-\noindent views a two processor run of test C.
-
-PETSc allows the programmer to access command line arguments at any time during program
-execution. This is preferable to using \t{getopt.h} for this purpose.
-
-Quite ellaborate error tracing and performance monitoring is possible with PETSc.  All
-functions return \t{PetscErrorCode} which should be checked by the macro \t{CHKERRQ()}.
-Normally, runtime errors print traceback information when the program exits.  If this
-information is not present, you may need to use a debugger which is accessible with the
-command line options \verb|-start_in_debugger| and \verb|-on_error_attach_debugger|.  Also
-consider options such as \verb|-log_summary| to get diagnostics written to the terminal.
 
 
 %         References
