@@ -105,9 +105,9 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     if ((firstTime == PETSC_TRUE) || (grid.year - lastSSAUpdateYear >= ssaIntervalYears)) {
       ierr = verbPrintf(2,grid.com, "SSA"); CHKERRQ(ierr);
       PetscInt numSSAiter;
-      ierr = setupGeometryForSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
+      ierr = setupGeometryForSSA(min_thickness_SSA); CHKERRQ(ierr);
       ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
-      ierr = cleanupGeometryAfterSSA(DEFAULT_MINH_SSA); CHKERRQ(ierr);
+      ierr = cleanupGeometryAfterSSA(min_thickness_SSA); CHKERRQ(ierr);
       lastSSAUpdateYear = grid.year;
       ierr = verbPrintf(2,grid.com," "); CHKERRQ(ierr);
 //      ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);

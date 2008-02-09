@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -39,24 +39,9 @@ public:
   IceModel(IceGrid &g, IceType &i);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
-  void setDoTimeStep(PetscTruth);
-  void setTimeStepYears(PetscScalar); // use a constant time step
-  void setMaxTimeStepYears(PetscScalar); // use this value for adaptive stepping
-  void setAdaptTimeStepRatio(PetscScalar);
-  PetscErrorCode setStartYear(PetscScalar);
-  PetscErrorCode setEndYear(PetscScalar);
-  void setInitialAgeYears(PetscScalar d);
-  void setAllGMaxVelocities(PetscScalar);
-  void setNoViewers();
-  void setConstantNuForSSA(PetscScalar);
-  void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
-
-  PetscTruth isInitialized() const;
-
   // see iceModel.cc
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
-  PetscScalar maxdt_temporary; // might be set by additionalAt??Timestep()
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -85,54 +70,14 @@ protected:
    static const int MASK_FLOATING;
    static const int MASK_FLOATING_OCEAN0;
 
-   static const PetscScalar DEFAULT_START_YEAR;
-   static const PetscScalar DEFAULT_RUN_YEARS;
-
-  //used in iMutil.cc
-   static const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE;
-   static const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT;
-   static const PetscScalar DEFAULT_ADAPT_TIMESTEP_RATIO;
-
-  //used in iMIO.cc and iMIOnetcdf.cc
-   static const PetscScalar DEFAULT_h_VALUE_MISSING;
-   static const PetscScalar DEFAULT_H_VALUE_MISSING;
-   static const PetscScalar DEFAULT_BED_VALUE_MISSING;
-   static const PetscScalar DEFAULT_ACCUM_VALUE_MISSING;
-   static const PetscScalar DEFAULT_SURF_TEMP_VALUE_MISSING;
-   static const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING;
-
-  //used in iMvelocity.cc, iMsia.cc, iMssa.cc
-   static const PetscScalar DEFAULT_MINH_SSA;  // m; minimum thickness for SSA velocity computation
-   static const PetscScalar DEFAULT_MIN_SHEET_TO_DRAGGING;   // m/a; critical SIA speed for switch SIA --> SSA
-   static const PetscScalar DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET;  // m/a; crit SSA speed for switch SSA --> SIA
-   static const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET;    // m/a; crit SIA speed for switch SSA --> SIA
-   static const PetscScalar DEFAULT_MAX_VEL_FOR_CFL;  // max velocity used in CFL calculation if velocity is not actually calculated  (which would be weird)
-   static const PetscScalar DEFAULT_MAXSLOPE_SSA; // no units/pure number; cap to avoid bad behavior
-   static const PetscScalar DEFAULT_EPSILON_SSA;  // units?;  initial amount of (denominator) regularization in
-  // computation of effective viscosity
-   static const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA;  // no units/pure number; epsilon goes up by this ratio when
-  // previous value failed
-   static const PetscScalar DEFAULT_VERT_VEL_SSA;  // temp evolution uses this value; incompressibility not satisfied
-   static const PetscScalar DEFAULT_BASAL_DRAG_COEFF_SSA;
-   static const PetscScalar DEFAULT_TAUC;
-   static const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING;  // note less than ice.meltingTemp;
-  // if above this value then decide to slide
-   static const PetscScalar DEFAULT_INITIAL_AGE_YEARS;  // age for ice to start age computation
-   static const PetscScalar DEFAULT_GRAIN_SIZE;  // size of ice grains when assumed constant
-
-  // used in iMtemp.cc
-  static const PetscScalar DEFAULT_OCEAN_HEAT_FLUX;
-  static const PetscScalar DEFAULT_MAX_HMELT;
-
   IceGrid        &grid;
-
-  PolarStereoParams  psParams;
 
   IceType        &ice;
   BasalType      *basal;
   BedrockType    bedrock;
   SeaWaterType   ocean;
   FreshWaterType porewater;
+  PolarStereoParams  psParams;
   
   NCTool         nct;
 
@@ -158,15 +103,15 @@ protected:
   IceModelVec3Bedrock Tb3;
 
   // parameters
-  PetscScalar maxdt, muSliding, enhancementFactor;
-  PetscScalar dt, dtTempAge;    // current mass cont. and temp/age time steps in seconds
-  PetscScalar dt_force;
-  PetscScalar constantNuForSSA, constantHardnessForSSA,
+  PetscScalar maxdt, muSliding, enhancementFactor, grain_size_default, initial_age_years_default;
+  PetscScalar dt, dtTempAge, dt_force;    // current mass cont. and temp/age time steps in seconds
+  PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
-              ssaRelativeTolerance, ssaEpsilon;
+              ssaRelativeTolerance, ssaEpsilon, beta_default_drag_SSA;
   PetscInt    ssaMaxIterations;
-  PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization;
-  PetscScalar startYear, endYear;
+  PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
+              tauc_default_value;
+  PetscScalar startYear, endYear, run_year_default, maxdt_temporary;
   PetscScalar ssaIntervalYears, gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
   PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax;
@@ -174,9 +119,9 @@ protected:
                                     // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
-  PetscScalar isothermalFlux_n_exponent;
+  PetscScalar isothermalFlux_n_exponent, min_temperature_for_SIA_sliding, Hmelt_max;
   PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel, maxLowTempCount;
-  PetscScalar globalMinAllowedTemp;
+  PetscScalar globalMinAllowedTemp, oceanHeatFlux;
 
   // flags
   PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
@@ -212,6 +157,16 @@ protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
+  void setMaxTimeStepYears(PetscScalar); // use this value for adaptive stepping
+  void setAdaptTimeStepRatio(PetscScalar);
+  PetscErrorCode setStartYear(PetscScalar);
+  PetscErrorCode setEndYear(PetscScalar);
+  void setInitialAgeYears(PetscScalar d);
+  void setAllGMaxVelocities(PetscScalar);
+  void setNoViewers();
+  void setConstantNuForSSA(PetscScalar);
+  void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
+  PetscTruth isInitialized() const;
   PetscErrorCode updateSurfaceElevationAndMask();
   PetscErrorCode massBalExplicitStep();
   int intMask(PetscScalar);
@@ -324,12 +279,6 @@ protected:
   PetscTruth  doPDD, doPDDTrueRand, pddStuffCreated, pddRandStuffCreated;
   PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, 
               pddSummerWarming, pddSummerPeakDay;
-  static const PetscScalar DEFAULT_PDD_STD_DEV;
-  static const PetscScalar DEFAULT_PDD_FACTOR_SNOW;
-  static const PetscScalar DEFAULT_PDD_FACTOR_ICE;
-  static const PetscScalar DEFAULT_PDD_REFREEZE_FRAC;
-  static const PetscScalar DEFAULT_PDD_SUMMER_WARMING;
-  static const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY;
   PetscErrorCode initPDDFromOptions();
   PetscErrorCode updateSurfaceBalanceFromPDD();
   PetscErrorCode putBackSnowAccumPDD();

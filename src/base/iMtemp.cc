@@ -190,7 +190,7 @@ PetscErrorCode IceModel::temperatureStep() {
           // *half* a segment
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
           D[k0] = 1.0 + 2.0 * iceR; U[k0] = - 2.0 * iceR;
-          rhs[k0] = T[0] + 2.0 * dtTempAge * DEFAULT_OCEAN_HEAT_FLUX / (rho_c_I * dzEQ);
+          rhs[k0] = T[0] + 2.0 * dtTempAge * oceanHeatFlux / (rho_c_I * dzEQ);
           if (!isMarginal) {
             rhs[k0] += dtTempAge * (Sigma[0] - UpTu - UpTv - UpTw) / 2;
           }
@@ -351,7 +351,7 @@ PetscErrorCode IceModel::temperatureStep() {
       basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
 
       // limit Hmelt by default max
-      Hmeltnew = PetscMin(DEFAULT_MAX_HMELT,Hmeltnew);
+      Hmeltnew = PetscMin(Hmelt_max, Hmeltnew);
 
       // eliminate basal water if floating
       if (modMask(mask[i][j]) == MASK_FLOATING) {

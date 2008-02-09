@@ -119,7 +119,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  
 <h2>The PISM source code</h2>
 
-<h3> Overview</h3>  
+<h3>Overview.</h3>  
 PISM is implemented as a collection of C++ object classes, the most central of which is \c IceModel.  
 There are five basic classes to know about, the sources for each of which are in \c pism/src/base/:
   - \c MaterialType.  Various materials are derived from the class \c MaterialType which merely defines 
@@ -146,7 +146,7 @@ Additional classes are \c Data1D and \c LocalInterpCtx but these are details.
 <i>CITATIONS CAN BE FIGURED OUT BY LOOKING IN <tt>pism/src/doc/ice_bib.bib</tt>; SOMEDAY I'LL 
 FIGURE OUT HOW TO GET CITATIONS IN doxygen.</i>
  
-<h3>IceModel: Overview</h3>
+<h3>IceModel: Overview.</h3>
 The methods for \c IceModel are many.  In addition to numerics, they initialize the model 
 (from input data files; several derived classes initialize from formulas describing simplified 
 geometry experiments or exact solutions), they read user options, they allocate arrays in a 
@@ -193,7 +193,7 @@ http://www-unix.mcs.anl.gov/petsc/petsc-as/.
 
 Although PISM is a C++ program, PETSc is a C library.  All PISM calls to PETSc use standard (ANSI) C.
 
-<h3>PETSc types</h3>
+<h3>PETSc types.</h3>
 Most important variables in a PETSc program are of these types:
   - \c DA
   - \c Vec
@@ -203,100 +203,212 @@ In fact most of the PETSc types merely declare pointers, but these types should 
 as abstract data types.  Variables must be created with calls to functions like \c DACreate2d(), 
 \c VecCreate(), etc., and destroyed when no longer needed.
 
-<h3>Distributed arrays and vectors</h3>
+<h3>Distributed arrays and vectors.</h3>
 PETSc has an abstract date type called a Distributed Array (type \c DA).  \c DAs contain 
 information about the grid and stencil.  They set up \e ghosted values which are intended to
 duplicate the values on neighboring processors so communication can be done in big batches.
 
-Vectors (type \verb|Vec|) are created with \texttt{DAVecCreate()} and similar. These vectors will be distributed across the processors as indicated by the distributed array.
+Vectors (type \c Vec) are created \e using a \c DA with \c DAVecCreate() and similar 
+procedures.  These vectors are distributed across the processors according to the information
+in the \c DA.  Just for emphasis: <i>PISM distributes itself across the processors by calling
+PETSc procedures which create a \c DA</i>.
 
-There are two parameters of note: stencil type and stencil width.  The stencil types are
-\verb|DA_STENCIL_STAR| and \verb|DA_STENCIL_BOX|.  They are generalizations of the five
-point and nine point stencils typical of two dimensional discretizations respectively.  In
-particular, \verb|DA_STENCIL_STAR| indicates that ghosted points (information owned by a
-different processor) will be needed only along the coordinate axes while
-\verb|DA_STENCIL_BOX| indicates that ghosted points will be needed in the box shaped
-region surrounding each point.  The stencil width indicates how many points in each
-direction will be needed.  We never need a stencil width greater than 1 and only need BOX
-style stencils when gradient terms must be evaluated on a staggered grid ($h$ in SIA
-velocity and $\bar{u},\bar{v}$ in computation of effective viscosity in SSA
-velocity).  Keeping all other two dimensional vectors on a STAR type stencil
-would reduce the necessary communication slightly, but would complicate the code.  For this
-reason, all two dimensional vectors are kept on a box type distributed array.
+There are two parameters of note when creating a \c DA: \e stencil \e type and 
+\e stencil \e width.  
 
-The three dimensional distributed arrays are aligned so that they have the same horizontal
-extent as the associated two dimensional distributed array, but have complete vertical
-extent. One point of confusion is the redefinition of the $x,y,z$ axes. Contrary to the
-PETSc default, our $z$ axis changes most rapidly through memory while the $x$ axis changes
-most slowly. That is, our C style arrays will be addressed as \texttt{u[i][j][k]} where
-$\texttt{i,j,k}$ are the coordinate indices in the directions $x,y,z$ respectively.
+The stencil types are \c DA_STENCIL_STAR and \c DA_STENCIL_BOX.  
+They are generalizations of the five point and nine point stencils typical of two-dimensional 
+discretizations of second order partial derivatives.  Using \c DA_STENCIL_STAR means
+that ghosted points are needed only along the coordinate axes, while \c DA_STENCIL_BOX 
+indicates that ghosted points are needed in the box-shaped region surrounding each point, 
+and thus each processor.  (On processor \e N, information owned by a neighboring processor 
+but duplicated onto \e N is called \e ghosted.  A picture is worth a thousand words here, so 
+find the appropriate picture in the PETSc manual!)  We only need \c BOX style stencils when gradient 
+terms must be evaluated on a staggered grid (\e h in SIA regions and \f$\bar{u},\bar{v}\f$
+in the computation of effective viscosity in SSA regions).  Keeping all other 
+two-dimensional vectors on a \c STAR type stencil would reduce the necessary communication
+slightly, but for now all two dimensional arrays are based on \c BOX.
 
-DA-based vectors can be accessed by \texttt{DAVecGetArray()} and restored with
-\texttt{DAVecRestoreArray()}. The resulting pointer should be addressed using normal
-multidimensional array indexing where values range over the global array.
+The stencil width indicates how many points in each direction will be needed.  We never 
+need a stencil width greater than 1.
 
-PETSc DA based vectors can be ``local'' or ``global''. Local vectors include space for the
-ghosted points. That is, when \texttt{DAVecGetArray()} is called, the resulting array can
-be indexed on all the ghosted points. However, all vector operations act only on the local
-portion. \texttt{DALocalToLocalBegin()} and then \texttt{DALocalToLocalEnd()} should be
-called to update the ghost points before they will be needed. Global vectors do not hold
-ghosted values, but array operations will act on the entire vector. Hence local vectors
-typically need to be mapped to global vectors before viewing or using in a linear system.
-This is achieved with \texttt{DALocalToGlobal()}.
+The three dimensional distributed arrays are distributed across processors in the same way
+as two-dimensional arrays, in the sense that <i>each column of the ice (or bedrock in that 
+thermal model) is owned by exactly one processor</i>.  From the point of view of parallelization,
+our problem is two-dimensional.  All three-dimensional arrays have stencil type \c STAR in the 
+horizontal directions.
 
-\subsubsection*{Solving linear systems}
-PETSc is designed for solving large, sparse systems in a distributed environment.
-Iterative methods are the name of the game and especially Krylov subspace methods such as
-conjugate gradients and GMRES. For consistency, all methods use the Krylov subspace
-interface. For this, the user declares an object of type \texttt{KSP}. Various options can
-be set and the preconditioner context can be extracted. PETSc has an options database
-which holds command line options. To allow these options to influence the \t{KSP}, one
-should call \t{KSPSetFromOptions()} prior to solving the system. The default method is
+One point of confusion (we admit ...) is the redefinition of the \f$x,y,z\f$ axes. Contrary 
+to the PETSc default, our \f$z\f$ axis changes most rapidly through memory while the
+\f$x\f$ axis changes most slowly.  The desirable consequence, however, is that our C
+arrays are addressed as <tt>u[i][j][k]</tt> where <tt>i,j,k</tt> are the coordinate 
+indices in the directions \f$x,y,z\f$ respectively.
+
+<h3>Accessing the processor's part of a DA-managed Vec.</h3>
+\c DA -based vectors must be accessed by a call to \c DAVecGetArray() before the access and
+a call to \c DAVecRestoreArray() after.  This just means that one gets a valid pointer 
+to the actual memory, for the abstract data type \c Vec.  The point has type 
+<tt>double**</tt> for a 2-dimensional array and type <tt>double***</tt> for a 3-dimensional 
+array.
+
+The resulting pointer can be addressed using normal (to the extent that C is "normal" in 
+this regard ...) multidimensional array indexing.  Furthermore, the indices themselves 
+allow one to pretend that the given processor is addressing the entire array, even though only a
+chunk is stored on the local processor.  <i>No message passing occurs here.</i>  Instead, the crucial
+idea is that the \c DA knows what are the valid index ranges for each processor.  That's why 
+essentially all loops over two dimensional arrays in PISM look like this:
+
+\code
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+
+    ... H[i][j] ...
+    
+    ... ubar[i][j] ...
+    
+    ... T[i][j][k] ...
+
+    }
+  }
+\endcode
+
+The integers \c grid.xs, \c grid.xm, \c grid.ys, \c grid.ym, are just the numbers that come
+from a call to \c DAGetLocalInfo(), just after the \c DA is created.
+
+<h3>``Local'' versus ``global'' Vecs</h3>
+PETSc \c DA -based vectors can be ``local'' or ``global''.   (This weird PETSc language should
+probably be translated as ``has ghosts'' or ``sans ghosts''.)  ``Local'' vectors include 
+space for the ghosted points.  That is, when \c DAVecGetArray() is called, the resulting 
+array can be indexed on all of the local portion owned by the processor, \e plus the 
+ghosted points.  The processor owns \e copies of the values at grid points owned by the neighboring
+processors, according to the stencil type and stencil width in the \c DA.  The processor should 
+treat these ghost values as ``read-only'', because of what happens at the communication stage 
+(which we describe in a moment).
+
+\e Example.  We create a local \c Vec \c v which we want to have \c STAR type stencil.  Assuming 
+\c da is \c DA created with \c DA_STENCIL_STAR then we do this to create \c v and get an array 
+pointer \c arr into the local portion of it:
+\code
+   DACreateLocalVector(da, &v);
+   DAVecGetArray(da, v, &arr);
+\endcode
+Now the processor can access <tt>arr[i][j]</tt> for every 
+\code 
+   grid.xs <= i <= grid.xs + grid.xm - 1
+\endcode
+and
+\code 
+   grid.ys <= j <= grid.ys + grid.ym - 1
+\endcode
+But this is just the regular (owned by the processor) portion.  In addition, all of these 
+are valid for every \c i and \c j in the above ranges:
+\code
+   arr[i+1][j],   arr[i-1][j],   arr[i][j+1],   arr[i][j-1].
+\endcode
+(\e If the \c da were of type \c DA_STENCIL_BOX then, in addition 
+\code
+   arr[i+1][j+1],   arr[i-1][j+1],   arr[i+1][j-1],   arr[i-1][j-1].
+\endcode
+would all be valid.)  Once the processor is done with modifying its portion of \c v (i.e. not including 
+the ghosts, although it may read them) then we would want to update the ghost values so that
+all processors agree on the values at those grid points:
+\code
+   DAVecRestoreArray(da, v, &arr);
+   DALocalToLocalBegin(da, v, INSERT_VALUES, v);
+   DALocalToLocalEnd(da, v, INSERT_VALUES, v);
+\endcode
+(Note we release the array pointer before the communication stage, although that may not be
+essential.)
+
+\c DALocalToLocalBegin() and then \c DALocalToLocalEnd() are called to update (communicate) the 
+ghosted values before the next stage at which they will be needed.  This pair of commands 
+perform a stage of actual (MPI) message passing.  Only enough values are passed around to 
+update the ghosts.  The size of the messages is relatively small, and <i>latency is more important
+(in slowing performance) than bandwidth</i>.  The significance of \c STAR versus \c BOX is not
+in the size of the extra memory, but in the extra messages which must be passed to the ``diagonal''
+neighboring processors.
+
+Global vectors do not hold ghosted values.  Certain array operations are more appropriate to
+these kind of vectors, like viewing arrays in graphics windows.  (Of course, viewing an array 
+distributed across all the processors requires message passing.  I think PETSc sends all the
+values to processor 0 to display then.)  In any case, when ghosts are not needed there is
+no need to allocate space for them, and a ``global'' \c Vec is appropriate.  Local vectors
+typically need to be mapped to global vectors before viewing or using in a linear system, but
+this is an entirely ``local'' operation which does not require message passing (\c DALocalToGlobal()).
+
+
+<h2>Solving linear systems</h2>
+
+PETSc is designed for solving large, sparse systems in parallel.  Iterative methods are 
+the name of the game and especially Krylov subspace methods such as conjugate gradients and 
+GMRES CITE{TrefethenBau,Saad}.  For consistency, all methods use the same 
+Krylov-subspace-method-with-preconditioner \c KSP interface, even though some are really direct 
+methods.
+
+The place in PISM where this is already used is in the solution of the linearized SSA velocity
+problem.  See the documentation for IceModel::velocitySSA() and IceModel::assembleSSAMatrix() 
+in this \e Manual.
+
+One starts by declaring an object of type \c KSP; in PISM this is done in IceModel::createVecs().
+Various options can be set by the program, but, if the program calls \c KSPSetFromOptions() 
+before any linear systems are solved, which PISM does, then user options like 
+\c -ksp_type, \c -pc_type, and \c -ksp_rtol can be read to control (respectively) 
+which Krylov method is used, which preconditioner is used, and what relative 
+tolerance will be used as the convergence criterion of the Krylov solver.  The default is
 GMRES(30) with ILU preconditioning.
 
-To solve the system, a matrix must be attached to the \t{KSP}. The first time
-\t{KSPSolve()} is called, the matrix will be factored by the preconditioner and reused
-when the system is called for additional right hand sides. The default matrix format is
-similar to the Matlab \t{sparse} format. Each processor owns a range of rows. Elements in
-matrices and vectors can be set using \t{MatSetValues()} and \t{VecSetValues()}. These
-routines use the global indexing and can set values on any processor. The values are
-cached until one calls \t{MatAssemblyBegin()} followed by \t{MatAssemblyEnd()} to
+(As a general mechanism, PETSc has an options database which holds command line options.
+All PISM options use this database.  See IceModel::setFromOptions().)
+
+To solve the system, a matrix must be attached to the \c KSP.  The first time
+\c KSPSolve() is called, the matrix will be factored by the preconditioner and reused
+when the system is called for additional right hand sides.  In the case of PISM and the 
+solution of the balance of momentum equations for the SSA, the matrix changes because the
+equations are nonlinear (because the effective viscosity depends on the strain rates).
+
+The default matrix format is similar to the \e Matlab \c sparse format.  Each processor
+owns a range of rows.  Elements in matrices and vectors can be set using \c MatSetValues()
+and \c VecSetValues().  These routines use a ``global'' indexing which is not based on the regular
+grid and stencil choices in the \c DA.  One can set any value on any processor but a lot of
+message passing has to occur; fortunately PETSc manages that all.  Values are
+cached until one calls \c MatAssemblyBegin() followed by \c MatAssemblyEnd() to
 communicate the values.
 
-In the SSA velocity computation, the solution and right hand side vectors are not DA
-based.
+In fact, in the SSA velocity computation, the matrix, the solution and right hand side 
+vectors are not DA based.  The solution is moved into DA based arrays (for vertically-averaged 
+velocity) by IceModel::moveVelocityToDAVectors() and IceModel::broadcastSSAVelocity().
 
-The vector (field) components are interlaced and distributed. This seemed to be the
+The vector (field) components are interlaced and distributed.  This seemed to be the
 most straightforward method to solve the system (as opposed to using more advanced
-features intended for multiple degrees of freedom on DA based vectors). This also allows
+features intended for multiple degrees of freedom on DA based vectors).  This also allows
 the matrix to have an optimal parallel layout.
 
-\subsubsection*{PETSc utility functions}
-The \t{PetscViewer} interface allows PETSc objects to be displayed. This can be in binary
-to disk, in plain text to the terminal, in graphical form to an X server, to a running
-instance of Matlab, etc. Typically, one will want to view an entire vector, not just the
-local portion, so DA based local vectors are mapped to global vectors before viewing.
+<h3>Additional PETSc utility functions</h3>
+The \c PetscViewer interface allows PETSc objects to be displayed.  One can ``view''
+a \c Vec to a graphical (X) window, but the ``view'' can be saving the \c Vec to a binary
+file on disk, in plain text to the terminal (standard out), or even by sending to a running
+instance of \e Matlab.  (This last capability is not used yet in PISM.)
 
-When viewing multiprocessor jobs, the display may have to be set on the command line, for instance as
-\t{-display :0} or similar; this must be given as the final option.  For example,
-
-\verb|mpiexec -n 2 pismv -test C -Mx 101 -My 101 -Mz 31 -y 1000 -d HT -display :0|
-
-\noindent views a two processor run of test C.
-
-PETSc allows the programmer to access command line arguments at any time during program
-execution. This is preferable to using \t{getopt.h} for this purpose.
+When viewing \c Vec s graphically in multiprocessor jobs, the display may have to be 
+set on the command line, for instance as <tt>-display :0</tt> or similar; this must be given 
+as the final option.  For example,
+\code
+   mpiexec -n 2 pismv -test C -Mx 101 -My 101 -Mz 31 -y 1000 -d HT -display :0
+\endcode
+allows a two processor run to view (graphically) both the ice thickness (<tt>-d H</tt>)
+and the ice temperature (<tt>-d T</tt>).
 
 Quite ellaborate error tracing and performance monitoring is possible with PETSc.  All
-functions return \t{PetscErrorCode} which should be checked by the macro \t{CHKERRQ()}.
-Normally, runtime errors print traceback information when the program exits.  If this
-information is not present, you may need to use a debugger which is accessible with the
-command line options \verb|-start_in_debugger| and \verb|-on_error_attach_debugger|.  Also
-consider options such as \verb|-log_summary| to get diagnostics written to the terminal.
+functions return \c PetscErrorCode which should be checked by the macro \c CHKERRQ().
+Therefore runtime errors normally print sufficient traceback information.
 
+If this information is not present (because the error did not get traced back), you 
+may need to use a debugger which is accessible with the command line (PETSc) options 
+\c -start_in_debugger and \c -on_error_attach_debugger.  
 
+Option \c -log_summary is useful to get some diagnostics written to the terminal.
 
- * @endcond
+@endcond
  */
 
 

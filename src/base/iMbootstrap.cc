@@ -139,6 +139,13 @@ We read only 2D information from the bootstrap file.
  */
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
+
+  const PetscScalar DEFAULT_H_VALUE_MISSING = 0.0;
+  const PetscScalar DEFAULT_BED_VALUE_MISSING = -5000.0;
+  const PetscScalar DEFAULT_ACCUM_VALUE_MISSING = -0.5/ secpera;
+  const PetscScalar DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
+  const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
+
   int stat;
   PetscInt psExists=0, lonExists=0, latExists=0, accumExists=0, hExists=0, HExists=0, bExists=0,
       TsExists=0, ghfExists=0, upliftExists=0, balvelExists=0,
@@ -359,8 +366,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   // fill in other 3D fields
-  setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
-  setConstantGrainSize(DEFAULT_GRAIN_SIZE);
+  setInitialAgeYears(initial_age_years_default);
+  setConstantGrainSize(grain_size_default);
 
   verbPrintf(2, grid.com, "bootstrapping by PISM default method done\n");
   initialized_p = PETSC_TRUE;

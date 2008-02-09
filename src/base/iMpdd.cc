@@ -65,14 +65,6 @@ PetscErrorCode IceModel::initPDDFromOptions() {
       pddRandStuffCreated = PETSC_FALSE;
     }
 
-    // see iMdefaults.cc for values of DEFAULT_PDD_...
-    pddFactorSnow = DEFAULT_PDD_FACTOR_SNOW;
-    pddFactorIce = DEFAULT_PDD_FACTOR_ICE;
-    pddRefreezeFrac = DEFAULT_PDD_REFREEZE_FRAC;
-    pddSummerPeakDay = DEFAULT_PDD_SUMMER_PEAK_DAY;
-    pddSummerWarming = DEFAULT_PDD_SUMMER_WARMING;
-    pddStdDev = DEFAULT_PDD_STD_DEV;
-
     PetscTruth   pSet;
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_snow", &pddFactorSnow, &pSet); CHKERRQ(ierr);
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_ice", &pddFactorIce, &pSet); CHKERRQ(ierr);

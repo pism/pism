@@ -343,8 +343,9 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
     // all of these relate to models which should be turned off ...
     ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
-    setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
-    setConstantGrainSize(DEFAULT_GRAIN_SIZE);  // no Goldsby-Kohlstedt
+    // none use Goldsby-Kohlstedt or do age calc
+    setConstantGrainSize(grain_size_default);
+    setInitialAgeYears(initial_age_years_default);
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no bed deformation
     ierr = VecSet(vTs, ice.meltingTemp); CHKERRQ(ierr);
     ierr = T3.setToConstant(ice.meltingTemp); CHKERRQ(ierr);

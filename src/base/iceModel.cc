@@ -287,27 +287,24 @@ PetscErrorCode IceModel::destroyVecs() {
 }
 
 
-void IceModel::setTimeStepYears(PetscScalar y) {
-  dt = y * secpera;
-  doAdaptTimeStep = PETSC_FALSE;
-}
-
 void IceModel::setMaxTimeStepYears(PetscScalar y) {
   maxdt = y * secpera;
   doAdaptTimeStep = PETSC_TRUE;
 }
 
+
 void IceModel::setAdaptTimeStepRatio(PetscScalar c) {
   adaptTimeStepRatio = c;
 }
+
 
 PetscErrorCode IceModel::setStartYear(PetscScalar y0) {
   startYear = y0;
   return 0;
 }
 
-PetscErrorCode IceModel::setEndYear(PetscScalar ye) {
-    
+
+PetscErrorCode IceModel::setEndYear(PetscScalar ye) {    
   if (ye < startYear)   {
     SETERRQ(1, "ERROR: ye < startYear.  PISM cannot run backward in time.\n");
   }
@@ -315,15 +312,18 @@ PetscErrorCode IceModel::setEndYear(PetscScalar ye) {
   return 0;
 }
 
+
 void  IceModel::setInitialAgeYears(PetscScalar d) {
   tau3.setToConstant(d*secpera);
 }
+
 
 void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
   gmaxu=uvw_for_cfl;
   gmaxv=uvw_for_cfl;
   gmaxw=uvw_for_cfl;
 }
+
 
 void IceModel::setConstantNuForSSA(PetscScalar nu) {
   useConstantNuForSSA = PETSC_TRUE;
@@ -339,6 +339,7 @@ PetscTruth IceModel::isInitialized() const {
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
 /*!
 This procedure should be called whenever necessary to maintain consistency of geometry.
+
 For instance, it should be called when either ice thickness or bed elevation change. 
 In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
 other hand, we want the mask to reflect that the ice is floating if the floatation 
@@ -402,8 +403,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
             mask[i][j] = MASK_SHEET;
           } else {
             // if frozen to bed or essentially frozen to bed then make it SHEET
-            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] 
-                         < DEFAULT_MIN_TEMP_FOR_SLIDING) { 
+            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] < min_temperature_for_SIA_sliding) { 
               mask[i][j] = MASK_SHEET;
             } else {
               // determine type of grounded ice by vote-by-neighbors
@@ -442,13 +442,13 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 }
 
 
-/// Update the thickness from the horizontal velocity and the surface and basal mass balance.
+//! Update the thickness from the horizontal velocity and the surface and basal mass balance.
 /*! 
 The partial differential equation describing the conservation of mass in the map-plane
 (parallel to the geoid) is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
 where 
-  \f[ \mathbf{q} = \bar{\mathbf{U}} H.\f]
+  \f[ \mathbf{q} = \bar{\mathbf{U}} H. \f]
 In these equations \f$H\f$ is the ice thickness, 
 \f$M\f$ is the surface mass balance (accumulation or ablation), \f$S\f$ is the basal 
 mass balance (e.g. basal melt or freeze-on), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
@@ -563,7 +563,7 @@ PetscErrorCode IceModel::massBalExplicitStep() {
 }
 
 
-/// Do the time-stepping for an evolution run.
+//! Do the time-stepping for an evolution run.
 /*! 
 This important routine can be replaced by derived classes; it is \c virtual.
 
@@ -719,7 +719,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
 }
 
 
-/// Calls the necessary routines to do a diagnostic calculation of velocity.
+//! Calls the necessary routines to do a diagnostic calculation of velocity.
 /*! 
 This important routine can be replaced by derived classes; it is \c virtual.
 
@@ -763,6 +763,7 @@ PetscErrorCode IceModel::diagnosticRun() {
 int IceModel::intMask(PetscScalar maskvalue) {
   return static_cast<int>(floor(maskvalue + 0.5));
 }
+
 
 int IceModel::modMask(PetscScalar maskvalue) {
   int intmask = static_cast<int>(floor(maskvalue + 0.5));

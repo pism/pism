@@ -681,6 +681,8 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
     }
     if (epsilon > 0.0) {
+       // this has no units; epsilon goes up by this ratio when previous value failed
+       const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
        ierr = verbPrintf(1,grid.com,
                   "WARNING: Effective viscosity not converged after %d iterations\n"
                   "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.                  \n",

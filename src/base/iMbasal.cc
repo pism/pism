@@ -39,7 +39,7 @@ PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
 
-  if (T + ice.beta_CC_grad * H > DEFAULT_MIN_TEMP_FOR_SLIDING) {
+  if (T + ice.beta_CC_grad * H > min_temperature_for_SIA_sliding) {
     return basal->velocity(mu, ice.rho * grav * H);
   } else {
     return 0;
@@ -76,8 +76,8 @@ PetscErrorCode IceModel::initBasalTillModel() {
   if (useSSAVelocity == PETSC_TRUE) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
-  ierr = VecSet(vtauc, DEFAULT_TAUC); CHKERRQ(ierr);
-  ierr = VecSet(vbeta, DEFAULT_BASAL_DRAG_COEFF_SSA); CHKERRQ(ierr);
+  ierr = VecSet(vtauc, tauc_default_value); CHKERRQ(ierr);
+  ierr = VecSet(vbeta, beta_default_drag_SSA); CHKERRQ(ierr);
   return 0;
 }
 
@@ -146,9 +146,9 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
           mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
           const PetscScalar overburdenP = ice.rho * grav * H[i][j];
           const PetscScalar pwP = plastic_till_pw_fraction * overburdenP;
-          // note Hmelt == 0 if frozen and  0 <= Hmelt <= DEFAULT_MAX_HMELT always
+          // note Hmelt == 0 if frozen and  0 <= Hmelt <= Hmelt_max always
           //   so  0 <= lambda <= 1 
-          const PetscScalar lambda = Hmelt[i][j] / DEFAULT_MAX_HMELT;
+          const PetscScalar lambda = Hmelt[i][j] / Hmelt_max;
           const PetscScalar N = overburdenP - lambda * pwP;  // effective pressure on till
           if (useConstantTillPhi == PETSC_TRUE) {
             tauc[i][j] = plastic_till_c_0 + plastic_till_mu * N;

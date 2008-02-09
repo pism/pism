@@ -63,7 +63,7 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   } else if (ySet == PETSC_TRUE) {
     ierr = setEndYear(usrRunYears + startYear); CHKERRQ(ierr);
   } else {
-    ierr = setEndYear(DEFAULT_RUN_YEARS + startYear); CHKERRQ(ierr);
+    ierr = setEndYear(run_year_default + startYear); CHKERRQ(ierr);
   }
   
   yearsStartRunEndDetermined = PETSC_TRUE;
@@ -399,7 +399,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
   MPI_Bcast(history, history_len, MPI_CHAR, 0, grid.com);
 
-  setConstantGrainSize(DEFAULT_GRAIN_SIZE); // since it is never read ...
+  setConstantGrainSize(grain_size_default); // since it is never read ...
 
   initialized_p = PETSC_TRUE;
   return 0;

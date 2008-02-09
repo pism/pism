@@ -166,9 +166,9 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = VecSet(vbed, 0);
     ierr = VecSet(vHmelt, 0.0);
     ierr = VecSet(vGhf, G_geothermal);
-    setInitialAgeYears(DEFAULT_INITIAL_AGE_YEARS);
+    setInitialAgeYears(initial_age_years_default);
+    setConstantGrainSize(grain_size_default);  // no expers use Goldsby-Kohlstedt
     ierr = VecSet(vMask, MASK_SHEET);
-    setConstantGrainSize(DEFAULT_GRAIN_SIZE);  // no expers use Goldsby-Kohlstedt
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
     // note height of grid must be great enough to handle max thickness

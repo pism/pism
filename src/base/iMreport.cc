@@ -283,7 +283,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
       if (tempAndAge || (verbosityLevel >= 3)) {
         if (H[i][j] > 0) {
           if (useHomoTemp) {
-            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] >= DEFAULT_MIN_TEMP_FOR_SLIDING)
+            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
               melt += a;
           } else {
             if (Tbase[i][j] >= ice.meltingTemp)
@@ -385,7 +385,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     if (tempAndAge) {
       ierr = PetscPrintf(grid.com, 
            "  maximum |u|,|v|,|w| in ice (m/a): "); CHKERRQ(ierr);
-      if (gmaxu == DEFAULT_MAX_VEL_FOR_CFL) {
+      if ((gmaxu < 0.0) || (gmaxv < 0.0) || (gmaxw < 0.0)) {
         ierr = PetscPrintf(grid.com,            "     <N/A>\n"); CHKERRQ(ierr);
       } else {
         ierr = PetscPrintf(grid.com,            "%10.3f,%10.3f, %9.3f\n",

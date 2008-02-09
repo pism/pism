@@ -39,6 +39,7 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 
   PetscErrorCode ierr;
 
+  const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
   PetscScalar **h, **H, **uvbar[2], **D;
   PetscScalar Dmax = 0.0;
 
@@ -118,6 +119,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
   // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
   // reference: Morton & Mayers 2nd ed. pp 62--63
+  const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
   const PetscScalar  
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_from_diffus = adaptTimeStepRatio

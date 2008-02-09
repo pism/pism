@@ -20,79 +20,45 @@
 #include <cmath>
 #include "iceModel.hh"
 
-// The order of precedence for setting parameters in PISM is:
-//
-//      Default values:
-//              Reasonable values to set up the model with.
-//              IceModel::setDefaults() below does this job and is virtual.  
-//              Ideally all options will have defaults defined here.
-//      Derived class overrides:
-//              The derived class can override these options.
-//      Command line options:
-//              IceModel::setFromOptions().  This method is also virtual.  A derived
-//              class may have its own setFromOptions(), at the beginning of which
-//              IceModel::setFromOptions() should be called.
-//      Data file (input) overrides:
-//              The input (e.g. NetCDF) file may set quantities
-//              The data always has highest precedence.  The user is
-//              warned when their command line options are overridden.
-//
-// Thus the input data takes precedence over command line options which take 
-// precedence over driver overrides which have precedence over the defaults below.
-// The defaults should be reasonable values under all circumstances or they should
-// indicate missing values in some manner.
 
-const PetscScalar IceModel::DEFAULT_START_YEAR = 0;
-const PetscScalar IceModel::DEFAULT_RUN_YEARS = 1000.0;  // years
+const PetscScalar DEFAULT_START_YEAR = 0;
+const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 
 //used in iMutil.C
-const PetscScalar IceModel::DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
-const PetscScalar IceModel::DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
-const PetscScalar IceModel::DEFAULT_ADAPT_TIMESTEP_RATIO = 0.12;  // yes, I'm confident this is o.k.
-
-//used in iMIO.C
-const PetscScalar IceModel::DEFAULT_h_VALUE_MISSING = 0.0;
-const PetscScalar IceModel::DEFAULT_H_VALUE_MISSING = 0.0;
-const PetscScalar IceModel::DEFAULT_BED_VALUE_MISSING = -5000.0;
-const PetscScalar IceModel::DEFAULT_ACCUM_VALUE_MISSING = -0.5/ secpera;
-const PetscScalar IceModel::DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
-const PetscScalar IceModel::DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
+const PetscScalar DEFAULT_ADAPT_TIMESTEP_RATIO = 0.12;  // yes, I'm confident this is o.k.
 
 //used in iMvelocity.C
-const PetscScalar IceModel::DEFAULT_MINH_SSA = 5.0;  // m; minimum thickness for SSA velocity computation
-const PetscScalar IceModel::DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> SSA
-const PetscScalar IceModel::DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch SSA --> SIA
-const PetscScalar IceModel::DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch SSA --> SIA
-const PetscScalar IceModel::DEFAULT_MAXSLOPE_SSA = 1.0e-3; // no units/pure number; cap to avoid bad behavior
-const PetscScalar IceModel::DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
-const PetscScalar IceModel::DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;  // no units/pure number; epsilon goes up by this ratio when
-// previous value failed
-const PetscScalar IceModel::DEFAULT_VERT_VEL_SSA = 0.0;  // temp evolution uses this value; incompressibility not satisfied
-const PetscScalar IceModel::DEFAULT_MAX_VEL_FOR_CFL = 1000.0 / secpera;  // 10 km/a
-//const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_SSA = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
-const PetscScalar IceModel::DEFAULT_BASAL_DRAG_COEFF_SSA = 4.0e9; // seems to work better
-const PetscScalar IceModel::DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
+const PetscScalar DEFAULT_MINH_SSA = 5.0;  // m; minimum thickness for SSA velocity computation
+const PetscScalar DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> SSA
+const PetscScalar DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch SSA --> SIA
+const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch SSA --> SIA
+const PetscScalar DEFAULT_MAXSLOPE_SSA = 1.0e-3; // no units/pure number; cap to avoid bad behavior
+const PetscScalar DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
+const PetscScalar DEFAULT_VERT_VEL_SSA = 0.0;  // temp evolution uses this value; incompressibility not satisfied
+//const PetscScalar DEFAULT_BASAL_DRAG_COEFF_SSA = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
+const PetscScalar DEFAULT_BASAL_DRAG_COEFF_SSA = 4.0e9; // seems to work better
+const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 //used in iMvelocity.C and iMutil.C
-const PetscScalar IceModel::DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
+const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
      // ice.meltingTemp; if above this value then decide to slide
-const PetscScalar IceModel::DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
-const PetscScalar IceModel::DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when assumed constant; for gk ice
-const PetscScalar IceModel::DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
+const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
+const PetscScalar DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when assumed constant; for gk ice
+const PetscScalar DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
         // about 4 times more heating than peak of 
         // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
-const PetscScalar IceModel::DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
+const PetscScalar DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
 
 // see iMpdd.cc
-const PetscScalar IceModel::DEFAULT_PDD_STD_DEV = 5.0;  // K
-const PetscScalar IceModel::DEFAULT_PDD_FACTOR_SNOW = 0.003;  // (m ice-equivalent) day^-1 (deg C)^-1
-const PetscScalar IceModel::DEFAULT_PDD_FACTOR_ICE  = 0.008;  // (m ice-equivalent) day^-1 (deg C)^-1
-const PetscScalar IceModel::DEFAULT_PDD_REFREEZE_FRAC = 0.6;  // [pure fraction]
-const PetscScalar IceModel::DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
+const PetscScalar DEFAULT_PDD_STD_DEV = 5.0;  // K
+const PetscScalar DEFAULT_PDD_FACTOR_SNOW = 0.003;  // (m ice-equivalent) day^-1 (deg C)^-1
+const PetscScalar DEFAULT_PDD_FACTOR_ICE  = 0.008;  // (m ice-equivalent) day^-1 (deg C)^-1
+const PetscScalar DEFAULT_PDD_REFREEZE_FRAC = 0.6;  // [pure fraction]
+const PetscScalar DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
      // re SUMMER_WARMING:  (30.38 - 0.006277 * 1000.0 - 0.3262 * 75.0)
      //                    - (49.13 - 0.007992 * 1000.0 -0.7576 * 75.0)
      //                   =  15.32   K
      // is result of EISMINT-GREENLAND formulas for h=1000.0 m and lat=75.0 deg N
-const PetscScalar IceModel::DEFAULT_PDD_SUMMER_PEAK_DAY = 243.0;  //  Julian day; August 1st
+const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY = 243.0;  //  Julian day; August 1st
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
@@ -150,11 +116,34 @@ const PetscScalar DEFAULT_TILL_C_0 = 0.0;  // Pa; cohesion of till;
             // for Ice Stream B that exceeds the basal shear stress there ..."
 const PetscScalar DEFAULT_TILL_PHI = 30.0;  // pure number; tan(30^o) = ; till friction angle
 
+
 //! Assigns default values to the many parameters and flags in IceModel.
+/*!
+The order of precedence for setting parameters in PISM is:
+  - default values: Reasonable values to set up the model with are given in setDefaults()
+    and in file pism/src/base/iMdefaults.  setDefaults() is called in the constructor for
+    IceModel.  It would be reasonable to have setDefaults() read the defaults from a
+    (default!) NetCDF file of a format so that others could be substituted.
+  - derived class overrides:  The constructor of a derived class can choose its own 
+    defaults for data members of IceModel (and its own data members).  These will override
+    the above.
+  - command line options:  The driver calls IceModel::setFromOptions() after the instance of
+    IceModel (or a derived class) is constructed.  setFromOptions() is virtual but should 
+    usually be called first if a derived class has a setFromOptions.
+
+The input file (\c -if or \c -bif) will not contain (in Feb 2008 version of PISM) any values 
+for the quantities which are set in setDefaults().  (There are parameters which can be set at
+the command line or by the input file, like \c grid.Mx.  For \c -if the data file has the final
+word but for -bif the command line options have the final word.)
+ 
+The defaults should be reasonable values under all circumstances or they should indicate 
+missing values in some manner.
+ */
 PetscErrorCode IceModel::setDefaults() {
   PetscErrorCode ierr;
   
-  //ierr = PetscPrintf(grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
+
   initialized_p = PETSC_FALSE;
 
   // No X11 diagnostics by default, but allow them
@@ -184,6 +173,8 @@ PetscErrorCode IceModel::setDefaults() {
   useConstantHardnessForSSA = DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA;
   constantNuForSSA = DEFAULT_CONSTANT_NU_FOR_SSA;
   constantHardnessForSSA = DEFAULT_CONSTANT_HARDNESS_FOR_SSA;
+  beta_default_drag_SSA = DEFAULT_BASAL_DRAG_COEFF_SSA;
+  min_thickness_SSA = DEFAULT_MINH_SSA;
   regularizingVelocitySchoof = DEFAULT_REGULARIZING_VELOCITY_SCHOOF;
   regularizingLengthSchoof = DEFAULT_REGULARIZING_LENGTH_SCHOOF;
   ssaRelativeTolerance = DEFAULT_SSA_RELATIVE_CONVERGENCE;
@@ -197,16 +188,28 @@ PetscErrorCode IceModel::setDefaults() {
   plastic_till_c_0 = DEFAULT_TILL_C_0;
   plastic_till_mu = tan((pi/180.0)*DEFAULT_TILL_PHI);
   plasticRegularization = DEFAULT_PLASTIC_REGULARIZATION;
+  tauc_default_value = DEFAULT_TAUC;
   holdTillYieldStress = PETSC_FALSE;
   useConstantTillPhi = PETSC_TRUE;
+  Hmelt_max = DEFAULT_MAX_HMELT;
+  oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
+
+  pddFactorSnow = DEFAULT_PDD_FACTOR_SNOW;
+  pddFactorIce = DEFAULT_PDD_FACTOR_ICE;
+  pddRefreezeFrac = DEFAULT_PDD_REFREEZE_FRAC;
+  pddSummerPeakDay = DEFAULT_PDD_SUMMER_PEAK_DAY;
+  pddSummerWarming = DEFAULT_PDD_SUMMER_WARMING;
+  pddStdDev = DEFAULT_PDD_STD_DEV;
 
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);
-  setAllGMaxVelocities(DEFAULT_MAX_VEL_FOR_CFL);
+  setAllGMaxVelocities(-1.0);
 
+  run_year_default = DEFAULT_RUN_YEARS;
   setStartYear(DEFAULT_START_YEAR);
-  setEndYear(DEFAULT_RUN_YEARS);
+  setEndYear(DEFAULT_RUN_YEARS + DEFAULT_START_YEAR);
   yearsStartRunEndDetermined = PETSC_FALSE;
+  initial_age_years_default = DEFAULT_INITIAL_AGE_YEARS;
 
   doMassConserve = DEFAULT_DO_MASS_CONSERVE;
   doTemp = DEFAULT_DO_TEMP;
@@ -215,9 +218,10 @@ PetscErrorCode IceModel::setDefaults() {
   reportHomolTemps = PETSC_TRUE;
   globalMinAllowedTemp = DEFAULT_GLOBAL_MIN_ALLOWED_TEMP;
   maxLowTempCount = DEFAULT_MAX_LOW_TEMP_COUNT;
-    
+  min_temperature_for_SIA_sliding = DEFAULT_MIN_TEMP_FOR_SLIDING;  
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
   doGrainSize = DEFAULT_DO_GRAIN_SIZE;
+  grain_size_default = DEFAULT_GRAIN_SIZE;
   realAgeForGrainSize = DEFAULT_REAL_AGE_FOR_GRAIN_SIZE;
   isDrySimulation = DEFAULT_IS_DRY_SIMULATION;
   updateHmelt = PETSC_TRUE;
