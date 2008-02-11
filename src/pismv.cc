@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -44,14 +44,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid      g(com, rank, size);
-    IceType*     ice;
-    PetscInt     flowlawNumber = 1;  // use cold part of Paterson-Budd by default
+    IceType*     ice = PETSC_NULL;
     char         testname[20];
     PetscTruth   testchosen, dontReport;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1, com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
-    ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
+    ierr = userChoosesIceType(com, ice, 1); CHKERRQ(ierr); // allocates ice
     
     // determine test (and whether to report error)
     ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, &testchosen); CHKERRQ(ierr);
@@ -63,7 +62,7 @@ int main(int argc, char *argv[]) {
     // actually construct and run one of the derived classes of IceModel
     if ((test == 'I') || (test == 'J')) {
       // run derived class for plastic till ice stream or linearized ice shelf
-      IceExactSSAModel mSSA(g, *ice, test);  
+      IceExactSSAModel mSSA(g, ice, test);  
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
@@ -78,8 +77,8 @@ int main(int argc, char *argv[]) {
       PetscTruth upwindSet;
       ierr = PetscOptionsHasName(PETSC_NULL, "-upwind", &upwindSet); CHKERRQ(ierr);
       IceCompModel*      mComp;
-      IceCompModel       mComp_standard(g, *tgaice, test);
-      IceUpwindCompModel mComp_upwind(g, *tgaice, test);
+      IceCompModel       mComp_standard(g, tgaice, test);
+      IceUpwindCompModel mComp_upwind(g, tgaice, test);
       if (upwindSet == PETSC_TRUE) {
         mComp = (IceCompModel*) &mComp_upwind;
       } else {
@@ -90,16 +89,19 @@ int main(int argc, char *argv[]) {
       ierr = mComp->run(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
-        if ((flowlawNumber != 1) && ((test == 'F') || (test == 'G'))) {
+        PetscInt myFLN;
+        ierr = getFlowLawNumber(myFLN,1); CHKERRQ(ierr);
+        if ((myFLN != 1) && ((test == 'F') || (test == 'G'))) {
             ierr = verbPrintf(1,com, 
                 "pismv WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
-                "   for reported errors in test %c to be meaningful!\n", test);
-                CHKERRQ(ierr);
+                "   for reported errors in test %c to be meaningful!\n", test); CHKERRQ(ierr);
         }
         ierr = mComp->reportErrors();  CHKERRQ(ierr);
       }
       ierr = mComp->writeFiles("verify",PETSC_FALSE); CHKERRQ(ierr);
     }
+    
+    delete ice;
     ierr = verbPrintf(1,com, " ... done\n"); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);

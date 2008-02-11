@@ -175,7 +175,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
             // usual temperature-dependent case; "nu" is really "nu H"!
             ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
             ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-            nu[o][i][j] = ice.effectiveViscosityColumn(schoofReg,
+            nu[o][i][j] = ice->effectiveViscosityColumn(schoofReg,
                                     myH, grid.kBelowHeight(myH), grid.Mz, grid.zlevels, 
                                     u_x, u_y, v_x, v_y, Tij, Toffset);
           }
@@ -505,7 +505,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
           h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
         }
-        const PetscScalar r = ice.rho * grav * H[i][j];
+        const PetscScalar r = ice->rho * grav * H[i][j];
         ierr = VecSetValue(rhs, rowU, -r*h_x, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, -r*h_y, INSERT_VALUES); CHKERRQ(ierr);
       }
@@ -869,7 +869,7 @@ PetscErrorCode IceModel::correctSigma() {
         const PetscScalar beta = PetscSqr(u_x) + PetscSqr(v_y)
                            + u_x * v_y + PetscSqr(0.5*(u_y + v_x));
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        const PetscScalar CC = 4 * beta / (ice.rho * ice.c_p);
+        const PetscScalar CC = 4 * beta / (ice->rho * ice->c_p);
 
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
@@ -879,8 +879,8 @@ PetscErrorCode IceModel::correctSigma() {
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
           // of shelves and streams
-          const PetscScalar pressure = ice.rho * grav * (H[i][j] - grid.zlevels[k]);
-          const PetscScalar mvSigma = CC * ice.effectiveViscosity(schoofReg,
+          const PetscScalar pressure = ice->rho * grav * (H[i][j] - grid.zlevels[k]);
+          const PetscScalar mvSigma = CC * ice->effectiveViscosity(schoofReg,
                                                u_x,u_y,v_x,v_y,T[k],pressure);
           // FIXME: what is the right thing here?  surely should be weighted by f(|v|) factor
           Sigma[k] = (addVels) ? Sigma[k] + mvSigma : mvSigma;

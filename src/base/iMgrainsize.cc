@@ -19,31 +19,6 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-// ELB moved grain size to separate source file 7/16/06: it is a physical model
-
-PetscErrorCode  IceModel::updateGrainSizeIfNeeded() {
-  // This is a front end to the grain size update system.  It initializes the
-  // first time it is called and then performs an update no more often than
-  // gsIntervalYears.
-  PetscErrorCode ierr;
-  static PetscScalar lastGSUpdateYear = grid.year;  // only happens when first called
-
-  // If the current grain sizes are not expired, exit cleanly.
-  if (grid.year - lastGSUpdateYear >= gsIntervalYears) {
-    ierr = updateGrainSizeNow(); CHKERRQ(ierr);
-    lastGSUpdateYear = grid.year;
-    ierr = verbPrintf(2,grid.com, "g"); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-void  IceModel::setConstantGrainSize(PetscScalar d) {
-  gs3.setToConstant(d);
-}
-
 
 //! Compute a grain size from a pseudo-age, which is determined only by the vertical velocity component.
 /*!
@@ -52,7 +27,7 @@ a grain size to compute the softness/viscosity.  To determine the grain size we 
 as a source for a universal relation between the age of the ice and its grain size; see grainSizeVostok().
 
 By default we do not use the full model age, which takes a very long time
-to equilibriate.  (If you want the to use the full model age for this purpose add 
+to equilibriate.  (If you want to use the full model age for this purpose add 
 option <tt>-real_age_grainsize</tt>.)  Instead we compute a pseudo age which uses only 
 the vertical (scalar) component of the velocity field and makes a steady state assumption.
 
@@ -76,83 +51,38 @@ or
     \f[a_k = a_{k+1} - \frac{2(z_{k+1}-z_k)}{w_k + w_{k+1}}.\f]
 This has second order truncation error (at \f$z_{k+1/2}\f$) whether or not vertical grid is equally-spaced.
  */
-PetscErrorCode  IceModel::updateGrainSizeNow() {
-  PetscErrorCode ierr;
-
-  const PetscInt  Mz = grid.Mz;
-  PetscScalar **H;
-  PetscScalar *age, *gs, *w;
-  gs = new PetscScalar[Mz];
-  age = new PetscScalar[Mz];
+PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
+                     const PetscScalar H, const PetscInt Mz, PetscScalar *w, PetscScalar *age_wspace,
+                     PetscScalar **gs) {
+  // don't call this method when realAgeForGrainSize == PETSC_TRUE
+  PetscScalar *age = age_wspace;
   
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; j++) {
-      if (realAgeForGrainSize == PETSC_FALSE) {  // default case
-        // compute pseudo age in column from vertical velocity
-        ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr); 
-        const PetscScalar  old_ice = 1.0e6 * secpera; // A million years
-        const PetscInt     ks = grid.kBelowHeight(H[i][j]);
-        bool               downward = true;
-        age[Mz-1] = 0.0;  // top always new
-        for (PetscInt k = Mz-2; k >= 0; k--) {
-          if (k+1 >= ks) {          // if either z_k or z_k+1 are at top of ice
-            age[k] = 0.0;
-          } else if (!downward) {   // once upward vel has been set, rest of column is old
-            age[k] = old_ice;
-          } else if (w[k] >= 0.0) { // upward (non-downward) velocity found; from now on will be old
-            age[k] = old_ice;
-            downward = false;
-          } else { // at this point we know:   z_k < H,   z_k+1 < H,   w_k < 0,   w_k+1 < 0
-            // implement a_k = a_{k+1} - \frac{2(z_{k+1}-z_k)}{w_k + w_{k+1}}
-            const PetscScalar dz = grid.zlevels[k+1] - grid.zlevels[k];
-            age[k] = age[k+1] - (2.0 * dz) / (w[k] + w[k+1]);
-          }
-        }
-      } else {
-        // transfers values into age
-        ierr = tau3.getValColumnPL(i,j,Mz,grid.zlevels,age); CHKERRQ(ierr); 
-      }
-      
-      // convert age or pseudo-age to grainsize and put in gs3
-      for (PetscInt k = 0; k < Mz; k++) {
-        gs[k] = grainSizeVostok(age[k]);
-      }
-      ierr = gs3.setInternalColumn(i,j,gs); CHKERRQ(ierr); 
+  const PetscScalar  old_ice = 1.0e6 * secpera; // A million years
+  const PetscInt     ks = grid.kBelowHeight(H);
+  bool               downward = true;
+  age[Mz-1] = 0.0;  // top always new
+  for (PetscInt k = Mz-2; k >= 0; k--) {
+    if (k+1 >= ks) {          // if either z_k or z_k+1 are at top of ice
+      age[k] = 0.0;
+    } else if (!downward) {   // once upward vel has been set, rest of column is old
+      age[k] = old_ice;
+    } else if (w[k] >= 0.0) { // upward (non-downward) velocity found; from now on will be old
+      age[k] = old_ice;
+      downward = false;
+    } else { // at this point we know:   z_k < H,   z_k+1 < H,   w_k < 0,   w_k+1 < 0
+      // implement a_k = a_{k+1} - \frac{2(z_{k+1}-z_k)}{w_k + w_{k+1}}
+      const PetscScalar dz = grid.zlevels[k+1] - grid.zlevels[k];
+      age[k] = age[k+1] - (2.0 * dz) / (w[k] + w[k+1]);
     }
   }
-
-  delete [] gs;  delete [] age;
-
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
-
-  // velocitySIAStaggered() uses neighbor values for gs
-  ierr = gs3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = gs3.endGhostComm(); CHKERRQ(ierr);
+      
+  // convert age or pseudo-age to grainsize and put in gs3
+  for (PetscInt k = 0; k < Mz; k++) {
+    (*gs)[k] = grainSizeVostok(age[k]);
+  }
 
   return 0;
 }
-
-/*
-HERE IS AN OLD BLOCK OF CODE PREVIOUSLY IN updateGrainSizeNow(); NOT CLEAR WHAT IT DOES OR ITS HISTORY:
-          const PetscScalar w_prime = (w[k] - w[k+1]) / dz;
-          const PetscScalar x = w_prime * dz / w[k];
-          // This is second order approximation since computing \frac{\log(1 + x)}{x}
-          // has problems as x \to 0
-          age[k] = age[k+1] - (dz / w[k+1]) * (1.0 - x / 2.0);
-WITH COMMENTARY:
-This equation has solution
-     \f[a(z) = a(0) + \int_0^z \frac{dz}{w_0 + w' z} = a(0) + (1/w') \log \frac{w_0 + w'z}{w_0}\f]
-     \f[     = a(0) + (z/w_0) \frac{\log(1 + x)}{x}\f]
-where \f$x = (w' z)/w_0\f$.  Note
-     \f[\log(1 + x)/x = 1 - x/2 + x^2/3 - x^3/4 + \dots\f]
-*/
 
 
 //! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.

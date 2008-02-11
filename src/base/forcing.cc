@@ -39,8 +39,8 @@ Data1D::~Data1D() {
 }
 
 
-// Read data from NetCDF file (specified by a file name) into a Data1D.
-/* Takes NetCDF file name and names of variables for independent variable
+//! Read data from NetCDF file (specified by a file name) into a Data1D.
+/*! Takes NetCDF file name and names of variables for independent variable
     (e.g. time variable) and dependent variable (e.g. temperature anomaly in
     case of ice core data).  Creates instance of Data1D class.  Reads data on
     processor zero.  Allocates sequential Vec on each processor.  Broadcasts
@@ -123,9 +123,8 @@ PetscErrorCode Data1D::getInterpolationCode(int ncid, int vid, int *code) {
 }
 
 
+//! Broadcast sequential Vecs containing ice or sea bed core-derived climate data to each processor.
 PetscErrorCode Data1D::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
-  // spread (broadcast) sequential Vecs containing ice or sea bed core-derived 
-  // climate data to each processor
   
   PetscErrorCode ierr;
   int stat;

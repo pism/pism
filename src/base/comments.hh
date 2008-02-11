@@ -176,7 +176,7 @@ partial differential equations of the continuum model.  In the case of \c IceCom
 
 <h2>PETSc: An overview for PISM users</h2>
 
-The PETSc library \CITE{petsc-user-ref,petsc-efficient} provides essential support for distributed 
+The PETSc library CITE{petsc-user-ref,petsc-efficient} provides essential support for distributed 
 arrays and linear solvers in a parallel computing environment.  ``PETSc'' stands for 
 ``Portable, Extensible Toolkit for Scientific Computation.''  It is a suite of data structures 
 and routines in C for the scalable parallel solution of partial differential equations and their 

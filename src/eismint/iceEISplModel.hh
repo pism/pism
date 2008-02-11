@@ -28,7 +28,7 @@
 class IceEISplModel : public IceEISModel {
 
 public:
-  IceEISplModel(IceGrid &g, IceType &i);
+  IceEISplModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode initFromOptions();
     
 protected:

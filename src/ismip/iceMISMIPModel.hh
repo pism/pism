@@ -75,7 +75,7 @@ struct mismipStatsType {
 class IceMISMIPModel : public IceModel {
 
 public:
-  IceMISMIPModel(IceGrid &g, IceType &i, MISMIPIce &mismip_i);
+  IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode         additionalAtStartTimestep();
@@ -86,7 +86,7 @@ public:
                            const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
 
 protected:
-  MISMIPIce   &mismip_ice;
+  MISMIPIce   *mismip_ice;
   PetscInt    exper, gridmode, runindex;
   char        sliding;
   PetscScalar runtimeyears;

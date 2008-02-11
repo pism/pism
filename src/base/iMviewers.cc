@@ -104,11 +104,11 @@ PetscErrorCode IceModel::createViewers() {
     return 0;
 
   PetscErrorCode ierr;
-  const int nv = 46; // number of viewers in use
+  const int nv = 44; // number of viewers in use
   char viewsInUse[nv] = {'0','1','2','3','4','5',
-                         'A','B','C','D','E','F','G','H','L','Q','R','S',
+                         'A','B','C','D','E','F','H','L','Q','R','S',
                                  'T','U','V','X','Y','Z',
-                         'a','b','c','e','f','g','h','i','j','l',
+                         'a','b','c','e','f','h','i','j','l',
                                  'm','n','p','q','r','s','t','u','v','x',
                                  'y','z'};
 
@@ -131,7 +131,6 @@ PetscErrorCode IceModel::createViewers() {
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &vd); CHKERRQ(ierr);
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &wd); CHKERRQ(ierr);
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &Sigmad); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &gsd); CHKERRQ(ierr);
   ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mz, &taud); CHKERRQ(ierr);
 
   createViewers_done = PETSC_TRUE;
@@ -155,7 +154,6 @@ PetscErrorCode IceModel::destroyViewers() {
   if (vd != PETSC_NULL) { ierr = VecDestroy(vd); CHKERRQ(ierr); }
   if (wd != PETSC_NULL) { ierr = VecDestroy(wd); CHKERRQ(ierr); }
   if (Sigmad != PETSC_NULL) { ierr = VecDestroy(Sigmad); CHKERRQ(ierr); }
-  if (gsd != PETSC_NULL) { ierr = VecDestroy(gsd); CHKERRQ(ierr); }
   if (taud != PETSC_NULL) { ierr = VecDestroy(taud); CHKERRQ(ierr); }
 
   return 0;
@@ -225,12 +223,6 @@ PetscErrorCode IceModel::updateSoundings() {
       ierr = VecSetValues(Sigmad, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
       ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
     }
-    if (runtimeViewers[cIndex('g')] != PETSC_NULL) {
-      ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
-      ierr = gs3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-      ierr = VecSetValues(gsd, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);
-    }
     if (runtimeViewers[cIndex('e')] != PETSC_NULL) {
       ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
       ierr = tau3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
@@ -243,7 +235,6 @@ PetscErrorCode IceModel::updateSoundings() {
 
   // actually view soundings:  
   ierr = updateOneSounding('e',taud,1.0/secpera); CHKERRQ(ierr); // Display in years
-  ierr = updateOneSounding('g',gsd,1000.0); CHKERRQ(ierr); // Display in mm
   ierr = updateOneSounding('s',Sigmad,secpera); CHKERRQ(ierr);
   ierr = updateOneSounding('t',Td,1.0); CHKERRQ(ierr);
   ierr = updateOneSounding('x',ud,secpera); CHKERRQ(ierr);
@@ -414,7 +405,6 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('C', vtauc, 0.001); CHKERRQ(ierr); // display in kPa
   ierr = updateSliceViewer('E', tau3, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
-  ierr = updateSliceViewer('G', gs3, 1000.0); CHKERRQ(ierr); // in mm
   ierr = update2DViewer('H', vH, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('L', vHmelt, 1.0); CHKERRQ(ierr);
   ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
@@ -433,7 +423,6 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = updateSpeed2DViewer('c', vubar, vvbar, secpera, PETSC_TRUE, -3.0); CHKERRQ(ierr);
   // 'e' is sounding
   ierr = update2DViewer('f', vdHdt, secpera); CHKERRQ(ierr);
-  // 'g' is sounding
   ierr = update2DViewer('h', vh, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('l', vbasalMeltRate, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('m', vMask, 1.0); CHKERRQ(ierr);

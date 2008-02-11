@@ -178,7 +178,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
 
-  PetscScalar *gsij, *Tij, *gsoffset, *Toffset;
+  PetscScalar *wij, *gsij, *work_age_space, *Tij, *Toffset;
+  gsij = new PetscScalar[grid.Mz];
+  work_age_space = new PetscScalar[grid.Mz];
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
@@ -189,7 +191,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
 
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = gs3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   ierr = Istag3[0].needAccessToVals(); CHKERRQ(ierr);
   ierr = Istag3[1].needAccessToVals(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].needAccessToVals(); CHKERRQ(ierr);
@@ -206,8 +208,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         if (thickness > 0) { 
           ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
           ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-          ierr = gs3.getInternalColumn(i,j,&gsij); CHKERRQ(ierr);
-          ierr = gs3.getInternalColumn(i+oi,j+oj,&gsoffset); CHKERRQ(ierr);
+          //OLD grainsize: ierr = gs3.getInternalColumn(i,j,&gsij); CHKERRQ(ierr);
+          //OLD grainsize: ierr = gs3.getInternalColumn(i+oi,j+oj,&gsoffset); CHKERRQ(ierr);
+          if (flowLawUsesGrainSize == PETSC_TRUE) {
+            ierr = w3.getInternalColumn(i,j,&wij); CHKERRQ(ierr);
+            //future grainsize: use PetscTruth realAgeForGrainSize to determine what to call
+            ierr = computeGrainSize_PseudoAge(thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
+          }
 
           const PetscInt      ks = grid.kBelowHeight(thickness);  // does validity check for thickness
           const PetscScalar   alpha =
@@ -215,17 +222,26 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
-            const PetscScalar   pressure = ice.rho * grav * (thickness - grid.zlevels[k]);
+            const PetscScalar   pressure = ice->rho * grav * (thickness - grid.zlevels[k]);
 
             // apply flow law; delta[] is on staggered grid so need two neighbors from reg 
             // grid to evaluate T and grain size
-            delta[k] = (2 * pressure * enhancementFactor
-                        * ice.flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure,
-                                   0.5 * (gsij[k] + gsoffset[k]))                          );
+            //OLD grainsize: delta[k] = (2 * pressure * enhancementFactor
+            //                           * ice.flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure,
+            //                                      0.5 * (gsij[k] + gsoffset[k]))                          );
+            //  note that the new method is O(dx) because gs[i+1/2,j] (for example) is approximated by
+            //  gs[i][j]
+            if (flowLawUsesGrainSize == PETSC_TRUE) {
+              delta[k] = (2 * pressure * enhancementFactor
+                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, gsij[k]) );
+            } else {
+              delta[k] = (2 * pressure * enhancementFactor
+                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure) );
+            }
 
             // for Sigma, ignor mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
-            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure / (ice.rho * ice.c_p);
+            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure / (ice->rho * ice->c_p);
 
             if (k>0) { // trapezoid rule for I[k] and K[k]
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
@@ -244,10 +260,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           }  
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-//          const PetscScalar  dzABOVEks = (ks+1 < grid.Mz)
-//                                         ? grid.zlevels[ks+1] - grid.zlevels[ks]
-//                                         : grid.zlevels[grid.Mz-1] - grid.zlevels[grid.Mz-2];
-//          const PetscScalar  Dfoffset = J[ks] + (thickness - ks * dzABOVEks) * I[ks];
           const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
 
           // vertically-averaged velocity; note uvbar[0][i][j] is  u  at right staggered
@@ -274,14 +286,15 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
 
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = gs3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].doneAccessToVals(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].doneAccessToVals(); CHKERRQ(ierr);
   ierr = Istag3[0].doneAccessToVals(); CHKERRQ(ierr);
   ierr = Istag3[1].doneAccessToVals(); CHKERRQ(ierr);
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
-
+  delete [] gsij;  delete [] work_age_space;
+  
   return 0;
 }
 
@@ -337,7 +350,7 @@ PetscErrorCode IceModel::basalSIA() {
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
           // in ice streams this result will be *overwritten* by
           //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-          const PetscScalar P = ice.rho * grav * H[i][j];
+          const PetscScalar P = ice->rho * grav * H[i][j];
           Rb[i][j] = - (P * myhx) * ub[i][j] - (P * myhy) * vb[i][j];
         }
       }

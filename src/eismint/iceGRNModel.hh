@@ -28,7 +28,7 @@
 class IceGRNModel : public IceModel {
 
 public:
-  IceGRNModel(IceGrid &g, IceType &i);
+  IceGRNModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode removeBedDiff();

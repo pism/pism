@@ -157,7 +157,7 @@ PetscScalar MISMIPBasalType::drag(PetscScalar coeff, PetscScalar tauc,
 
 
 
-IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType &i, MISMIPIce &mismip_i) : 
+IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) : 
       IceModel(g, i), mismip_ice(mismip_i) {
 
   // this just fills the data members with non-junk; see setFromOptions() for decent values
@@ -248,20 +248,20 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
       SETERRQ(5,"IceMISMIPModel ERROR:  run index N in '-run N' must be <= 9 in experiments 1 or 2");
     }
     runtimeyears = 3.0e4;
-    ierr = mismip_ice.setA(Aexper1or2[runindex]); CHKERRQ(ierr);  
+    ierr = mismip_ice->setA(Aexper1or2[runindex]); CHKERRQ(ierr);  
   } else if (exper == 3) {
     if (sliding == 'a') {
       if (runindex > 13) {
         SETERRQ(6,"IceMISMIPModel ERROR:  run index N in '-run N' must be <= 13 in experiment 3a");
       }
       runtimeyears = timeexper3a[runindex];
-      ierr = mismip_ice.setA(Aexper3a[runindex]); CHKERRQ(ierr);  
+      ierr = mismip_ice->setA(Aexper3a[runindex]); CHKERRQ(ierr);  
     } else if (sliding == 'b') {
       if (runindex > 15) {
         SETERRQ(7,"IceMISMIPModel ERROR:  run index N in '-run N' must be <= 15 in experiment 3b");
       }
       runtimeyears = timeexper3b[runindex];
-      ierr = mismip_ice.setA(Aexper3b[runindex]); CHKERRQ(ierr);  
+      ierr = mismip_ice->setA(Aexper3b[runindex]); CHKERRQ(ierr);  
     } else {
       SETERRQ(99, "how did I get here?");
     }
@@ -278,7 +278,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   doTemp               = PETSC_FALSE;
   doPlasticTill        = PETSC_FALSE;
   doBedDef             = PETSC_FALSE;
-  doGrainSize          = PETSC_FALSE;
 
   isDrySimulation        = PETSC_FALSE;
   includeBMRinContinuity = PETSC_FALSE;
@@ -318,7 +317,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = verbPrintf(1,grid.com, 
               "initializing MISMIP experiment %d%c\n"
               "    [grid mode %d; run %d (A = %5.4e, MISMIP run length = %5.2f years)] ... \n", 
-              exper,sliding,gridmode,runindex,mismip_ice.getA(),runtimeyears); CHKERRQ(ierr);
+              exper,sliding,gridmode,runindex,mismip_ice->getA(),runtimeyears); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -344,12 +343,11 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     // all of these relate to models which should be turned off ...
     ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
     // none use Goldsby-Kohlstedt or do age calc
-    setConstantGrainSize(grain_size_default);
     setInitialAgeYears(initial_age_years_default);
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no bed deformation
-    ierr = VecSet(vTs, ice.meltingTemp); CHKERRQ(ierr);
-    ierr = T3.setToConstant(ice.meltingTemp); CHKERRQ(ierr);
-    ierr = Tb3.setToConstant(ice.meltingTemp); CHKERRQ(ierr);
+    ierr = VecSet(vTs, ice->meltingTemp); CHKERRQ(ierr);
+    ierr = T3.setToConstant(ice->meltingTemp); CHKERRQ(ierr);
+    ierr = Tb3.setToConstant(ice->meltingTemp); CHKERRQ(ierr);
 
     ierr = VecSet(vAccum, 0.3/secpera); CHKERRQ(ierr);
 
@@ -383,7 +381,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     initialized_p = PETSC_TRUE;
   }
   
-  ierr = mismip_ice.printInfo(2,grid.com); CHKERRQ(ierr);
+  ierr = mismip_ice->printInfo(2,grid.com); CHKERRQ(ierr);
   ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
   
   if (!isInitialized()) {
@@ -392,8 +390,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
   ierr = IceModel::initFromOptions(PETSC_TRUE); CHKERRQ(ierr);  // regridding can happen here
 
-  // FIXME: report on these flags: doTemp=false, doBedDef=false, doPlasticTill=false,
-  //                               doGrainSize=false,
+  // FIXME: report on these flags: doTemp=false, doBedDef=false, doPlasticTill=false
 
   return 0;
 }

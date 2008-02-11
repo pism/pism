@@ -133,7 +133,7 @@ PetscErrorCode IceModel::bedDefSetup() {
         ierr = bdLC.settings(PETSC_FALSE, // turn off elastic model for now
                        grid.Mx,grid.My,grid.dx,grid.dy,
                        2,                 // use Z = 2 for now
-                       ice.rho, bedrock.rho, bedrock.eta, bedrock.D,
+                       ice->rho, bedrock.rho, bedrock.eta, bedrock.D,
                        &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0); CHKERRQ(ierr);
         ierr = bdLC.alloc(); CHKERRQ(ierr);
         // *always* initialize plate from uplift, but make sure uplift (=dbed/dt)
@@ -214,7 +214,7 @@ PetscErrorCode IceModel::bed_def_step_iso() {
   PetscErrorCode ierr;
   Vec vHdiff = vWork2d[0];
 
-  const PetscScalar  f = ice.rho / bedrock.rho;
+  const PetscScalar  f = ice->rho / bedrock.rho;
   ierr = VecWAXPY(vHdiff,-1.0,vHlast,vH); CHKERRQ(ierr);  // Hdiff = H - Hlast
   ierr = VecWAXPY(vbed,-f,vHdiff,vbedlast); CHKERRQ(ierr);  // bed = bedlast - f (Hdiff)
   return 0;

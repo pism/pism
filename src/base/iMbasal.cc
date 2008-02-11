@@ -39,8 +39,8 @@ PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
 
-  if (T + ice.beta_CC_grad * H > min_temperature_for_SIA_sliding) {
-    return basal->velocity(mu, ice.rho * grav * H);
+  if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
+    return basal->velocity(mu, ice->rho * grav * H);
   } else {
     return 0;
   }
@@ -144,7 +144,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
           mask[i][j] = MASK_DRAGGING;  // mark it this way anyway
         } else { // grounded and there is some ice
           mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
-          const PetscScalar overburdenP = ice.rho * grav * H[i][j];
+          const PetscScalar overburdenP = ice->rho * grav * H[i][j];
           const PetscScalar pwP = plastic_till_pw_fraction * overburdenP;
           // note Hmelt == 0 if frozen and  0 <= Hmelt <= Hmelt_max always
           //   so  0 <= lambda <= 1 

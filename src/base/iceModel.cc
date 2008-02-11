@@ -32,22 +32,40 @@ const int IceModel::MASK_FLOATING = 3;
 // (modMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill 
 const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 
-PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum) {
+
+PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN) {
     PetscErrorCode ierr;
     PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
 
+    flowLawNum = defaultFLN;
+
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);
-    if (useGK==PETSC_TRUE) {
-      flowlawSet = PETSC_TRUE;
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);  // takes priority
+    if (useGK == PETSC_TRUE) {
       flowLawNum = 4;
     }
+    return 0;
+}
 
-    ierr = verbPrintf((flowlawSet == PETSC_TRUE) ? 3 : 5,com, 
-        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
-        flowLawNum); CHKERRQ(ierr);
+
+PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice) {
+    PetscErrorCode ierr;
+    ierr = userChoosesIceType(com, ice, 0);  // use Paterson-Budd by default
+    return 0;
+}
+
+
+PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt defaultFLN) {
+    PetscErrorCode ierr;
+    PetscInt       myflowLawNum;
     
-    switch (flowLawNum) {
+    ierr = getFlowLawNumber(myflowLawNum, defaultFLN); CHKERRQ(ierr);
+
+    ierr = verbPrintf(3,com, 
+        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
+        myflowLawNum); CHKERRQ(ierr);
+    
+    switch (myflowLawNum) {
       case 0: // Paterson-Budd
         ice = new ThermoGlenIce;  
         break;
@@ -67,13 +85,13 @@ PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLaw
         ice = new HybridIceStripped;  
         break;
       default:
-        SETERRQ(1,"\nflow law number for to initialize IceModel must be 0,1,2,3,4,5\n");
+        SETERRQ(1,"\nflow law number must be 0,1,2,3,4\n");
     }
     return 0;
 }
 
 
-IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
+IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
   pism_signal = 0;
@@ -101,6 +119,10 @@ IceModel::IceModel(IceGrid &g, IceType &i): grid(g), ice(i) {
   psParams.svlfp = 0.0;  // default polar stereographic projection settings
   psParams.lopo = 90.0;
   psParams.sp = -71.0;
+  
+  ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
+  if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
+  else                      flowLawUsesGrainSize = PETSC_FALSE;
 }
 
 
@@ -157,8 +179,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = w3.create(grid,"wvel",false); CHKERRQ(ierr);        // never diff'ed in hor dirs
   ierr = Sigma3.create(grid,"Sigma",false); CHKERRQ(ierr);   // never diff'ed in hor dirs
   ierr = T3.create(grid,"temp",true); CHKERRQ(ierr);
-  ierr = gs3.create(grid,"grainsize",true); CHKERRQ(ierr);// note velocitySIAStaggered() 
-                                                          // averages grain size in horizontal
   ierr = tau3.create(grid,"age",true); CHKERRQ(ierr);
 
   ierr = Tb3.create(grid,"litho_temp",false); CHKERRQ(ierr);
@@ -233,7 +253,6 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = w3.destroy(); CHKERRQ(ierr);
   ierr = Sigma3.destroy(); CHKERRQ(ierr);
   ierr = T3.destroy(); CHKERRQ(ierr);
-  ierr = gs3.destroy(); CHKERRQ(ierr);
   ierr = tau3.destroy(); CHKERRQ(ierr);
 
   ierr = Tb3.destroy(); CHKERRQ(ierr);
@@ -380,7 +399,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         //   dragging ice shelf in dry case and/or ignor mean sea level elevation
       } else {
 
-        const PetscScalar hfloating = (1-ice.rho/ocean.rho) * H[i][j];
+        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // check whether you are actually floating or grounded
           if (hgrounded > hfloating+1.0) {
@@ -403,7 +422,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
             mask[i][j] = MASK_SHEET;
           } else {
             // if frozen to bed or essentially frozen to bed then make it SHEET
-            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] < min_temperature_for_SIA_sliding) { 
+            if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] < min_temperature_for_SIA_sliding) { 
               mask[i][j] = MASK_SHEET;
             } else {
               // determine type of grounded ice by vote-by-neighbors
@@ -588,21 +607,22 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventRegister(&siaEVENT,    "sia velocity",0);
 PetscLogEventRegister(&ssaEVENT,    "ssa velocity",0);
 PetscLogEventRegister(&velmiscEVENT,"misc vel calc",0);
 PetscLogEventRegister(&beddefEVENT, "bed deform",0);
-PetscLogEventRegister(&grainsizeEVENT,"grain size",0);
 PetscLogEventRegister(&pddEVENT,    "pos deg day",0);
 PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
 PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
+#endif
 
   ierr = verbPrintf(2,grid.com, "%%ybp SIA SSA  # vgatdh Nr  +STEP\n"); CHKERRQ(ierr);  // prototype for flags
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;
   // flags for first do-nothing time step
-  ierr = verbPrintf(2,grid.com,  " $$$$            $$$$$ $$"); CHKERRQ(ierr); 
+  ierr = verbPrintf(2,grid.com,  " $$$            $$$$$ $$"); CHKERRQ(ierr); 
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
   // main loop for time evolution
@@ -620,7 +640,9 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+#if (LOG_PISM_EVENTS)
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
+#endif
 
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
@@ -629,7 +651,9 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
+#endif
 
     // always do vertically-average velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
@@ -637,17 +661,6 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, doPlasticTill ? "p" : "$" ); CHKERRQ(ierr);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
-
-PetscLogEventBegin(grainsizeEVENT,0,0,0,0);
-
-    // now that velocity field is up to date, compute grain size
-    if (doGrainSize == PETSC_TRUE) {
-      ierr = updateGrainSizeIfNeeded(); CHKERRQ(ierr); // prints "g" or "$" as appropriate
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
-
-PetscLogEventEnd(grainsizeEVENT,0,0,0,0);
     
     // adapt time step using velocities and diffusivity, ..., just computed
     bool useCFLforTempAgeEqntoGetTimestep = (doTemp == PETSC_TRUE);
@@ -664,7 +677,9 @@ PetscLogEventEnd(grainsizeEVENT,0,0,0,0);
     //           grid.rank, grid.year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventBegin(tempEVENT,0,0,0,0);
+#endif
     
     bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
     if (tempAgeStep) { // do temperature and age
@@ -675,8 +690,10 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(tempEVENT,0,0,0,0);
 PetscLogEventBegin(pddEVENT,0,0,0,0);
+#endif
 
     // compute PDD; generates surface mass balance, with appropriate ablation area, using snow accumulation
     if (doPDD == PETSC_TRUE) {
@@ -686,8 +703,10 @@ PetscLogEventBegin(pddEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(pddEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);
+#endif
 
     if (doMassConserve == PETSC_TRUE) {
       // update H
@@ -701,7 +720,9 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
+#endif
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 

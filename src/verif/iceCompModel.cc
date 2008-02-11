@@ -30,17 +30,29 @@
 
 PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
-IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
-  : IceModel(g, i), tgaIce(i) {
+IceCompModel::IceCompModel(IceGrid &g, IceType *i, const char mytest)
+  : IceModel(g, i) {
   
   // note lots of defaults are set by the IceModel constructor
   
   testname = mytest;
   
+  tgaIce = (ThermoGlenArrIce *) ice;
+  
   // Override some defaults from parent class
   enhancementFactor = 1.0;
-  f = tgaIce.rho / bedrock.rho;  // for simple isostasy
+  f = tgaIce->rho / bedrock.rho;  // for simple isostasy
   
+  PetscInt       myFLN;
+  PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
+  PetscOptionsGetInt(PETSC_NULL, "-law", &myFLN, &flowlawSet);
+  PetscOptionsHasName(PETSC_NULL, "-gk", &useGK);  // takes priority
+  if (((flowlawSet == PETSC_TRUE) && (myFLN != 1)) || (useGK == PETSC_TRUE)) {
+    verbPrintf(1,grid.com,"WARNING: user set -law or -gk; default flow law should be -law 1 for IceCompModel\n");
+  } else {
+    flowLawNumber = 1;  // use cold part of Paterson-Budd by default
+  }
+
   // defaults for verification
   exactOnly = PETSC_FALSE;
   compVecsCreated = PETSC_FALSE;
@@ -53,7 +65,6 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
   includeBMRinContinuity = PETSC_FALSE;
   doPlasticTill = PETSC_FALSE;
   doPDD = PETSC_FALSE;
-  doGrainSize = PETSC_FALSE;
   if (testname == 'H') {
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_TRUE;
@@ -89,9 +100,9 @@ IceCompModel::IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    bedrock.rho = tgaIce.rho;
-    bedrock.c_p = tgaIce.c_p;
-    bedrock.k = tgaIce.k;
+    bedrock.rho = tgaIce->rho;
+    bedrock.c_p = tgaIce->c_p;
+    bedrock.k = tgaIce->k;
   }
 }
 
@@ -137,9 +148,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
       ierr = verbPrintf(1,grid.com,
               "setting material properties of bedrock to those of ice in Test K\n");
               CHKERRQ(ierr);
-      bedrock.rho = tgaIce.rho;
-      bedrock.c_p = tgaIce.c_p;
-      bedrock.k = tgaIce.k;
+      bedrock.rho = tgaIce->rho;
+      bedrock.c_p = tgaIce->c_p;
+      bedrock.k = tgaIce->k;
       bedrock_is_ice_forK = PETSC_TRUE;
     } else {
       ierr = verbPrintf(1,grid.com,
@@ -204,7 +215,6 @@ PetscErrorCode IceCompModel::initFromOptions() {
     }
 
     // none use Goldsby-Kohlstedt or do age calc
-    setConstantGrainSize(grain_size_default);
     setInitialAgeYears(initial_age_years_default);
     // all have no uplift or Hmelt
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
@@ -299,7 +309,7 @@ PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar
       const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
       PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot) 
                                * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
-      return muE * tgaIce.rho * grav * H;
+      return muE * tgaIce->rho * grav * H;
     } else
       return 0.0;
   } else
@@ -315,7 +325,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
+  T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = T3.setToConstant(T0); CHKERRQ(ierr);
   ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
@@ -392,7 +402,7 @@ PetscErrorCode IceCompModel::initTestL() {
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = -tgaIce.Q() / (gasConst_R * log(A0/tgaIce.A()));
+  T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = T3.setToConstant(T0); CHKERRQ(ierr);
   ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
@@ -612,7 +622,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
 
   // area of grid square in square km:
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3;
-  const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
+  const PetscScalar   m = (2.0 * tgaIce->exponent() + 2.0) / tgaIce->exponent();
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
@@ -846,7 +856,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = verbPrintf(1,grid.com, 
             "geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH\n");
             CHKERRQ(ierr);
-    const PetscScalar   m = (2*tgaIce.exponent()+2)/tgaIce.exponent();
+    const PetscScalar   m = (2.0 * tgaIce->exponent() + 2.0) / tgaIce->exponent();
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f%13.6f\n",
                       100*volerr/volexact, maxHerr, avHerr,
                       maxetaerr/pow(domeHexact,m), centerHerr); CHKERRQ(ierr);

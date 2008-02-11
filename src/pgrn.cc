@@ -41,15 +41,14 @@ int main(int argc, char *argv[]){
   // forces calling of deconstrucors before PetscFinalize() 
   {
     IceGrid g(com, rank, size);
-    IceType *ice;
-    PetscInt flowlawNumber = 0;
+    IceType *ice = PETSC_NULL;
  
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1, com, "PGRN (EISMINT Greenland mode)\n"); CHKERRQ(ierr);
 
-    ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
+    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
  
-    IceGRNModel mGRN(g, *ice);
+    IceGRNModel mGRN(g, ice);
     
     ierr = mGRN.setFromOptions(); CHKERRQ(ierr);
     ierr = mGRN.initFromOptions(); CHKERRQ(ierr);
@@ -62,6 +61,7 @@ int main(int argc, char *argv[]){
 
     ierr = mGRN.writeFiles("grn_exper"); CHKERRQ(ierr);
 
+    delete ice;
     ierr = verbPrintf(2, com, " ... done.\n"); CHKERRQ(ierr);
   }
 

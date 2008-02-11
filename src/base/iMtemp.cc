@@ -73,10 +73,10 @@ PetscErrorCode IceModel::temperatureStep() {
                       
   const PetscInt      k0 = Mbz - 1;
 
-  const PetscScalar   rho_c_I = ice.rho * ice.c_p;
+  const PetscScalar   rho_c_I = ice->rho * ice->c_p;
   const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
   const PetscScalar   rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
-  const PetscScalar   iceK = ice.k / rho_c_I;
+  const PetscScalar   iceK = ice->k / rho_c_I;
   const PetscScalar   iceR = iceK * dtTempAge / PetscSqr(dzEQ);
   const PetscScalar   brK = bedrock.k / rho_c_br;
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dzbEQ);
@@ -169,9 +169,9 @@ PetscErrorCode IceModel::temperatureStep() {
         D[k0] = 1.0; U[k0] = 0.0;
         // if floating and no ice then worry only about bedrock temps;
         // top of bedrock sees ocean
-        const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
+        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
         if (b[i][j] < floating_base - 1.0) {
-          rhs[k0] = ice.meltingTemp;
+          rhs[k0] = ice->meltingTemp;
         } else { // top of bedrock sees atmosphere
           rhs[k0] = Ts[i][j];
         }
@@ -202,7 +202,7 @@ PetscErrorCode IceModel::temperatureStep() {
             rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[0];
             rhs[k0] -= dtTempAge * rho_c_ratio * (0.5 * (UpTu + UpTv + UpTw) + T[0] * w[0] / dzEQ);
           }
-          const PetscScalar iceReff = ice.k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
+          const PetscScalar iceReff = ice->k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
           const PetscScalar brReff = bedrock.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
           if (Mbz > 1) { // there is bedrock; apply centered difference with 
                          // jump in diffusivity coefficient
@@ -267,7 +267,7 @@ PetscErrorCode IceModel::temperatureStep() {
           Tnew[k] = x[k0 + k];
         } else {
           const PetscScalar depth = H[i][j] - zlevEQ[k];
-          const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
+          const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
           if (x[k0 + k] > Tpmp) {
             Tnew[k] = Tpmp;
             PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
@@ -290,7 +290,7 @@ PetscErrorCode IceModel::temperatureStep() {
         if (allowAboveMelting == PETSC_TRUE) {
           Tnew[0] = x[k0];
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-          const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * H[i][j];
+          const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * H[i][j];
           PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
           if (modMask(mask[i][j]) == MASK_FLOATING) {
              // when floating, only half a segment has had its temperature raised
@@ -319,9 +319,9 @@ PetscErrorCode IceModel::temperatureStep() {
         Tbnew[k0] = Tnew[0];
       } else {
         // if floating then top of bedrock sees ocean
-        const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
+        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
         if (b[i][j] < floating_base - 1.0) {
-          Tbnew[k0] = ice.meltingTemp;
+          Tbnew[k0] = ice->meltingTemp;
         } else { // top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];
         }
@@ -401,7 +401,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
   const PetscScalar darea = grid.dx * grid.dy;
   const PetscScalar dvol = darea * dz;
   const PetscScalar dE = rho_c * (*Texcess) * dvol;
-  const PetscScalar massmelted = dE / ice.latentHeat;
+  const PetscScalar massmelted = dE / ice->latentHeat;
 
   if (allowAboveMelting == PETSC_TRUE) {
     SETERRQ(1,"excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
@@ -416,7 +416,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 //                           = (z < 100.0) ? 0.4 * (100.0 - z) / 100.0 : 0.0;
       const PetscScalar FRACTION_TO_BASE
                            = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
-      *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice.rho * darea);  // note: ice-equiv thickness
+      *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice->rho * darea);  // note: ice-equiv thickness
     }
     *Texcess = 0.0;
   } else if (updateHmelt == PETSC_TRUE) {  // neither Texcess nor Hmelt need to change 
@@ -427,13 +427,13 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
       SETERRQ(1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
     if (*Hmelt > 0.0) {
-      const PetscScalar thicknessToFreezeOn = - massmelted / (ice.rho * darea);
+      const PetscScalar thicknessToFreezeOn = - massmelted / (ice->rho * darea);
       if (thicknessToFreezeOn <= *Hmelt) { // the water *is* available to freeze on
         *Hmelt -= thicknessToFreezeOn;
         *Texcess = 0.0;
       } else { // only refreeze Hmelt thickness of water; update Texcess
         *Hmelt = 0.0;
-        const PetscScalar dTemp = ice.latentHeat * ice.rho * (*Hmelt) / (rho_c * dz);
+        const PetscScalar dTemp = ice->latentHeat * ice->rho * (*Hmelt) / (rho_c * dz);
         *Texcess += dTemp;
       }
     } 

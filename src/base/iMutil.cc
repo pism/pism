@@ -104,7 +104,7 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
       const PetscScalar h_x = (h[i+1][j]-h[i-1][j])/(2.0*grid.dx);
       const PetscScalar h_y = (h[i][j+1]-h[i][j-1])/(2.0*grid.dy);
       const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-      fbasal[i][j] = ice.rho * grav * H[i][j] * alpha;
+      fbasal[i][j] = ice->rho * grav * H[i][j] * alpha;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);

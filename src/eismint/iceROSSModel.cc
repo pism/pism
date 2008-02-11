@@ -27,7 +27,7 @@
 #include "iceROSSModel.hh"
 
 
-IceROSSModel::IceROSSModel(IceGrid &g, IceType &i)
+IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
 
   // use defined velocity boundary condition for shelf, instead of computing 
@@ -90,7 +90,7 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   // update surface elev: APPLY FLOATING CRITERION EVERYWHERE to get smooth surface;
   // does this need to be done *after* afterInitHook()?
   ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-  ierr = VecScale(vh, 1.0 - ice.rho / ocean.rho ); CHKERRQ(ierr);
+  ierr = VecScale(vh, 1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
   
   // fill in temperatures at depth according to special rule:
   // temp in column equals temp at surface

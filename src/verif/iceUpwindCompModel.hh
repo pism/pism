@@ -27,7 +27,7 @@
 class IceUpwindCompModel : public IceCompModel {
 
 public:
-  IceUpwindCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest);
+  IceUpwindCompModel(IceGrid &g, ThermoGlenArrIce *i, const char mytest);
   virtual PetscErrorCode initFromOptions();
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);
 

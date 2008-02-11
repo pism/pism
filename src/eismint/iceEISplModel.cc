@@ -41,7 +41,7 @@ const PetscScalar IceEISplModel::DEFAULT_EXTERIOR_ABLATION_RATE = 10.0; // m/yea
 
 
 
-IceEISplModel::IceEISplModel(IceGrid &g, IceType &i)
+IceEISplModel::IceEISplModel(IceGrid &g, IceType *i)
   : IceEISModel(g,i) {  // do nothing; note derived classes must have constructors
 
   expername = 'I';

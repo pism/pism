@@ -53,14 +53,19 @@ IceGrid::IceGrid(MPI_Comm c,
 
   spacing_type = 1;
   setVertLevels();
+  
+  da2 = PETSC_NULL;
 }
 
 
 IceGrid::~IceGrid() {
-  if (destroyDA() != 0) {
-    PetscPrintf(com, "IceGrid destructor: invalid destroyDA() return; ENDING\n");
-    PetscEnd();
+  if ((createDA_done == PETSC_TRUE) && (da2 == PETSC_NULL)) {
+    verbPrintf(1,com, "WARNING in IceGrid destructor: createDA_done inconsistent with da2\n");
   }
+  if (da2 != PETSC_NULL) {
+    DADestroy(da2);
+  }
+  createDA_done = PETSC_FALSE;
   delete [] zlevels;
   zlevels = PETSC_NULL;
   delete [] zblevels;
@@ -88,13 +93,40 @@ PetscErrorCode IceGrid::chooseQuadraticSpacedVertical() {
 
 //! Set the vertical levels according to values in Mz, Lz, Mbz, and the spacing_type flag.
 /*!
+Sets \c dzMIN, \c dzMAX, and \c Lbz.  Sets and re-allocates \c zlevels[] and \c zblevels[].
+
+Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c spacing_type cannot be zero at entry 
+to this routine; it must be 1, 2, or 3.
+
 This procedure is only called when a grid is determined from scratch, e.g. by a derived class or when
-bootstrapping from 2D data only, but not when reading a model state input file which will have its own grid.
-
-Uses Mz, Lz, Mbz, and spacing_type.  Note that \c spacing_type cannot be zero at entry to this routine;
-it must be 1, 2, or 3.
-
-Sets dzMIN, dzMAX, and Lbz.  Sets and re-allocates zlevels[] and zblevels[].
+bootstrapping from 2D data only, but not when reading a model state input file (which will have its own grid,
+which may not even be a grid created by this routine).
+  - When \c spacing_type == 1, the vertical grid in the ice is equally spaced: <tt>zlevels[k] = k dzMIN</tt> where
+<tt>dzMIN = Lz / (Mz - 1)</tt>.  In this case <tt>dzMIN = dzMAX</tt>.
+  - When \c spacing_type == 2, the vertical grid in the ice is Chebyshev spaced.  Note that (generally speaking)
+the \f$N+1\f$ \e Chebyshev \e extreme \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
+(See L. N. Trefethen, <i>Spectral Methods in MATLAB</i>, SIAM Press 2000.)
+These are concentrated at either end of the interval \f$[-1,1]\f$.  In our case we want points concentrated near
+zero, and we use only half of the Chebyshev points because we don't need concentration near the top
+of the computational box.  So we take the original Chebyshev extreme points
+\f$x_j\f$ with \f$N= 2\, \mathtt{Mz} - 1\f$ but we choose only \f$j=0,1,\dots,\mathtt{Mz}-1\f$. These points
+satisfy \f$0 \le x_j \le 1\f$ and they are clustered near \f$x=1\f$.  Then we flip and scale: 
+\f$z_j = \mathtt{Lz} (1 - x_j)\f$.  The smallest spacing is a factor proportional to \c Mz smaller than 
+the equal spacing.  That is, \f$z_1 = C \mathtt{Lz} / (\mathtt{Mz}^2)\f$ while 
+\f$dzEQ = \mathtt{Lz}/(\mathtt{Mz}-1)\f$.   Near the top the spacing is, to good approximation, 
+equal to \f$\pi \mathtt{dzEQ}\f$; the actual top space is recorded as \c dzMAX.
+  - When \c spacing_type == 3, the spacing is a quadratic function.  The intent is that the
+spacing is smaller near the base than near the top, but that the effect is less extreme than
+the Chebyshev case.  In particular, if \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then <tt>zlevels[k] 
+= Lz * ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0) * \f$\zeta_k\f$) )</tt> 
+where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ indicates the slope of the quadratic function as 
+it leaves the base.  Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer at 
+the base than equal spacing would be.
+      
+In all cases the spacing is equal in the bedrock: <tt>zblevels[k] = </tt> where 
+<tt>dzEQ = Lz / (Mz - 1)</tt> and <tt>Lbz = dzEQ * (Mbz - 1)</tt>.  That is, both the \c zblevels[] and 
+the depth into the bedrock to which the computational box extends (\c Lbz) are set according to the value
+of \c Mbz and according to the equal spacing which would apply to the ice.
  */
 PetscErrorCode  IceGrid::setVertLevels() {
   
@@ -122,14 +154,8 @@ PetscErrorCode  IceGrid::setVertLevels() {
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
   } else if (spacing_type == 2) { 
-    // Spaced according to the Chebyshev extreme points in the interval [0,1], with 1 being 
-    // the base of the ice.  That is, we take original Chebyshev extreme points x_j = cos(pi*j/N), 
-    // with N = 2 Mz - 1 but choosing only j=0,1,...,Mz-1 (and not j=0,1,...,N).  These satisfy
-    // 0 <= x_j <= 1 and they are clustered near x=1.  Then we flip and scale:
-    //   z_j = Lz * (1 - x_z).
-    // Note that the smallest spacing is a factor proportional to Mz smaller than dzEQ
-    // (i.e. z_1 = C Lz / (Mz^2) while dzEQ = Lz/(Mz-1)).   Near the top the spacing is 
-    // to very good approximation equal to pi * dzEQ.
+    // Spaced according to the Chebyshev extreme points in the interval [0,1], with 1 
+    //   flipped to be the base of the ice, and stretched.
     for (PetscInt k=0; k < Mz - 1; k++) {
       zlevels[k] = Lz * ( 1.0 - cos((pi/2.0) * k / (Mz-1)) );
     }
@@ -138,7 +164,7 @@ PetscErrorCode  IceGrid::setVertLevels() {
     dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
   } else if (spacing_type == 3) { 
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    const PetscScalar  ll = 3.0;
+    const PetscScalar  ll = 4.0;  
     for (PetscInt k=0; k < Mz - 1; k++) {
       const PetscScalar zeta = ((PetscScalar) k) / ((PetscScalar) Mz - 1);
       zlevels[k] = Lz * ( (zeta / ll) * (1.0 + (ll - 1.0) * zeta) );
@@ -170,6 +196,7 @@ PetscErrorCode  IceGrid::setVertLevels() {
 }
 
 
+//! Print the vertical levels in \c zlevels[] and \c zblevels[] to standard out.
 PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbosity,com,  "    printing vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz);
@@ -249,7 +276,7 @@ This idea is not quite compatible with the periodic nature of the grid.
 The upshot is that if one computes in a truely periodic way then the gap between the  
 <tt>i = 0</tt>  and  <tt>i = Mx - 1</tt>  grid points should \em also have width  \c dx.  
 Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
-*/
+ */
 PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                                 const PetscScalar lz, const PetscTruth truelyPeriodic) {
   PetscErrorCode ierr;
@@ -363,8 +390,11 @@ the parameters, and any conflicts must have been resolved.
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
 
-  if (createDA_done == PETSC_TRUE) {
-    ierr = destroyDA(); CHKERRQ(ierr);
+  if ((createDA_done == PETSC_TRUE) && (da2 == PETSC_NULL)) {
+    verbPrintf(1,com, "WARNING in IceGrid destructor: createDA_done inconsistent with da2\n");
+  }
+  if (da2 != PETSC_NULL) {
+    ierr = DADestroy(da2); CHKERRQ(ierr);
   }
 
   // this line contains the fundamental transpose: My,Mx instead of "Mx,My";
@@ -390,14 +420,6 @@ PetscErrorCode IceGrid::createDA() {
   ys = info.xs; ym = info.xm;
 
   createDA_done = PETSC_TRUE;
-  return 0;
-}
-
-
-PetscErrorCode IceGrid::destroyDA() {
-  PetscErrorCode ierr;
-
-  ierr = DADestroy(da2); CHKERRQ(ierr);
   return 0;
 }
 

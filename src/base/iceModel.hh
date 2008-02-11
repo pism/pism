@@ -36,7 +36,7 @@
 class IceModel {
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, IceType &i);
+  IceModel(IceGrid &g, IceType *i);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iceModel.cc
@@ -72,7 +72,8 @@ protected:
 
   IceGrid        &grid;
 
-  IceType        &ice;
+  IceType        *ice;
+//  IceType        &ice;
   BasalType      *basal;
   BedrockType    bedrock;
   SeaWaterType   ocean;
@@ -99,11 +100,12 @@ protected:
                                         //   u bar and v bar on staggered grid,
   Vec          vLongitude, vLatitude;
 
-  IceModelVec3        u3, v3, w3, Sigma3, T3, gs3, tau3;
+  IceModelVec3        u3, v3, w3, Sigma3, T3, tau3;  // note gs3 was one of these
   IceModelVec3Bedrock Tb3;
 
   // parameters
-  PetscScalar maxdt, muSliding, enhancementFactor, grain_size_default, initial_age_years_default;
+  PetscInt    flowLawNumber;
+  PetscScalar maxdt, muSliding, enhancementFactor, initial_age_years_default;
   PetscScalar dt, dtTempAge, dt_force;    // current mass cont. and temp/age time steps in seconds
   PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
@@ -112,7 +114,7 @@ protected:
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value;
   PetscScalar startYear, endYear, run_year_default, maxdt_temporary;
-  PetscScalar ssaIntervalYears, gsIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
+  PetscScalar ssaIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
   PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax;
   PetscScalar gmaxu, gmaxv, gmaxw;  // global maximums on 3D grid for abs value 
@@ -124,7 +126,7 @@ protected:
   PetscScalar globalMinAllowedTemp, oceanHeatFlux;
 
   // flags
-  PetscTruth  doMassConserve, doTemp, doGrainSize, doBedDef, doBedIso;
+  PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso, flowLawUsesGrainSize;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi;
   PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, pureSuperpose, useConstantNuForSSA, 
@@ -148,7 +150,7 @@ protected:
                matlabOutVars[PETSC_MAX_PATH_LEN]; // see iMmatlab.cc
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
-  Vec          Td, wd, ud, vd, Sigmad, gsd, taud;
+  Vec          Td, wd, ud, vd, Sigmad, taud;
 
   char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this 
                                        // instance of IceModel
@@ -218,10 +220,9 @@ protected:
   virtual PetscErrorCode setDefaults();
 
   // see iMgrainsize.cc
-  PetscErrorCode updateGrainSizeIfNeeded();
-  PetscErrorCode updateGrainSizeNow();
-  void setConstantGrainSize(PetscScalar d);
-  PetscScalar grainSizeVostok(PetscScalar age) const;
+  PetscErrorCode computeGrainSize_PseudoAge(const PetscScalar H, const PetscInt Mz, PetscScalar *w, 
+                                            PetscScalar *age_wspace, PetscScalar **gs);
+  PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
@@ -406,9 +407,11 @@ private:
   IceModelVec3 Tnew3, taunew3;
   IceModelVec3 *Sigmastag3, *Istag3;
   
+#if (LOG_PISM_EVENTS)
   // for event logging; see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, 
-      beddefEVENT, grainsizeEVENT, pddEVENT, massbalEVENT, tempEVENT;
+      beddefEVENT, pddEVENT, massbalEVENT, tempEVENT;
+#endif
 
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made

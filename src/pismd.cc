@@ -77,16 +77,15 @@ int main(int argc, char *argv[]) {
 
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     IceGrid    g(com, rank, size);
-    IceType*   ice;
-    PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
+    IceType*   ice = PETSC_NULL;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMD (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
-    ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
+    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
 
     IceModel*      m;
-    IceModel       mPlain(g, *ice);
-    IceROSSModel   mRoss(g, *ice);
+    IceModel       mPlain(g, ice);
+    IceROSSModel   mRoss(g, ice);
 
     // re this option, see  src/eismint/iceROSSModel.hh|cc and:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
@@ -112,6 +111,7 @@ int main(int argc, char *argv[]) {
       ierr = mRoss.finishROSS(); CHKERRQ(ierr);
     }
 
+    delete ice;
     ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);

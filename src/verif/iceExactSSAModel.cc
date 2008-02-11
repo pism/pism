@@ -32,7 +32,7 @@ const PetscScalar IceExactSSAModel::p_schoof = 4.0/3.0; // = 1 + 1/n
 
 const PetscScalar IceExactSSAModel::LforJ = 300.0e3; // 300 km half-width
 
-IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType &i, char mytest)
+IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType *i, char mytest)
   : IceModel(g,i) {
   test = mytest;
 }
@@ -151,7 +151,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
       const PetscInt jfrom0 = j - (grid.My - 1)/2;
       const PetscScalar y = grid.dy * jfrom0;
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice.rho * grav * H0_schoof * tan(theta);
+      const PetscScalar f = ice->rho * grav * H0_schoof * tan(theta);
       tauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }
@@ -230,7 +230,7 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
       const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &H[i][j], &junk1, &myu, &myv); CHKERRQ(ierr);
-      h[i][j] = (1.0 - ice.rho/ocean.rho) * H[i][j];
+      h[i][j] = (1.0 - ice->rho / ocean.rho) * H[i][j];
       // special case at center point: here we indirectly set ubar,vbar 
       // at (i,j) by marking this grid point as SHEET and setting staggered-grid
       // version of ubar approriately; the average done in assembleSSARhs()

@@ -282,7 +282,6 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = write2DToMatlab(viewer, 'C', vtauc, 0.001);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'E', tau3, 1.0/secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
-  ierr = writeSliceToMatlab(viewer, 'G', gs3, 1000.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
   ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
@@ -303,8 +302,6 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSoundingToMatlab(viewer,'e',tau3,1.0/secpera, PETSC_FALSE);
            CHKERRQ(ierr); // Display in years
   ierr = write2DToMatlab(viewer, 'f', vdHdt, secpera);  CHKERRQ(ierr);
-  ierr = writeSoundingToMatlab(viewer,'g',gs3,1000.0, PETSC_FALSE);
-           CHKERRQ(ierr); // Display in mm
   ierr = write2DToMatlab(viewer, 'h', vh, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'l', vbasalMeltRate, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'm', vMask, 1.0);  CHKERRQ(ierr);

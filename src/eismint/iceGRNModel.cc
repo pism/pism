@@ -29,7 +29,7 @@
 const PetscScalar EISMINT_G_geothermal   = 0.050;      // J/m^2 s; geo. heat flux
 
 
-IceGRNModel::IceGRNModel(IceGrid &g, IceType &i) : IceModel(g, i) {
+IceGRNModel::IceGRNModel(IceGrid &g, IceType *i) : IceModel(g, i) {
   // only call parent's constructor; do all classes need constructors?
 }
 
@@ -255,7 +255,7 @@ PetscErrorCode IceGRNModel::updateTs() {
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       calculateMeanAnnual(h[i][j], lat[i][j], &val);
-      Ts[i][j] = val + ice.meltingTemp;
+      Ts[i][j] = val + ice->meltingTemp;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 
 //! Describes the PISM grid and the distribution of data across processors.
-/*! 
+/*!
 This class holds parameters describing the grid, including the vertical spacing and which part
 of the horizontal grid is owned by the processor.  It contains the dimensions of the PISM computational box.
 
@@ -36,8 +36,7 @@ public:
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
   ~IceGrid();
 
-  PetscErrorCode createDA();
-  PetscErrorCode destroyDA();
+  PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
 
   PetscErrorCode chooseEquallySpacedVertical();
   PetscErrorCode chooseChebyshevSpacedVertical();

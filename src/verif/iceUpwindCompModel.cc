@@ -22,7 +22,7 @@
 #include "iceUpwindCompModel.hh"
 
 
-IceUpwindCompModel::IceUpwindCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest)
+IceUpwindCompModel::IceUpwindCompModel(IceGrid &g, ThermoGlenArrIce *i, const char mytest)
   : IceCompModel(g, i, mytest) {
 }
 

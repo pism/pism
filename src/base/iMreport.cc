@@ -283,10 +283,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
       if (tempAndAge || (verbosityLevel >= 3)) {
         if (H[i][j] > 0) {
           if (useHomoTemp) {
-            if (Tbase[i][j] + ice.beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
+            if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
               melt += a;
           } else {
-            if (Tbase[i][j] >= ice.meltingTemp)
+            if (Tbase[i][j] >= ice->meltingTemp)
               melt += a;
           }
         }

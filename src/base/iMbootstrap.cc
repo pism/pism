@@ -75,11 +75,11 @@ PetscErrorCode IceModel::putTempAtDepth() {
       
       // within ice
       const PetscScalar g = Ghf[i][j];
-      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice.k * HH * HH * HH));
-      const PetscScalar alpha = (g / (2.0 * HH * ice.k)) - 2.0 * HH * HH * beta;
+      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice->k * HH * HH * HH));
+      const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
       for (PetscInt k = 0; k < ks; k++) {
         const PetscScalar depth = HH - grid.zlevels[k];
-        const PetscScalar Tpmp = ice.meltingTemp - ice.beta_CC_grad * depth;
+        const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
         const PetscScalar d2 = depth * depth;
         T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
       }
@@ -89,9 +89,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
       
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice
-      const PetscScalar floating_base = - (ice.rho/ocean.rho) * H[i][j];
+      const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
       const PetscScalar T_top_bed = (b[i][j] < floating_base)
-                                         ? ice.meltingTemp : T[0];
+                                         ? ice->meltingTemp : T[0];
       ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j]); CHKERRQ(ierr);
     }
   }
@@ -365,9 +365,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
              "  filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
-  // fill in other 3D fields
   setInitialAgeYears(initial_age_years_default);
-  setConstantGrainSize(grain_size_default);
 
   verbPrintf(2, grid.com, "bootstrapping by PISM default method done\n");
   initialized_p = PETSC_TRUE;
@@ -401,7 +399,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
         } 
       } else { // if some ice thickness then check floating criterion
         const PetscScalar hgrounded = bed[i][j] + H[i][j];
-        const PetscScalar hfloating = (1-ice.rho/ocean.rho) * H[i][j];
+        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
         // check whether you are actually floating or grounded
         if (hgrounded > hfloating) {
           h[i][j] = hgrounded; // actually grounded so set h

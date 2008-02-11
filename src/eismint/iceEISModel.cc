@@ -23,16 +23,11 @@
 #include "iceEISModel.hh"
 
 
-IceEISModel::IceEISModel(IceGrid &g, IceType &i)
+IceEISModel::IceEISModel(IceGrid &g, IceType *i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
   expername = 'A';
   infileused = false;
   flowLawNumber = 0;
-}
-
-
-void IceEISModel::setFlowLawNumber(PetscInt law) {
-  flowLawNumber = law;
 }
 
 
@@ -43,7 +38,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   thermalBedrock = PETSC_FALSE;
   useSSAVelocity = PETSC_FALSE;
   isDrySimulation = PETSC_TRUE;
-  doGrainSize = PETSC_FALSE;
   enhancementFactor = 1.0;
   includeBMRinContinuity = PETSC_FALSE; // so basal melt does not change 
                                         // computation of vertical velocity
@@ -54,9 +48,9 @@ PetscErrorCode IceEISModel::setFromOptions() {
   // make bedrock material properties into ice properties
   // (note Mbz=1 is default, but want ice/rock interface segment to 
   // have geothermal flux applied directly to ice)
-  bedrock.rho = ice.rho;
-  bedrock.k = ice.k;
-  bedrock.c_p = ice.c_p;  
+  bedrock.rho = ice->rho;
+  bedrock.k = ice->k;
+  bedrock.c_p = ice->c_p;  
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */
@@ -167,7 +161,6 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = VecSet(vHmelt, 0.0);
     ierr = VecSet(vGhf, G_geothermal);
     setInitialAgeYears(initial_age_years_default);
-    setConstantGrainSize(grain_size_default);  // no expers use Goldsby-Kohlstedt
     ierr = VecSet(vMask, MASK_SHEET);
     ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
@@ -377,10 +370,10 @@ PetscScalar IceEISModel::basalVelocity(const PetscScalar x, const PetscScalar y,
   const PetscScalar  eismintII_temp_sliding = 273.15;
   
   if (expername == 'G') {
-      return Bfactor * ice.rho * grav * H; 
+      return Bfactor * ice->rho * grav * H; 
   } else if (expername == 'H') {
-      if (T + ice.beta_CC_grad * H > eismintII_temp_sliding) {
-        return Bfactor * ice.rho * grav * H; // ditto case G
+      if (T + ice->beta_CC_grad * H > eismintII_temp_sliding) {
+        return Bfactor * ice->rho * grav * H; // ditto case G
       } else {
         return 0.0;
       }

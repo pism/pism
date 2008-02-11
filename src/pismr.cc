@@ -39,14 +39,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid g(com, rank, size);
-    PetscInt   flowlawNumber = 0;  // use Paterson-Budd by default
-    IceType*   ice;
+    IceType*   ice = PETSC_NULL;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMR (base run mode)\n"); CHKERRQ(ierr);
     
-    ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
-    IceModel m(g, *ice);
+    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
+    IceModel m(g, ice);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 
@@ -58,6 +57,7 @@ int main(int argc, char *argv[]) {
     // We provide a default base name if no -o option.
     ierr = m.writeFiles("unnamed"); CHKERRQ(ierr);
 
+    delete ice;
     ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }
 

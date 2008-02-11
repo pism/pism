@@ -399,8 +399,6 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
   MPI_Bcast(history, history_len, MPI_CHAR, 0, grid.com);
 
-  setConstantGrainSize(grain_size_default); // since it is never read ...
-
   initialized_p = PETSC_TRUE;
   return 0;
 }

@@ -250,7 +250,7 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
   // run through grid and compute PDDs and then surface balance at each point
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar mean_annual = Ts[i][j] - ice.meltingTemp;  // in deg C
+      const PetscScalar mean_annual = Ts[i][j] - ice->meltingTemp;  // in deg C
       const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
 
       if ((i == id) && (j == jd)) {

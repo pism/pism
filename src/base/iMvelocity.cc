@@ -30,10 +30,9 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
-//ierr = verbPrintf(1,grid.com,"entering velocity() with computeSIAVelocities=%d, useSSAVelocity=%d, updateVelocityAtDepth=%d\n",
-//        (int) computeSIAVelocities, (int) useSSAVelocity, (int) updateVelocityAtDepth); CHKERRQ(ierr);
-
+#if (LOG_PISM_EVENTS)
 PetscLogEventBegin(siaEVENT,0,0,0,0);
+#endif
 
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
@@ -93,8 +92,10 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(siaEVENT,0,0,0,0);
 PetscLogEventBegin(ssaEVENT,0,0,0,0);
+#endif
   
   // do SSA
   if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
@@ -122,8 +123,10 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
+#endif
 
   // now communicate modified velocity fields
   ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
@@ -153,13 +156,6 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     // no communication needed for w, which is only differenced in the column
   }
   
-/* REMOVED TO AVOID STENCIL_BOX COMMUNICATION FOR 3D Vecs: 
-  // smoothing Sigma is NOT RECOMMENDED, but do it here
-  if (noSpokesLevel > 0) {
-    ierr = smoothSigma(); CHKERRQ(ierr); // comm here
-  }
-*/
-
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
 
@@ -168,7 +164,9 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }
 
+#if (LOG_PISM_EVENTS)
 PetscLogEventEnd(velmiscEVENT,0,0,0,0);
+#endif
   
   firstTime = PETSC_FALSE;
   return 0;
@@ -288,68 +286,6 @@ PetscScalar IceModel::capBasalMeltRate(const PetscScalar bMR) {
     return bMR;
   }
 }
-
-
-/* 
-THIS IS THE ONLY PLACE WHERE STENCIL_*BOX* COMMUNICATION IS REQUIRED FOR A 3D Vec IS REQUIRED
-REMOVING IT THEREFORE HAS A BENEFIT FOR COMMUNICATION
-
-PetscErrorCode IceModel::smoothSigma() {
-  // does iterated smoothing of Sigma on regular grid; uses box stencil of width one
-  // not exactly recommended; it is rather nonphysical; compare Bueler, Brown, and Lingle 2007
-  PetscErrorCode  ierr;
-  PetscScalar ***Snew, **H;
-  // following is [0.35 0.30 0.35] outer product w itself; ref conversation with Orion L.:
-  const PetscScalar c[3][3] = {{0.1225, 0.105,  0.1225},
-                               {0.105,  0.09,   0.105},
-                               {0.1225, 0.105,  0.1225}};
-
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-
-  for (int count=0; count < noSpokesLevel; ++count) {
-    ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscInt ks = static_cast<PetscInt>(floor(H[i][j]/grid.dz));
-        for (PetscInt k=0; k<ks; ++k) {
-          // note Sigma[neighbor][neighbor][k] will be zero if outside of ice
-          planeBox Sbb;
-          ierr = Sigma3.getPlaneBoxZ(i,j,k * grid.dz,&Sbb);
-          const PetscScalar SS =  
-              c[0][0]*Sbb.im1jm1 + c[0][1]*Sbb.im1 + c[0][2]*Sbb.im1jp1
-            + c[1][0]*Sbb.jm1    + c[1][1]*Sbb.ij  + c[1][2]*Sbb.jp1
-            + c[2][0]*Sbb.ip1jm1 + c[2][1]*Sbb.ip1 + c[2][2]*Sbb.ip1jp1;
-          const PetscScalar myz = k * grid.dz;
-          PetscScalar active = 0.0;  // build sum of coeffs for neighbors with ice at or above curr depth
-          if (H[i-1][j-1] >= myz) { active += c[0][0]; } 
-          if (H[i-1][j] >= myz) { active += c[0][1]; } 
-          if (H[i-1][j+1] >= myz) { active += c[0][2]; } 
-          if (H[i][j-1] >= myz) { active += c[1][0]; } 
-          if (H[i][j+1] >= myz) { active += c[1][2]; } 
-          if (H[i+1][j-1] >= myz) { active += c[2][0]; } 
-          if (H[i+1][j] >= myz) { active += c[2][1]; } 
-          if (H[i+1][j+1] >= myz) { active += c[2][2]; } 
-          Snew[i][j][k] = SS / (active + c[1][1]);  // ensures all heating goes into ice not outside it
-        }
-        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
-          Snew[i][j][k] = 0;
-        }
-      }
-    }
-    ierr = DAVecRestoreArray(grid.da3, vWork3d[0], &Snew); CHKERRQ(ierr);
-    ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
-
-    // communicate ghosted values *and* transfer Snew to vSigma
-    ierr = DALocalToLocalBegin(grid.da3, vWork3d[0], INSERT_VALUES, Sigma3.v); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da3, vWork3d[0], INSERT_VALUES, Sigma3.v); CHKERRQ(ierr);
-  } // for
-  
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-
-  return 0;
-}
-*/
 
 
 //! Compute the maximum velocities for time-stepping and reporting to user.

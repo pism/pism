@@ -229,7 +229,10 @@ PetscErrorCode  IceModel::setFromOptions() {
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
   ierr = PetscOptionsHasName(PETSC_NULL, "-real_age_grainsize", &realageSet); CHKERRQ(ierr);
-  if (realageSet == PETSC_TRUE)   realAgeForGrainSize = PETSC_TRUE;
+  //if (realageSet == PETSC_TRUE)   realAgeForGrainSize = PETSC_TRUE;
+  if (realageSet == PETSC_TRUE) {
+     SETERRQ(1,"-real_age_grainsize (sets realAgeForGrainSize) not implemented");
+  }
 
   // a parameter in regularizing the computation of effective viscosity from strain rates;
   // see computeEffectiveViscosity() in iMssa.cc

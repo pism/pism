@@ -45,19 +45,18 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid    g(com, rank, size);
-    IceType*   ice;
-    MISMIPIce  mismipice;
-    PetscInt   flowlawNumber = 0; // use Paterson-Budd by default
+    IceType*   ice = PETSC_NULL;
+    MISMIPIce* mismipice = new MISMIPIce;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
 
-    ierr = getFlowLawFromUser(com, ice, flowlawNumber); CHKERRQ(ierr);
+    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
     
     // call constructors on all three, but m will point to the one we use
-    IceEISModel    mEISII(g, *ice);
-//    IceHEINOModel  mHEINO(g, *ice);
-    IceEISplModel  mEISpl(g, *ice);
+    IceEISModel    mEISII(g, ice);
+//    IceHEINOModel  mHEINO(g, ice);
+    IceEISplModel  mEISpl(g, ice);
     IceMISMIPModel mMISMIP(g, mismipice, mismipice);
     IceModel*      m;
 
@@ -84,7 +83,6 @@ int main(int argc, char *argv[]) {
     }
     
     if (EISIIchosen == PETSC_TRUE) {
-      mEISII.setFlowLawNumber(flowlawNumber);
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
@@ -94,7 +92,6 @@ int main(int argc, char *argv[]) {
 //      ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
 //      m = (IceModel*) &mHEINO;
     } else if (EISplchosen == PETSC_TRUE) {
-      mEISpl.setFlowLawNumber(flowlawNumber);
       ierr = mEISpl.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISpl.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISpl;
@@ -115,6 +112,8 @@ int main(int argc, char *argv[]) {
 //    if (ISMIPchosen == PETSC_TRUE) {
 //      ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
 //    }
+    delete ice;
+    delete mismipice;
     ierr = verbPrintf(2,com, " ... done.\n"); CHKERRQ(ierr);
   }
 

@@ -42,7 +42,6 @@ const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
      // ice.meltingTemp; if above this value then decide to slide
 const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
-const PetscScalar DEFAULT_GRAIN_SIZE = 0.001;  // size of grains when assumed constant; for gk ice
 const PetscScalar DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
         // about 4 times more heating than peak of 
         // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
@@ -74,7 +73,6 @@ const PetscScalar DEFAULT_GLOBAL_MIN_ALLOWED_TEMP = 200.0;
 const PetscInt    DEFAULT_MAX_LOW_TEMP_COUNT = 10;  // 
 
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
-const PetscTruth  DEFAULT_DO_GRAIN_SIZE = PETSC_TRUE;
 const PetscTruth  DEFAULT_REAL_AGE_FOR_GRAIN_SIZE = PETSC_FALSE;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
 const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
@@ -220,12 +218,12 @@ PetscErrorCode IceModel::setDefaults() {
   maxLowTempCount = DEFAULT_MAX_LOW_TEMP_COUNT;
   min_temperature_for_SIA_sliding = DEFAULT_MIN_TEMP_FOR_SLIDING;  
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
-  doGrainSize = DEFAULT_DO_GRAIN_SIZE;
-  grain_size_default = DEFAULT_GRAIN_SIZE;
-  realAgeForGrainSize = DEFAULT_REAL_AGE_FOR_GRAIN_SIZE;
   isDrySimulation = DEFAULT_IS_DRY_SIMULATION;
   updateHmelt = PETSC_TRUE;
-  gsIntervalYears = DEFAULT_GRAIN_SIZE_INTERVAL_YEARS;
+
+  flowLawUsesGrainSize = PETSC_FALSE;
+  realAgeForGrainSize = DEFAULT_REAL_AGE_FOR_GRAIN_SIZE;
+
   doBedDef = DEFAULT_DO_BED_DEF;
   doBedIso = DEFAULT_DO_BED_ISO;
   bedDefIntervalYears = DEFAULT_BED_DEF_INTERVAL_YEARS;

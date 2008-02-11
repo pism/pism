@@ -28,14 +28,14 @@
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, ThermoGlenArrIce &i, const char mytest);
+  IceCompModel(IceGrid &g, IceType *i, const char mytest);
   virtual ~IceCompModel();
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode reportErrors();
 
 protected:
   // related to all (or most) tests
-  ThermoGlenArrIce &tgaIce;
+  ThermoGlenArrIce *tgaIce;
   PetscTruth   exactOnly;
   char         testname;
   void         mapcoords(const PetscInt i, const PetscInt j,

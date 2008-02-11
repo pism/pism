@@ -44,7 +44,9 @@ struct PolarStereoParams {
 };
 
 
-PetscErrorCode getFlowLawFromUser(MPI_Comm com, IceType* &ice, PetscInt &flowLawNum);
+PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN);
+PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice);
+PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt defaultFLN);
 
 
 // this utility prints only when verbosityLevel >= thresh; see iMutil.cc
