@@ -2,7 +2,7 @@ PISM is documented by two PDF manuals and an HTML browser:
 
     
   1.      PISM User's Manual         [pism/doc/manual.pdf  AND
-                                      http://www.dms.uaf.edu/~bueler/manual.pdf]
+                                      http://www.pism-docs.org/manual.pdf]
   
       BUILD the User's Manual by "make" or "make manual.pdf" in doc/.  View
       it with "acroread manual.pdf" or "evince manual.pdf" or similar.   
@@ -61,3 +61,25 @@ PISM is documented by two PDF manuals and an HTML browser:
       the gna.org browser keeps track of source code changes through the 
       Subversion revision control system.
 
+
+***********************
+
+Bueler's cookbook for maintaining PISM:
+
+
+1)  How do I make a .tar.gz from the current svn?
+
+   I assume that pism-stable0.1/ contains the source to tar up.  Then:
+   
+   $ svn export pism-stable0.1/ pism-stable0.1.0           # TELL SVN TO MAKE A CLEAN COPY
+   $ tar -cvzf pism-stable0.1.0.tar.gz pism-stable0.1.0/   # TAR IT UP
+   $ tar -tvf pism-stable0.1.0.tar.gz                      # CHECK IT FOR CONTENTS
+   $ scp pism-stable0.1.0.tar.gz bueler@download.gna.org:/upload/pism/   # UPLOAD
+   
+
+2)  Which files do I need to keep up-to-date at www.pism-docs.org, and how?
+
+   These files:
+   
+   $ scp refman.pdf manual.pdf bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/
+   
