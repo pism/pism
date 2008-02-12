@@ -21,14 +21,36 @@
 #include "grid.hh"
 #include "iceModelpreamble.hh"  // just for verbPrintf()
 
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lx   = 1500.0e3,
-                  IceGrid::DEFAULT_ICEPARAM_Ly   = 1500.0e3,
-                  IceGrid::DEFAULT_ICEPARAM_Lz   = 4000.0, 
-                  IceGrid::DEFAULT_ICEPARAM_year = 0.0;
-const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mx   = 61,
-                  IceGrid::DEFAULT_ICEPARAM_My   = 61,
-                  IceGrid::DEFAULT_ICEPARAM_Mz   = 31,
-                  IceGrid::DEFAULT_ICEPARAM_Mbz  = 1;
+//! Use equally-spaced vertical by default.
+const PetscInt    IceGrid::DEFAULT_SPACING_TYPE  = 1;
+
+//! Quadratic spacing in the vertical is 4 times finer near the base than equal spacing.
+const PetscScalar IceGrid::DEFAULT_QUADZ_LAMBDA  = 4.0;
+
+//! Default computational box is 3000 km x 3000 km (= 2 \c Lx x 2 \c Ly) in horizontal.
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lx   = 1500.0e3;
+
+//! Default computational box is 3000 km x 3000 km (= 2 \c Lx x 2 \c Ly) in horizontal.
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_Ly   = 1500.0e3;
+
+//! Default computational box for ice is 4000 m high.
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lz   = 4000.0;
+
+//! Start at year zero by default.
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_year = 0.0;
+
+
+//! Default grid is 61 x 61 in horizontal.
+const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mx   = 61;
+
+//! Default grid is 61 x 61 in horizontal.
+const PetscInt    IceGrid::DEFAULT_ICEPARAM_My   = 61;
+
+//! Default grid has 31 levels in the vertical.
+const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mz   = 31;
+
+//! Default grid has no grid for bedrock; top bedrock level duplicates bottom of ice.
+const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mbz  = 1;
 
 
 IceGrid::IceGrid(MPI_Comm c,
@@ -51,7 +73,7 @@ IceGrid::IceGrid(MPI_Comm c,
   zlevels = new PetscScalar[Mz];
   zblevels = new PetscScalar[Mbz];
 
-  spacing_type = 1;
+  spacing_type = DEFAULT_SPACING_TYPE;
   setVertLevels();
   
   da2 = PETSC_NULL;
@@ -73,18 +95,33 @@ IceGrid::~IceGrid() {
 }
 
 
+//! Choose equal spacing in vertical; call it before rescale_and_set_zlevels().
 PetscErrorCode IceGrid::chooseEquallySpacedVertical() {
   spacing_type = 1;
   return 0;
 }
 
 
+//! Choose Chebyshev spacing in vertical; call it before rescale_and_set_zlevels().
+/*!
+This spacing scheme is very fine near base.
+
+For more information, see documentation on setVertLevels().
+ */
 PetscErrorCode IceGrid::chooseChebyshevSpacedVertical() {
   spacing_type = 2;
   return 0;
 }
 
 
+//! Choose quadratic spacing in vertical; call it before rescale_and_set_zlevels().
+/*!
+This spacing scheme is only fairly fine near base.  
+
+The degree of fineness is controlled by DEFAULT_QUADZ_LAMBDA for now.
+
+For more information, see documentation on setVertLevels().
+ */
 PetscErrorCode IceGrid::chooseQuadraticSpacedVertical() {
   spacing_type = 3;
   return 0;
@@ -132,7 +169,7 @@ PetscErrorCode  IceGrid::setVertLevels() {
   
   if (spacing_type == 0) {
     SETERRQ(1,"IceGrid::setVertLevels():  spacing_type cannot be zero when running setVertLevels();\n"
-               "  was rescale_...() called twice or was choose...VertSpacing() not called?\n");
+               "  was rescale_and_set_zlevels() called twice or was choose...VertSpacing() not called?\n");
   } else if ((spacing_type < 0) || (spacing_type > 3)) {
     SETERRQ1(2,"IceGrid::setVertLevels():  spacing_type = %d is invalid\n",spacing_type);
   }
@@ -164,10 +201,10 @@ PetscErrorCode  IceGrid::setVertLevels() {
     dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
   } else if (spacing_type == 3) { 
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    const PetscScalar  ll = 4.0;  
+    const PetscScalar  lam = DEFAULT_QUADZ_LAMBDA;  
     for (PetscInt k=0; k < Mz - 1; k++) {
       const PetscScalar zeta = ((PetscScalar) k) / ((PetscScalar) Mz - 1);
-      zlevels[k] = Lz * ( (zeta / ll) * (1.0 + (ll - 1.0) * zeta) );
+      zlevels[k] = Lz * ( (zeta / lam) * (1.0 + (lam - 1.0) * zeta) );
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
@@ -214,11 +251,13 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 }
 
 
+//! Determine whether the grid is equally spaced in vertical; we try to avoid having code with such a restriction.
 bool IceGrid::isEqualVertSpacing() {
   return (spacing_type == 1);
 }
 
-  
+
+//! Return the index \c k into \c zlevels[] so that <tt>zlevels[k] <= height < zlevels[k+1]</tt> and <tt>k < Mz</tt>.
 PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com, 
@@ -233,6 +272,7 @@ PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
     PetscEnd();
   }
   PetscInt mcurr = 0;
+//  while ((zlevels[mcurr+1] <= height) && (mcurr+1 < Mz)) {
   while (zlevels[mcurr+1] < height) {
     mcurr++;
   }
@@ -296,6 +336,14 @@ PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const Pets
 }
 
 
+//! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
+/*! 
+Before calling this, always make sure \c Mz, \c Mbz, \c zlevels[], and \c zblevels[] are correctly set
+and consistent.  In particular, they need to be strictly increasing and <tt>zlevels[0] = zblevels[Mbz-1] = 0.0</tt>
+must be true.
+
+This version assumes the horizontal grid is not truely periodic.  Use this one by default.
+ */
 PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly) {
   PetscErrorCode ierr;
   ierr = rescale_using_zlevels(lx,ly,PETSC_FALSE);
@@ -304,11 +352,6 @@ PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscS
 
 
 //! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
-/*! 
-Before calling this, always make sure Mz, Mbz, zlevels[], and zblevels[] are correctly set
-and consistent.  In particular, they need to be strictly increasing and zlevels[0] = zblevels[Mbz-1] = 0.0
-must be true.
- */
 PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                               const PetscTruth truelyPeriodic) {
   PetscErrorCode ierr;

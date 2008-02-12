@@ -602,8 +602,8 @@ PetscErrorCode IceModel::solveTridiagonalSystem(
 // test IceModelVec: assuming this is called from pisms, try
 //   pisms -eisII A -y 1 -Mz 11    # no errors when grid coincides; significant otherwise
 //   pisms -eisII A -y 1 -Mz 101   # no errors when grid coincides; small otherwise
-//   pisms -eisII A -y 1 -Mz 501   # no errors
-//   pisms -eisII A -y 1 -Mz 500   # small errors (appropriate; from linear interpolation)
+//   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 501   # no errors
+//   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 500   # small errors (appropriate; from linear interpolation)
 PetscErrorCode IceModel::testIceModelVec()    {
   PetscErrorCode ierr;
   IceModelVec3 test3;
@@ -651,7 +651,6 @@ PetscErrorCode IceModel::testIceModelVec()    {
     CHKERRQ(ierr);
 
   ierr = test3.doneAccessToVals(); CHKERRQ(ierr);
-
   ierr = test3.destroy(); CHKERRQ(ierr);
   return 0;
 }

@@ -405,7 +405,7 @@ private:
 
   // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, taunew3;
-  IceModelVec3 *Sigmastag3, *Istag3;
+  IceModelVec3 Sigmastag3[2], Istag3[2];
   
 #if (LOG_PISM_EVENTS)
   // for event logging; see run() and velocity()

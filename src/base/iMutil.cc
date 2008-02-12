@@ -284,6 +284,12 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);
   }
+
+/*
+ierr = u3.printInfo(1); CHKERRQ(ierr);
+ierr = Istag3[0].printInfo(1); CHKERRQ(ierr);
+ierr = grid.printVertLevels(1); CHKERRQ(ierr);
+*/
   return 0;
 }
 

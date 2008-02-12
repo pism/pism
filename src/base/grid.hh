@@ -64,7 +64,6 @@ public:
                                    // which are represented in 3d Vecs
   PetscScalar dzMIN, dzMAX;
 
-  // FORMERLY IN IceParam:
   PetscScalar Lx, Ly;  // half width of the ice model grid in x-direction, y-direction (m)
   PetscInt    Mx, My; // number of grid points in x-direction, y-direction
   PetscScalar dx, dy; // spacing of grid
@@ -75,11 +74,14 @@ public:
   PetscScalar year;       // current time; units of years
   
 protected:
+  static const PetscInt    DEFAULT_SPACING_TYPE;
+  static const PetscScalar DEFAULT_QUADZ_LAMBDA;
+  // FORMERLY IN IceParam:
   static const PetscScalar DEFAULT_ICEPARAM_Lx, DEFAULT_ICEPARAM_Ly, DEFAULT_ICEPARAM_Lz, 
                            DEFAULT_ICEPARAM_year;
   static const PetscInt    DEFAULT_ICEPARAM_Mx, DEFAULT_ICEPARAM_My, DEFAULT_ICEPARAM_Mz,
                            DEFAULT_ICEPARAM_Mbz;
-
+  
 private:
   PetscInt        spacing_type;  // 0 = unknown spacing but not equally spaced
                                  // 1 = equally spaced

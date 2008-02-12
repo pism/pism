@@ -213,10 +213,8 @@ PetscErrorCode IceModel::createVecs() {
 
   ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
   ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
-  Sigmastag3 = new IceModelVec3[2];
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
   ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
-  Istag3 = new IceModelVec3[2];
   ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
 
@@ -288,10 +286,8 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = taunew3.destroy(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].destroy(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].destroy(); CHKERRQ(ierr);
-  delete [] Sigmastag3;
   ierr = Istag3[0].destroy(); CHKERRQ(ierr);
   ierr = Istag3[1].destroy(); CHKERRQ(ierr);
-  delete [] Istag3;
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
 

@@ -34,6 +34,8 @@ public:
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
   virtual PetscErrorCode  destroy();
 
+  virtual PetscErrorCode  printInfo(const PetscInt verbosity);
+ 
   virtual PetscErrorCode  setVaridNC(const int my_varid);
   virtual PetscErrorCode  setAttrsNC(const int my_varid,
              const char my_long_name[], const char my_units[], const char my_pism_intent[]);

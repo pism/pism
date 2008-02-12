@@ -7,12 +7,9 @@ include ${PETSC_DIR}/bmake/common/base
 
 #FLAGS:
 PISM_PREFIX ?= `pwd`
-MARGIN_TRICK ?= 0
-MARGIN_TRICK_TWO ?= 0
 WITH_FFTW ?= 1
 LOG_PISM_EVENTS ?= 0
-CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
-   -DMARGIN_TRICK=${MARGIN_TRICK} -DMARGIN_TRICK_TWO=${MARGIN_TRICK_TWO} -pipe
+CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} -pipe
 
 TESTS_LIB_FLAGS := -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib \
    -ltests -lm -lgsl -lgslcblas

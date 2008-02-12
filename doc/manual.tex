@@ -1223,7 +1223,7 @@ Note that EISMINT-Greenland specifies an 83 by 141 point grid.  But there is a t
 
 You may use other numbers for \verb|-Mx| and \verb|-My| if desired.  In such cases the data will be linearly interpolated onto your grid.
 
-Note the choice of the height of the computational box (``\verb|-Lz 4000|''), of the number of vertical levels (``\verb|-Mz 21|''), and of a not-equally-spaced grid (``\verb|-quadZ|''; currently UNDOCUMENTED OPTION).  The messages to standard out show that the vertical spacing is less than 30 m near the base and more than 130 m at the top of the computational box (where it matters less to have a fine grid).
+Note the choice of the height of the computational box (``\verb|-Lz 4000|''), of the number of vertical levels (``\verb|-Mz 21|''), and of a not-equally-spaced grid (``\verb|-quadZ|'').  The messages to standard out show that the vertical spacing is less than 30 m near the base and more than 130 m at the top of the computational box (where it matters less to have a fine grid).
 
 The option \verb|-bif| stands for ``bootstrapping input file''.  This option is an alternative to \verb|-if| (stands for ``input file'') which is used for a file which has full initial conditions.  In practice, \verb|-if| is only used with a NetCDF file which was previously saved by PISM; that is, \verb|-if| is used to continue a run.
 
@@ -1668,6 +1668,8 @@ As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref
 
 \optrestrict{bmr\und in\und cont}{pisms -eisII}  By default \verb|pisms -eisII| does not include the basal melt rate in the continuity equation because EISMINT II specifies that it should not be included.  This option makes \verb|pisms -eisII| behave like the generic PISM cases (e.g.~\verb|pismr|).
 
+\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
+
 \opt{constant\und hardness}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
@@ -1732,12 +1734,12 @@ Paterson-Budd law   &  \t{-law 0} &   Fixed Glen exponent $n=3$.  There is a spl
   & & $T^* < 263$ K and $(A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$, \\
   & & $Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* > 263$ K and \\
   & & where $T^*$ is the homologous temperature \cite{PatersonBudd}.  \\
-\emph{Cold} part of Paterson-Budd    &  \t{-law 1} &   Regardless of temperature, the values for $T^*<263$ K in \\
-  & & the Paterson-Budd law above apply.  This is the flow law \\
+\emph{Cold} part of Paterson-Budd    &  \t{-law 1} &   Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in \\
+  & & the Paterson-Budd law apply.  This is the flow law \\
   & & used in the thermomechanically coupled exact solutions \\
   & & Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} \\
-  & & and run by \verb|pismv -test F|,  \verb|pismv -test F|.  \\
-\emph{Warm} part of Paterson-Budd     &  \t{-law 2} & Regardless of temperature, the values for $T^*>263$ K in \\
+  & & and run by \verb|pismv -test F| and \verb|pismv -test G|.  \\
+\emph{Warm} part of Paterson-Budd     &  \t{-law 2} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in \\
   & &  Paterson-Budd apply.    \\
 Hooke law   &  \t{-law 3} &  Fixed Glen exponent $n=3$.  Here \\
   & & $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of \\
@@ -1836,6 +1838,8 @@ Note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
 	$$\mu = \tan\left(\frac{\pi}{180} \theta\right).$$
 Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
+\opt{quadZ}  Specify quadratically-spaced grid in the vertical.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
+
 \opt{regrid}  See section \ref{sect:usage}.
 
 \opt{regrid\und vars}  See section \ref{sect:usage}.
@@ -1884,7 +1888,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \opt{verbose}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
 
-\begin{table}[h]
+\begin{table}[ht]
 \caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
 \begin{tabular}{@{}llll}\hline
 \textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
@@ -2093,9 +2097,15 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 The following scripts, among others, are found in subdirectory \verb|pism/test/|.
 
-\subsubsection*{\Large{\texttt{fill\und missing.py}}}  [FILL IN DOCUMENTATION]
+\subsubsection*{\Large{\texttt{fill\und missing.py}}}  This script uses an approximation to Laplace's equation
+	$$\grad^2 u = 0$$
+to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
 
-\verb|fill_missing.py -i data.nc -v b,H,Ts -o data_smoothed.nc|.  Note that \emph{each} of the listed variables must have an attribute named \verb|missing_value|.
+This example of filling the missing values in several variables is probably complete documentation (if not, see the source code):
+
+\verb|fill_missing.py -i data.nc -v b,H,Ts -o data_smoothed.nc|
+
+\noindent Note that \emph{each} of the listed variables must have an attribute named \verb|missing_value|.
 
 
 \subsubsection*{\Large{\texttt{series.py}}}  This Python script postprocesses the standard output of \verb|pismr|, \verb|pisms|, \verb|pgrn|, or \verb|pismv| if it is stored in a text file.  (That is, standard output from the PISM \emph{evolution} executables.  Output from \verb|pismd|, an executable for diagnostic runs, is not supported.)
@@ -2140,6 +2150,7 @@ Note that the small number of digits reported in the standard output from the PI
 Three example usages are \begin{itemize}
 \item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|
 \item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do five levels (the maximum) of refinement only on test J
+\item ``\verb|verifynow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses the two cores on my laptop and runs in about two hours; the vertical spacing is not equal (its \verb|-quadZ|)
 \item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKL|'' will use forty processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait
 \end{itemize}
 
@@ -2154,6 +2165,8 @@ Three example usages are \begin{itemize}
 \optoptdef{p}{prefix}{} where the PISM executable \verb|pismv| is located
 
 \optoptdef{t}{tests}{CGIJ} which tests to run
+
+\optoptdef{u}{unequal}{0} spacing in vertical: \verb|-u 0| is default equal spacing, \verb|-u 1| adds option \verb|-quadZ| to \verb|pismv| call, and \verb|-u 2| adds option \verb|-chebZ| to \verb|pismv| call; see documentation on options \verb|-quadZ| and  \verb|-chebZ|
 
 \medskip
 Note that timing information is also given in the \verb|verifynow.py| output.  Therefore performance, including parallel performance, can be assessed along with accuracy.

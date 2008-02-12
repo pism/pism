@@ -21,6 +21,7 @@
 #include <petscda.h>
 #include <netcdf.h>
 #include "nc_util.hh"
+#include "iceModelpreamble.hh"
 
 #include "iceModelVec.hh"
 
@@ -44,11 +45,11 @@ IceModelVec::IceModelVec() {
   strcpy(standard_name,"UNKNOWN NetCDF CF 1.0 standard_name");
   
   varid_nc = -9999;
-};
+}
 
 
 IceModelVec::~IceModelVec() {
-};
+}
 
 
 PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_varname[], bool local) {
@@ -67,6 +68,41 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
+  return 0;
+}
+
+
+PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
+  PetscErrorCode ierr;
+  
+  if (grid == PETSC_NULL) {
+    SETERRQ1(1,"ERROR: cannot print info for IceModelVec with varname='%s' because grid=PETSC_NULL\n"
+               "  ENDING.\n\n",varname);
+  }
+
+  ierr = verbPrintf(verbosity,grid->com,"\nprinting info for IceModelVec with varname='%s':\n",
+                    varname); CHKERRQ(ierr);
+  if (da == PETSC_NULL) {
+    ierr = verbPrintf(verbosity,grid->com,"  WARNING:  da == PETSC_NULL for IceModelVec with varname='%s'!\n",
+                      varname); CHKERRQ(ierr);
+  }
+  if (v == PETSC_NULL) {
+    ierr = verbPrintf(verbosity,grid->com,"  WARNING:  v == PETSC_NULL for IceModelVec with varname='%s'!\n",
+                      varname); CHKERRQ(ierr);
+  }
+  if (array == PETSC_NULL) {
+    ierr = verbPrintf(verbosity,grid->com,"  WARNING:  array == PETSC_NULL for IceModelVec with varname='%s'!\n",
+                      varname); CHKERRQ(ierr);
+  }
+  
+  ierr = verbPrintf(verbosity,grid->com,"  boolean flags:  localp = %d,  IOwnDA = %d,  has_standard_name = %d\n",
+           (int)localp, (int)IOwnDA, has_standard_name);  CHKERRQ(ierr);
+
+  ierr = verbPrintf(verbosity,grid->com,"  NetCDF info:    varid_nc = %d\n", varid_nc);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,"                  long_name = '%s'\n", long_name);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,"                  standard_name = '%s'\n", standard_name);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,"                  units = '%s'\n", units);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,"                  pism_intent = '%s'\n\n", pism_intent);  CHKERRQ(ierr);
   return 0;
 }
 
