@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{255}
+\newcommand{\PISMREV}{263}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -55,7 +55,7 @@
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM bleeding edge by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}.} 
 
 \begin{document}
 \maketitle
@@ -162,6 +162,8 @@ You should configure and build PETSc \emph{essentially} as described on the  \hr
 
 \item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default:
 
+\verb|$  export PETSC_ARCH=linux-gnu-cxx|
+
 \verb|$  ./config/configure.py --with-shared --with-c-support \|
 
 \verb|   --with-clanguage=cxx --with-debugging=no|
@@ -185,7 +187,7 @@ Note that there is no PISM use of Fortran, and that it is sometimes convenient t
 \small
 \verb|export PETSC_DIR=/home/user/petsc-2.3.3-p2/|
 
-\verb|export PETSC_ARCH=linux-gnu-c-debug|
+\verb|export PETSC_ARCH=linux-gnu-cxx|
 
 \verb|export PATH=$PETSC_DIR/externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/:$PATH|
 \normalsize

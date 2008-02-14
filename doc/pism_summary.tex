@@ -1,0 +1,105 @@
+\documentclass[12pt,final]{amsart}
+
+\addtolength\topmargin{-.1in}
+\addtolength\textheight{0.3in}
+\addtolength{\oddsidemargin}{-.65in}
+\addtolength{\evensidemargin}{-.65in}
+\addtolength{\textwidth}{1.3in}
+\newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
+\newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
+\normalspacing
+
+\usepackage{bm,url,xspace,verbatim}
+\usepackage{amssymb,amsmath}
+\usepackage[final,pdftex]{graphicx}
+\usepackage[pdftex]{hyperref}
+
+\usepackage{natbib}
+
+\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
+\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
+\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
+\renewcommand{\t}[1]{\texttt{#1}}
+\newcommand{\Matlab}{\textsc{Matlab}\xspace}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\grad}{\nabla}
+
+\newcommand{\optoptdef}[3]{\vspace{1mm}\noindent \large\texttt{-#1},\,\,\texttt{--#2=}\normalsize\,\,[\textsl{#3}]:\quad}
+
+\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\normalsize}
+\newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
+\newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
+\newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
+\newcommand{\optdefrestrict}[3]{\rawopt{#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad}
+\newcommand{\und}{$\underline{\,\,\,}$}
+
+% note \beginV and \Vend are a pair, but they must be used as follows:
+%   \beginV
+%      ... stuff
+%   \end{verbatim}
+%   \Vend
+% that is, "\end{verbatim}" still has to appear on a line by itself with no leading spaces
+%\newcommand{\Vend}{ \rule{4.6in}{0.1mm}\end{quote} }
+%\newcommand{\beginV}{ \begin{quote}\rule{4.6in}{0.1mm}\begin{verbatim} }
+\newcommand{\Vend}{ \rule{4.6in}{0.1mm}\end{quote}\normalsize }
+%\newcommand{\beginV}{ \small\begin{quote}\rule{4.6in}{0.1mm}\begin{verbatim} }
+\newcommand{\beginV}{ \scriptsize\begin{quote}\rule{4.6in}{0.1mm}\begin{verbatim} }
+
+\newcommand{\Vfile}[1]{ \begin{quote}\rule{4.6in}{0.1mm} \verbatiminput{#1} \rule{4.6in}{0.1mm}\end{quote} }
+
+%\makeindex
+
+\title[]{\protect{\large Parallel Ice Sheet Model (PISM):\normalsize} \\ \protect{\large\medskip A Summary\normalsize}}
+
+\date{\today.} 
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+%\tablespacing
+
+PISM simulates the dynamic evolution of ice sheets like those in Antarctic and Greenland.
+
+The flow of interior ice sheets, ice streams, and ice shelves can each be approximated.  The model is always shallow but different stress balances are solved for these modes.  The flow is fully thermomechanically coupled.  PISM also computes the age of the ice, earth deformation, stored liquid water in the basal till, and other quantities.   Verification tests for many subsystems, including large coupled subsystems, are built in.
+
+PISM solves the flow equations in parallel; it is the only comprehensive ice sheet model which does so.  PISM uses PETSc (\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{www-unix.mcs.anl.gov/petsc/petsc-as}) and MPI for parallel computation.  PISM has been run on 500 processors simultaneously to simulate whole-sheet Antarctic ice sheet flow on a 5 km grid, for example.
+
+PISM has been designed with coupling to global circulation models (GCMs) in mind, though this capability is not yet proven.  The input and output format for PISM is CF 1.0-compliant NetCDF (\href{http://www.unidata.ucar.edu/software/netcdf/}{www.unidata.ucar.edu/software/netcdf}).  Because PISM is already an MPI program, coupling to GCMs can potentially be both offline and in parallel.
+
+\subsection*{The ice flow models in PISM}  Significant features of the continuum model approximated by the PISM include:\begin{itemize}
+\item The thermomechanically coupled shallow ice approximation equations \citep{Hutter,EISMINT00} are solved by PISM.  The numerical solution of these equations can be verified using highly nontrivial and coupled exact solutions \citep{BLKCB,BBL}.  These verification tests are built in and can be used at any time.
+\item Ice shelves and ice streams are modeled by shallow equations which describe flow constrained by membrane stresses and basal sliding resistance (in streams).  PISM solves the equations which were originally established for ice shelves \citep{Morland}, but it also solves the form adapted to ice streams (``dragging ice shelves'').  Ice streams can be modeled using till described by a range of models from linear viscosity to perfect plasticity \citep{MacAyeal,SchoofStream}.  The solution is verifiable using nontrivial ice stream and ice shelf exact solutions.
+\item The regions of grounded ice in which the ice stream model is applied can be determined from a plastic till assumption and the associated free boundary problem \citep{SchoofStream}.
+\item A three dimensional age field is computed, a temperature model for the bedrock under an ice sheet is included, and geothermal flux which varies in the map-plane can be used.
+\item Within the shallow ice sheet regions the model can use the constitutive relation of Goldsby and Kohlstedt \citep{GoldsbyKohlstedt}.  For inclusion in this flow law, grain size is approximated using a age-grain size relation from the Vostok core \citep{VostokCore}.
+\item An advanced bed deformation model is included \citep{BLKfastearth,LingleClark}.  It generalizes the better known elastic lithosphere, relaxing asthenosphere (``ELRA'') model \citep{Greve2001}.  This model can be initialized by an observed bed uplift map, a capability of no other ice sheet model.\end{itemize}
+
+Most of the internal numerical methods are of finite difference type.  The regular and rectangular three-dimensional grid is automatically broken into one-processor portions at run-time; the user merely specifies the number of available processors.  These portions communicate at their boundaries, and such communication is handled by PISM and PETSc, invisibly to the user.
+
+\subsection*{Usability of PISM as an ice sheet modeling language}  \begin{itemize}
+\item PISM is open source: \url{https://gna.org/projects/pism/}.
+\item A complete seventy page \emph{User's Manual} includes EISMINT-Greenland \citep{RitzEISMINT} and EISMINT-Ross \citep{MacAyealetal} modeling intercomparisons as realistic tutorial examples, as well as complete documentation on command line options and on installation.
+\item Example scripts for converting real data into PISM input files are included and documented.
+\item Verification tests and simplified geometry experiments (\citep{EISMINT00}, for example) can be run at the command line.
+\item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid or vice versa.
+\item PISM adaptively and automatically determines stable time steps.
+\item The state of the model can be viewed graphically at runtime or by examining output files in NetCDF or \Matlab format.
+\item The C++ and C source code itself is well-documented.  Comments in the source code comprise a sixty page \emph{Reference Manual} for programmers.  Programmers can write derived classes of PISM without having to create ice sheet modeling ``infrastructure'' from scratch.
+\end{itemize}
+
+\small
+%         References
+\bibliography{ice_bib}
+%\bibliographystyle{siam}
+\bibliographystyle{igs}
+\normalsize
+
+\vfill
+\noindent summary author: \emph{Ed Bueler}
+
+\vfill
+\noindent \emph{Learn more about PISM at}
+
+\centerline{\href{http://www.pism-docs.org/}{www.pism-docs.org}}
+\end{document}
