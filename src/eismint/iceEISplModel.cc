@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include <petsc.h>
 #include "iceEISplModel.hh"
 
+
 // default: no lake, the upstream and downstream part of the ice
 //   stream have the same till strength, "fjord" is just more weak till
 const PetscInt    IceEISplModel::phi_list_length = 5;
@@ -27,18 +28,9 @@ const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_LAKE        = 20.0;  // no lak
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_STRONG      = 20.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_UPSTREAM    =  5.0;
 const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_DOWNSTREAM  =  5.0;
-//const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       =  5.0;  // no floating tongue
-// make fjord region *strong*
-const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       = 20.0;  
+const PetscScalar IceEISplModel::DEFAULT_TILL_PHI_FJORD       =  5.0;  // just a continuation of weak strip
 
 const PetscScalar IceEISplModel::DEFAULT_STREAM_WIDTH = 100.0e3; // 100 km
-
-// 10 m/yr of surface ablation outside of original EISMINT II experiment A
-//    equilibrium ice cap; keeps ice stream from advancing to edge of computational grid
-const PetscScalar IceEISplModel::DEFAULT_EXTERIOR_RADIUS = 650.0e3;     // m
-const PetscScalar IceEISplModel::DEFAULT_EXTERIOR_ABLATION_RATE = 10.0; // m/year
-
-
 
 
 IceEISplModel::IceEISplModel(IceGrid &g, IceType *i)
@@ -109,31 +101,9 @@ PetscErrorCode IceEISplModel::initFromOptions() {
   
   ierr = setTillProperties(); CHKERRQ(ierr);
 
-// DON'T change accumulation
-//  ierr = resetAccum(); CHKERRQ(ierr);
-
   ierr = verbPrintf(1,grid.com, 
            "running plastic till SSA modification of EISMINT II experiment %c ...\n",
            expername);  CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Set accumulation outside of sheet very negative to stop flow to edge of computational domain.
-PetscErrorCode IceEISplModel::resetAccum() {
-  PetscErrorCode    ierr;
-  PetscScalar       **accum;
-
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  PetscScalar cx = grid.Lx, cy = grid.Ly;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // r is distance from center of grid
-      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i) + PetscSqr(-cy + grid.dy*j) );
-      if (r > DEFAULT_EXTERIOR_RADIUS)   accum[i][j] = - DEFAULT_EXTERIOR_ABLATION_RATE / secpera;
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   return 0;
 }
 
@@ -283,5 +253,4 @@ PetscErrorCode IceEISplModel::summaryPrintLine(
   }
   return 0;
 }
-
 

@@ -3,7 +3,11 @@
 # EISMINT II experiment I (and A); note this includes bedrock thermal, unlike EIS II
 # see preprint Bueler and Brown 2008, "A model of an ice sheet with one ice stream"
 
-NN=2  # set number of processors here
+NN=2  # set default number of processors here
+
+if [ $# -gt 0 ] ; then  # if user says "eis2plastic.sh 8" then NN = 8
+  NN="$1"
+fi
 
 # re speed: on experiment P0, marmaduke.gi.alaska.edu (8 cores) took about
 # 5 hours/(1000 model years) or, optimistically, about
@@ -17,8 +21,9 @@ mpisms()
     cmd="mpiexec -n $1 pisms $2"  # change if "mpirun" or "bin/pisms", etc.
     
     echo 
+    echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"
-    echo 
+    echo
     $cmd
 }
 
@@ -43,7 +48,7 @@ mpisms_vg()
 
 
 
-#THE EXPERIMENT:
+#THE EXPERIMENTS:
 
 # run without trough on coarse 25km grid for 100k years:
 mpisms_vg $NN u "-eisII A -Mx 61 -My 61 -y 100000 -track_Hmelt -o eis2A100k"

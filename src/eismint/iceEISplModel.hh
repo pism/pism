@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -32,9 +32,6 @@ public:
   virtual PetscErrorCode initFromOptions();
     
 protected:
-  static const PetscScalar DEFAULT_EXTERIOR_RADIUS;
-  static const PetscScalar DEFAULT_EXTERIOR_ABLATION_RATE;
-
   PetscScalar              stream_width;
   static const PetscScalar DEFAULT_STREAM_WIDTH;
 
@@ -48,14 +45,12 @@ protected:
 
   PetscInt       tillRegionCode(PetscInt i, PetscInt j);
   
-  PetscErrorCode resetAccum();
   PetscErrorCode setTillProperties();
   virtual PetscErrorCode summaryPrintLine(
               const PetscTruth printPrototype, const PetscTruth tempAndAge,
               const PetscScalar year, const PetscScalar dt, 
               const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
               const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
-
 };
 
 #endif /* __iceEISplModel_hh */
