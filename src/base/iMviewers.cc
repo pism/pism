@@ -23,18 +23,6 @@
 #include "iceModel.hh"
 
 
-PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName) {
-  return createOneViewerIfDesired(singleCharName,tn[cIndex(singleCharName)].title);
-}
-
-
-PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName,
-                                                  const char* title) {
-  return createOneViewerIfDesired(&(runtimeViewers[cIndex(singleCharName)]),
-                                  singleCharName,tn[cIndex(singleCharName)].title);
-}
-
-
 PetscErrorCode IceModel::getViewerDims(const PetscInt target_size, const PetscScalar Lx, const PetscScalar Ly,
                                        PetscInt *xdim, PetscInt *ydim)                             {
 
@@ -61,6 +49,18 @@ PetscErrorCode IceModel::getViewerDims(const PetscInt target_size, const PetscSc
   if (*xdim < 20)   *xdim = 20;
   if (*ydim < 20)   *ydim = 20;
   return 0;
+}
+
+
+PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName) {
+  return createOneViewerIfDesired(singleCharName,tn[cIndex(singleCharName)].title);
+}
+
+
+PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName,
+                                                  const char* title) {
+  return createOneViewerIfDesired(&(runtimeViewers[cIndex(singleCharName)]),
+                                  singleCharName,tn[cIndex(singleCharName)].title);
 }
 
 
@@ -116,7 +116,7 @@ PetscErrorCode IceModel::createViewers() {
     ierr = createOneViewerIfDesired(viewsInUse[nn]); CHKERRQ(ierr);
   } 
 
-  if (strchr(diagnostic, 'k') != NULL) {
+  if ( (strchr(diagnostic, 'k') != NULL) || (strchr(diagnosticBIG, 'k') != NULL) ) {
     ierr = KSPMonitorLGCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
                               PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
     ierr = KSPMonitorSet(SSAKSP, KSPMonitorLG, kspLG, 0); CHKERRQ(ierr);
@@ -334,14 +334,16 @@ PetscErrorCode IceModel::updateSpeedSurfaceValuesViewer(
                    const PetscScalar scale, const PetscTruth doLog,
                    const PetscScalar log_missing) {
   PetscErrorCode ierr;
-  ierr = imv3_u.needAccessToVals(); CHKERRQ(ierr);
-  ierr = imv3_v.needAccessToVals(); CHKERRQ(ierr);
-  ierr = imv3_u.getSurfaceValuesVec2d(vWork2d[2], vH); CHKERRQ(ierr);
-  ierr = imv3_v.getSurfaceValuesVec2d(vWork2d[3], vH); CHKERRQ(ierr);  
-  ierr = imv3_u.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = imv3_v.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = updateSpeed2DViewer(scName, vWork2d[2], vWork2d[3], 
-            scale, doLog, log_missing); CHKERRQ(ierr);
+  if (runtimeViewers[cIndex(scName)] != PETSC_NULL) {
+    ierr = imv3_u.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3_v.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3_u.getSurfaceValuesVec2d(vWork2d[2], vH); CHKERRQ(ierr);
+    ierr = imv3_v.getSurfaceValuesVec2d(vWork2d[3], vH); CHKERRQ(ierr);  
+    ierr = imv3_u.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3_v.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = updateSpeed2DViewer(scName, vWork2d[2], vWork2d[3], 
+             scale, doLog, log_missing); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -387,9 +389,12 @@ Most viewers are updated by this routing, but some other are updated elsewhere:
   \li see iceCompModel.cc for compensatory Sigma viewer (and redo of Sigma viewer) "-d PS".
  */
 PetscErrorCode IceModel::updateViewers() {
-
   PetscErrorCode ierr;
 
+  // no need to do anything if user requests no viewers:
+  if ((strlen(diagnostic) == 0) && (strlen(diagnosticBIG) == 0))
+    return 0;
+    
   // start by updating soundings:
   ierr = updateSoundings(); CHKERRQ(ierr);
   
@@ -400,15 +405,18 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('4', vub, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
-  ierr = update2DViewer('A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, secpera); CHKERRQ(ierr);
+  ierr = update2DViewer('A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, secpera);
+            CHKERRQ(ierr);
   ierr = updateLog2DViewer('B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = update2DViewer('C', vtauc, 0.001); CHKERRQ(ierr); // display in kPa
   ierr = updateSliceViewer('E', tau3, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
   ierr = update2DViewer('H', vH, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('L', vHmelt, 1.0); CHKERRQ(ierr);
-  ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
-  ierr = update2DViewer('Q', vWork2d[0], 0.001); CHKERRQ(ierr); // Display in kPa
+  if (runtimeViewers[cIndex('Q')] != PETSC_NULL) {
+    ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
+    ierr = update2DViewer('Q', vWork2d[0], 0.001); CHKERRQ(ierr); // Display in kPa
+  }
   ierr = update2DViewer('R', vRb, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
   ierr = updateSliceViewer('S', Sigma3, secpera); CHKERRQ(ierr);
   ierr = updateSliceViewer('T', T3, 1.0); CHKERRQ(ierr);

@@ -52,8 +52,6 @@
 
 \title[]{\protect{\large Parallel Ice Sheet Model (PISM):\normalsize} \\ \protect{\large\medskip A Summary\normalsize}}
 
-\date{\today.} 
-
 \begin{document}
 \maketitle
 \thispagestyle{empty}
@@ -77,15 +75,16 @@ PISM has been designed with coupling to global circulation models (GCMs) in mind
 
 Most of the internal numerical methods are of finite difference type.  The regular and rectangular three-dimensional grid is automatically broken into one-processor portions at run-time; the user merely specifies the number of available processors.  These portions communicate at their boundaries, and such communication is handled by PISM and PETSc, invisibly to the user.
 
-\subsection*{Usability of PISM as an ice sheet modeling language}  \begin{itemize}
+\subsection*{PISM as an ice sheet modeling language}  \begin{itemize}
 \item PISM is open source: \url{https://gna.org/projects/pism/}.
 \item A complete seventy page \emph{User's Manual} includes EISMINT-Greenland \citep{RitzEISMINT} and EISMINT-Ross \citep{MacAyealetal} modeling intercomparisons as realistic tutorial examples, as well as complete documentation on command line options and on installation.
-\item Example scripts for converting real data into PISM input files are included and documented.
+\item Example scripts for converting real data into PISM input files in NetCDF format are included and documented.
 \item Verification tests and simplified geometry experiments (\citep{EISMINT00}, for example) can be run at the command line.
 \item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid or vice versa.
 \item PISM adaptively and automatically determines stable time steps.
 \item The state of the model can be viewed graphically at runtime or by examining output files in NetCDF or \Matlab format.
-\item The C++ and C source code itself is well-documented.  Comments in the source code comprise a sixty page \emph{Reference Manual} for programmers.  Programmers can write derived classes of PISM without having to create ice sheet modeling ``infrastructure'' from scratch.
+\item The C++ and C source code itself is well-documented.  Comments in the source code comprise a sixty page \emph{Reference Manual} for programmers.  
+\item C++ programmers can write derived classes of PISM without having to create ice sheet modeling ``infrastructure'' from scratch.  The open source code of PISM is a natural starting point for new parallel ice sheet models with, for instance, different flow laws, basal physics, or ``higher-order'' stress balances.
 \end{itemize}
 
 \small
@@ -96,10 +95,13 @@ Most of the internal numerical methods are of finite difference type.  The regul
 \normalsize
 
 \vfill
-\noindent summary author: \emph{Ed Bueler}
-
-\vfill
-\noindent \emph{Learn more about PISM at}
+\noindent\emph{Learn more about PISM at:}
+\bigskip
 
 \centerline{\href{http://www.pism-docs.org/}{www.pism-docs.org}}
+\vfill
+\scriptsize
+\noindent \emph{Summary author:} Ed Bueler, \href{mailto:ffelb@uaf.edu}{\texttt{ffelb@uaf.edu}}.  \hfill \emph{Date:} \today.
+
 \end{document}
+

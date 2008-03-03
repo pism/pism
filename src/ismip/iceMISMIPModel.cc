@@ -26,23 +26,42 @@
 
 
 /* 
-WORKING REFERENCE RUN:
-  pisms -mismip 1b -Mx 11 -My 101 -Mz 11 -super -ocean_kill -ksp_rtol 1e-11 -ssa_rtol 1e-6 -max_dt 10.0
-  pisms -mismip 1b -Mx 11 -My 101 -Mz 11        -ocean_kill -ksp_rtol 1e-11 -ssa_rtol 1e-6 -max_dt 10.0
+WORKING REFERENCE RUNs:
+
+  mpiexec -n 2 pisms -mismip 1b -Mx 5 -My 101 -Mz 11 -super -ocean_kill \
+     -ksp_rtol 1e-11 -ssa_rtol 1e-6 -y 10000
+
+and version without -super, and with higher res
 */
 
 /* 
-WE'VE GOT A PROBLEM WITH FLUX ACROSS GROUNDING LINE:
-(not surprising ...)
-after end of 30000 year run as above, this sequence generates a file foobar.nc with 
-variable "q" where q = cbar .* thk:
-  ncks -v cbar mismip1b_30k.nc foo.nc
-  ncrename -v cbar,q foo.nc
-  ncks -v thk mismip1b_30k.nc bar.nc
-  ncrename -v thk,q bar.nc
-  ncbo --op_typ=* foo.nc bar.nc foobar.nc
-the resulting flux magnitude both jumps and wiggles at the grounding line
-BUT FROM NOW ON VARIABLE "cflx" WILL APPEAR IN OUTPUT FILE
+
+WE'VE GOT A PROBLEM WITH FLUX ACROSS GROUNDING LINE; not surprising ...
+See "cflx" in output file.
+
+-adapt_ratio is not the whole issue, although the instability is very noticable as 
+highest freq wiggles in dHdt on the land side of the grounding line.  For a Mx=500
+case these wiggles extended about 150km back from the grounding line.  Reducing
+to "-adapt_ratio 0.08" (from 0.12, default) makes these highest frequency wiggles 
+go away, and makes the problem a lower frequency "wobble" very close to the grounding
+line (within 40km of it; about 6 to 10 grid spaces).
+
+I think the underlying issue is *regularity of the basal shear stress*, that is, of the 
+shear stress coefficient, which jumps from C_MISMIP to zero across the grounding line.
+
+A plan: in additionalAtEndTimestep() we set an IceMISMIPModel variable which is the 
+current estimate of the location of the grounding line.  It must be determined correctly
+in parallel!  In particular, it will be xg = x_{i+1/2} for the largest i for which mask(i)
+is DRAGGING *and* mask(i+1) is FLOATING.  If this impossible it will be negative.
+PetscGlobalMax() should be usable.  Then we will damp out C_MISMIP in the 50km on the 
+grounded side of the grounding line; it will decrease linearly from C_MISMIP at xg - 50km
+to zero at xg.
+
+In other words, I think we need
+   \tau_b \in W^{1,\infty} 
+or something; without the damping all we have is
+   \tau_b \in L^\infty.
+   
 */
 
 /* 
@@ -64,6 +83,34 @@ and text files
   EBU2_2b_M1_A3_ss
   EBU2_2b_M1_A3_f
 */
+
+
+MISMIPIce::MISMIPIce() {
+  rho = 900.0;
+  n = 3;
+  setA(4.6416e-24);
+}
+
+
+PetscErrorCode MISMIPIce::setA(const PetscScalar myA) {
+  A_MISMIP = myA;
+  B_MISMIP = pow(A_MISMIP, - 1.0 / ((PetscScalar) n));
+  return 0;
+}
+
+
+PetscScalar MISMIPIce::getA() {
+  return A_MISMIP;
+}
+
+
+PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(thresh, com, 
+    "Using MISMIP ice w  rho=%5.2f, grav=%5.4f, n=%d, and A=%5.4e.\n",
+    rho, grav, n, A_MISMIP); CHKERRQ(ierr);
+  return 0;
+}
 
 
 PetscScalar MISMIPIce::flow(const PetscScalar stress, const PetscScalar temp,
@@ -94,69 +141,6 @@ PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar regularization
 }
 
 
-MISMIPIce::MISMIPIce() {
-  rho = 900.0;
-  n = 3;
-  setA(4.6416e-24);
-}
-
-
-PetscErrorCode MISMIPIce::setA(const PetscScalar myA) {
-  A_MISMIP = myA;
-  B_MISMIP = pow(A_MISMIP, - 1.0 / ((PetscScalar) n));
-  return 0;
-}
-
-
-PetscScalar MISMIPIce::getA() {
-  return A_MISMIP;
-}
-
-
-PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(thresh, com, 
-    "Using MISMIP ice with rho = %5.4f, n = %d, and A=%5.4e.  (Note grav = %5.4f.)\n",
-    rho, n, A_MISMIP, grav); CHKERRQ(ierr);
-  return 0;
-}
-
-
-MISMIPBasalType::MISMIPBasalType(const PetscScalar m, const PetscScalar C,
-                                 const PetscScalar regularize) {
-  m_MISMIP = m;
-  C_MISMIP = C;
-  regularize_MISMIP = regularize;
-}
-
-
-PetscErrorCode MISMIPBasalType::printInfo(const int thresh, MPI_Comm com) {
-  PetscErrorCode ierr;
-  if (m_MISMIP == 1.0) {
-    ierr = verbPrintf(thresh, com, 
-      "Using  tau_b = - C u  sliding model for MISMIP, with C=%5.4e.\n", C_MISMIP); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(thresh, com, 
-      "Using  tau_b = - C (|u|^2 + eps^2)^{(m-1)/2} u  model for MISMIP, with m=%5.4f, C=%5.4e,\n"
-      "  and eps = %5.4f m/a.\n",
-      m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-PetscScalar MISMIPBasalType::drag(PetscScalar coeff, PetscScalar tauc,
-                                   PetscScalar vx, PetscScalar vy) {
-  if (m_MISMIP == 1.0) {
-    return C_MISMIP;
-  } else {
-    const PetscScalar magsliding = PetscSqr(vx) + PetscSqr(vy) + PetscSqr(regularize_MISMIP);
-    return C_MISMIP * pow(magsliding, (m_MISMIP - 1.0) / 2.0);
-  }
-}
-
-
-
 IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) : 
       IceModel(g, i), mismip_ice(mismip_i) {
 
@@ -167,6 +151,65 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) :
   runindex = 1;
   runtimeyears = 3.0e4;
   strcpy(initials,"ABC");
+  m_MISMIP = 1.0/3.0;
+  C_MISMIP = 7.624e6;
+  regularize_MISMIP = 0.01 / secpera;  
+  rstats.xg = -1.0;
+}
+
+
+PetscErrorCode IceMISMIPModel::printBasalInfo() {
+  PetscErrorCode ierr;
+  if (m_MISMIP == 1.0) {
+    ierr = verbPrintf(2, grid.com, 
+      "Using MISMIP sliding w  tau_b = - C u,  C=%5.4e.\n", C_MISMIP); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+      "Using MISMIP sliding w  tau_b = - C (|u|^2 + eps^2)^{(m-1)/2} u,\n"
+      "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
+      m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
+  }
+  //ierr = verbPrintf(2, grid.com, 
+  // "[printBasalInfo: rstats.xg=%5.4f]\n", rstats.xg); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscScalar IceMISMIPModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                                       PetscScalar **u, PetscScalar **v,
+                                       PetscInt i, PetscInt j) const {
+  return basalIsotropicDrag(beta, tauc, u, v, i, j);
+}
+
+
+PetscScalar IceMISMIPModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                                       PetscScalar **u, PetscScalar **v,
+                                       PetscInt i, PetscInt j) const {
+  return basalIsotropicDrag(beta, tauc, u, v, i, j);
+}
+
+
+PetscScalar IceMISMIPModel::basalIsotropicDrag(PetscScalar **beta, PetscScalar **tauc,
+                                       PetscScalar **u, PetscScalar **v,
+                                       PetscInt i, PetscInt j) const {
+  PetscScalar myC = C_MISMIP;
+  if (rstats.xg < 50.0) {
+    // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
+    const PetscScalar jfrom0 =
+             static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+    const PetscScalar absy = PetscAbs(grid.dy * jfrom0);
+    if ((absy > rstats.xg - 50.0e3) && (absy < rstats.xg)) {
+      myC = myC * (rstats.xg - absy) / 50.0e3;
+    }
+  }
+
+  if (m_MISMIP == 1.0) {
+    return myC;
+  } else {
+    const PetscScalar magsliding = PetscSqr(u[i][j]) + PetscSqr(v[i][j])
+                                   + PetscSqr(regularize_MISMIP);
+    return myC * pow(magsliding, (m_MISMIP - 1.0) / 2.0);
+  }
 }
 
 
@@ -214,19 +257,22 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     sliding = 'a';
   } else if (strlen(Ee) == 1) {
     if ((Ee[0] < '1') || (Ee[0] > '3')) {
-      SETERRQ(1,"IceMISMIPModel ERROR:  first character of string Ee in '-mismip Ee' must be 1, 2, or 3");
+      SETERRQ(1,"IceMISMIPModel ERROR:  first character of string Ee in"
+                " '-mismip Ee' must be 1, 2, or 3");
     }
     exper = (int) Ee[0] - (int) '0';
     sliding = 'a';
   } else if (strlen(Ee) == 2) {
     if ((Ee[0] < '1') || (Ee[0] > '3')) {
-      SETERRQ(1,"IceMISMIPModel ERROR:  first character of string Ee in '-mismip Ee' must be 1, 2, or 3");
+      SETERRQ(1,"IceMISMIPModel ERROR:  first character of string Ee in"
+                " '-mismip Ee' must be 1, 2, or 3");
     }
     exper = (int) Ee[0] - (int) '0';
     if ((Ee[1] == 'a') || (Ee[1] == 'b')) {
       sliding = Ee[1];
     } else {
-      SETERRQ(2,"IceMISMIPModel ERROR:  second character of string Ee in '-mismip Ee' must be a or b");
+      SETERRQ(2,"IceMISMIPModel ERROR:  second character of string Ee in"
+                " '-mismip Ee' must be a or b");
     }
   } else {
     SETERRQ(3,"IceMISMIPModel ERROR:  string Ee in '-mismip Ee' must be of length 0, 1, or 2");
@@ -245,20 +291,23 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   }
   if ((exper == 1) || (exper == 2)) {
     if (runindex > 9) {
-      SETERRQ(5,"IceMISMIPModel ERROR:  run index N in '-run N' must be <= 9 in experiments 1 or 2");
+      SETERRQ(5,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
+                " <= 9 in experiments 1 or 2");
     }
     runtimeyears = 3.0e4;
     ierr = mismip_ice->setA(Aexper1or2[runindex]); CHKERRQ(ierr);  
   } else if (exper == 3) {
     if (sliding == 'a') {
       if (runindex > 13) {
-        SETERRQ(6,"IceMISMIPModel ERROR:  run index N in '-run N' must be <= 13 in experiment 3a");
+        SETERRQ(6,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
+                  " <= 13 in experiment 3a");
       }
       runtimeyears = timeexper3a[runindex];
       ierr = mismip_ice->setA(Aexper3a[runindex]); CHKERRQ(ierr);  
     } else if (sliding == 'b') {
       if (runindex > 15) {
-        SETERRQ(7,"IceMISMIPModel ERROR:  run index N in '-run N' must be <= 15 in experiment 3b");
+        SETERRQ(7,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
+                  " <= 15 in experiment 3b");
       }
       runtimeyears = timeexper3b[runindex];
       ierr = mismip_ice->setA(Aexper3b[runindex]); CHKERRQ(ierr);  
@@ -271,7 +320,8 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, PETSC_MAX_PATH_LEN, PETSC_NULL); 
             CHKERRQ(ierr);
   if (strlen(initials) != 3) {
-    ierr = verbPrintf(1,grid.com,"IceMISMIPModel WARNING:  Initials string should be three chars long.");
+    ierr = verbPrintf(1,grid.com,"IceMISMIPModel WARNING:  Initials string"
+                                 " should be three chars long.");
        CHKERRQ(ierr);
   }
 
@@ -311,26 +361,28 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
   if (infileused) {
     ierr = verbPrintf(1,grid.com, 
-       "IceMISMIPModel WARNING: -if or -bif option used; not using MISMIP formulae to initialize\n");
+       "IceMISMIPModel WARNING: -if or -bif option used; not using"
+       " MISMIP formulae to initialize\n");
        CHKERRQ(ierr);  
   } else { // usual case: initialize from MISMIP formulas
     ierr = verbPrintf(1,grid.com, 
               "initializing MISMIP experiment %d%c\n"
-              "    [grid mode %d; run %d (A = %5.4e, MISMIP run length = %5.2f years)] ... \n", 
+              "    [grid mode %d; run %d (A=%5.4e, MISMIP run length = %5.2f yrs)]\n", 
               exper,sliding,gridmode,runindex,mismip_ice->getA(),runtimeyears); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
     // see Table 3
-    const PetscScalar REGULARIZING_VELOCITY = 0.01 / secpera;
     if (sliding == 'a') {
-      basal = new MISMIPBasalType(1.0/3.0, 7.624e6, REGULARIZING_VELOCITY);
+      m_MISMIP = 1.0/3.0;
+      C_MISMIP = 7.624e6;
     } else if (sliding == 'b') {
-      basal = new MISMIPBasalType(1.0, 7.2082e10, REGULARIZING_VELOCITY);
+      m_MISMIP = 1.0;
+      C_MISMIP = 7.2082e10;
     } else {
       SETERRQ(99, "how did I get here?");
     }
-    createBasal_done = PETSC_TRUE;
+    regularize_MISMIP = 0.01 / secpera;  
 
     // FIXME:  use value of gridmode to set grid??
 
@@ -338,7 +390,9 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     // NOTE: y takes place of x!!!
     // NOTE: put calving front at 1600.0e3  ??
     ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
-    ierr = grid.rescale_and_set_zlevels(200.0e3, L, 4000.0); CHKERRQ(ierr);  // what to put for thickness?
+
+    // FIXME:  what to put for thickness here?
+    ierr = grid.rescale_and_set_zlevels(200.0e3, L, 4000.0); CHKERRQ(ierr); 
 
     // all of these relate to models which should be turned off ...
     ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
@@ -352,8 +406,11 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = VecSet(vAccum, 0.3/secpera); CHKERRQ(ierr);
 
     ierr = VecSet(vH, 10.0); CHKERRQ(ierr);  // initial thickness of 10 m
+
     ierr = setMISMIPBed(); CHKERRQ(ierr);
     ierr = setMISMIPMask(); CHKERRQ(ierr);
+    ierr = verbPrintf(4,grid.com,"IceMISMIPModel: bed topography and mask stored\n");
+              CHKERRQ(ierr);
 
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
@@ -370,7 +427,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
         "  from user option -y (or -ys and -ye)\n"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com,
-        "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specification)\n",
+        "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specs)\n",
         runtimeyears); CHKERRQ(ierr);
       grid.year = 0.0;
       ierr = setStartYear(grid.year); CHKERRQ(ierr);
@@ -382,7 +439,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   }
   
   ierr = mismip_ice->printInfo(2,grid.com); CHKERRQ(ierr);
-  ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
+//  ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
+  ierr = printBasalInfo(); CHKERRQ(ierr);
   
   if (!isInitialized()) {
     SETERRQ(1, "ERROR: IceMISMIPModel has not been initialized!\n");
@@ -428,8 +486,6 @@ PetscErrorCode IceMISMIPModel::setMISMIPBed() {
   // communicate b because it will be horizontally differentiated
   ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,grid.com,"IceMISMIPModel: bed topography stored\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -461,8 +517,6 @@ PetscErrorCode IceMISMIPModel::setMISMIPMask() {
   // communicate it
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,grid.com,"IceMISMIPModel: mask stored\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -518,9 +572,11 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       const PetscScalar jfrom0 =
                static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
 
-      // grounding line xg is largest  y  so that  mask[i][j] != FLOATING and mask[i][j+1] == FLOATING
+      // grounding line xg is largest  y  so that  mask[i][j] != FLOATING
+      //       and mask[i][j+1] == FLOATING
       if ( (jfrom0 > 0.0) && (H[i][j] > 0.0) 
-           && (modMask(mask[i][j]) != MASK_FLOATING) && (modMask(mask[i][j+1]) == MASK_FLOATING) ) {
+           && (modMask(mask[i][j]) != MASK_FLOATING) 
+           && (modMask(mask[i][j+1]) == MASK_FLOATING) ) {
         // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
         jg = PetscMax(jg,static_cast<PetscScalar>(j));
       }
@@ -549,7 +605,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   
   PetscScalar myhxg = 0.0;
   if ( (gjg >= grid.ys) && (gjg < grid.ys + grid.ym)
-       && (grid.xs == 0)                             ) {  // if (0,gjg) is in ownership range
+       && (grid.xs == 0)                             ) {  // if (0,gjg) is in ownership
     myhxg = H[0][static_cast<int>(gjg)]; // i.e. hxg = H[0][gjg]
   } else {
     myhxg = 0.0;
@@ -585,7 +641,8 @@ PetscErrorCode IceMISMIPModel::summaryPrintLine(
 
 /*
 Because this model does resolve the shelf and only uses the floatation criterion
-to move the grounding line, we give 17 numbers.  (These numbers will go into ABC1_1a_M1_A1_t.)
+to move the grounding line, we will give 17 numbers.
+(These numbers will go into ABC1_1a_M1_A1_t.)
 
 The basic format is
 

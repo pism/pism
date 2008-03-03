@@ -3,15 +3,18 @@
 # EISMINT II experiment I (and A); note this includes bedrock thermal, unlike EIS II
 # see preprint Bueler and Brown 2008, "A model of an ice sheet with one ice stream"
 
+# re speed: with exit after completion of P5 (as below; P8, P10, and P0cont not included),
+#           the whole script should take less than 500 processor-hours [???]
+
+# re speed: on experiment P0, marmaduke.gi.alaska.edu (8 cores) took about
+#           5 hours/(1000 model years) or, optimistically, about
+#           ( 1 hour/(1000 model years) )/core
+
 NN=2  # set default number of processors here
 
 if [ $# -gt 0 ] ; then  # if user says "eis2plastic.sh 8" then NN = 8
   NN="$1"
 fi
-
-# re speed: on experiment P0, marmaduke.gi.alaska.edu (8 cores) took about
-# 5 hours/(1000 model years) or, optimistically, about
-# ( 1 hour/(1000 model years) )/core
 
 set -e  # exit on error
 
@@ -47,7 +50,6 @@ mpisms_vg()
 #else           # put this before restart location
 
 
-
 #THE EXPERIMENTS:
 
 # run without trough on coarse 25km grid for 100k years:
@@ -78,11 +80,8 @@ mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 100 -o eis2plP0_100"
 
 mpisms $NN "-eis2pl -if eis2plP0_100.nc -y 900 -o eis2plP0_1000"
 
-mpisms $NN "eis2pl -if eis2plP0_1000.nc -y 4000 -f3d \
+mpisms $NN "-eis2pl -if eis2plP0_1000.nc -y 4000 -f3d \
  -o eis2plP0 -mato eis2plP0 -matv bcYTHLCQ0345"
-
-
-exit   # possible stopping point
 
 
 # experiment P6 (coarser horizontal 25km grid):
@@ -95,14 +94,7 @@ mpisms_vg $NN u "-eis2pl -Mx 201 -My 201 -ys 0 -y 5000 \
  -regrid eis2I_final.nc -regrid_vars HTBL \
  -f3d -o eis2plP7 -mato eis2plP7 -matv bcYTHLCQ0345"
 
-# experiment P8 (finer horizontal **5km** grid); save intermediate as it is long:
-mpisms_vg $NN u "-eis2pl -Mx 301 -My 301 -ys 0 -y 1000 \
- -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP8_1k"
-
-mpisms $NN "-eis2pl -if eis2plP8_1k.nc -y 2000 -o eis2plP8_3k"
-
-mpisms $NN "-eis2pl -if eis2plP8_3k.nc -y 2000 -f3d -o eis2plP8 \
- -mato eis2plP8 -matv bcYTHLCQ0345"
+# [finest horizontal grid run P8 put at end; slowest]
 
 # experiment P9 (finer vertical [less than near base] 10m grid):
 #MPISMS -eis2pl -Mx 121 -My 121 -Mz 501 -Mbz 101 ...
@@ -110,14 +102,7 @@ mpisms $NN "-eis2pl -Mx 121 -My 121 -Mz 201 -Mbz 81 -quadZ -ys 0 -y 5000 \
  -regrid eis2I_final.nc -regrid_vars HTBL \
  -f3d -o eis2plP9 -mato eis2plP9 -matv bcYTHLCQ0345"
 
-# experiment P10 (finer vertical [less than near base] *5m* grid):
-#MPISMS -eis2pl -Mx 121 -My 121 -Mz 1001 -Mbz 201 ...
-mpisms $NN "-eis2pl -Mx 121 -My 121 -Mz 401 -Mbz 161 -quadZ -ys 0 -y 5000 \
- -regrid eis2I_final.nc -regrid_vars HTBL \
- -f3d -o eis2plP10 -mato eis2plP10 -matv bcYTHLCQ0345"
-
-
-#exit    # possible stopping point
+# [finest vertical grid run P10 put at end; slowest]
 
 
 # experiment P1 (no trough)
@@ -144,7 +129,7 @@ mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 5000 -f3d \
  -mato eis2plP5 -matv bcYTHLCQ0345"
 
 
-#exit   # possible stopping point
+exit   # possible stopping point
 
 
 # experiment P0cont (run another 95k years;  lots of runtime!):
@@ -170,5 +155,22 @@ mpisms $NN "-eis2pl -if eis2pl80k.nc -y 10000 -o eis2pl90k"
 mpisms $NN "-eis2pl -if eis2pl90k.nc -y 10000 -f3d \
  -o eis2plP0cont -mato eis2plP0cont -matv bcYTHLCQ0345"
 
+
+# experiment P8 (finest horizontal **5km** grid); save intermediate as it is long:
+mpisms_vg $NN u "-eis2pl -Mx 301 -My 301 -ys 0 -y 1000 \
+ -regrid eis2I_final.nc -regrid_vars HTBL -o eis2plP8_1k"
+
+mpisms $NN "-eis2pl -if eis2plP8_1k.nc -y 2000 -o eis2plP8_3k"
+
+mpisms $NN "-eis2pl -if eis2plP8_3k.nc -y 2000 -f3d -o eis2plP8 \
+ -mato eis2plP8 -matv bcYTHLCQ0345"
+ 
+ 
+# experiment P10 (finer vertical [less than near base] *5m* grid):
+#MPISMS -eis2pl -Mx 121 -My 121 -Mz 1001 -Mbz 201 ...
+mpisms $NN "-eis2pl -Mx 121 -My 121 -Mz 401 -Mbz 161 -quadZ -ys 0 -y 5000 \
+ -regrid eis2I_final.nc -regrid_vars HTBL \
+ -f3d -o eis2plP10 -mato eis2plP10 -matv bcYTHLCQ0345"
+ 
 #fi
 

@@ -50,18 +50,6 @@ protected:
 };
 
 
-class MISMIPBasalType : public ViscousBasalType {
-public:
-  MISMIPBasalType(const PetscScalar m, const PetscScalar C, const PetscScalar regularize);
-  virtual PetscScalar    drag(PetscScalar coeff, PetscScalar tauc, PetscScalar vx, PetscScalar vy);
-  virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com);
-
-protected:
-  PetscScalar m_MISMIP, C_MISMIP;
-  PetscScalar regularize_MISMIP;
-};
-
-
 struct routineStatsType {
   PetscScalar xg, hxg, maxubar, avubarG, avubarF;
 };
@@ -80,10 +68,18 @@ public:
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
-  virtual PetscErrorCode summaryPrintLine(const PetscTruth printPrototype, const PetscTruth tempAndAge,
-                           const PetscScalar year, const PetscScalar dt, 
-                           const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-                           const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+  virtual PetscErrorCode summaryPrintLine(
+                const PetscTruth printPrototype, const PetscTruth tempAndAge,
+                const PetscScalar year, const PetscScalar dt, 
+                const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+                const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+  virtual PetscScalar    basalDragx(PetscScalar **beta, PetscScalar **tauc,
+                                    PetscScalar **u, PetscScalar **v,
+                                    PetscInt i, PetscInt j) const;
+  virtual PetscScalar    basalDragy(PetscScalar **beta, PetscScalar **tauc,
+                                    PetscScalar **u, PetscScalar **v,
+                                    PetscInt i, PetscInt j) const;
+  PetscErrorCode         printBasalInfo();
 
 protected:
   MISMIPIce   *mismip_ice;
@@ -99,6 +95,13 @@ protected:
   PetscErrorCode  setMISMIPMask();
   PetscErrorCode  getMISMIPStats();
   PetscErrorCode  getRoutineStats();
+
+  PetscScalar m_MISMIP, C_MISMIP;
+  PetscScalar regularize_MISMIP;
+
+  PetscScalar basalIsotropicDrag(PetscScalar **beta, PetscScalar **tauc,
+                                 PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const;
 };
 
 #endif  // __iceMISMIPModel_hh
