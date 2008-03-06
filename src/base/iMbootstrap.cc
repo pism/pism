@@ -226,10 +226,12 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   // will create "local interpolation context" from dimensions, limits, and lengths extracted from
   //   bootstrap file and from information about the part of the grid owned by this processor;
-  //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and equal to zero
+  //   this code fills dim[0..4] and bdy[0..6]
+  //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and
+  //   equal to zero
   size_t dim[5];  // dimensions in bootstrap NetCDF file
   double bdy[7];  // limits and lengths for bootstrap NetCDF file
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
   double *z_bif, *zb_bif;
   z_bif = new double[dim[3]];
   zb_bif = new double[dim[4]];

@@ -378,18 +378,26 @@ PetscErrorCode IceModel::afterInitHook() {
 
 //! Catch signals -USR1 and -TERM; in the former case save and continue; in the latter, save and stop.
 int IceModel::endOfTimeStepHook() {
-
-  // SIGTERM makes PISM end, saving state under original -o name
+  
+  // SIGTERM makes PISM end, saving state under original -o name (or default name)
+  //   and adding indication to history attribute of output NetCDF file.
   if (pism_signal == SIGTERM) {
-    verbPrintf(1, grid.com, "Caught signal SIGTERM: exiting early.\n");
+    verbPrintf(1, grid.com, 
+       "Caught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
+    char str[HISTORY_STRING_LENGTH];
+    snprintf(str, sizeof(str), 
+       "EARLY EXIT caused by signal SIGTERM.  Completed timestep at year=%.3f.",
+       grid.year);
+    stampHistory(str);
     return 1;
   }
   
-  // SIGUSR1 makes PISM save state under filename based on the current year
+  // SIGUSR1 makes PISM save state under filename based on the current year.
+  //   No need to indicate in history attribute of output NetCDF file.
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%5.3f.nc", grid.year);
-    verbPrintf(1, grid.com, "Caught signal SIGUSR1: Writing intermediate file `%s'.\n",
+    verbPrintf(1, grid.com, "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
                file_name);
     pism_signal = 0;
     dumpToFile_netCDF(file_name);
@@ -470,7 +478,7 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
   ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
   
   char str[HISTORY_STRING_LENGTH];
-  int length = snprintf(str, sizeof(str), "%s@%s %s : %s\n",
+  int length = snprintf(str, sizeof(str), "%s@%s %s:  %s\n",
                         username, hostname, date_str, string);
   
   if (length < 0) {

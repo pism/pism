@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     MISMIPIce* mismipice = new MISMIPIce;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
 
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
     

@@ -9,7 +9,9 @@ include ${PETSC_DIR}/bmake/common/base
 PISM_PREFIX ?= `pwd`
 WITH_FFTW ?= 1
 LOG_PISM_EVENTS ?= 0
-CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} -pipe
+MISMIP_PLAY ?= 0
+CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
+          -DMISMIP_PLAY=${MISMIP_PLAY} -pipe
 
 TESTS_LIB_FLAGS := -L`pwd` -L`pwd`/lib -Wl,-rpath,`pwd` -Wl,-rpath,`pwd`/lib \
    -ltests -lm -lgsl -lgslcblas

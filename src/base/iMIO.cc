@@ -118,11 +118,11 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
     PetscTruth userWantsFull;
     ierr = PetscOptionsHasName(PETSC_NULL, "-f3d", &userWantsFull); CHKERRQ(ierr);
     if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
-      ierr = verbPrintf(1, grid.com, 
+      ierr = verbPrintf(2, grid.com, 
             "Writing model state, with full 3D velocities, to file `%s'", ncf); CHKERRQ(ierr);
       ierr = dumpToFile_diagnostic_netCDF(ncf); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(1, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
       ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
     }
   }

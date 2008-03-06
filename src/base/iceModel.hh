@@ -397,12 +397,13 @@ protected:
   PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
   PetscErrorCode destroyViewers();
 
-private:
+protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
   Vec g2;    // Global work vector
   Vec* vWork2d;
 
+private:
   // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, taunew3;
   IceModelVec3 Sigmastag3[2], Istag3[2];
