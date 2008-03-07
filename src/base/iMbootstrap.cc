@@ -24,113 +24,6 @@
 #include "iceModel.hh"
 
 
-//! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
-/*!
-In bootstrapping we need to guess about the temperature within the ice and bedrock if surface temperature
-and geothermal flux maps are given.  This rule is heuristic but seems to work well anyway.  Full 
-bootstrapping will start from the temperature computed by this procedure and then run for a long time 
-(e.g. \f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically coupled equilibrium.
-See the part of the <i>User's Manual</i> on EISMINT-Greenland.
-
-Consider a horizontal grid point <tt>i,j</tt>.  Suppose the surface temperature \f$T_s\f$ and the geothermal
-flux \f$g\f$ are given at that grid point.  Within the corresponding column, denote the temperature
-by \f$T(z)\f$ for some elevation \f$z\f$ above the base of the ice.  (Note ice corresponds to \f$z>0\f$ while
-bedrock has \f$z<0\f$.)  Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice (at 
-\f$z=H\f$).  
-
-Within the ice, set
-	\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
-where \f$\alpha,\beta\f$ are chosen so that
-	\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
-and 
-   \f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
-The point of the second condition is our observation that, in observed ice, the rate of decrease 
-in ice temperature with elevation is significantly decreased at only one quarter of the ice thickness above 
-the base.  
-
-The temperature within the ice is not allowed to exceed the pressure-melting temperature.
-
-Note that the above heuristic rule for ice determines \f$T(0)\f$.  Within the bedrock our rule is that 
-the rate of change with depth is exactly the geothermal flux:
-   \f[T(z) = T(0) - \frac{g}{k_r} z.\f]
-Note that \f$z\f$ here is negative, so the temperature increases as one goes down into the bed.
- */
-PetscErrorCode IceModel::putTempAtDepth() {
-  PetscErrorCode  ierr;
-  PetscScalar     **H, **b, **Ts, **Ghf;
-
-  PetscScalar *T;
-  T = new PetscScalar[grid.Mz];
-
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar HH = H[i][j];
-      const PetscInt    ks = grid.kBelowHeight(HH);
-      
-      // within ice
-      const PetscScalar g = Ghf[i][j];
-      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice->k * HH * HH * HH));
-      const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
-      for (PetscInt k = 0; k < ks; k++) {
-        const PetscScalar depth = HH - grid.zlevels[k];
-        const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
-        const PetscScalar d2 = depth * depth;
-        T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
-      }
-      for (PetscInt k = ks; k < grid.Mz; k++) // above ice
-        T[k] = Ts[i][j];
-      ierr = T3.setValColumnPL(i,j,grid.Mz,grid.zlevels,T); CHKERRQ(ierr);
-      
-      // set temp within bedrock; if floating then top of bedrock sees ocean,
-      //   otherwise it sees the temperature of the base of the ice
-      const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
-      const PetscScalar T_top_bed = (b[i][j] < floating_base)
-                                         ? ice->meltingTemp : T[0];
-      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j]); CHKERRQ(ierr);
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
-
-  delete [] T;
-  
-  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = T3.endGhostComm(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-//! Set the temperatures in a column of bedrock based on a temperature at the top and a geothermal flux.
-/*! 
-This procedure sets the temperatures in the bedrock that would be correct for our model in steady state.
-In steady state there would be a temperature at the top of the bed and a flux condition at the bottom
-and the temperatures would be linear in between.
-
-Call <tt>Tb3.needAccessToVals()</tt> before and <tt>Tb3.doneAccessToVals()</tt> after this routine.
- */
-PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
-                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux) {
-  PetscScalar *Tb;
-  Tb = new PetscScalar[grid.Mbz];
-  for (PetscInt kb = 0; kb < grid.Mbz; kb++)
-    Tb[kb] = Ttopbedrock - (geothermflux / bedrock.k) * grid.zblevels[kb];
-  PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
-  delete [] Tb;
-  return 0;
-}
-
-
 //! Use heuristics to set up ice sheet fields needed for actual initialization.
 /*! 
 This procedure is called when option <tt>-bif</tt> is used.
@@ -146,33 +39,52 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   const PetscScalar DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
   const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
 
-  int stat;
-  PetscInt psExists=0, lonExists=0, latExists=0, accumExists=0, hExists=0, HExists=0, bExists=0,
-      TsExists=0, ghfExists=0, upliftExists=0, balvelExists=0,
-      xExists=0, yExists=0, HmeltExists=0, tExists=0;
-
-  ierr = verbPrintf(2, grid.com, "bootstrapping by PISM default method from file %s\n",fname); 
-           CHKERRQ(ierr);
+  // start by checking that we have a NetCDF file
+  int ncid,  stat;
+  PetscInt fileExists=0;
   if (fname == NULL) {
-    SETERRQ(1, "No file name given for bootstrapping\n");
+    SETERRQ(1, "no file name given for bootstrapping\n");
   }
-
-  // when bootstrapFromFile_netCDF() is called the dimensions (i.e. Mx,My,Mz,Mbz) must already be set
+  if (grid.rank == 0) {
+    stat = nc_open(fname, 0, &ncid); fileExists = (stat == NC_NOERR);
+  }
+  ierr = MPI_Bcast(&fileExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);  
+  if (fileExists) {
+    ierr = verbPrintf(2, grid.com, 
+       "bootstrapping by PISM default method from file %s\n",fname); 
+       CHKERRQ(ierr);
+  } else {
+    SETERRQ1(2,"bootstrapping file '%s' does not exist\n",fname);
+  }
+  
+  // now allocate our model;
+  // when bootstrapFromFile_netCDF() is called the grid dimensions
+  //   (i.e. Mx,My,Mz,Mbz) must already be set
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
-  // determine if variables exist in bootstrapping file
-  int ncid;
+  // determine if dimensions and variables exist in bootstrapping file
+  PetscInt tdimExists = 0,
+      xdimExists = 0, ydimExists = 0, zdimExists = 0, zbdimExists = 0,
+      psExists=0, lonExists=0, latExists=0, accumExists=0, hExists=0, 
+      HExists=0, bExists=0,
+      TsExists=0, ghfExists=0, upliftExists=0, balvelExists=0,
+      xExists=0, yExists=0, HmeltExists=0, tExists=0;
   int v_ps, v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
-      v_balvel, v_x, v_y, v_Hmelt, v_t;
+      v_balvel, v_x, v_y, v_Hmelt, v_t,
+      tdimid, xdimid, ydimid, zdimid, zbdimid;
   if (grid.rank == 0) {
     // use nc_inq_varid to determine whether variable exists in bootstrap file
     // in most cases, the varid itself is discarded
-    stat = nc_open(fname, 0, &ncid); CHKERRQ(nc_check(stat));
-    stat = nc_inq_varid(ncid, "polar_stereographic", &v_ps); psExists = stat == NC_NOERR;
+    stat = nc_inq_dimid(ncid, "t", &tdimid); tdimExists = (stat == NC_NOERR);
+    stat = nc_inq_dimid(ncid, "x", &xdimid); xdimExists = (stat == NC_NOERR);
+    stat = nc_inq_dimid(ncid, "y", &ydimid); ydimExists = (stat == NC_NOERR);
+    stat = nc_inq_dimid(ncid, "z", &zdimid); zdimExists = (stat == NC_NOERR);
+    stat = nc_inq_dimid(ncid, "zb", &zbdimid); zbdimExists = (stat == NC_NOERR);
     stat = nc_inq_varid(ncid, "x", &v_x); xExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "y", &v_y); yExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "t", &v_t); tExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "polar_stereographic", &v_ps); psExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "lon", &v_lon); lonExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "lat", &v_lat); latExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "acab", &v_accum); accumExists = stat == NC_NOERR;
@@ -186,6 +98,11 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     stat = nc_inq_varid(ncid, "bwat", &v_Hmelt); HmeltExists = stat == NC_NOERR;
   }
   // broadcast the existence flags
+  ierr = MPI_Bcast(&tdimExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&xdimExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&ydimExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&zdimExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&zbdimExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&psExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&xExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&yExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
@@ -201,54 +118,76 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&upliftExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&balvelExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&HmeltExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-  
-  // if polar_stereographic variable exists, then read them
-  if (psExists) {
-    if (grid.rank == 0) {
-      stat = nc_get_att_double(ncid, v_ps, "straight_vertical_longitude_from_pole",
-                              &psParams.svlfp); CHKERRQ(nc_check(stat));
-      stat = nc_get_att_double(ncid, v_ps, "latitude_of_projection_origin",
-                              &psParams.lopo); CHKERRQ(nc_check(stat));
-      stat = nc_get_att_double(ncid, v_ps, "standard_parallel",
-                              &psParams.sp); CHKERRQ(nc_check(stat));
-    }
-    ierr = MPI_Bcast(&psParams.svlfp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-    ierr = MPI_Bcast(&psParams.lopo, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-    ierr = MPI_Bcast(&psParams.sp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com,
-               "  polar stereographic found: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
-               psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
-  } else {
-    ierr = verbPrintf(2,grid.com,
-               "  polar stereo not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
-               psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
-  }
 
-  // will create "local interpolation context" from dimensions, limits, and lengths extracted from
-  //   bootstrap file and from information about the part of the grid owned by this processor;
-  //   this code fills dim[0..4] and bdy[0..6]
-  //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and
-  //   equal to zero
+  // if the horizontal dimensions and time (FIXME) are absent then we can not proceed
+  if (!tdimExists) {
+    SETERRQ1(3,"bootstrapping file '%s' has no time dimension 't'\n",fname);
+  }
+  if (!xdimExists) {
+    SETERRQ1(4,"bootstrapping file '%s' has no horizontal dimension 'x'\n",fname);
+  }
+  if (!ydimExists) {
+    SETERRQ1(5,"bootstrapping file '%s' has no horizontal dimension 'y'\n",fname);
+  }
+  if (!tExists) {
+    SETERRQ1(6,"bootstrapping file '%s' has no variable 't' (=t(t))\n",fname);
+  }
+  if (!xExists) {
+    SETERRQ1(7,"bootstrapping file '%s' has no variable 'x' (=x(x))\n",fname);
+  }
+  if (!yExists) {
+    SETERRQ1(8,"bootstrapping file '%s' has no variable 'y' (=y(y))\n",fname);
+  }
+ 
+  // our goal is to create "local interpolation context" from dimensions, 
+  //   limits, and lengths
+  //   extracted from bootstrap file and from information about the part of the 
+  //   grid owned by this processor; this code fills dim[0..4] and bdy[0..6]
   size_t dim[5];  // dimensions in bootstrap NetCDF file
   double bdy[7];  // limits and lengths for bootstrap NetCDF file
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
   double *z_bif, *zb_bif;
-  z_bif = new double[dim[3]];
-  zb_bif = new double[dim[4]];
-  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
+  if ((zdimExists) && (zbdimExists)) {
+    ierr = verbPrintf(2, grid.com, 
+         "  all dimensions t,x,y,z,zb found in file;\n"
+         "    reading corresponding coordinate variables\n"); CHKERRQ(ierr);
+    ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+    z_bif = new double[dim[3]];
+    zb_bif = new double[dim[4]];
+    ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
+  } else if ((!zdimExists) && (!zbdimExists)) {
+    ierr = verbPrintf(2, grid.com, 
+         "  dimensions t,x,y found in file, but no vertical dimension (z,zb);\n"
+         "    reading coordinate variables t,x,y\n"); CHKERRQ(ierr);
+    ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+    dim[3] = 1; 
+    dim[4] = 1;
+    bdy[5] = 0.0;
+    bdy[6] = 0.0;
+    //nc_get_var1_double(ncid, zb_id, &z_bdy[0], &bdy[5]);
+    //nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);
+    MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
+    MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
+    z_bif = new double[dim[3]];
+    zb_bif = new double[dim[4]];
+    //nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com);
+    z_bif[0] = 0.0;
+    zb_bif[0] = 0.0;
+  } else {
+    SETERRQ(999,"FIXME: need to handle cases of not having ONE of z and zb");
+  }
   
+  // set year from read-in time variable
   grid.year = bdy[0] / secpera;
   ierr = verbPrintf(2, grid.com, 
-          "  time t = %5.4f years found in bootstrap file; setting current year to this value\n",
+          "  time t = %5.4f years found in bootstrap file; setting current year\n",
           grid.year); CHKERRQ(ierr);
   ierr = setStartRunEndYearsFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
+  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
+  // if initialization is from an input file
   PetscScalar x_scale = (bdy[2] - bdy[1]) / 2.0,
               y_scale = (bdy[4] - bdy[3]) / 2.0,
               z_scale = bdy[6];
-
-  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
-  // if initialization is from an input file
   PetscTruth LxSet, LySet, LzSet;
   PetscScalar  x_scale_in, y_scale_in, z_scale_in;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &x_scale_in, &LxSet); CHKERRQ(ierr);
@@ -262,7 +201,9 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = verbPrintf(2, grid.com, 
          "  WARNING: option -Lz should usually be used to set vertical when bootstrapping ...\n"); CHKERRQ(ierr);
   }
-    
+
+  // report on resulting computational box, rescale grid, actually create
+  //   local interpolation context    
   ierr = verbPrintf(2, grid.com, 
          "  rescaling computational box *for ice* from defaults, -bif file, and\n"
          "    user options to dimensions:\n"
@@ -271,31 +212,80 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
   //DEBUG:  ierr = grid.printVertLevels(2); CHKERRQ(ierr);
-
   LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
   //DEBUG:  ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
-
   delete z_bif;
   delete zb_bif;
 
-  if (lonExists) {
-    ierr = nct.regrid_local_var("lon", 2, lic, grid, grid.da2, vLongitude, g2, false); CHKERRQ(ierr);
+  // if polar_stereographic variable exists, then read its attributes
+  if (psExists) {
+    PetscInt svlfpExists = 0, lopoExists = 0, spExists = 0;
+    if (grid.rank == 0) {
+      int dummy;
+      stat = nc_inq_attid(ncid, v_ps, "straight_vertical_longitude_from_pole",
+                              &dummy);
+      svlfpExists = (stat == NC_NOERR);
+      stat = nc_inq_attid(ncid,v_ps,"latitude_of_projection_origin",&dummy);
+      lopoExists = (stat == NC_NOERR);
+      stat = nc_inq_attid(ncid,v_ps,"standard_parallel",&dummy);
+      spExists = (stat == NC_NOERR);
+    }
+    ierr = MPI_Bcast(&svlfpExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&lopoExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&spExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+    if (grid.rank == 0) {
+       if (svlfpExists) {
+         stat = nc_get_att_double(ncid, v_ps, "straight_vertical_longitude_from_pole",
+                    &psParams.svlfp); CHKERRQ(nc_check(stat));
+       } 
+       if (lopoExists) {
+         stat = nc_get_att_double(ncid,v_ps,"latitude_of_projection_origin",
+                    &psParams.lopo); CHKERRQ(nc_check(stat));
+       }
+       if (spExists) {
+         stat = nc_get_att_double(ncid,v_ps,"standard_parallel",&psParams.sp);
+                    CHKERRQ(nc_check(stat));
+       }
+    }    
+    ierr = MPI_Bcast(&psParams.svlfp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&psParams.lopo, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&psParams.sp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,
+            "  polar stereographic var found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
+            "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
+            svlfpExists, lopoExists, spExists,
+            psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
   } else {
-    ierr = verbPrintf(2, grid.com, "  WARNING: longitude 'lon' not found; continuing without setting it\n");
+    ierr = verbPrintf(2,grid.com,
+               "  polar stereo not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
+               psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
+  }
+
+  // now work through all the 2d variables, regridding if present and otherwise setting
+  // to default values appropriately
+  if (lonExists) {
+    ierr = nct.regrid_local_var("lon", 2, lic, grid, grid.da2, vLongitude, g2, false);
+             CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+      "  WARNING: longitude 'lon' not found; continuing without setting it\n");
       CHKERRQ(ierr);
   }
   if (latExists) {
-    ierr = nct.regrid_local_var("lat", 2, lic, grid, grid.da2, vLatitude, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("lat", 2, lic, grid, grid.da2, vLatitude, g2, false);
+             CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2, grid.com, "  WARNING: latitude 'lat' not found; continuing without setting it\n");
+    ierr = verbPrintf(2, grid.com,
+      "  WARNING: latitude 'lat' not found; continuing without setting it\n");
       CHKERRQ(ierr);
   }
   if (accumExists) {
-    ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false);
+             CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-               "  WARNING: accumulation rate 'acab' not found; using default %7.2f m/a\n",
-               DEFAULT_ACCUM_VALUE_MISSING * secpera);  CHKERRQ(ierr);
+            "  WARNING: accumulation rate 'acab' not found; using default %7.2f m/a\n",
+            DEFAULT_ACCUM_VALUE_MISSING * secpera);  CHKERRQ(ierr);
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (HExists) {
@@ -371,59 +361,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 
   verbPrintf(2, grid.com, "bootstrapping by PISM default method done\n");
   initialized_p = PETSC_TRUE;
-  return 0;
-}
-
-
-PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
-    PetscErrorCode ierr;
-  PetscScalar **h, **bed, **H, **mask;
-
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // take this opportunity to check that H[i][j] >= 0
-      if (H[i][j] < 0.0) {
-        SETERRQ3(1,"Thickness H=%5.4f is negative at point i=%d, j=%d",H[i][j],i,j);
-      }
-      
-      if (H[i][j] < 0.001) {  // if no ice
-        if (bed[i][j] < 0.0) {
-          h[i][j] = 0.0;
-          mask[i][j] = MASK_FLOATING_OCEAN0;
-        } else {
-          h[i][j] = bed[i][j];
-          mask[i][j] = MASK_SHEET;
-        } 
-      } else { // if some ice thickness then check floating criterion
-        const PetscScalar hgrounded = bed[i][j] + H[i][j];
-        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
-        // check whether you are actually floating or grounded
-        if (hgrounded > hfloating) {
-          h[i][j] = hgrounded; // actually grounded so set h
-          mask[i][j] = MASK_SHEET;
-        } else {
-          h[i][j] = hfloating; // actually floating so update h
-          mask[i][j] = MASK_FLOATING;
-        }
-      }
-    }
-  }
-
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-
-  // go ahead and communicate mask and surface elev now; may be redundant communication?
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   return 0;
 }
 
@@ -543,6 +480,166 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   // reset initial velocities in shelf for iteration
   ierr = VecSet(vubar,0.0); CHKERRQ(ierr);
   ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
+    PetscErrorCode ierr;
+  PetscScalar **h, **bed, **H, **mask;
+
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // take this opportunity to check that H[i][j] >= 0
+      if (H[i][j] < 0.0) {
+        SETERRQ3(1,"Thickness H=%5.4f is negative at point i=%d, j=%d",H[i][j],i,j);
+      }
+      
+      if (H[i][j] < 0.001) {  // if no ice
+        if (bed[i][j] < 0.0) {
+          h[i][j] = 0.0;
+          mask[i][j] = MASK_FLOATING_OCEAN0;
+        } else {
+          h[i][j] = bed[i][j];
+          mask[i][j] = MASK_SHEET;
+        } 
+      } else { // if some ice thickness then check floating criterion
+        const PetscScalar hgrounded = bed[i][j] + H[i][j];
+        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
+        // check whether you are actually floating or grounded
+        if (hgrounded > hfloating) {
+          h[i][j] = hgrounded; // actually grounded so set h
+          mask[i][j] = MASK_SHEET;
+        } else {
+          h[i][j] = hfloating; // actually floating so update h
+          mask[i][j] = MASK_FLOATING;
+        }
+      }
+    }
+  }
+
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+
+  // go ahead and communicate mask and surface elev now; may be redundant communication?
+  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
+/*!
+In bootstrapping we need to guess about the temperature within the ice and bedrock if surface temperature
+and geothermal flux maps are given.  This rule is heuristic but seems to work well anyway.  Full 
+bootstrapping will start from the temperature computed by this procedure and then run for a long time 
+(e.g. \f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically coupled equilibrium.
+See the part of the <i>User's Manual</i> on EISMINT-Greenland.
+
+Consider a horizontal grid point <tt>i,j</tt>.  Suppose the surface temperature \f$T_s\f$ and the geothermal
+flux \f$g\f$ are given at that grid point.  Within the corresponding column, denote the temperature
+by \f$T(z)\f$ for some elevation \f$z\f$ above the base of the ice.  (Note ice corresponds to \f$z>0\f$ while
+bedrock has \f$z<0\f$.)  Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice (at 
+\f$z=H\f$).  
+
+Within the ice, set
+	\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
+where \f$\alpha,\beta\f$ are chosen so that
+	\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
+and 
+   \f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
+The point of the second condition is our observation that, in observed ice, the rate of decrease 
+in ice temperature with elevation is significantly decreased at only one quarter of the ice thickness above 
+the base.  
+
+The temperature within the ice is not allowed to exceed the pressure-melting temperature.
+
+Note that the above heuristic rule for ice determines \f$T(0)\f$.  Within the bedrock our rule is that 
+the rate of change with depth is exactly the geothermal flux:
+   \f[T(z) = T(0) - \frac{g}{k_r} z.\f]
+Note that \f$z\f$ here is negative, so the temperature increases as one goes down into the bed.
+ */
+PetscErrorCode IceModel::putTempAtDepth() {
+  PetscErrorCode  ierr;
+  PetscScalar     **H, **b, **Ts, **Ghf;
+
+  PetscScalar *T;
+  T = new PetscScalar[grid.Mz];
+
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar HH = H[i][j];
+      const PetscInt    ks = grid.kBelowHeight(HH);
+      
+      // within ice
+      const PetscScalar g = Ghf[i][j];
+      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice->k * HH * HH * HH));
+      const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
+      for (PetscInt k = 0; k < ks; k++) {
+        const PetscScalar depth = HH - grid.zlevels[k];
+        const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
+        const PetscScalar d2 = depth * depth;
+        T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
+      }
+      for (PetscInt k = ks; k < grid.Mz; k++) // above ice
+        T[k] = Ts[i][j];
+      ierr = T3.setValColumnPL(i,j,grid.Mz,grid.zlevels,T); CHKERRQ(ierr);
+      
+      // set temp within bedrock; if floating then top of bedrock sees ocean,
+      //   otherwise it sees the temperature of the base of the ice
+      const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
+      const PetscScalar T_top_bed = (b[i][j] < floating_base)
+                                         ? ice->meltingTemp : T[0];
+      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j]); CHKERRQ(ierr);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
+
+  delete [] T;
+  
+  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = T3.endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Set the temperatures in a column of bedrock based on a temperature at the top and a geothermal flux.
+/*! 
+This procedure sets the temperatures in the bedrock that would be correct for our model in steady state.
+In steady state there would be a temperature at the top of the bed and a flux condition at the bottom
+and the temperatures would be linear in between.
+
+Call <tt>Tb3.needAccessToVals()</tt> before and <tt>Tb3.doneAccessToVals()</tt> after this routine.
+ */
+PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
+                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux) {
+  PetscScalar *Tb;
+  Tb = new PetscScalar[grid.Mbz];
+  for (PetscInt kb = 0; kb < grid.Mbz; kb++)
+    Tb[kb] = Ttopbedrock - (geothermflux / bedrock.k) * grid.zblevels[kb];
+  PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
+  delete [] Tb;
   return 0;
 }
 
