@@ -613,7 +613,8 @@ PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
 PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 #endif
 
-  ierr = verbPrintf(2,grid.com, "%%ybp SIA SSA  # vgatdh Nr  +STEP\n"); CHKERRQ(ierr);  // prototype for flags
+  // prototype for flags:
+  ierr = verbPrintf(2,grid.com, "%%ybp SIA SSA  # vgatdh Nr  +STEP\n"); CHKERRQ(ierr);  
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;

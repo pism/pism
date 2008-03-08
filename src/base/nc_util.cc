@@ -73,7 +73,8 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
 
   if (bdy[1] > -Lx || bdy[2] < Lx) {
     PetscPrintf(grid.com,
-        "target computational domain not a subset of source (in NetCDF file) computational domain:\n");
+        "target computational domain not a subset of source (in NetCDF file)\n"
+        "  computational domain:\n");
     PetscPrintf(grid.com,
         "    need  [-Lx,Lx] contained in [bdy[1],bdy[2]],  but Lx = %5.4f km while\n"
         "    [bdy[1],bdy[2]]=[%5.4f,%5.4f] km;  ENDING ...\n",
@@ -82,7 +83,8 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
   }
   if (bdy[3] > -Ly || bdy[4] < Ly) {
     PetscPrintf(grid.com,
-        "target computational domain not a subset of source (in NetCDF file) computational domain:\n");
+        "target computational domain not a subset of source (in NetCDF file)\n"
+        "  computational domain:\n");
     PetscPrintf(grid.com,
         "    need  [-Ly,Ly] contained in [bdy[3],bdy[4]],  but Ly = %5.4f km while\n"
         "    [bdy[3],bdy[4]]=[%5.4f,%5.4f] km;  ENDING ...\n",
@@ -90,9 +92,10 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
     PetscEnd();
   }
   if (-bdy[5] < Lbz || bdy[6] < Lz) {
-    verbPrintf(2,grid.com,
-        "  WARNING: vertical  dimension of target computational domain not a subset of\n"
-        "    source (in NetCDF file) computational domain;  either  -bdy[5] = %5.4f < Lbz = %5.4f\n"
+    verbPrintf(3,grid.com,
+        "  LIC WARNING: vertical dimension of target computational domain\n"
+        "    not a subset of source (in NetCDF file) computational domain;\n"
+        "    either  -bdy[5] = %5.4f < Lbz = %5.4f\n"
         "    or  bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
         -bdy[5], Lbz, bdy[6], Lz);
     regrid_2d_only = true;

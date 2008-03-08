@@ -325,23 +325,24 @@ PetscErrorCode IceModel::afterInitHook() {
            "  [hor. grid cell dimensions: (%8.2f km) x (%8.2f km)]\n",
            grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, 
-           "  [vertical grid spacing in ice not equal: %8.6f m < dz < %8.6f m]\n",
+           "  [vertical grid spacing in ice not equal: %.3f m < dz < %.3f m]\n",
            grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
     PetscInt    myMz, dummyM;
     ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
     if (myMz > 1000) {
       ierr = verbPrintf(1,grid.com,
-                 "\n\n WARNING: Using more than 1000 vertical levels internally in temperatureStep()!\n\n");
-                 CHKERRQ(ierr);
+        "\n\n WARNING: Using more than 1000 vertical levels internally\n"
+        "   in temperatureStep()!\n\n");  CHKERRQ(ierr);
     }
     ierr = verbPrintf(2,grid.com, 
-           "  [fine equal spacing used in temperatureStep():  Mz = %d,  dzEQ = %8.2f m]\n",
+           "  [fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m]\n",
            myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
     if (grid.Mbz > 1) {
       ierr = verbPrintf(2,grid.com, 
-         "  [vertical spacing in bedrock: dz = %8.6f m for bottom layer and dz = %8.6f m for top layer]\n",
-         grid.zblevels[1]-grid.zblevels[0],grid.zblevels[grid.Mbz-1]-grid.zblevels[grid.Mbz-2]);
-         CHKERRQ(ierr);
+         "  [vertical spacing in bedrock: dz = %.3f m for bottom layer\n"
+         "     and dz = %.3f m for top layer]\n",
+         grid.zblevels[1]-grid.zblevels[0],
+         grid.zblevels[grid.Mbz-1]-grid.zblevels[grid.Mbz-2]); CHKERRQ(ierr);
     }
   }
 
@@ -356,7 +357,7 @@ PetscErrorCode IceModel::afterInitHook() {
            "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
            grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
   ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
-  ierr = verbPrintf(3,grid.com,
+  ierr = verbPrintf(5,grid.com,
      "            history = ****************\n%s            **************************\n"
      ,history); CHKERRQ(ierr);
   

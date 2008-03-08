@@ -54,9 +54,10 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     enhancementFactor = 1;
     ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &gkSet); CHKERRQ(ierr);
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &lawNum, &flowlawSet); CHKERRQ(ierr);
-    if (gkSet == PETSC_FALSE && ((flowlawSet == PETSC_TRUE && lawNum != 4) || flowlawSet == PETSC_FALSE)) {
-      ierr = verbPrintf(1, grid.com, "WARNING: SSL3 or CCL3 or GWL3 specified, but not -gk\n");
-              CHKERRQ(ierr);
+    if (gkSet == PETSC_FALSE && ( (flowlawSet == PETSC_TRUE && lawNum != 4)
+                                  || flowlawSet == PETSC_FALSE)             ) {
+      ierr = verbPrintf(1, grid.com, 
+          "WARNING: SSL3 or CCL3 or GWL3 specified, but not -gk\n"); CHKERRQ(ierr);
     }
     // use Lingle-Clark bed deformation model
     doBedDef = PETSC_TRUE;
@@ -71,8 +72,16 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   
   muSliding = 0.0;  // no sliding in any case; perhaps develop an SSA variant??
   bedDiff = 0.0; // related to sea level forcing, not bed deformation
+
+  // these flags turn off parts of the EISMINT-Greenland specification;
+  //   use when extra/different data is available
+  ierr = PetscOptionsHasName(PETSC_NULL, "-have_artm", &haveSurfaceTemps);
+     CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_EI_delete", &noEllesmereIcelandDelete);
+     CHKERRQ(ierr);
   
-  // note: user value for -e and -mu_sliding will override enhancementFactor, mu_sliding setting above
+  // note: user value for -e and -mu_sliding will override enhancementFactor,
+  //    mu_sliding setting above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
   return 0;
 }
@@ -98,13 +107,15 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   if (nopddSet == PETSC_TRUE) {
     doPDD = PETSC_FALSE;
   } else { 
-    // in this case, turn the PDD on for this derived class, so no "-pdd" option is needed to turn it on
+    // in this case, turn the PDD on for this derived class, so no "-pdd" option
+    //   is needed to turn it on
     doPDD = PETSC_TRUE;
     if (pddStuffCreated == PETSC_FALSE) {
       ierr = initPDDFromOptions(); CHKERRQ(ierr);
     }
     PetscTruth pddSummerWarmingSet, pddStdDevSet;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming", &pddSummerWarmingSet); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
+              &pddSummerWarmingSet); CHKERRQ(ierr);
     if (pddSummerWarmingSet == PETSC_TRUE) { // note IceGRNModel::getSummerWarming() is below
       ierr = verbPrintf(1, grid.com, 
          "WARNING: -pdd_summer_warming option ignored.  Using EISMINT-GREENLAND\n"
@@ -126,15 +137,22 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     ierr = verbPrintf(2, grid.com,"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
                EISMINT_G_geothermal);
     ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
-    ierr = verbPrintf(2, grid.com, 
-       "computing surface temperatures by EISMINT-Greenland elevation-latitude rule \n");  CHKERRQ(ierr);
-    ierr = updateTs(); CHKERRQ(ierr);
-    ierr = verbPrintf(2, grid.com, 
-       "filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);
-    ierr = putTempAtDepth(); CHKERRQ(ierr);
-    ierr = verbPrintf(2, grid.com, 
-       "removing extra land (Ellesmere Island and Iceland) using EISMINT-Greenland rule\n"); CHKERRQ(ierr);
-    ierr = cleanExtraLand(); CHKERRQ(ierr);
+    if (haveSurfaceTemps == PETSC_FALSE) {
+      ierr = verbPrintf(2, grid.com, 
+         "computing surface temperatures by EISMINT-Greenland elevation-latitude rule \n");
+         CHKERRQ(ierr);
+      ierr = updateTs(); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, 
+         "filling in temperatures at depth using surface temperatures and quartic guess\n");
+         CHKERRQ(ierr);
+      ierr = putTempAtDepth(); CHKERRQ(ierr);
+    }
+    if (noEllesmereIcelandDelete == PETSC_FALSE) {
+      ierr = verbPrintf(2, grid.com, 
+         "removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
+         CHKERRQ(ierr);
+      ierr = cleanExtraLand(); CHKERRQ(ierr);
+    }
   } else {
     SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
   }
@@ -163,7 +181,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
     ierr = verbPrintf(2, grid.com, 
          "reading delta sea level data from forcing file %s ...\n", dSLFile); CHKERRQ(ierr);
-    ierr = dSLforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.year,ISF_DELTA_SEA_LEVEL);
+    ierr = dSLforcing.readCoreClimateData(grid.com, grid.rank, 
+                                          ncid, grid.year,ISF_DELTA_SEA_LEVEL);
          CHKERRQ(ierr);
   } else if (expernum == 3) {
     SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
@@ -224,7 +243,8 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
 }
 
 
-PetscErrorCode IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val) {
+PetscErrorCode IceGRNModel::calculateMeanAnnual(
+                    PetscScalar h, PetscScalar lat, PetscScalar *val) {
   // EISMINT-Greenland surface temperature model
   PetscScalar Z = PetscMax(h, 20 * (lat - 65));
   *val = 49.13 - 0.007992 * Z - 0.7576 * (lat);
@@ -233,10 +253,10 @@ PetscErrorCode IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat, 
 
 
 PetscScalar IceGRNModel::getSummerWarming(
-       const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const {
+     const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const {
   // this is virtual in IceModel
-  // EISMINT-Greenland summer surface temperature model (expressed as warming above mean annual)
-  // Ta, Ts in degrees C; Ta is mean annual, Ts is summer peak
+  // EISMINT-Greenland summer surface temperature model (expressed as
+  // warming above mean annual); Ta,Ts in deg C; Ta is mean annual, Ts is summer peak
   const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
   return Ts - Ta;
 }
@@ -248,7 +268,8 @@ PetscErrorCode IceGRNModel::updateTs() {
   PetscScalar **Ts, **lat, **h;
   
   ierr = verbPrintf(4, grid.com, 
-     "recomputing surface temperatures according to EISMINT-Greenland rule \n");  CHKERRQ(ierr);
+     "recomputing surface temperatures according to EISMINT-Greenland rule \n");
+     CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
@@ -266,7 +287,6 @@ PetscErrorCode IceGRNModel::updateTs() {
 
 
 PetscErrorCode IceGRNModel::ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat) {
-  // first function
   float l1_x1 = -68.18, l1_y1 = 80.1;
   float l1_x2 = -62, l1_y2 = 82.24;
   float m, b;  // piecewise boundaries
@@ -281,7 +301,7 @@ PetscErrorCode IceGRNModel::ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat)
 PetscErrorCode IceGRNModel::cleanExtraLand(){
   PetscErrorCode ierr;
   PetscScalar lat_line;
-  // remove mask SE of the following point
+  // make mask SE of the following point into FLOATING_OCEAN0
   float ice_lon = 30, ice_lat = 67;
   PetscScalar **lat, **lon, **mask;
 
@@ -301,7 +321,8 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vLongitude, &lon); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  // when mask is changed we must communicate the ghosted values (because neighbor's mask matters)
+  // when mask is changed we must communicate the ghosted values
+  //   because neighbor's mask matters
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   return 0;

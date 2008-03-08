@@ -67,11 +67,11 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscInt tdimExists = 0,
       xdimExists = 0, ydimExists = 0, zdimExists = 0, zbdimExists = 0,
       psExists=0, lonExists=0, latExists=0, accumExists=0, hExists=0, 
-      HExists=0, bExists=0,
+      HExists=0, bExists=0, maskExists=0,
       TsExists=0, ghfExists=0, upliftExists=0, balvelExists=0,
       xExists=0, yExists=0, HmeltExists=0, tExists=0;
   int v_ps, v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
-      v_balvel, v_x, v_y, v_Hmelt, v_t,
+      v_balvel, v_x, v_y, v_Hmelt, v_t, v_mask,
       tdimid, xdimid, ydimid, zdimid, zbdimid;
   if (grid.rank == 0) {
     // use nc_inq_varid to determine whether variable exists in bootstrap file
@@ -91,6 +91,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     stat = nc_inq_varid(ncid, "usurf", &v_h); hExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "thk", &v_H); HExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "topg", &v_bed); bExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "mask", &v_mask); maskExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "artm", &v_Ts); TsExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "bheatflx", &v_ghf); ghfExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "dbdt", &v_uplift); upliftExists = stat == NC_NOERR;
@@ -113,6 +114,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&hExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&HExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&bExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&maskExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&TsExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&ghfExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&upliftExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
@@ -148,16 +150,15 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   double *z_bif, *zb_bif;
   if ((zdimExists) && (zbdimExists)) {
     ierr = verbPrintf(2, grid.com, 
-         "  all dimensions t,x,y,z,zb found in file;\n"
-         "    reading corresponding coordinate variables\n"); CHKERRQ(ierr);
+         "  all dimensions t,x,y,z,zb found in file\n"); CHKERRQ(ierr);
     ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
     z_bif = new double[dim[3]];
     zb_bif = new double[dim[4]];
     ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
   } else if ((!zdimExists) && (!zbdimExists)) {
     ierr = verbPrintf(2, grid.com, 
-         "  dimensions t,x,y found in file, but no vertical dimension (z,zb);\n"
-         "    reading coordinate variables t,x,y\n"); CHKERRQ(ierr);
+         "  dimensions t,x,y found in file, but no vertical dimension (z,zb)\n");
+         CHKERRQ(ierr);
     ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
     dim[3] = 1; 
     dim[4] = 1;
@@ -207,7 +208,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = verbPrintf(2, grid.com, 
          "  rescaling computational box *for ice* from defaults, -bif file, and\n"
          "    user options to dimensions:\n"
-         "      [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+         "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
   ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
@@ -306,7 +307,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   }
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-          "  WARNING: ignoring values found for surface elevation 'usurf'; using usurf = topg + thk\n");
+          "  WARNING: ignoring values found for surface elevation 'usurf';\n"
+          "    using usurf = topg + thk\n");
           CHKERRQ(ierr);
   }
   ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);
@@ -314,12 +316,13 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
-             "  WARNING: surface temperature 'artm' not found; using default %7.2f K\n",
+             "  WARNING: surface temperature 'artm' not found; using default %.2f K\n",
              DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (ghfExists) {
-    ierr = nct.regrid_local_var("bheatflx", 2, lic, grid, grid.da2, vGhf, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("bheatflx", 2, lic, grid, grid.da2, vGhf, g2, false);
+            CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
              "  WARNING: geothermal flux 'bheatflx' not found; using default %6.3f W/m^2\n",
@@ -327,17 +330,20 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (upliftExists) {
-    ierr = nct.regrid_local_var("dbdt", 2, lic, grid, grid.da2, vuplift, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("dbdt", 2, lic, grid, grid.da2, vuplift, g2, false);
+            CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
        "  WARNING: uplift rate 'dbdt' not found; filling with zero\n");  CHKERRQ(ierr);
     ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
   }
   if (HmeltExists) {
-    ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false);
+            CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-        "  WARNING: effective thickness of basal melt water 'bwat' not found; filling with zero\n"); 
+        "  WARNING: effective thickness of basal melt water 'bwat' not found;\n"
+        "    filling with zero\n"); 
         CHKERRQ(ierr);
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }
@@ -347,14 +353,20 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   }
   ierr = verbPrintf(3, grid.com, "  done reading .nc file\n"); CHKERRQ(ierr);
 
+  if (maskExists) {
+    ierr = verbPrintf(2, grid.com, 
+        "  WARNING: 'mask' found in file; IGNORING IT!\n"); CHKERRQ(ierr);
+  }
   ierr = verbPrintf(2, grid.com, 
-            "  determining mask by floating criterion; grounded ice marked as 1; floating ice as 7\n");
+            "  determining mask by floatation criterion:\n"
+            "    grounded ice marked as 1, floating ice as 7\n");
             CHKERRQ(ierr);
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 
-             "  filling in temperatures at depth using surface temperatures and quartic guess\n"); CHKERRQ(ierr);
+             "  filling in temperatures at depth using surface temperatures\n"
+             "    and quartic guess\n"); CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   setInitialAgeYears(initial_age_years_default);

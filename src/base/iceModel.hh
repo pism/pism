@@ -62,7 +62,8 @@ public:
   // see iMIO.cc
   PetscErrorCode initFromFile_netCDF(const char *);
   PetscErrorCode writeFiles(const char* defaultbasename);
-  PetscErrorCode writeFiles(const char* defaultbasename, const PetscTruth forceFullDiagnostics);
+  PetscErrorCode writeFiles(const char* defaultbasename, 
+                            const PetscTruth forceFullDiagnostics);
 
 protected:
    static const int MASK_SHEET;
@@ -106,7 +107,8 @@ protected:
   // parameters
   PetscInt    flowLawNumber;
   PetscScalar maxdt, muSliding, enhancementFactor, initial_age_years_default;
-  PetscScalar dt, dtTempAge, dt_force;    // current mass cont. and temp/age time steps in seconds
+  PetscScalar dt, dtTempAge, dt_force; // current mass cont. and temp/age 
+                                       //   time steps in seconds
   PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon, beta_default_drag_SSA;
@@ -220,8 +222,8 @@ protected:
   virtual PetscErrorCode setDefaults();
 
   // see iMgrainsize.cc
-  PetscErrorCode computeGrainSize_PseudoAge(const PetscScalar H, const PetscInt Mz, PetscScalar *w, 
-                                            PetscScalar *age_wspace, PetscScalar **gs);
+  PetscErrorCode computeGrainSize_PseudoAge(const PetscScalar H, const PetscInt Mz, 
+                          PetscScalar *w, PetscScalar *age_wspace, PetscScalar **gs);
   PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMIO.cc
@@ -286,9 +288,11 @@ protected:
   PetscErrorCode PDDCleanup();
   double         CalovGreveIntegrand(const double Tac);
   virtual PetscScalar getTemperatureFromYearlyCycle(
-                  const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day) const;
+                  const PetscScalar summer_warming, const PetscScalar Tma, 
+                  const PetscScalar day) const;
   virtual PetscScalar getSummerWarming(
-                  const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) const;
+                  const PetscScalar elevation, const PetscScalar latitude, 
+                  const PetscScalar Tma) const;
   virtual double getSurfaceBalanceFromSnowAndPDD(
                      const double snowrate, const double mydt, const double pdds);
 
