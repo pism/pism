@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
     ierr = mGRN.writeFiles("grn_exper"); CHKERRQ(ierr);
 
     delete ice;
-    ierr = verbPrintf(2, com, " ... done.\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, com, "\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

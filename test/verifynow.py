@@ -3,7 +3,8 @@
 ## It specifies a refinement path for each of Tests ABCDEFGIJKL and runs pismv accordingly.
 
 ## ELB 1/31/07; 2/3/07: -ksp_rtol 1e-6 added; 5/29/07 verifynow.sh --> verifynow.py;
-## 7/20/07 used getopt; 10/8/07 mods to work with vnreport.py
+## 7/20/07 used getopt; 10/8/07 mods to work with vnreport.py; 3/9/08 fix to error report
+## reading
 
 import sys
 import getopt
@@ -64,7 +65,7 @@ def verify(test):
          endline = errreport.find('\n')
          print '    ' + errreport[0:endline]
          errreport = errreport[endline+1:]
-         while len(errreport) > 1:
+         while (len(errreport) > 1) and (endline > 0):
            endline = errreport.find('\n')
            print '   #' + errreport[0:endline]
            errreport = errreport[endline+1:]       
