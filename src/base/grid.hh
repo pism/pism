@@ -25,11 +25,13 @@
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
-This class holds parameters describing the grid, including the vertical spacing and which part
-of the horizontal grid is owned by the processor.  It contains the dimensions of the PISM computational box.
+This class holds parameters describing the grid, including the vertical spacing 
+and which part of the horizontal grid is owned by the processor.  It contains 
+the dimensions of the PISM computational box.
 
-It creates and destroys a two dimensional \c PETSc \c DA (distributed array).  The creation of this
-\c DA is the point at which PISM gets distributed across multiple processors.
+It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
+The creation of this \c DA is the point at which PISM gets distributed across 
+multiple processors.
  */
 class IceGrid {
 public:
@@ -44,8 +46,9 @@ public:
 
   PetscErrorCode rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                          const PetscScalar lz);
-  PetscErrorCode rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                         const PetscScalar lz, const PetscTruth truelyPeriodic);
+  PetscErrorCode rescale_and_set_zlevels(
+                        const PetscScalar lx, const PetscScalar ly, 
+                        const PetscScalar lz, const PetscTruth truelyPeriodic);
   PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly);
   PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                        const PetscTruth truelyPeriodic);

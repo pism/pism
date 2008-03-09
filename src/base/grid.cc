@@ -130,46 +130,58 @@ PetscErrorCode IceGrid::chooseQuadraticSpacedVertical() {
 
 //! Set the vertical levels according to values in Mz, Lz, Mbz, and the spacing_type flag.
 /*!
-Sets \c dzMIN, \c dzMAX, and \c Lbz.  Sets and re-allocates \c zlevels[] and \c zblevels[].
+Sets \c dzMIN, \c dzMAX, and \c Lbz.  Sets and re-allocates \c zlevels[] 
+and \c zblevels[].
 
-Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c spacing_type cannot be zero at entry 
-to this routine; it must be 1, 2, or 3.
+Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c spacing_type 
+cannot be zero at entry to this routine; it must be 1, 2, or 3.
 
-This procedure is only called when a grid is determined from scratch, e.g. by a derived class or when
-bootstrapping from 2D data only, but not when reading a model state input file (which will have its own grid,
+This procedure is only called when a grid is determined from scratch, e.g. 
+by a derived class or when bootstrapping from 2D data only, but not when 
+reading a model state input file (which will have its own grid,
 which may not even be a grid created by this routine).
-  - When \c spacing_type == 1, the vertical grid in the ice is equally spaced: <tt>zlevels[k] = k dzMIN</tt> where
-<tt>dzMIN = Lz / (Mz - 1)</tt>.  In this case <tt>dzMIN = dzMAX</tt>.
-  - When \c spacing_type == 2, the vertical grid in the ice is Chebyshev spaced.  Note that (generally speaking)
-the \f$N+1\f$ \e Chebyshev \e extreme \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
-(See L. N. Trefethen, <i>Spectral Methods in MATLAB</i>, SIAM Press 2000.)
-These are concentrated at either end of the interval \f$[-1,1]\f$.  In our case we want points concentrated near
-zero, and we use only half of the Chebyshev points because we don't need concentration near the top
-of the computational box.  So we take the original Chebyshev extreme points
-\f$x_j\f$ with \f$N= 2\, \mathtt{Mz} - 1\f$ but we choose only \f$j=0,1,\dots,\mathtt{Mz}-1\f$. These points
-satisfy \f$0 \le x_j \le 1\f$ and they are clustered near \f$x=1\f$.  Then we flip and scale: 
-\f$z_j = \mathtt{Lz} (1 - x_j)\f$.  The smallest spacing is a factor proportional to \c Mz smaller than 
-the equal spacing.  That is, \f$z_1 = C \mathtt{Lz} / (\mathtt{Mz}^2)\f$ while 
-\f$dzEQ = \mathtt{Lz}/(\mathtt{Mz}-1)\f$.   Near the top the spacing is, to good approximation, 
-equal to \f$\pi \mathtt{dzEQ}\f$; the actual top space is recorded as \c dzMAX.
-  - When \c spacing_type == 3, the spacing is a quadratic function.  The intent is that the
-spacing is smaller near the base than near the top, but that the effect is less extreme than
-the Chebyshev case.  In particular, if \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then <tt>zlevels[k] 
-= Lz * ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0) * \f$\zeta_k\f$) )</tt> 
-where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ indicates the slope of the quadratic function as 
-it leaves the base.  Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer at 
-the base than equal spacing would be.
+  - When \c spacing_type == 1, the vertical grid in the ice is equally spaced:
+    <tt>zlevels[k] = k dzMIN</tt> where <tt>dzMIN = Lz / (Mz - 1)</tt>.  
+    In this case <tt>dzMIN = dzMAX</tt>.
+  - When \c spacing_type == 2, the vertical grid in the ice is Chebyshev spaced.  
+    Note that (generally speaking) the \f$N+1\f$ \e Chebyshev \e extreme 
+    \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
+    (See L. N. Trefethen, <i>Spectral Methods in MATLAB</i>, SIAM Press 2000.)
+    These are concentrated at either end of the interval \f$[-1,1]\f$.  In our 
+    case we want points concentrated near zero, and we use only half of the 
+    Chebyshev points because we don't need concentration near the top
+    of the computational box.  So we take the original Chebyshev extreme points
+    \f$x_j\f$ with \f$N= 2\, \mathtt{Mz} - 1\f$ but we choose only 
+    \f$j=0,1,\dots,\mathtt{Mz}-1\f$.  These points satisfy 
+    \f$0 \le x_j \le 1\f$ and they are clustered near \f$x=1\f$.  Then we 
+    flip and scale: \f$z_j = \mathtt{Lz} (1 - x_j)\f$.  The smallest spacing 
+    is a factor proportional to \c Mz smaller than the equal spacing.  That is, 
+    \f$z_1 = C \mathtt{Lz} / (\mathtt{Mz}^2)\f$ while 
+    \f$dzEQ = \mathtt{Lz}/(\mathtt{Mz}-1)\f$.   Near the top the spacing is, 
+    to good approximation, equal to \f$\pi \mathtt{dzEQ}\f$; the actual top 
+    space is recorded as \c dzMAX.
+  - When \c spacing_type == 3, the spacing is a quadratic function.  The intent 
+    is that the spacing is smaller near the base than near the top, but that 
+    the effect is less extreme than the Chebyshev case.  In particular, if 
+    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then <tt>zlevels[k] = Lz * 
+    ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0) 
+    * \f$\zeta_k\f$) )</tt> where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ 
+    indicates the slope of the quadratic function as it leaves the base.  
+    Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer 
+    at the base than equal spacing would be.
       
 In all cases the spacing is equal in the bedrock: <tt>zblevels[k] = </tt> where 
-<tt>dzEQ = Lz / (Mz - 1)</tt> and <tt>Lbz = dzEQ * (Mbz - 1)</tt>.  That is, both the \c zblevels[] and 
-the depth into the bedrock to which the computational box extends (\c Lbz) are set according to the value
+<tt>dzEQ = Lz / (Mz - 1)</tt> and <tt>Lbz = dzEQ * (Mbz - 1)</tt>.  That is, 
+both the \c zblevels[] and the depth into the bedrock to which the 
+computational box extends (\c Lbz) are set according to the value
 of \c Mbz and according to the equal spacing which would apply to the ice.
  */
 PetscErrorCode  IceGrid::setVertLevels() {
   
   if (spacing_type == 0) {
-    SETERRQ(1,"IceGrid::setVertLevels():  spacing_type cannot be zero when running setVertLevels();\n"
-               "  was rescale_and_set_zlevels() called twice or was choose...VertSpacing() not called?\n");
+    SETERRQ(1,"IceGrid::setVertLevels():  spacing_type cannot be zero when \n"
+              "  running setVertLevels(); was rescale_and_set_zlevels() called\n"
+              "   twice or was choose...VertSpacing() not called?\n");
   } else if ((spacing_type < 0) || (spacing_type > 3)) {
     SETERRQ1(2,"IceGrid::setVertLevels():  spacing_type = %d is invalid\n",spacing_type);
   }
@@ -220,7 +232,8 @@ PetscErrorCode  IceGrid::setVertLevels() {
     zblevels[0] = 0.0;
     Lbz = 0.0;
   } else if (Mbz > 1) {
-    const PetscScalar dzEQ = Lz / ((PetscScalar) Mz - 1);
+//    const PetscScalar dzEQ = Lz / ((PetscScalar) Mz - 1);
+    const PetscScalar dzEQ = dzMIN;
     Lbz = dzEQ * ((PetscScalar) Mbz - 1);
     for (PetscInt kb=0; kb < Mbz; kb++) {
       zblevels[kb] = -Lbz + dzEQ * ((PetscScalar) kb);

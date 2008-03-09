@@ -62,7 +62,8 @@ PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt de
     ierr = getFlowLawNumber(myflowLawNum, defaultFLN); CHKERRQ(ierr);
 
     ierr = verbPrintf(3,com, 
-        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,3=Hooke,4=Goldsby-Kohlstedt)]\n",
+        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,"
+        "3=Hooke,4=Goldsby-Kohlstedt)]\n",
         myflowLawNum); CHKERRQ(ierr);
     
     switch (myflowLawNum) {
