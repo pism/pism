@@ -76,33 +76,43 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
   PetscErrorCode ierr;
   
   if (grid == PETSC_NULL) {
-    SETERRQ1(1,"ERROR: cannot print info for IceModelVec with varname='%s' because grid=PETSC_NULL\n"
-               "  ENDING.\n\n",varname);
+    SETERRQ1(1,"ERROR: cannot print info for IceModelVec with varname='%s'\n"
+               "   because grid=PETSC_NULL.  ENDING.\n\n",varname);
   }
 
-  ierr = verbPrintf(verbosity,grid->com,"\nprinting info for IceModelVec with varname='%s':\n",
-                    varname); CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,
+         "\nprinting info for IceModelVec with varname='%s':\n",
+         varname); CHKERRQ(ierr);
   if (da == PETSC_NULL) {
-    ierr = verbPrintf(verbosity,grid->com,"  WARNING:  da == PETSC_NULL for IceModelVec with varname='%s'!\n",
-                      varname); CHKERRQ(ierr);
+    ierr = verbPrintf(verbosity,grid->com,
+          "  WARNING:  da == PETSC_NULL for IceModelVec with varname='%s'!\n",
+          varname); CHKERRQ(ierr);
   }
   if (v == PETSC_NULL) {
-    ierr = verbPrintf(verbosity,grid->com,"  WARNING:  v == PETSC_NULL for IceModelVec with varname='%s'!\n",
-                      varname); CHKERRQ(ierr);
+    ierr = verbPrintf(verbosity,grid->com,
+          "  WARNING:  v == PETSC_NULL for IceModelVec with varname='%s'!\n",
+          varname); CHKERRQ(ierr);
   }
   if (array == PETSC_NULL) {
-    ierr = verbPrintf(verbosity,grid->com,"  WARNING:  array == PETSC_NULL for IceModelVec with varname='%s'!\n",
-                      varname); CHKERRQ(ierr);
+    ierr = verbPrintf(verbosity,grid->com,
+          "  WARNING:  array == PETSC_NULL for IceModelVec with varname='%s'!\n",
+          varname); CHKERRQ(ierr);
   }
   
-  ierr = verbPrintf(verbosity,grid->com,"  boolean flags:  localp = %d,  IOwnDA = %d,  has_standard_name = %d\n",
+  ierr = verbPrintf(verbosity,grid->com,
+           "  boolean flags:  localp = %d,  IOwnDA = %d,  has_standard_name = %d\n",
            (int)localp, (int)IOwnDA, has_standard_name);  CHKERRQ(ierr);
 
-  ierr = verbPrintf(verbosity,grid->com,"  NetCDF info:    varid_nc = %d\n", varid_nc);  CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,grid->com,"                  long_name = '%s'\n", long_name);  CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,grid->com,"                  standard_name = '%s'\n", standard_name);  CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,grid->com,"                  units = '%s'\n", units);  CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,grid->com,"                  pism_intent = '%s'\n\n", pism_intent);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,
+           "  NetCDF info:    varid_nc = %d\n", varid_nc);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,
+           "                  long_name = '%s'\n", long_name);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,
+           "                  standard_name = '%s'\n", standard_name);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,
+           "                  units = '%s'\n", units);  CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,grid->com,
+           "                  pism_intent = '%s'\n\n", pism_intent);  CHKERRQ(ierr);
   return 0;
 }
 
@@ -165,8 +175,8 @@ PetscErrorCode  IceModelVec::findVecNC(const int ncid, PetscTruth *exists) {
 
 
 //! Calls the appropriate NCTool method to read a NetCDF variable into the IceModelVec.
-PetscErrorCode IceModelVec::getVecNC(const int ncid, const int *s, const int *c, int dims, 
-                                     void *a_mpi, int a_size) {           
+PetscErrorCode IceModelVec::getVecNC(const int ncid, const int *s, const int *c, 
+                             int dims, void *a_mpi, int a_size) {           
   PetscErrorCode ierr;
   NCTool nct;
   if (localp) {

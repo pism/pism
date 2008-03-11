@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
 
 //    ierr = m->testIceModelVec(); CHKERRQ(ierr);
 
+    ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);

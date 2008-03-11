@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     if ((test == 'I') || (test == 'J')) {
       // run derived class for plastic till ice stream or linearized ice shelf
       IceExactSSAModel mSSA(g, ice, test);  
+      ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]) {
       } else {
         mComp = (IceCompModel*) &mComp_standard;
       }
+      ierr = mComp->setExecName("pismv"); CHKERRQ(ierr);
       ierr = mComp->setFromOptions(); CHKERRQ(ierr);
       ierr = mComp->initFromOptions(); CHKERRQ(ierr);
       ierr = mComp->run(); CHKERRQ(ierr);

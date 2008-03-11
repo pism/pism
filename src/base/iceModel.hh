@@ -26,6 +26,7 @@
 #include <petscksp.h>
 #include "grid.hh"
 #include "materials.hh"
+#include "forcing.hh"
 #include "beddefLC.hh"
 #include "iceModelVec.hh"
 
@@ -44,6 +45,7 @@ public:
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
+  PetscErrorCode setExecName(const char *my_executable_short_name);
 
   // see iMbootstrap.cc 
   PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
@@ -156,6 +158,7 @@ protected:
 
   char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this 
                                        // instance of IceModel
+  char executable_short_name[PETSC_MAX_PATH_LEN];
   
 protected:
   // see iceModel.cc
@@ -221,6 +224,13 @@ protected:
   // see iMdefaults.cc
   virtual PetscErrorCode setDefaults();
 
+  // see iMforcing.cc
+  IceSheetForcing  *dTforcing, *dSLforcing;
+  PetscScalar    bedDiffSeaLevel;
+  PetscErrorCode initForcingFromOptions();
+  PetscErrorCode updateForcing();
+  PetscErrorCode forcingCleanup();
+
   // see iMgrainsize.cc
   PetscErrorCode computeGrainSize_PseudoAge(const PetscScalar H, const PetscInt Mz, 
                           PetscScalar *w, PetscScalar *age_wspace, PetscScalar **gs);
@@ -279,17 +289,21 @@ protected:
 
   // see iMpdd.cc (positive degree day model for ablation)
   gsl_rng     *pddRandGen;
-  PetscTruth  doPDD, doPDDTrueRand, pddStuffCreated, pddRandStuffCreated;
+  char        monthlyTempsFile[PETSC_MAX_PATH_LEN];
+  Vec*        vmonthlyTs;                  // will allocate 12 2D Vecs 
+  PetscTruth  doPDD, doPDDTrueRand, pddStuffCreated, pddRandStuffCreated,
+              pddHaveMonthlyTempData;
   PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, 
               pddSummerWarming, pddSummerPeakDay;
   PetscErrorCode initPDDFromOptions();
+  PetscErrorCode readMonthlyTempDataPDD();
   PetscErrorCode updateSurfaceBalanceFromPDD();
   PetscErrorCode putBackSnowAccumPDD();
   PetscErrorCode PDDCleanup();
   double         CalovGreveIntegrand(const double Tac);
   virtual PetscScalar getTemperatureFromYearlyCycle(
                   const PetscScalar summer_warming, const PetscScalar Tma, 
-                  const PetscScalar day) const;
+                  const PetscScalar day, const PetscInt i, const PetscInt j) const;
   virtual PetscScalar getSummerWarming(
                   const PetscScalar elevation, const PetscScalar latitude, 
                   const PetscScalar Tma) const;

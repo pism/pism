@@ -27,6 +27,18 @@
 /*!
 The default PDD is deterministic, but there is also a monte carlo (random)
 implementation.
+
+This procedure reads options
+  - "-pdd"
+  - "-pdd_rand"
+  - "-pdd_rand_repeatable"
+  - "-pdd_factor_ice"
+  - "-pdd_factor_snow"
+  - "-pdd_refreeze"
+  - "-pdd_std_dev"
+  - "-pdd_summer_peak_day"
+  - "-pdd_summer_warming"
+  - "-pdd_monthly_temps"
  */
 PetscErrorCode IceModel::initPDDFromOptions() {
   PetscErrorCode  ierr;
@@ -85,8 +97,106 @@ PetscErrorCode IceModel::initPDDFromOptions() {
              &pddSummerPeakDay, &pSet); CHKERRQ(ierr);
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_summer_warming", 
              &pddSummerWarming, &pSet); CHKERRQ(ierr);
+
+    ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_monthly_temps", 
+             monthlyTempsFile, PETSC_MAX_PATH_LEN, &pddHaveMonthlyTempData); CHKERRQ(ierr);
+    if (pddHaveMonthlyTempData == PETSC_TRUE) {
+      ierr = readMonthlyTempDataPDD(); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com,
+                "using PDD based on standard yearly surface temp cycle\n");
+                CHKERRQ(ierr);
+    }
   }
+  return 0;
+}
+
+
+//! De-allocate various stuff associated to the PDD model.
+PetscErrorCode IceModel::PDDCleanup() {
+  PetscErrorCode ierr;
+  if (pddStuffCreated == PETSC_TRUE) {
+    ierr = VecDestroy(vAccumSnow); CHKERRQ(ierr);
+    pddStuffCreated = PETSC_FALSE;
+  }  
+  if (pddRandStuffCreated == PETSC_TRUE) {
+    gsl_rng_free(pddRandGen);
+    pddRandStuffCreated = PETSC_FALSE;
+  }
+  if (pddHaveMonthlyTempData == PETSC_TRUE) {
+    if (vmonthlyTs != PETSC_NULL) {
+      for (PetscInt j = 0; j < 12; ++j) {
+        if (vmonthlyTs[j] != PETSC_NULL) {
+          ierr = VecDestroy(vmonthlyTs[j]); CHKERRQ(ierr);
+        }
+      }
+      vmonthlyTs = PETSC_NULL;
+    }
+    pddHaveMonthlyTempData = PETSC_FALSE;
+  }
+  return 0;
+}
+
+
+//! Read in monthly temperature data if available (and allocate space for it).
+/*!
+Called if option "-pdd_monthly_temps" is given with a file name.
+ */
+PetscErrorCode IceModel::readMonthlyTempDataPDD() {
+  PetscErrorCode ierr;
+
+  int stat, ncid = 0;
+  ierr = verbPrintf(2, grid.com, 
+       "reading monthly surface temperature data for PDD from file %s ...\n", 
+       monthlyTempsFile); CHKERRQ(ierr);
+  if (grid.rank == 0) {
+    stat = nc_open(monthlyTempsFile, 0, &ncid); CHKERRQ(nc_check(stat));
+  }
+  MPI_Bcast(&ncid, 1, MPI_INT, 0, grid.com);
+
+  ierr = verbPrintf(4, grid.com, 
+         "  creating local interpolation context for monthly surface temps ...\n");
+         CHKERRQ(ierr);
+  size_t dim[5];  // dimensions in monthly temp NetCDF file
+  double bdy[7];  // limits and lengths in NetCDF file
+  double *z_bif, *zb_bif;
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  // the monthly temp data is 2d so fill in dummy stuff for regrid
+  dim[3] = 1; 
+  dim[4] = 1;
+  bdy[5] = 0.0;
+  bdy[6] = 0.0;
+  MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
+  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
+  z_bif = new double[dim[3]];
+  zb_bif = new double[dim[4]];
+  z_bif[0] = 0.0;
+  zb_bif[0] = 0.0;
+
+  LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
+  //ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
+  delete z_bif;
+  delete zb_bif;
   
+  ierr = verbPrintf(4, grid.com, 
+         "  allocating space for monthly surface temps ...\n"); CHKERRQ(ierr);
+  ierr = VecDuplicateVecs(g2, 12, &vmonthlyTs); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, 
+         "  reading (regridding) monthly surface temps ('temp_monN'):\n    month  ");
+         CHKERRQ(ierr);
+  for (PetscInt j = 0; j < 12; ++j) {
+    char monthlyTempName[20];
+    snprintf(monthlyTempName, 20, "temp_mon%d", j);
+    ierr = nct.regrid_global_var(monthlyTempName, 2, lic, grid, grid.da2, 
+                 vmonthlyTs[j], false); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, " %d", j); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(2, grid.com, "\n"); CHKERRQ(ierr);
+  
+  if (grid.rank == 0) {
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
+  }
   return 0;
 }
 
@@ -103,23 +213,19 @@ PetscErrorCode IceModel::putBackSnowAccumPDD() {
 }
 
 
-PetscErrorCode IceModel::PDDCleanup() {
-  PetscErrorCode ierr;
-  if (pddStuffCreated == PETSC_TRUE) {
-    ierr = VecDestroy(vAccumSnow); CHKERRQ(ierr);
-    pddStuffCreated = PETSC_FALSE;
-  }  
-  if (pddRandStuffCreated == PETSC_TRUE) {
-    gsl_rng_free(pddRandGen);
-    pddRandStuffCreated = PETSC_FALSE;
-  }  
-  return 0;
-}
+//!  Return the amount of summer warming.
+/*!
+The amount of summer warming can also be a function of elevation, latitude, and mean 
+annual surface temperature.  The derived class IceGRNModel includes an example.
 
+The date of peak summer warming is controlled by option <tt>-pdd_summer_peak_day</tt> 
+with a given Julian day.  The magnitude of the yearly cycle is controlled by 
+<tt>-pdd_summer_warming</tt> with a temperature change in degrees C.
 
+This procedure is \e virtual and replacable.
+ */
 PetscScalar IceModel::getSummerWarming(
        const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) const {
-  // THIS PROCEDURE IS virtual AND REPLACEABLE
   // version here ignors elevation, latitude, and mean annual temperature (Tma)
   // and instead uses -pdd_summer_warming setable constant
   // see IceGRNModel for alternate implementation
@@ -127,21 +233,60 @@ PetscScalar IceModel::getSummerWarming(
 }
 
 
+//! Get the surface temperature at a point for a given time (in days) from yearly cycle.
+/*!
+There are two versions:
+
+  - if pddHaveMonthlyTempData is true then the monthly data read by 
+    readMonthlyTempDataPDD() is linearly interpolated, while
+
+  - if pddHaveMonthlyTempData is false then a standard sinusoidal formula is used:
+      \f[ T_s(d,i,j) = T_{ma} + S \cos((2\pi/365.24) * (d - P)) \f]
+    where \f$d\f$ is the day on a 365.24 day calendar,
+    \f$T_{ma}\f$ is the annual mean temperature in degrees C,
+    \f$S\f$ is the amplitude of the sinusoid (the ``summer warming'') in degrees C,
+    and \f$P\f$ is the day of peak summer warming, pddSummerPeakDay, which is rather
+    arbitrarily taken to be August 1st by default.
+
+The first version runs when option "-pdd_monthly_temps" is given with a file name.
+
+EISMINT-Greenland assumes the second version.  See <t>iceGRNModel.cc</tt>.
+
+This procedure is \e virtual and replacable.
+ */
 PetscScalar IceModel::getTemperatureFromYearlyCycle(
-       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day) const {
-  // THIS PROCEDURE IS virtual AND REPLACEABLE
-  // NOTE: Ta = mean annual temperature (at location on surface) in degrees C
-  //       summer_warming = difference between peak summer temperature and Ta
-  //       day = day on 365.24 day calendar
-  const PetscScalar  rad_per_day    = 2.0 * PETSC_PI / 365.24;
-  return Tma + summer_warming * cos(rad_per_day * (day - pddSummerPeakDay));
+       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day,
+       const PetscInt i, const PetscInt j) const {
+  
+  if (pddHaveMonthlyTempData == PETSC_TRUE) {
+    // this case is when "-have_monthly_temps foo.nc"
+    PetscScalar month = 12.0 * day / 365.24;
+    month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
+    PetscInt  curr = (int) floor(month);
+    curr = curr % 12;
+    PetscInt  next = curr+1;
+    if (next == 12)   next = 0;
+    PetscScalar **currTs, **nextTs;
+    DAVecGetArray(grid.da2, vmonthlyTs[curr], &currTs);
+    DAVecGetArray(grid.da2, vmonthlyTs[next], &nextTs);
+    const PetscScalar myTs = (currTs[i][j] - 273.15) 
+         + (month - (PetscScalar)curr) * (nextTs[i][j] - 273.15);
+    DAVecRestoreArray(grid.da2, vmonthlyTs[curr], &currTs);
+    DAVecRestoreArray(grid.da2, vmonthlyTs[next], &nextTs);
+    return myTs;
+  } else { 
+    // this is the default case for EISMINT-Greenland
+    const PetscScalar  rad_per_day    = 2.0 * PETSC_PI / 365.24;
+    return Tma + summer_warming * cos(rad_per_day * (day - pddSummerPeakDay));
+  }
 }
 
 
 //! Compute the surface balance at a location given the number of positive degree days and snowfall there.
 /*!  
 The surface balance (either net accumulation or ablation) is computed from the
-number of positive degree days and the yearly snowfall.  
+number of positive degree days and the yearly snowfall.  The number of positive degree
+days is determined inside updateSurfaceBalanceFromPDD().
 
 We assume a constant rate of melting per positive degree day for snow.  The rate is set
 by the option <tt>-pdd_factor_snow</tt>.  A fraction of the melted snow refreezes; 
@@ -182,15 +327,18 @@ double IceModel::getSurfaceBalanceFromSnowAndPDD(
 
 
 //! Compute the integrand in integral (6) in (Calov and Greve, 2005).
-/*! The integral is
+/*!
+The integral is
    \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,
          \bigg[\frac{\sigma}{\sqrt{2\pi}}\,\exp\left(-\frac{T_{ac}(t)^2}{2\sigma^2}\right)
                + \frac{T_{ac}(t)}{2}\,\mathrm{erfc}
                \left(-\frac{T_{ac}(t)}{\sqrt{2}\,\sigma}\right)\bigg] \f]
-This procedure computes the quantity in square brackets.  The user can choose 
-\f$\sigma\f$ by option <tt>-pdd_std_dev</tt>.  Note that the integral is over a 
-time interval of length \c dt instead of a whole year as stated in 
-(Calov and Greve, 2005).
+This procedure computes the quantity in square brackets.
+
+The user can choose \f$\sigma\f$ by option <tt>-pdd_std_dev</tt>.
+
+Note that the integral is over a time interval of length \c dt instead of a 
+whole year as stated in (Calov and Greve, 2005).
  */
 double IceModel::CalovGreveIntegrand(const double Tac) {
 
@@ -211,25 +359,12 @@ this temperature change can be controlled by option <tt>-pdd_std_dev</tt>.
 The deterministic method computes only the expected amount of melting, while the 
 monte carlo method uses pseudo-random numbers to simulate the melting.
 
-PISM assumes a yearly temperature cycle with average surface temperature determined 
-by the 2D Vec <tt>vTs</tt>.  The default has a constant choice for summer warming, 
-the difference between the peak summer temperature and the mean of the yearly cycle.  
-That is, the daily mean temperature is
-   \f[T(t) = \mathtt{Ts[i][j]} + A \cos(2\pi (t - B) / 365.24)\f]
-where \f$t\f$ gives the Julian day, \f$A\f$ is the number of degrees of summer 
-warming and \f$B\f$ is the Julian day of the peak summer temperature.
-
-The amount of summer warming can also be a function of elevation, latitude, and mean 
-annual surface temperature.  The derived class <tt>IceGRNModel</tt> includes an example.
-
-The date of peak summer warming can be controlled by option <tt>-pdd_summer_peak</tt> 
-with a given Julian day.  The magnitude of the yearly cycle can be controlled by 
-<tt>-pdd_summer_warming</tt> with a temperature change in degrees C.
+computes the yearly temperature cycle.
 
 The surface mass balance at each point of the grid is computed by calling
 getSurfaceBalanceFromSnowAndPDD().
 
-The default model only computes the <i>expected</i> number of positive degree days, 
+The default model only computes the \e expected number of positive degree days, 
 so it is deterministic.  It is chosen by option <tt>-pdd</tt>.  It implements the 
 scheme in R. Calov and R. Greve (2005), <i>Correspondence: A semi-analytical solution
 for the positive degree-day model with stochastic temperature variations</i>, 
@@ -239,11 +374,12 @@ is approximated here by Simpson's rule.
 The alternative method, chosen by either <tt>-pdd_rand</tt> or 
 <tt>-pdd_rand_repeatable</tt>, computes a (pseudo)random amount of temperature 
 change for each day at each grid point.  This change is normally distributed 
-and is independent at each grid point and each day.  (Clearly a more realistic 
-pattern for the variability would have correlation with appropriate spatial 
-and temporal ranges.)  This method can be regarded as a monte carlo simulation 
-of a stochastic process (of which the Calov-Greve method is computing the 
-expected value).
+and is independent at each grid point and each day.  This method can be regarded 
+as a monte carlo simulation of a stochastic process (of which the Calov-Greve 
+method computes the expected value.
+
+A more realistic pattern for the variability of surface melting would have correlation 
+with appropriate spatial and temporal ranges.
  */
 PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
   PetscErrorCode ierr;
@@ -280,13 +416,6 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
       const PetscScalar mean_annual = Ts[i][j] - ice->meltingTemp;  // in deg C
       const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
 
-      if ((i == id) && (j == jd)) {
-        ierr = verbPrintf(4,grid.com,
-          "\nreport on PDD at (i,j) = (id,jd) = (%d,%d):\n"
-            "  mean_annual = %5.4f, summer_warming = %5.4f\n",
-          i, j, mean_annual, summer_warming); CHKERRQ(ierr);
-      }
-
       // use one of the two methods for computing the number of positive degree days
       // at the given i,j grid point for the duration of time step (=dt)
       if (doPDDTrueRand == PETSC_TRUE) { // monte carlo
@@ -295,7 +424,7 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
         for (PetscInt day = intstartday; day < intstartday + num_days; day++){ 
           const PetscScalar mytemp
                       = getTemperatureFromYearlyCycle(
-                             summer_warming, mean_annual,(PetscScalar) day);
+                             summer_warming, mean_annual,(PetscScalar) day, i,j);
           const double randadd = gsl_ran_gaussian(pddRandGen, pddStdDev);
           const PetscScalar temp = mytemp + (PetscScalar) randadd;
           if (temp > 0.0)   pdd_sum += temp;
@@ -313,21 +442,25 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
           if ( (m == 0) || (m == (CGsumcount - 1)) )  coeff = 1.0;
           const PetscScalar day = startday + m * CGsumstepdays;
           const PetscScalar temp = getTemperatureFromYearlyCycle(
-                                       summer_warming,mean_annual,day);
+                                       summer_warming,mean_annual,day, i,j);
           pdd_sum += coeff * CalovGreveIntegrand(temp);
         }
         pdd_sum = (CGsumstepdays / 3.0) * pdd_sum;
       }
 
-      // now that we have number of PDDs, compute mass balance from snow rate
+      // now that we have the number of PDDs, compute mass balance from snow rate
       accum[i][j] = getSurfaceBalanceFromSnowAndPDD(snow_accum[i][j], dt, pdd_sum);
 
       if ((i == id) && (j == jd)) {
-        ierr = verbPrintf(4,grid.com,
-              "  CGsumcount = %d, CGsumstepdays = %5.2f, num_days = %d, intstartday = %d,\n"
-              "  h = %6.2f, pdd_sum = %5.2f, snow_accum = %5.4f, accum = %5.4f\n",
-              CGsumcount, CGsumstepdays, num_days, intstartday,
-              h[i][j], pdd_sum, snow_accum[i][j]*secpera, accum[i][j]*secpera); CHKERRQ(ierr);
+        ierr = verbPrintf(5,grid.com,
+          "\nPDD at (i,j)=(id,jd)=(%d,%d):\n"
+            "  mean_annual=%5.4f, summer_warming=%5.4f\n",
+            i, j, mean_annual, summer_warming); CHKERRQ(ierr);
+        ierr = verbPrintf(5,grid.com,
+            "  CGsumcount = %d, CGsumstepdays = %5.2f, num_days = %d, intstartday = %d,\n"
+            "  h = %6.2f, pdd_sum = %5.2f, snow_accum = %5.4f, accum = %5.4f\n",
+            CGsumcount, CGsumstepdays, num_days, intstartday,
+            h[i][j], pdd_sum, snow_accum[i][j]*secpera, accum[i][j]*secpera); CHKERRQ(ierr);
       }
 
     }
@@ -343,12 +476,10 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
 
 
 /*
-
 Following are trials for the Calov-Greve versus monte carlo methods.  The 
 conclusion is that Simpson's rule with at least 53 points per year---
 weekly steps in the quadrature---probably suffices.  But the monthly steps
 in (Calov and Greve 2005) are probably not sufficient.
-
 
 DATA GENERATED BY CALLS
    $ mpiexec -n 2 pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
@@ -356,7 +487,6 @@ DATA GENERATED BY CALLS
 AND
    $ mpiexec -n 2 pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
        -ocean_kill -y 50 -pdd_rand -o green_50yr_pdd_randN
-
 
 initial:
 S      0.00000:  2.82500  1.6708   0.2071   3042.000  270.5156
@@ -368,7 +498,6 @@ S     50.00000:  2.84077  1.6620   0.2385   3019.121  270.5353
 C-G pdd with 366 Simpson's points per year:
 +0.57177
 S     50.00000:  2.83997  1.6580   0.2388   3019.117  270.5353
-
 
 pdd_rand  trial 0:
 +0.57156

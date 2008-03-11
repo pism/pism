@@ -513,12 +513,14 @@ PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *v
 /*!
 Just calls get_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
-PetscErrorCode NCTool::get_local_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
-                                     DA da, Vec v, Vec g, const int *s, const int *c,
-                                     int dims, void *a_mpi, int a_size) {
+PetscErrorCode NCTool::get_local_var(
+         const IceGrid *grid, int ncid, const char *name, nc_type type,
+         DA da, Vec v, Vec g, const int *s, const int *c,
+         int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
-  ierr = get_global_var(grid, ncid, name, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
+  ierr = get_global_var(grid, ncid, name, type, da, g, s, c, dims, a_mpi, a_size);
+            CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
@@ -526,9 +528,10 @@ PetscErrorCode NCTool::get_local_var(const IceGrid *grid, int ncid, const char *
 
 
 //! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
-PetscErrorCode NCTool::get_global_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
-                                      DA da, Vec g, const int *s, const int *c,
-                                      int dims, void *a_mpi, int a_size) {
+PetscErrorCode NCTool::get_global_var(
+    const IceGrid *grid, int ncid, const char *name, nc_type type,
+    DA da, Vec g, const int *s, const int *c, int dims, void *a_mpi, int a_size) {
+
   const int req_tag = 1; // MPI tag for request block
   const int var_tag = 2; // MPI tag for data block
   const int sc_size = 8;
@@ -743,7 +746,8 @@ PetscErrorCode NCTool::set_MaskInterp(MaskInterp *mi_in) {
 Simply calls regrid_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
 PetscErrorCode NCTool::regrid_local_var(const char *name, int dim_flag, LocalInterpCtx &lic,
-                                        IceGrid &grid, DA da, Vec vec, Vec g, bool useMaskInterp) {
+                                        IceGrid &grid, DA da, Vec vec, Vec g, 
+                                        bool useMaskInterp) {
   PetscErrorCode ierr;
   ierr = regrid_global_var(name, dim_flag, lic, grid, da, g, useMaskInterp); CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);

@@ -120,6 +120,12 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   psParams.svlfp = 0.0;  // default polar stereographic projection settings
   psParams.lopo = 90.0;
   psParams.sp = -71.0;
+
+  bedDiffSeaLevel = 0.0;
+  
+  dTforcing = PETSC_NULL;
+  dSLforcing = PETSC_NULL;
+  vmonthlyTs = PETSC_NULL;
   
   ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
   if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
@@ -344,6 +350,12 @@ void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
 void IceModel::setConstantNuForSSA(PetscScalar nu) {
   useConstantNuForSSA = PETSC_TRUE;
   constantNuForSSA = nu;
+}
+
+
+PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
+  strcpy(executable_short_name, my_executable_short_name);
+  return 0;
 }
 
 
@@ -734,6 +746,8 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     if (endOfTimeStepHook() != 0) break;
   }
   
+  ierr = forcingCleanup(); CHKERRQ(ierr);
+
   return 0;
 }
 

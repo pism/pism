@@ -234,11 +234,16 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             //  note that the new method is O(dx) because gs[i+1/2,j] (for example) is approximated by
             //  gs[i][j]
             if (flowLawUsesGrainSize == PETSC_TRUE) {
+//              delta[k] = (2 * pressure * enhancementFactor
+//                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
+//                          pressure, gsij[k]) );
               delta[k] = (2 * pressure * enhancementFactor
-                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, gsij[k]) );
+                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
+                          pressure, 1.0e-3) );
             } else {
               delta[k] = (2 * pressure * enhancementFactor
-                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure) );
+                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]),
+                          pressure) );
             }
 
             // for Sigma, ignor mask value and assume SHEET; will be overwritten

@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
       m = (IceModel*) &mRoss;
     } else 
       m = (IceModel*) &mPlain;
+    ierr = m->setExecName("pismd"); CHKERRQ(ierr);
     ierr = m->setFromOptions(); CHKERRQ(ierr);
     ierr = m->initFromOptions(); CHKERRQ(ierr);
 

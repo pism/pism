@@ -123,6 +123,10 @@ PetscErrorCode  IceModel::setFromOptions() {
     strcpy(diagnosticBIG, "\0");
   }
 
+// note "-dSLforcing" read by initForcingFromOptions() in iMforcing.cc
+
+// note "-dTforcing" read by initForcingFromOptions() in iMforcing.cc
+
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
 // note "-f3d" is read in writefiles() in iMIO.cc
@@ -192,6 +196,18 @@ PetscErrorCode  IceModel::setFromOptions() {
   if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
 
 // note "-of" is in use for output file format; see iMIO.cc
+
+// lots of "-ppd_*" options read by initPDDFromOptions() in iMpdd.cc:
+//   "-pdd"
+//   "-pdd_rand"
+//   "-pdd_rand_repeatable"
+//   "-pdd_factor_snow"
+//   "-pdd_factor_ice"
+//   "-pdd_refreeze"
+//   "-pdd_std_dev"
+//   "-pdd_summer_peak_day"
+//   "-pdd_summer_warming"
+//   "-pdd_monthly_temps"
 
   // use a plastic basal till mechanical model
   ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &mydoPlasticTill); CHKERRQ(ierr);

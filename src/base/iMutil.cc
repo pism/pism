@@ -279,17 +279,14 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 
   ierr = initPDDFromOptions(); CHKERRQ(ierr);
 
+  ierr = initForcingFromOptions(); CHKERRQ(ierr);
+
   tempskipCountDown = 0;
 
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);
   }
 
-/*
-ierr = u3.printInfo(1); CHKERRQ(ierr);
-ierr = Istag3[0].printInfo(1); CHKERRQ(ierr);
-ierr = grid.printVertLevels(1); CHKERRQ(ierr);
-*/
   return 0;
 }
 
@@ -397,7 +394,8 @@ int IceModel::endOfTimeStepHook() {
   //   No need to indicate in history attribute of output NetCDF file.
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%5.3f.nc", grid.year);
+    snprintf(file_name, PETSC_MAX_PATH_LEN, "%s-%5.3f.nc",
+             executable_short_name, grid.year);
     verbPrintf(1, grid.com, "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
                file_name);
     pism_signal = 0;

@@ -164,13 +164,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     dim[4] = 1;
     bdy[5] = 0.0;
     bdy[6] = 0.0;
-    //nc_get_var1_double(ncid, zb_id, &z_bdy[0], &bdy[5]);
-    //nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);
     MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
     MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
     z_bif = new double[dim[3]];
     zb_bif = new double[dim[4]];
-    //nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com);
     z_bif[0] = 0.0;
     zb_bif[0] = 0.0;
   } else {
@@ -200,7 +197,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     z_scale = z_scale_in;
   } else {
     ierr = verbPrintf(2, grid.com, 
-         "  WARNING: option -Lz should usually be used to set vertical when bootstrapping ...\n"); CHKERRQ(ierr);
+      "  WARNING: option -Lz should usually be used to set vertical if bootstrapping ...\n");
+      CHKERRQ(ierr);
   }
 
   // report on resulting computational box, rescale grid, actually create

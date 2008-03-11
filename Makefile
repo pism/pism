@@ -27,7 +27,7 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
    simpleL gridL flowTable tryLCbd pant
 
 ice_sources := extrasGSL.cc grid.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc \
-	iMgrainsize.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
+	iMforcing.cc iMgrainsize.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
 	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
 	iceModel.cc materials.cc nc_util.cc iceModelVec.cc iceModelVec3.cc \
 	beddefLC.cc forcing.cc

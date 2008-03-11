@@ -71,7 +71,6 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   }
   
   muSliding = 0.0;  // no sliding in any case; perhaps develop an SSA variant??
-  bedDiff = 0.0; // related to sea level forcing, not bed deformation
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
@@ -92,7 +91,8 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   char inFile[PETSC_MAX_PATH_LEN], dTFile[PETSC_MAX_PATH_LEN], dSLFile[PETSC_MAX_PATH_LEN];
   PetscTruth inFileSet, bootFileSet, dTforceSet, dSLforceSet, nopddSet;
   
-  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // wait on init hook; possible regridding!
+  // wait on init hook; possible regridding!:
+  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
@@ -116,12 +116,15 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     PetscTruth pddSummerWarmingSet, pddStdDevSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
               &pddSummerWarmingSet); CHKERRQ(ierr);
-    if (pddSummerWarmingSet == PETSC_TRUE) { // note IceGRNModel::getSummerWarming() is below
+    // note IceGRNModel::getSummerWarming() is below
+    if (pddSummerWarmingSet == PETSC_TRUE) { 
       ierr = verbPrintf(1, grid.com, 
-         "WARNING: -pdd_summer_warming option ignored.  Using EISMINT-GREENLAND\n"
-         "         summer temperature formula\n"); CHKERRQ(ierr);
+         "WARNING: -pdd_summer_warming option ignored.\n"
+         "  Using EISMINT-GREENLAND summer temperature formula\n");
+         CHKERRQ(ierr);
     }
-    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); 
+       CHKERRQ(ierr);
     if (pddStdDevSet == PETSC_FALSE) {
       pddStdDev = 5.0;  // EISMINT-GREENLAND default; note we allow user to override
     }
@@ -129,17 +132,19 @@ PetscErrorCode IceGRNModel::initFromOptions() {
   
   if (inFileSet == PETSC_TRUE) {
     if (bootFileSet) {
-      ierr = verbPrintf(1, grid.com, "WARNING: -bif and -if given; using -if\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(1, grid.com, "WARNING: -bif and -if given; using -if\n");
+         CHKERRQ(ierr);
     }
   } else if (bootFileSet == PETSC_TRUE) {
-    // though default bootstrapping has set the new temperatures, we need to set the surface
-    // temp and geothermal flux at base and then set 3D temps again
-    ierr = verbPrintf(2, grid.com,"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
-               EISMINT_G_geothermal);
+    // though default bootstrapping has set the new temperatures, we need to set 
+    // the surface temp and geothermal flux at base and then set 3D temps again
+    ierr = verbPrintf(2, grid.com,
+         "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
+         EISMINT_G_geothermal);
     ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
     if (haveSurfaceTemps == PETSC_FALSE) {
       ierr = verbPrintf(2, grid.com, 
-         "computing surface temperatures by EISMINT-Greenland elevation-latitude rule \n");
+         "computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
          CHKERRQ(ierr);
       ierr = updateTs(); CHKERRQ(ierr);
       ierr = verbPrintf(2, grid.com, 
@@ -157,41 +162,18 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
   }
 
-  if (dTforceSet == PETSC_TRUE) {
-    int stat, ncid;
-    if (grid.rank == 0) {
-      stat = nc_open(dTFile, 0, &ncid); CHKERRQ(nc_check(stat));
-    } else {
-      ncid = 0;  // should not matter
-    }
-    ierr = verbPrintf(2, grid.com, 
-         "reading delta T data from forcing file %s ...\n", dTFile); CHKERRQ(ierr);
-    ierr = dTforcing.readCoreClimateData(grid.com, grid.rank, ncid, grid.year,ISF_DELTA_T);
-         CHKERRQ(ierr);
-  } else if (expernum == 3) {
+  if ((dTforceSet == PETSC_FALSE) && (expernum == 3)) {
     SETERRQ(5, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta T forcing data\n");
   }
 
-  if (dSLforceSet == PETSC_TRUE) {
-    int stat, ncid;
-    if (grid.rank == 0) {
-      stat = nc_open(dSLFile, 0, &ncid); CHKERRQ(nc_check(stat));
-    } else {
-      ncid = 0;  // should not matter
-    }
-    ierr = verbPrintf(2, grid.com, 
-         "reading delta sea level data from forcing file %s ...\n", dSLFile); CHKERRQ(ierr);
-    ierr = dSLforcing.readCoreClimateData(grid.com, grid.rank, 
-                                          ncid, grid.year,ISF_DELTA_SEA_LEVEL);
-         CHKERRQ(ierr);
-  } else if (expernum == 3) {
+  if ((dSLforceSet == PETSC_FALSE) && (expernum == 3)) {
     SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
   }
 
-  if (expernum == 4 && dTforceSet == PETSC_TRUE) {
+  if ((expernum == 4) && (dTforceSet == PETSC_TRUE)) {
     SETERRQ(3, "ERROR: EISMINT-GREENLAND experiment GWL3 cannot use -dTforcing option.\n");
   }
-  if (expernum == 4 && dSLforceSet == PETSC_TRUE) {
+  if ((expernum == 4) && (dSLforceSet == PETSC_TRUE)) {
     SETERRQ(4, "ERROR: EISMINT-GREENLAND experiment GWL3 cannot use -dSLforcing option.\n");
   }
 
@@ -208,23 +190,10 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
   PetscErrorCode ierr;
 
   // for all experiments, at each time step we need to recompute
-  // surface temperatures from surface elevation and latitude
-  ierr = updateTs(); CHKERRQ(ierr);
-    
-  if (expernum == 3) {  // for CCL3 get delta Temperature and delta Sea Level
-                        // from ice code/ sea bed core data
-    PetscScalar TsChange, seaLevelChange;
-    ierr = dTforcing.updateFromCoreClimateData(grid.year,&TsChange); CHKERRQ(ierr);
-    ierr = dSLforcing.updateFromCoreClimateData(grid.year,&seaLevelChange); CHKERRQ(ierr);
-    ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
-    ierr = VecShift(vbed,bedDiff - seaLevelChange); CHKERRQ(ierr);
-    bedDiff = seaLevelChange;
-    // communicate ghosted bed (bed slope matters); needed with VecShift?
-    ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-    if (seaLevelChange != 0) {
-      updateSurfaceElevationAndMask();
-    }
+  // surface temperatures from surface elevation and latitude, unless the 
+  // user supplies an additional map of mean annual surface temps
+  if (haveSurfaceTemps == PETSC_FALSE) {
+    ierr = updateTs(); CHKERRQ(ierr);
   }
 
   if (expernum == 4) {  // for GWL3 apply global warming temperature forcing
@@ -325,14 +294,6 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   //   because neighbor's mask matters
   ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceGRNModel::removeBedDiff() {
-  PetscErrorCode ierr;
-  
-  ierr = VecShift(vbed, bedDiff); CHKERRQ(ierr);
   return 0;
 }
 

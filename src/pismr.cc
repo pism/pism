@@ -42,10 +42,11 @@ int main(int argc, char *argv[]) {
     IceType*   ice = PETSC_NULL;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMR (base run mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMR (basic evolution run mode)\n"); CHKERRQ(ierr);
     
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
     IceModel m(g, ice);
+    ierr = m.setExecName("pismr"); CHKERRQ(ierr);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 

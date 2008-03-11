@@ -150,7 +150,8 @@ PetscErrorCode IceModel::setDefaults() {
   showViewers = PETSC_TRUE;
 
   setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);
-  
+  ierr = setExecName("pism"); CHKERRQ(ierr);  // drivers typically override this
+
   enhancementFactor = DEFAULT_ENHANCEMENT_FACTOR;
   muSliding = DEFAULT_MU_SLIDING;
   thermalBedrock = DEFAULT_THERMAL_BEDROCK;
