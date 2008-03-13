@@ -146,7 +146,7 @@ which may not even be a grid created by this routine).
   - When \c spacing_type == 2, the vertical grid in the ice is Chebyshev spaced.  
     Note that (generally speaking) the \f$N+1\f$ \e Chebyshev \e extreme 
     \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
-    (See L. N. Trefethen, <i>Spectral Methods in MATLAB</i>, SIAM Press 2000.)
+    (See \lo\cite{Trefethen}\elo.)
     These are concentrated at either end of the interval \f$[-1,1]\f$.  In our 
     case we want points concentrated near zero, and we use only half of the 
     Chebyshev points because we don't need concentration near the top

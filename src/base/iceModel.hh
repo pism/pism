@@ -54,8 +54,8 @@ public:
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
 
-  // see iMtemp.cc
-  PetscErrorCode testIceModelVec();
+  // see iMtests.cc
+  PetscErrorCode testIceModelVec3();
 
   // see iMutil.cc
   virtual PetscErrorCode initFromOptions();

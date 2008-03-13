@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for EISMINT II, MISMIP, and other simplified geometry\n"
-  "and intercomparison simulations.\n";
+  "Ice sheet driver for EISMINT II and MISMIP simplified geometry\n"
+  "intercomparison simulations.\n";
 
 #include <cstring>
 #include <petscbag.h>
@@ -27,7 +27,6 @@ static char help[] =
 #include "base/iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/iceEISplModel.hh"
-// #include "ismip/iceHEINOModel.hh"
 #include "ismip/iceMISMIPModel.hh"
 
 int main(int argc, char *argv[]) {
@@ -55,7 +54,6 @@ int main(int argc, char *argv[]) {
     
     // call constructors on all three, but m will point to the one we use
     IceEISModel    mEISII(g, ice);
-//    IceHEINOModel  mHEINO(g, ice);
     IceEISplModel  mEISpl(g, ice);
     IceMISMIPModel mMISMIP(g, mismipice, mismipice);
     IceModel*      m;
@@ -68,9 +66,6 @@ int main(int argc, char *argv[]) {
     /* This option chooses plastic till modification of EISMINT II experiment A or I. */
     ierr = PetscOptionsHasName(PETSC_NULL, "-eis2pl", &EISplchosen);
               CHKERRQ(ierr);
-    /* This option chooses ISMIP; "-ismip H" is ISMIP-HEINO and none others are implemented */
-//    ierr = PetscOptionsHasName(PETSC_NULL, "-ismip", &ISMIPchosen);
-//              CHKERRQ(ierr);
     /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
     ierr = PetscOptionsHasName(PETSC_NULL, "-mismip", &MISMIPchosen);
               CHKERRQ(ierr);
@@ -86,11 +81,6 @@ int main(int argc, char *argv[]) {
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
-//    } else if (ISMIPchosen == PETSC_TRUE) {
-//      mHEINO.setflowlawNumber(flowlawNumber);
-//      ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
-//      ierr = mHEINO.initFromOptions(); CHKERRQ(ierr);
-//      m = (IceModel*) &mHEINO;
     } else if (EISplchosen == PETSC_TRUE) {
       ierr = mEISpl.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISpl.initFromOptions(); CHKERRQ(ierr);
@@ -103,16 +93,13 @@ int main(int argc, char *argv[]) {
       SETERRQ(3,"PISMS: how did I get here?");
     }
 
-//    ierr = m->testIceModelVec(); CHKERRQ(ierr);
+    ierr = m->testIceModelVec(); CHKERRQ(ierr);
 
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
     
-//    if (ISMIPchosen == PETSC_TRUE) {
-//      ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
-//    }
     delete ice;
     delete mismipice;
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);

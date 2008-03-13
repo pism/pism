@@ -20,78 +20,17 @@
 #include <ctime>
 #include "iceModel.hh"
 #include "pism_signal.h"
-
 #include <petscvec.h>
 
-//! Compute the maximum diffusivity associated to the SIA deformational velocity.
-/*! 
-The time-stepping scheme for mass continuity is explicit.  For the non-sliding,
-deformational part of the vertically-integrated horizontal mass flux \f$\mathbf{q}\f$,
-the partial differential equation is diffusive.  Thus there is a stability criterion 
-(Morton and Mayers, 2005) which depends on the diffusivity coefficient.  Of course,
-because the PDE is nonlinear, this diffusivity changes at every time step.  This 
-procedure computes the maximum of the diffusivity on the grid.
 
-See determineTimeStep() and massBalExplicitStep().
+//! Compute scalar basal driving stress for diagnostic purposes.
+/*!
+Computes the scalar value of the driving stress at the base of the ice:
+   \f[ f_{basal} = \rho g H |\nabla h| \f]
+Saves it in \c myVec, which is treated as global.  (Does not 
+communicate ghosts.)
  */
-PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
-  // assumes vuvbar holds correct deformational values of velocities
-
-  PetscErrorCode ierr;
-
-  const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
-  PetscScalar **h, **H, **uvbar[2], **D;
-  PetscScalar Dmax = 0.0;
-
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0.0) {
-        if (computeSIAVelocities == PETSC_TRUE) {
-          // note: when basal sliding is proportional to surface slope, as
-          // it usually will be when sliding occurs in a MASK_SHEET area, then
-          //    D = H Ubar / alpha
-          // is the correct formula; note division by zero is avoided by
-          // addition to alpha
-          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.dx),
-                            h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.dy),
-                            alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-          const PetscScalar udef = 0.5 * (uvbar[0][i][j] + uvbar[0][i-1][j]),
-                            vdef = 0.5 * (uvbar[1][i][j] + uvbar[1][i][j-1]),
-                            Ubarmag = sqrt(PetscSqr(udef) + PetscSqr(vdef));
-          const PetscScalar d =
-               H[i][j] * Ubarmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
-          if (d > Dmax) Dmax = d;
-          D[i][j] = d;
-        } else {
-          D[i][j] = 0.0; // no diffusivity if no SIA
-        }
-      } else {
-        D[i][j] = 0.0; // no diffusivity if no ice
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
-
-  if (updateDiffusViewer) { // view diffusivity (m^2/s)
-    ierr = update2DViewer('D',vWork2d[0],1.0); CHKERRQ(ierr);
-  }
-
-  ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
-  return 0;
-}
-
-
 PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
-  // puts   f_basal = \rho g H |\grad h|   into myVec; does not communicate ghosts
   PetscErrorCode ierr;
 
   PetscScalar **h, **H, **fbasal;
@@ -114,92 +53,6 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
 }
 
 
-PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
-  // note computeMaxDiffusivity() must be called before this to set gDmax
-  // note that adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so 
-  // dt <= adapt_ratio * dx^2/maxD (if dx=dy)
-  // reference: Morton & Mayers 2nd ed. pp 62--63
-  const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
-  const PetscScalar  
-          gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dt_from_diffus = adaptTimeStepRatio
-                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
-  if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
-    const PetscScalar  conservativeFactor = 0.8;
-    // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
-    tempskipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
-    tempskipCountDown = (tempskipCountDown > tempskipMax) ? tempskipMax : tempskipCountDown;
-  } // if tempskipCountDown > 0 then it will get decremented at the mass balance step
-  if (dt_from_diffus < dt) {
-    dt = dt_from_diffus;
-    adaptReasonFlag = 'd';
-  }
-  return 0;
-}
-
-
-//! Use various stability criteria to determine the time step for an evolution run.
-/*! 
-The main loop in run() approximates many physical processes.  Several of these approximations,
-including the mass continuity and temperature equations in particular, involve stability
-criteria.  This procedure builds the length of the next time step by using these criteria and 
-by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived classes.
- */
-PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
-  PetscErrorCode ierr;
-
-  if ( (runtimeViewers[cIndex('D')] != PETSC_NULL) 
-       || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
-    ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
-  }
-  const PetscScalar timeToEnd = (endYear-grid.year) * secpera;
-  if (dt_force > 0.0) {
-    dt = dt_force; // override usual dt mechanism
-    adaptReasonFlag = 'f';
-    if (timeToEnd < dt) {
-      dt = timeToEnd;
-      adaptReasonFlag = 'e';
-    }
-  } else {
-    dt = maxdt;
-    adaptReasonFlag = 'm';
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
-        && doTemperatureCFL) {
-      // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
-      dt_from_cfl = CFLmaxdt;
-      if (dt_from_cfl < dt) {
-        dt = dt_from_cfl;
-        adaptReasonFlag = 'c';
-      }
-    } 
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)
-        && (useSSAVelocity)) {
-      // CFLmaxdt2D is set by broadcastSSAVelocity()
-      if (CFLmaxdt2D < dt) {
-        dt = CFLmaxdt2D;
-        adaptReasonFlag = 'u';
-      }
-    }
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)) {
-      // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
-      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
-    }
-    if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
-      dt = maxdt_temporary;
-      adaptReasonFlag = 't';
-    }
-    if (timeToEnd < dt) {
-      dt = timeToEnd;
-      adaptReasonFlag = 'e';
-    }
-    if ((adaptReasonFlag == 'm') || (adaptReasonFlag == 't') || (adaptReasonFlag == 'e')) {
-      if (tempskipCountDown > 1) tempskipCountDown = 1; 
-    }
-  }    
-  return 0;
-}
-
-
 //! Does nothing in \c IceModel, but allows derived classes to do more per-step computation.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
   return 0;
@@ -212,7 +65,7 @@ PetscErrorCode IceModel::additionalAtEndTimestep() {
 }
 
 
-//! Manages the actual initialization of IceModel, especially from input file options.
+//! Manages the initialization of IceModel, especially from input file options.
 PetscErrorCode IceModel::initFromOptions() {
   PetscErrorCode ierr;
 
@@ -221,6 +74,7 @@ PetscErrorCode IceModel::initFromOptions() {
 }
 
 
+//! Version of initFromOptions() which allows turning off afterInitHook().
 PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
   PetscTruth inFileSet, bootstrapSet; // bootstrapSetLegacy;
@@ -270,7 +124,8 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);
   }
 
-  // make sure the first vertical velocities do not use junk from uninitialized basal melt rate.
+  // make sure the first vertical velocities do not use junk from 
+  //   uninitialized basal melt rate.
   ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
 
   ierr = initBasalTillModel(); CHKERRQ(ierr);
@@ -375,10 +230,18 @@ PetscErrorCode IceModel::afterInitHook() {
 
 
 //! Catch signals -USR1 and -TERM; in the former case save and continue; in the latter, save and stop.
+/*!
+Signal \c SIGTERM makes PISM end, saving state under original \c -o name 
+(or default name).  We also add an indication to the history attribute 
+of the output NetCDF file.
+
+Signal \c SIGUSR1 makes PISM save state under a filename based on the
+the name of the executable (e.g. \c pismr or \c pismv) and the current 
+model year.  There is no indication in the history attribute of the output 
+NetCDF file because there is no effect.  There is an indication at \c stdout.
+ */
 int IceModel::endOfTimeStepHook() {
   
-  // SIGTERM makes PISM end, saving state under original -o name (or default name)
-  //   and adding indication to history attribute of output NetCDF file.
   if (pism_signal == SIGTERM) {
     verbPrintf(1, grid.com, 
        "Caught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
@@ -390,14 +253,13 @@ int IceModel::endOfTimeStepHook() {
     return 1;
   }
   
-  // SIGUSR1 makes PISM save state under filename based on the current year.
-  //   No need to indicate in history attribute of output NetCDF file.
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "%s-%5.3f.nc",
              executable_short_name, grid.year);
-    verbPrintf(1, grid.com, "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
-               file_name);
+    verbPrintf(1, grid.com, 
+       "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
+       file_name);
     pism_signal = 0;
     dumpToFile_netCDF(file_name);
   }
@@ -406,6 +268,7 @@ int IceModel::endOfTimeStepHook() {
 }
 
 
+//! Build a history string from the command which invoked PISM.
 PetscErrorCode  IceModel::stampHistoryCommand() {
   PetscErrorCode ierr;
   PetscInt argc;
@@ -426,8 +289,8 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   }
 
   // All this hooplah is the C equivalent of the Ruby expression
-  // ARGV.unshift($0).join(' ') and just ARGV.join(' ') if the executable name
-  // was not needed.
+  // ARGV.unshift($0).join(' ') and just ARGV.join(' ')
+  // if the executable name was not needed.
 
   ierr = stampHistory(str); CHKERRQ(ierr);
 
@@ -435,6 +298,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
 }
 
 
+//! Build the particular history string associated to the end of a PISM run.
 PetscErrorCode  IceModel::stampHistoryEnd() {
   PetscErrorCode ierr;
   PetscLogDouble flops, my_flops;
@@ -455,6 +319,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 }
 
 
+//! Get time and user/host name and add it to the given string.  Then call stampHistoryString(). 
 PetscErrorCode  IceModel::stampHistory(const char* string) {
   PetscErrorCode ierr;
 
@@ -488,8 +353,8 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
   }
   if (length > (int)sizeof(str)) {
     ierr = PetscPrintf(grid.com,
-                       "Warning: command line truncated by %d chars in history.\n",
-                       length + 1 - sizeof(str)); CHKERRQ(ierr);
+       "Warning: command line truncated by %d chars in history.\n",
+       length + 1 - sizeof(str)); CHKERRQ(ierr);
     str[sizeof(str) - 2] = '\n';
     str[sizeof(str) - 1] = '\0';
   }
@@ -500,6 +365,7 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
 }
 
 
+//! Add the given string to the history data member in IceModel.
 PetscErrorCode  IceModel::stampHistoryString(const char* string) {
   PetscErrorCode ierr;
 
@@ -507,8 +373,9 @@ PetscErrorCode  IceModel::stampHistoryString(const char* string) {
   PetscInt stringLength = strlen(string);
 
   if (stringLength + historyLength > (int)sizeof(history) - 1) {
-    ierr = PetscPrintf(grid.com, "Warning: History string overflow.  Truncating history.\n");
-    CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, 
+         "Warning: History string overflow.  Truncating history.\n");
+         CHKERRQ(ierr);
 
     // Don't overflow the buffer and null terminate.
     strncpy(history, string, sizeof(history));

@@ -301,7 +301,7 @@ If the rate of snowfall is negative then the rate is interpreted as an ice-equiv
 ablation).  For most uses the snowfall rate is positive everywhere on the ice sheet, 
 however.
 
-The default values for the factors come from
+The default values for the factors come from \lo\cite{RitzEISMINT}\elo
 C. Ritz, "EISMINT Intercomparison Experiment: Comparison of existing Greenland models,"
 <tt>http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html</tt>, 1997.
  */
@@ -326,7 +326,7 @@ double IceModel::getSurfaceBalanceFromSnowAndPDD(
 }
 
 
-//! Compute the integrand in integral (6) in (Calov and Greve, 2005).
+//! Compute the integrand in integral (6) in \lo\cite{CalovGreve05}\elo.
 /*!
 The integral is
    \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,
@@ -338,7 +338,7 @@ This procedure computes the quantity in square brackets.
 The user can choose \f$\sigma\f$ by option <tt>-pdd_std_dev</tt>.
 
 Note that the integral is over a time interval of length \c dt instead of a 
-whole year as stated in (Calov and Greve, 2005).
+whole year as stated in \lo\cite{CalovGreve05}\elo.
  */
 double IceModel::CalovGreveIntegrand(const double Tac) {
 
@@ -366,9 +366,7 @@ getSurfaceBalanceFromSnowAndPDD().
 
 The default model only computes the \e expected number of positive degree days, 
 so it is deterministic.  It is chosen by option <tt>-pdd</tt>.  It implements the 
-scheme in R. Calov and R. Greve (2005), <i>Correspondence: A semi-analytical solution
-for the positive degree-day model with stochastic temperature variations</i>, 
-J. Glaciol. 51 (172), pp 173--175.  In particular, integral (6) in that paper
+scheme in \lo\cite{CalovGreve05}\elo.  In particular, integral (6) in that paper
 is approximated here by Simpson's rule.
 
 The alternative method, chosen by either <tt>-pdd_rand</tt> or 

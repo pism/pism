@@ -89,21 +89,16 @@ PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
 PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
-    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3! (has varname='%s')\n",
-               varname);
+    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
+               "  (has varname='%s')\n", varname);
   }
-//  if (!imv3_source.localp) {
-//    SETERRQ1(2,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has varname='%s')\n",
-//               imv3_source.varname);
-//  }
   if (imv3_source.localp) {
     SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has varname='%s')\n",
                imv3_source.varname);
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
-//  ierr = DALocalToLocalBegin(da, imv3_source.v, INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr = DAGlobalToLocalBegin(da, imv3_source.v, INSERT_VALUES, v);  CHKERRQ(ierr);
+  ierr = DAGlobalToLocalBegin(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
 }
 
@@ -111,20 +106,16 @@ PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 imv3_source) {
 PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
-    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3! (has varname='%s')\n",
+    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
+               "  (has varname='%s')\n",
                varname);
   }
-//  if (!imv3_source.localp) {
-//    SETERRQ1(2,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has varname='%s')\n",
-//               imv3_source.varname);
-//  }
   if (imv3_source.localp) {
     SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has varname='%s')\n",
                imv3_source.varname);
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
-//  ierr = DALocalToLocalEnd(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
 }
@@ -195,7 +186,8 @@ PetscErrorCode  IceModelVec3::setValColumnPL(
     while (levelsIN[mcurr+1] < levels[k]) {
       mcurr++;
     }
-    const PetscScalar increment = (levels[k] - levelsIN[mcurr]) / (levelsIN[mcurr+1] - levelsIN[mcurr]);
+    const PetscScalar increment = (levels[k] - levelsIN[mcurr])
+                                  / (levelsIN[mcurr+1] - levelsIN[mcurr]);
     arr[i][j][k] = valsIN[mcurr] +  increment * (valsIN[mcurr+1] - valsIN[mcurr]);
   }
 
@@ -204,8 +196,8 @@ PetscErrorCode  IceModelVec3::setValColumnPL(
 
 
 //! Set all values of scalar quantity to given a single value in a particular column.
-PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscInt j, 
-                                                  const PetscScalar c) {
+PetscErrorCode  IceModelVec3::setToConstantColumn(
+                   const PetscInt i, const PetscInt j, const PetscScalar c) {
 
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   // check if in ownership ?
@@ -218,18 +210,19 @@ PetscErrorCode  IceModelVec3::setToConstantColumn(const PetscInt i, const PetscI
 
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
-PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const PetscScalar z) {
+PetscScalar IceModelVec3::getValZ(const PetscInt i, const PetscInt j, 
+                                  const PetscScalar z) {
 
   if (checkHaveArray() != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
-       "IceModelVec3 getValZ(): array was not allocated (so says IceModelVec::checkHaveArray());\n"
-       " varname = %s\n", varname);
+       "IceModelVec3 getValZ(): array was not allocated (so says\n"
+       "  IceModelVec::checkHaveArray()); varname = %s\n", varname);
     PetscEnd();
   }
   if (isLegalLevel(z) != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
-       "IceModelVec3 getValZ(): isLegalLevel() says level %f was not legal; varname = %s\n",
-       z, varname);
+       "IceModelVec3 getValZ(): isLegalLevel() says level %f was\n"
+       "  not legal; varname = %s\n", z, varname);
     PetscEnd();
   }
   PetscScalar ***arr = (PetscScalar***) array;
@@ -250,15 +243,16 @@ PetscScalar     IceModelVec3::getValZ(const PetscInt i, const PetscInt j, const 
 
 
 //! Return values on planar star stencil of scalar quantity at level z (by linear interpolation).
-PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j, const PetscScalar z,
-                                             planeStar *star) {
+PetscErrorCode   IceModelVec3::getPlaneStarZ(
+                     const PetscInt i, const PetscInt j, const PetscScalar z,
+                     planeStar *star) {
   PetscErrorCode ierr;
   ierr = checkHaveArray();  CHKERRQ(ierr);
   ierr = isLegalLevel(z);  CHKERRQ(ierr);
   // check ownership here?
   if (!localp) {
-    SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 with varname='%s' is GLOBAL and cannot do getPlaneStarZ()\n",
-             varname);
+    SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 with varname='%s' is GLOBAL\n"
+               "  and cannot do getPlaneStarZ()\n", varname);
   }
 
   PetscInt     kbz;
@@ -291,16 +285,21 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(const PetscInt i, const PetscInt j,
 
 //! Return values of ice scalar quantity at given levels (m) above base of ice, using piecewise linear interpolation.
 /*!
-Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
+Input array \c levelsIN must be an allocated array of \c nlevels scalars 
+(\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.Lz}\f$.
+\c levelsIN must be strictly increasing and in the range 
+\f$0 <= z <= \mathtt{grid.Lz}\f$.
 
-Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
+Return array \c valsOUT must be an allocated array of \c nlevels scalars 
+(\c PetscScalar).
 
-Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.
+Upon return, \c valsOUT will be filled with values of scalar quantity at 
+the \f$z\f$ values in \c levelsIN.
  */
 PetscErrorCode  IceModelVec3::getValColumnPL(const PetscInt i, const PetscInt j, 
-                     const PetscInt nlevelsIN, PetscScalar *levelsIN, PetscScalar *valsOUT) {
+                     const PetscInt nlevelsIN, PetscScalar *levelsIN, 
+                     PetscScalar *valsOUT) {
   
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -311,7 +310,7 @@ PetscErrorCode  IceModelVec3::getValColumnPL(const PetscInt i, const PetscInt j,
   for (PetscInt k=0; k < nlevelsIN - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
-                 "    (IceModelVec3 with varname='%s')  ENDING!\n",k,varname);
+                 "  (IceModelVec3 with varname='%s')  ENDING!\n",k,varname);
     }
   }
 
@@ -323,7 +322,8 @@ PetscErrorCode  IceModelVec3::getValColumnPL(const PetscInt i, const PetscInt j,
     while (levels[mcurr+1] < levelsIN[k]) {
       mcurr++;
     }
-    const PetscScalar incr = (levelsIN[k] - levels[mcurr]) / (levels[mcurr+1] - levels[mcurr]);
+    const PetscScalar incr = (levelsIN[k] - levels[mcurr])
+                              / (levels[mcurr+1] - levels[mcurr]);
     const PetscScalar valm = arr[i][j][mcurr];
     valsOUT[k] = valm + incr * (arr[i][j][mcurr+1] - valm);
   }
@@ -333,16 +333,21 @@ PetscErrorCode  IceModelVec3::getValColumnPL(const PetscInt i, const PetscInt j,
 
 //! Return values of ice scalar quantity at given levels (m) above base of ice, using local quadratic interpolation.
 /*!
-Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
+Input array \c levelsIN must be an allocated array of \c nlevels scalars 
+(\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range \f$0 <= z <= \mathtt{grid.Lz}\f$.
+\c levelsIN must be strictly increasing and in the range 
+\f$0 <= z <= \mathtt{grid.Lz}\f$.
 
-Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
+Return array \c valsOUT must be an allocated array of \c nlevels scalars 
+(\c PetscScalar).
 
-Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.
+Upon return, \c valsOUT will be filled with values of scalar quantity 
+at the \f$z\f$ values in \c levelsIN.
  */
 PetscErrorCode  IceModelVec3::getValColumnQUAD(const PetscInt i, const PetscInt j, 
-                     const PetscInt nlevelsIN, PetscScalar *levelsIN, PetscScalar *valsOUT) {
+                     const PetscInt nlevelsIN, PetscScalar *levelsIN, 
+                     PetscScalar *valsOUT) {
   
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);

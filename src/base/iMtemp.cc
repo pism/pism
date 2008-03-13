@@ -139,8 +139,9 @@ PetscErrorCode IceModel::temperatureStep() {
       ierr = Tb3.getValColumn(i,j,Mbz,zblevEQ,Tb); CHKERRQ(ierr);
 
       if (Mbz > 1) { // bedrock present: build k=0:Mbz-1 eqns
-        // gives O(\Delta t,\Delta z^2) convergence in Test K for equal spaced grid:
-        D[0] = (1.0 + 2.0 * brR);  U[0] = - 2.0 * brR;  // note L[0] not an allocated location
+        // gives O(\Delta t,\Delta z^2) convergence in Test K for equal spaced grid;
+        // note L[0] not an allocated location:
+        D[0] = (1.0 + 2.0 * brR);  U[0] = - 2.0 * brR;  
         rhs[0] = Tb[0] + 2.0 * dtTempAge * Ghf[i][j] / (rho_c_br * dzbEQ);
       
         // bedrock only: pure vertical conduction problem
@@ -608,71 +609,6 @@ PetscErrorCode IceModel::solveTridiagonalSystem(
     x[i] -= a[i+1] * x[i+1];
   }
 
-  return 0;
-}
-
-
-// test IceModelVec: assuming this is called from pisms, try
-//   pisms -eisII A -y 1 -Mz 11    # no errors when grid coincides; significant otherwise
-//   pisms -eisII A -y 1 -Mz 101   # no errors when grid coincides; small otherwise
-//   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 501   # no errors
-//   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 500   # small errors 
-//                                               (appropriate; from linear interpolation)
-PetscErrorCode IceModel::testIceModelVec()    {
-  PetscErrorCode ierr;
-  IceModelVec3 test3;
-
-  ierr = test3.create(grid,"testMe",true); CHKERRQ(ierr);
-
-  ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3; setting to constant %f",
-                    60402.70804); CHKERRQ(ierr);
-  ierr = test3.setToConstant(60402.70804); CHKERRQ(ierr);
-
-  ierr = test3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com,"\n\nIceModelVec3::getValZ() says value is %f",
-                    test3.getValZ(grid.xs,grid.ys,0.0) ); CHKERRQ(ierr);
-  ierr = test3.doneAccessToVals(); CHKERRQ(ierr);
-
-  ierr = test3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = test3.endGhostComm(); CHKERRQ(ierr);
-
-  PetscScalar levels[10] = {0.0, 10.0, 100.0, 200.0, 500.0, 1000.0, 
-                            1500.0, 2000.0, 2500.0, grid.Lz};
-  PetscScalar valsIN[10], valsOUT[10];
-  ierr = test3.needAccessToVals(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(1,grid.com,
-    "\n\ntesting IceModelVec3::setValColumn() and getValColumnPL()\n"); CHKERRQ(ierr);
-  for (PetscInt k=0; k < 10; k++) {
-    valsIN[k] = sin(levels[k]/1000.0);
-  }
-  ierr = test3.setValColumnPL(grid.xs, grid.ys, 10, levels, valsIN); CHKERRQ(ierr);
-  ierr = test3.getValColumnPL(grid.xs, grid.ys, 10, levels, valsOUT); CHKERRQ(ierr);
-  for (PetscInt k=0; k < 10; k++) {
-    ierr = verbPrintf(1,grid.com,
-        "   k=%d:   level=%7.2f   valsIN=%7.4f   valsOUT=%7.4f   |diff|=%5.4e\n",
-        k,levels[k],valsIN[k],valsOUT[k],PetscAbs(valsIN[k]-valsOUT[k]) ); CHKERRQ(ierr);
-  }
-  ierr = verbPrintf(1,grid.com,
-    "done testing IceModelVec3::setValColumn() and getValColumnPL()\n\n\n");
-    CHKERRQ(ierr);
-
-  ierr = verbPrintf(1,grid.com,
-    "\n\ntesting IceModelVec3::setValColumn() and getValColumnQUAD()\n");
-    CHKERRQ(ierr);
-  ierr = test3.getValColumnQUAD(grid.xs, grid.ys, 10, levels, valsOUT); CHKERRQ(ierr);
-  for (PetscInt k=0; k < 10; k++) {
-    ierr = verbPrintf(1,grid.com,
-       "   k=%d:   level=%7.2f   valsIN=%7.4f   valsOUT=%7.4f   |diff|=%5.4e\n",
-       k,levels[k],valsIN[k],valsOUT[k],PetscAbs(valsIN[k]-valsOUT[k]) ); 
-       CHKERRQ(ierr);
-  }
-  ierr = verbPrintf(1,grid.com,
-    "done testing IceModelVec3::setValColumn() and getValColumnQUAD()\n\n\n");
-    CHKERRQ(ierr);
-
-  ierr = test3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = test3.destroy(); CHKERRQ(ierr);
   return 0;
 }
 

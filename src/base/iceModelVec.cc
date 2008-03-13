@@ -439,7 +439,8 @@ IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {
 
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_varname[], bool local) {
+PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, 
+                               const char my_varname[], bool local) {
 
   strcpy(varname,my_varname);
 
@@ -456,7 +457,8 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_varn
   PetscErrorCode ierr;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mbz, N, M, 1, n, m, 1, 1,
+  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mbz, 
+                    N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
   IOwnDA = true;
 
@@ -471,8 +473,8 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_varn
 /*!
 Array \c valsIN must be an allocated array of \c grid->Mbz \c PetscScalar s.
  */
-PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(const PetscInt i, const PetscInt j, 
-                                                       PetscScalar *valsIN) {
+PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(
+                   const PetscInt i, const PetscInt j, PetscScalar *valsIN) {
   
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   PetscScalar ***arr = (PetscScalar***) array;
@@ -611,7 +613,8 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumn(const PetscInt i, const PetscI
     while (levels[mcurr+1] < levelsIN[k]) {
       mcurr++;
     }
-    const PetscScalar incr = (levelsIN[k] - levels[mcurr]) / (levels[mcurr+1] - levels[mcurr]);
+    const PetscScalar incr = (levelsIN[k] - levels[mcurr])
+                             / (levels[mcurr+1] - levels[mcurr]);
     const PetscScalar valm = arr[i][j][mcurr];
     valsOUT[k] = valm + incr * (arr[i][j][mcurr+1] - valm);
   }

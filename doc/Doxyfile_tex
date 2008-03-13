@@ -35,7 +35,7 @@ DETAILS_AT_TOP         = NO
 INHERIT_DOCS           = NO
 SEPARATE_MEMBER_PAGES  = NO
 TAB_SIZE               = 8
-ALIASES                = 
+ALIASES                = lo=\latexonly elo=\endlatexonly
 OPTIMIZE_OUTPUT_FOR_C  = NO
 OPTIMIZE_OUTPUT_JAVA   = NO
 BUILTIN_STL_SUPPORT    = NO

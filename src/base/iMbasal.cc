@@ -31,9 +31,11 @@ depend of the thickness, the basal temperature, and the horizontal location.
 
 This procedure is virtual and can be replaced by any derived class.
 
-The default version for IceModel here is location-independent pressure-melting-temperature-activated 
-linear sliding.
-  //                
+The default version for IceModel here is location-independent 
+pressure-melting-temperature-activated linear sliding.
+
+THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
+ZERO BY DEFAULT.                
  */
 PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
@@ -85,11 +87,11 @@ PetscErrorCode IceModel::initBasalTillModel() {
 //! Update the till yield stress for the plastic till model, based on pressure and stored till water.
 /*! 
 @cond CONTINUUM
-We implement formula (2.4) in C. Schoof 2006 "A variational approach to ice stream flow", J. Fluid Mech. vol 556 pp 227--251.  That formula is
+We implement formula (2.4) in \lo\cite{SchoofStream}\elo.  That formula is
     \f[   \tau_c = \mu (\rho g H - p_w)\f]
 We modify it by:
 
-    (1) adding a small till cohesion \f$c_0\f$ (see Paterson 3rd ed table 8.1);
+    (1) adding a small till cohesion \f$c_0\f$ (see \lo\cite{Paterson}\elo table 8.1);
 
     (2) replacing \f$p_w \to \lambda p_w\f$ where \f$\lambda =\f$ Hmelt / DEFAULT_MAX_HMELT;
        thus \f$0 \le \lambda \le 1\f$ always while \f$\lambda = 0\f$ when the bed is frozen; and
