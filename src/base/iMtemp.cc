@@ -173,8 +173,7 @@ PetscErrorCode IceModel::temperatureStep() {
         D[k0] = 1.0; U[k0] = 0.0;
         // if floating and no ice then worry only about bedrock temps;
         // top of bedrock sees ocean
-        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
-        if (b[i][j] < floating_base - 1.0) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
           rhs[k0] = ice->meltingTemp;
         } else { // top of bedrock sees atmosphere
           rhs[k0] = Ts[i][j];
@@ -239,7 +238,7 @@ PetscErrorCode IceModel::temperatureStep() {
       }
       
       // surface b.c.
-      if (k0+ks>0) {
+      if (ks>0) {
         L[k0+ks] = 0;   D[k0+ks] = 1.0;   // ignor U[k0+ks]
         rhs[k0+ks] = Ts[i][j];
         //  HAD NO k0+ks eqn before, and:
@@ -267,7 +266,6 @@ PetscErrorCode IceModel::temperatureStep() {
       
       // insert solution for generic ice segments
       for (PetscInt k=1; k <= ks; k++) {
-//      for (PetscInt k=1; k < ks; k++) {
         if (allowAboveMelting == PETSC_TRUE) {
           Tnew[k] = x[k0 + k];
         } else {
@@ -326,8 +324,7 @@ PetscErrorCode IceModel::temperatureStep() {
         Tbnew[k0] = Tnew[0];
       } else {
         // if floating then top of bedrock sees ocean
-        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
-        if (b[i][j] < floating_base - 1.0) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
           Tbnew[k0] = ice->meltingTemp;
         } else { // top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];
@@ -419,8 +416,6 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
       // pressure-melting, and a fraction of excess energy
       // needs to be turned into melt water at base
       // note massmelted is POSITIVE!
-//      const PetscScalar FRACTION_TO_BASE
-//                           = (z < 100.0) ? 0.4 * (100.0 - z) / 100.0 : 0.0;
       const PetscScalar FRACTION_TO_BASE
                            = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
       // note: ice-equiv thickness:
@@ -661,13 +656,15 @@ PetscErrorCode IceModel::getVertLevsForTempAge(const PetscInt ta_Mz, const Petsc
       ta_zblevEQ[k] = grid.zblevels[k];
     }
   } else {
-    ta_dzEQ = grid.Lz / ((PetscScalar) (ta_Mz - 1));  // exactly Mz-1 steps for [0,Lz]
+    // exactly Mz-1 steps for [0,Lz]:
+    ta_dzEQ = grid.Lz / ((PetscScalar) (ta_Mz - 1));  
     for (PetscInt k = 0; k < ta_Mz-1; k++) {
       ta_zlevEQ[k] = ((PetscScalar) k) * ta_dzEQ;
     }
     ta_zlevEQ[ta_Mz-1] = grid.Lz;  // make sure it is right on
     if (ta_Mbz > 1) {
-      ta_dzbEQ = grid.Lbz / ((PetscScalar) (ta_Mbz - 1));  // exactly Mbz-1 steps for [-Lbz,0]
+      // exactly Mbz-1 steps for [-Lbz,0]:
+      ta_dzbEQ = grid.Lbz / ((PetscScalar) (ta_Mbz - 1));  
       for (PetscInt kb = 0; kb < ta_Mbz-1; kb++) {
         ta_zblevEQ[kb] = - grid.Lbz + ta_dzbEQ * ((PetscScalar) kb);
       }

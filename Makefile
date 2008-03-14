@@ -29,7 +29,8 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc forcing.cc \
 	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc \
 	iMforcing.cc iMgrainsize.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
-	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
+	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMtests.cc iMutil.cc \
+	iMvelocity.cc iMviewers.cc \
 	iceModelVec.cc iceModelVec3.cc iceModel.cc
 
 ice_csources := cubature.c pism_signal.c

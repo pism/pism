@@ -93,7 +93,8 @@ int main(int argc, char *argv[]) {
       SETERRQ(3,"PISMS: how did I get here?");
     }
 
-    ierr = m->testIceModelVec(); CHKERRQ(ierr);
+//    ierr = m->testIceModelVec3(); CHKERRQ(ierr);
+//    ierr = m->testIceModelVec3Bedrock(); CHKERRQ(ierr);
 
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);

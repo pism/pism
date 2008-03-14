@@ -54,8 +54,9 @@ public:
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
 
-  // see iMtests.cc
+  // see iMtests.cc; FIXME: these should go in a derived class
   PetscErrorCode testIceModelVec3();
+  PetscErrorCode testIceModelVec3Bedrock();
 
   // see iMutil.cc
   virtual PetscErrorCode initFromOptions();
