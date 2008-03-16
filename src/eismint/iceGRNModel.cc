@@ -31,6 +31,8 @@ const PetscScalar EISMINT_G_geothermal   = 0.050;      // J/m^2 s; geo. heat flu
 
 IceGRNModel::IceGRNModel(IceGrid &g, IceType *i) : IceModel(g, i) {
   // only call parent's constructor; do all classes need constructors?
+  TsOffset = 0.0;
+  bedSLOffset = 0.0;
 }
 
 
@@ -70,8 +72,11 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   }
   
   muSliding = 0.0;  // no sliding in any case; perhaps develop an SSA variant??
-  bedDiff = 0.0; // related to sea level forcing, not bed deformation
+//  bedDiff = 0.0; // related to sea level forcing, not bed deformation
   
+  TsOffset = 0.0;
+  bedSLOffset = 0.0;
+
   // note: user value for -e and -mu_sliding will override enhancementFactor, mu_sliding setting above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
   return 0;
@@ -194,12 +199,21 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     
   if (expernum == 3) {  // for CCL3 get delta Temperature and delta Sea Level
                         // from ice code/ sea bed core data
-    PetscScalar TsChange, seaLevelChange;
-    ierr = dTforcing.updateFromCoreClimateData(grid.year,&TsChange); CHKERRQ(ierr);
+//    PetscScalar TsChange, seaLevelChange;
+//    ierr = dTforcing.updateFromCoreClimateData(grid.year,&TsChange); CHKERRQ(ierr);
+//    ierr = dSLforcing.updateFromCoreClimateData(grid.year,&seaLevelChange); CHKERRQ(ierr);
+//    ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
+//    ierr = VecShift(vbed,bedDiff - seaLevelChange); CHKERRQ(ierr);
+//    bedDiff = seaLevelChange;
+
+    ierr = dTforcing.updateFromCoreClimateData(grid.year,&TsOffset); CHKERRQ(ierr);
+    ierr = VecShift(vTs,TsOffset); CHKERRQ(ierr);
+
+    PetscScalar seaLevelChange;
     ierr = dSLforcing.updateFromCoreClimateData(grid.year,&seaLevelChange); CHKERRQ(ierr);
-    ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
-    ierr = VecShift(vbed,bedDiff - seaLevelChange); CHKERRQ(ierr);
-    bedDiff = seaLevelChange;
+    bedSLOffset = -seaLevelChange;
+    ierr = VecShift(vbed,bedSLOffset); CHKERRQ(ierr);
+
     // communicate ghosted bed (bed slope matters); needed with VecShift?
     ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
@@ -219,6 +233,20 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       t_increase = 3.514;
     }
     ierr = VecShift(vTs,t_increase); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+// created at stable0.1.1 --> stable 0.1.2 to fix offset bug
+PetscErrorCode IceGRNModel::additionalAtEndTimestep() {
+  PetscErrorCode ierr;
+
+  if (expernum == 3) {      
+    ierr = VecShift(vTs,-TsOffset); CHKERRQ(ierr);
+    TsOffset = 0.0;
+    ierr = VecShift(vbed,-bedSLOffset); CHKERRQ(ierr);
+    bedSLOffset = 0.0;
   }
   return 0;
 }
@@ -308,10 +336,11 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
 }
 
 
+/*
 PetscErrorCode IceGRNModel::removeBedDiff() {
   PetscErrorCode ierr;
   
   ierr = VecShift(vbed, bedDiff); CHKERRQ(ierr);
   return 0;
 }
-
+*/

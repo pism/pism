@@ -31,13 +31,15 @@ public:
   IceGRNModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
-  PetscErrorCode removeBedDiff();
+//  PetscErrorCode removeBedDiff();
 
 protected:
   int expernum;  // SSL2 is 1, SSL3 is 2, CCL3 is 3, GWL3 is 4
   IceSheetForcing  dTforcing, dSLforcing;
-  PetscScalar bedDiff;
+  PetscScalar TsOffset, bedSLOffset;
+//  PetscScalar bedDiff;
   virtual PetscErrorCode additionalAtStartTimestep();
+  virtual PetscErrorCode additionalAtEndTimestep();
 
 private:
   PetscTruth inFileSet;

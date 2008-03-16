@@ -169,8 +169,9 @@ PetscErrorCode IceModel::temperatureStep() {
         D[k0] = 1.0; U[k0] = 0.0;
         // if floating and no ice then worry only about bedrock temps;
         // top of bedrock sees ocean
-        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
-        if (b[i][j] < floating_base - 1.0) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+//        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
+//        if (b[i][j] < floating_base - 1.0) {
           rhs[k0] = ice->meltingTemp;
         } else { // top of bedrock sees atmosphere
           rhs[k0] = Ts[i][j];
@@ -234,7 +235,8 @@ PetscErrorCode IceModel::temperatureStep() {
       }
       
       // surface b.c.
-      if (k0+ks>0) {
+      if (ks>0) { // only if there really is ice
+//      if (k0+ks>0) {
         L[k0+ks] = 0;   D[k0+ks] = 1.0;   // ignor U[k0+ks]
         rhs[k0+ks] = Ts[i][j];
         //  HAD NO k0+ks eqn before, and:
@@ -319,8 +321,9 @@ PetscErrorCode IceModel::temperatureStep() {
         Tbnew[k0] = Tnew[0];
       } else {
         // if floating then top of bedrock sees ocean
-        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
-        if (b[i][j] < floating_base - 1.0) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+//        const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
+//        if (b[i][j] < floating_base - 1.0) {
           Tbnew[k0] = ice->meltingTemp;
         } else { // top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];
