@@ -227,7 +227,7 @@ protected:
 
   // see iMforcing.cc
   IceSheetForcing  *dTforcing, *dSLforcing;
-  PetscScalar    bedDiffSeaLevel;
+  PetscScalar    TsOffset, bedSLOffset;
   PetscErrorCode initForcingFromOptions();
   PetscErrorCode updateForcing();
   PetscErrorCode forcingCleanup();

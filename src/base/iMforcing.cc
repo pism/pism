@@ -24,6 +24,9 @@
 
 
 //! Initialize the forcing data if either -dTforcing or -dSLforcing is set.
+/*!
+Note grid.year must be valid before this is called.
+ */
 PetscErrorCode IceModel::initForcingFromOptions() {
   PetscErrorCode ierr;
   char dTFile[PETSC_MAX_PATH_LEN], dSLFile[PETSC_MAX_PATH_LEN];
@@ -42,6 +45,7 @@ PetscErrorCode IceModel::initForcingFromOptions() {
 
   if (dTforceSet == PETSC_TRUE) {
     dTforcing = new IceSheetForcing;
+    TsOffset = 0.0;
     int stat, ncid = 0;
     ierr = verbPrintf(2, grid.com, 
          "reading delta T data from forcing file %s ...\n", dTFile); 
@@ -57,8 +61,8 @@ PetscErrorCode IceModel::initForcingFromOptions() {
   }
 
   if (dSLforceSet == PETSC_TRUE) {
-    bedDiffSeaLevel = 0.0;
     dSLforcing = new IceSheetForcing;
+    bedSLOffset = 0.0;
     int stat, ncid = 0;
     ierr = verbPrintf(2, grid.com, 
          "reading delta sea level data from forcing file %s ...\n", 
@@ -77,41 +81,60 @@ PetscErrorCode IceModel::initForcingFromOptions() {
 }
 
 
-//! Read in new delta T or delta sea level from forcing data.
+//! Shift vTs (dTforcing) or vbed (dSLforcing) according to value read from corresponding climate data.
 PetscErrorCode IceModel::updateForcing() {
   PetscErrorCode ierr;
 
   if (dTforcing != PETSC_NULL) {
-    PetscScalar TsChange;
-    ierr = dTforcing->updateFromCoreClimateData(grid.year,&TsChange); CHKERRQ(ierr);
-    ierr = VecShift(vTs,TsChange); CHKERRQ(ierr);
+    // TsOffset should be zero when startup!
+    ierr = VecShift(vTs,-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+
+    // read a new offset
+    ierr = dTforcing->updateFromCoreClimateData(grid.year,&TsOffset); CHKERRQ(ierr);
+
+    ierr = verbPrintf(5,grid.com,"read TsOffset=%.6f from -dTforcing climate data\n",
+       TsOffset); CHKERRQ(ierr);
+       
+    ierr = VecShift(vTs,TsOffset); CHKERRQ(ierr);  // apply the offset
+
+    // no need to communicate vTs because no ghosts
   }
 
   if (dSLforcing != PETSC_NULL) {
-    PetscScalar seaLevelChange;
-    ierr = dSLforcing->updateFromCoreClimateData(grid.year,&seaLevelChange); CHKERRQ(ierr);
-    ierr = VecShift(vbed,bedDiffSeaLevel - seaLevelChange); CHKERRQ(ierr);
-    bedDiffSeaLevel = seaLevelChange;
-    // communicate ghosted bed (bed slope matters); needed with VecShift?
-    ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-    if (seaLevelChange != 0) {
-      updateSurfaceElevationAndMask();
+    // read new sea level (delta from modern)
+    PetscScalar seaLevelOffset;
+    ierr = dSLforcing->updateFromCoreClimateData(grid.year,&seaLevelOffset); CHKERRQ(ierr);
+
+    ierr = verbPrintf(5,grid.com,"read seaLevelOffset=%.6f from -dSLforcing climate data\n",
+       seaLevelOffset); CHKERRQ(ierr);
+
+    // for efficiency we only act if the value is new:
+    if (seaLevelOffset != -bedSLOffset) {
+      // bedSLOffset should be zero when startup!
+      ierr = VecShift(vbed,-bedSLOffset); CHKERRQ(ierr); // return vbed to unshifted state
+      
+      bedSLOffset = -seaLevelOffset;  // we implement rise in sea level by lowering bed
+      ierr = VecShift(vbed,bedSLOffset); CHKERRQ(ierr);
+
+      updateSurfaceElevationAndMask();  // fix the mask; new ice could be floating or grounded
     }
   }
   return 0;
 }
 
 
-//! De-allocate the forcing stuff.
+//! Un-shift and then de-allocate the forcing stuff.
 PetscErrorCode IceModel::forcingCleanup() {
   PetscErrorCode ierr;
   if (dTforcing != PETSC_NULL) {
+    ierr = VecShift(vTs,-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+    TsOffset = 0.0;
     delete dTforcing;
     dTforcing = PETSC_NULL;
   }
   if (dSLforcing != PETSC_NULL) {
-    ierr = VecShift(vbed, bedDiffSeaLevel); CHKERRQ(ierr);
+    ierr = VecShift(vbed,-bedSLOffset); CHKERRQ(ierr); // return vbed to unshifted state
+    bedSLOffset = 0.0;
     delete dSLforcing;
     dSLforcing = PETSC_NULL;
   }

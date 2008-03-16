@@ -15,21 +15,25 @@
  * See https://gna.org/projects/pism/ to download the PISM source code.  See 
  * http://www.pism-docs.org/ for all documentation of PISM.
  *
- * See the PISM User's Manual (http://www.pism-docs.org/manual.pdf) for help
+ * See the PISM <i>User's Manual</i> (do <tt>cd doc/ && make</tt> and then view 
+ * <tt>pism/doc/manual.pdf</tt>, or see the stable version at
+ * http://www.pism-docs.org/manual.pdf) for help
  * with installing and using PISM.  
  * Most users should stick to the User's Manual for quite a while; only when 
  * a user needs to extend PISM is a look at this source browser really 
  * worthwhile.
  *
- * See the PISM Reference Manual (http://www.pism-docs.org/refman.pdf)
+ * See the PISM <i>Reference Manual</i> (do <tt>cd doc/ && make</tt> and then view 
+ * <tt>pism/doc/refman.pdf</tt>, or see the stable version at 
+ * http://www.pism-docs.org/refman.pdf)
  * for a useful subset of this source browser
- * in PDF form.  The Reference Manual contains the minimum documentation 
+ * in PDF form.  The <i>Reference Manual</i> contains the minimum documentation 
  * of the PISM class structure in order to document 
  * the continuum models and numerical methods of PISM.  (Such continuum model
  * and numerical method documentation is widely scattered in this source browser.)
  *
  * There is also a source code <i>repository</i> browsing tool at the PISM download site
- * (https://gna.org/projects/pism/).  That tool is <i>very different from this one</i>.  This one
+ * (https://gna.org/projects/pism/).  That tool is very different from this one.  This one
  * documents the C++ class structure of the current revision.  The one at gna.org
  * shows changes between revisions but it ignors the class structure as it only cares 
  * about source code files as text files and generally ignors their semantics.
@@ -69,10 +73,16 @@
 This \e Reference \e Manual documents the continuum models and numerical
 methods in PISM.  It is organized by C++ class.  
 
+This \e Reference \e Manual can be built in any source code release.  Just do
+<tt>cd doc/ && make</tt> and then view <tt>refman.pdf</tt>
+
 Most users should start with the PISM <i>User's Manual</i>.  The latest
 stable version of the <i>User's Manual</i> is at
  
       http://www.pism-docs.org/manual.pdf  
+
+The <i>User's Manual</i> is also in any source code release.  Just do
+<tt>cd doc/ && make</tt> and then view <tt>manual.pdf</tt>
 
 The <i>User's Manual</i> is the guide to installing and using PISM.  
 Really smart know-it-all developers

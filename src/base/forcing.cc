@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2007--2008 Nathan Shemonski and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -323,7 +323,12 @@ PetscErrorCode IceSheetForcing::initIndexCoreClimateData(PetscScalar curr_year) 
 }
 
 
-PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year, PetscScalar *change) {
+//! Return the interpolated climate data value at time curr_year.
+/*!
+Consecutive calls to this must use non-decreasing values of curr_year.  An internal index is
+advanced at the call, for efficiency.  There is no backward index movement allowed.
+ */
+PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year, PetscScalar *value) {
   PetscErrorCode ierr;
   PetscScalar *timeinyears, *data;
   PetscInt    len;
@@ -332,47 +337,47 @@ PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year,
   ierr = VecGetLocalSize(vtimeinyears, &len); CHKERRQ(ierr);
   ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
 
-  // if there was a large time step, it is possible
-  // that we skip over multiple entries
-  while (index < len && curr_year > data[index]) {
+  // advance the index until curr_year is in interval
+  //   ( timeinyears[index-1], timeinyears[index] ]
+  while (index < len && curr_year > timeinyears[index]) {
     index++;
   }
+
   if (index >= len) {
     ierr = verbPrintf(1, com, 
-             "ATTENTION: no more data for climate forcing %s.\n", datavarname); CHKERRQ(ierr);
+       "ATTENTION: no more data for climate forcing %s; using forcing value of zero\n", 
+       datavarname); CHKERRQ(ierr);
     forcingActive = PETSC_FALSE;
+    *value = 0.0;
+  } else if (index < 0) {
+    ierr = verbPrintf(1, com, 
+       "ATTENTION: model year precedes beginning of data for climate forcing %s;"
+       "  using forcing value of zero\n", datavarname); CHKERRQ(ierr);
+    *value = 0.0;
+  } else if ( (index == 0) && (   (interpCode == DATA1D_CONST_PIECE_BCK_INTERP)
+                               || (interpCode == DATA1D_LINEAR_INTERP)         ) ) {
+    ierr = verbPrintf(1, com, 
+       "ATTENTION: model year not far enough after beginning of data for climate forcing %s;"
+       "  need to interpolate; using forcing value of zero\n", datavarname); CHKERRQ(ierr);
+    *value = 0.0;
   } else {
     if (curr_year == timeinyears[index]) {
-      *change = data[index]; // if we have exact data, use it
+      *value = data[index]; // if we have exact data, use it
     } else { // otherwise we need to interpolate
-      PetscScalar y0, y1;
       switch (interpCode) {
         case DATA1D_CONST_PIECE_BCK_INTERP:
           // use the data point we are infront of
-          if (index == 0) {
-            *change = 0.0;
-            ierr = verbPrintf(1, com, 
-                     "ATTENTION: model year precedes beginning of data for climate forcing %s;"
-                     " setting change=0\n", datavarname); CHKERRQ(ierr);
-          } else {
-            *change = data[index-1];
-          }
+          *value = data[index-1];
           break;
         case DATA1D_CONST_PIECE_FWD_INTERP:
-          *change = data[index];
+          *value = data[index];
           break;
         case DATA1D_LINEAR_INTERP:
-          if (index == 0) {
-            *change = 0.0;
-            ierr = verbPrintf(1, com, 
-                     "ATTENTION: model year precedes beginning of data for climate forcing %s;"
-                     " setting change=0\n", datavarname); CHKERRQ(ierr);
-          } else {
-            y0 = data[index-1];
-            y1 = data[index];
-            *change = y0 + ((y1-y0) / (timeinyears[index] - timeinyears[index-1]))
-                                  * (curr_year - timeinyears[index-1]);
-          }
+          PetscScalar y0, y1;
+          y0 = data[index-1];
+          y1 = data[index];
+          *value = y0 + ((y1-y0) / (timeinyears[index] - timeinyears[index-1]))
+                                 * (curr_year - timeinyears[index-1]);
           break;
         default:
           SETERRQ1(1, "Unknown interpolation method for climate forcing %s\n", datavarname);

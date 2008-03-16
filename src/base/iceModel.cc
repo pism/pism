@@ -121,10 +121,11 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   psParams.lopo = 90.0;
   psParams.sp = -71.0;
 
-  bedDiffSeaLevel = 0.0;
-  
+  TsOffset = 0.0;
+  bedSLOffset = 0.0;
   dTforcing = PETSC_NULL;
   dSLforcing = PETSC_NULL;
+
   vmonthlyTs = PETSC_NULL;
   
   ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
@@ -635,12 +636,16 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
   ierr = verbPrintf(2,grid.com,  " $$$            $$$$$ $$"); CHKERRQ(ierr); 
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
+
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
     ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
+    
+    // read in forcing data if present; (typically from ice/seabed core; modifies Ts and bed)
+    ierr = updateForcing(); CHKERRQ(ierr);
     
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (doPlasticTill == PETSC_TRUE) {
