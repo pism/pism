@@ -281,23 +281,31 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   
   ierr = PetscGetArgs(&argc, &argv); CHKERRQ(ierr);
   
-  char str[HISTORY_STRING_LENGTH];
+  char cmdstr[HISTORY_STRING_LENGTH], startstr[HISTORY_STRING_LENGTH];
+
+  snprintf(startstr, sizeof(startstr), 
+           "PISM started on %d procs.", (int)grid.size);
+  ierr = stampHistory(startstr); CHKERRQ(ierr);
   
-  strncpy(str, argv[0], sizeof(str)); // Does not null terminate on overflow
-  str[sizeof(str) - 1] = '\0';
+//  strncpy(cmdstr, argv[0], sizeof(str)); // Does not null terminate on overflow
+  strcpy(cmdstr, "cmd:  ");
+  strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
+  cmdstr[sizeof(cmdstr) - 1] = '\0';
   for (PetscInt i=1; i < argc; i++) {
-    PetscInt remaining_bytes = sizeof(str) - strlen(str) - 1;
+    PetscInt remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
     // strncat promises to null terminate, so we must only make sure that the
     // end of the buffer is not overwritten.
-    strncat(str, " ", remaining_bytes--);
-    strncat(str, argv[i], remaining_bytes);
+    strncat(cmdstr, " ", remaining_bytes--);
+    strncat(cmdstr, argv[i], remaining_bytes);
   }
+  strcat(cmdstr,"\n");
+  cmdstr[sizeof(cmdstr) - 1] = '\0';
 
   // All this hooplah is the C equivalent of the Ruby expression
   // ARGV.unshift($0).join(' ') and just ARGV.join(' ')
   // if the executable name was not needed.
 
-  ierr = stampHistory(str); CHKERRQ(ierr);
+  ierr = stampHistoryAdd(cmdstr); CHKERRQ(ierr);
 
   return 0;
 }
@@ -315,8 +323,8 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Reduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, 0, grid.com);
   
-  snprintf(str, sizeof(str), "Done. Petsc reports %.2f MFlops on %d processes.",
-           flops * 1.0e-6, grid.size);
+  snprintf(str, sizeof(str), "PISM done.  PETSc MFlops = %.2f.",
+           flops * 1.0e-6);
 
   ierr = stampHistory(str); CHKERRQ(ierr);
   
@@ -324,7 +332,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 }
 
 
-//! Get time and user/host name and add it to the given string.  Then call stampHistoryString(). 
+//! Get time and user/host name and add it to the given string.  Then call stampHistoryAdd(). 
 PetscErrorCode  IceModel::stampHistory(const char* string) {
   PetscErrorCode ierr;
 
@@ -364,14 +372,14 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
     str[sizeof(str) - 1] = '\0';
   }
 
-  ierr = stampHistoryString(str); CHKERRQ(ierr);
+  ierr = stampHistoryAdd(str); CHKERRQ(ierr);
   
   return 0;
 }
 
 
 //! Add the given string to the history data member in IceModel.
-PetscErrorCode  IceModel::stampHistoryString(const char* string) {
+PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
   PetscErrorCode ierr;
 
   PetscInt historyLength = strlen(history);

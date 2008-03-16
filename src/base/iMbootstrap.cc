@@ -154,7 +154,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
     z_bif = new double[dim[3]];
     zb_bif = new double[dim[4]];
-    ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
+    ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com);
+             CHKERRQ(ierr);
   } else if ((!zdimExists) && (!zbdimExists)) {
     ierr = verbPrintf(2, grid.com, 
          "  dimensions t,x,y found in file, but no vertical dimension (z,zb)\n");
@@ -197,7 +198,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     z_scale = z_scale_in;
   } else {
     ierr = verbPrintf(2, grid.com, 
-      "  WARNING: option -Lz should usually be used to set vertical if bootstrapping ...\n");
+      "  WARNING: option -Lz should be used to set vertical if bootstrapping ...\n");
       CHKERRQ(ierr);
   }
 
@@ -207,7 +208,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
          "  rescaling computational box *for ice* from defaults, -bif file, and\n"
          "    user options to dimensions:\n"
          "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-         x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); CHKERRQ(ierr);
+         x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); 
+         CHKERRQ(ierr);
   ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
   //DEBUG:  ierr = grid.printVertLevels(2); CHKERRQ(ierr);
@@ -250,14 +252,14 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = MPI_Bcast(&psParams.lopo, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
     ierr = MPI_Bcast(&psParams.sp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-            "  polar stereographic var found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
-            "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
-            svlfpExists, lopoExists, spExists,
-            psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
+       "  polar stereographic var found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
+       "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
+       svlfpExists, lopoExists, spExists,
+       psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
   } else {
     ierr = verbPrintf(2,grid.com,
-               "  polar stereo not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
-               psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
+       "  polar stereo not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
+       psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr); 
   }
 
   // now work through all the 2d variables, regridding if present and otherwise setting
@@ -283,39 +285,41 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
              CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-            "  WARNING: accumulation rate 'acab' not found; using default %7.2f m/a\n",
-            DEFAULT_ACCUM_VALUE_MISSING * secpera);  CHKERRQ(ierr);
+       "  WARNING: accumulation rate 'acab' not found; using default %7.2f m/a\n",
+       DEFAULT_ACCUM_VALUE_MISSING * secpera);  CHKERRQ(ierr);
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (HExists) {
-    ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false);
+       CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-               "  WARNING: thickness 'thk' not found; using default %8.2f\n",
-               DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr);
+       "  WARNING: thickness 'thk' not found; using default %8.2f\n",
+       DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
   }
   if (bExists) {
-    ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false);
+       CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-             "  WARNING: bedrock elevation 'topg' not found; using default %5.4f\n",
-             DEFAULT_BED_VALUE_MISSING);  CHKERRQ(ierr);
+       "  WARNING: bedrock elevation 'topg' not found; using default %5.4f\n",
+       DEFAULT_BED_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-          "  WARNING: ignoring values found for surface elevation 'usurf';\n"
-          "    using usurf = topg + thk\n");
-          CHKERRQ(ierr);
+       "  WARNING: ignoring values found for surface elevation 'usurf';\n"
+       "    using usurf = topg + thk\n"); CHKERRQ(ierr);
   }
   ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);
   if (TsExists) {
-    ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false);
+       CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
-             "  WARNING: surface temperature 'artm' not found; using default %.2f K\n",
-             DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
+       "  WARNING: surface temperature 'artm' not found; using default %.2f K\n",
+       DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
     ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (ghfExists) {
@@ -323,13 +327,13 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
             CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-             "  WARNING: geothermal flux 'bheatflx' not found; using default %6.3f W/m^2\n",
-             DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING);  CHKERRQ(ierr);
+       "  WARNING: geothermal flux 'bheatflx' not found; using default %6.3f W/m^2\n",
+       DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING);  CHKERRQ(ierr);
     ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
   }
   if (upliftExists) {
     ierr = nct.regrid_local_var("dbdt", 2, lic, grid, grid.da2, vuplift, g2, false);
-            CHKERRQ(ierr);
+       CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
        "  WARNING: uplift rate 'dbdt' not found; filling with zero\n");  CHKERRQ(ierr);
@@ -346,30 +350,30 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
   }
 
-  if (grid.rank == 0) {
-    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
-  }
-  ierr = verbPrintf(3, grid.com, "  done reading .nc file\n"); CHKERRQ(ierr);
-
   if (maskExists) {
     ierr = verbPrintf(2, grid.com, 
         "  WARNING: 'mask' found in file; IGNORING IT!\n"); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2, grid.com, 
-            "  determining mask by floatation criterion:\n"
-            "    grounded ice marked as 1, floating ice as 7\n");
-            CHKERRQ(ierr);
+     "  determining mask by floatation criterion:  grounded ice and ice-free\n"
+     "    land marked as 1, floating ice as 3, ice free ocean as 7\n");
+     CHKERRQ(ierr);
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 
-             "  filling in temperatures at depth using surface temperatures\n"
-             "    and quartic guess\n"); CHKERRQ(ierr);
+     "  filling in temperatures at depth using surface temperatures\n"
+     "    and quartic profile based on surface temp and geothermal flux\n");
+     CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   setInitialAgeYears(initial_age_years_default);
 
-  verbPrintf(2, grid.com, "bootstrapping by PISM default method done\n");
+  if (grid.rank == 0) {
+    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
+  }
+
+  verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",fname);
   initialized_p = PETSC_TRUE;
   return 0;
 }

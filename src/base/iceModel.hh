@@ -239,24 +239,11 @@ protected:
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
-//  PetscErrorCode getIndZero(DA da, Vec vind, Vec vindzero, VecScatter ctx);
   PetscErrorCode warnUserOptionsIgnored(const char *fname);
   PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
   PetscErrorCode dumpToFile_netCDF(const char *fname);
   PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
   PetscErrorCode regrid_netCDF(const char *fname);
-
-/*
-  // see iMIOlegacy.cc
-  // these are used in legacy pant and pismr runs and apply to "init.nc" which has non-standard
-  // bootstrap conventions
-  Vec    vbalvel;
-  PetscErrorCode cleanJustNan_legacy();
-  PetscErrorCode createMask_legacy(PetscTruth balVelRule);
-  PetscErrorCode cleanInputData_legacy();
-//  PetscErrorCode reconfigure_legacy_Mbz();
-  PetscErrorCode bootstrapFromFile_netCDF_legacyAnt(const char *fname);
-*/
 
   // see iMmatlab.cc
   bool           matlabOutWanted(const char name);
@@ -288,7 +275,7 @@ protected:
   // see iMoptions.cc
   PetscErrorCode determineSpacingTypeFromOptions();
 
-  // see iMpdd.cc (positive degree day model for ablation)
+  // see iMpdd.cc (positive degree day model)
   gsl_rng     *pddRandGen;
   char        monthlyTempsFile[PETSC_MAX_PATH_LEN];
   Vec*        vmonthlyTs;                  // will allocate 12 2D Vecs 
@@ -313,7 +300,7 @@ protected:
 
   // see iMreport.cc
   // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()
-  // are all in iMreport.cc
+  // are all in iMreport.cc, but they are not IceModel methods
   PetscErrorCode computeFlowUbarStats
                       (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
                        PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
@@ -375,7 +362,7 @@ protected:
   PetscErrorCode stampHistoryCommand();
   PetscErrorCode stampHistoryEnd();
   PetscErrorCode stampHistory(const char*);
-  PetscErrorCode stampHistoryString(const char*);
+  PetscErrorCode stampHistoryAdd(const char*);
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode computeBasalDrivingStress(Vec myVec);
   PetscErrorCode adaptTimeStepDiffusivity();
@@ -387,7 +374,6 @@ protected:
   PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   PetscErrorCode computeMax3DVelocities();
   PetscErrorCode computeMax2DSlidingSpeed();
-  // REMOVED TO AVOID STENCIL_BOX COMMUNICATION FOR 3D Vecs: PetscErrorCode smoothSigma();
     
   // see iMviewers.cc
   int isViewer(char name);
@@ -446,3 +432,4 @@ private:
 };
 
 #endif /* __iceModel_hh */
+
