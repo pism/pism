@@ -45,12 +45,12 @@ PetscErrorCode IceEISModel::setFromOptions() {
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
 
-  // make bedrock material properties into ice properties
+  // make bedrock thermal material properties into ice properties
   // (note Mbz=1 is default, but want ice/rock interface segment to 
   // have geothermal flux applied directly to ice)
-  bedrock.rho = ice->rho;
-  bedrock.k = ice->k;
-  bedrock.c_p = ice->c_p;  
+  bed_thermal.rho = ice->rho;
+  bed_thermal.k = ice->k;
+  bed_thermal.c_p = ice->c_p;  
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */

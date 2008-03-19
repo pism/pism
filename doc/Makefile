@@ -47,6 +47,7 @@ vfigs : vfnow.txt
 manual.pdf : manual.tex figs/*.png
 	pdflatex manual.tex
 	bibtex manual
+	makeindex -l manual
 	pdflatex manual.tex
 	pdflatex manual.tex
 

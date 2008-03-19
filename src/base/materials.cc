@@ -22,14 +22,16 @@
 PetscErrorCode verbPrintf(const int thresh, 
                           MPI_Comm comm,const char format[],...);
 
-PetscScalar BedrockType::k      = 3.0;          // J/(m K s) = W/(m K)    thermal conductivity
-PetscScalar BedrockType::c_p    = 1000;         // J/(kg K)     specific heat capacity
+PetscScalar BedrockThermalType::rho    = 3300;  // kg/(m^3)     density
+PetscScalar BedrockThermalType::k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
+PetscScalar BedrockThermalType::c_p    = 1000;  // J/(kg K)     specific heat capacity
+
 // for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
 // D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness T = 88 km,
 //    and Poisson's ratio nu = 0.5
-PetscScalar BedrockType::rho    = 3300;         // kg/(m^3)     density
-PetscScalar BedrockType::D      = 5.0e24;       // N m          lithosphere flexural rigidity
-PetscScalar BedrockType::eta    = 1.0e21;       // Pa s         half-space (mantle) viscosity
+PetscScalar DeformableEarthType::rho   = 3300;    // kg/(m^3)     density
+PetscScalar DeformableEarthType::D     = 5.0e24;  // N m          lithosphere flexural rigidity
+PetscScalar DeformableEarthType::eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
 
 // WaterTypes have nothing but density
 PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density (Lingle & Borwn 1987)

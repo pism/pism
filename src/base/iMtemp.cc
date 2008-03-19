@@ -77,11 +77,11 @@ PetscErrorCode IceModel::temperatureStep() {
   const PetscInt      k0 = Mbz - 1;
 
   const PetscScalar   rho_c_I = ice->rho * ice->c_p;
-  const PetscScalar   rho_c_br = bedrock.rho * bedrock.c_p;
+  const PetscScalar   rho_c_br = bed_thermal.rho * bed_thermal.c_p;
   const PetscScalar   rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
   const PetscScalar   iceK = ice->k / rho_c_I;
   const PetscScalar   iceR = iceK * dtTempAge / PetscSqr(dzEQ);
-  const PetscScalar   brK = bedrock.k / rho_c_br;
+  const PetscScalar   brK = bed_thermal.k / rho_c_br;
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dzbEQ);
 
   PetscScalar *Tb, *Tbnew;
@@ -207,7 +207,7 @@ PetscErrorCode IceModel::temperatureStep() {
                          * (0.5 * (UpTu + UpTv + UpTw) + T[0] * w[0] / dzEQ);
           }
           const PetscScalar iceReff = ice->k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
-          const PetscScalar brReff = bedrock.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
+          const PetscScalar brReff = bed_thermal.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
           if (Mbz > 1) { // there is bedrock; apply centered difference with 
                          // jump in diffusivity coefficient
             L[k0] = - brReff; D[k0] = 1 + iceReff + brReff; U[k0] = - iceReff;
@@ -484,10 +484,6 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   zlevEQ = new PetscScalar[Mz];
   dummylev = new PetscScalar[dummyM];
   ierr = getVertLevsForTempAge(Mz, dummyM, dzEQ, dummydz, zlevEQ, dummylev); CHKERRQ(ierr);
-
-  ierr = verbPrintf((grid.isEqualVertSpacing()) ? 5 : 3,grid.com, 
-           "\n  [entering ageStep(); Mz = %d, dzEQ = %5.3f]", Mz, dzEQ);
-           CHKERRQ(ierr);
 
   const PetscScalar   dx = grid.dx, 
                       dy = grid.dy;

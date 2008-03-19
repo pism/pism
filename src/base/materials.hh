@@ -182,11 +182,17 @@ protected:
 };
 
 
-class BedrockType {
+class BedrockThermalType {
 public:
   static PetscScalar rho;
   static PetscScalar k;
   static PetscScalar c_p;
+};
+
+
+class DeformableEarthType {
+public:
+  static PetscScalar rho;
   static PetscScalar D;
   static PetscScalar eta;
 };

@@ -651,7 +651,7 @@ PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const P
   PetscScalar *Tb;
   Tb = new PetscScalar[grid.Mbz];
   for (PetscInt kb = 0; kb < grid.Mbz; kb++)
-    Tb[kb] = Ttopbedrock - (geothermflux / bedrock.k) * grid.zblevels[kb];
+    Tb[kb] = Ttopbedrock - (geothermflux / bed_thermal.k) * grid.zblevels[kb];
   PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
   delete [] Tb;
   return 0;

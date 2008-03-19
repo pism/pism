@@ -109,12 +109,13 @@ PetscErrorCode IceModel::bedDefSetup() {
            CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, grid.com,
-          "using Lingle & Clark Earth deformation model; setting up bed def variables ..."); 
+          "using Lingle & Clark Earth deformation model\n"); 
           CHKERRQ(ierr);
 #if (WITH_FFTW==0)
       ierr = PetscPrintf(grid.com,
           "\n  WARNING: compiled without FFTW.  -bed_def_lc (-bed_def) will not work.\n"); 
           CHKERRQ(ierr);
+      return 1;
 #endif
       // create scatter context and allocate the Vecs for BedDeformLC
       ierr = createScatterToProcZero(Hp0); CHKERRQ(ierr);
@@ -133,14 +134,13 @@ PetscErrorCode IceModel::bedDefSetup() {
         ierr = bdLC.settings(PETSC_FALSE, // turn off elastic model for now
                        grid.Mx,grid.My,grid.dx,grid.dy,
                        2,                 // use Z = 2 for now
-                       ice->rho, bedrock.rho, bedrock.eta, bedrock.D,
+                       ice->rho, bed_deformable.rho, bed_deformable.eta, bed_deformable.D,
                        &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0); CHKERRQ(ierr);
         ierr = bdLC.alloc(); CHKERRQ(ierr);
         // *always* initialize plate from uplift, but make sure uplift (=dbed/dt)
         // is zero if it is not actually available from data
         ierr = bdLC.uplift_init(); CHKERRQ(ierr);
       } // if (grid.rank == 0)
-      ierr = verbPrintf(2,grid.com," done\n"); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -174,8 +174,11 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
   // This is a front end to the bed deformation update system.  It updates
   // no more often than bedDefIntervalYears.
   if (doBedDef == PETSC_TRUE) {
-    //ierr = PetscPrintf(grid.com, " [lastBedDefUpdateYear = %10.3f]\n",
-    //           lastBedDefUpdateYear); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com, "  [lastBedDefUpdateYear=%.3f, bedDefIntervalYears=%.3f]\n",
+              lastBedDefUpdateYear,bedDefIntervalYears); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com, 
+      "  [ice->rho=%.3f, bed_deformable.rho=%.3f, bed_deformable.D=%.3e, bed_deformable.eta=%.3e]\n",
+      ice->rho, bed_deformable.rho, bed_deformable.D, bed_deformable.eta); CHKERRQ(ierr);
     // If the bed elevations are not expired, exit cleanly.
     const PetscScalar dtBedDefYears = grid.year - lastBedDefUpdateYear;
     if (dtBedDefYears >= bedDefIntervalYears) {
@@ -214,7 +217,7 @@ PetscErrorCode IceModel::bed_def_step_iso() {
   PetscErrorCode ierr;
   Vec vHdiff = vWork2d[0];
 
-  const PetscScalar  f = ice->rho / bedrock.rho;
+  const PetscScalar  f = ice->rho / bed_deformable.rho;
   ierr = VecWAXPY(vHdiff,-1.0,vHlast,vH); CHKERRQ(ierr);  // Hdiff = H - Hlast
   ierr = VecWAXPY(vbed,-f,vHdiff,vbedlast); CHKERRQ(ierr);  // bed = bedlast - f (Hdiff)
   return 0;

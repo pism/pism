@@ -41,7 +41,7 @@ IceCompModel::IceCompModel(IceGrid &g, IceType *i, const char mytest)
   
   // Override some defaults from parent class
   enhancementFactor = 1.0;
-  f = tgaIce->rho / bedrock.rho;  // for simple isostasy
+  f = tgaIce->rho / bed_deformable.rho;  // for simple isostasy
   
   PetscInt       myFLN;
   PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
@@ -100,9 +100,9 @@ IceCompModel::IceCompModel(IceGrid &g, IceType *i, const char mytest)
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    bedrock.rho = tgaIce->rho;
-    bedrock.c_p = tgaIce->c_p;
-    bedrock.k = tgaIce->k;
+    bed_thermal.rho = tgaIce->rho;
+    bed_thermal.c_p = tgaIce->c_p;
+    bed_thermal.k = tgaIce->k;
   }
 }
 
@@ -148,9 +148,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
       ierr = verbPrintf(1,grid.com,
               "setting material properties of bedrock to those of ice in Test K\n");
               CHKERRQ(ierr);
-      bedrock.rho = tgaIce->rho;
-      bedrock.c_p = tgaIce->c_p;
-      bedrock.k = tgaIce->k;
+      bed_thermal.rho = tgaIce->rho;
+      bed_thermal.c_p = tgaIce->c_p;
+      bed_thermal.k = tgaIce->k;
       bedrock_is_ice_forK = PETSC_TRUE;
     } else {
       ierr = verbPrintf(1,grid.com,

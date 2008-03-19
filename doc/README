@@ -74,12 +74,15 @@ Bueler's cookbook for maintaining PISM:
    $ svn export pism-stable0.1/ pism-stable0.1.0           # TELL SVN TO MAKE A CLEAN COPY
    $ tar -cvzf pism-stable0.1.0.tar.gz pism-stable0.1.0/   # TAR IT UP
    $ tar -tvf pism-stable0.1.0.tar.gz                      # CHECK IT FOR CONTENTS
-   $ scp pism-stable0.1.0.tar.gz bueler@download.gna.org:/upload/pism/   # UPLOAD
-   
+   $ gpg --detach pism-stable0.1.0.tar.gz                  # GENERATE .sig SIGNATURE FILE;
+                                                           # passphrase in wallet
+   $ scp pism-stable0.1.0.tar.gz pism-stable0.1.0.tar.gz.sig \
+        bueler@download.gna.org:/upload/pism/              # UPLOAD
 
-2)  Which files do I need to keep up-to-date at www.pism-docs.org, and how?
+
+2)  Which files do I need to keep up-to-date at www.pism-docs.org for stable docs?
 
    These files:
    
    $ scp refman.pdf manual.pdf bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/
-   
+

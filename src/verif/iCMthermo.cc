@@ -136,7 +136,7 @@ PetscErrorCode IceCompModel::initTestFG() {
 
       // fill with basal temp increased by geothermal flux
       for (PetscInt k = 0; k < grid.Mbz; k++)
-        Tb[k] = T[0] - (Ggeo / bedrock.k) * grid.zblevels[k];
+        Tb[k] = T[0] - (Ggeo / bed_thermal.k) * grid.zblevels[k];
       ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
     }
   }

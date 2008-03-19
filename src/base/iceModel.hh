@@ -76,15 +76,17 @@ protected:
 
   IceGrid        &grid;
 
-  IceType        *ice;
-//  IceType        &ice;
-  BasalType      *basal;
-  BedrockType    bedrock;
-  SeaWaterType   ocean;
-  FreshWaterType porewater;
   PolarStereoParams  psParams;
   
   NCTool         nct;
+
+  IceType               *ice;
+//  IceType               &ice;
+  BasalType             *basal;
+  BedrockThermalType    bed_thermal;
+  DeformableEarthType   bed_deformable;
+  SeaWaterType          ocean;
+  FreshWaterType        porewater;
 
   // state variables
   Vec vh, vH, vbed,             // 2D vectors; Mx x My

@@ -84,7 +84,8 @@ const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3.0;
 
 const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
-const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 10.0;  // model is so cheap you might as well update frequently
+// model is so cheap you might as well update frequently:
+const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 10.0;  
 
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 
