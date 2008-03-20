@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{270}
+\newcommand{\PISMREV}{278}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -597,9 +597,9 @@ The heuristics themselves are, for now, only documented in the source code:
 
 \clearpage
 \newpage
-\section{More on usage}\label{sect:usage}
+\section{More on usage and models}\label{sect:usage}
 
-\subsection{The PISM coordinate system and grid} \label{subsect:coords} PISM does all simulations in a computational box\index{PISM!computational box} which is rectangular in the PISM coordinates.
+\subsection{Coordinate grid and computational box} \label{subsect:coords} PISM does all simulations in a computational box\index{PISM!computational box} which is rectangular in the PISM coordinates.
 
 The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice and it is exactly opposite to the vector of gravity.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.
 
@@ -632,6 +632,7 @@ One is allowed to specify the grid when PISM is started \emph{without} a pre-exi
 \verb|$  pisms -eisII A -if foo.nc -Mz 201 -y 100|
 
 \noindent will give a warning that ``\verb|user option -Mz ignored; value read from file foo.nc|.''  To change the model grid one must explicitly ``regrid'', as described next.
+
 
 \subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment as above, producing \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  Speaking conceptually, the idea in PISM is that one starts over from the beginning of EISMINT II experiment A on the finer grid, but one extracts the thickness and ice temperature stored in the coarse grid file and interpolates onto the finer grid before proceeding with the actual computation.  The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
@@ -666,7 +667,7 @@ A slightly different use of regridding occurs when ``bootstrapping'' as describe
 \end{table}
 
 
-\subsection{Understanding and controlling adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers.:
+\subsection{Adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers.:
 \begin{verbatim}
 %ybp SIA SSA  # vgatdh Nr  +STEP
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
@@ -700,7 +701,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \end{table}
 
 
-\subsection{Using signals to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard.  Such signals are included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
+\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard.  Such signals are included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
 
 Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{pismv}
 
@@ -787,7 +788,7 @@ Ctrl-C & \same & same, but only for foreground process(es)  \\ \hline
 \end{table}
 
 
-\subsection{Using the positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
+\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
 
 Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
 
@@ -816,6 +817,21 @@ To directly compare the two methods, try\index{pgrn}
 \verb|    -ocean_kill -y 50 -o green_50yr_pdd_rand -pdd_rand -d Aa|
 
 \noindent (See section \ref{sect:green} on how to create the file \verb|eis_green_smoothed.nc| from publically available data.  See the same section for the meaning of ``\verb|-bif|''.)
+
+
+\subsection{Floatation criterion and mask} \label{subsect:float} FIXME: add this section to explain semantics of mask, \verb|MASK_FLOATING_OCEAN0|, and \intextoption{ocean\und kill}; add and document option \intextoption{dry}
+
+
+\subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}   FIXME: add this section, which explains use of options
+\intextoption{bed\und def\und iso} and \intextoption{bed\und def\und lc}  Based on papers by Lingle and Clark \cite{LingleClark}\index{Lingle, Craig} \index{Clark, J.} and \cite{BLKfastearth}.  Example runs to compare are is
+
+\verb|$ pisms -eisII A -quadZ -y 6000 -o eisIIA_nobd|
+
+\verb|$ pisms -eisII A -quadZ -bed_def_iso -y 6000 -o eisIIA_bdiso|
+
+\verb|$ pisms -eisII A -quadZ -bed_def_lc -y 6000 -o eisIIA_bdlc|
+
+Also refer to test H.
 
 
 

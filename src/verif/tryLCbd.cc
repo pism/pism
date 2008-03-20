@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceType     ice;
-    BedrockType bedrock;
+    DeformableEarthType bedrock;
     BedDeformLC bdlc;
     DA          da2;
     Vec         H, bed, Hstart, bedstart, uplift;

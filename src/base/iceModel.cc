@@ -404,11 +404,19 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
       const PetscScalar hgrounded = bed[i][j] + H[i][j];
 
       if (isDrySimulation == PETSC_TRUE) {
+        // Don't update mask; potentially one would want to do SSA
+        //   dragging ice shelf in dry case and/or ignor mean sea level elevation.
         h[i][j] = hgrounded;
-        // don't update mask; potentially one would want to do SSA
-        //   dragging ice shelf in dry case and/or ignor mean sea level elevation
+      } else if (intMask(mask[i][j]) == MASK_FLOATING_OCEAN0) {
+        // Mask takes priority over bed in this case (note sea level may change).
+        // Example Greenland case: if mask say Ellesmere is OCEAN0,
+        //   then never want ice on Ellesmere.
+        // If mask says OCEAN0 then don't change the mask and also don't change
+        // the thickness; massBalExplicitStep() is in charge of that.
+        // Almost always the next line is equivalent to h[i][j] = 0.
+        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
+        h[i][j] = hfloating;  // ignor bed and treat it like ocean
       } else {
-
         const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // check whether you are actually floating or grounded

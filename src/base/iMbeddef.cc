@@ -109,7 +109,7 @@ PetscErrorCode IceModel::bedDefSetup() {
            CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, grid.com,
-          "using Lingle & Clark Earth deformation model\n"); 
+          "using Lingle & Clark Earth deformation model (Bueler et al 2007, Ann. Glaciol.)\n"); 
           CHKERRQ(ierr);
 #if (WITH_FFTW==0)
       ierr = PetscPrintf(grid.com,
