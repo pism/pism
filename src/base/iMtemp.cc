@@ -28,8 +28,9 @@ and have a CFL condition (Morton & Mayers 1994).  By being slightly conservative
 we use the same CFL condition for both (see Bueler and others (2007), "Exact 
 solutions ... thermomechanically-coupled ...,"  J. Glaciol.).
 
-We also report any CFL violations.  In the equally-spaced case these can 
-\em only occur when using the <tt>-tempskip</tt> option.  In the non equally spaced case
+We also report any CFL violations.  In the equally-spaced vertical grid case these can 
+\em only occur when using the <tt>-tempskip</tt> option.  In the non-equally spaced 
+vertical grid case
 they occur even with regular time-stepping, but in a percentage-wise sense they are very 
 rare.
  */
@@ -40,9 +41,11 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   PetscScalar  myCFLviolcount = 0.0;  // it is a count but it is type "PetscScalar"
                                       // because that type works with PetscGlobalSum()
   // do CFL and vertical grid blow-out checking only in ageStep()
-  ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
+//  ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
+  ierr = NEWageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
     
   ierr = temperatureStep(); CHKERRQ(ierr);  // puts vTnew in vWork3d[0]
+//  ierr = NEWtemperatureStep(); CHKERRQ(ierr);  // puts vTnew in vWork3d[0]
 
   // no communication done in ageStep(), temperatureStep(); it is all done here:
   ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
@@ -388,6 +391,378 @@ PetscErrorCode IceModel::temperatureStep() {
   ierr = Tnew3.doneAccessToVals(); CHKERRQ(ierr);
   
   delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
+
+  delete [] u;  delete [] v;  delete [] w;  delete [] Sigma;
+  delete [] T;  delete [] Tb;  delete [] Tbnew;  delete [] Tnew;
+
+  delete [] zlevEQ;   delete [] zblevEQ;
+ 
+  return 0;
+}
+
+
+// documentation for temperatureStep() is in pism/src/base/comments.hh
+PetscErrorCode IceModel::NEWtemperatureStep() {
+  PetscErrorCode  ierr;
+
+  const PetscScalar   dx = grid.dx, 
+                      dy = grid.dy;
+
+  PetscInt    Mz, Mbz;
+  PetscScalar dzEQ, dzbEQ, *zlevEQ, *zblevEQ;
+
+  ierr = getMzMbzForTempAge(Mz, Mbz); CHKERRQ(ierr);
+
+  zlevEQ = new PetscScalar[Mz];
+  zblevEQ = new PetscScalar[Mbz];
+
+  ierr = getVertLevsForTempAge(Mz, Mbz, dzEQ, dzbEQ, zlevEQ, zblevEQ); CHKERRQ(ierr);
+
+  ierr = verbPrintf(5, grid.com,
+    "\n  [entering temperatureStep(); Mz = %d, dzEQ = %5.3f, Mbz = %d, dzbEQ = %5.3f]",
+    Mz, dzEQ, Mbz, dzbEQ); CHKERRQ(ierr);
+
+  const PetscScalar dt_dzEQ = dtTempAge / dzEQ;
+
+                      
+  const PetscInt      k0 = Mbz - 1;  // index in full column; where ice/bed interface
+
+  const PetscScalar   rho_c_I = ice->rho * ice->c_p;
+  const PetscScalar   rho_c_br = bed_thermal.rho * bed_thermal.c_p;
+  const PetscScalar   rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
+  const PetscScalar   iceK = ice->k / rho_c_I;
+  const PetscScalar   iceR = iceK * dtTempAge / PetscSqr(dzEQ);
+  const PetscScalar   brK = bed_thermal.k / rho_c_br;
+  const PetscScalar   brR = brK * dtTempAge / PetscSqr(dzbEQ);
+
+  PetscScalar *Tb, *Tbnew;
+  PetscScalar **Ts, **H, **b, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate;
+
+  PetscScalar *u, *v, *w, *Sigma, *T, *Tnew;
+  u = new PetscScalar[Mz];
+  v = new PetscScalar[Mz];
+  w = new PetscScalar[Mz];
+  Sigma = new PetscScalar[Mz];
+  T = new PetscScalar[Mz];
+  Tnew = new PetscScalar[Mz];
+
+  Tb = new PetscScalar[Mbz];
+  Tbnew = new PetscScalar[Mbz];
+
+  PetscScalar *Lp, *L, *D, *U, *x, *rhs, *work;  
+  Lp = new PetscScalar[Mz+k0-1]; L = Lp-1; // ptr arith.; note L[0]=Lp[-1] not alloc
+  D = new PetscScalar[Mz+k0];
+  U = new PetscScalar[Mz+k0-1];
+  x = new PetscScalar[Mz+k0];
+  rhs = new PetscScalar[Mz+k0];
+  work = new PetscScalar[Mz+k0];
+
+  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
+  
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = Tnew3.needAccessToVals(); CHKERRQ(ierr);
+
+  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+
+  PetscInt        myLowTempCount = 0;
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // this should *not* be replaced by call to grid.kBelowHeightEQ():
+      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
+
+      // if isMarginal then only do vertical conduction for ice (i.e. ignor advection
+      // and strain heating if isMarginal)
+      const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
+                                             H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
+      
+      ierr = Tb3.getValColumn(i,j,Mbz,zblevEQ,Tb); CHKERRQ(ierr);
+
+      if (Mbz > 1) { // bedrock present: build k = 0:k0-1 = 0:Mbz-2 eqns
+        // gives O(\Delta t,\Delta z^2) convergence in Test K for equal spaced grid;
+        // note L[0] not an allocated location:
+        D[0] = (1.0 + 2.0 * brR);  U[0] = - 2.0 * brR;  
+        rhs[0] = Tb[0] + 2.0 * dtTempAge * Ghf[i][j] / (rho_c_br * dzbEQ);
+      
+        // bedrock only: pure vertical conduction problem
+        for (PetscInt k=1; k < k0; k++) {
+          L[k] = -brR; D[k] = 1+2*brR; U[k] = -brR;
+          rhs[k] = Tb[k];
+        }
+      }
+
+      if (grid.isEqualVertSpacing()) {
+        ierr = u3.getValColumnPL(i,j,Mz,zlevEQ,u); CHKERRQ(ierr);
+        ierr = v3.getValColumnPL(i,j,Mz,zlevEQ,v); CHKERRQ(ierr);
+        ierr = w3.getValColumnPL(i,j,Mz,zlevEQ,w); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumnPL(i,j,Mz,zlevEQ,Sigma); CHKERRQ(ierr);
+        ierr = T3.getValColumnPL(i,j,Mz,zlevEQ,T); CHKERRQ(ierr);
+      } else {
+        // slower, but better for not-equal spaced
+        ierr = u3.getValColumnQUAD(i,j,Mz,zlevEQ,u); CHKERRQ(ierr);
+        ierr = v3.getValColumnQUAD(i,j,Mz,zlevEQ,v); CHKERRQ(ierr);
+        ierr = w3.getValColumnQUAD(i,j,Mz,zlevEQ,w); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumnQUAD(i,j,Mz,zlevEQ,Sigma); CHKERRQ(ierr);
+        ierr = T3.getValColumnQUAD(i,j,Mz,zlevEQ,T); CHKERRQ(ierr);
+      }
+
+      // bottom part of ice (and top of bedrock in some cases): k=Mbz-1 eqn
+      if (ks == 0) { // no ice; just set T[0]
+        if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
+        D[k0] = 1.0;
+        U[k0] = 0.0;
+        // if floating and no ice then worry only about bedrock temps;
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          // top of bedrock sees ocean
+          rhs[k0] = ice->meltingTemp;
+        } else {
+          // top of bedrock sees atmosphere
+          rhs[k0] = Ts[i][j];
+        }
+      } else { // ks > 0; there is ice
+        planeStar ss;
+        ierr = T3.getPlaneStarZ(i,j,0.0,&ss);
+        const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
+                                              u[0] * (ss.ij  - ss.im1) / dx;
+        const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
+                                              v[0] * (ss.ij  - ss.jm1) / dy;
+//        // for w, always upwind *up* from base
+//        const PetscScalar UpTw = w[0] * (T[1] - T[0]) / dzEQ;
+        PetscScalar AA = dt_dzEQ * ((w[0] < 0.0) ? w[0] : 0.0);
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          // at base of ice shelf, will eventually set T = Tpmp
+          // but also determine basal melt rate by ocean flux;
+          // note volume for which energy is being computed is 
+          // *half* a segment
+          if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
+          D[k0] = 1.0 + 2.0 * iceR - AA;
+          U[k0] = - 2.0 * iceR + AA;
+          rhs[k0] = T[0] + 2.0 * dtTempAge * oceanHeatFlux / (rho_c_I * dzEQ);
+          rhs[k0] += dtTempAge * (Sigma[0] - UpTu - UpTv) / 2;
+        } else {
+          // there is *grounded* ice; ice/bedrock interface; from FV across interface
+          const PetscScalar rho_c_ratio = rho_c_I / rho_c_av;
+          const PetscScalar dzav = 0.5 * (dzEQ + dzbEQ);
+          rhs[k0] = T[0] + dtTempAge * (Rb[i][j] / (rho_c_av * dzav));
+          if (!isMarginal) {
+            rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[0];
+            rhs[k0] -= dtTempAge * rho_c_ratio
+                         * (0.5 * (UpTu + UpTv));
+          }
+          const PetscScalar iceReff = ice->k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
+          const PetscScalar brReff = bed_thermal.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
+          if (Mbz > 1) { // there is bedrock; apply centered difference with 
+                         // jump in diffusivity coefficient
+            L[k0] = - brReff;
+            D[k0] = 1 + iceReff + brReff - AA;
+            U[k0] = - iceReff + AA;
+          } else { // no bedrock; apply geothermal flux here
+            // L[k0] = 0.0;  (note this is not an allocated location!) 
+            D[k0] = 1.0 + 2.0 * iceR - AA;
+            U[k0] = - 2.0 * iceR + AA;
+            rhs[k0] += 2.0 * dtTempAge * Ghf[i][j] / (rho_c_I * dzEQ);
+          }
+        }
+      }
+
+      // generic ice segment: build k0+1:k0+ks-1 eqns
+      for (PetscInt k = 1; k < ks; k++) {
+        planeStar ss;  // ss.ij = T[i][j][k] = T[k]
+        ierr = T3.getPlaneStarZ(i,j,k * dzEQ,&ss);
+        const PetscScalar UpTu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
+                                              u[k] * (ss.ij  - ss.im1) / dx;
+        const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
+                                              v[k] * (ss.ij  - ss.jm1) / dy;
+//        rhs[k0+k] = T[k];
+//        const PetscScalar UpTw = (w[k] < 0) ? w[k] * (T[k+1] -   T[k]) / dzEQ :
+//                                              w[k] * (T[k]   - T[k-1]) / dzEQ;
+//        if (!isMarginal) {
+//          rhs[k0+k] += dtTempAge * (Sigma[k] - UpTu - UpTv - UpTw);
+//        }
+        rhs[k0+k] = ss.ij + dtTempAge * (Sigma[k] - UpTu - UpTv);
+        const PetscScalar AA = dt_dzEQ * w[k];
+//        const PetscScalar AA = 0.0;
+
+        // lambda=0 is implicit upwinding; lambda=1 is implicit centered diff
+//        const PetscScalar lambda = PetscMin( 1.0, 
+//                     2.0 * iceK / (dzEQ * (PetscAbs(w[k]) + 0.00001 / secpera)) );
+        const PetscScalar lambda = 1.0;
+        if (AA >= 0) { // upward velocity
+          L[k0+k] = - (iceR + AA * (1.0 - lambda / 2.0));
+          D[k0+k] = 1.0 + 2.0 * iceR + (1.0 - lambda) * AA;
+          U[k0+k] = - (iceR - AA * (lambda / 2.0));
+        } else { // downward velocity; note  -AA >= 0
+          L[k0+k] = - (iceR + AA * (lambda / 2.0));
+          D[k0+k] = 1.0 + 2.0 * iceR - (1.0 - lambda) * AA;
+          U[k0+k] = - (iceR - AA * (1.0 - lambda / 2.0));
+        }
+      }
+      
+      // surface b.c.
+      if (ks>0) {
+        rhs[k0+ks] = Ts[i][j];
+        L[k0+ks] = 0;
+        D[k0+ks] = 1.0;
+        // ignor U[k0+ks]
+        //  HAD NO k0+ks eqn before, and:
+        //        rhs[k0+ks-1] += iceR * Ts[i][j];
+        // U[k0+ks-1] = 0.0, but never actually eval'ed by tridiag solve
+      }
+
+      // solve system; melting not addressed yet
+      if (k0+ks>0) {
+        ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks+1);
+        // OLD:       ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks);
+        if (ierr != 0) {
+          SETERRQ3(1, "Tridiagonal solve failed at (%d,%d) with zero pivot in position %d.",
+               i, j, ierr);
+        }
+      }
+
+      // insert bedrock solution; check for too low below
+      for (PetscInt k=0; k < k0; k++) {
+        Tbnew[k] = x[k];
+      }
+
+      // prepare for melting/refreezing
+      PetscScalar Hmeltnew = Hmelt[i][j];
+      
+      // insert solution for generic ice segments
+      for (PetscInt k=1; k <= ks; k++) {
+        if (allowAboveMelting == PETSC_TRUE) {
+          Tnew[k] = x[k0 + k];
+        } else {
+          const PetscScalar depth = H[i][j] - zlevEQ[k];
+          const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
+          if (x[k0 + k] > Tpmp) {
+            Tnew[k] = Tpmp;
+            PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
+            excessToFromBasalMeltLayer(rho_c_I, zlevEQ[k], dzEQ, &Texcess, &Hmeltnew);
+            // Texcess  will always come back zero here; ignor it
+          } else {
+            Tnew[k] = x[k0 + k];
+          }
+        }
+        if (Tnew[k] < globalMinAllowedTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) generic segment temp T = %f at %d,%d,%d;"
+              " proc %d; mask=%f; w=%f]]\n",
+              Tnew[k],i,j,k,grid.rank,mask[i][j],w[k]*secpera); CHKERRQ(ierr);
+           myLowTempCount++;
+        }
+      }
+      
+      // insert solution for ice/rock interface (or base of ice shelf) segment
+      if (ks > 0) {
+        if (allowAboveMelting == PETSC_TRUE) {
+          Tnew[0] = x[k0];
+        } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
+          const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * H[i][j];
+          PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
+          if (modMask(mask[i][j]) == MASK_FLOATING) {
+             // when floating, only half a segment has had its temperature raised
+             // above Tpmp
+             excessToFromBasalMeltLayer(rho_c_I/2, 0.0, dzEQ, &Texcess, &Hmeltnew);
+          } else {
+             excessToFromBasalMeltLayer(rho_c_av, 0.0, dzEQ, &Texcess, &Hmeltnew);
+          }
+          Tnew[0] = Tpmp + Texcess;
+          if (Tnew[0] > (Tpmp + 0.00001)) {
+            SETERRQ(1,"updated temperature came out above Tpmp");
+          }
+        }
+        if (Tnew[0] < globalMinAllowedTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) ice/rock segment temp T = %f at %d,%d;"
+              " proc %d; mask=%f; w=%f]]\n",
+              Tnew[0],i,j,grid.rank,mask[i][j],w[0]*secpera); CHKERRQ(ierr);
+           myLowTempCount++;
+        }
+      } else {
+        Hmeltnew = 0.0;
+      }
+      
+      // we must agree on redundant values T(z=0) at top of bedrock and at bottom of ice
+      if (ks > 0) {
+        Tbnew[k0] = Tnew[0];
+      } else {
+        // if floating then top of bedrock sees ocean
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          Tbnew[k0] = ice->meltingTemp;
+        } else { // top of bedrock sees atmosphere
+          Tbnew[k0] = Ts[i][j];
+        }
+      }
+      // check bedrock solution        
+      for (PetscInt k=0; k <= k0; k++) {
+        if (Tbnew[k] < globalMinAllowedTemp) {
+           ierr = PetscPrintf(PETSC_COMM_SELF,
+              "  [[too low (<200) bedrock temp T = %f at %d,%d,%d; proc %d; mask=%f]]\n",
+              Tbnew[k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+           myLowTempCount++;
+        }
+      }
+
+      // transfer column into Tb3; neighboring columns will not reference!
+      ierr = Tb3.setValColumn(i,j,Mbz,zblevEQ,Tbnew); CHKERRQ(ierr);
+
+      // set to air temp above ice
+      for (PetscInt k=ks; k<Mz; k++) {
+        Tnew[k] = Ts[i][j];
+      }
+
+      // transfer column into Tnew3; communication later
+      ierr = Tnew3.setValColumnPL(i,j,Mz,zlevEQ,Tnew); CHKERRQ(ierr);
+
+      // basaMeltRate[][] is rate of change of Hmelt[][]; thus it can be negative
+      basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
+
+      // limit Hmelt by default max
+      Hmeltnew = PetscMin(Hmelt_max, Hmeltnew);
+
+      // eliminate basal water if floating
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
+        Hmelt[i][j] = 0.0;
+      } else {
+        Hmelt[i][j] = Hmeltnew;
+      }
+
+    } 
+  }
+  
+  if (myLowTempCount > maxLowTempCount) { SETERRQ(1,"too many low temps"); }
+
+  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
+
+  ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
+
+  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = Tnew3.doneAccessToVals(); CHKERRQ(ierr);
+  
+  delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
+
   delete [] u;  delete [] v;  delete [] w;  delete [] Sigma;
   delete [] T;  delete [] Tb;  delete [] Tbnew;  delete [] Tnew;
 
@@ -455,8 +830,10 @@ where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three 
 velocity field.  This equation is hyperbolic (purely advective).  
 The boundary condition is that when the ice fell as snow it had age zero.  
 That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
-boundary condition elsewhere (as the characteristics go outward elsewhere).  At this point 
-the refreeze case, either grounded basal ice or marine basal ice, is not handled correctly.
+boundary condition elsewhere (as the characteristics go outward elsewhere).
+
+At this point the case where ice freezes on at the base, either grounded basal ice
+or marine basal ice, is \e not handled correctly.
 
 By default, when computing the grain size for the Goldsby-Kohlstedt flow law, the age 
 \f$\tau\f$ is not used.  Instead a pseudo age is computed by updateGrainSizeNow().  
@@ -567,6 +944,187 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   ierr = taunew3.doneAccessToVals();  CHKERRQ(ierr);
 
   delete [] tau;  delete [] u;  delete [] v;  delete [] w;  delete [] taunew;  
+  delete [] zlevEQ;  delete [] dummylev;
+
+  return 0;
+}
+
+
+//! Take a semi-implicit time-step for the age equation.  Also check the horizontal CFL for advection.
+/*!
+The age equation is\f$d\tau/dt = 1\f$, that is,
+    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
+        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
+where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
+velocity field.  This equation is hyperbolic (purely advective).  
+The boundary condition is that when the ice fell as snow it had age zero.  
+That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
+boundary condition elsewhere (as the characteristics go outward elsewhere).
+
+If the velocity in the bottom cell of ice is upward (w[i][j][0]>0) then we apply
+an age=0 boundary condition.  This is the case where ice freezes on at the base,
+either grounded basal ice or marine basal ice.
+
+A related matter:  By default, when computing the grain size for the 
+Goldsby-Kohlstedt flow law, the age \f$\tau\f$ is not used.  Instead a pseudo age 
+is computed by updateGrainSizeNow().  If you want the age computed by this routine 
+to be used for the grain size estimation, 
+from the Vostok core relation as in grainSizeVostok(), add option 
+<tt>-real_age_grainsize</tt>.
+
+The numerical method is first-order upwind but the vertical advection term is computed
+implicitly.  Thus there is unconditional stability for that part (i.e. in
+the unlikely case that the horizontal velocity field is zero).
+
+We use equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
+methods getValColumn() and setValColumn() interpolate back and forth between the grid 
+on which calculation is done and the storage grid.  Thus the storage grid can be either 
+equally spaced or not.
+ */
+PetscErrorCode IceModel::NEWageStep(PetscScalar* CFLviol) {
+  PetscErrorCode  ierr;
+
+  PetscInt    Mz, dummyM;
+  PetscScalar dzEQ, dummydz, *zlevEQ, *dummylev;
+
+  ierr = getMzMbzForTempAge(Mz, dummyM); CHKERRQ(ierr);
+
+  zlevEQ = new PetscScalar[Mz];
+  dummylev = new PetscScalar[dummyM];
+
+  ierr = getVertLevsForTempAge(Mz, dummyM, dzEQ, dummydz, zlevEQ, dummylev);
+     CHKERRQ(ierr);
+
+  const PetscScalar dx = grid.dx,
+                    dy = grid.dy,
+                    cflx = dx / dtTempAge,
+                    cfly = dy / dtTempAge,
+                    dt_dzEQ = dtTempAge / dzEQ;
+
+  PetscScalar **H, *tau, *u, *v, *w;
+
+  tau = new PetscScalar[Mz];
+  u = new PetscScalar[Mz];
+  v = new PetscScalar[Mz];
+  w = new PetscScalar[Mz];
+
+  PetscScalar *Lp, *L, *D, *U, *x, *rhs, *work;  
+  Lp = new PetscScalar[Mz-1]; L = Lp-1; // ptr arith.; note L[0]=Lp[-1] not alloc
+  D = new PetscScalar[Mz];
+  U = new PetscScalar[Mz-1];
+  x = new PetscScalar[Mz];
+  rhs = new PetscScalar[Mz];
+  work = new PetscScalar[Mz];
+  
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = taunew3.needAccessToVals(); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // this should *not* be replaced by call to grid.kBelowHeightEQ():
+      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
+      if (ks > Mz-1) {
+        SETERRQ3(1,
+           "ageStep() ERROR: ks = %d too high in ice column;\n"
+           "  H[i][j] = %5.4f exceeds Lz = %5.4f\n",
+           ks, H[i][j], grid.Lz);
+      }
+
+      if (ks == 0) { // if no ice, set the entire column to zero age
+                     // and ignor the velocities in that column
+        ierr = taunew3.setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
+      } else { // general case
+        ierr = tau3.getValColumnQUAD(i,j,Mz,zlevEQ,tau); CHKERRQ(ierr);
+        ierr = u3.getValColumnQUAD(i,j,Mz,zlevEQ,u); CHKERRQ(ierr);
+        ierr = v3.getValColumnQUAD(i,j,Mz,zlevEQ,v); CHKERRQ(ierr);
+        ierr = w3.getValColumnQUAD(i,j,Mz,zlevEQ,w); CHKERRQ(ierr);
+
+        // age evolution is pure advection (so provides check on temp calculation):
+        //   check horizontal CFL conditions at each point
+        for (PetscInt k=0; k<ks; k++) {
+          if (PetscAbs(u[k]) > cflx)  *CFLviol += 1.0;
+          if (PetscAbs(v[k]) > cfly)  *CFLviol += 1.0;
+        }
+
+        // set up system: 0 <= k < ks
+        for (PetscInt k=0; k<ks; k++) {
+          planeStar ss;  // note ss.ij = tau[k]
+          ierr = tau3.getPlaneStarZ(i,j,zlevEQ[k],&ss);
+          // do lowest-order upwinding, explicitly for horizontal
+          rhs[k] =  (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx
+                               : u[k] * (ss.ij  - ss.im1) / dx;
+          rhs[k] += (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy
+                               : v[k] * (ss.ij  - ss.jm1) / dy;
+          // note it is the age eqn: dage/dt = 1.0 and we have moved the hor.
+          //   advection terms over to right:
+          rhs[k] = ss.ij + dtTempAge * (1.0 - rhs[k]);
+
+          // do lowest-order upwinding, *implicitly* for vertical
+          PetscScalar AA = dt_dzEQ * w[k];
+          if (k > 0) {
+            if (AA >= 0) { // upward velocity
+              L[k] = - AA;
+              D[k] = 1.0 + AA;
+              U[k] = 0.0;
+            } else { // downward velocity; note  -AA >= 0
+              L[k] = 0.0;
+              D[k] = 1.0 - AA;
+              U[k] = + AA;
+            }
+          } else { // k == 0 case
+            // note L[0] not an allocated location
+            if (AA > 0) { // if strictly upward velocity apply boundary condition:
+                          // age = 0 because ice is being added to base
+              D[0] = 1.0;
+              U[0] = 0.0;
+              rhs[0] = 0.0;
+            } else { // downward velocity; note  -AA >= 0
+              D[0] = 1.0 - AA;
+              U[0] = + AA;
+              // keep rhs[0] as is
+            }
+          }
+
+        }  // done "set up system: 0 <= k < ks"
+      
+        // surface b.c. at ks
+        if (ks>0) {
+          L[ks] = 0;
+          D[ks] = 1.0;   // ignor U[ks]
+          rhs[ks] = 0.0;  // age zero at surface
+        }
+        // done setting up system
+
+        ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, ks+1);
+        if (ierr != 0) {
+          SETERRQ3(2, "Tridiagonal solve failed at (%d,%d) with zero pivot in position %d.",
+                   i, j, ierr);
+        }
+        // x[k] contains age for k=0,...,ks
+        for (PetscInt k=ks+1; k<Mz; k++) {
+          x[k] = 0.0;  // age of ice above (and at) surface is zero years
+        }
+        
+        ierr = taunew3.setValColumnPL(i,j,Mz,zlevEQ,x); CHKERRQ(ierr);
+      }
+    }
+  }
+
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = tau3.doneAccessToVals();  CHKERRQ(ierr);
+  ierr = u3.doneAccessToVals();  CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals();  CHKERRQ(ierr);
+  ierr = w3.doneAccessToVals();  CHKERRQ(ierr);
+  ierr = taunew3.doneAccessToVals();  CHKERRQ(ierr);
+
+  delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
+
+  delete [] tau;  delete [] u;  delete [] v;  delete [] w;
+
   delete [] zlevEQ;  delete [] dummylev;
 
   return 0;

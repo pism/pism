@@ -962,7 +962,15 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   if (exactOnly == PETSC_FALSE)  
     return 0;
 
-  // because user want exact solution, fill gridded values from exact formulas
+  // because user wants exact solution, fill gridded values from exact formulas;
+  // important notes: 
+  //     (1) the numerical computation *has* already occurred, in run(),
+  //           and we just overwrite it with the exact solution here
+  //     (2) certain diagnostic quantities like dHdt are computed numerically,
+  //           and not overwritten here; while cbar,csurf,cflx,wsurf are diagnostic
+  //           quantities recomputed at the end of the run for writing into
+  //           NetCDF, in particular dHdt is not recomputed before being written
+  //           into the output file, so it is actually numerical
   switch (testname) {
     case 'A':
     case 'B':

@@ -342,7 +342,8 @@ PetscErrorCode IceCompModel::updateCompViewers() {
 }
 
 
-PetscErrorCode IceCompModel::computeTemperatureErrors(PetscScalar &gmaxTerr, PetscScalar &gavTerr) {
+PetscErrorCode IceCompModel::computeTemperatureErrors(
+                                  PetscScalar &gmaxTerr, PetscScalar &gavTerr) {
 
   PetscErrorCode ierr;
   PetscScalar    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
@@ -536,7 +537,8 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 }
 
 
-PetscErrorCode IceCompModel::computeSigmaErrors(PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr) {
+PetscErrorCode IceCompModel::computeSigmaErrors(
+                      PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr) {
 
   PetscErrorCode ierr;
   PetscScalar    maxSigerr = 0.0, avSigerr = 0.0, avcount = 0.0;
@@ -569,7 +571,8 @@ PetscErrorCode IceCompModel::computeSigmaErrors(PetscScalar &gmaxSigmaerr, Petsc
             bothexact(grid.year*secpera,r,grid.zlevels,Mz,ApforG,
                       &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
             break;
-          default:  SETERRQ(1,"strain-heating (Sigma) errors only computable for tests F and G\n");
+          default:
+            SETERRQ(1,"strain-heating (Sigma) errors only computable for tests F and G\n");
         }
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         ierr = Sigma3.getInternalColumn(i,j,&Sig); CHKERRQ(ierr);

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2008 Ed Bueler and Jed Brown
   
    This file is part of Pism.
   
@@ -39,7 +39,7 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
               double *Sigreturn, double *Sigc) {
 
   const double pi = 3.14159265358979;
-  const double SperA=31556926.0;  /* seconds per year; 365.2422 days */
+  const double SperA = 31556926.0;  /* seconds per year; 365.2422 days */
 
   /* parameters describing extent of sheet: */
   const double H0=3000.0;    /* m */
@@ -104,8 +104,14 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   Ts = Tmin+ST*r;
   nusqrt = sqrt( 1 + (4.0*H*Ggeo)/(k*Ts) );
   nu = ( k*Ts/(2.0*Ggeo) )*( 1 + nusqrt );
-  for (i=0; i<Mz; i++)
-    TT[i] = Ts * (nu+H) / (nu+z[i]);
+  for (i=0; i<Mz; i++) {
+    if (z[i] < H) {
+      TT[i] = Ts * (nu+H) / (nu+z[i]);
+    } else { // surface value above ice surface; matches numerical way
+      TT[i] = Ts;
+    }
+    //old way: extend formula above surface: TT[i] = Ts * (nu+H) / (nu+z[i]);
+  }
 
   /* compute surface slope and horizontal velocity */
   lamhatr = ((1+1/n)/L)*( 1 - pow(1-s,1/n) - pow(s,1/n) );
@@ -123,14 +129,23 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   Uconst = 2.0 * pow(rho*g,n) * A;
   omega = Uconst * pow(-Hr,n) * surfArr * pow(mu,-n-1);
   for (i=0; i<Mz; i++) {
-    I3[i] = p3(mu*H) * exp(mu*H) - p3(mu*(H-z[i])) * exp(mu*(H-z[i]));
-    U[i] = omega * I3[i];
+    if (z[i] < H) {
+      I3[i] = p3(mu*H) * exp(mu*H) - p3(mu*(H-z[i])) * exp(mu*(H-z[i]));
+      U[i] = omega * I3[i];
+    } else { // surface value above ice surface; matches numerical way
+      I3[i] = p3(mu*H) * exp(mu*H) - p3(0.0);  // z[i] = H case in above
+      U[i] = omega * I3[i];
+    }
   }
 
   /* compute strain heating */
   for (i=0; i<Mz; i++) {
-    Sigmu = -(Q*(nu+z[i])) / (Rgas*Ts*(nu+H));
-    Sig[i] = (Uconst*g/cpheat) * exp(Sigmu) * pow( fabs(Hr)*( H -z[i]) ,n+1);
+    if (z[i] < H) {
+      Sigmu = -(Q*(nu+z[i])) / (Rgas*Ts*(nu+H));
+      Sig[i] = (Uconst*g/cpheat) * exp(Sigmu) * pow( fabs(Hr)*( H -z[i]) ,n+1);
+    } else {
+      Sig[i] = 0.0;
+    }
   }
 
   /* compute vertical velocity */
@@ -161,12 +176,16 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   /* compute compensatory heating */
   nut = Ht/nusqrt;
   for (i=0; i<Mz; i++) {
-    dTt = Ts * ((nut+Ht)*(nu+z[i])-(nu+H)*nut) * pow(nu+z[i],-2.0);
-    Tr = Tsr*(nu+H)/(nu+z[i])
-      + Ts * ((nur+Hr)*(nu+z[i])-(nu+H)*nur) * pow(nu+z[i],-2.0);
-    Tz = -Ts * (nu+H) * pow(nu+z[i],-2.0);
-    Tzz = 2.0 * Ts * (nu+H) * pow(nu+z[i],-3.0);
-    Sigc[i] = dTt + U[i]*Tr + w[i]*Tz - Kcond*Tzz - Sig[i];
+    if (z[i] < H) {
+      dTt = Ts * ((nut+Ht)*(nu+z[i])-(nu+H)*nut) * pow(nu+z[i],-2.0);
+      Tr = Tsr*(nu+H)/(nu+z[i])
+        + Ts * ((nur+Hr)*(nu+z[i])-(nu+H)*nur) * pow(nu+z[i],-2.0);
+      Tz = -Ts * (nu+H) * pow(nu+z[i],-2.0);
+      Tzz = 2.0 * Ts * (nu+H) * pow(nu+z[i],-3.0);
+      Sigc[i] = dTt + U[i]*Tr + w[i]*Tz - Kcond*Tzz - Sig[i];
+    } else {
+      Sigc[i] = 0.0;
+    }
   }
 
   /* return duplicate copies to avoid conflicts */
@@ -180,3 +199,4 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   free(I3); free(U); free(w); free(Sig);
   return 0;
 }
+
