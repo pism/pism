@@ -441,6 +441,7 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
 /*! \page pismreferences References
 
 \latexonly
+\small
 
 \begin{thebibliography}{10}
 
@@ -544,6 +545,10 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
 {\sc C.~Schoof}, {\em A variational approach to ice stream flow}, J. Fluid
   Mech., 556 (2006), pp.~227--251.
 
+\bibitem{Strikwerda}
+{\sc J.~C. Strikwerda}, {\em Finite {D}ifference {S}chemes and {P}artial
+  {D}ifferential {E}quations}, Wadsworth, Pacific Grove, California, 1989.
+
 \bibitem{Trefethen}
 {\sc L.~N. Trefethen}, {\em Spectral {M}ethods in {MATLAB}}, SIAM Press,
   2000.
@@ -554,6 +559,8 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
 
 \end{thebibliography}
 
+\normalsize
+\newpage
 \endlatexonly
 
  */
