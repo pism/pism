@@ -1,0 +1,33 @@
+\documentclass[10pt,final]{amsart}
+\addtolength\textheight{0.75in}
+\addtolength{\oddsidemargin}{-.65in}
+\addtolength{\evensidemargin}{-.65in}
+\addtolength{\textwidth}{1.0in}
+
+\usepackage{xspace}
+
+
+\title{Complete Bibliography for Manuals in PISM}
+
+\author{Ed Bueler}
+
+\date{\today}
+
+\begin{document}
+
+\begin{abstract}
+One purpose of this trivial document is to display the full contents of the 
+bibliography file \texttt{ice\_bib.bib}.  Doing so also generates \texttt{fullbib.bbl}, 
+which is useful when grabbing bibliography items for the \emph{Reference Manual}, 
+for example.  This document cites everything: \cite{*}.
+\end{abstract}
+
+\maketitle
+
+\bigskip
+
+\bibliography{ice_bib}
+\bibliographystyle{siam}
+
+\end{document}
+

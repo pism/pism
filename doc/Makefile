@@ -1,8 +1,11 @@
-ALL : manual.pdf doxydocs
+ALL : userman summary refman browser
 
-PISMREV ?= 205
-
-doxydocs : refman browser
+userman : manual.tex ice_bib.bib figs/*.png
+	pdflatex manual.tex
+	bibtex manual
+	makeindex -l manual
+	pdflatex manual.tex
+	pdflatex manual.tex
 
 refman : Doxyfile_tex
 	doxygen Doxyfile_tex
@@ -11,6 +14,23 @@ refman : Doxyfile_tex
 
 browser : Doxyfile_html
 	doxygen Doxyfile_html
+
+summary : pism_summary.tex
+	pdflatex pism_summary
+	bibtex pism_summary
+	pdflatex pism_summary
+	pdflatex pism_summary
+
+fullbib : fullbib.tex
+	pdflatex fullbib
+	bibtex fullbib
+	pdflatex fullbib
+	pdflatex fullbib
+
+
+# this variable is the revision stamp for verification results figures which appear
+#   in the users manual; it is generally not the current trunk revision
+PISMREV ?= 205
 
 vfigs : vfnow.txt
 	# producing figures thickerrs_B.png, thickerrs_G.png, temperrs_G.png, surfvelerrs_G.png, 
@@ -44,13 +64,11 @@ vfigs : vfnow.txt
 	   -sOutputFile=figs/temperrs_K.png figs/temperrs_K.eps
 	rm figs/temperrs_K.eps
 
-manual.pdf : manual.tex figs/*.png
-	pdflatex manual.tex
-	bibtex manual
-	makeindex -l manual
-	pdflatex manual.tex
-	pdflatex manual.tex
 
 clean :
-	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.log manual.out manual.ps manual.toc
+	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.ind manual.ilg \
+	      manual.log manual.out manual.ps manual.toc
+	rm -f fullbib.aux fullbib.log fullbib.blg fullbib.bbl
+	rm -f pism_summary.aux pism_summary.log pism_summary.blg pism_summary.bbl pism_summary.out
+	
 
