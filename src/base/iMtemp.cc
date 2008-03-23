@@ -22,18 +22,6 @@
 
 
 //! Manage the time-stepping and parallel communication for the temperature and age equations.
-/*! 
-Note that both the temperature equation and the age equation involve advection 
-and have a CFL condition (Morton & Mayers 1994).  By being slightly conservative 
-we use the same CFL condition for both (see Bueler and others (2007), "Exact 
-solutions ... thermomechanically-coupled ...,"  J. Glaciol.).
-
-We also report any CFL violations.  In the equally-spaced vertical grid case these can 
-\em only occur when using the <tt>-tempskip</tt> option.  In the non-equally spaced 
-vertical grid case
-they occur even with regular time-stepping, but in a percentage-wise sense they are very 
-rare.
- */
 PetscErrorCode IceModel::temperatureAgeStep() {
   // update temp and age fields
   PetscErrorCode  ierr;
@@ -42,8 +30,7 @@ PetscErrorCode IceModel::temperatureAgeStep() {
                myVertSacrCount = 0.0;  // because that type works with PetscGlobalSum()
 
   // do CFL and vertical grid blow-out checking only in ageStep()
-//  ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
-  ierr = NEWageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
+  ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
     
   ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  // puts vTnew in vWork3d[0]
 
@@ -66,7 +53,67 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 }
 
 
-// documentation for temperatureStep() is in pism/src/base/comments.hh
+//! Takes a semi-implicit time-step for the temperature equation.
+/*!
+In summary, the conservation of energy equation is
+    \f[ \rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f] 
+where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
+of the full three-dimensional conservation of energy.  Note \f$dT/dt\f$ stands for the material
+derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
+\f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
+strain heating.
+
+Note that both the temperature equation and the age equation involve advection.
+We handle the horizontal advection explicitly by first-order upwinding.  We handle the
+vertical advection implicitly by centered differencing when possible, and a retreat to
+implicit first-order upwinding when necessary.  There is a CFL condition
+for the horizontal explicit upwinding \lo\cite{MortonMayers}\elo.  We report any CFL violations,
+but they are designed to not occur.
+
+The vertical conduction term is also handled implicitly (i.e. by backward Euler).
+
+We work from the bottom 
+of the column upward in building the system to solve (in the semi-implicit time-stepping scheme).
+The excess energy above pressure melting is converted to melt-water, and that a fraction 
+of this melt water is transported to the base according to the scheme in excessToFromBasalMeltLayer().
+
+The method uses equally-spaced calculation but the methods getValColumn(), setValColumn() interpolate 
+back and forth from this equally-spaced calculational grid to the (usually) non-equally space storage 
+grid.
+
+In this procedure four scalar fields are modified: vHmelt, vbasalMeltRate, Tb3, and Tnew3.
+But vHmelt, vbasalMeltRate and Tb3 will never need to communicate ghosted values (i.e. horizontal 
+stencil neighbors.  The ghosted values for T3 are updated from the values in Tnew3 in the
+communication done by temperatureAgeStep().
+ 
+Here is a more complete discussion and derivation.
+
+Consider a column of a slowly flowing and heat conducting material as shown in the left side 
+of the next figure.  (The left side shows a general column of flowing and heat conduction 
+material showing a small segment \f$V\f$.  The right side shows a more specific column of ice 
+flowing and sliding over bedrock.)  This is an \em Eulerian view so the material flows through 
+a column which remains fixed (and is notional).  The column is vertical.  We will 
+assume when needed that it is rectangular in cross-section with cross-sectional area 
+\f$\Delta x\Delta y\f$.
+
+\image latex earlycols.png "Left: a general column of material.  Right: ice over bedrock." width=3in
+
+[FIXME: CONTINUE TO MINE eqns3D.tex FOR MORE]
+
+The application of the geothermal flux at the base of a column is a special case for which 
+we give a finite difference argument.  This scheme follows the equation (2.114) in 
+\lo\cite{MortonMayers}\elo.  We have the boundary condition
+	\f[  -k \frac{\partial T}{\partial z} = G(t,x,y) \f]
+where \f$G(t,x,y)\f$ is the applied geothermal flux, and it is applied at level \f$z=-B_0\f$ 
+in the bedrock (which is the only case considered here).  We <em> add a virtual lower grid 
+point </em> \f$z_{-1} = z_0 - \Delta  z\f$ and we approximate the above boundary condition 
+at \f$z_0\f$ by the centered-difference
+	\f[  -k \frac{T_{1} - T_{-1}}{2 \Delta z} = G. \f]
+Here \f$T_k = T_{ijk}^{l+1}\f$.  We also apply the discretized conduction equation 
+at \f$z_0\f$.  These two combined equations yield a simplified form
+	\f[(1 + 2 KR) T_0 - 2 K T_1 = T_0 + \frac{2\Delta t}{\rho c_p \Delta z} G \f]
+where \f$K = k \Delta t (\rho c \Delta z^2)^{-1}\f$.
+ */
 PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   PetscErrorCode  ierr;
 
@@ -509,135 +556,6 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 }                           
 
 
-//! Take an explicit time-step for the age equation.  Also check the CFL for advection.
-/*!
-The age equation is\f$d\tau/dt = 1\f$, that is,
-    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
-        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
-velocity field.  This equation is hyperbolic (purely advective).  
-The boundary condition is that when the ice fell as snow it had age zero.  
-That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
-boundary condition elsewhere (as the characteristics go outward elsewhere).
-
-At this point the case where ice freezes on at the base, either grounded basal ice
-or marine basal ice, is \e not handled correctly.
-
-By default, when computing the grain size for the Goldsby-Kohlstedt flow law, the age 
-\f$\tau\f$ is not used.  Instead a pseudo age is computed by updateGrainSizeNow().  
-If you want the age computed by this routine to be used for the grain size estimation, 
-from the Vostok core relation as in grainSizeVostok(), add option 
-<tt>-real_age_grainsize</tt>.
-
-The numerical method is first-order upwind.
-
-We use equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
-methods getValColumn() and setValColumn() interpolate back and forth between the grid 
-on which calculation is done and the storage grid.  Thus the storage grid can be not 
-equally spaced.
-
-As a technicality, note that ageStep() should use equally-spaced calculations 
-whenever temperatureStep() does, because the CFL condition checked here is 
-supposed to apply to both.
- */
-PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
-  PetscErrorCode  ierr;
-
-  PetscInt    Mz, dummyM;
-  PetscScalar dzEQ, dummydz, *zlevEQ, *dummylev;
-  ierr = getMzMbzForTempAge(Mz, dummyM); CHKERRQ(ierr);
-  zlevEQ = new PetscScalar[Mz];
-  dummylev = new PetscScalar[dummyM];
-  ierr = getVertLevsForTempAge(Mz, dummyM, dzEQ, dummydz, zlevEQ, dummylev); CHKERRQ(ierr);
-
-  const PetscScalar   dx = grid.dx, 
-                      dy = grid.dy;
-  const PetscScalar   cflx = dx / dtTempAge, 
-                      cfly = dy / dtTempAge,
-                      cflz = dzEQ / dtTempAge;
-
-  PetscScalar **H, *tau, *u, *v, *w, *taunew;
-
-  tau = new PetscScalar[Mz];
-  u = new PetscScalar[Mz];
-  v = new PetscScalar[Mz];
-  w = new PetscScalar[Mz];
-  taunew = new PetscScalar[Mz];
-  
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = taunew3.needAccessToVals(); CHKERRQ(ierr);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // this should *not* be replaced by call to grid.kBelowHeightEQ():
-      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
-      if (ks > Mz-1) {
-        SETERRQ3(1,
-           "ageStep() ERROR: ks = %d too high in ice column; "
-           "H[i][j] = %5.4f exceeds Lz = %5.4f\n",
-           ks, H[i][j], grid.Lz);
-      }
-    
-      // only effect of this is whether vertical velocities are used in advection
-      const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
-                                             H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
-
-      ierr = tau3.getValColumnQUAD(i,j,Mz,zlevEQ,tau); CHKERRQ(ierr);
-      ierr = u3.getValColumnQUAD(i,j,Mz,zlevEQ,u); CHKERRQ(ierr);
-      ierr = v3.getValColumnQUAD(i,j,Mz,zlevEQ,v); CHKERRQ(ierr);
-      ierr = w3.getValColumnQUAD(i,j,Mz,zlevEQ,w); CHKERRQ(ierr);
-      for (PetscInt k=0; k<ks; k++) {
-        // age evolution is pure advection (so provides check on temp calculation)
-        // check CFL conditions at each point, then upwind for age
-        if (PetscAbs(u[k]) > cflx)  *CFLviol += 1.0;
-        if (PetscAbs(v[k]) > cfly)  *CFLviol += 1.0;
-        
-        // note ss.ij = tau[k]
-        planeStar ss;
-        const PetscScalar zk = zlevEQ[k];
-        ierr = tau3.getPlaneStarZ(i,j,zk,&ss);
-
-        // do lowest-order upwinding
-        PetscScalar     rtau;
-        rtau =  (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx
-                           : u[k] * (ss.ij  - ss.im1) / dx;
-        rtau += (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy
-                           : v[k] * (ss.ij  - ss.jm1) / dy;
-        // if marginal, or if at top of grid, or if w upward at k=0, then ignor 
-        //   contribution to age
-        if ( (!isMarginal) && (k != Mz-1) && ((k > 0) || (w[k] < 0))) {
-          if (PetscAbs(w[k]) > cflz)  *CFLviol += 1.0;
-          rtau += (w[k] < 0) ? w[k] * (tau[k+1] - tau[k]) / dzEQ  
-                             : w[k] * (tau[k] - tau[k-1]) / dzEQ;
-        }
-        taunew[k] = tau[k] + dtTempAge * (1.0 - rtau);
-      }      
-      for (PetscInt k=ks; k<Mz; k++) {
-        taunew[k] = 0.0;  // age of ice above (and at) surface is zero years
-      }
-      
-      ierr = taunew3.setValColumnPL(i,j,Mz,zlevEQ,taunew); CHKERRQ(ierr);
-    }
-  }
-
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = tau3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = u3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = w3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = taunew3.doneAccessToVals();  CHKERRQ(ierr);
-
-  delete [] tau;  delete [] u;  delete [] v;  delete [] w;  delete [] taunew;  
-  delete [] zlevEQ;  delete [] dummylev;
-
-  return 0;
-}
-
-
 //! Take a semi-implicit time-step for the age equation.  Also check the horizontal CFL for advection.
 /*!
 The age equation is\f$d\tau/dt = 1\f$, that is,
@@ -668,7 +586,7 @@ methods getValColumn() and setValColumn() interpolate back and forth between the
 on which calculation is done and the storage grid.  Thus the storage grid can be either 
 equally spaced or not.
  */
-PetscErrorCode IceModel::NEWageStep(PetscScalar* CFLviol) {
+PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   PetscErrorCode  ierr;
 
   PetscInt    Mz, dummyM;

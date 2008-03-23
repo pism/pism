@@ -26,11 +26,11 @@
 There are two methods for computing the surface gradient.  
 
 The default is to directly differentiate the surface elevation \f$h\f$ by the
-(Mahaffy 1976) method.
+Mahaffy method \lo\cite{Mahaffy}\elo.
 
 An option is to transform the thickness to something more regular and differentiate that.  
 We get back to the gradient of the surface by applying the chain rule.  In particular, as shown 
-in (Calvo et al 2002) for the flat bed and \f$n=3\f$ case, if we define
+in \lo\cite{CDDSV}\elo for the flat bed and \f$n=3\f$ case, if we define
 	\f[\eta = H^{(2n+2)/n}\f]
 then \f$\eta\f$ is more regular near the margin than \f$H\f$.  So we compute
 the surface gradient by
@@ -40,7 +40,7 @@ otherwise \f$\nabla h = \nabla b\f$.
 
 In this optional method we are computing the gradient by finite differences onto 
 a staggered grid.  So we apply centered differences using (roughly) the same method for \f$\eta\f$ and 
-\f$b\f$ that (Mahaffy 1976) applies directly to the surface elevation \f$h\f$.
+\f$b\f$ that \lo\cite{Mahaffy}\elo applies directly to the surface elevation \f$h\f$.
 
 The optional method is chosen by option <tt>-grad_from_eta</tt>.
  */

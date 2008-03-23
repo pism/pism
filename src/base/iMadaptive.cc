@@ -210,7 +210,8 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
-    const PetscScalar  conservativeFactor = 0.8;
+//    const PetscScalar  conservativeFactor = 0.8;
+    const PetscScalar  conservativeFactor = 0.95;
     // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
     tempskipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
     tempskipCountDown = (tempskipCountDown > tempskipMax) ? tempskipMax : tempskipCountDown;

@@ -602,9 +602,7 @@ PetscErrorCode IceModel::massBalExplicitStep() {
 
 //! Do the time-stepping for an evolution run.
 /*! 
-This important routine can be replaced by derived classes; it is \c virtual.
-
-This procedure has the main time-stepping loop.  The following actions are taken on each pass 
+This procedure is the main time-stepping loop.  The following actions are taken on each pass 
 through the loop:
 \li the yield stress for the plastic till model is updated (if appropriate)
 \li the positive degree day model is invoked to compute the surface mass balance (if appropriate)
@@ -678,10 +676,9 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
 #endif
 
-    // always do vertically-average velocity calculation; only update velocities at depth if
+    // always do vertically-averaged velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
     bool updateAtDepth = (tempskipCountDown == 0);
-    ierr = verbPrintf(2,grid.com, doPlasticTill ? "p" : "$" ); CHKERRQ(ierr);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
     
@@ -691,7 +688,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     dtTempAge += dt;
     grid.year += dt / secpera;  // adopt it
     // IceModel::dt,dtTempAge,grid.year are now set correctly according to
-    //    mass-continuity-eqn-diffusivity criteria, CFL criteria, and other 
+    //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and other 
     //    criteria from derived class additionalAtStartTimestep(), and from 
     //    "-tempskip" mechanism
 
@@ -718,7 +715,8 @@ PetscLogEventEnd(tempEVENT,0,0,0,0);
 PetscLogEventBegin(pddEVENT,0,0,0,0);
 #endif
 
-    // compute PDD; generates surface mass balance, with appropriate ablation area, using snow accumulation
+    // compute PDD; generates surface mass balance, with appropriate ablation area,
+    //   using snow accumulation
     if (doPDD == PETSC_TRUE) {
       ierr = updateSurfaceBalanceFromPDD();  CHKERRQ(ierr);
       ierr = verbPrintf(2,grid.com, "d"); CHKERRQ(ierr);
@@ -732,10 +730,8 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
 #endif
 
     if (doMassConserve == PETSC_TRUE) {
-      // update H
-      ierr = massBalExplicitStep(); CHKERRQ(ierr);
-      // update h and mask
-      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+      ierr = massBalExplicitStep(); CHKERRQ(ierr); // update H
+      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
       if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
         tempskipCountDown--;
       ierr = verbPrintf(2,grid.com, "h"); CHKERRQ(ierr);
@@ -759,7 +755,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     if (endOfTimeStepHook() != 0) break;
   }
   
-  ierr = forcingCleanup(); CHKERRQ(ierr);
+  ierr = forcingCleanup(); CHKERRQ(ierr);  // puts back bed and Ts (removes offsets)
 
   return 0;
 }
