@@ -94,17 +94,23 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
 Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
 Then sets \c CFLmaxdt, the maximum time step allowed under the 
 Courant-Friedrichs-Lewy (CFL) condition on the 
-advection scheme for age and for temperature.
+horizontal advection scheme for age and for temperature.
+
+Under BOMBPROOF there is no CFL condition for the vertical advection.
+The maximum vertical velocity is computed but it does not affect
+\c CFLmaxdt.
  */
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
   PetscScalar **H, *u, *v, *w;
   PetscScalar locCFLmaxdt = maxdt;
 
+/*
   // compute dzEQ which will be used inside temperatureStep() and ageStep()
   PetscInt    Mz_for_dzEQ, dummyM;
   ierr = getMzMbzForTempAge(Mz_for_dzEQ,dummyM); CHKERRQ(ierr);
   const PetscScalar dzEQ = grid.Lz / ((PetscScalar) (Mz_for_dzEQ - 1));
+*/
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
@@ -116,26 +122,31 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt      ks = grid.kBelowHeight(H[i][j]);
+/*
       const bool isMarginal = checkThinNeigh(
              H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
+*/
       ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
       ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
       for (PetscInt k=0; k<ks; ++k) {
-        const PetscScalar au = PetscAbs(u[k]);
-        const PetscScalar av = PetscAbs(v[k]);
-        maxu = PetscMax(maxu,au);
-        maxv = PetscMax(maxv,av);
+        const PetscScalar absu = PetscAbs(u[k]),
+                          absv = PetscAbs(v[k]);
+        maxu = PetscMax(maxu,absu);
+        maxv = PetscMax(maxv,absv);
         // make sure the denominator below is positive:
         PetscScalar tempdenom = (0.001/secpera) / (grid.dx + grid.dy);  
-        tempdenom += PetscAbs(au/grid.dx) + PetscAbs(av/grid.dy);
+        tempdenom += PetscAbs(absu/grid.dx) + PetscAbs(absv/grid.dy);
+/*
         if (!isMarginal) {
-          const PetscScalar aw = PetscAbs(w[k]);
-          maxw = PetscMax(maxw,aw);
-          tempdenom += PetscAbs(aw / dzEQ);
+          const PetscScalar absw = PetscAbs(w[k]);
+          maxw = PetscMax(maxw,absw);
+          tempdenom += PetscAbs(absw / dzEQ);
         }
+*/
         locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
+        maxw = PetscMax(maxw, PetscAbs(w[k]));        
       }
     }
   }
@@ -272,6 +283,4 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   }    
   return 0;
 }
-
-
 

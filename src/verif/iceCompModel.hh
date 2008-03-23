@@ -77,7 +77,7 @@ protected:
   PetscErrorCode fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
 
   // related to tests F G; see iCMthermo.cc
-  virtual PetscErrorCode temperatureStep();
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount);
   PetscErrorCode initTestFG();
   PetscErrorCode getCompSourcesTestFG();
   PetscErrorCode fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE

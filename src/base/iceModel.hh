@@ -343,8 +343,7 @@ protected:
 
   // see iMtemp.cc
   PetscErrorCode temperatureAgeStep();
-  virtual PetscErrorCode temperatureStep();
-  virtual PetscErrorCode NEWtemperatureStep();
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount);
   PetscErrorCode ageStep(PetscScalar* CFLviol);
   PetscErrorCode NEWageStep(PetscScalar* CFLviol);
   PetscErrorCode solveTridiagonalSystem(

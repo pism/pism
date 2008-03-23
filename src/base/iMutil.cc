@@ -288,7 +288,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   ierr = stampHistory(startstr); CHKERRQ(ierr);
   
 //  strncpy(cmdstr, argv[0], sizeof(str)); // Does not null terminate on overflow
-  strcpy(cmdstr, "cmd:  ");
+  strcpy(cmdstr, " ");
   strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
   cmdstr[sizeof(cmdstr) - 1] = '\0';
   for (PetscInt i=1; i < argc; i++) {

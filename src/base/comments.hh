@@ -500,8 +500,8 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
 {\sc P.~Huybrechts}, {\em Report of the {T}hird {EISMINT} {W}orkshop on {M}odel
   {I}ntercomparison}.
 \newblock
-  \texttt{http://homepages.vub.ac.be/~phuybrec/pdf/EISMINT3.Huyb.1998.pdf}; 120
-  p., 1998.
+  \href{http://homepages.vub.ac.be/~phuybrec/pdf/EISMINT3.Huyb.1998.pdf}{homep%
+ages.vub.ac.be/$\sim$phuybrec/pdf/EISMINT3.Huyb.1998.pdf}; 120 pages, 1998.
 
 \bibitem{LingleClark}
 {\sc C.~S. Lingle and J.~A. Clark}, {\em A numerical model of interactions
@@ -534,8 +534,9 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
 \bibitem{RitzEISMINT}
 {\sc C.~Ritz}, {\em {EISMINT} {I}ntercomparison {E}xperiment: {C}omparison of
   existing {G}reenland models}.
-\newblock \texttt{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html},
-  1997.
+\newblock
+  \href{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}{homepages%
+.vub.ac.be/$\sim$phuybrec/eismint/greenland.html}, 1997.
   
 \bibitem{Saad}
 {\sc Y. Saad}, {\em Iterative {M}ethods for {S}parse {L}inear {S}ystems}, SIAM Press,

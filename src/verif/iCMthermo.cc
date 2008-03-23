@@ -22,15 +22,15 @@
 #include "exactTestK.h" 
 #include "iceCompModel.hh"
 
-PetscErrorCode IceCompModel::temperatureStep() {
+PetscErrorCode IceCompModel::temperatureStep(PetscScalar* vertSacrCount) {
   PetscErrorCode  ierr;
 
   if ((testname == 'F') || (testname == 'G')) {
     ierr = VecAXPY(Sigma3.v, 1.0, SigmaComp3.v); CHKERRQ(ierr);   // Sigma = Sigma + Sigma_c
-    ierr = IceModel::temperatureStep(); CHKERRQ(ierr);
+    ierr = IceModel::temperatureStep(vertSacrCount); CHKERRQ(ierr);
     ierr = VecAXPY(Sigma3.v, -1.0, SigmaComp3.v); CHKERRQ(ierr);  // Sigma = Sigma - Sigma_c
   } else {
-    ierr = IceModel::temperatureStep(); CHKERRQ(ierr);
+    ierr = IceModel::temperatureStep(vertSacrCount); CHKERRQ(ierr);
   }
   return 0;
 }
