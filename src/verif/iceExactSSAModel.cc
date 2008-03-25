@@ -85,7 +85,8 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   // do rest of base class initialization before final initialization for I and J (below)
   initialized_p = PETSC_TRUE;
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);  // in preparation for rescale_and_set_zlevels() below
+  // in preparation for rescale_and_set_zlevels() below:
+  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);  
 
   switch (test) {
     case 'I': {
@@ -94,7 +95,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       //    problems when x dimension Lx is significantly smaller than y dimension Ly
       // note we assume Mx,My have been set by options, but not others
       const PetscScalar testI_Ly = 120.0e3,
-                        testI_Lx = PetscMax(60.0e3, ((grid.Mx - 1) / 2) * (2.0 * testI_Ly / (grid.My - 1)) );
+        testI_Lx = PetscMax(60.0e3, ((grid.Mx - 1) / 2) * (2.0 * testI_Ly / (grid.My - 1)) );
       ierr = grid.rescale_and_set_zlevels(testI_Lx, testI_Ly, 3000.0); CHKERRQ(ierr);
       // fill vtauc with values for Schoof solution:
       ierr = taucSetI(); CHKERRQ(ierr);
@@ -269,6 +270,10 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
               gmaxuerr = 0.0, gmaxverr = 0.0;
   PetscScalar **u, **v;
 
+  if (doPseudoPlasticTill == PETSC_TRUE) {
+    ierr = verbPrintf(1,grid.com, 
+          "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
+  }
   ierr = verbPrintf(1,grid.com, 
           "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
 
@@ -332,7 +337,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
     ierr = verbPrintf(1,grid.com, 
             "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
             gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
-            gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, gavverr*secpera); CHKERRQ(ierr);
+            gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, 
+            gavverr*secpera); CHKERRQ(ierr);
   }
 
 

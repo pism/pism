@@ -103,6 +103,9 @@ const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see
 // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
 // appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
 const PetscScalar DEFAULT_PLASTIC_REGULARIZATION = 0.01 / secpera;
+const PetscTruth  DEFAULT_DO_PSEUDO_PLASTIC_TILL = PETSC_FALSE;
+const PetscScalar DEFAULT_PSEUDO_PLASTIC_Q = 0.25;  // see PlasticBasalType
+const PetscScalar DEFAULT_PSEUDO_PLASTIC_UTHRESHOLD = 100 / secpera; // 100 m/a
 const PetscScalar DEFAULT_REGULARIZING_VELOCITY_SCHOOF = 1.0 / secpera;  // 1 m/a is small vel for stream/shelf
 const PetscScalar DEFAULT_REGULARIZING_LENGTH_SCHOOF = 1000.0e3;         // 1000km is largish for dim of stream/shelf
 const PetscScalar DEFAULT_SSA_RELATIVE_CONVERGENCE = 1.0e-4;
@@ -166,6 +169,7 @@ PetscErrorCode IceModel::setDefaults() {
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
   ssaIntervalYears = -1.0;  // i.e. the default is to do an update every time step
   doPlasticTill = DEFAULT_DO_PLASTIC_TILL;
+  doPseudoPlasticTill = DEFAULT_DO_PSEUDO_PLASTIC_TILL;
   doSuperpose = DEFAULT_DO_SUPERPOSE;
   pureSuperpose = DEFAULT_PURE_SUPERPOSE;
   ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;
@@ -189,6 +193,8 @@ PetscErrorCode IceModel::setDefaults() {
   plastic_till_mu = tan((pi/180.0)*DEFAULT_TILL_PHI);
   plasticRegularization = DEFAULT_PLASTIC_REGULARIZATION;
   tauc_default_value = DEFAULT_TAUC;
+  pseudo_plastic_q = DEFAULT_PSEUDO_PLASTIC_Q;
+  pseudo_plastic_uthreshold = DEFAULT_PSEUDO_PLASTIC_UTHRESHOLD;
   holdTillYieldStress = PETSC_FALSE;
   useConstantTillPhi = PETSC_TRUE;
   Hmelt_max = DEFAULT_MAX_HMELT;

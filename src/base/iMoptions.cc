@@ -37,11 +37,13 @@ PetscErrorCode  IceModel::setFromOptions() {
   PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
               mytransformForSurfaceGradient, myincludeBMRinContinuity, lowtempSet,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
+              pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
               mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet, maxlowtempsSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet;
   PetscTruth  noMassConserve, noTemp; 
   PetscScalar my_maxdt, myssaDt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
-              myplastic_till_c_0, myplastic_phi, myPlasticRegularization;
+              myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
+              mypseudo_plastic_q, mypseudo_plastic_uthreshold;
   PetscInt    my_Mx, my_My, my_Mz, my_Mbz, my_maxlowtemps;
 
   // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
@@ -239,6 +241,28 @@ PetscErrorCode  IceModel::setFromOptions() {
      &plasticphiSet);  CHKERRQ(ierr);
   if (plasticphiSet == PETSC_TRUE)
      plastic_till_mu = tan((pi/180.0) * myplastic_phi);
+
+  // use pseudo plastic instead of pure plastic; see iMbasal.cc
+  ierr = PetscOptionsHasName(PETSC_NULL, "-pseudo_plastic", &pseudoplasticSet);  CHKERRQ(ierr);
+  if (pseudoplasticSet == PETSC_TRUE) {
+     doPseudoPlasticTill = PETSC_TRUE;
+  }
+
+  // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pseudo_plastic_q", &mypseudo_plastic_q, 
+     &pseudoplasticqSet);  CHKERRQ(ierr);
+  if (pseudoplasticqSet == PETSC_TRUE) {
+     doPseudoPlasticTill = PETSC_TRUE;
+     pseudo_plastic_q = mypseudo_plastic_q;
+  }
+
+  // threshold; at this velocity tau_c is basal shear stress
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pseudo_plastic_uthreshold", 
+     &mypseudo_plastic_uthreshold, &pseudoplasticuthresholdSet);  CHKERRQ(ierr);
+  if (pseudoplasticuthresholdSet == PETSC_TRUE) {
+     doPseudoPlasticTill = PETSC_TRUE;
+     pseudo_plastic_uthreshold = mypseudo_plastic_uthreshold;
+  }
 
 // "-quadZ" read in determineSpacingTypeFromOptions()
 

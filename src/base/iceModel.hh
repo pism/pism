@@ -119,7 +119,7 @@ protected:
               ssaRelativeTolerance, ssaEpsilon, beta_default_drag_SSA;
   PetscInt    ssaMaxIterations;
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
-              tauc_default_value;
+              tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold;
   PetscScalar startYear, endYear, run_year_default, maxdt_temporary;
   PetscScalar ssaIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
   PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
@@ -136,7 +136,8 @@ protected:
   PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso, flowLawUsesGrainSize;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi;
-  PetscTruth  useSSAVelocity, doPlasticTill, doSuperpose, pureSuperpose, useConstantNuForSSA, 
+  PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
+              doSuperpose, pureSuperpose, useConstantNuForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
   PetscTruth  realAgeForGrainSize;

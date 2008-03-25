@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -68,7 +68,10 @@ PetscErrorCode IceModel::initBasalTillModel() {
   
   if (createBasal_done == PETSC_FALSE) {
     if (doPlasticTill == PETSC_TRUE) {
-      basal = new PlasticBasalType(plasticRegularization);
+//      basal = new PlasticBasalType(plasticRegularization, PETSC_FALSE, 0.0,
+//                                   100.0 / secpera);
+      basal = new PlasticBasalType(plasticRegularization, doPseudoPlasticTill, 
+                                   pseudo_plastic_q, pseudo_plastic_uthreshold);
     } else {
       basal = new ViscousBasalType;
     }
@@ -76,7 +79,8 @@ PetscErrorCode IceModel::initBasalTillModel() {
   }
 
   if (useSSAVelocity == PETSC_TRUE) {
-    ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
+//    ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
+    ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
   }
   ierr = VecSet(vtauc, tauc_default_value); CHKERRQ(ierr);
   ierr = VecSet(vbeta, beta_default_drag_SSA); CHKERRQ(ierr);

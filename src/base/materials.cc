@@ -396,22 +396,41 @@ PetscScalar ViscousBasalType::drag(PetscScalar coeff, PetscScalar tauc,
 
 
 
-PlasticBasalType::PlasticBasalType(const PetscScalar pReg) {
-  plastic_regularize = pReg;
+PlasticBasalType::PlasticBasalType(
+             const PetscScalar regularizationConstant, const PetscTruth pseudoPlastic,
+             const PetscScalar pseudoExponent, const PetscScalar pseudoUThreshold) {
+  plastic_regularize = regularizationConstant;
+  pseudo_plastic = pseudoPlastic;
+  pseudo_q = pseudoExponent;
+  pseudo_u_threshold = pseudoUThreshold;
 }
 
 
-PetscErrorCode PlasticBasalType::printInfo(const int thresh, MPI_Comm com) {
+PetscErrorCode PlasticBasalType::printInfo(const int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
-  ierr = verbPrintf(thresh, com, "Using plastic till with regularization %10.5e (m^2/s^2).\n",
-                    plastic_regularize * secpera); CHKERRQ(ierr);
+  if (pseudo_plastic == PETSC_TRUE) {
+    ierr = verbPrintf(verbthresh, com, 
+      "Using pseudo-plastic till with eps = %10.5e m/a, q = %.2f, and u_threshold = %.2f m/a.\n", 
+      plastic_regularize * secpera, pseudo_q, pseudo_u_threshold * secpera); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(verbthresh, com, 
+      "Using purely plastic till with eps = %10.5e m/a.\n",
+      plastic_regularize * secpera); CHKERRQ(ierr);
+  }
   return 0;
 }
 
     
 PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
                                    PetscScalar vx, PetscScalar vy) {
-  return tauc / sqrt(PetscSqr(plastic_regularize)
-                     + PetscSqr(vx) + PetscSqr(vy));
+  // basal shear stress term tau_b in force balance for ice
+  //   is minus the return value here times (vx,vy)
+  // purely plastic is the pseudo_q==0.0 case
+  const PetscScalar magreg = sqrt(PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy));
+  if (pseudo_plastic == PETSC_TRUE) {
+    return tauc / ( pow(magreg, 1.0 - pseudo_q) * pow(pseudo_u_threshold, pseudo_q) );
+  } else { // pure plastic, but regularized
+    return tauc / magreg;
+  }
 }
 

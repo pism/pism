@@ -46,7 +46,7 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   ierr = PetscGlobalSum(&myVertSacrCount, &VertSacrCount, grid.com); CHKERRQ(ierr);
   const PetscScalar bfsacrPRCNT = 100.0 * (VertSacrCount / (grid.Mx * grid.My));
   if (bfsacrPRCNT > 0.1) {
-    ierr = verbPrintf(2,grid.com," [BFsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
   }
 
   return 0;
@@ -63,6 +63,7 @@ derivative, so advection is included.  Here \f$\rho\f$ is the density of ice,
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
 strain heating.
 
+\latexonly\index{BOMBPROOF!implementation for temperature equation}\endlatexonly
 Note that both the temperature equation and the age equation involve advection.
 We handle the horizontal advection explicitly by first-order upwinding.  We handle the
 vertical advection implicitly by centered differencing when possible, and a retreat to
@@ -578,6 +579,7 @@ to be used for the grain size estimation,
 from the Vostok core relation as in grainSizeVostok(), add option 
 <tt>-real_age_grainsize</tt>.
 
+\latexonly\index{BOMBPROOF!implementation for age equation}\endlatexonly
 The numerical method is first-order upwind but the vertical advection term is computed
 implicitly.  Thus there is no CFL-type stability condition for that part.
 
