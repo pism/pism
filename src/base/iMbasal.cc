@@ -68,6 +68,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
   
   if (createBasal_done == PETSC_FALSE) {
     if (doPlasticTill == PETSC_TRUE) {
+//      basal = new PlasticBasalType(plasticRegularization);
 //      basal = new PlasticBasalType(plasticRegularization, PETSC_FALSE, 0.0,
 //                                   100.0 / secpera);
       basal = new PlasticBasalType(plasticRegularization, doPseudoPlasticTill, 

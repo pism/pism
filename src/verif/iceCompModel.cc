@@ -130,8 +130,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
   char inFile[PETSC_MAX_PATH_LEN];
 
   if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
-    ierr = verbPrintf(1,grid.com, "[IceCompModel WARNING: Test H should be run with option  ");
-    ierr = verbPrintf(1,grid.com, "-bed_def_iso  for the reported errors to be correct.]\n");
+    ierr = verbPrintf(1,grid.com, 
+           "[ IceCompModel WARNING: Test H should be run with option\n"
+           "  -bed_def_iso  for the reported errors to be correct.   ]\n");
     CHKERRQ(ierr);
   }
 
@@ -174,6 +175,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
         ierr = grid.rescale_and_set_zlevels(800e3, 800e3, 4000); CHKERRQ(ierr);
         break;
       case 'B':
+      case 'H':
         // use 2400km by 2400km by 4000m rectangular domain
         ierr = grid.rescale_and_set_zlevels(1200e3, 1200e3, 4000); CHKERRQ(ierr);
         break;
@@ -188,10 +190,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
         // use 1800km by 1800km by 4000m rectangular domain
         ierr = grid.rescale_and_set_zlevels(900e3, 900e3, 4000); CHKERRQ(ierr);
         break;
-      case 'H':
-        // use 1500km by 1500km by 4000m rectangular domain
-        ierr = grid.rescale_and_set_zlevels(1500e3, 1500e3, 4000); CHKERRQ(ierr);
-        break;
+//      case 'H':  // MOVED TO ABOVE WITH B
+//        // use 1500km by 1500km by 4000m rectangular domain
+//        ierr = grid.rescale_and_set_zlevels(1500e3, 1500e3, 4000); CHKERRQ(ierr);
       case 'K':
         // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
         ierr = grid.rescale_and_set_zlevels(1000e3, 1000e3, 4000, PETSC_TRUE); CHKERRQ(ierr);
@@ -777,146 +778,6 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
 }
 
 
-PetscErrorCode IceCompModel::summaryPrintLine(
-    const PetscTruth printPrototype, const PetscTruth tempAndAge,
-    const PetscScalar year, const PetscScalar dt, 
-    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
-
-  PetscErrorCode ierr;
-  if (printPrototype == PETSC_TRUE) {
-    if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
-      ierr = verbPrintf(2,grid.com,
-               "P         YEAR:      ivol    iarea meltfABS    thick0     temp0\n");
-      ierr = verbPrintf(2,grid.com,
-               "U        years  10^6_km^3 10^6_km^2  (none)         m         K\n");
-    } else {
-      ierr = verbPrintf(2,grid.com,
-               "P         YEAR:      ivol    iarea    thick0\n");
-      ierr = verbPrintf(2,grid.com,
-               "U        years  10^6_km^3 10^6_km^2        m\n");
-    }
-  } else {
-    if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
-      if (tempAndAge == PETSC_TRUE) {
-        ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f %8.4f %9.3f %9.4f\n",
-                       year, volume_kmcube/1.0e6,area_kmsquare/1.0e6,meltfrac,H0,T0); CHKERRQ(ierr);
-      } else {
-        ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f   <same> %9.3f    <same>\n",
-                       year, volume_kmcube/1.0e6,area_kmsquare/1.0e6,H0); CHKERRQ(ierr);
-      }
-    } else {
-        ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f %9.3f\n",
-           year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
-    }
-  }
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::reportErrors() {
-  // geometry errors to report (for all tests): 
-  //    -- max thickness error
-  //    -- average (at each grid point on whole grid) thickness error
-  //    -- dome thickness error
-  //    -- max (thickness)^(2n+2)/n error
-  //    -- volume error
-  //    -- area error
-  // and temperature errors (for tests F & G):
-  //    -- max T error over 3D domain of ice
-  //    -- av T error over 3D domain of ice
-  // and basal temperature errors (for tests F & G):
-  //    -- max basal temp error
-  //    -- average (at each grid point on whole grid) basal temp error
-  //    -- dome basal temp error
-  // and strain-heating (Sigma) errors (for tests F & G):
-  //    -- max Sigma error over 3D domain of ice (in 10^-3 K a^-1)
-  //    -- av Sigma error over 3D domain of ice (in 10^-3 K a^-1)
-  // and surface velocity errors (for tests F & G):
-  //    -- max |<us,vs> - <usex,vsex>| error
-  //    -- av |<us,vs> - <usex,vsex>| error
-  //    -- max ws error
-  //    -- av ws error
-  // and basal sliding errors (for test E):
-  //    -- max ub error
-  //    -- max vb error
-  //    -- max |<ub,vb> - <ubexact,vbexact>| error
-  //    -- av |<ub,vb> - <ubexact,vbexact>| error
-
-  PetscErrorCode  ierr;
-  ierr = verbPrintf(1,grid.com, "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n"); CHKERRQ(ierr);
-
-  // geometry (thickness, vol) errors if appropriate
-  if (testname != 'K') {
-    PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
-                maxetaerr, centerHerr;
-    ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
-                                 volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
-            CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-            "geometry  :    prcntVOL        maxH         avH   relmaxETA      centerH\n");
-            CHKERRQ(ierr);
-    const PetscScalar   m = (2.0 * tgaIce->exponent() + 2.0) / tgaIce->exponent();
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f%13.6f\n",
-                      100*volerr/volexact, maxHerr, avHerr,
-                      maxetaerr/pow(domeHexact,m), centerHerr); CHKERRQ(ierr);
-  }
-
-  // temperature errors if appropriate
-  if ((testname == 'F') || (testname == 'G')) {
-    PetscScalar maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr;
-    ierr = computeTemperatureErrors(maxTerr, avTerr); CHKERRQ(ierr);
-    ierr = computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-       "temp      :        maxT         avT    basemaxT     baseavT  basecenterT\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f%13.6f\n", 
-                  maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr); CHKERRQ(ierr);
-  } else if (testname == 'K') {
-    PetscScalar maxTerr, avTerr, maxTberr, avTberr;
-    ierr = computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-       "temp      :        maxT         avT       maxTb        avTb\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
-                  maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
-  }
-
-  // Sigma errors if appropriate
-  if ((testname == 'F') || (testname == 'G')) {
-    PetscScalar maxSigerr, avSigerr;
-    ierr = computeSigmaErrors(maxSigerr, avSigerr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-       "Sigma (3D):      maxSig       avSig\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
-                  maxSigerr*secpera*1.0e3, avSigerr*secpera*1.0e3); CHKERRQ(ierr);
-  }
-
-  // surface velocity errors if exact values are available
-  if ((testname == 'F') || (testname == 'G')) {
-    PetscScalar maxUerr, avUerr, maxWerr, avWerr;
-    ierr = computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-       "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
-                  maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
-  }
-
-  // basal velocity errors if appropriate
-  if (testname == 'E') {
-    PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
-    ierr = computeBasalVelocityErrors(exactmaxspeed,
-                          maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-       "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
-       CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
-                  maxvecerr*secpera, avvecerr*secpera, 
-                  (avvecerr/exactmaxspeed)*100.0,
-                  maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::additionalAtStartTimestep() {
   PetscErrorCode    ierr;
   
@@ -997,6 +858,149 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
       break;
   }
 
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::summaryPrintLine(
+    const PetscTruth printPrototype, const PetscTruth tempAndAge,
+    const PetscScalar year, const PetscScalar dt, 
+    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
+    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
+
+  PetscErrorCode ierr;
+  if (printPrototype == PETSC_TRUE) {
+    if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
+      ierr = verbPrintf(2,grid.com,
+               "P         YEAR:      ivol    iarea meltfABS    thick0     temp0\n");
+      ierr = verbPrintf(2,grid.com,
+               "U        years  10^6_km^3 10^6_km^2  (none)         m         K\n");
+    } else {
+      ierr = verbPrintf(2,grid.com,
+               "P         YEAR:      ivol    iarea    thick0\n");
+      ierr = verbPrintf(2,grid.com,
+               "U        years  10^6_km^3 10^6_km^2        m\n");
+    }
+  } else {
+    if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
+      if (tempAndAge == PETSC_TRUE) {
+        ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f %8.4f %9.3f %9.4f\n",
+                       year, volume_kmcube/1.0e6,area_kmsquare/1.0e6,meltfrac,H0,T0); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f   <same> %9.3f    <same>\n",
+                       year, volume_kmcube/1.0e6,area_kmsquare/1.0e6,H0); CHKERRQ(ierr);
+      }
+    } else {
+        ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f %9.3f\n",
+           year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
+    }
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::reportErrors() {
+  // geometry errors to report (for all tests): 
+  //    -- max thickness error
+  //    -- average (at each grid point on whole grid) thickness error
+  //    -- max (thickness)^(2n+2)/n error
+  //    -- volume error
+  //    -- area error
+  // and temperature errors (for tests F & G):
+  //    -- max T error over 3D domain of ice
+  //    -- av T error over 3D domain of ice
+  // and basal temperature errors (for tests F & G):
+  //    -- max basal temp error
+  //    -- average (at each grid point on whole grid) basal temp error
+  // and strain-heating (Sigma) errors (for tests F & G):
+  //    -- max Sigma error over 3D domain of ice (in 10^-3 K a^-1)
+  //    -- av Sigma error over 3D domain of ice (in 10^-3 K a^-1)
+  // and surface velocity errors (for tests F & G):
+  //    -- max |<us,vs> - <usex,vsex>| error
+  //    -- av |<us,vs> - <usex,vsex>| error
+  //    -- max ws error
+  //    -- av ws error
+  // and basal sliding errors (for test E):
+  //    -- max ub error
+  //    -- max vb error
+  //    -- max |<ub,vb> - <ubexact,vbexact>| error
+  //    -- av |<ub,vb> - <ubexact,vbexact>| error
+
+  PetscErrorCode  ierr;
+  ierr = verbPrintf(1,grid.com, 
+     "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
+     CHKERRQ(ierr);
+
+  // geometry (thickness, vol) errors if appropriate
+  if (testname != 'K') {
+    PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
+                maxetaerr, centerHerr;
+    ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
+                                 volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
+            CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+            "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");
+            CHKERRQ(ierr);  // no longer reporting centerHerr
+    const PetscScalar   m = (2.0 * tgaIce->exponent() + 2.0) / tgaIce->exponent();
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+                      100*volerr/volexact, maxHerr, avHerr,
+                      maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
+  }
+
+  // temperature errors if appropriate
+  if ((testname == 'F') || (testname == 'G')) {
+    PetscScalar maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr;
+    ierr = computeTemperatureErrors(maxTerr, avTerr); CHKERRQ(ierr);
+    ierr = computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr);
+       CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+       "temp      :        maxT         avT    basemaxT     baseavT\n");
+       CHKERRQ(ierr);  // no longer reporting   basecenterT
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+       maxTerr, avTerr, basemaxTerr, baseavTerr); CHKERRQ(ierr);
+  } else if (testname == 'K') {
+    PetscScalar maxTerr, avTerr, maxTberr, avTberr;
+    ierr = computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
+       CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+       "temp      :        maxT         avT       maxTb        avTb\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+                  maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
+  }
+
+  // Sigma errors if appropriate
+  if ((testname == 'F') || (testname == 'G')) {
+    PetscScalar maxSigerr, avSigerr;
+    ierr = computeSigmaErrors(maxSigerr, avSigerr); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+       "Sigma (3D):      maxSig       avSig\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
+                  maxSigerr*secpera*1.0e3, avSigerr*secpera*1.0e3); CHKERRQ(ierr);
+  }
+
+  // surface velocity errors if exact values are available
+  if ((testname == 'F') || (testname == 'G')) {
+    PetscScalar maxUerr, avUerr, maxWerr, avWerr;
+    ierr = computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+       "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+                  maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
+  }
+
+  // basal velocity errors if appropriate
+  if (testname == 'E') {
+    PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
+    ierr = computeBasalVelocityErrors(exactmaxspeed,
+                          maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+       "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
+       CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
+                  maxvecerr*secpera, avvecerr*secpera, 
+                  (avvecerr/exactmaxspeed)*100.0,
+                  maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
+  }
   return 0;
 }
 

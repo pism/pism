@@ -407,7 +407,8 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   adaptReasonFlag = ' '; // no reason for no timestep
   tempskipCountDown = 0;
 
-  if (exactOnly == PETSC_TRUE) { // just fill with exact solution
+  if (exactOnly == PETSC_TRUE) {
+    // just fill with exact solution, including exact 3D hor velocities
     ierr = fillFromExactSolution(); CHKERRQ(ierr);
   } else { // numerically solve ice shelf/stream equations
     PetscInt numiter;
@@ -415,13 +416,14 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
     if (test == 'I') {
       ierr = velocitySSA(&numiter); CHKERRQ(ierr);
     } else if (test == 'J') {
-      ierr = velocitySSA(vNuForJ,&numiter); CHKERRQ(ierr); // use locally allocated space for (computed) nu
+      // use locally allocated space for (computed) nu:
+      ierr = velocitySSA(vNuForJ,&numiter); CHKERRQ(ierr); 
       ierr = VecDestroyVecs(vNuForJ, 2); CHKERRQ(ierr); // immediately de-allocate
     }
+    // fill in 3D velocities (u,v,w)
+    ierr = broadcastSSAVelocity(true); CHKERRQ(ierr);
   }
 
-  // fill in 3D velocities (u,v,w)
-  ierr = broadcastSSAVelocity(true); CHKERRQ(ierr);
   // finally update w
   ierr = u3.beginGhostComm(); CHKERRQ(ierr);
   ierr = u3.endGhostComm(); CHKERRQ(ierr);

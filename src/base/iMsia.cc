@@ -204,8 +204,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) { // staggered point: o=0 is i+1/2, o=1 is j+1/2
-        const PetscInt     oi = 1-o, oj=o;  //  (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) { 
+        // staggered point: o=0 is i+1/2, o=1 is j+1/2,
+        //   (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt:
+        const PetscInt     oi = 1-o, oj=o;  
         const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
         const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
  
@@ -215,10 +217,12 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           if (flowLawUsesGrainSize == PETSC_TRUE) {
             ierr = w3.getInternalColumn(i,j,&wij); CHKERRQ(ierr);
             //future grainsize: use PetscTruth realAgeForGrainSize to determine what to call
-            ierr = computeGrainSize_PseudoAge(thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
+            ierr = computeGrainSize_PseudoAge(
+                       thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
           }
 
-          const PetscInt      ks = grid.kBelowHeight(thickness);  // does validity check for thickness
+          // does validity check for thickness:
+          const PetscInt      ks = grid.kBelowHeight(thickness);  
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
 
@@ -234,6 +238,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             //  note that the new method is O(dx) because gs[i+1/2,j] (for example) is approximated by
             //  gs[i][j]
             if (flowLawUsesGrainSize == PETSC_TRUE) {
+// BUG: as of 3/12/08 bug #11242, this did not work:
 //              delta[k] = (2 * pressure * enhancementFactor
 //                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
 //                          pressure, gsij[k]) );
@@ -254,7 +259,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
               I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
 //              K[k] = K[k-1] + 0.5 * dz * ((s-dz)*delta[k-1] + s*delta[k]);
-              K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1] + grid.zlevels[k] * delta[k]);
+              K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1]
+                                          + grid.zlevels[k] * delta[k]);
 //              J[k] = s * I[k] - K[k];
               J[k] = grid.zlevels[k] * I[k] - K[k];
             }
@@ -262,15 +268,15 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
-//            J[k] = k * (grid.zlevels[k] - grid.zlevels[k-1]) * I[ks]; // = J[ks];  SURELY WRONG!
-            J[k] = grid.zlevels[k] * I[ks]; //???
+            J[k] = grid.zlevels[k] * I[ks];
           }  
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
           const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
 
-          // vertically-averaged velocity; note uvbar[0][i][j] is  u  at right staggered
-          // point (i+1/2,j) but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
+          // vertically-averaged SIA-only velocity, sans sliding;
+          //   note uvbar[0][i][j] is  u  at right staggered point (i+1/2,j)
+          //   but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
           uvbar[o][i][j] = - Dfoffset * slope / thickness;
          
           ierr = Istag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,I); CHKERRQ(ierr);

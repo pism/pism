@@ -410,7 +410,7 @@ PetscErrorCode PlasticBasalType::printInfo(const int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   if (pseudo_plastic == PETSC_TRUE) {
     ierr = verbPrintf(verbthresh, com, 
-      "Using pseudo-plastic till with eps = %10.5e m/a, q = %.2f, and u_threshold = %.2f m/a.\n", 
+      "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f, and u_threshold = %.2f m/a.\n", 
       plastic_regularize * secpera, pseudo_q, pseudo_u_threshold * secpera); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(verbthresh, com, 

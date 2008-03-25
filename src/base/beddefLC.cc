@@ -40,7 +40,8 @@ double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* params
           222.4,  278.0,  333.6,  444.8,  556.0,  667.2,  778.4,  889.6, 1001.0, 1112.0,
          1334.0, 1779.0, 2224.0, 2780.0, 3336.0, 4448.0, 5560.0, 6672.0, 7784.0, 8896.0,
         10008.0};
-  // rm = rmkm * 1e3 (remember to convert to meters); GE /(10^12 rm) is vertical displacement in meters
+  // rm = rmkm * 1e3 (remember to convert to meters); GE /(10^12 rm) is
+  //    vertical displacement in meters
   // (GE(r=0) has been computed by linear extrapolation:  GE(0) := -33.6488)
   double GE[42] =
     {-33.6488, -33.64, -33.56, -32.75, -31.86, -30.98, -30.12, -28.44, -26.87, -25.41,
@@ -116,16 +117,16 @@ double viscDisc(double t, double H0, double R0, double r,
   F.function = &viscDiscIntegrand;
   F.params = &params;
   // regarding tolerance: request is for convergence of all digits and relative tolerance RELTOL
-  gsl_integration_qag (&F, pts[1], 100.0*pts[1], ABSTOL, RELTOL, N_gsl_workspace, GSL_INTEG_GAUSS21, w,
-                       &result, &error);
+  gsl_integration_qag (&F, pts[1], 100.0*pts[1], ABSTOL, RELTOL, N_gsl_workspace, 
+                       GSL_INTEG_GAUSS21, w, &result, &error);
 
   double  sum = result; 
   // for j=1:length(pts)-1
   //   result=result+quadl(@integrand,pts(j+1),pts(j),TOL,0,rg,D,t,eta,R0,rk);
   // end
   for (int j=0; j < lengthpts-1; j++) {
-    gsl_integration_qag (&F, pts[j+1], pts[j], ABSTOL, RELTOL, N_gsl_workspace, GSL_INTEG_GAUSS21, w,
-                         &result, &error);
+    gsl_integration_qag (&F, pts[j+1], pts[j], ABSTOL, RELTOL, N_gsl_workspace, 
+                         GSL_INTEG_GAUSS21, w, &result, &error);
     sum += result;
   }
   

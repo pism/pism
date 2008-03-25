@@ -24,7 +24,8 @@
 
 /* the following is from the PETSc FAQ page:
 
-How do I collect all the values from a parallel PETSc vector into a vector on the zeroth processor?
+How do I collect all the values from a parallel PETSc vector into a vector 
+on the zeroth processor?
 
     * Create the scatter context that will do the communication
           o VecScatterCreateToZero(v,&ctx,&w);
@@ -34,8 +35,11 @@ How do I collect all the values from a parallel PETSc vector into a vector on th
     * Remember to free the scatter context when no longer needed
           o VecScatterDestroy(ctx);
 
-Note that this simply concatenates in the parallel ordering of the vector.  If you are using a vector from DACreateGlobalVector() you likely want to first call DAGlobalToNaturalBegin/End() to scatter the original vector into the natural ordering in a new global vector before calling VecScatterBegin/End() to scatter the natural vector onto process 0.
-
+Note that this simply concatenates in the parallel ordering of the vector.
+If you are using a vector from DACreateGlobalVector() you likely want to 
+first call DAGlobalToNaturalBegin/End() to scatter the original vector into 
+the natural ordering in a new global vector before calling 
+VecScatterBegin/End() to scatter the natural vector onto process 0.
 */
 
 PetscErrorCode IceModel::createScatterToProcZero(Vec& samplep0) {
@@ -69,7 +73,8 @@ PetscErrorCode IceModel::putLocalOnProcZero(Vec& vlocal, Vec& onp0) {
   PetscErrorCode ierr;
 
   // scatter local Vec to proc zero: from a global Vec in the global ordering to 
-  //    a global Vec in the natural ordering and then to a Vec on proc zero (i.e. empty on other procs)
+  //    a global Vec in the natural ordering and then to a Vec on proc zero
+  //    (i.e. empty on other procs)
   // requires g2, g2natural, and top0ctx to all be set up properly
   ierr = DALocalToGlobal(grid.da2,vlocal,INSERT_VALUES,g2); CHKERRQ(ierr);
   ierr = DAGlobalToNaturalBegin(grid.da2,g2,INSERT_VALUES,g2natural); CHKERRQ(ierr);
@@ -133,7 +138,8 @@ PetscErrorCode IceModel::bedDefSetup() {
       if (grid.rank == 0) {
         ierr = bdLC.settings(PETSC_FALSE, // turn off elastic model for now
                        grid.Mx,grid.My,grid.dx,grid.dy,
-                       2,                 // use Z = 2 for now
+//                       2,                 // use Z = 2 for now
+                       4,                 // use Z = 4 for now; to reduce global drift?
                        ice->rho, bed_deformable.rho, bed_deformable.eta, bed_deformable.D,
                        &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0); CHKERRQ(ierr);
         ierr = bdLC.alloc(); CHKERRQ(ierr);
@@ -173,41 +179,39 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
 
   // This is a front end to the bed deformation update system.  It updates
   // no more often than bedDefIntervalYears.
-  if (doBedDef == PETSC_TRUE) {
-    ierr = verbPrintf(5,grid.com, "  [lastBedDefUpdateYear=%.3f, bedDefIntervalYears=%.3f]\n",
-              lastBedDefUpdateYear,bedDefIntervalYears); CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com, 
+    "  [lastBedDefUpdateYear=%.3f, bedDefIntervalYears=%.3f]\n",
+    lastBedDefUpdateYear,bedDefIntervalYears); CHKERRQ(ierr);
+  // If the bed elevations are not expired, exit cleanly.
+  const PetscScalar dtBedDefYears = grid.year - lastBedDefUpdateYear;
+  if (dtBedDefYears >= bedDefIntervalYears) {
     ierr = verbPrintf(5,grid.com, 
-      "  [ice->rho=%.3f, bed_deformable.rho=%.3f, bed_deformable.D=%.3e, bed_deformable.eta=%.3e]\n",
-      ice->rho, bed_deformable.rho, bed_deformable.D, bed_deformable.eta); CHKERRQ(ierr);
-    // If the bed elevations are not expired, exit cleanly.
-    const PetscScalar dtBedDefYears = grid.year - lastBedDefUpdateYear;
-    if (dtBedDefYears >= bedDefIntervalYears) {
-      if (doBedIso == PETSC_TRUE) { // pointwise isostasy model: in parallel
-        ierr = bed_def_step_iso(); CHKERRQ(ierr);
-      } else { // L&C model: only on proc zero
-        ierr = putLocalOnProcZero(vH,Hp0); CHKERRQ(ierr);
-        ierr = putLocalOnProcZero(vbed,bedp0); CHKERRQ(ierr);
-        if (grid.rank == 0) {  // only processor zero does the step
-          ierr = bdLC.step(dtBedDefYears, grid.year - startYear); CHKERRQ(ierr);
-        }
-        ierr = getLocalFromProcZero(bedp0, vbed); CHKERRQ(ierr);
-        ierr = DALocalToLocalBegin(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
-        ierr = DALocalToLocalEnd(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
+      "  [ice->rho=%.3f, bed_deformable.rho=%.3f, b_d.D=%.3e, b_d.eta=%.3e]\n",
+      ice->rho, bed_deformable.rho, bed_deformable.D, bed_deformable.eta);
+      CHKERRQ(ierr);
+    if (doBedIso == PETSC_TRUE) { // pointwise isostasy model: in parallel
+      ierr = bed_def_step_iso(); CHKERRQ(ierr);
+    } else { // L&C model: only on proc zero
+      ierr = putLocalOnProcZero(vH,Hp0); CHKERRQ(ierr);
+      ierr = putLocalOnProcZero(vbed,bedp0); CHKERRQ(ierr);
+      if (grid.rank == 0) {  // only processor zero does the step
+        ierr = bdLC.step(dtBedDefYears, grid.year - startYear); CHKERRQ(ierr);
       }
-      // update uplift: uplift = (bed - bedlast) / dt
-      ierr = VecWAXPY(vuplift,-1.0,vbedlast,vbed); CHKERRQ(ierr);  
-      ierr = VecScale(vuplift, 1.0 / (dtBedDefYears * secpera)); CHKERRQ(ierr); 
-      // copy current values of H, bed in prep for next step
-      ierr = VecCopy(vH,vHlast); CHKERRQ(ierr);
-      ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
-      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-      lastBedDefUpdateYear = grid.year;
-      ierr = PetscPrintf(grid.com, "b"); CHKERRQ(ierr);
-    } else {
-      ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+      ierr = getLocalFromProcZero(bedp0, vbed); CHKERRQ(ierr);
+      ierr = DALocalToLocalBegin(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
+      ierr = DALocalToLocalEnd(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
     }
+    // update uplift: uplift = (bed - bedlast) / dt
+    ierr = VecWAXPY(vuplift,-1.0,vbedlast,vbed); CHKERRQ(ierr);  
+    ierr = VecScale(vuplift, 1.0 / (dtBedDefYears * secpera)); CHKERRQ(ierr); 
+    // copy current values of H, bed in prep for next step
+    ierr = VecCopy(vH,vHlast); CHKERRQ(ierr);
+    ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+    lastBedDefUpdateYear = grid.year;
+    ierr = verbPrintf(2, grid.com, "b"); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, "$"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "$"); CHKERRQ(ierr);
   }
   return 0;
 }
