@@ -53,15 +53,82 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
 }
 
 
-//! Does nothing in \c IceModel, but allows derived classes to do more per-step computation.
+//! Virtual.  Does nothing in \c IceModel.  Allows derived classes to do more computation in each time step.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
   return 0;
 }
 
 
-//! Does nothing in \c IceModel, but allows derived classes to do more per-step computation.
+//! Virtual.  Does nothing in \c IceModel.  Allows derived classes to do more computation in each time step.
 PetscErrorCode IceModel::additionalAtEndTimestep() {
   return 0;
+}
+
+
+//! Check on whether -if or -bif file is actually present.
+/*!
+Checks first on whether "foo" is present, then whether "foo.nc" is.
+
+Returns a valid file name along with whether or not the file is present.
+
+If user sets one of '-if' or '-bif' and a valid file cannot be found, then
+stops PISM with an error.
+ */
+PetscTruth IceModel::checkOnInputFile(char *fname) {
+  PetscTruth ifSet, bifSet;
+  PetscInt fileExists = 0;
+  int ncid,  stat;
+  char inFile[PETSC_MAX_PATH_LEN], inFileExted[PETSC_MAX_PATH_LEN];
+
+  strcpy(inFileExted,"");  // zero length of inFileExted string has meaning
+
+  PetscOptionsGetString(PETSC_NULL, "-if", inFile, PETSC_MAX_PATH_LEN, &ifSet);
+  PetscOptionsGetString(PETSC_NULL, "-bif", inFile, PETSC_MAX_PATH_LEN, &bifSet);
+  if ((ifSet == PETSC_TRUE) && (bifSet == PETSC_TRUE)) {
+    verbPrintf(1,grid.com,
+       "PISM ERROR: both options '-if' and '-bif' are used; not allowed!\n");
+    PetscEnd();
+  }
+  
+  if ((ifSet == PETSC_FALSE) && (bifSet == PETSC_FALSE)) {
+    strcpy(fname,""); // no input file given, so don't claim a valid name
+    return PETSC_FALSE;
+  }
+  
+  if (grid.rank == 0) {
+    stat = nc_open(inFile, 0, &ncid); fileExists = (stat == NC_NOERR);
+  }
+  MPI_Bcast(&fileExists, 1, MPI_INT, 0, grid.com);  
+  if (!fileExists) {
+    // try again after adding .nc extension
+    strcpy(inFileExted, inFile);
+    strcat(inFileExted,".nc");
+    if (grid.rank == 0) {
+      stat = nc_open(inFileExted, 0, &ncid); fileExists = (stat == NC_NOERR);
+    }
+    MPI_Bcast(&fileExists, 1, MPI_INT, 0, grid.com);
+  }
+  
+  if (fileExists) {
+    // close, return valid infile name, and report success
+    if (grid.rank == 0) {
+      stat = nc_close(ncid);
+    }
+    if (strlen(inFileExted) > 0) {
+      strcpy(fname,inFileExted);
+    } else {
+      strcpy(fname,inFile);
+    }
+    return PETSC_TRUE;
+  } else {
+    // try to exit cleanly
+    verbPrintf(1,grid.com,
+       "PISM ERROR: '-if' or '-bif' file not found!\n"
+       "            (Tried names '%s' and '%s'.)\n",
+       inFile, inFileExted);
+    PetscEnd();
+    return PETSC_FALSE; // never actually happens ...
+  }
 }
 
 
@@ -77,24 +144,25 @@ PetscErrorCode IceModel::initFromOptions() {
 //! Version of initFromOptions() which allows turning off afterInitHook().
 PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
-  PetscTruth inFileSet, bootstrapSet; // bootstrapSetLegacy;
+  PetscTruth     inFilePresent;
   char inFile[PETSC_MAX_PATH_LEN];
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet);  CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
-                               PETSC_MAX_PATH_LEN, &bootstrapSet);  CHKERRQ(ierr);
-  
-  if ((inFileSet == PETSC_TRUE) && (bootstrapSet == PETSC_TRUE)) {
-    SETERRQ(2,"both options '-if' and '-bif' set; not allowed");
+  inFilePresent = checkOnInputFile(inFile);  // get a valid file name if present
+
+  if (inFilePresent == PETSC_TRUE) {
+    PetscTruth bifSet;
+    ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
+    if (bifSet == PETSC_TRUE) {
+      ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
+    } else {
+      ierr = initFromFile_netCDF(inFile); CHKERRQ(ierr);
+    }
   }
 
-  if (inFileSet == PETSC_TRUE) {
-    ierr = initFromFile_netCDF(inFile); CHKERRQ(ierr);
-  } else if (bootstrapSet == PETSC_TRUE) {
-    ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
-  }
-
+  // Status at this point:  Either a derived class has initialized from formulas
+  // (e.g. IceCompModel or IceEISModel) or there has been initialization 
+  // from an input NetCDF file, by bootstrapFromFile_netCDF() or
+  // initFromFile_netCDF().  Anything else is an error.
   if (! isInitialized()) {
     SETERRQ(1,"Model has not been initialized from a file or by a derived class.");
   }

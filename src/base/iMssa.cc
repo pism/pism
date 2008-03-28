@@ -247,40 +247,41 @@ COMMENT FIXME:  Finish plastic till paper first.  Then fix these comments to mat
 The SSA equations are in their clearest form
     \f[ - \frac{\partial T_{ij}}{\partial x_j} + \tau_{(b)i} = f_i \f]
 where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
-(i.e. equation (2.6) in (Schoof 2006), and following (Morland 1987)), 
+(i.e. equation (2.6) in \lo\cite{SchoofStream}\elo, and following \lo\cite{Morland}\elo, 
 and \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
 Also \f$f_i\f$ is the driving shear stress \f$f_i = - \rho g H \frac{\partial h}{\partial x_i}\f$.  
 These equations determine velocity in a more-or-less elliptic equation manner.  Here \f$H\f$ 
 is the ice thickness and \f$h\f$ is the elevation of the surface of the ice.
 
 More specifically, the SSA equations are
-    \f[ - 2 \frac{\partial}{\partial x}\left[\nu H \left(2 \frac{\partial u}{\partial x}
-                                                       + \frac{\partial v}{\partial y}\right)\right]
-        - \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial y}
-                                                       + \frac{\partial v}{\partial x}\right)\right]
-        + \tau_{(b)x}
-        = - \rho g H \frac{\partial h}{\partial x}, \f]
-    \f[ - \frac{\partial}{\partial x}\left[\nu H \left(\frac{\partial u}{\partial y}
-                                                       + \frac{\partial v}{\partial x}\right)\right]
-        - 2 \frac{\partial}{\partial y}\left[\nu H \left(\frac{\partial u}{\partial x}
-                                                         + 2 \frac{\partial v}{\partial y}\right)\right]
-        + \tau_{(b)y}
-        = - \rho g H \frac{\partial h}{\partial y}, \f]
-where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
+\latexonly
+\def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
+\def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
+\def\ddy#1{\ensuremath{\frac{\partial #1}{\partial y}}}
+\begin{align*}
+  - 2 \ddx{}\left[\nu H \left(2 \ddx{u} + \ddy{v}\right)\right]
+        - \ddy{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
+        + \tau_{(b)x}  &=  - \rho g H \ddx{h}, \\
+    - \ddx{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
+      - 2 \ddy{}\left[\nu H \left(\ddx{u} + 2 \ddy{v}\right)\right]
+        + \tau_{(b)y}  &=  - \rho g H \ddy{h}, 
+\end{align*}
+\endlatexonly
+ where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
 of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity of the ice.  
 
-For ice shelves \f$\tau_{(b)i} = 0\f$ (MacAyeal et al 1996).  For ice streams with a basal 
+For ice shelves \f$\tau_{(b)i} = 0\f$ \lo\cite{MacAyealetal}\elo.  For ice streams with a basal 
 till modelled as a plastic material, \f$\tau_{(b)i} = \tau_c u_i/|\mathbf{u}|\f$ where 
 \f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, and \f$\tau_c\f$ 
-is the yield stress of the till  (Schoof 2006).  For ice streams with a basal till modelled 
+is the yield stress of the till \lo\cite{SchoofStream}\elo.  For ice streams with a basal till modelled 
 as a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ is the basal
-drag (friction) parameter (Hulbe & MacAyeal 1999).
+drag (friction) parameter \lo\cite{HulbeMacAyeal}\elo.
 
 Note that the basal shear stress appears on the \em left side of the above system.  
 We believe this is crucial, because of its effect on the spectrum of the linear 
 approximations of each stage.  The effect on spectrum is clearest in the linearly-viscous
-till case (i.e. Hulbe & MacAyeal 1999) but there seems to be an analogous effect in the 
-plastic till case (Schoof 2006).
+till case (i.e. \lo\cite{HulbeMacAyeal}\elo) but there seems to be an analogous effect in the 
+plastic till case \lo\cite{SchoofStream}\elo.
 
 This method assembles the matrix for the left side of the SSA equations.  The numerical method 
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
@@ -685,7 +686,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
        const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
        ierr = verbPrintf(1,grid.com,
                   "WARNING: Effective viscosity not converged after %d iterations\n"
-                  "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.                  \n",
+                  "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
                   ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
            CHKERRQ(ierr);
        ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
@@ -693,7 +694,8 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        SETERRQ1(1, 
-         "Effective viscosity not converged after %d iterations; epsilon=0.0.  Stopping.                \n", 
+         "Effective viscosity not converged after %d iterations; epsilon=0.0.\n"
+         "  Stopping.                \n", 
          ssaMaxIterations);
     }
   }

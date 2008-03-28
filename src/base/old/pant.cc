@@ -24,6 +24,16 @@
 #include "base/nc_util.hh"
 #include "base/iceModel.hh"
 
+/* relevant Makefile lines were:
+
+other_sources := .... pant.cc ...
+
+pant : pant.o libpism.so
+	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
+
+*/
+
+
 static char help[] =
   "PISM driver whose purpose is to have either: (1) spatially-variable scalar basal sliding\n"
   "friction parameter beta, (2) spatially-variable vector basal sliding friction parameter\n"

@@ -240,6 +240,14 @@ protected:
                           PetscScalar *w, PetscScalar *age_wspace, PetscScalar **gs);
   PetscScalar    grainSizeVostok(PetscScalar age) const;
 
+  // see iMinverse.cc
+  PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
+                    Vec myC, const PetscScalar alphacrit, Vec &u, Vec &v);
+  PetscErrorCode computeBasalShearFromSSA(Vec myu, Vec myv, Vec &taubx, Vec &tauby);
+  PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
+                 const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
+                 Vec &tauc_out, Vec &tfa_out);
+
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
   PetscErrorCode warnUserOptionsIgnored(const char *fname);
@@ -360,6 +368,7 @@ protected:
                                        PetscScalar *ta_zlevEQ, PetscScalar *ta_zblevEQ);
 
   // see iMutil.cc
+  PetscTruth     checkOnInputFile(char *fname);
   virtual int endOfTimeStepHook();
   virtual PetscErrorCode afterInitHook();
   PetscErrorCode stampHistoryCommand();

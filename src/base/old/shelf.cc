@@ -16,6 +16,18 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+
+/* relevant Makefile lines were:
+
+other_sources := ... shelf.cc ...
+
+shelf : shelf.o libpism.so
+	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
+
+
+*/
+
+
 static char help[] =
   "Driver for testing ice stream (dragging ice shelf) model.  Implements verification tests.";
 

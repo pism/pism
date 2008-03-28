@@ -640,11 +640,13 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
 //! Set the temperatures in a column of bedrock based on a temperature at the top and a geothermal flux.
 /*! 
-This procedure sets the temperatures in the bedrock that would be correct for our model in steady state.
-In steady state there would be a temperature at the top of the bed and a flux condition at the bottom
+This procedure sets the temperatures in the bedrock that would be correct
+for our model in steady state.  In steady state there would be a temperature 
+at the top of the bed and a flux condition at the bottom
 and the temperatures would be linear in between.
 
-Call <tt>Tb3.needAccessToVals()</tt> before and <tt>Tb3.doneAccessToVals()</tt> after this routine.
+Call <tt>Tb3.needAccessToVals()</tt> before and 
+<tt>Tb3.doneAccessToVals()</tt> after this routine.
  */
 PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
                             const PetscScalar Ttopbedrock, const PetscScalar geothermflux) {

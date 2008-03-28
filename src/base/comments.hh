@@ -1,4 +1,4 @@
-// THE ONLY PURPOSE OF THIS FILE IS TO BE A LOCATION FOR MAJOR SOURCE CODE COMMENTS.
+// THE ONLY PURPOSE OF THIS FILE IS TO BE A LOCATION FOR MAJOR SOURCE CODE COMMENTS
 // IT NEEDS TO BE A .hh (OR OTHER STANDARD SOURCE TYPE) AND IT NEEDS TO BE IN THE
 // pism/src/ TREE SO THAT doxygen WILL AUTOMATICALLY READ IT.
 
@@ -441,7 +441,7 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
  */
  
 
-/*! \page pismreferences References
+/*! \page pismreferences
 
 \latexonly
 \small
@@ -503,6 +503,12 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
   of theoretical predictions, laboratory data, and field measurements}, Rev.
   Geophys. Space. Phys., 19 (1981), pp.~664--672.
 
+\bibitem{HulbeMacAyeal}
+{\sc C.~L. Hulbe and D.~R. MacAyeal}, {\em A new numerical model of coupled
+  inland ice sheet, ice stream, and ice shelf flow and its application to the
+  {W}est {A}ntarctic {I}ce {S}heet}, J. Geophys. Res., 104 (1999),
+  pp.~25349--25366.
+
 \bibitem{HuybrechtsEISMINT}
 {\sc P.~Huybrechts}, {\em Report of the {T}hird {EISMINT} {W}orkshop on {M}odel
   {I}ntercomparison}.
@@ -520,10 +526,20 @@ ages.vub.ac.be/$\sim$phuybrec/pdf/EISMINT3.Huyb.1998.pdf}; 120 pages, 1998.
   theory and application to ice stream {B}, {A}ntarctica}, J. Geophys. Res., 94
   (1989), pp.~4071--4087.
 
+\bibitem{MacAyealetal}
+{\sc D.~R. MacAyeal, V.~Rommelaere, P.~Huybrechts, C.~Hulbe, J.~Determann, and
+  C.~Ritz}, {\em An ice-shelf model test based on the {R}oss ice shelf}, Ann.
+  Glaciol., 23 (1996), pp.~46--51.
+
 \bibitem{Mahaffy}
 {\sc M.~W. Mahaffy}, {\em A three--dimensional numerical model of ice sheets:
   tests on the {B}arnes {I}ce {C}ap, {N}orthwest {T}erritories}, J. Geophys.
   Res., 81 (1976), pp.~1059--1066.
+
+\bibitem{Morland}
+{\sc L.~W. Morland}, {\em Unconfined ice-shelf flow}, in Dynamics of the {W}est
+  {A}ntarctic ice sheet, C.~J. van~der Veen and J.~Oerlemans, eds., Kluwer
+  Academic Publishers, 1987, pp.~99--116.
 
 \bibitem{MortonMayers}
 {\sc K.~W. Morton and D.~F. Mayers}, {\em Numerical {S}olutions of {P}artial
@@ -574,6 +590,8 @@ ages.vub.ac.be/$\sim$phuybrec/pdf/EISMINT3.Huyb.1998.pdf}; 120 pages, 1998.
 
 \normalsize
 \newpage
+
+
 \endlatexonly
  */
 

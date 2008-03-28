@@ -27,8 +27,8 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
    simpleL gridL flowTable tryLCbd pant
 
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc forcing.cc \
-	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc \
-	iMforcing.cc iMgrainsize.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
+	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc iMforcing.cc \
+	iMgrainsize.cc iMIO.cc iMinverse.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
 	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMtests.cc iMutil.cc \
 	iMvelocity.cc iMviewers.cc \
 	iceModelVec.cc iceModelVec3.cc iceModel.cc
@@ -38,7 +38,7 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
    exactTestK.c exactTestL.c
 
-other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pant.cc pgrn.cc \
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pgrn.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
 	iceEISplModel.cc iceCompModel.cc iceUpwindCompModel.cc iceExactSSAModel.cc iCMthermo.cc \
 	flowTable.cc tryLCbd.cc
@@ -94,14 +94,8 @@ pisms : iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
 pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
-pant : pant.o libpism.so
-	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
-
 pgrn : iceGRNModel.o pgrn.o libpism.so
 	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
-
-#shelf : shelf.o libpism.so
-#	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
 flowTable : flowTable.o materials.o
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
