@@ -25,10 +25,6 @@
 
 /* TO DO:
 -- read user options "-cbar_for_basal foo.nc" and "-csurf_for_basal foo.nc"
-59.  write out cbase as diagnostic, routinely
-60.  write out till friction angle as diagnostic, routinely
-61.  write out magnitude of basal shear stress as diagnostic, routinely
-
 */
 
 /*

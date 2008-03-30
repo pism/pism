@@ -76,6 +76,9 @@
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, acab_id, NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+      // write tillphi = till friction angle in degrees
+  ierr = nct.put_local_var(&grid, ncid, tillphi_id, NC_FLOAT, grid.da2, vtillphi, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 2-D diagnostic quantities
   // note h is diagnostic because it is recomputed by h=H+b at each time step
@@ -111,6 +114,27 @@
   ierr = VecPointwiseMult(vWork2d[1], vWork2d[0], vH); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // compute cbase  = sqrt(u|_{z=0}^2 + v|_{z=0}^2) and save it
+  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = u3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);
+  ierr = v3.getHorSlice(vWork2d[1], 0.0); CHKERRQ(ierr);
+  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
+  PetscScalar **ub, **vb;
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[1], &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      a[i][j] = sqrt(PetscSqr(ub[i][j]) + PetscSqr(vb[i][j])) * secpera;
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  ierr = nct.put_local_var(&grid, ncid, cbase_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
@@ -138,5 +162,12 @@
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // compute magnitude of basal shear stress = rho g H |grad h|
+  ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
+  ierr = nct.put_local_var(&grid, ncid, taub_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  // write out yield stress
+  ierr = nct.put_local_var(&grid, ncid, tauc_id, NC_FLOAT, grid.da2, vtauc, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 

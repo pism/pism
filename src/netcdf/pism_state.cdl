@@ -139,7 +139,7 @@ variables: // The names of variables are magic in PISM source.
     age:units = "s";
     age:pism_intent = "model_state";
 
-// 2-dimensional climate quantities
+// 2-dimensional climate or boundary quantities
   float artm(t,x,y);
     artm:long_name = "annual mean air temperature at ice surface";
     artm:standard_name = "surface_temperature";
@@ -155,6 +155,10 @@ variables: // The names of variables are magic in PISM source.
     acab:standard_name = "land_ice_surface_specific_mass_balance";
     acab:units = "m s-1";
     acab:pism_intent = "climate_steady";  // at this point; ditto
+  float tillphi(t,x,y);
+    tillphi:long_name = "friction angle for till under grounded ice sheet";
+    tillphi:units = "degrees";
+    tillphi:pism_intent = "climate_steady";
 
 // 2-dimensional diagnostic quantities
   float usurf(t,x,y);
@@ -170,6 +174,10 @@ variables: // The names of variables are magic in PISM source.
     cbar:long_name = "magnitude of vertically-integrated horizontal velocity of ice";
     cbar:units = "m year-1";
     cbar:pism_intent = "diagnostic";
+  float cbase(t,x,y);
+    cbase:long_name = "magnitude of horizontal velocity of ice at base of ice";
+    cbase:units = "m year-1";
+    cbase:pism_intent = "diagnostic";
   float csurf(t,x,y);
     csurf:long_name = "magnitude of horizontal velocity of ice at ice surface";
     csurf:units = "m year-1";
@@ -182,6 +190,14 @@ variables: // The names of variables are magic in PISM source.
     cflx:long_name = "magnitude of vertically-integrated horizontal flux of ice";
     cflx:units = "m2 year-1";
     cflx:pism_intent = "diagnostic";
+  float taub(t,x,y);
+    taub:long_name = "magnitude of driving shear stress at base of ice";
+    taub:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar
+    taub:pism_intent = "diagnostic";
+  float tauc(t,x,y);
+    tauc:long_name = "yield stress for till under grounded ice sheet";
+    tauc:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar
+    tauc:pism_intent = "diagnostic";
 
 // global attributes
     :Conventions = "CF-1.0";
