@@ -81,8 +81,8 @@ protected:
   NCTool         nct;
 
   IceType               *ice;
-//  IceType               &ice;
-  BasalType             *basal;
+  PlasticBasalType      *basal;
+  BasalTypeSIA          *basalSIA;
   BedrockThermalType    bed_thermal;
   DeformableEarthType   bed_deformable;
   SeaWaterType          ocean;
@@ -101,7 +101,7 @@ protected:
     vRb,                        // basal frictional heating on regular grid
     vubar, vvbar,               // vertically-averaged vels (u bar and v bar) on
                                 // standard grid
-    vtauc, vtillphi, vbeta;     // basal fields; plastic/viscous coefficients
+    vtauc, vtillphi;            // basal fields; plastic/pseudo-plastic coefficients
   Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
                                         //   u bar and v bar on staggered grid,
   Vec          vLongitude, vLatitude;
@@ -116,7 +116,7 @@ protected:
                                        //   time steps in seconds
   PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
-              ssaRelativeTolerance, ssaEpsilon, beta_default_drag_SSA;
+              ssaRelativeTolerance, ssaEpsilon;
   PetscInt    ssaMaxIterations;
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold;
@@ -185,16 +185,16 @@ protected:
 
   // see iMbasal.cc (basal mechanical model: either linear viscosity or
   //                 perfectly plastic according to doPlasticTill) 
-  PetscErrorCode initBasalTillModel();
+  PetscErrorCode         initBasalTillModel();
+  virtual PetscScalar    getEffectivePressureOnTill(
+            const PetscScalar thk, const PetscScalar melt_thk);
   virtual PetscErrorCode updateYieldStressFromHmelt();
-  virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y, 
-       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-       const PetscScalar mu);
-  virtual PetscScalar basalDragx(PetscScalar **beta, PetscScalar **tauc,
-                                 PetscScalar **u, PetscScalar **v,
-                                 PetscInt i, PetscInt j) const;
-  virtual PetscScalar basalDragy(PetscScalar **beta, PetscScalar **tauc,
-                                 PetscScalar **u, PetscScalar **v,
+  virtual PetscScalar    basalVelocity(const PetscScalar x, const PetscScalar y, 
+            const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+            const PetscScalar mu);
+  virtual PetscScalar    basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+                                    PetscInt i, PetscInt j) const;
+  virtual PetscScalar    basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
 
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
@@ -330,7 +330,7 @@ protected:
   // see iMsia.cc
   PetscErrorCode surfaceGradientSIA();
   PetscErrorCode velocitySIAStaggered();
-  PetscErrorCode basalSIA();
+  PetscErrorCode basalSlidingHeatingSIA();
   PetscErrorCode velocities2DSIAToRegular();
   PetscErrorCode SigmaSIAToRegular();
   PetscErrorCode horizontalVelocitySIARegular();

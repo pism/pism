@@ -322,7 +322,7 @@ fully over-written by this routine.  Where the ice is floating, they all have va
 
 See correctBasalFrictionalHeating().
  */
-PetscErrorCode IceModel::basalSIA() {
+PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
   PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **mask, **H;
 
@@ -345,7 +345,7 @@ PetscErrorCode IceModel::basalSIA() {
           vb[i][j] = 0.0;
           Rb[i][j] = 0.0;
         } else { 
-          // basal velocity
+          // basal velocity from SIA-type sliding law: generally not recommended!
           const PetscScalar
                   myx = -grid.Lx + grid.dx * i, 
                   myy = -grid.Ly + grid.dy * j,

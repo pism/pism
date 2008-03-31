@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -210,34 +210,25 @@ public:
 };
 
 
-class BasalType {
+class BasalTypeSIA {
 public:
-  virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com) = 0;
-  virtual PetscScalar velocity(PetscScalar sliding_coefficient,
-                               PetscScalar stress) = 0;
-  virtual PetscScalar drag(PetscScalar beta, PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy) = 0;
-  virtual ~BasalType() {};
-};
-
-class ViscousBasalType : public BasalType {
-public:
-  virtual PetscErrorCode printInfo(const int thresh, MPI_Comm com);
   virtual PetscScalar velocity(PetscScalar sliding_coefficient,
                                PetscScalar stress);
-  virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy);
+  virtual ~BasalTypeSIA() {}
 };
 
 
-class PlasticBasalType : public ViscousBasalType {
+class PlasticBasalType {
 public:
   PlasticBasalType(const PetscScalar regularizationConstant, const PetscTruth pseudoPlastic,
                    const PetscScalar pseudoExponent, const PetscScalar pseudoUThreshold);
   virtual PetscErrorCode printInfo(const int verbthresh, MPI_Comm com);
-  virtual PetscScalar drag(PetscScalar coeff, PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy);
-private:
+  virtual PetscScalar drag(const PetscScalar tauc, 
+                           const PetscScalar vx, const PetscScalar vy);
+  virtual PetscScalar taucFromMagnitudes(const PetscScalar taub_mag, 
+                                         const PetscScalar sliding_speed);
+  virtual ~PlasticBasalType() {}
+protected:
   PetscScalar plastic_regularize, pseudo_q, pseudo_u_threshold;
   PetscTruth  pseudo_plastic;
 };

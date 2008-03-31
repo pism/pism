@@ -42,7 +42,7 @@ PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar mu) {
 
   if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
-    return basal->velocity(mu, ice->rho * grav * H);
+    return basalSIA->velocity(mu, ice->rho * grav * H);
   } else {
     return 0;
   }
@@ -50,16 +50,16 @@ PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
 
 
 /*** for ice stream regions (MASK_DRAGGING): ***/
-PetscScalar IceModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
+PetscScalar IceModel::basalDragx(PetscScalar **tauc,
                                  PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const {
-  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
+  return basal->drag(tauc[i][j], u[i][j], v[i][j]);
 }
 
-PetscScalar IceModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
+PetscScalar IceModel::basalDragy(PetscScalar **tauc,
                                  PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const {
-  return basal->drag(beta[i][j], tauc[i][j], u[i][j], v[i][j]);
+  return basal->drag(tauc[i][j], u[i][j], v[i][j]);
 }
 
 
@@ -67,15 +67,8 @@ PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
   
   if (createBasal_done == PETSC_FALSE) {
-    if (doPlasticTill == PETSC_TRUE) {
-//      basal = new PlasticBasalType(plasticRegularization);
-//      basal = new PlasticBasalType(plasticRegularization, PETSC_FALSE, 0.0,
-//                                   100.0 / secpera);
-      basal = new PlasticBasalType(plasticRegularization, doPseudoPlasticTill, 
-                                   pseudo_plastic_q, pseudo_plastic_uthreshold);
-    } else {
-      basal = new ViscousBasalType;
-    }
+    basal = new PlasticBasalType(plasticRegularization, doPseudoPlasticTill, 
+                                 pseudo_plastic_q, pseudo_plastic_uthreshold);
     createBasal_done = PETSC_TRUE;
   }
 
@@ -84,30 +77,56 @@ PetscErrorCode IceModel::initBasalTillModel() {
     ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
   }
   ierr = VecSet(vtauc, tauc_default_value); CHKERRQ(ierr);
-  ierr = VecSet(vbeta, beta_default_drag_SSA); CHKERRQ(ierr);
+  // since vtillphi is part of model state it should not be set to default here, but 
+  //   rather as part of initialization/bootstrapping
   return 0;
 }
 
 
+//! Compute effective pressure on till from effective thickness of stored till water.
+/*!
+Uses ice thickness to compute overburden pressure.  Pore water pressure is assumed
+to be a fixed fraction of the overburden pressure.
+
+Note \c melt_thk should be zero at points where base of ice is frozen.
+
+Also we always want \f$0 \le \text{\texttt{melt_thk}} \le$ \c Hmelt_max 
+so \f$0 le\f$ \c lambda \f$\le 1\f$ inside this routine.
+ */
+PetscScalar IceModel::getEffectivePressureOnTill(
+               const PetscScalar thk, const PetscScalar melt_thk) {
+  const PetscScalar
+     overburdenP = ice->rho * grav * thk,
+     pwP = plastic_till_pw_fraction * overburdenP,
+     lambda = melt_thk / Hmelt_max;
+  return overburdenP - lambda * pwP;  
+}
+
+
 //! Update the till yield stress for the plastic till model, based on pressure and stored till water.
-/*! 
-@cond CONTINUUM
+/*!
+Expanded brief description: Update the till yield stress and the mask, for 
+the pseudo-plastic till model, based on pressure and stored till water.
+
+This procedure also modifies the mask.  In particular, it has the side effect
+of marking all grounded points as MASK_DRAGGING.  (FIXME:  This aspect should be
+refactored.  Unnecessary communication can probably be avoided.)
+
 We implement formula (2.4) in \lo\cite{SchoofStream}\elo.  That formula is
     \f[   \tau_c = \mu (\rho g H - p_w)\f]
 We modify it by:
-
-    (1) adding a small till cohesion \f$c_0\f$ (see \lo\cite{Paterson}\elo table 8.1);
-
-    (2) replacing \f$p_w \to \lambda p_w\f$ where \f$\lambda =\f$ Hmelt / DEFAULT_MAX_HMELT;
-       thus \f$0 \le \lambda \le 1\f$ always while \f$\lambda = 0\f$ when the bed is frozen; and
-
-    (3) computing porewater pressure \f$p_w\f$ as a fixed fraction \f$\varphi\f$ of the overburden pressure \f$\rho g H\f$.
+    - adding a small till cohesion \f$c_0\f$ (see \lo\cite{Paterson}\elo table 8.1);
+    - replacing \f$p_w \to \lambda p_w\f$ where \f$\lambda =\f$ 
+      Hmelt/DEFAULT_MAX_HMELT; thus \f$0 \le \lambda \le 1\f$ always while 
+      \f$\lambda = 0\f$ when the bed is frozen; and
+    - computing porewater pressure \f$p_w\f$ as a fixed fraction \f$\varphi\f$ 
+      of the overburden pressure \f$\rho g H\f$.
 
 With these replacements our formula looks like
     \f[   \tau_c = c_0 + \mu \left(1 - \lambda \varphi\right) \rho g H \f]
-Note also that \f$\mu = \tan(\theta)\f$ where \f$\theta\f$ is a ``friction angle''.  The parameters \f$c_0\f$, \f$\varphi\f$, \f$\theta\f$ can be set by options -till_cohesion, -till_pw_fraction, and -till_friction_angle, respectively.
-
-@endcond
+Note also that \f$\mu = \tan(\theta)\f$ where \f$\theta\f$ is a "friction angle."
+The parameters \f$c_0\f$, \f$\varphi\f$, \f$\theta\f$ can be set by options 
+\c -till_cohesion, \c -till_pw_fraction, and \c -till_friction_angle, respectively.
  */
 PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   PetscErrorCode  ierr;
@@ -151,12 +170,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
           mask[i][j] = MASK_DRAGGING;  // mark it this way anyway
         } else { // grounded and there is some ice
           mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
-          const PetscScalar overburdenP = ice->rho * grav * H[i][j];
-          const PetscScalar pwP = plastic_till_pw_fraction * overburdenP;
-          // note Hmelt == 0 if frozen and  0 <= Hmelt <= Hmelt_max always
-          //   so  0 <= lambda <= 1 
-          const PetscScalar lambda = Hmelt[i][j] / Hmelt_max;
-          const PetscScalar N = overburdenP - lambda * pwP;  // effective pressure on till
+          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
           if (useConstantTillPhi == PETSC_TRUE) {
             tauc[i][j] = plastic_till_c_0 + plastic_till_mu * N;
           } else {

@@ -57,6 +57,7 @@ PetscErrorCode IceModel::setupGeometryForSSA(const PetscScalar minH) {
   return 0;
 }
 
+
 PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
   PetscErrorCode  ierr;
   PetscScalar **h, **H, **mask;
@@ -273,9 +274,11 @@ of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity 
 For ice shelves \f$\tau_{(b)i} = 0\f$ \lo\cite{MacAyealetal}\elo.  For ice streams with a basal 
 till modelled as a plastic material, \f$\tau_{(b)i} = \tau_c u_i/|\mathbf{u}|\f$ where 
 \f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, and \f$\tau_c\f$ 
-is the yield stress of the till \lo\cite{SchoofStream}\elo.  For ice streams with a basal till modelled 
-as a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ is the basal
-drag (friction) parameter \lo\cite{HulbeMacAyeal}\elo.
+is the yield stress of the till \lo\cite{SchoofStream}\elo.  More generally,
+ice streams can be modeled with a pseudo-plastic basal till.  This includes assuming the
+basal till is a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ 
+is the basal drag (friction) parameter \lo\cite{HulbeMacAyeal}\elo.
+See PlasticBasalType::drag().
 
 Note that the basal shear stress appears on the \em left side of the above system.  
 We believe this is crucial, because of its effect on the spectrum of the linear 
@@ -291,7 +294,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **nu[2], **u, **v, **beta, **tauc;
+  PetscScalar     **mask, **nu[2], **u, **v, **tauc;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -299,7 +302,6 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
@@ -410,11 +412,12 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
 #endif
 
         /* Dragging ice experiences friction at the bed determined by the
-        * basalDrag[x|y]() methods.  These may be a linear friction law or plastic. */
+         *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
+         *    or linear friction law according to basal->drag(), ultimately. */
         if (intMask(mask[i][j]) == MASK_DRAGGING) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
-          valU[5] += basalDragx(beta, tauc, u, v, i, j);
-          valV[7] += basalDragy(beta, tauc, u, v, i, j);
+          valU[5] += basalDragx(tauc, u, v, i, j);
+          valV[7] += basalDragy(tauc, u, v, i, j);
         }
 
         ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
@@ -425,7 +428,6 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
@@ -617,7 +619,10 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
 }
 
 
-//! Call this one directly if control over allocation of vNu[2] is needed (e.g. test J); otherwise use velocitySSA(PetscInt*).
+//! Call this one directly if control over allocation of vNu[2] is needed (e.g. test J).
+/*!
+Generally use velocitySSA(PetscInt*) unless you have a vNu[2] already stored away.
+ */
 PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   PetscErrorCode ierr;
   KSP ksp = SSAKSP;
@@ -804,11 +809,10 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 PetscErrorCode IceModel::correctBasalFrictionalHeating() {
   // recompute vRb in ice stream (MASK_DRAGGING) locations; zeros vRb in FLOATING
   PetscErrorCode  ierr;
-  PetscScalar **ub, **vb, **mask, **Rb, **beta, **tauc;
+  PetscScalar **ub, **vb, **mask, **Rb, **tauc;
 
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -819,10 +823,10 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
         Rb[i][j] = 0.0;
       }
       if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
-        const PetscScalar beta_x = basalDragx(beta, tauc, ub, vb, i, j);
-        const PetscScalar beta_y = basalDragy(beta, tauc, ub, vb, i, j);
-        const PetscScalar basal_stress_x = - beta_x * ub[i][j];
-        const PetscScalar basal_stress_y = - beta_y * vb[i][j];
+        // note basalDrag[x|y]() produces a coefficient, not a stress
+        const PetscScalar 
+            basal_stress_x = - basalDragx(tauc, ub, vb, i, j) * ub[i][j],
+            basal_stress_y = - basalDragy(tauc, ub, vb, i, j) * vb[i][j];
         // note next line uses *updated* ub,vb if doSuperpose == TRUE
         Rb[i][j] = - basal_stress_x * ub[i][j] - basal_stress_y * vb[i][j];
       } 
@@ -832,7 +836,6 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -905,3 +908,4 @@ PetscErrorCode IceModel::correctSigma() {
 
   return 0;
 }
+

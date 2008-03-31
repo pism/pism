@@ -143,6 +143,7 @@ IceModel::~IceModel() {
   }
   if (createBasal_done == PETSC_TRUE) {
     delete basal;
+    delete basalSIA;
   }
 }
 
@@ -207,7 +208,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vdHdt); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vbeta); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vtauc); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vtillphi); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
@@ -279,7 +279,6 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
   ierr = VecDestroy(vuplift); CHKERRQ(ierr);
   ierr = VecDestroy(vdHdt); CHKERRQ(ierr);
-  ierr = VecDestroy(vbeta); CHKERRQ(ierr);
   ierr = VecDestroy(vtauc); CHKERRQ(ierr);
   ierr = VecDestroy(vtillphi); CHKERRQ(ierr);
   ierr = VecDestroy(vLongitude); CHKERRQ(ierr);

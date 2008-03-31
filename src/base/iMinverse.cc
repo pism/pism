@@ -67,8 +67,7 @@ as before.
 There will be new PISM options like "-cbar_for_basal foo.nc" and
 "-csurf_for_basal foo.nc"; "c" means ice velocity (actually, speed) in a
 number of PISM options.
-
-
+...
 */
 
 /*!
@@ -249,12 +248,17 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
 }
 
 
+//! Compute till friction angle in degrees.
 /*!
-First, here is the context for this procedure:
+The more complete brief description might be: "Compute till friction angle in 
+degrees from saved basal shear stress map and saved basal velocity 
+(both vector-valued) using pseudo-plastic till constitutive relation 
+and a pore water pressure model."
 
-This procedure should not be called if <tt>PlasticBasalType::pseudo_plastic</tt>
-is \c FALSE, that is, in the purely plastic case.  (This case is validly
-implemented in \c PlasticBasalType, however.)
+Here is the context for this procedure:
+
+This procedure should not be called in the purely plastic case, that is, 
+if <tt>PlasticBasalType::pseudo_plastic</tt> is \c FALSE.
 
 If <tt>PlasticBasalType::pseudo_plastic</tt> is \c TRUE then
 <tt>PlasticBasalType::drag()</tt> will compute the basal shear stress
@@ -279,34 +283,47 @@ The porewater pressure \f$p_w\f$ is estimated in terms of the stored basal water
 
 In this context, the current procedure uses a sliding velocity 
 and a basal shear stress (sign choice so that it is stress applied to the ice)
-to compute the till friction angle.  It is a three step process:
+to compute the yield stress and then the till friction angle.  
+There are some cases to check:
+  - If the velocity is below 1 m/a in magnitude then \f$\tau_c\f$ 
+    is set equal to \f$10 |\tau_{(b)}|\f$.
   - It is not assumed that the vectors \f$U\f$ and \f$\tau_{(b)}\f$
     at each grid point are pointing in the same direction 
-    on input to this routine.  If the velocity
-    is below 1 m/a in magnitude then \f$\tau_c\f$ is returned as 
-    \f$|\tau_{(b)}|\f$ and then the till friction angle is computed
-    by the above formula. If the velocity is larger in magnitude than
+    on input to this routine.  If the velocity is larger in magnitude than
     1 m/a then the angle between \f$U\f$ and \f$\tau_{(b)}\f$ is checked; 
-    if that angle exceeds 45 degrees then \f$\tau_c\f$ is returned as 
-    \f$|\tau_{(b)}|\f$ and \f$\phi\f$ is computed as above.
-  - Compute the yield stress through magnitudes:
+    if that angle exceeds 45 degrees then \f$\tau_c\f$ is set equal to 
+    \f$10 |\tau_{(b)}|\f$.
+  - If the last two cases did not apply, compute the yield stress through magnitudes:
     \f[ \tau_c = \frac{|\tau_{(b)}|\,|U_{\mathtt{thresh}}|^q}{|U|^q} \f]
+    by PlasticBasalType::taucFromMagnitudes().
   - Compute the till friction angle
     \f[ \phi = \frac{180}{\pi} \arctan\left(\frac{\tau_c - c_0}{N}\right) \f]
 
+All of the above is done only if the ice is grounded and there is positive
+ice thickness.  If a point is marked \c MASK_FLOATING or \c MASK_FLOATING_OCEAN0 
+then the yield stress is set to zero and the friction angle (quite arbitrarily) to 
+30 degrees.  If a point is grounded but the ice thickness is zero the the
+yield stress is set to a high value of 1000 kPa = 10 bar and again the friction angle 
+is set to 30 degrees.
+
 Values of both \f$\tau_c\f$ and \f$\phi\f$ are returned by this routine
 but it is envisioned that the value of \f$\tau_c\f$ may evolve in a run
-even if \f$\phi\f$ is treated as time-independent.
+while \f$\phi\f$ is treated as time-independent.
+
+This procedure reads three fields from the current model state, namely ice 
+thickness \c vH, effective thickness of basal meltwater \c vHmelt, and the 
+mask \c vMask.
  */
 PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
                  const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
                  Vec &tauc_out, Vec &tfa_out) {
   PetscErrorCode ierr;
-  SETERRQ(1,"NOT IMPLEMENTED");
   
-  const PetscScalar sufficientSpeed = 1.0 / secpera,
-                    sameDirAngle = pi/4.0;
-  PetscScalar **tauc, **phi, **u, **v, **taubx, **tauby, **Hmelt, **H;
+  const PetscScalar slowOrWrongDirFactor = 10.0,
+                    sufficientSpeed = 1.0 / secpera,
+                    sameDirMaxAngle = pi/4.0;
+  PetscScalar **tauc, **phi, **u, **v, **taubx, **tauby, 
+              **Hmelt, **H, **mask;
   ierr = DAVecGetArray(grid.da2, myu, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, myv, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, mytaubx, &taubx); CHKERRQ(ierr);
@@ -315,22 +332,36 @@ PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
   ierr = DAVecGetArray(grid.da2, tfa_out, &phi); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar speed = sqrt(PetscSqr(u[i][j]) + PetscSqr(v[i][j])),
-                        taumag = sqrt(PetscSqr(taubx[i][j]) + PetscSqr(tauby[i][j]));
-      if (speed < sufficientSpeed) {
-      } else {
-/* FIXME:      
-        const PetscScalar cosAngle = ;
-        
-        // this code is from updateYieldStressFromHmelt():
-          const PetscScalar
-                   overburdenP = ice->rho * grav * H[i][j],
-                   pwP = plastic_till_pw_fraction * overburdenP,
-                   lambda = Hmelt[i][j] / Hmelt_max,
-                   N = overburdenP - lambda * pwP;  // effective pressure on till
-*/
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
+        tauc[i][j] = 0.0;
+        phi[i][j] = 30.0;
+      } else if (H[i][j] <= 0.0) {
+        tauc[i][j] = 1000.0e3;  // large; 1000 kPa = 10 bar if no ice
+        phi[i][j] = 30.0;
+      } else { // grounded and ice is present
+        // first get tauc
+        const PetscScalar
+            speed = sqrt(PetscSqr(u[i][j]) + PetscSqr(v[i][j])),
+            taubmag = sqrt(PetscSqr(taubx[i][j]) + PetscSqr(tauby[i][j]));
+        if (speed < sufficientSpeed) {
+          tauc[i][j] = slowOrWrongDirFactor * taubmag;
+        } else {
+          const PetscScalar 
+              ubDOTtaub = u[i][j] * taubx[i][j] + tauby[i][j] * v[i][j],
+              angle = acos(ubDOTtaub / (speed * taubmag));
+          if (PetscAbs(angle) > sameDirMaxAngle) {
+            tauc[i][j] = slowOrWrongDirFactor * taubmag;
+          } else {
+            // use the formula which inverts PlasticBasalType::drag()
+            tauc[i][j] = basal->taucFromMagnitudes(taubmag, speed);
+          }
+        }
+        // now get till friction angle
+        const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
+        phi[i][j] = (180.0 / pi) * atan( (tauc[i][j] - plastic_till_c_0) / N );
       }
     }
   }
@@ -342,6 +373,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
   ierr = DAVecRestoreArray(grid.da2, tfa_out, &phi); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
 
   return 0;
 }

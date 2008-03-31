@@ -56,7 +56,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
 
     // compute (and initialize values in) ub,vb and Rb; zero everything where floating
-    ierr = basalSIA(); CHKERRQ(ierr);
+    ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
@@ -111,7 +111,6 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
       ierr = cleanupGeometryAfterSSA(min_thickness_SSA); CHKERRQ(ierr);
       lastSSAUpdateYear = grid.year;
       ierr = verbPrintf(2,grid.com," "); CHKERRQ(ierr);
-//      ierr = verbPrintf(2,grid.com, "SSA%3d ", numSSAiter); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
     }
@@ -138,7 +137,8 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
   ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
 
-  if (updateVelocityAtDepth || useSSAVelocity) {  // in latter case u,v are modified by broadcastSSAVelocity()
+  // in latter case u,v are modified by broadcastSSAVelocity():
+  if (updateVelocityAtDepth || useSSAVelocity) {  
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
     ierr = v3.beginGhostComm(); CHKERRQ(ierr);
     ierr = u3.endGhostComm(); CHKERRQ(ierr);
@@ -146,7 +146,8 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
   }
 
   if (useSSAVelocity) {
-    ierr = correctSigma(); CHKERRQ(ierr);  // note correctSigma() differences ub,vb in horizontal
+    // note correctSigma() differences ub,vb in horizontal:
+    ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   }
 

@@ -67,9 +67,13 @@ def verify(test):
          errreport = errreport[endline+1:]
          while (len(errreport) > 1) and (endline > 0):
            endline = errreport.find('\n')
+           if endline == -1:
+             endline = len(errreport)
            print '   #' + errreport[0:endline]
            errreport = errreport[endline+1:]       
            endline = errreport.find('\n')
+           if endline == -1:
+             endline = len(errreport)
            print '   |' + errreport[0:endline]
            errreport = errreport[endline+1:]       
       else:

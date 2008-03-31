@@ -545,7 +545,7 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, taub_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, tauc_id, "long_name", 46, "yield stress for till under grounded ice sheet");
+   stat = nc_put_att_text(ncid, tauc_id, "long_name", 61, "yield stress for basal till (plastic or pseudo-plastic model)");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, tauc_id, "units", 2, "Pa");
    check_err(stat,__LINE__,__FILE__);

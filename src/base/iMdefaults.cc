@@ -35,8 +35,6 @@ const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit
 const PetscScalar DEFAULT_MAXSLOPE_SSA = 1.0e-3; // no units/pure number; cap to avoid bad behavior
 const PetscScalar DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
 const PetscScalar DEFAULT_VERT_VEL_SSA = 0.0;  // temp evolution uses this value; incompressibility not satisfied
-//const PetscScalar DEFAULT_BASAL_DRAG_COEFF_SSA = 2.0e9; // Pa s m^-1 Hulbe & MacAyeal (1999), p. 25,356
-const PetscScalar DEFAULT_BASAL_DRAG_COEFF_SSA = 4.0e9; // seems to work better
 const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 //used in iMvelocity.C and iMutil.C
 const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
@@ -177,7 +175,6 @@ PetscErrorCode IceModel::setDefaults() {
   useConstantHardnessForSSA = DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA;
   constantNuForSSA = DEFAULT_CONSTANT_NU_FOR_SSA;
   constantHardnessForSSA = DEFAULT_CONSTANT_HARDNESS_FOR_SSA;
-  beta_default_drag_SSA = DEFAULT_BASAL_DRAG_COEFF_SSA;
   min_thickness_SSA = DEFAULT_MINH_SSA;
   regularizingVelocitySchoof = DEFAULT_REGULARIZING_VELOCITY_SCHOOF;
   regularizingLengthSchoof = DEFAULT_REGULARIZING_LENGTH_SCHOOF;

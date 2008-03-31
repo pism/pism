@@ -376,22 +376,11 @@ PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
-PetscErrorCode ViscousBasalType::printInfo(const int thresh, MPI_Comm com) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(thresh, com, "Using viscous till.\n"); CHKERRQ(ierr);
-  return 0;
-}
 
-PetscScalar ViscousBasalType::velocity(PetscScalar sliding_coefficient,
-                                       PetscScalar stress) {
+
+PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
+                                   PetscScalar stress) {
   return sliding_coefficient * stress;
-}
-PetscScalar ViscousBasalType::drag(PetscScalar coeff, PetscScalar tauc,
-                                   PetscScalar vx, PetscScalar vy) {
-  /* This implements a linear sliding law.  A more elaborate relation may be
-  * appropriate. */
-  //printf("viscous_drag ");
-  return coeff;
 }
 
 
@@ -409,9 +398,17 @@ PlasticBasalType::PlasticBasalType(
 PetscErrorCode PlasticBasalType::printInfo(const int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   if (pseudo_plastic == PETSC_TRUE) {
-    ierr = verbPrintf(verbthresh, com, 
-      "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f, and u_threshold = %.2f m/a.\n", 
-      plastic_regularize * secpera, pseudo_q, pseudo_u_threshold * secpera); CHKERRQ(ierr);
+    if (pseudo_q == 1.0) {
+      ierr = verbPrintf(verbthresh, com, 
+        "Using linearly viscous till with u_threshold = %.2f m/a.\n", 
+        pseudo_u_threshold * secpera); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(verbthresh, com, 
+        "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f,"
+        " and u_threshold = %.2f m/a.\n", 
+        plastic_regularize * secpera, pseudo_q, pseudo_u_threshold * secpera); 
+        CHKERRQ(ierr);
+    }
   } else {
     ierr = verbPrintf(verbthresh, com, 
       "Using purely plastic till with eps = %10.5e m/a.\n",
@@ -421,16 +418,28 @@ PetscErrorCode PlasticBasalType::printInfo(const int verbthresh, MPI_Comm com) {
 }
 
     
-PetscScalar PlasticBasalType::drag(PetscScalar coeff, PetscScalar tauc,
-                                   PetscScalar vx, PetscScalar vy) {
+PetscScalar PlasticBasalType::drag(const PetscScalar tauc, 
+                                   const PetscScalar vx, const PetscScalar vy) {
   // basal shear stress term tau_b in force balance for ice
   //   is minus the return value here times (vx,vy)
-  // purely plastic is the pseudo_q==0.0 case
+  // purely plastic is the pseudo_q==0.0 case; linear is q = 1.0
   const PetscScalar magreg = sqrt(PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy));
   if (pseudo_plastic == PETSC_TRUE) {
     return tauc / ( pow(magreg, 1.0 - pseudo_q) * pow(pseudo_u_threshold, pseudo_q) );
   } else { // pure plastic, but regularized
     return tauc / magreg;
   }
+}
+
+
+/*!
+\f[   \tau_c =  \frac{|\tau_{(b)}|\,|U_{\mathtt{thresh}}|^q}{|U|^q} \f]
+ */ 
+PetscScalar PlasticBasalType::taucFromMagnitudes(const PetscScalar taub_mag, 
+                                                 const PetscScalar sliding_speed) {
+  if ((pseudo_plastic == PETSC_FALSE) || (pseudo_q == 0.0)) {
+    // FIXME: bonk?  bonk if sliding speed too low.
+  }
+  return taub_mag * pow(pseudo_u_threshold, pseudo_q) / pow(sliding_speed, pseudo_q);
 }
 

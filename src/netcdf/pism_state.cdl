@@ -195,7 +195,7 @@ variables: // The names of variables are magic in PISM source.
     taub:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar
     taub:pism_intent = "diagnostic";
   float tauc(t,x,y);
-    tauc:long_name = "yield stress for till under grounded ice sheet";
+    tauc:long_name = "yield stress for basal till (plastic or pseudo-plastic model)";
     tauc:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar
     tauc:pism_intent = "diagnostic";
 

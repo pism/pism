@@ -278,7 +278,6 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
 
   ierr = write2DToMatlab(viewer,'A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, 
                          secpera); CHKERRQ(ierr);
-  ierr = writeLog2DToMatlab(viewer, 'B', vbeta, 1.0, 1.0e5, 5.0); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'C', vtauc, 0.001);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'E', tau3, 1.0/secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
