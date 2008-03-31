@@ -17,64 +17,139 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <cstdlib>
 #include <petscda.h>
 #include <netcdf.h>
 #include "nc_util.hh"
 #include "iceModel.hh"
 
-/* TO DO:
--- read user options "-cbar_for_basal foo.nc" and "-csurf_for_basal foo.nc"
-*/
 
-/*
-QUOTING FROM EMAIL TO TOLLY:
+//! Invert ice velocities saved in NetCDF file for till properties, based on user options.
+/*!
+Reads user options <tt>-cbar_to_till foo.nc</tt> and <tt>-csurf_to_till foo.nc</tt>.
 
-I am about to (re-)implement a scheme for reading a map of vertically
-averaged horizontal velocity from a NetCDF file and using it, along with
-the velocity field produced by the thermomechanically-coupled non-sliding
-SIA, and with the MacAyeal equations, to determine a basal shear stress
-and a basal sliding velocity.
+Must be called after more-or-less complete initialization (but at end of initialization).
+Uses initialized geometry, temperature field, and map of effective thickness of basal till
+water in its inversion.
 
-That is, the shear from the SIA will be removed from the vertically
-averaged velocity, the rest will be attributed to sliding, and this
-sliding velocity field will be fed into the MacAyeal equations to estimate
-a basal shear stress.  This is inverse modeling.  Done badly, compared to
-the principled methods underway by Martin and Hilmar and Olga and Doug and
-Ian etc.  This is the part where I am hoping interaction with Martin et al
-will give better methods, but ones which are still computable in a
-PISM-like framework at full ice sheet scale.
+Expects to find variable \c cbar or \c csurf in \c foo.nc according to option.  
+If found, reads it.  Then calls, in turn, removeVerticalPlaneShearRateFromC(),
+to compute the basal sliding, computeBasalShearFromSSA() to compute \f$\tau_b\f$ 
+(the part of the driving stress held pointwise by the basal shear stress), and 
+computeTFAFromBasalShearStressUsingPseudoPlastic()
+to get the till yield stress and the till friction angle in a pseudo-plastic till
+model (which includes purely-plastic and linearly-viscous cases).
+ */
+PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
+  PetscErrorCode ierr;
+  
+  PetscTruth cbarTillSet, csurfTillSet;
+  char cFile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-cbar_to_till", cFile, 
+                               PETSC_MAX_PATH_LEN, &cbarTillSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-csurf_to_till", cFile, 
+                               PETSC_MAX_PATH_LEN, &csurfTillSet); CHKERRQ(ierr);
+  if ((cbarTillSet == PETSC_TRUE) && (csurfTillSet == PETSC_TRUE)) {
+    SETERRQ(1,"both -cbar_to_till and -csurf_to_till set; NOT ALLOWED\n");
+  }
+  if ((cbarTillSet == PETSC_FALSE) && (csurfTillSet == PETSC_FALSE)) {
+    return 0;
+  }
 
-Spin up matters in all this because the removal of vertical shear using
-the SIA depends fairly critically on the flow factor in the flow law, and
-thus on the temperature field within the ice.
+  PetscInt fileExists = 0;
+  int ncid,  stat;
+  if (grid.rank == 0) {
+    stat = nc_open(cFile, 0, &ncid); fileExists = (stat == NC_NOERR);
+  }
+  MPI_Bcast(&fileExists, 1, MPI_INT, 0, grid.com);  
+  if (!fileExists) {
+    SETERRQ(2,"NetCDF file with velocities (either cbar or csurf) not found.\n");
+  }
 
-The "vertically averaged horizontal velocity" could be produced by any
-other model, but I have in mind using the balance velocities from Bamber. 
-He produced them from a lousy model for ice sheets, namely the underlying
-idea for balance velocities(!), but at least that model produces high
-velocities where they are justified by large catchments and substantial
-surface accumulation.  In other words, I know how to, and am about to
-(re)write the PISM code necessary to read in balance velocities and use
-them to estimate sliding ``coefficients''.  This code was written in draft
-for Antarctica runs, but I can make it part of standard PISM now.
+  PetscInt cbarExists = 0, csurfExists = 0;
+  int v_cbar, v_csurf;
+  if (grid.rank == 0) {
+    stat = nc_inq_varid(ncid, "cbar", &v_cbar); cbarExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "csurf", &v_csurf); csurfExists = stat == NC_NOERR;
+  }
+  ierr = MPI_Bcast(&cbarExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&csurfExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
 
-If we have surface velocities, the modifications are simple.  I will
-subtract SIA-predicted vertical shear from the surface velocities, not the
-vertically-averaged velocities, to produce basal sliding, and then proceed
-as before.
+  if ((cbarTillSet == PETSC_TRUE) && (!cbarExists)) {
+    SETERRQ1(3,"-cbar_to_till set but cbar not found in %s\n", cFile);
+  }
+  if ((csurfTillSet == PETSC_TRUE) && (!csurfExists)) {
+    SETERRQ1(4,"-csurf_to_till set but csurf not found in %s\n", cFile);
+  }
 
-There will be new PISM options like "-cbar_for_basal foo.nc" and
-"-csurf_for_basal foo.nc"; "c" means ice velocity (actually, speed) in a
-number of PISM options.
-...
-*/
+  // our goal is to create "local interpolation context" from dimensions, 
+  //   limits, and lengths; compare code in bootstrapFromFile_netCDF()
+  size_t dim[5];
+  double bdy[7];
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  dim[3] = 1; 
+  dim[4] = 1;
+  bdy[5] = 0.0;
+  bdy[6] = 0.0;
+  MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
+  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
+  double *z_bif, *zb_bif;
+  z_bif = new double[dim[3]];
+  zb_bif = new double[dim[4]];
+  z_bif[0] = 0.0;
+  zb_bif[0] = 0.0;
+  LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
+  delete z_bif;
+  delete zb_bif;
+  //DEBUG:  ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2, grid.com, 
+     "reading variable %s from file %s; computing till yield stress and till friction\n"
+     "  angle by removing SIA vertical shear and computing membrane stresses\n",
+     (cbarTillSet == PETSC_TRUE) ? "cbar" : "csurf", cFile); CHKERRQ(ierr);
+
+  Vec cIn;
+  ierr = VecDuplicate(vh, &cIn); CHKERRQ(ierr);
+  if ((cbarTillSet == PETSC_TRUE) && (cbarExists)) {
+    ierr = nct.regrid_local_var("cbar", 2, lic, grid, grid.da2, cIn, g2, false);
+             CHKERRQ(ierr);
+  } else if ((csurfTillSet == PETSC_TRUE) && (csurfExists)) {
+    ierr = nct.regrid_local_var("csurf", 2, lic, grid, grid.da2, cIn, g2, false);
+             CHKERRQ(ierr);
+  } else {
+    SETERRQ(998,"how did I get here?");
+  }
+  if (grid.rank == 0) {
+    stat = nc_close(ncid);
+  }
+
+  Vec ubComputed, vbComputed, taubxComputed, taubyComputed;
+  ierr = VecDuplicate(vh, &ubComputed); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &vbComputed); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &taubxComputed); CHKERRQ(ierr);
+  ierr = VecDuplicate(vh, &taubyComputed); CHKERRQ(ierr);
+
+  ierr = removeVerticalPlaneShearRateFromC(csurfTillSet, cIn, ubComputed, vbComputed);
+            CHKERRQ(ierr);
+  ierr = computeBasalShearFromSSA(ubComputed, vbComputed, taubxComputed, taubyComputed);
+            CHKERRQ(ierr);
+  ierr = computeTFAFromBasalShearStressUsingPseudoPlastic(ubComputed, vbComputed, 
+            taubxComputed, taubyComputed, vtauc, vtillphi); CHKERRQ(ierr);
+
+  ierr = VecDestroy(cIn); CHKERRQ(ierr);
+  ierr = VecDestroy(ubComputed); CHKERRQ(ierr);
+  ierr = VecDestroy(vbComputed); CHKERRQ(ierr);
+  ierr = VecDestroy(taubxComputed); CHKERRQ(ierr);
+  ierr = VecDestroy(taubyComputed); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Compute the vertical plane shear predicted by the nonsliding SIA, and remove it from a given ice speed to give a basal velocity field.
 /*!
 This procedure computes a z-independent horizontal ice velocity, conceptually
-a basal sliding velocity, from either surface horizontal ice speed or 
-a vertically-averaged horizontal speed by using the thermomechanically coupled 
-SIA equations.
+a basal sliding velocity, from either a specified surface horizontal ice speed 
+map or a vertically-averaged horizontal speed map.  The nonsliding
+thermomechanically coupled SIA equations are used for this purpose.
 
 We could be given a surface horizontal speed \c csurf or a vertically-integrated 
 horizontal speed \c cbar.  The argument \c CisSURF is \c PETSC_TRUE in the 
@@ -83,22 +158,130 @@ former case and \c PETSC_FALSE in the latter case.
 It is assumed that the input speed gives a velocity pointing down the 
 surface gradient.  That is,
   \f[ (u,v) = - c \frac{\nabla h}{|\nabla h|} \f]
-at all points where \f$|\nabla h| \ge \mathtt{alphacrit}\f$.  At points where 
-\f$|\nabla h| < \mathtt{alphacrit}\f$ the returned velocity is zero.  
 
-Where there is no ice the returned velocity is zero.
+If CisSURF is FALSE then this procedure calls only \c surfaceGradientSIA() 
+and \c velocitySIAStaggered().  Therefore these get modified:
+\c Vec s \c vuvbar[2] and \c vWork2d[0..3] and also 
+\c IceModelVec3 s \c Istag3[2] and \c Sigmastag3[2].  The results in
+\c vuvbar[2] on the staggered grid are the only quantities used here however.
 
-This procedure must save temporary versions of everything modified by 
-IceModel::velocitySIAStaggered() because it calls that routine to compute 
-\c vuvbar[2].
+If CisSURF is TRUE then this procedure calls an additional routine
+horizontalVelocitySIARegular().  This modifies 3d \c Vec s \c vu and \c vv.
+Also \c vub and \c vvb are set to zero.
 
-The result in \c Vecs \c u and \c v is on the regular grid.
+The result in \c Vecs \c ub_out and \c vb_out is on the regular grid.  These 2D
+\c Vec s must be allocated already.
  */
 PetscErrorCode IceModel::removeVerticalPlaneShearRateFromC(
-                 const PetscTruth CisSURF, Vec myC, const PetscScalar alphacrit,
-                 Vec &u, Vec &v) {
+                 const PetscTruth CisSURF, Vec myC, Vec ub_out, Vec vb_out) {
   PetscErrorCode ierr;
-  SETERRQ(1,"NOT IMPLEMENTED");
+  PetscScalar    **csurfSIA;
+
+  // compute the vertically integrated velocity from the nonsliding SIA
+  //   (onto the staggered grid)
+  ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
+  // surface gradient temporarily stored in vWork2d[0..3]
+  // compute vuvbar[2], which is (ubar,vbar) on staggered grid
+  ierr = velocitySIAStaggered(); CHKERRQ(ierr);
+  // communicate vuvbar[01] for velocities2DSIAToRegular():
+  ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+
+  if (CisSURF == PETSC_TRUE) {
+    // we need to do some extra work.  velocitySIAStaggered() has been called,
+    //   but it only computes the 2d vertically-averaged velocity on the staggered grid
+    //   we actually need the surface velocity computed by the nonsliding SIA
+    ierr = Istag3[0].beginGhostComm(); CHKERRQ(ierr);
+    ierr = Istag3[1].beginGhostComm(); CHKERRQ(ierr);
+    ierr = Istag3[0].endGhostComm(); CHKERRQ(ierr);
+    ierr = Istag3[1].endGhostComm(); CHKERRQ(ierr);
+    ierr = VecSet(vub, 0.0); CHKERRQ(ierr);
+    ierr = VecSet(vvb, 0.0); CHKERRQ(ierr);
+    ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
+    ierr = u3.beginGhostComm(); CHKERRQ(ierr);
+    ierr = v3.beginGhostComm(); CHKERRQ(ierr);
+    ierr = u3.endGhostComm(); CHKERRQ(ierr);
+    ierr = v3.endGhostComm(); CHKERRQ(ierr);
+    ierr = u3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = v3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = u3.getSurfaceValuesVec2d(vWork2d[4], vH); CHKERRQ(ierr);
+    ierr = v3.getSurfaceValuesVec2d(vWork2d[5], vH); CHKERRQ(ierr);
+    ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
+    PetscScalar **usurfSIA, **vsurfSIA;
+    ierr = DAVecGetArray(grid.da2, vWork2d[4], &usurfSIA); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[5], &vsurfSIA); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, vWork2d[0], &csurfSIA); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        csurfSIA[i][j] = sqrt(PetscSqr(usurfSIA[i][j]) + PetscSqr(vsurfSIA[i][j]));
+      }
+    }
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &usurfSIA); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[5], &vsurfSIA); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &csurfSIA); CHKERRQ(ierr);
+  }
+
+  PetscScalar **cc, **ub, **vb, **uvbar[2];
+  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, ub_out, &ub); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vb_out, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, myC, &cc); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &csurfSIA); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // note (ubarSIA,vbarSIA) points down the surface gradient; see 
+      //   velocities2DSIAToRegular()
+      const PetscScalar
+          ubarSIA = 0.5 * (uvbar[0][i-1][j] + uvbar[0][i][j]),
+          vbarSIA = 0.5 * (uvbar[1][i][j-1] + uvbar[1][i][j]),
+          magbarSIA = sqrt(PetscSqr(ubarSIA) + PetscSqr(vbarSIA));
+      if (magbarSIA < 1.0 / secpera) {
+        // this is the problematic case; presumably the surface gradient is so small
+        //   that there is little flow driven by the local driving stress;
+        //   so in this case we don't know what direction (ub,vb) should be; 
+        //   we just set the sliding velocity to zero
+        ub[i][j] = 0.0;
+        vb[i][j] = 0.0;
+      } else {
+        if (CisSURF == PETSC_TRUE) { // cc is ice surface speed
+          if (csurfSIA[i][j] >= cc[i][j]) {
+            // in this case all the speed in cc can be accounted for by SIA
+            //   deformation in vertical planes; therefore no sliding
+            ub[i][j] = 0.0;
+            vb[i][j] = 0.0;
+          } else {
+            const PetscScalar factor = (cc[i][j] - csurfSIA[i][j]) / magbarSIA;
+            ub[i][j] = factor * ubarSIA;
+            vb[i][j] = factor * vbarSIA;
+          }
+        } else { // cc is vertically-averaged
+          if (magbarSIA >= cc[i][j]) {
+            // in this case all the speed in cc can be accounted for by SIA
+            //   deformation in vertical planes; therefore no sliding
+            ub[i][j] = 0.0;
+            vb[i][j] = 0.0;
+          } else {
+            // desired case: remove the speed cc, assuming it is in direction of 
+            //   SIA velocity
+            const PetscScalar factor = (cc[i][j] - magbarSIA) / magbarSIA;
+            ub[i][j] = factor * ubarSIA;
+            vb[i][j] = factor * vbarSIA;
+          }
+        }
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, myC, &cc); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, ub_out, &ub); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vb_out, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &csurfSIA); CHKERRQ(ierr);
+  
   return 0;
 }
 
@@ -123,22 +306,20 @@ stress.  In particular, the equations we are using are
 \endlatexonly
 Note \f$\nu\f$ is temperature-dependent.
 
-In the case where the known field is \f$(u,v)\f$.  We are solving for 
-\f$\tau_b = (\tau_{(b)x},\tau_{(b)y})\f$.
-
-The equations are solved everywhere that there is positive thickness; at other points 
-this procedure returns \f$\tau_b = 0\f$.
+In this case the known field is \f$(u,v)\f$.  We are solving for 
+\f$\tau_b = (\tau_{(b)x},\tau_{(b)y})\f$.  The equations are solved everywhere 
+that there is positive thickness; at other points this procedure returns 
+\f$\tau_b = 0\f$.
 
 This procedure must save temporary versions of everything modified by 
-IceModel::assembleSSAMatrix() and IceModel::assembleSSARhs() and
-IceModel::computeEffectiveViscosity()
-because it calls those routines.
+assembleSSAMatrix() and assembleSSARhs() and
+computeEffectiveViscosity() because it calls those routines.
 
-The result in \c Vecs \c taubx and \c taubx are on the regular grid.
+The result in \c Vecs \c taubx_out and \c taubx_out are on the regular grid.
+They must be allocated before calling this routine.
  */
 PetscErrorCode IceModel::computeBasalShearFromSSA(
-                 Vec myu, Vec myv, Vec &taubx, Vec &tauby) {
-  PetscErrorCode ierr;
+                 Vec myu, Vec myv, Vec taubx_out, Vec tauby_out) {
   SETERRQ(1,"NOT IMPLEMENTED");
 
 #if 0
@@ -261,7 +442,7 @@ This procedure should not be called in the purely plastic case, that is,
 if <tt>PlasticBasalType::pseudo_plastic</tt> is \c FALSE.
 
 If <tt>PlasticBasalType::pseudo_plastic</tt> is \c TRUE then
-<tt>PlasticBasalType::drag()</tt> will compute the basal shear stress
+PlasticBasalType::drag() will compute the basal shear stress
 as
     \f[ (\tau_{(b)x},\tau_{(b)y})
            = - \frac{\tau_c}{|U|^{1-q} |U_{\mathtt{thresh}}|^q} U\f]
@@ -272,14 +453,14 @@ and 100 m/a for \f$U_{\mathtt{thresh}}\f$, but \f$q\f$ could even be
 set to 1 for a linear till model, in which case
 \f$\beta = \tau_c/|U_{\mathtt{thresh}}|\f$.
 
-On the other hand, <tt>updateYieldStressFromHmelt()</tt> computes
+On the other hand, updateYieldStressFromHmelt() computes
 the till yield stress \f$\tau_c\f$, a scalar, by 
     \f[ \tau_c = c_0 + \tan\left(\frac{\pi}{180} \phi\right)\, N \f]
 where \f$\phi\f$ is the map of till friction angle, in degrees, stored in
 \c vtillphi.  The till cohesion \f$c_0\f$ (= \c plastic_till_c_0) is usually zero.
 Here \f$N\f$ is the effective pressure on the till, namely \f$N = \rho g H - p_w\f$.
 The porewater pressure \f$p_w\f$ is estimated in terms of the stored basal water
-\c vHmelt; see <tt>updateYieldStressFromHmelt()</tt>.
+\c vHmelt; see getEffectivePressureOnTill().
 
 In this context, the current procedure uses a sliding velocity 
 and a basal shear stress (sign choice so that it is stress applied to the ice)
@@ -296,7 +477,7 @@ There are some cases to check:
   - If the last two cases did not apply, compute the yield stress through magnitudes:
     \f[ \tau_c = \frac{|\tau_{(b)}|\,|U_{\mathtt{thresh}}|^q}{|U|^q} \f]
     by PlasticBasalType::taucFromMagnitudes().
-  - Compute the till friction angle
+  - Compute the till friction angle \e from the till yield stress
     \f[ \phi = \frac{180}{\pi} \arctan\left(\frac{\tau_c - c_0}{N}\right) \f]
 
 All of the above is done only if the ice is grounded and there is positive
@@ -308,7 +489,8 @@ is set to 30 degrees.
 
 Values of both \f$\tau_c\f$ and \f$\phi\f$ are returned by this routine
 but it is envisioned that the value of \f$\tau_c\f$ may evolve in a run
-while \f$\phi\f$ is treated as time-independent.
+while \f$\phi\f$ is treated as time-independent.  No communication occurs
+in this routine.
 
 This procedure reads three fields from the current model state, namely ice 
 thickness \c vH, effective thickness of basal meltwater \c vHmelt, and the 
@@ -316,7 +498,7 @@ mask \c vMask.
  */
 PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
                  const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
-                 Vec &tauc_out, Vec &tfa_out) {
+                 Vec tauc_out, Vec tfa_out) {
   PetscErrorCode ierr;
   
   const PetscScalar slowOrWrongDirFactor = 10.0,
@@ -360,8 +542,12 @@ PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
           }
         }
         // now get till friction angle
-        const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
-        phi[i][j] = (180.0 / pi) * atan( (tauc[i][j] - plastic_till_c_0) / N );
+        if (tauc[i][j] > plastic_till_c_0) {
+          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
+          phi[i][j] = (180.0 / pi) * atan( (tauc[i][j] - plastic_till_c_0) / N );
+        } else {
+          phi[i][j] = 0.0;
+        }
       }
     }
   }

@@ -22,9 +22,10 @@
 
 //! Compute a grain size from a pseudo-age, which is determined only by the vertical velocity component.
 /*!
-PISM allows the choice of the Goldsby-Kohlstedt flow law with option <tt>-gk</tt>.  That flow law requires
-a grain size to compute the softness/viscosity.  To determine the grain size we use the Vostok core 
-as a source for a universal relation between the age of the ice and its grain size; see grainSizeVostok().
+PISM allows the choice of the Goldsby-Kohlstedt flow law with option <tt>-gk</tt>.  
+That flow law requires a grain size to compute the softness/viscosity.  To determine 
+the grain size we use the Vostok core \lo\cite{VostokCore}\elo as a source for a 
+universal relation between the age of the ice and its grain size; see grainSizeVostok().
 
 By default we do not use the full model age, which takes a very long time
 to equilibriate.  (If you want to use the full model age for this purpose add 
@@ -33,26 +34,34 @@ the vertical (scalar) component of the velocity field and makes a steady state a
 
 In fact we solve this equation in each ice column:
      \f[w\frac{\partial a}{\partial z} \stackrel{\ast}{=} 1,\f]
-where \f$a\f$ is the pseudo-age.  This represents a major simplification of the actual age equation
-    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x} + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-which is solved in ageStep().  There are two simplifications, first that we assume steady state for the age field,
-and secondly that the horizontal velocity is assumed to be zero.  (Alternately we could explain dropping the
-horizontal advection terms by assuming the age field does not vary in horizontal directions; each column is assumed
-to have the same age profile as its neighbor.)
+where \f$a\f$ is the pseudo-age.  This represents a major simplification of 
+the actual age equation
+    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
+        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
+which is solved in ageStep().  There are two simplifications, first that we 
+assume steady state for the age field, and secondly that the horizontal velocity 
+is assumed to be zero.  (Alternately we could explain dropping the
+horizontal advection terms by assuming the age field does not vary in horizontal 
+directions; each column is assumed to have the same age profile as its neighbor.)
 
-The boundary value for the first order hyperbolic equation \f$\ast\f$ is \f$a(z=H)=0\f$, where \f$H\f$ is the
-elevation of the surface of the ice.  We work down the column from the top, using the downward velocity to add
-to the age.  If at any point the vertical velocity is positive then we assume the ice is old below that level;
-in the Vostok time scale, for producing a grain size, ``old'' means \f$10^6\f$ years; see grainSizeVostok().
+The boundary value for the first order hyperbolic equation \f$\ast\f$ is 
+\f$a(z=H)=0\f$, where \f$H\f$ is the elevation of the surface of the ice.  We 
+work down the column from the top, using the downward velocity to add
+to the age.  If at any point the vertical velocity is positive then we assume 
+the ice is old below that level; in the Vostok time scale, for producing a 
+grain size, ``old'' means \f$10^6\f$ years; see grainSizeVostok().
 
 The numerical method is to approximate \f$\ast\f$ by
-    \f[\left(\frac{w_k + w_{k+1}}{2}\right)\,\left(\frac{a_{k+1} - a_k}{z_{k+1}-z_k}\right) = 1.\f]
+    \f[\left(\frac{w_k + w_{k+1}}{2}\right)\,
+         \left(\frac{a_{k+1} - a_k}{z_{k+1}-z_k}\right) = 1.\f]
 or
     \f[a_k = a_{k+1} - \frac{2(z_{k+1}-z_k)}{w_k + w_{k+1}}.\f]
-This has second order truncation error (at \f$z_{k+1/2}\f$) whether or not vertical grid is equally-spaced.
+This has second order truncation error (at \f$z_{k+1/2}\f$) whether or not 
+vertical grid is equally-spaced.
  */
 PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
-                     const PetscScalar H, const PetscInt Mz, PetscScalar *w, PetscScalar *age_wspace,
+                     const PetscScalar H, const PetscInt Mz, 
+                     PetscScalar *w, PetscScalar *age_wspace,
                      PetscScalar **gs) {
   // don't call this method when realAgeForGrainSize == PETSC_TRUE
   PetscScalar *age = age_wspace;
@@ -87,10 +96,7 @@ PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
 
 //! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.
 /*! 
-A data set is interpolated.  The data is from 
-
-EPICA community members (2004), <i>Eight glacial cycles from an Antarctic ice core</i>, Nature 429,
-623--628.
+A data set is interpolated.  The data is from \lo\cite{VostokCore}\elo.
  */
 PetscScalar IceModel::grainSizeVostok(PetscScalar age) const {
   const PetscInt numPoints = 22;

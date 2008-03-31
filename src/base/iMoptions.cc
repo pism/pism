@@ -88,6 +88,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
+// "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
+
 // "-chebZ" read in determineSpacingTypeFromOptions()
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
@@ -104,6 +106,8 @@ PetscErrorCode  IceModel::setFromOptions() {
     useConstantHardnessForSSA = PETSC_TRUE;
     constantHardnessForSSA = my_barB;
   }
+
+// "-csurf_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
   // regular size viewers
   ierr = PetscOptionsGetString(PETSC_NULL, "-d", diagnostic, PETSC_MAX_PATH_LEN, PETSC_NULL); 

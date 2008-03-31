@@ -73,8 +73,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
   }
 
   if (useSSAVelocity == PETSC_TRUE) {
-//    ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
-    ierr = basal->printInfo(2,grid.com); CHKERRQ(ierr);
+    ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
   ierr = VecSet(vtauc, tauc_default_value); CHKERRQ(ierr);
   // since vtillphi is part of model state it should not be set to default here, but 
@@ -83,15 +82,15 @@ PetscErrorCode IceModel::initBasalTillModel() {
 }
 
 
-//! Compute effective pressure on till from effective thickness of stored till water.
+//! Compute effective pressure on till using effective thickness of stored till water.
 /*!
 Uses ice thickness to compute overburden pressure.  Pore water pressure is assumed
 to be a fixed fraction of the overburden pressure.
 
 Note \c melt_thk should be zero at points where base of ice is frozen.
 
-Also we always want \f$0 \le \text{\texttt{melt_thk}} \le$ \c Hmelt_max 
-so \f$0 le\f$ \c lambda \f$\le 1\f$ inside this routine.
+Also we always want \f$0 \le\f$ \c melt_thk \f$\le\f$ \c Hmelt_max 
+so \f$0 \le\f$ \c lambda \f$\le 1\f$ inside this routine.
  */
 PetscScalar IceModel::getEffectivePressureOnTill(
                const PetscScalar thk, const PetscScalar melt_thk) {
@@ -103,9 +102,9 @@ PetscScalar IceModel::getEffectivePressureOnTill(
 }
 
 
-//! Update the till yield stress for the plastic till model, based on pressure and stored till water.
+//! Update the till yield stress for the pseudo-plastic till model.
 /*!
-Expanded brief description: Update the till yield stress and the mask, for 
+Expanded brief description: Update the till yield stress \e and the mask, for 
 the pseudo-plastic till model, based on pressure and stored till water.
 
 This procedure also modifies the mask.  In particular, it has the side effect
@@ -121,6 +120,8 @@ We modify it by:
       \f$\lambda = 0\f$ when the bed is frozen; and
     - computing porewater pressure \f$p_w\f$ as a fixed fraction \f$\varphi\f$ 
       of the overburden pressure \f$\rho g H\f$.
+The effective pressure \f$\rho g H - p_w\f$ is actually computed by 
+getEffectivePressureOnTill().
 
 With these replacements our formula looks like
     \f[   \tau_c = c_0 + \mu \left(1 - \lambda \varphi\right) \rho g H \f]

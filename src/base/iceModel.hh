@@ -241,12 +241,14 @@ protected:
   PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
+  PetscErrorCode invertVelocitiesFromNetCDF();
   PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
-                    Vec myC, const PetscScalar alphacrit, Vec &u, Vec &v);
-  PetscErrorCode computeBasalShearFromSSA(Vec myu, Vec myv, Vec &taubx, Vec &tauby);
+                    Vec myC, Vec ub_out, Vec vb_out);
+  PetscErrorCode computeBasalShearFromSSA(Vec myu, Vec myv, 
+                                          Vec taubx_out, Vec tauby_out);
   PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
                  const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
-                 Vec &tauc_out, Vec &tfa_out);
+                 Vec tauc_out, Vec tfa_out);
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;

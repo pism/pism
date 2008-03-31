@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = "PISM (a Parallel Ice Sheet Model)  "
+PROJECT_NAME           = "PISM (a Parallel Ice Sheet Model)"
 PROJECT_NUMBER         = alpha
 OUTPUT_DIRECTORY       = ./doxy/
 CREATE_SUBDIRS         = NO
