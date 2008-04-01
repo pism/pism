@@ -282,6 +282,7 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSliceToMatlab(viewer, 'E', tau3, 1.0/secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'I', vtillphi, 1.0); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
   ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'Q', vWork2d[0], 0.001); CHKERRQ(ierr);

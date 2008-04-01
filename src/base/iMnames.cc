@@ -66,7 +66,7 @@ const titleNname IceModel::tn[] = {
 {"geothermal heat flux (mW/m^2)", "ghf"}, // 'F'
 {}, // 'G'
 {"H (thickness; m)", "H"}, // 'H'
-{}, // 'I'
+{"till friction angle (deg)", "tillphi"}, // 'I'
 {}, // 'J'
 {}, // 'K'
 {"basal melt water thickness (m)", "Hmelt"}, // 'L'

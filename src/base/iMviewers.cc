@@ -104,9 +104,9 @@ PetscErrorCode IceModel::createViewers() {
     return 0;
 
   PetscErrorCode ierr;
-  const int nv = 43; // number of viewers in use
+  const int nv = 44; // number of viewers in use
   char viewsInUse[nv] = {'0','1','2','3','4','5',
-                         'A','C','D','E','F','H','L','Q','R','S',
+                         'A','C','D','E','F','H','L','P','Q','R','S',
                                  'T','U','V','X','Y','Z',
                          'a','b','c','e','f','h','i','j','l',
                                  'm','n','p','q','r','s','t','u','v','x',
@@ -411,7 +411,9 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = updateSliceViewer('E', tau3, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
   ierr = update2DViewer('H', vH, 1.0); CHKERRQ(ierr);
+  ierr = update2DViewer('I', vtillphi, 1.0); CHKERRQ(ierr); // stored and displayed in degrees
   ierr = update2DViewer('L', vHmelt, 1.0); CHKERRQ(ierr);
+  // 'P' in use for comPensatory strain heating, by IceCompModel
   if (runtimeViewers[cIndex('Q')] != PETSC_NULL) {
     ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
     ierr = update2DViewer('Q', vWork2d[0], 0.001); CHKERRQ(ierr); // Display in kPa

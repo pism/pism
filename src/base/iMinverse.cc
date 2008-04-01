@@ -23,21 +23,21 @@
 #include "iceModel.hh"
 
 
-//! Invert ice velocities saved in NetCDF file for till properties, based on user options.
+//! Invert ice velocities saved in NetCDF file to find till properties, based on user options.
 /*!
 Reads user options <tt>-cbar_to_till foo.nc</tt> and <tt>-csurf_to_till foo.nc</tt>.
 
-Must be called after more-or-less complete initialization (but at end of initialization).
-Uses initialized geometry, temperature field, and map of effective thickness of basal till
+Must be called after initialization is more-or-less completed.
+Uses geometry, temperature field, and map of effective thickness of basal till
 water in its inversion.
 
-Expects to find variable \c cbar or \c csurf in \c foo.nc according to option.  
+Expects to find variable \c cbar or \c csurf in NetCDF file \c foo.nc (according to option).  
 If found, reads it.  Then calls, in turn, removeVerticalPlaneShearRateFromC(),
-to compute the basal sliding, computeBasalShearFromSSA() to compute \f$\tau_b\f$ 
-(the part of the driving stress held pointwise by the basal shear stress), and 
-computeTFAFromBasalShearStressUsingPseudoPlastic()
-to get the till yield stress and the till friction angle in a pseudo-plastic till
-model (which includes purely-plastic and linearly-viscous cases).
+to compute the basal sliding, computeBasalShearFromSSA() to compute the basal shear stress, 
+and finally computeTFAFromBasalShearStressUsingPseudoPlastic().
+The result is to get the till yield stress and the till friction angle in a 
+pseudo-plastic till model.  (This model includes purely-plastic and linearly-viscous cases).
+A forward time-stepping model could then be based on the resulting till friction angle field.
  */
 PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   PetscErrorCode ierr;
@@ -122,22 +122,18 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
     stat = nc_close(ncid);
   }
 
-  Vec ubComputed, vbComputed, taubxComputed, taubyComputed;
-  ierr = VecDuplicate(vh, &ubComputed); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vbComputed); CHKERRQ(ierr);
+  Vec taubxComputed, taubyComputed;
   ierr = VecDuplicate(vh, &taubxComputed); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &taubyComputed); CHKERRQ(ierr);
 
-  ierr = removeVerticalPlaneShearRateFromC(csurfTillSet, cIn, ubComputed, vbComputed);
+  ierr = removeVerticalPlaneShearRateFromC(csurfTillSet, cIn, vubarSSA, vvbarSSA);
             CHKERRQ(ierr);
-  ierr = computeBasalShearFromSSA(ubComputed, vbComputed, taubxComputed, taubyComputed);
+  ierr = computeBasalShearFromSSA(vubarSSA, vvbarSSA, taubxComputed, taubyComputed);
             CHKERRQ(ierr);
-  ierr = computeTFAFromBasalShearStressUsingPseudoPlastic(ubComputed, vbComputed, 
+  ierr = computeTFAFromBasalShearStressUsingPseudoPlastic(vubarSSA, vvbarSSA, 
             taubxComputed, taubyComputed, vtauc, vtillphi); CHKERRQ(ierr);
 
   ierr = VecDestroy(cIn); CHKERRQ(ierr);
-  ierr = VecDestroy(ubComputed); CHKERRQ(ierr);
-  ierr = VecDestroy(vbComputed); CHKERRQ(ierr);
   ierr = VecDestroy(taubxComputed); CHKERRQ(ierr);
   ierr = VecDestroy(taubyComputed); CHKERRQ(ierr);
   return 0;
@@ -286,9 +282,9 @@ PetscErrorCode IceModel::removeVerticalPlaneShearRateFromC(
 }
 
 
-//! Compute basal shear stress from a given z-independent horizontal ice velocity using SSA equations.
+//! Compute basal shear stress from a given sliding velocity using SSA equations.
 /*!
-From the input velocity, and using ice thickness, ice surface elevation, and an 
+From the input sliding velocity, and using ice thickness, ice surface elevation, and an 
 ice temperature field, we use the SSA equations to compute the basal shear
 stress.  In particular, the equations we are using are
 \latexonly
@@ -320,111 +316,97 @@ They must be allocated before calling this routine.
  */
 PetscErrorCode IceModel::computeBasalShearFromSSA(
                  Vec myu, Vec myv, Vec taubx_out, Vec tauby_out) {
-  SETERRQ(1,"NOT IMPLEMENTED");
+  PetscErrorCode ierr;
 
-#if 0
+  // effective viscosity for myu, myv
+  const PetscTruth leaveNuAloneSSA_save = leaveNuAloneSSA, 
+                   useConstantNuForSSA_save = useConstantNuForSSA;
+  leaveNuAloneSSA = PETSC_FALSE;
+  useConstantNuForSSA = PETSC_FALSE;
+  Vec myvNu[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
+  Vec vubarSSAold = vWork2d[2], vvbarSSAold = vWork2d[3];
+  ierr = VecCopy(vubarSSA, vubarSSAold); CHKERRQ(ierr);
+  ierr = VecCopy(vvbarSSA, vvbarSSAold); CHKERRQ(ierr);
+  ierr = VecCopy(myu, vubarSSA); CHKERRQ(ierr);
+  ierr = VecCopy(myv, vvbarSSA); CHKERRQ(ierr);
+  // eps=0.0 in bdd-below regularization; Schoof type regularization does occur;
+  ierr = computeEffectiveViscosity(myvNu, 0.0); CHKERRQ(ierr);
+  ierr = VecCopy(vubarSSAold, vubarSSA); CHKERRQ(ierr);
+  ierr = VecCopy(vvbarSSAold, vvbarSSA); CHKERRQ(ierr);
+  leaveNuAloneSSA = leaveNuAloneSSA_save;
+  useConstantNuForSSA = useConstantNuForSSA_save;
+
+  // allocate Mat and Vecs; compare linear system in velocitySSA()
   Mat A;
   Vec x, result, rhs;
-  PetscScalar **ub, **vb, **cbarin, **taub;
-
-//FIXME: need to compute effective viscosity first
-
-  // allocate Mat and Vecs; compare IceModel::velocitySSA()
-  const PetscInt M = 2 * grid.Mx * grid.My;
-  ierr = MatDuplicate(SSAStiffnessMatrix, &A); CHKERRQ(ierr);
-//  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
-//                         13, PETSC_NULL, 13, PETSC_NULL,
-//                         &A); CHKERRQ(ierr);
+  ierr = MatDuplicate(SSAStiffnessMatrix, MAT_COPY_VALUES, &A); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &result); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &rhs); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &x); CHKERRQ(ierr);
 
-  // build approximation of SSA equations (A x = rhs)
-  // FIXME:  Issue here is about how assembleSSAMatrix() treats the mask.
-  //         Generally we want basal shear as part of matrix:
+  // Build approximation of SSA equations (A x = rhs)
+  //   Generally we want basal shear as part of matrix:
   //                L[U] + beta U = (driving),
-  //         so  A = L + beta I.
-  //         In this case we don't want basal shear terms as part of the matrix:
+  //   so  A = L + beta I. In this case we don't want basal shear terms 
+  //   as part of the matrix:
   //                tau_b := L[U] - (driving),
-  //         so  A = L.
-// I think we should save vMask and rebuild it based only on H>0; if H>0 mark
-// as FLOATING; if H==0 mark as SHEET.
-  Vec vNu[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
-  ierr = assembleSSAMatrix(vNu, A); CHKERRQ(ierr);
+  //   so  A = L.
+  ierr = assembleSSAMatrix(false, myvNu, A); CHKERRQ(ierr);
+ 
+  // Note rhs contains driving terms  - \rho g H \grad h
   ierr = assembleSSARhs(false, rhs); CHKERRQ(ierr);
 
-  // Note rhs contains driving terms  \rho g H \grad h  but  A  contains basal
-  // drag term [betax*u betay*v]'.  It must be removed.
-  // Also set x = [u v]'  (i.e. interleaved).
+  // Set x = [u v]'  (i.e. interleaved).
+  PetscScalar **u, **v;
+  const PetscInt  M = 2 * grid.My;
   ierr = VecSet(x, 0.0); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vmagbalvel, &balvel); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, myu, &u); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, myv, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt    J = 2*j;
-      const PetscInt    rowU = i*2*grid.p->My + J;
-      const PetscInt    rowV = i*2*grid.p->My + J+1;
-      // remove old drag term
-      if (intMask(mask[i][j]) == MASK_DRAGGING) {
-        ierr = MatSetValue(A, rowU, rowU,
-                           - basalDragx(beta, tauc, u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValue(A, rowV, rowV,
-                           - basalDragy(beta, tauc, u, v, i, j), ADD_VALUES); CHKERRQ(ierr);
-      }
-      // remove deformational from balance velocities; put in x
-      const PetscScalar c = sqrt(PetscSqr(u[i][j]) + PetscSqr(v[i][j]));
-      PetscScalar       residualFactor = (balvel[i][j] / c) - 1.0;
-      // if (residualFactor < 0.0)   residualFactor = 0.0;  // avoid negative drag coeff here?  probably not
-      ierr = VecSetValue(x, rowU, residualFactor * u[i][j], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValue(x, rowV, residualFactor * v[i][j], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*M + 2*j, u[i][j], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*M + 2*j+1, v[i][j], INSERT_VALUES); CHKERRQ(ierr);
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbeta, &beta); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vmagbalvel, &balvel); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, myu, &u); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, myv, &v); CHKERRQ(ierr);
+
   // communicate!
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
 
-  // With new A and x, compute  result = Ax - rhs.
+  // With new A and x, compute  result = Ax - rhs = L[u] - (driving)
   ierr = MatMult(A,x,result); CHKERRQ(ierr);
   ierr = VecAXPY(result,-1.0,rhs); CHKERRQ(ierr);  // note result = 0 if MASK_SHEET
   
-  // As result is [betax*u betay*v]', divide by velocities, but only where grounded!
-  // where floating, report no drag coeff
-  ierr = VecPointwiseDivide(dragxy,result,x); CHKERRQ(ierr);
-  ierr = VecScale(dragxy,-1.0); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  // transfer result to taub output vectors
+  PetscScalar     **tbx, **tby, *res;
+  Vec             resultLoc = SSAXLocal;
+  ierr = VecScatterBegin(SSAScatterGlobalToLocal, result, resultLoc, 
+           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(SSAScatterGlobalToLocal, result, resultLoc, 
+           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGetArray(resultLoc, &res); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, taubx_out, &tbx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, tauby_out, &tby); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt    J = 2*j;
-      const PetscInt    rowU = i*2*grid.p->My + J;
-      const PetscInt    rowV = i*2*grid.p->My + J+1;
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
-        ierr = VecSetValue(dragxy, rowU, 0.0, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(dragxy, rowV, 0.0, INSERT_VALUES); CHKERRQ(ierr);
-      }
+      tbx[i][j] = res[i*M + 2*j];
+      tby[i][j] = res[i*M + 2*j+1];
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(dragxy); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(dragxy); CHKERRQ(ierr);
-  
+  ierr = DAVecGetArray(grid.da2, taubx_out, &tbx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, tauby_out, &tby); CHKERRQ(ierr);
+  ierr = VecRestoreArray(resultLoc, &res); CHKERRQ(ierr);
+
+  // de-allocate
   ierr = MatDestroy(A); CHKERRQ(ierr);
   ierr = VecDestroy(x); CHKERRQ(ierr);
   ierr = VecDestroy(result); CHKERRQ(ierr);
   ierr = VecDestroy(rhs); CHKERRQ(ierr);
 
-#endif
   return 0;
 }
 

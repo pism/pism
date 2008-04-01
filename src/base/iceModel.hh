@@ -345,7 +345,7 @@ protected:
   PetscErrorCode cleanupGeometryAfterSSA(const PetscScalar minH);
   virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);
   PetscErrorCode testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2], PetscReal *, PetscReal *);
-  PetscErrorCode assembleSSAMatrix(Vec vNu[2], Mat A);
+  PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, Vec vNu[2], Mat A);
   PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   PetscErrorCode moveVelocityToDAVectors(Vec x);
   PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);

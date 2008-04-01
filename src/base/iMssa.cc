@@ -87,12 +87,14 @@ PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
 
 //! Compute the product of the effective viscosity \f$\nu\f$ and ice thickness \f$H\f$ for the SSA model.
 /*! 
-In PISM the product \f$\nu H\f$ can be (i) constant, (ii) can be computed with a constant ice hardness
-\f$\bar B\f$ (temperature-independent) but with dependence of the viscosity on the strain rates, or 
-(iii) it can depend on the strain rates and have a vertically-averaged ice hardness.
+In PISM the product \f$\nu H\f$ can be
+  - constant, or
+  - can be computed with a constant ice hardness \f$\bar B\f$ (temperature-independent)
+    but with dependence of the viscosity on the strain rates, or 
+  - it can depend on the strain rates and have a vertically-averaged ice hardness.
 
 The flow law in ice stream and ice shelf regions must, for now, be a temperature-dependent Glen
-law because these are the only ones we know how to convert to ``viscosity form''.  (More general 
+law.  This is the only flow law we know how to convert to ``viscosity form''.  (More general 
 forms like Goldsby-Kohlstedt are not yet inverted.)  The viscosity form is
    \f[ \nu(T^*,D) = \frac{1}{2} B(T^*) D^{(1/n)-1}\, D_{ij} \f]
 where 
@@ -113,6 +115,9 @@ The effective viscosity is then
 where in the temperature-dependent case
    \f[ \bar B = \frac{1}{H}\,\int_b^h B(T^*)\,dz\f]
 This integral is approximately computed by the trapezoid rule.
+
+In fact the integral is regularized as described in \lo\cite{SchoofStream}\elo.
+The regularization constant \f$\epsilon\f$ is an argument to this procedure.
  */
 PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon) {
   PetscErrorCode ierr;
@@ -130,14 +135,13 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
 
-  PetscScalar *Tij, *Toffset;
-
   // We need to compute integrated effective viscosity. It is locally determined by the
   // strain rates and temperature field.
-  PetscScalar **mask, **H, **nu[2], **u, **v;  
+//  PetscScalar *Tij, *Toffset, **mask, **H, **nu[2], **u, **v;  
+  PetscScalar *Tij, *Toffset, **H, **nu[2], **u, **v;  
   ierr = VecSet(vNu[0], 0.0); CHKERRQ(ierr);
   ierr = VecSet(vNu[1], 0.0); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
+//  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
@@ -148,7 +152,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscInt      oi = 1-o, oj=o;
-        if (intMask(mask[i][j]) != MASK_SHEET || intMask(mask[i+oi][j+oj]) != MASK_SHEET) {
+//        if (intMask(mask[i][j]) != MASK_SHEET || intMask(mask[i+oi][j+oj]) != MASK_SHEET) {
           const PetscScalar   dx = grid.dx, 
                               dy = grid.dy;
           PetscScalar u_x, u_y, v_x, v_y;
@@ -191,11 +195,11 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
           
           // We ensure that nu is bounded below by a positive constant.
           nu[o][i][j] += epsilon;
-        }
+//        }
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+//  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
@@ -289,7 +293,8 @@ plastic till case \lo\cite{SchoofStream}\elo.
 This method assembles the matrix for the left side of the SSA equations.  The numerical method 
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
-PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
+PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
+                                 Vec vNu[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
@@ -324,56 +329,13 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
         * Note that the positive i (x) direction is right and the positive j (y)
         * direction is up. */
 
-// these DO use thickness H because nu[][][] is actually viscosity times thickness
+        // thickness H is incorporated here because nu[][][] is actually 
+        //   viscosity times thickness
         const PetscScalar c00 = nu[0][i-1][j];
         const PetscScalar c01 = nu[0][i][j];
         const PetscScalar c10 = nu[1][i][j-1];
         const PetscScalar c11 = nu[1][i][j];
 
-#if 0
-        /*
-        * These are stencils for
-        *  - \nabla \cdot ( \nu \nabla u ) = 0
-        *      and
-        *  - \nabla \cdot ( \nu \nabla v ) = 0
-        * They leave u and v uncoupled.
-        */
-        const PetscInt stencilSize = 5;
-        const PetscInt colU[stencilSize] = {
-          i*M+Jp,
-          im*M+J,     i*M+J,      ip*M+J,
-          i*M+Jm};
-        const PetscScalar valU[stencilSize] = {
-          -c11/dy2,
-          -c00/dx2,   (c00+c01)/dx2+(c10+c11)/dy2,    -c01/dx2,
-          -c10/dy2};
-        const PetscInt colV[stencilSize] = {
-          i*M+Jp+1,
-          im*M+J+1,   i*M+J+1,    ip*M+J+1,
-          i*M+Jm+1};
-        const PetscScalar valV[stencilSize] = {
-          -c11/dy2,
-          -c00/dx2,   (c00+c01)/dx2+(c10+c11)/dy2,    -c01/dx2,
-          -c10/dy2};
-#else
-#if 0
-        /*
-        * These are the stencils for constant thickness and constant viscosity.
-        * They are not scaled for grid size so use 0 as RHS.
-        * Only use for basic testing.
-        */
-        const PetscInt stencilSize = 9;
-        const PetscInt colU[] = {
-          im*M+Jp+1,  i*M+Jp,     ip*M+Jp+1,
-          im*M+J,     i*M+J,      ip*M+J,
-          im*M+Jm+1,  i*M+Jm,     ip*M+Jm+1 };
-        const PetscScalar valU[] = {0.75, -1, -0.75,        -4, 10, -4,     -0.75, -1, 0.75};
-        const PetscInt colV[] = {
-          im*M+Jp,    i*M+Jp+1,   ip*M+Jp,
-          im*M+J+1,   i*M+J+1,    ip*M+J+1,
-          im*M+Jm,    i*M+Jm+1,   ip*M+Jm };
-        const PetscScalar valV[] = {0.75, -4, -0.75,        -1, 10, -1,     -0.75, -4, 0.75};
-#else
         const PetscInt stencilSize = 13;
         /* The locations of the stencil points for the U equation */
         const PetscInt colU[] = {
@@ -408,13 +370,11 @@ PetscErrorCode IceModel::assembleSSAMatrix(Vec vNu[2], Mat A) {
           -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
           -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
           /*               */ -4*c10/dy2 };
-#endif
-#endif
 
         /* Dragging ice experiences friction at the bed determined by the
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), ultimately. */
-        if (intMask(mask[i][j]) == MASK_DRAGGING) {
+        if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(tauc, u, v, i, j);
           valV[7] += basalDragy(tauc, u, v, i, j);
@@ -659,7 +619,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
                  (k == 0) ? "%3d" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%3d",k); CHKERRQ(ierr);
       }
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
-      ierr = assembleSSAMatrix(vNu, A); CHKERRQ(ierr);
+      ierr = assembleSSAMatrix(true, vNu, A); CHKERRQ(ierr);
       ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
