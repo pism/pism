@@ -325,6 +325,8 @@ PetscErrorCode  IceModel::setFromOptions() {
            
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
            PETSC_NULL); CHKERRQ(ierr);
+
+// -ssaBC used in IceROSSModel
   
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
   // SSA equations where DRAGGING; this version is  U = u + v   where u is SIA and v is SSA

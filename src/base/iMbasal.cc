@@ -20,8 +20,12 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-//! Compute the coefficient for the basal velocity in SIA regions.
+
+//! Compute the coefficient of surface gradient, for basal sliding velocity as a function of driving stress in SIA regions.
 /*!
+THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
+ZERO BY DEFAULT.                
+
 In SIA regions a basal sliding law of the form
   \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
 is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of the ice
@@ -32,10 +36,11 @@ depend of the thickness, the basal temperature, and the horizontal location.
 This procedure is virtual and can be replaced by any derived class.
 
 The default version for IceModel here is location-independent 
-pressure-melting-temperature-activated linear sliding.
+pressure-melting-temperature-activated linear sliding.  Here we pass
+\f$\mu\f$, which can be set by option \c -mu_sliding, and the pressure 
+at the base to BasalTypeSIA::velocity().
 
-THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
-ZERO BY DEFAULT.                
+The returned coefficient is used in basalSlidingHeatingSIA().
  */
 PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
@@ -63,12 +68,22 @@ PetscScalar IceModel::basalDragy(PetscScalar **tauc,
 }
 
 
+//! Initialize the pseudo-plastic till mechanical model.
+/*! 
+See PlasticBasalType and updateYieldStressFromHmelt() and getEffectivePressureOnTill()
+for model equations.  See also invertVelocitiesFromNetCDF() for one way to 
+get a map of till friction angle.
+
+Also initializes the SIA-type sliding law, but use of that model is not recommended
+and is turned off by default.
+ */
 PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
   
   if (createBasal_done == PETSC_FALSE) {
     basal = new PlasticBasalType(plasticRegularization, doPseudoPlasticTill, 
                                  pseudo_plastic_q, pseudo_plastic_uthreshold);
+    basalSIA = new BasalTypeSIA();  // initialize it; USE NOT RECOMMENDED!
     createBasal_done = PETSC_TRUE;
   }
 

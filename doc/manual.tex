@@ -324,55 +324,55 @@ Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \
 \clearpage\newpage
 \section{Getting started}\label{sect:start}\index{PISM!getting started}
 
-\subsection{Running an EISMINT simplified geometry experiment}\index{EISMINT}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} freely available as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet evolution model and section \ref{sect:ross} is a tutorial on PISM as an Ross ice shelf diagnosity model using the EISMINT data sets.}  For now, in order to avoid issues of data formats and data flaws in a first use of PISM, this section describes how to use PISM for experiment F in the ``EISMINT II'' simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.
+\subsection{Running an EISMINT simplified geometry experiment}\index{EISMINT}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} freely available as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet evolution model and section \ref{sect:ross} is a tutorial on PISM as an Ross ice shelf diagnosity model using the EISMINT data sets.}  For now, to avoid issues of data formats and data flaws in a first use of PISM, this section describes how to use PISM for experiment A in the ``EISMINT II'' simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.
 
-%APPLIES TO F; NOT NEEDED:  One happens to be approximating an unstable equilibrium of the relevant (thermomechanically-coupled) partial differential equations, so one inevitably gets ``spokes'' in the basal temperature field, which break the symmetry of the boundary conditions \cite{BBL,PayneBaldwin,SaitoEISMINT}.
-
-In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction; note that the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.  For a demonstration we choose this standard 25km grid in the horizontal and use 201 grid points in the vertical for a 25 m (equally-spaced) grid.  (Note that the computational box is 5000 m high by default for EISMINT II experiment A in PISM.)  Experiment A starts with zero ice, but the center thickness of the ice sheet grows to a peak near 5000 m before decaying to its equilibrium center thickness of about ??? m.  All EISMINT II runs are for 200,000 model years.  Here we start with a short 2000 year run for a quicker illustration.  The executable is ``\t{pisms}''\index{pisms}, for the ``simplifed geometry mode'' of PISM:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{Mx}\pismoptionindex{My}\pismoptionindex{Mz}\pismoptionindex{y}
+In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction; note that the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.  For a demonstration we choose this standard 25km grid in the horizontal and use 61 grid points in the vertical with unequal spacing.  The spacing is finest at the bottom of the ice column (22 m) and coarsest at the top (145 m).  Note that the computational box is 5000 m high by default for EISMINT II experiment A in PISM.  Experiment A starts with zero ice, but the center thickness of the ice sheet grows to a peak near 5000 m before decaying to its equilibrium center thickness of about ??? m.  All EISMINT II runs are for 200,000 model years.  Here we start with a short 2000 year run for a quicker illustration.  The executable is ``\t{pisms}''\index{pisms}, for the ``simplifed geometry mode'' of PISM:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{Mx}\pismoptionindex{My}\pismoptionindex{Mz}\pismoptionindex{y}
 
 \small\begin{quote}\begin{verbatim}
-$ pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 2000
+$ pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -y 2000
 PISMS (simplified geometry mode)
 setting parameters for EISMINT II experiment A ... 
 initializing EISMINT II experiment A ... 
   [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
-  [grid cell dims (equal dz): (   25.00 km) x (   25.00 km) x (   25.00 m)]
+  [hor. grid cell dimensions: (   25.00 km) x (   25.00 km)]
+  [vertical grid spacing in ice not equal: 21.875 m < dz < 144.792 m]
+  [fine equal spacing used in temperatureStep(): Mz = 230, dzEQ = 21.834 m]
 running EISMINT II experiment A ...
 %ybp SIA SSA  # vgatdh Nr  +STEP
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
 U        years 10^6_km^3 10^6_km^2 (none)          m         K
- $$$$            $$$$$ $$
+ $$$            $$$$$ $$
 S      0.00000:  0.00000  0.0000   0.0000      0.000  238.1500
- $$$ SIA        v$at$h 0m  +60.00000
+ $$ SIA        vat$h 0m  +60.00000
 S     60.00000:  0.01704  0.6281   0.0000     30.000  238.1500
 . . .
- $$$ SIA        v$at$h 0e  +20.00000
-S   2000.00000:  0.56790  0.6306   0.0000   1000.000  243.7518
+ $$ SIA        vat$h 0e  +20.00000
+S   2000.00000:  0.56790  0.6306   0.0000   1000.000  243.8026
 done with run ... 
-Writing model state to file `simp_exper.nc' ... done.
+Writing model state to file `simp_exper.nc'
 \end{verbatim}
 \end{quote}\normalsize
-\noindent This should have taken less than one minute.
+\noindent This should have taken much less than one minute.
 
 In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\verb|simp_exper.nc|''.  The next run will use a ``\intextoption{o}'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a four processor machine.  (The following should also work fine on a single processor machine but there is no speed-up, naturally.)  Let's also run things in the background so we can continue to experiment:\pismoptionindex{tempskip}\pismoptionindex{if}\index{mpiexec}
 
 \small\begin{quote}\begin{verbatim}
-$ mpiexec -n 4 pisms -eisII A -if simp_exper.nc -tempskip 5 -y 198000 \
+$ mpiexec -n 2 pisms -eisII A -if simp_exper.nc -tempskip 5 -y 198000 \
   -o eisIIA200k >> eisIIA.out &
 \end{verbatim}
 \end{quote}\normalsize
 
-This run will take at least four processor-hours.  It generates a NetCDF file \verb|eisIIA200k.nc| at the end.  The standard output in \verb|eisIIA.out| can be tracked as the job is running in the background using \verb|less|\index{less}, for instance; \verb|top|\index{top} is a Linux tool to watch CPU and memory usage during the run.
+This run will take at most four processor-hours.  It generates a NetCDF file \verb|eisIIA200k.nc| at the end.  The standard output in \verb|eisIIA.out| can be tracked as the job is running in the background using \verb|less|\index{less}, for instance; \verb|top|\index{top} is a Linux tool to watch CPU and memory usage during the run.
 
 To get the model state in the midst of a PISM run, send all running \verb|pisms| processes (that's the executable in this case) a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.\index{PISM!catches signals -TERM and -USR1}\index{pkill}  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc|, using the year at that time step.  On the other hand, terminatating the run with \verb|pkill -TERM pisms| will will cause PISM to stop, but only after saving the model state using the \intextoption{o} specified name (though it will not hold the result of the completed run).  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
 
-While the four processor \verb|pisms| run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{d}
+While the two processor \verb|pisms| run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{d}
 
 \verb|$ pisms -eisII A -if simp_exper.nc -y 1000 -d HTt|
 
 Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.  When the full 200,000 year run finishes, one may watch its evolving state, including the ice flow speed, by
 
-\verb|pisms -eisII A -if eisIIA200k.nc -d HTc|
+\verb|$ pisms -eisII A -if eisIIA200k.nc -d HTc|
 
 \noindent for example.  Figure \ref{fig:screenshot} will appear.
 

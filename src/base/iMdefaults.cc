@@ -242,5 +242,15 @@ PetscErrorCode IceModel::setDefaults() {
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;
   kd = 0;
+
+  // default polar stereographic projection settings; not currently used anyway;
+  //   merely propogate into output file if found in input file
+  psParams.svlfp = 0.0;
+  psParams.lopo = 90.0;
+  psParams.sp = -71.0;
+
+  // see updateForcing() and what it calls
+  TsOffset = 0.0;
+  bedSLOffset = 0.0;
   return 0;
 }

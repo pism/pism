@@ -333,7 +333,11 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
   
   ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
-  muSliding = 0.0;  // note reimplementation of basalVelocity()
+  if (testname == 'E') {  // value is not used by IceCompModel::basalVelocity() below,
+    muSliding = 1.0;      //    but this acts as flag to allow sliding
+  } else {
+    muSliding = 0.0;
+  }
 
   ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);

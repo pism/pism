@@ -404,11 +404,11 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&bcflagExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
   if ((ubarExists != 1) || (vbarExists != 1)) {
-    SETERRQ1(1,"-shelfstreamBC set but (ubar,vbar) not found in file %s\n",fname);
+    SETERRQ1(1,"-ssaBC set but (ubar,vbar) not found in file %s\n",fname);
   }
   if (bcflagExists != 1) {
     SETERRQ1(1,
-    "-shelfstreamBC set but bcflag (location of Dirichlet b.c.) not found in file %s\n",
+    "-ssaBC set but bcflag (location of Dirichlet b.c.) not found in file %s\n",
     fname);
   }
   ierr = VecDuplicate(vh, &vbcflag); CHKERRQ(ierr);
@@ -420,8 +420,8 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
   dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in NetCDF file, and use current grid info
   dim[4] = grid.Mbz;  
-  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);  // destructor is called at exit from
-                                                                          // readShelfStreamBCFromFile_netCDF()
+  // destructor is called at exit from readShelfStreamBCFromFile_netCDF():
+  LocalInterpCtx lic(ncid, dim, bdy, grid.zlevels, grid.zblevels, grid);  
 
   if (maskExists) {
     MaskInterp masklevs;

@@ -39,6 +39,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
+    ierr = verbPrintf(5,grid.com, "{surfaceGradientSIA()}"); CHKERRQ(ierr);
 
     // communicate h_x[o], h_y[o] on staggered for basalSIA() and horizontalVelocitySIARegular()
     for (PetscInt k=0; k<4; ++k) { 
@@ -47,6 +48,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     }
 
     ierr = velocitySIAStaggered(); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com, "{velocitySIAStaggered()}"); CHKERRQ(ierr);
 
     // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
     // and velocities2DSIAToRegular()
@@ -54,9 +56,11 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com, "{comm after velocitySIAStaggered()}"); CHKERRQ(ierr);
 
     // compute (and initialize values in) ub,vb and Rb; zero everything where floating
     ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com, "{basalSlidingHeatingSIA()}"); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
@@ -68,6 +72,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // we used *saved* ubar,vbar as first guess for iteration at SSA points)
     // also put staggered value of basal velocity onto regular grid
     ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com, "{velocities2DSIAToRegular()}"); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
     ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
@@ -87,6 +92,8 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
 
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
+      ierr = verbPrintf(5,grid.com, "{SigmaSIAToRegular(),horizontalVelocitySIARegular()}");
+                CHKERRQ(ierr);
     }
   } else { // if computeSIAVelocities
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);

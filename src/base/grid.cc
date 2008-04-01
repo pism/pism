@@ -249,13 +249,13 @@ PetscErrorCode  IceGrid::setVertLevels() {
 //! Print the vertical levels in \c zlevels[] and \c zblevels[] to standard out.
 PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   PetscErrorCode ierr;
-  ierr = verbPrintf(verbosity,com,  "    printing vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz);
-     CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+     "    vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz); CHKERRQ(ierr);
   for (PetscInt k=0; k < Mz; k++) {
     ierr = verbPrintf(verbosity,com," %5.4f,",zlevels[k]); CHKERRQ(ierr);
   }
-  ierr = verbPrintf(verbosity,com,"\n    printing vertical levels in bedrock (Mbz=%d,Lbz=%5.4f): ",Mbz,Lbz);
-     CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+     "\n    vertical levels in bedrock (Mbz=%d,Lbz=%5.4f): ",Mbz,Lbz); CHKERRQ(ierr);
   for (PetscInt kb=0; kb < Mbz; kb++) {
     ierr = verbPrintf(verbosity,com," %5.4f,",zblevels[kb]); CHKERRQ(ierr);
   }

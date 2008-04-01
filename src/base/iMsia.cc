@@ -313,8 +313,12 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
 
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.
-/*! This routine calls the SIA-type sliding law, which may return zero in the frozen base
-case.  I.e. basalVelocity().  The basal sliding velocity is computed for all SIA 
+/*!
+THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
+ZERO BY DEFAULT.                
+
+This routine calls the SIA-type sliding law, which may return zero in the frozen base
+case; see basalVelocity().  The basal sliding velocity is computed for all SIA 
 points.  This routine also computes the basal frictional heating.  
 
 The basal velocity \c Vecs \c vub and \c vvb and the frictional heating \c Vec are all
@@ -325,6 +329,13 @@ See correctBasalFrictionalHeating().
 PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
   PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **mask, **H;
+
+  if (muSliding == 0.0) {
+    ierr = VecSet(vub, 0.0); CHKERRQ(ierr);
+    ierr = VecSet(vvb, 0.0); CHKERRQ(ierr);
+    ierr = VecSet(vRb, 0.0); CHKERRQ(ierr);
+    return 0;
+  }
 
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);

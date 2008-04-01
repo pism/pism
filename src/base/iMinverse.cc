@@ -42,6 +42,7 @@ A forward time-stepping model could then be based on the resulting till friction
 PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   PetscErrorCode ierr;
   
+  // check whether either option is set; get filename if so
   PetscTruth cbarTillSet, csurfTillSet;
   char cFile[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-cbar_to_till", cFile, 
@@ -52,9 +53,10 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
     SETERRQ(1,"both -cbar_to_till and -csurf_to_till set; NOT ALLOWED\n");
   }
   if ((cbarTillSet == PETSC_FALSE) && (csurfTillSet == PETSC_FALSE)) {
-    return 0;
+    return 0;  // if neither option set
   }
 
+  // check whether file exists, and whether it contains cbar/csurf variable
   PetscInt fileExists = 0;
   int ncid,  stat;
   if (grid.rank == 0) {
@@ -64,7 +66,6 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   if (!fileExists) {
     SETERRQ(2,"NetCDF file with velocities (either cbar or csurf) not found.\n");
   }
-
   PetscInt cbarExists = 0, csurfExists = 0;
   int v_cbar, v_csurf;
   if (grid.rank == 0) {
@@ -73,7 +74,6 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   }
   ierr = MPI_Bcast(&cbarExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&csurfExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-
   if ((cbarTillSet == PETSC_TRUE) && (!cbarExists)) {
     SETERRQ1(3,"-cbar_to_till set but cbar not found in %s\n", cFile);
   }
@@ -81,7 +81,7 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
     SETERRQ1(4,"-csurf_to_till set but csurf not found in %s\n", cFile);
   }
 
-  // our goal is to create "local interpolation context" from dimensions, 
+  // create "local interpolation context" from dimensions, 
   //   limits, and lengths; compare code in bootstrapFromFile_netCDF()
   size_t dim[5];
   double bdy[7];
@@ -107,6 +107,7 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
      "  angle by removing SIA vertical shear and computing membrane stresses\n",
      (cbarTillSet == PETSC_TRUE) ? "cbar" : "csurf", cFile); CHKERRQ(ierr);
 
+  // space for read-in var; read it (regridding as you go)
   Vec cIn;
   ierr = VecDuplicate(vh, &cIn); CHKERRQ(ierr);
   if ((cbarTillSet == PETSC_TRUE) && (cbarExists)) {
@@ -122,10 +123,12 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
     stat = nc_close(ncid);
   }
 
+  // space for computed basal shear
   Vec taubxComputed, taubyComputed;
   ierr = VecDuplicate(vh, &taubxComputed); CHKERRQ(ierr);
   ierr = VecDuplicate(vh, &taubyComputed); CHKERRQ(ierr);
 
+  // do inverse model; result is tauc and tillphi fields
   ierr = removeVerticalPlaneShearRateFromC(csurfTillSet, cIn, vubarSSA, vvbarSSA);
             CHKERRQ(ierr);
   ierr = computeBasalShearFromSSA(vubarSSA, vvbarSSA, taubxComputed, taubyComputed);
@@ -133,6 +136,7 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   ierr = computeTFAFromBasalShearStressUsingPseudoPlastic(vubarSSA, vvbarSSA, 
             taubxComputed, taubyComputed, vtauc, vtillphi); CHKERRQ(ierr);
 
+  // clean up
   ierr = VecDestroy(cIn); CHKERRQ(ierr);
   ierr = VecDestroy(taubxComputed); CHKERRQ(ierr);
   ierr = VecDestroy(taubyComputed); CHKERRQ(ierr);

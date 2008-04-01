@@ -111,18 +111,6 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   pddStuffCreated = PETSC_FALSE;
   pddRandStuffCreated = PETSC_FALSE;
 
-  ierr = setDefaults();
-  if (ierr != 0) {
-    verbPrintf(1,grid.com, "Error setting defaults.\n");
-    PetscEnd();
-  }
-  
-  psParams.svlfp = 0.0;  // default polar stereographic projection settings
-  psParams.lopo = 90.0;
-  psParams.sp = -71.0;
-
-  TsOffset = 0.0;
-  bedSLOffset = 0.0;
   dTforcing = PETSC_NULL;
   dSLforcing = PETSC_NULL;
 
@@ -131,6 +119,13 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
   if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
   else                      flowLawUsesGrainSize = PETSC_FALSE;
+
+  ierr = setDefaults();  // lots of parameters and flags set here
+  if (ierr != 0) {
+    verbPrintf(1,grid.com, "Error setting defaults.\n");
+    PetscEnd();
+  }
+
 }
 
 
@@ -633,12 +628,12 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 #endif
 
   // prototype for flags:
-  ierr = verbPrintf(2,grid.com, "%%ybp SIA SSA  # vgatdh Nr  +STEP\n"); CHKERRQ(ierr);  
+  ierr = verbPrintf(2,grid.com, "%%yb SIA SSA  # vatdh Nr  +STEP\n"); CHKERRQ(ierr);  
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;
   // flags for first do-nothing time step
-  ierr = verbPrintf(2,grid.com,  " $$$            $$$$$ $$"); CHKERRQ(ierr); 
+  ierr = verbPrintf(2,grid.com,  " $$            $$$$$ $$"); CHKERRQ(ierr); 
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
 
