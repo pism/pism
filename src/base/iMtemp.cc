@@ -34,11 +34,15 @@ PetscErrorCode IceModel::temperatureAgeStep() {
     
   ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  // puts vTnew in vWork3d[0]
 
-  // no communication done in ageStep(), temperatureStep(); it is all done here:
+  // no communication done in ageStep(), temperatureStep()
+  // start temperature & age communication
   ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
   ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
-  ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-  ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
+
+  // none of this involves temp or age fields
+  if (updateHmelt == PETSC_TRUE) {
+    ierr = diffuseHmelt(); CHKERRQ(ierr);  // does communication
+  }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
@@ -48,6 +52,10 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   if (bfsacrPRCNT > 0.1) {
     ierr = verbPrintf(2,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
   }
+
+  // complete temperature & age communication
+  ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+  ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
 
   return 0;
 }
@@ -734,6 +742,47 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
 
   delete [] zlevEQ;  delete [] dummylev;
 
+  return 0;
+}
+
+
+PetscErrorCode IceModel::diffuseHmelt() {
+  PetscErrorCode  ierr;
+
+  // diffusion constant K in u_t = K \nabla^2 u is chosen so that fundmental
+  //   solution has standard deviation \sigma = 20 km at time t = 1000 yrs;
+  //   2 \sigma^2 = 4 K t
+  const PetscScalar K = 2.0e4 * 2.0e4 / (2.0 * 1000.0 * secpera),
+                    Rx = K * dtTempAge / (grid.dx * grid.dx),
+                    Ry = K * dtTempAge / (grid.dy * grid.dy);
+
+  // restriction that
+  //    1 - 2 R_x - 2 R_y \ge 0
+  // is a maximum principle restriction; therefore new Hmelt will be between
+  // zero and Hmelt_max if old Hmelt has that property
+  const PetscScalar oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
+  if (oneM4R <= 0.0) {
+    SETERRQ(1,
+       "diffuseHmelt() has 1 - 2Rx - 2Ry <= 0 so explicit method for diffusion unstable\n"
+       "  (note timestep restriction believed so rare that it is not part of adaptive)");
+  }
+
+  PetscScalar **Hmelt, **Hmeltnew; 
+  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      Hmeltnew[i][j] = oneM4R * Hmelt[i][j]
+                       + Rx * (Hmelt[i+1][j] + Hmelt[i-1][j])
+                       + Ry * (Hmelt[i][j+1] + Hmelt[i][j-1]);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
+
+  // finally copy new into vHmelt (and communicate ghosted values at same time)
+  ierr = DALocalToLocalBegin(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
   return 0;
 }
 

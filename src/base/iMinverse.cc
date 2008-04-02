@@ -81,6 +81,13 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
     SETERRQ1(4,"-csurf_to_till set but csurf not found in %s\n", cFile);
   }
 
+  char varName[10];
+  strcpy(varName, (cbarTillSet == PETSC_TRUE) ? "cbar" : "csurf");
+  ierr = verbPrintf(2, grid.com, 
+     "apply inverse model to %s in file %s\n"
+     "  reading and storing %s ...\n",
+     varName, cFile, varName); CHKERRQ(ierr);
+
   // create "local interpolation context" from dimensions, 
   //   limits, and lengths; compare code in bootstrapFromFile_netCDF()
   size_t dim[5];
@@ -101,11 +108,6 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   delete z_bif;
   delete zb_bif;
   //DEBUG:  ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com, 
-     "reading variable %s from file %s; computing till yield stress and till friction\n"
-     "  angle by removing SIA vertical shear and computing membrane stresses\n",
-     (cbarTillSet == PETSC_TRUE) ? "cbar" : "csurf", cFile); CHKERRQ(ierr);
 
   // space for read-in var; read it (regridding as you go)
   Vec cIn;
@@ -129,10 +131,17 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   ierr = VecDuplicate(vh, &taubyComputed); CHKERRQ(ierr);
 
   // do inverse model; result is tauc and tillphi fields
+  ierr = verbPrintf(2, grid.com, 
+     "  removing SIA vertical shear ...\n"); CHKERRQ(ierr);
   ierr = removeVerticalPlaneShearRateFromC(csurfTillSet, cIn, vubarSSA, vvbarSSA);
             CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+     "  computing membrane stresses and basal shear stress from SSA ...\n"); CHKERRQ(ierr);
   ierr = computeBasalShearFromSSA(vubarSSA, vvbarSSA, taubxComputed, taubyComputed);
             CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+     "  computing till friction angle using (pseudo-)plastic model ...\n"); 
+     CHKERRQ(ierr);
   ierr = computeTFAFromBasalShearStressUsingPseudoPlastic(vubarSSA, vvbarSSA, 
             taubxComputed, taubyComputed, vtauc, vtillphi); CHKERRQ(ierr);
 
@@ -343,7 +352,11 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
   // allocate Mat and Vecs; compare linear system in velocitySSA()
   Mat A;
   Vec x, result, rhs;
-  ierr = MatDuplicate(SSAStiffnessMatrix, MAT_COPY_VALUES, &A); CHKERRQ(ierr);
+//  ierr = MatDuplicate(SSAStiffnessMatrix, MAT_COPY_VALUES, &A); CHKERRQ(ierr);
+  const PetscInt M = 2 * grid.Mx * grid.My;
+  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
+                         13, PETSC_NULL, 13, PETSC_NULL,
+                         &A); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &result); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &rhs); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &x); CHKERRQ(ierr);
@@ -362,14 +375,14 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
 
   // Set x = [u v]'  (i.e. interleaved).
   PetscScalar **u, **v;
-  const PetscInt  M = 2 * grid.My;
+  const PetscInt  twoMy = 2 * grid.My;
   ierr = VecSet(x, 0.0); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, myu, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, myv, &v); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = VecSetValue(x, i*M + 2*j, u[i][j], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValue(x, i*M + 2*j+1, v[i][j], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*twoMy + 2*j, u[i][j], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*twoMy + 2*j+1, v[i][j], INSERT_VALUES); CHKERRQ(ierr);
     }
   }
   ierr = DAVecRestoreArray(grid.da2, myu, &u); CHKERRQ(ierr);
@@ -397,8 +410,8 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
   ierr = DAVecGetArray(grid.da2, tauby_out, &tby); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      tbx[i][j] = res[i*M + 2*j];
-      tby[i][j] = res[i*M + 2*j+1];
+      tbx[i][j] = res[i*twoMy + 2*j];
+      tby[i][j] = res[i*twoMy + 2*j+1];
     }
   }
   ierr = DAVecGetArray(grid.da2, taubx_out, &tbx); CHKERRQ(ierr);
@@ -486,6 +499,14 @@ PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
                  const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
                  Vec tauc_out, Vec tfa_out) {
   PetscErrorCode ierr;
+  
+  // FIXME: this should really ask the PlasticBasalType instance basal-> whether
+  //   it is pseudo or not
+  if (doPseudoPlasticTill == PETSC_FALSE) {
+    ierr = verbPrintf(1, grid.com, 
+       "WARNING: computeTFAFromBasalShearStress() should only be called with q > 0.0\n");
+       CHKERRQ(ierr);
+  }
   
   const PetscScalar slowOrWrongDirFactor = 10.0,
                     sufficientSpeed = 1.0 / secpera,
