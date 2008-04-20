@@ -449,8 +449,11 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
 \begin{thebibliography}{10}
 
 \bibitem{petsc-user-ref}
-{\sc S.~Balay and eight others}, {\em {PETS}c users manual}, Tech. Rep.
+{\sc S.~Balay and eight others}, {\em {PETS}c {U}sers {M}anual}, Tech. Rep.
   ANL-95/11 - Revision 2.3.2, Argonne National Laboratory, 2006.
+\newblock
+  \url{http://www.mcs.anl.gov/petsc/petsc-as/snapshots/petsc-current/docs/manu%
+al.pdf}.
 
 \bibitem{BB}
 {\sc E.~Bueler and J.~Brown}, {\em On exact solutions and numerics for cold,

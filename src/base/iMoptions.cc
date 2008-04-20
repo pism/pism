@@ -85,7 +85,8 @@ PetscErrorCode  IceModel::setFromOptions() {
        CHKERRQ(ierr);
   }
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity);
+      CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
 // "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc

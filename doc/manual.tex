@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{290}
+\newcommand{\PISMREV}{294}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -32,10 +32,12 @@
 %% macros having to do with documentation for options; note these appear in the index
 \newcommand{\und}{\_\!\_}
 
+%\newcommand{\alphaoptionindex}[1]{\index{alphabetical list of options for PISM (and PETSc)!\texttt{-#1}}}
 \newcommand{\pismoptionindex}[1]{\index{options for PISM (and PETSc)!\texttt{-#1}}}
 \newcommand{\intextoption}[1]{\texttt{-#1}\pismoptionindex{#1}}
 
-\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\normalsize\pismoptionindex{#1}}
+%\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\normalsize\pismoptionindex{#1}\alphaoptionindex{#1}}
+\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize\pismoptionindex{#1}}
 \newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
 \newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
 \newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
@@ -50,7 +52,7 @@
 
 \author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM bleeding edge by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM bleeding edge by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}.} 
 
 
 \begin{document}
@@ -90,7 +92,7 @@ The NASA Cryospheric Sciences Program\index{NASA Cryospheric Sciences Program} s
 
 Our research into ice sheet modeling was inherited from Craig Lingle\index{Lingle, Craig}.  We owe him a great deal for his imparted experience.
 
-Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
+Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Spencer Jones\index{Jones, Spencer}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -169,7 +171,7 @@ You should configure and build PETSc \emph{essentially} as described on the  \hr
 
 Turning off the inclusion of the debugging symbols gives a significant speed improvement.
 
-Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS} and LAPACK\index{LAPACK} rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
+Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
 
 \item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \verb|/home/user/mympi/|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi/|.  The path used in this option must have MPI executables \verb|mpicxx| and \verb|mpicc|, and either \verb|mpiexec| or \verb|mpirun|, in subdirectory \verb|bin/| and MPI library files in subdirectory \verb|lib/|.
 
@@ -205,7 +207,7 @@ At this point you have configured the environment which PISM needs.  You are rea
 \begin{enumerate}\setcounter{enumi}{5}
 \item \label{getPISMstep} Get the latest source\index{PISM!download source code} for PISM using the Subversion\index{Subversion} version control system:
 
-\verb|svn co http://svn.gna.org/svn/pism/trunk pism|
+\verb|svn co http://svn.gna.org/svn/pism/trunk pism-dev|
 
 \noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM.}
 
@@ -408,7 +410,7 @@ The next three entries in the summary report the volume of the ice in $10^6 \,\t
 \item turning the PISM standard output (above) into time series and viewing graphs of those.
 \end{enumerate}
 
-As shown by the ``\verb|-d HTt|'' option illustrated above, runtime viewers can be specified by options of the form \intextoption{d} \emph{letters} or \intextoption{dbig} \emph{letters}.  The latter option shows larger windows but is otherwise identical.  See Appendix C for the possible single letter names of each runtime viewer.  These viewers are updated at each step.  As they work under Xwindows, MPI must be told how to send data to the window, so PISM options are usually followed by ``\verb|-display :0|''\pismoptionindex{display} when PISM is run under MPI and runtime viewers are desired.
+As shown by the ``\verb|-d HTt|'' option illustrated above, runtime viewers can be specified by options of the form \intextoption{d} \emph{letters} or \intextoption{dbig} \emph{letters}.  The latter option shows larger windows but is otherwise identical.  See Appendix \ref{sect:viewers} for the possible single letter names of each runtime viewer.  These viewers are updated at each step.  As they work under Xwindows, MPI must be told how to send data to the window, so PISM options are usually followed by ``\verb|-display :0|''\pismoptionindex{display} when PISM is run under MPI and runtime viewers are desired.
 
 The format is limited by the style of PETSc viewers, but these viewers often suffice for visualizing an ongoing PISM run.  Note that some diagnostic viewers show slices of three-dimensional quantities in slices parallel to the bed.  They are controlled by the option \intextoption{kd}.  Those which show ``soundings'' are controlled by the options \intextoption{id}, \intextoption{jd}; see Appendices \ref{sect:options} and \ref{sect:viewers}.
 
@@ -515,7 +517,7 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 
 \subsection{Schoof's plastic till free boundary problem for ice streams} \label{subsect:plastic}    In \cite{SchoofTill} C.~Schoof\index{Schoof, Christian} proposes a model for plastic failure of the basal till\index{plastic till} under flowing ice, and in \cite{SchoofStream} he recognizes this as a free boundary problem for the SSA.  The result is a model for emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.
 
-PISM implements Schoof's model (among others, of course).  The user gives the options \verb|-ssa -plastic| to turn it on.  All grounded points are immediately marked as SSA (i.e.~as \verb|MASK_DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See the description of option \intextoption{plastic} in Appendix A for a detailed description of the yield stress computation; see also the PISM \emph{Reference Manual}.
+PISM implements Schoof's model (among others, of course).  The user gives the options \verb|-ssa -plastic| to turn it on.  All grounded points are immediately marked as SSA (i.e.~as \verb|MASK_DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See the description of option \intextoption{plastic} in Appendix \ref{sect:options} for a detailed description of the yield stress computation; see also the PISM \emph{Reference Manual}.
 
 
 \subsubsection*{A plastic till modification of EISMINT II experiment I}  To demonstrate the Schoof model we describe an example based on EISMINT II experiment I.\index{EISMINT}\index{EISMINT!unpublished additional EISMINT II experiments}
@@ -1240,7 +1242,7 @@ Writing model state to file `green20km_y1.nc' ... done.
 
 Therefore PISM fills in the unknown initial conditions based on some default guesses, as indicated by the messages to standard out.
 
-Note that EISMINT-Greenland specifies an 83 by 141 point grid.  But there is a transpose: In order to make the diagnostic viewers described in Appendix C have the correct orientation, the x and y axes are switched internally in PISM.  Of course the physics approximated by PISM does not care about orientation.  The consequence of using ``\verb|-Mx 83 -My 141|'', instead of the correct pair shown, would be to have grid cells which are far from square, and to have squashed viewers.
+Note that EISMINT-Greenland specifies an 83 by 141 point grid.  But there is a transpose: In order to make the diagnostic viewers described in Appendix \ref{sect:viewers} have the correct orientation, the x and y axes are switched internally in PISM.  Of course the physics approximated by PISM does not care about orientation.  The consequence of using ``\verb|-Mx 83 -My 141|'', instead of the correct pair shown, would be to have grid cells which are far from square, and to have squashed viewers.
 
 You may use other numbers for \verb|-Mx| and \verb|-My| if desired.  In such cases the data will be linearly interpolated onto your grid.
 
@@ -1630,7 +1632,7 @@ This section is an executive summary.  Technical documentation of the continuum 
 \item Within the shallow ice sheet regions the model can use the constitutive relation of Goldsby and Kohlstedt \cite{GoldsbyKohlstedt,Peltieretal}.  For inclusion in this flow law, grain size can be computed using a age-grain size relation from the Vostok core data \cite{VostokCore}, for example.
 \item The Lingle-Clark \cite{BLKfastearth,LingleClark} bed deformation model can be used.  It generalizes the better known elastic lithosphere, relaxing asthenosphere (``ELRA'') model \cite{Greve2001}.  This model can be initialized by an observed bed uplift map \cite{BLKfastearth}, or even an uplift map computed by an external model like that in \cite{IvinsJames2005}.\end{itemize}
 
-Many of the parts of the model described above are optional.  For instance, options can choose between five different flow laws; see Appendix A and B for options.
+Many of the parts of the model described above are optional.  For instance, options can choose between five different flow laws; see Appendix \ref{sect:options} for options.
 
 The following features are \emph{not} included in the continuum model, and would (or will) require major additions:
 \begin{itemize}
@@ -1661,6 +1663,9 @@ The following features are \emph{not} included in the continuum model, and would
 
 \appendix
 
+\newcommand{\subsect}[1]{\bigskip\subsection{#1}\rule{0mm}{2mm}\par\medskip}
+\newcommand{\subsubsect}[1]{\medskip\subsubsection{#1}\rule{0mm}{2mm}\par\smallskip}
+
 \clearpage\newpage
 \section{PISM command line options}\label{sect:options}
 
@@ -1672,71 +1677,148 @@ Much of the behavior of PISM can be set at the command line by options.\index{PI
 
 The format of the option documentation below is
 
-\centerline{``\optdefrestrict{optionname}{A}{B} Description.''}
+\centerline{``\large\texttt{-optionname} [\texttt{A}][\texttt{B} \emph{only}]: \quad Description.\normalsize''}
 
 \noindent Here ``A'' is the default value and ``\t{B}'' is a list of the allowed executables.  The option applies to all executables (\verb|pismr|, \verb|pisms|, \verb|pismv|) unless the allowed executables are specifically stated by giving ``[\t{B} \textsl{only}]''.
 
-As PISM is a PETSc program, all PETSc options are available \cite{petsc-user-ref}.  See the next section, which recalls some of these PETSc options.
-\bigskip
+As PISM is a PETSc program \cite{petsc-user-ref}, all PETSc options are available as well.  The last subsection \ref{subsect:petscoptions} recalls some of these PETSc options.
 
-\optdef{adapt\und ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
+The Index on page \pageref{sect:index} contains an alphabetical list of options.
+
+
+\subsect{Options turning on and off major physical models}
 
 \opt{bed\und def\und iso} Compute bed deformations by simple pointwise isostasy.  Assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.  See Test H in Verification section.
 
 \opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.
 
-\optrestrict{bif}{pismr, pgrn}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-if|.
+\opt{hold\und tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \verb|-ssa| and \verb|-plastic| are also set.  See documentation of option \verb|-plastic| for a description of the till yield stress model.
 
-\optrestrict{bmr\und in\und cont}{pisms -eisII}  By default \verb|pisms -eisII| does not include the basal melt rate in the continuity equation because EISMINT II specifies that it should not be included.  This option makes \verb|pisms -eisII| behave like the generic PISM cases (e.g.~\verb|pismr|).
+\opt{no\und mass}  Forces PISM to not change the ice thickness.  No time steps of the mass conservation equation are computed.
 
-\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
+\opt{no\und temp}  Force PISM to not change temperature or age values within the ice.  No time steps of the energy conservation and age equations are computed.
 
-\opt{constant\und hardness}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
+\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used in conjunction with \verb|-no_mass|.
+
+\opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use the method described in \cite{CalovGreve05}, which computes the expected number of positive degree days.  See subsection \ref{subsect:pdd}.
+
+\opt{plastic}  Use Schoof's plastic till model for ice streams at all grounded points on the ice sheet.  Must be used along with \verb|-ssa| to turn on the solution of the SSA (shallow shelf approximation).  See subsection \ref{subsect:plastic}.  See options \verb|-plastic_reg|, \verb|-plastic_c0|, \verb|-plastic_phi|, and \verb|-plastic_pwfrac|, all of which control the plastic till model in various ways.
+
+Indeed, we describe the role of the parameters for the plastic till model as follows: The effective pressure $N$ on the till is
+	$$N = P - p = (1 - (\mathtt{pwfrac}) \lambda) P$$
+where $P = \rho g H$ is the overburden or hydrostatic pressure at the base (see Paterson \cite{Paterson}, pp.~168--169) and $p = (\mathtt{pwfrac}) \lambda P$ is the pore water pressure in the till.  Here $\lambda$ is a pure number, $0\le \lambda \le 1$, measuring the amount of available basal water.  In particular, $\lambda = 0$ if the base is frozen, while $\lambda$ is a linear function of the stored basal melt water (see \verb|-d L|), up to the fixed maximum amount of stored basal melt water.  Thus our model says that when there is a lot (the maximum) amount of available basal water, $p= (\mathtt{pwfrac}) P$; the default value for $\mathtt{pwfrac}$ is 0.95.
+
+Note that Paterson gives this formula for the till yield stress
+	$$\tau_c = c_0 + \mu N, \qquad \mu = \tan \phi,$$
+while Schoof \cite{SchoofStream} formula (2.4) gives this one
+	$$\tau_c = \mu N,$$
+with zero till cohesion.  We allow a positive till cohesion, though the default is zero, and we describe $\mu$ as the tangent of the friction angle $\phi$.
+
+\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|.
+
+\opt{super}  Superpose the velocity fields from the SIA and SSA models.  That is, add the velocity fields which result from the SIA and SSA versions of the balance of momentum equations.  Also has the effect of the option \verb|-mu_sliding 0.0|, that is, the SIA-type sliding law is set to zero so that all basal sliding is controlled by the SSA model.  Only effective if used with \verb|-ssa|.
+
+
+
+\subsect{Options controlling model run length/start/end}
+
+\optdef{y}{1000} Number of model years to run.
+
+\opt{ye} Model year at which to end the run.  The default value is the default or given (\verb|-ys|) start year plus the default or given (\verb|-y|) run length.  If both \verb|-ys| and \verb|-ye| are used then the run length is set to the difference, and any time read from the input file is ignored.  (In this case \verb|-y| is ignored, if given, though a warning is displayed.)
+
+\optdef{ys}{0} Model year at which to start the run.  If both \verb|-y| and \verb|-ys| are used then the start year is set to the \verb|-ys| value, ignoring any time in the input file.  (If \verb|-ye| is also given then the \verb|-y| value is ignored, though a warning is displayed.)
+
+
+\subsect{Options controlling input and output behavior of PISM}
+
+\subsubsect{File input and output from PISM}
+
+\opt{bif}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-if|.
+
+\opt{dSLforcing}    Use the specified NetCDF file to apply changes in \emph{S}ea \emph{L}evel from a climate ``forcing'' record.  See section \ref{sect:green} for an example.
+
+\opt{dTforcing}    Use the specified NetCDF file to apply changes in surface \emph{T}emperature from a climate ``forcing'' record.  See section \ref{sect:green} for an example.
+
+\opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
+
+\opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
+
+\optdef{mato}{pism\und views}  Specifies the name of the \Matlab-readable file in which to save the views.  Use with \verb|-matv|, to set which views to save; if \verb|-matv| is not set then \verb|-mato| has no effect.
+
+\opt{matv}  Specifies which \Matlab ``views'' to save at end of run.  See Appendix \ref{sect:viewers} for list of single character names of the views.  The default is for \emph{no} \Matlab views.  See \verb|-mato| for setting the name of the \Matlab-readable file in which to save the views.  Typically the user will write \verb|-mato foo -matv HT0c| to save four views in the \Matlab-readable ASCII file \verb|foo.m|.
+
+\opt{o}  Give name of output file: \verb|-o foo| writes an output file named \verb|foo.nc|.  See the description of option \verb|-if|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
+
+\opt{regrid}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sect:usage}.
+
+\optdef{regrid\und vars}{TBe}  Which variables to regrid.  See section \ref{sect:usage}.
+
+
+\subsubsect{Diagnostic viewers}
+
+\opt{d}  Specifies diagnostic (X Windows) viewers.  See Appendix \ref{sect:viewers}.
+
+\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Appendix \ref{sect:viewers}.
+
+\opt{id}  Sets the x grid index at which a sounding diagnostic viewer (Appendix \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
+
+\opt{jd}  Sets the y grid index at which a sounding diagnostic viewer (Appendix \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{My}}-1$.  The default is $(\text{\t{My}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -jd 10|.
+
+\optdef{kd}{0}  Sets the z grid index at which map-plane diagnostic views are shown.  Compare \verb|pismv -test G -Mz 101 -d T| and \verb|pismv -test G -Mz 101 -d T -kd 50|.  See Appendix \ref{sect:viewers}.
+
+
+\subsubsect{Verbosity to standard out}
+
+\optdef{verbose}{2}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
+
+\opt{vverbose}   See table \ref{tab:verbosity}.
+
+\opt{vvverbose}   See table \ref{tab:verbosity}.
+
+\begin{table}[ht]
+\caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
+\begin{tabular}{@{}llll}\hline
+\textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
+   0  &  \t{-verbose 0} &   never print to standard out \emph{at all}; no warnings appear  \\
+   1  &  \t{-verbose 1} &   only warning messages and other high priority messages will appear  \\
+   2  &  [\t{-verbose 2}] & default verbosity    \\
+   3  &  \t{-verbose 3} &   somewhat verbose; expanded description of grid at start  \\
+      &  or \quad \t{-verbose} &  and expanded information in summary    \\
+   4  &  \t{-verbose 4} &     \\
+      &  or \quad \t{-vverbose} &  more verbose    \\
+   5  &  \t{-verbose 5} &     \\
+      &  or \quad \t{-vvverbose} &  maximally verbose \\
+\hline
+\normalsize
+\end{tabular}
+\end{table}
+
+
+\subsect{Options controlling parameters for physical models}
+
+\subsubsect{General parameters}
+
+\optdef{constant\und hardness}{1.9e8}  If this option is used then the velocities in ice shelves and streams (see \verb|-ssa| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
   \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
-Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field.  If \verb|-constant_hardness| is used then $\bar B$ is set to the given value.
+Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field.
+
+If \verb|-constant_hardness| is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \verb|-law|), which is $3$ by default.
 
 In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
 \optdef{constant\und nu}{30.0}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant viscosity $\nu$; see the option \verb|-constant_hardness| above.  Generally the viscosity is computed by a nonlinear iteration.  With option \verb|-constant_nu|, this iteration does not occur.  If \verb|-constant_nu| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
-\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:green}
+\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
 
-\opt{d}  Specifies diagnostic (X Windows) viewers.  See Appendix C.
 
-\optdefrestrict{datprefix}{PISM}{pisms -ismip H}  Specify base name for ISMIP-HEINO deliverable \verb|.dat| files.  See also \verb|-no_deliver|.
-
-\opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Appendix C.
+\subsubsect{Flow law parameters}
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
-\optrestrict{eo}{pismv}  Only evaluate the exact solution (don't do numerical approximation at all).  See section \ref{sect:verif}.
-
-\optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
-
-\optrestrict{forcing}{pgrn}    Uses a NetCDF file to apply changes in surface temperature and sea level. See section \ref{sect:green} for an example.
-
-\opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
-
-\optrestrict{gk}{pisms,pismr}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
-
-\opt{grad\und from\und eta}  The surface gradient is usually computed by simple centered-differences on the surface elevation.  With this option it is computed by first transforming the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
-	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
-Here $b$ is the bed elevation and $h$ is the surface elevation.  Note that only $n=3$ is used in this transformation regardless of the chosen flow law.  The transformation may have benefits in that the surface value of the vertical velocity may be better behaved near the margin, e.~.g.~as in EISMINT II experiments, but this is not yet clear.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
-
-\opt{hold\und tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \verb|-ssa| and \verb|-plastic| are also set.  See documentation of option \verb|-plastic| for a description of the till yield stress model.
-
-\optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:green}.
-
-\opt{id}  Sets the x grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
-
-\opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
-
-\opt{jd}  Sets the y grid index at which a sounding diagnostic viewer (section \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{My}}-1$.  The default is $(\text{\t{My}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -jd 10|.
-
-\optdef{kd}{0}  Sets the z grid index at which map-plane diagnostic views are shown.  Compare \verb|pismv -test G -Mz 101 -d T| and \verb|pismv -test G -Mz 101 -d T -kd 50|.  See section \ref{sect:viewers}.
+\opt{gk}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
 \optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
@@ -1775,49 +1857,8 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \end{tabular}
 \end{table}
 
-\optdef{low\und temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-max_low_temps|.
 
-\opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
-
-\opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
-
-\opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sect:usage}.
-
-\optdef{mato}{pism\und views}  Specifies the name of the \Matlab-readable file in which to save the views.  Use with \verb|-matv|, to set which views to save; if \verb|-matv| is not set then \verb|-mato| has no effect.
-
-\opt{matv}  Specifies which \Matlab ``views'' to save at end of run.  See Appendix C for list of single character names of the views.  The default is for \emph{no} \Matlab views.  See \verb|-mato| for setting the name of the \Matlab-readable file in which to save the views.  Typically the user will write \verb|-mato foo -matv HT0c| to save four views in the \Matlab-readable ASCII file \verb|foo.m|.
-
-\optdef{max\und dt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sect:usage}.
-
-\optdef{max\und low\und temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \verb|-verbose| is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-low_temp| for the cutoff low temperature.
-
-\optdef{Mbz}{1}  Number of grid points in the bedrock for the bedrock thermal model.  The highest grid point corresponds to the base of the ice $z=0$, and so \t{Mbz}$>1$ is required to actually have bedrock thermal model.  Note this option is unrelated to the bed deformation model (glacial isostasy model); see option \verb|-bed_def| for that.
-
-\optrestrict{Mmax}{pisms -eisII}  Set value of $M_{\text{max}}$ for EISMINT II.
-
-\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
-
-\optdef{Mx}{61}  Number of grid points in x horizontal direction.
-
-\optdef{My}{61}  Number of grid points in y horizontal direction.
-
-\optdef{Mz}{31}  Number of grid points in z (vertical) direction.
-
-\opt{no\und mass}  Forces PISM not to change the ice thickness.  No time steps of the mass conservation equation are computed.
-
-\optrestrict{no\und report}{pismv}  Do not report errors at the end of a verification run.
-
-\opt{no\und temp}  Do not change temperature or age values within the ice.  That is, do not do time steps of energy conservation and age equation.
-
-\optdef{o}{unnamed.nc} Give name of output file: \verb|-o foo| writes an output file named \verb|foo.nc|.  See the description of option \verb|-if|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
-
-\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used in conjunction with \verb|-no_mass|.
-
-\optdef{of}{n}  Format of output file(s).  Possible values are \verb|n| for model state written to a NetCDF file \verb|foo.nc| and \verb|m| for selected variables written to an ASCII Matlab file \verb|foo.m|.  PISM can be restarted using \verb|-if| from the output \verb|.nc| files.  Multiple files can be written, for instance, \verb|-o foo -of nm| writes both \verb|foo.nc| and \verb|foo.m|.
-
-\optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
-
-\opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use the method described in \cite{CalovGreve05}, which computes the expected number of positive degree days.  See subsection \ref{subsect:pdd}.
+\subsubsect{Positive degree day model (PDD) parameters}
 
 \opt{pdd\und rand}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use a monte carlo method based on a random number generator.  Note that if \verb|-pdd_std_dev 0.0| is set then the additional randomness is not active.  See subsection \ref{subsect:pdd}.
 
@@ -1835,17 +1876,8 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 
 \optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.  Note \verb|pgrn| ignors this option; see section \ref{sect:green}.
 
-\opt{plastic}  Use Schoof's plastic till model for ice streams at all grounded points on the ice sheet.  Must be used along with \verb|-ssa| to turn on the solution of the SSA (shallow shelf approximation).  See subsection \ref{subsect:plastic}.  See options \verb|-plastic_reg|, \verb|-plastic_c0|, \verb|-plastic_phi|, and \verb|-plastic_pwfrac|, all of which control the plastic till model in various ways.
 
-Indeed, we describe the role of the parameters for the plastic till model as follows: The effective pressure $N$ on the till is
-	$$N = P - p = (1 - (\mathtt{pwfrac}) \lambda) P$$
-where $P = \rho g H$ is the overburden or hydrostatic pressure at the base (see Paterson \cite{Paterson}, pp.~168--169) and $p = (\mathtt{pwfrac}) \lambda P$ is the pore water pressure in the till.  Here $\lambda$ is a pure number, $0\le \lambda \le 1$, measuring the amount of available basal water.  In particular, $\lambda = 0$ if the base is frozen, while $\lambda$ is a linear function of the stored basal melt water (see \verb|-d L|), up to the fixed maximum amount of stored basal melt water.  Thus our model says that when there is a lot (the maximum) amount of available basal water, $p= (\mathtt{pwfrac}) P$; the default value for $\mathtt{pwfrac}$ is 0.95.
-
-Note that Paterson gives this formula for the till yield stress
-	$$\tau_c = c_0 + \mu N, \qquad \mu = \tan \phi,$$
-while Schoof \cite{SchoofStream} formula (2.4) gives this one
-	$$\tau_c = \mu N,$$
-with zero till cohesion.  We allow a positive till cohesion, though the default is zero, and we describe $\mu$ as the tangent of the friction angle $\phi$.
+\subsubsect{Plastic till model parameters}
 
 \optdef{plastic\und c0}{0.0}  Set the value of the till cohesion in the plastic till model.  The value is a pressure, given in kPa.  Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
@@ -1859,23 +1891,52 @@ Note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
 	$$\mu = \tan\left(\frac{\pi}{180} \theta\right).$$
 Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
+
+\subsect{Options controlling the computational grid and box}
+
+\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
+
+\opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
+
+\opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
+
+\opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sect:usage}.
+
+\optdef{Mbz}{1}  Number of grid points in the bedrock for the bedrock thermal model.  The highest grid point corresponds to the base of the ice $z=0$, and so \t{Mbz}$>1$ is required to actually have bedrock thermal model.  Note this option is unrelated to the bed deformation model (glacial isostasy model); see option \verb|-bed_def| for that.
+
+\optdef{Mx}{61}  Number of grid points in x horizontal direction.
+
+\optdef{My}{61}  Number of grid points in y horizontal direction.
+
+\optdef{Mz}{31}  Number of grid points in z (vertical) direction.
+
 \opt{quadZ}  Specify quadratically-spaced grid in the vertical.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
 
-\opt{regrid}  See section \ref{sect:usage}.
 
-\opt{regrid\und vars}  See section \ref{sect:usage}.
+\subsect{Options controlling numerical methods}
+
+\subsubsect{General methods}
+
+\optdef{adapt\und ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
+
+\opt{grad\und from\und eta}  The surface gradient is usually computed by simple centered-differences on the surface elevation.  With this option it is computed by first transforming the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
+	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
+Here $b$ is the bed elevation and $h$ is the surface elevation.  Note that only $n=3$ is used in this transformation regardless of the chosen flow law.  The transformation may have benefits in that the surface value of the vertical velocity may be better behaved near the margin, e.~.g.~as in EISMINT II experiments, but this is not yet clear.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
+
+\optdef{low\und temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-max_low_temps|.
+
+\optdef{max\und dt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sect:usage}.
+
+\optdef{max\und low\und temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \verb|-verbose| is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-low_temp| for the cutoff low temperature.
+
+\optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  Only effective if the time step is being limited by the diffusivity time step restriction associated to mass continuity using the SIA, or by the CFL restriction associated to SSA-type mass continuity.  The maximum value recommended is \verb|-tempskip 10|, as the temperature field should be updated when the surface changes significantly.
+
+
+\subsubsect{Shelf and stream numerical method}
 
 \optdef{reg\und length\und schoof}{1000 km}  Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-ssa_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.
 
 \optdef{reg\und vel\und schoof}{1 m/a}  Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-ssa_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.  Use \verb|-plastic_reg| above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}.
-
-\optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
-
-\optrestrict{ross}{pisms}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
-
-\optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
-
-\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|.
 
 \optdef{ssa\und eps}{1.0e15}  The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
 
@@ -1889,57 +1950,66 @@ In particular, the nonlinear part of the iteration requires that successive valu
 	$$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{ssa\und rtol}$$
 in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.
 
-\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:green}.
 
-\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.  See section \ref{sect:green}.
+\subsect{Options special to verification and simplified geometry cases}
 
-\optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
 
-\opt{super}  Superpose the velocity fields from the SIA and SSA models.  That is, add the velocity fields which result from the SIA and SSA versions of the balance of momentum equations.  Also has the effect of the option \verb|-mu_sliding 0.0|, that is, the SIA-type sliding law is set to zero so that all basal sliding is controlled by the SSA model.  Only effective if used with \verb|-ssa|.
+\subsubsect{Verification}
 
-\optdef{tempskip}{1}  Number of mass-balance steps to perform before a temperature step is executed.  Only effective if the time step is being limited by the diffusivity time step restriction associated to mass continuity using the SIA, or by the CFL restriction associated to SSA-type mass continuity.  A maximum value of \verb|-tempskip 5| is recommended to avoid too many CFL violations.
+\optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
+
+\optrestrict{no\und report}{pismv}  Do not report errors at the end of a verification run.
+
+\optrestrict{eo}{pismv}  Only evaluate the exact solution (don't do numerical approximation at all).  See section \ref{sect:verif}.
 
 \optdefrestrict{test}{A}{pismv}  Choose which verification test to run by giving its single character name.  See section \ref{sect:verif}.
 
-\optdefrestrict{till\und phi}{20.0,5.0}{pisms -eisII I -ssa -plastic}  Set the till friction angle map special to the modification of EISMINT II experiment I discussed in subsection \ref{subsect:plastic}.
+
+\subsubsect{EISMINT II}
+
+\optrestrict{bmr\und in\und cont}{pisms -eisII}  By default PISM includes the basal melt rate in the continuity equation.  The EISMINT II experiments specify that it should not be included \cite{EISMINT00}, so the default behavior of \verb|pisms -eisII| is to not include it.  This option makes \verb|pisms -eisII| behave like the generic PISM cases (e.g.~\verb|pismr|).
+
+\optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
+
+\optrestrict{Mmax}{pisms -eisII}  Set value of $M_{\text{max}}$ for EISMINT II.
+
+\optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
+
+\optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
+
+\optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
 
 \optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
 
 \optrestrict{track\und Hmelt}{pisms -eisII}    Turn on the part of the conservation of energy model which accumulates (tracks) locally-stored basal melt water.
 
-\opt{verbose}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
 
-\begin{table}[ht]
-\caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
-\begin{tabular}{@{}llll}\hline
-\textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
-   0  &  \t{-verbose 0} &   never print to standard out \emph{at all}; no warnings appear  \\
-   1  &  \t{-verbose 1} &   only warning messages and other high priority messages will appear  \\
-   2  &  [\t{-verbose 2}] & default verbosity    \\
-   3  &  \t{-verbose 3} &   somewhat verbose; expanded description of grid at start  \\
-      &  or \quad \t{-verbose} &  and expanded information in summary    \\
-   4  &  \t{-verbose 4} &     \\
-      &  or \quad \t{-vverbose} &  more verbose    \\
-   5  &  \t{-verbose 5} &     \\
-      &  or \quad \t{-vvverbose} &  maximally verbose \\
-\hline
-\normalsize
-\end{tabular}
-\end{table}
+\subsubsect{EISMINT-Greenland}
 
-\opt{vverbose}   See table \ref{tab:verbosity}.
+\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:green}
 
-\opt{vvverbose}   See table \ref{tab:verbosity}.
+\optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:green}.
 
-\optdef{y}{1000} Number of model years to run.
+\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:green}.
 
-\opt{ye} Model year at which to end the run.
+\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.  See section \ref{sect:green}.
 
-\optdef{ys}{0} Model year at which to start the run.
+
+\subsubsect{EISMINT-Ross}
+
+\optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
+
+\optrestrict{ross}{pismd}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
+
+
+
 
 \begin{comment}
-% don't document ismip -H options
- \optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This option overrides the adaptime time-stepping and does $0.25$ year time steps anyway; \emph{will probably cause blowup so don't bother}.
+% DO NOT actually document ismip -H options
+
+\optdefrestrict{datprefix}{PISM}{pisms -ismip H}  Specify base name for ISMIP-HEINO deliverable \verb|.dat| files.  See also \verb|-no_deliver|.
+
+\optrestrict{force\und quarter\und year}{pisms -ismip H}  ISMIP-HEINO specifies rigid $0.25$ year time steps.  This will violate both the diffusivity and the CFL parts of the adaptive time-stepping scheme.  This option overrides the adaptime time-stepping and does $0.25$ year time steps anyway; \emph{will probably cause blowup so don't bother}.
 
 \optdefrestrict{ismip}{H}{pisms}  Choose ISMIP simplified geometry experiment.  Only ``H'' for HEINO is allowed at this time.
 
@@ -1955,8 +2025,16 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \end{comment}
 
 
-\clearpage\newpage
-\section{PETSC command line options (for PISM users)}  All PETSc programs accept command line options which control the manner in which PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual (\url{http://www.mcs.anl.gov/petsc/petsc-as/snapshots/petsc-current/docs/manual.pdf}) is the complete reference on these options.  Here we list some that are perhaps most useful to PISM users.
+
+\subsect{PISM options which have no other category}
+
+\optdefrestrict{till\und phi}{20.0,5.0}{pisms -eisII I -ssa -plastic}  Set the till friction angle map special to the modification of EISMINT II experiment I discussed in subsection \ref{subsect:plastic}.
+
+
+
+\subsect{PETSC options (for PISM users)}\label{subsect:petscoptions}
+
+\emph{Note: All PETSc programs accept command line options which control the manner in which PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  Here we list some that are useful to PISM users; they are used just like the PISM options and can be mixed in any order with PISM options.}
 
 \opt{da\und processors\und x}  Number of processors in x direction.
 
@@ -1985,6 +2063,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-ssa_rtol 1e-7| \verb|-ksp_rtol 1e-12|).
 
 \opt{v}   Show version number of PETSc.
+
 
 
 \clearpage \newpage
@@ -2065,7 +2144,7 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 \verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
-\verb|a|:\quad Map-plane view of ice surface mass balance in ice-equivalent meters per year.  Note \verb|-d A| gives snow accumulation rate but \verb|-d a| shows melting included in the surface balance if the positive degree day model is turned on; see options \verb|-pdd| and \verb|-pdd_rand| in Appendix A.  If positive degree day model is off then \verb|-d a| and \verb|-d A| give the same view.
+\verb|a|:\quad Map-plane view of ice surface mass balance in ice-equivalent meters per year.  Note \verb|-d A| gives snow accumulation rate but \verb|-d a| shows melting included in the surface balance if the positive degree day model is turned on; see options \verb|-pdd| and \verb|-pdd_rand| in Appendix \ref{sect:options}.  If positive degree day model is off then \verb|-d a| and \verb|-d A| give the same view.
 
 \verb|b|:\quad Map-plane view of bed elevation in meters above sea level.
 
@@ -2224,6 +2303,7 @@ The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more e
 \scriptoptdef{x}{exclude}{} specify tags of errors to exclude from the figure
 
 
+\label{sect:index}
 \printindex
 
 \end{document}
