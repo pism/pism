@@ -53,22 +53,25 @@ mpisms_vg()
 #THE EXPERIMENTS:
 
 # run without trough on coarse 25km grid for 100k years:
-mpisms_vg $NN u "-eisII A -Mx 61 -My 61 -y 100000 -track_Hmelt -o eis2A100k"
+mpisms_vg $NN u "-eisII A -Mx 61 -My 61 -y 100000 -track_Hmelt \
+ -tempskip 10 -o eis2A100k"
 
 #continue WITHOUT trough
-mpisms $NN "-eisII A -if eis2A100k.nc -y 90000 -track_Hmelt -o eis2A190k"
+mpisms $NN "-eisII A -if eis2A100k.nc -y 90000 -track_Hmelt \
+ -tempskip 10 -o eis2A190k"
 
    # refine to 12.5km grid, run 10k, save lots:
 mpisms_vg $NN u "-eisII A -Mx 121 -My 121 -ys 190000 -y 10000 -track_Hmelt \
- -regrid eis2A190k.nc -regrid_vars LTBHh \
+ -tempskip 10 -regrid eis2A190k.nc -regrid_vars LTBHh \
  -f3d -o eis2A_final -mato eis2A_final -matv bcYTHLCQ0345"
 
 #continue WITH trough (starting from 100k sans trough):
-mpisms $NN "-eisII I -if eis2A100k.nc -y 90000 -track_Hmelt -o eis2I190k"
+mpisms $NN "-eisII I -if eis2A100k.nc -y 90000 -track_Hmelt \
+ -tempskip 10 -o eis2I190k"
 
    # refine to 12.5km grid, run 10k, save lots:
 mpisms_vg $NN u "-eisII I -Mx 121 -My 121 -ys 190000 -y 10000 -track_Hmelt \
- -regrid eis2I190k.nc -regrid_vars LTBHh \
+ -tempskip 10 -regrid eis2I190k.nc -regrid_vars LTBHh \
  -f3d -o eis2I_final -mato eis2I_final -matv bcYTHLCQ0345"
 
 
@@ -82,6 +85,8 @@ mpisms $NN "-eis2pl -if eis2plP0_100.nc -y 900 -o eis2plP0_1000"
 
 mpisms $NN "-eis2pl -if eis2plP0_1000.nc -y 4000 -f3d \
  -o eis2plP0 -mato eis2plP0 -matv bcYTHLCQ0345"
+
+#exit
 
 
 # experiment P6 (coarser horizontal 25km grid):

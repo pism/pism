@@ -1,4 +1,4 @@
-VPATH += :src/ryan
+VPATH += :src/base/old/ryan
 
 CFLAGS += -I/opt/acml3.6.0/gnu32/include/
 

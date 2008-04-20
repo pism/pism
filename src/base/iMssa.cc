@@ -614,10 +614,6 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
-      if (verbosityLevel < 3) {
-        ierr = verbPrintf(2,grid.com,
-                 (k == 0) ? "%3d" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%3d",k); CHKERRQ(ierr);
-      }
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
       ierr = assembleSSAMatrix(true, vNu, A); CHKERRQ(ierr);
       ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
@@ -643,6 +639,10 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
+      if (verbosityLevel < 3) {
+        ierr = verbPrintf(2,grid.com,
+                 (k == 0) ? "%3d" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%3d",k + 1); CHKERRQ(ierr);
+      }
       *numiter = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
     }
