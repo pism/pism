@@ -205,11 +205,19 @@ See Table \ref{tab:PISMdepends} for a summary of the dependencies on external li
 At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
 
 \begin{enumerate}\setcounter{enumi}{5}
-\item \label{getPISMstep} Get the latest source\index{PISM!download source code} for PISM using the Subversion\index{Subversion} version control system:
+\item Get the latest source\index{PISM!download source code} for PISM using the Subversion\index{Subversion} version control system:
+\begin{enumerate}
+\item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest stable version of PISM; this manual will assume it is ``\texttt{stable0.1}'' but it will evolve.
+\item Do
+
+\verb|svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism|
+
+\item A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM.}
+
+\item If you instead want the bleeding edge, less stable developers version, instead do
 
 \verb|svn co http://svn.gna.org/svn/pism/trunk pism-dev|
-
-\noindent A directory called ``\verb|pism/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM.}
+\end{enumerate}
 
 \item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \t{ffelb\@@uaf.edu}.}\index{make}\index{PISM!install}
 

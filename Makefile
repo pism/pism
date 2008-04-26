@@ -73,7 +73,7 @@ local_install : depend libpism.so libtests.so $(executables)
 CXXLINKER=${CLINKER}
 ## PETSc has trouble choosing a linker which can link C++.  PISM is C++.
 ## If you have problems, comment out the CXXLINKER definition above and uncomment this one:
-#CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
+CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
 
 libpism.so : ${ICE_OBJS}
 	${CXXLINKER} -shared ${ICE_OBJS} -o $@

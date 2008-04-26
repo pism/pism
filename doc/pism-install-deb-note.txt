@@ -1,0 +1,144 @@
+                                     26 April 2008 (Ed Bueler)
+
+EXPLANATION OF THIS NOTE:  
+
+I just updated to ubuntu 8.04.  In this process I created a new 
+partition and installed a from-scratch copy of ubuntu.  Partly to see 
+how it worked, I rebuilt PISM from scratch, trying to do it
+just with Debian packages.  (Without building PETSc, in particular.)
+This time it worked, with a few minor hiccups.  
+
+Here is what I did:
+
+
+***************** DEBIAN PACKAGES USED *******************
+USING synaptic I FOUND AND INSTALLED THESE DEBIAN PACKAGES:
+
+petsc-dev  (WHICH DEPENDS ON libpetsc2.3.3-dev; THIS PACKAGE 
+            DEPENDS ON libpetsc2.3.3, libopenmpi-dev, libx11-dev,
+            libblas-dev, liblapack-dev, gfortran, AND OTHERS; 
+            NOTE libopenmpi-dev DEPENDS ON libopenmpi1 AND
+            REPLACES openmpi-bin)
+
+libgsl0-dev
+
+libfftw3-dev
+
+netcdf-bin  (I ALSO GRABBED nco AT THE SAME TIME)
+ 
+libnetcdf-dev
+
+
+
+****************
+AS A SEPARATE MATTER, THE LATEST .deb FOR PETSc WHICH I CAME ACROSS WAS:
+
+http://mirror.steadfast.net/debian/pool/main/p/petsc/petsc-dev_2.3.3-11_all.deb
+
+BUT I DID NOT USE IT DIRECTLY; synaptic DID THE JOB AND I AM NOT COMPLETELY
+SURE WHICH 2.3.3 IT USED.
+
+
+
+***************** NEXT STEPS *******************
+
+THEN I GRABBED THE PISM DEVELOPMENT VERSION:
+
+  svn co http://svn.gna.org/svn/pism/trunk pism-dev
+
+THIS REQUIRED USING synaptic AGAIN, TO GET subversion.  
+
+(NOTE THESE COMMENTS SHOULD ALL APPLY TO THE stable0.1 BRANCH AS WELL.)
+
+THEN, BASED ON THE "Installed Files" REPORTED BY synaptic,
+I ADDED THE LINES
+
+  export PETSC_DIR=/usr/lib/petscdir/2.3.3/
+  export PETSC_ARCH=linux-gnu-c-opt
+  export PATH=/home/bueler/pism-dev/bin/:/home/bueler/pism-dev/test/:$PATH
+
+TO MY .bashrc.
+
+
+
+***************** COMPILATION ERRORS *****************
+I TYPED "make" IN THE PISM DIRECTORY AND GOT A MESSAGE INCLUDING
+
+   gcc: error trying to exec 'cc1plus'
+
+THE ERROR OCCURRED WHEN make ATTEMPTED COMPILE THE FIRST .cc FILE.  
+IT WAS BECAUSE I DID NOT HAVE g++, WHICH WAS ASSUMED BY openmpi.  
+THERE WERE TWO STEPS TO FIX THIS.  FIRST I GOT g++:
+
+$ sudo apt-get install g++
+
+(ACTUALLY I USED synaptic.)  ALSO I NEEDED TO HAVE PETSc USE
+g++ TO LINK, WHICH IS TO SAY USE mpicxx INSTEAD OF mpicc TO LINK.
+SO I UNCOMMENTED THE LINE 
+
+  CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
+
+IN THE PISM Makefile.  FROM NOW ON I WILL LEAVE THAT LINE
+UNCOMMENTED BY DEFAULT.
+
+THEN PISM BUILT COMPLETELY.  THEN I DID
+
+$ make install
+
+
+
+***************** RUNTIME ERROR MESSAGES FROM OPENMPI *****************
+I RAN PISM AND IT WORKED BUT I GOT WARNING MESSAGES:
+
+$ mpirun -n 1 pismv -y 1
+libibverbs: Fatal: couldn't read uverbs ABI version.
+--------------------------------------------------------------------------
+[0,1,0]: OpenIB on host bueler-laptop was unable to find any HCAs.
+Another transport will be used instead, although this may result in 
+lower performance.
+--------------------------------------------------------------------------
+PISMV (verification mode)
+initializing Test A ...
+. . .
+
+THE SAME ERROR APPEARED WHEN USING mpiexec, I THINK.  THE USUAL TECHNIQUE, 
+NAMELY GOOGLING THE ERROR MESSAGE, FOUND THIS COMMENT
+(http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html):
+
+  "To get rid of the warning, you can either disable the use of the "openib" btl
+   in /etc/openmpi/openmpi-mca-params.conf or pass "--mca btl ^openib" to mpirun
+   or mpiexec. The configuration file contains a line to disable InfiniBand, you
+   just have to comment it out."
+
+THE WARNING MESSAGE COMES FROM THE (ASTONISHING ...  ;-) ) FACT THAT MY LAPTOP DOES
+NOT HAVE AN InfiniBand CONNECTING ITS PROCESSORS TOGETHER!  IN FACT,
+
+$ mpirun -n 2 --mca btl ^openib pismv -y 1
+
+PRODUCES NO ERRORS.  FURTHERMORE, UNCOMMENTING THE LINE "#   btl = ^openib"
+IN /etc/openmpi/openmpi-mca-params.conf PERMANENTLY REMOVED THE ERRORS.
+
+
+
+******************* CONCLUSION **********************
+EVERYTHING IN PISM WORKS FINE NOW.  THIS WAS THE QUICKEST BUILD-FROM-SCRATCH FOR PISM 
+SO FAR.
+
+
+
+** PS **
+A FINAL NOTE, INDIRECTLY CONNECTED.  THERE SEEMS TO BE NO ncview DEBIAN PACKAGE
+YET.  BUT THIS SEQUENCE WORKED WITH MINIMAL PAIN: GRAB LATEST SOURCE
+
+  ftp://cirrus.ucsd.edu/pub/ncview/ncview-1.93c.tar.gz
+
+BASICALLY FOLLOW INSTALL INSTRUCTIONS IN TOP-LEVEL "README".  BUT ERROR ABOUT
+MISSING x HEADERS ETC IS RESOLVED BY TWO THINGS, FIRST TO GET DEBIAN
+
+  xorg-dev
+
+PACKAGE, AND SECOND TO TELL THE ncview configure SCRIPT WHERE TO FIND x:
+
+  ./configure --x-libraries=/usr/lib
+
+
