@@ -47,7 +47,7 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
 #include config/ryan_make
-include config/macosx_macports
+#include config/macosx_macports
 
 TESTS_OBJS := $(tests_sources:.c=.o)
 
