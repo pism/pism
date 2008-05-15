@@ -394,7 +394,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    history_len = strnlen(history, HISTORY_STRING_LENGTH);
+    history_len = strlen(history);
   }
   MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
   MPI_Bcast(history, history_len, MPI_CHAR, 0, grid.com);

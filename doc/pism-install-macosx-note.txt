@@ -1,0 +1,97 @@
+Time-stamp: <pism-install-macosx-note.txt, saved on Wed, May 14, 2008 at 04:03pm> (Constantine Khroulev)
+
+This documents my experience installing PISM on Mac OS X 10.5.
+
+Here's what I did:
+
+* Installed MacPorts.
+
+  To do this, one needs to install XCode first, which can either be downloaded from Apple's website or installed from the
+  Mac OS X DVD.
+
+  Then one needs to download MacPorts installer from http://www.macports.org/install.php and follow the
+  instructions.
+
+* Installed PISM dependencies.
+
+  Mac OS X 10.5 comes with Python version 2.5.1, and the Python port in MacPorts does not work that well, so the
+  best choice is to download the SciPy Superpack from http://macinscience.org/?page_id=6 (this installs numpy,
+  scipy, matplotlib, etc)
+
+  Next, I had to install netcdf, ncview, GSL and FFTW:
+
+  $ sudo port install netcdf ncview gsl fftw-3
+
+  Note that BLAS, OpenMPI and Subversion come with the operating system (or XCode), so I didn't need to install them.
+
+  The last step is installing pycdf, which I downloaded from http://pysclint.sourceforge.net/pycdf/
+  Then I modified the setup.py to contain the line
+       library_dirs=["/opt/local/lib"], 
+  in the conditional corresponding to NumPy and ran
+
+  $ sudo python setup.py install
+
+* Installed PETSc.
+
+  I downloaded petsc-2.3.3-p12.tar.gz from ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-2.3.3-p12.tar.gz
+  After untarring, I had to add the lines (between ****)
+
+****
+shared_darwin9:
+	-@cd ${SHARED_LIBRARY_TMPDIR}; \
+       if [ "${LIBNAME}" = "libpetsc" ]; then OTHERLIBS="${PACKAGES_LIBS} ${EXTERNAL_LIB}  ${SYS_LIB} -lm -lc "; fi;\
+       if [ "${LIBNAME}" = "libpetscvec" ]; then OTHERLIBS="${PETSC_SYS_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetscmat" ]; then OTHERLIBS="${PLAPACK_LIB} ${PETSC_VEC_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetscdm" ]; then OTHERLIBS="${PETSC_MAT_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetscksp" ]; then OTHERLIBS="${PETSC_DM_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetscsnes" ]; then OTHERLIBS="${PETSC_KSP_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetscts" ]; then OTHERLIBS="${PETSC_SNES_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetscfortran" ]; then OTHERLIBS="${PETSC_TS_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libpetsccontrib" ]; then OTHERLIBS="${PETSC_TS_LIB_BASIC}"  ; fi;\
+       if [ "${LIBNAME}" = "libslepc" ]; then OTHERLIBS="${PETSC_KSP_LIB_BASIC}"  ; fi;\
+       if [ "${MACOSX_DEPLOYMENT_TARGET}" = "" ]; then MACOSX_DEPLOYMENT_TARGET=10.5; export MACOSX_DEPLOYMENT_TARGET; fi;\
+       ${CC}  -dynamiclib -single_module -multiply_defined suppress -undefined dynamic_lookup -o ${INSTALL_LIB_DIR}/$$LIBNAME.dylib *.o -L${PETSC_LIB_DIR}  ${OTHERSHAREDLIBS} ${SL_LINKER_LIBS} $$OTHERLIBS
+****
+  
+  to bmake/common/rules.shared.basic to make PETSc link shared libraries on Mac OS X 10.5 and add '.dylib' to lists
+  of file extensions in python/PETSc/packages/X11.py to make PETSc configure script find X11.
+
+  Note that according to Matthew Knepley, "these bugs were actually fixed in the development version" (which breaks
+  for some other reason -- CK).
+
+  The next two commands completed PETSc installation
+  $ export PETSC_DIR=`pwd`; export PETSC_ARCH=macosx; ./config/configure.py --with-shared --with-c-support --with-clanguage=cxx --with-debugging=no --with-fortran=0 --with-blas-lapack-dir=/usr/ --with-mpi-dir=/usr/ 
+  $ make all test
+
+  Also note that PETSc uses MPI and BLAS from the system. Nice!
+
+* Installed PISM
+
+  I added the following lines (between ****) to my .bash_profile
+
+****
+# PETSc and PISM stuff
+export PETSC_DIR=~/Documents/PISM/petsc-2.3.3-p12
+export PETSC_ARCH=macosx
+export DYLD_LIBRARY_PATH=~/Documents/PISM/pism-dev/lib/
+export PATH=~/Documents/PISM/pism-dev/bin/:$PATH
+****
+
+  (The third line tells the dynamic library loader where to find PISM libraries. It is not needed to build, but is
+  needed to run PISM.)
+
+  I changed the directory to ~/Documents/PISM and checked out the PISM sources
+
+  $ svn co http://svn.gna.org/svn/pism/trunk pism-dev
+
+  Next, I had to modify the PISM Makefile, add the config/macosx_macports file (which see) and replace strnlen with
+  strlen in src/base/iMIO.cc (since strnlen is a Linux extension).
+  
+  These changes should be reflected in the current PISM revision.
+
+  Now I just had to say
+
+  $ make; make install
+
+  PS: There might be a better way to make the library loader find PISM libraries, but this works fine (especially
+  if PISM is installed in a non-standard location).

@@ -19,7 +19,7 @@ ICE_LIB_FLAGS := -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf
 ifeq (${WITH_FFTW}, 1)
 	ICE_LIB_FLAGS += -lfftw3
 endif
-
+SHARED = -shared # default (for Linux)
 
 #VARIABLES:
 executables := pismr pismd pismv pisms pgrn
@@ -47,6 +47,7 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
 #include config/ryan_make
+include config/macosx_macports
 
 TESTS_OBJS := $(tests_sources:.c=.o)
 
@@ -76,11 +77,11 @@ CXXLINKER=${CLINKER}
 CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
 
 libpism.so : ${ICE_OBJS}
-	${CXXLINKER} -shared ${ICE_OBJS} -o $@
+	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
 #for static-linking:  ar cru -s libpism.a ${ICE_OBJS}   etc
 
 libtests.so : ${TESTS_OBJS}
-	${CLINKER} -shared ${TESTS_OBJS} -o $@
+	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
 
 pismr : pismr.o libpism.so
 	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@

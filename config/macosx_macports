@@ -1,0 +1,22 @@
+# Time-stamp: <macosx_macports, saved on Tue, May 13, 2008 at 02:43pm>
+# This file contains fixes necessary to build PISM on MacOS X with MacPorts.
+# (Checked on MacOS X 10.5, but it should work on 10.4 too.)
+
+# MacOS's gcc needs different switches to link shared libraries.
+SHARED = -dynamiclib -undefined dynamic_lookup
+
+# The location of headers and libraries installed via MacPorts.
+MACPORTS_INCLUDE = -I/opt/local/include
+MACPORTS_LIB = -L/opt/local/lib
+
+IFLAGS += $(MACPORTS_INCLUDE) $(PETSC_INCLUDE)
+LFLAGS += $(MACPORTS_LIB) -L$(PETSC_LIB_DIR)
+CLINKER += $(LFLAGS)
+
+# This is needed to make rules creating .d files find PETSc and MACPORTS.
+CC += $(IFLAGS)
+
+# This is used by the .c.o rule defined in $PETSC_DIR/bmake/common/rules
+PETSC_COMPILE_SINGLE += $(MACPORTS_INCLUDE)
+
+
