@@ -364,7 +364,7 @@ Writing model state to file `simp_exper.nc'
 \end{quote}\normalsize
 \noindent This should have taken much less than one minute.
 
-In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\verb|simp_exper.nc|''.  The next run will use a ``\intextoption{o}'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a four processor machine.  (The following should also work fine on a single processor machine but there is no speed-up, naturally.)  Let's also run things in the background so we can continue to experiment:\pismoptionindex{tempskip}\pismoptionindex{if}\index{mpiexec}
+In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\verb|simp_exper.nc|''.  The next run will use a ``\intextoption{o}'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a two processor machine.  (The following should also work fine on a single processor machine but there is no speed-up, naturally.)  Let's also run things in the background so we can continue to experiment:\pismoptionindex{tempskip}\pismoptionindex{if}\index{mpiexec}
 
 \small\begin{quote}\begin{verbatim}
 $ mpiexec -n 2 pisms -eisII A -if simp_exper.nc -tempskip 5 -y 198000 \
