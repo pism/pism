@@ -68,7 +68,7 @@ def create_write_attributes(diag = False):
     # Feed all the contents of 'pism_state.cdl' to ncgen, but stop at the line
     # containing the phrase "global attributes":
     for line in cdl_input_file:
-        if line.find("global attributes") > -1: #Find returns the substring position or -1 failure.
+        if line.find("global attributes") > -1: #Find returns the substring position or -1 on failure.
             break
         ncgen.stdin.write(line)
 

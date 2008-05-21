@@ -32,43 +32,25 @@ fullbib : fullbib.tex
 #   in the users manual; it is generally not the current trunk revision
 PISMREV ?= 205
 
-vfigs : vfnow.txt
+VFNOW_OUT=vfnow.txt
+vfigs : $(VFNOW_OUT)
 	# producing figures thickerrs_B.png, thickerrs_G.png, temperrs_G.png, surfvelerrs_G.png, 
 	# velerrs_I.png, and temperrs_K.png in subdirectory figs/ for use in manual
-	vnreport.py -f vfnow.txt -t B -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' -r ${PISMREV} \
+	vnreport.py -f $(VFNOW_OUT) -t B -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' -r ${PISMREV} \
 	   -o figs/thickerrs
-	gs -dSAFER -dBATCH -dNOPAUSE -dEPSCrop -sDEVICE=png16m -r300 \
-	   -sOutputFile=figs/thickerrs_B.png figs/thickerrs_B.eps
-	rm figs/thickerrs_B.eps
-	vnreport.py -f vfnow.txt -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' -r ${PISMREV} \
+	vnreport.py -f $(VFNOW_OUT) -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' -r ${PISMREV} \
 	   -o figs/thickerrs
-	gs -dSAFER -dBATCH -dNOPAUSE -dEPSCrop -sDEVICE=png16m -r300 \
-	   -sOutputFile=figs/thickerrs_G.png figs/thickerrs_G.eps
-	rm figs/thickerrs_G.eps
-	vnreport.py -f vfnow.txt -t G -e 'temp' -x 'basecenterT' -r ${PISMREV} -o figs/temperrs
-	gs -dSAFER -dBATCH -dNOPAUSE -dEPSCrop -sDEVICE=png16m -r300 \
-	   -sOutputFile=figs/temperrs_G.png figs/temperrs_G.eps
-	rm figs/temperrs_G.eps
-	vnreport.py -f vfnow.txt -t G -e 'surf vels' -x 'maxUvecmaxW' -r ${PISMREV} \
+	vnreport.py -f $(VFNOW_OUT) -t G -e 'temp' -x 'basecenterT' -r ${PISMREV} -o figs/temperrs
+	vnreport.py -f $(VFNOW_OUT) -t G -e 'surf vels' -x 'maxUvecmaxW' -r ${PISMREV} \
 	   -o figs/surfvelerrs
-	gs -dSAFER -dBATCH -dNOPAUSE -dEPSCrop -sDEVICE=png16m -r300 \
-	   -sOutputFile=figs/surfvelerrs_G.png figs/surfvelerrs_G.eps
-	rm figs/surfvelerrs_G.eps
-	vnreport.py -f vfnow.txt -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' -r ${PISMREV} \
+	vnreport.py -f $(VFNOW_OUT) -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' -r ${PISMREV} \
 	   -o figs/velerrs
-	gs -dSAFER -dBATCH -dNOPAUSE -dEPSCrop -sDEVICE=png16m -r300 \
-	   -sOutputFile=figs/velerrs_I.png figs/velerrs_I.eps
-	rm figs/velerrs_I.eps
-	vnreport.py -f vfnow.txt -t K -e 'temp' -r ${PISMREV} -o figs/temperrs
-	gs -dSAFER -dBATCH -dNOPAUSE -dEPSCrop -sDEVICE=png16m -r300 \
-	   -sOutputFile=figs/temperrs_K.png figs/temperrs_K.eps
-	rm figs/temperrs_K.eps
-
+	vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' -r ${PISMREV} -o figs/temperrs
 
 clean :
 	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.ind manual.ilg \
 	      manual.log manual.out manual.ps manual.toc
-	rm -f fullbib.aux fullbib.log fullbib.blg fullbib.bbl
+	rm -f fullbib.aux fullbib.log fullbib.blg fullbib.bbl fullbib.out
 	rm -f pism_summary.aux pism_summary.log pism_summary.blg pism_summary.bbl pism_summary.out
 	
 

@@ -129,12 +129,13 @@ err = numpy.array(vals).transpose()
 print 'found ' + str(len(err)*len(err[0])) + \
       ' "' + errtype + '"-type  numerical error values for plotting'
 
-# plot to postscript (.eps) files
+# plot to PNG files
 g = Gnuplot.Gnuplot()
 g('set data style linespoints')
 g('set pointsize 2')
 g('set logscale xy 10')
 g('set key top left')
+
 g.xlabel(dxname + '  (' + units + ')')
 for nn in range(len(tags)):
   if exclude.find(tags[nn]) < 0: # if the tag is not in the exclude string, then plot
@@ -147,8 +148,8 @@ for nn in range(len(tags)):
     print 'excluding "' + tags[nn] + '" errors from plot'
 g.title(titles[0] + ' numerical errors in test ' + testname + \
   ' (PISM revision ' + str(pismrev) + ')')
-outfilename = outfilestart + '_' + testname + '.eps'
-g.hardcopy(outfilename, mode='eps', enhanced=1, color=1)
-print 'postscript file ' + outfilename + ' written'
+outfilename = outfilestart + '_' + testname + '.pdf'
+g.hardcopy(outfilename, terminal='pdf')
+print 'PDF file ' + outfilename + ' written'
 # done
 

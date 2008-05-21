@@ -1,7 +1,7 @@
 % GRIDCOORDS  These are the grid coords reported in "111by147Grid.dat".  There
 % are several evident problems.  First, there are 112 and 148, resp., values,
 % and not "111by147".  Second, they are bizarrely spaced.  Do
-%    >> gridcoords, plot(1:112,diff(gridlat),1:148,diff(gridlon))
+%    >> gridcoords, plot(1:111,diff(gridlat),1:147,diff(gridlon))
 % ELB 2/11/07
 
 gridlat=[
