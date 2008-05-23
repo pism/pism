@@ -1162,7 +1162,7 @@ The bed elevation in the original data effectively contains a missing value attr
 \label{fig:greendata}
 \end{figure}
 
-In addition to getting the EISMINT gridded data into NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it would be possible for the modeled ice sheet to flow onto to it.  (Indeed this presumably occurred at the last glacial maximum.)  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island among the downloaded data, we want to prevent this from happening.  Therefore special code is executed by the relevant PISM executable \verb|pgrn| (see below).  It says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely anyway \dots).  The phrase ``removed from the flow simulation'' actually means that the points are marked as ice-free ocean; note the use of option \verb|-ocean_kill| below.
+In addition to getting the EISMINT gridded data into NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it would be possible for the modeled ice sheet to flow onto it.  (Indeed this presumably occurred at the last glacial maximum.)  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island among the downloaded data, we want to prevent this from happening.  Therefore special code is executed by the relevant PISM executable \verb|pgrn| (see below).  It says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely anyway \dots).  The phrase ``removed from the flow simulation'' actually means that the points are marked as ice-free ocean; note the use of option \verb|-ocean_kill| below.
 
 We mentioned the script \verb|eis_core.py|.  Now we execute it:
 
@@ -1286,7 +1286,7 @@ The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree d
 
 \verb|     -tempskip 3 -o green_SSL2_20k >> ssl2.txt|
 
-These runs took [HOW LONG?] on an 4 processor (8 core) Opteron cluster (2006 technology).
+These runs took about 20 minutes each on an 4 processor (8 core) Opteron cluster (2006 technology).
 
 Note the option ``\verb|-ocean_kill|''.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  Compare the Ross ice shelf model in the next section.
 
@@ -2282,7 +2282,7 @@ Note that timing information is also given in the \verb|verifynow.py| output.  T
 The exact meaning of the various errors reported by \verb|pismv|, which appear in a \verb|verifynow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
 
 
-\subsubsection*{\Large{\texttt{vnreport.py}}}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|gnuplot| (with the help of the \verb|Gnuplot.py| package, see \verb|http://gnuplot-py.sourceforge.net/| for installation instructions).  Example graphs are Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif}.
+\subsubsection*{\Large{\texttt{vnreport.py}}}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|gnuplot| (with the help of the \verb|Gnuplot.py| package, see \url{http://gnuplot-py.sourceforge.net/} for installation instructions).  Example graphs are Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif}.
 
 The basic use is this:
 
