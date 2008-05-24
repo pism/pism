@@ -1,48 +1,76 @@
 #!/usr/bin/env python
 # ross_plot.py plots the computed speed of Ross and shows observed values from RIGGS data. It is based on (and
-# provided as an alternative to) plot_ross.m by ELB.
-#
-# Assumes that unnamed_diag.nc, containing the result of PISM Ross computation, and riggs_clean.dat, are is in the
-# same directory.
-
+# provided as an alternative to) ross_plot.m by ELB.
+# 
 # This script requires matplotlib for plotting (see http://matplotlib.sourceforge.net/ for details) and
 # scipy.sandbox.delaunay for the 'natural neighbor' 2-d interpolation. This package is not built with scipy by
 # default, but can be easily installed by downloading scipy sources, changing into the scipy/sandbox/delaunay
 # directory and saying "python setup.py install". (This way it gets added to the global name-space; note the
 # corresponding "import" line.)
 
-# CK, May 22, 2008
+# CK, May 23, 2008
 
 from numpy import *
-from pycdf import *
 from pylab import *
+from getopt import getopt, GetoptError
+from sys import argv, exit
+from pycdf import CDF, CDFError
 from delaunay import *
 
-# This is the name of the input file:
-pism_output = 'unnamed_diag.nc'
+# process command line arguments
+try:
+    opts, args = getopt(argv[1:], "p:r:", ["pism-output=", "riggs="])
+    # defaults:
+    pism_output = "unnamed_diag.nc"
+    riggs_file = "riggs_clean.dat"
+    for opt, arg in opts:
+        if opt in ("-p", "--pism-output"):
+            pism_output = arg
+        if opt in ("-r", "--riggs"):
+            riggs_file = arg
+except GetoptError:
+    print """Options:
+               --pism-output=<PISM output file> or -p <PISM output file>
+                 specifies the NetCDF file with PISM output
+
+               --riggs=<RIGGS data file> or -r <RIGGS data file>
+                 specifies the data file with RIGGS points."""
+    exit(-1)
+
+# load RIGGS data FROM D. MACAYEAL TO ELB ON 19 DEC 2006.
+try:
+    print "Loading RIGGS data from '%s'..." % (riggs_file),
+    RIGGS = load(riggs_file)
+    print "done."
+except IOError:
+    print "ERROR!\nMake sure that '%s' is in the expected location and try again.\nExiting..." % (riggs_file)
+    exit(-1)
+
+# load the PISM output
+try:
+    print "Loading PISM output from '%s'..." % (pism_output),
+    infile = CDF(pism_output)
+    H = infile.var("thk").get()[0]
+    mask = infile.var("mask").get()[0]
+    cbar = infile.var("cbar").get()[0]
+    ubar = infile.var("uvel").get()[0,:,:,0] * (60*60*24*365) # convert from meters per second to
+    vbar = infile.var("vvel").get()[0,:,:,0] * (60*60*24*365) # meters per year
+    print "done."
+except CDFError:
+    print "ERROR!\nMake sure that '%s' is in the expected location and has the right format.\nExiting..." % (pism_output)
+    exit(-1)
 
 # see 111by147.dat for these ranges
 dlat = (-5.42445 - (-12.3325))/110;
 gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
 gridlon = linspace(-5.26168,3.72207,147);
 
-[lat, lon] = meshgrid(gridlatext, gridlon)
-glon = lon.flatten()
-glat = lat.flatten()
+# triangulate data
+glon = tile(gridlon, 147); glat = repeat(gridlatext, 147)
 tri = Triangulation(glon, glat)
 
-# load RIGGS data FROM D. MACAYEAL TO ELB ON 19 DEC 2006.
-RIGGS = load("riggs_clean.dat")
-
-# read the PISM output
-infile = CDF(pism_output)
-H = infile.var("thk").get()[0]
-mask = infile.var("mask").get()[0]
-cbar = infile.var("cbar").get()[0]
-ubar = infile.var("uvel").get()[0,:,:,0] * 31556926 # convert from meters per second to
-vbar = infile.var("vvel").get()[0,:,:,0] * 31556926 # meters per year
-
-# This is needed to only plot areas where H > 20 and mask == 0: 
+# This is needed to only plot areas where H >= 20 and mask == 0
+# and filter out RIGGS points that are outside the model domain.
 cbar_masked = ma.array(cbar, mask = (mask == 1) + (H < 20))
 
 # show computed speed as color
@@ -54,8 +82,9 @@ RIGGSlat = -(RIGGS[:,3] + RIGGS[:,4]/60 + RIGGS[:,5]/(60*60))
 RIGGSlon = RIGGS[:,6] + RIGGS[:,7]/60 + RIGGS[:,8]/(60*60)
 RIGGSlon = - RIGGSlon * RIGGS[:,9];  # RIGGS[:,9] is +1 if W, -1 if E
 
-# throw out the ones which are not in model domain; 132 (135) remain
-cRIGGS = tri.nn_interpolator(cbar.T.flatten())(RIGGSlon, RIGGSlat)
+# throw out the ones which are not in model domain; 132 (131?) remain
+cbar_masked.putmask(-20)
+cRIGGS = tri.nn_interpolator(cbar_masked.flat)(RIGGSlon, RIGGSlat)
 rig = RIGGS[cRIGGS > 0]; riglon = RIGGSlon[cRIGGS > 0]; riglat = RIGGSlat[cRIGGS > 0]
 
 # add markers for RIGGS points, then quiver observed velocities
@@ -65,24 +94,24 @@ rigv = cos((pi/180)*rig[:,12]) * rig[:,10]
 quiver(riglon, riglat, rigu, rigv, color='black')
 
 # quiver the computed velocities at the same points; note reversal of u,v in model
-uATrig = tri.nn_interpolator(vbar.T.flatten())(riglon, riglat)
-vATrig = tri.nn_interpolator(ubar.T.flatten())(riglon, riglat)
+uATrig = tri.nn_interpolator(vbar.flat)(riglon, riglat)
+vATrig = tri.nn_interpolator(ubar.flat)(riglon, riglat)
 quiver(riglon, riglat, uATrig, vATrig, color='red')
 axis([-5.26168, 3.72207, -13, -5.42445])
 xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
 title('Color is speed in m/a.\n Arrows are observed (black) and computed (red) velocities at RIGGS points.')
+savefig("rossquiver.png")
 show()
-#savefig("rossquiver.pdf")
 
-figure(2);clf();hold(True)
 # report results comparable to Table 1 in (MacAyeal et al 1996)
 ChiSqrActual = sum( ((uATrig - rigu)**2 + (vATrig - rigv)**2) / (30**2) )
 print "ChiSqr = %f" % (ChiSqrActual * (156.0/132.0))
 print "Maximal computer speed is %f." % (cbar.max())
 
 # show observed versus computed scatter plot as in Figure 2 in (MacAyeal et al 1996)
+figure(2);clf();hold(True)
 plot(sqrt(uATrig**2 + vATrig**2), sqrt(rigu**2 + rigv**2), '.k')
 plot([0, 1000],[0, 1000], 'k')
 xlabel('PISM computed speed (m/a)'); ylabel('RIGGS observed speed (m/a)')
+savefig("rossscatter.png")
 show()
-#savefig("rossscatter.pdf")
