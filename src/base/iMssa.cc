@@ -535,36 +535,42 @@ viscosity is computed by computeEffectiveViscosity() and then the linear system 
 set up and solved.
 
 This procedure creates a PETSC \c KSP, it calls assembleSSAMatrix() and assembleSSARhs() 
-to store the linear system in the \c KSP, and then calls the PETSc procedure KSPSolve() to solve
-the linear system.  
+to store the linear system in the \c KSP, and then calls the PETSc procedure KSPSolve()
+to solve the linear system.  
 
 Solving the linear system is also a loop, an iteration, but it occurs
 inside KSPSolve().  This inner loop is controlled by PETSc but the user can set the option 
 <tt>-ksp_rtol</tt>, in particular, and that tolerance controls when the inner loop terminates.
 
-Note that <tt>-ksp_type</tt> can be used to choose the \c KSP.  This will set which type of 
-linear iterative method is used.  The KSP is important because the eigenvalues of the linearized
-SSA are not well understood, but they determine the convergence of this linear, inner, iteration.
-The default KSP is GMRES(30).
+Note that <tt>-ksp_type</tt> can be used to choose the \c KSP.  This will set 
+which type of linear iterative method is used.  The KSP is important because 
+          omfv = 
+the eigenvalues of the linearized SSA are not well understood, but they 
+determine the convergence of this linear, inner, iteration.  The default KSP 
+is GMRES(30).
 
-Note that <tt>-ksp_pc</tt> will set which preconditioner to use; the default is ILU.  A well-chosen
-preconditioner can put the eigenvalues in the right place so that the KSP can converge quickly.  The 
-preconditioner is also important because it will behave differently on different numbers of processors.
-If the user wants the results of SSA calculations to be independent of the number of processors, then
-<tt>-ksp_pc none</tt> should be used.
+Note that <tt>-ksp_pc</tt> will set which preconditioner to use; the default 
+is ILU.  A well-chosen preconditioner can put the eigenvalues in the right
+place so that the KSP can converge quickly.  The preconditioner is also
+important because it will behave differently on different numbers of
+processors.  If the user wants the results of SSA calculations to be 
+independent of the number of processors, then <tt>-ksp_pc none</tt> should
+be used.
 
-If you want to test different KSP methods, it may be helpful to see how many iterations were 
-necessary.  Use <tt>-ksp_monitor</tt> or <tt>-d k</tt>.  Initial testing implies that CGS 
-takes roughly half the iterations of GMRES(30), but is not significantly faster because the iterations
-are each roughly twice as slow.  Furthermore, ILU and BJACOBI seem roughly equivalent as preconditioners.
+If you want to test different KSP methods, it may be helpful to see how many 
+iterations were necessary.  Use <tt>-ksp_monitor</tt> or <tt>-d k</tt>.
+Initial testing implies that CGS takes roughly half the iterations of 
+GMRES(30), but is not significantly faster because the iterations are each 
+roughly twice as slow.  Furthermore, ILU and BJACOBI seem roughly equivalent
+as preconditioners.
 
-The outer loop terminates when the effective viscosity is no longer changing much, according
-to the tolerance set by the option <tt>-ssa_rtol</tt>.  (The outer loop also terminates
-when a maximum number of iterations is exceeded.)
+The outer loop terminates when the effective viscosity is no longer changing 
+much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  (The 
+outer loop also terminates when a maximum number of iterations is exceeded.)
 
-In truth there is an outer outer loop (over index \c l).  This one manages an attempt to
-over-regularize the effective viscosity so that the nonlinear iteration (the "outer" loop 
-over \c k) has a chance to converge.
+In truth there is an outer outer loop (over index \c l).  This one manages an
+attempt to over-regularize the effective viscosity so that the nonlinear
+iteration (the "outer" loop over \c k) has a chance to converge.
 
   // We need to save the velocity from the last time step since we may have to
   // restart the iteration with larger values of epsilon.
@@ -679,26 +685,27 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
 //! At all SSA points, update the velocity field.
 /*!
-Once the vertically-averaged velocity field is computed by the SSA, this procedure
-updates the three-dimensional horizontal velocities \f$u\f$ and \f$v\f$.  (Note that
-\f$w\f$ gets update later by vertVelocityFromIncompressibility().)  The three-dimensional
-velocity field is needed, for example, so that the temperature equation can include advection.
+Once the vertically-averaged velocity field is computed by the SSA, this 
+procedure updates the three-dimensional horizontal velocities \f$u\f$ and
+\f$v\f$.  Note that \f$w\f$ gets updated later by 
+vertVelocityFromIncompressibility().  The three-dimensional velocity field
+is needed, for example, so that the temperature equation can include advection.
 Basal velocities also get updated.
 
-Here is where the flag doSuperpose controlled by option <tt>-super</tt>  applies.  
-If doSuperpose is true then the just-computed velocity \f$v\f$ from the SSA is added to a multiple of
-the stored velocity \f$u\f$ from the SIA computation:
-   \f[U = f(|v|)\, u + v.\f]
+Here is where the flag doSuperpose controlled by option <tt>-super</tt> applies.
+If doSuperpose is true then the just-computed velocity \f$v\f$ from the SSA is
+combined, in convex combination, to the stored velocity \f$u\f$ from the SIA 
+computation:
+   \f[U = f(|v|)\, u + \left(1-f(|v|)\right)\, v.\f]
 Here
-	\f[ f(|v|) = 1 - (2/\pi) \arctan(10^{-4} |v|^2) \f]
-is a function which decreases smoothly from 1 for \f$|v| = 0\f$ to 0 as \f$|v|\f$ becomes 
-significantly larger than 100 m/a.  (Actually, if the flag pureSuperpose is true 
-then \f$f(|v|)=1\f$.)
+   \f[ f(|v|) = 1 - (2/\pi) \arctan(10^{-4} |v|^2) \f]
+is a function which decreases smoothly from 1 for \f$|v| = 0\f$ to 0 as
+\f$|v|\f$ becomes significantly larger than 100 m/a.
  */
 PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
+
   PetscErrorCode ierr;
   PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb, **uvbar[2];
-
   PetscScalar *u, *v;
   
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -710,42 +717,50 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  if (doSuperpose == PETSC_TRUE) {
-    ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  }
+  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET) {
         // apply glaciological-superposition-to-low-order if desired (and not floating)
-        bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
-        PetscScalar fv = 1.0;
-        if (pureSuperpose == PETSC_FALSE) {
+        bool addVels = ( (doSuperpose == PETSC_TRUE) 
+                         && (modMask(mask[i][j]) == MASK_DRAGGING) );
+        PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
+                                           // speed is infinity; i.e. when !addVels
+                                           // we just pass through the SSA velocity
+        if (addVels) {
           const PetscScalar c2peryear = PetscSqr(ubarssa[i][j]*secpera)
                                            + PetscSqr(vbarssa[i][j]*secpera);
-          fv = 1.0 - (2.0/pi) * atan(1.0e-4 * c2peryear);
+          omfv = (2.0/pi) * atan(1.0e-4 * c2peryear);
+          fv = 1.0 - omfv;
         }
+
+        // update 3D velocity; u,v were from SIA
         if (updateVelocityAtDepth) {
-          ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
+          ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr); // returns pointer
           ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
           for (PetscInt k=0; k<grid.Mz; ++k) {
-            u[k] = (addVels) ? fv * u[k] + ubarssa[i][j] : ubarssa[i][j];
-            v[k] = (addVels) ? fv * v[k] + vbarssa[i][j] : vbarssa[i][j];
+            u[k] = (addVels) ? fv * u[k] + omfv * ubarssa[i][j] : ubarssa[i][j];
+            v[k] = (addVels) ? fv * v[k] + omfv * vbarssa[i][j] : vbarssa[i][j];
           }
-          // no need to call u3.setInternalColumn(), v3.setInternalColumn(); already set!
         }
-        ub[i][j] = (addVels) ? fv * ub[i][j] + ubarssa[i][j] : ubarssa[i][j];
-        vb[i][j] = (addVels) ? fv * vb[i][j] + vbarssa[i][j] : vbarssa[i][j];
+
+        // update basal velocity; ub,vb were from SIA
+        ub[i][j] = (addVels) ? fv * ub[i][j] + omfv * ubarssa[i][j] : ubarssa[i][j];
+        vb[i][j] = (addVels) ? fv * vb[i][j] + omfv * vbarssa[i][j] : vbarssa[i][j];
         
-        ubar[i][j] = ubarssa[i][j];
-        vbar[i][j] = vbarssa[i][j];
-        if (addVels) { // also update ubar,vbar by adding SIA contribution
-          ubar[i][j] += fv * 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-          vbar[i][j] += fv * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
-        }
+        // also update ubar,vbar by adding SIA contribution, interpolated from 
+        //   staggered grid
+        const PetscScalar ubarSIA = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
+                          vbarSIA = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        ubar[i][j] = (addVels) ? fv * ubarSIA + omfv * ubarssa[i][j] : ubarssa[i][j];
+        vbar[i][j] = (addVels) ? fv * vbarSIA + omfv * vbarssa[i][j] : vbarssa[i][j];
+
       }
     }
   }
+
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
@@ -755,11 +770,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-  
-  if (doSuperpose == PETSC_TRUE) {
-    ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  }
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -783,13 +795,13 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
         Rb[i][j] = 0.0;
       }
       if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
-        // note basalDrag[x|y]() produces a coefficient, not a stress
+        // note basalDrag[x|y]() produces a coefficient, not a stress;
+        //   uses *updated* ub,vb if doSuperpose == TRUE
         const PetscScalar 
             basal_stress_x = - basalDragx(tauc, ub, vb, i, j) * ub[i][j],
             basal_stress_y = - basalDragy(tauc, ub, vb, i, j) * vb[i][j];
-        // note next line uses *updated* ub,vb if doSuperpose == TRUE
         Rb[i][j] = - basal_stress_x * ub[i][j] - basal_stress_y * vb[i][j];
-      } 
+      }
       // otherwise leave SIA-computed value alone
     }
   }
@@ -804,7 +816,13 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 }
 
 
-//! At SSA points, correct the previously-computed volume strain-heating.
+//! At SSA points, correct the previously-computed volume strain heating (dissipation heating).
+/*!
+FIXME:  This needs improvement.  When the SIA only is used this should not 
+be called, and so that is fine.  Otherwise there are new tensor elements to 
+consider in the product of the strain rate and deviatoric stress tensors.
+Possibly the product of tensors should be more directly computed. 
+ */
 PetscErrorCode IceModel::correctSigma() {
   // recompute Sigma in ice stream and shelf (DRAGGING,FLOATING) locations
   PetscErrorCode  ierr;

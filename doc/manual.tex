@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{294}
+\newcommand{\PISMREV}{305}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 \addtolength\topmargin{-.1in}
@@ -50,7 +50,7 @@
 
 \title[PISM User's Manual]{\protect{\Large PISM, a \underline{P}arallel \underline{I}ce \underline{S}heet \underline{M}odel:\normalsize} \\ \protect{\Large \bigskip \bigskip User's Manual\normalsize}}
 
-\author[]{Ed $\text{Bueler}^\ast$, Jed Brown, and Nathan Shemonski}
+\author[]{Ed $\text{Bueler}^\ast$ \\ Jed Brown \\ Nathan Shemonski \\ Constantine Khroulev}
 
 \date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM bleeding edge by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}.} 
 
@@ -68,7 +68,7 @@
 \phantom{bob}
 \vspace{2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2008 Ed Bueler and Jed Brown and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2008 Ed Bueler and Jed Brown and Nathan Shemonski and Constantine Khroulev}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -90,9 +90,7 @@
 
 The NASA Cryospheric Sciences Program\index{NASA Cryospheric Sciences Program} supported this research with grant NAG5-11371.
 
-Our research into ice sheet modeling was inherited from Craig Lingle\index{Lingle, Craig}.  We owe him a great deal for his imparted experience.
-
-Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Spencer Jones\index{Jones, Spencer}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Spencer Jones\index{Jones, Spencer}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -293,36 +291,30 @@ Have fun!
 \begin{tabular}{@{}llll}\hline
 \textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\
 \textbf{/Program} &  &  &  \\ \hline
-FFTW & \href{http://www.fftw.org/}{\t{www.fftw.org}} & \emph{recommended} & if not present set \\
- & & & \quad \verb|WITH_FFTW=0| for PISM build \\
+FFTW & \href{http://www.fftw.org/}{\t{www.fftw.org}} & \emph{recommended} & needed for earth deformation; \\
+ & & & \quad  if not present set \verb|WITH_FFTW=0| \\
 GSL & \href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}} & \emph{required} &  \\
 Matlab & \href{http://www.mathworks.com/}{\t{www.mathworks.com}} & \emph{recommended} & only used for alternate\\
 & & & display of results \\
 MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
-NetCDF & \href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}} & \emph{required} & \\
+NetCDF & \scriptsize\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}\small & \emph{required} & \\
 \texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts  \\
  &  &  & in sections \ref{sect:green} and \ref{sect:ross}  \\
 PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
 \texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts  \\
  &  &  & in sections \ref{sect:green} and \ref{sect:ross}  \\
-Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\
+Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\ 
 \hline
-\normalsize
-\end{tabular}
-\end{table}
-
-
-\begin{table}[ht]
-\caption{Additional dependencies for PISM \protect{\emph{needed only for serious developers of PISM}}, listed alphabetically.\index{PISM!dependencies on other software}  }\label{tab:PISMdepends_superdev}
-\small
-\begin{tabular}{@{}llll}\hline
-\textbf{Library} & \textbf{Site} & \textbf{Comment} \\
-\textbf{/Program} &  &  &  \\ \hline
-\LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} & only used for rebuilding manuals (both this User's Manual  \\
- &  & and the Reference Manual) from source \\
-\texttt{doxygen}\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} & only used for rebuilding the Reference Manual and the \\
- & & Source Code Browser from the source code files \\
+& & & \\
+\multicolumn{3}{c}{\rule[-3mm]{0mm}{8mm}Additional dependencies for building PISM documentation:} & \\
+\hline
+\LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} & \emph{optional} & for rebuilding this \emph{User's Manual}  \\
+ & & & and the \emph{Reference Manual} \\
+ & & & from source \\
+\texttt{doxygen}\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} & \emph{optional}  & for rebuilding \emph{Reference Manual} \\
+ & & & and Source Code Browser \\
+ & & & from source \\
 \hline
 \normalsize
 \end{tabular}

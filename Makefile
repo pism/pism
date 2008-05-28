@@ -26,11 +26,11 @@ executables := pismr pismd pismv pisms pgrn
 extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
    simpleL gridL flowTable tryLCbd pant
 
-ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc forcing.cc \
-	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc iMforcing.cc \
-	iMgrainsize.cc iMIO.cc iMinverse.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc \
-	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMtests.cc iMutil.cc \
-	iMvelocity.cc iMviewers.cc \
+ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc \
+	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
+	iMdefaults.cc iMforcing.cc iMgrainsize.cc iMIO.cc iMinverse.cc \
+	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc \
+	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc \
 	iceModelVec.cc iceModelVec3.cc iceModel.cc
 
 ice_csources := cubature.c pism_signal.c
@@ -40,10 +40,10 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pgrn.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
-	iceEISplModel.cc iceCompModel.cc iceUpwindCompModel.cc iceExactSSAModel.cc iCMthermo.cc \
-	flowTable.cc tryLCbd.cc
+	iceEISplModel.cc iceCompModel.cc iceUpwindCompModel.cc \
+	iceExactSSAModel.cc iCMthermo.cc flowTable.cc tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
-   simpleJ.c simpleK.c simpleL.c
+	simpleJ.c simpleK.c simpleL.c
 
 #INCLUDE ADDITIONAL make INCLUDE FILES HERE: 
 #include config/ryan_make
@@ -53,8 +53,8 @@ TESTS_OBJS := $(tests_sources:.c=.o)
 
 ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
-depfiles := $(ice_sources:.cc=.d) $(ice_csources:.c=.d) $(tests_sources:.c=.d) \
-	$(other_sources:.cc=.d) $(other_csources:.c=.d)
+depfiles := $(ice_sources:.cc=.d) $(ice_csources:.c=.d) \
+	$(tests_sources:.c=.d) $(other_sources:.cc=.d) $(other_csources:.c=.d)
 
 all : depend libpism.so libtests.so $(executables) .pismmakeremind
 
@@ -73,7 +73,8 @@ local_install : depend libpism.so libtests.so $(executables)
 
 CXXLINKER=${CLINKER}
 ## PETSc has trouble choosing a linker which can link C++.  PISM is C++.
-## If you have problems, comment out the CXXLINKER definition above and uncomment this one:
+## If you have problems, comment out the CXXLINKER definition above and 
+## uncomment this one:
 CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
 
 libpism.so : ${ICE_OBJS}
@@ -90,10 +91,13 @@ pismd : pismd.o iceROSSModel.o libpism.so
 	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
 pisms : iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
-	${CXXLINKER} iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o \
+	${ICE_LIB_FLAGS} -o $@
 
-pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
-	${CXXLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
+pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o \
+		pismv.o libpism.so libtests.so
+	${CXXLINKER} iCMthermo.o iceCompModel.o iceUpwindCompModel.o \
+	iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
 pgrn : iceGRNModel.o pgrn.o libpism.so
 	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
@@ -137,7 +141,7 @@ gridL : gridL.o libtests.so
 
 .pismmakeremind :
 	@touch .pismmakeremind
-	@echo '*** Remember to "make install".  For now executables are "./pismv" etc ***'
+	@echo '*** Remember to "make install" to move executables to bin/ ***'
 
 showEnv :
 	@echo ${CLINKER}

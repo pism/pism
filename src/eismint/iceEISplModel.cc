@@ -46,7 +46,6 @@ PetscErrorCode IceEISplModel::initFromOptions() {
 
   useSSAVelocity = PETSC_TRUE;
   doSuperpose = PETSC_TRUE;
-  pureSuperpose = PETSC_FALSE;
   doPlasticTill = PETSC_TRUE;
 
   // these are different from EISMINT I conventions

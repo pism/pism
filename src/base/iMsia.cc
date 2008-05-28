@@ -440,7 +440,7 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
 }
 
 
-//! Put the (ice volume, not basal) strain-heating onto the regular grid.
+//! Put the volume strain heating (dissipation heating) onto the regular grid.
 /*!
 At the end of velocitySIAStaggered() the volume strain-heating \f$\Sigma\f$ is available
 on the staggered grid.  This procedure averages it onto the regular grid.

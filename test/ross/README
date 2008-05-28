@@ -1,17 +1,17 @@
-README                                      ELB 2/9/07; 8/4/07
+README                                  ELB 2/9/07; 8/4/07; 27may08
 
 This README file supplements the "readme.txt" file from the 
 EISMINT Ross intercomparison (that file is dated "Oct 2nd 1996" 
-and is by V. Rommelaere).  It describes three files which 
-clean up the EISMINT Ross files which relate to calculation of 
-the \Chi^2 measure; compare MacAyeal et. al 1996 Ann. Glaciol. 23.
-
-The three files are:
+and is by V. Rommelaere).  It describes four files which 
+clean up the EISMINT Ross files.  All relate to calculation of 
+the \chi^2 measure and display of the PISM result versus the RIGGS
+observations; compare MacAyeal et. al 1996 Ann. Glaciol. 23.  The
+files are:
 
 riggs_data_edit_fromDM.txt (=FILE1):  This text file was sent to 
 Ed Bueler (=ELB) by Doug MacAyeal on 19 Dec 2006.  It seems to 
 contain the (global) latitude and longitude of the 149 locations 
-of RIGGS data which were actually used to compute the \Chi^2 measure.
+of RIGGS data which were actually used to compute the \chi^2 measure.
 
 riggs_clean.dat:  This text file is a modified version
 of the previous file.  ELB removed some clutter to make it 
@@ -43,7 +43,14 @@ COLUMN    MEANING
 14        estimated speed error (m/a; note replaced with 30
           for Chi^2 stat in MacAyeal et al 1996)
 
-ross_plot.m:  Takes the result of a PISM Ross run (i.e. foo.m
-if "pismd -ross -o foo -of m" created it) and produces a
-good-looking figure.  Also reads the riggs_clean.dat file and
-produces the value of the Chi^2 statistic.
+ross_plot.py:  Takes the NetCDF result of a PISM Ross run (i.e. from
+"pismd -ross -bif ross.nc -ssaBC ross.nc ...") and produces a
+good-looking figure using Python tools matplotlib, pycdf, and 
+scikits.delaunay.  See comments to install.  Reads the riggs_clean.dat 
+file and produces the value of the \chi^2 statistic.  Produces .png
+images.
+ross_plot.m:  Similar but in Matlab.  Takes the result of a PISM Ross 
+run with Matlab output (i.e. from "pismd -ross -bif ross.nc -ssaBC ross.nc 
+-mato ross1p9 -matv cuvHm ..."; see User's Manual) and produces a
+good-looking figure.  Reads the riggs_clean.dat file and
+produces the value of the chi^2 statistic.
