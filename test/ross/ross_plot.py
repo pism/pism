@@ -1,21 +1,30 @@
 #!/usr/bin/env python
 # ross_plot.py plots the computed speed of Ross and shows observed values from RIGGS data. It is based on (and
 # provided as an alternative to) ross_plot.m by ELB.
-# 
-# This script requires matplotlib for plotting (see http://matplotlib.sourceforge.net/ for details) and
-# scipy.sandbox.delaunay for the 'natural neighbor' 2-d interpolation. This package is not built with scipy by
-# default, but can be easily installed by downloading scipy sources, changing into the scipy/sandbox/delaunay
-# directory and saying "python setup.py install". (This way it gets added to the global name-space; note the
-# corresponding "import" line.)
-
-# CK, May 23, 2008
+#
+# It depends on the following Python packages:
+# 1) numpy (provided by python-numpy on Debian; see http://numpy.scipy.org/)
+# 2) matplotlib (provided by python-matplotlib on Debian; see http://matplotlib.sourceforge.net/)
+# 3) pycdf (see http://pysclint.sourceforge.net/pycdf/)
+# 4) scikits.delaunay (for data regridding)
+#    (See http://scipy.org/scipy/scikits for more information and to learn what Scipy Toolkits are.)
+#
+#    To install scikits.delaunay, first install setuptools (provided by python-setuptools on Debian).
+#    Then do
+#
+#    $ svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
+#    $ cd delaunay; sudo python setup.py install
+#   
+# (Other imported packages (getopt and sys) come with Python.)
+#
+# CK, May 27, 2008
 
 from numpy import *
 from pylab import *
 from getopt import getopt, GetoptError
 from sys import argv, exit
 from pycdf import CDF, CDFError
-from delaunay import *
+from scikits.delaunay import *
 
 # process command line arguments
 try:
