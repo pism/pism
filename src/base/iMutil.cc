@@ -266,7 +266,8 @@ PetscErrorCode IceModel::afterInitHook() {
 //    }
     if (grid.Mbz > 1) {
       ierr = verbPrintf(2,grid.com, 
-         "  [vertical spacing in bedrock: dz = %.3f m in bottom layer]\n",
+         "  [vertical spacing in bedrock: dz = %.3f m]\n",
+//         "  [vertical spacing in bedrock: dz = %.3f m in bottom layer]\n",
          grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
     }
   }

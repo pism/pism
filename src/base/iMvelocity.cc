@@ -154,7 +154,8 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 
   if (useSSAVelocity) {
     // note correctSigma() differences ub,vb in horizontal:
-    ierr = correctSigma(); CHKERRQ(ierr);
+// 28may08: ELB experiment: DON'T CORRECT Sigma
+//    ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   }
 

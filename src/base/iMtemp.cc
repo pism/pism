@@ -294,19 +294,32 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           const PetscScalar iceReff = ice->k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
           const PetscScalar brReff = bed_thermal.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
           const PetscScalar AA = dtTempAge * rho_c_ratio * w[0] / (2.0 * dzEQ);  //NEW
-          if (Mbz > 1) { // there is bedrock; apply centered difference with 
+          if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0,
+                         // otherwise ignor advection; note 
                          // jump in diffusivity coefficient
             L[k0] = - brReff;
 //O            D[k0] = 1.0 + iceReff + brReff;
 //O            U[k0] = - iceReff;
-            D[k0] = 1.0 + iceReff + brReff + AA;
-            U[k0] = - iceReff + AA;
+//O_052808:            D[k0] = 1.0 + iceReff + brReff + AA;
+            if (w[0] >= 0.0) {  // velocity upward
+              D[k0] = 1.0 + iceReff + brReff;
+              U[k0] = - iceReff;
+            } else { // velocity downward
+              D[k0] = 1.0 + iceReff + brReff - AA;
+              U[k0] = - iceReff + AA;
+            }
           } else { // no bedrock; apply geothermal flux here
             // L[k0] = 0.0;  (note this is not an allocated location!) 
 //O            D[k0] = 1.0 + 2.0 * iceR;
 //O            U[k0] = - 2.0 * iceR;
-            D[k0] = 1.0 + 2.0 * iceR + AA;
-            U[k0] = - 2.0 * iceR + AA;
+//O_052808            D[k0] = 1.0 + 2.0 * iceR + AA;
+            if (w[0] >= 0.0) {  // velocity upward
+              D[k0] = 1.0 + 2.0 * iceR;
+              U[k0] = - 2.0 * iceR;
+            } else { // velocity downward
+              D[k0] = 1.0 + 2.0 * iceR - AA;
+              U[k0] = - 2.0 * iceR + AA;
+            }
             rhs[k0] += 2.0 * dtTempAge * Ghf[i][j] / (rho_c_I * dzEQ);
           }
         }
@@ -335,11 +348,11 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
 //O        L[k0+k] = -iceR; D[k0+k] = 1+2*iceR; U[k0+k] = -iceR;
 //        const PetscScalar AA = 0.0; //REMOVEME
         const PetscScalar AA = nuEQ * w[k];      
-        if (w[k] >= 0.0) {
+        if (w[k] >= 0.0) {  // velocity upward
           L[k0+k] = - iceR - AA * (1.0 - lambda/2.0);
           D[k0+k] = 1.0 + 2.0 * iceR + AA * (1.0 - lambda);
           U[k0+k] = - iceR + AA * (lambda/2.0);
-        } else {
+        } else {  // velocity downward ward
           L[k0+k] = - iceR - AA * (lambda/2.0);
           D[k0+k] = 1.0 + 2.0 * iceR - AA * (1.0 - lambda);
           U[k0+k] = - iceR + AA * (1.0 - lambda/2.0);
@@ -400,7 +413,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         }
         if (Tnew[k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) generic segment temp T = %f at %d,%d,%d;"
+              "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
               " proc %d; mask=%f; w=%f]]\n",
               Tnew[k],i,j,k,grid.rank,mask[i][j],w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
@@ -428,7 +441,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         }
         if (Tnew[0] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) ice/rock segment temp T = %f at %d,%d;"
+              "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
               " proc %d; mask=%f; w=%f]]\n",
               Tnew[0],i,j,grid.rank,mask[i][j],w[0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
@@ -452,7 +465,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       for (PetscInt k=0; k <= k0; k++) {
         if (Tbnew[k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "  [[too low (<200) bedrock temp T = %f at %d,%d,%d; proc %d; mask=%f]]\n",
+              "  [[too low (<200) bedrock segment temp T = %f at %d,%d,%d;"
+              " proc %d; mask=%f]]\n",
               Tbnew[k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
            myLowTempCount++;
         }
