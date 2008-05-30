@@ -19,22 +19,6 @@
 #include "materials.hh"
 #include "pism_const.hh"
 
-PetscScalar BedrockThermalType::rho    = 3300;  // kg/(m^3)     density
-PetscScalar BedrockThermalType::k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
-PetscScalar BedrockThermalType::c_p    = 1000;  // J/(kg K)     specific heat capacity
-
-// for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
-// D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness T = 88 km,
-//    and Poisson's ratio nu = 0.5
-PetscScalar DeformableEarthType::rho   = 3300;    // kg/(m^3)     density
-PetscScalar DeformableEarthType::D     = 5.0e24;  // N m          lithosphere flexural rigidity
-PetscScalar DeformableEarthType::eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
-
-// WaterTypes have nothing but density
-PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density (Lingle & Borwn 1987)
-PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m         density
-
-
 PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
 PetscScalar IceType::rho    = 910;          // kg/m^3       density
 PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
@@ -387,6 +371,22 @@ PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
+
+PetscScalar BedrockThermalType::rho    = 3300;  // kg/(m^3)     density
+PetscScalar BedrockThermalType::k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
+PetscScalar BedrockThermalType::c_p    = 1000;  // J/(kg K)     specific heat capacity
+
+// for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
+// D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness T = 88 km,
+//    and Poisson's ratio nu = 0.5
+PetscScalar DeformableEarthType::rho   = 3300;    // kg/(m^3)     density
+PetscScalar DeformableEarthType::D     = 5.0e24;  // N m          lithosphere flexural rigidity
+PetscScalar DeformableEarthType::eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
+
+// WaterTypes have nothing but density
+PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density (Lingle & Borwn 1987)
+
+PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m         density
 
 
 PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,

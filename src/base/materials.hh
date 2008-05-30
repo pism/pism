@@ -22,17 +22,20 @@
 #include <petsc.h>
 
 /*******************
-REGARDING IceType and HybridIce:  The hierarchy is:
-  IceType <- GlenIce <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
+REGARDING IceType and HybridIce:  The main hierarchy is:
+  IceType <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
 where "<-" means "derived class".  IceType is a virtual
 class; it should never be used "as is".
-Here:
-GlenIce           means *isothermal* Glen flow law ice.
+
 ThermoGlenIce     means *Paterson-Budd* version of Arhennius relation
+ThermoGlenArrIceHooke  means *Hooke* version ...
+ThermoGlenArrIce       uses only cold part of Paterson-Budd
+ThermoGlenArrIceWarm   uses only warm part of Paterson-Budd
 HybridIce         means *Goldsby-Kohlstedt* flow law where vMask=SHEET,
                   and otherwise Paterson-Budd
 HybridIceStripped means, where SHEET, G-K without the pressure dependence and without the
                   diffusional part; also grain size fixed at 3mm
+
 Note each IceType has both a forward flow law ("flow") and an
 inverted-and-vertically-integrated flow law ("effectiveViscosityColumn").  Only the
 former form of the flow law is known for Goldsby-Kohlstedt.  If one can
