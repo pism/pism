@@ -17,10 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "materials.hh"
-
-// If we have more stuff like this, we should just make pism_util.{cc,hh}
-PetscErrorCode verbPrintf(const int thresh, 
-                          MPI_Comm comm,const char format[],...);
+#include "pism_const.hh"
 
 PetscScalar BedrockThermalType::rho    = 3300;  // kg/(m^3)     density
 PetscScalar BedrockThermalType::k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
@@ -44,6 +41,7 @@ PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal co
 PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capacity
 PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
+PetscScalar IceType::n = 3.0;
 
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
                           const PetscScalar pressure) const {
@@ -79,19 +77,21 @@ PetscScalar IceType::effectiveViscosityColumn(const PetscScalar regularization,
   return H * B / 2 * pow(regularization + alpha, -1.0 / 3.0);
 }
 
-PetscScalar GlenIce::hardness_a = 135720960.;
-PetscScalar GlenIce::softness_A = 4.0e-25;
-PetscInt    GlenIce::n = 3;
 
-PetscScalar GlenIce::flow(const PetscScalar stress, const PetscScalar temp,
-                          const PetscScalar pressure) const {
-  // ignor temp and pressure
-  return softness_A * pow(stress, n-1);
-}
-
-PetscScalar GlenIce::exponent() const {
+PetscScalar IceType::exponent() const {
   return n;
 }
+
+
+PetscScalar IceType::softnessParameter(PetscScalar T) const {
+  return 4.0e-25;
+}
+
+
+PetscScalar IceType::hardnessParameter(PetscScalar T) const {
+  return 135720960.0;
+}
+
 
 // ThermoGlenIce is Paterson-Budd
 PetscScalar ThermoGlenIce::A_cold = 3.61e-13;   // Pa^-3 / s
@@ -100,11 +100,19 @@ PetscScalar ThermoGlenIce::Q_cold = 6.0e4;      // J / mol
 PetscScalar ThermoGlenIce::Q_warm = 13.9e4; // J / mol
 PetscScalar ThermoGlenIce::crit_temp = 263.15;  // K
 
+
 PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp,
                                 const PetscScalar pressure) const {
   const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
   return softnessParameter(T) * pow(stress,n-1);
 }
+
+
+PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp,
+                                const PetscScalar pressure, const PetscScalar gs) const {
+  return flow(stress, temp, pressure);
+}
+
 
 PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar regularization,
                            const PetscScalar u_x, const PetscScalar u_y,
@@ -114,8 +122,9 @@ PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar regularization,
   const PetscScalar B = hardnessParameter(T);
   const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
                              + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
-  return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n)); // regularization fixed at 1e-25 formerly
+  return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n)); 
 }
+
 
 PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regularization,
                            const PetscScalar H, const PetscInt kbelowH,
@@ -134,7 +143,8 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regulariza
     B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
     for (PetscInt m=1; m < kbelowH; m++) {
       const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
-      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m]) + beta_CC_grad * (H - zlevels[m]));
+      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m])
+           + beta_CC_grad * (H - zlevels[m]));
       dz = dzNEXT;
     }
     // use last dz
@@ -153,6 +163,7 @@ PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
   }
   return A_warm * exp(-Q_warm/(gasConst_R * T));
 }
+
 
 PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
   return pow(softnessParameter(T), -1.0/n);

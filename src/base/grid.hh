@@ -20,8 +20,6 @@
 #define __grid_hh
 
 #include <petscda.h>
-#include "pism_const.hh"
-
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!

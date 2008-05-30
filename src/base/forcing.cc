@@ -19,8 +19,7 @@
 #include <petscda.h>
 #include <cstring>
 #include <netcdf.h>
-// next is only needed for verbPrintF()
-#include "iceModelpreamble.hh"
+#include "pism_const.hh"
 #include "nc_util.hh"
 #include "forcing.hh"
 

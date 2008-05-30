@@ -23,73 +23,12 @@
 #include "iceModel.hh"
 #include "pism_signal.h"
 
-PetscInt verbosityLevel;
-
 // following numerical values have some significance; see updateSurfaceElevationAndMask() below
 const int IceModel::MASK_SHEET = 1;
 const int IceModel::MASK_DRAGGING = 2;
 const int IceModel::MASK_FLOATING = 3;
 // (modMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill 
 const int IceModel::MASK_FLOATING_OCEAN0 = 7;
-
-
-PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN) {
-    PetscErrorCode ierr;
-    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
-
-    flowLawNum = defaultFLN;
-
-    ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);  // takes priority
-    if (useGK == PETSC_TRUE) {
-      flowLawNum = 4;
-    }
-    return 0;
-}
-
-
-PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice) {
-    PetscErrorCode ierr;
-    ierr = userChoosesIceType(com, ice, 0);  // use Paterson-Budd by default
-    return 0;
-}
-
-
-PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt defaultFLN) {
-    PetscErrorCode ierr;
-    PetscInt       myflowLawNum;
-    
-    ierr = getFlowLawNumber(myflowLawNum, defaultFLN); CHKERRQ(ierr);
-
-    ierr = verbPrintf(3,com, 
-        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,"
-        "3=Hooke,4=Goldsby-Kohlstedt)]\n",
-        myflowLawNum); CHKERRQ(ierr);
-    
-    switch (myflowLawNum) {
-      case 0: // Paterson-Budd
-        ice = new ThermoGlenIce;  
-        break;
-      case 1: // cold part of P-B
-        ice = new ThermoGlenArrIce;  
-        break;
-      case 2: // warm part of P-B
-        ice = new ThermoGlenArrIceWarm;  
-        break;
-      case 3: // Hooke
-        ice = new ThermoGlenIceHooke;
-        break;
-      case 4: // Goldsby Kohlstedt
-        ice = new HybridIce;  
-        break;
-      case 5: // Goldsby Kohlstedt stripped down
-        ice = new HybridIceStripped;  
-        break;
-      default:
-        SETERRQ(1,"\nflow law number must be 0,1,2,3,4\n");
-    }
-    return 0;
-}
 
 
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {

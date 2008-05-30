@@ -1,5 +1,6 @@
 #! /usr/bin/env python
-## This script takes the standard out from verifynow.py and produces graphs using gnuplot.
+## This script takes the standard out from verifynow.py and produces graphs 
+## using gnuplot.
 
 import getopt
 import sys
@@ -7,7 +8,7 @@ import numpy
 import Gnuplot
 
 # defaults
-PISM_REV = 193
+PISM_REV = -1
 IN_FILE = 'foo.txt'
 OUT_FILE_START = 'report'
 TEST_NAME = 'A'
@@ -20,28 +21,32 @@ testname = TEST_NAME
 errtype = 'geometry'
 exclude = EXCLUDE
 pismrev = PISM_REV
+graphformat = 'png'
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "f:t:o:e:x:r:",
-                             ["file=", "test=", "out=", "error=", "exclude=", "pismrev="])
+  opts, args = getopt.getopt(sys.argv[1:], "f:t:o:e:x:r:g:",
+                             ["file=", "test=", "out=", "error=", 
+                              "exclude=", "pismrev=", "graphformat="])
   for opt, arg in opts:
-    if opt in ("-f", "--file"):
+    if opt in ("-e", "--error"):
+      errtype = arg
+    elif opt in ("-f", "--file"):
       infilename = arg
-    elif opt in ("-t", "--test"):
-      testname = arg
+    elif opt in ("-g", "--graphformat"):
+      graphformat = arg
     elif opt in ("-o", "--out"):
       outfilestart = arg
-    elif opt in ("-e", "--error"):
-      errtype = arg
-    elif opt in ("-x", "--exclude"):
-      exclude = arg
     elif opt in ("-r", "--pismrev"):
       pismrev = arg
+    elif opt in ("-t", "--test"):
+      testname = arg
+    elif opt in ("-x", "--exclude"):
+      exclude = arg
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
 
 # read file
-print "reading from " + infilename + " (which was standard output from verifynow.py, right?)"
+print "reading from " + infilename + " (= standard output from verifynow.py)"
 try:
   infile = open(infilename, 'r');
 except IOError:
@@ -129,7 +134,7 @@ err = numpy.array(vals).transpose()
 print 'found ' + str(len(err)*len(err[0])) + \
       ' "' + errtype + '"-type  numerical error values for plotting'
 
-# plot to PNG files
+# plot to PNG or PDF files
 g = Gnuplot.Gnuplot()
 g('set data style linespoints')
 g('set pointsize 2')
@@ -146,10 +151,23 @@ for nn in range(len(tags)):
       g.replot(d)
   else:
     print 'excluding "' + tags[nn] + '" errors from plot'
-g.title(titles[0] + ' numerical errors in test ' + testname + \
-  ' (PISM revision ' + str(pismrev) + ')')
-outfilename = outfilestart + '_' + testname + '.pdf'
-g.hardcopy(outfilename, terminal='pdf')
-print 'PDF file ' + outfilename + ' written'
+imagetitle = titles[0] + ' numerical errors in test ' + testname
+if pismrev > 0:
+  imagetitle += ' (PISM revision ' + str(pismrev) + ')'
+else:
+  imagetitle += ' (PISM)'
+g.title(imagetitle)
+
+outfilename = outfilestart + '_' + testname
+if graphformat.find('pdf') >= 0:
+  outfilename += '.pdf'
+  g.hardcopy(outfilename, terminal='pdf')
+  print 'PDF file ' + outfilename + ' written'
+else:
+  if graphformat.find('png') < 0:
+    print 'unknown graphic output format; attempting PNG'
+  outfilename += '.png'
+  g.hardcopy(outfilename, terminal='png')
+  print 'PNG file ' + outfilename + ' written'
 # done
 

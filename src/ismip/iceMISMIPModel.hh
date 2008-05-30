@@ -24,7 +24,7 @@
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 
-class MISMIPIce : public GlenIce {
+class MISMIPIce : public ThermoGlenIce {
 public:
   MISMIPIce();
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,

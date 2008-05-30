@@ -20,9 +20,8 @@
 #include <cstdlib>
 #include <petscda.h>
 #include <netcdf.h>
+#include "pism_const.hh"
 #include "nc_util.hh"
-#include "iceModelpreamble.hh"
-
 #include "iceModelVec.hh"
 
 

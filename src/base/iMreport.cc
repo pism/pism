@@ -22,114 +22,6 @@
 #include <petscsys.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <petscfix.h>
-
-// verbosity level version of PetscPrintf: print according to whether 
-// (thresh <= IceModel::verbosityLevel), in which case print, or 
-// (thresh > verbosityLevel) in which case no print
-//
-//   level  option        meaning
-//   -----  ------        -------
-//   0      -verbose 0    never print to std out AT ALL!
-//
-//   1      -verbose 1    less verbose than default: thresh must be 1 to print
-//
-//   2     [-verbose 2]   default
-//
-//   3      -verbose      somewhat verbose
-//         [-verbose 3]   
-//   4      -vverbose     fairly verbose
-//         [-verbose 4]
-//   5      -vvverbose    very verbose: if level this high then (thresh <= level) 
-//         [-verbose 5]       always, so print everything
-//
-// note: 1 <= thresh <= 5  enforced in verbPrintf() below
-
-PetscErrorCode setVerbosityLevel(PetscInt level) {
-  if ((level < 0) || (level > 5)) {
-     SETERRQ(1,"verbosity level invalid");
-  }
-  verbosityLevel = level;
-  return 0;  
-}
-
-
-PetscErrorCode verbosityLevelFromOptions() {
-  // verbosity options: more info to standard out
-  PetscErrorCode ierr;
-  PetscInt     myverbosityLevel;
-  PetscTruth   verbose, verbosityLevelSet;
-  PetscInt     DEFAULT_VERBOSITY_LEVEL = 2;
-  
-  ierr = setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);  
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myverbosityLevel, &verbosityLevelSet); CHKERRQ(ierr);
-  if (verbosityLevelSet == PETSC_TRUE) {
-    ierr = setVerbosityLevel(myverbosityLevel);
-  } else {
-    ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
-    if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
-  }
-  ierr = PetscOptionsHasName(PETSC_NULL, "-vverbose", &verbose); CHKERRQ(ierr);
-  if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(4);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-vvverbose", &verbose); CHKERRQ(ierr);
-  if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(5);
-  return 0;
-}
-
-
-PetscErrorCode verbPrintf(const int thresh, 
-                          MPI_Comm comm,const char format[],...)
-{
-  PetscErrorCode ierr;
-  PetscMPIInt    rank;
-  size_t         len;
-  char           *nformat,*sub1,*sub2;
-  PetscReal      value;
-
-  extern FILE *petsc_history;
-
-  if ((thresh < 1) || (thresh > 5)) { SETERRQ(1,"invalid threshold in verbPrintf()"); }
-
-  PetscFunctionBegin;
-  if (!comm) comm = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-  if (!rank && ((verbosityLevel >= thresh) || petsc_history) ) {
-    va_list Argp;
-    va_start(Argp,format);
-
-    ierr = PetscStrstr(format,"%A",&sub1);CHKERRQ(ierr);
-    if (sub1) {
-      ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
-      if (sub1 != sub2) SETERRQ(PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
-      ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
-      ierr    = PetscMalloc((len+16)*sizeof(char),&nformat);CHKERRQ(ierr);
-      ierr    = PetscStrcpy(nformat,format);CHKERRQ(ierr);
-      ierr    = PetscStrstr(nformat,"%",&sub2);CHKERRQ(ierr);
-      sub2[0] = 0;
-      value   = (double)va_arg(Argp,double);
-      if (PetscAbsReal(value) < 1.e-12) {
-        ierr    = PetscStrcat(nformat,"< 1.e-12");CHKERRQ(ierr);
-      } else {
-        ierr    = PetscStrcat(nformat,"%g");CHKERRQ(ierr);
-        va_end(Argp);
-        va_start(Argp,format);
-      }
-      ierr    = PetscStrcat(nformat,sub1+2);CHKERRQ(ierr);
-    } else {
-      nformat = (char*)format;
-    }
-    if (verbosityLevel >= thresh) {
-      ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
-    }
-    if (petsc_history) { // always print to history
-      ierr = PetscVFPrintf(petsc_history,nformat,Argp);CHKERRQ(ierr);
-    }
-    va_end(Argp);
-    if (sub1) {ierr = PetscFree(nformat);CHKERRQ(ierr);}
-  }
-  PetscFunctionReturn(0);
-}
-
 
 PetscErrorCode IceModel::computeFlowUbarStats
                       (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
@@ -265,7 +157,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   divideH = 0; 
-  if (tempAndAge || (verbosityLevel >= 3)) {
+  if (tempAndAge || (getVerbosityLevel() >= 3)) {
     ierr = T3.needAccessToVals(); CHKERRQ(ierr);
     ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);
     ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
@@ -280,7 +172,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
         divideH = H[i][j];
       }
-      if (tempAndAge || (verbosityLevel >= 3)) {
+      if (tempAndAge || (getVerbosityLevel() >= 3)) {
         if (H[i][j] > 0) {
           if (useHomoTemp) {
             if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
@@ -308,7 +200,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
-  if (tempAndAge || (verbosityLevel >= 3)) {
+  if (tempAndAge || (getVerbosityLevel() >= 3)) {
     ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
     ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&melt, &gmelt, grid.com); CHKERRQ(ierr);
@@ -349,7 +241,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
   
-  if (verbosityLevel >= 3) {
+  if (getVerbosityLevel() >= 3) {
     // show additional info
     PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;

@@ -19,7 +19,7 @@
 #include <petscfix.h>
 #include <petscda.h>
 #include "grid.hh"
-#include "iceModelpreamble.hh"  // just for verbPrintf()
+#include "pism_const.hh"
 
 //! Use equally-spaced vertical by default.
 const PetscInt    IceGrid::DEFAULT_SPACING_TYPE  = 1;

@@ -31,7 +31,7 @@ ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc \
 	iMdefaults.cc iMforcing.cc iMgrainsize.cc iMIO.cc iMinverse.cc \
 	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc \
 	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc \
-	iceModelVec.cc iceModelVec3.cc iceModel.cc
+	iceModelVec.cc iceModelVec3.cc iceModel.cc pism_const.cc
 
 ice_csources := cubature.c pism_signal.c
 
@@ -71,7 +71,7 @@ local_install : depend libpism.so libtests.so $(executables)
 	@echo 'PISM executables installed in ' ${PISM_PREFIX}'/bin/'
 	@rm .pismmakeremind
 
-CXXLINKER=${CLINKER}
+#CXXLINKER=${CLINKER}
 ## PETSc has trouble choosing a linker which can link C++.  PISM is C++.
 ## If you have problems, comment out the CXXLINKER definition above and 
 ## uncomment this one:

@@ -19,9 +19,7 @@
 #ifndef __materials_hh
 #define __materials_hh
 
-#include <cmath>
 #include <petsc.h>
-#include "pism_const.hh"
 
 /*******************
 REGARDING IceType and HybridIce:  The hierarchy is:
@@ -50,6 +48,7 @@ public:
   static PetscScalar c_p;
   static PetscScalar latentHeat;
   static PetscScalar meltingTemp;
+  static PetscScalar n;
 
   virtual ~IceType() {}
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
@@ -68,31 +67,18 @@ public:
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
-};
-
-
-class GlenIce : public IceType {
-public:
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
   virtual PetscScalar exponent() const;
-protected:
-  static PetscInt n;
-  static PetscScalar hardness_a;
-  static PetscScalar softness_A;
+  virtual PetscScalar softnessParameter(const PetscScalar T) const;
+  virtual PetscScalar hardnessParameter(const PetscScalar T) const;
 };
 
 
-class ThermoGlenIce : public GlenIce {
-public:
-  static PetscScalar A_cold;  // these four constants from Paterson & Budd (1982)
-  static PetscScalar A_warm;
-  static PetscScalar Q_cold;
-  static PetscScalar Q_warm;
-  static PetscScalar crit_temp;
+class ThermoGlenIce : public IceType {
 public:
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
+  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
+                           const PetscScalar pressure, const PetscScalar gs) const;
   virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
@@ -103,21 +89,27 @@ public:
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
+  virtual PetscScalar softnessParameter(const PetscScalar T) const;
+  virtual PetscScalar hardnessParameter(const PetscScalar T) const;
 protected:
-  virtual PetscScalar softnessParameter(PetscScalar T) const;
-  virtual PetscScalar hardnessParameter(PetscScalar T) const;
+  static PetscScalar A_cold;  // these four constants from Paterson & Budd (1982)
+  static PetscScalar A_warm;
+  static PetscScalar Q_cold;
+  static PetscScalar Q_warm;
+  static PetscScalar crit_temp;
 };
+
 
 class ThermoGlenIceHooke : public ThermoGlenIce {
 public:
+  virtual PetscScalar softnessParameter(PetscScalar T) const;
+protected:
   static PetscScalar A_Hooke;  // these six constants from Hooke (1981)
   static PetscScalar Q_Hooke;
   static PetscScalar C_Hooke;
   static PetscScalar K_Hooke;
   static PetscScalar Tr_Hooke;
   static PetscScalar R_Hooke;
-protected:
-  virtual PetscScalar softnessParameter(PetscScalar T) const;
 };
 
 
@@ -235,3 +227,4 @@ protected:
 
 
 #endif /* __materials_hh */
+

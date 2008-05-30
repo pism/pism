@@ -862,7 +862,7 @@ M  ######## ####### ######## ####### #######
       year, volume_kmcube/1.0e6, 
       H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera, 
       rstats.avubarG * secpera, rstats.avubarF * secpera); CHKERRQ(ierr);
-    if (abs(fmod(year, 50.0)) < 1.0e-6) {
+    if (fabs(fmod(year, 50.0)) < 1.0e-6) {
       ierr = getMISMIPStats(); CHKERRQ(ierr);
       ierr = verbPrintf(2,grid.com,"M  ");
       ierr = verbPrintf(1,grid.com,

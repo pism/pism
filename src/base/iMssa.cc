@@ -637,7 +637,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
       ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNu, vNuOld, &norm, &normChange); CHKERRQ(ierr);
-      if (verbosityLevel < 3) {
+      if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com,"%12.3e",normChange/norm); CHKERRQ(ierr);
       }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
@@ -645,7 +645,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
-      if (verbosityLevel < 3) {
+      if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com,
                  (k == 0) ? "%3d" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%3d",k + 1); CHKERRQ(ierr);
       }
@@ -673,7 +673,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
   done:
 
-  if (verbosityLevel < 3) {
+  if (getVerbosityLevel() < 3) {
     ierr = verbPrintf(2,grid.com,"\b\b\b\b\b\b\b\b\b\b\b\b"); CHKERRQ(ierr);
   }
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
@@ -818,10 +818,8 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
 //! At SSA points, correct the previously-computed volume strain heating (dissipation heating).
 /*!
-FIXME:  This needs improvement.  When the SIA only is used this should not 
-be called, and so that is fine.  Otherwise there are new tensor elements to 
-consider in the product of the strain rate and deviatoric stress tensors.
-Possibly the product of tensors should be more directly computed. 
+This is documented in the draft of Ed Bueler and Jed Brown, (2008), ``The shallow shelf 
+approximation as a ``sliding law'' in an ice sheet model with streaming flow''.
  */
 PetscErrorCode IceModel::correctSigma() {
   // recompute Sigma in ice stream and shelf (DRAGGING,FLOATING) locations
@@ -840,38 +838,50 @@ PetscErrorCode IceModel::correctSigma() {
                     dy = grid.dy;
   // next constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
-  const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (modMask(mask[i][j]) != MASK_SHEET) {
-        // hor. velocities don't depend on depth; use basal values
-        const PetscScalar u_x = (ub[i+1][j] - ub[i-1][j])/(2*dx),
-                          u_y = (ub[i][j+1] - ub[i][j-1])/(2*dy),
-                          v_x = (vb[i+1][j] - vb[i-1][j])/(2*dx),
-                          v_y = (vb[i][j+1] - vb[i][j-1])/(2*dy);
-        const PetscScalar beta = PetscSqr(u_x) + PetscSqr(v_y)
-                           + u_x * v_y + PetscSqr(0.5*(u_y + v_x));
-        const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        const PetscScalar CC = 4 * beta / (ice->rho * ice->c_p);
-
+        // hor. velocities don't depend on depth; use basal values; vubarSSA, vvbarSSA
+        //   are not communicated for differencing
         // apply glaciological-superposition-to-low-order if desired (and not floating)
-        bool addVels = ((doSuperpose == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_DRAGGING));
-
+        bool addVels = ( (doSuperpose == PETSC_TRUE) 
+                         && (modMask(mask[i][j]) == MASK_DRAGGING) );
+        PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
+                                           // speed is infinity; i.e. when !addVels
+                                           // we just pass through the SSA velocity
+        if (addVels) {
+          const PetscScalar c2peryear = PetscSqr(ub[i][j]*secpera)
+                                           + PetscSqr(vb[i][j]*secpera);
+          omfv = (2.0/pi) * atan(1.0e-4 * c2peryear);
+          fv = 1.0 - omfv;
+        }
+        const PetscScalar 
+                u_x   = (ub[i+1][j] - ub[i-1][j])/(2*dx),
+                u_y   = (ub[i][j+1] - ub[i][j-1])/(2*dy),
+                v_x   = (vb[i+1][j] - vb[i-1][j])/(2*dx),
+                v_y   = (vb[i][j+1] - vb[i][j-1])/(2*dy),
+                D2ssa = PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y
+                          + PetscSqr(0.5*(u_y + v_x));
+        // get valid pointers to Sigma, T; writable
         ierr = Sigma3.getInternalColumn(i,j,&Sigma); CHKERRQ(ierr);
         ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
+        const PetscInt ks = grid.kBelowHeight(H[i][j]);
         for (PetscInt k=0; k<ks; ++k) {
           // use hydrostatic pressure; presumably this is not quite right in context 
-          // of shelves and streams
-          const PetscScalar pressure = ice->rho * grav * (H[i][j] - grid.zlevels[k]);
-          const PetscScalar mvSigma = CC * ice->effectiveViscosity(schoofReg,
-                                               u_x,u_y,v_x,v_y,T[k],pressure);
-          // FIXME: what is the right thing here?  surely should be weighted by f(|v|) factor
-          Sigma[k] = (addVels) ? Sigma[k] + mvSigma : mvSigma;
+          //   of shelves and streams; here we hard-wire the Glen law
+          const PetscScalar n_glen = ice->exponent(),
+                            Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+                            BofT = ice->hardnessParameter(T[k]); // homologous??
+          if (addVels) {
+            const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
+            Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);
+          } else { // floating (or SSA but sans superposition)
+            Sigma[k] = 2.0 * BofT * pow(D2ssa, Sig_pow);
+          }
         }
         for (PetscInt k=ks+1; k<grid.Mz; ++k) {
           Sigma[k] = 0.0;
         }
-        // no need to call Sigma3.setInternalColumn(); already set!
       }
       // otherwise leave SIA-computed value alone
     }

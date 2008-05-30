@@ -24,14 +24,33 @@
 #include <gsl/gsl_rng.h>
 #include <petscda.h>
 #include <petscksp.h>
-#include "grid.hh"
 #include "materials.hh"
+#include "pism_const.hh"
+#include "grid.hh"
 #include "forcing.hh"
 #include "beddefLC.hh"
 #include "iceModelVec.hh"
 
-// following simply unclutters iceModel.hh:
-#include "iceModelpreamble.hh" 
+// remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
+ 
+
+struct titleNname {
+  char title[100]; // these short titles appear on PETSc graphical viewers and 
+                   //   in Matlab output file
+  char name[30];   // these names are for Matlab output vars
+};
+
+
+struct PolarStereoParams {
+  // these are "double" and not "float" ultimately because of how ncgen works
+  double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
+         lopo,  // latitude_of_projection_origin; defaults to 90
+         sp;    // standard_parallel; defaults to -71
+};
+
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -312,8 +331,6 @@ protected:
                      const double snowrate, const double mydt, const double pdds);
 
   // see iMreport.cc
-  // note setVerbosityLevel(), verbosityLevelFromOptions(), and verbPrintf()
-  // are all in iMreport.cc, but they are not IceModel methods
   PetscErrorCode computeFlowUbarStats
                       (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
                        PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
