@@ -935,7 +935,7 @@ PetscErrorCode IceCompModel::reportErrors() {
      "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
      CHKERRQ(ierr);
 
-  // geometry (thickness, vol) errors if appropriate
+  // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
   if (testname != 'K') {
     PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
                 maxetaerr, centerHerr;
@@ -951,7 +951,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
   }
 
-  // temperature errors if appropriate
+  // temperature errors if appropriate; reported in K
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr;
     ierr = computeTemperatureErrors(maxTerr, avTerr); CHKERRQ(ierr);
@@ -972,17 +972,17 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
   }
 
-  // Sigma errors if appropriate
+  // Sigma errors if appropriate; reported in 10^6 J/(s m^3)
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxSigerr, avSigerr;
     ierr = computeSigmaErrors(maxSigerr, avSigerr); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, 
-       "Sigma (3D):      maxSig       avSig\n"); CHKERRQ(ierr);
+       "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
-                  maxSigerr*secpera*1.0e3, avSigerr*secpera*1.0e3); CHKERRQ(ierr);
+                  maxSigerr*1.0e6, avSigerr*1.0e6); CHKERRQ(ierr);
   }
 
-  // surface velocity errors if exact values are available
+  // surface velocity errors if exact values are available; reported in m/a
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxUerr, avUerr, maxWerr, avWerr;
     ierr = computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr); CHKERRQ(ierr);
@@ -992,7 +992,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
   }
 
-  // basal velocity errors if appropriate
+  // basal velocity errors if appropriate; reported in m/a except prcntavvec
   if (testname == 'E') {
     PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     ierr = computeBasalVelocityErrors(exactmaxspeed,

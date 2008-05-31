@@ -69,7 +69,7 @@ where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shal
 of the full three-dimensional conservation of energy.  Note \f$dT/dt\f$ stands for the material
 derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
-strain heating.
+strain heating (with SI units of J$/(\text{s} \text{m}^3)$).
 
 \latexonly\index{BOMBPROOF!implementation for temperature equation}\endlatexonly
 Note that both the temperature equation and the age equation involve advection.
@@ -276,7 +276,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           rhs[k0] = T[0] + 2.0 * dtTempAge * oceanHeatFlux / (rho_c_I * dzEQ);
           if (!isMarginal) {
 //O            rhs[k0] += dtTempAge * (Sigma[0] - UpTu - UpTv - UpTw) / 2;
-            rhs[k0] += dtTempAge * (Sigma[0] - UpTu - UpTv) / 2;
+            rhs[k0] += dtTempAge * (Sigma[0] / rho_c_I - UpTu - UpTv) / 2;
           }
         } else { 
           // there is *grounded* ice; ice/bedrock interface; from FV across interface
@@ -284,7 +284,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           const PetscScalar dzav = 0.5 * (dzEQ + dzbEQ);
           rhs[k0] = T[0] + dtTempAge * (Rb[i][j] / (rho_c_av * dzav));
           if (!isMarginal) {
-            rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[0];
+//O            rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[0];
+            rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
             // WARNING: subtle consequences of finite volume argument across interface
 //O            rhs[k0] -= dtTempAge * rho_c_ratio
 //O                         * (0.5 * (UpTu + UpTv + UpTw) + T[0] * w[0] / dzEQ);
@@ -365,7 +366,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         rhs[k0+k] = T[k];
         if (!isMarginal) {
 //          rhs[k0+k] += dtTempAge * (Sigma[k] - UpTu - UpTv - UpTw);
-          rhs[k0+k] += dtTempAge * (Sigma[k] - UpTu - UpTv);
+          rhs[k0+k] += dtTempAge * (Sigma[k] / rho_c_I - UpTu - UpTv);
         }
       }
       

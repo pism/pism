@@ -824,13 +824,13 @@ approximation as a ``sliding law'' in an ice sheet model with streaming flow''.
 PetscErrorCode IceModel::correctSigma() {
   // recompute Sigma in ice stream and shelf (DRAGGING,FLOATING) locations
   PetscErrorCode  ierr;
-  PetscScalar **H, **mask, **ub, **vb;
+  PetscScalar **H, **mask, **ubarssa, **vbarssa;
   PetscScalar *Sigma, *T;
 
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
   ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
 
@@ -841,8 +841,8 @@ PetscErrorCode IceModel::correctSigma() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (modMask(mask[i][j]) != MASK_SHEET) {
-        // hor. velocities don't depend on depth; use basal values; vubarSSA, vvbarSSA
-        //   are not communicated for differencing
+        // note vubarSSA, vvbarSSA *are* communicated for differencing by last
+        //   call to moveVelocityToDAVectors()
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ( (doSuperpose == PETSC_TRUE) 
                          && (modMask(mask[i][j]) == MASK_DRAGGING) );
@@ -850,19 +850,19 @@ PetscErrorCode IceModel::correctSigma() {
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
         if (addVels) {
-          const PetscScalar c2peryear = PetscSqr(ub[i][j]*secpera)
-                                           + PetscSqr(vb[i][j]*secpera);
+          const PetscScalar c2peryear = PetscSqr(ubarssa[i][j]*secpera)
+                                           + PetscSqr(vbarssa[i][j]*secpera);
           omfv = (2.0/pi) * atan(1.0e-4 * c2peryear);
           fv = 1.0 - omfv;
         }
         const PetscScalar 
-                u_x   = (ub[i+1][j] - ub[i-1][j])/(2*dx),
-                u_y   = (ub[i][j+1] - ub[i][j-1])/(2*dy),
-                v_x   = (vb[i+1][j] - vb[i-1][j])/(2*dx),
-                v_y   = (vb[i][j+1] - vb[i][j-1])/(2*dy),
+                u_x   = (ubarssa[i+1][j] - ubarssa[i-1][j])/(2*dx),
+                u_y   = (ubarssa[i][j+1] - ubarssa[i][j-1])/(2*dy),
+                v_x   = (vbarssa[i+1][j] - vbarssa[i-1][j])/(2*dx),
+                v_y   = (vbarssa[i][j+1] - vbarssa[i][j-1])/(2*dy),
                 D2ssa = PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y
                           + PetscSqr(0.5*(u_y + v_x));
-        // get valid pointers to Sigma, T; writable
+        // get valid pointers to column of Sigma, T values
         ierr = Sigma3.getInternalColumn(i,j,&Sigma); CHKERRQ(ierr);
         ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
@@ -875,7 +875,7 @@ PetscErrorCode IceModel::correctSigma() {
           if (addVels) {
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
             Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);
-          } else { // floating (or SSA but sans superposition)
+          } else { // floating (or grounded SSA sans super)
             Sigma[k] = 2.0 * BofT * pow(D2ssa, Sig_pow);
           }
         }
@@ -889,8 +889,8 @@ PetscErrorCode IceModel::correctSigma() {
 
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
   ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
 

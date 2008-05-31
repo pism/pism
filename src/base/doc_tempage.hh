@@ -62,10 +62,8 @@ conduction \cite{Fowler}.  The units of this equation are energy per time, thus 
 We will assume, without exception, that $\rho,c_p(T),k$ are positive.
 Note $dT/dt$ stands for the material derivative, so advection 
 is present.  The function $\Sigma(T)$ is the strain-heating term, 
-the details of which will not affect the derivation here.\footnote{The units of 
-$\Sigma(T)$ in equation \eqref{basicConserve}, and in the rest of this Appendix,
-are, however, different from those of 
-$\Sigma$ in the code.  FIXME.}  Note that $\Sigma(T)$ is naturally
+the details of which will not affect the derivation here.  The SI units of 
+$\Sigma(T)$ are J$/(\text{s} \text{m}^3)$.  Note that $\Sigma(T)$ is naturally
 described as a (self-)reaction term \cite{Fowler}.
 
 We will be focusing on the dimension in which the temperature is changing fastest, 

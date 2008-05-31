@@ -30,14 +30,14 @@ extern "C"
 #include <math.h>
 
 /*
-ELB 9/12/05;  05/12/06;  10/14/06
+ELB 9/12/05;  05/12/06;  10/14/06;  5/30/08
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! exactTestsFG is a C implementation of the exact solutions Test F & G for a
 ! thermocoupled ice sheet.  References:
 !
 !    Ed Bueler, Jed Brown, and Craig Lingle, "Exact solutions to the
 !       thermomechanically coupled shallow ice approximation: effective 
-!       tools for verification," to appear J. Glaciol. 2007 (or 2008)
+!       tools for verification,"  J. Glaciol. 53 (182), 499--516.
 !
 !    Ed Bueler and Jed Brown, "On exact solutions for cold, shallow, and 
 !       thermocoupled ice sheets," preprint arXiv:physics/0610106, 2006
@@ -49,6 +49,9 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
               double *H, double *M, double *TT, double *U, double *w,
               double *Sig, double *Sigc);
 
+// NOTE:  Units returned for Sig and Sigc are K/s (i.e. temperature) not J/s.
+//        This matches the published sources above but requires conversion in
+//        PISM as of revision 311.
 
 #ifdef __cplusplus
 }

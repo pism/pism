@@ -253,7 +253,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
             // for Sigma, ignor mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
-            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure / (ice->rho * ice->c_p);
+// UNITS changed; now Joules/(s m^3)
+//            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure / (ice->rho * ice->c_p); 
+            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure;
 
             if (k>0) { // trapezoid rule for I[k] and K[k]
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
