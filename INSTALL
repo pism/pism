@@ -1,27 +1,32 @@
-PETSc must be installed (and functioning) before PISM can be built.
+
+Welcome!
+
+PETSc must be installed and functioning before PISM can be built.
 See http://www-unix.mcs.anl.gov/petsc/petsc-as/.
 
-Assuming PETSC_DIR and PETSC_ARCH are set properly, just run:
+Assuming PETSC_DIR and PETSC_ARCH are set properly:
 
-$ make && make install   # This only installs to ./{lib,bin}
+  $ cd pism0.1                [or "cd pism-dev" etc.]
+  $ make
+  $ make install
 
-If FFTW is not available do
+Note "make install" does not require root permission, as it only installs 
+to ./{lib,bin}
 
-$ export WITH_FFTW=0
-
-before make.
+If FFTW is not available do "export WITH_FFTW=0" before make.
 
 More complete installation information, including on installing
 PETSc and other libraries used by PISM, is in the first section of the PISM 
 User's Manual: http://www.pism-docs.org/manual.pdf
 
 
--------------------------------------------------------------------------------------------
 
-An alternative is to use the SCons build process.  SCons is more intelligent
-about recompiling files and managing shared libraries, so it might be more
-robust.  Bear in mind, however, SCons is not the official build method, so it is
-not always up to date.
+--------------------------------------------------------------------------
+
+An unsupported alternative is to use the SCons build process.  SCons 
+is more intelligent about recompiling files and managing shared libraries, 
+so it might be more robust.  Bear in mind, however, SCons is not the official 
+build method, so it is not always up to date.
 
 ### build and install Pism executables in $dir/bin with libraries in $dir/lib
 $ scons install	prefix=$dir 	 # no prefix argument is equivalent to `prefix=.'
@@ -33,10 +38,11 @@ $ config/scons.py      				# invoke the local scons
 
 SCons examples:
 
-$ scons exact 	     	         # build the simple* executables with shared library in $dir/lib
+$ scons exact 	     	         # build the simple* executables with shared
+                                 #   library in $dir/lib
 $ scons extras			 # build some extras
 $ scons pgrn	 		 # build only the Greenland executable
 $ scons install-lib prefix=$dir  # put just the libs there
 $ scons install-bin prefix=$dir  # put just the executables there
 $ scons -c ~/usr prefix=~/usr	 # remove any files installed in the first step
-$ MARGIN_TRICK_TWO=1 scons pismv # build the verification executable using MARGIN_TRICK_TWO
+

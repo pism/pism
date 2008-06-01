@@ -76,20 +76,20 @@ while True:
       for j in range(Nnames):
         names.append(tokens[2 + j])
         vals.append([])
-      print ' prototype line found; names=' + str(names)
+      print ' prototype line found; names = ' + str(names)
       #print names
   if ((myline[0] == 'U') and (myline[1] == ' ')):
-    # a units line
-    tokens = myline.split()
-    # expect: tokens[0] == 'U', tokens[1] == 'years'
-    #print tokens
-    if (Nnames == 0):
-      print 'ERROR: units line found but no names defined; prototype must precede units.'
-      sys.exit(2)
-    for j in range(Nnames):
-      units.append(tokens[2 + j])
-    #print 'units line found, with units = '
-    #print units
+    if len(units) == 0: # only read units if it is first instance
+      # a units line
+      tokens = myline.split()
+      # expect: tokens[0] == 'U', tokens[1] == 'years'
+      #print tokens
+      if (Nnames == 0):
+        print 'ERROR: units line found but no names defined; prototype must precede units.'
+        sys.exit(2)
+      for j in range(Nnames):
+        units.append(tokens[2 + j])
+      print ' units line found; units = ' + str(units)
   if ((myline[0] == 'S') and (myline[1] == ' ')):  # a summary line
     if (len(vals) == 0):
       print """ERROR: summary line found but no value sequences defined;\n

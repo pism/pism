@@ -71,16 +71,16 @@ def laplace(a, bad_value, myeps=1.):
 fileSet = 0
 variablesSet = 0
 outFileSet = 0
-fileName = "guess.nc"
+fileName = "foo.nc"
 outFileName = "fill_missing_out.nc"
-variables = ("bed")
+variables = ()
 eps = 1.0
 
 try:
   opts, args = getopt.getopt(sys.argv[1:], "i:v:o:e:", 
-                             ["in_file=", "variables=", "out_file=", "eps="])
+                             ["file=", "variables=", "out_file=", "eps="])
   for opt, arg in opts:
-    if opt in ("-i", "--in_file"):
+    if opt in ("-f", "--file"):
       fileName = arg
       fileSet = 1;
     if opt in ("-o", "--out_file"):

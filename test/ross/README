@@ -48,9 +48,11 @@ ross_plot.py:  Takes the NetCDF result of a PISM Ross run (i.e. from
 good-looking figure using Python tools matplotlib, pycdf, and 
 scikits.delaunay.  See comments to install.  Reads the riggs_clean.dat 
 file and produces the value of the \chi^2 statistic.  Produces .png
-images.
+images.
+
 ross_plot.m:  Similar but in Matlab.  Takes the result of a PISM Ross 
 run with Matlab output (i.e. from "pismd -ross -bif ross.nc -ssaBC ross.nc 
 -mato ross1p9 -matv cuvHm ..."; see User's Manual) and produces a
 good-looking figure.  Reads the riggs_clean.dat file and
 produces the value of the chi^2 statistic.
+

@@ -771,7 +771,7 @@ PetscErrorCode IceModel::diffuseHmelt() {
                     Rx = K * dtTempAge / (grid.dx * grid.dx),
                     Ry = K * dtTempAge / (grid.dy * grid.dy);
 
-  // restriction that
+  // NOTE: restriction that
   //    1 - 2 R_x - 2 R_y \ge 0
   // is a maximum principle restriction; therefore new Hmelt will be between
   // zero and Hmelt_max if old Hmelt has that property
@@ -779,7 +779,7 @@ PetscErrorCode IceModel::diffuseHmelt() {
   if (oneM4R <= 0.0) {
     SETERRQ(1,
        "diffuseHmelt() has 1 - 2Rx - 2Ry <= 0 so explicit method for diffusion unstable\n"
-       "  (note timestep restriction believed so rare that it is not part of adaptive)");
+       "  (timestep restriction believed so rare that is not part of adaptive scheme)");
   }
 
   PetscScalar **Hmelt, **Hmeltnew; 

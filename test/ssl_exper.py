@@ -22,9 +22,9 @@ mpido = 'mpiexec'
 
 try:
   opts, args = getopt.getopt(sys.argv[1:], "i:n:s:t:c:y:m:",
-         ["infile","nproc", "ssl3", "timeinterval", "criterion", "startyeark"])
+         ["file","nproc", "ssl3", "timeinterval", "criterion", "startyeark"])
   for opt, arg in opts:
-    if opt in ("-i", "--infile"):
+    if opt in ("-f", "--file"):
       IN_FILE = arg
     if opt in ("-n", "--nproc"):
       nproc = int(arg)
