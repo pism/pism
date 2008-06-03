@@ -16,41 +16,43 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __iceEISplModel_hh
-#define __iceEISplModel_hh
+#ifndef __icePSTexModel_hh
+#define __icePSTexModel_hh
 
 #include <petsc.h>
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "iceEISModel.hh"
 
-//! This derived class does the plastic till and SSA modification of EISMINT II experiment I.  
-class IceEISplModel : public IceEISModel {
+//! Derived class for a Plastic till ice Stream with Thermocoupling experiment.
+/*!
+This derived class supercedes an older class IceEISplModel.  The results from
+that model were presented at AGU 2007 and at NYU in Feb 2008.  The new model is
+merely more efficient in doing parameter studies, by having three streams going 
+simultaneously.  On the other hand there are less command line options.  The
+configuration is hard-wired into this derived class.
+Also there is no "lake" or "fjord".
+ */
+class IcePSTexModel : public IceEISModel {
 
 public:
-  IceEISplModel(IceGrid &g, IceType *i);
+  IcePSTexModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode initFromOptions();
     
 protected:
-  PetscScalar              stream_width;
-  static const PetscScalar DEFAULT_STREAM_WIDTH;
-
-  static const PetscInt    phi_list_length; // = 5
-  PetscScalar*             phi_list; // list of 5 numbers, with following as defaults:
-  static const PetscScalar DEFAULT_TILL_PHI_LAKE;
-  static const PetscScalar DEFAULT_TILL_PHI_STRONG;
-  static const PetscScalar DEFAULT_TILL_PHI_UPSTREAM;
-  static const PetscScalar DEFAULT_TILL_PHI_DOWNSTREAM;
-  static const PetscScalar DEFAULT_TILL_PHI_FJORD;
-
-  PetscInt       tillRegionCode(PetscInt i, PetscInt j);
+  char exper_chosen_name[10];
   
-  PetscErrorCode setTillProperties();
+  PetscErrorCode setBedElev();
+  PetscErrorCode setTillPhi();
   virtual PetscErrorCode summaryPrintLine(
               const PetscTruth printPrototype, const PetscTruth tempAndAge,
               const PetscScalar year, const PetscScalar dt, 
               const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
               const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+private:
+  int exper_chosen;
+  int sectorNumber(const PetscScalar x, const PetscScalar y);
 };
 
-#endif /* __iceEISplModel_hh */
+#endif /* __icePSTexModel_hh */
+

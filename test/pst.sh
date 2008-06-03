@@ -1,18 +1,22 @@
 #!/bin/bash
-# script for plastic till SSA and superposition modification of
-# EISMINT II experiment I (and A); note this includes bedrock thermal, unlike EIS II
-# see preprint Bueler and Brown 2008, "A model of an ice sheet with one ice stream"
+# 
+# Script for Plastic till ice Stream with Thermocoupling experiment.   Note 
+# this includes bedrock thermal and tracking of Hmelt unlike EIS II, just
+# to get started.  Then plastic SSA is turned in 4 streams.
+# 
+# See preprint Bueler and Brown 2008, "The shallow shelf approximation as a
+# `sliding law' in an ice sheet model with streaming flow".
 
+# FIXME: need new speed estimates
 # re speed: with exit after completion of P5 (as below; P8, P10, and P0cont not included),
 #           the whole script should take less than 500 processor-hours [???]
-
 # re speed: on experiment P0, marmaduke.gi.alaska.edu (8 cores) took about
 #           5 hours/(1000 model years) or, optimistically, about
 #           ( 1 hour/(1000 model years) )/core
 
 NN=2  # set default number of processors here
 
-if [ $# -gt 0 ] ; then  # if user says "eis2plastic.sh 8" then NN = 8
+if [ $# -gt 0 ] ; then  # if user says "pst.sh 8" then NN = 8
   NN="$1"
 fi
 
@@ -51,6 +55,8 @@ mpisms_vg()
 
 
 #THE EXPERIMENTS:
+
+# FIXME!!
 
 # run without trough on coarse 25km grid for 100k years:
 mpisms_vg $NN u "-eisII A -Mx 61 -My 61 -y 100000 -track_Hmelt \

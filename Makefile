@@ -40,7 +40,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pgrn.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
-	iceEISplModel.cc iceCompModel.cc iceUpwindCompModel.cc \
+	icePSTexModel.cc iceCompModel.cc iceUpwindCompModel.cc \
 	iceExactSSAModel.cc iCMthermo.cc flowTable.cc tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
 	simpleJ.c simpleK.c simpleL.c
@@ -90,8 +90,8 @@ pismr : pismr.o libpism.so
 pismd : pismd.o iceROSSModel.o libpism.so
 	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o libpism.so
-	${CXXLINKER} iceEISModel.o iceMISMIPModel.o iceEISplModel.o pisms.o \
+pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o libpism.so
+	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
 	${ICE_LIB_FLAGS} -o $@
 
 pismv : iCMthermo.o iceCompModel.o iceUpwindCompModel.o iceExactSSAModel.o \

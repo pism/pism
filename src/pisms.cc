@@ -26,7 +26,7 @@ static char help[] =
 #include "base/materials.hh"
 #include "base/iceModel.hh"
 #include "eismint/iceEISModel.hh"
-#include "eismint/iceEISplModel.hh"
+#include "eismint/icePSTexModel.hh"
 #include "ismip/iceMISMIPModel.hh"
 
 int main(int argc, char *argv[]) {
@@ -54,23 +54,23 @@ int main(int argc, char *argv[]) {
     
     // call constructors on all three, but m will point to the one we use
     IceEISModel    mEISII(g, ice);
-    IceEISplModel  mEISpl(g, ice);
+    IcePSTexModel  mPSTex(g, ice);
     IceMISMIPModel mMISMIP(g, mismipice, mismipice);
     IceModel*      m;
 
-    PetscTruth  EISIIchosen, EISplchosen, MISMIPchosen;
+    PetscTruth  EISIIchosen, PSTexchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
               CHKERRQ(ierr);
-    /* This option chooses plastic till modification of EISMINT II experiment A or I. */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-eis2pl", &EISplchosen);
+    /* This option chooses Plastic till ice Stream with Thermocoupling experiment. */
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pst", &PSTexchosen);
               CHKERRQ(ierr);
     /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
     ierr = PetscOptionsHasName(PETSC_NULL, "-mismip", &MISMIPchosen);
               CHKERRQ(ierr);
     
-    int  choiceSum = (int) EISIIchosen + (int) EISplchosen + (int) MISMIPchosen;
+    int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
     if (choiceSum == 0) {
       SETERRQ(1,"PISMS called with no simplified geometry experiment chosen");
     } else if (choiceSum > 1) {
@@ -81,10 +81,10 @@ int main(int argc, char *argv[]) {
       ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
       ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
-    } else if (EISplchosen == PETSC_TRUE) {
-      ierr = mEISpl.setFromOptions(); CHKERRQ(ierr);
-      ierr = mEISpl.initFromOptions(); CHKERRQ(ierr);
-      m = (IceModel*) &mEISpl;
+    } else if (PSTexchosen == PETSC_TRUE) {
+      ierr = mPSTex.setFromOptions(); CHKERRQ(ierr);
+      ierr = mPSTex.initFromOptions(); CHKERRQ(ierr);
+      m = (IceModel*) &mPSTex;
     } else if (MISMIPchosen == PETSC_TRUE) {
       ierr = mMISMIP.setFromOptions(); CHKERRQ(ierr);
       ierr = mMISMIP.initFromOptions(); CHKERRQ(ierr);
