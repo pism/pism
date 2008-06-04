@@ -54,8 +54,6 @@ mpst_vg()
 #else           # put this before restart location
 
 
-#THE EXPERIMENTS:
-
 # P0A: run without trough on refining grid for total of 200k years:
 mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 100000 -track_Hmelt \
  -tempskip 10 -o P0A_100k"
@@ -68,6 +66,22 @@ mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 -track_Hmelt \
 
 mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -track_Hmelt \
  -tempskip 10 -regrid P0A_190k.nc -regrid_vars LTBHhe -f3d -o P0A"
+
+
+# P1 (also save 100 year and 1000 year states): flat with variable
+#   width but grid-aligned ice streams, on 10km grid
+mpst $NN "-P1 -if P0A.nc -ys 0 -y 100 -o P1_100"
+
+mpst $NN "-P1 -if P1_100.nc -y 900 -o P1_1000"
+
+mpst $NN "-P1 -if P1_1000.nc -y 4000 -f3d -o P1"
+
+# P2: flat with THREE same width and NOT grid-aligned ice streams
+mpst $NN "-P2 -if P0A.nc -ys 0 -y 5000 -o P2"
+
+# P4: flat with variable width but grid-aligned ice streams 
+#   and different down-stream till phi
+mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4"
 
 
 # P0I: run with trough on refining grid for total of 200k years:
@@ -84,29 +98,57 @@ mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -track_Hmelt \
  -tempskip 10 -regrid P0I_190k.nc -regrid_vars LTBHhe -f3d -o P0I"
 
 
-#exit    # possible stopping point; uncomment to stop
-
-
-# P1 (also save 100 year and 1000 year states): flat with variable
-#   width but grid-aligned ice streams
-mpst $NN "-P1 -if P0A.nc -ys 0 -y 100 -o P1_100"
-
-mpst $NN "-P1 -if P1_100.nc -y 900 -o P1_1000"
-
-mpst $NN "-P1 -if P1_1000.nc -y 4000 -f3d -o P1"
-
-# P2: flat with THREE same width and NOT grid-aligned ice streams
-mpst $NN "-P2 -if P0A.nc -ys 0 -y 5000 -o P2"
-
 # P3: troughs, with variable width but grid-aligned ice streams
 mpst $NN "-P3 -if P0I.nc -ys 0 -y 5000 -o P3"
 
-# P4: flat with variable width but grid-aligned ice streams 
-#   and different down-stream till phi
-mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4"
 
 exit
 
+
+# P1coarse: as P1, but on 15km grid
+mpst_vg $NN u "-P1 -Mx 101 -My 101 -y 5000 \
+ -regrid P0A.nc -regrid_vars LTBHhe -o P1coarse"
+
+
+# P1fine: as P1, but on 7.5km grid
+mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 \
+ -regrid P0A.nc -regrid_vars LTBHhe -o P1fine"
+
+
+# P1vertfine: as P1, but with finer vertical grid (x2 points)
+mpst $NN u "-P1 -Mx 151 -My 151 -Mz 201 -Mbz 81 -quadZ -y 5000 \
+ -regrid P0A.nc -regrid_vars LTBHhe -o P1vertfine"
+
+ 
+# P1finest: as P1, but on 5km grid; slow so save intermediate
+mpst_vg $NN u "-P1 -Mx 301 -My 301 -y 1000 \
+ -regrid P0A.nc -regrid_vars LTBHhe -o P1finest_1k"
+
+mpst $NN "-P1 -if P1finest_1k -y 2000 -o P1finest_3k"
+
+mpst $NN "-P1 -if P1finest_3k -y 2000 -o P1finest"
+
+
+# P1cont: as P1, but continue from saved state to 100k model years
+mpst $NN "-P1 -if P1.nc -y 15000 -o P1_20k"
+
+mpst $NN "-P1 -if P1_20k.nc -y 20000 -o P1_40k"
+
+mpst $NN "-P1 -if P1_40k.nc -y 20000 -o P1_60k"
+
+mpst $NN "-P1 -if P1_60k.nc -y 20000 -o P1_80k"
+
+mpst $NN "-P1 -if P1_80k.nc -y 20000 -o P1_100k"
+
+
+#exit    # possible stopping point; uncomment to stop
+
+
+exit
+
+
+
+################# OLD STUFF for short-term reference ####################
 
 ## experiment P6 (coarser horizontal 25km grid):
 mpisms_vg $NN u "-eis2pl -Mx 61 -My 61 -ys 0 -y 5000 \
@@ -123,53 +165,6 @@ mpisms $NN "-eis2pl -Mx 121 -My 121 -Mz 201 -Mbz 81 -quadZ -ys 0 -y 5000 \
  -regrid eis2I_final.nc -regrid_vars LTBHh -f3d -o eis2plP9"
 
 # [finest vertical grid run P10 put at end; slowest]
-
-
-
-# experiment P1 (no trough)
-mpisms $NN "-eis2pl -if eis2A_final.nc -ys 0 -y 5000 \
- -no_trough -f3d -o eis2plP1"
-
-# experiment P2 (narrower stream):
-mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 5000 \
- -stream_width 50.0 -f3d -o eis2plP2"
-
-# experiment P3 (stronger downstream till):
-mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 5000 \
- -till_phi 20.0,20.0,5.0,8.0,8.0 -f3d -o eis2plP3"
-
-# experiment P4 (lake):
-mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 5000 -f3d \
- -till_phi 0.0,20.0,5.0,5.0,5.0 -o eis2plP4"
-
-# experiment P5 (fjord):
-mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 5000 -f3d \
- -till_phi 20.0,20.0,5.0,5.0,0.0 -o eis2plP5"
-
-
-exit   # possible stopping point
-
-
-# experiment P0cont (run another 95k years;  lots of runtime!):
-mpisms $NN "-eis2pl -if eis2plP0.nc -y 5000"
-
-mpisms $NN "-eis2pl -if eis2pl10k.nc -y 10000 -o eis2pl20k"
-    
-mpisms $NN "-eis2pl -if eis2pl20k.nc -y 10000 -o eis2pl30k"
-    
-mpisms $NN "-eis2pl -if eis2pl30k.nc -y 10000 -o eis2pl40k"
-    
-mpisms $NN "-eis2pl -if eis2pl40k.nc -y 10000 -o eis2pl50k"
-    
-mpisms $NN "-eis2pl -if eis2pl50k.nc -y 10000 -o eis2pl60k"
-    
-mpisms $NN "-eis2pl -if eis2pl60k.nc -y 10000 -o eis2pl70k"
-    
-mpisms $NN "-eis2pl -if eis2pl70k.nc -y 10000 -o eis2pl80k"
-    
-mpisms $NN "-eis2pl -if eis2pl80k.nc -y 10000 -o eis2pl90k"
-
-mpisms $NN "-eis2pl -if eis2pl90k.nc -y 10000 -f3d -o eis2plP0cont"
 
 
 # experiment P8 (finest horizontal **5km** grid); save intermediate as it is long:
