@@ -27,8 +27,8 @@
 //! Derived class for a Plastic till ice Stream with Thermocoupling experiment.
 /*!
 This derived class supercedes an older class IceEISplModel.  The results from
-that model were presented at AGU 2007 and at NYU in Feb 2008.  The new model is
-merely more efficient in doing parameter studies, by having three streams going 
+that model were presented by Bueler at AGU 2007 and at NYU in Feb 2008.  The new 
+model is more efficient in doing parameter studies, by having three streams going 
 simultaneously.  On the other hand there are less command line options.  The
 configuration is hard-wired into this derived class.
 Also there is no "lake" or "fjord".
@@ -51,7 +51,11 @@ protected:
               const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
 private:
   int exper_chosen;
-  int sectorNumber(const PetscScalar x, const PetscScalar y);
+  int sectorNumberP2(const PetscScalar x, const PetscScalar y);
+  int inStream(const int m, const PetscScalar width,
+               const PetscScalar x, const PetscScalar y,
+               PetscScalar &x_loc, PetscScalar &y_loc);
+  int inStreamP2(const PetscScalar width, const PetscScalar x, const PetscScalar y);
 };
 
 #endif /* __icePSTexModel_hh */

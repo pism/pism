@@ -30,52 +30,56 @@ char exper_names[Nexpers][NAME_LENGTH] = { "P0A",
                                            "P3",
                                            "P4" };
 
-PetscScalar stream_angle[3] = {0.0, 100.0, 225.0};  // degrees
+PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
 const PetscScalar DEFAULT_PHI_STRONG = 20.0;
 
-PetscScalar exper_params[Nexpers][4][3] = {
+const PetscScalar stream_length = 650.0e3;
+
+const PetscScalar stream_change = 400.0e3;
+
+PetscScalar exper_params[Nexpers][4][4] = {
 
   {// P0A
-    {0.0, 0.0, 0.0},    // bed depth at end
-    {70.0, 70.0, 70.0}, // stream_width in km; INACTIVE
-    {5.0, 5.0, 5.0},    // upstream till phi; INACTIVE
-    {5.0, 5.0, 5.0}     // downstream till phi; INACTIVE
+    {0.0, 0.0, 0.0, 0.0},     // bed depth at end
+    {70.0, 70.0, 70.0, 70.0}, // stream_width in km; INACTIVE
+    {5.0, 5.0, 5.0, 5.0},     // upstream till phi; INACTIVE
+    {5.0, 5.0, 5.0, 5.0}      // downstream till phi; INACTIVE
   },
 
   {// P0I
-    {1000.0, 1000.0, 1000.0},    // bed depth at end
-    {70.0, 70.0, 70.0}, // stream_width in km; INACTIVE
-    {5.0, 5.0, 5.0},    // upstream till phi; INACTIVE
-    {5.0, 5.0, 5.0}     // downstream till phi; INACTIVE
+    {1000.0, 1000.0, 1000.0, 1000.0},    // bed depth at end
+    {70.0, 70.0, 70.0, 70.0}, // stream_width in km; INACTIVE
+    {5.0, 5.0, 5.0, 5.0},     // upstream till phi; INACTIVE
+    {5.0, 5.0, 5.0, 5.0}      // downstream till phi; INACTIVE
   },
 
-  {// P1
-    {0.0, 0.0, 0.0},    // bed depth at end
-    {70.0, 70.0, 70.0}, // stream_width in km
-    {5.0, 5.0, 5.0},    // upstream till phi
-    {5.0, 5.0, 5.0}     // downstream till phi
+  {// P1: default
+    {0.0, 0.0, 0.0, 0.0},     // bed depth at end
+    {70.0, 30.0, 100.0, 50.0}, // stream_width in km
+    {5.0, 5.0, 5.0, 5.0},     // upstream till phi
+    {5.0, 5.0, 5.0, 5.0}      // downstream till phi
   },
 
-  {// P2
-    {0.0, 0.0, 0.0},     // bed depth at end
-    {70.0, 40.0, 100.0}, // stream_width in km
-    {5.0, 5.0, 5.0},     // upstream till phi
-    {5.0, 5.0, 5.0}      // downstream till phi
+  {// P2: only three streams, so last entry inactive
+    {0.0, 0.0, 0.0, 0.0},     // bed depth at end
+    {70.0, 70.0, 70.0, 70.0}, // stream_width in km; INACTIVE
+    {5.0, 5.0, 5.0, 5.0},     // upstream till phi
+    {5.0, 5.0, 5.0, 5.0}      // downstream till phi
   },
 
-  {// P3: default
-    {1000.0, 1000.0, 1000.0},  // bed depth at end
-    {70.0, 40.0, 100.0},       // stream_width in km
-    {5.0, 5.0, 5.0},           // upstream till phi
-    {5.0, 5.0, 5.0}            // downstream till phi
+  {// P3
+    {1000.0, 1000.0, 1000.0, 1000.0},    // bed depth at end
+    {70.0, 30.0, 100.0, 50.0}, // stream_width in km
+    {5.0, 5.0, 5.0, 5.0},     // upstream till phi
+    {5.0, 5.0, 5.0, 5.0}      // downstream till phi
   },
 
   {// P4
-    {1000.0, 1000.0, 1000.0},  // bed depth at end
-    {70.0, 70.0, 70.0},       // stream_width in km
-    {5.0, 5.0, 5.0},           // upstream till phi
-    {5.0, 3.0, 8.0}            // downstream till phi
+    {0.0, 0.0, 0.0, 0.0},     // bed depth at end
+    {70.0, 70.0, 70.0, 70.0}, // stream_width in km
+    {5.0, 5.0, 5.0, 5.0},     // upstream till phi
+    {2.0, 3.0, 8.0, 10.0}     // downstream till phi
   }
 
 };
@@ -149,7 +153,7 @@ PetscErrorCode IcePSTexModel::initFromOptions() {
 }
 
 
-int IcePSTexModel::sectorNumber(const PetscScalar x, const PetscScalar y) {
+int IcePSTexModel::sectorNumberP2(const PetscScalar x, const PetscScalar y) {
   if (x > 0.0) {
     if (y < x)
       return 0;
@@ -164,42 +168,66 @@ int IcePSTexModel::sectorNumber(const PetscScalar x, const PetscScalar y) {
 }
 
 
+//! Echo four-way stream number if in stream, or -1 if not in stream, and give local coords in stream.
+int IcePSTexModel::inStream(const int m, const PetscScalar width,
+                            const PetscScalar x, const PetscScalar y,
+                            PetscScalar &x_loc, PetscScalar &y_loc) {
+  const PetscScalar offset = 100.1e3,
+                    sinrot = sin((pi/180.0) * (m * 90.0)),
+                    cosrot = cos((pi/180.0) * (m * 90.0));
+  x_loc =  cosrot * x + sinrot * y,
+  y_loc = -sinrot * x + cosrot * y;
+  if ( (x_loc > offset) && (y_loc < width / 2.0) && (y_loc > -width / 2.0) ) {
+    x_loc = x_loc - offset;
+    return m;
+  } else
+    return -1;
+}
+
+
+//! Return three-way stream number (for experiment P2) or -1 if not in stream.
+int IcePSTexModel::inStreamP2(const PetscScalar width,
+                              const PetscScalar x, const PetscScalar y) {
+  const int m = sectorNumberP2(x,y);
+  const PetscScalar offset = 100.1e3,
+                    sinrot = sin((pi/180.0) * stream_angle_P2[m]),
+                    cosrot = cos((pi/180.0) * stream_angle_P2[m]),
+                    x_rot =  cosrot * x + sinrot * y,
+                    y_rot = -sinrot * x + cosrot * y;
+  if ( (x_rot > offset) && (y_rot < width / 2.0) && (y_rot > -width / 2.0) )
+    return m;
+  else
+    return -1;
+}
+
+
 PetscInt IcePSTexModel::setBedElev() {
   PetscErrorCode ierr;
   PetscScalar **b;
   
-  // half-width of EISMINT II computational domain
-  const PetscScalar    L = 750.0e3,
-                       offset = 100.0e3,
-                       width = 200.0e3,  // trough width = 200km
+  const PetscScalar    width = 200.0e3,  // trough width = 200km
                        plateau = 2000.0;
   const PetscScalar    dx = grid.dx, dy = grid.dy;
+  PetscScalar x_loc, y_loc;
 
   ierr = VecSet(vbed, plateau); CHKERRQ(ierr);
 
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  for (PetscInt m=0; m<3; m++) { // go through sectors
-    PetscScalar    drop = exper_params[exper_chosen][0][m];
-    PetscScalar    slope = drop / (L - offset);
-    //ierr = verbPrintf(2,grid.com,
-    //         "setting bed for sector %d with drop %f and angle %f\n",
-    //         m,drop,stream_angle[m]); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscScalar x = -grid.Ly + dy * j,  // note reversal
-                          y = -grid.Lx + dx * i;
-        if (m == sectorNumber(x,y)) {
-          const PetscScalar sinrot = sin((pi/180.0)*stream_angle[m]),
-                            cosrot = cos((pi/180.0)*stream_angle[m]);
-          const PetscScalar x_rot =  cosrot * x + sinrot * y,
-                            y_rot = -sinrot * x + cosrot * y;
-          if ( (x_rot > offset) && (y_rot < width / 2.0) && (y_rot > -width / 2.0) ) {
-            b[i][j] = plateau - slope * (x_rot - offset) * cos(pi * y_rot / width);
-          }
-        }
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar x = -grid.Ly + dy * j,  // note reversal
+                        y = -grid.Lx + dx * i;
+      // note we treat exper P2 like others; but should be flat so it doesn't matter
+      for (PetscInt m=0; m<4; m++) {
+        PetscScalar drop = exper_params[exper_chosen][0][m],
+                    slope = drop / stream_length;
+        if (m == inStream(m,width,x,y,x_loc,y_loc))
+          b[i][j] = plateau - slope * x_loc * cos(pi * y_loc / width);
       }
     }
   }
+
   ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
 
   // communicate b because it will be horizontally differentiated
@@ -210,129 +238,164 @@ PetscInt IcePSTexModel::setBedElev() {
 
 
 
-
 PetscInt IcePSTexModel::setTillPhi() {
   PetscErrorCode ierr;
   PetscScalar **phi;
   
-  const PetscScalar    offset = 100.0e3,
-                       stream_change = 400.0e3;
   const PetscScalar    dx = grid.dx, dy = grid.dy;
+  PetscScalar x_loc, y_loc;
 
   ierr = VecSet(vtillphi, DEFAULT_PHI_STRONG); CHKERRQ(ierr);
 
+  if ((exper_chosen == 0) || (exper_chosen == 1)) {
+    return 0;  // done for P0A and P0I
+  }
+
   ierr = DAVecGetArray(grid.da2, vtillphi, &phi); CHKERRQ(ierr);
-  for (PetscInt m=0; m<3; m++) { // go through sectors
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscScalar x = -grid.Ly + dy * j,  // note reversal
-                          y = -grid.Lx + dx * i;
-        if (m == sectorNumber(x,y)) {
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar x = -grid.Ly + dy * j,  // note reversal
+                        y = -grid.Lx + dx * i,
+                        r = sqrt(PetscSqr(x) + PetscSqr(y));
+      if (exper_chosen == 3) { // experiment P2
+        const PetscScalar width = exper_params[exper_chosen][1][0] * 1000.0;
+        int m = inStreamP2(width,x,y);
+        if (m >= 0) {
+          if (r > stream_change)
+            phi[i][j] = exper_params[exper_chosen][3][m]; // downstream value
+          else
+            phi[i][j] = exper_params[exper_chosen][2][m]; // upstream value
+        }
+      } else {
+        for (PetscInt m=0; m<4; m++) { // go through four sectors
           const PetscScalar width = exper_params[exper_chosen][1][m] * 1000.0;
-          const PetscScalar sinrot = sin((pi/180.0)*stream_angle[m]),
-                            cosrot = cos((pi/180.0)*stream_angle[m]);
-          const PetscScalar x_rot =  cosrot * x + sinrot * y,
-                            y_rot = -sinrot * x + cosrot * y;
-          if ( (x_rot > offset) && (y_rot < width / 2.0) && (y_rot > -width / 2.0) ) {
-            if ((x_rot - offset) > stream_change) {
+          if (m == inStream(m,width,x,y,x_loc,y_loc)) {
+            if (x_loc > stream_change) {
               phi[i][j] = exper_params[exper_chosen][3][m]; // downstream value
             } else {
               phi[i][j] = exper_params[exper_chosen][2][m]; // upstream value
             }
-          }
+          }          
         }
       }
     }
   }
+
   ierr = DAVecRestoreArray(grid.da2, vtillphi, &phi); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-//! Replace IceModel default summary.  This one gives velocities everywhere and in stream.
+//! Replace IceModel default summary.  This one gives velocities in streams.
 PetscErrorCode IcePSTexModel::summaryPrintLine(
     const PetscTruth printPrototype, const PetscTruth tempAndAge,
     const PetscScalar year, const PetscScalar dt, 
     const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
 
-// FIXME!!
-
   PetscErrorCode ierr;
-
-  PetscScalar     **H, **ubar, **vbar, **ub, **vb;
-  // these are in MKS; with "g" are global across all processors
-  PetscScalar     maxcbar = 0.0, 
-                  avcbar = 0.0, avcbupstream = 0.0, avcbdownstream = 0.0, 
-                  Nhaveice = 0.0, Nupstream = 0.0, Ndownstream;
-  PetscScalar     gmaxcbar, gavcbar, gavcbupstream, gavcbdownstream,
-                  gNhaveice, gNupstream, gNdownstream;
+  PetscScalar     **H, **ubar, **vbar;
+  // these are in MKS units; with "g" are global across all processors
+  PetscScalar     maxcbarALL = 0.0, 
+                  areaup[4] = {0.0, 0.0, 0.0, 0.0},
+                  avcup[4] = {0.0, 0.0, 0.0, 0.0},
+                  areadown[4] = {0.0, 0.0, 0.0, 0.0},
+                  avcdown[4] = {0.0, 0.0, 0.0, 0.0};
+  PetscScalar     gmaxcbarALL, gareaup[4], gavcup[4], gareadown[4], gavcdown[4];
+  PetscScalar     x_loc, y_loc;
+  const PetscScalar darea = grid.dx * grid.dy;
   
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
-        Nhaveice += 1.0;
         const PetscScalar cbar = sqrt( PetscSqr(ubar[i][j])
                                        + PetscSqr(vbar[i][j]) );
-        if (cbar > maxcbar)  maxcbar = cbar;
-        avcbar += cbar;
-/*
-        const PetscInt code = tillRegionCode(i,j);
-        if ((code == 2) || (code == 3)) {
-          const PetscScalar cb = sqrt( PetscSqr(ub[i][j])+ PetscSqr(vb[i][j]));
-          if (code == 2) {
-            Nupstream += 1.0;
-            avcbupstream += cb;
-          } else {
-            Ndownstream += 1.0;
-            avcbdownstream += cb;
+        const PetscScalar x = -grid.Ly + grid.dy * j,  // note reversal
+                          y = -grid.Lx + grid.dx * i,
+                          r = sqrt(PetscSqr(x) + PetscSqr(y));
+        if (cbar > maxcbarALL)  maxcbarALL = cbar;
+        if (exper_chosen == 3) { // exper P2
+          const PetscScalar width = exper_params[exper_chosen][1][0] * 1000.0;
+          int m = inStreamP2(width,x,y);
+          if (m >= 0) {
+            if (r > stream_change) {
+              areadown[m] += darea;
+              avcdown[m] += cbar * darea;
+            } else {
+              areaup[m] += darea;
+              avcup[m] += cbar * darea;
+            }
+          }
+        } else {
+          for (int m=0; m<4; m++) {
+            const PetscScalar width = exper_params[exper_chosen][1][m] * 1000.0;
+            if (m == inStream(m,width,x,y,x_loc,y_loc)) {
+              if (x_loc > stream_change) {
+                areadown[m] += darea;
+                avcdown[m] += cbar * darea;
+              } else {
+                areaup[m] += darea;
+                avcup[m] += cbar * darea;
+              }
+            }
           }
         }
-*/
       }
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxcbar, &gmaxcbar, grid.com); CHKERRQ(ierr);
-  
-  ierr = PetscGlobalSum(&Nhaveice, &gNhaveice, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&Nupstream, &gNupstream, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&Ndownstream, &gNdownstream, grid.com); CHKERRQ(ierr);
-
-  ierr = PetscGlobalSum(&avcbar, &gavcbar, grid.com); CHKERRQ(ierr);
-  if (gNhaveice > 0)   gavcbar = gavcbar / gNhaveice;
-  else                 gavcbar = 0.0;  // degenerate case
-    
-  ierr = PetscGlobalSum(&avcbupstream, &gavcbupstream, grid.com); CHKERRQ(ierr);
-  if (gNupstream > 0)  gavcbupstream = gavcbupstream / gNupstream;
-  else                 gavcbupstream = 0.0;  // degenerate case
-
-  ierr = PetscGlobalSum(&avcbdownstream, &gavcbdownstream, grid.com); CHKERRQ(ierr);
-  if (gNdownstream > 0)  gavcbdownstream = gavcbdownstream / gNdownstream;
-  else                   gavcbdownstream = 0.0;  // degenerate case
+  // globalize and actually compute averages
+  ierr = PetscGlobalMax(&maxcbarALL, &gmaxcbarALL, grid.com); CHKERRQ(ierr);
+  for (PetscInt m=0; m<4; m++) {
+    ierr = PetscGlobalSum(&areaup[m], &gareaup[m], grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&avcup[m], &gavcup[m], grid.com); CHKERRQ(ierr);
+    if (gareaup[m] > 0.0) {
+      gavcup[m] = gavcup[m] / gareaup[m];
+    } else {
+      gavcup[m] = 0.0;
+    }
+    ierr = PetscGlobalSum(&areadown[m], &gareadown[m], grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&avcdown[m], &gavcdown[m], grid.com); CHKERRQ(ierr);
+    if (gareadown[m] > 0.0) {
+      gavcdown[m] = gavcdown[m] / gareadown[m];
+    } else {
+      gavcdown[m] = 0.0;
+    }
+  }
 
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P         YEAR:     ivol   iarea   meltf   maxcbar    avcbar   avcbUpS avcbDownS\n");
+      "++++++++++++++++++++++++++ WIDEN SCREEN TO AT LEAST 114 CHARS FOR IcePSTexModel OUTPUT"
+      " +++++++++++++++++++++++++++\n"); CHKERRQ(ierr);
+    if (exper_chosen == 3) {
+      ierr = verbPrintf(2,grid.com, 
+        "\nWARNING: columns 'avup3' and 'avdwn3' should be ignored for experiment P2.\n\n");
+        CHKERRQ(ierr);
+    }
     ierr = verbPrintf(2,grid.com,
-      "U        years 10^6_km^3 10^6_km^2 (none)      m/a       m/a       m/a       m/a\n");
+      "P         YEAR:     ivol   iarea   maxcbar"
+      "    avup0   avdwn0    avup1   avdwn1    avup2   avdwn2    avup3   avdwn3\n");
+    ierr = verbPrintf(2,grid.com,
+      "U        years 10^6_km^3 10^6_km^2     m/a"
+      "      m/a      m/a      m/a      m/a      m/a      m/a      m/a      m/a\n");
   } else {
     ierr = verbPrintf(2,grid.com, 
-      "S %12.5f: %8.5f %7.4f %7.4f %9.2f %9.3f %9.3f %9.3f\n",
-         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
-         gmaxcbar*secpera, gavcbar*secpera, 
-         gavcbupstream*secpera, gavcbdownstream*secpera); CHKERRQ(ierr);
+      "S %12.5f: %8.5f %7.4f %9.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f\n",
+         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6,
+         gmaxcbarALL*secpera,
+         gavcup[0]*secpera, gavcdown[0]*secpera,
+         gavcup[1]*secpera, gavcdown[1]*secpera,
+         gavcup[2]*secpera, gavcdown[2]*secpera,
+         gavcup[3]*secpera, gavcdown[3]*secpera); CHKERRQ(ierr);
   }
+
   return 0;
 }

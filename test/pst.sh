@@ -22,10 +22,10 @@ fi
 
 set -e  # exit on error
 
-# function to run pisms on NN processors
-mpisms()
+# function to run "pisms -pst" on NN processors
+mpst()
 {
-    cmd="mpiexec -n $1 pisms $2"  # change if "mpirun" or "bin/pisms", etc.
+    cmd="mpiexec -n $1 pisms -pst $2"  # change if "mpirun" or "bin/pisms", etc.
     
     echo 
     echo "date = '`date`' on host '`uname -n`':"
@@ -35,7 +35,7 @@ mpisms()
 }
 
 # function to run pisms on NN processors and set vertical grid to standard choices
-mpisms_vg()
+mpst_vg()
 {
     if [ "$2" = "e" ] ; then  # equal spaced default vertical grid
         vg="-Mz 251 -Mbz 51 $3"
@@ -45,7 +45,7 @@ mpisms_vg()
         return 1
     fi
     
-    mpisms $1 "$vg"
+    mpst $1 "$vg"
 }
 
 
@@ -56,42 +56,56 @@ mpisms_vg()
 
 #THE EXPERIMENTS:
 
-# FIXME!!
+# P0A: run without trough on refining grid for total of 200k years:
+mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 100000 -track_Hmelt \
+ -tempskip 10 -o P0A_100k"
 
-# run without trough on coarse 25km grid for 100k years:
-mpisms_vg $NN u "-eisII A -Mx 61 -My 61 -y 100000 -track_Hmelt \
- -tempskip 10 -o eis2A100k"
+mpst $NN "-P0A -if P0A_100k.nc -y 50000 -track_Hmelt \
+ -tempskip 10 -o P0A_150k"
 
-#continue WITHOUT trough
-mpisms $NN "-eisII A -if eis2A100k.nc -y 90000 -track_Hmelt \
- -tempskip 10 -o eis2A190k"
+mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 -track_Hmelt \
+ -tempskip 10 -regrid P0A_150k.nc -regrid_vars LTBHhe -o P0A_190k"
 
-   # refine to 12.5km grid, run 10k, save lots:
-mpisms_vg $NN u "-eisII A -Mx 121 -My 121 -ys 190000 -y 10000 -track_Hmelt \
- -tempskip 10 -regrid eis2A190k.nc -regrid_vars LTBHh -f3d -o eis2A_final"
+mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -track_Hmelt \
+ -tempskip 10 -regrid P0A_190k.nc -regrid_vars LTBHhe -f3d -o P0A"
 
-#continue WITH trough (starting from 100k sans trough):
-mpisms $NN "-eisII I -if eis2A100k.nc -y 90000 -track_Hmelt \
- -tempskip 10 -o eis2I190k"
 
-   # refine to 12.5km grid, run 10k, save lots:
-mpisms_vg $NN u "-eisII I -Mx 121 -My 121 -ys 190000 -y 10000 -track_Hmelt \
- -tempskip 10 -regrid eis2I190k.nc -regrid_vars LTBHh -f3d -o eis2I_final"
+# P0I: run with trough on refining grid for total of 200k years:
+mpst_vg $NN u "-P0I -Mx 61 -My 61 -y 100000 -track_Hmelt \
+ -tempskip 10 -o P0I_100k"
+
+mpst $NN "-P0I -if P0I_100k.nc -y 50000 -track_Hmelt \
+ -tempskip 10 -o P0I_150k"
+
+mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 -track_Hmelt \
+ -tempskip 10 -regrid P0I_150k.nc -regrid_vars LTBHhe -o P0I_190k"
+
+mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -track_Hmelt \
+ -tempskip 10 -regrid P0I_190k.nc -regrid_vars LTBHhe -f3d -o P0I"
 
 
 #exit    # possible stopping point; uncomment to stop
 
 
-# basic experiment P0 (also save 100 year and 1000 year states)
-#   note this corresponds to option "-till_phi 20.0,20.0,5.0,5.0,5.0"
-#   and "-stream_width 100.0"
-mpisms $NN "-eis2pl -if eis2I_final.nc -ys 0 -y 100 -o eis2plP0_100"
+# P1 (also save 100 year and 1000 year states): flat with variable
+#   width but grid-aligned ice streams
+mpst $NN "-P1 -if P0A.nc -ys 0 -y 100 -o P1_100"
 
-mpisms $NN "-eis2pl -if eis2plP0_100.nc -y 900 -o eis2plP0_1000"
+mpst $NN "-P1 -if P1_100.nc -y 900 -o P1_1000"
 
-mpisms $NN "-eis2pl -if eis2plP0_1000.nc -y 4000 -f3d -o eis2plP0"
+mpst $NN "-P1 -if P1_1000.nc -y 4000 -f3d -o P1"
 
-#exit
+# P2: flat with THREE same width and NOT grid-aligned ice streams
+mpst $NN "-P2 -if P0A.nc -ys 0 -y 5000 -o P2"
+
+# P3: troughs, with variable width but grid-aligned ice streams
+mpst $NN "-P3 -if P0I.nc -ys 0 -y 5000 -o P3"
+
+# P4: flat with variable width but grid-aligned ice streams 
+#   and different down-stream till phi
+mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4"
+
+exit
 
 
 ## experiment P6 (coarser horizontal 25km grid):
