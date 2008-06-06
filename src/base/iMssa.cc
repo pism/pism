@@ -638,7 +638,9 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNu, vNuOld, &norm, &normChange); CHKERRQ(ierr);
       if (getVerbosityLevel() < 3) {
-        ierr = verbPrintf(2,grid.com,"%12.3e",normChange/norm); CHKERRQ(ierr);
+        ierr = verbPrintf(2,grid.com,
+          (k == 0) ? "%12.4e" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%12.4e",
+          normChange/norm); CHKERRQ(ierr);
       }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
@@ -646,8 +648,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
 
       if (getVerbosityLevel() < 3) {
-        ierr = verbPrintf(2,grid.com,
-                 (k == 0) ? "%3d" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%3d",k + 1); CHKERRQ(ierr);
+        ierr = verbPrintf(2,grid.com, "%4d", k+1); CHKERRQ(ierr);
       }
       *numiter = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
@@ -673,9 +674,9 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
   done:
 
-  if (getVerbosityLevel() < 3) {
-    ierr = verbPrintf(2,grid.com,"\b\b\b\b\b\b\b\b\b\b\b\b"); CHKERRQ(ierr);
-  }
+  //if (getVerbosityLevel() < 3) {
+  //  ierr = verbPrintf(2,grid.com,"\b\b\b\b\b\b\b\b\b\b\b\b"); CHKERRQ(ierr);
+  //}
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
   }

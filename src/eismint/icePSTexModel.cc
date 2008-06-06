@@ -116,21 +116,23 @@ PetscErrorCode IcePSTexModel::initFromOptions() {
     SETERRQ(2,"Unrecognized experiment name for IcePSTexModel.\n"
               "  An experiment name option like '-P2' must be chosen.");
 
+  ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
+
   if (exper_chosen <= 1) {
     useSSAVelocity = PETSC_FALSE;
     doSuperpose = PETSC_FALSE;
     doPlasticTill = PETSC_FALSE;
   } else {
+    // these options mean "-ssa -super -plastic" already
     useSSAVelocity = PETSC_TRUE;
     doSuperpose = PETSC_TRUE;
     doPlasticTill = PETSC_TRUE;
+    useConstantTillPhi = PETSC_FALSE;
   }
   
   // these are different from EISMINT II conventions
   updateHmelt = PETSC_TRUE;
   includeBMRinContinuity = PETSC_TRUE;
-
-  ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
   
   ierr = verbPrintf(2,grid.com, 
     "setting up PST (Plastic till Stream w Thermocoupling) experiment '%s' ...\n",
@@ -172,36 +174,36 @@ int IcePSTexModel::sectorNumberP2(const PetscScalar x, const PetscScalar y) {
 int IcePSTexModel::inStream(const int m, const PetscScalar width,
                             const PetscScalar x, const PetscScalar y,
                             PetscScalar &x_loc, PetscScalar &y_loc) {
-  const PetscScalar offset = 100.1e3,
-                    sinrot = sin((pi/180.0) * (m * 90.0)),
-                    cosrot = cos((pi/180.0) * (m * 90.0));
-  x_loc =  cosrot * x + sinrot * y,
+  const PetscScalar offset = 100.0e3,
+                    sinrot = sin(0.5 * pi * m),
+                    cosrot = cos(0.5 * pi * m);
+  x_loc =  cosrot * x + sinrot * y - offset;
   y_loc = -sinrot * x + cosrot * y;
-  if ( (x_loc > offset) && (y_loc < width / 2.0) && (y_loc > -width / 2.0) ) {
-    x_loc = x_loc - offset;
-    return m;
-  } else
-    return -1;
-}
-
-
-//! Return three-way stream number (for experiment P2) or -1 if not in stream.
-int IcePSTexModel::inStreamP2(const PetscScalar width,
-                              const PetscScalar x, const PetscScalar y) {
-  const int m = sectorNumberP2(x,y);
-  const PetscScalar offset = 100.1e3,
-                    sinrot = sin((pi/180.0) * stream_angle_P2[m]),
-                    cosrot = cos((pi/180.0) * stream_angle_P2[m]),
-                    x_rot =  cosrot * x + sinrot * y,
-                    y_rot = -sinrot * x + cosrot * y;
-  if ( (x_rot > offset) && (y_rot < width / 2.0) && (y_rot > -width / 2.0) )
+  if ( (x_loc > 0.0) && (y_loc < width / 2.0) && (y_loc > -width / 2.0) )
     return m;
   else
     return -1;
 }
 
 
-PetscInt IcePSTexModel::setBedElev() {
+//! Return three-way stream number (for experiment P2) or -1 if not in stream.
+int IcePSTexModel::inStreamP2(const PetscScalar width,
+                              const PetscScalar x, const PetscScalar y,
+                              PetscScalar &x_loc, PetscScalar &y_loc) {
+  const int m = sectorNumberP2(x,y);
+  const PetscScalar offset = 100.0e3,
+                    sinrot = sin((pi/180.0) * stream_angle_P2[m]),
+                    cosrot = cos((pi/180.0) * stream_angle_P2[m]);
+  x_loc =  cosrot * x + sinrot * y - offset;
+  y_loc = -sinrot * x + cosrot * y;
+  if ( (x_loc > 0.0) && (y_loc < width / 2.0) && (y_loc > -width / 2.0) )
+    return m;
+  else
+    return -1;
+}
+
+
+PetscErrorCode IcePSTexModel::setBedElev() {
   PetscErrorCode ierr;
   PetscScalar **b;
   
@@ -218,7 +220,7 @@ PetscInt IcePSTexModel::setBedElev() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar x = -grid.Ly + dy * j,  // note reversal
                         y = -grid.Lx + dx * i;
-      // note we treat exper P2 like others; but should be flat so it doesn't matter
+      // note we treat exper P2 like others; it is flat anyway (slope=0)
       for (PetscInt m=0; m<4; m++) {
         PetscScalar drop = exper_params[exper_chosen][0][m],
                     slope = drop / stream_length;
@@ -237,45 +239,72 @@ PetscInt IcePSTexModel::setBedElev() {
 }
 
 
+//! Compute the till friction angle in local strip coordinates.
+PetscScalar IcePSTexModel::phiLocal(const PetscScalar width,
+              const PetscScalar x, const PetscScalar y,
+              const PetscScalar STRONG, 
+              const PetscScalar UP, const PetscScalar DOWN) {
 
-PetscInt IcePSTexModel::setTillPhi() {
+  const PetscScalar eta   = y / (width/2.0),   // normalized local y
+                    xi    = x / stream_change; // normalized local x
+
+  // compute lambda(eta) which is even and in [0,1]
+  PetscScalar lambda = 0.0; // for big eta
+  if (PetscAbs(eta) <= 0.5)
+    lambda = 1.0;
+  else if (PetscAbs(eta) < 1.5)
+    lambda = 0.5 - 0.5 * sin(pi * (PetscAbs(eta) - 1.0));
+
+  if (x > stream_change)
+    return DOWN * lambda + STRONG * (1.0 - lambda); // downstream value
+  else { // f(xi) is for upstream part only
+    PetscScalar f = STRONG;
+    if (xi >= 0.25)
+      f = UP;
+    else if (xi > -0.25) {
+      const PetscScalar fav = 0.5 * (STRONG + UP);
+      f = fav - 0.5 * sin(2.0 * pi * xi) * (STRONG - UP);
+    }
+    return f * lambda + STRONG * (1.0 - lambda); // upstream value
+  }
+}
+
+
+
+PetscErrorCode IcePSTexModel::setTillPhi() {
   PetscErrorCode ierr;
   PetscScalar **phi;
   
   const PetscScalar    dx = grid.dx, dy = grid.dy;
-  PetscScalar x_loc, y_loc;
+  PetscScalar          x_loc, y_loc;
 
   ierr = VecSet(vtillphi, DEFAULT_PHI_STRONG); CHKERRQ(ierr);
 
-  if ((exper_chosen == 0) || (exper_chosen == 1)) {
+  if (exper_chosen <= 1)
     return 0;  // done for P0A and P0I
-  }
 
   ierr = DAVecGetArray(grid.da2, vtillphi, &phi); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar x = -grid.Ly + dy * j,  // note reversal
-                        y = -grid.Lx + dx * i,
-                        r = sqrt(PetscSqr(x) + PetscSqr(y));
+                        y = -grid.Lx + dx * i;
+      // FIXME:  need to return smoothed phi even if not *IN* stream
+      //   but merely near the stream; create nearStream, nearStreamP2
       if (exper_chosen == 3) { // experiment P2
         const PetscScalar width = exper_params[exper_chosen][1][0] * 1000.0;
-        int m = inStreamP2(width,x,y);
-        if (m >= 0) {
-          if (r > stream_change)
-            phi[i][j] = exper_params[exper_chosen][3][m]; // downstream value
-          else
-            phi[i][j] = exper_params[exper_chosen][2][m]; // upstream value
-        }
+        int m = inStreamP2(width,x,y,x_loc,y_loc);
+        if (m >= 0)
+          phi[i][j] = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
+                               exper_params[exper_chosen][2][m],
+                               exper_params[exper_chosen][3][m]);
       } else {
         for (PetscInt m=0; m<4; m++) { // go through four sectors
           const PetscScalar width = exper_params[exper_chosen][1][m] * 1000.0;
           if (m == inStream(m,width,x,y,x_loc,y_loc)) {
-            if (x_loc > stream_change) {
-              phi[i][j] = exper_params[exper_chosen][3][m]; // downstream value
-            } else {
-              phi[i][j] = exper_params[exper_chosen][2][m]; // upstream value
-            }
+            phi[i][j] = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
+                                 exper_params[exper_chosen][2][m],
+                                 exper_params[exper_chosen][3][m]);
           }          
         }
       }
@@ -321,7 +350,7 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
         if (cbar > maxcbarALL)  maxcbarALL = cbar;
         if (exper_chosen == 3) { // exper P2
           const PetscScalar width = exper_params[exper_chosen][1][0] * 1000.0;
-          int m = inStreamP2(width,x,y);
+          int m = inStreamP2(width,x,y,x_loc,y_loc);
           if (m >= 0) {
             if (r > stream_change) {
               areadown[m] += darea;
@@ -399,3 +428,4 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
 
   return 0;
 }
+

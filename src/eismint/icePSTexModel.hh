@@ -55,7 +55,13 @@ private:
   int inStream(const int m, const PetscScalar width,
                const PetscScalar x, const PetscScalar y,
                PetscScalar &x_loc, PetscScalar &y_loc);
-  int inStreamP2(const PetscScalar width, const PetscScalar x, const PetscScalar y);
+  int inStreamP2(const PetscScalar width, 
+                 const PetscScalar x, const PetscScalar y,
+                 PetscScalar &x_loc, PetscScalar &y_loc);
+  PetscScalar phiLocal(const PetscScalar width, 
+                       const PetscScalar x, const PetscScalar y,
+                       const PetscScalar STRONG,
+                       const PetscScalar UP, const PetscScalar DOWN);
 };
 
 #endif /* __icePSTexModel_hh */

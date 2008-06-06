@@ -55,16 +55,14 @@ mpst_vg()
 
 
 # P0A: run without trough on refining grid for total of 200k years:
-mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 100000 -track_Hmelt \
- -tempskip 10 -o P0A_100k"
+mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 100000 -tempskip 10 -o P0A_100k"
 
-mpst $NN "-P0A -if P0A_100k.nc -y 50000 -track_Hmelt \
- -tempskip 10 -o P0A_150k"
+mpst $NN "-P0A -if P0A_100k.nc -y 50000 -tempskip 10 -o P0A_150k"
 
-mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 -track_Hmelt \
+mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 \
  -tempskip 10 -regrid P0A_150k.nc -regrid_vars LTBHhe -o P0A_190k"
 
-mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -track_Hmelt \
+mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 \
  -tempskip 10 -regrid P0A_190k.nc -regrid_vars LTBHhe -f3d -o P0A"
 
 
@@ -85,16 +83,14 @@ mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4"
 
 
 # P0I: run with trough on refining grid for total of 200k years:
-mpst_vg $NN u "-P0I -Mx 61 -My 61 -y 100000 -track_Hmelt \
- -tempskip 10 -o P0I_100k"
+mpst_vg $NN u "-P0I -Mx 61 -My 61 -y 100000 -tempskip 10 -o P0I_100k"
 
-mpst $NN "-P0I -if P0I_100k.nc -y 50000 -track_Hmelt \
- -tempskip 10 -o P0I_150k"
+mpst $NN "-P0I -if P0I_100k.nc -y 50000 -tempskip 10 -o P0I_150k"
 
-mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 -track_Hmelt \
+mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 \
  -tempskip 10 -regrid P0I_150k.nc -regrid_vars LTBHhe -o P0I_190k"
 
-mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -track_Hmelt \
+mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 \
  -tempskip 10 -regrid P0I_190k.nc -regrid_vars LTBHhe -f3d -o P0I"
 
 
@@ -141,45 +137,4 @@ mpst $NN "-P1 -if P1_60k.nc -y 20000 -o P1_80k"
 mpst $NN "-P1 -if P1_80k.nc -y 20000 -o P1_100k"
 
 
-#exit    # possible stopping point; uncomment to stop
-
-
-exit
-
-
-
-################# OLD STUFF for short-term reference ####################
-
-## experiment P6 (coarser horizontal 25km grid):
-mpisms_vg $NN u "-eis2pl -Mx 61 -My 61 -ys 0 -y 5000 \
- -regrid eis2I_final.nc -regrid_vars LTBHh -f3d -o eis2plP6"
-
-# experiment P7 (finer horizontal *7.5km* grid):
-mpisms_vg $NN u "-eis2pl -Mx 201 -My 201 -ys 0 -y 5000 \
- -regrid eis2I_final.nc -regrid_vars LTBHh -f3d -o eis2plP7"
-
-# [finest horizontal grid (5km) run P8 put at end; slowest]
-
-# experiment P9 (finer vertical [less than near base] 10m grid):
-mpisms $NN "-eis2pl -Mx 121 -My 121 -Mz 201 -Mbz 81 -quadZ -ys 0 -y 5000 \
- -regrid eis2I_final.nc -regrid_vars LTBHh -f3d -o eis2plP9"
-
-# [finest vertical grid run P10 put at end; slowest]
-
-
-# experiment P8 (finest horizontal **5km** grid); save intermediate as it is long:
-mpisms_vg $NN u "-eis2pl -Mx 301 -My 301 -ys 0 -y 1000 \
- -regrid eis2I_final.nc -regrid_vars LTBHh -o eis2plP8_1k"
-
-mpisms $NN "-eis2pl -if eis2plP8_1k.nc -y 2000 -o eis2plP8_3k"
-
-mpisms $NN "-eis2pl -if eis2plP8_3k.nc -y 2000 -f3d -o eis2plP8"
- 
- 
-# experiment P10 (finest vertical [less than near base] *5m* grid):
-#MPISMS -eis2pl -Mx 121 -My 121 -Mz 1001 -Mbz 201 ...
-mpisms $NN "-eis2pl -Mx 121 -My 121 -Mz 401 -Mbz 161 -quadZ -ys 0 -y 5000 \
- -regrid eis2I_final.nc -regrid_vars LTBHh -f3d -o eis2plP10"
- 
-#fi
 
