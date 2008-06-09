@@ -26,11 +26,14 @@
 const PetscScalar IceExactSSAModel::m_schoof = 10; // (pure number)
 const PetscScalar IceExactSSAModel::L_schoof = 40e3; // meters
 const PetscScalar IceExactSSAModel::aspect_schoof = 0.05; // (pure)
-const PetscScalar IceExactSSAModel::H0_schoof = aspect_schoof * L_schoof; // = 2000 m THICKNESS
-const PetscScalar IceExactSSAModel::B_schoof = 3.7e8; // Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big?
+const PetscScalar IceExactSSAModel::H0_schoof = aspect_schoof * L_schoof; 
+                                       // = 2000 m THICKNESS
+const PetscScalar IceExactSSAModel::B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
+                                       // given on p. 239 of Schoof; why so big?
 const PetscScalar IceExactSSAModel::p_schoof = 4.0/3.0; // = 1 + 1/n
 
 const PetscScalar IceExactSSAModel::LforJ = 300.0e3; // 300 km half-width
+
 
 IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType *i, char mytest)
   : IceModel(g,i) {
@@ -57,7 +60,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
     
-  // fill in temperature and age; not critical I think
+  // fill in temperature and age; not critical
   const PetscScalar T0 = 263.15;  // completely arbitrary
   ierr = VecSet(vTs, T0); CHKERRQ(ierr);
   ierr = T3.setToConstant(T0); CHKERRQ(ierr);
@@ -82,6 +85,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   useConstantNuForSSA = PETSC_FALSE;
   doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J
   doSuperpose = PETSC_FALSE;
+  
   // do rest of base class initialization before final initialization for I and J (below)
   initialized_p = PETSC_TRUE;
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
@@ -91,9 +95,10 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   switch (test) {
     case 'I': {
       // set up X km by 240 km by 3000 m grid; note 240km = 6L where L = L_schoof
-      // find dimension X so that pixels are square but for some unknown reason there are convergence
-      //    problems when x dimension Lx is significantly smaller than y dimension Ly
-      // note we assume Mx,My have been set by options, but not others
+      // find dimension X so that pixels are square but for some unknown reason 
+      //    there are convergence problems when x dimension Lx is significantly
+      //    smaller than y dimension Ly
+      // note Mx,My may have been set by options, but not others
       const PetscScalar testI_Ly = 120.0e3,
         testI_Lx = PetscMax(60.0e3, ((grid.Mx - 1) / 2) * (2.0 * testI_Ly / (grid.My - 1)) );
       ierr = grid.rescale_and_set_zlevels(testI_Lx, testI_Ly, 3000.0); CHKERRQ(ierr);
@@ -113,7 +118,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       regularizingVelocitySchoof); CHKERRQ(ierr);
       }
       break;
-    case 'J': {
+    case 'J':
       // first allocate space for nu (which will be calculated from formula)
       ierr = VecDuplicateVecs(vh, 2, &vNuForJ); CHKERRQ(ierr);
       // we set a flag because the grid is truely periodic
@@ -123,7 +128,6 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       computeSurfGradInwardSSA = PETSC_FALSE;
       useConstantHardnessForSSA = PETSC_FALSE;
       ssaEpsilon = 0.0;  // don't use this lower bound
-      }
       break;
     default:
       SETERRQ(1,"Only tests I and J currently supported in IceExactSSAModel.");
@@ -248,7 +252,6 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
         ierr = v3.setToConstantColumn(i,j,myv); CHKERRQ(ierr);
         ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
         ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-        
       }
     }
   }  

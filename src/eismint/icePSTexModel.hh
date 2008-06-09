@@ -52,16 +52,25 @@ protected:
 private:
   int exper_chosen;
   int sectorNumberP2(const PetscScalar x, const PetscScalar y);
-  int inStream(const int m, const PetscScalar width,
+  bool inStream(const PetscScalar angle, const PetscScalar width,
                const PetscScalar x, const PetscScalar y,
                PetscScalar &x_loc, PetscScalar &y_loc);
+  bool inStreamNbhd(bool strictly_in_stream,
+               const PetscScalar angle, const PetscScalar width,
+               const PetscScalar x, const PetscScalar y,
+               PetscScalar &x_loc, PetscScalar &y_loc);
+/*
   int inStreamP2(const PetscScalar width, 
                  const PetscScalar x, const PetscScalar y,
                  PetscScalar &x_loc, PetscScalar &y_loc);
+  int inStreamNbhdP2(bool strictly_in_stream,
+                 const PetscScalar width, 
+                 const PetscScalar x, const PetscScalar y,
+                 PetscScalar &x_loc, PetscScalar &y_loc);
+*/
   PetscScalar phiLocal(const PetscScalar width, 
-                       const PetscScalar x, const PetscScalar y,
-                       const PetscScalar STRONG,
-                       const PetscScalar UP, const PetscScalar DOWN);
+         const PetscScalar x, const PetscScalar y,
+         const PetscScalar STRONG, const PetscScalar UP, const PetscScalar DOWN);
 };
 
 #endif /* __icePSTexModel_hh */

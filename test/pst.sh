@@ -2,17 +2,18 @@
 # 
 # Script for Plastic till ice Stream with Thermocoupling experiment.   Note 
 # this includes bedrock thermal and tracking of Hmelt unlike EIS II, just
-# to get started.  Then plastic SSA is turned in 4 streams.
+# to get started.  Then plastic SSA is turned on for 4 (or 3) streams in
+# several parameter sensitivity studies.
 # 
 # See preprint Bueler and Brown 2008, "The shallow shelf approximation as a
 # `sliding law' in an ice sheet model with streaming flow".
-
-# FIXME: need new speed estimates
-# re speed: with exit after completion of P5 (as below; P8, P10, and P0cont not included),
-#           the whole script should take less than 500 processor-hours [???]
-# re speed: on experiment P0, marmaduke.gi.alaska.edu (8 cores) took about
-#           5 hours/(1000 model years) or, optimistically, about
-#           ( 1 hour/(1000 model years) )/core
+#
+# re SPEED: On experiment P1 with a 10km grid, bueler-pogo with 8 cores 
+# (two quad core Xeon processors at 2.33GHz) took about 2.5 hours for 
+# 4000 model years.  If sustained this means about 1500 model years 
+# per wall clock hour on the 10km grid; this is with multiple plastic-till
+# modeled ice streams.  (We can determine whether it is sustained, which is
+# likely, from timing of experiment P1cont below.)
 
 NN=2  # set default number of processors here
 
@@ -55,7 +56,7 @@ mpst_vg()
 
 
 # P0A: run without trough on refining grid for total of 200k years:
-mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 100000 -tempskip 10 -o P0A_100k"
+mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -tempskip 10 -o P0A_100k"
 
 mpst $NN "-P0A -if P0A_100k.nc -y 50000 -tempskip 10 -o P0A_150k"
 
@@ -74,8 +75,10 @@ mpst $NN "-P1 -if P1_100.nc -y 900 -o P1_1000"
 
 mpst $NN "-P1 -if P1_1000.nc -y 4000 -f3d -o P1"
 
+
 # P2: flat with THREE same width and NOT grid-aligned ice streams
 mpst $NN "-P2 -if P0A.nc -ys 0 -y 5000 -o P2"
+
 
 # P4: flat with variable width but grid-aligned ice streams 
 #   and different down-stream till phi
@@ -83,7 +86,7 @@ mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4"
 
 
 # P0I: run with trough on refining grid for total of 200k years:
-mpst_vg $NN u "-P0I -Mx 61 -My 61 -y 100000 -tempskip 10 -o P0I_100k"
+mpst_vg $NN u "-P0I -Mx 61 -My 61 -y 1e5 -tempskip 10 -o P0I_100k"
 
 mpst $NN "-P0I -if P0I_100k.nc -y 50000 -tempskip 10 -o P0I_150k"
 
@@ -98,7 +101,7 @@ mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 \
 mpst $NN "-P3 -if P0I.nc -ys 0 -y 5000 -o P3"
 
 
-exit
+#exit  # possible stopping point before slower experiments
 
 
 # P1coarse: as P1, but on 15km grid
@@ -112,7 +115,7 @@ mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 \
 
 
 # P1vertfine: as P1, but with finer vertical grid (x2 points)
-mpst $NN u "-P1 -Mx 151 -My 151 -Mz 201 -Mbz 81 -quadZ -y 5000 \
+mpst $NN "-P1 -Mx 151 -My 151 -Mz 201 -Mbz 81 -quadZ -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P1vertfine"
 
  
@@ -137,4 +140,5 @@ mpst $NN "-P1 -if P1_60k.nc -y 20000 -o P1_80k"
 mpst $NN "-P1 -if P1_80k.nc -y 20000 -o P1_100k"
 
 
+#fi
 

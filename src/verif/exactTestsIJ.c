@@ -23,6 +23,9 @@
 #include <math.h>
 #include "exactTestsIJ.h"
 
+#define pi      3.14159265358979
+#define secpera 31556926.0        /* seconds per year; 365.2422 days */
+
 int exactI(const double m, const double x, const double y, 
            double *bed, double *tauc, double *u, double *v) {
   /* see exact solution for an ice stream sliding over plastic till described
@@ -35,9 +38,11 @@ int exactI(const double m, const double x, const double y,
   const double h0 = aspect * L; /* if aspect = 0.05 and L = 40km then h0 = 2000 m */
   const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
   const double rho = 910, g = 9.81;  /* kg/m^3 and m/s^2, resp. */
-  const double f = rho * g * h0 * tan(theta);  /* about 18 kPa given above rho,g,theta,aspect,L */
+  const double f = rho * g * h0 * tan(theta);  /* about 18 kPa given above
+                                                  values for rho,g,theta,aspect,L */
   const double W = pow(m+1.0,1.0/m) * L;  /* e.g. W = 1.2 * L if m = 10 */
-  const double B = 3.7e8;       /* Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big? */  
+  const double B = 3.7e8;       /* Pa s^{1/3}; hardness given on p. 239 of Schoof;
+                                   why so big? */  
 
   const double s = fabs(y/L);
 
@@ -45,15 +50,18 @@ int exactI(const double m, const double x, const double y,
   
   *tauc = f * pow(s,m);
 
-  /* to compute bed, assume bed(x=0)=0 and bed is sloping down (?) for increasing x;
+  /* to compute bed, assume bed(x=0)=0 and bed is sloping down for increasing x;
      if tan(theta) = 0.001 and -Lx < x < Lx with Lx = 240km then bed(x=Lx) = -240 m */
   *bed = - x * tan(theta);
 
   /* formula (4.3) in Schoof; note u is indep of aspect because f/h0 ratio gives C0 */
   if (fabs(y) < W) {
     C0 = 2.0 * pow(f / (B * h0),3.0) * pow(L,4.0);
-    /* printf("  C0*secpera = %10.5e\n",C0*31556926.0); */
-    C1 = pow(m + 1.0, 4.0/m); C2 = (m+1.0) * C1; C3 = (m+1.0) * C2; C4 = (m+1.0) * C3;
+    /* printf("  C0*secpera = %10.5e\n",C0*secpera); */
+    C1 = pow(m + 1.0, 4.0/m);
+    C2 = (m+1.0) * C1;
+    C3 = (m+1.0) * C2;
+    C4 = (m+1.0) * C3;
     z1 = ( pow(s,4.0) - C1 ) / 4.0;
     z2 = ( pow(s,m+4.0) - C2 ) / ( (m+1.0) * (m+4.0) );
     z3 = ( pow(s,2.0*m+4.0) - C3 ) / ( (m+1.0)*(m+1.0) * (2.0*m+4.0) );
@@ -68,16 +76,15 @@ int exactI(const double m, const double x, const double y,
 }
 
 
-#define pi      3.14159265358979
-#define secpera 31556926.0        /* seconds per year; 365.2422 days */
-
 int exactJ(const double x, const double y, 
            double *H, double *nu, double *u, double *v) {
+  /* documented only in preprint by Bueler */
   /* return 0 if successful */
-  
+
   const double L = 300.0e3;      /* 300 km half-width */
   const double H0 = 500.0;       /* 500 m typical thickness */
-  /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
+  /* use Ritz et al (2001) value of 30 MPa yr for typical 
+     vertically-averaged viscosity */
   const double nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const double rho_ice = 910.0;  /* kg/m^3 */
   const double rho_sw = 1028.0;  /* kg/m^3 */
