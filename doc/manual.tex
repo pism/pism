@@ -298,6 +298,7 @@ FFTW & \href{http://www.fftw.org/}{\t{www.fftw.org}} & \emph{recommended} & need
 GSL & \href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}} & \emph{required} &  \\
 Matlab & \href{http://www.mathworks.com/}{\t{www.mathworks.com}} & \emph{recommended} & only used for alternate\\
 & & & display of results \\
+matplotlib & \scriptsize\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}} & \emph{recommended} & used by \verb|ross_plot.py| in section \ref{sect:green}\\
 MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
 NetCDF & \scriptsize\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}\small & \emph{required} & \\
 \texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts  \\
@@ -306,6 +307,7 @@ PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.
 Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
 \texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts  \\
  &  &  & in sections \ref{sect:green} and \ref{sect:ross}  \\
+\texttt{scikits.delaunay} & \href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}} & \emph{recommended} & used by \verb|ross_plot.py| in section \ref{sect:green}\\
 Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\ 
 \hline
 & & & \\
@@ -1148,7 +1150,7 @@ The bed elevation in the original data effectively contains a missing value attr
 
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
-\noindent Here, \verb|eis_green20.nc| is the input file, \verb|topg| is the variable with missing values, and \verb|eis_green_smoothed.nc| is the output file. The script will look for an attribute named \verb|missing_value| and fill in the missing values according to the averages of its neighbors.\footnote{\texttt{fill\und missing.py} is a general tool for smoothly removing missing values from variables in NetCDF files; see Appendix D.}
+\noindent Here, \verb|eis_green20.nc| is the input file, \verb|topg| is the variable with missing values, and \verb|eis_green_smoothed.nc| is the output file. The script will look for attributes defining missing values and fill them in according to the averages of their neighbors.\footnote{\texttt{fill\und missing.py} is a general tool for smoothly removing missing values from variables in NetCDF files; see Appendix D.}
 
 \begin{figure}[ht]
 \includegraphics[width=2.6in,keepaspectratio=true]{figs/EISgreen_thick}\qquad\includegraphics[width=2.8in,keepaspectratio=true]{figs/EISgreen_bed}
@@ -1595,26 +1597,40 @@ trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc
 We see that hardnesses $\bar B = 1.8,1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ give the best fits.  This fitting exercise is a first small step towards inverse modelling of the spatially-distributed effective viscosity.  More steps in such directions are found in \cite{HumbertGreveHutter,RommelaereMacAyeal}
 
 
-\subsubsection*{Additional visualization using \Matlab output from PISM}  The visualization abilities of PISM's runtime viewers and of \verb|ncview| (applied to the PISM output NetCDF file) are limited.  PISM can save certain variables in a \Matlab-readable form, however, and this is a situation where it might be useful.\index{PISM!visualizing results}
+\subsubsection*{Additional visualization}  The visualization abilities of PISM's runtime viewers and of \verb|ncview| (applied to the PISM output NetCDF file) are limited. On the other hand, it is fairly easy to produce pretty pictures using Python with \verb|pycdf| and \verb|matplotlib|; the script \verb|ross_plot.py| provides an example.
 
-\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc \|
+Assuming that \verb|rossComputed.nc| was produced by the following PISM run
 
-\verb|    -ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa \|
+\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
 
-\verb|    -constant_hardness 1.9e8 -mato ross1p9 -matv cuvHm|
+\verb|    -ssa -o rossComputed|
 
-\noindent When this completes, make sure \Matlab can find \verb|ross1p9.m| and also files \verb|ross_plot.m| and \verb|riggs_clean.dat| (both in directory \verb|pism/test/ross/|).  Execute the \verb|m|-files at the \Matlab command line:
+\noindent and the RIGGS data is in \verb|riggs_clean.dat| described above,
 
-\verb|>> ross1p9|
+\verb|$ ross_plot.py --pism-output=rossComputed.nc --riggs=riggs_clean.dat|
 
-\verb|>> ross_plot|
+\noindent produces Figure \ref{fig:rosspython}.\footnote{If this does not work, make sure that you have \t{matplotlib}, \t{scikits.delaunay} and \t{pycdf}.} We have succeeded in modeling a real ice shelf.
 
-\noindent Figure \ref{fig:rossmatlab} is the result.  We have succeeded in modeling a real ice shelf.
+% Alternatively, PISM can save certain variables in a \Matlab-readable form, and this is a situation where it might be useful.\index{PISM!visualizing results}
+
+% \verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc \|
+
+% \verb|    -ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa \|
+
+% \verb|    -constant_hardness 1.9e8 -mato ross1p9 -matv cuvHm|
+
+% \noindent When this completes, make sure \Matlab can find \verb|ross1p9.m| and also files \verb|ross_plot.m| and \verb|riggs_clean.dat| (both in directory \verb|pism/test/ross/|).  Execute the \verb|m|-files at the \Matlab command line:
+
+% \verb|>> ross1p9|
+
+% \verb|>> ross_plot|
+
+% \noindent Figure \ref{fig:rosspython} is the result.  We have succeeded in modeling a real ice shelf.
 
 \begin{figure}[ht]
 \mbox{\includegraphics[width=3.3in,keepaspectratio=true]{figs/rossquiver}\quad \includegraphics[width=3.0in,keepaspectratio=true]{figs/rossscatter}}
 \caption{\protect{\emph{Left}}: Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.  \protect{\emph{Right}}: Comparison between modeled and observed speeds at RIGGS points; compare figure 2  in \cite{MacAyealetal}.}
-\label{fig:rossmatlab}
+\label{fig:rosspython}
 \end{figure}
 
 
@@ -2208,19 +2224,23 @@ The following scripts, among others, are found in subdirectory \verb|pism/test/|
 	$$\grad^2 u = 0$$
 to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
 
-Section \ref{sect:green} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|artm|, using a convergence tolerance of $10^{-4}$, on data in the NetCDF file \verb|data.nc|:
+Section \ref{sect:green} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|artm|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
 
-\verb|fill_missing.py -i data.nc -v topg,artm --eps=1.0e-4 -o data_smoothed.nc|
+\verb|fill_missing.py -f data.nc -v topg,artm --eps=1.0e-4 \|
+
+\verb|                -i 100.0 -o data_smoothed.nc|
 
 \opthead  \verb|fill_missing.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
 
 \scriptoptdef{e}{eps}{$1.0$}  Convergence tolerance for iteration to solve Laplace's equation.
 
-\scriptoptdef{f}{file}{foo.nc}  The full name of the NetCDF file from which to read variables for filling.
+\scriptoptdef{f}{file}{no default}  The full name of the NetCDF file from which to read variables for filling.
 
-\scriptoptdef{o}{out\und file}{fill\und missing\und out.nc}  Full name of output file.
+\scriptoptdef{o}{out\und file}{no default}  Full name of output file.
 
-\scriptoptdef{v}{variables}{blah}  Comma separated list of variables for which to fill missing values.  Note that each of the listed variables must have an attribute named \verb|missing_value|.
+\scriptoptdef{i}{initial\und guess}{'mean'}  The initial guess used by the script; should be within the valid range of values. The default is the mean of all the \emph{present} values of a variable.
+
+\scriptoptdef{v}{variables}{no default}  Comma separated list of variables for which to fill missing values.  Note that each of the listed variables must have the missing values specified according to CF Metadata conventions. Namely, each of the listed variables must have one of the following: \verb|valid_range| or both of \verb|valid_min| and \verb|valid_max| defined if the values are in the specific range; one of \verb|valid_min| and \verb|valid_max| if values are greater (or less, respectively) than some value, or \verb|_FillValue|. Also note that \verb|_FillValue| is interpreted as \verb|valid_max| if it is positive and as \verb|valid_min| otherwise; see \href{http://www.unidata.ucar.edu/software/netcdf/guide_10.html#SEC76}{NetCDF User's Guide: Attributes} for details. The \verb|missing_value| is deprecated by the NetCDF User's Guide, but is supported for backward compatibility.
 
 
 \scripthead{series.py}\index{series.py}  This Python script postprocesses the standard output of \verb|pismr|, \verb|pisms|, \verb|pgrn|, or \verb|pismv|, if it is stored in a text file, to generate a NetCDF file with a time series.\footnote{That is, it postprocesses standard output from the PISM \emph{evolution} executables.  Output from \texttt{pismd}, an executable for diagnostic runs, leads to no meaningful time series.}  This yields time series for ice sheet volume, area, melt fraction, thickness at the center of the grid, and temperature of the base of the ice at the center of the grid, in the default case.  Also the time series for the time step length itself is extracted.  The result is a one-dimensional NetCDF file.

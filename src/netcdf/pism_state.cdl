@@ -49,7 +49,7 @@ variables: // The names of variables are magic in PISM source.
     // if the input or bootstrap file has this var then it is written into the pism state file
     polar_stereographic:grid_mapping_name = "polar_stereographic";
     polar_stereographic:straight_vertical_longitude_from_pole = 0.0;
-    polar_stereographic:latitude_of_projection_origin = 90.0;
+    polar_stereographic:latitude_of_projection_origin = -90.0;
     polar_stereographic:standard_parallel = -71.0;
     polar_stereographic:pism_intent = "mapping";
   // note accuracy desirable for the locations of the points of the grid
