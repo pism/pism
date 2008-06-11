@@ -251,10 +251,7 @@ valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
 
             elif adict.has_key("missing_value"):
                 missing = adict["missing_value"]
-                if missing <= 0:
-                    mask = data <= missing + 2*finfo(float).eps
-                else:
-                    mask = data >= missing - 2*finfo(float).eps
+                mask = abs(data - missing) < 2*finfo(float).eps
                 print """Using the missing_value attribute; missing_value = %10f
 Warning: this attribute is deprecated by the NUG.""" % missing
 

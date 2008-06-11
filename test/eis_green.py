@@ -11,6 +11,10 @@ GRID_FILE = 'grid20-EISMINT'
 SUAQ_FILE = 'suaq20-EISMINT'
 WRIT_FILE = 'eis_green20.nc'
 
+# These values should all be outside the valid range so that generic
+# applications will treat them as missing. (NUG: Attributes)
+fill_value = -9999.0
+
 ##### command line arguments #####
 
 try:
@@ -114,6 +118,10 @@ for line in input.read().split():
 input.close()
 print "Total Values Read: "+str(x)
 
+# replace zero (used to represent missing values in the input file) with a
+# value outside the valid range
+putmask(B, B == 0, fill_value)
+
 # ready to write NetCDF file
 ncfile = CDF(WRIT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
@@ -190,7 +198,7 @@ setattr(Hvar, 'units', 'm')
 setattr(Bvar, 'long_name', 'bedrock surface elevation')
 setattr(Bvar, 'standard_name', 'bedrock_altitude')
 setattr(Bvar, 'units', 'm')
-setattr(Bvar, 'missing_value', 0.0)
+setattr(Bvar, 'missing_value', fill_value)
 
 setattr(Accvar, 'long_name', 'mean annual net ice equivalent accumulation (ablation) rate')
 setattr(Accvar, 'standard_name', 'land_ice_surface_specific_mass_balance')
