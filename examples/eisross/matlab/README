@@ -1,0 +1,5 @@
+The Matlab scripts in this directory are DEPRECATED as of revision 321.
+Generally, use of Matlab in PISM is being replaced by use of open source
+Python + scipy + pycdf + pylab.
+
+ELB 6/12/08

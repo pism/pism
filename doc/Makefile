@@ -34,17 +34,17 @@ VFNOW_OUT=vfnow.txt
 vfigs : $(VFNOW_OUT)
 	# producing figures thickerrs_B.pdf, thickerrs_G.df, etc. 
 	# in subdirectory figs/ for use in manual
-	vnreport.py -f $(VFNOW_OUT) -t B -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
+	../test/vnreport.py -f $(VFNOW_OUT) -t B -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
 	   -r ${PISMREV} -g pdf -o figs/thickerrs
-	vnreport.py -f $(VFNOW_OUT) -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
+	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
 	   -r ${PISMREV} -g pdf -o figs/thickerrs
-	vnreport.py -f $(VFNOW_OUT) -t G -e 'temp' -x 'basecenterT' \
+	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'temp' -x 'basecenterT' \
 	   -r ${PISMREV} -g pdf -o figs/temperrs
-	vnreport.py -f $(VFNOW_OUT) -t G -e 'surf vels' -x 'maxUvecmaxW' \
+	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'surf vels' -x 'maxUvecmaxW' \
 	   -r ${PISMREV} -g pdf -o figs/surfvelerrs
-	vnreport.py -f $(VFNOW_OUT) -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' \
+	../test/vnreport.py -f $(VFNOW_OUT) -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' \
 	   -r ${PISMREV} -g pdf -o figs/velerrs
-	vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' -r ${PISMREV} -g pdf -o figs/temperrs
+	../test/vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' -r ${PISMREV} -g pdf -o figs/temperrs
 
 clean :
 	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.ind \

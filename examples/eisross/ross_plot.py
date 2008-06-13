@@ -114,8 +114,8 @@ vATrig = tri.nn_interpolator(ubar.flat)(riglon, riglat)
 quiver(riglon, riglat, uATrig, vATrig, color='red')
 axis([-5.26168, 3.72207, -13, -5.42445])
 xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
-title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
-(red) velocities at RIGGS points.""")
+#title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
+#(red) velocities at RIGGS points.""")
 savefig("rossquiver.png")
 show()
 
