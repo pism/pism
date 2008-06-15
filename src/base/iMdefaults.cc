@@ -78,8 +78,6 @@ const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigm
 //const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
 const PetscScalar DEFAULT_MU_SLIDING = 0.0;
 
-const PetscScalar DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT = 3.0;
-
 const PetscTruth  DEFAULT_DO_BED_DEF = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
 // model is so cheap you might as well update frequently:
@@ -233,8 +231,6 @@ PetscErrorCode IceModel::setDefaults() {
   noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
   doPDD = PETSC_FALSE;
   doPDDTrueRand = PETSC_FALSE;
-
-  isothermalFlux_n_exponent = DEFAULT_ISOTHERMAL_FLUX_N_EXPONENT;
   
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;

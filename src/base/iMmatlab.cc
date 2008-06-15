@@ -284,8 +284,10 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = write2DToMatlab(viewer, 'H', vH, 1.0);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'I', vtillphi, 1.0); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'L', vHmelt, 1.0);  CHKERRQ(ierr);
-  ierr = computeBasalDrivingStress(vWork2d[0]); CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'Q', vWork2d[0], 0.001); CHKERRQ(ierr);
+  // ideally would be condition: is 'Q' desired?
+  ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
+  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
+  ierr = write2DToMatlab(viewer, 'Q', vWork2d[2], 0.001); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'R', vRb, 1000.0);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'S', Sigma3, secpera);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'T', T3, 1.0);  CHKERRQ(ierr);

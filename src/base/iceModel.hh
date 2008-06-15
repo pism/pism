@@ -147,9 +147,8 @@ protected:
                                     // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
-  PetscScalar isothermalFlux_n_exponent, min_temperature_for_SIA_sliding, Hmelt_max;
+  PetscScalar min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp, oceanHeatFlux;
   PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel, maxLowTempCount;
-  PetscScalar globalMinAllowedTemp, oceanHeatFlux;
 
   // flags
   PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso, flowLawUsesGrainSize;
@@ -396,7 +395,8 @@ protected:
   PetscErrorCode stampHistory(const char*);
   PetscErrorCode stampHistoryAdd(const char*);
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
-  PetscErrorCode computeBasalDrivingStress(Vec myVec);
+  PetscErrorCode getMagnitudeOf2dVectorField(Vec vfx, Vec vfy, Vec vmag);
+  PetscErrorCode computeBasalDrivingStress(Vec vtaubx, Vec vtauby);
   PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
 

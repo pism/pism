@@ -23,43 +23,101 @@
 #include <petscvec.h>
 
 
-//! Compute scalar basal driving stress for diagnostic purposes.
-/*!
-Computes the scalar value of the driving stress at the base of the ice:
-   \f[ f_{basal} = \rho g H |\nabla h| \f]
-Saves it in \c myVec, which is treated as global.  (Does not 
-communicate ghosts.)
- */
-PetscErrorCode IceModel::computeBasalDrivingStress(Vec myVec) {
+//! Compute the scalar magnitude of a two-dimensional vector field.
+PetscErrorCode IceModel::getMagnitudeOf2dVectorField(Vec vfx, Vec vfy, Vec vmag) {
   PetscErrorCode ierr;
-
-  PetscScalar **h, **H, **fbasal;
-
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, myVec, &fbasal); CHKERRQ(ierr);
+  PetscScalar **fx, **fy, **mag;
+  ierr = DAVecGetArray(grid.da2, vfx, &fx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vfy, &fy); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vmag, &mag); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar h_x = (h[i+1][j]-h[i-1][j])/(2.0*grid.dx);
-      const PetscScalar h_y = (h[i][j+1]-h[i][j-1])/(2.0*grid.dy);
-      const PetscScalar alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-      fbasal[i][j] = ice->rho * grav * H[i][j] * alpha;
+      mag[i][j] = sqrt(PetscSqr(fx[i][j]) + PetscSqr(fy[i][j]));
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, myVec, &fbasal); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vfx, &fx); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vfy, &fy); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vmag, &mag); CHKERRQ(ierr);
   return 0;
 }
 
 
-//! Virtual.  Does nothing in \c IceModel.  Allows derived classes to do more computation in each time step.
+//! Compute vector basal driving stress on the regular grid.
+/*!
+Computes the driving stress at the base of the ice:
+   \f[ \tau_b = - \rho g H \nabla h \f]
+The surface gradient \f$\nabla h\f$ is computed by the gradient of the
+transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
+Because this quantity is more regular at ice sheet margins, we get a 
+better surface gradient.
+ 
+Saves it in user supplied Vecs \c vtaubx and \c vtauby, which are treated 
+as global.  (I.e. we do not communicate ghosts.)
+ */
+PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
+  PetscErrorCode ierr;
+
+  PetscScalar **h, **H, **mask, **b, **taubx, **tauby;
+
+  const PetscScalar n       = ice->n, // frequently 3.0
+                    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
+                    invpow  = 1.0 / etapow,
+                    dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
+
+  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtaubx, &taubx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtauby, &tauby); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar pressure = ice->rho * grav * H[i][j];
+      if (pressure <= 0.0) {
+        taubx[i][j] = 0.0;
+        tauby[i][j] = 0.0;
+      } else {
+        PetscScalar h_x = 0.0, h_y = 0.0;
+        if (intMask(mask[i][j]) == MASK_FLOATING) {
+          h_x = (h[i+1][j] - h[i-1][j]) / (2*grid.dx);
+          h_y = (h[i][j+1] - h[i][j-1]) / (2*grid.dy);
+        } else {
+          // in grounded case, differentiate eta = H^{8/3} by chain rule
+          if (H[i][j] > 0.0) {
+            const PetscScalar eta = pow(H[i][j], etapow),
+                              factor = invpow * pow(eta, dinvpow);
+            h_x = factor * (pow(H[i+1][j],etapow) - pow(H[i-1][j],etapow)) / (2*grid.dx);
+            h_y = factor * (pow(H[i][j+1],etapow) - pow(H[i][j-1],etapow)) / (2*grid.dy);
+          }
+          // now add bed slope to get actual h_x,h_y
+          h_x += (b[i+1][j] - b[i-1][j]) / (2*grid.dx);
+          h_y += (b[i][j+1] - b[i][j-1]) / (2*grid.dy);
+        }
+        taubx[i][j] = - pressure * h_x;
+        tauby[i][j] = - pressure * h_y;
+      }
+    }
+  }
+
+  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtaubx, &taubx); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtauby, &tauby); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Virtual.  Does nothing in \c IceModel.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
   return 0;
 }
 
 
-//! Virtual.  Does nothing in \c IceModel.  Allows derived classes to do more computation in each time step.
+//! Virtual.  Does nothing in \c IceModel.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtEndTimestep() {
   return 0;
 }
@@ -123,8 +181,7 @@ PetscTruth IceModel::checkOnInputFile(char *fname) {
   } else {
     // try to exit cleanly
     verbPrintf(1,grid.com,
-       "PISM ERROR: '-if' or '-bif' file not found!\n"
-       "            (Tried names '%s' and '%s'.)\n",
+       "PISM ERROR: input file not found!  (Tried names '%s' and '%s'.)\n",
        inFile, inFileExted);
     PetscEnd();
     return PETSC_FALSE; // never actually happens ...

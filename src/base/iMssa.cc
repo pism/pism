@@ -424,9 +424,14 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **h, **H, **uvbar[2];
+  PetscScalar     **mask, **h, **H, **uvbar[2], **taubx, **tauby;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
+
+  // get basal driving stress components by eta=H^8/3 transform
+  ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &taubx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[1], &tauby); CHKERRQ(ierr);
 
   /* matrix assembly loop */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -445,10 +450,9 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
         ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
       } else {
-        PetscScalar h_x, h_y;
-        bool edge;
-        if (surfGradInward) edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
+        bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
         if (surfGradInward && edge) {
+          PetscScalar h_x, h_y;
           if (i == 0) {
             h_x = (h[i+1][j] - h[i][j]) / (dx);
             h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
@@ -464,13 +468,13 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           } else {
             SETERRQ(1,"should not reach here: surfGradInward=TRUE & edge=TRUE but not at edge");
           }          
-        } else { 
-          h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-          h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+          const PetscScalar pressure = ice->rho * grav * H[i][j];
+          ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
+        } else { // usual case: use already computed taub
+          ierr = VecSetValue(rhs, rowU, taubx[i][j], INSERT_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValue(rhs, rowV, tauby[i][j], INSERT_VALUES); CHKERRQ(ierr);          
         }
-        const PetscScalar r = ice->rho * grav * H[i][j];
-        ierr = VecSetValue(rhs, rowU, -r*h_x, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowV, -r*h_y, INSERT_VALUES); CHKERRQ(ierr);
       }
     }
   }
@@ -479,6 +483,9 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &taubx); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &tauby); CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);

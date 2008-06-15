@@ -130,6 +130,7 @@ PetscErrorCode IcePSTexModel::initFromOptions() {
   // different from EISMINT II conventions (even for P0A and P0I)
   updateHmelt = PETSC_TRUE;
   includeBMRinContinuity = PETSC_TRUE;
+  transformForSurfaceGradient = PETSC_TRUE;
 
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
     useSSAVelocity = PETSC_FALSE;
