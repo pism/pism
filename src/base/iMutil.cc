@@ -79,7 +79,7 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
         tauby[i][j] = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
-        if (intMask(mask[i][j]) == MASK_FLOATING) {
+        if ((intMask(mask[i][j]) == MASK_FLOATING) || (transformForSurfaceGradient == PETSC_FALSE)) {
           h_x = (h[i+1][j] - h[i-1][j]) / (2*grid.dx);
           h_y = (h[i][j+1] - h[i][j-1]) / (2*grid.dy);
         } else {

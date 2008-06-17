@@ -566,13 +566,9 @@ PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
 PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 #endif
 
-  // prototype for flags:
-  ierr = verbPrintf(2,grid.com, "%%yb SIA SSA  # vatdh Nr  +STEP\n"); CHKERRQ(ierr);  
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   tempskipCountDown = 0;
-  // flags for first do-nothing time step
-  ierr = verbPrintf(2,grid.com,  " $$            $$$$$ $$"); CHKERRQ(ierr); 
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
 
@@ -679,7 +675,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     // end the flag line and report a summary
-    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f", tempskipCountDown, adaptReasonFlag,
+    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", tempskipCountDown, adaptReasonFlag,
                       dt / secpera); CHKERRQ(ierr);
     ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
 

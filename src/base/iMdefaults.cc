@@ -24,10 +24,8 @@
 const PetscScalar DEFAULT_START_YEAR = 0;
 const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 
-//used in iMutil.C
 const PetscScalar DEFAULT_ADAPT_TIMESTEP_RATIO = 0.12;  // yes, I'm confident this is o.k.
 
-//used in iMvelocity.C
 const PetscScalar DEFAULT_MINH_SSA = 5.0;  // m; minimum thickness for SSA velocity computation
 const PetscScalar DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> SSA
 const PetscScalar DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch SSA --> SIA
@@ -42,7 +40,7 @@ const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than
 const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
 const PetscScalar DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
         // about 4 times more heating than peak of 
-        // Shapiro&Ritzwoller geothermal fluxes (i.e. about 130 mW/m^2)
+        // Shapiro&Ritzwoller geothermal fluxes for Antarctica (i.e. about 130 mW/m^2)
 const PetscScalar DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
 
 // see iMpdd.cc
@@ -159,7 +157,7 @@ PetscErrorCode IceModel::setDefaults() {
   ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
   
   computeSIAVelocities = PETSC_TRUE;
-  transformForSurfaceGradient = PETSC_FALSE;
+  transformForSurfaceGradient = PETSC_TRUE;
 
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
   ssaIntervalYears = -1.0;  // i.e. the default is to do an update every time step

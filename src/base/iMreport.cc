@@ -212,11 +212,9 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     else meltfrac=0.0;
   }
 
-  if (CFLviolcount > 0.5) { // report any CFL violations at end of flag line
+  if (CFLviolcount > 0.5) { // report any CFL violations
     ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
               CFLviolcount,100.0 * CFLviolcount/(grid.Mx * grid.Mz * grid.Mz)); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
   }
    
   // give summary data a la EISMINT II:

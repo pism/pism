@@ -621,26 +621,31 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
      "   constantHardnessForSSA = %10.5e, ssaRelativeTolerance = %10.5e]\n",
     constantHardnessForSSA, ssaRelativeTolerance); CHKERRQ(ierr);
   
+  // this only needs to be done once; RHS does not depend on changing solution
+  ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
+
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
+    
+      // in preparation of measuring change of effective viscosity:
       ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
       ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
 
+      // reform matrix, which depends on updated viscosity
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
       ierr = assembleSSAMatrix(true, vNu, A); CHKERRQ(ierr);
-      ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
+      // call PETSc to solve linear system by iterative method
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-
-      ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr);
-
+      ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "S:%d,%d: ", its, reason); CHKERRQ(ierr);
 
+      // finish iteration and report to standard out
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
       ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNu, vNuOld, &norm, &normChange); CHKERRQ(ierr);
@@ -651,15 +656,15 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
-
       ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
-
       if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com, "%4d", k+1); CHKERRQ(ierr);
       }
       *numiter = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
+
     }
+
     if (epsilon > 0.0) {
        // this has no units; epsilon goes up by this ratio when previous value failed
        const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
@@ -677,13 +682,11 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
          "  Stopping.                \n", 
          ssaMaxIterations);
     }
+
   }
 
   done:
 
-  //if (getVerbosityLevel() < 3) {
-  //  ierr = verbPrintf(2,grid.com,"\b\b\b\b\b\b\b\b\b\b\b\b"); CHKERRQ(ierr);
-  //}
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
   }

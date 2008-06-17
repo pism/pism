@@ -33,11 +33,16 @@ We read only 2D information from the bootstrap file.
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
 
-  const PetscScalar DEFAULT_H_VALUE_MISSING = 0.0;
-  const PetscScalar DEFAULT_BED_VALUE_MISSING = -5000.0;
-  const PetscScalar DEFAULT_ACCUM_VALUE_MISSING = -0.5/ secpera;
-  const PetscScalar DEFAULT_SURF_TEMP_VALUE_MISSING = 263.15;
-  const PetscScalar DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING = 0.042; // J/m^2 s
+  const PetscScalar DEFAULT_H_VALUE_NO_VAR = 0.0,  // m
+                    DEFAULT_BED_VALUE_NO_VAR = 1.0, // m;  grounded if no bed topo
+                    DEFAULT_ACCUM_VALUE_NO_VAR = -0.5 / secpera, // m/s
+                    DEFAULT_SURF_TEMP_VALUE_NO_VAR = 263.15, // K
+                    DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR = 0.042, // J/m^2 s
+                    DEFAULT_UPLIFT_VALUE_NO_VAR = 0.0, // m/s
+                    DEFAULT_HMELT_VALUE_NO_VAR = 0.0, // m
+                    DEFAULT_TILL_PHI_VALUE_NO_VAR = 15.0; // degrees; tends not to slip
+                                                          //   (if -ssa -plastic, which is
+                                                          //    not default anyway)
 
   // start by checking that we have a NetCDF file
   int ncid,  stat;
@@ -57,9 +62,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     SETERRQ1(2,"bootstrapping file '%s' does not exist\n",fname);
   }
   
-  // now allocate our model;
-  // when bootstrapFromFile_netCDF() is called the grid dimensions
-  //   (i.e. Mx,My,Mz,Mbz) must already be set
+  // now allocate our model; when bootstrapFromFile_netCDF() is called 
+  //   the grid dimensions (i.e. Mx,My,Mz,Mbz) must already be set
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
@@ -67,11 +71,11 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscInt tdimExists = 0,
       xdimExists = 0, ydimExists = 0, zdimExists = 0, zbdimExists = 0,
       psExists=0, lonExists=0, latExists=0, accumExists=0, hExists=0, 
-      HExists=0, bExists=0, maskExists=0,
-      TsExists=0, ghfExists=0, upliftExists=0, balvelExists=0,
+      HExists=0, bExists=0, maskExists=0, tillphiExists=0,
+      TsExists=0, ghfExists=0, upliftExists=0,
       xExists=0, yExists=0, HmeltExists=0, tExists=0;
   int v_ps, v_lon, v_lat, v_accum, v_h, v_H, v_bed, v_Ts, v_ghf, v_uplift,
-      v_balvel, v_x, v_y, v_Hmelt, v_t, v_mask,
+      v_x, v_y, v_Hmelt, v_t, v_mask, v_tillphi,
       tdimid, xdimid, ydimid, zdimid, zbdimid;
   if (grid.rank == 0) {
     // use nc_inq_varid to determine whether variable exists in bootstrap file
@@ -94,8 +98,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     stat = nc_inq_varid(ncid, "mask", &v_mask); maskExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "artm", &v_Ts); TsExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "bheatflx", &v_ghf); ghfExists = stat == NC_NOERR;
+    stat = nc_inq_varid(ncid, "tillphi", &v_tillphi); tillphiExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "dbdt", &v_uplift); upliftExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "balvel", &v_balvel); balvelExists = stat == NC_NOERR;
     stat = nc_inq_varid(ncid, "bwat", &v_Hmelt); HmeltExists = stat == NC_NOERR;
   }
   // broadcast the existence flags
@@ -117,8 +121,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&maskExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&TsExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&ghfExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&tillphiExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&upliftExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&balvelExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&HmeltExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
 
   // if the horizontal dimensions and time (FIXME) are absent then we can not proceed
@@ -178,7 +182,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // set year from read-in time variable
   grid.year = bdy[0] / secpera;
   ierr = verbPrintf(2, grid.com, 
-          "  time t = %5.4f years found in bootstrap file; setting current year\n",
+          "  time t = %5.4f years found; setting current year\n",
           grid.year); CHKERRQ(ierr);
   ierr = setStartRunEndYearsFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
@@ -267,6 +271,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   if (lonExists) {
     ierr = nct.regrid_local_var("lon", 2, lic, grid, grid.da2, vLongitude, g2, false);
              CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vLongitude,"lon","degrees_east",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
       "  WARNING: longitude 'lon' not found; continuing without setting it\n");
@@ -275,6 +280,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   if (latExists) {
     ierr = nct.regrid_local_var("lat", 2, lic, grid, grid.da2, vLatitude, g2, false);
              CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vLatitude,"lat","degrees_north",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
       "  WARNING: latitude 'lat' not found; continuing without setting it\n");
@@ -283,29 +289,32 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   if (accumExists) {
     ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false);
              CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vAccum,"acab","m a-1",secpera); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: accumulation rate 'acab' not found; using default %7.2f m/a\n",
-       DEFAULT_ACCUM_VALUE_MISSING * secpera);  CHKERRQ(ierr);
-    ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_MISSING); CHKERRQ(ierr);
+       "  WARNING: accumulation rate 'acab' not found; using default constant %7.2f m/a\n",
+       DEFAULT_ACCUM_VALUE_NO_VAR * secpera);  CHKERRQ(ierr);
+    ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_NO_VAR); CHKERRQ(ierr);
   }
   if (HExists) {
     ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false);
        CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vH,"thk","m",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: thickness 'thk' not found; using default %8.2f\n",
-       DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr);
-    ierr = VecSet(vH, DEFAULT_H_VALUE_MISSING); CHKERRQ(ierr); 
+       "  WARNING: thickness 'thk' not found; using default constant %8.2f m\n",
+       DEFAULT_H_VALUE_NO_VAR); CHKERRQ(ierr);
+    ierr = VecSet(vH, DEFAULT_H_VALUE_NO_VAR); CHKERRQ(ierr); 
   }
   if (bExists) {
     ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false);
        CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vbed,"topg","m",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: bedrock elevation 'topg' not found; using default %5.4f\n",
-       DEFAULT_BED_VALUE_MISSING);  CHKERRQ(ierr);
-    ierr = VecSet(vbed, DEFAULT_BED_VALUE_MISSING); CHKERRQ(ierr);
+       "  WARNING: bedrock elevation 'topg' not found; using default constant %5.4f m\n",
+       DEFAULT_BED_VALUE_NO_VAR);  CHKERRQ(ierr);
+    ierr = VecSet(vbed, DEFAULT_BED_VALUE_NO_VAR); CHKERRQ(ierr);
   }
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
@@ -313,46 +322,61 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
        "    using usurf = topg + thk\n"); CHKERRQ(ierr);
   }
   ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);
+  if (HmeltExists) {
+    ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false);
+            CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vHmelt,"bwat","m",1.0); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+        "  WARNING: effective thickness of basal melt water 'bwat' not found;\n"
+        "    using default constant %6.3f m\n",
+        DEFAULT_HMELT_VALUE_NO_VAR); CHKERRQ(ierr);
+    ierr = VecSet(vHmelt,DEFAULT_HMELT_VALUE_NO_VAR); CHKERRQ(ierr);  
+  }
   if (TsExists) {
     ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false);
        CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vTs,"artm","K",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
-       "  WARNING: surface temperature 'artm' not found; using default %.2f K\n",
-       DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
-    ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_MISSING); CHKERRQ(ierr);
+       "  WARNING: surface temperature 'artm' not found; using default constant %.2f K\n",
+       DEFAULT_SURF_TEMP_VALUE_NO_VAR); CHKERRQ(ierr);
+    ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_NO_VAR); CHKERRQ(ierr);
+  }
+  if (tillphiExists) {
+    ierr = nct.regrid_local_var("tillphi", 2, lic, grid, grid.da2, vtillphi, g2, false);
+            CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vtillphi,"tillphi","degrees",1.0); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+        "  WARNING: till friction angle 'tillphi' not found; using default constant %6.3f degrees\n",
+        DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);
+    ierr = VecSet(vtillphi,DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);  
   }
   if (ghfExists) {
     ierr = nct.regrid_local_var("bheatflx", 2, lic, grid, grid.da2, vGhf, g2, false);
             CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vGhf,"bheatflx","W m-2",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: geothermal flux 'bheatflx' not found; using default %6.3f W/m^2\n",
-       DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING);  CHKERRQ(ierr);
-    ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_MISSING); CHKERRQ(ierr);
+       "  WARNING: geothermal flux 'bheatflx' not found; using default constant %6.3f W/m^2\n",
+       DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR);  CHKERRQ(ierr);
+    ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
   }
   if (upliftExists) {
     ierr = nct.regrid_local_var("dbdt", 2, lic, grid, grid.da2, vuplift, g2, false);
        CHKERRQ(ierr);
+    ierr = reportBIFVarFoundMinMax(vuplift,"dbdt","m a-1",secpera); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: uplift rate 'dbdt' not found; filling with zero\n");  CHKERRQ(ierr);
-    ierr = VecSet(vuplift, 0.0); CHKERRQ(ierr);
-  }
-  if (HmeltExists) {
-    ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false);
-            CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, 
-        "  WARNING: effective thickness of basal melt water 'bwat' not found;\n"
-        "    filling with zero\n"); 
-        CHKERRQ(ierr);
-    ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);  
+       "  WARNING: uplift rate 'dbdt' not found; using default constant %6.3f m/s\n",
+       DEFAULT_UPLIFT_VALUE_NO_VAR);  CHKERRQ(ierr);
+    ierr = VecSet(vuplift, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
   }
 
   if (maskExists) {
     ierr = verbPrintf(2, grid.com, 
-        "  WARNING: 'mask' found in file; IGNORING IT!\n"); CHKERRQ(ierr);
+        "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2, grid.com, 
      "  determining mask by floatation criterion:  grounded ice and ice-free\n"
@@ -362,8 +386,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 
-     "  filling in temperatures at depth using surface temperatures\n"
-     "    and quartic profile based on surface temp and geothermal flux\n");
+     "  filling in temperatures at depth using quartic guess\n");
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
@@ -373,11 +396,25 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));
   }
 
-  verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",fname);
+  ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",fname); CHKERRQ(ierr);
   initialized_p = PETSC_TRUE;
   return 0;
 }
 
+
+//! Give a standard report when a variable is found in the -bif file.
+PetscErrorCode IceModel::reportBIFVarFoundMinMax(Vec myvar, const char *varname, 
+                                 const char *varunits, const PetscScalar factor) {
+  PetscErrorCode ierr;
+  PetscScalar varmax, varmin;
+  
+  ierr = VecMin(myvar,PETSC_NULL,&varmin); CHKERRQ(ierr);
+  ierr = VecMax(myvar,PETSC_NULL,&varmax); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+    "  variable %s found and regridded; min,max = %8.3f,%8.3f (%s)\n",
+    varname,varmin*factor,varmax*factor,varunits); CHKERRQ(ierr);
+  return 0;
+}
 
 //! Read certain boundary conditions from a NetCDF file, especially for diagnostic SSA calculations.
 /*!

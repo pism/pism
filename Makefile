@@ -143,13 +143,17 @@ gridL : gridL.o libtests.so
 	@echo '*** Remember to "make install" to move executables to bin/ ***'
 
 showEnv :
-	@echo ${CLINKER}
-	@echo ${CXXLINKER}
-	@echo ${PETSC_DIR}
-	@echo ${PETSC_LIB}
-	@echo ${ICE_LIB_FLAGS}
-	@echo ${TESTS_LIB_FLAGS}
-	@echo ${ICE_OBJS}
+	@echo 'VPATH = ' ${VPATH}
+	@echo 'CC = ' ${CC}
+	@echo 'CLINKER = ' ${CLINKER}
+	@echo 'CXXLINKER = ' ${CXXLINKER}
+	@echo 'PETSC_DIR = ' ${PETSC_DIR}
+	@echo 'PETSC_ARCH = ' ${PETSC_ARCH}
+	@echo 'PETSC_LIB = ' ${PETSC_LIB}
+	@echo 'CFLAGS = ' ${CFLAGS}
+	@echo 'ICE_LIB_FLAGS = ' ${ICE_LIB_FLAGS}
+	@echo 'TESTS_LIB_FLAGS = ' ${TESTS_LIB_FLAGS}
+	@echo 'ICE_OBJS = ' ${ICE_OBJS}
 
 # Emacs style tags
 .PHONY: tags TAGS
@@ -161,7 +165,7 @@ tags TAGS :
 %.d : %.cc
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(CC) -MM $< > $@.$$$$; \
+	 $(CC) -w -c -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -169,7 +173,7 @@ tags TAGS :
 %.d : %.c
 	@echo "Dependencies from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(CC) -MM $< > $@.$$$$; \
+	 $(CC) -w -c -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 

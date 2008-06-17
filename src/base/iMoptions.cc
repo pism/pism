@@ -33,14 +33,14 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet;
-  PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
-              mytransformForSurfaceGradient, myincludeBMRinContinuity, lowtempSet,
+  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet,
+              my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
+              myincludeBMRinContinuity, lowtempSet,
               mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
               mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet, maxlowtempsSet,
-              plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet;
-  PetscTruth  noMassConserve, noTemp; 
+              plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
+              noMassConserve, noTemp, noEtaSet; 
   PetscScalar my_maxdt, myssaDt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
@@ -140,10 +140,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-gk" is in use for specifying Goldsby-Kohlstedt ice
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-grad_from_eta", &mytransformForSurfaceGradient); 
-            CHKERRQ(ierr);
-  if (mytransformForSurfaceGradient == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
-
   ierr = PetscOptionsHasName(PETSC_NULL, "-hold_tauc", &myholdTillYieldStress); CHKERRQ(ierr);
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
 
@@ -183,6 +179,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
   if (MbzSet == PETSC_TRUE)   grid.Mbz = my_Mbz;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_eta", &noEtaSet); CHKERRQ(ierr);
+  if (noEtaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_FALSE;
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;

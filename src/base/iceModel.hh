@@ -238,6 +238,8 @@ protected:
   PetscErrorCode bed_def_step_iso();
 
   // see iMbootstrap.cc 
+  PetscErrorCode reportBIFVarFoundMinMax(Vec myvar, const char *varname,
+                                         const char *varunits, const PetscScalar factor);
   PetscErrorCode putTempAtDepth();
   PetscErrorCode bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
                             const PetscScalar Ttopbedrock, const PetscScalar geothermflux);

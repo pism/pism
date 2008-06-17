@@ -148,7 +148,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
          CHKERRQ(ierr);
       ierr = updateTs(); CHKERRQ(ierr);
       ierr = verbPrintf(2, grid.com, 
-         "filling in temperatures at depth using surface temperatures and quartic guess\n");
+         "filling in temperatures at depth using quartic guess\n");
          CHKERRQ(ierr);
       ierr = putTempAtDepth(); CHKERRQ(ierr);
     }

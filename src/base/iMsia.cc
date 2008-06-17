@@ -116,7 +116,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     }
     ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &eta); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  } else {  // if !transformForSurfaceGradient; the old way
+  } else {  // if transformForSurfaceGradient == FALSE; the old way
     PetscScalar **h;
     ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
