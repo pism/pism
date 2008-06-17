@@ -24,11 +24,11 @@
 #include "iceModel.hh"
 
 
-//! Use heuristics to set up ice sheet fields needed for actual initialization.
+//! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
 This procedure is called when option <tt>-bif</tt> is used.
 
-We read only 2D information from the bootstrap file.
+See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
 PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
@@ -406,15 +406,18 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
 PetscErrorCode IceModel::reportBIFVarFoundMinMax(Vec myvar, const char *varname, 
                                  const char *varunits, const PetscScalar factor) {
   PetscErrorCode ierr;
-  PetscScalar varmax, varmin;
+  PetscScalar varmax, varmin, gvarmin, gvarmax;
   
   ierr = VecMin(myvar,PETSC_NULL,&varmin); CHKERRQ(ierr);
+  ierr = PetscGlobalMin(&varmin, &gvarmin, grid.com); CHKERRQ(ierr);
   ierr = VecMax(myvar,PETSC_NULL,&varmax); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&varmax, &gvarmax, grid.com); CHKERRQ(ierr);
   ierr = verbPrintf(2, grid.com, 
     "  variable %s found and regridded; min,max = %8.3f,%8.3f (%s)\n",
-    varname,varmin*factor,varmax*factor,varunits); CHKERRQ(ierr);
+    varname,gvarmin*factor,gvarmax*factor,varunits); CHKERRQ(ierr);
   return 0;
 }
+
 
 //! Read certain boundary conditions from a NetCDF file, especially for diagnostic SSA calculations.
 /*!
