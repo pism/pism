@@ -166,7 +166,7 @@
   // compute magnitude of basal shear stress = rho g H |grad h|
   ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
   ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
-  ierr = nct.put_local_var(&grid, ncid, taub_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
+  ierr = nct.put_local_var(&grid, ncid, taud_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   // write out yield stress
   ierr = nct.put_local_var(&grid, ncid, tauc_id, NC_FLOAT, grid.da2, vtauc, g2,

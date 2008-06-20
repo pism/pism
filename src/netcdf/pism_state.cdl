@@ -53,8 +53,8 @@ variables: // The names of variables are magic in PISM source.
     polar_stereographic:standard_parallel = -71.0;
     polar_stereographic:pism_intent = "mapping";
   // note accuracy desirable for the locations of the points of the grid
-  // accuracy is desirable for t(t) even for long runs (e.g. day accuracy for 1e6 year runs
-  // so that PDD method works; also note appearance of year at each restart)
+  // accuracy is desirable for t(t) for long runs (e.g. day accuracy for 1e6 year runs
+  // so that PDD method works)
   double x(x);
     x:axis = "X";
     x:long_name = "x-coordinate in Cartesian system";
@@ -190,10 +190,10 @@ variables: // The names of variables are magic in PISM source.
     cflx:long_name = "magnitude of vertically-integrated horizontal flux of ice";
     cflx:units = "m2 year-1";
     cflx:pism_intent = "diagnostic";
-  float taub(t,x,y);
-    taub:long_name = "magnitude of driving shear stress at base of ice";
-    taub:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar
-    taub:pism_intent = "diagnostic";
+  float taud(t,x,y);
+    taud:long_name = "magnitude of driving shear stress at base of ice";
+    taud:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar
+    taud:pism_intent = "diagnostic";
   float tauc(t,x,y);
     tauc:long_name = "yield stress for basal till (plastic or pseudo-plastic model)";
     tauc:units = "Pa";  // Pascals; 100 kPa = 1e5 Pa = 1 bar

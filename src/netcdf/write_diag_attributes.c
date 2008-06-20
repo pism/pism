@@ -48,7 +48,7 @@
    int csurf_id;
    int wsurf_id;
    int cflx_id;
-   int taub_id;
+   int taud_id;
    int tauc_id;
    int uvel_id;
    int vvel_id;
@@ -82,7 +82,7 @@
 #  define RANK_csurf 3
 #  define RANK_wsurf 3
 #  define RANK_cflx 3
-#  define RANK_taub 3
+#  define RANK_taud 3
 #  define RANK_tauc 3
 #  define RANK_uvel 4
 #  define RANK_vvel 4
@@ -115,7 +115,7 @@
    int csurf_dims[RANK_csurf];
    int wsurf_dims[RANK_wsurf];
    int cflx_dims[RANK_cflx];
-   int taub_dims[RANK_taub];
+   int taud_dims[RANK_taud];
    int tauc_dims[RANK_tauc];
    int uvel_dims[RANK_uvel];
    int vvel_dims[RANK_vvel];
@@ -296,10 +296,10 @@ if (grid.rank == 0) {
    stat = nc_def_var(ncid, "cflx", NC_FLOAT, RANK_cflx, cflx_dims, &cflx_id);
    check_err(stat,__LINE__,__FILE__);
 
-   taub_dims[0] = t_dim;
-   taub_dims[1] = x_dim;
-   taub_dims[2] = y_dim;
-   stat = nc_def_var(ncid, "taub", NC_FLOAT, RANK_taub, taub_dims, &taub_id);
+   taud_dims[0] = t_dim;
+   taud_dims[1] = x_dim;
+   taud_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "taud", NC_FLOAT, RANK_taud, taud_dims, &taud_id);
    check_err(stat,__LINE__,__FILE__);
 
    tauc_dims[0] = t_dim;
@@ -335,7 +335,7 @@ if (grid.rank == 0) {
    polar_stereographic_straight_vertical_longitude_from_pole[0] = 0;
    stat = nc_put_att_double(ncid, polar_stereographic_id, "straight_vertical_longitude_from_pole", NC_DOUBLE, 1, polar_stereographic_straight_vertical_longitude_from_pole);
    check_err(stat,__LINE__,__FILE__);
-   polar_stereographic_latitude_of_projection_origin[0] = 90;
+   polar_stereographic_latitude_of_projection_origin[0] = -90;
    stat = nc_put_att_double(ncid, polar_stereographic_id, "latitude_of_projection_origin", NC_DOUBLE, 1, polar_stereographic_latitude_of_projection_origin);
    check_err(stat,__LINE__,__FILE__);
    polar_stereographic_standard_parallel[0] = -71;
@@ -539,11 +539,11 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, cflx_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, taub_id, "long_name", 48, "magnitude of driving shear stress at base of ice");
+   stat = nc_put_att_text(ncid, taud_id, "long_name", 48, "magnitude of driving shear stress at base of ice");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, taub_id, "units", 2, "Pa");
+   stat = nc_put_att_text(ncid, taud_id, "units", 2, "Pa");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, taub_id, "pism_intent", 10, "diagnostic");
+   stat = nc_put_att_text(ncid, taud_id, "pism_intent", 10, "diagnostic");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, tauc_id, "long_name", 61, "yield stress for basal till (plastic or pseudo-plastic model)");
    check_err(stat,__LINE__,__FILE__);
