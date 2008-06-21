@@ -261,21 +261,16 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
                                               v[0] * (ss.ij  - ss.jm1) / dy;
         // for w, always difference *up* from base, but make it implicit
-//O <-- means OLD (before BOMBPROOF)
-//O        const PetscScalar UpTw = w[0] * (T[1] - T[0]) / dzEQ;
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
           // by ocean flux; note volume for which energy is being computed is 
           // *half* a segment
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
-//O          D[k0] = 1.0 + 2.0 * iceR; 
-//O          U[k0] = - 2.0 * iceR;
           const PetscScalar AA = dtTempAge * w[0] / (2.0 * dzEQ);
           D[k0] = 1.0 + 2.0 * iceR - AA;
           U[k0] = - 2.0 * iceR + AA;
           rhs[k0] = T[0] + 2.0 * dtTempAge * oceanHeatFlux / (rho_c_I * dzEQ);
           if (!isMarginal) {
-//O            rhs[k0] += dtTempAge * (Sigma[0] - UpTu - UpTv - UpTw) / 2;
             rhs[k0] += dtTempAge * (Sigma[0] / rho_c_I - UpTu - UpTv) / 2;
           }
         } else { 
@@ -284,13 +279,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           const PetscScalar dzav = 0.5 * (dzEQ + dzbEQ);
           rhs[k0] = T[0] + dtTempAge * (Rb[i][j] / (rho_c_av * dzav));
           if (!isMarginal) {
-//O            rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * Sigma[0];
             rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
             // WARNING: subtle consequences of finite volume argument across interface
-//O            rhs[k0] -= dtTempAge * rho_c_ratio
-//O                         * (0.5 * (UpTu + UpTv + UpTw) + T[0] * w[0] / dzEQ);
-            rhs[k0] -= dtTempAge * rho_c_ratio
-                         * (0.5 * (UpTu + UpTv));
+            rhs[k0] -= dtTempAge * rho_c_ratio * (0.5 * (UpTu + UpTv));
           }
           const PetscScalar iceReff = ice->k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
           const PetscScalar brReff = bed_thermal.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
@@ -299,9 +290,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
                          // otherwise ignor advection; note 
                          // jump in diffusivity coefficient
             L[k0] = - brReff;
-//O            D[k0] = 1.0 + iceReff + brReff;
-//O            U[k0] = - iceReff;
-//O_052808:            D[k0] = 1.0 + iceReff + brReff + AA;
             if (w[0] >= 0.0) {  // velocity upward
               D[k0] = 1.0 + iceReff + brReff;
               U[k0] = - iceReff;
@@ -311,9 +299,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
             }
           } else { // no bedrock; apply geothermal flux here
             // L[k0] = 0.0;  (note this is not an allocated location!) 
-//O            D[k0] = 1.0 + 2.0 * iceR;
-//O            U[k0] = - 2.0 * iceR;
-//O_052808            D[k0] = 1.0 + 2.0 * iceR + AA;
             if (w[0] >= 0.0) {  // velocity upward
               D[k0] = 1.0 + 2.0 * iceR;
               U[k0] = - 2.0 * iceR;
@@ -333,8 +318,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
                                   * ice->rho * ice->c_p * dzEQ;  
         lambda = PetscMin(lambda, 2.0 * ice->k / denom);
       }
-      if (lambda < 1.0)   *vertSacrCount += 1; // count columns in which lambda < 1 in BOMBPROOF
-
+      if (lambda < 1.0)   *vertSacrCount += 1; // count columns in which
+                                               //   lambda < 1 in BOMBPROOF
 
       // generic ice segment: build k0+1:k0+ks-1 eqns
       for (PetscInt k = 1; k < ks; k++) {
@@ -344,10 +329,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
                                               u[k] * (ss.ij  - ss.im1) / dx;
         const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
                                               v[k] * (ss.ij  - ss.jm1) / dy;
-//O        const PetscScalar UpTw = (w[k] < 0) ? w[k] * (T[k+1] -   T[k]) / dzEQ :
-//O                                              w[k] * (T[k]   - T[k-1]) / dzEQ;
-//O        L[k0+k] = -iceR; D[k0+k] = 1+2*iceR; U[k0+k] = -iceR;
-//        const PetscScalar AA = 0.0; //REMOVEME
         const PetscScalar AA = nuEQ * w[k];      
         if (w[k] >= 0.0) {  // velocity upward
           L[k0+k] = - iceR - AA * (1.0 - lambda/2.0);
@@ -358,14 +339,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           D[k0+k] = 1.0 + 2.0 * iceR - AA * (1.0 - lambda);
           U[k0+k] = - iceR + AA * (1.0 - lambda/2.0);
         }
-/*O
-        L[k0+k] = -iceR;
-        D[k0+k] = 1.0 + 2.0 * iceR;
-        U[k0+k] = -iceR;
-*/
         rhs[k0+k] = T[k];
         if (!isMarginal) {
-//          rhs[k0+k] += dtTempAge * (Sigma[k] - UpTu - UpTv - UpTw);
           rhs[k0+k] += dtTempAge * (Sigma[k] / rho_c_I - UpTu - UpTv);
         }
       }

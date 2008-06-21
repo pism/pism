@@ -37,7 +37,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com, " SIA "); CHKERRQ(ierr);
-    ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
+    ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here for eta
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
     ierr = verbPrintf(5,grid.com, "{surfaceGradientSIA()}"); CHKERRQ(ierr);
 
@@ -58,14 +58,20 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{comm after velocitySIAStaggered()}"); CHKERRQ(ierr);
 
-    // compute (and initialize values in) ub,vb and Rb; zero everything where floating
-    ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
-    ierr = verbPrintf(5,grid.com, "{basalSlidingHeatingSIA()}"); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr); 
-    // no need to communicate vRb since not differenced in horizontal
+    if (muSliding == 0.0) { // no need to spend time on nothing
+      ierr = VecSet(vub, 0.0); CHKERRQ(ierr);
+      ierr = VecSet(vvb, 0.0); CHKERRQ(ierr);
+      ierr = VecSet(vRb, 0.0); CHKERRQ(ierr);
+    } else {
+      // compute (and initialize values in) ub,vb and Rb; zero everything where floating
+      ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
+      ierr = verbPrintf(5,grid.com, "{basalSlidingHeatingSIA()}"); CHKERRQ(ierr);
+      ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+      ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+      ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+      ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr); 
+      // no need to communicate vRb since not differenced in horizontal
+    }
 
     // now put staggered grid value of vertically-averaged horizontal velocity on regular grid
     // (this makes ubar and vbar be just the result of SIA; note that for SSA
@@ -125,6 +131,21 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     // to get 3D velocity field, basal velocities, basal frictional heating, 
     // and strain dissipation heating
     ierr = broadcastSSAVelocity(updateVelocityAtDepth); CHKERRQ(ierr);
+
+    // now communicate modified velocity fields
+    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
+    ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+
+    // note correctSigma() differences ub,vb in horizontal, so communication
+    //   above is important
+    ierr = correctSigma(); CHKERRQ(ierr);
+    ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
@@ -134,6 +155,7 @@ PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 #endif
 
+/* OLD:
   // now communicate modified velocity fields
   ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
@@ -143,6 +165,7 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
   ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+*/
 
   // in latter case u,v are modified by broadcastSSAVelocity():
   if (updateVelocityAtDepth || useSSAVelocity) {  
@@ -152,12 +175,14 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = v3.endGhostComm(); CHKERRQ(ierr);
   }
 
+/* OLD
   if (useSSAVelocity) {
     // note correctSigma() differences ub,vb in horizontal, so communication
     //   above is important
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   }
+*/
 
   // finally update w
   if (updateVelocityAtDepth) {
