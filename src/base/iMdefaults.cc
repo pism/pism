@@ -187,7 +187,7 @@ PetscErrorCode IceModel::setDefaults() {
   pseudo_plastic_q = DEFAULT_PSEUDO_PLASTIC_Q;
   pseudo_plastic_uthreshold = DEFAULT_PSEUDO_PLASTIC_UTHRESHOLD;
   holdTillYieldStress = PETSC_FALSE;
-  useConstantTillPhi = PETSC_TRUE;
+  useConstantTillPhi = PETSC_FALSE;
   Hmelt_max = DEFAULT_MAX_HMELT;
   oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
 

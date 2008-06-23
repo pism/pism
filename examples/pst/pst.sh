@@ -1,8 +1,9 @@
 #!/bin/bash
 # 
-# Script for Plastic till ice Stream with Thermocoupling experiment.   Note 
-# this includes bedrock thermal and tracking of Hmelt unlike EIS II, just
-# to get started.  Then plastic SSA is turned on for 4 (or 3) streams in
+# Script for Plastic till ice Stream with Thermocoupling experiment.   
+# Starts with a run like EISMINT II exper A (and exper I), but 
+# this includes bedrock thermal and tracking of Hmelt.  Then plastic SSA 
+# is turned on for 4 (or 3 in P2) streams in
 # several parameter sensitivity studies.
 # 
 # See preprint Bueler and Brown 2008, "The shallow shelf approximation as a
