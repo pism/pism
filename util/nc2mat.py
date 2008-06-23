@@ -7,7 +7,7 @@ from getopt import getopt, GetoptError
 from os.path import splitext
 
 def print_options_and_exit(exit_code=0):
-    print """nc2mat.py converts a NetCDF file into a MATLAB .mat binary data file
+    print """nc2mat.py converts a NetCDF file to a MATLAB .mat binary data file
 It uses MATLAB v5 format.
 
         nc2mat.py [-o<output file name>] [-v<variable list>] [-e<list of variables to exclude>] <file>
@@ -25,8 +25,8 @@ Options:
 Examples:
         nc2mat.py -e x,y,z ross.nc
             will write all the variables from ross.nc except x,y,z to ross.mat
-        nc2mat.py -v thk,accum ross.nc -o ross_matlab.mat
-            will write thk and accum to ross_matlab.mat
+        nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc 
+            will write thk and acab to ross_matlab.mat
         nc2mat.py ross.nc
             will write all the variables from ross.nc to ross.mat
 """
@@ -72,7 +72,7 @@ mdict = {}
 missing = []
 for each in variables:
     try:
-        if each in exclude:
+        if each in exclude_list:
             continue
         mdict[each] = input_file.var(each).get()
         print each,
@@ -84,7 +84,7 @@ print ""
 if len(missing) > 0:
     print "Warning! the following variable(s) was(were) not found in '%s':" % (input_name), missing
 
-print "Excluded variables: ", exclude
+print "Excluded variables: ", exclude_list
 
 if mdict.keys() == []:
     print "No data to write. Exiting..."

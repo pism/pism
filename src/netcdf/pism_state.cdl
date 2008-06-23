@@ -34,10 +34,10 @@
 // 5.  pism_intent "diagnostic" means just that; modifying or removing them will have no effect
 //     on the future run
 
-netcdf pism_state { // name is magic in ncgen.rb
+netcdf pism_state { // name is magic in pism-state-ncgen.py
 
 dimensions:
-  x = 91; // numbers are magic in ncgen.rb
+  x = 91; // numbers are magic in pism-state-ncgen.py
   y = 92;
   z = 93;
   zb = 94;
@@ -60,26 +60,22 @@ variables: // The names of variables are magic in PISM source.
     x:long_name = "x-coordinate in Cartesian system";
     x:standard_name = "projection_x_coordinate";
     x:units = "m";
-    x:pism_intent = "mapping";
   double y(y);
     y:axis = "Y";
     y:long_name = "y-coordinate in Cartesian system";
     y:standard_name = "projection_y_coordinate";
     y:units = "m";
-    y:pism_intent = "mapping";
   double z(z);
     z:axis = "Z";
     z:long_name = "z-coordinate in Cartesian system";
     z:standard_name = "projection_z_coordinate";
     z:units = "m";
     z:positive = "up";
-    z:pism_intent = "mapping";
   double zb(zb);
     zb:long_name = "z-coordinate in bedrock";
     zb:standard_name = "projection_z_coordinate_in_bedrock";
     zb:units = "m";
     zb:positive = "up";
-    zb:pism_intent = "mapping";
   double t(t);
     t:long_name = "time";
     t:units = "seconds since 2007-01-01 00:00:00";

@@ -2235,11 +2235,13 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 	$$\grad^2 u = 0$$
 to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
 
-Section \ref{sect:green} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|artm|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
+Section \ref{sect:green} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|usurf|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
 
-\verb|fill_missing.py -f data.nc -v topg,artm --eps=1.0e-4 \|
+\verb|fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \|
 
 \verb|                -i 100.0 -o data_smoothed.nc|
+
+Note that \verb|-i| and \verb|-e| specify the initial guess and the convergence tolerance for \emph{all} the specified variables, so using these options only makes sense if all the variables have the same units. Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes, so we recommend processing variables one at a time.
 
 \opthead  \verb|fill_missing.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
 
@@ -2350,6 +2352,51 @@ The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more e
 
 \scriptoptdef{x}{exclude}{} specify tags of errors to exclude from the figure
 
+\scripthead{util/nc2mat.py}\index{nc2mat.py} This Python script reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|pycdf| and SciPy.
+
+\opthead \verb|nc2mat.py| takes the following options:
+
+\scriptoptdef{o}{output}{same as input, with \t{.nc} replaced with \t{.mat}} output file name
+
+\scriptoptdef{v}{variables}{all the variables} the list of variables to write to the output file
+
+\scriptoptdef{e}{exclude}{no variables} the list of variables to exclude
+
+Here are some examples:
+
+\verb|nc2mat.py -e x,y,z ross.nc|
+
+\noindent will read all the variables except \verb|x|, \verb|y| and \verb|z| from \verb|ross.nc| and write them to \verb|ross.mat|.
+
+\verb|nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc|
+
+\noindent will read variables \verb|thk| and \verb|acab| from \verb|ross.nc| and write them to \verb|ross_matlab.nc|.
+
+\verb|nc2mat.py ross.nc|
+
+\noindent will read all the variables from \verb|ross.nc| and write them to \verb|ross.mat|.
+
+Note that the options should go before the input file name. Also note that PISM saves all the variables using the single precision (type \verb|float|), while most MATLAB plotting functions expect data to have double precision (type \verb|double|), so one might need to convert them explicitly.
+
+Assuming that \verb|ross.nc| contains data produced by a PISM run like ones in section \ref{sect:ross}, running
+
+\verb|nc2mat.py -v cbar ross.nc|
+
+\noindent and then typing
+\begin{verbatim}
+>> load ross.mat;
+>> cbar = double(reshape(cbar, 147, 147));
+>> pcolor(cbar);colorbar();
+\end{verbatim}
+in the MATLAB shell will produce a picture similar to Figure \ref{fig:rossspeed}.
+
+\scripthead{util/nc\und template.py}\index{nc\und template.py} This Python script reads \verb|pism_state.cdl| and runs \verb|ncgen| to create an empty NetCDF file in PISM-readable format with given grid dimensions and variables defined.
+
+The intended use is this: suppose we have latitude, longitude, bed elevation,
+ice thickness and accumulation/ablation rate data and we need to convert it to PISM-readable format. Then we can run
+\verb|nc_template.py -x 100 -y 100 -v |
+
+\opthead \verb|nc_template.py| takes the following options:
 
 \label{sect:index}
 \printindex
