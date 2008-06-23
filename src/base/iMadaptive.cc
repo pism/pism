@@ -31,7 +31,7 @@ which depends on the diffusivity coefficient.  Of course,
 because the PDE is nonlinear, this diffusivity changes at every time step.  This 
 procedure computes the maximum of the diffusivity on the grid.
 
-See determineTimeStep() and massBalExplicitStep().
+See determineTimeStep() and massContExplicitStep().
  */
 PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   // assumes vuvbar holds correct deformational values of velocities
@@ -167,7 +167,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
 //! Compute the CFL constant associated to first-order upwinding for the sliding contribution to mass continuity.
 /*!
 This procedure computes the maximum horizontal speed in the SSA areas.  In
-particular it computes CFL constant for the upwinding, in massBalExplicitStep(),
+particular it computes CFL constant for the upwinding, in massContExplicitStep(),
 which applies to the basal component of mass flux.
 
 That is, because the map-plane mass continuity is advective in the

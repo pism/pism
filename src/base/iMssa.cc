@@ -731,19 +731,21 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
 
+  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
+                    outC_fofv = 2.0 / pi;
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET) {
-        // apply glaciological-superposition-to-low-order if desired (and not floating)
-        bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                         && (modMask(mask[i][j]) == MASK_DRAGGING) );
+        // combine velocities if desired (and not floating)
+        const bool addVels = ( (doSuperpose == PETSC_TRUE) 
+                               && (modMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
         if (addVels) {
-          const PetscScalar c2peryear = PetscSqr(ubarssa[i][j]*secpera)
-                                           + PetscSqr(vbarssa[i][j]*secpera);
-          omfv = (2.0/pi) * atan(1.0e-4 * c2peryear);
+          const PetscScalar c2 = PetscSqr(ubarssa[i][j]) + PetscSqr(vbarssa[i][j]);
+          omfv = outC_fofv * atan(inC_fofv * c2);
           fv = 1.0 - omfv;
         }
 

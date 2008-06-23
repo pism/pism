@@ -147,7 +147,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
 
 //!  Compute the vertically-averaged horizontal velocity according to the non-sliding SIA.
 /*!
-See the comment for massBalExplicitStep() before reading the rest of this comment.
+See the comment for massContExplicitStep() before reading the rest of this comment.
 
 Note that one may write 
   \f[ \mathbf{q} = \bar{\mathbf{U}} H = D \nabla h + \mathbf{U}_b \cdot H\f]

@@ -197,7 +197,7 @@ protected:
   void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
   PetscTruth isInitialized() const;
   PetscErrorCode updateSurfaceElevationAndMask();
-  PetscErrorCode massBalExplicitStep();
+  PetscErrorCode massContExplicitStep();
   int intMask(PetscScalar);
   int modMask(PetscScalar);
 
