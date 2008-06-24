@@ -53,20 +53,20 @@ ExperDescription e[Nexpers] = {
   },
 
   { "P0I",
-    {1000.0, 1000.0, 1000.0, 1000.0},
+    {0.0, 500.0, 1000.0, 2000.0},
     {70.0, 70.0, 70.0, 70.0}, // INACTIVE
     {5.0, 5.0, 5.0, 5.0},     // INACTIVE
     {5.0, 5.0, 5.0, 5.0}      // INACTIVE
   },
 
-  { "P1",                     // default experiment
+  { "P1",
     {0.0, 0.0, 0.0, 0.0},
     {70.0, 30.0, 100.0, 50.0},
     {5.0, 5.0, 5.0, 5.0},
     {5.0, 5.0, 5.0, 5.0}
   },
 
-  { "P2",                     // only three streams, so last entry inactive
+  { "P2",                     // only three streams, variable grid orient
     {0.0, 0.0, 0.0, 0.0},     // last one INACTIVE
     {70.0, 70.0, 70.0, 70.0}, // last *three* INACTIVE; constant width
     {5.0, 5.0, 5.0, 5.0},     // last one INACTIVE
@@ -74,8 +74,8 @@ ExperDescription e[Nexpers] = {
   },
 
   { "P3",
-    {1000.0, 1000.0, 1000.0, 1000.0},
-    {70.0, 30.0, 100.0, 50.0},
+    {0.0, 500.0, 1000.0, 2000.0},
+    {70.0, 70.0, 70.0, 70.0},
     {5.0, 5.0, 5.0, 5.0},
     {5.0, 5.0, 5.0, 5.0}
   },
