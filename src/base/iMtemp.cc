@@ -32,16 +32,15 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   // do CFL and vertical grid blow-out checking only in ageStep()
   ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
     
-  ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  // puts vTnew in vWork3d[0]
+  ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  // puts vTnew in vWork3d[0], updates Hmelt
 
   // no communication done in ageStep(), temperatureStep()
   // start temperature & age communication
   ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
   ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
-
-  // none of this involves temp or age fields
   if (updateHmelt == PETSC_TRUE) {
-    ierr = diffuseHmelt(); CHKERRQ(ierr);  // does communication
+    // diffusing Hmelt means differencing, so must communicate ghosted
+    ierr = DALocalToLocalBegin(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
@@ -53,6 +52,13 @@ PetscErrorCode IceModel::temperatureAgeStep() {
     ierr = verbPrintf(2,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
   }
 
+  if (updateHmelt == PETSC_TRUE) {
+    ierr = DALocalToLocalEnd(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+    ierr = diffuseHmelt(); CHKERRQ(ierr);
+    // finally copy new into vHmelt (and communicate ghosted values at same time)
+    ierr = DALocalToLocalBegin(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+    ierr = DALocalToLocalEnd(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+  }
   // complete temperature & age communication
   ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
   ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
@@ -769,10 +775,6 @@ PetscErrorCode IceModel::diffuseHmelt() {
   }
   ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
-
-  // finally copy new into vHmelt (and communicate ghosted values at same time)
-  ierr = DALocalToLocalBegin(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
   return 0;
 }
 

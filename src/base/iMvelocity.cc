@@ -84,7 +84,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
   
-    if (updateVelocityAtDepth) {  
+    if (updateVelocityAtDepth == PETSC_TRUE) {  
       // communicate I on staggered for horizontalVelocitySIARegular()
       //   and also communicate Sigma on staggered for SigmaSIAToRegular()
       ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
@@ -115,7 +115,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = initSSA(); CHKERRQ(ierr);
   }
   static PetscScalar lastSSAUpdateYear = grid.year;  // only set when first called
-  if (useSSAVelocity) { // communication happens within SSA
+  if (useSSAVelocity == PETSC_TRUE) { // communication happens within SSA
     if ((firstTime == PETSC_TRUE) || (grid.year - lastSSAUpdateYear >= ssaIntervalYears)) {
       ierr = verbPrintf(2,grid.com, "SSA"); CHKERRQ(ierr);
       PetscInt numSSAiter;
@@ -155,37 +155,16 @@ PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 #endif
 
-/* OLD:
-  // now communicate modified velocity fields
-  ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
-*/
-
   // in latter case u,v are modified by broadcastSSAVelocity():
-  if (updateVelocityAtDepth || useSSAVelocity) {  
+  if ((updateVelocityAtDepth == PETSC_TRUE) || (useSSAVelocity == PETSC_TRUE)) {  
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
     ierr = v3.beginGhostComm(); CHKERRQ(ierr);
     ierr = u3.endGhostComm(); CHKERRQ(ierr);
     ierr = v3.endGhostComm(); CHKERRQ(ierr);
   }
 
-/* OLD
-  if (useSSAVelocity) {
-    // note correctSigma() differences ub,vb in horizontal, so communication
-    //   above is important
-    ierr = correctSigma(); CHKERRQ(ierr);
-    ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
-  }
-*/
-
   // finally update w
-  if (updateVelocityAtDepth) {
+  if (updateVelocityAtDepth == PETSC_TRUE) {
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
     // no communication needed for w, which is only differenced in the column
   }
