@@ -183,12 +183,14 @@ bool IcePSTexModel::inStreamNbhd(bool strictly_in_stream,
   x_loc =  cosrot * x + sinrot * y - stream_offset;
   y_loc = -sinrot * x + cosrot * y;
   if (strictly_in_stream) {
-    if ( (x_loc > 0.0) && (fabs(y_loc) < width / 2.0) )
+    //if ( (x_loc > 0.0) && (fabs(y_loc) < width / 2.0) )
+    if ( (x_loc > -1.0) && (fabs(y_loc) < width / 2.0) )
       return true;
     else
       return false;
   } else {
-    if ( (x_loc > - xi_slop * stream_change)
+    //if ( (x_loc > - xi_slop * stream_change)
+    if ( (x_loc > - xi_slop * stream_change - 1.0)
          && (fabs(y_loc) < (1.0 + eta_slop) * (width / 2.0)) )
       return true;
     else
@@ -367,7 +369,8 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
           for (int m=0; m<4; m++) {
             const PetscScalar width = e[exper_chosen].stream_width[m] * 1000.0;
             if (inStream((pi/2.0)*m,width,x,y,x_loc,y_loc)) {
-              if (x_loc > stream_change) {
+              //if (x_loc > stream_change) {
+              if (x_loc > stream_change - 1.0) {
                 areadown[m] += darea;
                 avcdown[m] += cbar * darea;
               } else {
