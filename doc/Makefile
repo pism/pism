@@ -28,9 +28,9 @@ fullbib : fullbib.tex
 	pdflatex fullbib
 
 
-PISMREV ?= 205 # revision stamp for verification results in User Manual figures;
+PISMREV ?= 327 # revision stamp for verification results in User Manual figures;
                # generally not the current trunk revision
-VFNOW_OUT=vfnow.txt
+VFNOW_OUT=vfnow_r327_L5_23june08.txt
 vfigs : $(VFNOW_OUT)
 	# producing figures thickerrs_B.pdf, thickerrs_G.df, etc. 
 	# in subdirectory figs/ for use in manual

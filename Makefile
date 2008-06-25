@@ -57,6 +57,23 @@ depfiles := $(ice_sources:.cc=.d) $(ice_csources:.c=.d) \
 	$(tests_sources:.c=.d) $(other_sources:.cc=.d) $(other_csources:.c=.d)
 
 all : depend libpism.so libtests.so $(executables) .pismmakeremind
+	@svnversion src/ > src/revision
+
+update: svn_update doc/revision src/revision
+ifeq ($(shell touch src/revision; svnversion src/ | diff src/revision -),)
+	@echo "src/ directory is up to date."
+else
+	@echo "Rebuilding PISM..."
+	$(MAKE) all install
+	@svnversion src/ > src/revision
+endif
+ifeq ($(shell touch doc/revision; svnversion doc/ | diff doc/revision -),)
+	@echo "doc/ directory is up to date."
+else
+	@echo "Rebuilding doc/manual.tex"
+	$(MAKE) -C doc userman
+	@svnversion doc/ > doc/revision
+endif
 
 install : local_install clean
 
@@ -189,6 +206,10 @@ distclean : clean
 	libpism.so libtests.so lib/libpism.so lib/libtests.so \
 	${executables} $(patsubst %, bin/%, ${executables})\
 	${extra_execs} $(patsubst %, bin/%, ${extra_execs})
+
+svn_update:
+	@echo "Updating PISM..."
+	@svn update
 
 .PHONY: clean
 
