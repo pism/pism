@@ -52,6 +52,7 @@ variables: // The names of variables are magic in PISM source.
     polar_stereographic:latitude_of_projection_origin = -90.0;
     polar_stereographic:standard_parallel = -71.0;
     polar_stereographic:pism_intent = "mapping";
+
   // note accuracy desirable for the locations of the points of the grid
   // accuracy is desirable for t(t) for long runs (e.g. day accuracy for 1e6 year runs
   // so that PDD method works)
@@ -81,6 +82,8 @@ variables: // The names of variables are magic in PISM source.
     t:units = "seconds since 2007-01-01 00:00:00";
     t:calendar = "none";
     t:axis = "T";
+
+// 2-dimensional map
   float lon(t,x,y);
     lon:long_name = "longitude";
     lon:standard_name = "longitude";

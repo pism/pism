@@ -351,8 +351,6 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, x_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, x_id, "pism_intent", 7, "mapping");
-   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "axis", 1, "Y");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "long_name", 32, "y-coordinate in Cartesian system");
@@ -360,8 +358,6 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, y_id, "standard_name", 23, "projection_y_coordinate");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, y_id, "units", 1, "m");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, y_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, z_id, "axis", 1, "Z");
    check_err(stat,__LINE__,__FILE__);
@@ -373,8 +369,6 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, z_id, "positive", 2, "up");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, z_id, "pism_intent", 7, "mapping");
-   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "long_name", 23, "z-coordinate in bedrock");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "standard_name", 34, "projection_z_coordinate_in_bedrock");
@@ -382,8 +376,6 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, zb_id, "units", 1, "m");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, zb_id, "positive", 2, "up");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, zb_id, "pism_intent", 7, "mapping");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, t_id, "long_name", 4, "time");
    check_err(stat,__LINE__,__FILE__);

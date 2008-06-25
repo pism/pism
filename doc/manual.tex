@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{321}
+\newcommand{\PISMREV}{332}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 %\addtolength\topmargin{-.1in}
@@ -647,23 +647,21 @@ Such ``regridding'' is done using the \intextoption{regrid} and \intextoption{re
 
 \noindent By specifying regridded variables ``\verb|HT|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-See table \ref{tab:regridvar} for the regriddable variables.
-
 A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
 
+See table \ref{tab:regridvar} for the regriddable variables.  Only modeled variables are regriddable, while climate and boundary data is not.
+
 \begin{table}[ht]
-\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  ``\texttt{.nc} \textbf{Name}'' gives the name of the variable in a PISM output NetCDF file.  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
+\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
 \begin{tabular}{@{}llll}\hline
-\textbf{Flag} & \texttt{.nc} \textbf{Name} & \textbf{Variable} & \textbf{Comment}\\ \hline
-\verb|a| & \texttt{acab}       & (net annual) accumulation & \emph{climate}; usually not regridded \\
-\verb|b| & \texttt{topg}       & bed elevation & \\
-\verb|B| & \texttt{litho\und temp} & temperature in bedrock & \\
-\verb|e| & \texttt{age}        & age of the ice & \\
-\verb|g| & \texttt{bheatflx}   & geothermal flux & \emph{climate}; usually not regridded \\
-\verb|H| & \texttt{thk}        & thickness & \\
-\verb|L| & \texttt{bwat}       & thickness of basal melt water & \\
-\verb|s| & \texttt{artm}       & ice surface temperature & \emph{climate}; usually not regridded\\
-\verb|T| & \texttt{temp}       & ice temperature & \\
+\textbf{Flag} & \textbf{Name in NetCDF file} & \textbf{Description}\\ \hline
+\verb|b| & \texttt{topg}       & bed elevation \\
+\verb|B| & \texttt{litho\und temp} & temperature in bedrock \\
+\verb|e| & \texttt{age}        & age of the ice \\
+\verb|h| & \texttt{usurf}      & surface elevation \\
+\verb|H| & \texttt{thk}        & thickness \\
+\verb|L| & \texttt{bwat}       & thickness of basal melt water \\
+\verb|T| & \texttt{temp}       & ice temperature \\
 \hline
 \normalsize
 \end{tabular}
@@ -1777,7 +1775,7 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \opt{regrid}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sect:usage}.
 
-\optdef{regrid\und vars}{TBe}  Which variables to regrid.  See section \ref{sect:usage}.
+\optdef{regrid\und vars}{}  Which variables to regrid.  See section \ref{sect:usage}.
 
 
 \subsubsect{Diagnostic viewers}

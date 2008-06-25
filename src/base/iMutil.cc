@@ -314,17 +314,9 @@ PetscErrorCode IceModel::afterInitHook() {
     ierr = verbPrintf(2,grid.com, 
            "  [fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m]\n",
            myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
-//    if (grid.Mbz > 1) {
-//      ierr = verbPrintf(2,grid.com, 
-//         "  [vertical spacing in bedrock: dz = %.3f m for bottom layer\n"
-//         "     and dz = %.3f m for top layer]\n",
-//         grid.zblevels[1]-grid.zblevels[0],
-//         grid.zblevels[grid.Mbz-1]-grid.zblevels[grid.Mbz-2]); CHKERRQ(ierr);
-//    }
     if (grid.Mbz > 1) {
       ierr = verbPrintf(2,grid.com, 
          "  [vertical spacing in bedrock: dz = %.3f m]\n",
-//         "  [vertical spacing in bedrock: dz = %.3f m in bottom layer]\n",
          grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
     }
   }
@@ -353,8 +345,9 @@ PetscErrorCode IceModel::afterInitHook() {
                                &regridFileSet); CHKERRQ(ierr);
   if (regridFileSet == PETSC_TRUE) {
     ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
-    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
   }
+
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   // last task before proceeding: invert for basal till properties, if desired;
   //   reads options "-cbar_to_till foo.nc" and "-csurf_to_till foo.nc"

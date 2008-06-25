@@ -338,15 +338,21 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
   ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
 
-  // 2-D model quantities
+  // 2-D mapping
   ierr = nct.get_local_var(&grid, ncid, "lon", NC_FLOAT, grid.da2, vLongitude, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "lat", NC_FLOAT, grid.da2, vLatitude, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
+  // 2-D model quantities: discrete
   ierr = nct.get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, 
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
+  // 2-D model quantities: float
+  ierr = nct.get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,  // DEPRECATED: pism_intent = diagnostic;
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);             //   WE SHOULD NOT BE READING THIS
+                                                                              //   (CHOICES ABOUT WHAT -bif DOES ARE A
+                                                                              //   DIFFERENT ISSUE)
   ierr = nct.get_local_var(&grid, ncid, "thk", NC_FLOAT, grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "bwat", NC_FLOAT, grid.da2, vHmelt, g2,
@@ -355,13 +361,17 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "dbdt", NC_FLOAT, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  // 2-D climate quantities
+
+  // 2-D climate/bdry quantities
   ierr = nct.get_local_var(&grid, ncid, "artm", NC_FLOAT, grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "bheatflx", NC_FLOAT, grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = nct.get_local_var(&grid, ncid, "tillphi", NC_FLOAT, grid.da2, vtillphi, g2,
+                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // 3-D model quantities
   ierr = T3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = Tb3.getVecNC(ncid, s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
@@ -419,8 +429,8 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   PetscTruth regridVarsSet;
   char regridVars[PETSC_MAX_PATH_LEN];
   
-  const int  npossible = 8;
-  const char possible[20] = "hHLbaTeB";
+  const int  npossible = 7;
+  const char possible[20] = "bBehHLT";
   
   if (!hasSuffix(regridFile, ".nc")) {
     SETERRQ(1,"regridding is only possible if the source file has NetCDF format and extension '.nc'");
@@ -429,7 +439,7 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
                                PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
   if (regridVarsSet == PETSC_FALSE) {
-    strcpy(regridVars, "TBe");
+    strcpy(regridVars, "");
   }
   ierr = verbPrintf(2,grid.com, 
            "regridding variables with single character flags `%s' from NetCDF file `%s':", 
@@ -459,6 +469,18 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
     for (PetscInt k = 0; k < npossible; k++) {
       if (strchr(regridVars, possible[k])) {
        switch (possible[k]) {
+         case 'b':
+           ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... "); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false); CHKERRQ(ierr);
+           break;
+         case 'B':
+           ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... "); CHKERRQ(ierr);
+           ierr = Tb3.regridVecNC(4, lic);  CHKERRQ(ierr);
+           break;
+         case 'e':
+           ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... "); CHKERRQ(ierr);
+           ierr = tau3.regridVecNC(3, lic);  CHKERRQ(ierr);
+           break;
          case 'h':
            ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... "); CHKERRQ(ierr);
            ierr = nct.regrid_local_var("usurf", 2, lic, grid, grid.da2, vh, g2, false); CHKERRQ(ierr);
@@ -471,25 +493,9 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
            ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... "); CHKERRQ(ierr);
            ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
            break;
-         case 'b':
-           ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false); CHKERRQ(ierr);
-           break;
-         case 'a':
-           ierr = verbPrintf(2, grid.com, "\n   a: regridding 'acab' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false); CHKERRQ(ierr);
-           break;
          case 'T':
            ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... "); CHKERRQ(ierr);
            ierr = T3.regridVecNC(3, lic);  CHKERRQ(ierr);
-           break;
-         case 'e':
-           ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... "); CHKERRQ(ierr);
-           ierr = tau3.regridVecNC(3, lic);  CHKERRQ(ierr);
-           break;
-         case 'B':
-           ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... "); CHKERRQ(ierr);
-           ierr = Tb3.regridVecNC(4, lic);  CHKERRQ(ierr);
            break;
        }
       }

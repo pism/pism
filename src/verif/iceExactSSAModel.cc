@@ -102,6 +102,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       const PetscScalar testI_Ly = 120.0e3,
         testI_Lx = PetscMax(60.0e3, ((grid.Mx - 1) / 2) * (2.0 * testI_Ly / (grid.My - 1)) );
       ierr = grid.rescale_and_set_zlevels(testI_Lx, testI_Ly, 3000.0); CHKERRQ(ierr);
+      ierr = afterInitHook(); CHKERRQ(ierr);
       // fill vtauc with values for Schoof solution:
       ierr = taucSetI(); CHKERRQ(ierr);
       // set up remaining stuff:
@@ -123,7 +124,9 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       ierr = VecDuplicateVecs(vh, 2, &vNuForJ); CHKERRQ(ierr);
       // we set a flag because the grid is truely periodic
       ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000, PETSC_TRUE); CHKERRQ(ierr);
+      ierr = afterInitHook(); CHKERRQ(ierr);
       ierr = setInitStateJ(); CHKERRQ(ierr);
+      isDrySimulation = PETSC_FALSE;
       leaveNuAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
       computeSurfGradInwardSSA = PETSC_FALSE;
       useConstantHardnessForSSA = PETSC_FALSE;
@@ -141,7 +144,6 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
 
-  ierr = afterInitHook(); CHKERRQ(ierr);
   return 0;
 }
 
