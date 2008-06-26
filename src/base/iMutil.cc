@@ -407,7 +407,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   char cmdstr[HISTORY_STRING_LENGTH], startstr[HISTORY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
-           "PISM started on %d procs.", (int)grid.size);
+           "PISM %s started on %d procs.", PISM_REVISION, (int)grid.size);
   ierr = stampHistory(startstr); CHKERRQ(ierr);
   
 //  strncpy(cmdstr, argv[0], sizeof(str)); // Does not null terminate on overflow

@@ -1,18 +1,19 @@
-export PISM_PREFIX ?= $(PWD)
-BUILD_DIR = $(PWD)/build
-
-# Flags:
-export WITH_FFTW ?= 1
-export LOG_PISM_EVENTS ?= 0
-export MISMIP_PLAY ?= 0
-
-# PETSc has trouble choosing a linker which can link C++.  PISM is C++.
-# Set this to zero to let PETSc choose a linker.
-export USE_MPICXX = 1
+# Configuration flags:
+WITH_FFTW ?= 1
+LOG_PISM_EVENTS ?= 0
+MISMIP_PLAY ?= 0
+# PETSc has troubles choosing a linker which can link C++. PISM is C++. Setting
+# this to zero would let PETSc choose a linker.
+USE_MPICXX = 1
 
 # Put additional make include files here: 
-#export CONFIG = config/ryan_make
-#export CONFIG = config/macosx_macports
+#CONFIG = config/ryan_make
+CONFIG = config/macosx_macports
+
+# These variables are used by $(BUILD_DIR)/Makefile:
+PISM_PREFIX ?= $(PWD)
+BUILD_DIR = $(PWD)/build
+GOALS = $(MAKECMDGOALS)
 
 ALL: all
 
@@ -33,6 +34,10 @@ svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."
 	@svn update
 
+userman refman browser summary fullbib:
+	@cd doc && $(MAKE) $@
+
 .DEFAULT:
 	@cd $(BUILD_DIR) && $(MAKE) $@
 
+.EXPORT_ALL_VARIABLES: ;

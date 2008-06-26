@@ -2,15 +2,29 @@ ifndef PISM_PREFIX
   $(error Please run make from the top-level PISM directory)
 endif
 
+# Get the current PISM revision:
+url = $(shell svn info | grep URL)
+rev = $(shell svnversion ../)
+ifeq ($(findstring trunk,$(url)),trunk)
+  PISM_REVISION = (trunk: revision $(rev))
+else ifeq ($(findstring branches,$(url)),branches)
+  PISM_REVISION = (branch $(lastword $(subst /, ,$(url))): revision $(rev))
+else ifndef PISM_REVISION
+  $(error Can't determine PISM's revision number. \
+  Please define PISM_REVISION in the top-level Makefile)
+endif
+
 # Get PETSc environment and rules:
 include $(PETSC_DIR)/bmake/common/base
 
-# Flags:
+# Compiler flags:
 CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
-          -DMISMIP_PLAY=${MISMIP_PLAY} -pipe
+          -DMISMIP_PLAY=${MISMIP_PLAY} -DPISM_REVISION='"$(PISM_REVISION)"' \
+          -pipe
 
 SHARED = -shared # default (for Linux)
 
+# Linker flags:
 TESTS_LIB_FLAGS := -L$(PISM_PREFIX) -L$(PISM_PREFIX)/lib \
                    -Wl,-rpath,$(PISM_PREFIX) -Wl,-rpath,$(PISM_PREFIX)/lib \
                    -ltests -lm -lgsl -lgslcblas
@@ -20,6 +34,7 @@ ifeq (${WITH_FFTW}, 1)
   ICE_LIB_FLAGS += -lfftw3
 endif
 
+# Override PETSc's choice of the linker (if asked to):
 ifeq ($(USE_MPICXX), 1)
   CXXLINKER = $(subst mpicc,mpicxx,$(CLINKER))
 endif
@@ -60,12 +75,14 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
 # Import additional make include files:
--include $(addprefix ../,$(CONFIG))
+ifdef CONFIG
+  include $(addprefix ../,$(CONFIG))
+endif
 
 all: libpism.so libtests.so $(executables)
 	@svnversion ../src/ > ../src/revision
-ifeq ($(findstring install,$(MAKECMDGOALS)),)
-	@echo "\nAll the PISM libraries and executables are in $(PWD)."
+ifeq ($(findstring install,$(GOALS)),)
+	@echo "All the PISM libraries and executables are in $(PWD)."
 	@echo "Please don't forget to run 'make install'."
 endif
 
@@ -139,6 +156,8 @@ gridL : gridL.o libtests.so
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 # The GNU recommended procedure for automatically generating prerequisites.
+# (The obscure sed command comes straight from the GNU Make manual.)
+
 # This rule updates the `*.d' to reflect changes in `*.cc' files
 %.d : %.cc
 	@echo "Prerequisites from" $< "-->" $@
@@ -167,6 +186,7 @@ showEnv:
 	@echo 'ICE_LIB_FLAGS = ' ${ICE_LIB_FLAGS}
 	@echo 'TESTS_LIB_FLAGS = ' ${TESTS_LIB_FLAGS}
 	@echo 'ICE_OBJS = ' ${ICE_OBJS}
+	@echo 'PISM_REVISION = ' "$(PISM_REVISION)"
 
 depend: ;
 
@@ -183,6 +203,8 @@ distclean: clean
 	$(executables) $(extra_execs) \
 	$(addprefix $(PISM_PREFIX)/bin/, $(executables) $(extra_execs))
 
+# This is to avoid recreating .d files if you all you need is 'make clean' or
+# 'make distclean':
 ifneq ($(MAKECMDGOALS),clean)
   ifneq ($(MAKECMDGOALS),distclean)
     include $(depfiles)

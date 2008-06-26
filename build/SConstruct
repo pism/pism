@@ -1,3 +1,27 @@
+# An unsupported alternative is to use the SCons build process.  SCons 
+# is more intelligent about recompiling files and managing shared libraries, 
+# so it might be more robust.  Bear in mind, however, SCons is not the official 
+# build method, so it is not always up to date.
+
+# ### build and install Pism executables in $dir/bin with libraries in $dir/lib
+# $ scons install	prefix=$dir 	 # no prefix argument is equivalent to `prefix=.'
+
+# Or, if you do not already have SCons installed:
+
+# $ (cd config && tar xf scons-local-0.97.tar.gz) # unpack a local copy
+# $ config/scons.py      				# invoke the local scons
+
+# SCons examples:
+
+# $ scons exact 	     	         # build the simple* executables with shared
+#                                  #   library in $dir/lib
+# $ scons extras			 # build some extras
+# $ scons pgrn	 		 # build only the Greenland executable
+# $ scons install-lib prefix=$dir  # put just the libs there
+# $ scons install-bin prefix=$dir  # put just the executables there
+# $ scons -c ~/usr prefix=~/usr	 # remove any files installed in the first step
+
+
 import os
 import tempfile
 import string
