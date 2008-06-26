@@ -130,7 +130,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
 \item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need \href{http://www.python.org/}{Python} and \href{http://subversion.tigris.org/}{Subversion} installed, but these are included in all current Linux distributions.  To use the (recommended) graphical output of PISM you will need an  (\href{http://www.x.org/}{X Windows server}.
-\item As PISM is currently under rapid development, we distribute it only as compilable source code.  On the other hand, there are several software libraries needed by PISM.  Therefore the ``header files'' for these libraries are required for building PISM.  In particular this means that the ``developer's versions'' of the libraries are needed if the libraries are downloaded from package repositories like Debian.\footnote{Situation May 2008:  It is now possible to to most of the install based on Debian binary packages, with only PISM itself built from source.  In particular, the Debian package for PETSc now does work.  See \href{http://www.pism-docs.org/pism-install-deb-note.txt}{www.pism-docs.org/pism-install-deb-note.txt}.}
+\item As PISM is currently under rapid development, we distribute it only as compilable source code.  On the other hand, there are several software libraries needed by PISM.  Therefore the ``header files'' for these libraries are required for building PISM.  In particular this means that the ``developer's versions'' of the libraries are needed if the libraries are downloaded from package repositories like Debian.\footnote{Situation May 2008:  It is now possible to do most of the install based on Debian binary packages, with only PISM itself built from source.  In particular, the Debian package for PETSc now does work.  See \href{http://www.pism-docs.org/pism-install-deb-note.txt}{www.pism-docs.org/pism-install-deb-note.txt}.}
 
 \item PISM uses \href{http://www.unidata.ucar.edu/software/netcdf/}{NetCDF (= \emph{network Common Data Form})}\index{NetCDF} for an input and output file format.   If it is not already present, install it using the instructions at the webpage or using a package management system.
 
@@ -227,7 +227,7 @@ At this point you have configured the environment which PISM needs.  You are rea
 
 \verb|make install|
 
-\noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism0.1/bin/| subdirectory and cleans up the junk from the build process.  Note ``\verb|make install|'' does not require root permission as it only writes to the local \verb|pism0.1/bin| and \verb|pism0.1/lib|.
+\noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism0.1/bin/| subdirectory. Object files created during the build process (located in the \verb|build| subdirectory) are not deleted by the \verb|install| target, so please do ``\verb|make clean|'' if space is an issue. Note ``\verb|make install|'' does not require root permission as it only writes to the local \verb|pism0.1/bin| and \verb|pism0.1/lib|.
 
 \item PISM executables can be run most easily by adding the directories \verb|pism0.1/bin/| and \verb|pism0.1/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
 
@@ -2318,7 +2318,7 @@ Note that timing information is also given in the \verb|verifynow.py| output.  T
 The exact meaning of the various errors reported by \verb|pismv|, which appear in a \verb|verifynow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
 
 
-\scripthead{test/vnreport.py}\index{vnreport.py}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|gnuplot| (with the help of the \verb|Gnuplot.py| package, see \url{http://gnuplot-py.sourceforge.net/} for installation instructions).  Example graphs are Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif}.
+\scripthead{test/vnreport.py}\index{vnreport.py}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|matplotlib|.  Example graphs are Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif}.
 
 In a standard PISM installation, to run this script you will want to \verb|cd test/| and run the script there with ``\verb|./|'' or ``\verb|python|''.
 
@@ -2340,7 +2340,7 @@ The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more e
 
 \scriptoptdef{f}{file}{foo.txt} name of the text file containing the \verb|verifynow.py| report
 
-\scriptoptdef{g}{graphformat}{png} image file type; \verb|png| and \verb|pdf| are the two supported possiblities; some \verb|gnuplot| installations do not support \verb|pdf|
+\scriptoptdef{g}{graphformat}{png} image file type; \verb|png| and \verb|pdf| are the two supported possiblities
 
 \scriptoptdef{o}{out}{report} prefix of output file name; if ``\verb|-t G -o bar|'' then output file is named ``\verb|bar_G.pdf|''
 
@@ -2391,11 +2391,28 @@ in the MATLAB shell will produce a picture similar to Figure \ref{fig:rossspeed}
 \scripthead{util/nc\und template.py}\index{nc\und template.py} This Python script reads \verb|pism_state.cdl| and runs \verb|ncgen| to create an empty NetCDF file in PISM-readable format with given grid dimensions and variables defined.
 
 The intended use is this: suppose we have latitude, longitude, bed elevation,
-ice thickness and accumulation/ablation rate data and we need to convert it to PISM-readable format. Then we can run
-\verb|nc_template.py -x 100 -y 100 -v |
+ice thickness and accumulation/ablation rate data and we need to convert it to PISM-readable format.
+One way to do this is to hand-edit \verb|src/netcdf/pism_state.cdl| to remove all the unneeded variables, run \verb|ncgen| on the resulting file, and then fill it with data. Another way is to manually define all the variables in the script converting data to PISM's format. Alternatively, one can run
+
+\verb|nc_template.py -x 101 -y 101 -v lat,lon,topg,thk,acab \|
+
+\verb|               -p pism_state.cdl -o input.nc|
+
+\noindent to create \verb|input.nc| and then fill this file with data. This defines all the variables \emph{and} metadata.
 
 \opthead \verb|nc_template.py| takes the following options:
 
+\scriptoptdef{p}{pism-state}{pism\und state.cdl} the location of \verb|pism_state.cdl|
+
+\scriptoptdef{o}{output}{no default} output file name
+
+\scriptoptdef{x}{x}{no default} grid width (points)
+
+\scriptoptdef{y}{y}{no default} grid height (points)
+
+\scriptoptdef{v}{variables}{all mapping, climate and all 2D model\und state variables} comma-separated list of variables
+
+Variables \verb|x|, \verb|y|, \verb|z|, \verb|zb|, \verb|t| are always included; if \verb|-v| if omitted, then the output file will have these variables, plus all the variables with \verb|pism_intent| equal to \verb|mapping|, \verb|climate_steady|, \verb|climate_snapshot| and all the 2D \verb|model_state| variables.
 \label{sect:index}
 \printindex
 

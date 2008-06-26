@@ -91,7 +91,9 @@ def make_template(x, y, vars, pism_state_cdl, output_filename, remove=False):
                 if (parts[1].find("mapping") >= 0 or
                     parts[1].find("model_state") >= 0 or
                     parts[1].find("climate") >= 0):
-                    vars.append(parts[0].strip())
+                    name = parts[0].strip()
+                    if name not in ("age", "temp", "litho_temp"):
+                        vars.append(name)
     vars += ["x", "y", "z", "zb", "t"]
 
     N = len(lines); j = 0
@@ -144,32 +146,40 @@ def make_template(x, y, vars, pism_state_cdl, output_filename, remove=False):
     nc.close()
 
 if __name__ == "__main__":
-    opts, args = getopt(argv[1:], "x:y:v:p:o:r", ["x=", "y=", "variables="
-                                                  "pism-state=","output=",
-                                                  "remove"])
-    x = 0;y = 0
-    vars = []
-    pism_state_cdl = "pism_state.cdl"
-    output_filename = ""
-    remove = False
-    for opt, arg in opts:
-        if opt in ("-p", "--pism-state"):
-            pism_state_cdl = arg
-        if opt in ("-o", "--output"):
-            output_filename = arg
-        if opt in ("-x", "--x"):
-            x = int(arg)
-        if opt in ("-y", "--y"):
-            y = int(arg)
-        if opt in ("-v", "--variables"):
-            vars = arg.split(",")
-        if opt in ("-r", "--remove"):
-            remove = True
-    if (x <= 0) or (y <= 0):
-        print "Both x and y should be greater than zero. Exiting..."
+    try:
+        opts, args = getopt(argv[1:], "x:y:v:p:o:r", ["x=", "y=", "variables="
+                                                      "pism-state=","output=",
+                                                      "remove"])
+        x = 0;y = 0
+        vars = []
+        pism_state_cdl = "pism_state.cdl"
+        output_filename = ""
+        for opt, arg in opts:
+            if opt in ("-p", "--pism-state"):
+                pism_state_cdl = arg
+            if opt in ("-o", "--output"):
+                output_filename = arg
+            if opt in ("-x", "--x"):
+                x = int(arg)
+            if opt in ("-y", "--y"):
+                y = int(arg)
+            if opt in ("-v", "--variables"):
+                vars = arg.split(",")
+        if (x <= 0) or (y <= 0):
+            print "Both x and y should be greater than zero. Exiting..."
+            exit(-1)
+        if output_filename == "":
+            print "Please specify the output file name. Exiting..."
+            exit(-1)
+    except GetoptError:
+        print """Options:
+  -p [--pism-state=] location of pism_state.cdl
+                     (nc_template.py loo
+  -o [--output=]     output file name
+  -x [--x=]          grid width (points)
+  -y [--y=]          grid height (points)
+  -v [--variables=]  comma-separated list of variable names to include
+                     if this list is omitted, then all the mapping, climate and 2D
+                     model_state variables are included"""
         exit(-1)
-    if output_filename == "":
-        print "Please specify the output file name. Exiting..."
-        exit(-1)
-
-    make_template(x, y, vars, pism_state_cdl, output_filename, remove)
+    make_template(x, y, vars, pism_state_cdl, output_filename, False)

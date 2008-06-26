@@ -4,7 +4,7 @@ update: svn_update
 ifeq ($(shell touch revision; svnversion | diff revision -),)
 	@echo "doc/ directory is up to date."
 else
-	@echo "Rebuilding manual.tex"
+	@echo "Rebuilding manual.tex..."
 	$(MAKE) userman
 	@svnversion > revision
 endif
@@ -56,11 +56,11 @@ vfigs : $(VFNOW_OUT)
 	../test/vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' -r ${PISMREV} -g pdf -o figs/temperrs
 
 clean :
-	rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.ind \
-	      manual.ilg  manual.log manual.out manual.ps manual.toc
-	rm -f fullbib.aux fullbib.log fullbib.blg fullbib.bbl fullbib.out
-	rm -f pism_summary.aux pism_summary.log pism_summary.blg pism_summary.bbl \
-	      pism_summary.out
+	@rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.ind \
+	       manual.ilg  manual.log manual.out manual.ps manual.toc
+	@rm -f fullbib.aux fullbib.log fullbib.blg fullbib.bbl fullbib.out
+	@rm -f pism_summary.aux pism_summary.log pism_summary.blg pism_summary.bbl \
+	       pism_summary.out
 	
 
 svn_update:

@@ -6,6 +6,7 @@ import getopt
 import sys
 import numpy
 import Gnuplot
+from pylab import *
 
 # defaults
 PISM_REV = -1
@@ -135,20 +136,19 @@ print 'found ' + str(len(err)*len(err[0])) + \
       ' "' + errtype + '"-type  numerical error values for plotting'
 
 # plot to PNG or PDF files
-g = Gnuplot.Gnuplot()
-g('set data style linespoints')
-g('set pointsize 2')
-g('set logscale xy 10')
-g('set key top left')
+style = '-o'
+markersize = 2.0
+base = 10
+loc = 'lower right'
 
-g.xlabel(dxname + '  (' + units + ')')
+figure(1,figsize=(8, 4));hold(True);grid(True)
+xlabel(dxname + '  (' + units + ')')
 for nn in range(len(tags)):
   if exclude.find(tags[nn]) < 0: # if the tag is not in the exclude string, then plot
-    d = Gnuplot.Data( path[0:len(err[nn])], err[nn], title=(tags[nn] + ' error') )
-    if nn == 0:
-      g.plot(d)
-    else:
-      g.replot(d)
+    loglog(path[0:len(err[nn])], err[nn], style, label=(tags[nn] + ' error'),
+           markersize=markersize,
+           basex=base,
+           basey=base)
   else:
     print 'excluding "' + tags[nn] + '" errors from plot'
 imagetitle = titles[0] + ' numerical errors in test ' + testname
@@ -156,18 +156,19 @@ if pismrev > 0:
   imagetitle += ' (PISM revision ' + str(pismrev) + ')'
 else:
   imagetitle += ' (PISM)'
-g.title(imagetitle)
+legend(loc=loc);title(imagetitle)
+axis('tight')
 
 outfilename = outfilestart + '_' + testname
 if graphformat.find('pdf') >= 0:
   outfilename += '.pdf'
-  g.hardcopy(outfilename, terminal='pdf')
+  savefig(outfilename)
   print 'PDF file ' + outfilename + ' written'
 else:
   if graphformat.find('png') < 0:
     print 'unknown graphic output format; attempting PNG'
   outfilename += '.png'
-  g.hardcopy(outfilename, terminal='png')
+  savefig(outfilename)
   print 'PNG file ' + outfilename + ' written'
 # done
 
