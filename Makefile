@@ -1,4 +1,5 @@
 # Configuration flags:
+PISM_PREFIX ?= $(PWD)
 WITH_FFTW ?= 1
 LOG_PISM_EVENTS ?= 0
 MISMIP_PLAY ?= 0
@@ -8,10 +9,9 @@ USE_MPICXX = 1
 
 # Put additional make include files here: 
 #CONFIG = config/ryan_make
-CONFIG = config/macosx_macports
+#CONFIG = config/macosx_macports
 
-# These variables are used by $(BUILD_DIR)/Makefile:
-PISM_PREFIX ?= $(PWD)
+# Miscellaneous variables:
 BUILD_DIR = $(PWD)/build
 GOALS = $(MAKECMDGOALS)
 

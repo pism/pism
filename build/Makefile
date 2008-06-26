@@ -7,9 +7,11 @@ url = $(shell svn info | grep URL)
 rev = $(shell svnversion ../)
 ifeq ($(findstring trunk,$(url)),trunk)
   PISM_REVISION = (trunk: revision $(rev))
-else ifeq ($(findstring branches,$(url)),branches)
+endif
+ifeq ($(findstring branches,$(url)),branches)
   PISM_REVISION = (branch $(lastword $(subst /, ,$(url))): revision $(rev))
-else ifndef PISM_REVISION
+endif
+ifndef PISM_REVISION
   $(error Can't determine PISM's revision number. \
   Please define PISM_REVISION in the top-level Makefile)
 endif
