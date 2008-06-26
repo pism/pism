@@ -1,5 +1,14 @@
 ALL : userman summary refman browser
 
+update: svn_update
+ifeq ($(shell touch revision; svnversion | diff revision -),)
+	@echo "doc/ directory is up to date."
+else
+	@echo "Rebuilding manual.tex"
+	$(MAKE) userman
+	@svnversion > revision
+endif
+
 userman : manual.tex ice_bib.bib
 	pdflatex manual.tex
 	bibtex manual
@@ -54,3 +63,6 @@ clean :
 	      pism_summary.out
 	
 
+svn_update:
+	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."
+	@svn update
