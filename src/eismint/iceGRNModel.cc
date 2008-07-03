@@ -49,7 +49,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-gwl3", &gwl3Set); CHKERRQ(ierr);
   if (gwl3Set == PETSC_TRUE)   expernum = 4;
 
-  if ((ssl3Set == PETSC_TRUE) || (ccl3Set == PETSC_TRUE) || (gwl3Set == PETSC_TRUE)) {
+  if (ssl3Set == PETSC_TRUE) {
     // use Goldsby-Kohlstedt with enhancement factor of 1; user will have to give "-gk"
     enhancementFactor = 1;
     ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &gkSet); CHKERRQ(ierr);
@@ -57,20 +57,23 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     if (gkSet == PETSC_FALSE && ( (flowlawSet == PETSC_TRUE && lawNum != 4)
                                   || flowlawSet == PETSC_FALSE)             ) {
       ierr = verbPrintf(1, grid.com, 
-          "WARNING: SSL3 or CCL3 or GWL3 specified, but not -gk\n"); CHKERRQ(ierr);
+          "WARNING: SSL3 specified, but not -gk; setting -e 3\n"); CHKERRQ(ierr);
+      enhancementFactor = 3;
     }
-    // use Lingle-Clark bed deformation model
-    doBedDef = PETSC_TRUE;
-    doBedIso = PETSC_FALSE;
-    /*  BAD SLIDING!  NO DONUT!:
-      const PetscScalar SSL3_MU_SLIDING = 1.585e-11;  // 50 m/a at 100kPa = 1 bar
-      muSliding = SSL3_MU_SLIDING; 
-    */
   } else {
     enhancementFactor = 3;
   }
   
+  if ((ssl3Set == PETSC_TRUE) || (ccl3Set == PETSC_TRUE) || (gwl3Set == PETSC_TRUE)) {
+    // use Lingle-Clark bed deformation model
+    doBedDef = PETSC_TRUE;
+    doBedIso = PETSC_FALSE;
+  }
+  
   muSliding = 0.0;  // no sliding in any case; perhaps develop an SSA variant??
+
+  doTempSkip = PETSC_TRUE;
+  tempskipMax = 20;
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
@@ -162,13 +165,14 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
   }
 
+#if 0
   if ((dTforceSet == PETSC_FALSE) && (expernum == 3)) {
     SETERRQ(5, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta T forcing data\n");
   }
-
   if ((dSLforceSet == PETSC_FALSE) && (expernum == 3)) {
     SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
   }
+#endif
 
   if ((expernum == 4) && (dTforceSet == PETSC_TRUE)) {
     SETERRQ(3, "ERROR: EISMINT-GREENLAND experiment GWL3 cannot use -dTforcing option.\n");

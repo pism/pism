@@ -2,15 +2,16 @@
 # 
 # Script for Plastic till ice Stream with Thermocoupling experiment.   
 # Starts with a run like EISMINT II exper A (and exper I), but 
-# this includes bedrock thermal and tracking of Hmelt.  Then plastic SSA 
-# is turned on for 4 (or 3 in P2) streams in several parameter sensitivity 
-# studies.
+# this includes bedrock thermal model, inclusion of basal melt rate in mass
+# continuity, and tracking of Hmelt.
 #
-# See src/eismint/icePSTexModel.cc for meaning of P1,P2,P3,P4, but (roughly)
-#   P1 studies stream width parameter
-#   P2 studies stream orientation (relative to grid) parameter
-#   P3 studies bed slope
-#   P4 studies downstream till friction angle changes
+# Then plastic SSA is turned on for 4 (or 3 in P2) streams in several
+# parameter sensitivity studies.  See src/eismint/icePSTexModel.cc for
+# meaning of P1,P2,P3,P4, but (roughly):
+#   * P1 studies stream width parameter
+#   * P2 studies stream orientation (relative to grid) parameter
+#   * P3 studies bed slope
+#   * P4 studies downstream till friction angle changes
 # 
 # See preprint Bueler and Brown 2008, "The shallow shelf approximation as a
 # `sliding law' in an ice sheet model with streaming flow".
@@ -21,11 +22,11 @@
 # Just before the 5km cases, the 10km grid P1 is extended to 100k years.
 #
 # re SPEED: On experiment P1 with a 10km grid, bueler-pogo with 8 cores 
-# (two quad core Xeon processors at 2.33GHz) took about 2.5 hours for 
-# 4000 model years.  If sustained this means about 1500 model years 
-# per wall clock hour on the 10km grid; this is with multiple plastic-till
-# modeled ice streams.  (We can determine whether it is sustained, which is
-# likely, from timing of experiment P1cont below.)
+# (two quad core Xeon processors at 2.33GHz) took about 4 hours for 
+# 5000 model years.  If sustained and cleanly parallelizable this means
+# about 150 model years per processor-hour on the 10km grid.  (We can
+# determine whether it is sustained-parallel, which is likely, from timing of
+# experiment P1cont below.)
 
 NN=2  # set default number of processors here
 

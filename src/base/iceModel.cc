@@ -334,7 +334,8 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
       }
 
-      const PetscScalar hgrounded = bed[i][j] + H[i][j];
+      const PetscScalar hgrounded = bed[i][j] + H[i][j],
+                        hfloating = seaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
 
       if (isDrySimulation == PETSC_TRUE) {
         // Don't update mask; potentially one would want to do SSA
@@ -347,10 +348,8 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // If mask says OCEAN0 then don't change the mask and also don't change
         // the thickness; massContExplicitStep() is in charge of that.
         // Almost always the next line is equivalent to h[i][j] = 0.
-        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
         h[i][j] = hfloating;  // ignor bed and treat it like ocean
       } else {
-        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // check whether you are actually floating or grounded
           if (hgrounded > hfloating+1.0) {
@@ -482,9 +481,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if (H[i][j] > 0.0)  icecount++;
 
       // get thickness averaged onto staggered grid;
-      //    note Div Q = - Div (f(v) D grad h) = - Div (f(v) D grad h) 
+      //    note Div Q = Div (- f(v) D grad h + (1-f(v)) U_b H) 
       //    in  -ssa -super case; note f(v) is on regular grid;
-      //    compare broadcastSSAVelocity()
+      //    compare broadcastSSAVelocity(); note uvbar[o] is SIA result:
+      //    uvbar[0] H = - D h_x
       PetscScalar He, Hw, Hn, Hs;
       if ( (doSuperpose == PETSC_TRUE) 
            && (modMask(mask[i][j]) == MASK_DRAGGING) ) {

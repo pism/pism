@@ -102,20 +102,15 @@ PetscErrorCode IceModel::updateForcing() {
 
   if (dSLforcing != PETSC_NULL) {
     // read new sea level (delta from modern)
-    PetscScalar seaLevelOffset;
-    ierr = dSLforcing->updateFromCoreClimateData(grid.year,&seaLevelOffset); CHKERRQ(ierr);
+    PetscScalar newSeaLevel;
+    ierr = dSLforcing->updateFromCoreClimateData(grid.year,&newSeaLevel); CHKERRQ(ierr);
 
-    ierr = verbPrintf(5,grid.com,"read seaLevelOffset=%.6f from -dSLforcing climate data\n",
-       seaLevelOffset); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid.com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
+       newSeaLevel); CHKERRQ(ierr);
 
     // for efficiency we only act if the value is new:
-    if (seaLevelOffset != -bedSLOffset) {
-      // bedSLOffset should be zero when startup!
-      ierr = VecShift(vbed,-bedSLOffset); CHKERRQ(ierr); // return vbed to unshifted state
-      
-      bedSLOffset = -seaLevelOffset;  // we implement rise in sea level by lowering bed
-      ierr = VecShift(vbed,bedSLOffset); CHKERRQ(ierr);
-
+    if (seaLevel != newSeaLevel) {
+      seaLevel = newSeaLevel;
       updateSurfaceElevationAndMask();  // fix the mask; new ice could be floating or grounded
     }
   }

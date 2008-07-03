@@ -70,7 +70,6 @@ const PetscInt    DEFAULT_MAX_LOW_TEMP_COUNT = 10;  //
 
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
 const PetscTruth  DEFAULT_REAL_AGE_FOR_GRAIN_SIZE = PETSC_FALSE;
-const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
 const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
 const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
 //const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
@@ -81,6 +80,8 @@ const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
 // model is so cheap you might as well update frequently:
 const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 10.0;  
 
+const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
+const PetscScalar DEFAULT_SEA_LEVEL = 0.0;  // used in updateSurfaceElevationAndMask()
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 
 const PetscTruth  DEFAULT_USE_SSA_VELOCITY = PETSC_FALSE;
@@ -217,7 +218,10 @@ PetscErrorCode IceModel::setDefaults() {
   maxLowTempCount = DEFAULT_MAX_LOW_TEMP_COUNT;
   min_temperature_for_SIA_sliding = DEFAULT_MIN_TEMP_FOR_SLIDING;  
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
+
+  seaLevel = DEFAULT_SEA_LEVEL;
   isDrySimulation = DEFAULT_IS_DRY_SIMULATION;
+  
   updateHmelt = PETSC_TRUE;
 
   flowLawUsesGrainSize = PETSC_FALSE;

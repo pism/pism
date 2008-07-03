@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{332}
+\newcommand{\PISMREV}{339}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 %\addtolength\topmargin{-.1in}
@@ -1184,7 +1184,7 @@ Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year 
 
 \verb|$ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \|
 
-\verb|  -ocean_kill -y 1 -o green20km_y1|
+\verb|  -ocean_kill -tempskip 0 -y 1 -o green20km_y1|
 
 \noindent The run takes a few seconds of real time.
 
@@ -1192,7 +1192,8 @@ Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year 
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-$  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ -ocean_kill -y 1 -o green20km_y1
+$  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
+   -ocean_kill -tempskip 0 -y 1 -o green20km_y1
 PGRN (EISMINT Greenland mode)
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   all dimensions t,x,y,z,zb found in file
@@ -1286,68 +1287,17 @@ The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree d
 
 \verb|mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 10000 -ys 0 -ocean_kill \|
 
-\verb|     -tempskip 3 -o green_SSL2_10k >> ssl2.txt|
+\verb|     -o green_SSL2_10k >> ssl2.txt|
 
 \noindent We can continue for another ten thousand years by
 
 \verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_10k.nc -y 10000 -ocean_kill \|
 
-\verb|     -tempskip 3 -o green_SSL2_20k >> ssl2.txt|
+\verb|     -o green_SSL2_20k >> ssl2.txt|
 
-These runs took about 20 minutes each on an 4 processor (8 core) Opteron cluster (2006 technology).
+Note the option ``\verb|-ocean_kill|''.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  (Compare the Ross ice shelf model in the next section.)
 
-Note the option ``\verb|-ocean_kill|''.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  Compare the Ross ice shelf model in the next section.
-
-For these runs we add ``\verb|-tempskip 3|'' to speed things up.  The effect of this option is to allow the explicit time-stepping scheme to not update the temperature field for up to three time-steps of the mass continuity scheme, \emph{if} this is allowed by the stability conditions appropriate to the conservation of energy equation and the (diffusive in this case) mass continuity equation; see subsection \ref{subsect:adapt} for more detail.
-
-This simulation is, however, intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
-
-\begin{comment}
-PISM includes a script that automates the process of checking the steady state condition, so which means the user doesn't have to stop the run every so often and compare the volumes in saved states.  This script is called \verb|ssl_exper.py| and is in the \verb|pism/test| directory.  It will save states every 10,000 years (or other chosen interval), until the change in volume between saved states is less than a specified criterion.  It uses the \href{http://nco.sourceforge.net/}{NCO} to compare the thicknesses in saved model states.  It can be used with multiple processors by setting the option \verb|-n|; see Appendix D for documentation of the options.
-
-For illustration we do:
-
-\verb|$  ssl_exper.py -n 8 -f green20km_Tsteady.nc -t 1 -c 0.01|
-
-\noindent Here we specify that the criterion for steady state is weak so that our example takes less computer time; we ask for less than 1\% change (``\verb|-c 0.01|'') between 1000 year runs (``\verb|-t 1|'').  With 8 processors this example completes in several hours.  The actual EISMINT-Greenland run would be
-
-\verb|$  ssl_exper.py -n 80 -f green20km_Tsteady.nc -t 10 -c 0.0001|
-
-\noindent With 80 processors this full run completed in 5 hours.  Efficiency when solving the thermomechanically coupled SIA is a concern for PISM.  On the other hand, the first efficiency concern for PISM in the use of the SSA for fast sliding.
-
-The example run gives this output:
-
-\small\begin{quote}\begin{verbatim}
-$ ssl_exper.py -n 8 -f green20km_Tsteady.nc -t 1 -c 0.01
-  [using 8 processors]
-  [using interval of 1k years between volume measurements]
-  [using criterion of 1.0 percent change between volume measurements]
-  running from 0k years until 1k years ...
-  trying:  mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 1000 -ys 0 -ocean_kill
-     -tempskip 3 -o green_SSL2_1k >> out.txt
-  sum of thk for 0k, 1k years, resp.: 7063322.500000, 8002617.500000
-  volume change is: 11.7373471867%
-  running from 1k years until 2k years ...
-  trying:  mpiexec -n 8 pgrn -ssl2 -if green_SSL2_1k.nc -y 1000 -ocean_kill
-     -tempskip 3 -o green_SSL2_2k >> out.txt
-  sum of thk for 1k, 2k years, resp.: 8002617.500000, 8598249.000000
-  volume change is: 6.92735811675%
-  running from 2k years until 3k years ...
-.
-.
-.
-  running from 7k years until 8k years ...
-  trying:  mpiexec -n 8 pgrn -ssl2 -if green_SSL2_7k.nc -y 1000 -ocean_kill
-     -tempskip 3 -o green_SSL2_8k >> out.txt
-  sum of thk for 7k, 8k years, resp.: 9836617.000000, 9915852.000000
-  volume change is: 0.799074048302%
-  resulting volume change below criterion; ending
-\end{verbatim}
-\end{quote}\normalsize
-
-We see that the volume gradually increases but levels out.  Inspection of the standard output \verb|out.txt| shows that the initial volume of $2.825 \times 10^{6}\,\text{km}^3$ grows to $3.966 \times 10^{6}\,\text{km}^3$ at $8000$ model years.
-
-\end{comment}
+These runs took about 15 minutes each on an 2 quad core Xeon server (2008 technology).  This simulation is, however, intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
 
 One can look at the standard output text file by a minimal method like ``\verb|less ssl2.txt|''.  But, to more clearly see the behavior over time of the volume, area, basal melt fraction, and so on, one can generate a time series file in NetCDF form and then use various tools to view and manipulate that file.  Use the Python script \verb|util/series.py|, documented in Appendix D, like this:
 
@@ -1373,7 +1323,7 @@ The command that completed the full 110k model year run is
 
 \verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_20k.nc -y 90000 -ocean_kill \|
 
-\verb|     -tempskip 3 -o green_SSL2_110k >> ssl2.txt|
+\verb|     -o green_SSL2_110k >> ssl2.txt|
 
 We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness and homologous basal temperature maps are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.
 
@@ -1389,29 +1339,23 @@ We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISM
 \label{fig:ssl2cbar}
 \end{figure}
 
-\begin{comment}
-One may also give a \verb|--ssl3| option to \verb|ssl_exper.py| to run an EISMINT-Greenland ``SSL3'' experiment \cite{RitzEISMINT}.  (Giving this option to \verb|ssl_exper.py| actually gives a \verb|--ssl3 -gk| option to \verb|pgrn|.)  
-\end{comment}
-
 In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' intercomparison was performed allowing each participant to choose parameters in the model.  The PISM interpretation of the SSL3 experiment is the same as SSL2 with these two modificiation: \begin{itemize}
 \item use Goldsby-Kohlstedt flow law \cite{GoldsbyKohlstedt} with an enhancement factor of 1.0, and
 \item the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model is used, assuming zero uplift rate at time zero.
 %\item allow pressure-melting temperature dependent linear sliding with a sliding coefficient that gives 50 m/a sliding at 100 kPa (1 bar).\footnote{FIXME:  Turn off this evil kind of sliding.  For this particular SSL3 experiment we should do no sliding but add isostatic adjustment.  Addition of the plastic till SSA is then absolutely appropriate, but outside the scope of using EISMINT-Greenland as a tutorial example.}
 \end{itemize}
-There is no particular assertion that these are superior modeling choices.  We give ``SSL3'' this interpretation merely for illustration.
-%  Note that because of the basal sliding, with sliding velocity proportional to the driving shear stress at the base, the volume time series never quite settles down (not shown).
-A 100k year run starting over with these choices would be
+There is no particular assertion that these are superior modeling choices.  We give ``SSL3'' this interpretation merely for illustration.  A 100k year run starting over with these choices would be
 
 \verb|mpiexec -n 8 pgrn -ssl3 -gk -if green20km_Tsteady.nc -y 100000 -ys 0 -ocean_kill \|
 
-\verb|     -tempskip 3 -o green_SSL3_100k >> ssl3.txt|
+\verb|     -o green_SSL3_100k >> ssl3.txt|
 
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment is intended to be carried out after the completion of the SSL2 steady state run above.
 
 Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and the change in sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| for \verb|pgrn| can use these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT} under PISM.  Before every time step, \verb|pgrn| adds in a change to the surface temperature and sea level in order to incorporate the effects of global climate changes stored in the GRIP ice core and a collection of sea bed cores.  The data in \verb|grip_dT.nc| goes about 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, but EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|.  The CCL3 experiment can be run using the following command:
 
-\verb|$  pgrn -ccl3 -gk -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
+\verb|$  pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
 
 \verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y0|
 
@@ -1425,12 +1369,12 @@ The resulting thickness difference, relative to the end of the SSL2 run, and the
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing.  If \verb|pgrn -ccl3| is run past year 0, and thus past the end of the GRIP and SPECMAP data, this baseline run will occur by default.  So the previous command can be run for another 500 years, and the forcing can be omitted:
 
-\verb|$  pgrn -ccl3 -gk -if green_CCL3_y0.nc -y 500 -o green_CCL3_y500|
+\verb|$  pgrn -ccl3 -if green_CCL3_y0.nc -y 500 -o green_CCL3_y500|
 
 
 \subsubsection*{A greenhouse warming scenario}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It uses the model state obtained for present day from the CCL3 run.  The GWL3 experiment  runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\verb|$  pgrn -gwl3 -gk -if green_CCL3_y0.nc -y 500 -o green_GWL3_y500|
+\verb|$  pgrn -gwl3 -if green_CCL3_y0.nc -y 500 -o green_GWL3_y500|
 
 
 
@@ -2350,6 +2294,7 @@ The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more e
 
 \scriptoptdef{x}{exclude}{} specify tags of errors to exclude from the figure
 
+
 \scripthead{util/nc2mat.py}\index{nc2mat.py} This Python script reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|pycdf| and SciPy.
 
 \opthead \verb|nc2mat.py| takes the following options:
@@ -2387,6 +2332,7 @@ Assuming that \verb|ross.nc| contains data produced by a PISM run like ones in s
 >> pcolor(cbar);colorbar();
 \end{verbatim}
 in the MATLAB shell will produce a picture similar to Figure \ref{fig:rossspeed}.
+
 
 \scripthead{util/nc\und template.py}\index{nc\und template.py} This Python script reads \verb|pism_state.cdl| and runs \verb|ncgen| to create an empty NetCDF file in PISM-readable format with given grid dimensions and variables defined.
 

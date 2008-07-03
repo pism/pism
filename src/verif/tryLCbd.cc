@@ -23,6 +23,7 @@ static char help[] =
 #include <cstdio>
 #include <petscvec.h>
 #include <petscda.h>
+#include "../base/pism_const.hh"
 #include "../base/materials.hh"
 #include "../base/beddefLC.hh"
 

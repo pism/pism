@@ -563,8 +563,9 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
           mask[i][j] = MASK_SHEET;
         } 
       } else { // if some ice thickness then check floating criterion
-        const PetscScalar hgrounded = bed[i][j] + H[i][j];
-        const PetscScalar hfloating = (1-ice->rho/ocean.rho) * H[i][j];
+        const PetscScalar 
+           hgrounded = bed[i][j] + H[i][j],
+           hfloating = seaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
         // check whether you are actually floating or grounded
         if (hgrounded > hfloating) {
           h[i][j] = hgrounded; // actually grounded so set h

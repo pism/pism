@@ -147,7 +147,8 @@ protected:
                                     // of 3D components of velocities
   PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
                                //   [units m/s] and d(volume)/dt [units m^3/s]
-  PetscScalar min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp, oceanHeatFlux;
+  PetscScalar min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp, 
+              oceanHeatFlux, seaLevel;
   PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel, maxLowTempCount;
 
   // flags
