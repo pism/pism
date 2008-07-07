@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{339}
+\newcommand{\PISMREV}{340}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 %\addtolength\topmargin{-.1in}
@@ -1660,13 +1660,15 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 \opt{bed\und def\und lc} Compute bed deformations, caused by the changing load of the ice, using a viscoelastic earth model.  Uses the model and computational technique described in \cite{BLKfastearth}, based on the continuum model in \cite{LingleClark}.
 
+\opt{float\und kill}  If ice is (or becomes) floating then it is set to thickness zero.  This is calving at the grounding line.
+
 \opt{hold\und tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \verb|-ssa| and \verb|-plastic| are also set.  See documentation of option \verb|-plastic| for a description of the till yield stress model.
 
 \opt{no\und mass}  Forces PISM to not change the ice thickness.  No time steps of the mass conservation equation are computed.
 
 \opt{no\und temp}  Force PISM to not change temperature or age values within the ice.  No time steps of the energy conservation and age equations are computed.
 
-\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero.  Has no effect when used in conjunction with \verb|-no_mass|.
+\opt{ocean\und kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask (value \verb|MASK_FLOATING_OCEAN0|$=7$), will zero out ice thicknesses in areas that were ice-free ocean at time zero.  This is calving at the location of the original calving front.  Has no effect when used in conjunction with \verb|-no_mass|.
 
 \opt{pdd}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use the method described in \cite{CalovGreve05}, which computes the expected number of positive degree days.  See subsection \ref{subsect:pdd}.
 

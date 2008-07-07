@@ -35,8 +35,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
   PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet,
               my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
-              myincludeBMRinContinuity, lowtempSet,
-              mydoOceanKill, mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
+              myincludeBMRinContinuity, lowtempSet, mydoOceanKill, floatkillSet,
+              mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
               mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet, maxlowtempsSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
@@ -137,6 +137,10 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
 // note "-f3d" is read in writefiles() in iMIO.cc
+
+  // whether or not to kill ice (zero thickness) if it is (or becomes) floating
+  ierr = PetscOptionsHasName(PETSC_NULL, "-float_kill", &floatkillSet); CHKERRQ(ierr);
+  if (floatkillSet == PETSC_TRUE)  floatingIceKilled = PETSC_TRUE;
 
 // note "-gk" is in use for specifying Goldsby-Kohlstedt ice
 

@@ -158,9 +158,10 @@ protected:
   PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
-  PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, allowAboveMelting;
+  PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
   PetscTruth  realAgeForGrainSize;
-  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps;
+  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps,
+              allowAboveMelting;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, transformForSurfaceGradient;
   char        adaptReasonFlag;

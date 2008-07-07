@@ -536,9 +536,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // apply free boundary rule: negative thickness becomes zero
       if (Hnew[i][j] < 0)
         Hnew[i][j] = 0.0;
-      // force zero at ocean; "accumulation-zone" b.c.
+
+      // force zero thickness at points which were originally ocean (if "-ocean_kill");
+      //   this is calving at original calving front location
       if ( (doOceanKill == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
         Hnew[i][j] = 0.0;
+
+      // force zero thickness at points which are floating (if "-float_kill");
+      //   this is calving at grounding line
+      if ( (floatingIceKilled == PETSC_TRUE) && (modMask(mask[i][j]) == MASK_FLOATING) )
+        Hnew[i][j] = 0.0;
+
     }
   }
 

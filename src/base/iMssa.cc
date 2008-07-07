@@ -791,8 +791,10 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
 
 //! At SSA points, correct the previously-computed basal frictional heating.
+/*!
+Ice shelves have zero basal friction heating.
+ */
 PetscErrorCode IceModel::correctBasalFrictionalHeating() {
-  // recompute vRb in ice stream (MASK_DRAGGING) locations; zeros vRb in FLOATING
   PetscErrorCode  ierr;
   PetscScalar **ub, **vb, **mask, **Rb, **tauc;
 
@@ -835,7 +837,6 @@ This is documented in the draft of Ed Bueler and Jed Brown, (2008), ``The shallo
 approximation as a ``sliding law'' in an ice sheet model with streaming flow''.
  */
 PetscErrorCode IceModel::correctSigma() {
-  // recompute Sigma in ice stream and shelf (DRAGGING,FLOATING) locations
   PetscErrorCode  ierr;
   PetscScalar **H, **mask, **ubarssa, **vbarssa;
   PetscScalar *Sigma, *T;

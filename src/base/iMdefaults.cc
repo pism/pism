@@ -83,6 +83,7 @@ const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 10.0;
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
 const PetscScalar DEFAULT_SEA_LEVEL = 0.0;  // used in updateSurfaceElevationAndMask()
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
+const PetscTruth  DEFAULT_FLOATING_ICE_KILLED = PETSC_FALSE;
 
 const PetscTruth  DEFAULT_USE_SSA_VELOCITY = PETSC_FALSE;
 const PetscTruth  DEFAULT_DO_PLASTIC_TILL = PETSC_FALSE;
@@ -154,7 +155,8 @@ PetscErrorCode IceModel::setDefaults() {
   muSliding = DEFAULT_MU_SLIDING;
   thermalBedrock = DEFAULT_THERMAL_BEDROCK;
   doOceanKill = DEFAULT_OCEAN_KILL;
-  
+  floatingIceKilled = DEFAULT_FLOATING_ICE_KILLED;
+
   ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
   
   computeSIAVelocities = PETSC_TRUE;
