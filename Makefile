@@ -18,11 +18,14 @@ GOALS = $(MAKECMDGOALS)
 ALL: all
 
 update: svn_update
+	@$(MAKE) rebuild
+
+rebuild:
 ifeq ($(shell touch src/revision; svnversion src/ | diff src/revision -),)
 	@echo "src/ directory is up to date."
 else
 	@echo "Rebuilding PISM..."
-	$(MAKE) all install
+	@$(MAKE) all install
 endif
 
 install: local_install
@@ -33,6 +36,10 @@ depclean:
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."
 	@svn update
+
+clean:
+	@make -C $(BUILD_DIR) clean
+	@make -C doc clean
 
 userman refman browser summary fullbib:
 	@cd doc && $(MAKE) $@
