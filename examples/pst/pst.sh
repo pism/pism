@@ -34,6 +34,11 @@ if [ $# -gt 0 ] ; then  # if user says "pst.sh 8" then NN = 8
   NN="$1"
 fi
 
+SHOWONLY=0
+if [ $# -gt 1 ] ; then  # if user says "pst.sh 8 D" then NN = 8 and only shows; no run 
+  SHOWONLY=1
+fi
+
 set -e  # exit on error
 
 # function to run "pisms -pst" on NN processors
@@ -45,7 +50,9 @@ mpst()
     echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"
     echo
-    $cmd
+    if [ $SHOWONLY = 0 ] ; then
+      $cmd
+    fi
 }
 
 # function to run pisms on NN processors and set vertical grid to standard choices
@@ -85,7 +92,6 @@ mpst $NN "-P1 -if P0A.nc -ys 0 -y 5000 -o P1"
 #mpst $NN "-P1 -if P0A.nc -ys 0 -y 100 -o P1_100"
 #mpst $NN "-P1 -if P1_100.nc -y 900 -o P1_1000"
 
-
 # P2: flat with THREE same width and NOT grid-aligned ice streams
 mpst $NN "-P2 -if P0A.nc -ys 0 -y 5000 -o P2"
 
@@ -124,6 +130,7 @@ mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 \
 mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4coarse"
 
+exit
 
 # FINE: as above but on 7.5km grid
 mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 \
