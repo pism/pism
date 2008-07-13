@@ -165,15 +165,6 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
   }
 
-#if 0
-  if ((dTforceSet == PETSC_FALSE) && (expernum == 3)) {
-    SETERRQ(5, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta T forcing data\n");
-  }
-  if ((dSLforceSet == PETSC_FALSE) && (expernum == 3)) {
-    SETERRQ(6, "ERROR: EISMINT-GREENLAND experiment CCL3 needs delta sea level forcing data\n");
-  }
-#endif
-
   if ((expernum == 4) && (dTforceSet == PETSC_TRUE)) {
     SETERRQ(3, "ERROR: EISMINT-GREENLAND experiment GWL3 cannot use -dTforcing option.\n");
   }
@@ -241,7 +232,7 @@ PetscErrorCode IceGRNModel::updateTs() {
   PetscScalar **Ts, **lat, **h;
   
   ierr = verbPrintf(4, grid.com, 
-     "recomputing surface temperatures according to EISMINT-Greenland rule \n");
+     "recomputing surface temperatures according to EISMINT-Greenland rule and setting TsOffset=0.0\n");
      CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
@@ -255,6 +246,9 @@ PetscErrorCode IceGRNModel::updateTs() {
   ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  
+  TsOffset = 0.0;  // see IceModel::updateForcing(); note old offset is not 
+                   //    in vTs because vTs is totally recomputed
   return 0;
 }
 

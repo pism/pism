@@ -99,6 +99,7 @@ Note: your data was not modified.""" % initial_guess
             xi = sum(data[Is, Js]) - 4 * data[i,j]
             initial_norm += abs(xi)
     print "Initial norm of residual =", initial_norm
+    print "Criterion is (change < %f) OR (res norm < %f (initial norm))." %         (eps2,eps1)
 
     omega = 1.0
     # The main loop:
@@ -136,7 +137,7 @@ if __name__ == "__main__":
     from shutil import copyfile, move
     from tempfile import mkstemp
     from os import close
-    from time import time
+    from time import time, asctime
     from pycdf import *
 
     try:
@@ -193,6 +194,14 @@ if __name__ == "__main__":
        print message
        print "Note: %s was not modified." % output_filename
        exit(-1)
+
+    # add history global attribute (after checking if present)
+    historysep = ' '
+    historystr = asctime() + ': ' + historysep.join(argv) + '\n'
+    if 'history' in nc.attributes().keys():
+      nc.history += historystr
+    else:
+      nc.history = historystr
 
     t_zero = time()
     for name in variables:

@@ -252,7 +252,7 @@ protected:
 
   // see iMforcing.cc
   IceSheetForcing  *dTforcing, *dSLforcing;
-  PetscScalar    TsOffset, bedSLOffset;
+  PetscScalar    TsOffset;
   PetscErrorCode initForcingFromOptions();
   PetscErrorCode updateForcing();
   PetscErrorCode forcingCleanup();

@@ -2,6 +2,7 @@
 
 import sys
 import getopt
+import time
 from numpy import *
 from pycdf import *
 
@@ -245,6 +246,10 @@ inlets.close()
 ##### create and define dimensions and variables in NetCDF file #####
 ncfile = CDF(WRIT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
+# set global attributes
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
 # define the dimensions
 tdim = ncfile.def_dim('t', NC.UNLIMITED)
 xdim = ncfile.def_dim('x', MxROSS)

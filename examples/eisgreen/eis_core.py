@@ -4,6 +4,7 @@ from numpy import *
 from pycdf import *
 import getopt
 import sys
+import time
 
 GRIP_FILE = 'sum89-92-ss09-50yr.stp'
 SPEC_FILE = 'specmap.017'
@@ -61,6 +62,10 @@ input.close()
 # open the nc for delta Sea Level file to write to
 ncfile = CDF(DSL_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
+# set global attributes
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
 # define time dimension, then time variable, then attributes
 Stdim = ncfile.def_dim('t', size(dSea))
 Stvar = ncfile.def_var('t', NC.FLOAT, (Stdim,))
@@ -116,6 +121,8 @@ print str(count) + ' numbers read.'
 # open the nc file to write to
 ncfile = CDF(DT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
+# set global attributes; historystr already created
+setattr(ncfile, 'history', historystr)
 # define time dimension, then time variable, then attributes
 Ttdim = ncfile.def_dim('t', int(dim[0])/2)
 Ttvar = ncfile.def_var('t', NC.FLOAT, (Ttdim,))

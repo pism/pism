@@ -249,6 +249,5 @@ PetscErrorCode IceModel::setDefaults() {
 
   // see updateForcing() and what it calls
   TsOffset = 0.0;
-  bedSLOffset = 0.0;
   return 0;
 }

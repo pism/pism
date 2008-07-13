@@ -3,6 +3,7 @@
 #import Numeric
 import sys
 import getopt
+import time
 from numpy import *
 from pycdf import *
 
@@ -126,6 +127,12 @@ putmask(B, B == 0, fill_value)
 ncfile = CDF(WRIT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
 
+# set global attributes
+setattr(ncfile, 'Conventions', 'CF-1.0')
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
+
 # define the dimensions
 tdim = ncfile.def_dim('t', NC.UNLIMITED)
 xdim = ncfile.def_dim('x', int(dim[0]))
@@ -146,9 +153,6 @@ hvar = ncfile.def_var('usurf', NC.FLOAT, (tdim, xdim, ydim))
 Hvar = ncfile.def_var('thk', NC.FLOAT, (tdim, xdim, ydim))
 Bvar = ncfile.def_var('topg', NC.FLOAT, (tdim, xdim, ydim)) 
 Accvar = ncfile.def_var('acab', NC.FLOAT, (tdim, xdim, ydim))
-
-# set global attributes
-setattr(ncfile, 'Conventions', 'CF-1.0')
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')

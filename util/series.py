@@ -13,6 +13,7 @@ from numpy import *
 from pycdf import *
 import getopt
 import sys
+import time
 
 # defaults
 IN_FILE = 'foo.txt'
@@ -117,6 +118,11 @@ infile.close()
 # open a NetCDF file to write to
 ncfile = CDF(outfilename, NC.WRITE|NC.CREATE|NC.TRUNC)
 ncfile.automode()
+
+# add history global attribute
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
 
 # always have time dimension t and step var delta_t
 # define time dimension, then time variable, then attributes

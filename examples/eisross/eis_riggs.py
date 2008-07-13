@@ -2,6 +2,7 @@
 
 import sys
 import getopt
+import time
 from numpy import *
 from pycdf import *
 
@@ -81,6 +82,9 @@ riggsvvar = ncfile.def_var('riggsv', NC.FLOAT, (xdim,))
 ##### attributes in NetCDF file #####
 # set global attributes
 setattr(ncfile, 'Conventions', 'CF-1.0')
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
 # set the attributes of the variables
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'index in RIGGS data')

@@ -5,7 +5,9 @@ import sys
 from getopt import getopt, GetoptError
 import pycdf
 
-# description of where the transcripts are:
+# description of where the transcripts are
+# (0,       1,        2,      3,       4,      5,      6)
+# (FILENAME,STARTLINE,ENDLINE,EXPERNUM,GRIDRES,[0|1|2],[P1contSTAGE])
 desc = [
 ('../pst_P3etc.out',34216,43806,1,15,0),  # 15km (coarse) grids
 ('../pst_P3etc.out',43808,53326,2,15,0),
@@ -26,7 +28,7 @@ desc = [
 ('../mid_6july/pstfinish.pbs.o510189',4,87292,1,5,0),  # 5km (finest) grids
 ('../mid_6july/pstfinish.pbs.o510189',87296,174820,2,5,0),
 ('../mid_6july/pstfinish.pbs.o510189',174823,315350,3,5,0),
-#('../mid_6july/pstfinish.pbs.o510189',,,1,5,0),  # P4 NOT COMPLETED;FIXME
+('../mid_8july/pstfinish2.pbs.o511587',4,86959,4,5,0),
 ('../mid_7july/pstP1cont.pbs.o510058',4,66949,1,10,2,20),  # P1cont
 ('../mid_7july/pstP1cont.pbs.o510058',66953,159004,1,10,2,40),
 ('../mid_7july/pstP1cont.pbs.o510058',159008,252293,1,10,2,60),
@@ -110,6 +112,8 @@ for k in desc:
   nc = pycdf.CDF(filename)
   time = nc.var("t").get()
 
+  # figure(1|2|3|4) shows grid refinement for ivol time series
+  #   for P[1|2|3|4]
   if ( (k[5] == 0) | (k[5] == 1) ):
     print "adding ivol to figure(%d)" % (k[3])
     figure(k[3])
@@ -123,6 +127,7 @@ for k in desc:
     plot(time, var, linestyle=myls, linewidth=1.5, color=getcolor(k[4]), label=mylabel)
     hold(False)
 
+  # figure(5) shows P2 down stream speeds from 5km run
   if ( (k[3] == 2) & (k[4] == 5) ):  # want only finest
     print "adding avdwn0,avdwn1,avdwn2 to figure(5)"
     figure(5)
@@ -134,6 +139,11 @@ for k in desc:
       semilogy(time, var, linestyle=P2styles[j], linewidth=1.5, 
                color='black', label=mylabel)
 
+  # figure(6) shows P1cont ivol time series
+  # figure(7) shows P1cont down stream speed time series
+  #     for 30,50,70 km wide streams
+  # figure(8) shows P1cont down stream speed time series
+  #     for 100km wide stream
   if ( (k[5] == 2) | ((k[3] == 1) & (k[4] == 10) & (k[5] == 0)) ):
     print "adding ivol from P1cont to figure(6)"
     figure(6)
@@ -158,7 +168,8 @@ for k in desc:
     myl = semilogy(time, var, linewidth=1.5, color='black')
     P1contlines.append(myl)
 
-  if ((k[4] == 10) & (k[5] == 0)):
+  # figure(9) shows ivol time series for P[1|2|3|4] on 5km grid
+  if ((k[4] == 5) & (k[5] == 0)):
     print "adding ivol to figure(9)"
     figure(9)
     hold(True)
@@ -182,7 +193,6 @@ def savepng(fignum,prefix):
 # ivol figures
 for j in [1,2,3,4]:
   figure(j)
-  #title("results for experiment P%d" % (j))
   xlabel("t  (a)",fontsize=16)
   ylabel(r'volume  ($10^6$ $\mathrm{km}^3$)',fontsize=16)
   axis([0, 5000, 2.10, 2.22]) 
@@ -196,9 +206,9 @@ for j in [1,2,3,4]:
 figure(9)
 xlabel("t  (a)",fontsize=16)
 ylabel(r'volume  ($10^6$ $\mathrm{km}^3$)',fontsize=16)
-axis([0, 5000, 2.10, 2.22]) 
+axis([0, 5000, 2.14, 2.22]) 
 xticks(arange(0,6000,1000),fontsize=14)
-yticks(arange(2.10,2.22,0.02),fontsize=14)
+yticks(arange(2.14,2.22,0.02),fontsize=14)
 legend(loc='upper right')
 savepng(9,"Pall_vol")
 

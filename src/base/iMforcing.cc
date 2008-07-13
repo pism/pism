@@ -62,7 +62,6 @@ PetscErrorCode IceModel::initForcingFromOptions() {
 
   if (dSLforceSet == PETSC_TRUE) {
     dSLforcing = new IceSheetForcing;
-    bedSLOffset = 0.0;
     int stat, ncid = 0;
     ierr = verbPrintf(2, grid.com, 
          "reading delta sea level data from forcing file %s ...\n", 
@@ -81,7 +80,7 @@ PetscErrorCode IceModel::initForcingFromOptions() {
 }
 
 
-//! Shift vTs (dTforcing) or vbed (dSLforcing) according to value read from corresponding climate data.
+//! Shift vTs (dTforcing) or update seaLevel (dSLforcing) according to value read from corresponding climate data.
 PetscErrorCode IceModel::updateForcing() {
   PetscErrorCode ierr;
 
@@ -108,7 +107,7 @@ PetscErrorCode IceModel::updateForcing() {
     ierr = verbPrintf(5,grid.com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
        newSeaLevel); CHKERRQ(ierr);
 
-    // for efficiency we only act if the value is new:
+    // act only if the value is new:
     if (seaLevel != newSeaLevel) {
       seaLevel = newSeaLevel;
       updateSurfaceElevationAndMask();  // fix the mask; new ice could be floating or grounded
@@ -128,8 +127,6 @@ PetscErrorCode IceModel::forcingCleanup() {
     dTforcing = PETSC_NULL;
   }
   if (dSLforcing != PETSC_NULL) {
-    ierr = VecShift(vbed,-bedSLOffset); CHKERRQ(ierr); // return vbed to unshifted state
-    bedSLOffset = 0.0;
     delete dSLforcing;
     dSLforcing = PETSC_NULL;
   }
