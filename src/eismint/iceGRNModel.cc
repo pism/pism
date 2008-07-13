@@ -36,36 +36,27 @@ IceGRNModel::IceGRNModel(IceGrid &g, IceType *i) : IceModel(g, i) {
 
 PetscErrorCode IceGRNModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set, gkSet, flowlawSet;
-  PetscInt lawNum;
+  PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
 
   expernum = 1;  // SSL2 is the default
   ierr = PetscOptionsHasName(PETSC_NULL, "-ssl2", &ssl2Set); CHKERRQ(ierr);
   if (ssl2Set == PETSC_TRUE)   expernum = 1;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
-  if (ssl3Set == PETSC_TRUE)   expernum = 2;
   ierr = PetscOptionsHasName(PETSC_NULL, "-ccl3", &ccl3Set); CHKERRQ(ierr);
   if (ccl3Set == PETSC_TRUE)   expernum = 3;
   ierr = PetscOptionsHasName(PETSC_NULL, "-gwl3", &gwl3Set); CHKERRQ(ierr);
   if (gwl3Set == PETSC_TRUE)   expernum = 4;
 
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
-    // use Goldsby-Kohlstedt with enhancement factor of 1; user will have to give "-gk"
-    enhancementFactor = 1;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &gkSet); CHKERRQ(ierr);
-    ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &lawNum, &flowlawSet); CHKERRQ(ierr);
-    if (gkSet == PETSC_FALSE && ( (flowlawSet == PETSC_TRUE && lawNum != 4)
-                                  || flowlawSet == PETSC_FALSE)             ) {
-      ierr = verbPrintf(1, grid.com, 
-          "WARNING: SSL3 specified, but not -gk; setting -e 3\n"); CHKERRQ(ierr);
-      enhancementFactor = 3;
-    }
-  } else {
-    enhancementFactor = 3;
+    SETERRQ(1,"EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
+            "Choose parameters yourself, by runtime options.\n");
   }
+
+  enhancementFactor = 3;
   
-  if ((ssl3Set == PETSC_TRUE) || (ccl3Set == PETSC_TRUE) || (gwl3Set == PETSC_TRUE)) {
-    // use Lingle-Clark bed deformation model
+  if (expernum == 1) { // no bed deformation for steady state (SSL2)
+    doBedDef = PETSC_FALSE;
+  } else { // use Lingle-Clark bed deformation model for CCL3 and GWL3
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_FALSE;
   }
@@ -82,8 +73,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_EI_delete", &noEllesmereIcelandDelete);
      CHKERRQ(ierr);
   
-  // note: user value for -e and -mu_sliding will override enhancementFactor,
-  //    mu_sliding setting above
+  // note: user value for -e, and -gk, and so on, will override settings above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
   return 0;
 }
@@ -91,8 +81,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
 PetscErrorCode IceGRNModel::initFromOptions() {
   PetscErrorCode ierr;
-  char inFile[PETSC_MAX_PATH_LEN], dTFile[PETSC_MAX_PATH_LEN], dSLFile[PETSC_MAX_PATH_LEN];
-  PetscTruth inFileSet, bootFileSet, dTforceSet, dSLforceSet, nopddSet;
+  char inFile[PETSC_MAX_PATH_LEN];
+  PetscTruth inFileSet, bootFileSet, nopddSet;
   
   // wait on init hook; possible regridding!:
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  
@@ -101,10 +91,6 @@ PetscErrorCode IceGRNModel::initFromOptions() {
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dTforcing", dTFile,
-                               PETSC_MAX_PATH_LEN, &dTforceSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dSLforcing", dSLFile,
-                               PETSC_MAX_PATH_LEN, &dSLforceSet); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_pdd", &nopddSet); CHKERRQ(ierr);
 
   if (nopddSet == PETSC_TRUE) {
@@ -163,13 +149,6 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     }
   } else {
     SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
-  }
-
-  if ((expernum == 4) && (dTforceSet == PETSC_TRUE)) {
-    SETERRQ(3, "ERROR: EISMINT-GREENLAND experiment GWL3 cannot use -dTforcing option.\n");
-  }
-  if ((expernum == 4) && (dSLforceSet == PETSC_TRUE)) {
-    SETERRQ(4, "ERROR: EISMINT-GREENLAND experiment GWL3 cannot use -dSLforcing option.\n");
   }
 
   if (!isInitialized()) {
@@ -232,7 +211,8 @@ PetscErrorCode IceGRNModel::updateTs() {
   PetscScalar **Ts, **lat, **h;
   
   ierr = verbPrintf(4, grid.com, 
-     "recomputing surface temperatures according to EISMINT-Greenland rule and setting TsOffset=0.0\n");
+     "recomputing surface temperatures according to EISMINT-Greenland rule"
+     " and setting TsOffset=0.0\n");
      CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);

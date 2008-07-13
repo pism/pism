@@ -33,7 +33,7 @@ public:
   virtual PetscErrorCode initFromOptions();
 
 protected:
-  int expernum;  // SSL2 is 1, SSL3 is 2, CCL3 is 3, GWL3 is 4
+  int expernum;  // SSL2 is 1, CCL3 is 3, GWL3 is 4
   virtual PetscErrorCode additionalAtStartTimestep();
 
 private:
