@@ -54,6 +54,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   enhancementFactor = 3;
   
+  doOceanKill = PETSC_TRUE;
+  
   if (expernum == 1) { // no bed deformation for steady state (SSL2)
     doBedDef = PETSC_FALSE;
   } else { // use Lingle-Clark bed deformation model for CCL3 and GWL3
