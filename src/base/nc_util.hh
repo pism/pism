@@ -64,7 +64,7 @@ public:
   int ncid;
   int nz, nzb;
   double *zlevs, *zblevs;
-  bool regrid_2d_only;
+  bool regrid_2d_only, no_regrid_bedrock;
 
 public:
   LocalInterpCtx(int ncid, const size_t dim[], const double bdy[],

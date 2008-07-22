@@ -340,10 +340,11 @@ PetscErrorCode BedDeformLC::uplift_init() {
   // Bueler, Lingle, Brown (2007) "Fast computation of a viscoelastic
   // deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
   // [NOTE PROBABLE SIGN ERROR in eqn (16)?:  load "rho g H" should be "- rho g H"]
-  PetscErrorCode ierr;
-  PetscScalar **upl, **pla, **lft, **rgt;
     
 #if (WITH_FFTW)
+  PetscErrorCode ierr;
+  PetscScalar **upl, **pla, **lft, **rgt;
+
   // spectral/FFT quantities are on fat computational grid but uplift is on thin
   ierr = VecGetArray2d(*uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
   ierr = VecGetArray2d(plateoffset, Nx, Ny, 0, 0, &pla); CHKERRQ(ierr);
@@ -396,6 +397,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
   ierr = VecCopy(plateoffset,platefat); CHKERRQ(ierr);
 #endif
+
   return 0;
 }
 
@@ -408,13 +410,15 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
   // Bueler, Lingle, Brown (2007) "Fast computation of a viscoelastic
   // deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
   PetscErrorCode ierr;
-  const PetscScalar dt = dtyear * secpera;
-  PetscScalar **dH, **b, **bs, **dbE, **pla, **plaoff, **lft, **rgt;
+  PetscScalar **b, **bs, **dbE, **pla, **plaoff;
 
   // update Hdiff from H
   ierr = VecWAXPY(Hdiff, -1, *Hstart, *H); CHKERRQ(ierr);
 
 #if (WITH_FFTW)
+  const PetscScalar dt = dtyear * secpera;
+  PetscScalar **dH, **lft, **rgt;
+
   // note ice thicknesses and bed elevations only on physical ("thin") grid
   //   while spectral/FFT quantities are on fat computational grid
   ierr = VecGetArray2d(platefat, Nx, Ny, 0, 0, &pla); CHKERRQ(ierr);

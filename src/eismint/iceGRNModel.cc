@@ -63,7 +63,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     doBedIso = PETSC_FALSE;
   }
   
-  muSliding = 0.0;  // no sliding in any case; perhaps develop an SSA variant??
+  muSliding = 0.0;  // no SIA-type sliding!
 
   doTempSkip = PETSC_TRUE;
   tempskipMax = 20;

@@ -16,6 +16,8 @@ ifndef PISM_REVISION
   Please define PISM_REVISION in the top-level Makefile)
 endif
 
+DISPLAY = :0.0
+
 # Get PETSc environment and rules:
 include $(PETSC_DIR)/bmake/common/base
 
@@ -27,8 +29,7 @@ CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
 SHARED = -shared # default (for Linux)
 
 # Linker flags:
-TESTS_LIB_FLAGS := -L$(PISM_PREFIX) -L$(PISM_PREFIX)/lib \
-                   -Wl,-rpath,$(PISM_PREFIX) -Wl,-rpath,$(PISM_PREFIX)/lib \
+TESTS_LIB_FLAGS := -L. -Wl,-rpath,$(PISM_PREFIX) -Wl,-rpath,$(PISM_PREFIX)/lib \
                    -ltests -lm -lgsl -lgslcblas
 
 ICE_LIB_FLAGS := -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf 
@@ -201,7 +202,8 @@ clean: depclean
 
 distclean: clean
 	@rm -f \
-	libpism.so libtests.so lib/libpism.so lib/libtests.so \
+	libpism.so libtests.so \
+	$(PISM_PREFIX)/lib/libpism.so $(PISM_PREFIX)/lib/libtests.so \
 	$(executables) $(extra_execs) \
 	$(addprefix $(PISM_PREFIX)/bin/, $(executables) $(extra_execs))
 
@@ -212,3 +214,4 @@ ifneq ($(MAKECMDGOALS),clean)
     include $(depfiles)
   endif
 endif
+

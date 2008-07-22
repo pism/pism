@@ -91,16 +91,25 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
         Ly,bdy[3],bdy[4]);
     PetscEnd();
   }
-  if (-bdy[5] < Lbz || bdy[6] < Lz) {
+  if (bdy[6] < Lz) {
     verbPrintf(3,grid.com,
         "  LIC WARNING: vertical dimension of target computational domain\n"
         "    not a subset of source (in NetCDF file) computational domain;\n"
-        "    either  -bdy[5] = %5.4f < Lbz = %5.4f\n"
-        "    or  bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
-        -bdy[5], Lbz, bdy[6], Lz);
+        "    bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
+        bdy[6], Lz);
     regrid_2d_only = true;
   } else {
     regrid_2d_only = false;
+  }
+  if (-bdy[5] < Lbz) {
+    verbPrintf(3,grid.com,
+        "  LIC WARNING: vertical dimension of target BEDROCK computational domain\n"
+        "    not a subset of source (in NetCDF file) BEDROCK computational domain;\n"
+        "    -bdy[5] = %5.4f < Lbz = %5.4f; NOT ALLOWING BEDROCK REGRIDDING ...\n",
+        -bdy[5], Lbz);
+    no_regrid_bedrock = true;
+  } else {
+    no_regrid_bedrock = false;
   }
 
   // limits of the processor's part of the target computational domain
@@ -835,10 +844,15 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
       dims = 3; // time, x, y
       break;
     case 3:
-    case 4:
-      dims = 4; // time, x, y, {z|zb}
+      dims = 4; // time, x, y, z
       if (lic.regrid_2d_only) {
-        SETERRQ(2, "regrid_2d_only is set, so dim_flag == 3 or 4 is not allowed");
+        SETERRQ(2, "regrid_2d_only is set, so dim_flag == 3 is not allowed");
+      }
+      break;
+    case 4:
+      dims = 4; // time, x, y, zb
+      if (lic.no_regrid_bedrock) {
+        SETERRQ(2, "no_regrid_bedrock is set, so dim_flag == 4 is not allowed");
       }
       break;
     default:
