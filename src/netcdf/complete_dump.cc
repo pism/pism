@@ -90,6 +90,7 @@
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, dHdt_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // compute cbar = sqrt(ubar^2 + vbar^2) and save it
   ierr = VecPointwiseMult(vWork2d[0], vubar, vubar); CHKERRQ(ierr);
   ierr = VecPointwiseMult(vWork2d[1], vvbar, vvbar); CHKERRQ(ierr);
@@ -110,10 +111,12 @@
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, cbar_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // compute cflx = cbar .* thk and save it
   ierr = VecPointwiseMult(vWork2d[1], vWork2d[0], vH); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, cflx_id, NC_FLOAT, grid.da2, vWork2d[1], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // compute cbase  = sqrt(u|_{z=0}^2 + v|_{z=0}^2) and save it
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
@@ -125,16 +128,23 @@
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      a[i][j] = sqrt(PetscSqr(ub[i][j]) + PetscSqr(vb[i][j])) * secpera;
+      if (H[i][j] > 0.0) {
+        a[i][j] = sqrt(PetscSqr(ub[i][j]) + PetscSqr(vb[i][j])) * secpera;
+      } else {
+        a[i][j] = 0.0;
+      }
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vb); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, cbase_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
@@ -146,16 +156,23 @@
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      a[i][j] = sqrt(PetscSqr(us[i][j]) + PetscSqr(vs[i][j])) * secpera;
+      if (H[i][j] > 0.0) {
+        a[i][j] = sqrt(PetscSqr(us[i][j]) + PetscSqr(vs[i][j])) * secpera;
+      } else {
+        a[i][j] = 0.0;
+      }
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &us); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &vs); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &a); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, csurf_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // compute wsurf, the surface values of vertical velocity
   ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   ierr = w3.getSurfaceValuesVec2d(vWork2d[0], vH); CHKERRQ(ierr);
@@ -163,11 +180,13 @@
   ierr = VecScale(vWork2d[0],secpera); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, wsurf_id, NC_FLOAT, grid.da2, vWork2d[0], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // compute magnitude of basal shear stress = rho g H |grad h|
   ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
   ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, taud_id, NC_FLOAT, grid.da2, vWork2d[2], g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
   // write out yield stress
   ierr = nct.put_local_var(&grid, ncid, tauc_id, NC_FLOAT, grid.da2, vtauc, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);

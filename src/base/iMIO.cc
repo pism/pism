@@ -158,7 +158,8 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
 PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   PetscErrorCode ierr;
 
-// bring in the result of applying ncgen.rb to pism_state.cdl (see directory pism/src/netcdf/)
+// bring in the result of applying pism-state-ncgen.py to pism_state.cdl
+//   (see directory pism/src/netcdf/)
 #include "../netcdf/write_attributes.c"
 
   int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
@@ -189,7 +190,9 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
 PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
   PetscErrorCode ierr;
 
-// bring in the result of applying ncgen.rb to pism_state.cdl along with pism_diag.fragment
+// bring in the result of applying pism-state-ncgen.py to pism_state.cdl
+//   and pism_diag.fragment
+//   (see directory pism/src/netcdf/)
 // ("ncid" defined in included file)
 #include "../netcdf/write_diag_attributes.c"
 

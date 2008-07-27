@@ -220,7 +220,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   const PetscScalar   dx = grid.dx, 
                       dy = grid.dy;
   const PetscInt      Mz = grid.Mz;
-  PetscScalar **ub, **vb, **basalMeltRate, **b, **dbdt;
+  PetscScalar **ub, **vb, **basalMeltRate, **mask, **b, **dbdt;
   PetscScalar *u, *v, *w;
 
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
@@ -229,6 +229,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 
   ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuplift, &dbdt); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
@@ -239,11 +240,16 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
 
-      // basal w from basal kinematical equation
-      const PetscScalar dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx),
-                        dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
+      PetscScalar dbdx = 0.0, dbdy = 0.0;
+      if (modMask(mask[i][j]) != MASK_FLOATING) {
+        // basal w from basal kinematical equation when grounded
+        dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx),
+        dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
+      }
+
 //      w[0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy; // DEBUG?: remove dbdt
       w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
+
       if (includeBMRinContinuity == PETSC_TRUE) {
         w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
       }
@@ -277,6 +283,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 
   ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuplift, &dbdt); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
