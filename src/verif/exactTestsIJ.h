@@ -35,7 +35,7 @@ extern "C"
 !     on pages 237 and 238 of C. Schoof 2006 "A variational approach to ice 
 !     streams" J Fluid Mech 556 pp 227--251
 ! 2.  an exact solution for a linearized ice shelf with periodic boundary 
-!     conditions [CREATED BY ELB; give reference]
+!     conditions [CREATED BY ELB; ONLY REFERENCE IS EARLY PREPRINT]
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */

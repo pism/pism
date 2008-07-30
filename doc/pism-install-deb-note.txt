@@ -1,14 +1,15 @@
-                                     07May08; 26Apr08 (Ed Bueler)
+                                  22July08; 07May08; 26Apr08 (Ed Bueler)
 
 EXPLANATION OF THIS NOTE:  
 
-I just updated a couple of computers to ubuntu 8.04.  In this process I 
-created a new partition and installed a from-scratch copy of ubuntu.  
+I just updated a couple of computers to ubuntu 8.04.  
 Partly this was to see how it worked, I rebuilt PISM from scratch, trying 
-to do it just with Debian packages.  Without building PETSc from source, 
-in particular.  This time it worked, with a few minor hiccups.  
+to do it just with Debian packages and without building PETSc from source. 
 
-Here is what I did:
+This time it worked, with a few minor hiccups.  
+
+Below is what I did.  These comments should all apply to the stable0.1
+source code branch as well; see https://gna.org/projects/pism.
 
 
 ***************** DEBIAN PACKAGES USED *******************
@@ -34,32 +35,26 @@ g++    (WITHOUT THIS I SAW A COMPILE ERROR "gcc: error trying to exec 'cc1plus'"
 subversion
 
 
-****************
-
-AS A SEPARATE MATTER, THE LATEST .deb FOR PETSc WHICH I CAME ACROSS WAS:
-
-http://mirror.steadfast.net/debian/pool/main/p/petsc/petsc-dev_2.3.3-11_all.deb
-
-BUT I DID NOT USE IT DIRECTLY; synaptic DID THE JOB AND I AM NOT COMPLETELY
-SURE WHICH 2.3.3 IT USED.
-
-
 ***************** PISM *******************
 
 THEN I GRABBED THE PISM DEVELOPMENT VERSION:
 
   svn co http://svn.gna.org/svn/pism/trunk pism-dev
 
-(NOTE THESE COMMENTS SHOULD ALL APPLY TO THE stable0.1 BRANCH AS WELL.)
+(FOR stable0.1:  svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1 )
 
 THEN, BASED ON THE "Installed Files" REPORTED FOR libpetsc2.3.3-dev USING
 synaptic, I ADDED THE LINES
 
   export PETSC_DIR=/usr/lib/petscdir/2.3.3/
   export PETSC_ARCH=linux-gnu-c-opt
-  export PATH=/home/bueler/pism-dev/bin/:/home/bueler/pism-dev/test/:$PATH
+  export PATH=/home/bueler/pism-dev/bin/:/home/bueler/pism-dev/util/:$PATH
 
 TO MY .bashrc.
+
+(FOR stable0.1 it would be:
+  export PATH=/home/bueler/pism0.1/bin/:/home/bueler/pism0.1/test/:$PATH
+)
 
 THEN I ENTERED pism-dev AND BUILT PISM WITHOUT ERRORS
 

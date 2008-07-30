@@ -32,7 +32,7 @@ extern "C"
 ! pure conduction problem in a column of ice and bedrock in the preprint
 !
 !    Ed Bueler (2007).  "An exact solution to the temperature 
-!    equation in a column of ice and bedrock", preprint arXiv:????
+!    equation in a column of ice and bedrock", preprint arXiv:0710.1314
 !
 ! See also src/exact/simpleK.c.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

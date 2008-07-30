@@ -20,7 +20,7 @@ program simpleFG
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Runs testsFG; see reference there.
 !
-! Compilation and linking:
+! Compilation and linking example:
 !  $ gfortran -c testsFG.f90
 !  $ gfortran -c simpleFG.f90
 !  $ gfortran testsFG.o simpleFG.o -o simpleFG

@@ -23,10 +23,9 @@ module testsFG
 !
 !    E. Bueler, J. Brown, and C. Lingle (2007).  "Exact solutions to the 
 !    thermomechanically coupled shallow ice approximation: effective tools
-!    for verification", J. Glaciol., to appear.
-!    [http://www.dms.uaf.edu/~bueler/exactcoupRESUB_TWOCOLA4.pdf]
+!    for verification", J. Glaciol., J. Glaciol., vol. 53 no. 182, 499--516.
 !
-! ELB 3/29/05; 7/27/07
+! ELB 3/29/05; 7/27/07; 7/29/08
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    public :: testF, testG

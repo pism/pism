@@ -12,7 +12,6 @@ The F90 sources are added here to help other ice sheet modellers use the
 thermomechanically coupled SIA exact solutions from 
    E. Bueler, J. Brown, and C. Lingle (2007).  "Exact solutions to the 
    thermomechanically coupled shallow ice approximation: effective tools
-   for verification", J. Glaciol., to appear.
-   [http://www.dms.uaf.edu/~bueler/exactcoupRESUB_TWOCOLA4.pdf]
+   for verification", J. Glaciol., vol. 53 no. 182, 499--516.
 for verification of other ice sheet simulations.
    
