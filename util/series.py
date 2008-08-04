@@ -126,7 +126,8 @@ setattr(ncfile, 'history', historystr)
 
 # always have time dimension t and step var delta_t
 # define time dimension, then time variable, then attributes
-timedim = ncfile.def_dim('t', size(year))
+NYEAR = size(year)
+timedim = ncfile.def_dim('t', NC.UNLIMITED)
 yearvar = ncfile.def_var('t', NC.FLOAT, (timedim,))
 setattr(yearvar, 'units', 'years from start of run')
 stepvar = ncfile.def_var('delta_t', NC.FLOAT, (timedim,))
@@ -141,10 +142,10 @@ for j in range(Nnames):
   setattr(var[j], 'interpolation', 'linear')
 
 # write data 
-yearvar[:] = year
-stepvar[:] = step
+yearvar[:NYEAR] = year
+stepvar[:NYEAR] = step
 for j in range(Nnames):
-  var[j][:] = vals[j]
+  var[j][:NYEAR] = vals[j]
 
 # close
 ncfile.close()

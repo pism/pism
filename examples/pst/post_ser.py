@@ -43,7 +43,6 @@ desc = [
 
 
 colors = ["red", "green", "yellow", "blue", "black", "cyan", "magenta"]
-
 def getcolor(gridspacing):
   if (gridspacing == 5):
     return colors[0]
@@ -57,14 +56,30 @@ def getcolor(gridspacing):
     print "INVALID HORIZONTAL GRID SPACING; ENDING"
     sys.exit(2)
 
+volstyles = ['-','-.',':','--']
+def getvolstyle(gridspacing):
+  if (gridspacing == 5):
+    return volstyles[0]
+  elif (gridspacing == 7.5):
+    return volstyles[1]
+  elif (gridspacing == 10):
+    return volstyles[2]
+  elif (gridspacing == 15):
+    return volstyles[3]
+  else:
+    print "INVALID HORIZONTAL GRID SPACING; ENDING"
+    sys.exit(2)
+
 P1widths = [70, 30, 100, 50]
 P1styles = ['-',':','-.','--']
 P2angles = [0,10,45]
 P2styles = ['-',':','--']
+P3drops = [0, 500, 1000, 2000]
+P4phis = [2, 3, 8, 10]
 
 P1contlines = []
 
-numfigs=9
+numfigs=12
 
 doExtract = False
 try:
@@ -112,19 +127,20 @@ for k in desc:
   nc = pycdf.CDF(filename)
   time = nc.var("t").get()
 
-  # figure(1|2|3|4) shows grid refinement for ivol time series
-  #   for P[1|2|3|4]
-  if ( (k[5] == 0) | (k[5] == 1) ):
+  # figure(1|2) shows grid refinement for ivol time series
+  #   for P[1|2]
+  if ( (k[3] < 3) & ((k[5] == 0) | (k[5] == 1)) ):
     print "adding ivol to figure(%d)" % (k[3])
     figure(k[3])
     hold(True)
     var = nc.var("ivol").get()
-    myls = "-"
+    myls = getvolstyle(k[4])
     mylabel = "%.1f km grid" % k[4]
     if (k[5] == 1):
-      myls = "--"
       mylabel += " (fine vert)"
-    plot(time, var, linestyle=myls, linewidth=1.5, color=getcolor(k[4]), label=mylabel)
+      plot(time, var, linestyle=myls, linewidth=4, color='black', label=mylabel)
+    else:
+      plot(time, var, linestyle=myls, linewidth=1.5, color='black', label=mylabel)
     hold(False)
 
   # figure(5) shows P2 down stream speeds from 5km run
@@ -167,6 +183,10 @@ for k in desc:
     var = nc.var(varname).get()
     myl = semilogy(time, var, linewidth=1.5, color='black')
     P1contlines.append(myl)
+    if (k[5] == 2):
+      if (k[6] == 100): # if last part, then extract last 5ka
+        time_100km_last5ka = time[time>=95000]
+        avdwn_100km_last5ka = var[time>=95000]
 
   # figure(9) shows ivol time series for P[1|2|3|4] on 5km grid
   if ((k[4] == 5) & (k[5] == 0)):
@@ -179,6 +199,42 @@ for k in desc:
          linestyle=P1styles[k[3]-1], label=mylabel)
     hold(False)
     
+  # figure(10) shows P1 downstream speeds from 5km run
+  if ( (k[3] == 1) & (k[4] == 5) ):  # want only finest
+    print "adding avdwn0,avdwn1,avdwn2 to figure(10)"
+    figure(10)
+    hold(True)
+    for j in [0,1,2,3]:
+      varname = "avdwn%d" % j
+      var = nc.var(varname).get()
+      mylabel = r"$%d$ km" % P1widths[j]
+      semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
+               color='black', label=mylabel)
+    
+  # figure(11) shows P3 downstream speeds from 5km run
+  if ( (k[3] == 3) & (k[4] == 5) ):  # want only finest
+    print "adding avdwn0,avdwn1,avdwn2 to figure(11)"
+    figure(11)
+    hold(True)
+    for j in [0,1,2,3]:
+      varname = "avdwn%d" % j
+      var = nc.var(varname).get()
+      mylabel = r"$%d$ m" % P3drops[j]
+      semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
+               color='black', label=mylabel)
+    
+  # figure(12) shows P4 downstream speeds from 5km run
+  if ( (k[3] == 4) & (k[4] == 5) ):  # want only finest
+    print "adding avdwn0,avdwn1,avdwn2 to figure(12)"
+    figure(12)
+    hold(True)
+    for j in [0,1,2,3]:
+      varname = "avdwn%d" % j
+      var = nc.var(varname).get()
+      mylabel = r"$%d^\circ$" % P4phis[j]
+      semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
+               color='black', label=mylabel)
+
   nc.close()
    
   
@@ -190,19 +246,68 @@ def savepng(fignum,prefix):
   print "saving figure(%d) as %s ..." % (fignum,filename)
   savefig(filename, dpi=300, facecolor='w', edgecolor='w')
     
-# ivol figures
-for j in [1,2,3,4]:
+# P1 and P2 ivol figures (for grid refinement)
+for j in [1,2]:
   figure(j)
   xlabel("t  (a)",fontsize=16)
   ylabel(r'volume  ($10^6$ $\mathrm{km}^3$)',fontsize=16)
-  axis([0, 5000, 2.10, 2.22]) 
+  axis([0, 5000, 2.14, 2.22]) 
   xticks(arange(0,6000,1000),fontsize=14)
-  yticks(arange(2.10,2.22,0.02),fontsize=14)
-  if j in [1,2]:
-    legend(loc='lower left')
-  else:
-    legend(loc='upper right')
+  yticks(arange(2.14,2.22,0.02),fontsize=14)
+  legend(loc='upper right')
   savepng(j,"P%d_vol" % j)
+
+# P2 speed figure
+figure(5)
+xlabel("t  (a)",fontsize=16)
+ylabel("average downstream speed  (m/a)",fontsize=16)
+axis([0, 5000, 10, 1000]) 
+xticks(arange(0,6000,1000),fontsize=14)
+yticks([10,20,50,100,200,500,1000],('10','20','50','100','200','500','1000'),fontsize=14)
+rcParams.update({'legend.fontsize': 14})
+legend()
+savepng(5,"P2_dwnspeeds")
+hold(False)
+
+# P1cont volume figure
+figure(6)
+xlabel("t  (ka)",fontsize=16)
+ylabel(r'volume  ($10^6$ $\mathrm{km}^3$)',fontsize=16)
+axis([0, 100000, 2.10, 2.22]) 
+xticks(arange(0,120000,20000),('0','20','40','60','80','100'),fontsize=14)
+yticks(arange(2.10,2.22,0.02),fontsize=14)
+savepng(6,"P1cont_vol")
+hold(False)
+
+# P1cont speed figure for 70,30,50km wide
+figure(7)
+xlabel("t  (ka)",fontsize=16)
+ylabel("average downstream speed  (m/a)",fontsize=16)
+axis([0, 100000, 75, 200]) 
+xticks(arange(0,120000,20000),('0','20','40','60','80','100'),fontsize=14)
+yticks([75,100,150,200],('75','100','150','200'),fontsize=14)
+rcParams.update({'legend.fontsize': 14})
+legend(P1contlines[0:3],
+       ( "%d km wide strip" % P1widths[0],"%d km wide strip" % P1widths[1],
+         "%d km wide strip" % P1widths[3] ))
+savepng(7,"P1cont_dwnspeeds")
+hold(False)
+
+# P1cont speed figure for 100km wide, with inset
+figure(8)
+xlabel("t  (ka)",fontsize=16)
+ylabel("average downstream speed  (m/a)",fontsize=16)
+axis([0, 100000, 75, 200]) 
+xticks(arange(0,120000,20000),('0','20','40','60','80','100'),fontsize=14)
+yticks([75,100,150,200],('75','100','150','200'),fontsize=14)
+hold(False)
+axes100km = axes([0.67, 0.71, 0.28, 0.24],axisbg='w')
+plot(time_100km_last5ka,avdwn_100km_last5ka, linewidth=1.5, color='black')
+setp(axes100km,xticks=arange(95.e3,101.e3,1.e3),
+     xticklabels=('95','96','97','98','99','100'))
+savepng(8,"P1cont_dwnspeed100km")
+    
+# ivol figure for all P? at 5km resolution
 figure(9)
 xlabel("t  (a)",fontsize=16)
 ylabel(r'volume  ($10^6$ $\mathrm{km}^3$)',fontsize=16)
@@ -212,55 +317,40 @@ yticks(arange(2.14,2.22,0.02),fontsize=14)
 legend(loc='upper right')
 savepng(9,"Pall_vol")
 
-# P2 speed figure
-figure(5)
+# P1 speed figure
+figure(10)
 xlabel("t  (a)",fontsize=16)
 ylabel("average downstream speed  (m/a)",fontsize=16)
 axis([0, 5000, 10, 1000]) 
 xticks(arange(0,6000,1000),fontsize=14)
-yticks([10,50,100,500,1000],('10','50','100','500','1000'),fontsize=14)
+yticks([10,20,50,100,200,500,1000],('10','20','50','100','200','500','1000'),fontsize=14)
 rcParams.update({'legend.fontsize': 14})
 legend()
-savepng(5,"P2_dwnspeeds")
-hold(False)
+savepng(10,"P1_dwnspeeds")
 
-# P1cont volume figure
-figure(6)
-xlabel("t  (a)",fontsize=16)
-ylabel(r'volume  ($10^6$ $\mathrm{km}^3$)',fontsize=16)
-axis([0, 100000, 2.10, 2.22]) 
-xticks(arange(0,120000,20000),fontsize=14)
-yticks(arange(2.10,2.22,0.02),fontsize=14)
-savepng(6,"P1cont_vol")
-hold(False)
-
-# P1cont speed figure for 70,30,50km wide
-figure(7)
+# P3 speed figure
+figure(11)
 xlabel("t  (a)",fontsize=16)
 ylabel("average downstream speed  (m/a)",fontsize=16)
-axis([0, 100000, 75, 200]) 
-xticks(arange(0,120000,20000),fontsize=14)
-yticks([75,100,150,200],('75','100','150','200'),fontsize=14)
+axis([0, 5000, 10, 1000]) 
+xticks(arange(0,6000,1000),fontsize=14)
+yticks([10,20,50,100,200,500,1000],('10','20','50','100','200','500','1000'),fontsize=14)
 rcParams.update({'legend.fontsize': 14})
-legend(P1contlines[0:3],
-       ( "%d km wide strip" % P1widths[0],"%d km wide strip" % P1widths[1],
-         "%d km wide strip" % P1widths[3] ))
-savepng(7,"P1cont_dwnspeeds")
-hold(False)
+legend()
+savepng(11,"P3_dwnspeeds")
 
-# P1cont speed figure for 100km wide
-figure(8)
+# P4 speed figure
+figure(12)
 xlabel("t  (a)",fontsize=16)
 ylabel("average downstream speed  (m/a)",fontsize=16)
-axis([0, 100000, 75, 200]) 
-xticks(arange(0,120000,20000),fontsize=14)
-yticks([75,100,150,200],('75','100','150','200'),fontsize=14)
+axis([0, 5000, 10, 1000]) 
+xticks(arange(0,6000,1000),fontsize=14)
+yticks([10,20,50,100,200,500,1000],('10','20','50','100','200','500','1000'),fontsize=14)
 rcParams.update({'legend.fontsize': 14})
-legend(("100 km wide strip",))
-savepng(8,"P1cont_dwnspeed100km")
-hold(False)
+legend()
+savepng(12,"P4_dwnspeeds")
 
-  
+
 print ""
 print "AUTOCROPPING FIGURES (P*.png)"
 # uses one of the ImageMagick tools (http://www.imagemagick.org/)
