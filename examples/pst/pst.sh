@@ -1,20 +1,18 @@
 #!/bin/bash
-# 
-# Script for Plastic till ice Stream with Thermocoupling experiment.   
+ 
+# Script for Plastic till ice Stream with Thermocoupling experiment.  See
+# preprint Bueler and Brown 2008, "The shallow shelf approximation as a
+# `sliding law' in an ice sheet model with streaming flow".
+#
 # Starts with a run like EISMINT II exper A (and exper I), but 
 # this includes bedrock thermal model, inclusion of basal melt rate in mass
-# continuity, and tracking of Hmelt.
-#
-# Then plastic SSA is turned on for 4 (or 3 in P2) streams in several
-# parameter sensitivity studies.  See src/eismint/icePSTexModel.cc for
-# meaning of P1,P2,P3,P4, but (roughly):
+# continuity, and tracking of Hmelt.  Then plastic SSA is turned on 
+# for 4 (or 3 in P2) streams in several parameter sensitivity studies.
+# See src/eismint/icePSTexModel.cc for meaning of P1,P2,P3,P4, but roughly:
 #   * P1 studies stream width parameter
 #   * P2 studies stream orientation (relative to grid) parameter
 #   * P3 studies bed slope
 #   * P4 studies downstream till friction angle changes
-# 
-# See preprint Bueler and Brown 2008, "The shallow shelf approximation as a
-# `sliding law' in an ice sheet model with streaming flow".
 #
 # Each of P1,P2,P3,P4 is run on each of 15km,10km,7.5km,5km grids.
 # The 10km grid cases are done first.  The 5km grid cases are saved for last.
@@ -88,13 +86,9 @@ mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 \
 
 # P1: flat with variable width but grid-aligned ice streams
 mpst $NN "-P1 -if P0A.nc -ys 0 -y 5000 -o P1"
-# optionally produce year 100, 1000 state by starting over:
-#mpst $NN "-P1 -if P0A.nc -ys 0 -y 100 -o P1_100"
-#mpst $NN "-P1 -if P1_100.nc -y 900 -o P1_1000"
 
 # P2: flat with THREE same width and NOT grid-aligned ice streams
 mpst $NN "-P2 -if P0A.nc -ys 0 -y 5000 -o P2"
-
 
 # P4: flat with variable width but grid-aligned ice streams 
 #   and different down-stream till phi

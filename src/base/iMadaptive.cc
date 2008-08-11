@@ -210,7 +210,6 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
-//    const PetscScalar  conservativeFactor = 0.8;
     const PetscScalar  conservativeFactor = 0.95;
     // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
     tempskipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
@@ -249,26 +248,26 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   } else {
     dt = maxdt;
     adaptReasonFlag = 'm';
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doTemp == PETSC_TRUE)
-        && doTemperatureCFL) {
-      // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
-      dt_from_cfl = CFLmaxdt;
-      if (dt_from_cfl < dt) {
-        dt = dt_from_cfl;
-        adaptReasonFlag = 'c';
+    if (doAdaptTimeStep == PETSC_TRUE) {
+      if ((doTemp == PETSC_TRUE) && (doTemperatureCFL)) {
+        // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
+        dt_from_cfl = CFLmaxdt;
+        if (dt_from_cfl < dt) {
+          dt = dt_from_cfl;
+          adaptReasonFlag = 'c';
+        }
       }
-    } 
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)
-        && (useSSAVelocity)) {
-      // CFLmaxdt2D is set by broadcastSSAVelocity()
-      if (CFLmaxdt2D < dt) {
-        dt = CFLmaxdt2D;
-        adaptReasonFlag = 'u';
+      if ((doMassConserve == PETSC_TRUE) && (useSSAVelocity)) {
+        // CFLmaxdt2D is set by broadcastSSAVelocity()
+        if (CFLmaxdt2D < dt) {
+          dt = CFLmaxdt2D;
+          adaptReasonFlag = 'u';
+        }
       }
-    }
-    if ((doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE)) {
-      // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
-      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+      if (doMassConserve == PETSC_TRUE) {
+        // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
+        ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+      }
     }
     if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
       dt = maxdt_temporary;

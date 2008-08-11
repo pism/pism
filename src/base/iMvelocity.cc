@@ -84,7 +84,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
     ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
   
-    if (updateVelocityAtDepth == PETSC_TRUE) {  
+    if (updateVelocityAtDepth) {  
       // communicate I on staggered for horizontalVelocitySIARegular()
       //   and also communicate Sigma on staggered for SigmaSIAToRegular()
       ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
@@ -116,7 +116,8 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
   }
   static PetscScalar lastSSAUpdateYear = grid.year;  // only set when first called
   if (useSSAVelocity == PETSC_TRUE) { // communication happens within SSA
-    if ((firstTime == PETSC_TRUE) || (grid.year - lastSSAUpdateYear >= ssaIntervalYears)) {
+//    if ((firstTime == PETSC_TRUE) || (grid.year - lastSSAUpdateYear >= ssaIntervalYears)) {
+    if ((firstTime == PETSC_TRUE) || (updateVelocityAtDepth)) {
       ierr = verbPrintf(2,grid.com, "SSA"); CHKERRQ(ierr);
       PetscInt numSSAiter;
       ierr = setupGeometryForSSA(min_thickness_SSA); CHKERRQ(ierr);
@@ -125,7 +126,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
       lastSSAUpdateYear = grid.year;
       ierr = verbPrintf(2,grid.com," "); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,"       "); CHKERRQ(ierr);
     }
     // even if velocitySSA() did not run, we still need to use stored SSA velocities 
     // to get 3D velocity field, basal velocities, basal frictional heating, 
@@ -156,7 +157,8 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 #endif
 
   // in latter case u,v are modified by broadcastSSAVelocity():
-  if ((updateVelocityAtDepth == PETSC_TRUE) || (useSSAVelocity == PETSC_TRUE)) {  
+//  if ((updateVelocityAtDepth == PETSC_TRUE) || (useSSAVelocity == PETSC_TRUE)) {  
+  if (updateVelocityAtDepth) {  
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
     ierr = v3.beginGhostComm(); CHKERRQ(ierr);
     ierr = u3.endGhostComm(); CHKERRQ(ierr);
@@ -164,7 +166,7 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
   }
 
   // finally update w
-  if (updateVelocityAtDepth == PETSC_TRUE) {
+  if (updateVelocityAtDepth) {
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
     // no communication needed for w, which is only differenced in the column
   }
@@ -172,7 +174,8 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
 
-  if ((useSSAVelocity == PETSC_TRUE) || (updateVelocityAtDepth == PETSC_TRUE)) {
+//  if ((useSSAVelocity == PETSC_TRUE) || (updateVelocityAtDepth == PETSC_TRUE)) {
+  if (updateVelocityAtDepth) {
     // communication here for global max; sets CFLmaxdt
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }

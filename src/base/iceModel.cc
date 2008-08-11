@@ -627,16 +627,9 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
     
-    // read in forcing data if present; (typically from ice/seabed core; modifies Ts and bed)
+    // read in forcing data if present; (typically from ice/seabed core;
+    //   modifies vTs and seaLevel)
     ierr = updateForcing(); CHKERRQ(ierr);
-    
-    // update basal till yield stress if appropriate; will modify and communicate mask
-    if (doPlasticTill == PETSC_TRUE) {
-      ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
-      ierr = verbPrintf(2,grid.com, "y"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
     
 #if (LOG_PISM_EVENTS)
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
@@ -652,6 +645,14 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
 #if (LOG_PISM_EVENTS)
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
 #endif
+
+    // update basal till yield stress if appropriate; will modify and communicate mask
+    if (doPlasticTill == PETSC_TRUE) {
+      ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, "y"); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
+    }
 
     // always do vertically-averaged velocity calculation; only update velocities at depth if
     // needed for temp and age calculation
