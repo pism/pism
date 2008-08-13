@@ -33,15 +33,15 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet, ssaDtSet,
+  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet,
               my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
               myincludeBMRinContinuity, lowtempSet, mydoOceanKill, floatkillSet,
               mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
-              mydoSuperpose, mydoTempSkip, plasticRegSet, regVelSet, maxlowtempsSet,
+              mydoSuperpose, mydoSkip, plasticRegSet, regVelSet, maxlowtempsSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
               noMassConserve, noTemp, noEtaSet; 
-  PetscScalar my_maxdt, myssaDt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
+  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
   PetscInt    my_Mx, my_My, my_Mz, my_Mbz, my_maxlowtemps;
@@ -302,11 +302,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &myuseSSAVelocity); CHKERRQ(ierr);
   if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
   
-  //  AT THIS POINT (11/17/07) THIS OPTION DOES NOTHING AT ALL!;  THE ISSUE IS THAT THE SSA
-  //  VELOCITY IS NOT SEPARATELY SAVED SO THAT IT CAN BE ADDED IN SUPERPOSITION EVERY FEW STEPS
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_dt", &myssaDt, &ssaDtSet); CHKERRQ(ierr);
-  if (ssaDtSet == PETSC_TRUE)   ssaIntervalYears = myssaDt;
-  
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_eps", &ssaEpsilon, PETSC_NULL); CHKERRQ(ierr);
   
   // option to save linear system in Matlab-readable ASCII format at end of each
@@ -339,9 +334,10 @@ PetscErrorCode  IceModel::setFromOptions() {
     doSuperpose = PETSC_TRUE;
   }
 
-  /* This controls allows more than one mass continuity steps per temperature/age step */
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-tempskip", &tempskipMax, &mydoTempSkip); CHKERRQ(ierr);
-  if (mydoTempSkip == PETSC_TRUE)   doTempSkip = PETSC_TRUE;
+  /* This controls allows more than one mass continuity steps per temperature/age and
+     SSA computation */
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-skip", &skipMax, &mydoSkip); CHKERRQ(ierr);
+  if (mydoSkip == PETSC_TRUE)   doSkip = PETSC_TRUE;
 
   // verbosity options: more info to standard out; 
   // includes -verbose, -vverbose, -vvverbose see iMreport.cc

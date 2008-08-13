@@ -216,12 +216,29 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
 }
 
 
+
+/*!
+Compares saved to current product of vertically-averaged viscosity times height,
+the quantity denoted \f$\bar\nu H\f$.  This comparison is used to determine
+if the outer iteration is converged.
+
+Verification and PST experiments
+suggest that an \f$L^1\f$ criterion for convergence is best.  For verification
+there seems to be little difference, presumably because the solutions are smooth
+and the norms are roughly equivalent on a subspace of smooth functions.  For PST,
+the \f$L^1\f$ criterion gives faster runs with essentially the same results.
+Presumably that is because rapid (temporal and spatial) variation in 
+\f$\bar\nu H\f$ occurs at margins, occupying very few horizontal grid cells.
+For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ignor
+a bit of bad behavior at these few places, and \f$L^1\f$ ignors it more than
+\f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
+ */
 PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
                                              PetscReal *norm, PetscReal *normChange) {
   PetscErrorCode  ierr;
   PetscReal nuNorm[2], nuChange[2];
   const PetscScalar area = grid.dx * grid.dy;
-#define MY_NORM     NORM_2
+#define MY_NORM     NORM_1
 
   // Test for change in nu
   ierr = VecAXPY(vNuOld[0], -1, vNu[0]); CHKERRQ(ierr);

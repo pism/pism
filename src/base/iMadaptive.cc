@@ -209,12 +209,14 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
-  if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown == 0)) {
+  if ((doSkip == PETSC_TRUE) && (skipCountDown == 0)) {
     const PetscScalar  conservativeFactor = 0.95;
-    // typically "dt" in next line is from CFL, but might be from other, e.g. maxdt
-    tempskipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
-    tempskipCountDown = (tempskipCountDown > tempskipMax) ? tempskipMax : tempskipCountDown;
-  } // if tempskipCountDown > 0 then it will get decremented at the mass balance step
+    // typically "dt" in next line is from CFL for advection in temperature equation,
+    //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
+    //   in basal sliding case, or max_dt
+    skipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
+    skipCountDown = ( skipCountDown >  skipMax) ?  skipMax :  skipCountDown;
+  } // if  skipCountDown > 0 then it will get decremented at the mass balance step
   if (dt_from_diffus < dt) {
     dt = dt_from_diffus;
     adaptReasonFlag = 'd';
@@ -265,7 +267,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
         }
       }
       if (doMassConserve == PETSC_TRUE) {
-        // note: if doTempSkip then tempskipCountDown = floor(dt_from_cfl/dt_from_diffus)
+        // note: if doSkip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
         ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
       }
     }
@@ -278,7 +280,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       adaptReasonFlag = 'e';
     }
     if ((adaptReasonFlag == 'm') || (adaptReasonFlag == 't') || (adaptReasonFlag == 'e')) {
-      if (tempskipCountDown > 1) tempskipCountDown = 1; 
+      if (skipCountDown > 1) skipCountDown = 1; 
     }
   }    
   return 0;

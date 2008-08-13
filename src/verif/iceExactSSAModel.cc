@@ -410,7 +410,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
-  tempskipCountDown = 0;
+  skipCountDown = 0;
 
   if (exactOnly == PETSC_TRUE) {
     // just fill with exact solution, including exact 3D hor velocities

@@ -616,7 +616,7 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
-  tempskipCountDown = 0;
+  skipCountDown = 0;
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
 
@@ -654,9 +654,11 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
-    // always do vertically-averaged velocity calculation; only update velocities at depth if
-    // needed for temp and age calculation
-    bool updateAtDepth = (tempskipCountDown == 0);
+    // always do SIA velocity calculation; only update SSA and 
+    //   only update velocities at depth if suggested by temp and age
+    //   stability criterion; note *lots* of communication is avoided by 
+    //   skipping SSA (and temp/age)
+    bool updateAtDepth = (skipCountDown == 0);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
     
@@ -668,7 +670,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     // IceModel::dt,dtTempAge,grid.year are now set correctly according to
     //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and other 
     //    criteria from derived class additionalAtStartTimestep(), and from 
-    //    "-tempskip" mechanism
+    //    "-skip" mechanism
 
     // ierr = PetscPrintf(PETSC_COMM_SELF,
     //           "\n[rank=%d, year=%f, dt=%f, startYear=%f, endYear=%f]",
@@ -710,8 +712,8 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
     if (doMassConserve == PETSC_TRUE) {
       ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
-      if ((doTempSkip == PETSC_TRUE) && (tempskipCountDown > 0))
-        tempskipCountDown--;
+      if ((doSkip == PETSC_TRUE) && (skipCountDown > 0))
+        skipCountDown--;
       ierr = verbPrintf(2,grid.com, "h"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
@@ -724,7 +726,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     // end the flag line and report a summary
-    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", tempskipCountDown, adaptReasonFlag,
+    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", skipCountDown, adaptReasonFlag,
                       dt / secpera); CHKERRQ(ierr);
     ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
 
@@ -756,7 +758,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
-  tempskipCountDown = 0;
+  skipCountDown = 0;
 
   // update basal till yield stress if appropriate; will modify and communicate mask
   if (doPlasticTill == PETSC_TRUE) {

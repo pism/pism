@@ -261,7 +261,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
 
-  tempskipCountDown = 0;
+  skipCountDown = 0;
 
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);

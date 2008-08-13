@@ -149,7 +149,7 @@ protected:
                                //   [units m/s] and d(volume)/dt [units m^3/s]
   PetscScalar min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp, 
               oceanHeatFlux, seaLevel;
-  PetscInt    tempskipCountDown, tempskipMax, noSpokesLevel, maxLowTempCount;
+  PetscInt    skipCountDown, skipMax, noSpokesLevel, maxLowTempCount;
 
   // flags
   PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso, flowLawUsesGrainSize;
@@ -160,7 +160,7 @@ protected:
               useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
   PetscTruth  realAgeForGrainSize;
-  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doTempSkip, reportHomolTemps,
+  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
               allowAboveMelting;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;
   PetscTruth  computeSIAVelocities, transformForSurfaceGradient;

@@ -63,8 +63,8 @@ const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
 const PetscTruth  DEFAULT_DO_MASS_CONSERVE = PETSC_TRUE;
 const PetscTruth  DEFAULT_DO_TEMP = PETSC_TRUE;
-const PetscTruth  DEFAULT_DO_TEMPSKIP = PETSC_FALSE; // off by default
-const PetscInt    DEFAULT_TEMPSKIP_MAX = 10;
+const PetscTruth  DEFAULT_DO_SKIP = PETSC_FALSE; // off by default
+const PetscInt    DEFAULT_SKIP_MAX = 10;
 const PetscScalar DEFAULT_GLOBAL_MIN_ALLOWED_TEMP = 200.0;
 const PetscInt    DEFAULT_MAX_LOW_TEMP_COUNT = 10;  // 
 
@@ -163,7 +163,6 @@ PetscErrorCode IceModel::setDefaults() {
   transformForSurfaceGradient = PETSC_TRUE;
 
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
-  ssaIntervalYears = -1.0;  // i.e. the default is to do an update every time step
   doPlasticTill = DEFAULT_DO_PLASTIC_TILL;
   doPseudoPlasticTill = DEFAULT_DO_PSEUDO_PLASTIC_TILL;
   doSuperpose = DEFAULT_DO_SUPERPOSE;
@@ -213,8 +212,8 @@ PetscErrorCode IceModel::setDefaults() {
 
   doMassConserve = DEFAULT_DO_MASS_CONSERVE;
   doTemp = DEFAULT_DO_TEMP;
-  doTempSkip = DEFAULT_DO_TEMPSKIP;
-  tempskipMax = DEFAULT_TEMPSKIP_MAX;
+  doSkip = DEFAULT_DO_SKIP;
+  skipMax = DEFAULT_SKIP_MAX;
   reportHomolTemps = PETSC_TRUE;
   globalMinAllowedTemp = DEFAULT_GLOBAL_MIN_ALLOWED_TEMP;
   maxLowTempCount = DEFAULT_MAX_LOW_TEMP_COUNT;

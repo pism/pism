@@ -220,7 +220,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   // give summary data a la EISMINT II:
   //    year (+ dt[NR]) (years),
   //       [ note 
-  //            N = tempskipCountDown
+  //            N = skipCountDown
   //            R = on character reason for dt: 
   //            m = maxdt applied, 
   //            e = time to end, 

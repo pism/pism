@@ -127,6 +127,9 @@ PetscErrorCode IcePSTexModel::initFromOptions() {
 
   ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
 
+  doSkip = PETSC_TRUE;
+  skipMax = 2;
+
   // different from EISMINT II conventions (even for P0A and P0I)
   updateHmelt = PETSC_TRUE;
   includeBMRinContinuity = PETSC_TRUE;

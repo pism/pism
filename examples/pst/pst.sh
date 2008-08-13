@@ -20,9 +20,9 @@
 # Just before the 5km cases, the 10km grid P1 is extended to 100k years.
 #
 # re SPEED: On experiment P1 with a 10km grid, bueler-pogo with 8 cores 
-# (two quad core Xeon processors at 2.33GHz) took about 4 hours for 
+# (two quad core Xeon processors at 2.33GHz) took about 1.5 hours for 
 # 5000 model years.  If sustained and cleanly parallelizable this means
-# about 150 model years per processor-hour on the 10km grid.  (We can
+# about 400 model years per processor-hour on the 10km grid.  (We can
 # determine whether it is sustained-parallel, which is likely, from timing of
 # experiment P1cont below.)
 
@@ -76,12 +76,12 @@ mpst_vg()
 
 
 # P0A: run without trough on refining grid for total of 200k years:
-mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -tempskip 20 -o P0A_100k"
-mpst $NN "-P0A -if P0A_100k.nc -y 50000 -tempskip 20 -o P0A_150k"
+mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -skip 20 -o P0A_100k"
+mpst $NN "-P0A -if P0A_100k.nc -y 50000 -skip 20 -o P0A_150k"
 mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 \
- -tempskip 20 -regrid P0A_150k.nc -regrid_vars LTBHhe -o P0A_190k"
+ -skip 20 -regrid P0A_150k.nc -regrid_vars LTBHhe -o P0A_190k"
 mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 \
- -tempskip 20 -regrid P0A_190k.nc -regrid_vars LTBHhe -o P0A"
+ -skip 20 -regrid P0A_190k.nc -regrid_vars LTBHhe -o P0A"
 
 
 # P1: flat with variable width but grid-aligned ice streams
@@ -124,7 +124,7 @@ mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 \
 mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4coarse"
 
-exit
+#exit
 
 # FINE: as above but on 7.5km grid
 mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 \

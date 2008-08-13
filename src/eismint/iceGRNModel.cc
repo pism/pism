@@ -65,8 +65,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   
   muSliding = 0.0;  // no SIA-type sliding!
 
-  doTempSkip = PETSC_TRUE;
-  tempskipMax = 20;
+  doSkip = PETSC_TRUE;
+  skipMax = 20;
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
