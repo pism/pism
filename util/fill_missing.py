@@ -12,7 +12,7 @@ from numpy import *
 # Python module -- by adding 'from fill_missing import laplace' to your
 # program.
 
-# CK, 06/10/2008
+# CK, 08/12/2008
 
 def rho_jacobi((J,L)):
     """Computes $\rho_{Jacobi}$, see formula (19.5.24), page 858."""
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     from tempfile import mkstemp
     from os import close
     from time import time, asctime
-    from pycdf import *
+    from netCDF3 import Dataset as NC
 
     try:
         opts, args = getopt(argv[1:], "f:v:o:e:i:",
@@ -188,9 +188,8 @@ if __name__ == "__main__":
         print "ERROR: Can't create %s, Exiting..." % tmp_filename
 
     try:
-        nc = CDF(tmp_filename, NC.WRITE)
-        nc.automode()
-    except CDFError, message:
+        nc = NC(tmp_filename, 'a')
+    except Exception, message:
        print message
        print "Note: %s was not modified." % output_filename
        exit(-1)
@@ -198,7 +197,7 @@ if __name__ == "__main__":
     # add history global attribute (after checking if present)
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(argv) + '\n'
-    if 'history' in nc.attributes().keys():
+    if 'history' in nc.ncattrs():
       nc.history += historystr
     else:
       nc.history = historystr
@@ -207,25 +206,19 @@ if __name__ == "__main__":
     for name in variables:
         print "Processing %s..." % name
         try:
-            var = nc.var(name)
-            data = var.get()
-
-            # This happens only if the current variable depends on time; in
-            # that case we take the first time-slice only.
-            if len(data.shape) == 3:
-                data = data[0]
+            var = nc.variables[name]
+            data = squeeze(var[:])
 
             attributes = ["valid_range", "valid_min", "valid_max",
                           "_FillValue", "missing_value"]
             adict = {}
             print "Reading attributes..."
             for attribute in attributes:
-                try:
-                    print "* %15s -- " % attribute,
-                    attr = var.attr(attribute).get()
-                    adict[attribute] = attr
+                print "* %15s -- " % attribute,
+                if attribute in var.ncattrs():
+                    adict[attribute] = getattr(var, attribute)
                     print "found"
-                except:
+                else:
                     print "not found"
 
             if adict.has_key("valid_range"):
@@ -275,9 +268,9 @@ Warning: this attribute is deprecated by the NUG.""" % missing
             print "Filling in %5d missing values..." % count
             t0 = time()
             laplace(data, mask, -1, eps, initial_guess=initial_guess)
-            var.put(data)
+            var[:] = data
             print "This took %5f seconds." % (time() - t0)
-        except CDFError, message:
+        except Exception, message:
             print "ERROR:", message
             print "Note: %s was not modified." % output_filename
             exit(-1)

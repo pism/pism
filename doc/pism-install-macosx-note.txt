@@ -1,4 +1,4 @@
-Time-stamp: <pism-install-macosx-note.txt, saved on Wed, May 14, 2008 at 04:03pm> (Constantine Khroulev)
+Time-stamp: <pism-install-macosx-note.txt, saved on Wed, Aug 13, 2008 at 03:00pm> (Constantine Khroulev)
 
 This documents my experience installing PISM on Mac OS X 10.5.
 
@@ -24,12 +24,9 @@ Here's what I did:
 
   Note that BLAS, OpenMPI and Subversion come with the operating system (or XCode), so I didn't need to install them.
 
-  The last step is installing pycdf, which I downloaded from http://pysclint.sourceforge.net/pycdf/
-  Then I modified the setup.py to contain the line
-       library_dirs=["/opt/local/lib"], 
-  in the conditional corresponding to NumPy and ran
+  Finally, installing NetCDF4-python library (i.e. its NetCDF3 part) required running
 
-  $ sudo python setup.py install
+  $ sudo NETCDF3_DIR=/opt/local/ python setup-nc3.py install
 
 * Installed PETSc.
 

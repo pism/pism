@@ -2,7 +2,7 @@
 
 from scipy.io.matlab.mio import savemat
 from sys import argv, exit
-from pycdf import CDF, CDFError
+from netCDF3 import Dataset as NC
 from getopt import getopt, GetoptError
 from os.path import splitext
 
@@ -56,16 +56,17 @@ except GetoptError:
     print_options_and_exit(-1)
 
 try:
-    input_file = CDF(input_name)
-except CDFError:
-    print "ERROR! Can't open %s. Exiting..." %(input_name)
+    input_file = NC(input_name, "r")
+except Exception, message:
+    print "ERROR: ", message
+    print "Can't open %s. Exiting..." %(input_name)
     exit(-1)
 
 print "Reading data from %s..." % (input_name)
 
 # if no variables were specified, assume that we need to dump them all
 if variables == []:
-    variables = input_file.variables().keys()
+    variables = input_file.variables.keys()
 
 print "Loading variables...",
 mdict = {}
@@ -74,9 +75,9 @@ for each in variables:
     try:
         if each in exclude_list:
             continue
-        mdict[each] = input_file.var(each).get()
+        mdict[each] = input_file.variables[each][:]
         print each,
-    except CDFError:
+    except Exception:
         missing.append(each)
         continue
 print ""

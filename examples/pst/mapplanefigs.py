@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from pylab import *
-import pycdf
+from netCDF3 import Dataset as NC
 import os
 import sys
 
@@ -17,10 +17,10 @@ def savepng(fignum,prefix):
 for j in [1,2,3,4]:
   filename = "P%dfinest.nc" % j
   print "opening %s to make map plane csurf figure" % filename
-  nc = pycdf.CDF(filename)
-  x = nc.var("x").get()
-  y = nc.var("y").get()
-  csurf = squeeze(nc.var("csurf").get())
+  nc = NC(filename, 'r')
+  x = nc.variables["x"][:]
+  y = nc.variables["y"][:]
+  csurf = squeeze(nc.variables["csurf"][:])
   print "  csurf has max = %.2f and min = %.2f (m/a)" % (csurf.max(),csurf.min())
   nc.close()
 
@@ -48,10 +48,10 @@ for j in [1,2,3,4]:
 ## bwat for P4
 filename = "P4finest.nc"
 print "opening %s to make map plane bwat figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-bwat = squeeze(nc.var("bwat").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+bwat = squeeze(nc.variables["bwat"][:])
 print "  bwat has max = %.2f and min = %.2f (m/a)" % (bwat.max(),bwat.min())
 nc.close()
 figure(5, figsize=(9,8))
@@ -66,10 +66,10 @@ savepng(5,prefix)
 ## csurf for P4 at 5 years
 filename = "P4finest_5yr.nc"
 print "opening %s to make map plane csurf figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-csurf = squeeze(nc.var("csurf").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+csurf = squeeze(nc.variables["csurf"][:])
 print "  csurf has max = %.2f and min = %.2f (m/a)" % (csurf.max(),csurf.min())
 nc.close()
 figure(6, figsize=(9,8))
@@ -85,10 +85,10 @@ savepng(6,'P4_5km_5yr_csurf')
 ## csurf detail for P1, stream 0 (on 5km grid)
 filename = "P1finest.nc"
 print "opening %s to make map plane csurf detail figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-csurf = squeeze(nc.var("csurf").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+csurf = squeeze(nc.variables["csurf"][:])
 xpatch = x[200:281] # 301 x 301
 ypatch = y[130:171]
 csurfpatch = csurf[130:171,200:281]
@@ -108,10 +108,10 @@ savepng(7,'P1detail_5km')
 ## csurf detail for P1, stream 0 (on 7.5km grid)
 filename = "P1fine.nc"
 print "opening %s to make map plane csurf detail figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-csurf = squeeze(nc.var("csurf").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+csurf = squeeze(nc.variables["csurf"][:])
 xpatch = x[134:188] # 201 x 201
 ypatch = y[87:114]
 csurfpatch = csurf[87:114,134:188]
@@ -127,10 +127,10 @@ savepng(8,'P1detail_7.5km')
 ## csurf detail for P1, stream 0 (on 10km grid)
 filename = "P1.nc"
 print "opening %s to make map plane csurf detail figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-csurf = squeeze(nc.var("csurf").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+csurf = squeeze(nc.variables["csurf"][:])
 xpatch = x[100:141] # 151 x 151
 ypatch = y[65:86]
 csurfpatch = csurf[65:86,100:141]
@@ -146,10 +146,10 @@ savepng(9,'P1detail_10km')
 ## csurf detail for P1, stream 0 (on 15km grid)
 filename = "P1coarse.nc"
 print "opening %s to make map plane csurf detail figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-csurf = squeeze(nc.var("csurf").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+csurf = squeeze(nc.variables["csurf"][:])
 xpatch = x[66:95] # 101 x 101
 ypatch = y[43:58]
 csurfpatch = csurf[43:58,66:95]
@@ -166,19 +166,19 @@ savepng(10,'P1detail_15km')
 ## surface elevation profile for P1_100k versus P0A [NOT ACTUALLY MAP-PLANE]
 filename = "P1_100k.nc"
 print "opening %s to make surface elevation profile figure" % filename
-nc = pycdf.CDF(filename)
-x = nc.var("x").get()
-y = nc.var("y").get()
-usurf = squeeze(nc.var("usurf").get())
+nc = NC(filename, 'r')
+x = nc.variables["x"][:]
+y = nc.variables["y"][:]
+usurf = squeeze(nc.variables["usurf"][:])
 print "  usurf has max = %.2f and min = %.2f (m) and shape =" % (usurf.max(),usurf.min()),
 print shape(usurf)
 nc.close()
 filename = "P0A.nc"
 print "opening %s to make surface elevation profile figure" % filename
-nc = pycdf.CDF(filename)
-x0 = nc.var("x").get()
-y0 = nc.var("y").get()
-usurf0 = squeeze(nc.var("usurf").get())
+nc = NC(filename, 'r')
+x0 = nc.variables["x"][:]
+y0 = nc.variables["y"][:]
+usurf0 = squeeze(nc.variables["usurf"][:])
 print "  usurf0 has max = %.2f and min = %.2f (m) and shape =" % (usurf0.max(),usurf0.min()),
 print shape(usurf0)
 nc.close()

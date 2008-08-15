@@ -5,7 +5,7 @@ import sys
 import getopt
 import time
 from numpy import *
-from pycdf import *
+from netCDF3 import Dataset as NC
 
 SECPERA = 3.1556926e7
 GRID_FILE = 'grid20-EISMINT'
@@ -124,8 +124,7 @@ print "Total Values Read: "+str(x)
 putmask(B, B == 0, fill_value)
 
 # ready to write NetCDF file
-ncfile = CDF(WRIT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
-ncfile.automode()
+ncfile = NC(WRIT_FILE, 'w')
 
 # set global attributes
 setattr(ncfile, 'Conventions', 'CF-1.0')
@@ -134,25 +133,25 @@ historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define the dimensions
-tdim = ncfile.def_dim('t', NC.UNLIMITED)
-xdim = ncfile.def_dim('x', int(dim[0]))
-ydim = ncfile.def_dim('y', int(dim[1]))
-zdim = ncfile.def_dim('z', 1)  # dummy
-zbdim = ncfile.def_dim('zb', 1) # dummy
+tdim = ncfile.createDimension('t', None)
+xdim = ncfile.createDimension('x', int(dim[0]))
+ydim = ncfile.createDimension('y', int(dim[1]))
+zdim = ncfile.createDimension('z', 1)  # dummy
+zbdim = ncfile.createDimension('zb', 1) # dummy
 
 # define the variables
-polarVar = ncfile.def_var('polar_stereographic', NC.INT)
-tvar = ncfile.def_var('t', NC.DOUBLE, (tdim,))
-xvar = ncfile.def_var('x', NC.DOUBLE, (xdim,))
-yvar = ncfile.def_var('y', NC.DOUBLE, (ydim,))
-zvar = ncfile.def_var('z', NC.DOUBLE, (zdim,))
-zbvar = ncfile.def_var('zb', NC.DOUBLE, (zbdim,))
-lonvar = ncfile.def_var('lon', NC.FLOAT, (tdim, xdim, ydim))
-latvar = ncfile.def_var('lat', NC.FLOAT, (tdim, xdim, ydim))
-hvar = ncfile.def_var('usurf', NC.FLOAT, (tdim, xdim, ydim))
-Hvar = ncfile.def_var('thk', NC.FLOAT, (tdim, xdim, ydim))
-Bvar = ncfile.def_var('topg', NC.FLOAT, (tdim, xdim, ydim)) 
-Accvar = ncfile.def_var('acab', NC.FLOAT, (tdim, xdim, ydim))
+polarVar = ncfile.createVariable('polar_stereographic', 'i4')
+tvar = ncfile.createVariable('t', 'f8', dimensions=('t',))
+xvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
+yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
+zvar = ncfile.createVariable('z', 'f8', dimensions=('z',))
+zbvar = ncfile.createVariable('zb', 'f8', dimensions=('zb',))
+lonvar = ncfile.createVariable('lon', 'f4', dimensions=('t', 'x', 'y'))
+latvar = ncfile.createVariable('lat', 'f4', dimensions=('t', 'x', 'y'))
+hvar = ncfile.createVariable('usurf', 'f4', dimensions=('t', 'x', 'y'))
+Hvar = ncfile.createVariable('thk', 'f4', dimensions=('t', 'x', 'y'))
+Bvar = ncfile.createVariable('topg', 'f4', dimensions=('t', 'x', 'y')) 
+Accvar = ncfile.createVariable('acab', 'f4', dimensions=('t', 'x', 'y'))
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')

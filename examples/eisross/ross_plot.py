@@ -6,7 +6,7 @@
 #   1) numpy (see http://numpy.scipy.org/; python-numpy is Debian package)
 #   2) matplotlib (see http://matplotlib.sourceforge.net/; python-matplotlib 
 #        is Debian package)
-#   3) pycdf (see http://pysclint.sourceforge.net/pycdf/; no Debian package)
+#   3) netcdf-python (see http://code.google.com/p/netcdf4-python/; no Debian package)
 #   4) scikits.delaunay (for data regridding; see 
 #        http://scipy.org/scipy/scikits for more information and to learn 
 #        what Scipy Toolkits are.)
@@ -25,8 +25,10 @@ from numpy import *
 from pylab import *
 from getopt import getopt, GetoptError
 from sys import argv, exit
-from pycdf import CDF, CDFError
+from netCDF3 import Dataset as NC
 from scikits.delaunay import *
+
+seconds_per_year = 3.1556926e7
 
 # process command line arguments
 try:
@@ -61,14 +63,14 @@ except IOError:
 # load the PISM output
 try:
     print "Loading PISM output from '%s'..." % (pism_output),
-    infile = CDF(pism_output)
-    H = infile.var("thk").get()[0]
-    mask = infile.var("mask").get()[0]
-    cbar = infile.var("cbar").get()[0]
-    ubar = infile.var("uvel").get()[0,:,:,0] * (60*60*24*365) # convert from 
-    vbar = infile.var("vvel").get()[0,:,:,0] * (60*60*24*365) # m s^-1 to m a^-1
+    infile = NC(pism_output, 'r')
+    H = squeeze(infile.variables["thk"][:])
+    mask = squeeze(infile.variables["mask"][:])
+    cbar = squeeze(infile.variables["cbar"][:])
+    ubar = squeeze(infile.variables["uvel"][:,:,:,0]) * seconds_per_year # convert from 
+    vbar = squeeze(infile.variables["vvel"][:,:,:,0]) * seconds_per_year # m s^-1 to m a^-1
     print "done."
-except CDFError:
+except Exception:
     print """ERROR!\nSpecify NetCDF file from PISM run with -p.
     See ross_plot.py --help and User's Manual.  Exiting..."""
     exit(-1)

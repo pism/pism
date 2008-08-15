@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from numpy import loadtxt, concatenate
-from pycdf import CDF, NC
+from netCDF3 import Dataset as NC
 from getopt import getopt, GetoptError
 from sys import exit, argv
 from time import asctime
@@ -36,8 +36,7 @@ years_sea *= 1000.0
 dSea = -34.83 * (d18Osea + 1.93)
 
 # open the nc for delta Sea Level file to write to
-ncfile = CDF(DSL_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
-ncfile.automode()
+ncfile = NC(DSL_FILE, 'w')
 
 # set global attributes
 historysep = ' '
@@ -45,16 +44,16 @@ historystr = asctime() + ': ' + historysep.join(argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define time dimension, then time variable
-Stdim = ncfile.def_dim('t', NC.UNLIMITED)
-Stvar = ncfile.def_var('t', NC.FLOAT, (Stdim,))
+Stdim = ncfile.createDimension('t', None)
+Stvar = ncfile.createVariable('t', 'f4', ('t',))
 setattr(Stvar, 'units', 'years before present')
 
 # define climate data variables and attributes
-d18Oseavar = ncfile.def_var('delta_18_O', NC.FLOAT, (Stdim,))
+d18Oseavar = ncfile.createVariable('delta_18_O', 'f4', ('t',))
 setattr(d18Oseavar, 'units', 'normalized O-18') # see specmap_readme.txt
 setattr(d18Oseavar, 'long_name', 'change in oxygen isotope ratio (18^O to 16^O) from present')
 setattr(d18Oseavar, 'interpolation', 'linear')
-dSeavar = ncfile.def_var('delta_sea_level', NC.FLOAT, (Stdim,))
+dSeavar = ncfile.createVariable('delta_sea_level', 'f4', ('t',))
 setattr(dSeavar, 'units', 'm')
 setattr(dSeavar, 'long_name', 'change in sea level from present')
 setattr(dSeavar, 'interpolation', 'linear')
@@ -82,8 +81,7 @@ except IOError:
 dT = 1.5 * (d18O + 35.27)
 
 # open the nc file to write to
-ncfile = CDF(DT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
-ncfile.automode()
+ncfile = NC(DT_FILE, 'w')
 
 # set global attribute
 historysep = ' '
@@ -91,16 +89,16 @@ historystr = asctime() + ': ' + historysep.join(argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define time dimension, variable
-Ttdim = ncfile.def_dim('t', NC.UNLIMITED)
-Ttvar = ncfile.def_var('t', NC.FLOAT, (Ttdim,))
+Ttdim = ncfile.createDimension('t', None)
+Ttvar = ncfile.createVariable('t', 'f4', ('t',))
 setattr(Ttvar, 'units', 'years before present')
 
 # define climate data variables and attributes
-d18Ovar = ncfile.def_var('delta_18_O', NC.FLOAT, (Ttdim,))
+d18Ovar = ncfile.createVariable('delta_18_O', 'f4', ('t',))
 setattr(d18Ovar, 'units', 'per mil relative to the SMOW standard') # see grip18o.readme
 setattr(d18Ovar, 'long_name', 'change in isotope ratio 18^O to 16^O (oxygen) from present')
 setattr(d18Ovar, 'interpolation', 'constant_piecewise_forward')
-dTvar = ncfile.def_var('delta_T', NC.FLOAT, (Ttdim,))
+dTvar = ncfile.createVariable('delta_T', 'f4', ('t',))
 setattr(dTvar, 'units', 'degrees C')
 setattr(dTvar, 'long_name', 'change in surface temperature from present')
 setattr(dTvar, 'interpolation', 'constant_piecewise_forward')

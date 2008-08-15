@@ -302,7 +302,7 @@ NetCDF & \scriptsize\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.u
 \texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts  \\
 PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ 2.3.3-p2 \\
 Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
-\texttt{pycdf} & \href{http://pysclint.sourceforge.net/pycdf/}{\t{pysclint.sourceforge.net/pycdf}} & \emph{recommended}  & used in Python scripts  \\
+\texttt{netcdf4-python} & \href{http://code.google.com/p/netcdf4-python/}{\t{http://code.google.com/p/netcdf4-python/}} & \emph{recommended}  & used in Python scripts  \\
 \texttt{scikits.delaunay} & \href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}} & \emph{recommended} & used in Python scripts \\
 Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\ 
 \hline
@@ -1096,7 +1096,7 @@ The data for performing this experiment are freely available at
 Substantial developments have occurred in modeling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, the relation between a Greenland ice sheet flow model, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  The response of Greenland ice sheet models to climate warming is addressed in \cite{HuybrechtsdeWolde,Huybrechts02, Greve00}, among other references.
 
 
-\subsubsection*{Obtaining and converting EISMINT-Greenland data}  We use two Python scripts to convert the EISMINT-Greenland data, which is in the form of several ASCII text files, into NetCDF files usable by PISM.  The Python libraries \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://pysclint.sourceforge.net/pycdf/}{\texttt{pycdf}} must be present for the scripts to work.
+\subsubsection*{Obtaining and converting EISMINT-Greenland data}  We use two Python scripts to convert the EISMINT-Greenland data, which is in the form of several ASCII text files, into NetCDF files usable by PISM.  The Python libraries \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}} must be present for the scripts to work.
 
 First, \verb|cd examples/eisgreen/| from the PISM directory, and download these text (ASCII) files from the EISMINT-Greenland web site above: 
 
@@ -1124,7 +1124,7 @@ As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used
 \noindent The variable \verb|check| in the output file holds the difference of \verb|usurf| and the sum $\verb|topg|+\verb|thk|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|usurf| is within 1 meter of $\verb|topg|+\verb|thk|$.  Thus the surface elevation \verb|usurf| is consistent.  It is also redundant because at bootstrapping, described below, PISM reads ice thickness and bed elevation and computes ice surface elevation as the sum of these two.
 \end{comment}
 
-The bed elevation in the original data (\verb|suaq20-EISMINT|) effectively contains a missing value attribute of $0.0$, because in several places---deep fjords, mostly---the observed bed elevation was not measured or the measured value was not trusted.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://pysclint.sourceforge.net/pycdf/}{\texttt{pycdf}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix D.} found in directory \verb|pism/util/|:
+The bed elevation in the original data (\verb|suaq20-EISMINT|) effectively contains a missing value attribute of $0.0$, because in several places---deep fjords, mostly---the observed bed elevation was not measured or the measured value was not trusted.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix D.} found in directory \verb|pism/util/|:
 
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
@@ -1361,7 +1361,7 @@ Substantial developments have occurred in the modeling of the Ross ice shelf sin
 
 \normalsize\noindent The reader might want to look at these files in a text editor; their idiosyncratic format is handled by the python script \verb|eis_ross.py| (more below).  In fact, a very significant part of setting up EISMINT-Ross in PISM was the step of converting these text files into machine-readable and metadata-containing NetCDF.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but, as usual, the PISM computational grid can be determined by the user.
 
-The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://pysclint.sourceforge.net/pycdf/}{\texttt{pycdf}}.} \verb|eis_ross.py| reads the above three \verb|.dat| files and it creates a NetCDF file:
+The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.} \verb|eis_ross.py| reads the above three \verb|.dat| files and it creates a NetCDF file:
 
 \verb|$ ./eis_ross.py -o ross.nc|
 
@@ -1509,7 +1509,7 @@ trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc
 We see that hardnesses $\bar B = 1.8,1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ give the best fits.  This fitting exercise is a first small step towards inverse modelling of the spatially-distributed effective viscosity.  More steps in such directions are found in \cite{HumbertGreveHutter,RommelaereMacAyeal}
 
 
-\subsubsection*{Additional visualization}  The visualization abilities of PISM's runtime viewers, and of \verb|ncview| for NetCDF files, are limited.  On the other hand, we can produce pretty pictures using Python with \verb|pycdf| and \verb|matplotlib|; the script \verb|ross_plot.py|\footnote{Requires \t{matplotlib}, \t{scikits.delaunay} and \t{pycdf}.} provides an example.
+\subsubsection*{Additional visualization}  The visualization abilities of PISM's runtime viewers, and of \verb|ncview| for NetCDF files, are limited.  On the other hand, we can produce pretty pictures using Python with \verb|netcdf4-python| and \verb|matplotlib|; the script \verb|ross_plot.py|\footnote{Requires \t{matplotlib}, \t{scikits.delaunay} and \t{netcdf4-python}.} provides an example.
 
 Assuming that \verb|rossComputed.nc| was produced by the following PISM run
 
@@ -2256,7 +2256,7 @@ The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more e
 \scriptoptdef{x}{exclude}{} specify tags of errors to exclude from the figure
 
 
-\scripthead{util/nc2mat.py}\index{nc2mat.py} This Python script reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|pycdf| and SciPy.
+\scripthead{util/nc2mat.py}\index{nc2mat.py} This Python script reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|netcdf4-python| and SciPy.
 
 \opthead \verb|nc2mat.py| takes the following options:
 

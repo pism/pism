@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pycdf import *
+from netCDF3 import *
 from getopt import getopt, GetoptError
 from subprocess import Popen, PIPE
 from sys import argv, exit, stdout
@@ -134,14 +134,14 @@ def make_template(x, y, vars, pism_state_cdl, output_filename, remove=False):
 
     # Do some basic initialization:
     try:
-        nc = CDF(output_filename, NC.WRITE)
+        nc = Dataset(output_filename, 'a')
     except:
         print "Could not open %s. Exiting..." % output_filename
         exit(-1)
 
     dummy_variables = ["t", "z", "zb"]
     for name in dummy_variables:
-        var = nc.var(name)
+        var = nc.variables[name]
         var[0] = 0.0
     nc.close()
 

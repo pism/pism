@@ -4,7 +4,7 @@ import sys
 import getopt
 import time
 from numpy import *
-from pycdf import *
+from netCDF3 import Dataset as NC
 
 # set constants
 SECPERA = 3.1556926e7
@@ -244,38 +244,37 @@ inlets.close()
 
 
 ##### create and define dimensions and variables in NetCDF file #####
-ncfile = CDF(WRIT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
-ncfile.automode()
+ncfile = NC(WRIT_FILE, 'w')
 # set global attributes
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
 # define the dimensions
-tdim = ncfile.def_dim('t', NC.UNLIMITED)
-xdim = ncfile.def_dim('x', MxROSS)
-ydim = ncfile.def_dim('y', MyROSS)
-zdim = ncfile.def_dim('z', 1)  # dummy
-zbdim = ncfile.def_dim('zb', 1) # dummy
+tdim = ncfile.createDimension('t', None)
+xdim = ncfile.createDimension('x', MxROSS)
+ydim = ncfile.createDimension('y', MyROSS)
+zdim = ncfile.createDimension('z', 1)  # dummy
+zbdim = ncfile.createDimension('zb', 1) # dummy
 # define the variables
-tvar = ncfile.def_var('t', NC.DOUBLE, (tdim,))
-xvar = ncfile.def_var('x', NC.DOUBLE, (xdim,))
-yvar = ncfile.def_var('y', NC.DOUBLE, (ydim,))
-zvar = ncfile.def_var('z', NC.DOUBLE, (zdim,))
-zbvar = ncfile.def_var('zb', NC.DOUBLE, (zbdim,))
-latvar = ncfile.def_var('lat', NC.FLOAT, (tdim,xdim,ydim))
-lonvar = ncfile.def_var('lon', NC.FLOAT, (tdim,xdim,ydim))
-maskvar = ncfile.def_var('mask', NC.INT, (tdim,xdim,ydim))
-azivar = ncfile.def_var('azi_obs', NC.FLOAT, (tdim,xdim,ydim))
-magvar = ncfile.def_var('mag_obs', NC.FLOAT, (tdim,xdim,ydim))
-thkvar = ncfile.def_var('thk', NC.FLOAT, (tdim,xdim,ydim))
-accurvar = ncfile.def_var('accur', NC.INT, (tdim,xdim,ydim))
-bedvar = ncfile.def_var('topg', NC.FLOAT, (tdim,xdim,ydim))
-accumvar = ncfile.def_var('acab', NC.FLOAT, (tdim,xdim,ydim))
-barBvar = ncfile.def_var('barB', NC.FLOAT, (tdim,xdim,ydim))
-Tsvar = ncfile.def_var('artm', NC.FLOAT, (tdim,xdim,ydim))
-ubarvar = ncfile.def_var('ubar', NC.FLOAT, (tdim,xdim,ydim))
-vbarvar = ncfile.def_var('vbar', NC.FLOAT, (tdim,xdim,ydim))
-bcflagvar = ncfile.def_var('bcflag', NC.INT, (tdim,xdim,ydim))
+tvar = ncfile.createVariable('t', 'f8', ('t',))
+xvar = ncfile.createVariable('x', 'f8', ('x',))
+yvar = ncfile.createVariable('y', 'f8', ('y',))
+zvar = ncfile.createVariable('z', 'f8', ('z',))
+zbvar = ncfile.createVariable('zb', 'f8', ('zb',))
+latvar = ncfile.createVariable('lat', 'f4', ('t','x','y'))
+lonvar = ncfile.createVariable('lon', 'f4', ('t','x','y'))
+maskvar = ncfile.createVariable('mask', 'i4', ('t','x','y'))
+azivar = ncfile.createVariable('azi_obs', 'f4', ('t','x','y'))
+magvar = ncfile.createVariable('mag_obs', 'f4', ('t','x','y'))
+thkvar = ncfile.createVariable('thk', 'f4', ('t','x','y'))
+accurvar = ncfile.createVariable('accur', 'i4', ('t','x','y'))
+bedvar = ncfile.createVariable('topg', 'f4', ('t','x','y'))
+accumvar = ncfile.createVariable('acab', 'f4', ('t','x','y'))
+barBvar = ncfile.createVariable('barB', 'f4', ('t','x','y'))
+Tsvar = ncfile.createVariable('artm', 'f4', ('t','x','y'))
+ubarvar = ncfile.createVariable('ubar', 'f4', ('t','x','y'))
+vbarvar = ncfile.createVariable('vbar', 'f4', ('t','x','y'))
+bcflagvar = ncfile.createVariable('bcflag', 'i4', ('t','x','y'))
 
 ##### attributes in NetCDF file #####
 setattr(ncfile, 'Conventions', 'CF-1.0') # only global attribute

@@ -10,7 +10,7 @@
 ## to extract.
 
 from numpy import *
-from pycdf import *
+from netCDF3 import Dataset as NC
 import getopt
 import sys
 import time
@@ -116,8 +116,7 @@ print ' ' + str(count) + ' summary lines read'
 infile.close()
 
 # open a NetCDF file to write to
-ncfile = CDF(outfilename, NC.WRITE|NC.CREATE|NC.TRUNC)
-ncfile.automode()
+ncfile = NC(outfilename, "w")
 
 # add history global attribute
 historysep = ' '
@@ -127,17 +126,17 @@ setattr(ncfile, 'history', historystr)
 # always have time dimension t and step var delta_t
 # define time dimension, then time variable, then attributes
 NYEAR = size(year)
-timedim = ncfile.def_dim('t', NC.UNLIMITED)
-yearvar = ncfile.def_var('t', NC.FLOAT, (timedim,))
+timedim = ncfile.createDimension('t', None)
+yearvar = ncfile.createVariable('t', 'f4', dimensions=('t',))
 setattr(yearvar, 'units', 'years from start of run')
-stepvar = ncfile.def_var('delta_t', NC.FLOAT, (timedim,))
+stepvar = ncfile.createVariable('delta_t', 'f4', dimensions=('t',))
 setattr(stepvar, 'units', 'years')
 setattr(stepvar, 'interpolation', 'constant')
 
 # define the rest of the vars
 var=[]
 for j in range(Nnames):
-  var.append(ncfile.def_var(names[j], NC.FLOAT, (timedim,)))
+  var.append(ncfile.createVariable(names[j], 'f4', dimensions=('t',)))
   setattr(var[j], 'units', units[j])
   setattr(var[j], 'interpolation', 'linear')
 

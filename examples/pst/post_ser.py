@@ -3,7 +3,7 @@ from pylab import *
 import os
 import sys
 from getopt import getopt, GetoptError
-import pycdf
+from netCDF import Dataset as NC
 
 # description of where the transcripts are
 # (0,       1,        2,      3,       4,      5,      6)
@@ -124,8 +124,8 @@ for k in desc:
 
   filename = "%s.ser.nc" % pre
   print "opening %s to make time series figures" % filename
-  nc = pycdf.CDF(filename)
-  time = nc.var("t").get()
+  nc = NC(filename, 'r')
+  time = nc.variables["t"][:]
 
   # figure(1|2) shows grid refinement for ivol time series
   #   for P[1|2]
@@ -133,7 +133,7 @@ for k in desc:
     print "adding ivol to figure(%d)" % (k[3])
     figure(k[3])
     hold(True)
-    var = nc.var("ivol").get()
+    var = nc.variables["ivol"][:]
     myls = getvolstyle(k[4])
     mylabel = "%.1f km grid" % k[4]
     if (k[5] == 1):
@@ -150,7 +150,7 @@ for k in desc:
     hold(True)
     for j in [0,1,2]:
       varname = "avdwn%d" % j
-      var = nc.var(varname).get()
+      var = nc.variables[varname][:]
       mylabel = r"$%d^\circ$ strip" % P2angles[j]
       semilogy(time, var, linestyle=P2styles[j], linewidth=1.5, 
                color='black', label=mylabel)
@@ -164,7 +164,7 @@ for k in desc:
     print "adding ivol from P1cont to figure(6)"
     figure(6)
     hold(True)
-    var = nc.var("ivol").get()
+    var = nc.variables["ivol"][:]
     plot(time, var, linewidth=1.5, color='black')
     hold(False)
     print "adding avdwn013 (70,30,50km wide) from P1cont to figure(7)"
@@ -172,7 +172,7 @@ for k in desc:
     hold(True)
     for j in [0,1,3]:
       varname = "avdwn%d" % j
-      var = nc.var(varname).get()
+      var = nc.variables[varname][:]
       myl = semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
                      color='black')
       P1contlines.append(myl)
@@ -180,7 +180,7 @@ for k in desc:
     figure(8)
     hold(True)
     varname = "avdwn2"
-    var = nc.var(varname).get()
+    var = nc.variables[varname][:]
     myl = semilogy(time, var, linewidth=1.5, color='black')
     P1contlines.append(myl)
     if (k[5] == 2):
@@ -193,7 +193,7 @@ for k in desc:
     print "adding ivol to figure(9)"
     figure(9)
     hold(True)
-    var = nc.var("ivol").get()
+    var = nc.variables["ivol"][:]
     mylabel = "P%d" % k[3]
     plot(time, var, linewidth=1.5, color="black",
          linestyle=P1styles[k[3]-1], label=mylabel)
@@ -206,7 +206,7 @@ for k in desc:
     hold(True)
     for j in [0,1,2,3]:
       varname = "avdwn%d" % j
-      var = nc.var(varname).get()
+      var = nc.variables[varname][:]
       mylabel = r"$%d$ km" % P1widths[j]
       semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
                color='black', label=mylabel)
@@ -218,7 +218,7 @@ for k in desc:
     hold(True)
     for j in [0,1,2,3]:
       varname = "avdwn%d" % j
-      var = nc.var(varname).get()
+      var = nc.variables[varname][:]
       mylabel = r"$%d$ m" % P3drops[j]
       semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
                color='black', label=mylabel)
@@ -230,7 +230,7 @@ for k in desc:
     hold(True)
     for j in [0,1,2,3]:
       varname = "avdwn%d" % j
-      var = nc.var(varname).get()
+      var = nc.variables[varname][:]
       mylabel = r"$%d^\circ$" % P4phis[j]
       semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
                color='black', label=mylabel)

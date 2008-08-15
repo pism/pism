@@ -6,7 +6,7 @@
 from pylab import *
 import os
 import sys
-import pycdf
+from netCDF3 import Dataset as NC
 
 ## a successful experiment with polyfit:
 #t=arange(0,1,.1)
@@ -32,9 +32,9 @@ except KeyboardInterrupt:  sys.exit(2)
 if status:  sys.exit(status)
 
 print "opening %s to get ivol time series" % fullname
-nc = pycdf.CDF(fullname)
-time = nc.var("t").get()
-ivol = nc.var("ivol").get()
+nc = NC(fullname, 'r')
+time = nc.variables["t"][:]
+ivol = nc.variables["ivol"][:]
 nc.close()
 
 estFinalVol = 2.106  # from direct inspection of .ser.nc

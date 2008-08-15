@@ -4,7 +4,7 @@ import sys
 import getopt
 import time
 from numpy import *
-from pycdf import *
+from netCDF3 import Dataset as NC
 
 # set constants
 SECPERA = 3.1556926e7
@@ -64,20 +64,19 @@ print "lines read from " + IN_FILE + "= " + str(count)
 riggsin.close()
 
 ##### create and define dimensions and variables in NetCDF file #####
-ncfile = CDF(OUT_FILE, NC.WRITE|NC.CREATE|NC.TRUNC)
-ncfile.automode()
+ncfile = NC(OUT_FILE, 'w')
 # define the dimensions
-xdim = ncfile.def_dim('count', count)
+xdim = ncfile.createDimension('count', count)
 # define the variables
-xvar = ncfile.def_var('count', NC.INT, (xdim,))
-truelatvar = ncfile.def_var('truelat', NC.FLOAT, (xdim,))
-truelonvar = ncfile.def_var('truelon', NC.FLOAT, (xdim,))
-riggslatvar = ncfile.def_var('riggslat', NC.FLOAT, (xdim,))
-riggslonvar = ncfile.def_var('riggslon', NC.FLOAT, (xdim,))
-riggsmagvar = ncfile.def_var('riggsmag', NC.FLOAT, (xdim,))
-riggsazivar = ncfile.def_var('riggsazi', NC.FLOAT, (xdim,))
-riggsuvar = ncfile.def_var('riggsu', NC.FLOAT, (xdim,))
-riggsvvar = ncfile.def_var('riggsv', NC.FLOAT, (xdim,))
+xvar = ncfile.createVariable('count', 'f4', dimensions=('count',))
+truelatvar = ncfile.createVariable('truelat', 'f4', dimensions=('count',))
+truelonvar = ncfile.createVariable('truelon', 'f4', dimensions=('count',))
+riggslatvar = ncfile.createVariable('riggslat', 'f4', dimensions=('count',))
+riggslonvar = ncfile.createVariable('riggslon', 'f4', dimensions=('count',))
+riggsmagvar = ncfile.createVariable('riggsmag', 'f4', dimensions=('count',))
+riggsazivar = ncfile.createVariable('riggsazi', 'f4', dimensions=('count',))
+riggsuvar = ncfile.createVariable('riggsu', 'f4', dimensions=('count',))
+riggsvvar = ncfile.createVariable('riggsv', 'f4', dimensions=('count',))
 
 ##### attributes in NetCDF file #####
 # set global attributes
