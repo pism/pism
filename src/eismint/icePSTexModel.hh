@@ -38,6 +38,7 @@ class IcePSTexModel : public IceEISModel {
 
 public:
   IcePSTexModel(IceGrid &g, IceType *i);
+  virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
     
 protected:

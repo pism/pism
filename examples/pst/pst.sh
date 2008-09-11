@@ -96,11 +96,11 @@ mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4"
 
 
 # P0I: run with troughs on refining grid for total of 200k years:
-mpst $NN "-P0I -if P0A_100k.nc -y 50000 -tempskip 20 -o P0I_150k"
+mpst $NN "-P0I -if P0A_100k.nc -y 50000 -skip 20 -o P0I_150k"
 mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 \
- -tempskip 20 -regrid P0I_150k.nc -regrid_vars LTBHhe -o P0I_190k"
+ -skip 20 -regrid P0I_150k.nc -regrid_vars LTBHhe -o P0I_190k"
 mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 \
- -tempskip 20 -regrid P0I_190k.nc -regrid_vars LTBHhe -o P0I"
+ -skip 20 -regrid P0I_190k.nc -regrid_vars LTBHhe -o P0I"
 
 
 # P3: troughs, with variable width but grid-aligned ice streams
@@ -119,7 +119,7 @@ mpst_vg $NN u "-P2 -Mx 101 -My 101 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P2coarse"
 
 mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 \
- -regrid P0I.nc -regrid_vars LTBHhe -o P3coarse"  # note start with troughs SIA
+ -regrid P0I.nc -regrid_vars LTBHhe -o P3coarse"  # initial state has troughs
 
 mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4coarse"
@@ -134,7 +134,7 @@ mpst_vg $NN u "-P2 -Mx 201 -My 201 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P2fine"
 
 mpst_vg $NN u "-P3 -Mx 201 -My 201 -y 5000 \
- -regrid P0I.nc -regrid_vars LTBHhe -o P3fine"  # note start with troughs SIA
+ -regrid P0I.nc -regrid_vars LTBHhe -o P3fine"
 
 mpst_vg $NN u "-P4 -Mx 201 -My 201 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4fine"
@@ -148,7 +148,7 @@ mpst_vg $NN t "-P2 -Mx 151 -My 151 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P2vertfine"
 
 mpst_vg $NN t "-P3 -Mx 151 -My 151 -y 5000 \
- -regrid P0I.nc -regrid_vars LTBHhe -o P3vertfine"  # note start with troughs SIA
+ -regrid P0I.nc -regrid_vars LTBHhe -o P3vertfine"
 
 mpst_vg $NN t "-P4 -Mx 151 -My 151 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4vertfine"
@@ -176,7 +176,7 @@ mpst_vg $NN u "-P2 -Mx 301 -My 301 -tempskip 10 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P2finest"
 
 mpst_vg $NN u "-P3 -Mx 301 -My 301 -tempskip 10 -y 5000 \
- -regrid P0I.nc -regrid_vars LTBHhe -o P3finest"  # note start with troughs SIA
+ -regrid P0I.nc -regrid_vars LTBHhe -o P3finest"
 
 mpst_vg $NN u "-P4 -Mx 301 -My 301 -tempskip 10 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4finest"

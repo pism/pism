@@ -98,7 +98,7 @@ IcePSTexModel::IcePSTexModel(IceGrid &g, IceType *i)
 }
 
 
-PetscErrorCode IcePSTexModel::initFromOptions() {
+PetscErrorCode IcePSTexModel::setFromOptions() {
   PetscErrorCode      ierr;
 
   exper_chosen = -1;
@@ -121,14 +121,10 @@ PetscErrorCode IcePSTexModel::initFromOptions() {
     SETERRQ(2,"Unrecognized experiment name for IcePSTexModel.\n"
               "  An experiment name option like '-P2' must be chosen.");
 
-  ierr = verbPrintf(2,grid.com, 
-    "setting up PST (Plastic till Stream w Thermocoupling) experiment '%s' ...\n",
-    exper_chosen_name); CHKERRQ(ierr);
-
-  ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
-
   doSkip = PETSC_TRUE;
   skipMax = 2;
+
+  ierr = IceEISModel::setFromOptions();  CHKERRQ(ierr);
 
   // different from EISMINT II conventions (even for P0A and P0I)
   updateHmelt = PETSC_TRUE;
@@ -146,6 +142,19 @@ PetscErrorCode IcePSTexModel::initFromOptions() {
     doPlasticTill = PETSC_TRUE;
     useConstantTillPhi = PETSC_FALSE;
   }  
+
+  return 0;
+}
+
+
+PetscErrorCode IcePSTexModel::initFromOptions() {
+  PetscErrorCode      ierr;
+
+  ierr = verbPrintf(2,grid.com, 
+    "setting up PST (Plastic till Stream w Thermocoupling) experiment '%s' ...\n",
+    exper_chosen_name); CHKERRQ(ierr);
+
+  ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
 
   ierr = setBedElev(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "bed topography stored ... "); CHKERRQ(ierr);
