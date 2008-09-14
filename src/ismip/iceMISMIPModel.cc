@@ -26,7 +26,7 @@
 
 
 /* 
-WORKING REFERENCE RUN:  see  examples/mismip/mismip.sh
+see run script   examples/mismip/mismip.sh
 */
 
 /* 
@@ -71,15 +71,10 @@ PetscErrorCode MISMIPIce::setA(const PetscScalar myA) {
 }
 
 
-PetscScalar MISMIPIce::getA() {
-  return A_MISMIP;
-}
-
-
 PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
   PetscErrorCode ierr;
   ierr = verbPrintf(thresh, com, 
-    "Using MISMIP ice w  rho=%5.2f, grav=%5.4f, n=%d, and A=%5.4e.\n",
+    "Using MISMIP ice w  rho=%6.2f, grav=%6.4f, n=%6.4f, and A=%6.4e.\n",
     rho, grav, n, A_MISMIP); CHKERRQ(ierr);
   return 0;
 }
@@ -111,6 +106,17 @@ PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar regularization
   // NOTE: temp and pressure args to effectiveViscosity() ignored
   return H * effectiveViscosity(regularization, u_x, u_y, v_x, v_y, 0.0, 0.0);
 }
+
+
+PetscScalar MISMIPIce::softnessParameter(PetscScalar T) const {
+  return A_MISMIP;
+}
+
+
+PetscScalar MISMIPIce::hardnessParameter(PetscScalar T) const {
+  return B_MISMIP;
+}
+
 
 
 IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) : 
@@ -154,28 +160,30 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
 }
 
 
-PetscScalar IceMISMIPModel::basalDragx(PetscScalar **beta, PetscScalar **tauc,
+PetscScalar IceMISMIPModel::basalDragx(PetscScalar **tauc,
                                        PetscScalar **u, PetscScalar **v,
                                        PetscInt i, PetscInt j) const {
-  return basalIsotropicDrag(beta, tauc, u, v, i, j);
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  // verbPrintf(1,grid.com,"IceMISMIPModel::basalDragx()\n");
+  return basalIsotropicDrag(u, v, i, j);
 }
 
 
-PetscScalar IceMISMIPModel::basalDragy(PetscScalar **beta, PetscScalar **tauc,
+PetscScalar IceMISMIPModel::basalDragy(PetscScalar **tauc,
                                        PetscScalar **u, PetscScalar **v,
                                        PetscInt i, PetscInt j) const {
-  return basalIsotropicDrag(beta, tauc, u, v, i, j);
+  return basalIsotropicDrag(u, v, i, j);
 }
 
 
-PetscScalar IceMISMIPModel::basalIsotropicDrag(PetscScalar **beta, PetscScalar **tauc,
-                                       PetscScalar **u, PetscScalar **v,
-                                       PetscInt i, PetscInt j) const {
+PetscScalar IceMISMIPModel::basalIsotropicDrag(
+            PetscScalar **u, PetscScalar **v, PetscInt i, PetscInt j) const {
 
   PetscScalar       myC = C_MISMIP;
   
-#if (0)
-  const PetscScalar damp_width = 50.0e3;
+#if (MISMIP_PLAY)
+  //verbPrintf(1,grid.com,"doing smoothed C transition");
+  const PetscScalar damp_width = 100.0e3;
   if (rstats.xg > damp_width) {  // avoid weird cases where grounding line has moved far left
     // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
     const PetscScalar jfrom0 =
@@ -190,7 +198,7 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(PetscScalar **beta, PetscScalar *
 //  myC = C_MISMIP;  // UNDOES THE ABOVE
 #endif
 
-#if (MISMIP_PLAY)
+#if (0)
   const PetscScalar switch_to_slick = 710.0e3;
   const PetscScalar jfrom0 =
              static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
@@ -309,12 +317,14 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
        CHKERRQ(ierr);
   }
 
-  doTemp               = PETSC_FALSE;
-  doPlasticTill        = PETSC_FALSE;
-  doBedDef             = PETSC_FALSE;
+  doTemp                    = PETSC_FALSE;
+  doPlasticTill             = PETSC_FALSE;
+  doBedDef                  = PETSC_FALSE;
 
-  isDrySimulation        = PETSC_FALSE;
-  includeBMRinContinuity = PETSC_FALSE;
+  isDrySimulation           = PETSC_FALSE;
+  includeBMRinContinuity    = PETSC_FALSE;
+  
+  doOceanKill               = PETSC_TRUE;
   
   useSSAVelocity            = PETSC_TRUE;
   computeSurfGradInwardSSA  = PETSC_FALSE;
@@ -344,8 +354,17 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   else
     gridmode = 3;
 
+  // determine model number from doSuperpose; if "-super" then
+  //   "ABC2_.." but if not then "ABC1_..."
+  if (doSuperpose == PETSC_TRUE) {
+    modelnum = 2;
+  } else {
+    modelnum = 1;
+  }
+  
   // create prefix (e.g.) "EBU1_2b_M1_A3" for output files with names (e.g.)
   //   EBU1_2b_M1_A3.nc, EBU1_2b_M1_A3_t, EBU1_2b_M1_A3_ss, and EBU1_2b_M1_A3_f
+  //   unless user says "-o foo"
   PetscTruth  oused;
   char        oname[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
@@ -353,16 +372,9 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   if (oused == PETSC_TRUE) {
     strcpy(mprefix, oname);
   } else {
-    strcpy(mprefix, initials);
-    strcat(mprefix, "1_");
-    strcat(mprefix, Ee);
-    strcat(mprefix, "_M");
-    char str[10];
-    snprintf(str, sizeof(str), "%d_A%d", gridmode, runindex);
-//    strcat(mprefix, str);
-//    strcat(mprefix, "_A");
-//    snprintf(str, sizeof(str), "%d", runindex);
-    strcat(mprefix, str);
+    snprintf(mprefix, sizeof(mprefix), 
+             "%s%d_%s_M%d_A%d",
+             initials, modelnum, Ee, gridmode, runindex);
     // now act like user set the output name
     ierr = PetscOptionsSetValue("-o",mprefix);  CHKERRQ(ierr);
   }
@@ -394,7 +406,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   } else { // usual case: initialize from MISMIP formulas
     ierr = verbPrintf(2,grid.com, 
               "initializing MISMIP experiment %d%c;  grid mode %d;  run %d (A=%5.4e)\n", 
-              exper,sliding,gridmode,runindex,mismip_ice->getA()); CHKERRQ(ierr);
+              exper,sliding,gridmode,runindex,mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -492,7 +504,7 @@ PetscErrorCode IceMISMIPModel::setMISMIPBed() {
       const PetscScalar xs = PetscAbs(y) / 750.0e3;  // scaled and symmetrical x coord
 
       if ((exper == 1) || (exper == 2)) {
-#if (MISMIP_PLAY)
+#if (0)
         if (PetscAbs(y) < 710.0e3) {
           b[i][j] = 720.0 - 778.5 * xs;
         } else {
@@ -583,6 +595,8 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   PetscScalar     infnormdHdt, ginfnormdHdt;
   ierr = VecNorm(vdHdt,NORM_INFINITY,&infnormdHdt); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&infnormdHdt, &ginfnormdHdt, grid.com); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"max|dH/dt| = %8.3e m/a; MISMIP steady is < 1.0e-4 m/a");
+     CHKERRQ(ierr);
 
   if (ginfnormdHdt < 1.0e-4 / secpera) {  // if all points have dHdt < 10^-4 m/yr,
     // then set the IceModel goal of endYear to the current year; stops immediately
@@ -590,7 +604,7 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
 
     // report stopping to standard out
     ierr = verbPrintf(2,grid.com,
-        "\nIceMISMIPModel: MISMIP steady state criterion (max|dHdt| < 10^-4 m/yr) satisfied;\n"
+        "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < 10^-4 m/yr) satisfied;\n"
         "                stopping at year=%.3f\n",grid.year); CHKERRQ(ierr);
 
     // leave stopping stamp in output NetCDF file

@@ -41,7 +41,8 @@ public:
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
   PetscErrorCode setA(const PetscScalar myA);
-  PetscScalar    getA();
+  PetscScalar    softnessParameter(PetscScalar T) const;
+  PetscScalar    hardnessParameter(PetscScalar T) const;
   PetscErrorCode printInfo(const int thresh, MPI_Comm com);
   
 protected:
@@ -75,17 +76,17 @@ public:
                 const PetscScalar year, const PetscScalar dt, 
                 const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
                 const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
-  virtual PetscScalar    basalDragx(PetscScalar **beta, PetscScalar **tauc,
+  virtual PetscScalar    basalDragx(PetscScalar **tauc,
                                     PetscScalar **u, PetscScalar **v,
                                     PetscInt i, PetscInt j) const;
-  virtual PetscScalar    basalDragy(PetscScalar **beta, PetscScalar **tauc,
+  virtual PetscScalar    basalDragy(PetscScalar **tauc,
                                     PetscScalar **u, PetscScalar **v,
                                     PetscInt i, PetscInt j) const;
   PetscErrorCode         printBasalAndIceInfo();
 
 protected:
   MISMIPIce   *mismip_ice;
-  PetscInt    exper, gridmode, runindex;
+  PetscInt    exper, gridmode, runindex, modelnum;
   char        sliding;
   PetscScalar runtimeyears;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
@@ -104,9 +105,8 @@ protected:
   PetscScalar m_MISMIP, C_MISMIP;
   PetscScalar regularize_MISMIP;
 
-  PetscScalar basalIsotropicDrag(PetscScalar **beta, PetscScalar **tauc,
-                                 PetscScalar **u, PetscScalar **v,
-                                 PetscInt i, PetscInt j) const;
+PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
+                               PetscInt i, PetscInt j) const;
 };
 
 #endif  // __iceMISMIPModel_hh

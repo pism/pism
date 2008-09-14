@@ -58,6 +58,7 @@ PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
 PetscScalar IceModel::basalDragx(PetscScalar **tauc,
                                  PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const {
+  verbPrintf(1,grid.com,"IceModel::basalDragx()\n");
   return basal->drag(tauc[i][j], u[i][j], v[i][j]);
 }
 
