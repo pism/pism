@@ -303,14 +303,12 @@ chooseEquallySpacedVertical(), chooseQuadraticSpacedVertical(), or chooseChebysh
 should be called before this one.
 
 If vertical levels are already determined, use method rescale_using_zlevels().
-
-See the comment for rescale_and_set_zlevels(<tt>lx,ly,lz,truelyPeriodic</tt>).
  */
 PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
                                                 const PetscScalar lz) {
   PetscErrorCode ierr;
   
-  ierr = rescale_and_set_zlevels(lx,ly,lz,PETSC_FALSE); CHKERRQ(ierr);
+  ierr = rescale_and_set_zlevels(lx,ly,lz,PETSC_FALSE,PETSC_FALSE); CHKERRQ(ierr);
   return 0;
 }
 
@@ -331,7 +329,8 @@ The upshot is that if one computes in a truely periodic way then the gap between
 Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
  */
 PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                                const PetscScalar lz, const PetscTruth truelyPeriodic) {
+                                                const PetscScalar lz, 
+                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic) {
   PetscErrorCode ierr;
 
   if (lz<=0) {
@@ -344,7 +343,7 @@ PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const Pets
   Lz = lz;  
   ierr = setVertLevels(); CHKERRQ(ierr);  // note Lbz is determined within setVertLevels()
 
-  ierr = rescale_using_zlevels(lx, ly, truelyPeriodic); CHKERRQ(ierr);
+  ierr = rescale_using_zlevels(lx, ly, XisTruelyPeriodic, YisTruelyPeriodic); CHKERRQ(ierr);
   return 0;
 }
 
@@ -359,14 +358,14 @@ This version assumes the horizontal grid is not truely periodic.  Use this one b
  */
 PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly) {
   PetscErrorCode ierr;
-  ierr = rescale_using_zlevels(lx,ly,PETSC_FALSE);
+  ierr = rescale_using_zlevels(lx,ly,PETSC_FALSE,PETSC_FALSE); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
 PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                              const PetscTruth truelyPeriodic) {
+                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic) {
   PetscErrorCode ierr;
 
   if (lx<=0) {
@@ -377,11 +376,14 @@ PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscS
   }
 
   Lx = lx; Ly = ly;
-  if (truelyPeriodic == PETSC_TRUE) {
+  if (XisTruelyPeriodic == PETSC_TRUE) {
     dx = 2.0 * Lx / (Mx);
-    dy = 2.0 * Ly / (My);
   } else {
     dx = 2.0 * Lx / (Mx - 1);
+  }
+  if (YisTruelyPeriodic == PETSC_TRUE) {
+    dy = 2.0 * Ly / (My);
+  } else {
     dy = 2.0 * Ly / (My - 1);
   }
 
@@ -454,21 +456,14 @@ PetscErrorCode IceGrid::createDA() {
   }
 
   // this line contains the fundamental transpose: My,Mx instead of "Mx,My";
-  // this transpose allows us to index the Vecs by "[i][j]" but display them correctly in PETSc viewers
-  // changing this to untransposed should *only* change that viewer behavior
+  // this transpose allows us to index the Vecs by "[i][j]" but display them
+  //   correctly in PETSc viewers; changing this to untransposed should *only*
+  //   change that viewer behavior
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
 
-/* see IceModelVec3; we no longer need da3 and da3b
-  PetscInt    M, N, m, n;
-  ierr = DAGetInfo(da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, Mz, N, M, 1, n, m, 1, 1,
-                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3); CHKERRQ(ierr);
-  ierr = DACreate3d(com, DA_YZPERIODIC, DA_STENCIL_STAR, Mbz, N, M, 1, n, m, 1, 1,
-                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3b); CHKERRQ(ierr);
-*/
+  /* see IceModelVec3 for creation of three-dimensional DAs for each 3D Vec */
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);

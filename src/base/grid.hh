@@ -46,10 +46,11 @@ public:
                                          const PetscScalar lz);
   PetscErrorCode rescale_and_set_zlevels(
                         const PetscScalar lx, const PetscScalar ly, 
-                        const PetscScalar lz, const PetscTruth truelyPeriodic);
+                        const PetscScalar lz, 
+                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic);
   PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly);
   PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                       const PetscTruth truelyPeriodic);
+                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic);
 
   PetscErrorCode printVertLevels(const int verbosity); 
   bool           isEqualVertSpacing();

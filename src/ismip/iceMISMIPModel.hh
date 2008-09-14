@@ -64,6 +64,8 @@ class IceMISMIPModel : public IceModel {
 
 public:
   IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i);
+  virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
+
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode         additionalAtStartTimestep();
@@ -79,7 +81,7 @@ public:
   virtual PetscScalar    basalDragy(PetscScalar **beta, PetscScalar **tauc,
                                     PetscScalar **u, PetscScalar **v,
                                     PetscInt i, PetscInt j) const;
-  PetscErrorCode         printBasalInfo();
+  PetscErrorCode         printBasalAndIceInfo();
 
 protected:
   MISMIPIce   *mismip_ice;
@@ -88,6 +90,8 @@ protected:
   PetscScalar runtimeyears;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
+  PetscViewer tviewfile;
+  char        tfilename[PETSC_MAX_PATH_LEN];
 
   routineStatsType  rstats;
   mismipStatsType   mstats;

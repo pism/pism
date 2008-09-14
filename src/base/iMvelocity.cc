@@ -233,7 +233,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vuplift, &dbdt); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
-    
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
@@ -242,11 +242,25 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 
       PetscScalar dbdx = 0.0, dbdy = 0.0;
       if (modMask(mask[i][j]) != MASK_FLOATING) {
-        // basal w from basal kinematical equation when grounded
-        dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx),
-        dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
+        // bed gradient needed if grounded; there is no reason to assume that the
+        //   bed elevation has been periodized by the user
+        if (i == 0) {
+          dbdx = (b[i+1][j] - b[i][j]) / (dx);
+        } else if (i == grid.Mx-1) {
+          dbdx = (b[i][j] - b[i-1][j]) / (dx);
+        } else {
+          dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx);
+        }
+        if (j == 0) {
+          dbdy = (b[i][j+1] - b[i][j]) / (dy);
+        } else if (j == grid.My-1) {
+          dbdy = (b[i][j] - b[i][j-1]) / (dy);
+        } else {
+          dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
+        }
       }
 
+      // basal w from basal kinematical equation
 //      w[0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy; // DEBUG?: remove dbdt
       w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
 

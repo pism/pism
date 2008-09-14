@@ -123,7 +123,8 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       // first allocate space for nu (which will be calculated from formula)
       ierr = VecDuplicateVecs(vh, 2, &vNuForJ); CHKERRQ(ierr);
       // we set a flag because the grid is truely periodic
-      ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000, PETSC_TRUE); CHKERRQ(ierr);
+      ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000, PETSC_TRUE, PETSC_TRUE);
+         CHKERRQ(ierr);
       ierr = afterInitHook(); CHKERRQ(ierr);
       ierr = setInitStateJ(); CHKERRQ(ierr);
       isDrySimulation = PETSC_FALSE;

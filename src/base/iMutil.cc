@@ -91,6 +91,8 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
             h_y = factor * (pow(H[i][j+1],etapow) - pow(H[i][j-1],etapow)) / (2*grid.dy);
           }
           // now add bed slope to get actual h_x,h_y
+          // FIXME: there is no reason to assume user's bed is periodized; see vertical
+          //   velocity computation
           h_x += (b[i+1][j] - b[i-1][j]) / (2*grid.dx);
           h_y += (b[i][j+1] - b[i][j-1]) / (2*grid.dy);
         }

@@ -195,7 +195,8 @@ PetscErrorCode IceCompModel::initFromOptions() {
 //        ierr = grid.rescale_and_set_zlevels(1500e3, 1500e3, 4000); CHKERRQ(ierr);
       case 'K':
         // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-        ierr = grid.rescale_and_set_zlevels(1000e3, 1000e3, 4000, PETSC_TRUE); CHKERRQ(ierr);
+        ierr = grid.rescale_and_set_zlevels(1000e3, 1000e3, 4000, PETSC_TRUE, PETSC_TRUE);
+           CHKERRQ(ierr);
         // now, if unequal spaced vertical then run special code to set bedrock vertical 
         //   levels so geothermal boundary condition is imposed at exact depth 1000m
         if (grid.Mbz == 1) {

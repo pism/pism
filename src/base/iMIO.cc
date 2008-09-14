@@ -322,7 +322,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = grid.createDA(); CHKERRQ(ierr);
   // FIXME: note we *can* determine from the input file whether the hor. dims are truely periodic,
   // but this has not been done; here we simply require it is not periodic
-  ierr = grid.rescale_using_zlevels(-bdy[1], -bdy[3], PETSC_FALSE); CHKERRQ(ierr);
+  ierr = grid.rescale_using_zlevels(-bdy[1], -bdy[3]); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   
   // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
