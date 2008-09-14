@@ -595,8 +595,8 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   PetscScalar     infnormdHdt, ginfnormdHdt;
   ierr = VecNorm(vdHdt,NORM_INFINITY,&infnormdHdt); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&infnormdHdt, &ginfnormdHdt, grid.com); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,"max|dH/dt| = %8.3e m/a; MISMIP steady is < 1.0e-4 m/a");
-     CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com," [ max |dH/dt| = %.3e m/a; steady is 1.0e-4 ]  ",
+     ginfnormdHdt * secpera); CHKERRQ(ierr);
 
   if (ginfnormdHdt < 1.0e-4 / secpera) {  // if all points have dHdt < 10^-4 m/yr,
     // then set the IceModel goal of endYear to the current year; stops immediately
