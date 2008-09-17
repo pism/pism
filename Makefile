@@ -2,7 +2,6 @@
 PISM_PREFIX ?= $(PWD)
 WITH_FFTW ?= 1
 LOG_PISM_EVENTS ?= 0
-MISMIP_PLAY ?= 0
 # PETSc has troubles choosing a linker which can link C++. PISM is C++. Setting
 # this to zero would let PETSc choose a linker.
 USE_MPICXX = 1
@@ -48,3 +47,4 @@ userman refman browser summary fullbib:
 	@cd $(BUILD_DIR) && $(MAKE) $@
 
 .EXPORT_ALL_VARIABLES: ;
+

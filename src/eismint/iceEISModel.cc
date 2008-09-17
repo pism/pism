@@ -166,7 +166,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
 
     // note height of grid must be great enough to handle max thickness
     const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
-    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
     switch (expername) {
       case 'A':
       case 'E':

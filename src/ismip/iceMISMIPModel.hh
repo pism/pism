@@ -52,7 +52,7 @@ protected:
 
 
 struct routineStatsType {
-  PetscScalar jg, xg, hxg, maxubar, avubarG, avubarF;
+  PetscScalar jg, xg, hxg, maxubar, avubarG, avubarF, dHdtnorm;
 };
 
 
@@ -86,9 +86,9 @@ public:
 
 protected:
   MISMIPIce   *mismip_ice;
-  PetscInt    exper, gridmode, runindex, modelnum;
+  PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
-  PetscScalar runtimeyears;
+  PetscScalar runtimeyears, dHdtnorm_atol;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;

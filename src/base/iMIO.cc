@@ -280,7 +280,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
        "WARNING:  Unknown file format for %s.  Trying to read as NetCDF.\n",fname); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2,grid.com,"initializing from NetCDF format file  %s  ...\n",
+  ierr = verbPrintf(2,grid.com,"initializing from NetCDF file  %s  ...\n",
                      fname); CHKERRQ(ierr);
 
   if (grid.rank == 0) {

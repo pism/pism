@@ -952,22 +952,26 @@ produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs r
 \clearpage\newpage
 \section{Simplified geometry experiments}\label{sect:simp}
 
-\subsection{Historical note}  There have been three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s.\index{EISMINT!defined}
+\subsection{Historical note}  There have been three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s \cite{BuelerSpray}.\index{EISMINT!defined}
 
 EISMINT\footnote{``EISMINT'' stands for European Ice Sheet Modeling INiTiative.  
 
-See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is, however, superceded by \emph{verification} using the full variety of exact solutions to the isothermal SIA.  The reasons why EISMINT I can be fully replaced by verification are described in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the very useful Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM.
+See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is superceded, however, by \emph{verification} using the full variety of known exact solutions to the isothermal SIA, as shown in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why good performance on the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM, although it would be easy code to write.
 
-EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  Here is not the place for a discussion of the interpretations which have followed the EISMINT II results, but references \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the perceived shortfalls of ice sheet models (as evidenced by their behavior on EISMINT II experiments).  PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
+EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  References \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the (perceived and real) shortfalls of ice sheet models as evidenced by their behavior on EISMINT II experiments.  PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
 The ISMIP\footnote{``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  \index{ISMIP!defined}
 
-See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.} round of intercomparisons are ongoing at the time of this writing (January 2008).  There are two components of ISMIP partially completed, namely HOM = Higher Order Models and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.  Of these ISMIP experiments, PISM has supported HEINO, but this ability is unmaintained (for reasons described in the next paragraph).  There is no current plan to support HOM.  The PISM developers plan to participate in the upcoming Marine Ice Sheet Model Intercomparison Project (MISMIP)\index{ISMIP!MISMIP}\index{MISMIP} and ISMIP-POLICE exercises.
+See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.} round of intercomparisons are ongoing at this time.  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
 
-The results from PISM for HEINO are not regarded by the PISM authors as meaningful.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO to not be easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The same problem applies to EISMINT II experiment H.  This is a problem regardless of the details of the numerical schemes or even (roughly speaking) of the shallowness of the continuum model.
+Of these ISMIP experiments, PISM participated in HEINO, but this ability is unmaintained.  The results from PISM for HEINO are not regarded by the PISM authors as any more or less meaningful than those from other participating models.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite{BBssasliding}, and the same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
+
+There is no current plan to support ISMIP-HOM.
+
+A third ISMIP part is the Marine Ice Sheet Model Intercomparison Project (MISMIP)\index{ISMIP!MISMIP}.  It is supported in PISM, as described in subsection \ref{subsect:MISMIP}.
 
 
-\subsection{EISMINT II in PISM}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}.\index{EISMINT}  They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
+\subsection{EISMINT II in PISM}\label{subsect:EISMINTII}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}.\index{EISMINT}  They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
 \item runs are of 200,000 years, with no prescribed time step;
 \item runs are on a prescribed $61\times 61$ horizontal grid;
 \item the boundary conditions always have angular symmetry around the center of the grid;
@@ -1080,6 +1084,35 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \hline\normalsize
 \end{tabular}\end{table}
 \end{comment}
+
+
+\subsection{MISMIP in PISM}\label{subsect:MISMIP}  This intercomparison is described at the webpage
+
+\centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
+
+\noindent The full text description, available at this site as PDF, is essential reading to understand MISMIP results.
+
+
+\begin{table}[ht]
+\caption{MISMIP run options in PISM.\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
+\small
+\begin{tabular}{@{}lll}\hline
+\textbf{Option} & \textbf{Default value} & \textbf{Meaning} \\ \hline
+\verb|-initials| & \verb|ABC| & initials to prepend to ASCII output file names \\
+\verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; \\
+               &  & allowed values are \verb|1a,1b,2a,2b,3a,3b| \\
+\verb|-model| &  &  \\
+\verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state;  \\
+                    & & criterion is $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
+\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiment 1,  \\
+             &  & $\{1,\dots,13\}$ for exper.~2, and $\{1,\dots,15\}$ for exper.~3;  \\
+             &  & note typo in table 6 in PDF: ``step 16'' is mentioned \\
+             &  & but only 15 values are given \\
+\hline\normalsize
+\end{tabular}\end{table}
+
+
+FIXME: MORE
 
 
 

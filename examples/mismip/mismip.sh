@@ -12,10 +12,13 @@
 # boundary layer or other advanced treatment of dynamics in the vicinity 
 # of the grounding line; compare C. Schoof, (2007). "Marine ice-sheet
 # dynamics. Part 1. The case of rapid sliding," J. Fluid Mech., vol. 573,
-# pp. 27–55.
+# pp. 27–55.  Also there is no calving front boundary condition; compare 
+# EISMINT-Ross on this issue.  See also comments at start of
+# src/ismip/iceMISMIPModel.cc regarding grounding line flux issues.
 
-# See comments at start of src/ismip/iceMISMIPModel.cc regarding grounding
-# line flux issues.
+# There are two models: Model one ("ABC1_...") uses only the SSA.
+# Model two ("ABC2_...") adds PISM option '-super', so that there is
+# an average of SSA and SIA velocities.
 
 # A PISM MISMIP run always saves an ASCII file in the MISMIP specified format:
 #   ABC1_1b_M1_A1_t
@@ -46,13 +49,15 @@ if [ $# -gt 1 ] ; then  # if user says "mismip.sh 8 D" then NN = 8 and only show
 fi
 
 set -e  # exit on error
+shopt -s nullglob  # don't return list of files if none found
 
-# function to run "pisms -mismip EXPER -initials MYINITIALS OTHEROPTIONS"
+# function to run
+#   "pisms -mismip EXPER -initials MYINITIALS -ksp_rtol 1e-11 OTHEROPTS"
 #   on NN processors
 mpimismip()
 {
     # change this if "bin/pisms", etc.:
-    cmd="$MPIDO -np $1 pisms -mismip $2 -initials $MYINITIALS $3"
+    cmd="$MPIDO -np $1 pisms -mismip $2 -initials $MYINITIALS -ksp_rtol 1e-11 $3"
     
     echo 
     echo "date = '`date`' on host '`uname -n`':"
@@ -68,23 +73,68 @@ mpimismip()
 #if [ ]; then   # always goes to "else"
 #else           # put this before restart location
 
+## model 1 is pure SSA, model 2 is SIA+SSA
 
-# EBU1_1a_M1_A1_*
-mpimismip $NN 1a "-run 1 -Mx 3 -My 151 -Mz 11 -ksp_rtol 1e-11"
+## exper 1:
+#for MODEL in 1 2
+for MODEL in 1
+do
 
-# EBU2_1a_M1_A1_*
-mpimismip $NN 1a "-super -run 1 -Mx 3 -My 151 -Mz 11 -ksp_rtol 1e-11"
+  #for GRID in 1 2 3  # 2 is slow!!
+  for GRID in 3
+  do
 
-# EBU1_1a_M2_A1_*
-mpimismip $NN 1a "-run 1 -Mx 3 -My 1501 -Mz 11 -ksp_rtol 1e-11"
+    case $GRID in
+      1   ) GRIDMY=151;;
+      2   ) GRIDMY=1501;;
+      3   ) GRIDMY=601;;
+    esac
+    case $GRID in
+      1   ) SKIP=;;
+      2   ) SKIP="-skip 10";;
+      3   ) SKIP="-skip 10";;
+    esac
+
+    #for ES in 1a 1b
+    for ES in 1a
+    do
+      mpimismip $NN $ES "-model ${MODEL} -step 1 ${SKIP} -Mx 3 -Mz 11 -My ${GRIDMY}"
+      for STEP in 2 3 4 5 6 7 8 9
+      do
+        PREV=$(($STEP-1))
+        INNAME=${MYINITIALS}${MODEL}_${ES}_M${GRID}_A${PREV}.nc
+        mpimismip $NN $ES "-model ${MODEL} -step ${STEP} ${SKIP} -if ${INNAME}"
+      done # for STEP
+    done # for ES
+
+  done # for GRID
+
+done # for MODEL
 
 exit
 
-# EBU1_3a_M1_A1_*
-mpimismip $NN 3a "-run 1 -Mx 3 -My 151 -Mz 11 -ksp_rtol 1e-11"
 
-# EBU2_3a_M1_A1_*
-mpimismip $NN 3a "-super -run 1 -Mx 3 -My 151 -Mz 11 -ksp_rtol 1e-11"
+## grid mode 3 runs (4 times resolution):
+
+# ABC1_1a_M3_A1_*
+mpimismip $NN 1a "-step 1 -My 601 -skip 10"
+
+exit
+
+## grid mode 2 runs with -My 1501 are expensive:
+
+# ABC1_1a_M2_A1_*
+mpimismip $NN 1a "-step 1 -My 1501 -skip 10"
 
 #fi
+
+exit
+
+## this loop automatically generates figures for each run which
+## reached steady state
+for file in *_ss
+do
+  prefix=`echo $file | sed 's/_ss//g'`  # strip "_ss" from file name
+  ./figsMISMIP.py -p $prefix
+done
 

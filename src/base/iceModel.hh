@@ -308,7 +308,8 @@ protected:
   int cIndex(const char singleCharName);
 
   // see iMoptions.cc
-  PetscErrorCode determineSpacingTypeFromOptions();
+  PetscErrorCode determineSpacingTypeFromOptions(
+                      const PetscTruth forceEqualIfNoOption);
 
   // see iMpdd.cc (positive degree day model)
   gsl_rng     *pddRandGen;

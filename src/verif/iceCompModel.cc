@@ -167,7 +167,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
-    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
     switch (testname) {
       case 'A':
       case 'E':

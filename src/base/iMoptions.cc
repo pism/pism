@@ -20,9 +20,14 @@
 #include <cmath>
 #include "iceModel.hh"
 
-//! Read runtime (command line) options and set the corresponding parameter or flag.
+//! Read runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 /*!
 This is called by a driver program, assuming it would like to use command line options.
+
+A critical principle of this procedure is that it will not alter IceModel parameters and flags
+\e unless the user sets an option to do so.  Thus this base class setFromOptions() can be
+called by a derived class after the derived class has set its own defaults for base class
+parameters and flags.
 
 In fact this procedure only reads the majority of the options.  Some are read in 
 initFromOptions(), writeFiles(), and setStartRunEndYearsFromOptions(), among other places.
@@ -33,32 +38,30 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  MxSet, MySet, MzSet, MbzSet, maxdtSet,
-              my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
-              myincludeBMRinContinuity, lowtempSet, mydoOceanKill, floatkillSet,
+  PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
+              myincludeBMRinContinuity, mydoOceanKill, floatkillSet,
               mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
-              mydoSuperpose, mydoSkip, plasticRegSet, regVelSet, maxlowtempsSet,
+              mydoSuperpose, mydoSkip, plasticRegSet, regVelSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
-              noMassConserve, noTemp, noEtaSet; 
-  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB, my_lowtemp,
+              maxdtSet, noMassConserve, noTemp, noEtaSet; 
+  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
-  PetscInt    my_Mx, my_My, my_Mz, my_Mbz, my_maxlowtemps;
 
   // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
   // allows users to set options using this.
-  ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (in PISM)",PETSC_NULL); 
+  ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (PISM)",PETSC_NULL); 
           CHKERRQ(ierr);
 
   /* 
   note on pass-by-reference for options:
      For the last argument "flag" to PetscOptionsXXXX(....,&flag), the flag always indicates
-     whether the option has been set.  Therefore "flag" is always set by this function call.
+     whether the option has been set.  Therefore "flag" is altered by this function call.
      For other arguments "value" to PetscOptionsXXXX(....,&value,&flag), the value of "value"
      is only set if the user specified the option.  Therefore "flag" should always be given a
      local PetscTruth variable if we want to preserve previously set IceModel flags.  By 
-     contrast, for various parameters "value" we can use the IceModel class member itself
+     contrast, for various parameters "value" we can use the IceModel parameter itself
      without fear of overwriting defaults unless, of course, the user wants them overwritten.
      It is also o.k. to have a local variable for "value", and then proceed to set the IceModel
      member accordingly.
@@ -155,8 +158,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-low_temp", &my_lowtemp, &lowtempSet); CHKERRQ(ierr);
-  if (lowtempSet == PETSC_TRUE)  globalMinAllowedTemp = my_lowtemp;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-low_temp", &globalMinAllowedTemp, 
+           PETSC_NULL); CHKERRQ(ierr);
 
 // note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
 
@@ -167,22 +170,17 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-max_dt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
   if (maxdtSet == PETSC_TRUE)    setMaxTimeStepYears(my_maxdt);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-max_low_temps", &my_maxlowtemps, &maxlowtempsSet); CHKERRQ(ierr);
-  if (maxlowtempsSet)    maxLowTempCount = my_maxlowtemps;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-max_low_temps", &maxLowTempCount, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &my_Mx, &MxSet); CHKERRQ(ierr);
-  if (MxSet == PETSC_TRUE)   grid.Mx = my_Mx;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &grid.Mx, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &my_My, &MySet); CHKERRQ(ierr);
-  if (MySet == PETSC_TRUE)   grid.My = my_My;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &grid.My, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &my_Mz, &MzSet); CHKERRQ(ierr);
-  if (MzSet == PETSC_TRUE)   grid.Mz = my_Mz;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &grid.Mz, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &my_Mbz, &MbzSet); CHKERRQ(ierr);
-  if (MbzSet == PETSC_TRUE)   grid.Mbz = my_Mbz;
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &grid.Mbz, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_eta", &noEtaSet); CHKERRQ(ierr);
   if (noEtaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_FALSE;
@@ -240,7 +238,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // option given in m/a so convert to m/s
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_reg", &myPlasticRegularization, 
      &plasticRegSet);  CHKERRQ(ierr);
-  if (plasticRegSet == PETSC_TRUE)  plasticRegularization = myPlasticRegularization/secpera;
+  if (plasticRegSet == PETSC_TRUE)  plasticRegularization = myPlasticRegularization / secpera;
 
   // plastic_till_mu is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
@@ -287,7 +285,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // option given in m/a so convert to m/s
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &myRegVelSchoof, &regVelSet);
            CHKERRQ(ierr);
-  if (regVelSet == PETSC_TRUE)   regularizingVelocitySchoof = myRegVelSchoof/secpera;
+  if (regVelSet == PETSC_TRUE)   regularizingVelocitySchoof = myRegVelSchoof / secpera;
     
   // a parameter in regularizing the computation of effective viscosity from strain rates;
   // see computeEffectiveViscosity() in iMssa.cc
@@ -345,7 +343,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note -ys, -ye, -y options are read in setStartRunEndYearsFromOptions()
  
-  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);  // reads "-quadZ" and "-chebZ"
+  ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // reads "-quadZ" and "-chebZ"
   
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
@@ -353,7 +351,11 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 
 //! Read options -quadZ or -chebZ or nothing; good to call this before rescaling.
-PetscErrorCode IceModel::determineSpacingTypeFromOptions() {
+/*!
+Only use with \c forceEqualIfNoOption = \c TRUE if you want to ignor all previous
+settings and defaults.
+ */
+PetscErrorCode IceModel::determineSpacingTypeFromOptions(const PetscTruth forceEqualIfNoOption) {
   PetscErrorCode ierr;
   PetscTruth quadSet, chebSet;
   ierr = PetscOptionsHasName(PETSC_NULL, "-quadZ", &quadSet); CHKERRQ(ierr);
@@ -363,7 +365,9 @@ PetscErrorCode IceModel::determineSpacingTypeFromOptions() {
   } else if (chebSet == PETSC_TRUE) {
     ierr = grid.chooseChebyshevSpacedVertical(); CHKERRQ(ierr);
   } else {
-    ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
+    if (forceEqualIfNoOption == PETSC_TRUE) {
+      ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
+    }
   }
   return 0;
 }

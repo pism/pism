@@ -298,6 +298,34 @@ PetscTruth IceModel::isInitialized() const {
 }
 
 
+// THIS IS AN IDEA THAT *SEEMS* NOT TO BE HELPFUL FOR MISMIP.  PROBABLY THE
+// CHANGE NEEDS TO OCCUR IN THE WAY THE DRIVING STRESS IS COMPUTED.
+// Apply soft floatation criterion: when ice is barely floating, return surface elevation closer to grounded value.
+/*
+Only call this when hard floatation criterion already shows it is floating.
+ */
+#if 0
+const PetscTruth  DEFAULT_DO_SOFT_FLOAT_CRIT = PETSC_FALSE;
+const PetscScalar DEFAULT_SOFT_FLOAT_CRIT_FLOATINESS_MAX = 0.2;
+PetscScalar IceModel::softFloatationSurface(const PetscScalar thk, const PetscScalar bedelev) const {
+  const PetscScalar  h_hard = seaLevel + (1.0 - ice->rho/ocean.rho) * thk;
+  if ((doSoftFloatCrit == PETSC_TRUE) && (thk > 1.0)) {
+    // apply soft floatation criterion; gap = (h_hard - thk) - (bedelev - seaLevel)
+    const PetscScalar  floatiness = ((h_hard - thk) - (bedelev - seaLevel)) / thk;
+    if (floatiness >= softFloatCritFloatinessMax) {
+      return h_hard;
+    } else {
+      const PetscScalar lambda = floatiness / softFloatCritFloatinessMax,
+                        h_gnd = bedelev + thk;
+      return (1.0 - lambda) * h_gnd + lambda * h_hard;
+    }
+  } else { 
+    return h_hard;
+  }
+}
+#endif
+
+
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
 /*!
 This procedure should be called whenever necessary to maintain consistency of geometry.
@@ -348,14 +376,15 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // If mask says OCEAN0 then don't change the mask and also don't change
         // the thickness; massContExplicitStep() is in charge of that.
         // Almost always the next line is equivalent to h[i][j] = 0.
-        h[i][j] = hfloating;  // ignor bed and treat it like ocean
+        h[i][j] = hfloating;  // ignor bed and treat it like deep ocean
       } else {
         if (modMask(mask[i][j]) == MASK_FLOATING) {
           // check whether you are actually floating or grounded
-          if (hgrounded > hfloating+1.0) {
+          if (hgrounded > hfloating+1.0) { // hard floatation crit.
             mask[i][j] = MASK_GROUNDED_TO_DETERMINE;
             h[i][j] = hgrounded; // actually grounded so update h
           } else {
+            //h[i][j] = softFloatationSurface(H[i][j],bed[i][j]);
             h[i][j] = hfloating; // actually floating so update h
           }
         } else { // deal with grounded ice according to mask
@@ -363,6 +392,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
             h[i][j] = hgrounded; // actually grounded so update h
           } else {
             mask[i][j] = MASK_FLOATING;
+            //h[i][j] = softFloatationSurface(H[i][j],bed[i][j]);
             h[i][j] = hfloating; // actually floating so update h
           }
         }
@@ -513,9 +543,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // staggered grid Div(Q) for SIA (non-sliding) deformation part;
       //    Q = - D grad h = Ubar H    in non-sliding case
-      PetscScalar divQ;
-      divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
-            + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
+      PetscScalar divQ = 0.0;
+      if (computeSIAVelocities == PETSC_TRUE) {
+        divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
+              + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
+      }
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second

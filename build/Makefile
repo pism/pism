@@ -23,7 +23,7 @@ include $(PETSC_DIR)/bmake/common/base
 
 # Compiler flags:
 CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
-          -DMISMIP_PLAY=${MISMIP_PLAY} -DPISM_REVISION='"$(PISM_REVISION)"' \
+          -DPISM_REVISION='"$(PISM_REVISION)"' \
           -pipe
 
 SHARED = -shared # default (for Linux)

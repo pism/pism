@@ -214,7 +214,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
          "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); 
          CHKERRQ(ierr);
-  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+  ierr = determineSpacingTypeFromOptions(PETSC_TRUE); CHKERRQ(ierr);
   ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
   //DEBUG:  ierr = grid.printVertLevels(2); CHKERRQ(ierr);
   LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);

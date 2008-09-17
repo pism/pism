@@ -101,7 +101,19 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
       ierr = verbPrintf(5,grid.com, "{SigmaSIAToRegular(),horizontalVelocitySIARegular()}");
                 CHKERRQ(ierr);
     }
-  } else { // if computeSIAVelocities
+  } else { // if computeSIAVelocities == PETSC_FALSE
+    ierr = VecSet(vubar,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vub,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vvb,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vRb,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
+    ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
+    if (updateVelocityAtDepth) {
+      ierr = u3.setToConstant(0.0); CHKERRQ(ierr);
+      ierr = v3.setToConstant(0.0); CHKERRQ(ierr);
+      ierr = Sigma3.setToConstant(0.0); CHKERRQ(ierr);
+    }
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
 

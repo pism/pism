@@ -90,7 +90,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   initialized_p = PETSC_TRUE;
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
   // in preparation for rescale_and_set_zlevels() below:
-  ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);  
+  ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  
 
   switch (test) {
     case 'I': {

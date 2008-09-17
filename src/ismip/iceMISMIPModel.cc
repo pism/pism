@@ -26,24 +26,16 @@
 
 
 /* 
-see run script   examples/mismip/mismip.sh
-*/
+See run script   examples/mismip/mismip.sh.
 
-/* 
 WE'VE GOT A PROBLEM WITH FLUX ACROSS GROUNDING LINE; not surprising ...
 See "cflx" in output file.
 
--adapt_ratio is not the whole issue, although with -adapt_ratio 0.12, the default, 
-the instability is very noticable as 
-highest freq wiggles in dHdt on the land side of the grounding line.  For a Mx=500
-case these wiggles extended about 150km back from the grounding line.  Reducing
-to "-adapt_ratio 0.08" makes these highest frequency wiggles 
-go away, and makes the problem a lower frequency "wobble" very close to the grounding
-line (within 40km of it; about 6 to 10 grid spaces).
+I think the underlying issue *may* still be *regularity of the basal shear stress*, 
+that is, of the shear stress coefficient, which jumps from C_MISMIP to zero across
+the grounding line.
 
-I think the underlying issue is *regularity of the basal shear stress*, that is, of the 
-shear stress coefficient, which jumps from C_MISMIP to zero across the grounding line.
-Note that with  export MISMIP_PLAY=1  I can turn on code that makes the ice grounded
+I did an experiment that made the ice grounded
 all the way out to the calving front, but has zero basal resistance; the results are
 similar the intended MISMIP case, even though the surface is not at all what is given
 by the floatation criterion.
@@ -54,6 +46,7 @@ really.  In other words, I thought we needed
    \tau_b \in W^{1,\infty} 
 or something; without the damping all we have is
    \tau_b \in L^\infty.
+The results in the former case, of smoother C_MISMIP, are no better, I think.
 */
 
 
@@ -122,16 +115,19 @@ PetscScalar MISMIPIce::hardnessParameter(PetscScalar T) const {
 IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) : 
       IceModel(g, i), mismip_ice(mismip_i) {
 
-  // this just fills the data members with non-junk; see setFromOptions() for decent values
+  // some are the defaults, while some are merely in a valid range;
+  //   see IceMISMIPModel::setFromOptions() for decent values
+  modelnum = 1;
   exper = 1;
   sliding = 'a';
   gridmode = 1;
-  runindex = 1;
+  stepindex = 1;
   runtimeyears = 3.0e4;
-  strcpy(initials,"ZZZ");
+  strcpy(initials,"ABC");
   m_MISMIP = 1.0/3.0;
   C_MISMIP = 7.624e6;
-  regularize_MISMIP = 0.01 / secpera;  
+  regularize_MISMIP = 0.01 / secpera;
+  dHdtnorm_atol = 1.0e-4;  // m/a
   rstats.xg = -1.0;
 }
 
@@ -154,8 +150,8 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
       m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
   }
   ierr = mismip_ice->printInfo(2, grid.com); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,"IceModel.ice-> info: n=%7.3f, A(T=273.15)=%10.3e\n",
-                    ice->exponent(),ice->softnessParameter(273.15)); CHKERRQ(ierr);
+  //ierr = verbPrintf(2,grid.com,"IceModel.ice-> info: n=%7.3f, A(T=273.15)=%10.3e\n",
+  //                  ice->exponent(),ice->softnessParameter(273.15)); CHKERRQ(ierr);
   return 0;
 }
 
@@ -180,35 +176,6 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(
             PetscScalar **u, PetscScalar **v, PetscInt i, PetscInt j) const {
 
   PetscScalar       myC = C_MISMIP;
-  
-#if (MISMIP_PLAY)
-  //verbPrintf(1,grid.com,"doing smoothed C transition");
-  const PetscScalar damp_width = 100.0e3;
-  if (rstats.xg > damp_width) {  // avoid weird cases where grounding line has moved far left
-    // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
-    const PetscScalar jfrom0 =
-             static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-    const PetscScalar absy = PetscAbs(grid.dy * jfrom0);
-    if ((absy > rstats.xg - damp_width) && (absy < rstats.xg)) {
-      // this case damps C_MISMIP to zero within damp_width of grounding line
-      myC = myC * (rstats.xg - absy) / damp_width;
-    }
-  }
-
-//  myC = C_MISMIP;  // UNDOES THE ABOVE
-#endif
-
-#if (0)
-  const PetscScalar switch_to_slick = 710.0e3;
-  const PetscScalar jfrom0 =
-             static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-  const PetscScalar absy = PetscAbs(grid.dy * jfrom0);
-  if (absy > switch_to_slick) {
-      //myC = myC / 10.0;
-      myC = 0.0;
-  }
-#endif
-
   if (m_MISMIP == 1.0) {
     return myC;
   } else {
@@ -276,33 +243,39 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     }
   }
 
-  // read option    -run [1|..|15]
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-run", &runindex, PETSC_NULL); CHKERRQ(ierr);
-  if (runindex < 1) {
+  // read option    -model [1|2]
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-model", &modelnum, PETSC_NULL); CHKERRQ(ierr);
+  if ((modelnum < 1) || (modelnum > 2)) {
+    SETERRQ(8,"IceMISMIPModel ERROR:  modelnum must be 1 or 2; '-model 1' or '-model 2'");
+  }
+
+  // read option    -step [1|..|15]
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-step", &stepindex, PETSC_NULL); CHKERRQ(ierr);
+  if (stepindex < 1) {
     SETERRQ(4,"IceMISMIPModel ERROR:  run index N in '-run N' must be at least 1");
   }
   if ((exper == 1) || (exper == 2)) {
-    if (runindex > 9) {
+    if (stepindex > 9) {
       SETERRQ(5,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
                 " <= 9 in experiments 1 or 2");
     }
     runtimeyears = 3.0e4;
-    ierr = mismip_ice->setA(Aexper1or2[runindex]); CHKERRQ(ierr);  
+    ierr = mismip_ice->setA(Aexper1or2[stepindex]); CHKERRQ(ierr);  
   } else if (exper == 3) {
     if (sliding == 'a') {
-      if (runindex > 13) {
+      if (stepindex > 13) {
         SETERRQ(6,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
                   " <= 13 in experiment 3a");
       }
-      runtimeyears = timeexper3a[runindex];
-      ierr = mismip_ice->setA(Aexper3a[runindex]); CHKERRQ(ierr);  
+      runtimeyears = timeexper3a[stepindex];
+      ierr = mismip_ice->setA(Aexper3a[stepindex]); CHKERRQ(ierr);  
     } else if (sliding == 'b') {
-      if (runindex > 15) {
+      if (stepindex > 15) {
         SETERRQ(7,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
                   " <= 15 in experiment 3b");
       }
-      runtimeyears = timeexper3b[runindex];
-      ierr = mismip_ice->setA(Aexper3b[runindex]); CHKERRQ(ierr);  
+      runtimeyears = timeexper3b[stepindex];
+      ierr = mismip_ice->setA(Aexper3b[stepindex]); CHKERRQ(ierr);  
     } else {
       SETERRQ(99, "how did I get here?");
     }
@@ -317,6 +290,9 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
        CHKERRQ(ierr);
   }
 
+  // read option    -steady_atol
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-steady_atol", &dHdtnorm_atol, PETSC_NULL); CHKERRQ(ierr);
+
   doTemp                    = PETSC_FALSE;
   doPlasticTill             = PETSC_FALSE;
   doBedDef                  = PETSC_FALSE;
@@ -330,6 +306,19 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   computeSurfGradInwardSSA  = PETSC_FALSE;
   useConstantHardnessForSSA = PETSC_FALSE;
 
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
+
+  // models 1 vs 2
+  if (modelnum == 1) {
+    computeSIAVelocities = PETSC_FALSE;
+    doSuperpose = PETSC_FALSE;
+  } else if (modelnum == 2) {
+    computeSIAVelocities = PETSC_TRUE;
+    doSuperpose = PETSC_TRUE;
+  } else {
+    SETERRQ(98, "how did I get here?");    
+  }
+
   // see Table 3
   if (sliding == 'a') {
     m_MISMIP = 1.0/3.0;
@@ -340,50 +329,8 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   } else {
     SETERRQ(99, "how did I get here?");
   }
-  regularize_MISMIP = 0.01 / secpera;  
-
-
-  // among other things, this reads option "-My"
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
-
-  // determine gridmode from My
-  if (grid.My == 151) 
-    gridmode = 1;
-  else if (grid.My == 1501) 
-    gridmode = 2;
-  else
-    gridmode = 3;
-
-  // determine model number from doSuperpose; if "-super" then
-  //   "ABC2_.." but if not then "ABC1_..."
-  if (doSuperpose == PETSC_TRUE) {
-    modelnum = 2;
-  } else {
-    modelnum = 1;
-  }
+  regularize_MISMIP = 0.01 / secpera;
   
-  // create prefix (e.g.) "EBU1_2b_M1_A3" for output files with names (e.g.)
-  //   EBU1_2b_M1_A3.nc, EBU1_2b_M1_A3_t, EBU1_2b_M1_A3_ss, and EBU1_2b_M1_A3_f
-  //   unless user says "-o foo"
-  PetscTruth  oused;
-  char        oname[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
-           CHKERRQ(ierr);
-  if (oused == PETSC_TRUE) {
-    strcpy(mprefix, oname);
-  } else {
-    snprintf(mprefix, sizeof(mprefix), 
-             "%s%d_%s_M%d_A%d",
-             initials, modelnum, Ee, gridmode, runindex);
-    // now act like user set the output name
-    ierr = PetscOptionsSetValue("-o",mprefix);  CHKERRQ(ierr);
-  }
-  ierr = verbPrintf(2,grid.com,
-       "IceMISMIPModel:  MISMIP options read.  Will save file %s_t during run, and file\n"
-       "  %s.nc at end of run, and files %s_ss, %s_f\n"
-       "  at end of run if steady state achieved.\n",
-       mprefix,mprefix,mprefix,mprefix); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -405,19 +352,18 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
        CHKERRQ(ierr);
   } else { // usual case: initialize from MISMIP formulas
     ierr = verbPrintf(2,grid.com, 
-              "initializing MISMIP experiment %d%c;  grid mode %d;  run %d (A=%5.4e)\n", 
-              exper,sliding,gridmode,runindex,mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
+              "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d (A=%5.4e)\n", 
+              modelnum,exper,sliding,gridmode,stepindex,
+              mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
     const PetscScalar   L = 1700.0e3;      // Horizontal half-width of grid
     // NOTE: y takes place of x!!!
-    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
-/*    // why does change to Lx=20.0e3 (so cells closer to horizontal aspect ratio of 1)
-    //   slow down the linear solve so much?
-*/
     // is Lz = 4000m an adequate choice for thickness for all runs?
+//  FIXME:  NO!  4000m is too small for EBU2_1b_M1_A5, at least!
     //   (could be set in setFromOptions() according to experiment/run/...)
     // effect of double rescale is to compute grid.dy so we can get square cells
     //   (in horizontal)
@@ -454,6 +400,37 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     SETERRQ(1, "ERROR: IceMISMIPModel has not been initialized!\n");
   }
 
+  // determine gridmode from My
+  if (grid.My == 151) 
+    gridmode = 1;
+  else if (grid.My == 1501) 
+    gridmode = 2;
+  else
+    gridmode = 3;
+
+  // create prefix (e.g.) "EBU1_2b_M1_A3" for output files with names (e.g.)
+  //   EBU1_2b_M1_A3.nc, EBU1_2b_M1_A3_t, EBU1_2b_M1_A3_ss, and EBU1_2b_M1_A3_f
+  snprintf(mprefix, sizeof(mprefix), "%s%d_%d%c_M%d_A%d",
+           initials, modelnum, exper, sliding, gridmode, stepindex);
+
+  // if user says "-o foo"
+  PetscTruth  oused;
+  char        oname[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
+           CHKERRQ(ierr);
+  if (oused == PETSC_FALSE) {
+    // act like user set the output name
+    ierr = PetscOptionsSetValue("-o",mprefix);  CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
+           CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+       "IceMISMIPModel:  MISMIP options read.  Will save file\n"
+       "  %s_t during run, %s.nc at end of run,\n"
+       "  and files %s_ss, %s_f at end of run if\n"
+       "  steady state achieved.\n",
+       mprefix,oname,mprefix,mprefix); CHKERRQ(ierr);
+
   // use MISMIP runtimeyears UNLESS USER SPECIFIES A RUN LENGTH
   // use -y option, if given, to overwrite runtimeyears
   PetscTruth ySet, ysSet, yeSet;
@@ -476,10 +453,16 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
   ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
   
-// report on these flags: doTemp=false, doBedDef=false, doPlasticTill=false  ?
+  // automatic parallel layout from DACreate2d(...PETSC_DECIDE...) in grid.cc
+  //   LOOKS GOOD:
+  //ierr = verbPrintf(1,grid.com,"result from DAView(da2,..):\n\n"); CHKERRQ(ierr);
+  //ierr = DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //ierr = verbPrintf(1,grid.com,"\n\n"); CHKERRQ(ierr);
+
+// FIXME: report on these flags: doTemp=false, doBedDef=false, doPlasticTill=false  ?
 // check "-ssa" is set? check on -super option?
 
-  // create ABC1_1b_M1_A1_t kind of file for every 50 year results
+  // create ABC1_..._t file for every 50 year results
   strcpy(tfilename,mprefix);
   strcat(tfilename,"_t");
   ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
@@ -504,15 +487,7 @@ PetscErrorCode IceMISMIPModel::setMISMIPBed() {
       const PetscScalar xs = PetscAbs(y) / 750.0e3;  // scaled and symmetrical x coord
 
       if ((exper == 1) || (exper == 2)) {
-#if (0)
-        if (PetscAbs(y) < 710.0e3) {
-          b[i][j] = 720.0 - 778.5 * xs;
-        } else {
-          b[i][j] = 720.0 - 778.5 * (710.0e3 / 750.0e3);
-        } 
-#else
         b[i][j] = 720.0 - 778.5 * xs;
-#endif
       } else if (exper == 3) {
         const PetscScalar xs2 = xs * xs,
                           xs4 = xs2 * xs2,
@@ -522,12 +497,6 @@ PetscErrorCode IceMISMIPModel::setMISMIPBed() {
         SETERRQ(99,"how did I get here?");
       }
 
-#if (0)
-      b[i][j] += 940.8; // eliminate the shelf by putting the calving front right where bed=0
-                        // (note mask = MASK_FLOATING_OCEAN0 beyond calving front)
-                        // calculation was   A + 720 - 778.5 * (1600e3/750e3) = 0 
-                        // to get A = 940.8
-#endif
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
@@ -591,27 +560,24 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
 
   PetscErrorCode  ierr;
 
-  // why is it necessary to globalize this norm??  because vdHdt is local??
-  PetscScalar     infnormdHdt, ginfnormdHdt;
+  PetscScalar     infnormdHdt;
   ierr = VecNorm(vdHdt,NORM_INFINITY,&infnormdHdt); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&infnormdHdt, &ginfnormdHdt, grid.com); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com," [ max |dH/dt| = %.3e m/a; steady is 1.0e-4 ]  ",
-     ginfnormdHdt * secpera); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
 
-  if (ginfnormdHdt < 1.0e-4 / secpera) {  // if all points have dHdt < 10^-4 m/yr,
+  if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr,
     // then set the IceModel goal of endYear to the current year; stops immediately
     endYear = grid.year;  
 
     // report stopping to standard out
     ierr = verbPrintf(2,grid.com,
-        "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < 10^-4 m/yr) satisfied;\n"
-        "                stopping at year=%.3f\n",grid.year); CHKERRQ(ierr);
+        "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < %.2e m/yr) satisfied;\n"
+        "                stopping at year=%.3f\n",dHdtnorm_atol,grid.year); CHKERRQ(ierr);
 
     // leave stopping stamp in output NetCDF file
     char str[HISTORY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
-       "MISMIP steady state criterion (max|dHdt| < 10^-4 m/yr) satisfied.  Stopping."
-       "  Completed timestep at year=%.3f.",grid.year);
+       "MISMIP steady state criterion (max|dHdt| < %.2e m/yr) satisfied.\n"
+       "Stopping.  Completed timestep year=%.3f.",dHdtnorm_atol,grid.year);
     stampHistory(str); 
 
     // get stats in preparation for writing
@@ -619,32 +585,34 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
     ierr = getMISMIPStats(); CHKERRQ(ierr);
 
     // write ASCII file ABC1_1b_M1_A1_ss
-    PetscViewer  viewfile;
+    PetscViewer  ssviewfile, fviewfile;
     char         filename[PETSC_MAX_PATH_LEN];
     strcpy(filename,mprefix);
     strcat(filename,"_ss");
     ierr = verbPrintf(2, grid.com, "IceMISMIPModel:  writing profile to %s\n",
              filename); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIOpen(grid.com, filename, &viewfile); CHKERRQ(ierr);
-    ierr = PetscViewerSetFormat(viewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIOpen(grid.com, filename, &ssviewfile); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(ssviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
 
     PetscScalar     **H;
     ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    if (grid.xs == 0) {  // if (0,jg) is in ownership
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-        const PetscScalar y = grid.dy * jfrom0;
-        if (y >= 0) {
-          ierr = PetscViewerASCIISynchronizedPrintf(viewfile,
-                 "%10.2f %10.4f\n", y / 1000.0, H[0][j]); CHKERRQ(ierr);
-        }
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar
+        jfrom0 = static_cast<PetscScalar>(j)
+                                 - static_cast<PetscScalar>(grid.My - 1)/2.0,
+        y = grid.dy * jfrom0;
+      if (y >= 0) {
+        ierr = PetscViewerASCIISynchronizedPrintf(ssviewfile,
+               "%10.2f %10.4f\n", y / 1000.0, H[grid.xs][j]); CHKERRQ(ierr);
+      } else { // write empty string to make sure all processors write;
+               // perhaps it is a bug in PETSc that this seems to be necessary?
+        ierr = PetscViewerASCIISynchronizedPrintf(ssviewfile,""); CHKERRQ(ierr);
       }
     }
     ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    
-    ierr = PetscViewerFlush(viewfile); CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewfile); CHKERRQ(ierr);
+
+    ierr = PetscViewerFlush(ssviewfile); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(ssviewfile); CHKERRQ(ierr);
     
     // write ASCII file ABC1_1b_M1_A1_f
     strcpy(filename,mprefix);
@@ -652,11 +620,12 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
     ierr = verbPrintf(2, grid.com, 
              "IceMISMIPModel:  writing final location of grounding line to %s\n",
              filename); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIOpen(grid.com, filename, &viewfile); CHKERRQ(ierr);
-    ierr = PetscViewerSetFormat(viewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewfile,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
+    ierr = PetscViewerASCIIOpen(grid.com, filename, &fviewfile); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(fviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(fviewfile,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
                CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewfile); CHKERRQ(ierr);
+    ierr = PetscViewerFlush(fviewfile); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(fviewfile); CHKERRQ(ierr);
 
   }
   return 0;
@@ -808,6 +777,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   else                  gavubarfloating = 0.0;  // degenerate case
   rstats.avubarF = gavubarfloating;
 
+  // rstats.dHdtnorm already calculated in additionalAtEndTimestep()
   return 0;
 }
 
@@ -819,8 +789,8 @@ PetscErrorCode IceMISMIPModel::summaryPrintLine(
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
 
 /*
-Because this model does resolve the shelf and only uses the floatation criterion
-to move the grounding line, we will give 17 numbers.  These numbers will go into
+Because this model resolves the shelf and only uses the floatation criterion
+to move the grounding line, we must give 17 numbers.  These numbers will go into
 a reportable ascii file ABC1_1a_M1_A1_t.
 
 The reported numbers are
@@ -843,7 +813,7 @@ The format written to ABC1_1a_M1_A1_t has 137 columns, like this:
 
 ######## ####### ######## ####### ####### ####### ####### ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
 
-The at verbosity 3 or higher, the stdout format fits in an 80 column line:
+At verbosity 3 or higher, an additional stdout format fits in an 80 column line:
 
 M  ######## ####### ######## ####### #######
    ####### ####### ####### ####### ####### ####### ####### #######
@@ -851,23 +821,24 @@ M  ######## ####### ######## ####### #######
 
 A line
    [ d(xg)/dt = ####### m/yr by MISMIP computation ]
-is written to stdout at verbosity 2 or higher.  This grounding line motion rate
+is written to stdout.  This grounding line motion rate
 is computed as in MISMIP description, and finite differences.
 */
 
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P         YEAR:     ivol      h0      xg     hxg maxubar avubarG avubarF\n");
+      "P         YEAR:     ivol      h0      xg     hxg maxubar avubarG avubarF dHdtnorm\n");
     ierr = verbPrintf(2,grid.com,
-      "U        years 10^6_km^3       m      km       m     m/a     m/a     m/a\n");
+      "U        years 10^6_km^3       m      km       m     m/a     m/a     m/a      m/a\n");
   } else {
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-      "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f\n",
+      "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e\n",
       year, volume_kmcube/1.0e6, 
       H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera, 
-      rstats.avubarG * secpera, rstats.avubarF * secpera); CHKERRQ(ierr);
+      rstats.avubarG * secpera, rstats.avubarF * secpera,
+      rstats.dHdtnorm * secpera); CHKERRQ(ierr);
     if (fabs(fmod(year, 50.0)) < 1.0e-6) {
       // write another line to ASCII file ABC1_1b_M1_A1_t; also write to stdout
       //   (given some verbosity level); note modest code redundancy

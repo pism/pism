@@ -247,7 +247,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     ierr = verbPrintf(2,grid.com,
       "resetting vertical levels base on options and user option -Lz ...\n");
       CHKERRQ(ierr);
-    ierr = determineSpacingTypeFromOptions(); CHKERRQ(ierr);
+    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);
   }
 

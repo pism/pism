@@ -251,7 +251,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     dt = maxdt;
     adaptReasonFlag = 'm';
     if (doAdaptTimeStep == PETSC_TRUE) {
-      if ((doTemp == PETSC_TRUE) && (doTemperatureCFL)) {
+      if ((doTemp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
         // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
         dt_from_cfl = CFLmaxdt;
         if (dt_from_cfl < dt) {
@@ -259,14 +259,14 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
           adaptReasonFlag = 'c';
         }
       }
-      if ((doMassConserve == PETSC_TRUE) && (useSSAVelocity)) {
+      if ((doMassConserve == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
         // CFLmaxdt2D is set by broadcastSSAVelocity()
         if (CFLmaxdt2D < dt) {
           dt = CFLmaxdt2D;
           adaptReasonFlag = 'u';
         }
       }
-      if (doMassConserve == PETSC_TRUE) {
+      if ((doMassConserve == PETSC_TRUE) && (computeSIAVelocities == PETSC_TRUE)) {
         // note: if doSkip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
         ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
       }
