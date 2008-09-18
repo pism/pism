@@ -57,7 +57,7 @@ shopt -s nullglob  # don't return list of files if none found
 mpimismip()
 {
     # change this if "bin/pisms", etc.:
-    cmd="$MPIDO -np $1 pisms -mismip $2 -initials $MYINITIALS -ksp_rtol 1e-11 $3"
+    cmd="$MPIDO -np $1 pisms -mismip $2 -initials $MYINITIALS -ksp_rtol 1e-11 -extras $3"
     
     echo 
     echo "date = '`date`' on host '`uname -n`':"
@@ -77,11 +77,11 @@ mpimismip()
 
 ## exper 1:
 #for MODEL in 1 2
-for MODEL in 1
+for MODEL in 1 2
 do
 
   #for GRID in 1 2 3  # 2 is slow!!
-  for GRID in 3
+  for GRID in 1
   do
 
     case $GRID in
@@ -91,19 +91,18 @@ do
     esac
     case $GRID in
       1   ) SKIP=;;
-      2   ) SKIP="-skip 10";;
-      3   ) SKIP="-skip 10";;
+      2   ) SKIP="-skip 10 ";;
+      3   ) SKIP="-skip 10 ";;
     esac
 
-    #for ES in 1a 1b
-    for ES in 1a
+    for ES in 1a 1b
     do
-      mpimismip $NN $ES "-model ${MODEL} -step 1 ${SKIP} -Mx 3 -Mz 11 -My ${GRIDMY}"
+      mpimismip $NN $ES "-model ${MODEL} -step 1 ${SKIP}-Mx 3 -Mz 11 -My ${GRIDMY}"
       for STEP in 2 3 4 5 6 7 8 9
       do
         PREV=$(($STEP-1))
         INNAME=${MYINITIALS}${MODEL}_${ES}_M${GRID}_A${PREV}.nc
-        mpimismip $NN $ES "-model ${MODEL} -step ${STEP} ${SKIP} -if ${INNAME}"
+        mpimismip $NN $ES "-model ${MODEL} -step ${STEP} ${SKIP}-if ${INNAME}"
       done # for STEP
     done # for ES
 
@@ -113,28 +112,4 @@ done # for MODEL
 
 exit
 
-
-## grid mode 3 runs (4 times resolution):
-
-# ABC1_1a_M3_A1_*
-mpimismip $NN 1a "-step 1 -My 601 -skip 10"
-
-exit
-
-## grid mode 2 runs with -My 1501 are expensive:
-
-# ABC1_1a_M2_A1_*
-mpimismip $NN 1a "-step 1 -My 1501 -skip 10"
-
-#fi
-
-exit
-
-## this loop automatically generates figures for each run which
-## reached steady state
-for file in *_ss
-do
-  prefix=`echo $file | sed 's/_ss//g'`  # strip "_ss" from file name
-  ./figsMISMIP.py -p $prefix
-done
 

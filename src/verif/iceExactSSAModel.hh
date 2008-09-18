@@ -27,6 +27,7 @@
 class IceExactSSAModel : public IceModel {
 public:
     IceExactSSAModel(IceGrid &g, IceType *i, const char mytest);
+    using IceModel::initFromOptions;
     virtual PetscErrorCode initFromOptions();
     virtual PetscErrorCode diagnosticRun();
     PetscErrorCode         reportErrors();

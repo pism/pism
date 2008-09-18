@@ -30,6 +30,7 @@ class IceGRNModel : public IceModel {
 public:
   IceGRNModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode setFromOptions();
+  using IceModel::initFromOptions;
   virtual PetscErrorCode initFromOptions();
 
 protected:

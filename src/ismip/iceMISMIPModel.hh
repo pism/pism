@@ -27,6 +27,7 @@
 class MISMIPIce : public ThermoGlenIce {
 public:
   MISMIPIce();
+  using ThermoGlenIce::flow;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
   // this one returns nu; ignors temp & pressure
@@ -36,13 +37,14 @@ public:
                            const PetscScalar temp, const PetscScalar pressure) const;
   // this one returns nu * H; calls effectiveViscosity() for nu
   virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
   PetscErrorCode setA(const PetscScalar myA);
-  PetscScalar    softnessParameter(PetscScalar T) const;
-  PetscScalar    hardnessParameter(PetscScalar T) const;
+  PetscScalar    softnessParameter(const PetscScalar T) const;
+  PetscScalar    hardnessParameter(const PetscScalar T) const;
   PetscErrorCode printInfo(const int thresh, MPI_Comm com);
   
 protected:
@@ -61,13 +63,38 @@ struct mismipStatsType {
 };
 
 
+//! Derived class of IceModel with performs MISMIP experiments.
+/*!
+See \e User's \e Manual and run script   examples/mismip/mismip.sh.
+
+WE'VE GOT A PROBLEM WITH FLUX ACROSS GROUNDING LINE; not surprising ...
+See "cflx" in output file.
+
+I think the underlying issue *may* still be *regularity of the basal shear stress*, 
+that is, of the shear stress coefficient, which jumps from C_MISMIP to zero across
+the grounding line.
+
+I did an experiment that made the ice grounded
+all the way out to the calving front, but has zero basal resistance; the results are
+similar the intended MISMIP case, even though the surface is not at all what is given
+by the floatation criterion.
+
+Damping out C_MISMIP in the 50km on the grounded side of the grounding line (a linear
+decrease linearly from C_MISMIP at xg - 50km to zero at xg) does not make a difference,
+really.  In other words, I thought we needed
+   \tau_b \in W^{1,\infty} 
+or something; without the damping all we have is
+   \tau_b \in L^\infty.
+The results in the former case, of smoother C_MISMIP, are no better, I think.
+ */
 class IceMISMIPModel : public IceModel {
 
 public:
-  IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i);
+  IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i);
   virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
 
   virtual PetscErrorCode setFromOptions();
+  using IceModel::initFromOptions;
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
@@ -89,6 +116,7 @@ protected:
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
   PetscScalar runtimeyears, dHdtnorm_atol;
+  PetscTruth  writeExtras;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;
@@ -107,6 +135,7 @@ protected:
 
 PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
                                PetscInt i, PetscInt j) const;
+PetscErrorCode writeMISMIPasciiFile(const char mismiptype);
 };
 
 #endif  // __iceMISMIPModel_hh

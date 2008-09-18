@@ -212,9 +212,9 @@ protected:
   virtual PetscScalar    basalVelocity(const PetscScalar x, const PetscScalar y, 
             const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
             const PetscScalar mu);
-  virtual PetscScalar    basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
-                                    PetscInt i, PetscInt j) const;
-  virtual PetscScalar    basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+  virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+                                 PetscInt i, PetscInt j) const;
+  virtual PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
 
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero

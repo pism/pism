@@ -964,7 +964,7 @@ The ISMIP\footnote{``ISMIP'' stands for Ice Sheet Model Intercomparison Project.
 
 See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.} round of intercomparisons are ongoing at this time.  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
 
-Of these ISMIP experiments, PISM participated in HEINO, but this ability is unmaintained.  The results from PISM for HEINO are not regarded by the PISM authors as any more or less meaningful than those from other participating models.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite{BBssasliding}, and the same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
+Of these ISMIP experiments, PISM participated in HEINO, but this ability is unmaintained.  The results from PISM for HEINO are not regarded by the PISM authors as any more or less meaningful than those from other participating models.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite[][Appendix B]{BBssasliding}, and the same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.  In essence, PISM offers the results in \cite{BBssasliding} as an alternative to HEINO results.
 
 There is no current plan to support ISMIP-HOM.
 
@@ -1090,7 +1090,7 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
 
-\noindent The full text description, available at this site as PDF, is essential reading to understand MISMIP results.
+\noindent The full text description, available at the above site as PDF, is essential reading to understand MISMIP results.
 
 
 \begin{table}[ht]
@@ -1098,10 +1098,15 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \small
 \begin{tabular}{@{}lll}\hline
 \textbf{Option} & \textbf{Default value} & \textbf{Meaning} \\ \hline
+\verb|-extras| &  & if this flag is set then, once steady state is reached,  \\
+               &  & surface elevation and bed elevation are written to \\
+               &  & an extra file with name ending \verb|_extras|\\
 \verb|-initials| & \verb|ABC| & initials to prepend to ASCII output file names \\
 \verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; \\
                &  & allowed values are \verb|1a,1b,2a,2b,3a,3b| \\
-\verb|-model| &  &  \\
+\verb|-model| & 1 & model 1 is SSA only an is ``category 1'' in the \\
+              &   & MISMIP classification; model 2 combines SIA and SSA \\
+              &   & velocities as described in \cite{BBssasliding} \\
 \verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state;  \\
                     & & criterion is $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
 \verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiment 1,  \\

@@ -26,30 +26,20 @@
 
 
 /* 
-See run script   examples/mismip/mismip.sh.
+This derived class illustrates the bug-creation problem that
+if the signature of a virtual method of the base class IceModel is modified,
+then there is a good chance the behavior of MISMIP runs will change but
+there will be no compile time error to indicate it.
 
-WE'VE GOT A PROBLEM WITH FLUX ACROSS GROUNDING LINE; not surprising ...
-See "cflx" in output file.
-
-I think the underlying issue *may* still be *regularity of the basal shear stress*, 
-that is, of the shear stress coefficient, which jumps from C_MISMIP to zero across
-the grounding line.
-
-I did an experiment that made the ice grounded
-all the way out to the calving front, but has zero basal resistance; the results are
-similar the intended MISMIP case, even though the surface is not at all what is given
-by the floatation criterion.
-
-Damping out C_MISMIP in the 50km on the grounded side of the grounding line (a linear
-decrease linearly from C_MISMIP at xg - 50km to zero at xg) does not make a difference,
-really.  In other words, I thought we needed
-   \tau_b \in W^{1,\infty} 
-or something; without the damping all we have is
-   \tau_b \in L^\infty.
-The results in the former case, of smoother C_MISMIP, are no better, I think.
-*/
-
-
+The temporary solution is indicated by the print commands with
+"MAKE SURE THIS IS REALLY BEING USED!!" below.  Both for 
+IceType --> MISMIPIce and for IceModel --> IceMISMIPModel.
+The use of COMM_SELF in these print commands is reasonably important
+because, for instance, if COMM_WORLD is used, and we run 
+with 8 processors, then some processors "own" entirely floating ice 
+so they never call the print statement and then no output at all occurs.
+ */
+ 
 MISMIPIce::MISMIPIce() {
   rho = 900.0;
   n = 3;
@@ -75,6 +65,8 @@ PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
 
 PetscScalar MISMIPIce::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure) const {
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::flow()\n");
   return A_MISMIP * pow(stress,n-1);
 }
 
@@ -83,37 +75,45 @@ PetscScalar MISMIPIce::effectiveViscosity(const PetscScalar regularization,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const  {
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::effectiveViscosity()\n");
   const PetscScalar nn = (PetscScalar) n;
   const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
                              + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
   return 0.5 * B_MISMIP * pow(regularization + alpha, - (nn - 1.0) / (2.0 * nn));
 }
 
-
 PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscScalar dz,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::effectiveViscosityColumn()\n");
   // DESPITE NAME, does *not* return effective viscosity; returns viscosity times thickness.
   // NOTE: temp and pressure args to effectiveViscosity() ignored
   return H * effectiveViscosity(regularization, u_x, u_y, v_x, v_y, 0.0, 0.0);
 }
 
 
-PetscScalar MISMIPIce::softnessParameter(PetscScalar T) const {
+PetscScalar MISMIPIce::softnessParameter(const PetscScalar T) const {
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::softnessParameter()\n");
   return A_MISMIP;
 }
 
 
-PetscScalar MISMIPIce::hardnessParameter(PetscScalar T) const {
+PetscScalar MISMIPIce::hardnessParameter(const PetscScalar T) const {
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::hardnessParameter()\n");
   return B_MISMIP;
 }
 
 
 
-IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) : 
-      IceModel(g, i), mismip_ice(mismip_i) {
+IceMISMIPModel::IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i) : 
+      IceModel(g, (IceType*)mismip_i), mismip_ice(mismip_i) {
 
   // some are the defaults, while some are merely in a valid range;
   //   see IceMISMIPModel::setFromOptions() for decent values
@@ -124,6 +124,7 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) :
   stepindex = 1;
   runtimeyears = 3.0e4;
   strcpy(initials,"ABC");
+  writeExtras = PETSC_FALSE;
   m_MISMIP = 1.0/3.0;
   C_MISMIP = 7.624e6;
   regularize_MISMIP = 0.01 / secpera;
@@ -133,7 +134,6 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, IceType *i, MISMIPIce *mismip_i) :
 
 
 IceMISMIPModel::~IceMISMIPModel() {
-  // close open _t file
   PetscViewerDestroy(tviewfile);
 }
 
@@ -160,7 +160,7 @@ PetscScalar IceMISMIPModel::basalDragx(PetscScalar **tauc,
                                        PetscScalar **u, PetscScalar **v,
                                        PetscInt i, PetscInt j) const {
   // MAKE SURE THIS IS REALLY BEING USED!!:
-  // verbPrintf(1,grid.com,"IceMISMIPModel::basalDragx()\n");
+  //PetscPrintf(PETSC_COMM_SELF,"IceMISMIPModel::basalDragx()\n");
   return basalIsotropicDrag(u, v, i, j);
 }
 
@@ -168,6 +168,8 @@ PetscScalar IceMISMIPModel::basalDragx(PetscScalar **tauc,
 PetscScalar IceMISMIPModel::basalDragy(PetscScalar **tauc,
                                        PetscScalar **u, PetscScalar **v,
                                        PetscInt i, PetscInt j) const {
+  // MAKE SURE THIS IS REALLY BEING USED!!:
+  //PetscPrintf(PETSC_COMM_SELF,"IceMISMIPModel::basalDragy()\n");
   return basalIsotropicDrag(u, v, i, j);
 }
 
@@ -282,8 +284,8 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   }
 
   // read option  -initials ABC
-  ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, PETSC_MAX_PATH_LEN, PETSC_NULL); 
-            CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, 
+            PETSC_MAX_PATH_LEN, PETSC_NULL);  CHKERRQ(ierr);
   if (strlen(initials) != 3) {
     ierr = verbPrintf(1,grid.com,"IceMISMIPModel WARNING:  Initials string"
                                  " should usually be three chars long.");
@@ -291,7 +293,11 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   }
 
   // read option    -steady_atol
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-steady_atol", &dHdtnorm_atol, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-steady_atol", &dHdtnorm_atol, PETSC_NULL);
+          CHKERRQ(ierr);
+
+  // read option    -extras
+  ierr = PetscOptionsHasName(PETSC_NULL, "-extras", &writeExtras); CHKERRQ(ierr);
 
   doTemp                    = PETSC_FALSE;
   doPlasticTill             = PETSC_FALSE;
@@ -345,16 +351,16 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bootFileSet); CHKERRQ(ierr);
   infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
 
+  ierr = verbPrintf(2,grid.com, 
+      "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d (A=%5.4e)\n", 
+      modelnum,exper,sliding,gridmode,stepindex,
+      mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
   if (infileused) {
     ierr = verbPrintf(1,grid.com, 
        "IceMISMIPModel: -if or -bif option used; not using"
        "  certain MISMIP formulas to initialize\n");
        CHKERRQ(ierr);
-  } else { // usual case: initialize from MISMIP formulas
-    ierr = verbPrintf(2,grid.com, 
-              "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d (A=%5.4e)\n", 
-              modelnum,exper,sliding,gridmode,stepindex,
-              mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
+  } else { // usual case: initialize grid and variables from MISMIP formulas
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -362,14 +368,17 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     // NOTE: y takes place of x!!!
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
-    // is Lz = 4000m an adequate choice for thickness for all runs?
-//  FIXME:  NO!  4000m is too small for EBU2_1b_M1_A5, at least!
+    // FIXME:  is Lz = 4500m an adequate choice for thickness for all runs?
+    const PetscScalar MISMIPmaxThick = 4500.0;
+    
     //   (could be set in setFromOptions() according to experiment/run/...)
     // effect of double rescale is to compute grid.dy so we can get square cells
     //   (in horizontal)
-    ierr = grid.rescale_and_set_zlevels(1000.0e3, L, 4000.0,PETSC_TRUE,PETSC_FALSE); CHKERRQ(ierr); 
+    ierr = grid.rescale_and_set_zlevels(1000.0e3, L, MISMIPmaxThick,PETSC_TRUE,PETSC_FALSE);
+             CHKERRQ(ierr); 
     const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
-    ierr = grid.rescale_and_set_zlevels(Lx_desired, L, 4000.0,PETSC_TRUE,PETSC_FALSE); CHKERRQ(ierr); 
+    ierr = grid.rescale_and_set_zlevels(Lx_desired, L, MISMIPmaxThick,PETSC_TRUE,PETSC_FALSE);
+             CHKERRQ(ierr); 
 
     // all of these relate to models which should be turned off ...
     ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
@@ -445,9 +454,11 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = verbPrintf(2,grid.com,
       "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specs)\n",
       runtimeyears); CHKERRQ(ierr);
-    grid.year = 0.0;
-    ierr = setStartYear(grid.year); CHKERRQ(ierr);
-    ierr = setEndYear(grid.year + runtimeyears); CHKERRQ(ierr);
+    if (ysSet == PETSC_FALSE) {
+      grid.year = 0.0;
+      ierr = setStartYear(grid.year); CHKERRQ(ierr);
+    }
+    ierr = setEndYear(startYear + runtimeyears); CHKERRQ(ierr);
     yearsStartRunEndDetermined = PETSC_TRUE;
   }
 
@@ -584,50 +595,75 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = getMISMIPStats(); CHKERRQ(ierr);
 
-    // write ASCII file ABC1_1b_M1_A1_ss
-    PetscViewer  ssviewfile, fviewfile;
-    char         filename[PETSC_MAX_PATH_LEN];
-    strcpy(filename,mprefix);
-    strcat(filename,"_ss");
-    ierr = verbPrintf(2, grid.com, "IceMISMIPModel:  writing profile to %s\n",
-             filename); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIOpen(grid.com, filename, &ssviewfile); CHKERRQ(ierr);
-    ierr = PetscViewerSetFormat(ssviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+    // write ASCII file ABC1_1b_M1_A1_ss and ABC1_1b_M1_A1_f;
+    ierr = writeMISMIPasciiFile('s'); CHKERRQ(ierr);
+    ierr = writeMISMIPasciiFile('f'); CHKERRQ(ierr);
 
-    PetscScalar     **H;
-    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    // optionally write ABC1_1b_M1_A1_ss
+    if (writeExtras == PETSC_TRUE) {
+      ierr = writeMISMIPasciiFile('e'); CHKERRQ(ierr);
+    }
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype) {
+  PetscErrorCode ierr;
+  PetscViewer  view;
+  char         filename[PETSC_MAX_PATH_LEN];
+
+  strcpy(filename,mprefix);
+  switch (mismiptype) {
+    case 's':
+      strcat(filename,"_ss");    
+      break;
+    case 'f':
+      strcat(filename,"_f");    
+      break;
+    case 'e':
+      strcat(filename,"_extras");      
+      break;
+    default:
+      SETERRQ(1, "unknown mismiptype");
+  } // end switch
+  ierr = verbPrintf(2, grid.com, "IceMISMIPModel:  writing %s\n",
+             filename); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIOpen(grid.com, filename, &view); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(view, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  // just get all Vecs which might be needed
+  PetscScalar     **H, **h, **bed;
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  if (mismiptype == 'f') {
+    ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
+               CHKERRQ(ierr);
+  } else {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar
         jfrom0 = static_cast<PetscScalar>(j)
                                  - static_cast<PetscScalar>(grid.My - 1)/2.0,
         y = grid.dy * jfrom0;
       if (y >= 0) {
-        ierr = PetscViewerASCIISynchronizedPrintf(ssviewfile,
+        if (mismiptype == 's') {
+          ierr = PetscViewerASCIISynchronizedPrintf(view,
                "%10.2f %10.4f\n", y / 1000.0, H[grid.xs][j]); CHKERRQ(ierr);
+        } else { // mismiptype == 'e'
+          ierr = PetscViewerASCIISynchronizedPrintf(view,
+                 "%10.4f %10.4f\n", h[grid.xs][j], bed[grid.xs][j]); CHKERRQ(ierr);
+        }
       } else { // write empty string to make sure all processors write;
                // perhaps it is a bug in PETSc that this seems to be necessary?
-        ierr = PetscViewerASCIISynchronizedPrintf(ssviewfile,""); CHKERRQ(ierr);
+        ierr = PetscViewerASCIISynchronizedPrintf(view,""); CHKERRQ(ierr);
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-
-    ierr = PetscViewerFlush(ssviewfile); CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(ssviewfile); CHKERRQ(ierr);
-    
-    // write ASCII file ABC1_1b_M1_A1_f
-    strcpy(filename,mprefix);
-    strcat(filename,"_f");
-    ierr = verbPrintf(2, grid.com, 
-             "IceMISMIPModel:  writing final location of grounding line to %s\n",
-             filename); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIOpen(grid.com, filename, &fviewfile); CHKERRQ(ierr);
-    ierr = PetscViewerSetFormat(fviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(fviewfile,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
-               CHKERRQ(ierr);
-    ierr = PetscViewerFlush(fviewfile); CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(fviewfile); CHKERRQ(ierr);
-
   }
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = PetscViewerFlush(view); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(view); CHKERRQ(ierr);
   return 0;
 }
 

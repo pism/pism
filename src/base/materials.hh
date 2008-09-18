@@ -119,6 +119,7 @@ protected:
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
   virtual PetscScalar softnessParameter(PetscScalar T) const;
+  using ThermoGlenIce::flow;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure) const;
   virtual PetscScalar A() const;  // returns A_cold for Paterson-Budd

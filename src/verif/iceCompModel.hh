@@ -30,6 +30,7 @@ class IceCompModel : public IceModel {
 public:
   IceCompModel(IceGrid &g, IceType *i, const char mytest);
   virtual ~IceCompModel();
+  using IceModel::initFromOptions;
   virtual PetscErrorCode initFromOptions();
   PetscErrorCode reportErrors();
 

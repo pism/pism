@@ -11,13 +11,16 @@ import os
 import sys
 from getopt import getopt, GetoptError
 
-MAXTHICK = 4000.0  # so that all plotting has save vertical scale
+MAXTHICK = 4500.0  # so that all plotting has save vertical scale
 
+haveExtras = False
 mprefix='ABC1_1a_M1_A1'
 outputname='foo.png'
 try:
-  opts, args = getopt(sys.argv[1:], "o:p:",["outfile=:prefix="])
+  opts, args = getopt(sys.argv[1:], "e:o:p:",["extras=:outfile=:prefix="])
   for opt, arg in opts:
+    if opt in ("-e", "--extras"):
+      haveExtras = True
     if opt in ("-p", "--prefix"):
       mprefix = arg
     if opt in ("-o", "--outfile"):
@@ -43,17 +46,40 @@ except IOError:
   sys.exit(2)
 
 figure(1)
-plot(A[:,0],A[:,1],'b.-',markersize=12)
-hold(True)
-plot(array([B[0]]),array([0.0]),'kd',markersize=16)
-hold(False)
-text(800,2300,'grounding line at\n    $x_g=%.3f$ km' % B[0], size=14)
-title('thickness at steady state ($t_f$ = %.2f a)' % B[1])
-xlabel(r'$x$ (km)')
-ylabel(r'$H(x,t_f)$ (m)')
-myax = axis()
-axis((myax[0],myax[1],0.0,MAXTHICK))
+
+if haveExtras:
+  try:
+    name = mprefix + '_extras'
+    E = load(name)
+  except IOError:
+    haveExtras = False
+
+if haveExtras:
+  plot(A[:,0],E[:,0],'b.-',markersize=10)
+  hold(True)
+  plot(A[:,0],E[:,0]-A[:,1],'c.-',markersize=10)
+  plot(A[:,0],E[:,1],'k.-',markersize=10)
+  plot(array([B[0]]),array([-1000.0]),'kd',markersize=16)
+  hold(False)
+  text(800,2300,'grounding line at\n    $x_g=%.3f$ km' % B[0], size=14)
+  title('profile at steady state ($t_f$ = %.2f a)' % B[1])
+  xlabel(r'$x$ (km)')
+  ylabel(r'elevation (m)')
+  myax = axis()
+  axis((myax[0],myax[1],-1000.0,MAXTHICK+700.0))
+else:
+  plot(A[:,0],A[:,1],'b.-',markersize=12)
+  hold(True)
+  plot(array([B[0]]),array([0.0]),'kd',markersize=16)
+  hold(False)
+  text(800,2300,'grounding line at\n    $x_g=%.3f$ km' % B[0], size=14)
+  title('thickness at steady state ($t_f$ = %.2f a)' % B[1])
+  xlabel(r'$x$ (km)')
+  ylabel(r'$H(x,t_f)$ (m)')
+  myax = axis()
+  axis((myax[0],myax[1],0.0,MAXTHICK))
 
 print "  saving figure %s" % outputname
 savefig(outputname, dpi=300, facecolor='w', edgecolor='w')
+  
 

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     // call constructors on all three, but m will point to the one we use
     IceEISModel    mEISII(g, ice);
     IcePSTexModel  mPSTex(g, ice);
-    IceMISMIPModel mMISMIP(g, mismipice, mismipice);
+    IceMISMIPModel mMISMIP(g, mismipice);
     IceModel*      m;
 
     PetscTruth  EISIIchosen, PSTexchosen, MISMIPchosen;
