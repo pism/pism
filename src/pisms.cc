@@ -100,7 +100,10 @@ int main(int argc, char *argv[]) {
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
-    
+    if (MISMIPchosen == PETSC_TRUE) {
+      ierr = mMISMIP.writeMISMIPFinalFiles(); CHKERRQ(ierr);
+    }
+
     delete ice;
     delete mismipice;
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);

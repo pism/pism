@@ -26,7 +26,7 @@ try:
     if opt in ("-o", "--outfile"):
       outputname = arg
     else:
-      outputname = 'steady_' + mprefix + '.png'
+      outputname = 'profile_' + mprefix + '.png'
 except GetoptError:
   print "Incorrect command line arguments. Exiting..."
   sys.exit(-1)
@@ -52,19 +52,19 @@ if haveExtras:
     name = mprefix + '_extras'
     E = load(name)
   except IOError:
+    print "can't find _extras, so showing just thickness from _ss"
     haveExtras = False
 
 if haveExtras:
-  plot(A[:,0],E[:,0],'b.-',markersize=10)
+  plot(A[:,0],E[:,0]-A[:,1],'c.-',markersize=9)
   hold(True)
-  plot(A[:,0],E[:,0]-A[:,1],'c.-',markersize=10)
-  plot(A[:,0],E[:,1],'k.-',markersize=10)
-  plot(array([B[0]]),array([-1000.0]),'kd',markersize=16)
+  plot(A[:,0],zeros(size(A[:,0])),'r:',linewidth=2)
+  plot(A[:,0],E[:,0],'b.-',markersize=9)
+  plot(A[:,0],E[:,1],'k.-',markersize=9)
+  plot(array([B[0]]),array([-1000.0]),'kd',markersize=14)
   hold(False)
-  text(800,2300,'grounding line at\n    $x_g=%.3f$ km' % B[0], size=14)
-  title('profile at steady state ($t_f$ = %.2f a)' % B[1])
-  xlabel(r'$x$ (km)')
-  ylabel(r'elevation (m)')
+  title('profile ($t_f$ = %.2f a, $x_g$ = %.3f km)' % (B[1],B[0]))
+  ylabel(r'elevation (m)',size=14)
   myax = axis()
   axis((myax[0],myax[1],-1000.0,MAXTHICK+700.0))
 else:
@@ -72,12 +72,13 @@ else:
   hold(True)
   plot(array([B[0]]),array([0.0]),'kd',markersize=16)
   hold(False)
-  text(800,2300,'grounding line at\n    $x_g=%.3f$ km' % B[0], size=14)
-  title('thickness at steady state ($t_f$ = %.2f a)' % B[1])
-  xlabel(r'$x$ (km)')
-  ylabel(r'$H(x,t_f)$ (m)')
+  title('thickness ($t_f$ = %.2f a, $x_g$ = %.3f km)' % (B[1],B[0]))
+  ylabel(r'$H(x,t_f)$ (m)',size=14)
   myax = axis()
   axis((myax[0],myax[1],0.0,MAXTHICK))
+
+text(1200,4500,mprefix,size=14)
+xlabel(r'$x$ (km)',size=14)
 
 print "  saving figure %s" % outputname
 savefig(outputname, dpi=300, facecolor='w', edgecolor='w')

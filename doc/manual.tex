@@ -964,9 +964,9 @@ The ISMIP\footnote{``ISMIP'' stands for Ice Sheet Model Intercomparison Project.
 
 See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.} round of intercomparisons are ongoing at this time.  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
 
-Of these ISMIP experiments, PISM participated in HEINO, but this ability is unmaintained.  The results from PISM for HEINO are not regarded by the PISM authors as any more or less meaningful than those from other participating models.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite[][Appendix B]{BBssasliding}, and the same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.  In essence, PISM offers the results in \cite{BBssasliding} as an alternative to HEINO results.
+Of these ISMIP experiments, PISM participated in HEINO, but this ability is unmaintained.  The results from PISM for HEINO are not regarded by the PISM authors as any more or less meaningful than those from other participating models.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite[Appendix B]{BBssasliding}  The same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.  In essence, PISM offers the physical continuum model described in \cite{BBssasliding} as an alternative to the continuum model used in ISMIP-HEINO.
 
-There is no current plan to support ISMIP-HOM.
+There is no current plan to support ISMIP-HOM, but comparison of shallow PISM results to exact Stokes solutions is a goal for PISM evaluation.
 
 A third ISMIP part is the Marine Ice Sheet Model Intercomparison Project (MISMIP)\index{ISMIP!MISMIP}.  It is supported in PISM, as described in subsection \ref{subsect:MISMIP}.
 
@@ -1090,34 +1090,72 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
 
-\noindent The full text description, available at the above site as PDF, is essential reading to understand MISMIP results.
+\noindent The full text description, available at the above site as \verb|.pdf|, is essential reading, both to understand MISMIP results and many of the next comments.
 
+PISM's version of MISMIP includes an attached ice shelf.  There is a flow line analysis in \cite{SchoofMarine1}, a paper which strongly influenced the design of the MISMIP, which shows that the ice shelf need not be modeled because its only effect is to apply the force present at the calving front directly to the ice at the grounding line.  But this analysis does not apply to general ice shelves with two horizontal dimensions.  These real ice shelves, which are well-modeled in PISM as shown in section \ref{sect:ross}, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  Instead of changing the ice dynamics in PISM to remove the ice shelf for this flow line job, instead we keep the usual PISM ice shelf model for MISMIP.
 
+Because PISM is a map-plane model with two horizontal dimensions, we must adapt it to do a one horizontal dimension problem.  The flow line direction for MISMIP is taken to be ``$y$'', fairly arbitrarily.  We periodize the cross-flow direction ``$x$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-Mx 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes, apparently.
+
+PISM has two applicable ice dynamics models, and they correspond to \verb|-model 1| and \verb|-model 2| options when running MISMIP.  The first is a pure SSA model which is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
+
+There are many runs for the complete MISMIP, namely $62$ runs for each model and grid choice.  Here there are two models and three (suggested) grid choices, so a full suite of MISMIP runs is $6 \times 62 = 372$ runs.  But, as usual, the finest grid accounts for all the run time.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.\footnote{For the intercomparison submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.}
+ 
 \begin{table}[ht]
 \caption{MISMIP run options in PISM.\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
 \small
 \begin{tabular}{@{}lll}\hline
-\textbf{Option} & \textbf{Default value} & \textbf{Meaning} \\ \hline
-\verb|-extras| &  & if this flag is set then, once steady state is reached,  \\
-               &  & surface elevation and bed elevation are written to \\
-               &  & an extra file with name ending \verb|_extras|\\
+\textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \hline
+\verb|-extras| &  & if this flag is set then, once steady state is reached, surface \\
+               &  & and bed elevation are written to an extra file with name ending \\
+               &  & ``\verb|_extras|''; script \verb|figsMISMIP.py| can read this \\
 \verb|-initials| & \verb|ABC| & initials to prepend to ASCII output file names \\
-\verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; \\
-               &  & allowed values are \verb|1a,1b,2a,2b,3a,3b| \\
-\verb|-model| & 1 & model 1 is SSA only an is ``category 1'' in the \\
-              &   & MISMIP classification; model 2 combines SIA and SSA \\
-              &   & velocities as described in \cite{BBssasliding} \\
-\verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state;  \\
-                    & & criterion is $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
-\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiment 1,  \\
-             &  & $\{1,\dots,13\}$ for exper.~2, and $\{1,\dots,15\}$ for exper.~3;  \\
-             &  & note typo in table 6 in PDF: ``step 16'' is mentioned \\
-             &  & but only 15 values are given \\
+\verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; allowed values \\
+               &  & are \verb|1a,1b,2a,2b,3a,3b| \\
+\verb|-model| & 1 & model 1 is SSA only and model 2 combines SIA and SSA velocities; \\
+              &   & see text \\
+\verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state; criterion is \\
+                    & & $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
+\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiment 1, $\{1,\dots,13\}$ for \\
+             &  & exper.~2, and $\{1,\dots,15\}$ for exper.~3; note typo in table 6 in  \\
+             &  & \verb|mismip_4.pdf|: ``step 16'' is mentioned but no ``step 15'' \\
 \hline\normalsize
 \end{tabular}\end{table}
 
+To do an actual MISMIP run, the executable \verb|pisms| is used, as with EISMINT II previously.  Table \ref{tab:MISMIPoptions} shows particular runtime options.  
 
-FIXME: MORE
+A reasonable first MISMIP run is:
+
+\verb|$ cd examples/mismip/|  \hfill (directory where some MISMIP-related scripts are)
+
+\verb|$ pisms -mismip 1a -initials EBU -model 1 -step 1 -Mx 3 -Mz 15 -My 151|
+
+\noindent This will produce ASCII files \verb|EBU1_1a_M1_A1_t|, \verb|EBU1_1a_M1_A1_ss|, and \verb|EBU1_1a_M1_A1_f|, as well as a standard NetCDF output file \verb|EBU1_1a_M1_A1.nc|, in about 3 minutes.
+
+Using a few processors speeds things up a little, and a little extra output is nice, so next you might try:
+
+\verb|$ mpiexec -n 4 pisms -mismip 1a -initials EBU -model 1 -step 1 \|
+
+\verb|  -Mx 3 -Mz 15 -My 151 -extras|
+
+\noindent This time it takes about 2 minutes on my 8 core machine.  In addition to the same files as before, this time we get an additional ASCII file \verb|EBU1_1a_M1_A1_extras|.  The \verb|_ss| file has the thickness and the \verb|_extras| file has the bed and surface elevation.  With all this information we can produce a nice figure, showing the ice sheet and ice shelf profile for the final steady state, by using the Python script \verb|figsMISMIP.py| (in directory \verb|examples/mismip/|):
+
+\verb|$ ./figsMISMIP.py -p EBU1_1a_M1_A1 -e 1|
+
+\noindent The result is shown in Figure \ref{fig:MISMIPmodel1exper1aM1A1}.  The script \verb|figsMISMIP.py| does not require \verb|_extras| output, but does produce a nicer picture if it is present.  Once you have done multiple runs, the script \verb|makefigs.sh| will apply \verb|figsMISMIP.py| to each MISMIP output in the current directory.
+
+\begin{figure}[ht]
+\includegraphics[width=5.0in,keepaspectratio=true]{figs/profile_EBU1_1a_M1_A1}
+\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 1, step 1.}
+\label{fig:MISMIPmodel1exper1aM1A1}
+\end{figure}
+
+FIXME: describe how to continue to step 2, how to do other grid modes, -skip 10 and -ksprtol stuff, and exper 3b
+
+FIXME: but all is not kosher!  show jump in cflx, compare hysteresis figure 3 in \verb|mismip_4.pdf| 
+
+Running \verb|pisms -mismip ...| with options as shown here is perhaps fine for a few particular MISMIP runs, but hardly adequate to complete all 372 runs in the intercomparison.  We need automation, so in \verb|examples/mismip/| there is a shell script \verb|mismip.sh| which helps manage the runs.  There are several nested loops, naturally, but setting variables \verb|MODELRANGE| and \verb|GRIDRANGE| at the start will do some of the job of configuring what you want.  Do ``\verb|./mismip.sh 4 D|'', or similar, with the extra ``\verb|D|'' at the end, to see what \verb|pisms -mismip| calls will happen before actually doing it; ``\verb|D|'' stands for ``debug''.
+
+
 
 
 

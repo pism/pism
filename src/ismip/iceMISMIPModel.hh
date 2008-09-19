@@ -110,13 +110,14 @@ public:
                                     PetscScalar **u, PetscScalar **v,
                                     PetscInt i, PetscInt j) const;
   PetscErrorCode         printBasalAndIceInfo();
+  PetscErrorCode         writeMISMIPFinalFiles();
 
-protected:
+private:
   MISMIPIce   *mismip_ice;
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
   PetscScalar runtimeyears, dHdtnorm_atol;
-  PetscTruth  writeExtras;
+  PetscTruth  writeExtras, steadyOrGoalAchieved;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;
@@ -133,9 +134,9 @@ protected:
   PetscScalar m_MISMIP, C_MISMIP;
   PetscScalar regularize_MISMIP;
 
-PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
-                               PetscInt i, PetscInt j) const;
-PetscErrorCode writeMISMIPasciiFile(const char mismiptype);
+  PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
+                                 PetscInt i, PetscInt j) const;
+  PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);
 };
 
 #endif  // __iceMISMIPModel_hh

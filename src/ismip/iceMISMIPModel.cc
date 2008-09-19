@@ -125,6 +125,7 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i) :
   runtimeyears = 3.0e4;
   strcpy(initials,"ABC");
   writeExtras = PETSC_FALSE;
+  steadyOrGoalAchieved = PETSC_FALSE;
   m_MISMIP = 1.0/3.0;
   C_MISMIP = 7.624e6;
   regularize_MISMIP = 0.01 / secpera;
@@ -368,8 +369,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     // NOTE: y takes place of x!!!
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
-    // FIXME:  is Lz = 4500m an adequate choice for thickness for all runs?
-    const PetscScalar MISMIPmaxThick = 4500.0;
+    // FIXME:  is this Lz an adequate choice for thickness for all runs?
+    const PetscScalar MISMIPmaxThick = 6000.0;
     
     //   (could be set in setFromOptions() according to experiment/run/...)
     // effect of double rescale is to compute grid.dy so we can get square cells
@@ -575,60 +576,70 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   ierr = VecNorm(vdHdt,NORM_INFINITY,&infnormdHdt); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
 
-  if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr,
-    // then set the IceModel goal of endYear to the current year; stops immediately
-    endYear = grid.year;  
+//FIXME:  We need to write out the _ss, _f, _extras stuff even if steady state is not
+//  Perhaps this will require an endOfRunHook()
+//  if ((rstats.dHdtnorm * secpera < dHdtnorm_atol)  // if all points have dHdt < 10^-4 m/yr,
+//      || (PetscAbs(endYear - grid.year) < 1.0e-4)) { // or if we are at the end of the run anyway
 
+  if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
+    steadyOrGoalAchieved = PETSC_TRUE;
+    // set the IceModel goal of endYear to the current year; causes immediate stop
+    endYear = grid.year;  
     // report stopping to standard out
     ierr = verbPrintf(2,grid.com,
         "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < %.2e m/yr) satisfied;\n"
         "                stopping at year=%.3f\n",dHdtnorm_atol,grid.year); CHKERRQ(ierr);
-
     // leave stopping stamp in output NetCDF file
     char str[HISTORY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
        "MISMIP steady state criterion (max|dHdt| < %.2e m/yr) satisfied.\n"
        "Stopping.  Completed timestep year=%.3f.",dHdtnorm_atol,grid.year);
     stampHistory(str); 
+  }
+  return 0;
+}
 
-    // get stats in preparation for writing
+
+PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
+  PetscErrorCode ierr;
+  //ierr = verbPrintf(1,grid.com,
+  //     "\nENTERING writeMISMIPFinalFiles() WITH startYear=%f,runtimeyears=%f,grid.year=%f\n",
+  //     startYear,runtimeyears,grid.year); CHKERRQ(ierr);
+  if (PetscAbs(startYear + runtimeyears - grid.year) < 1.0e-4) {
+    steadyOrGoalAchieved = PETSC_TRUE;
+  }
+  if (steadyOrGoalAchieved == PETSC_TRUE) {
+    // get stats in preparation for writing final files
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = getMISMIPStats(); CHKERRQ(ierr);
-
     // write ASCII file ABC1_1b_M1_A1_ss and ABC1_1b_M1_A1_f;
-    ierr = writeMISMIPasciiFile('s'); CHKERRQ(ierr);
-    ierr = writeMISMIPasciiFile('f'); CHKERRQ(ierr);
-
+    char  ssfilename[PETSC_MAX_PATH_LEN], ffilename[PETSC_MAX_PATH_LEN];
+    strcpy(ssfilename,mprefix);
+    strcat(ssfilename,"_ss");    
+    strcpy(ffilename,mprefix);
+    strcat(ffilename,"_f");    
+    ierr = verbPrintf(2, grid.com, 
+            "\nIceMISMIPModel:  steady state achieved or specified run time completed.\n"
+              "                 writing files %s and %s",
+            ssfilename, ffilename); CHKERRQ(ierr);
+    ierr = writeMISMIPasciiFile('s',ssfilename); CHKERRQ(ierr);
+    ierr = writeMISMIPasciiFile('f',ffilename); CHKERRQ(ierr);
     // optionally write ABC1_1b_M1_A1_ss
     if (writeExtras == PETSC_TRUE) {
-      ierr = writeMISMIPasciiFile('e'); CHKERRQ(ierr);
+      char  efilename[PETSC_MAX_PATH_LEN];
+      strcpy(efilename,mprefix);
+      strcat(efilename,"_extras");    
+      ierr = verbPrintf(2, grid.com, " and %s", efilename); CHKERRQ(ierr);
+      ierr = writeMISMIPasciiFile('e',efilename); CHKERRQ(ierr);
     }
   }
   return 0;
 }
 
 
-PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype) {
+PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char* filename) {
   PetscErrorCode ierr;
   PetscViewer  view;
-  char         filename[PETSC_MAX_PATH_LEN];
-
-  strcpy(filename,mprefix);
-  switch (mismiptype) {
-    case 's':
-      strcat(filename,"_ss");    
-      break;
-    case 'f':
-      strcat(filename,"_f");    
-      break;
-    case 'e':
-      strcat(filename,"_extras");      
-      break;
-    default:
-      SETERRQ(1, "unknown mismiptype");
-  } // end switch
-  ierr = verbPrintf(2, grid.com, "IceMISMIPModel:  writing %s\n",
-             filename); CHKERRQ(ierr);
   ierr = PetscViewerASCIIOpen(grid.com, filename, &view); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(view, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
   // just get all Vecs which might be needed
