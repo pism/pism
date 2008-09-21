@@ -6,6 +6,10 @@ ALL : all
 include ${PETSC_DIR}/bmake/common/base
 
 #FLAGS:
+# PETSc has troubles choosing a linker which can link C++. PISM is C++. Setting
+# this to zero would let PETSc choose a linker.
+USE_MPICXX = 1
+
 PISM_PREFIX ?= `pwd`
 WITH_FFTW ?= 1
 LOG_PISM_EVENTS ?= 0
@@ -66,10 +70,10 @@ local_install : depend libpism.so libtests.so $(executables)
 	@echo 'PISM executables installed in ' ${PISM_PREFIX}'/bin/'
 	@rm .pismmakeremind
 
-CXXLINKER=${CLINKER}
-## PETSc has trouble choosing a linker which can link C++.  PISM is C++.
-## If you have problems, comment out the CXXLINKER definition above and uncomment this one:
-#CXXLINKER=`echo ${CLINKER} | sed 's/mpicc/mpicxx/'`
+# Override PETSc's choice of the linker (if asked to):
+ifeq ($(USE_MPICXX), 1)
+  CXXLINKER = $(subst mpicc,mpicxx,$(CLINKER))
+endif
 
 libpism.so : ${ICE_OBJS}
 	${CXXLINKER} -shared ${ICE_OBJS} -o $@
