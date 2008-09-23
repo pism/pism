@@ -56,7 +56,7 @@ const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mbz  = 1;
 IceGrid::IceGrid(MPI_Comm c,
                  PetscMPIInt r,
                  PetscMPIInt s):
-  com(c), rank(r), size(s), createDA_done(PETSC_FALSE) { 
+  com(c), rank(r), size(s) { 
 
   Lx = DEFAULT_ICEPARAM_Lx;
   Ly = DEFAULT_ICEPARAM_Ly;
@@ -81,13 +81,9 @@ IceGrid::IceGrid(MPI_Comm c,
 
 
 IceGrid::~IceGrid() {
-  if ((createDA_done == PETSC_TRUE) && (da2 == PETSC_NULL)) {
-    verbPrintf(1,com, "WARNING in %s: createDA_done inconsistent with da2\n",__FUNCTION__);
-  }
   if (da2 != PETSC_NULL) {
     DADestroy(da2);
   }
-  createDA_done = PETSC_FALSE;
   delete [] zlevels;
   zlevels = PETSC_NULL;
   delete [] zblevels;
@@ -448,9 +444,6 @@ the parameters, and any conflicts must have been resolved.
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
 
-  if ((createDA_done == PETSC_TRUE) && (da2 == PETSC_NULL)) {
-    verbPrintf(1,com, "WARNING in %s: createDA_done inconsistent with da2\n",__FUNCTION__);
-  }
   if (da2 != PETSC_NULL) {
     ierr = DADestroy(da2); CHKERRQ(ierr);
   }
@@ -470,7 +463,6 @@ PetscErrorCode IceGrid::createDA() {
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
 
-  createDA_done = PETSC_TRUE;
   return 0;
 }
 

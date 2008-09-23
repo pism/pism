@@ -127,18 +127,19 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i) :
   strcpy(initials,"ABC");
   writeExtras = PETSC_FALSE;
   steadyOrGoalAchieved = PETSC_FALSE;
-  tviewcreated = PETSC_FALSE;
   m_MISMIP = 1.0/3.0; // power
   C_MISMIP = 7.624e6; // Pa m^(−1/3) s^(1/3)
   regularize_MISMIP = 0.01 / secpera; // 0.01 m/a
   dHdtnorm_atol = 1.0e-4;  // m/a
   rstats.xg = -1.0;  // deliberately invalid
+  tviewfile = PETSC_NULL;
 }
 
 
 IceMISMIPModel::~IceMISMIPModel() {
   // this destructor gets called even if user does *not* choose -mismip
-  if (tviewcreated == PETSC_TRUE)   PetscViewerDestroy(tviewfile);
+  if (tviewfile != PETSC_NULL)
+    PetscViewerDestroy(tviewfile);
 }
 
 
@@ -497,7 +498,6 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   strcat(tfilename,"_t");
   ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-  tviewcreated = PETSC_TRUE;
 
   return 0;
 }

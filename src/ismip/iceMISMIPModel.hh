@@ -117,7 +117,7 @@ private:
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
   PetscScalar initialthickness, runtimeyears, dHdtnorm_atol;
-  PetscTruth  writeExtras, steadyOrGoalAchieved, tviewcreated;
+  PetscTruth  writeExtras, steadyOrGoalAchieved;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;

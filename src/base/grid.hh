@@ -89,7 +89,6 @@ private:
                                  // 1 = equally spaced
                                  // 2 = Chebyshev spaced (very fine near base of ice)
                                  // 3 = quadratic spaced (fairly fine near base of ice)
-  PetscTruth      createDA_done;
   PetscErrorCode  setVertLevels();
   PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
   bool            isIncreasing(const PetscInt len, PetscScalar *vals);
