@@ -82,7 +82,7 @@ IceGrid::IceGrid(MPI_Comm c,
 
 IceGrid::~IceGrid() {
   if ((createDA_done == PETSC_TRUE) && (da2 == PETSC_NULL)) {
-    verbPrintf(1,com, "WARNING in IceGrid destructor: createDA_done inconsistent with da2\n");
+    verbPrintf(1,com, "WARNING in %s: createDA_done inconsistent with da2\n",__FUNCTION__);
   }
   if (da2 != PETSC_NULL) {
     DADestroy(da2);
@@ -449,7 +449,7 @@ PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
 
   if ((createDA_done == PETSC_TRUE) && (da2 == PETSC_NULL)) {
-    verbPrintf(1,com, "WARNING in IceGrid destructor: createDA_done inconsistent with da2\n");
+    verbPrintf(1,com, "WARNING in %s: createDA_done inconsistent with da2\n",__FUNCTION__);
   }
   if (da2 != PETSC_NULL) {
     ierr = DADestroy(da2); CHKERRQ(ierr);
