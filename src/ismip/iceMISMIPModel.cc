@@ -417,6 +417,17 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     SETERRQ(1, "ERROR: IceMISMIPModel has not been initialized!\n");
   }
 
+  // option  -useSMthk foo.nc  :
+  //   initialize from thickness in file  foo.nc;  usually this file is written by
+  //   solverSM.py
+  PetscTruth useSMthkSet;
+  char SMthk_filename[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-useSMthk", SMthk_filename, 
+                PETSC_MAX_PATH_LEN, &useSMthkSet); CHKERRQ(ierr);
+  if (useSMthkSet == PETSC_TRUE) {
+    ierr = readThkFromSMResult(SMthk_filename); CHKERRQ(ierr);
+  }
+
   // determine gridmode from My
   if (grid.My == 151) 
     gridmode = 1;
@@ -488,6 +499,13 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
   tviewcreated = PETSC_TRUE;
 
+  return 0;
+}
+
+
+PetscErrorCode IceMISMIPModel::readThkFromSMResult(char* filename) {
+  SETERRQ(99,"IceMISMIPModel::readThkFromSMResult() NOT YET IMPLEMENTED");
+  // see bootstrap example
   return 0;
 }
 

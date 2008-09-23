@@ -137,6 +137,7 @@ private:
   PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
                                  PetscInt i, PetscInt j) const;
   PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);
+  PetscErrorCode readThkFromSMResult(char* filename);
 };
 
 #endif  // __iceMISMIPModel_hh
