@@ -30,15 +30,15 @@
 IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
   : IceModel(g,i) {  // do nothing; note derived classes must have constructors
 
-  // use defined velocity boundary condition for shelf, instead of computing 
-  // SIA values at those locations
+  useSSAVelocity= PETSC_TRUE;
   computeSIAVelocities = PETSC_FALSE;
 
   // further settings for velocity computation 
-  useConstantNuForSSA = PETSC_FALSE;       // compute the effective viscosity by including shear-thinning ...
+  useConstantNuForSSA = PETSC_FALSE;       // compute the effective viscosity
+                                           //   in non-Newtonian way ...
   useConstantHardnessForSSA = PETSC_TRUE;  // but don't include thermocoupling
-  ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
   constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
+  ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
 }
@@ -68,7 +68,7 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com, 
-    "initializing EISMINT Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
+    "initializing EISMINT-Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
 
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
@@ -86,11 +86,6 @@ PetscErrorCode IceROSSModel::initFromOptions() {
 
   // allocate observed velocity space
   ierr = createROSSVecs(); CHKERRQ(ierr);
-
-  // update surface elev: APPLY FLOATING CRITERION EVERYWHERE to get smooth surface;
-  // does this need to be done *after* afterInitHook()?
-  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-  ierr = VecScale(vh, 1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
   
   // fill in temperatures at depth according to special rule:
   // temp in column equals temp at surface
@@ -105,13 +100,20 @@ PetscErrorCode IceROSSModel::initFromOptions() {
 
   ierr = afterInitHook(); CHKERRQ(ierr);
 
+  // update surface elev
+  ierr = verbPrintf(2,grid.com, 
+     "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n"); CHKERRQ(ierr);
+  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+  ierr = VecScale(vh, 1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
+
   if (ssaBCset == PETSC_TRUE) {
-     ierr = verbPrintf(2, grid.com,"reading SSA boundary condition file %s and setting bdry conds\n",
-                       ssaBCfile); CHKERRQ(ierr);
+     ierr = verbPrintf(2, grid.com,
+             "EIS-Ross: reading SSA boundary condition file %s and setting bdry conds\n",
+             ssaBCfile); CHKERRQ(ierr);
      ierr = readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2,grid.com, "running EISMINT ROSS ...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "EIS-Ross: computing velocity ...\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -126,14 +128,14 @@ PetscErrorCode IceROSSModel::finishROSS() {
   if (ssaBCset == PETSC_FALSE)
     return 0;
     
-  ierr = verbPrintf(2,grid.com, "\nreading EISMINT ROSS observed velocities from %s...\n",
+  ierr = verbPrintf(2,grid.com, "\nEIS-Ross: reading observed velocities from %s...\n",
                     ssaBCfile); CHKERRQ(ierr);
   ierr = readObservedVels(ssaBCfile); CHKERRQ(ierr);
 
   ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
   ierr = readRIGGSandCompare(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(4,grid.com, "showing EISMINT ROSS observed velocities"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, "EIS-Ross: showing observed velocities (if -d used)\n"); CHKERRQ(ierr);
   ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
   ierr = updateViewers(); CHKERRQ(ierr);
   

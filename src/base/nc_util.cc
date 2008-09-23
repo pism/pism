@@ -93,7 +93,7 @@ LocalInterpCtx::LocalInterpCtx(int ncidIN, const size_t dim[], const double bdy[
   }
   if (bdy[6] < Lz) {
     verbPrintf(3,grid.com,
-        "  LIC WARNING: vertical dimension of target computational domain\n"
+        "  WARNING: vertical dimension of target computational domain\n"
         "    not a subset of source (in NetCDF file) computational domain;\n"
         "    bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
         bdy[6], Lz);

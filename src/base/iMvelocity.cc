@@ -102,13 +102,13 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
                 CHKERRQ(ierr);
     }
   } else { // if computeSIAVelocities == PETSC_FALSE
+    // do NOT zero out vuvbar[0],vuvbar[1]; they are used to communicate boundary
+    // conditions to SSA calculation
     ierr = VecSet(vubar,0.0); CHKERRQ(ierr);
     ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
     ierr = VecSet(vub,0.0); CHKERRQ(ierr);
     ierr = VecSet(vvb,0.0); CHKERRQ(ierr);
     ierr = VecSet(vRb,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
-    ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
     if (updateVelocityAtDepth) {
       ierr = u3.setToConstant(0.0); CHKERRQ(ierr);
       ierr = v3.setToConstant(0.0); CHKERRQ(ierr);

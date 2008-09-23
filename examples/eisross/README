@@ -1,9 +1,17 @@
-README                                  ELB 2/9/07; 8/4/07; 27may08
+                                             ELB 20may08
 
-This README file supplements the "readme.txt" file from the 
+Please see the User's Manual for *how* to perform the 
+EISMINT-Ross intercomparison using PISM.  It is in the section
+titled "Example: Validating PISM as a flow model for the Ross 
+ice shelf".
+
+This README file describes the sources and format of the data 
+used for EISMINT-Ross.  It supplements the "readme.txt" file from the 
 EISMINT Ross intercomparison (that file is dated "Oct 2nd 1996" 
-and is by V. Rommelaere).  It describes four files which 
-clean up the EISMINT Ross files.  All relate to calculation of 
+and is by V. Rommelaere).
+
+Here we describe four files which clean up the original
+EISMINT Ross files.  All relate to calculation of 
 the \chi^2 measure and display of the PISM result versus the RIGGS
 observations; compare MacAyeal et. al 1996 Ann. Glaciol. 23.  The
 files are:

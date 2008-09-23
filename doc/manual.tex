@@ -1,6 +1,6 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{354}
+\newcommand{\PISMREV}{362}
 \newcommand{\PETSCREV}{2.3.3-p2}
 
 %\addtolength\topmargin{-.1in}
@@ -1153,7 +1153,9 @@ FIXME: describe how to continue to step 2, how to do other grid modes, -skip 10 
 
 FIXME: but all is not kosher!  show jump in cflx, compare hysteresis figure 3 in \verb|mismip_4.pdf| 
 
-Running \verb|pisms -mismip ...| with options as shown here is perhaps fine for a few particular MISMIP runs, but hardly adequate to complete all 372 runs in the intercomparison.  We need automation, so in \verb|examples/mismip/| there is a shell script \verb|mismip.sh| which helps manage the runs.  There are several nested loops, naturally, but setting variables \verb|MODELRANGE| and \verb|GRIDRANGE| at the start will do some of the job of configuring what you want.  Do ``\verb|./mismip.sh 4 D|'', or similar, with the extra ``\verb|D|'' at the end, to see what \verb|pisms -mismip| calls will happen before actually doing it; ``\verb|D|'' stands for ``debug''.
+FIXME: mention convergence criterion and reported dxg/dt
+
+Running \verb|pisms -mismip ...| with options as shown here is perhaps fine for a few particular MISMIP runs, but hardly adequate to manage all 372 runs in the intercomparison.  We need automation!  In \verb|examples/mismip/| there is a shell script \verb|mismip.sh| which helps manage the runs.  There are several nested loops, naturally, but setting variables \verb|MODELRANGE| and \verb|GRIDRANGE| at the start will do much of the job of configuring what you want.  Do ``\verb|./mismip.sh 4 D|'', or similar, with the extra ``\verb|D|'' at the end, to see what \verb|pisms -mismip| calls will happen \emph{before} actually actually starting any; yes, ``\verb|D|'' stands for ``debug''.
 
 
 
@@ -1461,15 +1463,13 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eis_ross.py| e
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 
-\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
-
-\verb|    -ssa -o rossComputed|
+\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3|
 
 \noindent Here we bootstrap (\verb|-bif|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
 
 At the end of this run the computed velocity field is compared to the interpolated observed velocities stored in \verb|ross.nc|.  The value called ``average relative error in vector vel'' is most relevant.  A value of 0.07 here means that the averaged absolute difference between the computed and the observed velocity, in the ``accurate'' region, is 7\%.
 
-The output file \verb|rossComputed.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Viewing that variable will show a picture like the one on the cover page of this \emph{User's Manual}, and like that in figure \ref{fig:rossspeed}.
+The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Viewing that variable will show a picture like the one on the cover page of this \emph{User's Manual}, and like that in figure \ref{fig:rossspeed}.
 
 \begin{figure}[ht]
 \includegraphics[height=3.2in,keepaspectratio=true]{figs/rossspeed}
@@ -1479,15 +1479,15 @@ The output file \verb|rossComputed.nc| contains vertically-averaged horizontal s
 
 There are many variations on this basic ``\verb|pismd -ross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\index{pismd} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
 
-\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
+\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \|
 
-\verb|     -ssa -d cnmu -verbose -pause 10|
+\verb|     -Mx 147 -My 147 -Mz 3 -Lz 1e3 -d cnmu -verbose -pause 10|
 
 \noindent Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
-\verb|$ mpiexec -n 4 pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 201 -My 201 \|
+\verb|$ mpiexec -n 4 pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \|
 
-\verb|     -Lz 1000 -Mz 3 -ssa|
+\verb|     -Mx 201 -My 201 -Mz 3 -Lz 1e3|
 
 \noindent The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 

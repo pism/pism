@@ -116,8 +116,8 @@ private:
   MISMIPIce   *mismip_ice;
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
-  PetscScalar runtimeyears, dHdtnorm_atol;
-  PetscTruth  writeExtras, steadyOrGoalAchieved;
+  PetscScalar initialthickness, runtimeyears, dHdtnorm_atol;
+  PetscTruth  writeExtras, steadyOrGoalAchieved, tviewcreated;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;

@@ -70,13 +70,17 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
 
 IceModel::~IceModel() {
   if (createVecs_done == PETSC_TRUE) {
+    //verbPrintf(1,grid.com, "calling destroyVecs()\n");
     destroyVecs();
   }
   if (createViewers_done == PETSC_TRUE) {
+    //verbPrintf(1,grid.com, "calling destroyViewers()\n");
     destroyViewers();
   }
   if (createBasal_done == PETSC_TRUE) {
+    //verbPrintf(1,grid.com, "deleting basal()\n");
     delete basal;
+    //verbPrintf(1,grid.com, "deleting basalSIA()\n");
     delete basalSIA;
   }
 }

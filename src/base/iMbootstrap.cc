@@ -349,7 +349,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = reportBIFVarFoundMinMax(vtillphi,"tillphi","degrees",1.0); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-        "  WARNING: till friction angle 'tillphi' not found; using default constant %6.3f degrees\n",
+        "  WARNING: till friction angle 'tillphi' not found; using default constant %6.3f deg\n",
         DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);
     ierr = VecSet(vtillphi,DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);  
   }
@@ -419,9 +419,11 @@ PetscErrorCode IceModel::reportBIFVarFoundMinMax(Vec myvar, const char *varname,
 }
 
 
-//! Read certain boundary conditions from a NetCDF file, especially for diagnostic SSA calculations.
+//! Read certain boundary conditions from a NetCDF file, for diagnostic SSA calculations.
 /*!
 This is not really a bootstrap procedure, but it has to go somewhere.
+
+For now it is \e only called using "pismd -ross".
  */
 PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
@@ -530,10 +532,6 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
 
   // update viewers
   ierr = updateViewers(); CHKERRQ(ierr);
-  
-  // reset initial velocities in shelf for iteration
-  ierr = VecSet(vubar,0.0); CHKERRQ(ierr);
-  ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
   return 0;
 }
 

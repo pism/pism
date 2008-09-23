@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
       ierr = mMISMIP.writeMISMIPFinalFiles(); CHKERRQ(ierr);
     }
 
-    delete ice;
     delete mismipice;
+    delete ice;
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);
   }
 

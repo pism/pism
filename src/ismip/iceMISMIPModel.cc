@@ -122,20 +122,23 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i) :
   sliding = 'a';
   gridmode = 1;
   stepindex = 1;
-  runtimeyears = 3.0e4;
+  initialthickness = 10.0; // m
+  runtimeyears = 3.0e4; // a
   strcpy(initials,"ABC");
   writeExtras = PETSC_FALSE;
   steadyOrGoalAchieved = PETSC_FALSE;
-  m_MISMIP = 1.0/3.0;
-  C_MISMIP = 7.624e6;
-  regularize_MISMIP = 0.01 / secpera;
+  tviewcreated = PETSC_FALSE;
+  m_MISMIP = 1.0/3.0; // power
+  C_MISMIP = 7.624e6; // Pa m^(−1/3) s^(1/3)
+  regularize_MISMIP = 0.01 / secpera; // 0.01 m/a
   dHdtnorm_atol = 1.0e-4;  // m/a
-  rstats.xg = -1.0;
+  rstats.xg = -1.0;  // deliberately invalid
 }
 
 
 IceMISMIPModel::~IceMISMIPModel() {
-  PetscViewerDestroy(tviewfile);
+  // this destructor gets called even if user does *not* choose -mismip
+  if (tviewcreated == PETSC_TRUE)   PetscViewerDestroy(tviewfile);
 }
 
 
@@ -224,7 +227,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
                         6.0e-25, 8.0e-25, 1.0e-24,
                         1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
 
-  // read option    -mismip [1a|1b|2a|2b|3a|3b]
+  // read major option    -mismip [1a|1b|2a|2b|3a|3b]
   char Ee[PETSC_MAX_PATH_LEN];
   strcpy(Ee,"");
   ierr = PetscOptionsGetString(PETSC_NULL, "-mismip", Ee, PETSC_MAX_PATH_LEN, PETSC_NULL); 
@@ -246,13 +249,33 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     }
   }
 
-  // read option    -model [1|2]
+  // other options:
+  // read option    -extras       [OFF]
+  ierr = PetscOptionsHasName(PETSC_NULL, "-extras", &writeExtras); CHKERRQ(ierr);
+
+  // read option    -initials     [ABC]
+  ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, 
+            PETSC_MAX_PATH_LEN, PETSC_NULL);  CHKERRQ(ierr);
+  if (strlen(initials) != 3) {
+    ierr = verbPrintf(1,grid.com,"IceMISMIPModel WARNING:  Initials string"
+                      " should usually be three chars long."); CHKERRQ(ierr);
+  }
+
+  // read option    -initialthk   [10.0]
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-initialthk", &initialthickness, PETSC_NULL);
+           CHKERRQ(ierr);
+
+  // read option    -model        [1]
   ierr = PetscOptionsGetInt(PETSC_NULL, "-model", &modelnum, PETSC_NULL); CHKERRQ(ierr);
   if ((modelnum < 1) || (modelnum > 2)) {
     SETERRQ(8,"IceMISMIPModel ERROR:  modelnum must be 1 or 2; '-model 1' or '-model 2'");
   }
 
-  // read option    -step [1|..|15]
+  // read option    -steady_atol  [1.0e-4]
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-steady_atol", &dHdtnorm_atol, PETSC_NULL);
+          CHKERRQ(ierr);
+
+  // read option    -step         [1]
   ierr = PetscOptionsGetInt(PETSC_NULL, "-step", &stepindex, PETSC_NULL); CHKERRQ(ierr);
   if (stepindex < 1) {
     SETERRQ(4,"IceMISMIPModel ERROR:  run index N in '-run N' must be at least 1");
@@ -283,22 +306,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
       SETERRQ(99, "how did I get here?");
     }
   }
-
-  // read option  -initials ABC
-  ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, 
-            PETSC_MAX_PATH_LEN, PETSC_NULL);  CHKERRQ(ierr);
-  if (strlen(initials) != 3) {
-    ierr = verbPrintf(1,grid.com,"IceMISMIPModel WARNING:  Initials string"
-                                 " should usually be three chars long.");
-       CHKERRQ(ierr);
-  }
-
-  // read option    -steady_atol
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-steady_atol", &dHdtnorm_atol, PETSC_NULL);
-          CHKERRQ(ierr);
-
-  // read option    -extras
-  ierr = PetscOptionsHasName(PETSC_NULL, "-extras", &writeExtras); CHKERRQ(ierr);
 
   doTemp                    = PETSC_FALSE;
   doPlasticTill             = PETSC_FALSE;
@@ -365,7 +372,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
-    const PetscScalar   L = 1700.0e3;      // Horizontal half-width of grid
+    const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
     // NOTE: y takes place of x!!!
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
@@ -392,7 +399,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
     ierr = VecSet(vAccum, 0.3/secpera); CHKERRQ(ierr);
 
-    ierr = VecSet(vH, 10.0); CHKERRQ(ierr);  // initial thickness of 10 m
+    ierr = VecSet(vH, initialthickness); CHKERRQ(ierr);
 
     ierr = setMISMIPBed(); CHKERRQ(ierr);
     ierr = setMISMIPMask(); CHKERRQ(ierr);
@@ -479,6 +486,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   strcat(tfilename,"_t");
   ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+  tviewcreated = PETSC_TRUE;
 
   return 0;
 }

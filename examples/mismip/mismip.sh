@@ -44,10 +44,11 @@ MYINITIALS=EBU     # MISMIP says "first character of the first name followed
                    #    by the first two characters of the last name"
 
 MODELRANGE="1 2"   # model 1 is pure SSA, model 2 is SIA+SSA
+#MODELRANGE="1"
 
 #GRIDRANGE="1 2 3" # grid 1 is "-My 151", grid 2 is "-My 1501", grid 3 is "-My 601"
                    # 3 is slow, 2 is practically impossible!!
-GRIDRANGE="1"
+GRIDRANGE="3"
 
 
 if [ $# -gt 0 ] ; then  # if user says "mismip.sh 8" then NN = 8
@@ -62,13 +63,16 @@ fi
 set -e  # exit on error
 
 
-# the function which runs
-#    "pisms -mismip EXPER -initials MYINITIALS OTHEROPTS"
+# the function which turns
+#    mismip NP NUM EXPER OPTS
+# into
+#    "mpiexec -np NP pisms -model NUM -mismip EXPER -initials MYINITIALS 
+#         -extras -ksp_rtol 1.0e-7 OPTS"
 # on NN processors
 mpimismip()
 {
     # change this if "bin/pisms", etc.:
-    cmd="$MPIDO -np $1 pisms -mismip $2 -initials $MYINITIALS -extras -ksp_rtol 1.0e-7 $3"
+    cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ksp_rtol 1.0e-7 $4"
     if [ $SHOWONLY = 1 ] ; then
       echo "would try '$cmd'"
     else
@@ -80,7 +84,6 @@ mpimismip()
 }
 
 
-## exper 1:
 for MODEL in $MODELRANGE
 do
 
@@ -92,83 +95,48 @@ do
       3   ) GRIDMY=601; SKIP="-skip 10 ";;
     esac
 
+    ## experiment 1:
     for ES in 1a 1b
     do
-      mpimismip $NN $ES "-model ${MODEL} -step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY}"
+      mpimismip $NN $MODEL $ES "-step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY}"
       for STEP in 2 3 4 5 6 7 8 9
       do
         PREV=$(($STEP-1))
         INNAME=${MYINITIALS}${MODEL}_${ES}_M${GRID}_A${PREV}.nc
-        mpimismip $NN $ES "-model ${MODEL} -step ${STEP} ${SKIP}-if ${INNAME}"
+        mpimismip $NN $MODEL $ES "-step ${STEP} ${SKIP}-if ${INNAME}"
       done # for STEP
     done # for ES
 
-  done # for GRID
-
-done # for MODEL
-
-#exit
-
-
-# experiment 2 starts from end of 1, so above loop should be checked for completion
-for MODEL in $MODELRANGE
-do
-
-  for GRID in $GRIDRANGE
-  do
-    case $GRID in
-      1   ) GRIDMY=151; SKIP=;;
-      2   ) GRIDMY=1501; SKIP="-skip 10 ";;
-      3   ) GRIDMY=601; SKIP="-skip 10 ";;
-    esac
-
+    # experiment 2 starts from end of 1, so above loop should be checked
+    # for completion:
     for SLIDING in a b
     do
       INNAME=${MYINITIALS}${MODEL}_1${SLIDING}_M${GRID}_A9.nc
-      mpimismip $NN 2$SLIDING "-model ${MODEL} -step 8 ${SKIP}-if ${INNAME}"
+      mpimismip $NN $MODEL 2$SLIDING "-step 8 ${SKIP}-if ${INNAME}"
       for STEP in 7 6 5 4 3 2 1
       do
         PREV=$(($STEP+1))
         INNAME=${MYINITIALS}${MODEL}_2${SLIDING}_M${GRID}_A${PREV}.nc
-        mpimismip $NN 2$SLIDING "-model ${MODEL} -step ${STEP} ${SKIP}-if ${INNAME}"
+        mpimismip $NN $MODEL 2$SLIDING "-step ${STEP} ${SKIP}-if ${INNAME}"
       done # for STEP
     done # for SLIDING
 
-  done # for GRID
-
-done # for MODEL
-                           
-#exit
-
-
-## exper 3:
-for MODEL in $MODELRANGE
-do
-
-  for GRID in $GRIDRANGE
-  do
-    case $GRID in
-      1   ) GRIDMY=151; SKIP=;;
-      2   ) GRIDMY=1501; SKIP="-skip 10 ";;
-      3   ) GRIDMY=601; SKIP="-skip 10 ";;
-    esac
-
     # exper 3a
-    mpimismip $NN 3a "-model ${MODEL} -step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY}"
+    mpimismip $NN $MODEL 3a "-step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY}"
     for STEP in 2 3 4 5 6 7 8 9 10 11 12 13
     do
       PREV=$(($STEP-1))
       INNAME=${MYINITIALS}${MODEL}_3a_M${GRID}_A${PREV}.nc
-      mpimismip $NN 3a "-model ${MODEL} -step ${STEP} ${SKIP}-if ${INNAME}"
+      mpimismip $NN $MODEL 3a "-step ${STEP} ${SKIP}-if ${INNAME}"
     done # for STEP
 
     # exper 3b
-    mpimismip $NN 3b "-model ${MODEL} -step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY}"
+    mpimismip $NN $MODEL 3b "-step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY}"
     for STEP in 2 3 4 5 6 7 8 9 10 11 12 13 14 15
     do
       PREV=$(($STEP-1))
       INNAME=${MYINITIALS}${MODEL}_3b_M${GRID}_A${PREV}.nc
-      mpimismip $NN 3b "-model ${MODEL} -step ${STEP} ${SKIP}-if ${INNAME}"
+      mpimismip $NN $MODEL 3b "-step ${STEP} ${SKIP}-if ${INNAME}"
     done # for STEP
 
   done # for GRID

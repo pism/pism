@@ -218,6 +218,9 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     }
   }
 
+  // FIXME:  shouldn't -ssaBC be allowed as an option to something more general
+  //   than just the EISMINT-Ross example?  see also IceModel::diagnosticRun()
+
   // Status at this point:  Either a derived class has initialized from formulas
   // (e.g. IceCompModel or IceEISModel) or there has been initialization 
   // from an input NetCDF file, by bootstrapFromFile_netCDF() or
@@ -245,7 +248,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &my_Lz, &LzSet); CHKERRQ(ierr);
   if (LzSet == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "resetting vertical levels base on options and user option -Lz ...\n");
+      "resetting vertical levels based on options and user option -Lz ...\n");
       CHKERRQ(ierr);
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);
