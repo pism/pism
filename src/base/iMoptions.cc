@@ -320,6 +320,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-ssa_maxi", &ssaMaxIterations,
            PETSC_NULL); CHKERRQ(ierr);
            
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_min_thk", &min_thickness_SSA, PETSC_NULL);
+       CHKERRQ(ierr);
+
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
            PETSC_NULL); CHKERRQ(ierr);
 

@@ -22,7 +22,8 @@ figfilename = ""
 ncfilename = ""
 My = 601
 try:
-  opts, args = getopt(sys.argv[1:], "e:l:s:o:n:m:",["exper=:sliding:step=:out=:netcdf=:My="])
+  opts, args = getopt(sys.argv[1:], "e:l:s:o:n:m:", \
+                      ['exper=','sliding=','step=','out=','netcdf=','My='])
   for opt, arg in opts:
     if opt in ("-e", "--exper"):
       EXPER = float(arg)
@@ -30,14 +31,14 @@ try:
       SLIDING = arg
     if opt in ("-s", "--step"):
       STEP = float(arg)
-    if opt in ("-o", "--out="):
+    if opt in ("-o", "--out"):
       figfilename = arg
-    if opt in ("-n", "--netcdf="):
+    if opt in ("-n", "--netcdf"):
       ncfilename = arg
-    if opt in ("-m", "--My="):
-      My = float(arg)
+    if opt in ("-m", "--My"):
+      My = int(arg)
 except GetoptError:
-  print "bad command line arguments. Exiting..."
+  print "bad command line arguments ... exiting ..."
   sys.exit(-1)
 
 SM_MODEL = 'B' # as defined in Schoof 2007, models A or B; ONLY USE B?
@@ -206,9 +207,9 @@ S_soln = H_soln - SMcold_bedheight(x_grid);
 #print "showing grounded part ..."
 #plot(X_soln,-SMcold_bedheight(X_soln),'k')
 #plot(X_soln,S_soln,'b')
-plot(x_grid/1.e3,-SMcold_bedheight(x_grid),'k')
+plot(x_grid/1.e3,-SMcold_bedheight(x_grid),'k',linewidth=2)
 hold(True)
-plot(x_grid/1.e3,S_soln,'b')
+plot(x_grid/1.e3,S_soln,'b',linewidth=2)
 plot(x_grid/1.e3,zeros(size(x_grid)),'r:',linewidth=1) # show sea level
 
 #SM H_soln is now rearranged and the point corresponding to the grounding
@@ -242,17 +243,14 @@ user_thickness = append(H_soln,H_soln2)
 
 x_gridfloat = append([x],floating)
 thkfloat = append([h_f],H_soln2)
-plot(x_gridfloat / 1.e3,(1.-r) * thkfloat,'b');
-plot(x_gridfloat / 1.e3,-r * thkfloat,'b');
-plot(x_gridfloat / 1.e3,-SMcold_bedheight(x_gridfloat),'k') # show rest of bed
+plot(x_gridfloat / 1.e3,(1.-r) * thkfloat,'b',linewidth=2);
+plot(x_gridfloat / 1.e3,-r * thkfloat,'b',linewidth=2);
+plot(x_gridfloat / 1.e3,-SMcold_bedheight(x_gridfloat),'k',linewidth=2) # show rest of bed
 plot(x_gridfloat / 1.e3,zeros(size(x_gridfloat)),'r:',linewidth=1) # show sea level
 hold(False)
-xlabel("x  (m)")
-ylabel("elevation  (m)")
-if EXPER == 3:
-  axis([0.,1800.,-2000.,5000.])
-else:
-  axis([0.,1800.,-1000.,5000.])
+xlabel("$y$  (km)",size=14)
+ylabel("elevation  (m)",size=14)
+axis([0.,1800.,-1000.,5000.])
 
 # show figure or save it
 if len(figfilename) == 0:
@@ -282,9 +280,13 @@ ncfile = NC(ncfilename, 'w')
 tdim = ncfile.createDimension('t', None)
 xdim = ncfile.createDimension('x', Mx)
 ydim = ncfile.createDimension('y', My)
+zdim = ncfile.createDimension('z', 1)  # dummy
+zbdim = ncfile.createDimension('zb', 1) # dummy
 tvar = ncfile.createVariable('t', 'f8', dimensions=('t',))
 xvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
 yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
+zvar = ncfile.createVariable('z', 'f8', dimensions=('z',))
+zbvar = ncfile.createVariable('zb', 'f8', dimensions=('zb',))
 Hvar = ncfile.createVariable('thk', 'f4', dimensions=('t', 'x', 'y'))
 
 # attributes of the variables
@@ -300,6 +302,17 @@ setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
 setattr(yvar, 'standard_name', 'projection_y_coordinate')
 setattr(yvar, 'units', 'm')
 
+setattr(zvar, 'axis', 'Z')
+setattr(zvar, 'long_name', 'z-coordinate in Cartesian system')
+setattr(zvar, 'standard_name', 'projection_z_coordinate')
+setattr(zvar, 'positive', 'up')
+setattr(zvar, 'units', 'm')
+
+setattr(zbvar, 'long_name', 'z-coordinate in bedrock')
+setattr(zbvar, 'standard_name', 'projection_z_coordinate_in_bedrock')
+setattr(zbvar, 'positive', 'up')
+setattr(zbvar, 'units', 'm')
+
 setattr(Hvar, 'long_name', 'land ice thickness')
 setattr(Hvar, 'standard_name', 'land_ice_thickness')
 setattr(Hvar, 'units', 'm')
@@ -309,7 +322,10 @@ tvar[0]=0
 for i in range(My):
   yvar[i]=-1800.0e3 + float(i) * dy
 for i in range(Mx):
-  xvar[i]=-Lx + float(i) * dy
+  xvar[i]=100.0* (-Lx + float(i) * dy)
+  #xvar[i]=-Lx + float(i) * dy
+zvar[0]=0 
+zbvar[0]=0 
 
 # write the thickness data
 thkrow = append(user_thickness[:0:-1],user_thickness)

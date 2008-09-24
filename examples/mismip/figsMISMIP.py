@@ -78,7 +78,7 @@ else:
   axis((myax[0],myax[1],0.0,MAXTHICK))
 
 text(1200,4500,mprefix,size=14)
-xlabel(r'$x$ (km)',size=14)
+xlabel(r'$y$ (km)',size=14)
 
 print "  saving figure %s" % outputname
 savefig(outputname, dpi=300, facecolor='w', edgecolor='w')

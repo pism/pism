@@ -374,15 +374,12 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = createVecs(); CHKERRQ(ierr);
 
     const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
-    // NOTE: y takes place of x!!!
-    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-
     // FIXME:  is this Lz an adequate choice for thickness for all runs?
     const PetscScalar MISMIPmaxThick = 6000.0;
-    
-    //   (could be set in setFromOptions() according to experiment/run/...)
-    // effect of double rescale is to compute grid.dy so we can get square cells
-    //   (in horizontal)
+
+    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
+    // effect of double rescale here is to compute grid.dy so we can get square cells
+    //    (in horizontal).  NOTE: y takes place of x!!!
     ierr = grid.rescale_and_set_zlevels(1000.0e3, L, MISMIPmaxThick,PETSC_TRUE,PETSC_FALSE);
              CHKERRQ(ierr); 
     const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
@@ -416,17 +413,6 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
   if (!isInitialized()) {
     SETERRQ(1, "ERROR: IceMISMIPModel has not been initialized!\n");
-  }
-
-  // option  -useSMthk foo.nc  :
-  //   initialize from thickness in file  foo.nc;  usually this file is written by
-  //   solverSM.py
-  PetscTruth useSMthkSet;
-  char SMthk_filename[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-useSMthk", SMthk_filename, 
-                PETSC_MAX_PATH_LEN, &useSMthkSet); CHKERRQ(ierr);
-  if (useSMthkSet == PETSC_TRUE) {
-    ierr = readThkFromSMResult(SMthk_filename); CHKERRQ(ierr);
   }
 
   // determine gridmode from My
@@ -499,13 +485,6 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
 
-  return 0;
-}
-
-
-PetscErrorCode IceMISMIPModel::readThkFromSMResult(char* filename) {
-  SETERRQ(99,"IceMISMIPModel::readThkFromSMResult() NOT YET IMPLEMENTED");
-  // see bootstrap example
   return 0;
 }
 
