@@ -54,7 +54,8 @@ protected:
 
 
 struct routineStatsType {
-  PetscScalar jg, xg, hxg, maxubar, avubarG, avubarF, dHdtnorm;
+  PetscScalar jg, xg, hxg, maxubar, avubarG, avubarF, 
+              dHdtnorm, Ngrounded, Nfloating;
 };
 
 
@@ -126,14 +127,15 @@ private:
   routineStatsType  rstats;
   mismipStatsType   mstats;
 
-  PetscErrorCode  setMISMIPBed();
-  PetscErrorCode  setMISMIPMask();
+  PetscErrorCode  setBed();
+  PetscErrorCode  setMask();
   PetscErrorCode  getMISMIPStats();
   PetscErrorCode  getRoutineStats();
 
   PetscScalar m_MISMIP, C_MISMIP;
   PetscScalar regularize_MISMIP;
 
+  PetscErrorCode calving();
   PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
                                  PetscInt i, PetscInt j) const;
   PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);

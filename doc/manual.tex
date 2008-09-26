@@ -1,7 +1,7 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{366}
-\newcommand{\PETSCREV}{2.3.3-p2}
+\newcommand{\PISMREV}{\input{revision.tex}}
+\newcommand{\PETSCREL}{2.3.3-p2}
 
 %\addtolength\topmargin{-.1in}
 \addtolength\textheight{0.1in}
@@ -54,7 +54,7 @@
 
 \author[]{Ed $\text{Bueler}^\ast$ \\ Jed Brown \\ Nathan Shemonski \\ Constantine Khroulev}
 
-\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREV.  \\\tiny Get PISM bleeding edge by Subversion: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}.} 
+\date{\today.  $\phantom{|}^\ast$\texttt{ffelb\@@uaf.edu}.  Based on PISM rev \PISMREV\,and PETSC rel \PETSCREL.  \\ Get PISM development version by ``\quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}\quad''} 
 
 
 \begin{document}
@@ -68,7 +68,7 @@
 
 \newpage
 \phantom{bob}
-\vspace{2in}
+\vspace{1in}
 \begin{quote}
 \textsl{Copyright (C) 2004--2008 Ed Bueler and Jed Brown and Nathan Shemonski and Constantine Khroulev}
 \medskip
@@ -82,7 +82,7 @@
 \noindent \textsl{PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.}
 \medskip
 
-\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{pism/COPYING}}; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}} in PISM root directory.   If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \vspace{1in}
 \normalspacing
@@ -92,7 +92,7 @@
 
 The NASA Cryospheric Sciences Program\index{NASA Cryospheric Sciences Program} supported this research with grant NAG5-11371.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Spencer Jones\index{Jones, Spencer}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, Ben Sperisen\index{Sperisen, Ben}, Maria Martin\index{Martin, Maria} and other PISM users for helpful comments and questions on PISM.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -156,7 +156,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 
 \item PISM uses   \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}{PETSc (= \emph{Portable Extensible Toolkit for Scientific computation})}.\index{PETSc (\emph{Portable Extensible Toolkit for Scientific computation})}  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at  
    \centerline{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}{\t{www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}}}
-PISM requires a version of PETSc which is \texttt{\PETSCREV} or later.\footnote{A Debian package for PETSc may exist, but it should only be used if it is version \texttt{\PETSCREV} or later.}   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
+PISM requires a version of PETSc which is \texttt{\PETSCREL} or later.\footnote{A Debian package for PETSc may exist, but it should only be used if it is version \texttt{\PETSCREL} or later.}   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
 
 You should configure and build PETSc \emph{essentially} as described on the  \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}, but it might be best to read the following comments on the PETSc configure and build process first:
 
@@ -1098,7 +1098,7 @@ PISM's version of MISMIP includes an attached ice shelf.  This is an important p
 
 Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$y$''.  We periodize the cross-flow direction ``$x$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-Mx 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes.
 
-PISM has two applicable ice dynamics models, and they correspond to \verb|-model 1| and \verb|-model 2| options when running MISMIP.  The first is a pure SSA model which is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
+PISM has two applicable ice dynamics models, the \verb|-model 1| and \verb|-model 2| options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 
 There are many runs for the complete MISMIP, namely $62$ runs for each model and grid choice.  As there are two models and three (suggested) grid choices, a full suite is $6 \times 62 = 372$ runs.  As usual, however, the finest grid accounts for all the run time.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.\footnote{For the intercomparison submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.}
  
@@ -1132,7 +1132,7 @@ There are many runs for the complete MISMIP, namely $62$ runs for each model and
 \hline\normalsize
 \end{tabular}\end{table}
 
-To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional options.  Table \ref{tab:MISMIPoptions} shows special MISMIP options.  A first run is:
+To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional options.  See Table \ref{tab:MISMIPoptions}.  A first run is:
 
 \verb|$ cd examples/mismip/|  \hfill \scriptsize(directory where some MISMIP-related scripts are)\normalsize
 
@@ -1140,19 +1140,17 @@ To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional option
 
 \noindent This will produce ASCII files \verb|EBU1_1a_M1_A1_t|, \verb|EBU1_1a_M1_A1_ss|, and \verb|EBU1_1a_M1_A1_f|, as well as a standard NetCDF output file \verb|EBU1_1a_M1_A1.nc|, in about 3 minutes.
 
-Using a few processors speeds things up a little, and a little extra output is nice, so next you might try:
+Using a few processors speeds things up a little, and a little extra output is nice, so re-doing it:
 
 \verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -initials EBU -step 1 \|
 
 \verb|  -Mx 3 -Mz 15 -My 151 -extras|
 
-\noindent This time it takes about 2 minutes on my 8 core machine.  In addition to the same files as before, this time we get an additional ASCII file \verb|EBU1_1a_M1_A1_extras|.  The \verb|_ss| file has the thickness and the \verb|_extras| file has the bed and surface elevation.  This information means we can produce a figure showing the profile for the final steady state:
+\noindent This run takes about 2 minutes on an 8 core machine.  In addition to the same files as before, now we get an additional ASCII file \verb|EBU1_1a_M1_A1_extras|.  The \verb|_ss| file with thickness and the \verb|_extras| file with bed and surface elevation allow us to produce a figure showing the profile for the final steady state, Figure \ref{fig:MISMIPmodel1exper1aM1A1}:
 
 \verb|$ ./figsMISMIP.py -p EBU1_1a_M1_A1 -e 1|
 
-\noindent The result is Figure \ref{fig:MISMIPmodel1exper1aM1A1}.
-
-The script \verb|makefigs.sh| will apply \verb|figsMISMIP.py| to each MISMIP output in the current directory.
+\noindent The script \verb|makefigs.sh| will apply \verb|figsMISMIP.py| to each MISMIP output in the current directory.
 
 \begin{figure}[ht]
 \includegraphics[width=4.0in,keepaspectratio=true]{figs/profile_EBU1_1a_M1_A1}
@@ -1166,15 +1164,17 @@ MISMIP runs are done in sequence using the result of a previous run but with a s
 
 \verb|    -if EBU1_1a_M1_A1.nc|
 
+\noindent The result is \verb|EBU1_1a_M1_A2_t|, etc.
+
 Running \verb|pisms -mismip ...| with options as shown here is o.k.~for a few examples.  The script \verb|mismip.sh| automates the process for the hundreds of runs in the intercomparison.  It has several nested loops, naturally, but setting variables \verb|MODELRANGE| and \verb|GRIDRANGE| at the top of the file will mostly configure what you want.  Do ``\verb|./mismip.sh 4 D|'', or similar, to see what PISM calls will happen \emph{before} actually actually starting any; ``\verb|D|'' stands for ``debug''.
 
 \verb|mismip.sh| illustrates how to reverse the order of steps in experiments 2a and 2b.
 
-For finer grids than mode 1 (i.e.~\verb|-My| $>301$, perhaps), it becomes more critical to set the tolerance parameters for the SSA velocity calculation.  We think that adding options
+For significantly finer grids than mode 1, it becomes more critical to set the tolerance parameters for the SSA velocity calculation.  We think that adding options
 
 \verb|-ksp_rtol 1.0e-7 -ssa_rtol 1.0e-3|
 
-\noindent is effective.  [CHECK THIS!]
+\noindent are effective.  [CHECK THIS!]
 
 The implementation of MISMIP in PISM conforms closely to the intercomparison description.  However, that document specifies
 \begin{quotation}
@@ -1206,13 +1206,13 @@ We can learn more about the problem.  It turns out that the numerical flaw in th
 
 In fact, \verb|solverSM.py| has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \verb|-regrid| (section \ref{sect:usage}).  Furthermore we can do this at higher resolution (6km instead of 24 km):
 
-\verb|$ ./solverSM.py  --My=601 -e 1 --sliding=a -s 1 -n SM_1a_M3_A1_thk.nc|
+\verb|$ ./solverSM.py  --My=601 -e 1 --sliding=a -s 1 -n SMthk_1a_M3_A1.nc|
 
 \verb|$ mpiexec -n 8 pisms -model 1 -mismip 1a -initials EBU -extras \|
 
 \verb|    -ksp_rtol 1.0e-7 -step 1 -skip 10 -Mx 3 -Mz 15 -My 601 \|
 
-\verb|    -regrid SM_1a_M3_A1_thk.nc -regrid_vars H|
+\verb|    -regrid SMthk_1a_M3_A1.nc -regrid_vars H|
 
 \noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is satisfactory.  Inspection of the flux figure for this new run shows a smaller, but still significant, jump in flux to a too-high value for the floating shelf.  This too-high value of flux reflects the same fact as shown in the profile Figure  \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, namely, that the ice shelf is flowing, and therefore thinning, too fast.
 

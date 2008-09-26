@@ -1,12 +1,12 @@
 ALL : userman summary refman browser
 
 update: svn_update
-ifeq ($(shell touch revision; svnversion | diff revision -),)
+ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
 	@echo "doc/ directory is up to date."
 else
 	@echo "Rebuilding manual.tex..."
+	@svnversion > revision.tex
 	$(MAKE) userman
-	@svnversion > revision
 endif
 
 userman : manual.tex ice_bib.bib

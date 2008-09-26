@@ -33,54 +33,60 @@ PetscErrorCode IceModel::initSSA() {
 
 PetscErrorCode IceModel::setupGeometryForSSA(const PetscScalar minH) {
   PetscErrorCode ierr;
-  PetscScalar **h, **H, **mask;
+//  PetscScalar **h, **H, **mask;
+  PetscScalar **H, **mask;
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+//  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] < minH) {
-        h[i][j] += (minH - H[i][j]);
+//        h[i][j] += (minH - H[i][j]);
         H[i][j] = minH;
       }
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+//  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+//  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+//  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); //ADDED// update h and mask
   return 0;
 }
 
 
 PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
   PetscErrorCode  ierr;
-  PetscScalar **h, **H, **mask;
+//  PetscScalar **h, **H, **mask;
+  PetscScalar **H, **mask;
 
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+//  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] <= minH) {
-        h[i][j] -= minH;
+//        h[i][j] -= minH;
         H[i][j] = 0.0;
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+//  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+//  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+//  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); //ADDED// update h and mask
   return 0;
 }
 
@@ -171,8 +177,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
 
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
           if (useConstantHardnessForSSA == PETSC_TRUE) { 
-            // constant \bar B case, i.e for EISMINT ROSS; "nu" is really "nu H"!
-            // FIXME: assumes n=3; can be fixed by having new ice.effectiveViscosityConstant() method
+            // constant \bar B case; for EISMINT-Ross and MISMIP; "nu" is really "nu H"!
+            // FIXME: assumes n=3; create new ice.effectiveViscosityConstant() method?
             nu[o][i][j] = myH * constantHardnessForSSA * 0.5 *
               pow(schoofReg + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
                   -(1.0/3.0));
@@ -390,12 +396,24 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
 
         /* Dragging ice experiences friction at the bed determined by the
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
-         *    or linear friction law according to basal->drag(), ultimately. */
+         *    or linear friction law according to basal->drag(), which gets called
+         *    by basalDragx(),basalDragy().  */
         if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(tauc, u, v, i, j);
           valV[7] += basalDragy(tauc, u, v, i, j);
         }
+
+#if 1
+        // Ed is playing with MISMIP: make shelf drag a little bit
+        if ((intMask(mask[i][j]) == MASK_FLOATING)) {
+          const PetscScalar beta_for_floating = 1.8e9 * 0.0001;
+                // Pa s m^{-1};  (1/10000) of value stated in
+                // Hulbe&MacAyeal1999 for ice stream E
+          valU[5] += beta_for_floating;
+          valV[7] += beta_for_floating;
+        }
+#endif
 
         ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
         ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);
@@ -441,14 +459,14 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **h, **H, **uvbar[2], **taubx, **tauby;
+  PetscScalar     **mask, **h, **H, **uvbar[2], **taudx, **taudy;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
-  // get basal driving stress components by eta=H^8/3 transform
-  ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &taubx); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &tauby); CHKERRQ(ierr);
+  // get driving stress components
+  ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMutil.cc
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &taudx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[1], &taudy); CHKERRQ(ierr);
 
   /* matrix assembly loop */
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -489,8 +507,8 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
           ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
         } else { // usual case: use already computed taub
-          ierr = VecSetValue(rhs, rowU, taubx[i][j], INSERT_VALUES); CHKERRQ(ierr);
-          ierr = VecSetValue(rhs, rowV, tauby[i][j], INSERT_VALUES); CHKERRQ(ierr);          
+          ierr = VecSetValue(rhs, rowU, taudx[i][j], INSERT_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValue(rhs, rowV, taudy[i][j], INSERT_VALUES); CHKERRQ(ierr);          
         }
       }
     }
@@ -501,8 +519,8 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
 
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &taubx); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &tauby); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &taudx); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &taudy); CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);

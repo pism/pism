@@ -401,7 +401,7 @@ protected:
   PetscErrorCode stampHistoryAdd(const char*);
   PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
   PetscErrorCode getMagnitudeOf2dVectorField(Vec vfx, Vec vfy, Vec vmag);
-  PetscErrorCode computeBasalDrivingStress(Vec vtaubx, Vec vtauby);
+  PetscErrorCode computeBasalDrivingStress(Vec vtaudx, Vec vtaudy);
   PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
 

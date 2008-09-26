@@ -65,6 +65,7 @@ PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
 
 PetscScalar MISMIPIce::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure) const {
+  // this one is called by SIA force balance code
   // MAKE SURE THIS IS REALLY BEING USED!!:
   //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::flow()\n");
   return A_MISMIP * pow(stress,n-1);
@@ -75,12 +76,11 @@ PetscScalar MISMIPIce::effectiveViscosity(const PetscScalar regularization,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar temp, const PetscScalar pressure) const  {
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::effectiveViscosity()\n");
-  const PetscScalar nn = (PetscScalar) n;
-  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
-                             + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
-  return 0.5 * B_MISMIP * pow(regularization + alpha, - (nn - 1.0) / (2.0 * nn));
+  PetscPrintf(PETSC_COMM_SELF,
+        "\n\n\n\nMISMIPIce::effectiveViscosity() should never be called because\n"
+        "  ice has constant hardness (useConstantHardnessForSSA = PETSC_TRUE)\n\n\n\n");
+  PetscEnd();
+  return 0;
 }
 
 PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar regularization,
@@ -89,11 +89,11 @@ PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar regularization
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::effectiveViscosityColumn()\n");
-  // DESPITE NAME, does *not* return effective viscosity; returns viscosity times thickness.
-  // NOTE: temp and pressure args to effectiveViscosity() ignored
-  return H * effectiveViscosity(regularization, u_x, u_y, v_x, v_y, 0.0, 0.0);
+  PetscPrintf(PETSC_COMM_SELF,
+        "\n\n\n\nMISMIPIce::effectiveViscosityColumn() should never be called because\n"
+        "  ice has constant hardness (useConstantHardnessForSSA = PETSC_TRUE)\n\n\n\n");
+  PetscEnd();
+  return 0;
 }
 
 
@@ -155,8 +155,6 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
       m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
   }
   ierr = mismip_ice->printInfo(2, grid.com); CHKERRQ(ierr);
-  //ierr = verbPrintf(2,grid.com,"IceModel.ice-> info: n=%7.3f, A(T=273.15)=%10.3e\n",
-  //                  ice->exponent(),ice->softnessParameter(273.15)); CHKERRQ(ierr);
   return 0;
 }
 
@@ -319,7 +317,11 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   
   useSSAVelocity            = PETSC_TRUE;
   computeSurfGradInwardSSA  = PETSC_FALSE;
-  useConstantHardnessForSSA = PETSC_FALSE;
+  transformForSurfaceGradient = PETSC_TRUE;
+  useConstantHardnessForSSA = PETSC_TRUE;
+  constantHardnessForSSA    = mismip_ice->hardnessParameter(273.15); // temp. irrelevant
+//  min_thickness_SSA         = 20.0;  // extend by 20 m thick iceshelf, beyond calving front
+  min_thickness_SSA         = 5.0;  // extend by 20 m thick iceshelf, beyond calving front
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
 
@@ -374,7 +376,6 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = createVecs(); CHKERRQ(ierr);
 
     const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
-    // FIXME:  is this Lz an adequate choice for thickness for all runs?
     const PetscScalar MISMIPmaxThick = 6000.0;
 
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
@@ -399,10 +400,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 
     ierr = VecSet(vH, initialthickness); CHKERRQ(ierr);
 
-    ierr = setMISMIPBed(); CHKERRQ(ierr);
-    ierr = setMISMIPMask(); CHKERRQ(ierr);
-    ierr = verbPrintf(4,grid.com,"IceMISMIPModel: bed topography and mask stored\n");
-              CHKERRQ(ierr);
+    ierr = setBed(); CHKERRQ(ierr);
+    ierr = setMask(); CHKERRQ(ierr);
 
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
@@ -471,13 +470,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
   ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
   
   // automatic parallel layout from DACreate2d(...PETSC_DECIDE...) in grid.cc
-  //   LOOKS GOOD:
-  //ierr = verbPrintf(1,grid.com,"result from DAView(da2,..):\n\n"); CHKERRQ(ierr);
-  //ierr = DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  //ierr = verbPrintf(1,grid.com,"\n\n"); CHKERRQ(ierr);
-
-// FIXME: report on these flags: doTemp=false, doBedDef=false, doPlasticTill=false  ?
-// check "-ssa" is set? check on -super option?
+  //   LOOKS GOOD:  DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD);
 
   // create ABC1_..._t file for every 50 year results
   strcpy(tfilename,mprefix);
@@ -489,7 +482,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
 }
 
 
-PetscErrorCode IceMISMIPModel::setMISMIPBed() {
+PetscErrorCode IceMISMIPModel::setBed() {
   PetscErrorCode ierr;
   PetscScalar          **b;
 
@@ -525,12 +518,12 @@ PetscErrorCode IceMISMIPModel::setMISMIPBed() {
 }
 
 
-
-PetscErrorCode IceMISMIPModel::setMISMIPMask() {
+PetscErrorCode IceMISMIPModel::setMask() {
   PetscErrorCode ierr;
   PetscScalar    **mask;
 
-  const PetscScalar MISMIP_calving_front = 1600.0e3;
+  const PetscScalar calving_front = 1600.0e3;
+//  const PetscScalar calving_front = 10000.0e3;  // NOW NOTHING MARKED AS FLOATING_OCEAN0
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -540,7 +533,7 @@ PetscErrorCode IceMISMIPModel::setMISMIPMask() {
       const PetscScalar jfrom0 =
                static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
       const PetscScalar y = grid.dy * jfrom0;
-      if (PetscAbs(y) >= MISMIP_calving_front) {
+      if (PetscAbs(y) >= calving_front) {
         mask[i][j] = MASK_FLOATING_OCEAN0;
       } else {
         // note updateSurfaceElevationAndMask() will mark DRAGGING as FLOATING if it is floating
@@ -558,10 +551,43 @@ PetscErrorCode IceMISMIPModel::setMISMIPMask() {
 }
 
 
-PetscErrorCode IceMISMIPModel::additionalAtStartTimestep() {
-  // this is called at the beginning of each pass through time-stepping loop in IceModel::run()
+PetscErrorCode IceMISMIPModel::calving() {
+  // allows the calving front to retreat and advance, with attempt to
+  //    maintain thickness at calving front in range [100m,200m]
+  // front will not advance beyond calving_front=1600km above
+  PetscErrorCode ierr;
+  PetscScalar    **mask, **H;
 
-  // go to next multiple of 50 years
+  const PetscScalar calving_thk_min = 100.0, calving_thk_max = 200.0; // meters
+
+  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
+        if (H[i][j] < calving_thk_min) {
+          H[i][j] = 0.0;
+        } else if ( (H[i][j] == 0.0) && 
+                    ((H[i][j-1] > calving_thk_max) || (H[i][j+1] > calving_thk_max)) ) {
+          H[i][j] = (calving_thk_min + calving_thk_max) / 2.0;
+        }
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+
+  // communicate
+  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
+  return 0;
+}
+
+
+PetscErrorCode IceMISMIPModel::additionalAtStartTimestep() {
+  // this is called at start of each pass through time-stepping loop IceModel::run()
   const PetscScalar tonext50 = (50.0 - fmod(grid.year, 50.0)) * secpera;
   if (maxdt_temporary < 0.0) {  // it has not been set
     maxdt_temporary = tonext50;
@@ -573,23 +599,32 @@ PetscErrorCode IceMISMIPModel::additionalAtStartTimestep() {
 
 
 PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
-  // this is called at the end of each pass through time-stepping loop in IceModel::run()
-
+  // this is called at the end of each pass through time-stepping loop IceModel::run()
   PetscErrorCode  ierr;
 
   PetscScalar     infnormdHdt;
   ierr = VecNorm(vdHdt,NORM_INFINITY,&infnormdHdt); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
 
-//FIXME:  We need to write out the _ss, _f, _extras stuff even if steady state is not
-//  Perhaps this will require an endOfRunHook()
-//  if ((rstats.dHdtnorm * secpera < dHdtnorm_atol)  // if all points have dHdt < 10^-4 m/yr,
-//      || (PetscAbs(endYear - grid.year) < 1.0e-4)) { // or if we are at the end of the run anyway
-
   if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
     steadyOrGoalAchieved = PETSC_TRUE;
     // set the IceModel goal of endYear to the current year; causes immediate stop
     endYear = grid.year;  
+  }
+
+  // apply calving criterion
+//  ierr = calving(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
+  PetscErrorCode ierr;
+
+  if (steadyOrGoalAchieved == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com, 
+      "\nIceMISMIPModel:  steady state achieved or specified run time completed.\n"
+      ); CHKERRQ(ierr);
     // report stopping to standard out
     ierr = verbPrintf(2,grid.com,
         "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < %.2e m/yr) satisfied;\n"
@@ -600,43 +635,33 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
        "MISMIP steady state criterion (max|dHdt| < %.2e m/yr) satisfied.\n"
        "Stopping.  Completed timestep year=%.3f.",dHdtnorm_atol,grid.year);
     stampHistory(str); 
+  } else {
+    ierr = verbPrintf(2, grid.com,
+      "\nIceMISMIPModel WARNING:  steady state NOT achieved or specified run time NOT completed.\n"
+      ); CHKERRQ(ierr);
   }
-  return 0;
-}
 
-
-PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
-  PetscErrorCode ierr;
-  //ierr = verbPrintf(1,grid.com,
-  //     "\nENTERING writeMISMIPFinalFiles() WITH startYear=%f,runtimeyears=%f,grid.year=%f\n",
-  //     startYear,runtimeyears,grid.year); CHKERRQ(ierr);
-  if (PetscAbs(startYear + runtimeyears - grid.year) < 1.0e-4) {
-    steadyOrGoalAchieved = PETSC_TRUE;
-  }
-  if (steadyOrGoalAchieved == PETSC_TRUE) {
-    // get stats in preparation for writing final files
-    ierr = getRoutineStats(); CHKERRQ(ierr);
-    ierr = getMISMIPStats(); CHKERRQ(ierr);
-    // write ASCII file ABC1_1b_M1_A1_ss and ABC1_1b_M1_A1_f;
-    char  ssfilename[PETSC_MAX_PATH_LEN], ffilename[PETSC_MAX_PATH_LEN];
-    strcpy(ssfilename,mprefix);
-    strcat(ssfilename,"_ss");    
-    strcpy(ffilename,mprefix);
-    strcat(ffilename,"_f");    
-    ierr = verbPrintf(2, grid.com, 
-            "\nIceMISMIPModel:  steady state achieved or specified run time completed.\n"
-              "                 writing files %s and %s",
-            ssfilename, ffilename); CHKERRQ(ierr);
-    ierr = writeMISMIPasciiFile('s',ssfilename); CHKERRQ(ierr);
-    ierr = writeMISMIPasciiFile('f',ffilename); CHKERRQ(ierr);
-    // optionally write ABC1_1b_M1_A1_ss
-    if (writeExtras == PETSC_TRUE) {
-      char  efilename[PETSC_MAX_PATH_LEN];
-      strcpy(efilename,mprefix);
-      strcat(efilename,"_extras");    
-      ierr = verbPrintf(2, grid.com, " and %s", efilename); CHKERRQ(ierr);
-      ierr = writeMISMIPasciiFile('e',efilename); CHKERRQ(ierr);
-    }
+  // get stats in preparation for writing final files
+  ierr = getRoutineStats(); CHKERRQ(ierr);
+  ierr = getMISMIPStats(); CHKERRQ(ierr);
+  // write ASCII file ABC1_1b_M1_A1_ss and ABC1_1b_M1_A1_f;
+  char  ssfilename[PETSC_MAX_PATH_LEN], ffilename[PETSC_MAX_PATH_LEN];
+  strcpy(ssfilename,mprefix);
+  strcat(ssfilename,"_ss");    
+  strcpy(ffilename,mprefix);
+  strcat(ffilename,"_f");    
+  ierr = verbPrintf(2, grid.com, 
+          "IceMISMIPModel:  writing files %s and %s",
+          ssfilename, ffilename); CHKERRQ(ierr);
+  ierr = writeMISMIPasciiFile('s',ssfilename); CHKERRQ(ierr);
+  ierr = writeMISMIPasciiFile('f',ffilename); CHKERRQ(ierr);
+  // optionally write ABC1_1b_M1_A1_ss
+  if (writeExtras == PETSC_TRUE) {
+    char  efilename[PETSC_MAX_PATH_LEN];
+    strcpy(efilename,mprefix);
+    strcat(efilename,"_extras");    
+    ierr = verbPrintf(2, grid.com, " and %s", efilename); CHKERRQ(ierr);
+    ierr = writeMISMIPasciiFile('e',efilename); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -759,8 +784,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   //   across all processors; we only evaluate for x > 0
   PetscScalar     maxubar = 0.0, avubargrounded = 0.0, avubarfloating = 0.0, jg = 0.0,
                   Ngrounded = 0.0, Nfloating = 0.0;
-  PetscScalar     gavubargrounded, gavubarfloating, gjg,
-                  gNgrounded, gNfloating;
+  PetscScalar     gavubargrounded, gavubarfloating, gjg;
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
@@ -817,16 +841,16 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
   ierr = PetscGlobalMax(&maxubar, &rstats.maxubar, grid.com); CHKERRQ(ierr);
     
-  ierr = PetscGlobalSum(&Ngrounded, &gNgrounded, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&Ngrounded, &rstats.Ngrounded, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avubargrounded, &gavubargrounded, grid.com); CHKERRQ(ierr);
-  if (gNgrounded > 0)   gavubargrounded = gavubargrounded / gNgrounded;
-  else                  gavubargrounded = 0.0;  // degenerate case
+  if (rstats.Ngrounded > 0)   gavubargrounded = gavubargrounded / rstats.Ngrounded;
+  else                        gavubargrounded = 0.0;  // degenerate case
   rstats.avubarG = gavubargrounded;
 
-  ierr = PetscGlobalSum(&Nfloating, &gNfloating, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&Nfloating, &rstats.Nfloating, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avubarfloating, &gavubarfloating, grid.com); CHKERRQ(ierr);
-  if (gNfloating > 0)   gavubarfloating = gavubarfloating / gNfloating;
-  else                  gavubarfloating = 0.0;  // degenerate case
+  if (rstats.Nfloating > 0)   gavubarfloating = gavubarfloating / rstats.Nfloating;
+  else                        gavubarfloating = 0.0;  // degenerate case
   rstats.avubarF = gavubarfloating;
 
   // rstats.dHdtnorm already calculated in additionalAtEndTimestep()
@@ -880,17 +904,19 @@ is computed as in MISMIP description, and finite differences.
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P         YEAR:     ivol      h0      xg     hxg maxubar avubarG avubarF dHdtnorm\n");
+      "P         YEAR:     ivol      h0      xg     hxg maxubar avubarG avubarF dHdtnorm  Ngnd  Nflt\n");
     ierr = verbPrintf(2,grid.com,
-      "U        years 10^6_km^3       m      km       m     m/a     m/a     m/a      m/a\n");
+      "U        years 10^6_km^3       m      km       m     m/a     m/a     m/a      m/a     1     1\n");
   } else {
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-      "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e\n",
+//      "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %f %f\n",
+      "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %5d %5d\n",
       year, volume_kmcube/1.0e6, 
       H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera, 
       rstats.avubarG * secpera, rstats.avubarF * secpera,
-      rstats.dHdtnorm * secpera); CHKERRQ(ierr);
+//      rstats.dHdtnorm * secpera, rstats.Ngrounded, rstats.Nfloating); CHKERRQ(ierr);
+      rstats.dHdtnorm * secpera, int(rstats.Ngrounded), int(rstats.Nfloating)); CHKERRQ(ierr);
     if (fabs(fmod(year, 50.0)) < 1.0e-6) {
       // write another line to ASCII file ABC1_1b_M1_A1_t; also write to stdout
       //   (given some verbosity level); note modest code redundancy

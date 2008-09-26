@@ -252,17 +252,16 @@ xlabel("$y$  (km)",size=14)
 ylabel("elevation  (m)",size=14)
 axis([0.,1800.,-1000.,5000.])
 
-# show figure or save it
-if len(figfilename) == 0:
-  print "showing figure; close figure to end ..."
-  show()
-elif figfilename == "0":
-  print "(suppressing figure)"
-else:
-  print "saving figure %s" % figfilename
-  savefig(figfilename, dpi=300)
-
+# if .nc output *not* desired, either show figure or save it as PNG
 if len(ncfilename) == 0:
+  if len(figfilename) == 0:
+    print "showing figure; close figure to end ..."
+    show()
+  elif figfilename == "0":
+    print "(suppressing figure)"
+  else:
+    print "saving figure %s" % figfilename
+    savefig(figfilename, dpi=300)
   sys.exit(0)
 
 

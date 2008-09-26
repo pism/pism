@@ -51,13 +51,13 @@ transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$)
 Because this quantity is more regular at ice sheet margins, we get a 
 better surface gradient.
  
-Saves it in user supplied Vecs \c vtaubx and \c vtauby, which are treated 
+Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
 as global.  (I.e. we do not communicate ghosts.)
  */
-PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
+PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaudx, Vec vtaudy) {
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **mask, **b, **taubx, **tauby;
+  PetscScalar **h, **H, **mask, **b, **taudx, **taudy;
 
   const PetscScalar n       = ice->n, // frequently 3.0
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -68,15 +68,15 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
   ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vtaubx, &taubx); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vtauby, &tauby); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtaudx, &taudx); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vtaudy, &taudy); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar pressure = ice->rho * grav * H[i][j];
       if (pressure <= 0.0) {
-        taubx[i][j] = 0.0;
-        tauby[i][j] = 0.0;
+        taudx[i][j] = 0.0;
+        taudy[i][j] = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
         if ((intMask(mask[i][j]) == MASK_FLOATING) || (transformForSurfaceGradient == PETSC_FALSE)) {
@@ -96,8 +96,8 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
           h_x += (b[i+1][j] - b[i-1][j]) / (2*grid.dx);
           h_y += (b[i][j+1] - b[i][j-1]) / (2*grid.dy);
         }
-        taubx[i][j] = - pressure * h_x;
-        tauby[i][j] = - pressure * h_y;
+        taudx[i][j] = - pressure * h_x;
+        taudy[i][j] = - pressure * h_y;
       }
     }
   }
@@ -106,8 +106,8 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaubx, Vec vtauby) {
   ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vtaubx, &taubx); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vtauby, &tauby); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtaudx, &taudx); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vtaudy, &taudy); CHKERRQ(ierr);
 
   return 0;
 }
