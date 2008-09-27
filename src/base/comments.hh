@@ -5,6 +5,10 @@
 
 // add commentary and GPL to first page of doxygen-erated HTML source browser
 /*! @cond BROWSER \mainpage 
+<CENTER>
+<i>
+Based on PISM \c trunk revision \verbinclude revision.tex
+</i></CENTER>
  *
  * This source browser shows the C++ class (object) structure of PISM.  It 
  * shows \em all the classes in PISM, \em all the inheritance structure and
@@ -19,48 +23,41 @@
  * See https://gna.org/projects/pism/ to download the PISM source code.  See 
  * http://www.pism-docs.org/ for all documentation of PISM.
  *
- * See the PISM <i>User's Manual</i> (do <tt>cd doc/ && make userman</tt> and then view 
- * <tt>pism/doc/manual.pdf</tt>, or see the stable version at
- * http://www.pism-docs.org/manual.pdf) for help
- * with installing and using PISM.  
+ * For help with installing and using PISM, see the PISM <i>User's Manual</i>
+ * (do <tt>cd doc/ && make userman</tt> and then view 
+ * <tt>pism/doc/manual.pdf</tt>, or see a recent version at
+ * http://www.pism-docs.org/manual-dev.pdf).  
  * Most users should stick to the User's Manual for quite a while; only when 
  * a user needs to extend PISM is a look at this source browser really 
  * worthwhile.
  *
- * See the PISM <i>Reference Manual</i> (do <tt>cd doc/ && make refman</tt> and then view 
- * <tt>pism/doc/refman.pdf</tt>, or see the stable version at 
- * http://www.pism-docs.org/refman.pdf)
- * for a useful subset of this source browser
- * in PDF form.  The <i>Reference Manual</i> contains the minimum documentation 
+ * For a useful subset of this source browser
+ * in PDF form, see the PISM <i>Reference Manual</i> (do <tt>cd doc/ && make refman</tt>
+ * and then view 
+ * <tt>pism/doc/refman.pdf</tt>, or see a recent version at 
+ * http://www.pism-docs.org/refman-dev.pdf).  The <i>Reference Manual</i> contains
+ * the minimum documentation 
  * of the PISM class structure in order to document 
- * the continuum models and numerical methods of PISM.  (Such continuum model
- * and numerical method documentation is widely scattered in this source browser.)
+ * the continuum models and numerical methods of PISM.  Continuum model
+ * and numerical method documentation is widely scattered in this source browser.
  *
  * There is also a source code <i>repository</i> browsing tool at the PISM download site
- * (https://gna.org/projects/pism/).  That tool is very different from this one.  This one
- * documents the C++ class structure of the current revision.  The one at gna.org
- * shows changes between revisions but it ignors the class structure as it only cares 
- * about source code files as text files and generally ignors their semantics.
+ * (https://gna.org/projects/pism/) which shows changes between source code revisions.
  *
- * <i>
- * Copyright (C) 2008 Ed Bueler
+ * Finally, you can get help, send comments, or ask for new features by email to help@pism-docs.org
  *
- * This document is part of PISM.
+ * 
+<i>
+Copyright (C) 2008 Ed Bueler.  This document is part of PISM.  PISM is free software; you can
+redistribute it and/or modify it under the terms of the GNU General Public License as published
+by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have
+received a copy of the GNU General Public License along with PISM; see \c COPYING in the PISM
+source directory; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+</i>
  *
- * PISM is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
- *
- * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with PISM; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA 
- * </i>
  * @endcond
  */
  
@@ -71,6 +68,7 @@
 
 \e Author:  Ed Bueler
 
+<i>Based on PISM \c trunk revision:</i> \include revision.tex
  
 \section purposeID Purpose, and relation to the User's Manual
 
@@ -441,7 +439,7 @@ Option \c -log_summary is useful to get some diagnostics written to the terminal
  */
  
 
-/*! \page pismreferences
+/*! @cond REFMAN  \page pismreferences
 
 \latexonly
 \small
@@ -602,6 +600,7 @@ ages.vub.ac.be/$\sim$phuybrec/pdf/EISMINT3.Huyb.1998.pdf}; 120 pages, 1998.
 
 
 \endlatexonly
+@endcond
  */
 
 

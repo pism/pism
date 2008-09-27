@@ -1,5 +1,5 @@
 
-/*! \page bombproof Appendix:  BOMBPROOF, a numerical scheme for temperature and age
+/*! @cond REFMAN  \page bombproof Appendix:  BOMBPROOF, a numerical scheme for temperature and age
 \latexonly
 \newtheorem{theorem}{Theorem}
 \newcommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
@@ -359,5 +359,6 @@ to put it mildly, but theorem 2.2.3 of \cite{Strikwerda} is one interesting case
 ($B=0$ and $D=0$).
 
 \endlatexonly
+@endcond
  */ 
 

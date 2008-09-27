@@ -125,6 +125,7 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i) :
   initialthickness = 10.0; // m
   runtimeyears = 3.0e4; // a
   strcpy(initials,"ABC");
+  tryCalving = PETSC_FALSE;
   writeExtras = PETSC_FALSE;
   steadyOrGoalAchieved = PETSC_FALSE;
   m_MISMIP = 1.0/3.0; // power
@@ -248,7 +249,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     }
   }
 
-  // other options:
+  // OTHER OPTIONS:
   // read option    -extras       [OFF]
   ierr = PetscOptionsHasName(PETSC_NULL, "-extras", &writeExtras); CHKERRQ(ierr);
 
@@ -268,6 +269,16 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-model", &modelnum, PETSC_NULL); CHKERRQ(ierr);
   if ((modelnum < 1) || (modelnum > 2)) {
     SETERRQ(8,"IceMISMIPModel ERROR:  modelnum must be 1 or 2; '-model 1' or '-model 2'");
+  }
+
+  // read option    -no_shelf_drag
+  PetscTruth noShelfDrag;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_shelf_drag", &noShelfDrag); CHKERRQ(ierr);
+  if (noShelfDrag == PETSC_TRUE) {
+    shelvesDragToo = PETSC_FALSE;
+  } else {
+    // usually in MISMIP we need the shelves to drag a tiny bit to stabilize them
+    shelvesDragToo = PETSC_TRUE; // with beta = (1.8e9 / 10000) Pa s m-1; see iMdefaults.cc
   }
 
   // read option    -steady_atol  [1.0e-4]
@@ -306,6 +317,9 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     }
   }
 
+  // read option    -try_calving      [OFF]
+  ierr = PetscOptionsHasName(PETSC_NULL, "-try_calving", &tryCalving); CHKERRQ(ierr);
+
   doTemp                    = PETSC_FALSE;
   doPlasticTill             = PETSC_FALSE;
   doBedDef                  = PETSC_FALSE;
@@ -320,7 +334,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   transformForSurfaceGradient = PETSC_TRUE;
   useConstantHardnessForSSA = PETSC_TRUE;
   constantHardnessForSSA    = mismip_ice->hardnessParameter(273.15); // temp. irrelevant
-//  min_thickness_SSA         = 20.0;  // extend by 20 m thick iceshelf, beyond calving front
   min_thickness_SSA         = 5.0;  // extend by 20 m thick iceshelf, beyond calving front
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
@@ -376,7 +389,9 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
     ierr = createVecs(); CHKERRQ(ierr);
 
     const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
-    const PetscScalar MISMIPmaxThick = 6000.0;
+    PetscScalar MISMIPmaxThick = 6000.0;
+    if ((modelnum == 2) && (sliding == 'b'))
+       MISMIPmaxThick = 7000.0;
 
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
     // effect of double rescale here is to compute grid.dy so we can get square cells
@@ -558,6 +573,8 @@ PetscErrorCode IceMISMIPModel::calving() {
   PetscErrorCode ierr;
   PetscScalar    **mask, **H;
 
+  ierr = verbPrintf(2,grid.com,"\nIceMISMIPModel: ad hoc calving ...\n"); CHKERRQ(ierr);
+
   const PetscScalar calving_thk_min = 100.0, calving_thk_max = 200.0; // meters
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
@@ -612,8 +629,10 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
     endYear = grid.year;  
   }
 
-  // apply calving criterion
-//  ierr = calving(); CHKERRQ(ierr);
+  // apply an ad hoc calving criterion only under user option -try_calving
+  if (tryCalving == PETSC_TRUE) {
+    ierr = calving(); CHKERRQ(ierr);
+  }
   return 0;
 }
 

@@ -404,16 +404,12 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
           valV[7] += basalDragy(tauc, u, v, i, j);
         }
 
-#if 1
-        // Ed is playing with MISMIP: make shelf drag a little bit
-        if ((intMask(mask[i][j]) == MASK_FLOATING)) {
-          const PetscScalar beta_for_floating = 1.8e9 * 0.0001;
-                // Pa s m^{-1};  (1/10000) of value stated in
-                // Hulbe&MacAyeal1999 for ice stream E
-          valU[5] += beta_for_floating;
-          valV[7] += beta_for_floating;
+        // make shelf drag a little bit if desired
+        if ((shelvesDragToo == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING)) {
+          //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
+          valU[5] += betaShelvesDragToo;
+          valV[7] += betaShelvesDragToo;
         }
-#endif
 
         ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
         ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);

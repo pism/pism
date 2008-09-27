@@ -17,7 +17,7 @@ haveExtras = False
 mprefix='ABC1_1a_M1_A1'
 outputname='foo.png'
 try:
-  opts, args = getopt(sys.argv[1:], "e:o:p:",["extras=:outfile=:prefix="])
+  opts, args = getopt(sys.argv[1:], "eo:p:",["extras","outfile=","prefix="])
   for opt, arg in opts:
     if opt in ("-e", "--extras"):
       haveExtras = True

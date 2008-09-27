@@ -118,7 +118,7 @@ private:
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
   PetscScalar initialthickness, runtimeyears, dHdtnorm_atol;
-  PetscTruth  writeExtras, steadyOrGoalAchieved;
+  PetscTruth  tryCalving, writeExtras, steadyOrGoalAchieved;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;
@@ -136,8 +136,8 @@ private:
   PetscScalar regularize_MISMIP;
 
   PetscErrorCode calving();
-  PetscScalar basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
-                                 PetscInt i, PetscInt j) const;
+  PetscScalar    basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
+                                    PetscInt i, PetscInt j) const;
   PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);
 };
 

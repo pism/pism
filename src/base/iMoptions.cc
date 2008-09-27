@@ -44,7 +44,7 @@ PetscErrorCode  IceModel::setFromOptions() {
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
               mydoSuperpose, mydoSkip, plasticRegSet, regVelSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
-              maxdtSet, noMassConserve, noTemp, noEtaSet; 
+              maxdtSet, noMassConserve, noTemp, noEtaSet, doShelvesDragToo; 
   PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
@@ -297,6 +297,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 
+  // see assembleSSAMatrix(); used in MISMIP
+  ierr = PetscOptionsHasName(PETSC_NULL, "-shelves_drag_too", &doShelvesDragToo); CHKERRQ(ierr);
+  if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;
+  
   ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &myuseSSAVelocity); CHKERRQ(ierr);
   if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
   

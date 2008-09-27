@@ -105,6 +105,9 @@ const PetscScalar DEFAULT_REGULARIZING_VELOCITY_SCHOOF = 1.0 / secpera;  // 1 m/
 const PetscScalar DEFAULT_REGULARIZING_LENGTH_SCHOOF = 1000.0e3;         // 1000km is largish for dim of stream/shelf
 const PetscScalar DEFAULT_SSA_RELATIVE_CONVERGENCE = 1.0e-4;
 
+const PetscScalar DEFAULT_BETA_SHELVES_DRAG_TOO = 1.8e9 * 0.0001;  // Pa s m^{-1}
+                             //  (1/10000) of value stated in Hulbe&MacAyeal1999 for ice stream E
+
 // pure number; pore water pressure is this fraction of overburden:
 const PetscScalar DEFAULT_TILL_PW_FRACTION = 0.95;  
 const PetscScalar DEFAULT_TILL_C_0 = 0.0;  // Pa; cohesion of till; 
@@ -190,6 +193,10 @@ PetscErrorCode IceModel::setDefaults() {
   pseudo_plastic_uthreshold = DEFAULT_PSEUDO_PLASTIC_UTHRESHOLD;
   holdTillYieldStress = PETSC_FALSE;
   useConstantTillPhi = PETSC_FALSE;
+  
+  shelvesDragToo = PETSC_FALSE;
+  betaShelvesDragToo = DEFAULT_BETA_SHELVES_DRAG_TOO;
+  
   Hmelt_max = DEFAULT_MAX_HMELT;
   oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
 

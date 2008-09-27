@@ -10,6 +10,6 @@ for file in *_ss
 do
   prefix=`echo $file | sed 's/_ss//g'`  # strip "_ss" from file name
   #./figsMISMIP.py -p $prefix  # if _extras not present
-  ./figsMISMIP.py -p $prefix -e 1
+  ./figsMISMIP.py -p $prefix --extras
 done
 

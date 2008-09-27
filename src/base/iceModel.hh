@@ -135,7 +135,7 @@ protected:
                                        //   time steps in seconds
   PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
-              ssaRelativeTolerance, ssaEpsilon;
+              ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo;
   PetscInt    ssaMaxIterations;
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold;
@@ -157,7 +157,8 @@ protected:
               isDrySimulation, holdTillYieldStress, useConstantTillPhi;
   PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuForSSA, 
-              useConstantHardnessForSSA, computeSurfGradInwardSSA, leaveNuAloneSSA;
+              useConstantHardnessForSSA, computeSurfGradInwardSSA,
+              leaveNuAloneSSA, shelvesDragToo;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
   PetscTruth  realAgeForGrainSize;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,

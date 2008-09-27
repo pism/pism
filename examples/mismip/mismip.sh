@@ -54,11 +54,11 @@ MYINITIALS=EBU     # MISMIP says "first character of the first name followed
                    #    by the first two characters of the last name"
 
 #MODELRANGE="1 2"   # model 1 is pure SSA, model 2 is SIA+SSA
-MODELRANGE="1"
+MODELRANGE="2"
 
 #GRIDRANGE="1 2 3" # grid 1 is "-My 151", grid 2 is "-My 1501", grid 3 is "-My 601"
                    # 3 is slow, 2 is practically impossible!!
-GRIDRANGE="3"
+GRIDRANGE="1 3"
 
 
 if [ $# -gt 3 ] ; then
