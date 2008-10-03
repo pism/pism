@@ -316,12 +316,23 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
        DEFAULT_BED_VALUE_NO_VAR);  CHKERRQ(ierr);
     ierr = VecSet(vbed, DEFAULT_BED_VALUE_NO_VAR); CHKERRQ(ierr);
   }
+  if (maskExists) {
+    ierr = verbPrintf(2, grid.com, 
+        "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(2, grid.com, 
+       "  determining mask by floatation criterion:  grounded ice and ice-free\n"
+       "    land marked as 1, floating ice as 3, ice free ocean as 7\n");
+     CHKERRQ(ierr);
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: ignoring values found for surface elevation 'usurf';\n"
-       "    using usurf = topg + thk\n"); CHKERRQ(ierr);
+       "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
-  ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+       "  determining surface elevation by using usurf = topg + thk where grounded\n"
+       "    and floatation criterion where floating\n"); CHKERRQ(ierr);
+  ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
+  //ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);  // ONLY APPLIED TO GROUNDED
   if (HmeltExists) {
     ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false);
             CHKERRQ(ierr);
@@ -373,16 +384,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
        DEFAULT_UPLIFT_VALUE_NO_VAR);  CHKERRQ(ierr);
     ierr = VecSet(vuplift, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
   }
-
-  if (maskExists) {
-    ierr = verbPrintf(2, grid.com, 
-        "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
-  }
-  ierr = verbPrintf(2, grid.com, 
-     "  determining mask by floatation criterion:  grounded ice and ice-free\n"
-     "    land marked as 1, floating ice as 3, ice free ocean as 7\n");
-     CHKERRQ(ierr);
-  ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 
