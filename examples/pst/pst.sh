@@ -169,16 +169,16 @@ mpst $NN "-P1 -if P1_80k.nc -y 20000 -o P1_100k"
 exit
 
 # FINEST: as P1, but on 5km grid; slow!
-mpst_vg $NN u "-P1 -Mx 301 -My 301 -tempskip 10 -y 5000 \
+mpst_vg $NN u "-P1 -Mx 301 -My 301 -skip 10 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P1finest"
 
-mpst_vg $NN u "-P2 -Mx 301 -My 301 -tempskip 10 -y 5000 \
+mpst_vg $NN u "-P2 -Mx 301 -My 301 -skip 10 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P2finest"
 
-mpst_vg $NN u "-P3 -Mx 301 -My 301 -tempskip 10 -y 5000 \
+mpst_vg $NN u "-P3 -Mx 301 -My 301 -skip 10 -y 5000 \
  -regrid P0I.nc -regrid_vars LTBHhe -o P3finest"
 
-mpst_vg $NN u "-P4 -Mx 301 -My 301 -tempskip 10 -y 5000 \
+mpst_vg $NN u "-P4 -Mx 301 -My 301 -skip 10 -y 5000 \
  -regrid P0A.nc -regrid_vars LTBHhe -o P4finest"
 
 

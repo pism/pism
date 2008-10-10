@@ -82,20 +82,26 @@ ifdef CONFIG
   include $(addprefix ../,$(CONFIG))
 endif
 
-all: libpism.so libtests.so $(executables)
+LIBPISMNAME := libpism.so
+LIBTESTSNAME := libtests.so
+## use these if static linked:
+#LIBPISMNAME := libpism.a
+#LIBTESTSNAME := libtests.a
+
+all: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
 	@svnversion ../src/ > ../src/revision
 ifeq ($(findstring install,$(GOALS)),)
 	@echo "All the PISM libraries and executables are in $(PWD)."
 	@echo "Please don't forget to run 'make install'."
 endif
 
-local_install: libpism.so libtests.so $(executables)
-	@cp libpism.so ${PISM_PREFIX}/lib/
-	@cp libtests.so ${PISM_PREFIX}/lib/
+local_install: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
+	@cp ${LIBPISMNAME} ${PISM_PREFIX}/lib/
+	@cp ${LIBTESTSNAME} ${PISM_PREFIX}/lib/
 	@echo 'PISM libraries installed in ' ${PISM_PREFIX}'/lib/'
 	@cp $(executables) ${PISM_PREFIX}/bin/
-	@rm -f libpism.so
-	@rm -f libtests.so
+	@rm -f ${LIBPISMNAME}
+	@rm -f ${LIBTESTSNAME}
 	@rm -f $(executables)
 	@echo 'PISM executables installed in ' ${PISM_PREFIX}'/bin/'
 	@echo 'Note: Object files created during the build process were not deleted.'
@@ -103,26 +109,31 @@ local_install: libpism.so libtests.so $(executables)
 
 libpism.so : ${ICE_OBJS}
 	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
-#for static-linking:  ar cru -s libpism.a ${ICE_OBJS}   etc
+## for static-linking do something like this:
+#libpism.a : ${ICE_OBJS}
+#	ar r $@ ${ICE_OBJS} 
 
 libtests.so : ${TESTS_OBJS}
 	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
+## for static-linking do something like this:
+#libtests.a : ${TESTS_OBJS}
+#	ar r $@ ${TESTS_OBJS} 
 
-pismr : pismr.o libpism.so
+pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-pismd : pismd.o iceROSSModel.o libpism.so
+pismd : pismd.o iceROSSModel.o ${LIBPISMNAME}
 	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o libpism.so
+pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
 	${ICE_LIB_FLAGS} -o $@
 
-pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o libpism.so libtests.so
+pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o \
 	iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
-pgrn : iceGRNModel.o pgrn.o libpism.so
+pgrn : iceGRNModel.o pgrn.o ${LIBPISMNAME}
 	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
 
 flowTable : flowTable.o materials.o
@@ -131,31 +142,31 @@ flowTable : flowTable.o materials.o
 tryLCbd : tryLCbd.o beddefLC.o materials.o
 	${CXXLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-simpleABCD : simpleABCD.o libtests.so
+simpleABCD : simpleABCD.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleE : simpleE.o libtests.so
+simpleE : simpleE.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleFG : simpleFG.o libtests.so
+simpleFG : simpleFG.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleH : simpleH.o libtests.so
+simpleH : simpleH.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleI : simpleI.o libtests.so
+simpleI : simpleI.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleJ : simpleJ.o libtests.so
+simpleJ : simpleJ.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleL : simpleL.o libtests.so
+simpleL : simpleL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleK : simpleK.o libtests.so
+simpleK : simpleK.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-gridL : gridL.o libtests.so
+gridL : gridL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 # The GNU recommended procedure for automatically generating prerequisites.
@@ -188,6 +199,8 @@ showEnv:
 	@echo 'CFLAGS = ' ${CFLAGS}
 	@echo 'ICE_LIB_FLAGS = ' ${ICE_LIB_FLAGS}
 	@echo 'TESTS_LIB_FLAGS = ' ${TESTS_LIB_FLAGS}
+	@echo 'LIBPISMNAME = ' ${LIBPISMNAME}
+	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
 	@echo 'ICE_OBJS = ' ${ICE_OBJS}
 	@echo 'PISM_REVISION = ' "$(PISM_REVISION)"
 
@@ -202,8 +215,8 @@ clean: depclean
 
 distclean: clean
 	@rm -f \
-	libpism.so libtests.so \
-	$(PISM_PREFIX)/lib/libpism.so $(PISM_PREFIX)/lib/libtests.so \
+	${LIBPISMNAME} ${LIBTESTSNAME} \
+	$(PISM_PREFIX)/lib/${LIBPISMNAME} $(PISM_PREFIX)/lib/${LIBTESTSNAME} \
 	$(executables) $(extra_execs) \
 	$(addprefix $(PISM_PREFIX)/bin/, $(executables) $(extra_execs))
 

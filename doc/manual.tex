@@ -619,6 +619,7 @@ One is allowed to specify the grid when PISM is started \emph{without} a pre-exi
 
 \noindent will give a warning that ``\verb|user option -Mz ignored; value read from file foo.nc|.''  To change the model grid one must explicitly ``regrid'', as described next.
 
+FIXME: need to document \verb|-quadZ|
 
 \subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment as above, producing \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  Speaking conceptually, the idea in PISM is that one starts over from the beginning of EISMINT II experiment A on the finer grid, but one extracts the thickness and ice temperature stored in the coarse grid file and interpolates onto the finer grid before proceeding with the actual computation.  The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
@@ -828,11 +829,11 @@ Also refer to test H.
 \hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
 \bigskip
 
-\subsubsection*{Ideas} ``Verification'' is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  One is not comparing model output to nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
+\subsubsection*{Ideas}  Verification is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate!).  There is no comparison between model output and nature, here.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
 
-See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics.
+See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification (and validation) in computational fluid dynamics.
 
-In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}, and \emph{all} PISM executables run \verb|IceModel|.
+In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}.  All PISM executables run \verb|IceModel|, but derived classes add bits of code, in this case the exact solutions.)
 
 \begin{table}[ht]
 \caption{Exact solutions for verification.}\label{tab:tests}
@@ -861,7 +862,7 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREPARATION]
 \end{table}
 
 \begin{table}[ht]
-\caption{Running PISM\index{pismv!options to run verification tests}\index{verification tests}  to verify using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
+\caption{Canonical PISM\index{pismv!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Test} & \textbf{Example invocation}  \\ \hline
@@ -882,11 +883,16 @@ L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \end{tabular}
 \end{table}
 
-Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Note that most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids (for relatively quick execution time).
+Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Only Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids (for relatively quick execution time).
 
-\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit.  For example, in the the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) refinement limit $(\Delta x,\Delta y,\Delta t) = (0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or several norms) of the difference between the numerical solution and the exact solution.   Concretely, we will typically compute both the \emph{maximum} numerical error anywhere on the grid and the \emph{average} numerical error on the grid.
+\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero cell size.  For example, in the the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.   Concretely, we usually compute both the \emph{maximum} numerical error anywhere on the grid and the \emph{average} numerical error on the grid.
 
-The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense, generally.  Rather the goal is to see that the error is trending toward zero, and to measure the rate at which it decays.  Knowing the error decay rate allows the modeler to have a sense of how fine a grid is necessary to achieve a small enough numerical error so that the numerical solution can be regarded as a (near) solution to the continuum model.  See \cite{BLKCB,BBL,Roache,Wesseling}.
+The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense (generally).  Rather the goals are \begin{itemize}
+\item to see that the error is decreasing,
+\item to measure the rate at which it is decreasing,
+\item and to get a realistic sense of the magnitude of numerical error, compared to other errors, in a realistic ice sheet model run.
+\end{itemize}
+Knowing the error decay rate may even give a prediction as to how fine a grid is necessary to achieve a desired smallness for the numerical error.  ``Other errors'' includes critically the error from using the wrong (or over-simplified) continuum model, and also observational (or pre-processing) errors present in the data used in the realistic run.
 
 For an example of a refinement path, consider the runs\index{refinement path!example}\index{pismv}
 \begin{quote}\small\begin{verbatim}
@@ -896,7 +902,7 @@ pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
 \end{verbatim}
 \normalsize\end{quote}
-These verify the basic function of the isothermal shallow ice approximation components of PISM in the case of no accumulation.  The exact solution used here is the Halfar similarity solution \cite{Halfar83}.  Note that one specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
+Here we seek to measure the basic function of the isothermal shallow ice approximation components of PISM.  The exact solution used here is the Halfar similarity solution \cite{Halfar83}, in the case of no accumulation.  One specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
 
 The data produced by the above four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
 
@@ -910,7 +916,7 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
+produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip 10| and \verb|-quadZ| would make a lot of sense for speeding up; see subsection \ref{sect:usage}.)
 
 \subsubsection*{Results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
 

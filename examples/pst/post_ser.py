@@ -5,7 +5,7 @@ import sys
 from getopt import getopt, GetoptError
 from netCDF import Dataset as NC
 
-# description of where the transcripts are
+# description of where the transcripts are; EXAMPLES!!
 # (0,       1,        2,      3,       4,      5,      6)
 # (FILENAME,STARTLINE,ENDLINE,EXPERNUM,GRIDRES,[0|1|2],[P1contSTAGE])
 desc = [
@@ -74,7 +74,8 @@ P1widths = [70, 30, 100, 50]
 P1styles = ['-',':','-.','--']
 P2angles = [0,10,45]
 P2styles = ['-',':','--']
-P3drops = [0, 500, 1000, 2000]
+#P3drops = [0, 500, 1000, 2000]
+P3slopepercents = [0.000, 0.077, 0.154, 0.308]
 P4phis = [2, 3, 8, 10]
 
 P1contlines = []
@@ -219,7 +220,8 @@ for k in desc:
     for j in [0,1,2,3]:
       varname = "avdwn%d" % j
       var = nc.variables[varname][:]
-      mylabel = r"$%d$ m" % P3drops[j]
+      #mylabel = r"$%d$ m" % P3drops[j]
+      mylabel = r"$%.3f$ %%" % P3slopepercents[j]
       semilogy(time, var, linestyle=P1styles[j], linewidth=1.5, 
                color='black', label=mylabel)
     
