@@ -209,13 +209,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         const PetscInt     oi = 1-o, oj=o;  
         const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
         const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
- 
+
         if (thickness > 0) { 
           ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
           ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
           if (flowLawUsesGrainSize == PETSC_TRUE) {
+            //FIXME: use realAgeForGrainSize to determine what to call
             ierr = w3.getInternalColumn(i,j,&wij); CHKERRQ(ierr);
-            //future grainsize: use PetscTruth realAgeForGrainSize to determine what to call
             ierr = computeGrainSize_PseudoAge(
                        thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
           }
@@ -229,21 +229,15 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   pressure = ice->rho * grav * (thickness - grid.zlevels[k]);
 
-            // apply flow law; delta[] is on staggered grid so need two neighbors from reg 
-            // grid to evaluate T and grain size
-            //OLD grainsize: delta[k] = (2 * pressure * enhancementFactor
-            //                           * ice.flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure,
-            //                                      0.5 * (gsij[k] + gsoffset[k]))                          );
-            //  note that the new method is O(dx) because gs[i+1/2,j] (for example) is approximated by
-            //  gs[i][j]
             if (flowLawUsesGrainSize == PETSC_TRUE) {
+              // this method is O(dx) because e.g. gs[i+1/2,j] is approximated by gs[i][j]
 // BUG: as of 3/12/08 bug #11242, this did not work:
-//              delta[k] = (2 * pressure * enhancementFactor
-//                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
-//                          pressure, gsij[k]) );
               delta[k] = (2 * pressure * enhancementFactor
                           * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
-                          pressure, 1.0e-3) );
+                          pressure, gsij[k]) );
+//              delta[k] = (2 * pressure * enhancementFactor
+//                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
+//                          pressure, 1.0e-3) );
             } else {
               delta[k] = (2 * pressure * enhancementFactor
                           * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]),

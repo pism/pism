@@ -29,12 +29,18 @@ PetscScalar IceType::n = 3.0;
 
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
                           const PetscScalar pressure) const {
+  PetscPrintf(PETSC_COMM_SELF,
+     "ERROR:  IceType::flow() is unimplemented virtual; ENDING ...\n");
+  PetscEnd();
   return 0;
 }
 
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
                           const PetscScalar pressure, const PetscScalar gs) const {
-  return flow(stress, temp, pressure);
+  PetscPrintf(PETSC_COMM_SELF,
+     "ERROR:   IceType::flow() depending on grainsize is unimplemented virtual; ENDING ...\n");
+  PetscEnd();
+  return 0;
 }
 
 PetscScalar IceType::effectiveViscosity(const PetscScalar regularization,
@@ -94,7 +100,11 @@ PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp
 
 PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp,
                                 const PetscScalar pressure, const PetscScalar gs) const {
-  return flow(stress, temp, pressure);
+//  return flow(stress, temp, pressure);
+  PetscPrintf(PETSC_COMM_SELF,
+     "ERROR:   ThermoGlenIce::flow() depending on grainsize is virtual ... ENDING");
+  PetscEnd();
+  return 0;
 }
 
 

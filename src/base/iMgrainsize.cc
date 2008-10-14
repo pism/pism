@@ -84,7 +84,6 @@ PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
       age[k] = age[k+1] - (2.0 * dz) / (w[k] + w[k+1]);
     }
   }
-      
   // convert age or pseudo-age to grainsize and put in gs3
   for (PetscInt k = 0; k < Mz; k++) {
     (*gs)[k] = grainSizeVostok(age[k]);

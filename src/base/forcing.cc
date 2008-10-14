@@ -351,9 +351,9 @@ PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year,
   index = l;
 
   // DEBUG: show current values
-  ierr = PetscPrintf(PETSC_COMM_WORLD, 
-       "DEBUG: climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
-       datavarname,curr_year,len,index); CHKERRQ(ierr);
+  //ierr = PetscPrintf(PETSC_COMM_WORLD, 
+  //     "DEBUG: climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
+  //     datavarname,curr_year,len,index); CHKERRQ(ierr);
   //ierr = PetscPrintf(PETSC_COMM_SELF, 
   //     "DEBUG (rank=%d): climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
   //     rank,datavarname,curr_year,len,index); CHKERRQ(ierr);

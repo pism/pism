@@ -55,16 +55,15 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
 
   vmonthlyTs = PETSC_NULL;
   
-  ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
-  if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
-  else                      flowLawUsesGrainSize = PETSC_FALSE;
-
   ierr = setDefaults();  // lots of parameters and flags set here
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
     PetscEnd();
   }
 
+  ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
+  if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
+  else                      flowLawUsesGrainSize = PETSC_FALSE;
 }
 
 

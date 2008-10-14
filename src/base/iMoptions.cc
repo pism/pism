@@ -145,7 +145,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-float_kill", &floatkillSet); CHKERRQ(ierr);
   if (floatkillSet == PETSC_TRUE)  floatingIceKilled = PETSC_TRUE;
 
-// note "-gk" is in use for specifying Goldsby-Kohlstedt ice
+// note "-gk" is in use for specifying Goldsby-Kohlstedt ice; see pism_const.cc
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-hold_tauc", &myholdTillYieldStress); CHKERRQ(ierr);
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
