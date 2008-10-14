@@ -1,28 +1,44 @@
 #!/bin/bash
 
-#   Runs the SSL2 EISMINT-Greenland experiment.  Requires green20km_Tsteady.nc,
-# the output of bootstrap.sh.  Saves state every 10000 model years.  Use
-# series.py to see volume time series to evaluate EISMINT-Greenland
-# steady state criterion of 0.01% change in volume in 10000 model years.
-#   See the PISM User's Manual for the modeling choices in "pgrn -ssl2".
+#   Runs the SSL2 EISMINT-Greenland experiment from the output of bootstrap.sh.
+# Saves state every 10000 model years.  See the PISM User's Manual.
 
-#   A recommended way to run with 2 processors is "./ssl2.sh 2 >& ssl2.txt &"
-# which saves a transcript in ssl2.txt.
+#   Recommended way to run with 2 processors is "./ssl2.sh 2 >& out.ssl2 &"
+# which saves a transcript in out.ssl2
 
 NN=2  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "ssl2.sh 8" then NN = 8
   NN="$1"
 fi
+
 set -e  # exit on error
 
-mpiexec -n $NN pgrn -ssl2 -if green20km_Tsteady.nc \
-       -ys 0 -y 10000 -o green_SSL2_10k
+SHOWONLY=0
+if [ $# -gt 1 ] ; then  # if user says "ssl2.sh 8 D" then NN = 8 and *only* shows
+                        #   what will happen; NO RUN (debug mode)
+  SHOWONLY=1
+fi
 
-for ((kyear=20; kyear <= 110 ; kyear+=10))
-do
+# function to run "pgrn -ssl2" on NN processors
+mpgrn()
+{
+    cmd="mpiexec -n $NN pgrn -ssl2 $1"  # change if "mpirun" or "bin/pgrn", etc.
+    
+    echo 
+    echo "date = '`date`' on host '`uname -n`':"
+    echo "trying '$cmd'"
+    if [ $SHOWONLY = 0 ] ; then
+      $cmd
+      echo
+    fi
+}
+
+# the EISMINT-Greenland SSL2 experiment:
+
+mpgrn "-if green20km_Tsteady.nc -ys 0 -y 10000 -o green_SSL2_10k"
+
+for ((kyear=20; kyear <= 110 ; kyear+=10)); do
   (( oldkyear = kyear - 10 ))
-  mpiexec -n $NN pgrn -ssl2 -if green_SSL2_${oldkyear}k.nc \
-       -y 10000 -o green_SSL2_${kyear}k
+  mpgrn "-if green_SSL2_${oldkyear}k.nc -y 10000 -o green_SSL2_${kyear}k"
 done
-
 

@@ -111,11 +111,11 @@ d18O = d18O[::2]
 dT = concatenate(([dT[0]],dT))
 dT = dT[::2]
 
-# write data
+# write data (reversing order)
 DATALEN=len(y_bp)
-Ttvar[:DATALEN] = y_bp.tolist()
-d18Ovar[:DATALEN] = d18O.tolist()
-dTvar[:DATALEN] = dT.tolist()
+Ttvar[:DATALEN] = y_bp[::-1].tolist()
+d18Ovar[:DATALEN] = d18O[::-1].tolist()
+dTvar[:DATALEN] = dT[::-1].tolist()
 
 # finish
 ncfile.close()

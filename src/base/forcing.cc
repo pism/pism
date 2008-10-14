@@ -23,6 +23,7 @@
 #include "nc_util.hh"
 #include "forcing.hh"
 
+
 Data1D::Data1D() {
   vecsAllocated = PETSC_FALSE;
   interpCode = DATA1D_LINEAR_INTERP;
@@ -333,33 +334,52 @@ PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year,
   PetscInt    len;
 
   ierr = VecGetArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
-  ierr = VecGetLocalSize(vtimeinyears, &len); CHKERRQ(ierr);
-  ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
 
-  // advance the index until curr_year is in interval
-  //   ( timeinyears[index-1], timeinyears[index] ]
-  while (index < len && curr_year > timeinyears[index]) {
-    index++;
-  }
+  ierr = VecGetLocalSize(vtimeinyears, &len); CHKERRQ(ierr);
+
+  // do a binary search to find where our year fits in.
+  int r, l=0;
+  r = len;
+  while (r > l + 1) {
+    PetscInt j = (r + l)/2;
+    if(curr_year < timeinyears[j]) {
+      r = j;
+    } else {
+      l = j;
+    }
+  }    
+  index = l;
+
+  // DEBUG: show current values
+  ierr = PetscPrintf(PETSC_COMM_WORLD, 
+       "DEBUG: climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
+       datavarname,curr_year,len,index); CHKERRQ(ierr);
+  //ierr = PetscPrintf(PETSC_COMM_SELF, 
+  //     "DEBUG (rank=%d): climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
+  //     rank,datavarname,curr_year,len,index); CHKERRQ(ierr);
 
   if (index >= len) {
     ierr = verbPrintf(1, com, 
-       "ATTENTION: no more data for climate forcing %s; using forcing value of zero\n", 
-       datavarname); CHKERRQ(ierr);
+       "ATTENTION: no more data for climate forcing %s; curr_year = %f;\n"
+       "   len = %d; index = %d; using forcing value 0.0\n", 
+       datavarname,curr_year,len,index); CHKERRQ(ierr);
     forcingActive = PETSC_FALSE;
     *value = 0.0;
   } else if (index < 0) {
     ierr = verbPrintf(1, com, 
-       "ATTENTION: model year precedes beginning of data for climate forcing %s;"
-       "  using forcing value of zero\n", datavarname); CHKERRQ(ierr);
+       "ATTENTION: model year precedes beginning of data for climate forcing %s;\n"
+       "   curr_year = %f; index = %d; using forcing value 0.0\n", 
+       datavarname,curr_year,index); CHKERRQ(ierr);
     *value = 0.0;
   } else if ( (index == 0) && (   (interpCode == DATA1D_CONST_PIECE_BCK_INTERP)
                                || (interpCode == DATA1D_LINEAR_INTERP)         ) ) {
     ierr = verbPrintf(1, com, 
-       "ATTENTION: model year not far enough after beginning of data for climate forcing %s;"
-       "  need to interpolate; using forcing value of zero\n", datavarname); CHKERRQ(ierr);
+       "ATTENTION: model year not far enough after beginning of data for interpolation\n"
+       "   of climate forcing %s; curr_year = %f; index = %d; using forcing value 0.0\n",
+       datavarname,curr_year,index); CHKERRQ(ierr);
     *value = 0.0;
   } else {
+    ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
     if (curr_year == timeinyears[index]) {
       *value = data[index]; // if we have exact data, use it
     } else { // otherwise we need to interpolate
@@ -379,13 +399,14 @@ PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year,
                                  * (curr_year - timeinyears[index-1]);
           break;
         default:
-          SETERRQ1(1, "Unknown interpolation method for climate forcing %s\n", datavarname);
+          SETERRQ1(1, "Unknown interpolation method for climate forcing %s\n",
+            datavarname);
       } // end switch
     }
+    ierr = VecRestoreArray(vdata, &data); CHKERRQ(ierr);
   }
   
   ierr = VecRestoreArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
-  ierr = VecRestoreArray(vdata, &data); CHKERRQ(ierr);
   return 0;
 }
 

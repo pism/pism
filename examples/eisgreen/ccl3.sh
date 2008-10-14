@@ -2,37 +2,48 @@
 
 #   Runs the CCL3 EISMINT-Greenland experiment.  Requires GRIP ice core 
 # temperature data in grip_dT.nc and SPECMAP sea bed core (stack) sea level
-# data in specmap_dSL.nc.  Saves state every 50000 model years.
-#   Also requires green_SSL2_110k.nc, the final state of the EISMINT-Greenland 
-# SSL2 run.  See examples/eisgreen/ssl2.sh.
-#   See the PISM User's Manual for the modeling choices in "pgrn -ccl3".
+# data in specmap_dSL.nc (from preprocess.sh) and final result from ssl.sh.
+# See the PISM User's Manual.
 
-#   A recommended way to run with 2 processors is "./ccl3.sh 2 >& ccl3.txt &"
-# which saves a transcript in ccl3.txt.
+#   A recommended way to run with 2 processors is "./ccl3.sh 2 >& out.ccl3 &"
+# which saves a transcript in out.ccl3
 
 NN=2  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "ccl3.sh 8" then NN = 8
   NN="$1"
 fi
+
 set -e  # exit on error
 
-mpiexec -n $NN pgrn -ccl3 -if green_SSL2_110k.nc \
-   -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-   -ys -249900 -y 49900 -o green_CCL3_y-200000
-   
-mpiexec -n $NN pgrn -ccl3 -if green_CCL3_y-200000.nc \
-   -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-   -y 50000 -o green_CCL3_y-150000
-   
-mpiexec -n $NN pgrn -ccl3 -if green_CCL3_y-150000.nc \
-   -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-   -y 50000 -o green_CCL3_y-100000
-   
-mpiexec -n $NN pgrn -ccl3 -if green_CCL3_y-100000.nc \
-   -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-   -y 50000 -o green_CCL3_y-50000
+SHOWONLY=0
+if [ $# -gt 1 ] ; then  # if user says "ccl3.sh 8 D" then *only* shows; debug mode
+  SHOWONLY=1
+fi
 
-mpiexec -n $NN pgrn -ccl3 -if green_CCL3_y-50000.nc \
-   -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-   -ye 0 -o green_CCL3_y0
+DTNAME=grip_dT.nc
+DSLNAME=specmap_dSL.nc
+
+# function to run "pgrn -ccl3 -dTforcing ... -dSLforcing ..." on NN processors
+mpgrn()
+{
+    # change this if "mpirun" or "bin/pgrn", etc.:
+    cmd="mpiexec -n $NN pgrn -ccl3 -dTforcing $DTNAME -dSLforcing $DSLNAME $1"
+    
+    echo 
+    echo "date = '`date`' on host '`uname -n`':"
+    echo "trying '$cmd'"
+    if [ $SHOWONLY = 0 ] ; then
+      $cmd
+      echo
+    fi
+}
+
+# the EISMINT-Greenland CCL3 experiment:
+
+mpgrn "-if green_SSL2_110k.nc -ys -249900 -y 9900 -o green_CCL3_y-240k"
+
+for ((kyear=230; kyear >= 0 ; kyear-=10)); do
+  (( oldkyear = kyear + 10 ))
+  mpgrn "-if green_CCL3_y-${oldkyear}k.nc -y 10000 -o green_CCL3_y-${kyear}k"
+done
 

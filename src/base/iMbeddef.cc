@@ -109,19 +109,22 @@ PetscErrorCode IceModel::bedDefSetup() {
     ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
     lastBedDefUpdateYear = grid.year;
     
+    ierr = verbPrintf(2,grid.com,"initializing bed deformation model"); CHKERRQ(ierr);
     if (doBedIso == PETSC_TRUE) {
-      ierr = verbPrintf(2, grid.com,"using pointwise isostasy Earth deformation model\n");
-           CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com," (pointwise isostasy)\n"); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2, grid.com,
-          "using Lingle & Clark Earth deformation model (Bueler et al 2007, Ann. Glaciol.)\n"); 
-          CHKERRQ(ierr);
 #if (WITH_FFTW==0)
       ierr = PetscPrintf(grid.com,
           "\n  WARNING: compiled without FFTW.  -bed_def_lc (-bed_def) will not work.\n"); 
           CHKERRQ(ierr);
       return 1;
 #endif
+      ierr = verbPrintf(2,grid.com," (LC by spectral"); CHKERRQ(ierr);
+      ierr = verbPrintf(3, grid.com,
+          " = Lingle & Clark model computed with FFT spectral method;\n"
+          "   see Lingle & Clark 1985 (J Geophys Res) and Bueler et al 2007 (Ann Glaciol)"); 
+          CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,")\n"); CHKERRQ(ierr);
       // create scatter context and allocate the Vecs for BedDeformLC
       ierr = createScatterToProcZero(Hp0); CHKERRQ(ierr);
       ierr = VecDuplicate(Hp0,&bedp0);

@@ -64,11 +64,11 @@ protected:
   char         indepvarname[PETSC_MAX_PATH_LEN], datavarname[PETSC_MAX_PATH_LEN];
   PetscInt     interpCode;
   MPI_Comm     com;
+  PetscMPIInt  rank;
   
 private:
   PetscErrorCode getInterpolationCode(int ncid, int vid, int *code);
   PetscErrorCode ncVarBcastVec(int ncid, int vid, Vec *vecg);
-  PetscMPIInt    rank;
   PetscTruth     vecsAllocated;
 };
 

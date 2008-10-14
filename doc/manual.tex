@@ -1225,9 +1225,6 @@ The effect when we do this at higher resolution (grid mode 3 with 6km spacing, i
 
 
 
-
-
-
 \clearpage\newpage
 \section{Example: Modeling the Greenland ice sheet}\label{sect:green} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
 
@@ -1237,10 +1234,11 @@ The data for performing this experiment are freely available at
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
 \medskip
 
-\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  Note that in the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  A parameter-sensitivity study of a EISMINT-Greenland type ice sheet model is described in \cite{RitzFabreLetreguilly}.
+\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  Note that in the ice and sea floor-core driven ``forced climate'' CCL3 run described below the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  A parameter-sensitivity study of a EISMINT-Greenland type ice sheet model is described in \cite{RitzFabreLetreguilly}.
 
 Substantial developments have occurred in modeling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, the relation between a Greenland ice sheet flow model, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  The response of Greenland ice sheet models to climate warming is addressed in \cite{HuybrechtsdeWolde,Huybrechts02, Greve00}, among other references.
 
+The rest of this section is a step-by-step illustration of using PISM.  The details can be typed in by hand, or the user can invoke the bash scripts \verb|preprocess.sh|, \verb|bootstrap.sh|, \verb|ssl2.sh|, and \verb|ccl3.sh| in the directory \verb|examples/eisgreen|.  These scripts execute the commands in the next four subsections, respectively.
 
 \subsubsection*{Obtaining and converting EISMINT-Greenland data}  We use two Python scripts to convert the EISMINT-Greenland data, which is in the form of several ASCII text files, into NetCDF files usable by PISM.  The Python libraries \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}} must be present for the scripts to work.
 
@@ -1248,7 +1246,7 @@ First, \verb|cd examples/eisgreen/| from the PISM directory, and download these 
 
 \verb|grid20-EISMINT,  suaq20-EISMINT,  specmap.017,  sum89-92-ss09-50yr.stp|
 
-\noindent One method for the download is: \small
+\noindent One method for the download is: \scriptsize
 
 \verb|$  for name in "grid20-EISMINT" "suaq20-EISMINT" "specmap.017" "sum89-92-ss09-50yr.stp"|
 
@@ -1256,13 +1254,11 @@ First, \verb|cd examples/eisgreen/| from the PISM directory, and download these 
 
 \normalsize\noindent Once all four files have been downloaded, run
 
-\verb|$ ./eis_green.py|
+\verb|$ ./eisgreen.py|
 
 \noindent The NetCDF file \verb|eis_green20.nc| will be created from the data in \verb|grid20-EISMINT| and \verb|suaq20-EISMINT|.  It contains variables for the gridded latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (``\verb|usurf|'' for \emph{u}pper \emph{surf}ace elevation), bedrock altitude (\verb|topg|), ice thickness (\verb|thk|), and snow accumulation rate (\verb|acab|).  These values can be viewed graphically with \verb|ncview|.  The header (metadata) can be viewed by \verb|ncdump -h eis_green20.nc|.
 
 \begin{comment}
-If needed, the script \verb|eis_green.py| accepts option \verb|--prefix=foo/| if the downloaded data is in directory \verb|foo/|; \verb|eis_core.py| below also takes this option.  Option \verb|-g| specifies grid spacing; use \verb|-g 40| if you downloaded \verb|grid40-EISMINT| and \verb|suaq40-EISMINT| 40 km data; ``\verb|-g 20|'' or no option specifies 20 km grid.
-
 As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used on \verb|eis_green20.nc| to compare the putative ice surface elevation to the sum of the ice thickness and the bed elevation:
 
 \verb|$ ncap -O -vs "check=usurf-(thk+topg)" eis_green20.nc eis_green_check.nc|
@@ -1270,23 +1266,23 @@ As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used
 \noindent The variable \verb|check| in the output file holds the difference of \verb|usurf| and the sum $\verb|topg|+\verb|thk|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|usurf| is within 1 meter of $\verb|topg|+\verb|thk|$.  Thus the surface elevation \verb|usurf| is consistent.  It is also redundant because at bootstrapping, described below, PISM reads ice thickness and bed elevation and computes ice surface elevation as the sum of these two.
 \end{comment}
 
-The bed elevation in the original data (\verb|suaq20-EISMINT|) effectively contains a missing value attribute of $0.0$, because in several places---deep fjords, mostly---the observed bed elevation was not measured or the measured value was not trusted.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix D.} found in directory \verb|pism/util/|:
+The bed elevation \verb|topg| in the original data (\verb|suaq20-EISMINT|) effectively contains a missing values.  These are locations where \verb|topg| is \emph{exactly} $0.0$, presumably because in these locations the observed bed elevation was not measured or the measured value was not trusted.  We think these are deep fjords locations, mostly.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix D.} found in directory \verb|pism/util/|:
 
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
 \begin{figure}[ht]
-\includegraphics[width=2.6in,keepaspectratio=true]{figs/EISgreen_thick}\qquad\includegraphics[width=2.8in,keepaspectratio=true]{figs/EISgreen_bed}
+\includegraphics[width=2.3in,keepaspectratio=true]{figs/EISgreen_thick}\quad\includegraphics[width=2.4in,keepaspectratio=true]{figs/EISgreen_bed}
 \caption{Views of the thickness (left) and smoothed bed elevation (right) for EISMINT-Greenland.  The coastal topography around several fjords has been smoothed..}
 \label{fig:greendata}
 \end{figure}
 
-In addition to getting the EISMINT gridded data into NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it would be possible for the modeled ice sheet to flow onto it.  (Indeed this presumably occurred at the last glacial maximum.)  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island among the downloaded data \cite{RitzEISMINT}, we want to prevent this from happening.  Therefore special code is executed by the PISM executable \verb|pgrn| which we use below.  It says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely anyway \dots).  The phrase ``removed from the flow simulation'' actually means that the points are marked as ice-free ocean; the use of option \verb|-ocean_kill| below means that ice-free ocean remains that way.
+In addition to getting the EISMINT gridded data into NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it would be possible for the modeled ice sheet to flow onto it.  (This may have occurred at the last glacial maximum.)  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island, among the downloaded data \cite{RitzEISMINT}, we want to prevent this from happening.  Therefore special code is executed by the PISM executable \verb|pgrn| which we use below.  It says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely anyway \dots).  The phrase ``removed from the flow simulation'' actually means that the points are marked as ice-free ocean.
 
-Next we use the script which converts the data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| to  PISM readable NetCDF form:
+Next we use the script which converts the time series data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| to  PISM readable NetCDF form:
 
-\verb|$ ./eis_core.py|
+\verb|$ ./eiscore.py|
 
-\noindent Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  The executable \verb|pgrn| will be called with options \verb|-dTforcing| and \verb|-dSLforcing| for these two \verb|.nc| files in the ``CCL3'' run below.  Thus PISM reads the GRIP data \cite{Dansgaardetal1993} for the surface temperature forcing and the SPECMAP data \cite{Imbrieetal1984} form sea level forcing.  Figure \ref{fig:gripDeltaT} shows the GRIP temperature offsets.
+\noindent Two NetCDF files with one-dimensional time series data are created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  The executable \verb|pgrn| will be called with options \verb|-dTforcing| and \verb|-dSLforcing| for these two \verb|.nc| files in the ``CCL3'' run below.  That is, in CCL3 PISM will read the GRIP data \cite{Dansgaardetal1993} for the surface temperature forcing and the SPECMAP data \cite{Imbrieetal1984} for sea level forcing.  Figure \ref{fig:gripDeltaT} shows the GRIP temperature offsets.
 
 \begin{figure}[ht]
 \includegraphics[width=5.6in,keepaspectratio=true]{figs/gripDeltaT}
@@ -1295,13 +1291,13 @@ Next we use the script which converts the data files \verb|specmap.017| and \ver
 \end{figure}
 
 
-\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
+\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
 Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-bif| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|\index{pgrn}
 
 \verb|$ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \|
 
-\verb|  -ocean_kill -skip 0 -y 1 -o green20km_y1|
+\verb|  -skip 1 -y 1 -o green20km_y1|
 
 \noindent The run takes a few seconds of real time.
 
@@ -1310,7 +1306,7 @@ Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year 
 \begin{quote}
 \begin{verbatim}
 $  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
-   -ocean_kill -skip 0 -y 1 -o green20km_y1
+    -skip 1 -y 1 -o green20km_y1
 PGRN (EISMINT Greenland mode)
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   all dimensions t,x,y,z,zb found in file
@@ -1325,19 +1321,20 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
   variable acab found and regridded; min,max =    0.030,   2.820 (m a-1)
   variable thk found and regridded; min,max =    0.000,3200.000 (m)
   variable topg found and regridded; min,max = -3859.000,2151.000 (m)
-  WARNING: ignoring values found for surface elevation 'usurf';
-    using usurf = topg + thk
+  determining mask by floatation criterion:  grounded ice and ice-free
+    land marked as 1, floating ice as 3, ice free ocean as 7
+  WARNING: surface elevation 'usurf' found; IGNORING IT!
+  determining surface elevation by using usurf = topg + thk where grounded
+    and floatation criterion where floating
   WARNING: effective thickness of basal melt water 'bwat' not found;
     using default constant  0.000 m
   WARNING: surface temperature 'artm' not found; using default constant 263.15 K
-  WARNING: till friction angle 'tillphi' not found; using default constant 15.000 degrees
+  WARNING: till friction angle 'tillphi' not found; using default constant 15.000 deg
   WARNING: geothermal flux 'bheatflx' not found; using default constant  0.042 W/m^2
   WARNING: uplift rate 'dbdt' not found; using default constant  0.000 m/s
-  determining mask by floatation criterion:  grounded ice and ice-free
-    land marked as 1, floating ice as 3, ice free ocean as 7
   filling in temperatures at depth using quartic guess
 done reading eis_green_smoothed.nc; bootstrapping done
-resetting vertical levels base on options and user option -Lz ...
+resetting vertical levels based on options and user option -Lz ...
 using PDD based on standard yearly surface temp cycle
 geothermal flux set to EISMINT-Greenland value 0.050000 W/m^2
 computing surface temps by EISMINT-Greenland elevation-latitude rule
@@ -1388,43 +1385,52 @@ This bootstrapping mode also fills in several default values.  For instance, the
 
 Continuing with the above output, after default bootstrapping there are additional settings special to EISMINT-Greenland.  For instance, because there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}, at the surface there is a formula which determines the temperature as a function of latitude and surface elevation.  The code behind \verb|pgrn| knows this formula and uses it.  The constant value for geothermal flux is reset, and the above-mentioned Ellesmere Island issue is resolved.
 
-\subsubsection*{Relaxing the temperature field}  Before seeking a good steady state for the entire thermo-mechanically-coupled ice sheet, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model, but while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to replace the heuristic temperature field applied above by one which is approximately stationary with respect to advection and conduction.  The resulting temperature field is still not the fully physical temperature field, however, because it comes from a steadiness assumption about position of the surface of the ice.
+Before seeking a good steady state for the entire thermo-mechanically-coupled ice sheet, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model, but while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to create a temperature field which is approximately stationary with respect to advection and conduction.  The resulting temperature field is not a fully physical temperature field, however, because it comes from a steadiness assumption about the geometry of the ice sheet.
 
-We create this temperature field by running for 10000 years\footnote{In fact a much longer run should be done for serious modeling because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
+We create this temperature field by running for 10000 years\footnote{In fact a much longer run might be called for because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
 \verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady|
 
-\noindent This last run takes on the order of one processor hour.  Many more processors are effective, up to perhaps peak real time speed with 40 to 80 processors for this 83 by 141 grid.  Note finer grid computations are easier to parallelize in the sense that greater maximum speedup over one processor, in wall clock time, is attainable.
+This last run takes on the order of one processor hour.  Parallel processing is effective here, up to perhaps peak real time speed with 40 processors for this coarse 83 by 141 grid.  (Finer grid computations are easier to parallelize in the sense that greater a maximum speedup over one processor is attainable.)
 
-The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \verb|pgrn| executable.  (Other executables may require option \verb|-pdd| or \verb|-pdd_rand| to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \verb|-pdd_rand| to use a stochastic PDD model.
+The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \verb|pgrn| executable.  (The base executable \verb|pismr| requires option \verb|-pdd| or \verb|-pdd_rand| to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \verb|-pdd_rand| to use a stochastic PDD implementation.
+
 
 \subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
 
-\verb|mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 10000 -ys 0 -ocean_kill \|
+\verb|mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 10000 -ys 0 \|
 
-\verb|     -o green_SSL2_10k >> ssl2.txt|
+\verb|     -o green_SSL2_10k|
 
 \noindent We can continue for another ten thousand years by
 
-\verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_10k.nc -y 10000 -ocean_kill \|
+\verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_10k.nc -y 10000 \|
 
-\verb|     -o green_SSL2_20k >> ssl2.txt|
+\verb|     -o green_SSL2_20k|
 
-Note the option ``\verb|-ocean_kill|''.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  (Compare the Ross ice shelf model in the next section.)
+\noindent And so on.   The script \verb|ssh2.sh| is useful to automate this, and we will now assume that the user \emph{actually} did a run like  
 
-These runs took about 15 minutes each on an 2 quad core Xeon server (2008 technology).  This simulation is, however, intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
+\verb|./ssh2.sh 2 >> out.ssl2 &|
 
-One can look at the standard output text file by a minimal method like ``\verb|less ssl2.txt|''.  But, to more clearly see the behavior over time of the volume, area, basal melt fraction, and so on, one can generate a time series file in NetCDF form and then use various tools to view and manipulate that file.  Use the Python script \verb|util/series.py|, documented in Appendix D, like this:
+\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like 15 processor hours to produce eleven output files with names \verb|green_SSL2_|$N$\verb|k.nc| for $N=10,\dots,110$.
 
-\verb|$  series.py -f ssl2.txt -o ssl2_series.nc|
+Note that, by default the option \verb|-ocean_kill| is set internally in \verb|pgrn|.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  Another default setting is \verb|-skip 20|.
 
-\noindent View using \verb|ncview|, for instance.  One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume expected to be a bit more than $4 \times 10^{6}\,\text{km}^3$.
+The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
 
-In fact that is what happens with a long run.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then the run ends at 110k years with a volume change of about 0.001\% between the 100k and 110k model states.  This steady state criteria can be most easily determined by examining the time series NetCDF file produced by \verb|series.py| (from a completed partial run or even during an ongoing run).  The final volume was $4.087 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
+One can look at the standard output text file by a minimal method like ``\verb|less out.ssl2|''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by generating a time series file in NetCDF form from the text (log) file coming from \verb|stdout|.  Then various NetCDF tools can be applied to view and manipulate that file.  To do this, use the Python script \verb|util/series.py|, documented in Appendix D, like this:
+
+\verb|series.py -f out.ssl2 -o ssl2.ser.nc|
+
+\noindent View \verb|ssl2.ser.nc| using \verb|ncview|, for instance.
+
+One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then the run ends at 110k years with a volume change of about 0.001\% between the 100k and 110k model states.
+
+The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
 
 \begin{figure}[ht]
 \includegraphics[width=6.0in,keepaspectratio=true]{figs/eisgrn_volseries}
-\caption{Volume time series for a 110k model year EISMINT-Greenland run; units of $10^{6}\,\text{km}^3$.}
+\caption{Volume time series for a 110k model year EISMINT-Greenland SSL2 run; units of $10^{6}\,\text{km}^3$.}
 \label{fig:eisgrnvolseries}
 \end{figure}
 
@@ -1434,53 +1440,41 @@ In fact that is what happens with a long run.  If we run the SSL2 experiment wit
 \label{fig:eisgrnmeltfseries}
 \end{figure}
 
-The command that completed the full 110k model year run is 
-
-\verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_20k.nc -y 90000 -ocean_kill \|
-
-\verb|     -o green_SSL2_110k >> ssl2.txt|
-
-We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness and homologous basal temperature maps are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.
+We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickThomol}.
 
 \begin{figure}[ht]
-\includegraphics[height=3.5in]{figs/greenH_SSL2}\qquad\includegraphics[height=3.5in,width=2.6in]{figs/greenThomol_SSL2}%\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
-\caption{Ice thickness (meters; left) and homologous basal temperature (degrees C below 0; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
+\mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{figs/greenH_SSL2}\,\includegraphics[height=3.0in,width=2.3in]{figs/greenThomol_SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{figs/greencbar_SSL2}}
+%\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
+\caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
 \label{fig:ssl2thickThomol}
-\end{figure}
-
-\begin{figure}[ht]
-\includegraphics[height=3.5in,keepaspectratio=true]{figs/greencbar_SSL2}
-\caption{Vertically-averaged horizontal velocity in meters per year at the end (110k model years) of a EISMINT-Greenland SSL2 run.}
-\label{fig:ssl2cbar}
 \end{figure}
 
 In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this run for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
 
 
-\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:
+\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka.}
 
-\verb|$  pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
+\verb|mpiexec -n 8 pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
 
-\verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y0|
+\verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y-0|
 
 \noindent Note option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
 
 The resulting thickness difference, relative to the end of the SSL2 run, and the homologous basal temperature, are shown in Figure \ref{fig:cclthickThomol}.
 
 \begin{figure}[ht]
-\includegraphics[width=3.3in]{figs/Hdiff_CCLSSL}\,\includegraphics[width=3.3in]{figs/Thomol_CCL}
+\includegraphics[width=2.8in]{figs/Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{figs/Thomol_CCL}
 \caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice homologous basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickThomol}.}
 \label{fig:cclthickThomol}
 \end{figure}
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing (noting no GRIP or SPECMAP data are known from the future!):
 
-\verb|$  pgrn -ccl3 -if green_CCL3_y0.nc -y 500 -o green_CCL3_y500|
+\verb|mpiexec -n 8 pgrn -ccl3 -if green_CCL3_y-0.nc -y 500 -o green_CCL3_y500|
 
+A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\subsubsection*{A greenhouse warming scenario}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
-
-\verb|$  pgrn -gwl3 -if green_CCL3_y0.nc -y 500 -o green_GWL3_y500|
+\verb|mpiexec -n 8 pgrn -gwl3 -if green_CCL3_y-0.nc -y 500 -o green_GWL3_y500|
 
 
 
