@@ -181,10 +181,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
 
-  PetscScalar *wij, *gsij, *work_age_space, *Tij, *Toffset;
-  gsij = new PetscScalar[grid.Mz];
-  work_age_space = new PetscScalar[grid.Mz];
+  PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
+  const bool usetau3 = ((flowLawUsesGrainSize == PETSC_TRUE) && (realAgeForGrainSize == PETSC_TRUE));
+  
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
@@ -194,6 +194,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
 
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  if (usetau3) {
+    ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
+  }
   ierr = w3.needAccessToVals(); CHKERRQ(ierr);
   ierr = Istag3[0].needAccessToVals(); CHKERRQ(ierr);
   ierr = Istag3[1].needAccessToVals(); CHKERRQ(ierr);
@@ -213,11 +216,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         if (thickness > 0) { 
           ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
           ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-          if (flowLawUsesGrainSize == PETSC_TRUE) {
-            //FIXME: use realAgeForGrainSize to determine what to call
-            ierr = w3.getInternalColumn(i,j,&wij); CHKERRQ(ierr);
-            ierr = computeGrainSize_PseudoAge(
-                       thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
+          if (usetau3) {
+            ierr = tau3.getInternalColumn(i,j,&ageij); CHKERRQ(ierr);
+            ierr = tau3.getInternalColumn(i+oi,j+oj,&ageoffset); CHKERRQ(ierr);
           }
 
           // does validity check for thickness:
@@ -228,35 +229,37 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   pressure = ice->rho * grav * (thickness - grid.zlevels[k]);
-
+            PetscScalar flow;
             if (flowLawUsesGrainSize == PETSC_TRUE) {
-              // this method is O(dx) because e.g. gs[i+1/2,j] is approximated by gs[i][j]
-// BUG: as of 3/12/08 bug #11242, this did not work:
-              delta[k] = (2 * pressure * enhancementFactor
-                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
-                          pressure, gsij[k]) );
-//              delta[k] = (2 * pressure * enhancementFactor
-//                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
-//                          pressure, 1.0e-3) );
+              //if (realAgeForGrainSize == PETSC_TRUE)
+              //  PetscPrintf(PETSC_COMM_WORLD,
+              //        "flowLawUsesGrainSize and realAgeForGrainSize both TRUE\n");
+              //else
+              /// PetscPrintf(PETSC_COMM_WORLD,
+              //        "flowLawUsesGrainSize TRUE and realAgeForGrainSize FALSE;\n"
+              //        "   constantGrainSize=%f\n",constantGrainSize);              
+              const PetscScalar grainsize = 
+                        (realAgeForGrainSize == PETSC_TRUE) ?
+                        grainSizeVostok(0.5 * (ageij[k] + ageoffset[k])) :
+                        constantGrainSize;
+              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
+                               pressure, grainsize);
             } else {
-              delta[k] = (2 * pressure * enhancementFactor
-                          * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]),
-                          pressure) );
+              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]),
+                               pressure);
             }
+
+            delta[k] = 2.0 * pressure * enhancementFactor * flow;
 
             // for Sigma, ignor mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
-// UNITS changed; now Joules/(s m^3)
-//            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure / (ice->rho * ice->c_p); 
             Sigma[k] = delta[k] * PetscSqr(alpha) * pressure;
 
             if (k>0) { // trapezoid rule for I[k] and K[k]
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
               I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
-//              K[k] = K[k-1] + 0.5 * dz * ((s-dz)*delta[k-1] + s*delta[k]);
               K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1]
                                           + grid.zlevels[k] * delta[k]);
-//              J[k] = s * I[k] - K[k];
               J[k] = grid.zlevels[k] * I[k] - K[k];
             }
           }
@@ -294,6 +297,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
 
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  if (usetau3) {
+    ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
+  }
   ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].doneAccessToVals(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].doneAccessToVals(); CHKERRQ(ierr);
@@ -301,7 +307,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = Istag3[1].doneAccessToVals(); CHKERRQ(ierr);
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
-  delete [] gsij;  delete [] work_age_space;
+  //delete [] gsij;  delete [] work_age_space;
   
   return 0;
 }

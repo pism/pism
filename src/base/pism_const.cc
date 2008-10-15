@@ -22,13 +22,14 @@
 
 PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN) {
     PetscErrorCode ierr;
-    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
+    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE, useGKAGE = PETSC_FALSE;
 
     flowLawNum = defaultFLN;
 
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);  // takes priority
-    if (useGK == PETSC_TRUE) {
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &useGKAGE); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);
+    if ((useGKAGE == PETSC_TRUE) || (useGK == PETSC_TRUE)) {
       flowLawNum = 4;
     }
     return 0;

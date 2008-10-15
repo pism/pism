@@ -44,7 +44,8 @@ PetscErrorCode  IceModel::setFromOptions() {
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
               mydoSuperpose, mydoSkip, plasticRegSet, regVelSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
-              maxdtSet, noMassConserve, noTemp, noEtaSet, doShelvesDragToo; 
+              maxdtSet, noMassConserve, noTemp, noEtaSet, doShelvesDragToo,
+              mygsConstantSet;
   PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
@@ -145,7 +146,13 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-float_kill", &floatkillSet); CHKERRQ(ierr);
   if (floatkillSet == PETSC_TRUE)  floatingIceKilled = PETSC_TRUE;
 
-// note "-gk" is in use for specifying Goldsby-Kohlstedt ice; see pism_const.cc
+  // note "-gk" is used for specifying Goldsby-Kohlstedt ice; see also pism_const.cc
+  //   this form allows a constant value of grain size to be input in mm
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-gk", &constantGrainSize, &mygsConstantSet); CHKERRQ(ierr);
+  if (mygsConstantSet == PETSC_TRUE)  constantGrainSize *= 1.0e-3;
+
+  // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice; see also pism_const.cc
+  ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &realAgeForGrainSize); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-hold_tauc", &myholdTillYieldStress); CHKERRQ(ierr);
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;

@@ -20,8 +20,8 @@
 #include "iceModel.hh"
 
 
-//! Compute a grain size from a pseudo-age, which is determined only by the vertical velocity component.
-/*!
+// Compute a grain size from a pseudo-age, which is determined only by the vertical velocity component.
+/*
 PISM allows the choice of the Goldsby-Kohlstedt flow law with option <tt>-gk</tt>.  
 That flow law requires a grain size to compute the softness/viscosity.  To determine 
 the grain size we use the Vostok core \lo\cite{VostokCore}\elo as a source for a 
@@ -63,6 +63,26 @@ PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
                      const PetscScalar H, const PetscInt Mz, 
                      PetscScalar *w, PetscScalar *age_wspace,
                      PetscScalar **gs) {
+
+  // see velocitySIAStaggered() to make sense of this comment:
+  //PetscScalar *wij, *gsij, *work_age_space;
+  //gsij = new PetscScalar[grid.Mz];
+  //work_age_space = new PetscScalar[grid.Mz];
+  //if ((flowLawUsesGrainSize == PETSC_TRUE) && (realAgeForGrainSize == PETSC_FALSE)) {
+  //  // compute grainsize from pseudo age FIXME: IF DESIRED
+  //  ierr = w3.getInternalColumn(i,j,&wij); CHKERRQ(ierr);
+  //  ierr = computeGrainSize_PseudoAge(
+  //             thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
+  //}
+  // this other method is O(dx) because e.g. gs[i+1/2,j] is approximated by gs[i][j]
+  // BUG: as of 3/12/08 bug #11242, this did not work:
+  //delta[k] = (2 * pressure * enhancementFactor
+  //            * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
+  //            pressure, gsij[k]) );
+
+
+  SETERRQ(1,"IceModel::computeGrainSize_PseudoAge() currently broken\n");
+
   // don't call this method when realAgeForGrainSize == PETSC_TRUE
   PetscScalar *age = age_wspace;
   

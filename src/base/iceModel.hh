@@ -129,14 +129,12 @@ protected:
   IceModelVec3Bedrock Tb3;
 
   // parameters
-  PetscInt    flowLawNumber;
   PetscScalar maxdt, muSliding, enhancementFactor, initial_age_years_default;
   PetscScalar dt, dtTempAge, dt_force; // current mass cont. and temp/age 
                                        //   time steps in seconds
   PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo;
-  PetscInt    ssaMaxIterations;
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold;
   PetscScalar startYear, endYear, run_year_default, maxdt_temporary;
@@ -149,10 +147,12 @@ protected:
                                //   [units m/s] and d(volume)/dt [units m^3/s]
   PetscScalar min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp, 
               oceanHeatFlux, seaLevel;
-  PetscInt    skipCountDown, skipMax, noSpokesLevel, maxLowTempCount;
+  PetscScalar constantGrainSize;
+  PetscInt    skipCountDown, skipMax, noSpokesLevel, maxLowTempCount,
+              flowLawNumber,ssaMaxIterations;
 
   // flags
-  PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso, flowLawUsesGrainSize;
+  PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso;
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi;
   PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
@@ -160,7 +160,7 @@ protected:
               useConstantHardnessForSSA, computeSurfGradInwardSSA,
               leaveNuAloneSSA, shelvesDragToo;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
-  PetscTruth  realAgeForGrainSize;
+  PetscTruth  flowLawUsesGrainSize, realAgeForGrainSize;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
               allowAboveMelting;
   PetscTruth  createVecs_done, createViewers_done, createBasal_done;

@@ -1737,9 +1737,9 @@ The following features are \emph{not} included in the continuum model, and would
 
 Much of the behavior of PISM can be set at the command line by options.\index{PISM!options available at the command line}\index{options for PISM (and PETSc)!complete list}  For example, the command 
 
-\verb|$  pismv -test C -Mx 61 -gk -e 1.2 -o foo|
+\verb|$  pismv -test C -Mx 61 -e 1.2 -o foo|
 
-\noindent includes five options ``\verb|-test|'', ``\verb|-Mx|'', ``\verb|-gk|'', ``\verb|-e|'', and ``\verb|-o|'',  The first of these options includes a single character argument, the second an integer argument, the third has no argument, the fourth has a floating point argument, and the fifth has a string argument.
+\noindent includes four options ``\verb|-test|'', ``\verb|-Mx|'', ``\verb|-e|'', and ``\verb|-o|'',  The first of these options includes a single character argument, the second an integer argument, the third a floating point argument, and the fourth has a string argument.
 
 The format of the option documentation below is
 
@@ -1865,7 +1865,7 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \subsect{Options controlling parameters for physical models}
 
-\subsubsect{General parameters}
+\subsubsect{Flow and dynamical parameters}
 
 \optdef{constant\und hardness}{1.9e8}  If this option is used then the velocities in ice shelves and streams (see \verb|-ssa| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
@@ -1880,14 +1880,11 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdef{constant\und nu}{30.0}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant viscosity $\nu$; see the option \verb|-constant_hardness| above.  Generally the viscosity is computed by a nonlinear iteration.  With option \verb|-constant_nu|, this iteration does not occur.  If \verb|-constant_nu| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
-\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
-
-
-\subsubsect{Flow law parameters}
-
 \optdef{e}{1.0}  Flow enhancement factor.
 
-\opt{gk}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
+\optdef{gk}{1.0}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} and uses a constant grain size.  The option \verb|-gk| without an argument uses default grain size of 1 mm while \verb|-gk N| uses \verb|N| mm grains.  See \verb|-law| for more complete option choice of flow law.
+
+\opt{gk\und age}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to compute the grain size; compare \verb|-gk|.  The age is used in a table from the Vostok core \cite{VostokCore} to compute a grain size.  This option should not be used unless the model age has stabilized after a long (e.g.~$\ge 100$ ka) run.
 
 \optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
@@ -1925,6 +1922,8 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \normalsize	
 \end{tabular}
 \end{table}
+
+\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
 
 
 \subsubsect{Positive degree day model (PDD) parameters}

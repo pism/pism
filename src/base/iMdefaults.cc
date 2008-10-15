@@ -57,7 +57,6 @@ const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY = 243.0;  //  Julian day; August 1
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
-const PetscScalar DEFAULT_GRAIN_SIZE_INTERVAL_YEARS = 10.0;
 const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
@@ -68,8 +67,9 @@ const PetscInt    DEFAULT_SKIP_MAX = 10;
 const PetscScalar DEFAULT_GLOBAL_MIN_ALLOWED_TEMP = 200.0;
 const PetscInt    DEFAULT_MAX_LOW_TEMP_COUNT = 10;  // 
 
+const PetscScalar DEFAULT_CONSTANT_GRAIN_SIZE = 1.0e-3;  // 1 mm
+
 const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
-const PetscTruth  DEFAULT_REAL_AGE_FOR_GRAIN_SIZE = PETSC_FALSE;
 const PetscTruth  DEFAULT_THERMAL_BEDROCK = PETSC_TRUE;
 const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
 //const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
@@ -233,7 +233,8 @@ PetscErrorCode IceModel::setDefaults() {
   updateHmelt = PETSC_TRUE;
 
   flowLawUsesGrainSize = PETSC_FALSE;
-  realAgeForGrainSize = DEFAULT_REAL_AGE_FOR_GRAIN_SIZE;
+  realAgeForGrainSize = PETSC_FALSE;
+  constantGrainSize = DEFAULT_CONSTANT_GRAIN_SIZE;
 
   doBedDef = DEFAULT_DO_BED_DEF;
   doBedIso = DEFAULT_DO_BED_ISO;
