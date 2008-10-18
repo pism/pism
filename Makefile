@@ -40,7 +40,7 @@ clean:
 	@make -C $(BUILD_DIR) clean
 	@make -C doc clean
 
-userman refman browser summary fullbib:
+userman refman browser summary fullbib installation:
 	@cd doc && $(MAKE) $@
 
 .DEFAULT:

@@ -200,7 +200,7 @@ and routines in C for the scalable parallel solution of partial differential equ
 scientific applications.  Large parts of PETSc relate especially to finite-difference-type regular, 
 rectangular grids but PETSc has been used for unstructured grids as well.
 
-PETSc employs the MPI standard for all message-passing communicationbut it is deliberately at a 
+PETSc employs the MPI standard for all message-passing communication but it is deliberately at a 
 higher level of abstraction than MPI.  We find that using PETSc protects the programmer from 
 explicit consideration of message passing about 90% of the time.
 

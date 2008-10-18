@@ -5,8 +5,6 @@ from subprocess import Popen, PIPE
 from sys import argv, exit, stdout
 import os
 
-# Fix me! I cannot add scalar variables, such as polar_stereographic. :-(
-
 # Reads pism_state.cdl, replaces magic numbers with actual values and runs
 # ncgen on the result to produce a .nc file having the right structure.
 
@@ -38,6 +36,7 @@ def make_template(x, y, vars, pism_state_cdl, output_filename, remove=False):
         """Reads until the next variable definition is found or the end of the
         'variables' section is reached. If printp = True, then also prints the
         lines read."""
+        from numpy import any
         for j in range(j, N):
             positions = map(lines[j].strip().find,
                             ["int ", "double ",

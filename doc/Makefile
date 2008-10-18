@@ -1,4 +1,4 @@
-ALL : userman summary refman browser
+ALL : userman summary refman browser install
 
 update: svn_update
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
@@ -8,6 +8,12 @@ else
 	@svnversion > revision.tex
 	$(MAKE) userman
 endif
+
+installation : installation.tex ice_bib.bib
+	pdflatex installation.tex
+	bibtex installation
+	pdflatex installation.tex
+	pdflatex installation.tex
 
 userman : manual.tex ice_bib.bib
 	pdflatex manual.tex
