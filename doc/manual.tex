@@ -102,7 +102,7 @@ Our research into ice sheet modeling was strongly influenced and constantly moti
 \newpage
 \section{Introduction}\label{sect:intro}
 
-This \emph{User's Manual} describes how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.  It describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on basic publicly-available data.
+Please see the \emph{Installation Manual} for the description of how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.  This \emph{User's Manual} describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on basic publicly-available data.
 
 Information about PISM is online at
 
@@ -123,207 +123,10 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 
 \bigskip
 
-\texttt{help\@@pism-docs.org}
+\href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}
 \normalsize
 \end{center}
 \normalsize
-
-
-\newpage
-\section{Installation}\label{sect:install}
-
-\subsubsection*{Installing prerequisities}
-\renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
-\begin{enumerate}
-\item You will need a UNIX system with internet access.  A GNU/Linux environment will be easiest but other UNIX versions have been used successfully.  Package management systems are useful for installing many of the tools below, \emph{but} neither PISM itself nor up-to-date PETSc distributions are currently available in the Debian repositories.  You will need \href{http://www.python.org/}{Python} and \href{http://subversion.tigris.org/}{Subversion} installed, but these are included in all current Linux distributions.  To use the (recommended) graphical output of PISM you will need an  (\href{http://www.x.org/}{X Windows server}.
-\item As PISM is currently under rapid development, we distribute it only as compilable source code.  On the other hand, there are several software libraries needed by PISM.  Therefore the ``header files'' for these libraries are required for building PISM.  In particular this means that the ``developer's versions'' of the libraries are needed if the libraries are downloaded from package repositories like Debian.\footnote{Situation May 2008:  It is now possible to do most of the install based on Debian binary packages, with only PISM itself built from source.  In particular, the Debian package for PETSc now does work.  See \href{http://www.pism-docs.org/pism-install-deb-note.txt}{www.pism-docs.org/pism-install-deb-note.txt}.}
-
-\item PISM uses \href{http://www.unidata.ucar.edu/software/netcdf/}{NetCDF (= \emph{network Common Data Form})}\index{NetCDF} for an input and output file format.   If it is not already present, install it using the instructions at the webpage or using a package management system.
-
-\item PISM uses the \href{http://www.gnu.org/software/gsl/}{GSL (= \emph{GNU Scientific Library})}\index{GSL (\emph{GNU Scientific Library})} for certain numerical calculations and special functions.  If it is not already present, install it using the instructions at the webpage or using a package management system.
-
-\item PISM optionally uses the \href{http://www.fftw.org/}{``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the West})}\index{FFTW (\emph{Fastest Fourier Transform in the West})} in approximating the deformation of the solid earth under ice loads \cite{BLKfastearth}.  If you want the functionality of this earth model, which is coupled to the ice flow and which we recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt to build with it by setting the environment variable \verb|WITH_FFTW=0|.   If this library is absent, all of PISM will work \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
-
-\item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (= \emph{Message Passing Interface})}.\index{MPI (\emph{Message Passing Interface})}  Your system may have an existing MPI installation, in which case the path to the MPI directory will be used when installing PETSc below.  Otherwise we recommend that you allow PETSc to download \href{http://www-unix.mcs.anl.gov/mpi/mpich2/}{MPICH2} as part of the PETSc configure process (next).  In either case, once MPI is installed, you will want to add the MPI \verb|bin| directory to your path so that you can invoke MPI using the \verb|mpiexec| or \verb|mpirun| command.  For example, you can add it with the statement
-
-\verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for \verb|bash| shell)
-
-\noindent or
-
-\verb|setenv PATH /home/user/mympi/bin:$PATH|  \qquad (for \verb|csh| or \verb|tcsh| shell).
-
-\noindent Such a statement can, of course, appear in your \verb|.bashrc|, \verb|.profile|, or \verb|.cshrc| file so that there is no need to retype it each time you use MPI.
-
-\medskip
-\centerline{\emph{From now on this manual will assume use of} bash.}
-\medskip
-
-\item PISM uses   \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}{PETSc (= \emph{Portable Extensible Toolkit for Scientific computation})}.\index{PETSc (\emph{Portable Extensible Toolkit for Scientific computation})}  As mentions of this library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball at  
-   \centerline{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}{\t{www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}}}
-PISM requires a version of PETSc which is \texttt{\PETSCREL} or later.\footnote{A Debian package for PETSc may exist, but it should only be used if it is version \texttt{\PETSCREL} or later.}   The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation. 
-
-You should configure and build PETSc \emph{essentially} as described on the  \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}, but it might be best to read the following comments on the PETSc configure and build process first:
-
-\renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges.  Note that you will need to define the environment variable \verb|PETSC_DIR|\index{PETSC\und DIR} before configuring PETSc (next).  For instance, once you have entered the PETSc directory just untarred, \verb|export PETSC_DIR=|$\phantom{!}^\backprime \mathtt{pwd}^\backprime$.  (Note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \verb|'|.)
-
-\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default:\index{PETSC\und ARCH}
-
-\verb|$  export PETSC_ARCH=linux-gnu-cxx|
-
-\verb|$  ./config/configure.py --with-shared --with-c-support \|
-
-\verb|   --with-clanguage=cxx --with-debugging=no|
-
-Turning off the inclusion of the debugging symbols gives a significant speed improvement.
-
-Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
-
-\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \verb|/home/user/mympi/|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi/|.  The path used in this option must have MPI executables \verb|mpicxx| and \verb|mpicc|, and either \verb|mpiexec| or \verb|mpirun|, in subdirectory \verb|bin/| and MPI library files in subdirectory \verb|lib/|.
-
-\item On the other hand, it seems common that one needs to tell PETSc to download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
-
-\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \verb|--with-batch=1|.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
-
-\item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \verb|PETSC_ARCH| will be reported at the end of the configure process; take note of this value.  (Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.)
-
-\item  After \verb|configure.py| finishes, you will need to \verb|make all test| in the PETSc directory and watch the result.  If the X Windows system is functional some example viewers will appear; as noted you will need the X header files for this to work.
-
-\item Finally, you will want to set the \verb|PETSC_DIR| and the \verb|PETSC_ARCH| environment variables in your \verb|.profile| or \verb|.bashrc| file.  Also remember to add the MPI \verb|bin| directory to your \verb|PATH|.  For instance, if you used the option \verb|--download-mpich=1| in the PETSc configure, the MPI \verb|bin| directory will have a path like \verb|$PETSC_DIR/| \verb|externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/|.  Therefore the lines 
-
-\small
-\verb|export PETSC_DIR=/home/user/petsc-2.3.3-p2/|
-
-\verb|export PETSC_ARCH=linux-gnu-cxx|
-
-\verb|export PATH=$PETSC_DIR/externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/:$PATH|
-\normalsize
-
-\noindent could appear in one of those files.
-\end{enumerate}
-\end{enumerate}
-
-\medskip
-See Table \ref{tab:PISMdepends} for a summary of the dependencies on external libraries, including those mentioned so far.
-
-
-\subsubsection*{Installing PISM itself}
-At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
-
-\begin{enumerate}\setcounter{enumi}{5}
-\item Get the latest source\index{PISM!download source code} for PISM using the Subversion\index{Subversion} version control system:
-\begin{enumerate}
-\item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
-\item Do
-
-\verb|svn co http://svn.gna.org/svn/pism/trunk pism-dev|
-
-\item A directory called ``\verb|pism-dev/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM.}
-\end{enumerate}
-
-\item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \t{help\@@pism-docs.org}.}\index{make}\index{PISM!install}
-
-\verb|cd pism-dev|
-
-\verb|make|
-
-\verb|make install|
-
-\noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory. Object files created during the build process (located in the \verb|build| subdirectory) are not deleted by the \verb|install| target, so please do ``\verb|make clean|'' if space is an issue. Note ``\verb|make install|'' does not require root permission as it only writes to the local \verb|pism-dev/bin| and \verb|pism-dev/lib|.
-
-\item PISM executables can be run most easily by adding the directories \verb|pism-dev/bin/| and \verb|pism-dev/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
-
-\verb|export PATH=/home/user/pism-dev/bin:/home/user/pism-dev/util:$PATH|
-\end{enumerate}
-\smallskip
-
-
-\subsubsection*{Quick tests of the installation}
-You are done with installation at this point.  The next few items are recommended as they allow you to observe that PISM is functioning correctly.
-\medskip
-
-\begin{enumerate}\setcounter{enumi}{9}
-\item \label{serialpismvrun} Try a serial verification run of PISM:\index{pismv}
-
-\verb|pismv -test G -y 100|
-
-\noindent If you see some output and a final \verb|Writing model state| \verb|to file 'verify.nc'| \verb|... done| then PISM completed successfully.  Note that at the end of this run you get measurements of the difference between the numerical result and the exact solution \cite{BBL}.
-
-\item Try the MPI four processor version of the above run:\index{mpiexec}
-
-\verb|mpiexec -n 4 pismv -test G -y 100|
-
-\noindent This should work even if there is only one actual processor on your machine, in which case MPI will run multiple processes on the one processor, naturally.  The reported errors should be very nearly the same as the serial run above, but the results should appear faster (if there really are four processors)!
-
-\item Try a verification run on a finer vertical grid while watching the diagnostic views which use Xwindows:
-
-\verb|pismv -test G -Mz 201 -y 2000 -d HTc|
-
-\noindent When using such diagnostic views and \verb|mpiexec| the additional final option \pismoptionindex{display}\verb|-display :0| is sometimes required to enable MPI to use X windows:
-
-\verb|mpiexec -n 2 pismv -test G -Mz 201 -y 2000 -d HTc -display :0|
-
-\item Run a verification test of the ice stream code:\pismoptionindex{verbose}
-
-\verb|pismv -test I -Mx 5 -My 401 -verbose|
-
-\noindent This runs a rather different part of the PISM code and then compares the numerical result to the exact solution appearing in \cite{SchoofStream}.
-
-\item Run a Python\index{Python} script for a basic suite of verifications:\index{verifynow.py}
-
-\verb|test/verifynow.py|
-
-\noindent or, on an $N$ processor machine,
-
-\verb|test/verifynow.py -n |$N$
-
-\noindent If you would like us to confirm that PISM is working as expected please save the one page or so of output from this script and send it to us (\verb|help@pism-docs.org|).  See section \ref{sect:verif} for more on PISM verification.
-\end{enumerate}
-\smallskip
-
-At this stage you can do the EISMINT II simplified geometry experiments (section \ref{sect:simp}) and run many verification tests (section \ref{sect:verif}) without further downloads.  Section \ref{sect:green} is an example of using PISM to model the Greenland ice sheet using freely-downloadable data.  Similarly one can model the Ross ice shelf using free data as described in section \ref{sect:ross}.
-
-Setting up PISM to model real ice sheets will frequently require techniques not be covered in this manual.  At the minimum, the user will need to convert ice sheet data to NetCDF format so that it can be read by PISM.  Actual modeling may also require the writing of additional source code; see the \emph{Reference Manual} for a description of the source code for PISM.  Use of PISM for real ice sheet modeling is something we welcome questions about, and will attempt to help with, but we will not pretend it is routine.  See the PISM Documentation web-page\index{PISM!documentation web page link} \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}} for links to additional documentation.
-
-A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.   You can update your copy of PISM to the latest version by \verb|svn update|\index{svn update} in the PISM directory.  After doing so you will want to \verb|make|\index{make} and \verb|make install|\index{make install} in order to rebuild the PISM executables using the updated source code files.
-
-Have fun!
-
-\begin{table}[ht]
-\caption{Dependencies for PISM, listed alphabetically.\index{PISM!dependencies on other software}  These are needed to build a fully-functional PISM from source and to do all the examples in the manual.}\label{tab:PISMdepends}
-\small
-\begin{tabular}{@{}llll}\hline
-\textbf{Library} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\
-\textbf{/Program} &  &  &  \\ \hline
-FFTW & \href{http://www.fftw.org/}{\t{www.fftw.org}} & \emph{recommended} & needed for earth deform- \\
- & & & \quad  -ation; if not present set \\
- & & & \quad  \verb|WITH_FFTW=0| \\
-GSL & \href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}} & \emph{required} &  \\
-matplotlib & \scriptsize\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}} & \emph{recommended} & used in Python scripts \\
-MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
-NetCDF & \scriptsize\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}\small & \emph{required} & \\
-\texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts  \\
-PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ 2.3.3-p2 \\
-Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & \\
-\texttt{netcdf4-python} & \scriptsize\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}\small & \emph{recommended}  & used in Python scripts  \\
-\texttt{scikits.delaunay} & \href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}} & \emph{recommended} & used in Python scripts \\
-Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\ 
-\hline
-& & & \\
-\multicolumn{3}{c}{\rule[-3mm]{0mm}{8mm}Additional dependencies for building PISM documentation:} & \\
-\hline
-\LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} & \emph{optional} & for rebuilding this \emph{User's}  \\
- & & & \emph{Manual} and the \\
- & & & \emph{Reference Manual} \\
- & & & from source \\
-\texttt{doxygen}\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} & \emph{optional}  & for rebuilding the \emph{Reference}  \\
- & & & \emph{Manual} and Source Code \\
- & & & Browser from source \\
-\hline
-\normalsize
-\end{tabular}
-\end{table}
-
 
 \clearpage\newpage
 \section{Getting started}\label{sect:start}\index{PISM!getting started}
@@ -1266,7 +1069,7 @@ As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used
 \noindent The variable \verb|check| in the output file holds the difference of \verb|usurf| and the sum $\verb|topg|+\verb|thk|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|usurf| is within 1 meter of $\verb|topg|+\verb|thk|$.  Thus the surface elevation \verb|usurf| is consistent.  It is also redundant because at bootstrapping, described below, PISM reads ice thickness and bed elevation and computes ice surface elevation as the sum of these two.
 \end{comment}
 
-The bed elevation \verb|topg| in the original data (\verb|suaq20-EISMINT|) effectively contains a missing values.  These are locations where \verb|topg| is \emph{exactly} $0.0$, presumably because in these locations the observed bed elevation was not measured or the measured value was not trusted.  We think these are deep fjords locations, mostly.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix D.} found in directory \verb|pism/util/|:
+The bed elevation \verb|topg| in the original data (\verb|suaq20-EISMINT|) effectively contains missing values.  These are locations where \verb|topg| is \emph{exactly} $0.0$, presumably because in these locations the observed bed elevation was not measured or the measured value was not trusted.  We think these are deep fjords locations, mostly.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix \ref{sect:scripts}.} found in directory \verb|pism/util/|:
 
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
@@ -1286,7 +1089,7 @@ Next we use the script which converts the time series data files \verb|specmap.0
 
 \begin{figure}[ht]
 \includegraphics[width=5.6in,keepaspectratio=true]{figs/gripDeltaT}
-\caption{Change in temperature from present, from the GRIP core.  A famous graph reproduced by applying \texttt{ncview} to \texttt{grip\und dT.nc}}
+\caption{Change in temperature from present, from the GRIP core.  A famous graph reproduced by applying \texttt{doc/gripdeltaT.py} to \texttt{grip\und dT.nc}}
 \label{fig:gripDeltaT}
 \end{figure}
 
@@ -1301,7 +1104,7 @@ Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year 
 
 \noindent The run takes a few seconds of real time.
 
-\begin{table}\label{bootstrapEISgreen}
+\begin{table}
 \scriptsize
 \begin{quote}
 \begin{verbatim}
@@ -1365,6 +1168,7 @@ Writing model state to file `green20km_y1.nc'
 \bigskip
 
 \caption{Bootstrapping from the EISMINT-Greenland data and running for one model year.}
+\label{bootstrapEISgreen}
 \end{table}
 
 Let's explain what has happened.  The EISMINT-Greenland data, as with \emph{all} real ice sheet data, does not contain certain variables necessary to initialize PISM in the sense of complete initial values for time-dependent partial differential equations.  For instance, the data do not include the temperature of the ice anywhere but at the surface (and only there by a elevation and latitude dependent formula).  The data also do not include the amount of water stored in the till, for instance.  These are not omissions from the data sets but rather inevitable facts; one cannot observe ice sheets as fluids very well.  Therefore PISM fills in the unknown initial conditions based on some default guesses, as indicated by the messages in Table \ref{bootstrapEISgreen}.
