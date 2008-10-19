@@ -25,11 +25,9 @@
 \newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
 \renewcommand{\t}[1]{\texttt{#1}}
 \newcommand{\Matlab}{\textsc{Matlab}\xspace}
-\newcommand{\bq}{\mathbf{q}}
 \newcommand{\bU}{\mathbf{U}}
 \newcommand{\eps}{\epsilon}
 \newcommand{\grad}{\nabla}
-\newcommand{\Div}{\nabla\cdot}
 
 %% macros having to do with documentation for options; note these appear in the index
 \newcommand{\und}{\_\!\_}
@@ -52,9 +50,9 @@
 
 \title[PISM User's Manual]{\protect{\Large \emph{PISM}, a Parallel Ice Sheet Model:\normalsize} \\ \protect{\Large \bigskip \bigskip User's Manual\normalsize}}
 
-\author[]{Ed Bueler \\ Jed Brown \\ Nathan Shemonski \\ Constantine Khroulev}
+\author[]{Ed $\text{Bueler}^\ast$ \\ Jed Brown \\ Nathan Shemonski \\ Constantine Khroulev}
 
-\date{\today.  \href{mailto:help@pism-docs.org}{help@pism-docs.org}.  Based on PISM rev \PISMREV\,and PETSC rel \PETSCREL.  \\ Get PISM development version by ``\quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}\quad''} 
+\date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREL.  Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}} 
 
 
 \begin{document}
@@ -68,7 +66,7 @@
 
 \newpage
 \phantom{bob}
-\vspace{1in}
+\vspace{2in}
 \begin{quote}
 \textsl{Copyright (C) 2004--2008 Ed Bueler and Jed Brown and Nathan Shemonski and Constantine Khroulev}
 \medskip
@@ -82,7 +80,7 @@
 \noindent \textsl{PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.}
 \medskip
 
-\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}} in PISM root directory.   If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{pism/COPYING}}; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \vspace{1in}
 \normalspacing
@@ -92,7 +90,7 @@
 
 The NASA Cryospheric Sciences Program\index{NASA Cryospheric Sciences Program} supported this research with grant NAG5-11371.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, Ben Sperisen\index{Sperisen, Ben}, Maria Martin\index{Martin, Maria} and other PISM users for helpful comments and questions on PISM.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Spencer Jones\index{Jones, Spencer}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -102,16 +100,16 @@ Our research into ice sheet modeling was strongly influenced and constantly moti
 \newpage
 \section{Introduction}\label{sect:intro}
 
-Please see the \emph{Installation Manual} for the description of how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.  This \emph{User's Manual} describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on basic publicly-available data.
+Welcome to PISM!
 
-Information about PISM is online at
+Please see the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.
 
-\centerline{\href{http://www.pism-docs.org}{\t{www.pism-docs.org}}}
+This \emph{User's Manual} describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on basic publicly-available data.
 
-Users who want to advance the science of ice sheets will need to go beyond what is described in this \emph{User's Manual}.  For such users there are two additional documents to know about:
+But that is all.  Users who want to advance the science of ice sheets will need to go beyond what is described here.  For such users there are two additional documents to know about:
 \begin{enumerate}
  \item  The \emph{PISM Reference Manual}\index{PISM!\emph{Reference Manual}}
-describes the most important pieces of the source code.  It contains, or is intended to contain, the minimum documentation of the PISM source code parts in order to include all the continuum models and numerical methods of PISM.  A recent development version of the \emph{Reference Manual} is online (\href{http://www.pism-docs.org/refman-dev.pdf}{\t{www.pism-docs.org/refman-dev.pdf}}).  A current \emph{Reference Manual} can be generated from the source by doing \verb|cd doc| and then \verb|make|.  Then use a PDF viewer on \verb|refman.pdf|.
+describes the most important pieces of the source code.  It contains, or at least it is intended to contain, the minimum documentation of the PISM source code parts in order to include all the continuum models and numerical methods of PISM.  Though the stable version of the \emph{Reference Manual} is online (\href{http://www.pism-docs.org/refman.pdf}{\t{www.pism-docs.org/refman.pdf}}), it can be re-generated from the source by doing \verb|cd doc| and then \verb|make|. Then use a PDF viewer on \verb|refman.pdf|.
  \item  The \emph{PISM (HTML) Source Code Browser}\index{PISM!\emph{Source Code Browser (HTML)}} gives a complete view of the class/object structure of the source code.  It can be generated from the source by by doing \verb|cd doc| and then \verb|make|.  Then use a web browser to view \verb|doxy/html/index.html|.
 \end{enumerate}
 The \emph{Reference Manual} and the \emph{Source Code Browser} were automatically generated by \verb|doxygen| (\href{http://www.doxygen.org/}{\t{www.doxygen.org}}) from comments in the PISM source code.  Thus they are not as user-friendly as this \emph{User's Manual}.
@@ -119,7 +117,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \vspace{1.5in}
 \large
 \begin{center}
- \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \large
+ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  But do write to us with questions: 
 
 \bigskip
 
@@ -127,6 +125,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \normalsize
 \end{center}
 \normalsize
+
 
 \clearpage\newpage
 \section{Getting started}\label{sect:start}\index{PISM!getting started}
@@ -422,7 +421,6 @@ One is allowed to specify the grid when PISM is started \emph{without} a pre-exi
 
 \noindent will give a warning that ``\verb|user option -Mz ignored; value read from file foo.nc|.''  To change the model grid one must explicitly ``regrid'', as described next.
 
-FIXME: need to document \verb|-quadZ|
 
 \subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment as above, producing \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  Speaking conceptually, the idea in PISM is that one starts over from the beginning of EISMINT II experiment A on the finer grid, but one extracts the thickness and ice temperature stored in the coarse grid file and interpolates onto the finer grid before proceeding with the actual computation.  The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
@@ -632,11 +630,11 @@ Also refer to test H.
 \hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
 \bigskip
 
-\subsubsection*{Ideas}  Verification is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate!).  There is no comparison between model output and nature, here.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
+\subsubsection*{Ideas} ``Verification'' is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  One is not comparing model output to nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
 
-See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification (and validation) in computational fluid dynamics.
+See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics.
 
-In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}.  All PISM executables run \verb|IceModel|, but derived classes add bits of code, in this case the exact solutions.)
+In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}, and \emph{all} PISM executables run \verb|IceModel|.
 
 \begin{table}[ht]
 \caption{Exact solutions for verification.}\label{tab:tests}
@@ -665,7 +663,7 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREPARATION]
 \end{table}
 
 \begin{table}[ht]
-\caption{Canonical PISM\index{pismv!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
+\caption{Running PISM\index{pismv!options to run verification tests}\index{verification tests}  to verify using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Test} & \textbf{Example invocation}  \\ \hline
@@ -686,16 +684,11 @@ L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \end{tabular}
 \end{table}
 
-Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Only Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids (for relatively quick execution time).
+Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Note that most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids (for relatively quick execution time).
 
-\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero cell size.  For example, in the the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.   Concretely, we usually compute both the \emph{maximum} numerical error anywhere on the grid and the \emph{average} numerical error on the grid.
+\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit.  For example, in the the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) refinement limit $(\Delta x,\Delta y,\Delta t) = (0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or several norms) of the difference between the numerical solution and the exact solution.   Concretely, we will typically compute both the \emph{maximum} numerical error anywhere on the grid and the \emph{average} numerical error on the grid.
 
-The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense (generally).  Rather the goals are \begin{itemize}
-\item to see that the error is decreasing,
-\item to measure the rate at which it is decreasing,
-\item and to get a realistic sense of the magnitude of numerical error, compared to other errors, in a realistic ice sheet model run.
-\end{itemize}
-Knowing the error decay rate may even give a prediction as to how fine a grid is necessary to achieve a desired smallness for the numerical error.  ``Other errors'' includes critically the error from using the wrong (or over-simplified) continuum model, and also observational (or pre-processing) errors present in the data used in the realistic run.
+The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense, generally.  Rather the goal is to see that the error is trending toward zero, and to measure the rate at which it decays.  Knowing the error decay rate allows the modeler to have a sense of how fine a grid is necessary to achieve a small enough numerical error so that the numerical solution can be regarded as a (near) solution to the continuum model.  See \cite{BLKCB,BBL,Roache,Wesseling}.
 
 For an example of a refinement path, consider the runs\index{refinement path!example}\index{pismv}
 \begin{quote}\small\begin{verbatim}
@@ -705,7 +698,7 @@ pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
 \end{verbatim}
 \normalsize\end{quote}
-Here we seek to measure the basic function of the isothermal shallow ice approximation components of PISM.  The exact solution used here is the Halfar similarity solution \cite{Halfar83}, in the case of no accumulation.  One specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
+These verify the basic function of the isothermal shallow ice approximation components of PISM in the case of no accumulation.  The exact solution used here is the Halfar similarity solution \cite{Halfar83}.  Note that one specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
 
 The data produced by the above four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
 
@@ -719,7 +712,7 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip 10| and \verb|-quadZ| would make a lot of sense for speeding up; see subsection \ref{sect:usage}.)
+produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
 
 \subsubsection*{Results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
 
@@ -901,135 +894,82 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
 
-\noindent The full text description, available at the above site as \verb|.pdf|, is essential reading.  It is essential both to understand MISMIP results and many of the comments in this subsection.
+\noindent The full text description, available at the above site as \verb|.pdf|, is essential reading, both to understand MISMIP results and many of the next comments.
 
-PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the flow line case (as considered in MISMIP).  In fact, \cite{SchoofMarine1} shows that the only effect on an ice shelf in the flow line case is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  This analysis does not apply to general ice shelves with two horizontal dimensions, however.  Real ice shelves, which are the modelling goal in PISM, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  In fact, PISM was first used to model a two horizontal dimension ice shelf, namely the Ross ice shelf example in section \ref{sect:ross}.
+PISM's version of MISMIP includes an attached ice shelf.  There is a flow line analysis in \cite{SchoofMarine1}, a paper which strongly influenced the design of the MISMIP, which shows that the ice shelf need not be modeled because its only effect is to apply the force present at the calving front directly to the ice at the grounding line.  But this analysis does not apply to general ice shelves with two horizontal dimensions.  These real ice shelves, which are well-modeled in PISM as shown in section \ref{sect:ross}, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  Instead of changing the ice dynamics in PISM to remove the ice shelf for this flow line job, instead we keep the usual PISM ice shelf model for MISMIP.
 
-Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP, and we consider the affect on grounding line dynamics.  We make the base of the ice shelves have very small resistance, namely $10^4$ less linear drag than is typical of a Siple coast ice stream \cite{HulbeMacAyeal}, because this seems to have the effect of stabilizing the ice shelf.
+Because PISM is a map-plane model with two horizontal dimensions, we must adapt it to do a one horizontal dimension problem.  The flow line direction for MISMIP is taken to be ``$y$'', fairly arbitrarily.  We periodize the cross-flow direction ``$x$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-Mx 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes, apparently.
 
-Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$y$''.  We periodize the cross-flow direction ``$x$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-Mx 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes.
+PISM has two applicable ice dynamics models, and they correspond to \verb|-model 1| and \verb|-model 2| options when running MISMIP.  The first is a pure SSA model which is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 
-PISM has two applicable ice dynamics models, the \verb|-model 1| and \verb|-model 2| options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
-
-There are many runs for the complete MISMIP, namely $62$ runs for each model and grid choice.  As there are two models and three (suggested) grid choices, a full suite is $6 \times 62 = 372$ runs.  As usual, however, the finest grid accounts for all the run time.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.\footnote{For the intercomparison submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.}
+There are many runs for the complete MISMIP, namely $62$ runs for each model and grid choice.  Here there are two models and three (suggested) grid choices, so a full suite of MISMIP runs is $6 \times 62 = 372$ runs.  But, as usual, the finest grid accounts for all the run time.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.\footnote{For the intercomparison submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.}
  
 \begin{table}[ht]
-\caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options (Appendix \ref{sect:options}).\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
+\caption{MISMIP run options in PISM.\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
 \small
 \begin{tabular}{@{}lll}\hline
 \textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \hline
 \verb|-extras| &  & if this flag is set then, once steady state is reached, surface \\
-               &  & and bed elevation are written to an extra file with name \\
-               &  & ending ``\verb|_extras|''; script \verb|figsMISMIP.py| reads them \\
+               &  & and bed elevation are written to an extra file with name ending \\
+               &  & ``\verb|_extras|''; script \verb|figsMISMIP.py| can read this \\
 \verb|-initials| & \verb|ABC| & initials to prepend to ASCII output file names \\
-\verb|-initialthk| & 10.0 & initial thickness (m) at start of run \\
 \verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; allowed values \\
                &  & are \verb|1a,1b,2a,2b,3a,3b| \\
-\verb|-model| & 1 & model 1 is SSA only and model 2 combines SIA and SSA  \\
-              &   & velocities; see text \\
-\verb|-no_shelf_drag| &  & flag to turn off small drag on shelves \\
+\verb|-model| & 1 & model 1 is SSA only and model 2 combines SIA and SSA velocities; \\
+              &   & see text \\
 \verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state; criterion is \\
                     & & $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
-\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for \\
-             &  & exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in  \\
-             &  & \verb|mismip_4.pdf|: ``step 15'' skipped \\
-\verb|-try_calving| &  & flag to turn on experimental calving law which keeps  \\
-                    &  & calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
-\hline
-\verb|-My| &  & this option gets additional interpretation: \verb|-My 151| makes grid \\
-           &  & mode 1 so output files have ``\verb|_M1_|''; \verb|-My 1501| is grid mode 2 \\
-           &  & (``\verb|_M2_|''); any other value is grid mode 3 (``\verb|_M3_|'') \\
-\verb|-shelves_drag_too| &  & using this option has no effect because shelf drag is on \\
-                         &  & by default in MISMIP; see \verb|-no_shelf_drag| to turn off  \\
-\verb|-ssa_min_thk| & 5 & m; calving-front boundary condition is dealt with by  \\
-                    &   & extending the ice beyond $|y|=1600$ km with a shelf  \\
-                    &   & of this thickness; changing this has some effect  \\
+\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiment 1, $\{1,\dots,13\}$ for \\
+             &  & exper.~2, and $\{1,\dots,15\}$ for exper.~3; note typo in table 6 in  \\
+             &  & \verb|mismip_4.pdf|: ``step 16'' is mentioned but no ``step 15'' \\
 \hline\normalsize
 \end{tabular}\end{table}
 
-To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional options.  See Table \ref{tab:MISMIPoptions}.  A first run is:
+To do an actual MISMIP run, the executable \verb|pisms| is used, as with EISMINT II previously.  Table \ref{tab:MISMIPoptions} shows particular runtime options.  
 
-\verb|$ cd examples/mismip/|  \hfill \scriptsize(directory where some MISMIP-related scripts are)\normalsize
+A reasonable first MISMIP run is:
 
-\verb|$ pisms -mismip 1a -model 1 -step 1 -Mx 3 -Mz 15 -My 151|
+\verb|$ cd examples/mismip/|  \hfill (directory where some MISMIP-related scripts are)
 
-\noindent This will produce ASCII files \verb|ABC1_1a_M1_A1_t|, \verb|ABC1_1a_M1_A1_ss|, and \verb|ABC1_1a_M1_A1_f|, as well as a standard NetCDF output file \verb|ABC1_1a_M1_A1.nc|, in about 3 minutes.  Using a few processors speeds things up a little, and a little extra output is nice, so re-doing it:
+\verb|$ pisms -mismip 1a -initials EBU -model 1 -step 1 -Mx 3 -Mz 15 -My 151|
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -Mx 3 -Mz 15 -My 151 -extras|
+\noindent This will produce ASCII files \verb|EBU1_1a_M1_A1_t|, \verb|EBU1_1a_M1_A1_ss|, and \verb|EBU1_1a_M1_A1_f|, as well as a standard NetCDF output file \verb|EBU1_1a_M1_A1.nc|, in about 3 minutes.
 
-\noindent This run takes about 2 minutes on an 8 core machine.  In addition to the same files as before, now we get an additional ASCII file \verb|ABC1_1a_M1_A1_extras|.  The \verb|_ss| file with thickness and the \verb|_extras| file with bed and surface elevation allow us to produce a figure showing the profile for the final steady state, Figure \ref{fig:MISMIPmodel1exper1aM1A1}:
+Using a few processors speeds things up a little, and a little extra output is nice, so next you might try:
 
-\verb|$ ./figsMISMIP.py -p ABC1_1a_M1_A1 --extras|
+\verb|$ mpiexec -n 4 pisms -mismip 1a -initials EBU -model 1 -step 1 \|
 
-\noindent The script \verb|makefigs.sh| will apply \verb|figsMISMIP.py| to each MISMIP output in the current directory.
+\verb|  -Mx 3 -Mz 15 -My 151 -extras|
+
+\noindent This time it takes about 2 minutes on my 8 core machine.  In addition to the same files as before, this time we get an additional ASCII file \verb|EBU1_1a_M1_A1_extras|.  The \verb|_ss| file has the thickness and the \verb|_extras| file has the bed and surface elevation.  With all this information we can produce a nice figure, showing the ice sheet and ice shelf profile for the final steady state, by using the Python script \verb|figsMISMIP.py| (in directory \verb|examples/mismip/|):
+
+\verb|$ ./figsMISMIP.py -p EBU1_1a_M1_A1 -e 1|
+
+\noindent The result is shown in Figure \ref{fig:MISMIPmodel1exper1aM1A1}.  The script \verb|figsMISMIP.py| does not require \verb|_extras| output, but does produce a nicer picture if it is present.  Once you have done multiple runs, the script \verb|makefigs.sh| will apply \verb|figsMISMIP.py| to each MISMIP output in the current directory.
 
 \begin{figure}[ht]
-\includegraphics[width=4.0in,keepaspectratio=true]{figs/profile_EBU1_1a_M1_A1}
+\includegraphics[width=5.0in,keepaspectratio=true]{figs/profile_EBU1_1a_M1_A1}
 \caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 1, step 1.}
 \label{fig:MISMIPmodel1exper1aM1A1}
 \end{figure}
 
-MISMIP runs are done in sequence using the result of a previous run but with a step change in ice hardness.  That is, you initialize as usual in PISM from a saved \verb|.nc| file.  The next run is
+FIXME: describe how to continue to step 2, how to do other grid modes, -skip 10 and -ksprtol stuff, and exper 3b
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -extras -step 2 -if ABC1_1a_M1_A1.nc|
+FIXME: but all is not kosher!  show jump in cflx, compare hysteresis figure 3 in \verb|mismip_4.pdf| 
 
-\noindent The result is \verb|ABC1_1a_M1_A2_t|, etc.
+Running \verb|pisms -mismip ...| with options as shown here is perhaps fine for a few particular MISMIP runs, but hardly adequate to complete all 372 runs in the intercomparison.  We need automation, so in \verb|examples/mismip/| there is a shell script \verb|mismip.sh| which helps manage the runs.  There are several nested loops, naturally, but setting variables \verb|MODELRANGE| and \verb|GRIDRANGE| at the start will do some of the job of configuring what you want.  Do ``\verb|./mismip.sh 4 D|'', or similar, with the extra ``\verb|D|'' at the end, to see what \verb|pisms -mismip| calls will happen before actually doing it; ``\verb|D|'' stands for ``debug''.
 
-Running \verb|pisms -mismip ...| with options as shown here is practical for a few examples.  The script \verb|mismip.sh| automates the process for the hundreds of runs in the intercomparison.  Setting variables \verb|MODELRANGE| and \verb|GRIDRANGE| at the top of the file will mostly configure what you want.  Do ``\verb|./mismip.sh 4 D|'', or similar, to see what calls will happen \emph{before} actually starting them; ``\verb|D|'' stands for ``debug''.  The script \verb|mismip.sh| also illustrates how to reverse the order of steps in experiments 2a and 2b.
 
-For significantly finer grids than mode 1, it becomes more critical to set the tolerance parameters for the SSA velocity calculation.  Apparently adding option \verb|-ksp_rtol 1.0e-7| is effective.
-
-The implementation of MISMIP in PISM conforms fairly closely to the intercomparison description.  However, that document specifies
-\begin{quotation}
-\dots we require that the rate of change of grounding line position be $0.1$ m/a or less, while the rate of change of ice thickness at each grid point at which ice thickness is defined must be less than $10^{-4}$ m/a \dots
-\end{quotation}
-as a standard for ``steady state''.  Because the grounding line undergoes only discrete jumps on the grid, because it shows great stability, and because in two horizontal dimensions there is no well-defined ``rate of change of grounding line position'' which would be generally implementable in PISM, we do not check the grounding line movement criterion.  Steady state is achieved if the ice thickness criterion holds.  However, we report enough information, in the required ASCII files with names ending in \verb|_t|, to compute a grounding line rate.
-
-\begin{figure}[ht]
-\includegraphics[width=4.0in,keepaspectratio=true]{figs/SM_1a_A1}
-\caption{Analytical profile for steady state of experiment 1a, grid mode 1, step 1, from theory in \cite{SchoofMarine1}.  This is a boundary layer asymptotic matching result, but not the exact solution to the equations solved numerically by PISM.  The grounding line is at $1052.5$ km.  Compare Figures \ref{fig:MISMIPmodel1exper1aM1A1} and \ref{fig:MISMIPmodel1exper1aM3A1FROMSM} generated by PISM.}
-\label{fig:SMexper1aM1A1}
-\end{figure}
-
-There is an additional script \verb|solverSM.py| which computes the profile from the Schoof's \cite{SchoofMarine1} asymptotic-matching boundary layer theory.  This script is a Python translation, using \verb|scipy| and \verb|pylab|, of the \Matlab codes in \url{http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar}.  For example,
-
-\verb|$ ./solverSM.py -e 1 --sliding=a -s 1|
-
-\noindent produces Figure \ref{fig:SMexper1aM1A1}.
-
-We see immediately that the PISM result does not put the grounding line in the same location as Schoof's boundary layer theory.  We believe the problem is with PISM's numerical solution, not with that theory.  More evidence that the problem is numerical can be found by looking at the ice flux.  Using \verb|ncview| to examine the diagnostic variable \verb|cflx| (magnitude) in \verb|ABC1_1a_M1_A1.nc| we see Figure \ref{fig:cflx1aM1A1}.  \emph{This is a problem with PISM}.  The flux should be a linear function.  Indeed, at steady state the flux $\bq$ solves $a=\Div\bq$ where $a$ is the accumulation rate.  In MISMIP, $a$ is the constant $0.3$ m/a, so at steady state $|\bq| = a x$, a line.
-
-\begin{figure}[ht]
-\includegraphics[width=4.0in,keepaspectratio=true]{figs/cflx_EBU1_1a_M1_A1}
-\caption{Numerically computed flux $\bq = \bar\bU\, H$, where $\bar\bU$ is the vertically-averaged horizontal velocity and $H$ the thickness, for steady state of experiment 1a, grid mode 1, step 1.  Illustrates a significant numerical problem; it should be the dotted line, which has slope $a = 0.3$ m/a.}
-\label{fig:cflx1aM1A1}
-\end{figure}
-
-We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially 10 m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
-
-But \verb|solverSM.py| has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \verb|-regrid| (section \ref{sect:usage}).
-
-The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
-
-\verb|$ ./solverSM.py  --My=601 -e 1 --sliding=a -s 1 -n SM.nc|
-
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid SM.nc \|
-
-\verb|  -regrid_vars H -ksp_rtol 1.0e-7 -Mx 3 -Mz 15 -My 601|
-
-\noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
-
-\begin{figure}[ht]
-\includegraphics[width=4.0in,keepaspectratio=true]{figs/profile_EBU1_1a_M3_A1}
-\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 3, step 1, but on a run started from the corresponding asymptotic-matching result.  At least the location of the grounding line agrees closely with that in Figure \ref{fig:SMexper1aM1A1}.}
-\label{fig:MISMIPmodel1exper1aM3A1FROMSM}
-\end{figure}
 
 
 
 
 \clearpage\newpage
-\section{Example: Modeling the Greenland ice sheet}\label{sect:green} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
+\section{Example: Modeling the Greenland ice sheet}\label{sect:green} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
+
+[FIXME: I think EISMINT-Greenland is supposed to have bedrock thermal!  There is no mention in the text \cite{RitzEISMINT}, but there are bedrock thermal parameter values mentioned.  Easy to fix \dots]
+
+In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
 
 The data for performing this experiment are freely available at
 \medskip
@@ -1037,11 +977,10 @@ The data for performing this experiment are freely available at
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
 \medskip
 
-\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  Note that in the ice and sea floor-core driven ``forced climate'' CCL3 run described below the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  A parameter-sensitivity study of a EISMINT-Greenland type ice sheet model is described in \cite{RitzFabreLetreguilly}.
+\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  Note that in the ice and sea floor-core driven ``forced climate'' run \verb|-ccl3| described below, the ice sheet is forced by changes in temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  A parameter-sensitivity study of a EISMINT-Greenland type ice sheet model is described in \cite{RitzFabreLetreguilly}.
 
 Substantial developments have occurred in modeling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, the relation between a Greenland ice sheet flow model, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  The response of Greenland ice sheet models to climate warming is addressed in \cite{HuybrechtsdeWolde,Huybrechts02, Greve00}, among other references.
 
-The rest of this section is a step-by-step illustration of using PISM.  The details can be typed in by hand, or the user can invoke the bash scripts \verb|preprocess.sh|, \verb|bootstrap.sh|, \verb|ssl2.sh|, and \verb|ccl3.sh| in the directory \verb|examples/eisgreen|.  These scripts execute the commands in the next four subsections, respectively.
 
 \subsubsection*{Obtaining and converting EISMINT-Greenland data}  We use two Python scripts to convert the EISMINT-Greenland data, which is in the form of several ASCII text files, into NetCDF files usable by PISM.  The Python libraries \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}} must be present for the scripts to work.
 
@@ -1049,7 +988,7 @@ First, \verb|cd examples/eisgreen/| from the PISM directory, and download these 
 
 \verb|grid20-EISMINT,  suaq20-EISMINT,  specmap.017,  sum89-92-ss09-50yr.stp|
 
-\noindent One method for the download is: \scriptsize
+\noindent One method for the download is: \small
 
 \verb|$  for name in "grid20-EISMINT" "suaq20-EISMINT" "specmap.017" "sum89-92-ss09-50yr.stp"|
 
@@ -1057,11 +996,13 @@ First, \verb|cd examples/eisgreen/| from the PISM directory, and download these 
 
 \normalsize\noindent Once all four files have been downloaded, run
 
-\verb|$ ./eisgreen.py|
+\verb|$ ./eis_green.py|
 
 \noindent The NetCDF file \verb|eis_green20.nc| will be created from the data in \verb|grid20-EISMINT| and \verb|suaq20-EISMINT|.  It contains variables for the gridded latitude (\verb|lat|), longitude (\verb|lon|), surface altitude (``\verb|usurf|'' for \emph{u}pper \emph{surf}ace elevation), bedrock altitude (\verb|topg|), ice thickness (\verb|thk|), and snow accumulation rate (\verb|acab|).  These values can be viewed graphically with \verb|ncview|.  The header (metadata) can be viewed by \verb|ncdump -h eis_green20.nc|.
 
 \begin{comment}
+If needed, the script \verb|eis_green.py| accepts option \verb|--prefix=foo/| if the downloaded data is in directory \verb|foo/|; \verb|eis_core.py| below also takes this option.  Option \verb|-g| specifies grid spacing; use \verb|-g 40| if you downloaded \verb|grid40-EISMINT| and \verb|suaq40-EISMINT| 40 km data; ``\verb|-g 20|'' or no option specifies 20 km grid.
+
 As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used on \verb|eis_green20.nc| to compare the putative ice surface elevation to the sum of the ice thickness and the bed elevation:
 
 \verb|$ ncap -O -vs "check=usurf-(thk+topg)" eis_green20.nc eis_green_check.nc|
@@ -1069,23 +1010,23 @@ As an exercise, the \href{http://nco.sourceforge.net/}{\texttt{NCO}} can be used
 \noindent The variable \verb|check| in the output file holds the difference of \verb|usurf| and the sum $\verb|topg|+\verb|thk|$.  Viewing \verb|check| in \verb|ncview| will show that \verb|usurf| is within 1 meter of $\verb|topg|+\verb|thk|$.  Thus the surface elevation \verb|usurf| is consistent.  It is also redundant because at bootstrapping, described below, PISM reads ice thickness and bed elevation and computes ice surface elevation as the sum of these two.
 \end{comment}
 
-The bed elevation \verb|topg| in the original data (\verb|suaq20-EISMINT|) effectively contains missing values.  These are locations where \verb|topg| is \emph{exactly} $0.0$, presumably because in these locations the observed bed elevation was not measured or the measured value was not trusted.  We think these are deep fjords locations, mostly.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix \ref{sect:scripts}.} found in directory \verb|pism/util/|:
+The bed elevation in the original data (\verb|suaq20-EISMINT|) effectively contains a missing value attribute of $0.0$, because in several places---deep fjords, mostly---the observed bed elevation was not measured or the measured value was not trusted.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  If these missing values are left in then the bed elevation map is extraordinarily rough and this makes reasonable ice flow predictions more difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|,\footnote{Requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.  It is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  See Appendix D.} found in directory \verb|pism/util/|:
 
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
 \begin{figure}[ht]
-\includegraphics[width=2.3in,keepaspectratio=true]{figs/EISgreen_thick}\quad\includegraphics[width=2.4in,keepaspectratio=true]{figs/EISgreen_bed}
+\includegraphics[width=2.6in,keepaspectratio=true]{figs/EISgreen_thick}\qquad\includegraphics[width=2.8in,keepaspectratio=true]{figs/EISgreen_bed}
 \caption{Views of the thickness (left) and smoothed bed elevation (right) for EISMINT-Greenland.  The coastal topography around several fjords has been smoothed..}
 \label{fig:greendata}
 \end{figure}
 
-In addition to getting the EISMINT gridded data into NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it would be possible for the modeled ice sheet to flow onto it.  (This may have occurred at the last glacial maximum.)  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island, among the downloaded data \cite{RitzEISMINT}, we want to prevent this from happening.  Therefore special code is executed by the PISM executable \verb|pgrn| which we use below.  It says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely anyway \dots).  The phrase ``removed from the flow simulation'' actually means that the points are marked as ice-free ocean.
+In addition to getting the EISMINT gridded data into NetCDF format and filling missing values, there is an issue with Ellesmere Island.  Ellesmere Island is very close to Greenland, and so it would be possible for the modeled ice sheet to flow onto it.  (Indeed this presumably occurred at the last glacial maximum.)  Since we don't, however, have correct topography or accumulation rates for Ellesmere Island among the downloaded data \cite{RitzEISMINT}, we want to prevent this from happening.  Therefore special code is executed by the PISM executable \verb|pgrn| which we use below.  It says that all points northwest of the line connecting the points $(68.18^\circ E, 80.1^\circ N)$ and $(62^\circ E, 82.24^\circ N)$ are removed from the flow simulation.  The same applies to anything east of $30^\circ E$ and south of $67^\circ N$ so that the flow could not spread to the tip of Iceland (not likely anyway \dots).  The phrase ``removed from the flow simulation'' actually means that the points are marked as ice-free ocean; the use of option \verb|-ocean_kill| below means that ice-free ocean remains that way.
 
-Next we use the script which converts the time series data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| to  PISM readable NetCDF form:
+Next we use the script which converts the data files \verb|specmap.017| and \verb|sum89-92-ss09-50yr.stp| to  PISM readable NetCDF form:
 
-\verb|$ ./eiscore.py|
+\verb|$ ./eis_core.py|
 
-\noindent Two NetCDF files with one-dimensional time series data are created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  The executable \verb|pgrn| will be called with options \verb|-dTforcing| and \verb|-dSLforcing| for these two \verb|.nc| files in the ``CCL3'' run below.  That is, in CCL3 PISM will read the GRIP data \cite{Dansgaardetal1993} for the surface temperature forcing and the SPECMAP data \cite{Imbrieetal1984} for sea level forcing.  Figure \ref{fig:gripDeltaT} shows the GRIP temperature offsets.
+\noindent Two NetCDF files with one-dimensional (time series) data will be created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  The executable \verb|pgrn| will be called with options \verb|-dTforcing| and \verb|-dSLforcing| for these two \verb|.nc| files in the ``CCL3'' run below.  Thus PISM reads the GRIP data \cite{Dansgaardetal1993} for the surface temperature forcing and the SPECMAP data \cite{Imbrieetal1984} form sea level forcing.  Figure \ref{fig:gripDeltaT} shows the GRIP temperature offsets.
 
 \begin{figure}[ht]
 \includegraphics[width=5.6in,keepaspectratio=true]{figs/gripDeltaT}
@@ -1094,13 +1035,13 @@ Next we use the script which converts the time series data files \verb|specmap.0
 \end{figure}
 
 
-\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
+\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the continuum model (differential equations) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
 Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-bif| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|\index{pgrn}
 
 \verb|$ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \|
 
-\verb|  -skip 1 -y 1 -o green20km_y1|
+\verb|  -ocean_kill -skip 0 -y 1 -o green20km_y1|
 
 \noindent The run takes a few seconds of real time.
 
@@ -1109,7 +1050,7 @@ Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year 
 \begin{quote}
 \begin{verbatim}
 $  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
-    -skip 1 -y 1 -o green20km_y1
+   -ocean_kill -skip 0 -y 1 -o green20km_y1
 PGRN (EISMINT Greenland mode)
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   all dimensions t,x,y,z,zb found in file
@@ -1124,20 +1065,19 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
   variable acab found and regridded; min,max =    0.030,   2.820 (m a-1)
   variable thk found and regridded; min,max =    0.000,3200.000 (m)
   variable topg found and regridded; min,max = -3859.000,2151.000 (m)
-  determining mask by floatation criterion:  grounded ice and ice-free
-    land marked as 1, floating ice as 3, ice free ocean as 7
-  WARNING: surface elevation 'usurf' found; IGNORING IT!
-  determining surface elevation by using usurf = topg + thk where grounded
-    and floatation criterion where floating
+  WARNING: ignoring values found for surface elevation 'usurf';
+    using usurf = topg + thk
   WARNING: effective thickness of basal melt water 'bwat' not found;
     using default constant  0.000 m
   WARNING: surface temperature 'artm' not found; using default constant 263.15 K
-  WARNING: till friction angle 'tillphi' not found; using default constant 15.000 deg
+  WARNING: till friction angle 'tillphi' not found; using default constant 15.000 degrees
   WARNING: geothermal flux 'bheatflx' not found; using default constant  0.042 W/m^2
   WARNING: uplift rate 'dbdt' not found; using default constant  0.000 m/s
+  determining mask by floatation criterion:  grounded ice and ice-free
+    land marked as 1, floating ice as 3, ice free ocean as 7
   filling in temperatures at depth using quartic guess
 done reading eis_green_smoothed.nc; bootstrapping done
-resetting vertical levels based on options and user option -Lz ...
+resetting vertical levels base on options and user option -Lz ...
 using PDD based on standard yearly surface temp cycle
 geothermal flux set to EISMINT-Greenland value 0.050000 W/m^2
 computing surface temps by EISMINT-Greenland elevation-latitude rule
@@ -1189,52 +1129,43 @@ This bootstrapping mode also fills in several default values.  For instance, the
 
 Continuing with the above output, after default bootstrapping there are additional settings special to EISMINT-Greenland.  For instance, because there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}, at the surface there is a formula which determines the temperature as a function of latitude and surface elevation.  The code behind \verb|pgrn| knows this formula and uses it.  The constant value for geothermal flux is reset, and the above-mentioned Ellesmere Island issue is resolved.
 
-Before seeking a good steady state for the entire thermo-mechanically-coupled ice sheet, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model, but while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to create a temperature field which is approximately stationary with respect to advection and conduction.  The resulting temperature field is not a fully physical temperature field, however, because it comes from a steadiness assumption about the geometry of the ice sheet.
+\subsubsection*{Relaxing the temperature field}  Before seeking a good steady state for the entire thermo-mechanically-coupled ice sheet, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model, but while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to replace the heuristic temperature field applied above by one which is approximately stationary with respect to advection and conduction.  The resulting temperature field is still not the fully physical temperature field, however, because it comes from a steadiness assumption about position of the surface of the ice.
 
-We create this temperature field by running for 10000 years\footnote{In fact a much longer run might be called for because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
+We create this temperature field by running for 10000 years\footnote{In fact a much longer run should be done for serious modeling because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
 \verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady|
 
-This last run takes on the order of one processor hour.  Parallel processing is effective here, up to perhaps peak real time speed with 40 processors for this coarse 83 by 141 grid.  (Finer grid computations are easier to parallelize in the sense that greater a maximum speedup over one processor is attainable.)
+\noindent This last run takes on the order of one processor hour.  Many more processors are effective, up to perhaps peak real time speed with 40 to 80 processors for this 83 by 141 grid.  Note finer grid computations are easier to parallelize in the sense that greater maximum speedup over one processor, in wall clock time, is attainable.
 
-The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \verb|pgrn| executable.  (The base executable \verb|pismr| requires option \verb|-pdd| or \verb|-pdd_rand| to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \verb|-pdd_rand| to use a stochastic PDD implementation.
-
+The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \verb|pgrn| executable.  (Other executables may require option \verb|-pdd| or \verb|-pdd_rand| to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \verb|-pdd_rand| to use a stochastic PDD model.
 
 \subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
 
-\verb|mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 10000 -ys 0 \|
+\verb|mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 10000 -ys 0 -ocean_kill \|
 
-\verb|     -o green_SSL2_10k|
+\verb|     -o green_SSL2_10k >> ssl2.txt|
 
 \noindent We can continue for another ten thousand years by
 
-\verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_10k.nc -y 10000 \|
+\verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_10k.nc -y 10000 -ocean_kill \|
 
-\verb|     -o green_SSL2_20k|
+\verb|     -o green_SSL2_20k >> ssl2.txt|
 
-\noindent And so on.   The script \verb|ssh2.sh| is useful to automate this, and we will now assume that the user \emph{actually} did a run like  
+Note the option ``\verb|-ocean_kill|''.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  (Compare the Ross ice shelf model in the next section.)
 
-\verb|./ssh2.sh 2 >> out.ssl2 &|
+These runs took about 15 minutes each on an 2 quad core Xeon server (2008 technology).  This simulation is, however, intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
 
-\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like 15 processor hours to produce eleven output files with names \verb|green_SSL2_|$N$\verb|k.nc| for $N=10,\dots,110$.
+One can look at the standard output text file by a minimal method like ``\verb|less ssl2.txt|''.  But, to more clearly see the behavior over time of the volume, area, basal melt fraction, and so on, one can generate a time series file in NetCDF form and then use various tools to view and manipulate that file.  Use the Python script \verb|util/series.py|, documented in Appendix D, like this:
 
-Note that, by default the option \verb|-ocean_kill| is set internally in \verb|pgrn|.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).  Another default setting is \verb|-skip 20|.
+\verb|$  series.py -f ssl2.txt -o ssl2_series.nc|
 
-The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
+\noindent View using \verb|ncview|, for instance.  One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume expected to be a bit more than $4 \times 10^{6}\,\text{km}^3$.
 
-One can look at the standard output text file by a minimal method like ``\verb|less out.ssl2|''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by generating a time series file in NetCDF form from the text (log) file coming from \verb|stdout|.  Then various NetCDF tools can be applied to view and manipulate that file.  To do this, use the Python script \verb|util/series.py|, documented in Appendix D, like this:
-
-\verb|series.py -f out.ssl2 -o ssl2.ser.nc|
-
-\noindent View \verb|ssl2.ser.nc| using \verb|ncview|, for instance.
-
-One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then the run ends at 110k years with a volume change of about 0.001\% between the 100k and 110k model states.
-
-The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
+In fact that is what happens with a long run.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then the run ends at 110k years with a volume change of about 0.001\% between the 100k and 110k model states.  This steady state criteria can be most easily determined by examining the time series NetCDF file produced by \verb|series.py| (from a completed partial run or even during an ongoing run).  The final volume was $4.087 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
 
 \begin{figure}[ht]
 \includegraphics[width=6.0in,keepaspectratio=true]{figs/eisgrn_volseries}
-\caption{Volume time series for a 110k model year EISMINT-Greenland SSL2 run; units of $10^{6}\,\text{km}^3$.}
+\caption{Volume time series for a 110k model year EISMINT-Greenland run; units of $10^{6}\,\text{km}^3$.}
 \label{fig:eisgrnvolseries}
 \end{figure}
 
@@ -1244,41 +1175,53 @@ The time series for volume and melt fraction (the fraction of the base where the
 \label{fig:eisgrnmeltfseries}
 \end{figure}
 
-We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickThomol}.
+The command that completed the full 110k model year run is 
+
+\verb|mpiexec -n 8 pgrn -ssl2 -if green_SSL2_20k.nc -y 90000 -ocean_kill \|
+
+\verb|     -o green_SSL2_110k >> ssl2.txt|
+
+We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness and homologous basal temperature maps are shown in Figure \ref{fig:ssl2thickThomol}.  The vertically-averaged horizontal velocity is shown in Figure \ref{fig:ssl2cbar}.
 
 \begin{figure}[ht]
-\mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{figs/greenH_SSL2}\,\includegraphics[height=3.0in,width=2.3in]{figs/greenThomol_SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{figs/greencbar_SSL2}}
-%\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
-\caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
+\includegraphics[height=3.5in]{figs/greenH_SSL2}\qquad\includegraphics[height=3.5in,width=2.6in]{figs/greenThomol_SSL2}%\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
+\caption{Ice thickness (meters; left) and homologous basal temperature (degrees C below 0; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
 \label{fig:ssl2thickThomol}
+\end{figure}
+
+\begin{figure}[ht]
+\includegraphics[height=3.5in,keepaspectratio=true]{figs/greencbar_SSL2}
+\caption{Vertically-averaged horizontal velocity in meters per year at the end (110k model years) of a EISMINT-Greenland SSL2 run.}
+\label{fig:ssl2cbar}
 \end{figure}
 
 In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this run for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
 
 
-\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka.}
+\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:
 
-\verb|mpiexec -n 8 pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
+\verb|$  pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \|
 
-\verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y-0|
+\verb|      -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y0|
 
 \noindent Note option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
 
 The resulting thickness difference, relative to the end of the SSL2 run, and the homologous basal temperature, are shown in Figure \ref{fig:cclthickThomol}.
 
 \begin{figure}[ht]
-\includegraphics[width=2.8in]{figs/Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{figs/Thomol_CCL}
+\includegraphics[width=3.3in]{figs/Hdiff_CCLSSL}\,\includegraphics[width=3.3in]{figs/Thomol_CCL}
 \caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice homologous basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickThomol}.}
 \label{fig:cclthickThomol}
 \end{figure}
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing (noting no GRIP or SPECMAP data are known from the future!):
 
-\verb|mpiexec -n 8 pgrn -ccl3 -if green_CCL3_y-0.nc -y 500 -o green_CCL3_y500|
+\verb|$  pgrn -ccl3 -if green_CCL3_y0.nc -y 500 -o green_CCL3_y500|
 
-A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\verb|mpiexec -n 8 pgrn -gwl3 -if green_CCL3_y-0.nc -y 500 -o green_GWL3_y500|
+\subsubsection*{A greenhouse warming scenario}  A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
+
+\verb|$  pgrn -gwl3 -if green_CCL3_y0.nc -y 500 -o green_GWL3_y500|
 
 
 
@@ -1327,13 +1270,15 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eis_ross.py| e
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 
-\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3|
+\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
+
+\verb|    -ssa -o rossComputed|
 
 \noindent Here we bootstrap (\verb|-bif|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
 
 At the end of this run the computed velocity field is compared to the interpolated observed velocities stored in \verb|ross.nc|.  The value called ``average relative error in vector vel'' is most relevant.  A value of 0.07 here means that the averaged absolute difference between the computed and the observed velocity, in the ``accurate'' region, is 7\%.
 
-The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Viewing that variable will show a picture like the one on the cover page of this \emph{User's Manual}, and like that in figure \ref{fig:rossspeed}.
+The output file \verb|rossComputed.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Viewing that variable will show a picture like the one on the cover page of this \emph{User's Manual}, and like that in figure \ref{fig:rossspeed}.
 
 \begin{figure}[ht]
 \includegraphics[height=3.2in,keepaspectratio=true]{figs/rossspeed}
@@ -1343,15 +1288,15 @@ The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal s
 
 There are many variations on this basic ``\verb|pismd -ross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\index{pismd} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
 
-\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \|
+\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
 
-\verb|     -Mx 147 -My 147 -Mz 3 -Lz 1e3 -d cnmu -verbose -pause 10|
+\verb|     -ssa -d cnmu -verbose -pause 10|
 
 \noindent Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
-\verb|$ mpiexec -n 4 pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \|
+\verb|$ mpiexec -n 4 pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 201 -My 201 \|
 
-\verb|     -Mx 201 -My 201 -Mz 3 -Lz 1e3|
+\verb|     -Lz 1000 -Mz 3 -ssa|
 
 \noindent The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 
@@ -1541,9 +1486,9 @@ The following features are \emph{not} included in the continuum model, and would
 
 Much of the behavior of PISM can be set at the command line by options.\index{PISM!options available at the command line}\index{options for PISM (and PETSc)!complete list}  For example, the command 
 
-\verb|$  pismv -test C -Mx 61 -e 1.2 -o foo|
+\verb|$  pismv -test C -Mx 61 -gk -e 1.2 -o foo|
 
-\noindent includes four options ``\verb|-test|'', ``\verb|-Mx|'', ``\verb|-e|'', and ``\verb|-o|'',  The first of these options includes a single character argument, the second an integer argument, the third a floating point argument, and the fourth has a string argument.
+\noindent includes five options ``\verb|-test|'', ``\verb|-Mx|'', ``\verb|-gk|'', ``\verb|-e|'', and ``\verb|-o|'',  The first of these options includes a single character argument, the second an integer argument, the third has no argument, the fourth has a floating point argument, and the fifth has a string argument.
 
 The format of the option documentation below is
 
@@ -1669,7 +1614,7 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \subsect{Options controlling parameters for physical models}
 
-\subsubsect{Flow and dynamical parameters}
+\subsubsect{General parameters}
 
 \optdef{constant\und hardness}{1.9e8}  If this option is used then the velocities in ice shelves and streams (see \verb|-ssa| below) are computed with a constant, temperature-independent hardness parameter $\bar B$.  In particular, the viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
@@ -1684,11 +1629,14 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 
 \optdef{constant\und nu}{30.0}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant viscosity $\nu$; see the option \verb|-constant_hardness| above.  Generally the viscosity is computed by a nonlinear iteration.  With option \verb|-constant_nu|, this iteration does not occur.  If \verb|-constant_nu| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
+\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
+
+
+\subsubsect{Flow law parameters}
+
 \optdef{e}{1.0}  Flow enhancement factor.
 
-\optdef{gk}{1.0}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} and uses a constant grain size.  The option \verb|-gk| without an argument uses default grain size of 1 mm while \verb|-gk N| uses \verb|N| mm grains.  See \verb|-law| for more complete option choice of flow law.
-
-\opt{gk\und age}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to compute the grain size; compare \verb|-gk|.  The age is used in a table from the Vostok core \cite{VostokCore} to compute a grain size.  This option should not be used unless the model age has stabilized after a long (e.g.~$\ge 100$ ka) run.
+\opt{gk}  Sets the flow law to Goldsby-Kohlstedt.  Same as \verb|-law 4|.  See \verb|-law| for more complete option choice of flow law.
 
 \optdef{law}{0}  Allows choice of thermocoupled flow law.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
@@ -1726,8 +1674,6 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \normalsize	
 \end{tabular}
 \end{table}
-
-\optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
 
 
 \subsubsect{Positive degree day model (PDD) parameters}
@@ -1812,13 +1758,9 @@ With the \verb|-no_eta| option the surface gradient is computed the old-fashione
 
 \optdef{reg\und vel\und schoof}{1 m/a}  Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \verb|-ssa_eps 0.0| to turn off the other regularization mechanism, otherwise there is a double regularization.  Use \verb|-plastic_reg| above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}.
 
-\opt{shelves\und drag\und too}  Ice streams are modeled as ``dragging ice shelves'' in PISM, as in either linear \cite{MacAyeal} or plastic \cite{SchoofStream} or pseudo-plastic basal resistance, according to options.  If this option is turned on then the floating ice shelves also have very slight resistance, according to a linear model $\tau_b = \beta u$ where $\beta = 1.8\times 10^5\, \text{Pa}\,\text{s}\,\text{m}^{-1}$.  This value is $10^4$ times smaller than the representative drag coefficient given for ice stream E in \cite{HulbeMacAyeal}.  Ice shelves usually have precisely zero basal resistance, but nonzero drag for the ice shelf is turned on by default in MISMIP; see section \ref{sect:simp}.
-
 \optdef{ssa\und eps}{1.0e15}  The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
 
 In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-ssa_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|-ssa_eps| is set to zero automatically when running \verb|pismv -test I|.
-
-\optdef{ssa\und min\und thk}{5}  When ice free ocean is present and we are solving the SSA for the velocity in ice shelves, we extend a virtual ice shelf everywhere with this thickness.  This takes the place of a principled calving front force imbalance boundary condition.  Units of m.
 
 \optdef{ssa\und maxi}{300}  This option sets the maximum allowed number of nonlinear iterations in solving the shallow shelf approximation.  One should usually use option \verb|-ssa_rtol| to control convergence of the nonlinear iteration.
 
@@ -1902,6 +1844,11 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optrestrict{time4}{pisms -ismip H}  See \verb|-time1| explanation.
 \end{comment}
 
+
+
+\subsect{PISM options which have no other category}
+
+\optdefrestrict{till\und phi}{20.0,5.0}{pisms -eisII I -ssa -plastic}  Set the till friction angle map special to the modification of EISMINT II experiment I discussed in subsection \ref{subsect:plastic}.
 
 
 
