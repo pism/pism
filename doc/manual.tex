@@ -52,7 +52,7 @@
 
 \title[PISM User's Manual]{\protect{\Large \emph{PISM}, a Parallel Ice Sheet Model:\normalsize} \\ \protect{\Large \bigskip \bigskip User's Manual\normalsize}}
 
-\author[]{Ed $\text{Bueler}^\ast$ \\ Jed Brown \\ Nathan Shemonski \\ Constantine Khroulev}
+\author[]{Ed Bueler \\ Jed Brown \\ Nathan Shemonski \\ Constantine Khroulev}
 
 \date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREL.  Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}} 
 
@@ -82,7 +82,7 @@
 \noindent \textsl{PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.}
 \medskip
 
-\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{pism/COPYING}}; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \vspace{1in}
 \normalspacing
@@ -92,7 +92,7 @@
 
 The NASA Cryospheric Sciences Program\index{NASA Cryospheric Sciences Program} supported this research with grant NAG5-11371.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Spencer Jones\index{Jones, Spencer}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, and other PISM users for helpful comments and questions on PISM.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, Ben Sperisen\index{Sperisen, Ben}, Maria Martin\index{Martin, Maria} and other PISM users for helpful comments and questions on PISM.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -104,14 +104,17 @@ Our research into ice sheet modeling was strongly influenced and constantly moti
 
 Welcome to PISM!
 
+Information about PISM is online at
+\centerline{\href{http://www.pism-docs.org}{\t{www.pism-docs.org}}}
+
 Please see the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.
 
 This \emph{User's Manual} describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on basic publicly-available data.
 
-But that is all.  Users who want to advance the science of ice sheets will need to go beyond what is described here.  For such users there are two additional documents to know about:
+Users who want to advance the science of ice sheets will need to go beyond what is described here.  For such users there are two additional documents to know about:
 \begin{enumerate}
  \item  The \emph{PISM Reference Manual}\index{PISM!\emph{Reference Manual}}
-describes the most important pieces of the source code.  It contains, or at least it is intended to contain, the minimum documentation of the PISM source code parts in order to include all the continuum models and numerical methods of PISM.  Though the stable version of the \emph{Reference Manual} is online (\href{http://www.pism-docs.org/refman.pdf}{\t{www.pism-docs.org/refman.pdf}}), it can be re-generated from the source by doing \verb|cd doc| and then \verb|make|. Then use a PDF viewer on \verb|refman.pdf|.
+describes the most important pieces of the source code.  It contains, or is intended to contain, the minimum documentation of the PISM source code parts in order to include all the continuum models and numerical methods of PISM.  A recent development version of the \emph{Reference Manual} is online (\href{http://www.pism-docs.org/refman-dev.pdf}{\t{www.pism-docs.org/refman-dev.pdf}}).  A current \emph{Reference Manual} can be generated from the source by doing \verb|cd doc| and then \verb|make|.  Then use a PDF viewer on \verb|refman.pdf|.
  \item  The \emph{PISM (HTML) Source Code Browser}\index{PISM!\emph{Source Code Browser (HTML)}} gives a complete view of the class/object structure of the source code.  It can be generated from the source by by doing \verb|cd doc| and then \verb|make|.  Then use a web browser to view \verb|doxy/html/index.html|.
 \end{enumerate}
 The \emph{Reference Manual} and the \emph{Source Code Browser} were automatically generated by \verb|doxygen| (\href{http://www.doxygen.org/}{\t{www.doxygen.org}}) from comments in the PISM source code.  Thus they are not as user-friendly as this \emph{User's Manual}.
@@ -119,7 +122,7 @@ The \emph{Reference Manual} and the \emph{Source Code Browser} were automaticall
 \vspace{1.5in}
 \large
 \begin{center}
- \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  But do write to us with questions: 
+ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: 
 
 \bigskip
 
@@ -407,7 +410,9 @@ The extent of the computational box, along with its bedrock extension downward, 
 
 The extent of the computational box for the ice is directly controlled by the options \intextoption{Lx}, \intextoption{Ly}, and \intextoption{Lz} as described in Appendix 1.  As noted \t{-Lx} and \t{-Ly} options should include values in kilometers while \t{-Lz} should be in meters.
 
-\subsection{Grid} \label{subsect:grid} The PISM grid\index{PISM!grid} covering the computational box is equally spaced in each of the three dimensions.  FIXME: non-equal spacing in vertical allowed with \verb|-quadZ|
+\subsection{Grid} \label{subsect:grid} The PISM grid\index{PISM!grid} covering the computational box is equally spaced in each of the three dimensions.
+
+FIXME: non-equal spacing in vertical allowed with \verb|-quadZ|; need to document
 
 Because of the bedrock extension, the grid of points is described by four numbers, namely the number of grid points in the $x$ direction, the number in the $y$ direction, the number in the $z$ direction within the ice, and the number in the $z$ direction within the bedrock.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively, as described in the Runtime options section.  The defaults for these four values are 61, 61, 31, and 1, respectively.  Note that \verb|Mx|, \verb|My|, \verb|Mz|, and \verb|Mbz| all indicate the number of grid \emph{points}.  Therefore the number of grid \emph{spaces} are, respectively, 60, 60, 30, and 0 (zero) in the default case.  Note that the lowest grid point in a column of ice, that is the one at $z=0$, coincides with the highest grid point in the bedrock.  Also \verb|Mbz| must always be at least one.
 
@@ -632,11 +637,11 @@ Also refer to test H.
 \hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
 \bigskip
 
-\subsubsection*{Ideas} ``Verification'' is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  One is not comparing model output to nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
+\subsubsection*{Ideas}  Verification is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  There is no comparison between model output and nature in verification.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
 
-See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics.
+See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification (and validation) in computational fluid dynamics.
 
-In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}, and \emph{all} PISM executables run \verb|IceModel|.
+In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}.  All PISM executables run \verb|IceModel|, but derived classes add bits of code, in this case the exact solutions.)
 
 \begin{table}[ht]
 \caption{Exact solutions for verification.}\label{tab:tests}
@@ -665,7 +670,7 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREPARATION]
 \end{table}
 
 \begin{table}[ht]
-\caption{Running PISM\index{pismv!options to run verification tests}\index{verification tests}  to verify using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
+\caption{Canonical PISM\index{pismv!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests_exec}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Test} & \textbf{Example invocation}  \\ \hline
@@ -686,11 +691,17 @@ L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 \end{tabular}
 \end{table}
 
-Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Note that most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids (for relatively quick execution time).
+Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Only Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids for relatively quick execution time.
 
-\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit.  For example, in the the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) refinement limit $(\Delta x,\Delta y,\Delta t) = (0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or several norms) of the difference between the numerical solution and the exact solution.   Concretely, we will typically compute both the \emph{maximum} numerical error anywhere on the grid and the \emph{average} numerical error on the grid.
 
-The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense, generally.  Rather the goal is to see that the error is trending toward zero, and to measure the rate at which it decays.  Knowing the error decay rate allows the modeler to have a sense of how fine a grid is necessary to achieve a small enough numerical error so that the numerical solution can be regarded as a (near) solution to the continuum model.  See \cite{BLKCB,BBL,Roache,Wesseling}.
+\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero cell size.  For example, in the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.   Concretely, we usually compute both the maximum and average numerical error anywhere on the grid.
+
+The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense (generally).  Rather the goals are \begin{itemize}
+\item to see that the error is decreasing,
+\item to measure the rate at which it is decreasing,
+\item and to get a realistic sense of the magnitude of numerical error, compared to other errors, in a realistic ice sheet model run.
+\end{itemize}
+Knowing the error decay rate may even give a prediction as to how fine a grid is necessary to achieve a desired smallness for the numerical error.  ``Other errors'' includes critically the error from using the wrong (or over-simplified) continuum model, and also observational (or pre-processing) errors present in the data used in the realistic run.
 
 For an example of a refinement path, consider the runs\index{refinement path!example}\index{pismv}
 \begin{quote}\small\begin{verbatim}
@@ -700,7 +711,7 @@ pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
 \end{verbatim}
 \normalsize\end{quote}
-These verify the basic function of the isothermal shallow ice approximation components of PISM in the case of no accumulation.  The exact solution used here is the Halfar similarity solution \cite{Halfar83}.  Note that one specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
+Here we seek to measure the basic function of the isothermal shallow ice approximation components of PISM.  The exact solution is the Halfar similarity solution \cite{Halfar83}, with zero accumulation.  One specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
 
 The data produced by the above four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
 
@@ -714,7 +725,7 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.)
+produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip 10| and \verb|-quadZ| would make a lot of sense for speeding up; see subsection \ref{sect:usage}.)
 
 \subsubsection*{Results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
 
@@ -1326,15 +1337,13 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eis_ross.py| e
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 
-\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
-
-\verb|    -ssa -o rossComputed|
+\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3|
 
 \noindent Here we bootstrap (\verb|-bif|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
 
 At the end of this run the computed velocity field is compared to the interpolated observed velocities stored in \verb|ross.nc|.  The value called ``average relative error in vector vel'' is most relevant.  A value of 0.07 here means that the averaged absolute difference between the computed and the observed velocity, in the ``accurate'' region, is 7\%.
 
-The output file \verb|rossComputed.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Viewing that variable will show a picture like the one on the cover page of this \emph{User's Manual}, and like that in figure \ref{fig:rossspeed}.
+The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Viewing that variable will show a picture like the one on the cover page of this \emph{User's Manual}, and like that in figure \ref{fig:rossspeed}.
 
 \begin{figure}[ht]
 \includegraphics[height=3.2in,keepaspectratio=true]{figs/rossspeed}
@@ -1344,15 +1353,15 @@ The output file \verb|rossComputed.nc| contains vertically-averaged horizontal s
 
 There are many variations on this basic ``\verb|pismd -ross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\index{pismd} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
 
-\verb|$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \|
+\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \|
 
-\verb|     -ssa -d cnmu -verbose -pause 10|
+\verb|     -Mx 147 -My 147 -Mz 3 -Lz 1e3 -d cnmu -verbose -pause 10|
 
 \noindent Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
-\verb|$ mpiexec -n 4 pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 201 -My 201 \|
+\verb|$ mpiexec -n 4 pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \|
 
-\verb|     -Lz 1000 -Mz 3 -ssa|
+\verb|     -Mx 201 -My 201 -Mz 3 -Lz 1e3|
 
 \noindent The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 
