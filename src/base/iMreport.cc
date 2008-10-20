@@ -212,9 +212,16 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     else meltfrac=0.0;
   }
 
-  if (CFLviolcount > 0.5) { // report any CFL violations
-    ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
-              CFLviolcount,100.0 * CFLviolcount/(grid.Mx * grid.Mz * grid.Mz)); CHKERRQ(ierr);
+  if (CFLviolcount > 0.0) {
+    const PetscScalar CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
+    const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1; // only report (verbosity=2) if above 0.1%
+    if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT) {
+      ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
+                CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(3,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
+                CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
+    }
   }
    
   // give summary data a la EISMINT II:
@@ -239,7 +246,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
   
-  if (getVerbosityLevel() >= 3) {
+  const PetscScalar EXTRAS_VERB_LEVEL = 4;
+  if (getVerbosityLevel() >= EXTRAS_VERB_LEVEL) {
     // show additional info
     PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;

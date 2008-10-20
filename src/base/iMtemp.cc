@@ -47,11 +47,14 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 
   PetscScalar VertSacrCount;
   ierr = PetscGlobalSum(&myVertSacrCount, &VertSacrCount, grid.com); CHKERRQ(ierr);
-  const PetscScalar bfsacrPRCNT = 100.0 * (VertSacrCount / (grid.Mx * grid.My));
-  if (bfsacrPRCNT > 1.0) { // only report under default verbosity if above 1%
-    ierr = verbPrintf(2,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
-  } else if (bfsacrPRCNT > 0.0) {
-    ierr = verbPrintf(3,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
+  if (VertSacrCount > 0.0) {
+    const PetscScalar bfsacrPRCNT = 100.0 * (VertSacrCount / (grid.Mx * grid.My));
+    const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report (verbosity=2) if above 5%
+    if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) {
+      ierr = verbPrintf(2,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(3,grid.com," [BPsacr=%.4f\%] ", bfsacrPRCNT); CHKERRQ(ierr);
+    }
   }
 
   if (updateHmelt == PETSC_TRUE) {
