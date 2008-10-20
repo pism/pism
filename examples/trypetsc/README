@@ -1,0 +1,34 @@
+This directory merely contains a PETSc example source code.  This allows users
+to test whether their PETSc is installed properly, perhaps as a way of testing
+PETSc before building PISM.
+
+The following should work if PETSc is installed properly:
+
+$ make ex5
+$ ./ex5
+Number of Newton iterations = 4
+
+
+-----------------------
+ERRORS
+-----------------------
+If there is an error 
+   "makefile: ... /bmake/common/base: No such file or directory"
+or similar then
+   ***  PETSC_DIR is not set properly  ***
+   ***  see PISM install guide  ***
+
+If there is an error
+   "..../bmake/FOO/petscconf: No such file or directory"
+or similar then
+   ***  PETSC_ARCH is not set properly (as it is set to FOO)  ***
+   ***  see PISM install guide  ***
+   
+
+-----------------------
+DEVELOPER COMMENT
+-----------------------
+The example ex5.c is also useful to PISM developers because
+it shows use of SNES on a nonlinear PDE.
+
+
