@@ -23,22 +23,26 @@ Based on PISM \c trunk revision \verbinclude revision.tex
  * See https://gna.org/projects/pism/ to download the PISM source code.  See 
  * http://www.pism-docs.org/ for all documentation of PISM.
  *
- * For help with installing and using PISM, see the PISM <i>User's Manual</i>
- * (do <tt>cd doc/ && make userman</tt> and then view 
- * <tt>pism/doc/manual.pdf</tt>, or see a recent version at
+ * For help with \e installing PISM, see the PISM <i>Installation Manual</i>
+ * (do <tt>cd doc/</tt> and <tt>make installation</tt> and then view 
+ * <tt>installation.pdf</tt>, or see a recent version at
+ * http://www.pism-docs.org/installation-dev.pdf).  
+ *
+ * For help with \e using PISM, see the PISM <i>User's Manual</i>
+ * (do <tt>cd doc/</tt> and <tt>make userman</tt> and then view 
+ * <tt>manual.pdf</tt>, or see a recent version at
  * http://www.pism-docs.org/manual-dev.pdf).  
  * Most users should stick to the User's Manual for quite a while; only when 
  * a user needs to extend PISM is a look at this source browser really 
  * worthwhile.
  *
  * For a useful subset of this source browser
- * in PDF form, see the PISM <i>Reference Manual</i> (do <tt>cd doc/ && make refman</tt>
- * and then view 
- * <tt>pism/doc/refman.pdf</tt>, or see a recent version at 
+ * in PDF form, see the PISM <i>Reference Manual</i> (do <tt>cd doc/</tt> and <tt>make refman</tt>
+ * and then view <tt>refman.pdf</tt>, or see a recent version at 
  * http://www.pism-docs.org/refman-dev.pdf).  The <i>Reference Manual</i> contains
  * the minimum documentation 
  * of the PISM class structure in order to document 
- * the continuum models and numerical methods of PISM.  Continuum model
+ * the continuum models and numerical methods of PISM.  By contrast, continuum model
  * and numerical method documentation is widely scattered in this source browser.
  *
  * There is also a source code <i>repository</i> browsing tool at the PISM download site

@@ -7,11 +7,11 @@
 \newcommand{\PISMREV}{\input{revision.tex}}
 \newcommand{\PETSCREL}{2.3.3-p2}
 
-%\addtolength\topmargin{-.1in}
-\addtolength\textheight{0.1in}
-\addtolength{\oddsidemargin}{-.4in}
-\addtolength{\evensidemargin}{-.4in}
-\addtolength{\textwidth}{0.9in}
+\addtolength\topmargin{+.3in}
+\addtolength\textheight{-0.2in}
+%\addtolength{\oddsidemargin}{-.4in}
+%\addtolength{\evensidemargin}{-.4in}
+%\addtolength{\textwidth}{0.9in}
 \newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
 \newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
 \normalspacing
@@ -58,11 +58,11 @@
     Sheet Model:\normalsize} \\ \protect{\Large \bigskip \bigskip Installation
     Manual\normalsize}}
 
-\author[]{Ed Bueler \\ Constantine Khroulev}
+\author[]{Constantine Khroulev \\ Ed Bueler}
 
 \date{\today. \href{mailto:help@pism-docs.org}{help@pism-docs.org}. Based on
   PISM rev \PISMREV\,and PETSC rel \PETSCREL. \\ Get PISM development version
-  by ``\quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}\quad''}
+  by \quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}\quad}
 
 \pdfinfo{
 /Title (PISM Installation Manual)
@@ -77,14 +77,28 @@
 \maketitle
 \thispagestyle{empty}
 
-\vspace{2.0in}
-\begin{center}
-\includegraphics[width=2.5in,keepaspectratio=true]{figs/greencbar_SSL2}\, \includegraphics[width=3.2in,keepaspectratio=true]{figs/rossquiver}
-\end{center}
+\vspace{1.5in}
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+
 
 \newpage
-\phantom{bob}
-\vspace{1in}
+\section*{Introduction}
+
+\large
+This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM is online at
+\bigskip
+\begin{center}
+  \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
+\end{center}
+\bigskip
+
+\emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \bigskip
+
+\centerline{\href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}}
+\vfill
+
 \begin{quote}
 \textsl{Copyright (C) 2004--2008 Ed Bueler and Constantine Khroulev}
 \medskip
@@ -103,56 +117,51 @@
   with PISM; see \emph{\texttt{COPYING}} in PISM root directory. If not, write to the Free Software Foundation, Inc., 51 Franklin
   St, Fifth Floor, Boston, MA 02110-1301 USA}
 \end{quote}
-\vspace{1in}
-\normalspacing
-
-\newpage
-\setcounter{tocdepth}{2}
-\tableofcontents
-
-
-\newpage
-\section{Introduction}\label{sect:intro}
-
-This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.
-
-Information about PISM is online at
-\begin{center}
-  \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
-\end{center}
-
-\begin{center}
-\large
- \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \large
-\bigskip
-
-\href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}
-\normalsize
-\end{center}
 
 \clearpage
-\section{Prerequisites}
+\section{Libraries needed by PISM}
 \label{sec:prerequisites}
 
-The following table lists the dependencies for PISM, arranged alphabetically. These are needed to build a fully-functional PISM from
-source and do all the examples in the \emph{User's Manual}.
 \bigskip
+The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.
+\bigskip
+\newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
+
+\fattablespacing
+\newcommand\pairstack[2]{#1 \quad (\small#2\normalsize)}
+%\newcommand\pairstack[2]{\begin{tabular}{lc} #1 \\ \quad (\small#2\normalsize)\end{tabular}}
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{lllp{0.25\linewidth}}\hline
-  \textbf{Library/Program} & \textbf{Site} & \textbf{Required?} & \textbf{Comment} \\
-  FFTW & \href{http://www.fftw.org/}{\t{www.fftw.org}} & \emph{recommended} & needed for earth deformation; if not present set |WITH_FFTW=0|\\
-  GSL & \href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}} & \emph{required} &  \\
-  |matplotlib| & \href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}} & \emph{recommended} & used in Python scripts \\
-  MPI & \href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}} & \emph{required} & \\
-  NetCDF & \href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}\small & \emph{required} & \\
-  |netcdf4-python| & \href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}\small & \emph{recommended}  & used in Python scripts  \\  \texttt{numpy} & \href{http://numpy.scipy.org/}{\t{numpy.scipy.org}} & \emph{recommended}  & used in Python scripts  \\
-  PETSc &  \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}} & \emph{required} & version $\ge$ \PETSCREL \\
-  Python & \href{http://python.org/}{\t{python.org}} & \emph{required} & required for PETSc configuration and scripts used in the \emph{User's Manual}\\
-  |scikits.delaunay| & \href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}} & \emph{recommended} & used in Python scripts \\
-  Subversion & \href{http://subversion.tigris.org/}{\t{subversion.tigris.org}} & \emph{required} & \\ 
+\begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\hline
+  \textbf{Required Library/Program} & \textbf{Comment} \\
+  &  \\
+  \pairstack{GSL}{\href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}}}  &  \\
+  \pairstack{MPI}{\href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}}}  & \\
+  \pairstack{NetCDF}{\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}}  & \\
+  \pairstack{PETSc}{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}}}  & version $\ge$ \PETSCREL \\
+  \pairstack{Python}{\href{http://python.org/}{\t{python.org}}}  & used during PETSc configuration \\
+  \pairstack{Subversion}{\href{http://subversion.tigris.org/}{\t{subversion.tigris.org}}}  & \\ 
   \hline
 \end{tabular*}
 \end{center}
+\normalspacing
+
+\vspace{0.5in}
+These recommended prerequisites are needed to do all the examples in the \emph{User's Manual}.
+\bigskip\fattablespacing
+\begin{center}
+\begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\hline
+  \textbf{Recommended Library/Program} & \textbf{Comment} \\
+  & \\
+  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}} & needed for earth deformation; if not present set |WITH_FFTW=0|\\
+  \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in Python scripts \\
+  \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in Python scripts  \\    
+  \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in Python scripts  \\
+  \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in Python scripts \\
+  \hline
+\end{tabular*}
+\end{center}
+\normalspacing
+
 
 \newpage
 \section{Generic installation instructions}\label{sect:generic}
@@ -181,11 +190,12 @@ source and do all the examples in the \emph{User's Manual}.
   instructions at the webpage or using a package management system.
 
 \item PISM optionally uses the \href{http://www.fftw.org/}{``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the
-      West})}\index{FFTW (\emph{Fastest Fourier Transform in the West})} in approximating the deformation of the solid earth under
-  ice loads \cite{BLKfastearth}. If you want the functionality of this earth model, which is coupled to the ice flow and which we
-  recommend, install FFTW or check that it is installed already. If FFTW is \emph{not installed}, however, turn off PISM's attempt
-  to build with it by setting the environment variable |WITH_FFTW=0|. If this library is absent, all of PISM will work
-  \emph{except} for the bed deformation model described in the paper \cite{BLKfastearth}.
+      West})}\index{FFTW (\emph{Fastest Fourier Transform in the West})} in one approximation of the deformation of the solid earth (bed) under
+  ice loads.\footnote{Bueler and others 2007. \emph{Fast computation of a viscoelastic deformable Earth
+model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–105}  If you want the functionality of this bed deformation model, which is coupled to the ice flow and which we
+  recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt
+  to build with it by setting the environment variable |WITH_FFTW=0|.  If this library is absent, all of PISM will work
+  \emph{except} for this bed deformation model.
 
 \item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (= \emph{Message Passing Interface})}.\index{MPI
     (\emph{Message Passing Interface})} Your system may have an existing MPI installation, in which case the path to the MPI
@@ -398,6 +408,7 @@ things, first to get Debian |xorg-dev| package, and second to tell the |ncview| 
 $  ./configure --x-libraries=/usr/lib
 \end{verbatim}
 
+
 \clearpage
 \section{Installing PISM on Mac OS X}
 \label{sec:macosx}
@@ -507,28 +518,22 @@ that PISM is functioning correctly.
 \begin{enumerate}
 \item Try the MPI four processor verification run:
 
-\verb|mpiexec -n 4 pismv -test G -y 100|
+\verb|mpiexec -n 4 pismv -test G -y 200|
 
 \noindent If you see some output and a final \verb|Writing model state| \verb|to file 'verify.nc'| \verb|... done| then PISM
 completed successfully. Note that at the end of this run you get measurements of the difference between the numerical result and
-the exact solution \cite{BBL}.
+the exact solution.\footnote{Bueler and others, 2007.  \emph{Exact solutions to the thermomechanically coupled shallow ice approximation: effective tools for verification}, J.~Glaciol.~53 (182), pp.~499--516}
 
 \noindent This should work even if there is only one actual processor on your machine, in which case MPI will run multiple
 processes on the one processor, naturally.
 
-\item Try a verification run on a finer vertical grid while watching the diagnostic views which use Xwindows:
+\item Try a verification run using the PETSc viewers (under the X window system):
 
-\verb|pismv -test G -Mz 201 -y 2000 -d HTc|
+\verb|pismv -test G -y 200 -d HTc|
 
-\noindent When using such diagnostic views and \verb|mpiexec| the additional final option \verb|-display :0| is sometimes required to enable MPI to use X windows:
+\noindent When using such viewers and \verb|mpiexec| the additional final option \verb|-display :0| is sometimes required to enable MPI to use X, like this:
 
-\verb|mpiexec -n 2 pismv -test G -Mz 201 -y 2000 -d HTc -display :0|
-
-\item Run a verification test of the ice stream code:
-
-\verb|pismv -test I -Mx 5 -My 401 -verbose|
-
-\noindent This runs a rather different part of the PISM code and then compares the numerical result to the exact solution appearing in \cite{SchoofStream}.
+\verb|mpiexec -n 2 pismv -test G -y 200 -d HTc -display :0|
 
 \item Run a Python script for a basic suite of verifications:
 
@@ -541,25 +546,12 @@ processes on the one processor, naturally.
 \noindent If you would like us to confirm that PISM is working as expected please save the one page or so of output from this script and send it to us (\href{mailto:help@pism-docs.org}{help@pism-docs.org}).  See section \emph{Verification} of the \emph{User's Manual} for more on PISM verification.
 \end{enumerate}
 
-At this stage you can do the EISMINT II simplified geometry experiments (section \emph{Simplified geometry experiments} of the
-\emph{User's Manual}) and run many verification tests (section \emph{Verification} of the \emph{User's Manual}) without further
-downloads. Section \emph{Example: Modeling the Greenland ice sheet} of the manual is an example of using PISM to model the
-Greenland ice sheet using freely-downloadable data. Similarly one can model the Ross ice shelf using free data as described in
-section \emph{Example: Validating PISM as a flow model for the Ross ice shelf}.
+The next step is to start with the \emph{PISM User's Manual}.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with additional technical documentation.  A completely up-to-date \emph{User's Manual} can be built from \LaTeX~source in the |doc\| subdirectory, as described in the next section.
 
-Setting up PISM to model real ice sheets will frequently require techniques not covered in the \emph{User's Manual} manual. At the
-minimum, the user will need to convert ice sheet data to NetCDF format so that it can be read by PISM. Actual modeling may also
-require the writing of additional source code; see the \emph{Reference Manual} for a description of the source code for PISM. Use
-of PISM for real ice sheet modeling is something we welcome questions about, and will attempt to help with, but we will not
-pretend it is routine. See the PISM Documentation web-page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}} for links to
-additional documentation.
+A final reminder with respect to installation: Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory.  This will run |svn update| and then |make all install| if necessary.
 
-A final reminder with respect to installation: Let's assume you have checked out a copy of PISM using Subversion, as in step
-\ref{getPISMstep} above. You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory. This
-will run |svn update| and then |make all install| if necessary.
 
-Have fun!
-
+\newpage
 \section{Rebuilding PISM documentation}
 \label{sec:docs}
 
@@ -591,10 +583,7 @@ a directory called ``|pism-dev|'' will be created. To rebuild PISM documentation
   \end{tabular*}
 \end{center}
 
-% References
-\clearpage\newpage
-\bibliography{ice_bib}
-\bibliographystyle{siam}
+
 
 \end{document}
 

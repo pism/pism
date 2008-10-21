@@ -1,17 +1,15 @@
-ALL : userman summary refman browser install
+ALL : installation userman refman browser install
 
 update: svn_update
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
 	@echo "doc/ directory is up to date."
 else
-	@echo "Rebuilding manual.tex..."
+	@echo "Rebuilding manuals ..."
 	@svnversion > revision.tex
-	$(MAKE) userman
+	$(MAKE) ALL
 endif
 
-installation : installation.tex ice_bib.bib
-	pdflatex installation.tex
-	bibtex installation
+installation : installation.tex
 	pdflatex installation.tex
 	pdflatex installation.tex
 
