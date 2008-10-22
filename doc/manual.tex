@@ -111,7 +111,9 @@ Our research into ice sheet modeling was strongly influenced and constantly moti
 Welcome to PISM!
 
 Information about PISM is online at
-\centerline{\href{http://www.pism-docs.org}{\t{www.pism-docs.org}}}
+\begin{center}
+  \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
+\end{center}
 
 Please see the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.
 
@@ -414,7 +416,7 @@ The extent of the computational box, along with its bedrock extension downward, 
 \label{fig:rectilinearbox}
 \end{figure}
 
-The extent of the computational box for the ice is directly controlled by the options \intextoption{Lx}, \intextoption{Ly}, and \intextoption{Lz} as described in Appendix 1.  As noted \t{-Lx} and \t{-Ly} options should include values in kilometers while \t{-Lz} should be in meters.
+The extent of the computational box for the ice is directly controlled by the options \intextoption{Lx}, \intextoption{Ly}, and \intextoption{Lz} as described in Appendix \ref{sect:options}.  As noted \t{-Lx} and \t{-Ly} options should include values in kilometers while \t{-Lz} should be in meters.
 
 \subsection{Grid} \label{subsect:grid} The PISM grid\index{PISM!grid} covering the computational box is equally spaced in each of the three dimensions.
 
@@ -1237,7 +1239,7 @@ Note that, by default the option \verb|-ocean_kill| is set internally in \verb|p
 
 The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
 
-One can look at the standard output text file by a minimal method like ``\verb|less out.ssl2|''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by generating a time series file in NetCDF form from the text (log) file coming from \verb|stdout|.  Then various NetCDF tools can be applied to view and manipulate that file.  To do this, use the Python script \verb|util/series.py|, documented in Appendix D, like this:
+One can look at the standard output text file by a minimal method like ``\verb|less out.ssl2|''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by generating a time series file in NetCDF form from the text (log) file coming from \verb|stdout|.  Then various NetCDF tools can be applied to view and manipulate that file.  To do this, use the Python script \verb|util/series.py|, documented in Appendix \ref{sect:scripts}, like this:
 
 \verb|series.py -f out.ssl2 -o ssl2.ser.nc|
 
