@@ -294,6 +294,22 @@ $  cd pism-dev
 $  make
 $  make install
 \end{verbatim}
+
+If your operating system does not support shared libraries, then run
+\begin{verbatim}
+$  cd pism-dev
+$  export PISM_STATIC=1
+$  make
+$  make install
+\end{verbatim}
+\noindent instead. (This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.) You might also
+want to add
+\begin{verbatim}
+export PISM_STATIC=1
+\end{verbatim}
+\noindent to your |.bashrc| file if you're working with the development version of PISM (i.e. if you are likely to rebuild it
+later).
+
 \noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory. Object files created during the build process (located in the \verb|build| subdirectory) are not deleted by the \verb|install| target, so please do ``\verb|make clean|'' if space is an issue. Note ``\verb|make install|'' does not require root permission as it only writes to the local \verb|pism-dev/bin| and \verb|pism-dev/lib|.
 
 \item PISM executables can be run most easily by adding the directories \verb|pism-dev/bin/| and \verb|pism-dev/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
@@ -507,9 +523,6 @@ building PISM on different systems using the same set of makefiles, so |svn comm
 other than yours.
 
 Another possible use, besides building PISM on platforms other than Linux, is adding extra |make| targets.
-
-Also note that even though PISM uses dynamic linking by default, it is possible to build it on systems that only support
-static linking. See comments in |build/Makefile| for alternative |make| rules that can be used in this case. 
 
 \clearpage
 \section{Quick tests of the installation}

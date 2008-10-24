@@ -82,11 +82,14 @@ ifdef CONFIG
   include $(addprefix ../,$(CONFIG))
 endif
 
-LIBPISMNAME := libpism.so
-LIBTESTSNAME := libtests.so
-## use these if static linked:
-#LIBPISMNAME := libpism.a
-#LIBTESTSNAME := libtests.a
+# Build shared libraries by default, static if PISM_STATIC=1
+ifneq ($(PISM_STATIC),1)
+  LIBPISMNAME := libpism.so
+  LIBTESTSNAME := libtests.so
+else
+  LIBPISMNAME := libpism.a
+  LIBTESTSNAME := libtests.a
+endif
 
 all: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
 	@svnversion ../src/ > ../src/revision
@@ -107,17 +110,20 @@ local_install: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
 	@echo 'Note: Object files created during the build process were not deleted.'
 	@echo "      Please run 'make clean' if space is an issue."
 
+# Build shared libraries by default, static if PISM_STATIC=1.
+ifneq ($(PISM_STATIC),1)
 libpism.so : ${ICE_OBJS}
 	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
-## for static-linking do something like this:
-#libpism.a : ${ICE_OBJS}
-#	ar r $@ ${ICE_OBJS} 
 
 libtests.so : ${TESTS_OBJS}
 	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
-## for static-linking do something like this:
-#libtests.a : ${TESTS_OBJS}
-#	ar r $@ ${TESTS_OBJS} 
+else
+libpism.a : ${ICE_OBJS}
+	ar r $@ ${ICE_OBJS} 
+
+libtests.a : ${TESTS_OBJS}
+	ar r $@ ${TESTS_OBJS} 
+endif
 
 pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
