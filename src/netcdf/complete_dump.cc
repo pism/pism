@@ -43,6 +43,12 @@
                             NC_DOUBLE, 1, &psParams.lopo); CHKERRQ(nc_check(stat));
     stat = nc_put_att_double(ncid, polar_stereographic_id, "standard_parallel",
                             NC_DOUBLE, 1, &psParams.sp); CHKERRQ(nc_check(stat));
+
+    if (useSSAVelocity) {
+      int one = 1;
+      stat = nc_put_att_int(ncid, NC_GLOBAL, "haveSSAvelocities",
+			    NC_INT, 1, &one); CHKERRQ(nc_check(stat));
+    }
   }
 
   // 2-D model quantities
@@ -60,6 +66,14 @@
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   ierr = nct.put_local_var(&grid, ncid, dbdt_id, grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+
+  if (useSSAVelocity) {
+    ierr = nct.put_local_var(&grid, ncid, vubarSSA_id, grid.da2, vubarSSA, g2,
+			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+    ierr = nct.put_local_var(&grid, ncid, vvbarSSA_id, grid.da2, vvbarSSA, g2,
+			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  }
+
   // 3-D model quantities
   ierr = T3.setVaridNC(temp_id); CHKERRQ(ierr);
   ierr = T3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);

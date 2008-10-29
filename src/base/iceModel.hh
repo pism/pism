@@ -461,8 +461,8 @@ private:
   // Note these do not initialize correctly for derived classes if made
   // "private" however, derived classes should not need access to the details
   // of the linear system which uses these
-  bool haveSSAvelocities;	// use vubarSSA and vvbarSSA from a previous
-				// run it true, otherwise set them to zero in
+  int haveSSAvelocities;	// use vubarSSA and vvbarSSA from a previous
+				// run if 1, otherwise set them to zero in
 				// IceModel::initSSA
   Vec vubarSSA, vvbarSSA;
   KSP SSAKSP;

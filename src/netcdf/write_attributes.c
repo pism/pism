@@ -33,6 +33,8 @@
    int bwat_id;
    int topg_id;
    int dbdt_id;
+   int vubarSSA_id;
+   int vvbarSSA_id;
    int temp_id;
    int litho_temp_id;
    int age_id;
@@ -64,6 +66,8 @@
 #  define RANK_bwat 3
 #  define RANK_topg 3
 #  define RANK_dbdt 3
+#  define RANK_vubarSSA 3
+#  define RANK_vvbarSSA 3
 #  define RANK_temp 4
 #  define RANK_litho_temp 4
 #  define RANK_age 4
@@ -94,6 +98,8 @@
    int bwat_dims[RANK_bwat];
    int topg_dims[RANK_topg];
    int dbdt_dims[RANK_dbdt];
+   int vubarSSA_dims[RANK_vubarSSA];
+   int vvbarSSA_dims[RANK_vvbarSSA];
    int temp_dims[RANK_temp];
    int litho_temp_dims[RANK_litho_temp];
    int age_dims[RANK_age];
@@ -114,6 +120,7 @@
    double polar_stereographic_straight_vertical_longitude_from_pole[1];
    double polar_stereographic_latitude_of_projection_origin[1];
    double polar_stereographic_standard_parallel[1];
+   int cdf_haveSSAvelocities[1];
 
    /* enter define mode */
 if (grid.rank == 0) {
@@ -197,6 +204,18 @@ if (grid.rank == 0) {
    dbdt_dims[1] = x_dim;
    dbdt_dims[2] = y_dim;
    stat = nc_def_var(ncid, "dbdt", NC_DOUBLE, RANK_dbdt, dbdt_dims, &dbdt_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   vubarSSA_dims[0] = t_dim;
+   vubarSSA_dims[1] = x_dim;
+   vubarSSA_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "vubarSSA", NC_DOUBLE, RANK_vubarSSA, vubarSSA_dims, &vubarSSA_id);
+   check_err(stat,__LINE__,__FILE__);
+
+   vvbarSSA_dims[0] = t_dim;
+   vvbarSSA_dims[1] = x_dim;
+   vvbarSSA_dims[2] = y_dim;
+   stat = nc_def_var(ncid, "vvbarSSA", NC_DOUBLE, RANK_vvbarSSA, vvbarSSA_dims, &vvbarSSA_id);
    check_err(stat,__LINE__,__FILE__);
 
    temp_dims[0] = t_dim;
@@ -403,6 +422,25 @@ if (grid.rank == 0) {
    stat = nc_put_att_text(ncid, dbdt_id, "units", 5, "m s-1");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, dbdt_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
+   cdf_haveSSAvelocities[0] = 0;
+   stat = nc_put_att_int(ncid, NC_GLOBAL, "haveSSAvelocities", NC_INT, 1, cdf_haveSSAvelocities);
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vubarSSA_id, "long_name", 8, "vubarSSA");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vubarSSA_id, "standard_name", 8, "vubarSSA");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vubarSSA_id, "units", 5, "m s-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vubarSSA_id, "pism_intent", 11, "model_state");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vvbarSSA_id, "long_name", 8, "vvbarSSA");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vvbarSSA_id, "standard_name", 8, "vvbarSSA");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vvbarSSA_id, "units", 5, "m s-1");
+   check_err(stat,__LINE__,__FILE__);
+   stat = nc_put_att_text(ncid, vvbarSSA_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, temp_id, "long_name", 15, "ice temperature");
    check_err(stat,__LINE__,__FILE__);

@@ -365,24 +365,29 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = nct.get_local_var(&grid, ncid, "dbdt", grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
-//   if (grid.rank == 0) {
-//     if (!useSSAvelocities) break;
+  // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
+  // if they are present in the input file.
+  PetscTruth dontreadSSAvels = PETSC_FALSE;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-dontreadSSAvels", &dontreadSSAvels); CHKERRQ(ierr);
 
-//     ierr = nc_inq_varid(ncid, "vubarSSA", NULL);
-//     if (ierr == NC_NOERR) {
-//       ierr = nc_inq_varid(ncid, "vvbarSSA", NULL);
-//       if (ierr == NC_NOERR) {
-// 	haveSSAvelocities = true;
-// 	ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
+  if ((grid.rank == 0) && useSSAVelocity && (!dontreadSSAvels)) {
 
-// 	ierr = MPI_Bcast(&haveSSAvelocities, 1, MPI_BOOL, 0, grid.com); CHKERRQ(ierr);
-// 	ierr = nct.get_local_var(&grid, ncid, "vubarSSA", grid.da2, vubarSSA, g2,
-// 				 s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-// 	ierr = nct.get_local_var(&grid, ncid, "vvbarSSA", grid.da2, vvbarSSA, g2,
-// 				 s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-//       }
-//     }
-//   }
+    int flag;
+    stat = nc_get_att_int(ncid, NC_GLOBAL, "haveSSAvelocities", &flag);
+    if (stat == NC_NOERR) {
+      haveSSAvelocities = flag;
+      ierr = MPI_Bcast(&haveSSAvelocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+    }
+  }
+  
+  if (haveSSAvelocities == 1) {
+    ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
+
+    ierr = nct.get_local_var(&grid, ncid, "vubarSSA", grid.da2, vubarSSA, g2,
+			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+    ierr = nct.get_local_var(&grid, ncid, "vvbarSSA", grid.da2, vvbarSSA, g2,
+			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  }
 
   // 2-D climate/bdry quantities
   ierr = nct.get_local_var(&grid, ncid, "artm", grid.da2, vTs, g2,

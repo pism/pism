@@ -120,19 +120,17 @@ variables: // The names of variables are magic in PISM source.
     dbdt:standard_name = "tendency_of_bedrock_altitude";
     dbdt:units = "m s-1";
     dbdt:pism_intent = "model_state";  // note LC bed model treats as model state
-//   :haveSSAvelocities = 0;
-//   double vubarSSA(t,x,y);
-//     vubarSSA:long_name = "vubarSSA";
-//     vubarSSA:standard_name = "vubarSSA";
-//     vubarSSA:units = "m s-1";
-//     vubarSSA:present = 0;
-//     vubarSSA:pism_intent = "model_state";
-//   double vvbarSSA(t,x,y);
-//     vvbarSSA:long_name = "vvbarSSA";
-//     vvbarSSA:standard_name = "vvbarSSA";
-//     vvbarSSA:units = "m s-1";
-//     vvbarSSA:present = 0;
-//     vvbarSSA:pism_intent = "model_state";
+  :haveSSAvelocities = 0;
+  double vubarSSA(t,x,y);
+    vubarSSA:long_name = "vubarSSA";
+    vubarSSA:standard_name = "pism_vubarSSA";
+    vubarSSA:units = "m s-1";
+    vubarSSA:pism_intent = "model_state";
+  double vvbarSSA(t,x,y);
+    vvbarSSA:long_name = "vvbarSSA";
+    vvbarSSA:standard_name = "pism_vvbarSSA";
+    vvbarSSA:units = "m s-1";
+    vvbarSSA:pism_intent = "model_state";
 
 // 3-dimensional model quantities
   double temp(t,x,y,z);
