@@ -171,7 +171,7 @@ PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
   int a_len, max_a_len;
   max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
+  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
 
 // complete the output file
 #include "../netcdf/complete_dump.cc"
@@ -205,7 +205,7 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
   int a_len, max_a_len;
   max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
+  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
 
 // complete the output file as in usual dump
 // ("uvel_id", "vvel_id", "wvel_id" defined in included file)
@@ -339,40 +339,59 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   int a_len, max_a_len;
   max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
   MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(max_a_len * sizeof(float), &a_mpi); CHKERRQ(ierr);
+  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
 
   // 2-D mapping
-  ierr = nct.get_local_var(&grid, ncid, "lon", NC_FLOAT, grid.da2, vLongitude, g2,
+  ierr = nct.get_local_var(&grid, ncid, "lon", grid.da2, vLongitude, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "lat", NC_FLOAT, grid.da2, vLatitude, g2,
+  ierr = nct.get_local_var(&grid, ncid, "lat", grid.da2, vLatitude, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 2-D model quantities: discrete
-  ierr = nct.get_local_var(&grid, ncid, "mask", NC_BYTE, grid.da2, vMask, g2, 
+  ierr = nct.get_local_var(&grid, ncid, "mask", grid.da2, vMask, g2, 
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
-  // 2-D model quantities: float
-  ierr = nct.get_local_var(&grid, ncid, "usurf", NC_FLOAT, grid.da2, vh, g2,  // DEPRECATED: pism_intent = diagnostic;
+  // 2-D model quantities: double
+  ierr = nct.get_local_var(&grid, ncid, "usurf", grid.da2, vh, g2,  // DEPRECATED: pism_intent = diagnostic;
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);             //   WE SHOULD NOT BE READING THIS
                                                                               //   (CHOICES ABOUT WHAT -bif DOES ARE A
                                                                               //   DIFFERENT ISSUE)
-  ierr = nct.get_local_var(&grid, ncid, "thk", NC_FLOAT, grid.da2, vH, g2,
+  ierr = nct.get_local_var(&grid, ncid, "thk", grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "bwat", NC_FLOAT, grid.da2, vHmelt, g2,
+  ierr = nct.get_local_var(&grid, ncid, "bwat", grid.da2, vHmelt, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "topg", NC_FLOAT, grid.da2, vbed, g2,
+  ierr = nct.get_local_var(&grid, ncid, "topg", grid.da2, vbed, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "dbdt", NC_FLOAT, grid.da2, vuplift, g2,
+  ierr = nct.get_local_var(&grid, ncid, "dbdt", grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
+//   if (grid.rank == 0) {
+//     if (!useSSAvelocities) break;
+
+//     ierr = nc_inq_varid(ncid, "vubarSSA", NULL);
+//     if (ierr == NC_NOERR) {
+//       ierr = nc_inq_varid(ncid, "vvbarSSA", NULL);
+//       if (ierr == NC_NOERR) {
+// 	haveSSAvelocities = true;
+// 	ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
+
+// 	ierr = MPI_Bcast(&haveSSAvelocities, 1, MPI_BOOL, 0, grid.com); CHKERRQ(ierr);
+// 	ierr = nct.get_local_var(&grid, ncid, "vubarSSA", grid.da2, vubarSSA, g2,
+// 				 s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+// 	ierr = nct.get_local_var(&grid, ncid, "vvbarSSA", grid.da2, vvbarSSA, g2,
+// 				 s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+//       }
+//     }
+//   }
+
   // 2-D climate/bdry quantities
-  ierr = nct.get_local_var(&grid, ncid, "artm", NC_FLOAT, grid.da2, vTs, g2,
+  ierr = nct.get_local_var(&grid, ncid, "artm", grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "bheatflx", NC_FLOAT, grid.da2, vGhf, g2,
+  ierr = nct.get_local_var(&grid, ncid, "bheatflx", grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "acab", NC_FLOAT, grid.da2, vAccum, g2,
+  ierr = nct.get_local_var(&grid, ncid, "acab", grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "tillphi", NC_FLOAT, grid.da2, vtillphi, g2,
+  ierr = nct.get_local_var(&grid, ncid, "tillphi", grid.da2, vtillphi, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 3-D model quantities

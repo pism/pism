@@ -188,46 +188,46 @@ if (grid.rank == 0) {
    thk_dims[0] = t_dim;
    thk_dims[1] = x_dim;
    thk_dims[2] = y_dim;
-   stat = nc_def_var(ncid, "thk", NC_FLOAT, RANK_thk, thk_dims, &thk_id);
+   stat = nc_def_var(ncid, "thk", NC_DOUBLE, RANK_thk, thk_dims, &thk_id);
    check_err(stat,__LINE__,__FILE__);
 
    bwat_dims[0] = t_dim;
    bwat_dims[1] = x_dim;
    bwat_dims[2] = y_dim;
-   stat = nc_def_var(ncid, "bwat", NC_FLOAT, RANK_bwat, bwat_dims, &bwat_id);
+   stat = nc_def_var(ncid, "bwat", NC_DOUBLE, RANK_bwat, bwat_dims, &bwat_id);
    check_err(stat,__LINE__,__FILE__);
 
    topg_dims[0] = t_dim;
    topg_dims[1] = x_dim;
    topg_dims[2] = y_dim;
-   stat = nc_def_var(ncid, "topg", NC_FLOAT, RANK_topg, topg_dims, &topg_id);
+   stat = nc_def_var(ncid, "topg", NC_DOUBLE, RANK_topg, topg_dims, &topg_id);
    check_err(stat,__LINE__,__FILE__);
 
    dbdt_dims[0] = t_dim;
    dbdt_dims[1] = x_dim;
    dbdt_dims[2] = y_dim;
-   stat = nc_def_var(ncid, "dbdt", NC_FLOAT, RANK_dbdt, dbdt_dims, &dbdt_id);
+   stat = nc_def_var(ncid, "dbdt", NC_DOUBLE, RANK_dbdt, dbdt_dims, &dbdt_id);
    check_err(stat,__LINE__,__FILE__);
 
    temp_dims[0] = t_dim;
    temp_dims[1] = x_dim;
    temp_dims[2] = y_dim;
    temp_dims[3] = z_dim;
-   stat = nc_def_var(ncid, "temp", NC_FLOAT, RANK_temp, temp_dims, &temp_id);
+   stat = nc_def_var(ncid, "temp", NC_DOUBLE, RANK_temp, temp_dims, &temp_id);
    check_err(stat,__LINE__,__FILE__);
 
    litho_temp_dims[0] = t_dim;
    litho_temp_dims[1] = x_dim;
    litho_temp_dims[2] = y_dim;
    litho_temp_dims[3] = zb_dim;
-   stat = nc_def_var(ncid, "litho_temp", NC_FLOAT, RANK_litho_temp, litho_temp_dims, &litho_temp_id);
+   stat = nc_def_var(ncid, "litho_temp", NC_DOUBLE, RANK_litho_temp, litho_temp_dims, &litho_temp_id);
    check_err(stat,__LINE__,__FILE__);
 
    age_dims[0] = t_dim;
    age_dims[1] = x_dim;
    age_dims[2] = y_dim;
    age_dims[3] = z_dim;
-   stat = nc_def_var(ncid, "age", NC_FLOAT, RANK_age, age_dims, &age_id);
+   stat = nc_def_var(ncid, "age", NC_DOUBLE, RANK_age, age_dims, &age_id);
    check_err(stat,__LINE__,__FILE__);
 
    artm_dims[0] = t_dim;

@@ -187,7 +187,7 @@ and \c delta entries in the struct will not be meaningful.
   a_len = count[1] * count[2] * myzcount;
   int my_a_len = a_len;
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(a_len * sizeof(float), &(a)); //CHKERRQ(ierr);
+  ierr = PetscMalloc(a_len * sizeof(double), &(a)); //CHKERRQ(ierr);
 
   //return 0;  // can't return; its a constructor
 }
@@ -523,12 +523,12 @@ PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *v
 Just calls get_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
 PetscErrorCode NCTool::get_local_var(
-         const IceGrid *grid, int ncid, const char *name, nc_type type,
+         const IceGrid *grid, int ncid, const char *name,
          DA da, Vec v, Vec g, const int *s, const int *c,
          int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
-  ierr = get_global_var(grid, ncid, name, type, da, g, s, c, dims, a_mpi, a_size);
+  ierr = get_global_var(grid, ncid, name, da, g, s, c, dims, a_mpi, a_size);
             CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
@@ -538,7 +538,7 @@ PetscErrorCode NCTool::get_local_var(
 
 //! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
 PetscErrorCode NCTool::get_global_var(
-    const IceGrid *grid, int ncid, const char *name, nc_type type,
+    const IceGrid *grid, int ncid, const char *name,
     DA da, Vec g, const int *s, const int *c, int dims, void *a_mpi, int a_size) {
 
   const int req_tag = 1; // MPI tag for request block
@@ -549,16 +549,9 @@ PetscErrorCode NCTool::get_global_var(
   int stat;
   int sc[sc_size]; // buffer to hold both `s' and `c'
   size_t sc_nc[sc_size];
-  float *a_float = NULL;
-  unsigned char *a_uchar = NULL;
+  double *a_double = NULL;
 
-  if (type == NC_FLOAT) {
-    a_float = (float *)a_mpi;
-  } else if (type == NC_BYTE) {
-    a_uchar = (unsigned char *)a_mpi;
-  } else {
-    SETERRQ(1, "Unsupported type.");
-  }
+  a_double = (double *)a_mpi;
 
   for (int i = 0; i < 2 * dims; i++) {
     sc[i] = (i < dims) ? s[i] : c[i - dims];
@@ -586,36 +579,18 @@ PetscErrorCode NCTool::get_global_var(
 
       int var_id;
       stat = nc_inq_varid(ncid, name, &var_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      if (type == NC_FLOAT) {
-        stat = nc_get_vara_float(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_float);
-      } else if (type == NC_BYTE) {
-        stat = nc_get_vara_uchar(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_uchar);
-      } else {
-        SETERRQ(1, "Unsupported type.");
-      }
+      stat = nc_get_vara_double(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       if (proc != 0) {
         int b_len = 1;
         for (int i = dims; i < 2 * dims; i++) b_len *= sc[i];
-        if (type == NC_FLOAT) {
-          MPI_Send(a_float, b_len, MPI_FLOAT, proc, var_tag, grid->com);
-        } else if (type == NC_BYTE) {
-          MPI_Send(a_uchar, b_len, MPI_UNSIGNED_CHAR, proc, var_tag, grid->com);
-        } else {
-          SETERRQ(1, "Unsupported type.");
-        }
+	MPI_Send(a_double, b_len, MPI_DOUBLE, proc, var_tag, grid->com);
       }
     }
   } else {
     MPI_Send(sc, 2 * dims, MPI_INT, 0, req_tag, grid->com);
-    if (type == NC_FLOAT) {
-      MPI_Recv(a_float, a_size, MPI_FLOAT, 0, var_tag, grid->com, &mpi_stat);
-    } else if (type == NC_BYTE) {
-      MPI_Recv(a_uchar, a_size, MPI_UNSIGNED_CHAR, 0, var_tag, grid->com, &mpi_stat);
-    } else {
-      SETERRQ(1, "Unsupported type.");
-    }
+    MPI_Recv(a_double, a_size, MPI_DOUBLE, 0, var_tag, grid->com, &mpi_stat);
   }
 
   int b_len = 1;
@@ -623,13 +598,7 @@ PetscErrorCode NCTool::get_global_var(
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
   for (int i = 0; i < b_len; i++) {
-    if (type == NC_FLOAT) {
-      a_petsc[i] = (PetscScalar)a_float[i];
-    } else if (type == NC_BYTE) {
-      a_petsc[i] = (PetscScalar)a_uchar[i];
-    } else {
-      SETERRQ(1, "Unsupported type.");
-    }
+    a_petsc[i] = (PetscScalar)a_double[i];
   }
 
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
@@ -641,19 +610,19 @@ PetscErrorCode NCTool::get_global_var(
 /*!
 Just calls put_global_var(), after transfering the local \c Vec called \c vec into the global \c Vec \c g.
  */
-PetscErrorCode NCTool::put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+PetscErrorCode NCTool::put_local_var(const IceGrid *grid, int ncid, const int var_id,
                                      DA da, Vec v, Vec g, const int *s, const int *c,
                                      int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
   ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
-  ierr = put_global_var(grid, ncid, var_id, type, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
+  ierr = put_global_var(grid, ncid, var_id, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
-PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int var_id,
                                       DA da, Vec g, const int *s, const int *c,
                                       int dims, void *a_mpi, int a_size) {
   const int lim_tag = 1; // MPI tag for limits block
@@ -664,16 +633,9 @@ PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int v
   int stat;
   int sc[sc_size]; // buffer to hold both `s' and `c'
   size_t sc_nc[sc_size];
-  float *a_float = NULL;
-  unsigned char *a_uchar = NULL;
+  double *a_double = NULL;
 
-  if (type == NC_FLOAT) {
-    a_float = (float *)a_mpi;
-  } else if (type == NC_BYTE) {
-    a_uchar = (unsigned char *)a_mpi;
-  } else {
-    SETERRQ(1, "Unsupported type.");
-  }
+  a_double = (double *)a_mpi;
 
   for (int i = 0; i < 2 * dims; i++) {
     sc[i] = (i < dims) ? s[i] : c[i - dims];
@@ -682,17 +644,11 @@ PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int v
   int b_len = 1;
   for (int i = 0; i < dims; i++) b_len *= c[i];
 
-  // convert IceModel Vec containing PetscScalar to array of float or char for NetCDF
+  // convert IceModel Vec containing PetscScalar to array of double for NetCDF
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
   for (int i = 0; i < b_len; i++) {
-    if (type == NC_FLOAT) {
-      a_float[i] = (float)a_petsc[i];
-    } else if (type == NC_BYTE) {
-      a_uchar[i] = (unsigned char)a_petsc[i];
-    } else {
-      SETERRQ(1, "Unsupported type.");
-    }
+    a_double[i] = (double)a_petsc[i];
   }
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
@@ -701,13 +657,7 @@ PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int v
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
         MPI_Recv(sc, sc_size, MPI_INT, proc, lim_tag, grid->com, &mpi_stat);
-        if (type == NC_FLOAT) {
-          MPI_Recv(a_float, a_size, MPI_FLOAT, proc, var_tag, grid->com, &mpi_stat);
-        } else if (type == NC_BYTE) {
-          MPI_Recv(a_uchar, a_size, MPI_UNSIGNED_CHAR, proc, var_tag, grid->com, &mpi_stat);
-        } else {
-          SETERRQ(1, "Unsupported type.");
-        }
+	MPI_Recv(a_double, a_size, MPI_DOUBLE, proc, var_tag, grid->com, &mpi_stat);
       }
 
       /* {
@@ -720,24 +670,13 @@ PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int v
       } */
 
       for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
-      if (type == NC_FLOAT) {
-        stat = nc_put_vara_float(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_float);
-      } else if (type == NC_BYTE) {
-        stat = nc_put_vara_uchar(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_uchar);
-      } else {
-        SETERRQ(1, "Unsupported type.");
-      }
+
+      stat = nc_put_vara_double(ncid, var_id, &sc_nc[0], &sc_nc[dims], a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
     }
   } else {  // all other processors send to rank 0 processor
     MPI_Send(sc, 2 * dims, MPI_INT, 0, lim_tag, grid->com);
-    if (type == NC_FLOAT) {
-      MPI_Send(a_float, a_size, MPI_FLOAT, 0, var_tag, grid->com);
-    } else if (type == NC_BYTE) {
-      MPI_Send(a_uchar, a_size, MPI_UNSIGNED_CHAR, 0, var_tag, grid->com);
-    } else {
-      SETERRQ(1, "Unsupported type.");
-    }
+    MPI_Send(a_double, a_size, MPI_DOUBLE, 0, var_tag, grid->com);
   }
   return 0;
 }
@@ -900,7 +839,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
       for (int i = 0; i < sc_len; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
 
       // Actually read the block into the buffer.
-      stat = nc_get_vara_float(lic.ncid, var_id, &sc_nc[0], &sc_nc[4], lic.a);
+      stat = nc_get_vara_double(lic.ncid, var_id, &sc_nc[0], &sc_nc[4], lic.a);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       /*{
@@ -926,15 +865,15 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
 
       // send the filled buffer
       if (proc != 0) {
-        MPI_Send(lic.a, a_len, MPI_FLOAT, proc, var_tag, grid.com);
+        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, var_tag, grid.com);
       }
     }
   } else { // not process 0:
     MPI_Send(sc, sc_len, MPI_INT, 0, req_tag, grid.com);  // send out my bounds
-    MPI_Recv(lic.a, lic.a_len, MPI_FLOAT, 0, var_tag, grid.com, &mpi_stat); // get back filled buffer
+    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, var_tag, grid.com, &mpi_stat); // get back filled buffer
   }
 
-  // At this point, the buffer lic.a[] should contain lic.a_len floats.  This is the 
+  // At this point, the buffer lic.a[] should contain lic.a_len doubles.  This is the 
   // local processor's part of the source variable.  
   // That is, it should be enough of the source variable so that \e interpolation
   // (not extrapolation) onto the local processor's part of the target grid is possible.

@@ -34,6 +34,8 @@ const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
+  haveSSAvelocities = false;
+
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
   signal(SIGUSR1, pism_signal_handler);

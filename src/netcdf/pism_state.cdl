@@ -101,38 +101,51 @@ variables: // The names of variables are magic in PISM source.
     mask:pism_intent = "model_state";
 
 // 2-dimensional model quantities
-  float thk(t,x,y);
+  double thk(t,x,y);
     thk:long_name = "land ice thickness";
     thk:standard_name = "land_ice_thickness";
     thk:units = "m";
     thk:pism_intent = "model_state";
-  float bwat(t,x,y);
+  double bwat(t,x,y);
     bwat:long_name = "effective thickness of subglacial melt water";
     bwat:units = "m";
     bwat:pism_intent = "model_state";
-  float topg(t,x,y);
+  double topg(t,x,y);
     topg:long_name = "bedrock surface elevation";
     topg:standard_name = "bedrock_altitude";
     topg:units = "m";
     topg:pism_intent = "model_state";
-  float dbdt(t,x,y);
+  double dbdt(t,x,y);
     dbdt:long_name = "bedrock uplift rate";
     dbdt:standard_name = "tendency_of_bedrock_altitude";
     dbdt:units = "m s-1";
     dbdt:pism_intent = "model_state";  // note LC bed model treats as model state
+//   :haveSSAvelocities = 0;
+//   double vubarSSA(t,x,y);
+//     vubarSSA:long_name = "vubarSSA";
+//     vubarSSA:standard_name = "vubarSSA";
+//     vubarSSA:units = "m s-1";
+//     vubarSSA:present = 0;
+//     vubarSSA:pism_intent = "model_state";
+//   double vvbarSSA(t,x,y);
+//     vvbarSSA:long_name = "vvbarSSA";
+//     vvbarSSA:standard_name = "vvbarSSA";
+//     vvbarSSA:units = "m s-1";
+//     vvbarSSA:present = 0;
+//     vvbarSSA:pism_intent = "model_state";
 
 // 3-dimensional model quantities
-  float temp(t,x,y,z);
+  double temp(t,x,y,z);
     temp:long_name = "ice temperature";
     temp:standard_name = "land_ice_temperature";
     temp:units = "K";
     temp:pism_intent = "model_state";
-  float litho_temp(t,x,y,zb);
+  double litho_temp(t,x,y,zb);
     litho_temp:long_name = "bedrock temperature";
     litho_temp:standard_name = "bedrock_temperature";
     litho_temp:units = "K";
     litho_temp:pism_intent = "model_state";
-  float age(t,x,y,z);
+  double age(t,x,y,z);
     age:long_name = "age of ice";
     age:standard_name = "land_ice_age";
     age:units = "s";

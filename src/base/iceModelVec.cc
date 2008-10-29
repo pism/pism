@@ -181,11 +181,11 @@ PetscErrorCode IceModelVec::getVecNC(const int ncid, const int *s, const int *c,
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nct.get_local_var(grid, ncid, varname, NC_FLOAT, da, v, g,
+    ierr = nct.get_local_var(grid, ncid, varname, da, v, g,
                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = nct.get_global_var(grid, ncid, varname, NC_FLOAT, da, v,
+    ierr = nct.get_global_var(grid, ncid, varname, da, v,
                           s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
   }
   return 0;
@@ -200,11 +200,11 @@ PetscErrorCode IceModelVec::putVecNC(const int ncid, const int *s, const int *c,
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nct.put_local_var(grid, ncid, varid_nc, NC_FLOAT, da, v, g,
+    ierr = nct.put_local_var(grid, ncid, varid_nc, da, v, g,
                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = nct.put_global_var(grid, ncid, varid_nc, NC_FLOAT, da, v,
+    ierr = nct.put_global_var(grid, ncid, varid_nc, da, v,
                           s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
   }
   return 0;

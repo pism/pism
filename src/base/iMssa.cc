@@ -25,8 +25,10 @@
 //! Each step of SSA uses previously saved values to start iteration; zero them here to start.
 PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
-  ierr = VecSet(vubarSSA,0.0); CHKERRQ(ierr);
-  ierr = VecSet(vvbarSSA,0.0); CHKERRQ(ierr);
+  if (!haveSSAvelocities) {
+    ierr = VecSet(vubarSSA,0.0); CHKERRQ(ierr);
+    ierr = VecSet(vvbarSSA,0.0); CHKERRQ(ierr);
+  }
   return 0;
 }
 

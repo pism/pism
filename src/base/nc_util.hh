@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Jed Brown and Ed Bueler
+// Copyright (C) 2007, 2008 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -59,7 +59,7 @@ class LocalInterpCtx {
 public:
   double fstart[3], delta[3];
   int start[5], count[5];    // Indices in netCDF file.
-  float *a;
+  double *a;
   int a_len;
   int ncid;
   int nz, nzb;
@@ -101,17 +101,17 @@ PetscErrorCode get_vertical_dims(int ncid, const int z_len, const int zb_len,
 PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
 PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, double start, double delta);
 
-PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
+PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name,
                              DA da, Vec v, Vec g, const int *s, const int *c,
                              int dims, void *a_mpi, int a_size);
-PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name, nc_type type,
+PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name,
                               DA da, Vec g, const int *s, const int *c,
                               int dims, void *a_mpi, int a_size);
 
-PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id,
                              DA da, Vec v, Vec g, const int *s, const int *c,
                              int dims, void *a_mpi, int a_size);
-PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id, nc_type type,
+PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id,
                               DA da, Vec g, const int *s, const int *c,
                               int dims, void *a_mpi, int a_size);
 
