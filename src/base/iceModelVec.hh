@@ -105,6 +105,8 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_varname[], bool local);
+  virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
+				       IceGrid &my_grid, const char my_varname[], bool local);
 
   PetscScalar     getVal(const PetscInt i, const PetscInt j);
   PetscErrorCode  getPlaneStar(const PetscInt i, const PetscInt j, planeStar *star);

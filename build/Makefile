@@ -50,26 +50,27 @@ executables := pismr pismd pismv pisms pgrn
 extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
    simpleL gridL flowTable tryLCbd pant
 
-ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc \
-	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
-	iMdefaults.cc iMforcing.cc iMgrainsize.cc iMIO.cc iMinverse.cc \
-	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc \
-	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc \
-	iceModelVec.cc iceModelVec3.cc iceModel.cc pism_const.cc
+ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
+	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
+	iMdefaults.cc iMforcing.cc iMgrainsize.cc iMIO.cc iMinverse.cc		\
+	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc	\
+	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc	\
+	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc		\
+	pism_const.cc
 
 ice_csources := cubature.c pism_signal.c
 
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
    exactTestK.c exactTestL.c
 
-other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pgrn.cc \
-	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc \
-	icePSTexModel.cc iceCompModel.cc \
-	iceExactSSAModel.cc iCMthermo.cc flowTable.cc tryLCbd.cc
-other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c \
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pgrn.cc iceEISModel.cc	\
+	iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc icePSTexModel.cc	\
+	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc flowTable.cc		\
+	tryLCbd.cc
+other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c
-all_sources :=  $(ice_sources) $(ice_csources) $(test_sources) \
-		$(other_sources) $(other_csources)
+all_sources := $(ice_sources) $(ice_csources) $(test_sources) $(other_sources)	\
+		$(other_csources)
 
 TESTS_OBJS := $(tests_sources:.c=.o)
 
