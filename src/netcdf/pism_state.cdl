@@ -123,12 +123,10 @@ variables: // The names of variables are magic in PISM source.
   :haveSSAvelocities = 0;
   double vubarSSA(t,x,y);
     vubarSSA:long_name = "vubarSSA";
-    vubarSSA:standard_name = "pism_vubarSSA";
     vubarSSA:units = "m s-1";
     vubarSSA:pism_intent = "model_state";
   double vvbarSSA(t,x,y);
     vvbarSSA:long_name = "vvbarSSA";
-    vvbarSSA:standard_name = "pism_vvbarSSA";
     vvbarSSA:units = "m s-1";
     vvbarSSA:pism_intent = "model_state";
 

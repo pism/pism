@@ -374,11 +374,10 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
 
     int flag;
     stat = nc_get_att_int(ncid, NC_GLOBAL, "haveSSAvelocities", &flag);
-    if (stat == NC_NOERR) {
+    if (stat == NC_NOERR)
       haveSSAvelocities = flag;
-      ierr = MPI_Bcast(&haveSSAvelocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-    }
   }
+  ierr = MPI_Bcast(&haveSSAvelocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
   if (haveSSAvelocities == 1) {
     ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);

@@ -459,15 +459,11 @@ if (grid.rank == 0) {
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, vubarSSA_id, "long_name", 8, "vubarSSA");
    check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, vubarSSA_id, "standard_name", 8, "vubarSSA");
-   check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, vubarSSA_id, "units", 5, "m s-1");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, vubarSSA_id, "pism_intent", 11, "model_state");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, vvbarSSA_id, "long_name", 8, "vvbarSSA");
-   check_err(stat,__LINE__,__FILE__);
-   stat = nc_put_att_text(ncid, vvbarSSA_id, "standard_name", 8, "vvbarSSA");
    check_err(stat,__LINE__,__FILE__);
    stat = nc_put_att_text(ncid, vvbarSSA_id, "units", 5, "m s-1");
    check_err(stat,__LINE__,__FILE__);
