@@ -32,15 +32,20 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
 
   useSSAVelocity= PETSC_TRUE;
   computeSIAVelocities = PETSC_FALSE;
+  doMassConserve = PETSC_FALSE;  // diagnostic calculation
 
   // further settings for velocity computation 
   useConstantNuForSSA = PETSC_FALSE;       // compute the effective viscosity
                                            //   in non-Newtonian way ...
   useConstantHardnessForSSA = PETSC_TRUE;  // but don't include thermocoupling
+  shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
   constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
+  min_thickness_SSA = 50.0; // m; critical quantity for adjusting force boundary
+                            // condition at calving front; use command line option
+                            // "-ssa_min_thk 10.0" for 10.0 m thick 
 }
 
 
@@ -102,7 +107,8 @@ PetscErrorCode IceROSSModel::initFromOptions() {
 
   // update surface elev
   ierr = verbPrintf(2,grid.com, 
-     "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n"); CHKERRQ(ierr);
+     "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
+     CHKERRQ(ierr);
   ierr = VecCopy(vH,vh); CHKERRQ(ierr);
   ierr = VecScale(vh, 1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
 
@@ -135,9 +141,9 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
   ierr = readRIGGSandCompare(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "EIS-Ross: showing observed velocities (if -d used)\n"); CHKERRQ(ierr);
-  ierr = putObservedVelsCartesian(); CHKERRQ(ierr);
-  ierr = updateViewers(); CHKERRQ(ierr);
+  // if we want to show observed velocities, they should be written 
+  // to an nc file by additional code; old revisions had code to show in diagnostic
+  // viewers by overwriting ubar,vbar
   
   Vec*  myvNu;
   ierr = VecDuplicateVecs(vh, 2, &myvNu); CHKERRQ(ierr);
@@ -338,32 +344,6 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = verbPrintf(2,grid.com,
              "  rms average error in vector vel      = %9.3f (m/a)\n",
              gvecErrAcc); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceROSSModel::putObservedVelsCartesian() {
-  PetscErrorCode  ierr;
-  PetscScalar **azi, **mag, **acc, **ubar, **vbar;   
-  const PetscScalar pi = 3.14159265358979;
-
-  ierr = DAVecGetArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, obsAccurate, &acc); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      vbar[i][j] = acc[i][j] * mag[i][j] * sin((pi/180.0) * azi[i][j]);
-      ubar[i][j] = acc[i][j] * mag[i][j] * cos((pi/180.0) * azi[i][j]);
-      // see comment above in computeErrorsInAccurateRegion()
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, obsAccurate, &acc); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
   return 0;
 }
 

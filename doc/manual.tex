@@ -1301,17 +1301,18 @@ A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-G
 
 
 \clearpage\newpage
-\section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross} \index{PISM!running the EISMINT Ross ice shelf intercomparison in}\index{Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf} The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model, not merely errors in, incompleteness of, or lack of confidence in the data.
+\section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross} \index{PISM!running the EISMINT Ross ice shelf intercomparison in}\index{Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf} The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.
 
-As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} validated several ice shelf numerical models using the Ross ice shelf as an example.  We will refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from the RIGGS (= Ross Ice shelf Geophysical and Glaciological Survey) \cite{RIGGS2,RIGGS1}, data acquired in the period 1973--1978.   The RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rosspython} below for an indication of these positions.
+As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} validated several ice shelf numerical models using the Ross ice shelf as an example.  We refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from RIGGS (the Ross Ice shelf Geophysical and Glaciological Survey \cite{RIGGS2,RIGGS1}), acquired in the period 1973--1978.   The RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rosspython} below for an indication of these positions.
 
 Substantial developments have occurred in the modeling of the Ross ice shelf since the EISMINT-Ross intercomparison.  For example, inverse modeling techniques were used to recover depth-averaged viscosity of the Ross ice shelf from the RIGGS data in \cite{RommelaereMacAyeal}. A parameter-sensitivity study was performed for a particular Ross ice shelf numerical model in \cite{HumbertGreveHutter}.
 
-\subsubsection*{Grabbing the data}  Download data files from the website
+The scripts in this section are found in the directory \verb|examples/eisross/|.  The script \verb|quickstart.sh| in that directory will download the data, build a NetCDF input file, and run \verb|pismd| as described in the next three subsections.
+
+\subsubsection*{Grabbing the data}  Download data files from the website:
 
 \centerline{\url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}}
-
-\noindent to do the validation:\small
+\small
 
 \verb|$ cd examples/eisross/|
 
@@ -1321,17 +1322,11 @@ Substantial developments have occurred in the modeling of the Ross ice shelf sin
 
 \verb|$ wget http://homepages.vub.ac.be/~phuybrec/eismint/inlets.dat|
 
-\normalsize\noindent The reader might want to look at these files in a text editor; their idiosyncratic format is handled by the python script \verb|eis_ross.py| (more below).  In fact, a very significant part of setting up EISMINT-Ross in PISM was the step of converting these text files into machine-readable and metadata-containing NetCDF.  Note that these data are for a particular rectangular grid with $6.822$km spacing in both $x$ and $y$ directions, but, as usual, the PISM computational grid can be determined by the user.
-
-The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.} \verb|eis_ross.py| reads the above three \verb|.dat| files and it creates a NetCDF file:
+\normalsize\noindent The reader might want to look at these files in a text editor; their idiosyncratic format is handled by a python script \verb|eis_ross.py|.  In fact, a significant part of setting up EISMINT-Ross in PISM was the step of converting these text files into a machine-readable and metadata-containing NetCDF file.  That is typical of geophysical modeling generally.  The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.} reads the above three \verb|.dat| files and it creates a NetCDF file:
 
 \verb|$ ./eis_ross.py -o ross.nc|
 
-\noindent Note that the NetCDF file \verb|ross.nc| can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.  For example,
-
-\verb|$ ncdump -h ross.nc|
-
-\noindent shows the ``header'' (the metadata) for \verb|ross.nc|.  The script \verb|eis_ross.py| has added this metadata, much of which can only be found in \cite{RIGGS2,RIGGS1,MacAyealetal}; attention to such details is unavoidable!
+\noindent Note that the NetCDF file \verb|ross.nc| can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.  For example, \verb|ncdump -h ross.nc| shows the ``header'' (the metadata) for \verb|ross.nc|.  The script \verb|eis_ross.py| has added this metadata, much of which can only be found by carefully reading references \cite{RIGGS2,RIGGS1,MacAyealetal}.
 
 \begin{figure}[ht]
 \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
@@ -1341,7 +1336,7 @@ The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and 
 
 The NetCDF file \verb|ross.nc| contains ice thickness, bed elevations, surface temperature, and accumulation.  Values for latitude and longitude from the RIGGS survey grid \cite{RIGGS1} are given.  All of these are typical of ice sheet modeling data, both in evolution and diagnostic runs.  The file also has variables \verb|ubar| and \verb|vbar|.  These give the boundary values which are needed for the diagnostic computation of velocity, and they are only valid at grounding line locations.  They are the measured velocities of the ice flow inputs to the ice shelf.  Also present are integer variables \verb|mask|, which shows the domain where the ice shelf is modeled, and \verb|bcflag|, which shows the locations where the boundary conditions are to be applied.  Finally, \verb|ross.nc| contains variables which allow us to partly validate our computation.  There is an interger variable \verb|accur| which flags the region where the interpolated measured velocities are believed to be accurate enough for validation.\footnote{\texttt{111by147.dat} has a ``Reliable Velocity Obs'' flag.}  The variables \verb|azi_obs| and \verb|mag_obs| are believed to be accurate in this region \cite{MacAyealetal}.
 
-The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid with the same $6.822$ km spacing in each coordinate direction.  This grid has ice-free ocean beyond the calving front; the calving front is straightened in the EISMINT-Ross intercomparison \cite{MacAyealetal}.
+The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eis_ross.py| extends this grid to a more convenient 147 by 147 grid with the same $6.822$ km spacing.  This grid has ice-free ocean beyond the calving front, which is straightened as described in \cite{MacAyealetal}.  The gridded data have a particular resolution, but the PISM computational grid can be finer or coarser according to runtime options (as illustrated below).
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 

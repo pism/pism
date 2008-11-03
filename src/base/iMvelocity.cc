@@ -166,7 +166,6 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 #endif
 
   // in latter case u,v are modified by broadcastSSAVelocity():
-//  if ((updateVelocityAtDepth == PETSC_TRUE) || (useSSAVelocity == PETSC_TRUE)) {  
   if (updateVelocityAtDepth) {  
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
     ierr = v3.beginGhostComm(); CHKERRQ(ierr);
@@ -183,7 +182,6 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
 
-//  if ((useSSAVelocity == PETSC_TRUE) || (updateVelocityAtDepth == PETSC_TRUE)) {
   if (updateVelocityAtDepth) {
     // communication here for global max; sets CFLmaxdt
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 

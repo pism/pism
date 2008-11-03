@@ -38,7 +38,6 @@ private:
     PetscErrorCode  destroyROSSVecs();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  readObservedVels(const char *fname);
-    PetscErrorCode  putObservedVelsCartesian();
     PetscErrorCode  computeErrorsInAccurateRegion();
 };
 

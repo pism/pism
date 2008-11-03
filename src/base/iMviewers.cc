@@ -415,7 +415,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('L', vHmelt, 1.0); CHKERRQ(ierr);
   // 'P' in use for comPensatory strain heating, by IceCompModel
   if (runtimeViewers[cIndex('Q')] != PETSC_NULL) {
-    ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
+    ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
     ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
     ierr = update2DViewer('Q', vWork2d[2], 0.001); CHKERRQ(ierr); // Display in kPa
   }

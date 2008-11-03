@@ -35,60 +35,52 @@ PetscErrorCode IceModel::initSSA() {
 
 PetscErrorCode IceModel::setupGeometryForSSA(const PetscScalar minH) {
   PetscErrorCode ierr;
-//  PetscScalar **h, **H, **mask;
   PetscScalar **H, **mask;
 
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-//  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] < minH) {
-//        h[i][j] += (minH - H[i][j]);
         H[i][j] = minH;
       }
     }
   }
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-//  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
-//  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-//  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
 
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); //ADDED// update h and mask
+  if (doMassConserve == PETSC_TRUE) {
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask for consistency
+  }
   return 0;
 }
 
 
 PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
   PetscErrorCode  ierr;
-//  PetscScalar **h, **H, **mask;
   PetscScalar **H, **mask;
 
-//  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] <= minH) {
-//        h[i][j] -= minH;
         H[i][j] = 0.0;
       }
     }
   }
-//  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
 
-//  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-//  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
 
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); //ADDED// update h and mask
+  if (doMassConserve == PETSC_TRUE) {
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask for consistency
+  }
   return 0;
 }
 
@@ -341,6 +333,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
       if (intMask(mask[i][j]) == MASK_SHEET) {
+        // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
+        //   this is where boundary value to SSA is set
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
         ierr = MatSetValues(A, 1, &rowV, 1, &rowV, &one, INSERT_VALUES); CHKERRQ(ierr);
       } else {
@@ -462,7 +456,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
-  ierr = computeBasalDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMutil.cc
+  ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMutil.cc
   ierr = DAVecGetArray(grid.da2, vWork2d[0], &taudx); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vWork2d[1], &taudy); CHKERRQ(ierr);
 
@@ -504,7 +498,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           const PetscScalar pressure = ice->rho * grav * H[i][j];
           ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
           ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
-        } else { // usual case: use already computed taub
+        } else { // usual case: use already computed driving stress
           ierr = VecSetValue(rhs, rowU, taudx[i][j], INSERT_VALUES); CHKERRQ(ierr);
           ierr = VecSetValue(rhs, rowV, taudy[i][j], INSERT_VALUES); CHKERRQ(ierr);          
         }

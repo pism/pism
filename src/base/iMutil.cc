@@ -42,19 +42,23 @@ PetscErrorCode IceModel::getMagnitudeOf2dVectorField(Vec vfx, Vec vfy, Vec vmag)
 }
 
 
-//! Compute vector basal driving stress on the regular grid.
+//! Compute vector driving stress (at base of ice) on the regular grid.
 /*!
 Computes the driving stress at the base of the ice:
-   \f[ \tau_b = - \rho g H \nabla h \f]
-The surface gradient \f$\nabla h\f$ is computed by the gradient of the
+   \f[ \tau_d = - \rho g H \nabla h \f]
+
+If transformForSurfaceGradient is TRUE then the surface gradient
+\f$\nabla h\f$ is computed by the gradient of the
 transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
 Because this quantity is more regular at ice sheet margins, we get a 
 better surface gradient.
+
+In floating parts the surface gradient is always computed by the regular formula.
  
 Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
 as global.  (I.e. we do not communicate ghosts.)
  */
-PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaudx, Vec vtaudy) {
+PetscErrorCode IceModel::computeDrivingStress(Vec vtaudx, Vec vtaudy) {
   PetscErrorCode ierr;
 
   PetscScalar **h, **H, **mask, **b, **taudx, **taudy;
@@ -79,7 +83,8 @@ PetscErrorCode IceModel::computeBasalDrivingStress(Vec vtaudx, Vec vtaudy) {
         taudy[i][j] = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
-        if ((intMask(mask[i][j]) == MASK_FLOATING) || (transformForSurfaceGradient == PETSC_FALSE)) {
+        if (   (intMask(mask[i][j]) == MASK_FLOATING)
+            || (transformForSurfaceGradient == PETSC_FALSE) ) {
           h_x = (h[i+1][j] - h[i-1][j]) / (2*grid.dx);
           h_y = (h[i][j+1] - h[i][j-1]) / (2*grid.dy);
         } else {

@@ -1,4 +1,4 @@
-ALL : installation userman refman browser install
+ALL : installation userman refman browser
 
 update: svn_update
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
@@ -8,6 +8,8 @@ else
 	@svnversion > revision.tex
 	$(MAKE) ALL
 endif
+
+# manuals:
 
 installation : installation.tex
 	pdflatex installation.tex
@@ -28,6 +30,9 @@ refman : Doxyfile_tex
 browser : Doxyfile_html
 	doxygen Doxyfile_html
 
+
+# not default targets; generally not needed by users:
+
 summary : pism_summary.tex
 	pdflatex pism_summary
 	bibtex pism_summary
@@ -41,7 +46,7 @@ fullbib : fullbib.tex
 	pdflatex fullbib
 
 
-PISMREV ?= 327 # revision stamp for verification results in User Manual figures;
+PISMREV ?= 327 # revision stamp for verification results in User's Manual figures;
                # generally not the current trunk revision
 VFNOW_OUT=vfnow_r327_L5_23june08.txt
 vfigs : $(VFNOW_OUT)
@@ -60,13 +65,10 @@ vfigs : $(VFNOW_OUT)
 	../test/vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' -r ${PISMREV} -g pdf -o figs/temperrs
 
 clean :
-	@rm -f manual.aux manual.bbl manual.blg manual.dvi manual.idx manual.ind \
-	       manual.ilg  manual.log manual.out manual.ps manual.toc
-	@rm -f fullbib.aux fullbib.log fullbib.blg fullbib.bbl fullbib.out
-	@rm -f pism_summary.aux pism_summary.log pism_summary.blg pism_summary.bbl \
-	       pism_summary.out
-	
+	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc
+	@rm -f manual.bbl refman.bbl pism_summary.bbl  # I like to keep fullbib.bbl
 
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."
 	@svn update
+
