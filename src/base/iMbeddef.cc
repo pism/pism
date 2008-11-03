@@ -113,7 +113,7 @@ PetscErrorCode IceModel::bedDefSetup() {
     if (doBedIso == PETSC_TRUE) {
       ierr = verbPrintf(2, grid.com," (pointwise isostasy)\n"); CHKERRQ(ierr);
     } else {
-#if (WITH_FFTW==0)
+#if (PISM_HAVE_FFTW==0)
       ierr = PetscPrintf(grid.com,
           "\n  WARNING: compiled without FFTW.  -bed_def_lc (-bed_def) will not work.\n"); 
           CHKERRQ(ierr);

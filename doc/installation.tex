@@ -152,7 +152,7 @@ These recommended prerequisites are needed to do all the examples in the \emph{U
 \begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\hline
   \textbf{Recommended Library/Program} & \textbf{Comment} \\
   & \\
-  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}} & needed for earth deformation; if not present set |WITH_FFTW=0|\\
+  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}} & needed for earth deformation; if not present set |PISM_HAVE_FFTW=0|\\
   \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in Python scripts \\
   \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in Python scripts  \\    
   \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in Python scripts  \\
@@ -194,7 +194,7 @@ These recommended prerequisites are needed to do all the examples in the \emph{U
   ice loads.\footnote{Bueler and others 2007. \emph{Fast computation of a viscoelastic deformable Earth
 model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–105}  If you want the functionality of this bed deformation model, which is coupled to the ice flow and which we
   recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt
-  to build with it by setting the environment variable |WITH_FFTW=0|.  If this library is absent, all of PISM will work
+  to build with it by setting the environment variable |PISM_HAVE_FFTW=0|.  If this library is absent, all of PISM will work
   \emph{except} for this bed deformation model.
 
 \item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (= \emph{Message Passing Interface})}.\index{MPI

@@ -1,6 +1,6 @@
 # Configuration flags:
 PISM_PREFIX ?= $(PWD)
-WITH_FFTW ?= 1
+PISM_HAVE_FFTW ?= 1
 LOG_PISM_EVENTS ?= 0
 # PETSc has troubles choosing a linker which can link C++. PISM is C++. Setting
 # this to zero would let PETSc choose a linker.

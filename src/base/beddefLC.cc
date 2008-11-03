@@ -19,7 +19,7 @@
 #include <cmath>
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_integration.h>
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
 #include <fftw3.h>
 #endif
 #include <petscvec.h>
@@ -181,7 +181,7 @@ BedDeformLC::BedDeformLC() {
 BedDeformLC::~BedDeformLC() {
   if (allocDone == PETSC_TRUE) {
     PetscErrorCode  ierr;
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
     fftw_destroy_plan(bdplanfor);
     fftw_destroy_plan(bdplanback);
     fftw_free(bdin);
@@ -252,7 +252,7 @@ PetscErrorCode BedDeformLC::alloc() {
   if (allocDone == PETSC_TRUE) {
     SETERRQ(2,"BedDeformLC already allocated\n");
   }
-#if (WITH_FFTW==0)
+#if (PISM_HAVE_FFTW==0)
   SETERRQ(3,"BedDeformLC will not work without FFTW");
 #endif
 
@@ -268,7 +268,7 @@ PetscErrorCode BedDeformLC::alloc() {
   ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, &lrmE); CHKERRQ(ierr);
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
   bdin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx * Ny);
   bdout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx * Ny);
          
@@ -341,7 +341,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
   // deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
   // [NOTE PROBABLE SIGN ERROR in eqn (16)?:  load "rho g H" should be "- rho g H"]
     
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
   PetscErrorCode ierr;
   PetscScalar **upl, **pla, **lft, **rgt;
 
@@ -415,7 +415,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
   // update Hdiff from H
   ierr = VecWAXPY(Hdiff, -1, *Hstart, *H); CHKERRQ(ierr);
 
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
   const PetscScalar dt = dtyear * secpera;
   PetscScalar **dH, **lft, **rgt;
 

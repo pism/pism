@@ -20,7 +20,7 @@
 #define __beddefLC_hh
 
 #include <petscvec.h>
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
 #include <fftw3.h>
 #endif
 
@@ -134,7 +134,7 @@ private:
                 platefat, plateoffset, // seq and fat
                 vleft, vright,  // coeffs; sequential and fat
                 lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
-#if (WITH_FFTW)
+#if (PISM_HAVE_FFTW)
   fftw_complex  *bdin, *bdout;  // 2D sequential
   fftw_plan     bdplanfor,bdplanback;
 #endif

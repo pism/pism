@@ -22,7 +22,7 @@ DISPLAY = :0.0
 include $(PETSC_DIR)/bmake/common/base
 
 # Compiler flags:
-CFLAGS += -DWITH_FFTW=${WITH_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
+CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
           -Woverloaded-virtual -pipe
 
@@ -33,7 +33,7 @@ TESTS_LIB_FLAGS := -L. -Wl,-rpath,$(PISM_PREFIX) -Wl,-rpath,$(PISM_PREFIX)/lib \
                    -ltests -lm -lgsl -lgslcblas
 
 ICE_LIB_FLAGS := -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf 
-ifeq (${WITH_FFTW}, 1)
+ifeq (${PISM_HAVE_FFTW}, 1)
   ICE_LIB_FLAGS += -lfftw3
 endif
 
