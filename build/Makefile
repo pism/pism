@@ -22,7 +22,7 @@ DISPLAY = :0.0
 include $(PETSC_DIR)/bmake/common/base
 
 # Compiler flags:
-CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DLOG_PISM_EVENTS=${LOG_PISM_EVENTS} \
+CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
           -Woverloaded-virtual -pipe
 

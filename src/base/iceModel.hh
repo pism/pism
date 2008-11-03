@@ -451,7 +451,7 @@ private:
   IceModelVec3 Tnew3, taunew3;
   IceModelVec3 Sigmastag3[2], Istag3[2];
   
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
   // for event logging; see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, 
       beddefEVENT, pddEVENT, massbalEVENT, tempEVENT;

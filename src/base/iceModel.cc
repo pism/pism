@@ -641,7 +641,7 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventRegister(&siaEVENT,    "sia velocity",0);
 PetscLogEventRegister(&ssaEVENT,    "ssa velocity",0);
 PetscLogEventRegister(&velmiscEVENT,"misc vel calc",0);
@@ -668,7 +668,7 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
     //   modifies vTs and seaLevel)
     ierr = updateForcing(); CHKERRQ(ierr);
     
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
 #endif
 
@@ -679,7 +679,7 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
 #endif
 
@@ -714,7 +714,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     //           grid.rank, grid.year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventBegin(tempEVENT,0,0,0,0);
 #endif
     
@@ -727,7 +727,7 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(tempEVENT,0,0,0,0);
 PetscLogEventBegin(pddEVENT,0,0,0,0);
 #endif
@@ -741,7 +741,7 @@ PetscLogEventBegin(pddEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(pddEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);
 #endif
@@ -756,7 +756,7 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
 #endif
     

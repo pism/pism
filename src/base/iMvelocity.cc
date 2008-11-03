@@ -30,7 +30,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventBegin(siaEVENT,0,0,0,0);
 #endif
 
@@ -117,7 +117,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(siaEVENT,0,0,0,0);
 PetscLogEventBegin(ssaEVENT,0,0,0,0);
 #endif
@@ -160,7 +160,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 #endif
@@ -187,7 +187,7 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }
 
-#if (LOG_PISM_EVENTS)
+#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(velmiscEVENT,0,0,0,0);
 #endif
   
