@@ -146,7 +146,8 @@ PetscErrorCode verbPrintf(const int thresh,
   PetscErrorCode ierr;
   PetscMPIInt    rank;
   size_t         len;
-  char           *nformat,*sub1,*sub2;
+  char           *buffer,*sub1,*sub2;
+  const char     *nformat;
   PetscReal      value;
 
   extern FILE *petsc_history;
@@ -165,21 +166,22 @@ PetscErrorCode verbPrintf(const int thresh,
       ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
       if (sub1 != sub2) SETERRQ(PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
       ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
-      ierr    = PetscMalloc((len+16)*sizeof(char),&nformat);CHKERRQ(ierr);
-      ierr    = PetscStrcpy(nformat,format);CHKERRQ(ierr);
-      ierr    = PetscStrstr(nformat,"%",&sub2);CHKERRQ(ierr);
+      ierr    = PetscMalloc((len+16)*sizeof(char),&buffer);CHKERRQ(ierr);
+      ierr    = PetscStrcpy(buffer,format);CHKERRQ(ierr);
+      ierr    = PetscStrstr(buffer,"%",&sub2);CHKERRQ(ierr);
       sub2[0] = 0;
       value   = (double)va_arg(Argp,double);
       if (PetscAbsReal(value) < 1.e-12) {
-        ierr    = PetscStrcat(nformat,"< 1.e-12");CHKERRQ(ierr);
+        ierr    = PetscStrcat(buffer,"< 1.e-12");CHKERRQ(ierr);
       } else {
-        ierr    = PetscStrcat(nformat,"%g");CHKERRQ(ierr);
+        ierr    = PetscStrcat(buffer,"%g");CHKERRQ(ierr);
         va_end(Argp);
         va_start(Argp,format);
       }
-      ierr    = PetscStrcat(nformat,sub1+2);CHKERRQ(ierr);
+      ierr    = PetscStrcat(buffer,sub1+2);CHKERRQ(ierr);
+      nformat = buffer;
     } else {
-      nformat = (char*)format;
+      nformat = format;
     }
     if (verbosityLevel >= thresh) {
       ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
@@ -188,7 +190,7 @@ PetscErrorCode verbPrintf(const int thresh,
       ierr = PetscVFPrintf(petsc_history,nformat,Argp);CHKERRQ(ierr);
     }
     va_end(Argp);
-    if (sub1) {ierr = PetscFree(nformat);CHKERRQ(ierr);}
+    if (sub1) {ierr = PetscFree(buffer);CHKERRQ(ierr);}
   }
   PetscFunctionReturn(0);
 }
