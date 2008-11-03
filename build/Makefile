@@ -6,10 +6,10 @@ endif
 url = $(shell svn info | grep URL)
 rev = $(shell svnversion ../)
 ifeq ($(findstring trunk,$(url)),trunk)
-  PISM_REVISION = (trunk: revision $(rev))
+  PISM_REVISION = trunk: revision $(rev)
 endif
 ifeq ($(findstring branches,$(url)),branches)
-  PISM_REVISION = (branch $(lastword $(subst /, ,$(url))): revision $(rev))
+  PISM_REVISION = branch $(lastword $(subst /, ,$(url))): revision $(rev)
 endif
 ifndef PISM_REVISION
   $(error Can't determine PISM's revision number. \
