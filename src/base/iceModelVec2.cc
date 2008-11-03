@@ -28,8 +28,7 @@
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-IceModelVec2::IceModelVec2() : IceModelVec() {
-};
+IceModelVec2::IceModelVec2() : IceModelVec() {}
 
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], bool local) {
@@ -130,8 +129,7 @@ PetscScalar**   IceModelVec2::arrayGet() {
 
 /********* IceModelVec2Box **********/
 
-IceModelVec2Box::IceModelVec2Box() : IceModelVec2() {
-};
+IceModelVec2Box::IceModelVec2Box() : IceModelVec2() {}
 
 
 PetscErrorCode  IceModelVec2Box::create(IceGrid &my_grid, const char my_varname[], bool local) {
@@ -172,8 +170,7 @@ PetscErrorCode   IceModelVec2Box::getPlaneBox(const PetscInt i, const PetscInt j
 
 /********* IceModelVec3Bedrock **********/
 
-IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {
-};
+IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {}
 
 
 //! Allocate a DA and a Vec from information in IceGrid.

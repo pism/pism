@@ -29,8 +29,7 @@
 // methods for base class IceModelVec and derived class IceModelVec2 and IceModelVec2Box 
 // are in "iceModelVec.cc"
 
-IceModelVec3::IceModelVec3() : IceModelVec() {
-};
+IceModelVec3::IceModelVec3() : IceModelVec() {}
 
 
 //! Allocate a DA and a Vec from information in IceGrid.
