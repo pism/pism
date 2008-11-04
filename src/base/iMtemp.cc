@@ -273,6 +273,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
                                               v[0] * (ss.ij  - ss.jm1) / dy;
         // for w, always difference *up* from base, but make it implicit
         if (modMask(mask[i][j]) == MASK_FLOATING) {
+          // FIXME:  this comment makes no sense with respect to "dHmelt/dt";
+          //     also Potsdam reports the effect is that *bed depth* affects temperature
+          //     within ice
           // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
           // by ocean flux; note volume for which energy is being computed is 
           // *half* a segment

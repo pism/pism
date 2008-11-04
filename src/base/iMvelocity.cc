@@ -275,7 +275,8 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
 
       if (includeBMRinContinuity == PETSC_TRUE) {
-        w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
+//        w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
+        w[0] -= basalMeltRate[i][j];
       }
 
       // compute w above base by trapezoid rule 

@@ -567,7 +567,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // time step to get new H
       Hnew[i][j] += (accum[i][j] - divQ) * dt;
       if (includeBMRinContinuity == PETSC_TRUE) {
-         Hnew[i][j] -= capBasalMeltRate(basalMeltRate[i][j]) * dt;
+//         Hnew[i][j] -= capBasalMeltRate(basalMeltRate[i][j]) * dt;
+         Hnew[i][j] -= basalMeltRate[i][j] * dt;
       }
 
       // apply free boundary rule: negative thickness becomes zero
