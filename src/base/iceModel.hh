@@ -181,8 +181,10 @@ protected:
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, taud;
 
-  char history[HISTORY_STRING_LENGTH]; // history of commands used to generate this 
-                                       // instance of IceModel
+  char *history; // history of commands used to generate this 
+		 // instance of IceModel
+  size_t history_size;	// the number of bytes allocated for the
+			// history string
   char executable_short_name[PETSC_MAX_PATH_LEN];
   
 protected:

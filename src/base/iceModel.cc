@@ -34,6 +34,9 @@ const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
+  history_size = TEMPORARY_STRING_LENGTH;
+  history = new char[history_size];
+
   haveSSAvelocities = false;
 
   pism_signal = 0;
@@ -84,6 +87,9 @@ IceModel::~IceModel() {
     //verbPrintf(1,grid.com, "deleting basalSIA()\n");
     delete basalSIA;
   }
+
+  //verbPrintf(1,grid.com, "Cleaning up the history string.\n");
+  delete[] history;
 }
 
 

@@ -27,7 +27,7 @@ const PetscScalar grav       = 9.81;         // m/s^2        acceleration of gra
 const PetscScalar secpera    = 3.1556926e7;
 const PetscScalar pi         = 3.14159265358979;
 
-const PetscInt HISTORY_STRING_LENGTH = 32768; // 32KiB ought to be enough
+const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN);
 PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice);

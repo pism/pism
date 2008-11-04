@@ -383,7 +383,7 @@ int IceModel::endOfTimeStepHook() {
   if (pism_signal == SIGTERM) {
     verbPrintf(1, grid.com, 
        "Caught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
-    char str[HISTORY_STRING_LENGTH];
+    char str[TEMPORARY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at year=%.3f.",
        grid.year);
@@ -414,7 +414,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   
   ierr = PetscGetArgs(&argc, &argv); CHKERRQ(ierr);
   
-  char cmdstr[HISTORY_STRING_LENGTH], startstr[HISTORY_STRING_LENGTH];
+  char cmdstr[TEMPORARY_STRING_LENGTH], startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
            "PISM (%s) started on %d procs.", PISM_REVISION, (int)grid.size);
@@ -448,7 +448,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
 PetscErrorCode  IceModel::stampHistoryEnd() {
   PetscErrorCode ierr;
   PetscLogDouble flops, my_flops;
-  char str[HISTORY_STRING_LENGTH];
+  char str[TEMPORARY_STRING_LENGTH];
   MPI_Datatype mpi_type;
 
   ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
@@ -487,7 +487,7 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
   
-  char str[HISTORY_STRING_LENGTH];
+  char str[TEMPORARY_STRING_LENGTH];
   int length = snprintf(str, sizeof(str), "%s@%s %s:  %s\n",
                         username, hostname, date_str, string);
   
@@ -513,28 +513,22 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
 
 //! Add the given string to the history data member in IceModel.
 PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
-  PetscErrorCode ierr;
+  unsigned int historyLength = strlen(history);
+  unsigned int stringLength = strlen(string);
+  char *tempstr;
 
-  PetscInt historyLength = strlen(history);
-  PetscInt stringLength = strlen(string);
+  if (stringLength + historyLength > history_size - 1)
+    history_size += stringLength + 1;
 
-  if (stringLength + historyLength > (int)sizeof(history) - 1) {
-    ierr = PetscPrintf(grid.com, 
-         "Warning: History string overflow.  Truncating history.\n");
-         CHKERRQ(ierr);
+  tempstr = new char[history_size];
 
-    // Don't overflow the buffer and null terminate.
-    strncpy(history, string, sizeof(history));
-    history[sizeof(history) - 1] = '\0';
-  } else { // We are safe, so we can just write it.
-    //OLD METHOD: append the latest command:    
-    // strcat(history, string);
-    //NEW METHOD: prepend it; this matches NCO behavior so commands are in order
-    char tempstr[HISTORY_STRING_LENGTH];
-    strcpy(tempstr,string);
-    strcat(tempstr,history);
-    strcpy(history,tempstr);
-  }
+  //prepend it; this matches NCO behavior so commands are in order
+  strcpy(tempstr, string);
+  strcat(tempstr, history);
+
+  delete[] history;
+  
+  history = tempstr;
   
   return 0;
 }

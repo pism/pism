@@ -423,17 +423,38 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&psParams.lopo, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&psParams.sp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
 
-  // read the history *and* close the file
-  int history_len;
+  // Get the current history length
+  size_t history_len;
+  if (grid.rank == 0) {
+    stat = nc_inq_attlen(ncid, NC_GLOBAL, "history", &history_len);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  // Broadcast the history length
+  MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
+
+  // Allocate some memory (if necessary)
+  if (history_len > history_size - 1) {
+    history_size = history_len + 1;
+    delete[] history;
+    history = new char[history_size];
+  }
+
+  // Zero out the allocated memory so that we don't need to worry about the
+  // trailing zero in the history string (which might be absent).
+  memset(history, 0, history_size);
+
+  // Read the history string and close the file
   if (grid.rank == 0) {
     stat = nc_get_att_text(ncid, NC_GLOBAL, "history", history);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
     stat = nc_close(ncid);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    history_len = strlen(history);
   }
-  MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
-  MPI_Bcast(history, history_len, MPI_CHAR, 0, grid.com);
+
+  // Broadcast the string
+  MPI_Bcast(history, history_size, MPI_CHAR, 0, grid.com);
 
   initialized_p = PETSC_TRUE;
   return 0;

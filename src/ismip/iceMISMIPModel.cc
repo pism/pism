@@ -649,7 +649,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
         "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < %.2e m/yr) satisfied;\n"
         "                stopping at year=%.3f\n",dHdtnorm_atol,grid.year); CHKERRQ(ierr);
     // leave stopping stamp in output NetCDF file
-    char str[HISTORY_STRING_LENGTH];
+    char str[TEMPORARY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
        "MISMIP steady state criterion (max|dHdt| < %.2e m/yr) satisfied.\n"
        "Stopping.  Completed timestep year=%.3f.",dHdtnorm_atol,grid.year);
