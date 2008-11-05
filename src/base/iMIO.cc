@@ -424,7 +424,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = MPI_Bcast(&psParams.sp, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
 
   // Get the current history length
-  size_t history_len;
+  size_t history_len = 0;
   if (grid.rank == 0) {
     stat = nc_inq_attlen(ncid, NC_GLOBAL, "history", &history_len);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));

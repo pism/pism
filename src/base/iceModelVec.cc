@@ -121,27 +121,27 @@ PetscErrorCode  IceModelVec::setVaridNC(const int my_varid) {
   return 0;
 }
 
+//! Sets the NetCDF attributes of an IceModelVec object.
+/*! Call setAttrs("new long name", "new units", "new pism_intent", NULL) if a
+  variable does not have a standard name. Similarly, by putting NULL in an
+  appropriate spot, it is possible tp leave long_name, units or pism_intent
+  unmodified.
+ */
+PetscErrorCode  IceModelVec::setAttrs(const char my_long_name[], const char my_units[],
+				      const char my_pism_intent[], const char my_standard_name[]) {
+  if (my_long_name != NULL)
+    strcpy(long_name,my_long_name);
 
-PetscErrorCode  IceModelVec::setAttrsNC(const int my_varid,
-             const char my_long_name[], const char my_units[], const char my_pism_intent[]) {
-  varid_nc = my_varid;
-  strcpy(long_name,my_long_name);
-  strcpy(units,my_units);
-  strcpy(pism_intent,my_pism_intent);
-  has_standard_name = PETSC_FALSE;
-  return 0;
-}
+  if (my_units != NULL)
+    strcpy(units,my_units);
 
+  if (my_pism_intent != NULL)
+    strcpy(pism_intent,my_pism_intent);
 
-PetscErrorCode  IceModelVec::setAttrsCFstandardNC(const int my_varid,
-             const char my_long_name[], const char my_units[], const char my_pism_intent[],
-             const char my_standard_name[]) {
-  varid_nc = my_varid;
-  strcpy(long_name,my_long_name);
-  strcpy(units,my_units);
-  strcpy(pism_intent,my_pism_intent);
-  strcpy(standard_name,my_standard_name);
-  has_standard_name = PETSC_TRUE;
+  if (my_standard_name != NULL) {
+    strcpy(standard_name,my_standard_name);
+    has_standard_name = PETSC_TRUE;
+  }
   return 0;
 }
 
@@ -151,9 +151,69 @@ PetscErrorCode  IceModelVec::writeAttrsNC(const int ncid) {
   return 0;
 }
 
+//! Finds the variable by its standard_name attribute, which has to be set using setAttrs
+/*!
+  Here's how it works:
 
-PetscErrorCode  IceModelVec::findVecNC(const int ncid, PetscTruth *exists) {
-  SETERRQ(1,"not YET implemented");
+  1) Check if the current IceModelVec has a standard_name. If it does, go to
+  step 2, otherwise go to step 4.
+
+  2) Find the variable with this standard_name. Bail out if two
+  variables have the same standard_name, otherwise go to step 3.
+
+  3) If no variable was found, go to step 4, otherwise go to step 5.
+
+  4) Find the variable with the right variable name. Bail out if it does not
+  exist. Go to step 5.
+
+  5) Broadcast the variable ID.
+ */
+PetscErrorCode  IceModelVec::find(const int ncid, int *varidp, PetscTruth *exists) {
+  PetscInt ierr;
+  size_t attlen;
+  int stat = 0, nvars, my_varid;
+  char attribute[TEMPORARY_STRING_LENGTH];
+  PetscTruth found = PETSC_FALSE;
+
+  // Processor 0 does all the job here.
+  if (grid->rank == 0) {
+
+    if (has_standard_name) {
+      ierr = nc_inq_nvars(ncid, &nvars); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+      for (int j = 0; j < nvars; j++) {
+	stat = nc_get_att_text(ncid, j, "standard_name", attribute);
+	if (stat != NC_NOERR) {
+	  continue;
+	}
+
+	// text attributes are not always zero-terminated, so we need to add the
+	// trailing zero:
+	stat = nc_inq_attlen(ncid, j, "standard_name", &attlen);
+	CHKERRQ(check_err(stat,__LINE__,__FILE__));
+	attribute[attlen] = 0;
+
+	if (strcmp(attribute, standard_name) == 0) {
+	  if (!found) {		// if unique
+	    found = PETSC_TRUE;
+	    my_varid = j;
+	  } else {    // if not unique
+	    printf("Both variable #%d and #%d have the standard_name '%s'.\n",
+		   my_varid, j, attribute);
+	    SETERRQ(1,"Inconsistency in the input file: two variables have the same standard_name.");	  
+	  }
+	}
+      }
+    } // end of if(has_standard_name)
+
+    if (found) {
+      *varidp = my_varid;
+    } else {
+      // look for varname
+    }
+
+  } // end of if(grid->rank == 0)
+
 /*
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);

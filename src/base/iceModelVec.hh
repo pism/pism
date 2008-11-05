@@ -37,13 +37,10 @@ public:
   virtual PetscErrorCode  printInfo(const PetscInt verbosity);
  
   virtual PetscErrorCode  setVaridNC(const int my_varid);
-  virtual PetscErrorCode  setAttrsNC(const int my_varid,
-             const char my_long_name[], const char my_units[], const char my_pism_intent[]);
-  virtual PetscErrorCode  setAttrsCFstandardNC(const int my_varid,
-             const char my_long_name[], const char my_units[], const char my_pism_intent[],
-             const char my_standard_name[]);
+  virtual PetscErrorCode  setAttrs(const char my_long_name[], const char my_units[],
+				   const char my_pism_intent[], const char my_standard_name[]);
 
-  virtual PetscErrorCode  findVecNC(const int ncid, PetscTruth *exists);  //FIXME: not implemented
+  virtual PetscErrorCode  find(const int ncid, int *varid, PetscTruth *exists);  //FIXME: not implemented
 
   virtual PetscErrorCode  getVecNC(const int ncid, const int *s, const int *c, int dims, 
                                    void *a_mpi, int a_size);
