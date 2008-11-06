@@ -334,7 +334,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   transformForSurfaceGradient = PETSC_TRUE;
   useConstantHardnessForSSA = PETSC_TRUE;
   constantHardnessForSSA    = mismip_ice->hardnessParameter(273.15); // temp. irrelevant
-  min_thickness_SSA         = 5.0;  // extend by 20 m thick iceshelf, beyond calving front
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
 

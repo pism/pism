@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Craig Lingle and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,9 @@
 #include "iceModel.hh"
 
 
+// FIXME:  This code should be removed once we have experience with the new
+//   -gk N and -gk_age options in Antarctic runs.  Also close bug #11242 at that
+//   time.
 // Compute a grain size from a pseudo-age, which is determined only by the vertical velocity component.
 /*
 PISM allows the choice of the Goldsby-Kohlstedt flow law with option <tt>-gk</tt>.  
@@ -115,7 +118,18 @@ PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
 
 //! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.
 /*! 
-A data set is interpolated.  The data is from \lo\cite{VostokCore}\elo.
+A data set is interpolated here.  The intention is that the softness of the ice has
+nontrivial dependence on its age, through its grainsize, because of variable dustiness
+of the global climate.  The grainsize is partly determined by at which point in 
+the glacial cycle the given ice fell as snow.
+
+The data is from \lo\cite{DeLaChapelleEtAl98} and 
+\cite{LipenkovEtAl89}\elo.  In particular, Figure A2 in the former reference was
+hand-sampled with an attempt to include the ``wiggles'' in that figure.  Ages of
+the oldest ice (>= 300 ka) were estimated in a necessarily ad hoc way.  The 
+age value of 10000 ka was added simply to give interpolation for very old ice;
+ages beyond that get constant extrapolation.  Linear interpolation is done between
+the samples.
  */
 PetscScalar IceModel::grainSizeVostok(PetscScalar age) const {
   const PetscInt numPoints = 22;

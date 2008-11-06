@@ -292,9 +292,9 @@ void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
 }
 
 
-void IceModel::setConstantNuForSSA(PetscScalar nu) {
-  useConstantNuForSSA = PETSC_TRUE;
-  constantNuForSSA = nu;
+void IceModel::setConstantNuHForSSA(PetscScalar nuH) {
+  useConstantNuHForSSA = PETSC_TRUE;
+  constantNuHForSSA = nuH;
 }
 
 

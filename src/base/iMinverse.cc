@@ -331,11 +331,12 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
                  Vec myu, Vec myv, Vec taubx_out, Vec tauby_out) {
   PetscErrorCode ierr;
 
+  // FIXME: there is a change from "Nu" to "NuH" notation; follow it more completely:
   // effective viscosity for myu, myv
   const PetscTruth leaveNuAloneSSA_save = leaveNuAloneSSA, 
-                   useConstantNuForSSA_save = useConstantNuForSSA;
+                   useConstantNuHForSSA_save = useConstantNuHForSSA;
   leaveNuAloneSSA = PETSC_FALSE;
-  useConstantNuForSSA = PETSC_FALSE;
+  useConstantNuHForSSA = PETSC_FALSE;
   Vec myvNu[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
   Vec vubarSSAold = vWork2d[2], vvbarSSAold = vWork2d[3];
   ierr = VecCopy(vubarSSA, vubarSSAold); CHKERRQ(ierr);
@@ -347,7 +348,7 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
   ierr = VecCopy(vubarSSAold, vubarSSA); CHKERRQ(ierr);
   ierr = VecCopy(vvbarSSAold, vvbarSSA); CHKERRQ(ierr);
   leaveNuAloneSSA = leaveNuAloneSSA_save;
-  useConstantNuForSSA = useConstantNuForSSA_save;
+  useConstantNuHForSSA = useConstantNuHForSSA_save;
 
   // allocate Mat and Vecs; compare linear system in velocitySSA()
   Mat A;

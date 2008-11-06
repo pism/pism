@@ -82,7 +82,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   
   useSSAVelocity = PETSC_TRUE;
   ssaMaxIterations = 500;  
-  useConstantNuForSSA = PETSC_FALSE;
+  useConstantNuHForSSA = PETSC_FALSE;
   doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J
   doSuperpose = PETSC_FALSE;
   

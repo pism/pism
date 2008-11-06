@@ -130,9 +130,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     if ((firstTime == PETSC_TRUE) || (updateVelocityAtDepth)) {
       ierr = verbPrintf(2,grid.com, "SSA"); CHKERRQ(ierr);
       PetscInt numSSAiter;
-      ierr = setupGeometryForSSA(min_thickness_SSA); CHKERRQ(ierr);
       ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
-      ierr = cleanupGeometryAfterSSA(min_thickness_SSA); CHKERRQ(ierr);
       ierr = verbPrintf(2,grid.com," "); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com,"       "); CHKERRQ(ierr);
@@ -321,6 +319,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 }
 
 
+#if 0
 PetscScalar IceModel::capBasalMeltRate(const PetscScalar bMR) {
   const PetscScalar MAX_BASALMELTRATE = 0.5/secpera;
   if (bMR > MAX_BASALMELTRATE) {
@@ -331,5 +330,5 @@ PetscScalar IceModel::capBasalMeltRate(const PetscScalar bMR) {
     return bMR;
   }
 }
-
+#endif
 

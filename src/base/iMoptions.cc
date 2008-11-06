@@ -38,7 +38,7 @@ setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  my_useConstantNu, my_useConstantHardness, mybedDeflc, mydoBedIso, 
+  PetscTruth  my_useConstantNuH, my_useConstantHardness, mybedDeflc, mydoBedIso, 
               myincludeBMRinContinuity, mydoOceanKill, floatkillSet,
               mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
@@ -46,7 +46,7 @@ PetscErrorCode  IceModel::setFromOptions() {
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
               maxdtSet, noMassConserve, noTemp, noEtaSet, doShelvesDragToo,
               mygsConstantSet;
-  PetscScalar my_maxdt, my_nu, myRegVelSchoof, my_barB,
+  PetscScalar my_maxdt, my_nuH, myRegVelSchoof, my_barB,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
 
@@ -97,11 +97,11 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-chebZ" read in determineSpacingTypeFromOptions()
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nu", &my_nu, &my_useConstantNu); CHKERRQ(ierr);
-  // user gives nu in MPa yr (e.g. Ritz et al 2001 value is 30.0)
-  if (my_useConstantNu == PETSC_TRUE) {
-    useConstantNuForSSA = PETSC_TRUE;
-    setConstantNuForSSA(my_nu  * 1.0e6 * secpera);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
+  // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
+  if (my_useConstantNuH == PETSC_TRUE) {
+    useConstantNuHForSSA = PETSC_TRUE;
+    setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s m
   }
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);

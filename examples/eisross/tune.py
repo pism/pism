@@ -26,7 +26,7 @@ except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
 
-print 'TUNE.PY (for EISMINT Ross; compare to table 1 in MacAyeal et al 1996)'
+print 'TUNE.PY (for EISMINT Ross; compare Chi^2 results to table 1 in MacAyeal et al 1996)'
 for hard in [1.5, 1.6, 1.7, 1.8, 1.9, 2.0]:
    rossdo = ''
    if nproc > 1:

@@ -35,17 +35,24 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
   doMassConserve = PETSC_FALSE;  // diagnostic calculation
 
   // further settings for velocity computation 
-  useConstantNuForSSA = PETSC_FALSE;       // compute the effective viscosity
-                                           //   in non-Newtonian way ...
+  useConstantNuHForSSA = PETSC_FALSE; // compute the effective viscosity in usual
+           // shear-thinning way (except will extend shelf using constantNuHForSSA below,
+           // also as usual)
   useConstantHardnessForSSA = PETSC_TRUE;  // but don't include thermocoupling
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
   constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
   regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
   regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
-  min_thickness_SSA = 50.0; // m; critical quantity for adjusting force boundary
-                            // condition at calving front; use command line option
-                            // "-ssa_min_thk 10.0" for 10.0 m thick 
+  
+  // this calculation of shelf extension strength is same as default for IceModel,
+  // but we might want to make it depend on options
+  const PetscScalar typicalStrainRate = (100.0 / secpera) / (100.0 * 1.0e3);  
+     // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
+  constantNuHForSSA = min_thickness_SSA * constantHardnessForSSA
+                      / (2.0 * pow(typicalStrainRate,2./3.));
+     // Pa s m; critical quantity for adjusting force boundary
+     // condition at calving front 
 }
 
 

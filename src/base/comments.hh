@@ -492,10 +492,11 @@ al.pdf}.
 {\sc N.~Calvo et~al.}, {\em On a doubly nonlinear parabolic obstacle problem
   modelling ice sheet dynamics}, SIAM J. Appl. Math., 63 (2002a), pp.~683--707.
 
-\bibitem{VostokCore}
-{\sc {{EPICA} community members}}, {\em Eight glacial cycles from an
-  {A}ntarctic ice core}, Nature, 429 (2004), pp.~623--628.
-\newblock doi: 10.1038/nature02599.
+\bibitem{DeLaChapelleEtAl98}
+{\sc S.~D.~L. Chapelle, O.~Castelnau, V.~Lipenkov, and P.~Duval}, {\em Dynamic
+  recrystallization and texture development in ice as revealed by the study of
+  deep cores in {A}ntarctica and {G}reenland}, J. Geophys. Res., 103 (1998),
+  pp.~5091--5105.
 
 \bibitem{Fowler}
 {\sc A.~C. Fowler}, {\em Mathematical Models in the Applied Sciences},
@@ -531,6 +532,11 @@ ages.vub.ac.be/$\sim$phuybrec/pdf/EISMINT3.Huyb.1998.pdf}; 120 pages, 1998.
 {\sc C.~S. Lingle and J.~A. Clark}, {\em A numerical model of interactions
   between a marine ice sheet and the solid earth: {A}pplication to a {W}est
   {A}ntarctic ice stream}, J. Geophys. Res., 90 (1985), pp.~1100--1114.
+
+\bibitem{LipenkovEtAl89}
+{\sc V.~Lipenkov, N.~I. Barkov, P.~Duval, and P.~Pimienta}, {\em Crystalline
+  texture of the 2083 m ice core at {V}ostok {S}tation, {A}ntarctica}, J.
+  Glaciol., 35 (1989), pp.~392--398.
 
 \bibitem{MacAyeal}
 {\sc D.~R. MacAyeal}, {\em Large-scale ice flow over a viscous basal sediment:

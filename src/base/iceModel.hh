@@ -132,7 +132,7 @@ protected:
   PetscScalar maxdt, muSliding, enhancementFactor, initial_age_years_default;
   PetscScalar dt, dtTempAge, dt_force; // current mass cont. and temp/age 
                                        //   time steps in seconds
-  PetscScalar constantNuForSSA, constantHardnessForSSA, min_thickness_SSA,
+  PetscScalar constantNuHForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo;
   PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
@@ -156,7 +156,7 @@ protected:
   PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi;
   PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
-              doSuperpose, useConstantNuForSSA, 
+              doSuperpose, useConstantNuHForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA,
               leaveNuAloneSSA, shelvesDragToo;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
@@ -198,7 +198,7 @@ protected:
   void setInitialAgeYears(PetscScalar d);
   void setAllGMaxVelocities(PetscScalar);
   void setNoViewers();
-  void setConstantNuForSSA(PetscScalar);
+  void setConstantNuHForSSA(PetscScalar);
   void setIsothermalFlux(PetscTruth use, PetscScalar n, PetscScalar A);
   PetscTruth isInitialized() const;
   PetscErrorCode updateSurfaceElevationAndMask();
@@ -305,7 +305,7 @@ protected:
   PetscErrorCode writeSoundingToMatlab(PetscViewer v, const char scName, IceModelVec3 imv3,
                           const PetscScalar scale, const PetscTruth doTandTb);
   PetscErrorCode writeMatlabVars(const char *fname);
-  PetscErrorCode writeSSAsystemMatlab(Vec vNu[2]);
+  PetscErrorCode writeSSAsystemMatlab(Vec vNuH[2]);
 
   // see iMnames.cc; note tn is statically-initialized in iMnames.cc
   int cIndex(const char singleCharName);
@@ -364,12 +364,10 @@ protected:
   // see iMssa.cc
   PetscErrorCode initSSA();
   PetscErrorCode velocitySSA(PetscInt *numiter);
-  PetscErrorCode velocitySSA(Vec vNu[2], PetscInt *numiter);
-  PetscErrorCode setupGeometryForSSA(const PetscScalar minH);
-  PetscErrorCode cleanupGeometryAfterSSA(const PetscScalar minH);
-  virtual PetscErrorCode computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon);
-  PetscErrorCode testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2], PetscReal *, PetscReal *);
-  PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, Vec vNu[2], Mat A);
+  PetscErrorCode velocitySSA(Vec vNuH[2], PetscInt *numiter);
+  virtual PetscErrorCode computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilon);
+  PetscErrorCode testConvergenceOfNu(Vec vNuH[2], Vec vNuHOld[2], PetscReal *, PetscReal *);
+  PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, Vec vNuH[2], Mat A);
   PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   PetscErrorCode moveVelocityToDAVectors(Vec x);
   PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
@@ -411,7 +409,7 @@ protected:
   // see iMvelocity.cc
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
   PetscErrorCode vertVelocityFromIncompressibility();
-  PetscScalar    capBasalMeltRate(const PetscScalar bMR);
+//  PetscScalar    capBasalMeltRate(const PetscScalar bMR);
   PetscErrorCode computeMax3DVelocities();
   PetscErrorCode computeMax2DSlidingSpeed();
     

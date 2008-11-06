@@ -33,58 +33,6 @@ PetscErrorCode IceModel::initSSA() {
 }
 
 
-PetscErrorCode IceModel::setupGeometryForSSA(const PetscScalar minH) {
-  PetscErrorCode ierr;
-  PetscScalar **H, **mask;
-
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] < minH) {
-        H[i][j] = minH;
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-
-  if (doMassConserve == PETSC_TRUE) {
-    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask for consistency
-  }
-  return 0;
-}
-
-
-PetscErrorCode IceModel::cleanupGeometryAfterSSA(const PetscScalar minH) {
-  PetscErrorCode  ierr;
-  PetscScalar **H, **mask;
-
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (intMask(mask[i][j]) != MASK_SHEET && H[i][j] <= minH) {
-        H[i][j] = 0.0;
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-
-  if (doMassConserve == PETSC_TRUE) {
-    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask for consistency
-  }
-  return 0;
-}
-
-
 //! Compute the product of the effective viscosity \f$\nu\f$ and ice thickness \f$H\f$ for the SSA model.
 /*! 
 In PISM the product \f$\nu H\f$ can be
@@ -118,41 +66,50 @@ This integral is approximately computed by the trapezoid rule.
 
 In fact the integral is regularized as described in \lo\cite{SchoofStream}\elo.
 The regularization constant \f$\epsilon\f$ is an argument to this procedure.
+
+Also we put \f$\bar\nu H = \f$\c constantNuHForSSA anywhere the ice is thinner
+than \c min_thickness_SSA.  The geometry is not changed, but this has the effect 
+of producing a shelf extension in ice free ocean, which affects the driving stress
+and the force balance at the calving front.
  */
-PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon) {
+PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilon) {
   PetscErrorCode ierr;
 
   if (leaveNuAloneSSA == PETSC_TRUE) {
     return 0;
   }
-  if (useConstantNuForSSA == PETSC_TRUE) {
-    ierr = VecSet(vNu[0], constantNuForSSA); CHKERRQ(ierr);
-    ierr = VecSet(vNu[1], constantNuForSSA); CHKERRQ(ierr);
+  if (useConstantNuHForSSA == PETSC_TRUE) {
+    ierr = VecSet(vNuH[0], constantNuHForSSA); CHKERRQ(ierr);
+    ierr = VecSet(vNuH[1], constantNuHForSSA); CHKERRQ(ierr);
     return 0;
   }
-  
+    
   // this constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
 
-  // We need to compute integrated effective viscosity. It is locally determined by the
-  // strain rates and temperature field.
-//  PetscScalar *Tij, *Toffset, **mask, **H, **nu[2], **u, **v;  
-  PetscScalar *Tij, *Toffset, **H, **nu[2], **u, **v;  
-  ierr = VecSet(vNu[0], 0.0); CHKERRQ(ierr);
-  ierr = VecSet(vNu[1], 0.0); CHKERRQ(ierr);
-//  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
+  // clear them out (why?)
+  ierr = VecSet(vNuH[0], 0.0); CHKERRQ(ierr);
+  ierr = VecSet(vNuH[1], 0.0); CHKERRQ(ierr);
+
+  // We need to compute integrated effective viscosity (\bar\nu * H).
+  // It is locally determined by the strain rates and temperature field.
+  PetscScalar *Tij, *Toffset, **H, **nuH[2], **u, **v;  
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
   ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vubarSSA, &u);
   ierr = DAVecGetArray(grid.da2, vvbarSSA, &v);
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscInt      oi = 1-o, oj=o;
-//        if (intMask(mask[i][j]) != MASK_SHEET || intMask(mask[i+oi][j+oj]) != MASK_SHEET) {
+        if (H[i][j] < min_thickness_SSA) {
+          nuH[o][i][j] = constantNuHForSSA;  // this choice extends a shelf into the ice
+                       // free region, in terms of the resulting membrane stress though
+                       // not by adding or subtracting ice
+        } else {
+          const PetscInt      oi = 1-o, oj=o;
           const PetscScalar   dx = grid.dx, 
                               dy = grid.dy;
           PetscScalar u_x, u_y, v_x, v_y;
@@ -168,50 +125,48 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNu[2], PetscReal epsilon
             v_x = (v[i+1][j] + v[i+1][j+1] - v[i-1][j] - v[i-1][j+1]) / (4*dx);
             v_y = (v[i][j+1] - v[i][j]) / dy;
           }
-
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
           if (useConstantHardnessForSSA == PETSC_TRUE) { 
             // constant \bar B case; for EISMINT-Ross and MISMIP; "nu" is really "nu H"!
             // FIXME: assumes n=3; create new ice.effectiveViscosityConstant() method?
-            nu[o][i][j] = myH * constantHardnessForSSA * 0.5 *
+            nuH[o][i][j] = myH * constantHardnessForSSA * 0.5 *
               pow(schoofReg + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
                   -(1.0/3.0));
           } else { 
             // usual temperature-dependent case; "nu" is really "nu H"!
             ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
             ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-            nu[o][i][j] = ice->effectiveViscosityColumn(schoofReg,
-                                    myH, grid.kBelowHeight(myH), grid.Mz, grid.zlevels, 
-                                    u_x, u_y, v_x, v_y, Tij, Toffset);
+            nuH[o][i][j] = ice->effectiveViscosityColumn(schoofReg,
+                                  myH, grid.kBelowHeight(myH), grid.Mz, grid.zlevels, 
+                                  u_x, u_y, v_x, v_y, Tij, Toffset);
           }
-
-          if (! finite(nu[o][i][j]) || false) {
-            ierr = PetscPrintf(grid.com, "nu[%d][%d][%d] = %e\n", o, i, j, nu[o][i][j]);
-            CHKERRQ(ierr); 
+          if (! finite(nuH[o][i][j]) || false) {
+            ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
+              CHKERRQ(ierr); 
             ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
                                u_x, u_y, v_x, v_y);
-            CHKERRQ(ierr);
+              CHKERRQ(ierr);
           }
           
           // We ensure that nu is bounded below by a positive constant.
-          nu[o][i][j] += epsilon;
-//        }
+          nuH[o][i][j] += epsilon;
+        }
       }
     }
   }
 //  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
 
   // Some communication
-  ierr = DALocalToLocalBegin(grid.da2, vNu[0], INSERT_VALUES, vNu[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vNu[0], INSERT_VALUES, vNu[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vNu[1], INSERT_VALUES, vNu[1]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vNu[1], INSERT_VALUES, vNu[1]); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vNuH[0], INSERT_VALUES, vNuH[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vNuH[0], INSERT_VALUES, vNuH[0]); CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(grid.da2, vNuH[1], INSERT_VALUES, vNuH[1]); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vNuH[1], INSERT_VALUES, vNuH[1]); CHKERRQ(ierr);
   return 0;
 }
 
@@ -233,7 +188,7 @@ For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ign
 a bit of bad behavior at these few places, and \f$L^1\f$ ignors it more than
 \f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
  */
-PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
+PetscErrorCode IceModel::testConvergenceOfNu(Vec vNuH[2], Vec vNuHOld[2],
                                              PetscReal *norm, PetscReal *normChange) {
   PetscErrorCode  ierr;
   PetscReal nuNorm[2], nuChange[2];
@@ -241,20 +196,20 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNu[2], Vec vNuOld[2],
 #define MY_NORM     NORM_1
 
   // Test for change in nu
-  ierr = VecAXPY(vNuOld[0], -1, vNu[0]); CHKERRQ(ierr);
-  ierr = VecAXPY(vNuOld[1], -1, vNu[1]); CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, vNuOld[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = VecAXPY(vNuHOld[0], -1, vNuH[0]); CHKERRQ(ierr);
+  ierr = VecAXPY(vNuHOld[1], -1, vNuH[1]); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, vNuHOld[0], INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuChange[0]); CHKERRQ(ierr);
   nuChange[0] *= area;
-  ierr = DALocalToGlobal(grid.da2, vNuOld[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, vNuHOld[1], INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuChange[1]); CHKERRQ(ierr);
   nuChange[1] *= area;
   *normChange = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
 
-  ierr = DALocalToGlobal(grid.da2, vNu[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, vNuH[0], INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuNorm[0]); CHKERRQ(ierr);
   nuNorm[0] *= area;
-  ierr = DALocalToGlobal(grid.da2, vNu[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = DALocalToGlobal(grid.da2, vNuH[1], INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuNorm[1]); CHKERRQ(ierr);
   nuNorm[1] *= area;
   *norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
@@ -311,12 +266,12 @@ This method assembles the matrix for the left side of the SSA equations.  The nu
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
 PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
-                                 Vec vNu[2], Mat A) {
+                                 Vec vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **nu[2], **u, **v, **tauc;
+  PetscScalar     **mask, **nuH[2], **u, **v, **tauc;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -325,8 +280,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
   ierr = DAVecGetArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt J = 2*j;
@@ -348,12 +303,12 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
         * Note that the positive i (x) direction is right and the positive j (y)
         * direction is up. */
 
-        // thickness H is incorporated here because nu[][][] is actually 
+        // thickness H is incorporated here because nuH[][][] is actually 
         //   viscosity times thickness
-        const PetscScalar c00 = nu[0][i-1][j];
-        const PetscScalar c01 = nu[0][i][j];
-        const PetscScalar c10 = nu[1][i][j-1];
-        const PetscScalar c11 = nu[1][i][j];
+        const PetscScalar c00 = nuH[0][i-1][j];
+        const PetscScalar c01 = nuH[0][i][j];
+        const PetscScalar c10 = nuH[1][i][j-1];
+        const PetscScalar c11 = nuH[1][i][j];
 
         const PetscInt stencilSize = 13;
         /* The locations of the stencil points for the U equation */
@@ -416,8 +371,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
   ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNu[0], &nu[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNu[1], &nu[1]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -619,16 +574,16 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
 }
 
 
-//! Call this one directly if control over allocation of vNu[2] is needed (e.g. test J).
+//! Call this one directly if control over allocation of vNuH[2] is needed (e.g. test J).
 /*!
-Generally use velocitySSA(PetscInt*) unless you have a vNu[2] already stored away.
+Generally use velocitySSA(PetscInt*) unless you have a vNuH[2] already stored away.
  */
-PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
+PetscErrorCode IceModel::velocitySSA(Vec vNuH[2], PetscInt *numiter) {
   PetscErrorCode ierr;
   KSP ksp = SSAKSP;
   Mat A = SSAStiffnessMatrix;
   Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
-  Vec vNuOld[2] = {vWork2d[2], vWork2d[3]};
+  Vec vNuHOld[2] = {vWork2d[2], vWork2d[3]};
   Vec vubarOld = vWork2d[4], vvbarOld = vWork2d[5];
   PetscReal   norm, normChange, epsilon;
   PetscInt    its;
@@ -652,16 +607,16 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) {
-    ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
+    ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
     
       // in preparation of measuring change of effective viscosity:
-      ierr = VecCopy(vNu[0], vNuOld[0]); CHKERRQ(ierr);
-      ierr = VecCopy(vNu[1], vNuOld[1]); CHKERRQ(ierr);
+      ierr = VecCopy(vNuH[0], vNuHOld[0]); CHKERRQ(ierr);
+      ierr = VecCopy(vNuH[1], vNuHOld[1]); CHKERRQ(ierr);
 
       // reform matrix, which depends on updated viscosity
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
-      ierr = assembleSSAMatrix(true, vNu, A); CHKERRQ(ierr);
+      ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
 
       // call PETSc to solve linear system by iterative method
@@ -674,8 +629,8 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
 
       // finish iteration and report to standard out
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
-      ierr = computeEffectiveViscosity(vNu, epsilon); CHKERRQ(ierr);
-      ierr = testConvergenceOfNu(vNu, vNuOld, &norm, &normChange); CHKERRQ(ierr);
+      ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
+      ierr = testConvergenceOfNu(vNuH, vNuHOld, &norm, &normChange); CHKERRQ(ierr);
       if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com,
           (k == 0) ? "%12.4e" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%12.4e",
@@ -683,7 +638,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
       }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
-      ierr = updateNuViewers(vNu, vNuOld, true); CHKERRQ(ierr);
+      ierr = updateNuViewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
       if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com, "%4d", k+1); CHKERRQ(ierr);
       }
@@ -715,7 +670,7 @@ PetscErrorCode IceModel::velocitySSA(Vec vNu[2], PetscInt *numiter) {
   done:
 
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
-    ierr = writeSSAsystemMatlab(vNu); CHKERRQ(ierr);
+    ierr = writeSSAsystemMatlab(vNuH); CHKERRQ(ierr);
   }
   return 0;
 }
