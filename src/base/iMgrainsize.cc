@@ -62,6 +62,7 @@ or
 This has second order truncation error (at \f$z_{k+1/2}\f$) whether or not 
 vertical grid is equally-spaced.
  */
+#if 0
 PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
                      const PetscScalar H, const PetscInt Mz, 
                      PetscScalar *w, PetscScalar *age_wspace,
@@ -114,6 +115,7 @@ PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
 
   return 0;
 }
+#endif
 
 
 //! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.

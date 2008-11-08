@@ -127,13 +127,13 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilo
           }
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
           if (useConstantHardnessForSSA == PETSC_TRUE) { 
-            // constant \bar B case; for EISMINT-Ross and MISMIP; "nu" is really "nu H"!
+            // constant \bar B case; for EISMINT-Ross and MISMIP
             // FIXME: assumes n=3; create new ice.effectiveViscosityConstant() method?
             nuH[o][i][j] = myH * constantHardnessForSSA * 0.5 *
               pow(schoofReg + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
                   -(1.0/3.0));
           } else { 
-            // usual temperature-dependent case; "nu" is really "nu H"!
+            // usual temperature-dependent case
             ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
             ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
             nuH[o][i][j] = ice->effectiveViscosityColumn(schoofReg,
@@ -148,13 +148,12 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilo
               CHKERRQ(ierr);
           }
           
-          // We ensure that nu is bounded below by a positive constant.
+          // We ensure that nuH is bounded below by a positive constant.
           nuH[o][i][j] += epsilon;
         }
       }
     }
   }
-//  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);

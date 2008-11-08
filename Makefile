@@ -7,7 +7,6 @@ PISM_LOG_EVENTS ?= 0
 USE_MPICXX = 1
 
 # Put additional make include files here: 
-#CONFIG = config/ryan_make
 #CONFIG = config/macosx_macports
 
 # Miscellaneous variables:

@@ -32,7 +32,8 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   // do CFL and vertical grid blow-out checking only in ageStep()
   ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
     
-  ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  // puts vTnew in vWork3d[0], updates Hmelt
+  // put vTnew in vWork3d[0]; update Hmelt
+  ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  
 
   // no communication done in ageStep(), temperatureStep()
   // start temperature & age communication

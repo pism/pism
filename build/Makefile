@@ -46,13 +46,13 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/)
 
 # Variables:
-executables := pismr pismd pismv pisms pgrn
+executables := pismr pismd pismv pisms
 extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
    simpleL gridL flowTable tryLCbd pant
 
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
-	iMdefaults.cc iMforcing.cc iMgrainsize.cc iMIO.cc iMinverse.cc		\
+	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMIO.cc iMinverse.cc	\
 	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc	\
 	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc	\
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc		\
@@ -63,12 +63,22 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
    exactTestK.c exactTestL.c
 
-other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pgrn.cc iceEISModel.cc	\
-	iceMISMIPModel.cc iceROSSModel.cc iceGRNModel.cc icePSTexModel.cc	\
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
+	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
 	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc flowTable.cc		\
 	tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c
+
+# this is the main derived class example so it is structured like an example
+#  derived class, including this make piece
+include ../src/eismint/grn_make
+
+# Import additional make include files:
+ifdef CONFIG
+  include $(addprefix ../,$(CONFIG))
+endif
+
 all_sources := $(ice_sources) $(ice_csources) $(test_sources) $(other_sources)	\
 		$(other_csources)
 
@@ -78,10 +88,6 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
-# Import additional make include files:
-ifdef CONFIG
-  include $(addprefix ../,$(CONFIG))
-endif
 
 # Build shared libraries by default, static if PISM_STATIC=1
 ifneq ($(PISM_STATIC),1)
@@ -139,9 +145,6 @@ pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
 pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o \
 	iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
-
-pgrn : iceGRNModel.o pgrn.o ${LIBPISMNAME}
-	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
 
 flowTable : flowTable.o materials.o
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@

@@ -105,13 +105,6 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscScalar **H, *u, *v, *w;
   PetscScalar locCFLmaxdt = maxdt;
 
-/*
-  // compute dzEQ which will be used inside temperatureStep() and ageStep()
-  PetscInt    Mz_for_dzEQ, dummyM;
-  ierr = getMzMbzForTempAge(Mz_for_dzEQ,dummyM); CHKERRQ(ierr);
-  const PetscScalar dzEQ = grid.Lz / ((PetscScalar) (Mz_for_dzEQ - 1));
-*/
-
   ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
   ierr = u3.needAccessToVals(); CHKERRQ(ierr);
   ierr = v3.needAccessToVals(); CHKERRQ(ierr);
@@ -122,11 +115,6 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt      ks = grid.kBelowHeight(H[i][j]);
-/*
-      const bool isMarginal = checkThinNeigh(
-             H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
-             H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
-*/
       ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
       ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
@@ -138,13 +126,6 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
         // make sure the denominator below is positive:
         PetscScalar tempdenom = (0.001/secpera) / (grid.dx + grid.dy);  
         tempdenom += PetscAbs(absu/grid.dx) + PetscAbs(absv/grid.dy);
-/*
-        if (!isMarginal) {
-          const PetscScalar absw = PetscAbs(w[k]);
-          maxw = PetscMax(maxw,absw);
-          tempdenom += PetscAbs(absw / dzEQ);
-        }
-*/
         locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
         maxw = PetscMax(maxw, PetscAbs(w[k]));        
       }

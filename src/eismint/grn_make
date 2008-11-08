@@ -1,0 +1,9 @@
+VPATH += :../src/eismint/
+
+executables += pgrn
+
+other_sources += iceGRNModel.cc pgrn.cc
+
+pgrn : iceGRNModel.o pgrn.o ${LIBPISMNAME}
+	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
+
