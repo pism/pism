@@ -160,7 +160,7 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
   size_t dim[5];  // dimensions in monthly temp NetCDF file
   double bdy[7];  // limits and lengths in NetCDF file
   double *z_bif, *zb_bif;
-  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy); CHKERRQ(ierr);
   // the monthly temp data is 2d so fill in dummy stuff for regrid
   dim[3] = 1; 
   dim[4] = 1;
@@ -188,7 +188,7 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
   for (PetscInt j = 0; j < 12; ++j) {
     char monthlyTempName[20];
     snprintf(monthlyTempName, 20, "temp_mon%d", j);
-    ierr = nct.regrid_global_var(monthlyTempName, 2, lic, grid, grid.da2, 
+    ierr = nct.regrid_global_var(monthlyTempName, 2, lic, grid.da2, 
                  vmonthlyTs[j], false); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, " %d", j); CHKERRQ(ierr);
   }

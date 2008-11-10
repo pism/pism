@@ -306,8 +306,19 @@ int LocalInterpCtx::kbBelowHeight(const double elevation, MPI_Comm com) {
 NCTool::NCTool() {
   //FIXME: does there need to be a default MaskInterp?
   myMaskInterp = PETSC_NULL;
+  grid = PETSC_NULL;
 }
 
+NCTool::NCTool(IceGrid *my_grid) {
+  //FIXME: does there need to be a default MaskInterp?
+  myMaskInterp = PETSC_NULL;
+  grid = my_grid;
+}
+
+PetscErrorCode NCTool::set_grid(IceGrid *my_grid) {
+  grid = my_grid;
+  return 0;
+}
 
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
 /*!
@@ -326,21 +337,18 @@ and the values in \c IceGrid:
              <tt>grid.Lbz</tt>=-<tt>bdy[5]</tt>
   - <tt>bdy[6]</tt> is thickness (positive) of ice layer; becomes <tt>grid.Lz</tt>
  */
-PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bdy[], MPI_Comm com) {
+PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bdy[]) {
   PetscErrorCode ierr;
   
   // first fill dim[0..2] and bdy[0..4]
-  ierr = get_dims_limits_lengths_2d(ncid, dim, bdy, com); CHKERRQ(ierr);
+  ierr = get_dims_limits_lengths_2d(ncid, dim, bdy); CHKERRQ(ierr);
 
-  PetscMPIInt rank;
   int stat;
   int z_dim, zb_dim;
   int z_id, zb_id;
   size_t z_len, zb_len;
 
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-
-  if (rank == 0) {
+  if (grid->rank == 0) {
     stat = nc_inq_dimid(ncid, "z", &z_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "zb", &zb_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
@@ -358,8 +366,8 @@ PetscErrorCode NCTool::get_dims_limits_lengths(int ncid, size_t dim[], double bd
     stat = nc_get_var1_double(ncid, zb_id, &z_bdy[0], &bdy[5]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  MPI_Bcast(dim, 5, MPI_LONG, 0, com);
-  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, com);
+  MPI_Bcast(dim, 5, MPI_LONG, 0, grid->com);
+  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid->com);
 
   return 0;
 }
@@ -373,20 +381,17 @@ This version only sets sets <tt>dim[0..2]</tt> and <tt>bdy[0..4]</tt>.  It ignor
 if that information is present at all (e.g. when calling bootstrapFromFile_netCDF() it is not usually present).  
 This method does not modify <tt>dim[3,4]</tt> and <tt>bdy[5,6]</tt>, which may even be invalid.
  */
-PetscErrorCode NCTool::get_dims_limits_lengths_2d(int ncid, size_t dim[], double bdy[], MPI_Comm com) {
+PetscErrorCode NCTool::get_dims_limits_lengths_2d(int ncid, size_t dim[], double bdy[]) {
   PetscErrorCode ierr;
 
-  ierr = get_last_time(ncid, &(bdy[0]), com); CHKERRQ(ierr);
+  ierr = get_last_time(ncid, &(bdy[0])); CHKERRQ(ierr);
 
-  PetscMPIInt rank;
   int stat;
   int t_dim, x_dim, y_dim;
   int x_id, y_id;
   size_t t_len, x_len, y_len;
 
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-
-  if (rank == 0) {
+  if (grid->rank == 0) {
     stat = nc_inq_dimid(ncid, "t", &t_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "x", &x_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "y", &y_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -411,26 +416,22 @@ PetscErrorCode NCTool::get_dims_limits_lengths_2d(int ncid, size_t dim[], double
     stat = nc_get_var1_double(ncid, y_id, &y_bdy[1], &bdy[4]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
   
-  MPI_Bcast(dim, 5, MPI_LONG, 0, com);
-  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, com);
+  MPI_Bcast(dim, 5, MPI_LONG, 0, grid->com);
+  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid->com);
 
   return 0;
 }
 
 
 //! Read the last value of the time variable t from a NetCDF file.
-PetscErrorCode NCTool::get_last_time(int ncid, double *time, MPI_Comm com) {
-  PetscErrorCode ierr;
-  PetscMPIInt rank;
+PetscErrorCode NCTool::get_last_time(int ncid, double *time) {
   int stat;
   int t_dim;
   int t_id;
   size_t t_len;
   double mytime;
 
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-
-  if (rank == 0) {
+  if (grid->rank == 0) {
     stat = nc_inq_dimid(ncid, "t", &t_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimlen(ncid, t_dim, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -438,7 +439,7 @@ PetscErrorCode NCTool::get_last_time(int ncid, double *time, MPI_Comm com) {
     stat = nc_get_var1_double(ncid, t_id, &t_end, &mytime);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  MPI_Bcast(&mytime, 1, MPI_DOUBLE, 0, com);
+  MPI_Bcast(&mytime, 1, MPI_DOUBLE, 0, grid->com);
 
   *time = mytime;
   return 0;
@@ -452,18 +453,14 @@ Arrays z_read[] and zb_read[] must be pre-allocated arrays of length at least z_
 Get values of z_len, zb_len by using get_dims_limits_lengths() before this routine; z_len = dim[3] and zb_len = dim[4].
  */
 PetscErrorCode NCTool::get_vertical_dims(int ncid, const int z_len, const int zb_len,
-                                         double z_read[], double zb_read[], MPI_Comm com) {
-  PetscErrorCode ierr;
-  PetscMPIInt rank;
+                                         double z_read[], double zb_read[]) {
   int stat;
   int z_id, zb_id;
   size_t zeroST  = 0,
          zlenST  = (size_t) z_len,
          zblenST = (size_t) zb_len;
 
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-
-  if (rank == 0) {
+  if (grid->rank == 0) {
     stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
@@ -473,8 +470,8 @@ PetscErrorCode NCTool::get_vertical_dims(int ncid, const int z_len, const int zb
              CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  MPI_Bcast(z_read, z_len, MPI_DOUBLE, 0, com);
-  MPI_Bcast(zb_read, zb_len, MPI_DOUBLE, 0, com);
+  MPI_Bcast(z_read, z_len, MPI_DOUBLE, 0, grid->com);
+  MPI_Bcast(zb_read, zb_len, MPI_DOUBLE, 0, grid->com);
   return 0;
 }
 
@@ -523,12 +520,25 @@ PetscErrorCode NCTool::put_dimension(int ncid, int v_id, int len, PetscScalar *v
 Just calls get_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
 PetscErrorCode NCTool::get_local_var(
-         const IceGrid *grid, int ncid, const char *name,
+         int ncid, const char *name,
          DA da, Vec v, Vec g, const int *s, const int *c,
          int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
-  ierr = get_global_var(grid, ncid, name, da, g, s, c, dims, a_mpi, a_size);
+  ierr = get_global_var(ncid, name, da, g, s, c, dims, a_mpi, a_size);
+            CHKERRQ(ierr);
+  ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode NCTool::get_local_var_id(
+         int ncid, const int varid,
+         DA da, Vec v, Vec g, const int *s, const int *c,
+         int dims, void *a_mpi, int a_size) {
+
+  PetscErrorCode ierr;
+  ierr = get_global_var_id(ncid, varid, da, g, s, c, dims, a_mpi, a_size);
             CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
@@ -538,7 +548,7 @@ PetscErrorCode NCTool::get_local_var(
 
 //! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
 PetscErrorCode NCTool::get_global_var(
-    const IceGrid *grid, int ncid, const char *name,
+    int ncid, const char *name,
     DA da, Vec g, const int *s, const int *c, int dims, void *a_mpi, int a_size) {
 
   const int req_tag = 1; // MPI tag for request block
@@ -605,24 +615,91 @@ PetscErrorCode NCTool::get_global_var(
   return 0;
 }
 
+//! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
+PetscErrorCode NCTool::get_global_var_id(
+    int ncid, const int varid,
+    DA da, Vec g, const int *s, const int *c, int dims, void *a_mpi, int a_size) {
+
+  const int req_tag = 1; // MPI tag for request block
+  const int var_tag = 2; // MPI tag for data block
+  const int sc_size = 8;
+  PetscErrorCode ierr;
+  MPI_Status mpi_stat;
+  int stat;
+  int sc[sc_size]; // buffer to hold both `s' and `c'
+  size_t sc_nc[sc_size];
+  double *a_double = NULL;
+
+  a_double = (double *)a_mpi;
+
+  for (int i = 0; i < 2 * dims; i++) {
+    sc[i] = (i < dims) ? s[i] : c[i - dims];
+  }
+
+  if (grid->rank == 0) {
+    int sc0[sc_size];
+    for (int i = 0; i < sc_size; i++) sc0[i] = sc[i]; // root needs to save its range
+    for (int proc = grid->size - 1; proc >= 0; proc--) { // root will read itself last
+      if (proc == 0) {
+        for (int i = 0; i < sc_size; i++) sc[i] = sc0[i];
+      } else {
+        MPI_Recv(sc, sc_size, MPI_INT, proc, req_tag, grid->com, &mpi_stat);
+      }
+      for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
+
+      /* {
+        printf("[%1d] reading %10s [", proc, name);
+        for (int i = 0; i < 2 * dims; i++) {
+          if (i == dims) printf("] [");
+          printf("%5d", (int)sc_nc[i]);
+        }
+        printf("]\n");
+      } */
+
+      stat = nc_get_vara_double(ncid, varid, &sc_nc[0], &sc_nc[dims], a_double);
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+      if (proc != 0) {
+        int b_len = 1;
+        for (int i = dims; i < 2 * dims; i++) b_len *= sc[i];
+	MPI_Send(a_double, b_len, MPI_DOUBLE, proc, var_tag, grid->com);
+      }
+    }
+  } else {
+    MPI_Send(sc, 2 * dims, MPI_INT, 0, req_tag, grid->com);
+    MPI_Recv(a_double, a_size, MPI_DOUBLE, 0, var_tag, grid->com, &mpi_stat);
+  }
+
+  int b_len = 1;
+  for (int i = dims; i < 2 * dims; i++) b_len *= sc[i];
+  PetscScalar *a_petsc;
+  ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
+  for (int i = 0; i < b_len; i++) {
+    a_petsc[i] = (PetscScalar)a_double[i];
+  }
+
+  ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
+  return 0;
+}
+
 
 //! Put a \c DA -managed local \c Vec \c v into a variable in a NetCDF file; a global \c Vec \c g is used for storage space.
 /*!
 Just calls put_global_var(), after transfering the local \c Vec called \c vec into the global \c Vec \c g.
  */
-PetscErrorCode NCTool::put_local_var(const IceGrid *grid, int ncid, const int var_id,
+PetscErrorCode NCTool::put_local_var(int ncid, const int var_id,
                                      DA da, Vec v, Vec g, const int *s, const int *c,
                                      int dims, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
   ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
-  ierr = put_global_var(grid, ncid, var_id, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
+  ierr = put_global_var(ncid, var_id, da, g, s, c, dims, a_mpi, a_size); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
-PetscErrorCode NCTool::put_global_var(const IceGrid *grid, int ncid, const int var_id,
+PetscErrorCode NCTool::put_global_var(int ncid, const int var_id,
                                       DA da, Vec g, const int *s, const int *c,
                                       int dims, void *a_mpi, int a_size) {
   const int lim_tag = 1; // MPI tag for limits block
@@ -694,10 +771,10 @@ PetscErrorCode NCTool::set_MaskInterp(MaskInterp *mi_in) {
 Simply calls regrid_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
 PetscErrorCode NCTool::regrid_local_var(const char *name, int dim_flag, LocalInterpCtx &lic,
-                                        IceGrid &grid, DA da, Vec vec, Vec g, 
+                                        DA da, Vec vec, Vec g, 
                                         bool useMaskInterp) {
   PetscErrorCode ierr;
-  ierr = regrid_global_var(name, dim_flag, lic, grid, da, g, useMaskInterp); CHKERRQ(ierr);
+  ierr = regrid_global_var(name, dim_flag, lic, da, g, useMaskInterp); CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, vec); CHKERRQ(ierr);
   return 0;
@@ -768,7 +845,7 @@ Then we just do the two variable interpolation as before, finding \f$a_{m}\f$ an
 computing \f$F(x,y,z)\f$.
  */
 PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalInterpCtx &lic,
-                                         IceGrid &grid, DA da, Vec g, bool useMaskInterp) {
+                                         DA da, Vec g, bool useMaskInterp) {
   PetscErrorCode ierr;
 
   const int req_tag = 1; // MPI tag for request block
@@ -816,7 +893,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
     sc[3] = lic.start[4]; sc[7] = lic.count[4];
   }
 
-  if (grid.rank == 0) {
+  if (grid->rank == 0) {
     int var_id;
     stat = nc_inq_varid(lic.ncid, name, &var_id);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -826,11 +903,11 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
     int sc0[sc_len];
     for (int i = 0; i < sc_len; i++) sc0[i] = sc[i];
 
-    for (int proc = grid.size - 1; proc >= 0; proc--) {
+    for (int proc = grid->size - 1; proc >= 0; proc--) {
       if (proc == 0) {// Get the bounds.
         for (int i = 0; i < sc_len; i++) sc[i] = sc0[i];
       } else {
-        MPI_Recv(sc, sc_len, MPI_INT, proc, req_tag, grid.com, &mpi_stat);
+        MPI_Recv(sc, sc_len, MPI_INT, proc, req_tag, grid->com, &mpi_stat);
       }
 
       // It is not safe to cast memory.  In particular on amd64 int and size_t are
@@ -865,12 +942,12 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
 
       // send the filled buffer
       if (proc != 0) {
-        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, var_tag, grid.com);
+        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, var_tag, grid->com);
       }
     }
   } else { // not process 0:
-    MPI_Send(sc, sc_len, MPI_INT, 0, req_tag, grid.com);  // send out my bounds
-    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, var_tag, grid.com, &mpi_stat); // get back filled buffer
+    MPI_Send(sc, sc_len, MPI_INT, 0, req_tag, grid->com);  // send out my bounds
+    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, var_tag, grid->com, &mpi_stat); // get back filled buffer
   }
 
   // At this point, the buffer lic.a[] should contain lic.a_len doubles.  This is the 
@@ -883,10 +960,10 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
   const int ycount = lic.count[2];
   int myMz = 1, zcount = 1; // indexing trick so that we don't have to duplicate code for the 2-D case.
   if (dim_flag == 3) {
-    myMz = grid.Mz;
+    myMz = grid->Mz;
     zcount = lic.count[3];
   } else if (dim_flag == 4) {
-    myMz = grid.Mbz;
+    myMz = grid->Mbz;
     zcount = lic.count[4];
   }
 
@@ -895,14 +972,14 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
   PetscScalar *vec_a;
   ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
+  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
+    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
 
       for (int k = 0; k < myMz; k++) {
         // location (x,y,z) is in target computational domain
-        const double x = -grid.Lx + i * grid.dx,
-                     y = -grid.Ly + j * grid.dy,
-                     z = (dim_flag == 3) ? grid.zlevels[k] : grid.zblevels[k];
+        const double x = -grid->Lx + i * grid->dx,
+                     y = -grid->Ly + j * grid->dy,
+                     z = (dim_flag == 3) ? grid->zlevels[k] : grid->zblevels[k];
 
         // We need to know how the point (x,y,z) sits within the local block we
         // pulled from the netCDF file.  This part is special to a regular
@@ -935,8 +1012,8 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
 
         if (dim_flag == 3 || dim_flag == 4) {
           // get the index into the source grid, for just below the level z
-          const int kc = (dim_flag == 3) ? lic.kBelowHeight(z,grid.com)
-                                           : lic.kbBelowHeight(z,grid.com);
+          const int kc = (dim_flag == 3) ? lic.kBelowHeight(z,grid->com)
+                                           : lic.kbBelowHeight(z,grid->com);
 
           // We pretend that there are always 8 neighbors.  And compute the
           // indices into the buffer for those neighbors.  
@@ -1007,7 +1084,7 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
         const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
 
         const double ii = ic - floor(ic);
-        int index = ((i - grid.xs) * grid.ym + (j - grid.ys)) * myMz + k;
+        int index = ((i - grid->xs) * grid->ym + (j - grid->ys)) * myMz + k;
 
         // index into the new array and interpolate in x direction
         vec_a[index] = a_m * (1.0 - ii) + a_p * ii;
@@ -1042,5 +1119,135 @@ PetscErrorCode NCTool::regrid_global_var(const char *name, int dim_flag, LocalIn
 
   ierr = VecRestoreArray(g, &vec_a); CHKERRQ(ierr);
 
+  return 0;
+}
+
+
+PetscErrorCode NCTool::write_history(const int ncid, const char history[]) {
+  int stat;
+  if (grid-> rank == 0) {
+    stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
+			   strlen(history), history);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  
+  return 0;
+}
+
+//! Checks if the dimension dim in a NetCDF file is OK.
+/*! A dimension is OK if is exists and its length is equal to len. If len < 0,
+    then dimension length is ignored.
+ */
+bool NCTool::check_dimension(const int ncid, const char dim[],
+				   const int len) {
+  int stat, dimid;
+  size_t dimlen;
+  int result = 0;
+
+  if (grid->rank == 0) {
+    stat = nc_inq_dimid(ncid, dim, &dimid);
+    if (stat == NC_NOERR) {
+      stat = nc_inq_dimlen(ncid, dimid, &dimlen);
+
+      if (stat != NC_NOERR)
+	result = 0;
+      else if ((len < 0) || ((int)dimlen == len))
+	result = 1;	// OK
+    }
+  }
+
+  stat = MPI_Bcast(&result, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  return (result == 1);
+}
+
+bool NCTool::check_dimensions(const int ncid) {
+  bool t, x, y, z, zb;
+
+  t = check_dimension(ncid, "t", -1); // length does not matter
+  x = check_dimension(ncid, "x", grid->Mx);
+  y = check_dimension(ncid, "y", grid->My);
+  z = check_dimension(ncid, "z", grid->Mz);
+  zb = check_dimension(ncid, "zb", grid->Mbz);
+  
+  return (t & x & y & z & zb);
+}
+
+//! Create dimensions and coordinate variables. Assumes that the dataset is in
+//! the data mode.
+PetscErrorCode NCTool::create_dimensions(const int ncid) {
+  int stat, t, x, y, z, zb, dimid; // used both as flags and variable ids.
+
+  if (grid->rank == 0) {
+    // define dimensions and coordinate variables:
+    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // t
+    stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // x
+    stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // y
+    stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // z
+    stat = nc_def_dim(ncid, "z", grid->Mz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_var(ncid, "z", NC_DOUBLE, 1, &dimid, &z); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // zb
+    stat = nc_def_dim(ncid, "zb", grid->Mbz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_var(ncid, "zb", NC_DOUBLE, 1, &dimid, &zb); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // 
+    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // set values:
+
+    double time = grid->year * secpera;
+    size_t zero = 0;
+    stat = nc_put_var1_double(ncid, t, &zero, &time); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = put_dimension_regular(ncid, x, grid->Mx, -grid->Lx, grid->dx); CHKERRQ(stat);
+    stat = put_dimension_regular(ncid, y, grid->My, -grid->Ly, grid->dy); CHKERRQ(stat);
+    stat = put_dimension(ncid, z, grid->Mz, grid->zlevels); CHKERRQ(stat);
+    stat = put_dimension(ncid, zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
+  }
+
+  return 0;
+}
+
+//! Opens or creates a NetCDF file for writing the PISM model state.
+/*!
+  1) Open the file. If the file could not be opened, go to step 3. Otherwise go
+  to step 2.
+
+  2) Call check_dimensions(). If dimensions are OK, go to step 5. Otherwise go
+  to step 4.
+
+  3) Create the file with NC_CLOBBER (overwrite). Go to step 4.
+
+  4) Define dimensions and create dimension variables. Go to step 5.
+
+  5) Return the NetCDF ID.
+ */
+PetscErrorCode NCTool::open_or_create(const char filename[], int *ncidp) {
+  int stat, ncid;
+
+  if (grid->rank == 0) {
+    stat = nc_open(filename, NC_WRITE, &ncid);
+    if (stat == NC_NOERR) {
+      stat = check_dimensions(ncid);
+      if (stat == PETSC_TRUE) {
+	*ncidp = ncid;
+	return 0;
+      } else {
+	stat = nc_close(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      }
+    }
+
+    stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = create_dimensions(ncid); CHKERRQ(stat);
+  }
+  stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  *ncidp = ncid;
   return 0;
 }

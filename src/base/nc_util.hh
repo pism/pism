@@ -90,41 +90,55 @@ int check_err(const int stat, const int line, const char *file);
 class NCTool {
 
 public:
-NCTool();
+  NCTool(IceGrid *my_grid);
+  NCTool();
+  PetscErrorCode set_grid(IceGrid *my_grid);
+  PetscErrorCode open_or_create(const char filename[], int *ncidp);
+  bool check_dimension(const int ncid, const char dim[], const int len);
+  bool check_dimensions(const int ncid);
+  PetscErrorCode create_dimensions(const int ncid);
+  PetscErrorCode write_history(const int ncid, const char history[]);
+  PetscErrorCode get_last_time(int ncid, double *time);
+  PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], double bdy[]);
+  PetscErrorCode get_dims_limits_lengths_2d(int ncid, size_t dim[], double bdy[]);
+  PetscErrorCode get_vertical_dims(int ncid, const int z_len, const int zb_len, 
+				   double z_read[], double zb_read[]);
 
-PetscErrorCode get_last_time(int ncid, double *time, MPI_Comm com);
-PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], double bdy[], MPI_Comm com);
-PetscErrorCode get_dims_limits_lengths_2d(int ncid, size_t dim[], double bdy[], MPI_Comm com);
-PetscErrorCode get_vertical_dims(int ncid, const int z_len, const int zb_len, 
-                                 double z_read[], double zb_read[], MPI_Comm com);
+  PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
+  PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, double start, double delta);
 
-PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
-PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, double start, double delta);
+  PetscErrorCode get_local_var(int ncid, const char *name, // remove
+			       DA da, Vec v, Vec g, const int *s, const int *c,
+			       int dims, void *a_mpi, int a_size);
+  PetscErrorCode get_global_var(int ncid, const char *name, // remove 
+				DA da, Vec g, const int *s, const int *c,
+				int dims, void *a_mpi, int a_size);
 
-PetscErrorCode get_local_var(const IceGrid *grid, int ncid, const char *name,
-                             DA da, Vec v, Vec g, const int *s, const int *c,
-                             int dims, void *a_mpi, int a_size);
-PetscErrorCode get_global_var(const IceGrid *grid, int ncid, const char *name,
-                              DA da, Vec g, const int *s, const int *c,
-                              int dims, void *a_mpi, int a_size);
+  PetscErrorCode get_local_var_id(int ncid, const int varid,
+			       DA da, Vec v, Vec g, const int *s, const int *c,
+			       int dims, void *a_mpi, int a_size);
+  PetscErrorCode get_global_var_id(int ncid, const int varid,
+				DA da, Vec g, const int *s, const int *c,
+				int dims, void *a_mpi, int a_size);
 
-PetscErrorCode put_local_var(const IceGrid *grid, int ncid, const int var_id,
-                             DA da, Vec v, Vec g, const int *s, const int *c,
-                             int dims, void *a_mpi, int a_size);
-PetscErrorCode put_global_var(const IceGrid *grid, int ncid, const int var_id,
-                              DA da, Vec g, const int *s, const int *c,
-                              int dims, void *a_mpi, int a_size);
+  PetscErrorCode put_local_var(int ncid, const int var_id,
+			       DA da, Vec v, Vec g, const int *s, const int *c,
+			       int dims, void *a_mpi, int a_size);
+  PetscErrorCode put_global_var(int ncid, const int var_id,
+				DA da, Vec g, const int *s, const int *c,
+				int dims, void *a_mpi, int a_size);
 
-PetscErrorCode set_MaskInterp(MaskInterp *mi_in);
-PetscErrorCode regrid_local_var(const char *name, int dim_flag,
-                                LocalInterpCtx &lic, IceGrid &grid, DA da, Vec vec, Vec g,
-                                bool useMaskInterp);
-PetscErrorCode regrid_global_var(const char *name, int dim_flag,
-                                 LocalInterpCtx &lic, IceGrid &grid, DA da, Vec g,
-                                 bool useMaskInterp);
+  PetscErrorCode set_MaskInterp(MaskInterp *mi_in);
+  PetscErrorCode regrid_local_var(const char *name, int dim_flag,
+				  LocalInterpCtx &lic, DA da, Vec vec, Vec g,
+				  bool useMaskInterp);
+  PetscErrorCode regrid_global_var(const char *name, int dim_flag,
+				   LocalInterpCtx &lic, DA da, Vec g,
+				   bool useMaskInterp);
 
 private:
-   MaskInterp  *myMaskInterp;
+  MaskInterp  *myMaskInterp;
+  IceGrid* grid;
 };
 
 #endif // __nc_util_hh

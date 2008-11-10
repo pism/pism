@@ -34,6 +34,8 @@ const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
+  nct.set_grid(&grid);
+
   history_size = TEMPORARY_STRING_LENGTH;
   history = new char[history_size];
 

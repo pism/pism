@@ -59,7 +59,9 @@ public:
   
   MPI_Comm    com;
   PetscMPIInt rank, size;
-  DA          da2;
+  DA          da2;		// whether this is PETSC_NULL is important;
+				// functions such as IceModelVec::read_from_netcdf() use it
+				// to determine if values in this DA can be trusted
   PetscInt    xs, xm, ys, ym;
 
   PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 

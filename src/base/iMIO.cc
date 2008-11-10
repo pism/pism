@@ -212,11 +212,8 @@ PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
 #include "../netcdf/complete_dump.cc"
 
   // now write additional 3-D diagnostic quantities
-  ierr = u3.setVaridNC(uvel_id); CHKERRQ(ierr);
   ierr = u3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = v3.setVaridNC(vvel_id); CHKERRQ(ierr);
   ierr = v3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = w3.setVaridNC(wvel_id); CHKERRQ(ierr);
   ierr = w3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
   
   // We are done with these buffers
@@ -291,7 +288,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   double      bdy[7];
   // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
   //   this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);
   grid.year = bdy[0] / secpera;
   grid.Mx = dim[1];
   grid.My = dim[2];
@@ -302,7 +299,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   double *zlevs, *zblevs;
   zlevs = new double[grid.Mz];
   zblevs = new double[grid.Mbz];
-  ierr = nct.get_vertical_dims(ncid, grid.Mz, grid.Mbz, zlevs, zblevs, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_vertical_dims(ncid, grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
 
   // re-allocate and fill grid.zlevels & zblevels with read values
   delete [] grid.zlevels;
@@ -333,7 +330,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent; 
                                                  //   dim[0] is the number of t vals in file
   int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
-  int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
+//   int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
   void *a_mpi;
   int a_len, max_a_len;
@@ -342,27 +339,27 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
 
   // 2-D mapping
-  ierr = nct.get_local_var(&grid, ncid, "lon", grid.da2, vLongitude, g2,
+  ierr = nct.get_local_var(ncid, "lon", grid.da2, vLongitude, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "lat", grid.da2, vLatitude, g2,
+  ierr = nct.get_local_var(ncid, "lat", grid.da2, vLatitude, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 2-D model quantities: discrete
-  ierr = nct.get_local_var(&grid, ncid, "mask", grid.da2, vMask, g2, 
+  ierr = nct.get_local_var(ncid, "mask", grid.da2, vMask, g2, 
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr = nct.get_local_var(&grid, ncid, "usurf", grid.da2, vh, g2,  // DEPRECATED: pism_intent = diagnostic;
+  ierr = nct.get_local_var(ncid, "usurf", grid.da2, vh, g2,  // DEPRECATED: pism_intent = diagnostic;
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);             //   WE SHOULD NOT BE READING THIS
                                                                               //   (CHOICES ABOUT WHAT -bif DOES ARE A
                                                                               //   DIFFERENT ISSUE)
-  ierr = nct.get_local_var(&grid, ncid, "thk", grid.da2, vH, g2,
+  ierr = nct.get_local_var(ncid, "thk", grid.da2, vH, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "bwat", grid.da2, vHmelt, g2,
+  ierr = nct.get_local_var(ncid, "bwat", grid.da2, vHmelt, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "topg", grid.da2, vbed, g2,
+  ierr = nct.get_local_var(ncid, "topg", grid.da2, vbed, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "dbdt", grid.da2, vuplift, g2,
+  ierr = nct.get_local_var(ncid, "dbdt", grid.da2, vuplift, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
@@ -382,26 +379,26 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   if (haveSSAvelocities == 1) {
     ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
-    ierr = nct.get_local_var(&grid, ncid, "vubarSSA", grid.da2, vubarSSA, g2,
+    ierr = nct.get_local_var(ncid, "vubarSSA", grid.da2, vubarSSA, g2,
 			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-    ierr = nct.get_local_var(&grid, ncid, "vvbarSSA", grid.da2, vvbarSSA, g2,
+    ierr = nct.get_local_var(ncid, "vvbarSSA", grid.da2, vvbarSSA, g2,
 			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
   }
 
   // 2-D climate/bdry quantities
-  ierr = nct.get_local_var(&grid, ncid, "artm", grid.da2, vTs, g2,
+  ierr = nct.get_local_var(ncid, "artm", grid.da2, vTs, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "bheatflx", grid.da2, vGhf, g2,
+  ierr = nct.get_local_var(ncid, "bheatflx", grid.da2, vGhf, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "acab", grid.da2, vAccum, g2,
+  ierr = nct.get_local_var(ncid, "acab", grid.da2, vAccum, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(&grid, ncid, "tillphi", grid.da2, vtillphi, g2,
+  ierr = nct.get_local_var(ncid, "tillphi", grid.da2, vtillphi, g2,
                        s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
 
   // 3-D model quantities
-  ierr = T3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = Tb3.getVecNC(ncid, s, cb, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = tau3.getVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr =   T3.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =  Tb3.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr = tau3.read(fname, dim[0] - 1); CHKERRQ(ierr);
 
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
 
@@ -504,12 +501,12 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   if (grid.rank == 0) {
     stat = nc_open(regridFile, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
   // from regridFile: Mz = dim[3], Mbz = dim[4]  
   double *zlevs, *zblevs;
   zlevs = new double[dim[3]];
   zblevs = new double[dim[4]];
-  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], zlevs, zblevs, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], zlevs, zblevs); CHKERRQ(ierr);
 
   { // explicit scoping means destructor will be called for lic
     LocalInterpCtx lic(ncid, dim, bdy, zlevs, zblevs, grid);
@@ -520,7 +517,7 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
        switch (possible[k]) {
          case 'b':
            ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("topg", 2, lic, grid.da2, vbed, g2, false); CHKERRQ(ierr);
            break;
          case 'B':
            ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... "); CHKERRQ(ierr);
@@ -532,15 +529,15 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
            break;
          case 'h':
            ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("usurf", 2, lic, grid, grid.da2, vh, g2, false); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("usurf", 2, lic, grid.da2, vh, g2, false); CHKERRQ(ierr);
            break;
          case 'H':
            ierr = verbPrintf(2, grid.com, "\n   H: regridding 'thk' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("thk", 2, lic, grid.da2, vH, g2, false); CHKERRQ(ierr);
            break;
          case 'L':
            ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
+           ierr = nct.regrid_local_var("bwat", 2, lic, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
            break;
          case 'T':
            ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... "); CHKERRQ(ierr);

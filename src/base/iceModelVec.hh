@@ -31,22 +31,16 @@ public:
   IceModelVec();
   virtual ~IceModelVec();
 
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
-  virtual PetscErrorCode  destroy();
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local); // done
+  virtual PetscErrorCode  destroy(); // done
 
-  virtual PetscErrorCode  printInfo(const PetscInt verbosity);
+  virtual PetscErrorCode  printInfo(const PetscInt verbosity); // done
  
-  virtual PetscErrorCode  setVaridNC(const int my_varid);
-  virtual PetscErrorCode  setAttrs(const char my_long_name[], const char my_units[],
-				   const char my_pism_intent[], const char my_standard_name[]);
-
-  virtual PetscErrorCode  find(const int ncid, int *varid, PetscTruth *exists);  //FIXME: not implemented
-
-  virtual PetscErrorCode  getVecNC(const int ncid, const int *s, const int *c, int dims, 
-                                   void *a_mpi, int a_size);
-
-  virtual PetscErrorCode  writeAttrsNC(const int ncid);  //FIXME: not implemented
-
+  virtual PetscErrorCode  set_attrs(const char my_pism_intent[], const char my_long_name[], // done
+				   const char my_units[], const char my_standard_name[]);
+  virtual PetscErrorCode  write_attrs(const int ncid); // done
+  virtual PetscErrorCode  find(const int ncid, int *varid, PetscTruth *exists); // done
+  virtual PetscErrorCode  read(const char filename[], const unsigned int time); // done
   virtual PetscErrorCode  putVecNC(const int ncid, const int *s, const int *c, int dims, 
                                    void *a_mpi, int a_size);
 
@@ -64,7 +58,7 @@ public:
 
 protected:
   char         varname[PETSC_MAX_PATH_LEN],       // usually the name of the NetCDF variable (unless
-                                                  //   there is no corresponding NetCDF var)
+                                                  // there is no corresponding NetCDF var)
                long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
                units[PETSC_MAX_PATH_LEN],         // NetCDF attribute
                pism_intent[PETSC_MAX_PATH_LEN],   // NetCDF attribute
@@ -74,14 +68,16 @@ protected:
   IceGrid      *grid;
   DA           da;
   bool         localp, IOwnDA;
-  
-  int          varid_nc;
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
   virtual PetscErrorCode  checkAllocated();
   virtual PetscErrorCode  checkHaveArray();
-
+  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
+  virtual PetscErrorCode  read_from_netcdf(const char filename[], const unsigned int time, const int dims,
+					   const int Mz);
+  virtual PetscErrorCode  write_to_netcdf(const int ncid, const int dims, nc_type nctype,
+					  const int Mz, void *a_mpi, int a_size);
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
   //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);
@@ -104,14 +100,16 @@ public:
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_varname[], bool local);
   virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
 				       IceGrid &my_grid, const char my_varname[], bool local);
+  virtual PetscErrorCode  read(const char filename[], const unsigned int time);
 
   PetscScalar     getVal(const PetscInt i, const PetscInt j);
-  PetscErrorCode  getPlaneStar(const PetscInt i, const PetscInt j, planeStar *star);
+  PetscErrorCode  getPlaneStar(const PetscInt i, const PetscInt j, planeStar *star); // do we need this?
 
-  PetscScalar**   arrayGet();  // FIXME: potentially dangerous
+  PetscScalar**   get_array();  // FIXME: potentially dangerous
 
 protected:
   PetscErrorCode  create(IceGrid &my_grid, const char my_varname[], bool local, DAStencilType my_sten);
+  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
 
@@ -121,7 +119,7 @@ public:
   IceModelVec2Box();
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
 
-  PetscErrorCode  getPlaneBox(const PetscInt i, const PetscInt j, planeBox *box);
+  PetscErrorCode  getPlaneBox(const PetscInt i, const PetscInt j, planeBox *box); // do we need this?
 };
 
 
@@ -129,7 +127,8 @@ public:
 class IceModelVec3Bedrock : public IceModelVec {
 public:
   IceModelVec3Bedrock();
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_varname[], bool local);
+  virtual PetscErrorCode read(const char filename[], const unsigned int time);
 
   PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  setToConstantColumn(const PetscInt i, const PetscInt j,
@@ -143,6 +142,7 @@ public:
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);
+  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
 
@@ -155,6 +155,8 @@ public:
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
   PetscErrorCode          createSameDA(IceModelVec3 imv3_dasource, 
                                        IceGrid &mygrid, const char my_varname[], bool local);
+
+  virtual PetscErrorCode read(const char filename[], const unsigned int time);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 imv3_source);
@@ -189,6 +191,7 @@ public:
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);
+  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
 #endif /* __IceModelVec_hh */

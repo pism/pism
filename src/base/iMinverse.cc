@@ -92,7 +92,7 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   //   limits, and lengths; compare code in bootstrapFromFile_netCDF()
   size_t dim[5];
   double bdy[7];
-  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy); CHKERRQ(ierr);
   dim[3] = 1; 
   dim[4] = 1;
   bdy[5] = 0.0;
@@ -113,10 +113,10 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   Vec cIn;
   ierr = VecDuplicate(vh, &cIn); CHKERRQ(ierr);
   if ((cbarTillSet == PETSC_TRUE) && (cbarExists)) {
-    ierr = nct.regrid_local_var("cbar", 2, lic, grid, grid.da2, cIn, g2, false);
+    ierr = nct.regrid_local_var("cbar", 2, lic, grid.da2, cIn, g2, false);
              CHKERRQ(ierr);
   } else if ((csurfTillSet == PETSC_TRUE) && (csurfExists)) {
-    ierr = nct.regrid_local_var("csurf", 2, lic, grid, grid.da2, cIn, g2, false);
+    ierr = nct.regrid_local_var("csurf", 2, lic, grid.da2, cIn, g2, false);
              CHKERRQ(ierr);
   } else {
     SETERRQ(998,"how did I get here?");

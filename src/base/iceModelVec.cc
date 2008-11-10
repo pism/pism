@@ -42,8 +42,6 @@ IceModelVec::IceModelVec() {
 
   has_standard_name = PETSC_FALSE;
   strcpy(standard_name,"UNKNOWN NetCDF CF 1.0 standard_name");
-  
-  varid_nc = -9999;
 }
 
 
@@ -103,8 +101,6 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
            (int)localp, (int)IOwnDA, has_standard_name);  CHKERRQ(ierr);
 
   ierr = verbPrintf(verbosity,grid->com,
-           "  NetCDF info:    varid_nc = %d\n", varid_nc);  CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,grid->com,
            "                  long_name = '%s'\n", long_name);  CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,grid->com,
            "                  standard_name = '%s'\n", standard_name);  CHKERRQ(ierr);
@@ -115,20 +111,14 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
   return 0;
 }
 
-
-PetscErrorCode  IceModelVec::setVaridNC(const int my_varid) {
-  varid_nc = my_varid;
-  return 0;
-}
-
-//! Sets the NetCDF attributes of an IceModelVec object.
+//! Sets NetCDF attributes of an IceModelVec object.
 /*! Call setAttrs("new long name", "new units", "new pism_intent", NULL) if a
   variable does not have a standard name. Similarly, by putting NULL in an
   appropriate spot, it is possible tp leave long_name, units or pism_intent
   unmodified.
  */
-PetscErrorCode  IceModelVec::setAttrs(const char my_long_name[], const char my_units[],
-				      const char my_pism_intent[], const char my_standard_name[]) {
+PetscErrorCode  IceModelVec::set_attrs(const char my_long_name[], const char my_units[],
+				       const char my_pism_intent[], const char my_standard_name[]) {
   if (my_long_name != NULL)
     strcpy(long_name,my_long_name);
 
@@ -145,12 +135,6 @@ PetscErrorCode  IceModelVec::setAttrs(const char my_long_name[], const char my_u
   return 0;
 }
 
-
-PetscErrorCode  IceModelVec::writeAttrsNC(const int ncid) {
-  SETERRQ(1,"not YET implemented");
-  return 0;
-}
-
 //! Finds the variable by its standard_name attribute, which has to be set using setAttrs
 /*!
   Here's how it works:
@@ -163,17 +147,15 @@ PetscErrorCode  IceModelVec::writeAttrsNC(const int ncid) {
 
   3) If no variable was found, go to step 4, otherwise go to step 5.
 
-  4) Find the variable with the right variable name. Bail out if it does not
-  exist. Go to step 5.
+  4) Find the variable with the right variable name. Go to step 5.
 
-  5) Broadcast the variable ID.
+  5) Broadcast the existence flag and the variable ID.
  */
 PetscErrorCode  IceModelVec::find(const int ncid, int *varidp, PetscTruth *exists) {
   PetscInt ierr;
   size_t attlen;
-  int stat = 0, nvars, my_varid;
+  int stat = 0, found = 0, my_varid = -1, nvars;
   char attribute[TEMPORARY_STRING_LENGTH];
-  PetscTruth found = PETSC_FALSE;
 
   // Processor 0 does all the job here.
   if (grid->rank == 0) {
@@ -195,10 +177,10 @@ PetscErrorCode  IceModelVec::find(const int ncid, int *varidp, PetscTruth *exist
 
 	if (strcmp(attribute, standard_name) == 0) {
 	  if (!found) {		// if unique
-	    found = PETSC_TRUE;
+	    found = 1;
 	    my_varid = j;
 	  } else {    // if not unique
-	    printf("Both variable #%d and #%d have the standard_name '%s'.\n",
+	    fprintf(stderr, "Variables #%d and #%d have the same standard_name ('%s').\n",
 		   my_varid, j, attribute);
 	    SETERRQ(1,"Inconsistency in the input file: two variables have the same standard_name.");	  
 	  }
@@ -206,85 +188,192 @@ PetscErrorCode  IceModelVec::find(const int ncid, int *varidp, PetscTruth *exist
       }
     } // end of if(has_standard_name)
 
-    if (found) {
-      *varidp = my_varid;
-    } else {
+    if (!found) {
       // look for varname
+      stat = nc_inq_varid(ncid, varname, &my_varid);
+      if (stat == NC_NOERR)
+	found = 1;
     }
-
   } // end of if(grid->rank == 0)
 
-/*
-  PetscErrorCode ierr;
-  ierr = checkAllocated(); CHKERRQ(ierr);
-  // on processor zero, use varname string to check if it is present
-  if (grid->rank == 0) {
-    int stat = nc_inq_varid(ncid, varname_nc, &varid_nc); 
-    exists = (stat == NC_NOERR);
-  }
-  // broadcast the existence flag
-  ierr = MPI_Bcast(&exists, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  // if it exists, read it
-  if (exists == PETSC_TRUE) {
-    ierr = ncVarToDAVec(ncid, varid_nc, *da, v, g2, vzero); CHKERRQ(ierr);
-  }
-*/
-  return 0;
-}
+  // Broadcast the existence flag and the variable ID.
+  ierr = MPI_Bcast(&found, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&my_varid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
-
-//! Calls the appropriate NCTool method to read a NetCDF variable into the IceModelVec.
-PetscErrorCode IceModelVec::getVecNC(const int ncid, const int *s, const int *c, 
-                             int dims, void *a_mpi, int a_size) {           
-  PetscErrorCode ierr;
-  NCTool nct;
-  if (localp) {
-    Vec g;
-    ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nct.get_local_var(grid, ncid, varname, da, v, g,
-                         s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
-    ierr = VecDestroy(g); CHKERRQ(ierr);
+  if (found) {
+    *exists = PETSC_TRUE;
+    if (varidp != NULL)
+      *varidp = my_varid;
   } else {
-    ierr = nct.get_global_var(grid, ncid, varname, da, v,
-                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
+    *exists = PETSC_FALSE;
+    // *varidp is not modified
   }
+
   return 0;
 }
 
+//! Defines a netcdf variable corresponding to an IceModelVec object. Virtual only.
+PetscErrorCode IceModelVec::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
+  SETERRQ(1, "define_netcdf_variable: virtual only");
+}
+
+PetscErrorCode IceModelVec::write_attrs(const int ncid) {
+  PetscTruth exists;
+  int varid, ierr;
+  
+  ierr = find(ncid, &varid, &exists); CHKERRQ(ierr);
+  if (!exists)
+    SETERRQ(1, "Can't write attributes of an undefined variable.");
+
+  if (grid->rank == 0) {
+    ierr = nc_put_att_text(ncid, varid,"pism_intent", strlen(pism_intent), pism_intent);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_put_att_text(ncid, varid,"units", strlen(units), units);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_put_att_text(ncid, varid,"long_name", strlen(long_name), long_name);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_put_att_text(ncid, varid,"standard_name", strlen(standard_name), standard_name);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  return 0;
+}
 
 //! Calls the appropriate NCTool method to save the IceModelVec into a NetCDF variable.
 PetscErrorCode IceModelVec::putVecNC(const int ncid, const int *s, const int *c, int dims, 
                                           void *a_mpi, int a_size) {
   PetscErrorCode ierr;
-  NCTool nct;
+  NCTool nct(grid);
+  PetscTruth exists;
+  int varid_nc;
+
+  ierr = find(ncid, &varid_nc, &exists); CHKERRQ(ierr);
+  if (!exists)
+    SETERRQ(1, "Variable does not exist");
+
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nct.put_local_var(grid, ncid, varid_nc, da, v, g,
+    ierr = nct.put_local_var(ncid, varid_nc, da, v, g,
                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = nct.put_global_var(grid, ncid, varid_nc, da, v,
+    ierr = nct.put_global_var(ncid, varid_nc, da, v,
                           s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
   }
   return 0;
+}
+
+PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {           
+  SETERRQ(1, "IceModelVec::read(...) is virtual only.");
+  return 0;
+}
+
+
+//! Calls the appropriate NCTool method to read a NetCDF variable into the IceModelVec.
+PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsigned int time,
+					     int dims, const int Mz) {           
+  PetscErrorCode ierr;
+  PetscTruth exists;
+  void *a_mpi;
+  int a_len, max_a_len, ncid, varid;
+  NCTool nct(grid);
+  int s[] = {time, grid->xs, grid->ys, 0}; // Start local block: t dependent; 
+  int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
+
+  // Memory allocation:
+  max_a_len = a_len = grid->xm * grid->ym * Mz;
+  ierr = MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
+  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
+
+  if (grid->rank == 0) {
+    ierr = nc_open(filename, NC_NOWRITE, &ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+  ierr = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+
+  ierr = find(ncid, &varid, &exists); CHKERRQ(ierr);
+  if (!exists)
+    SETERRQ2(1, "Can't find '%s' in '%s'.", varname, filename);
+
+  if (localp) {
+    Vec g;
+    ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
+    ierr = nct.get_local_var_id(ncid, varid, da, v, g,
+                         s, c, dims, a_mpi, max_a_len); CHKERRQ(ierr);  
+    ierr = VecDestroy(g); CHKERRQ(ierr);
+  } else {
+    ierr = nct.get_global_var_id(ncid, varid, da, v,
+                          s, c, dims, a_mpi, max_a_len); CHKERRQ(ierr);  
+  }
+
+  if (grid->rank == 0) {
+    ierr = nc_close(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  ierr = PetscFree(a_mpi);
+  return 0;
+}
+
+//! Writes an IceModelVec to a NetCDF file.
+/*!
+  1) Get the last time.
+  2) Find the variable in the file. Call define_variable if not found.
+  3) Call put_global_var or put_local_var.
+ */
+PetscErrorCode IceModelVec::write_to_netcdf(const int ncid, int dims, nc_type nctype,
+					    const int Mz, void *a_mpi, int a_size) {
+  PetscErrorCode ierr;
+  PetscTruth exists;
+  NCTool nct(grid);
+  int t_id, varid;
+  int t;
+
+  // get the last time (index, not the value):
+  if (grid->rank == 0) {
+    size_t t_len;
+    ierr = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    t = (int)t_len;
+  }
+  ierr = MPI_Bcast(&t, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  int s[] = {t - 1, grid->xs, grid->ys, 0}; // Start local block: t dependent; 
+  int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
+
+  // find the variable
+  ierr = find(ncid, &varid, &exists); CHKERRQ(ierr);
+  if (!exists) {
+    ierr = define_netcdf_variable(ncid, nctype, &varid); CHKERRQ(ierr);
+  }
+
+  if (localp) {
+    Vec g;
+    ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
+    ierr = nct.put_local_var(ncid, varid, da, v, g,
+                         s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
+    ierr = VecDestroy(g); CHKERRQ(ierr);
+  } else {
+    ierr = nct.put_global_var(ncid, varid, da, v,
+                          s, c, dims, a_mpi, a_size); CHKERRQ(ierr);  
+  }
+  return 0;
+  
 }
 
 
 //! Calls the appropriate NCTool method to regrid a NetCDF variable from some file into the IceModelVec.
 PetscErrorCode  IceModelVec::regridVecNC(int dim_flag, LocalInterpCtx &lic)  {
   PetscErrorCode ierr;
-  NCTool nct;
+  NCTool nct(grid);
   // FIXME: a flag for whether the IceModelVec is really integer-valued should be checked; if so 
   // then regrid_local|global_var() should be called w last arg "true", after setting the MaskInterp
   // for NCTool
   if (localp) {
     Vec g;
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nct.regrid_local_var(varname, dim_flag, lic, *grid, da, v, g, false); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var(varname, dim_flag, lic, da, v, g, false); CHKERRQ(ierr);
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = nct.regrid_global_var(varname, dim_flag, lic, *grid, da, v, false); CHKERRQ(ierr);
+    ierr = nct.regrid_global_var(varname, dim_flag, lic, da, v, false); CHKERRQ(ierr);
   }
   return 0;
 }

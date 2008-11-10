@@ -155,16 +155,16 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   if ((zdimExists) && (zbdimExists)) {
     ierr = verbPrintf(2, grid.com, 
          "  all dimensions t,x,y,z,zb found in file\n"); CHKERRQ(ierr);
-    ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+    ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);
     z_bif = new double[dim[3]];
     zb_bif = new double[dim[4]];
-    ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com);
+    ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif);
              CHKERRQ(ierr);
   } else if ((!zdimExists) && (!zbdimExists)) {
     ierr = verbPrintf(2, grid.com, 
          "  dimensions t,x,y found in file, but no vertical dimension (z,zb)\n");
          CHKERRQ(ierr);
-    ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);
+    ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy); CHKERRQ(ierr);
     dim[3] = 1; 
     dim[4] = 1;
     bdy[5] = 0.0;
@@ -269,7 +269,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   // now work through all the 2d variables, regridding if present and otherwise setting
   // to default values appropriately
   if (lonExists) {
-    ierr = nct.regrid_local_var("lon", 2, lic, grid, grid.da2, vLongitude, g2, false);
+    ierr = nct.regrid_local_var("lon", 2, lic, grid.da2, vLongitude, g2, false);
              CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vLongitude,"lon","degrees_east",1.0); CHKERRQ(ierr);
   } else {
@@ -278,7 +278,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
       CHKERRQ(ierr);
   }
   if (latExists) {
-    ierr = nct.regrid_local_var("lat", 2, lic, grid, grid.da2, vLatitude, g2, false);
+    ierr = nct.regrid_local_var("lat", 2, lic, grid.da2, vLatitude, g2, false);
              CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vLatitude,"lat","degrees_north",1.0); CHKERRQ(ierr);
   } else {
@@ -287,7 +287,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
       CHKERRQ(ierr);
   }
   if (accumExists) {
-    ierr = nct.regrid_local_var("acab", 2, lic, grid, grid.da2, vAccum, g2, false);
+    ierr = nct.regrid_local_var("acab", 2, lic, grid.da2, vAccum, g2, false);
              CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vAccum,"acab","m a-1",secpera); CHKERRQ(ierr);
   } else {
@@ -297,7 +297,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vAccum, DEFAULT_ACCUM_VALUE_NO_VAR); CHKERRQ(ierr);
   }
   if (HExists) {
-    ierr = nct.regrid_local_var("thk", 2, lic, grid, grid.da2, vH, g2, false);
+    ierr = nct.regrid_local_var("thk", 2, lic, grid.da2, vH, g2, false);
        CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vH,"thk","m",1.0); CHKERRQ(ierr);
   } else {
@@ -307,7 +307,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vH, DEFAULT_H_VALUE_NO_VAR); CHKERRQ(ierr); 
   }
   if (bExists) {
-    ierr = nct.regrid_local_var("topg", 2, lic, grid, grid.da2, vbed, g2, false);
+    ierr = nct.regrid_local_var("topg", 2, lic, grid.da2, vbed, g2, false);
        CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vbed,"topg","m",1.0); CHKERRQ(ierr);
   } else {
@@ -334,7 +334,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   //ierr = VecWAXPY(vh, 1.0, vbed, vH); CHKERRQ(ierr);  // ONLY APPLIED TO GROUNDED
   if (HmeltExists) {
-    ierr = nct.regrid_local_var("bwat", 2, lic, grid, grid.da2, vHmelt, g2, false);
+    ierr = nct.regrid_local_var("bwat", 2, lic, grid.da2, vHmelt, g2, false);
             CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vHmelt,"bwat","m",1.0); CHKERRQ(ierr);
   } else {
@@ -345,7 +345,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vHmelt,DEFAULT_HMELT_VALUE_NO_VAR); CHKERRQ(ierr);  
   }
   if (TsExists) {
-    ierr = nct.regrid_local_var("artm", 2, lic, grid, grid.da2, vTs, g2, false);
+    ierr = nct.regrid_local_var("artm", 2, lic, grid.da2, vTs, g2, false);
        CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vTs,"artm","K",1.0); CHKERRQ(ierr);
   } else {
@@ -355,7 +355,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vTs, DEFAULT_SURF_TEMP_VALUE_NO_VAR); CHKERRQ(ierr);
   }
   if (tillphiExists) {
-    ierr = nct.regrid_local_var("tillphi", 2, lic, grid, grid.da2, vtillphi, g2, false);
+    ierr = nct.regrid_local_var("tillphi", 2, lic, grid.da2, vtillphi, g2, false);
             CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vtillphi,"tillphi","degrees",1.0); CHKERRQ(ierr);
   } else {
@@ -365,7 +365,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vtillphi,DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);  
   }
   if (ghfExists) {
-    ierr = nct.regrid_local_var("bheatflx", 2, lic, grid, grid.da2, vGhf, g2, false);
+    ierr = nct.regrid_local_var("bheatflx", 2, lic, grid.da2, vGhf, g2, false);
             CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vGhf,"bheatflx","W m-2",1.0); CHKERRQ(ierr);
   } else {
@@ -375,7 +375,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *fname) {
     ierr = VecSet(vGhf, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
   }
   if (upliftExists) {
-    ierr = nct.regrid_local_var("dbdt", 2, lic, grid, grid.da2, vuplift, g2, false);
+    ierr = nct.regrid_local_var("dbdt", 2, lic, grid.da2, vuplift, g2, false);
        CHKERRQ(ierr);
     ierr = reportBIFVarFoundMinMax(vuplift,"dbdt","m a-1",secpera); CHKERRQ(ierr);
   } else {
@@ -460,7 +460,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   //    file and from information about the part of the grid owned by this processor
   size_t dim[5];  // dimensions in NetCDF file
   double bdy[7];  // limits and lengths in NetCDF file
-  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // see nc_util.cc
+  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
   dim[3] = grid.Mz;  // we ignor any 3D vars, if present, in NetCDF file, and use current grid info
   dim[4] = grid.Mbz;  
   // destructor is called at exit from readShelfStreamBCFromFile_netCDF():
@@ -472,13 +472,13 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
     masklevs.allowed_levels[0] = MASK_SHEET;
     masklevs.allowed_levels[1] = MASK_FLOATING;
     ierr = nct.set_MaskInterp(&masklevs); CHKERRQ(ierr);
-    ierr = nct.regrid_local_var("mask", 2, lic, grid, grid.da2, vMask, g2, true); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("mask", 2, lic, grid.da2, vMask, g2, true); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(3, grid.com, "  mask not found; leaving current values alone ...\n");
                CHKERRQ(ierr);
   }
-  ierr = nct.regrid_local_var("ubar", 2, lic, grid, grid.da2, vubar, g2, false); CHKERRQ(ierr);
-  ierr = nct.regrid_local_var("vbar", 2, lic, grid, grid.da2, vvbar, g2, false); CHKERRQ(ierr);
+  ierr = nct.regrid_local_var("ubar", 2, lic, grid.da2, vubar, g2, false); CHKERRQ(ierr);
+  ierr = nct.regrid_local_var("vbar", 2, lic, grid.da2, vvbar, g2, false); CHKERRQ(ierr);
 
   // we have already checked if "bcflag" exists, so just read it
   MaskInterp bclevs;
@@ -486,7 +486,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *fname) {
   bclevs.allowed_levels[0] = 0;
   bclevs.allowed_levels[1] = 1;
   ierr = nct.set_MaskInterp(&bclevs); CHKERRQ(ierr);
-  ierr = nct.regrid_local_var("bcflag", 2, lic, grid, grid.da2, vbcflag, g2, true); CHKERRQ(ierr);
+  ierr = nct.regrid_local_var("bcflag", 2, lic, grid.da2, vbcflag, g2, true); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
     stat = nc_close(ncid); CHKERRQ(nc_check(stat));

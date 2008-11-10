@@ -224,11 +224,11 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
   //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and equal to zero
   size_t dim[5];  // dimensions in bootstrap NetCDF file
   double bdy[7];  // limits and lengths for bootstrap NetCDF file
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy, grid.com); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
+  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
   double *z_bif, *zb_bif;
   z_bif = new double[dim[3]];
   zb_bif = new double[dim[4]];
-  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif, grid.com); CHKERRQ(ierr);
+  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif); CHKERRQ(ierr);
 
   LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
 
@@ -239,17 +239,17 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
     masklevs.allowed_levels[1] = 0;
     masklevs.allowed_levels[2] = 1;
     ierr = nct.set_MaskInterp(&masklevs); CHKERRQ(ierr);
-    ierr = nct.regrid_local_var("accur", 2, lic, grid, grid.da2, obsAccurate, myg2, true); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("accur", 2, lic, grid.da2, obsAccurate, myg2, true); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"'accur' does not exist");
   }
   if (magExists) {
-    ierr = nct.regrid_local_var("mag_obs", 2, lic, grid, grid.da2, obsMagnitude, myg2, true); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("mag_obs", 2, lic, grid.da2, obsMagnitude, myg2, true); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"'mag_obs' does not exist");
   }
   if (aziExists) {
-    ierr = nct.regrid_local_var("azi_obs", 2, lic, grid, grid.da2, obsAzimuth, myg2, true); CHKERRQ(ierr);
+    ierr = nct.regrid_local_var("azi_obs", 2, lic, grid.da2, obsAzimuth, myg2, true); CHKERRQ(ierr);
   } else {
     SETERRQ(3,"'azi_obs' does not exist");
   }
