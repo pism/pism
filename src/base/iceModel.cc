@@ -36,6 +36,8 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
 
   nct.set_grid(&grid);
 
+  bootstrapLIC = PETSC_NULL;
+  
   history_size = TEMPORARY_STRING_LENGTH;
   history = new char[history_size];
 
@@ -89,7 +91,9 @@ IceModel::~IceModel() {
     //verbPrintf(1,grid.com, "deleting basalSIA()\n");
     delete basalSIA;
   }
-
+  if (bootstrapLIC != PETSC_NULL) {
+    delete bootstrapLIC;
+  }
   //verbPrintf(1,grid.com, "Cleaning up the history string.\n");
   delete[] history;
 }

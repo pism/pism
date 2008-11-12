@@ -93,11 +93,13 @@ protected:
    static const int MASK_FLOATING;
    static const int MASK_FLOATING_OCEAN0;
 
-  IceGrid        &grid;
+  IceGrid            &grid;
 
   PolarStereoParams  psParams;
   
-  NCTool         nct;
+  NCTool             nct;
+
+  LocalInterpCtx     *bootstrapLIC;
 
   IceType               *ice;
   PlasticBasalType      *basal;
@@ -413,7 +415,6 @@ protected:
   // see iMvelocity.cc
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
   virtual PetscErrorCode vertVelocityFromIncompressibility();
-//  virtual PetscScalar    capBasalMeltRate(const PetscScalar bMR);
     
   // see iMviewers.cc
   int isViewer(char name);
