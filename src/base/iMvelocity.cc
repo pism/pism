@@ -273,7 +273,6 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
 
       if (includeBMRinContinuity == PETSC_TRUE) {
-//        w[0] -= capBasalMeltRate(basalMeltRate[i][j]);
         w[0] -= basalMeltRate[i][j];
       }
 
@@ -318,17 +317,4 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   return 0;
 }
 
-
-#if 0
-PetscScalar IceModel::capBasalMeltRate(const PetscScalar bMR) {
-  const PetscScalar MAX_BASALMELTRATE = 0.5/secpera;
-  if (bMR > MAX_BASALMELTRATE) {
-    return MAX_BASALMELTRATE;
-  } else if (bMR < -MAX_BASALMELTRATE) {
-    return -MAX_BASALMELTRATE;
-  } else {
-    return bMR;
-  }
-}
-#endif
 

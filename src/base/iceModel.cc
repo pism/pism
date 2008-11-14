@@ -419,6 +419,9 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
     if (tempAgeStep) { // do temperature and age
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
+      if (updateHmelt == PETSC_TRUE) {
+        ierr = diffuseHmelt(); CHKERRQ(ierr);
+      }
       ierr = verbPrintf(2,grid.com, "at"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);

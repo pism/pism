@@ -466,7 +466,7 @@ al.pdf}.
 {\sc E.~Bueler and J.~Brown}, {\em The shallow shelf
   approximation as a ``sliding law'' in a thermodynamically coupled ice sheet
   model}.
-\newblock preprint, 2008.
+\newblock submitted to JGR earth surface; also at \texttt{arxiv.org/abs/0810.3449}, 2008.
 
 \bibitem{BBL}
 {\sc E.~Bueler, J.~Brown, and C.~Lingle}, {\em Exact solutions to the

@@ -210,3 +210,54 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   return 0;
 }
 
+
+//! Apply explicit time step for pure diffusion to basal layer of melt water.
+/*!
+See preprint \lo\cite{BBssasliding}\elo.
+
+Uses vWork2d[0] to temporarily store new values for Hmelt.
+ */
+PetscErrorCode IceModel::diffuseHmelt() {
+  PetscErrorCode  ierr;
+  
+  // diffusion constant K in u_t = K \nabla^2 u is chosen so that fundmental
+  //   solution has standard deviation \sigma = 20 km at time t = 1000 yrs;
+  //   2 \sigma^2 = 4 K t
+  const PetscScalar K = 2.0e4 * 2.0e4 / (2.0 * 1000.0 * secpera),
+                    Rx = K * dtTempAge / (grid.dx * grid.dx),
+                    Ry = K * dtTempAge / (grid.dy * grid.dy);
+
+  // NOTE: restriction that
+  //    1 - 2 R_x - 2 R_y \ge 0
+  // is a maximum principle restriction; therefore new Hmelt will be between
+  // zero and Hmelt_max if old Hmelt has that property
+  const PetscScalar oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
+  if (oneM4R <= 0.0) {
+    SETERRQ(1,
+       "diffuseHmelt() has 1 - 2Rx - 2Ry <= 0 so explicit method for diffusion unstable\n"
+       "  (timestep restriction believed so rare that is not part of adaptive scheme)");
+  }
+
+  // communicate ghosted values so neighbors are valid
+  ierr = DALocalToLocalEnd(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+
+  PetscScalar **Hmelt, **Hmeltnew; 
+  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      Hmeltnew[i][j] = oneM4R * Hmelt[i][j]
+                       + Rx * (Hmelt[i+1][j] + Hmelt[i-1][j])
+                       + Ry * (Hmelt[i][j+1] + Hmelt[i][j-1]);
+    }
+  }
+  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
+
+  // finally copy new into vHmelt (and communicate ghosted values at same time)
+  ierr = DALocalToLocalBegin(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+
+  return 0;
+}
+
