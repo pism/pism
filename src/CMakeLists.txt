@@ -16,6 +16,7 @@ add_library (pismbase
   base/iMbootstrap.cc
   base/iMdefaults.cc
   base/iMforcing.cc
+  base/iMgeometry.cc
   base/iMgrainsize.cc
   base/iMinverse.cc
   base/iMmatlab.cc
@@ -69,7 +70,7 @@ add_executable (pismv pismv.cc
   verif/iceExactSSAModel.cc)
 target_link_libraries (pismv pismverif ${Pism_LIBS})
 
-add_executable (pgrn pgrn.cc
+add_executable (pgrn eismint/pgrn.cc
   eismint/iceGRNModel.cc)
 target_link_libraries (pgrn ${Pism_LIBS})
 

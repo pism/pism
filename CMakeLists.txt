@@ -1,6 +1,6 @@
 project (Pism)
 
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.6.2)
 
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
@@ -11,7 +11,7 @@ find_package (FFTW)
 
 # use the PETSc compiler as a hint when looking for an MPI compiler
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
-find_package (MPI REQUIRED)
+#find_package (MPI REQUIRED)
 
 # The default options cache
 option (Pism_BUILD_TESTS       "Build tests"                                           ON)
@@ -77,12 +77,12 @@ if (Pism_PEDANTIC_WARNINGS)
   set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
 endif (Pism_PEDANTIC_WARNINGS)
 
-include_directories (${PETSC_INCLUDE_PATH} ${GSL_INCLUDE_PATH} ${NetCDF_INCLUDE_PATH} ${MPI_INCLUDE_PATH})
-set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NetCDF_LIBRARIES} ${MPI_LIBRARIES})
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH})
+set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
 
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)
-  include_directories (${FFTW_INCLUDE_PATH})
+  include_directories (${FFTW_INCLUDE_DIRS})
   list (APPEND Pism_EXTERNAL_LIBS ${FFTW_LIBRARIES})
 else (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=0)
