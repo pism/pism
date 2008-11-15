@@ -337,7 +337,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
       divQ += H[i][j] * ( (ub[i+1][j] - ub[i-1][j]) / (2.0*dx)
                           + (vb[i][j+1] - vb[i][j-1]) / (2.0*dy) );
 
-      // time step to get new H
       Hnew[i][j] += (accum[i][j] - divQ) * dt;
       if (includeBMRinContinuity == PETSC_TRUE) {
          Hnew[i][j] -= basalMeltRate[i][j] * dt;

@@ -351,7 +351,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
           vb[i][j] = 0.0;
           Rb[i][j] = 0.0;
         } else {
-          // basal velocity from SIA-type sliding law: generally not recommended!
+          // basal velocity from SIA-type sliding law: not recommended!
           const PetscScalar
                   myx = -grid.Lx + grid.dx * i, 
                   myy = -grid.Ly + grid.dy * j,
@@ -422,6 +422,7 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
       }
     }
   } else {
+    // this case is not recommended!  don't use -mu_sliding POSITIVE
     PetscScalar **ub, **vb;
     ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
     ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
