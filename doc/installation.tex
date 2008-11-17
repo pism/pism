@@ -87,14 +87,16 @@
 \section*{Introduction}
 
 \large
-This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM is online at
+This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM including a \emph{User's Manual} and a \emph{Reference Manual} is online at
 \bigskip
 \begin{center}
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
 \end{center}
 \bigskip
+\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu), subsection \ref{subsec:debian}, then install a Python package following section \ref{sec:python}, and then use the online manuals.
+\vfill
 
-\emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \bigskip
+\noindent\emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \bigskip
 
 \centerline{\href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}}
 \vfill
@@ -118,8 +120,9 @@ This \emph{Installation Manual} describes how to download the PISM source code a
   St, Fifth Floor, Boston, MA 02110-1301 USA}
 \end{quote}
 
+
 \clearpage
-\section{Libraries needed by PISM}
+\section{Libraries and programs needed by PISM}
 \label{sec:prerequisites}
 
 \bigskip
@@ -164,9 +167,11 @@ These recommended prerequisites are needed to do all the examples in the \emph{U
 
 
 \newpage
-\section{Generic installation instructions}\label{sect:generic}
+\section{Installation Cookbook}\label{sec:cookbook}
 
-\subsection{Installing prerequisities}
+\subsection{Generic PISM installation, using PETSc source code}\label{subsec:generic}
+
+\subsubsection{Installing prerequisities}
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
 \item You will need a UNIX system with internet access. A GNU/Linux environment will be easiest but other UNIX versions have been
@@ -273,7 +278,7 @@ export PATH=$PETSC_DIR/externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/:$PATH
 \medskip See the table in the section \ref{sec:prerequisites} for a summary of the dependencies on external libraries, including
 those mentioned so far.
 
-\subsection{Installing PISM itself}
+\subsubsection{Installing PISM itself}
 \label{sec:pism-itself}
 At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
 
@@ -319,42 +324,16 @@ export PATH=/home/user/pism-dev/bin:/home/user/pism-dev/util:$PATH
 \end{enumerate}
 
 
-\subsection{Installing Python packages}
-\label{sec:recommended}
-
-If you're lucky, you might be able to install all the Python packages mentioned in section \ref{sec:prerequisites} using a package
-manager. On the other hand, |netcdf4-python| and |scikits.delaunay| are not currently available in Debian package repositories and
-are easy to install using Python setuptools (included with recent versions of Python).
-
-If you are using NetCDF 3.6.2, you can install |netcdf4-python| by downloading a tarball from
-\href{http://code.google.com/p/netcdf4-python/}{the project homepage}. After entering the directory you just untarred, run
-\begin{verbatim}
-$  sudo NETCDF3_DIR=/usr/ python setup-nc3.py install
-\end{verbatim}
-assuming that NetCDF was installed in the |/usr/| tree. And if you use NetCDF 4.0, do
-\begin{verbatim}
-$  sudo NETCDF4_DIR=/usr/ HDF5_DIR=/usr/ python setup.py install
-\end{verbatim}
-(again, assuming that HDF5 and NetCDF were installed in the |/usr/| tree.
-
-\bigskip
-Installing |scikits.delaunay| can be accomplished by running
-\begin{verbatim}
-$  svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
-$  cd delaunay; sudo python setup.py install
-\end{verbatim}
-
 \clearpage
-\section{Installing PISM on a Debian-based Linux system}
-\label{sec:debian}
-It is now possible to install all the PISM prerequisites on a Debian-based system (such as Ubuntu) using a package manager.
+\subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
+It is quicker to install all the PISM prerequisites on a Debian-based system (such as Ubuntu) using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
 
 \begin{enumerate}
-\item You will need to find and install (using |synaptic|, for example) the following packages:
+\item Find and install (using |apt-get| or |synaptic|, for example) the following packages:
   \begin{center}
-    \begin{tabular*}{0.9\linewidth}{p{0.15\linewidth}p{0.7\linewidth}}
+    \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
       \hline
-      Package name & Comments\\
+      \emph{Package name} & \emph{Comments}\\
       |petsc-dev| & depends on |libpetsc2.3.3-dev|; this package 
       depends on |libpetsc2.3.3|, |libopenmpi-dev|, |libx11-dev|,
       |libblas-dev|, |liblapack-dev|, |gfortran|, and others; 
@@ -362,27 +341,25 @@ It is now possible to install all the PISM prerequisites on a Debian-based syste
       replaces openmpi-bin\\
       |libgsl0-dev| & \\
       |libfftw3-dev| & \\
-      |netcdf-bin| & it might be a good idea to grab |nco| at the same time\\
+      |netcdf-bin| & (and perhaps grab |nco| at the same time)\\
       |libnetcdf-dev| & \\
-      |g++| & without this I (ELB) saw a compiler error: "gcc: error trying to exec 'cc1plus'"\\
+      |g++| & without this you may see a compiler error: ``|gcc: error| |trying to| |exec 'cc1plus'|''\\
       |subversion| & \\
       \hline
     \end{tabular*}
   \end{center}
-  Note that PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is
-  available.
 \item Get the PISM development version:
 \begin{verbatim}
 $  svn co http://svn.gna.org/svn/pism/trunk pism-dev
 \end{verbatim}
-(for |stable0.1|, do |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1|).
-\item Then, based on the ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, add the lines similar to
+(for |stable0.1|, do \quad\small |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1| \normalsize \quad).
+\item Based on the locations of installed files, add the lines similar to
 \begin{verbatim}
 export PETSC_DIR=/usr/lib/petscdir/2.3.3/
 export PETSC_ARCH=linux-gnu-c-opt
-export PATH=/home/bueler/pism-dev/bin/:/home/bueler/pism-dev/util/:$PATH
+export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
 \end{verbatim}
-  to your |.bashrc| equivalent.
+to your |.bashrc| equivalent.  (See ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, for example.)
 \item Next, enter |pism-dev| (or |pism0.1|) and build PISM by running
 \begin{verbatim}
 $  make
@@ -395,7 +372,7 @@ Running PISM might produce a warning message like the following:
 $ mpiexec -n 2 pismv -y 1
 libibverbs: Fatal: couldn't read uverbs ABI version.
 --------------------------------------------------------------------------
-[0,1,0]: OpenIB on host bueler-laptop was unable to find any HCAs.
+[0,1,0]: OpenIB on host user-laptop was unable to find any HCAs.
 Another transport will be used instead, although this may result in 
 lower performance.
 --------------------------------------------------------------------------
@@ -404,16 +381,16 @@ PISMV (verification mode)
 initializing Test A ...
 . . .
 \end{verbatim}
-According to \href{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html}{this} comment,
+According to this comment found online at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
 \begin{quote}
-   ``To get rid of the warning, you can either disable the use of the "openib" btl
-   in |/etc/openmpi/openmpi-mca-params.conf| or pass "|--mca btl ^openib|" to |mpirun|
-   or |mpiexec|. The configuration file contains a line to disable InfiniBand, you
-   just have to comment it out.''
+   To get rid of the warning, you can either disable the use of the ``|openib|'' btl
+   in |/etc/openmpi/openmpi-mca-params.conf| or pass ``|--mca btl ^openib|'' to |mpirun|
+   or |mpiexec|.  The configuration file contains a line to disable InfiniBand, you
+   just have to comment it out.
 \end{quote}
 \bigskip
 
-A final note, indirectly connected. There seems to be no |ncview| Debian package
+\subsubsection*{About \texttt{ncview}}  There seems to be no |ncview| Debian package
 yet.  But this sequence worked with minimal pain: grab latest source
 \begin{center}
   \url{ftp://cirrus.ucsd.edu/pub/ncview/ncview-1.93f.tar.gz}
@@ -425,11 +402,11 @@ $  ./configure --x-libraries=/usr/lib
 \end{verbatim}
 
 
-\clearpage
-\section{Installing PISM on Mac OS X}
-\label{sec:macosx}
 
-Please refer to section \ref{sect:generic} for the description of PISM's use of prerequisites and generic installation
+\clearpage
+\subsection{Installing PISM on Mac OS X}  \label{subsec:macosx}
+
+Please refer to section \ref{subsec:generic} for the description of PISM's use of prerequisites and generic installation
 instructions. This section describes an adaptation of the same process to the Mac OS X operating system.
 
 \begin{enumerate}
@@ -451,10 +428,6 @@ export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 $  sudo port install netcdf ncview gsl fftw-3
 \end{verbatim}
 to install NetCDF, ncview, GSL and FFTW.
-\item To install |netcdf4-python| to use with NetCDF 3.6.x, download the tarball from \href{http://code.google.com/p/netcdf4-python/}{the project's homepage} and run
-\begin{verbatim}
-$  sudo NETCDF3_DIR=/opt/local/ python setup-nc3.py install
-\end{verbatim}
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
   \href{ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/}{PETSc website}. Untar, then change to the directory just created.
   Unfortunately, the current\footnote{As of October 2008.} version (2.3.3-p15) has some issues and it is necessary to add the following lines to
@@ -497,7 +470,7 @@ $  make
 $  make install
 \end{verbatim}
   The first command includes the file |config/macosx_macports| into |build/Makefile|, modifying compiler and linker flags. See
-  section \ref{sec:config} for more info.
+  section \ref{subsec:config} for more info.
 
   Note that it might also be necessary to add
 \begin{verbatim}
@@ -506,39 +479,31 @@ export DYLD_LIBRARY_PATH=/home/user/pism-dev/lib/
   to your |.bashrc| or equivalent to tell the dynamic library loader where to find PISM libraries.
 \end{enumerate}
 
+
 \clearpage
-\section{If nothing else works: modifying makefiles}
-\label{sec:config}
+\subsection{If nothing else works: modifying makefiles}
+\label{subsec:config}
 
-On some platforms\footnote{Mac OS X is one example.} it is necessary to use compiler or linker flags different from ones used on
-Linux (which is the default). This can be done by editing the top-level makefile (|Makefile|) or |build/Makefile|, but there are
-other ways.
+On some platforms it is necessary to use compiler or linker flags different from ones used on
+Linux, the default.  This can be done by editing the top-level makefile (|Makefile|) or |build/Makefile|, but here is a more robust approach.
 
-By setting the environment variable |CONFIG| to |config/foo| one can include the file |config/foo| into the makefile.
-Note that it is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of
-them. (This is the way the PISM build process works on Mac OS X: by using |CONFIG=config/macosx_macports|, which see.)
+Set the environment variable |CONFIG| to |config/foo| to include the file |config/foo| into the makefile.  It is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of them.   This is the way the PISM build process works on Mac OS X, using |CONFIG=config/macosx_macports|.  There are two advantages of this approach: first, settings for different systems can be kept separate.  Second, this allows building PISM on different systems using the same set of makefiles, so an |svn update| is less likely to break the build process on your system.
 
-There are two advantages of this approach: first, settings for different systems can be kept separate. Second, this allows
-building PISM on different systems using the same set of makefiles, so |svn commit| can not break the build process on systems
-other than yours.
 
-Another possible use, besides building PISM on platforms other than Linux, is adding extra |make| targets.
 
 \clearpage
 \section{Quick tests of the installation}
-Once you're done with the installation, we recommend going through the next few items as they allow you to observe
-that PISM is functioning correctly.
+Once you're done with the installation, a few tests can confirm that PISM is functioning correctly.
 \begin{enumerate}
-\item Try the MPI four processor verification run:
+\item Try a MPI four processor verification run:
 
 \verb|mpiexec -n 4 pismv -test G -y 200|
 
 \noindent If you see some output and a final \verb|Writing model state| \verb|to file 'verify.nc'| \verb|... done| then PISM
-completed successfully. Note that at the end of this run you get measurements of the difference between the numerical result and
+completed successfully.  At the end of this run you get measurements of the difference between the numerical result and
 the exact solution.\footnote{Bueler and others, 2007.  \emph{Exact solutions to the thermomechanically coupled shallow ice approximation: effective tools for verification}, J.~Glaciol.~53 (182), pp.~499--516}
 
-\noindent This should work even if there is only one actual processor on your machine, in which case MPI will run multiple
-processes on the one processor, naturally.
+\noindent This should work even if there is only one actual processor (core) on your machine, in which case MPI will just run multiple processes on the one processor.
 
 \item Try a verification run using the PETSc viewers (under the X window system):
 
@@ -559,40 +524,69 @@ processes on the one processor, naturally.
 \noindent If you would like us to confirm that PISM is working as expected please save the one page or so of output from this script and send it to us (\href{mailto:help@pism-docs.org}{help@pism-docs.org}).  See section \emph{Verification} of the \emph{User's Manual} for more on PISM verification.
 \end{enumerate}
 
-The next step is to start with the \emph{PISM User's Manual}.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with additional technical documentation.  A completely up-to-date \emph{User's Manual} can be built from \LaTeX~source in the |doc\| subdirectory, as described in the next section.
+\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a \emph{Reference Manual} and additional technical documentation.
 
-A final reminder with respect to installation: Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory.  This will run |svn update| and then |make all install| if necessary.
+Completely up-to-date \emph{Manual}s can be built from \LaTeX~source in the |doc\| subdirectory, as described in the next section.
+
+A final reminder with respect to installation: Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory.  This will run |svn update| and then |make all install| if there were updates from the source code repository.
+
+
+\newpage
+\section{Installing Python packages}
+\label{sec:python}
+
+If you're lucky, you might be able to install all the Python packages mentioned in section \ref{sec:prerequisites} using a package
+manager. On the other hand, |netcdf4-python| is not currently available in Debian package repositories and
+are easy to install using Python setuptools (included with recent versions of Python).  And you might not be using a package manager, of course.
+
+If you are using NetCDF 3.6.2, you can install |netcdf4-python| by downloading a tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.  After entering the directory you just untarred, run
+\begin{verbatim}
+$  sudo NETCDF3_DIR=/usr/ python setup-nc3.py install
+\end{verbatim}
+assuming that NetCDF was installed in the |/usr/| tree.   Under Mac OS X,
+\begin{verbatim}
+$  sudo NETCDF3_DIR=/opt/local/ python setup-nc3.py install
+\end{verbatim}
+
+The scripts in directories |example/eisgreen| and |example/eisross|, which need |netcdf4-python|, should now run as is.
+
+\subsubsection*{Python package \texttt{scikits.delaunay}}
+\begin{verbatim}
+$  svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
+$  cd delaunay; sudo python setup.py install
+\end{verbatim}
+
+\subsubsection*{If you use NetCDF 4.0}
+\begin{verbatim}
+$  sudo NETCDF4_DIR=/usr/ HDF5_DIR=/usr/ python setup.py install
+\end{verbatim}
+(assuming that HDF5 and NetCDF were installed in the |/usr/| tree)
 
 
 \newpage
 \section{Rebuilding PISM documentation}
 \label{sec:docs}
 
-If you're using the development version of PISM, you might want to (re-)build the documentation (this document, the \emph{User's
-  Manual}, the \emph{Reference Manual} and the \emph{Class browser}) from source, as PISM and its documentation evolve together.
-
-The following table lists the tools required:
+If you're using the development version of PISM, you might want to rebuild the documentation from source, as PISM and its documentation evolve together.  These tools are required:
+\bigskip
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{llp{0.55\linewidth}}
     \hline
     \LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} &  for rebuilding this \emph{Installation Manual}, the \emph{User's Manual} and the \emph{Reference Manual} from source\\
-    |doxygen|\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} &  for rebuilding the \emph{Reference Manual} and the \emph{Source Code Browser} from source  \\
+    |doxygen|\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} &  for rebuilding the \emph{Reference Manual} and the \emph{C++ class Browser} from source  \\
     \hline
   \end{tabular*}
 \end{center}
-
-After obtaining PISM source by
-\begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/trunk pism-dev
-\end{verbatim}
-a directory called ``|pism-dev|'' will be created. To rebuild PISM documentation, change to that directory and do
+\bigskip
+\noindent To rebuild PISM documentation, change to the PISM root directory and do
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{lp{0.8\linewidth}}
     |make userman| & to build the \emph{User's Manual}, |doc/manual.pdf|\\
     |make refman| & to build the \emph{Reference Manual}, |doc/refman.pdf|\\
     |make installation| & to build this document, the \emph{Installation Manual}, |doc/installation.pdf|\\
-    |make summary| & to build the \emph{PISM summary}, |doc/pism_summary.pdf|\\
-    |make fullbib| & to build the \emph{Complete Bibliography for PISM}, |doc/fullbib.pdf|
+    |make browser| & to build the \emph{C++ class browser}, |doc/doxy/index.html|\\
+    |make summary| & to build a PISM executive summary, |doc/pism_summary.pdf|\\
+    |make fullbib| & to build  a complete bibliography from |doc/ice_bib.bib|, |doc/fullbib.pdf|
   \end{tabular*}
 \end{center}
 
