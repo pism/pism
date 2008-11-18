@@ -39,10 +39,6 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   // start temperature & age communication
   ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
   ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
-  if (updateHmelt == PETSC_TRUE) {
-    // diffusing Hmelt means differencing, so must communicate ghosted
-    ierr = DALocalToLocalBegin(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
-  }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 

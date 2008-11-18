@@ -129,37 +129,46 @@ This \emph{Installation Manual} describes how to download the PISM source code a
 The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.
 \bigskip
 \newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
-
 \fattablespacing
 \newcommand\pairstack[2]{#1 \quad (\small#2\normalsize)}
 %\newcommand\pairstack[2]{\begin{tabular}{lc} #1 \\ \quad (\small#2\normalsize)\end{tabular}}
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\hline
-  \textbf{Required Library/Program} & \textbf{Comment} \\
-  &  \\
+  \textbf{Required Library} & \textbf{Comment} \\
   \pairstack{GSL}{\href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}}}  &  \\
   \pairstack{MPI}{\href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}}}  & \\
   \pairstack{NetCDF}{\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}}  & \\
   \pairstack{PETSc}{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}}}  & version $\ge$ \PETSCREL \\
-  \pairstack{Python}{\href{http://python.org/}{\t{python.org}}}  & used during PETSc configuration \\
-  \pairstack{Subversion}{\href{http://subversion.tigris.org/}{\t{subversion.tigris.org}}}  & \\ 
+  \hline
+\end{tabular*}
+\end{center}
+\normalspacing\bigskip
+
+\noindent One library is only used for the earth deformation (``isostatic rebound'') model
+\bigskip
+\fattablespacing
+\begin{center}
+\begin{tabular*}{1.0\linewidth}{ll}\hline
+  \textbf{Recommended Library} & \textbf{Comment} \\
+  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}}\hspace{1.9in} & if not present set |PISM_HAVE_FFTW=0|\\
   \hline
 \end{tabular*}
 \end{center}
 \normalspacing
+\bigskip
+
+\noindent In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.
 
 \vspace{0.5in}
-These recommended prerequisites are needed to do all the examples in the \emph{User's Manual}.
+These Python packages are needed to do all the examples in the \emph{User's Manual} by running python scripts.  Some are used more often in Python scripts than others.
 \bigskip\fattablespacing
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\hline
-  \textbf{Recommended Library/Program} & \textbf{Comment} \\
-  & \\
-  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}} & needed for earth deformation; if not present set |PISM_HAVE_FFTW=0|\\
-  \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in Python scripts \\
-  \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in Python scripts  \\    
-  \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in Python scripts  \\
-  \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in Python scripts \\
+  \textbf{Recommended Python Package} & \textbf{Importance} \\
+  \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in some scripts \\
+  \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in \emph{most} scripts  \\    
+  \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in \emph{most} scripts \\
+  \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in only one script \\
   \hline
 \end{tabular*}
 \end{center}

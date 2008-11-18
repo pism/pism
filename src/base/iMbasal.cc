@@ -239,6 +239,7 @@ PetscErrorCode IceModel::diffuseHmelt() {
   }
 
   // communicate ghosted values so neighbors are valid
+  ierr = DALocalToLocalBegin(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
 
   PetscScalar **Hmelt, **Hmeltnew; 
