@@ -911,21 +911,21 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \end{comment}
 
 
-\subsection{MISMIP in PISM}\label{subsect:MISMIP}  This intercomparison is described at the webpage
+\subsection{MISMIP in PISM}\label{subsect:MISMIP}  This intercomparison addresses grounding line dynamics by considering an idealized one-dimensional stream-shelf system.  The intercomparison process is described at the website
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
 
-\noindent The full text description, available at the above site as \verb|.pdf|, is essential reading.  It is essential both to understand MISMIP results and many of the comments in this subsection.
+\noindent and there is a full text description available there.  It is essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
 
-PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the flow line case (as considered in MISMIP).  In fact, \cite{SchoofMarine1} shows that the only effect on an ice shelf in the flow line case is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  This analysis does not apply to general ice shelves with two horizontal dimensions, however.  Real ice shelves, which are the modelling goal in PISM, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  In fact, PISM was first used to model a two horizontal dimension ice shelf, namely the Ross ice shelf example in section \ref{sect:ross}.
+PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  In fact, the analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf in the flow line case is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  This analysis does not apply to general ice shelves with two horizontal dimensions, however.  Real ice shelves, which are the modelling goal in PISM, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  See the Ross ice shelf example in section \ref{sect:ross}, for example.
 
-Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP, and we consider the affect on grounding line dynamics.  We make the base of the ice shelves have very small resistance, namely $10^4$ less linear drag than is typical of a Siple coast ice stream \cite{HulbeMacAyeal}, because this seems to have the effect of stabilizing the ice shelf.
+Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP.  We consider the grounding line dynamics properties the usual PISM code, though in a highly symmetric case without side drag.
 
 Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$y$''.  We periodize the cross-flow direction ``$x$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-Mx 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes.
 
-PISM has two applicable ice dynamics models, the \verb|-model 1| and \verb|-model 2| options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
+PISM has two applicable ice dynamics models corresponding to the \verb|-model 1| and \verb|-model 2| options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 
-There are many runs for the complete MISMIP, namely $62$ runs for each model and grid choice.  As there are two models and three (suggested) grid choices, a full suite is $6 \times 62 = 372$ runs.  As usual, however, the finest grid accounts for all the run time.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.\footnote{For the intercomparison submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.}
+There are many runs for a complete MISMIP intercomparison submission.  There are $62$ runs for each model and grid choice, and there are two models and three (suggested) grid choices, so a full suite is $6 \times 62 = 372$ runs.  The finest grid runs account for all the compute time, however.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.  For the PISM MISMIP submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.
  
 \begin{table}[ht]
 \caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options (Appendix \ref{sect:options}).\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
@@ -955,9 +955,6 @@ There are many runs for the complete MISMIP, namely $62$ runs for each model and
            &  & (``\verb|_M2_|''); any other value is grid mode 3 (``\verb|_M3_|'') \\
 \verb|-shelves_drag_too| &  & using this option has no effect because shelf drag is on \\
                          &  & by default in MISMIP; see \verb|-no_shelf_drag| to turn off  \\
-\verb|-ssa_min_thk| & 5 & m; calving-front boundary condition is dealt with by  \\
-                    &   & extending the ice beyond $|y|=1600$ km with a shelf  \\
-                    &   & of this thickness; changing this has some effect  \\
 \hline\normalsize
 \end{tabular}\end{table}
 
@@ -998,6 +995,9 @@ The implementation of MISMIP in PISM conforms fairly closely to the intercompari
 \dots we require that the rate of change of grounding line position be $0.1$ m/a or less, while the rate of change of ice thickness at each grid point at which ice thickness is defined must be less than $10^{-4}$ m/a \dots
 \end{quotation}
 as a standard for ``steady state''.  Because the grounding line undergoes only discrete jumps on the grid, because it shows great stability, and because in two horizontal dimensions there is no well-defined ``rate of change of grounding line position'' which would be generally implementable in PISM, we do not check the grounding line movement criterion.  Steady state is achieved if the ice thickness criterion holds.  However, we report enough information, in the required ASCII files with names ending in \verb|_t|, to compute a grounding line rate.
+
+Also, two physical parameters regarding PISM's ice shelf model need comment.  First, we make the base of the ice shelves have very small resistance, using $10^{-4}$ times the linear drag typical of a Siple coast ice stream \cite{HulbeMacAyeal}, because this seems to have the effect of stabilizing the ice shelf.  Second, there is no direct implementation of the calving front force imbalance associated to the calving front.  Instead, an ice shelf extension of strength equivalent to a $5$ m ice shelf is added at points which have zero thickness ice.
+
 
 \begin{figure}[ht]
 \includegraphics[width=4.0in,keepaspectratio=true]{figs/SM_1a_A1}
@@ -1804,17 +1804,15 @@ Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
 \optdef{adapt\und ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
 
+\opt{eta}  The surface gradient is usually computed in the obvious way by finite differences applied to the surface elevation $h$.  Specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if this option is set we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
+	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
+Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
+
 \optdef{low\und temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-max_low_temps|.
 
 \optdef{max\und dt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sect:usage}.
 
 \optdef{max\und low\und temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \verb|-verbose| is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-low_temp| for the cutoff low temperature.
-
-\opt{no\und eta}  The surface gradient is usually computed by first transforming the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
-	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
-Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformation generally has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  (See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.)
-
-With the \verb|-no_eta| option the surface gradient is computed the old-fashioned way, by simple centered-differences on the surface elevation.  The old-fashioned way is slightly faster (e.g.~at most $20\%$ faster).
 
 \optdef{skip}{10}  Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done.  This is only effective if the time step is being limited by the diffusivity time step restriction associated to mass continuity using the SIA.  The maximum recommended value for \verb|-skip| is, unfortunately, dependent on the context.  The temperature field should be updated when the surface changes significantly, and likewise the basal sliding velocity if it comes (as it should) from the SSA calculation.
 
@@ -1830,8 +1828,6 @@ With the \verb|-no_eta| option the surface gradient is computed the old-fashione
 \optdef{ssa\und eps}{1.0e15}  The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$. 
 
 In fact there is a double regularization by default because the Schoof regularization mechanism described in equation (4.1) of \cite{SchoofStream} is also used.  Turn off this lower bound mechanise by \verb|-ssa_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-reg_vel_schoof| and \verb|-reg_length_Schoof| below.  Note \verb|-ssa_eps| is set to zero automatically when running \verb|pismv -test I|.
-
-\optdef{ssa\und min\und thk}{5}  When ice free ocean is present and we are solving the SSA for the velocity in ice shelves, we extend a virtual ice shelf everywhere with this thickness.  This takes the place of a principled calving front force imbalance boundary condition.  Units of m.
 
 \optdef{ssa\und maxi}{300}  This option sets the maximum allowed number of nonlinear iterations in solving the shallow shelf approximation.  One should usually use option \verb|-ssa_rtol| to control convergence of the nonlinear iteration.
 

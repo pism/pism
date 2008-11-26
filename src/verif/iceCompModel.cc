@@ -117,7 +117,7 @@ IceCompModel::~IceCompModel() {
     compVecsCreated = PETSC_FALSE;
   }
   if (vHexactLCreated == PETSC_TRUE) {
-    SigmaComp3.destroy();
+    VecDestroy(vHexactL);
     vHexactLCreated = PETSC_FALSE;
   }
 }
@@ -468,6 +468,7 @@ PetscErrorCode IceCompModel::initTestL() {
 
   // store copy of vH for "-eo" runs and for evaluating geometry errors
   ierr = VecDuplicate(vh, &vHexactL); CHKERRQ(ierr);
+  vHexactLCreated = PETSC_TRUE;
   ierr = VecCopy(vH, vHexactL); CHKERRQ(ierr);
   return 0;
 }

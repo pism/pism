@@ -46,6 +46,8 @@ def verify(test):
         testdo = testdo + ' -quadZ'
       elif (uneq == 2):
         testdo = testdo + ' -chebZ'
+      if (doeta):
+        testdo = testdo + ' -eta'
       print ' trying \"' + testdo + '\"'
       testdo = testdo + ' -verbose 1'  # only need final errors anyway
       try:
@@ -90,26 +92,26 @@ KSPRTOL = 1e-12 # for test I
 SSARTOL = 5e-7   # ditto
 
 ## tests and additional info for verification
-## order here is for convenience and speed: generally do easier (faster) tests first
+## tests F and G go last because they take the longest time to run
 alltests = [
+   ['A',[31,41,61,81,121],
+        'isothermal SIA w marine margin',0,' -Mz 31 -y 25000.0',
+        '(refine dx=53.33,40,26.67,20,13.33,km, dx=dy and Mx=My=31,41,61,81,121)'],
    ['B',[31,41,61,81,121],
-        'isothermal SIA w moving margin',0,' -Mz 31 -no_eta -ys 422.45 -y 25000.0',
+        'isothermal SIA w moving margin',0,' -Mz 31 -ys 422.45 -y 25000.0',
         '(refine dx=80,60,40,30,20,km, dx=dy and Mx=My=31,41,61,81,121)'],
    ['C',[41,61,81,101,121],
-        'isothermal SIA w moving margin',0,' -Mz 31 -no_eta -y 15208.0',
+        'isothermal SIA w moving margin',0,' -Mz 31 -y 15208.0',
         '(refine dx=50,33.33,25,20,16,km, dx=dy and Mx=My=41,61,81,101,121)'],
    ['D',[41,61,81,101,121],
-        'isothermal SIA w variable accumulation',0,' -Mz 31 -no_eta -y 25000.0',
+        'isothermal SIA w variable accumulation',0,' -Mz 31 -y 25000.0',
         '(refine dx=50,33.33,25,20,16.67,km, dx=dy and Mx=My=41,61,81,101,121)'],
-   ['A',[31,41,61,81,121],
-        'isothermal SIA w marine margin',0,' -Mz 31 -no_eta -y 25000.0',
-        '(refine dx=53.33,40,26.67,20,13.33,km, dx=dy and Mx=My=31,41,61,81,121)'],
    ['E',[31,41,61,81,121],
-        'isothermal SIA w sliding',0,' -Mz 31 -no_eta -y 25000.0',
+        'isothermal SIA w sliding',0,' -Mz 31 -y 25000.0',
         '(refine dx=53.33,40,26.67,20,13.33,km, dx=dy and Mx=My=31,41,61,81,121)'],
    ['H',[31,41,61,81,121],
         'isothermal SIA w moving margin and isostatic bed deformation\n     ',
-        0,' -Mz 31 -no_eta -bed_def_iso -y 60000.0',
+        0,' -Mz 31 -bed_def_iso -y 60000.0',
         '(refine dx=80,60,40,30,20,km, dx=dy and Mx=My=31,41,61,81,121)'],
    ['I',[49,193,769,3073,12289],'plastic till ice stream',1,
         ' -Mx 5 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
@@ -122,7 +124,7 @@ alltests = [
         '(refine dz=100,50,25,12.5,6.25,m, Mz=41,81,161,321,641)',
         [15,28,55,108,215]],
    ['L',[31,61,91,121,181],
-        'isothermal SIA w non-flat bed',0,' -Mz 31 -no_eta -y 25000.0',
+        'isothermal SIA w non-flat bed',0,' -Mz 31 -y 25000.0',
         '(refine dx=60,30,20,15,10,km, dx=dy and Mx=My=31,61,91,121,181)'],
    ['F',[61,91,121,181,241],'thermocoupled SIA',2,' -y 25000.0',
         '(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m\n'
@@ -135,6 +137,7 @@ alltests = [
 ]
 
 ## get options:
+##   -e to add "-eta" option
 ##   -l for number of levels
 ##   -m for MPI executable (e.g. mpirun or mpiexec)
 ##   -n for number of processors
@@ -148,9 +151,10 @@ mpi = MPIDO
 pref = PREFIX
 letters = TESTS
 uneq = 0
+doeta = False
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:m:n:l:t:u:",
-                             ["prefix=", "mpido=", "nproc=", "levels=", "tests=", "unequal="])
+  opts, args = getopt.getopt(sys.argv[1:], "ep:m:n:l:t:u:",
+                             ["eta","prefix=","mpido=","nproc=","levels=","tests=","unequal="])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
       pref = arg
@@ -164,6 +168,8 @@ try:
       letters = arg
     elif opt in ("-u", "--uneq"):
       uneq = string.atoi(arg)
+    elif opt in ("-e", "--eta"):
+      doeta = True
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)

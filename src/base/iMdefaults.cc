@@ -171,7 +171,7 @@ PetscErrorCode IceModel::setDefaults() {
   ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
   
   computeSIAVelocities = PETSC_TRUE;
-  transformForSurfaceGradient = PETSC_TRUE;
+  transformForSurfaceGradient = PETSC_FALSE;
 
   useSSAVelocity = DEFAULT_USE_SSA_VELOCITY;
   doPlasticTill = DEFAULT_DO_PLASTIC_TILL;

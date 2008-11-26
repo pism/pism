@@ -44,7 +44,7 @@ PetscErrorCode  IceModel::setFromOptions() {
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
               mydoSuperpose, mydoSkip, plasticRegSet, regVelSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
-              maxdtSet, noMassConserve, noTemp, noEtaSet, doShelvesDragToo,
+              maxdtSet, noMassConserve, noTemp, etaSet, doShelvesDragToo,
               mygsConstantSet;
   PetscScalar my_maxdt, my_nuH, myRegVelSchoof, my_barB,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
@@ -140,6 +140,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
+  ierr = PetscOptionsHasName(PETSC_NULL, "-eta", &etaSet); CHKERRQ(ierr);
+  if (etaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
+
 // note "-f3d" is read in writefiles() in iMIO.cc
 
   // whether or not to kill ice (zero thickness) if it is (or becomes) floating
@@ -188,9 +191,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &grid.Mz, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &grid.Mbz, PETSC_NULL); CHKERRQ(ierr);
-
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_eta", &noEtaSet); CHKERRQ(ierr);
-  if (noEtaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_FALSE;
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
@@ -331,9 +331,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-ssa_maxi", &ssaMaxIterations,
            PETSC_NULL); CHKERRQ(ierr);
            
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_min_thk", &min_thickness_SSA, PETSC_NULL);
-       CHKERRQ(ierr);
-
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
            PETSC_NULL); CHKERRQ(ierr);
 

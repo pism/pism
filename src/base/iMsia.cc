@@ -25,10 +25,11 @@
 /*! 
 There are two methods for computing the surface gradient.  
 
-The default is to directly differentiate the surface elevation \f$h\f$ by the
-Mahaffy method \lo\cite{Mahaffy}\elo.
+The default method is to directly differentiate 
+the surface elevation \f$h\f$ by the Mahaffy method \lo\cite{Mahaffy}\elo.
 
-An option, chosen by <tt>-grad_from_eta</tt>,  is to transform the thickness 
+The alternative method, using option <c>-eta</c> which sets 
+<c>transformForSurfaceGradient = PETSC_TRUE</c>, is to transform the thickness 
 to something more regular and differentiate that.  We get back to the gradient 
 of the surface by applying the chain rule.  In particular, as shown 
 in \lo\cite{CDDSV}\elo for the flat bed and \f$n=3\f$ case, if we define
@@ -36,12 +37,18 @@ in \lo\cite{CDDSV}\elo for the flat bed and \f$n=3\f$ case, if we define
 then \f$\eta\f$ is more regular near the margin than \f$H\f$.  So we compute
 the surface gradient by
    \f[\nabla h = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b,\f]
-recalling that \f$h = H + b\f$.  This method is only applied when \f$\eta > 0\f$ at a given point;
-otherwise \f$\nabla h = \nabla b\f$.
+recalling that \f$h = H + b\f$.  This method is only applied when \f$\eta > 0\f$
+at a given point; otherwise \f$\nabla h = \nabla b\f$.
 
-In this optional method we are computing the gradient by finite differences onto 
-a staggered grid.  So we apply centered differences using (roughly) the same method for \f$\eta\f$ and 
-\f$b\f$ that \lo\cite{Mahaffy}\elo applies directly to the surface elevation \f$h\f$.
+In both cases we are computing the gradient by finite differences onto 
+a staggered grid.  In the method with \f$\eta\f$ we apply centered differences
+using (roughly) the same method for \f$\eta\f$ and \f$b\f$ that applies 
+directly to the surface elevation \f$h\f$ in the alternative method.
+
+The resulting surface gradient on the staggered grid is in four \c Vecs,
+<c>vWork2d[k]</c> for \c k=0,1,2,3; recall there are two staggered grid points
+per regular grid point.  These \c Vecs are used in velocitySIAStaggered(),
+basalSlidingHeatingSIA(), and horizontalVelocitySIARegular().
  */
 PetscErrorCode IceModel::surfaceGradientSIA() {
   PetscErrorCode  ierr;
@@ -116,7 +123,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     }
     ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &eta); CHKERRQ(ierr);
     ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  } else {  // if transformForSurfaceGradient == FALSE; the old way
+  } else {  // if transformForSurfaceGradient == FALSE; the Mahaffy scheme
     PetscScalar **h;
     ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
