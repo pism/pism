@@ -123,7 +123,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       // first allocate space for nu (which will be calculated from formula)
       ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true); CHKERRQ(ierr);
       ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true); CHKERRQ(ierr);
-      // we set a flag because the grid is truely periodic
+      // we set last two flags: grid is truely periodic both in x and in y
       ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000, PETSC_TRUE, PETSC_TRUE);
          CHKERRQ(ierr);
       ierr = afterInitHook(); CHKERRQ(ierr);
