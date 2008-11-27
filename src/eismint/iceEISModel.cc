@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -155,14 +155,14 @@ PetscErrorCode IceEISModel::initFromOptions() {
     // following will be part of saved state; not reset if read from file
     // if no inFile then starts with zero ice
     const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
-    ierr = VecSet(vh, 0);
-    ierr = VecSet(vH, 0);
-    ierr = VecSet(vbed, 0);
-    ierr = VecSet(vHmelt, 0.0);
-    ierr = VecSet(vGhf, G_geothermal);
+    ierr = vh.set(0.0);
+    ierr = vH.set(0.0);
+    ierr = vbed.set(0.0);
+    ierr = vHmelt.set(0.0);
+    ierr = vGhf.set(G_geothermal);
     setInitialAgeYears(initial_age_years_default);
-    ierr = VecSet(vMask, MASK_SHEET);
-    ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no expers have uplift at start
+    ierr = vMask.set(MASK_SHEET);
+    ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
     // note height of grid must be great enough to handle max thickness
     const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
@@ -242,8 +242,8 @@ PetscErrorCode IceEISModel::initAccumTs() {
   PetscScalar       **accum, **Ts;
 
   // now fill in accum and surface temp
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr =    vTs.get_array(Ts); CHKERRQ(ierr);
+  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -256,8 +256,8 @@ PetscErrorCode IceEISModel::initAccumTs() {
       Ts[i][j] = T_min + S_T * r;                 // formula (8) in (Payne et al 2000)
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vTs.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -270,18 +270,18 @@ PetscErrorCode IceEISModel::fillintemps() {
 
   // fill in all ice temps with Ts and then have bedrock (if present despite EISMINT
   //   standard) temperatures reflect default geothermal rate
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
+      ierr = T3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
       ierr = bootstrapSetBedrockColumnTemp(i,j,Ts[i][j],G_geothermal); CHKERRQ(ierr);
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vTs.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Tb3.end_access(); CHKERRQ(ierr);
 
   // communicate T because it will be horizontally differentiated
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
@@ -304,7 +304,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
   PetscScalar          topg, **b;
 
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * dx, ewd = j *dy;
@@ -317,11 +317,12 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
       b[i][j] = topg;
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   // communicate b because it will be horizontally differentiated
-  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+
   ierr = verbPrintf(3,grid.com,
                "trough bed topography stored by IceEISModel::generateTroughTopography()\n");
                CHKERRQ(ierr);
@@ -340,7 +341,7 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   const PetscScalar    dx = grid.dx, dy = grid.dy;
   PetscScalar          topg, **b;
 
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * dx, ewd = j *dy;
@@ -348,11 +349,11 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
       b[i][j] = topg;
     }
   }
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   // communicate b because it will be horizontally differentiated
-  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
            "mound bed topography stored by IceEISModel::generateTroughTopography()\n");
            CHKERRQ(ierr);

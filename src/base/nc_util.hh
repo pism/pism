@@ -1,4 +1,4 @@
-// Copyright (C) 2007, 2008 Jed Brown and Ed Bueler
+// Copyright (C) 2007, 2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -61,19 +61,19 @@ public:
   int start[5], count[5];    // Indices in netCDF file.
   double *a;
   int a_len;
-  int ncid;
   int nz, nzb;
   double *zlevs, *zblevs;
   bool regrid_2d_only, no_regrid_bedrock;
 
 public:
-  LocalInterpCtx(int ncid, const size_t dim[], const double bdy[],
+  LocalInterpCtx(const size_t dim[], const double bdy[],
                  const double zlevsIN[], const double zblevsIN[], IceGrid &grid);
   ~LocalInterpCtx();
   int kBelowHeight(const double height, MPI_Comm com);
   int kbBelowHeight(const double elevation, MPI_Comm com);
   PetscErrorCode printGrid(MPI_Comm com);
   PetscErrorCode printArray(MPI_Comm com);
+protected:
 };
 
 
@@ -88,55 +88,64 @@ int check_err(const int stat, const int line, const char *file);
 
 //! Collects together parallel NetCDF methods used by IceModel and IceModelVec.
 class NCTool {
+public:
+  int ncid;
 
 public:
   NCTool(IceGrid *my_grid);
   NCTool();
   PetscErrorCode set_grid(IceGrid *my_grid);
-  PetscErrorCode open_or_create(const char filename[], int *ncidp);
-  bool check_dimension(const int ncid, const char dim[], const int len);
-  bool check_dimensions(const int ncid);
-  PetscErrorCode create_dimensions(const int ncid);
-  PetscErrorCode write_history(const int ncid, const char history[]);
-  PetscErrorCode get_last_time(int ncid, double *time);
-  PetscErrorCode get_dims_limits_lengths(int ncid, size_t dim[], double bdy[]);
-  PetscErrorCode get_dims_limits_lengths_2d(int ncid, size_t dim[], double bdy[]);
-  PetscErrorCode get_vertical_dims(int ncid, const int z_len, const int zb_len, 
+  PetscErrorCode open_for_reading(const char filename[], bool &exists);
+  PetscErrorCode open_for_writing(const char filename[]);
+  PetscErrorCode close();
+  PetscErrorCode find_variable(const char short_name[], const char standard_name[],
+			       int *varid, bool &exists);
+  PetscErrorCode find_dimension(const char short_name[], int *dimid, bool &exists);
+  PetscErrorCode create_dimensions();
+  PetscErrorCode append_time(PetscReal time);
+  PetscErrorCode write_global_attrs(bool have_ssa_velocities, const char conventions[]);
+  PetscErrorCode write_history(const char history[]);
+  PetscErrorCode get_last_time(double *time);
+  PetscErrorCode get_dims_limits_lengths(size_t dim[], double bdy[]);
+  PetscErrorCode get_dims_limits_lengths_2d(size_t dim[], double bdy[]);
+  PetscErrorCode get_vertical_dims(const int z_len, const int zb_len, 
 				   double z_read[], double zb_read[]);
 
-  PetscErrorCode put_dimension(int ncid, int v_id, int len, PetscScalar *vals);
-  PetscErrorCode put_dimension_regular(int ncid, int v_id, int len, double start, double delta);
+  PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals);
+  PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta);
 
-  PetscErrorCode get_local_var(int ncid, const char *name, // remove
-			       DA da, Vec v, Vec g, const int *s, const int *c,
+  PetscErrorCode read_polar_stereographic(double &straight_vertical_longitude_from_pole,
+					  double &latitude_of_projection_origin,
+					  double &standard_parallel);
+  PetscErrorCode write_polar_stereographic(double straight_vertical_longitude_from_pole,
+					   double latitude_of_projection_origin,
+					   double standard_parallel);
+
+  PetscErrorCode get_local_var(const int varid, DA da, Vec v, Vec g,
+			       const int *s, const int *c,
 			       int dims, void *a_mpi, int a_size);
-  PetscErrorCode get_global_var(int ncid, const char *name, // remove 
-				DA da, Vec g, const int *s, const int *c,
+  PetscErrorCode get_global_var(const int varid, DA da, Vec g,
+				const int *s, const int *c,
 				int dims, void *a_mpi, int a_size);
 
-  PetscErrorCode get_local_var_id(int ncid, const int varid,
-			       DA da, Vec v, Vec g, const int *s, const int *c,
+  PetscErrorCode put_local_var(const int varid, DA da, Vec v, Vec g,
+			       const int *s, const int *c,
 			       int dims, void *a_mpi, int a_size);
-  PetscErrorCode get_global_var_id(int ncid, const int varid,
-				DA da, Vec g, const int *s, const int *c,
-				int dims, void *a_mpi, int a_size);
-
-  PetscErrorCode put_local_var(int ncid, const int var_id,
-			       DA da, Vec v, Vec g, const int *s, const int *c,
-			       int dims, void *a_mpi, int a_size);
-  PetscErrorCode put_global_var(int ncid, const int var_id,
-				DA da, Vec g, const int *s, const int *c,
+  PetscErrorCode put_global_var(const int varid, DA da, Vec g,
+				const int *s, const int *c,
 				int dims, void *a_mpi, int a_size);
 
   PetscErrorCode set_MaskInterp(MaskInterp *mi_in);
-  PetscErrorCode regrid_local_var(const char *name, int dim_flag,
+  PetscErrorCode regrid_local_var(const int varid, int dim_flag,
 				  LocalInterpCtx &lic, DA da, Vec vec, Vec g,
 				  bool useMaskInterp);
-  PetscErrorCode regrid_global_var(const char *name, int dim_flag,
+  PetscErrorCode regrid_global_var(const int varid, int dim_flag,
 				   LocalInterpCtx &lic, DA da, Vec g,
 				   bool useMaskInterp);
 
 private:
+  bool check_dimension(const char dim[], const int len);
+  bool check_dimensions();
   MaskInterp  *myMaskInterp;
   IceGrid* grid;
 };

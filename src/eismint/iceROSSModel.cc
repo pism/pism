@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Ed Bueler
+// Copyright (C) 2006-2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,9 +59,15 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
 PetscErrorCode IceROSSModel::createROSSVecs() {
   PetscErrorCode ierr;
 
-  ierr = VecDuplicate(vh, &obsAzimuth); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &obsMagnitude); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &obsAccurate); CHKERRQ(ierr);
+  ierr = obsAzimuth.create(grid, "azi_obs", true); CHKERRQ(ierr);
+  ierr = obsAzimuth.set_attrs(NULL, "observed ice velocity azimuth", "degrees_east", NULL); CHKERRQ(ierr);
+
+  ierr = obsMagnitude.create(grid, "mag_obs", true); CHKERRQ(ierr);
+  ierr = obsMagnitude.set_attrs(NULL, "observed ice velocity magnitude", "m s-1", NULL); CHKERRQ(ierr);
+  ierr = obsMagnitude.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+
+  ierr = obsAccurate.create(grid, "accur", true); CHKERRQ(ierr);
+  ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity", "", NULL); CHKERRQ(ierr);
   return 0;
 }
 
@@ -69,9 +75,9 @@ PetscErrorCode IceROSSModel::createROSSVecs() {
 PetscErrorCode IceROSSModel::destroyROSSVecs() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(obsAzimuth); CHKERRQ(ierr);
-  ierr = VecDestroy(obsMagnitude); CHKERRQ(ierr);
-  ierr = VecDestroy(obsAccurate); CHKERRQ(ierr);
+  ierr = obsAzimuth.destroy(); CHKERRQ(ierr);
+  ierr = obsMagnitude.destroy(); CHKERRQ(ierr);
+  ierr = obsAccurate.destroy(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -104,8 +110,8 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   ierr = fillinTemps();  CHKERRQ(ierr);
 
   // zeros out vuvbar; SIA velocities will not be computed so this will stay
-  ierr = VecSet(vuvbar[0],0.0); CHKERRQ(ierr);
-  ierr = VecSet(vuvbar[1],0.0); CHKERRQ(ierr);
+  ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
+  ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
 
   ierr = verbPrintf(5,grid.com,"  [using Schoof regularization constant = %10.5e]\n",
               PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
@@ -115,9 +121,9 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   // update surface elev
   ierr = verbPrintf(2,grid.com, 
      "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
-     CHKERRQ(ierr);
-  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-  ierr = VecScale(vh, 1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
+  CHKERRQ(ierr);
+  ierr = vH.copy_to(vh); CHKERRQ(ierr);
+  ierr = vh.scale(1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
 
   if (ssaBCset == PETSC_TRUE) {
      ierr = verbPrintf(2, grid.com,
@@ -152,11 +158,13 @@ PetscErrorCode IceROSSModel::finishROSS() {
   // to an nc file by additional code; old revisions had code to show in diagnostic
   // viewers by overwriting ubar,vbar
   
-  Vec*  myvNu;
-  ierr = VecDuplicateVecs(vh, 2, &myvNu); CHKERRQ(ierr);
+  IceModelVec2  myvNu[2];
+  ierr = myvNu[0].create(grid, "myvNu", true); CHKERRQ(ierr);
+  ierr = myvNu[1].create(grid, "myvNu", true); CHKERRQ(ierr);
   ierr = computeEffectiveViscosity(myvNu, ssaEpsilon); CHKERRQ(ierr);
   ierr = updateNuViewers(myvNu,myvNu,false); CHKERRQ(ierr);
-  ierr = VecDestroyVecs(myvNu, 2); CHKERRQ(ierr);
+  ierr = myvNu[0].destroy(); CHKERRQ(ierr);
+  ierr = myvNu[1].destroy(); CHKERRQ(ierr);
   
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
@@ -175,91 +183,54 @@ PetscErrorCode IceROSSModel::fillinTemps() {
   PetscScalar         **Ts;
 
   // fill in all temps with Ts
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
-      ierr = Tb3.setToConstantColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
+      ierr = T3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
+      ierr = Tb3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
     }
   }
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Tb3.end_access(); CHKERRQ(ierr);
+  ierr = vTs.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode IceROSSModel::readObservedVels(const char *fname) {
+PetscErrorCode IceROSSModel::readObservedVels(const char *filename) {
   PetscErrorCode  ierr;
+  NCTool nc(&grid);
 
   // determine if variables exist in file and get missing values; broadcast
-  int    ncid, stat, magid, aziid, accid, magExists=0, aziExists=0, accExists=0;
-  double magMiss, aziMiss; 
-  int    accMiss;
-  if (grid.rank == 0) {
-    stat = nc_open(fname, 0, &ncid); CHKERRQ(nc_check(stat));
-    stat = nc_inq_varid(ncid, "accur", &accid); accExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "mag_obs", &magid); magExists = stat == NC_NOERR;
-    stat = nc_inq_varid(ncid, "azi_obs", &aziid); aziExists = stat == NC_NOERR;
-    stat = nc_get_att_int(ncid, accid, "missing_value",&accMiss); CHKERRQ(nc_check(stat));
-    stat = nc_get_att_double(ncid, magid, "missing_value",
-                             &magMiss); CHKERRQ(nc_check(stat));
-    stat = nc_get_att_double(ncid, aziid, "missing_value",
-                             &aziMiss); CHKERRQ(nc_check(stat));
-  }
-  ierr = MPI_Bcast(&accExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&magExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&aziExists, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&accMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&magMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&aziMiss, 1, MPI_DOUBLE, 0, grid.com); CHKERRQ(ierr);
+  bool file_exists = false;
 
-  Vec myg2;
-  ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
+  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
+  if (!file_exists)
+    SETERRQ1(1, "Couldn't open '%s'.\n", filename);
 
   // will create "local interpolation context" from dimensions, limits, and lengths extracted from
   //   bootstrap file and from information about the part of the grid owned by this processor;
   //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and equal to zero
   size_t dim[5];  // dimensions in bootstrap NetCDF file
   double bdy[7];  // limits and lengths for bootstrap NetCDF file
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
+  ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
   double *z_bif, *zb_bif;
   z_bif = new double[dim[3]];
   zb_bif = new double[dim[4]];
-  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], z_bif, zb_bif); CHKERRQ(ierr);
+  ierr = nc.get_vertical_dims(dim[3], dim[4], z_bif, zb_bif); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
-  LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
+  LocalInterpCtx lic(dim, bdy, z_bif, zb_bif, grid);
 
-  if (accExists) {
-    MaskInterp masklevs;
-    masklevs.number_allowed = 3;
-    masklevs.allowed_levels[0] = accMiss;
-    masklevs.allowed_levels[1] = 0;
-    masklevs.allowed_levels[2] = 1;
-    ierr = nct.set_MaskInterp(&masklevs); CHKERRQ(ierr);
-    ierr = nct.regrid_local_var("accur", 2, lic, grid.da2, obsAccurate, myg2, true); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"'accur' does not exist");
-  }
-  if (magExists) {
-    ierr = nct.regrid_local_var("mag_obs", 2, lic, grid.da2, obsMagnitude, myg2, true); CHKERRQ(ierr);
-  } else {
-    SETERRQ(2,"'mag_obs' does not exist");
-  }
-  if (aziExists) {
-    ierr = nct.regrid_local_var("azi_obs", 2, lic, grid.da2, obsAzimuth, myg2, true); CHKERRQ(ierr);
-  } else {
-    SETERRQ(3,"'azi_obs' does not exist");
-  }
+  ierr =  obsAccurate.regrid(filename, lic, true); CHKERRQ(ierr);
+  ierr = obsMagnitude.regrid(filename, lic, true); CHKERRQ(ierr);
+  ierr =   obsAzimuth.regrid(filename, lic, true); CHKERRQ(ierr);
 
   delete z_bif;
   delete zb_bif;
-  ierr = VecDestroy(myg2); CHKERRQ(ierr);
-  if (grid.rank == 0) {
-    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
-  }
+  
   return 0;
 }
 
@@ -273,13 +244,13 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
   
   const PetscScalar pi = 3.14159265358979, area = grid.dx * grid.dy;
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, obsAccurate, &acc); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = obsAzimuth.get_array(azi); CHKERRQ(ierr);    
+  ierr = obsMagnitude.get_array(mag); CHKERRQ(ierr);    
+  ierr = obsAccurate.get_array(acc); CHKERRQ(ierr);    
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
      if ((modMask(mask[i][j]) == MASK_FLOATING) && (H[i][j] > 1.0)) {
@@ -307,13 +278,13 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, obsMagnitude, &mag); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, obsAzimuth, &azi); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, obsAccurate, &acc); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = obsMagnitude.end_access(); CHKERRQ(ierr);
+  ierr = obsAzimuth.end_access(); CHKERRQ(ierr);
+  ierr = obsAccurate.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
 
   PetscScalar  guerr, gverr, grelvecerr, gaccN, 
                gaccArea, gmaxcComputed, gvecErrAcc;
@@ -372,11 +343,11 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
       PetscInt    len;
       PetscScalar **ubar, **vbar, **clat, **clon, **mask;
 
-      ierr = DAVecGetArray(grid.da2, vLatitude, &clat); CHKERRQ(ierr);    
-      ierr = DAVecGetArray(grid.da2, vLongitude, &clon); CHKERRQ(ierr);    
-      ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-      ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
-      ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
+      ierr = vLongitude.get_array(clon); CHKERRQ(ierr);
+      ierr =  vLatitude.get_array(clat); CHKERRQ(ierr);
+      ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+      ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+      ierr = vMask.get_array(mask); CHKERRQ(ierr);
       
       ierr = latdata.readData(grid.com,grid.rank, riggsfile, "count", "riggslat"); CHKERRQ(ierr);
       ierr = londata.readData(grid.com,grid.rank, riggsfile, "count", "riggslon"); CHKERRQ(ierr);
@@ -425,11 +396,12 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
       ierr = verbPrintf(2,grid.com,"Chi^2 statistic for computed results compared to RIGGS is %10.3f\n",
              g_ChiSqr * (156.0 / g_goodptcount)); CHKERRQ(ierr);
 
-      ierr = DAVecRestoreArray(grid.da2, vLatitude, &clat); CHKERRQ(ierr);    
-      ierr = DAVecRestoreArray(grid.da2, vLongitude, &clon); CHKERRQ(ierr);    
-      ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);    
-      ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);    
-      ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);    
+      ierr = vLongitude.end_access(); CHKERRQ(ierr);
+      ierr =  vLatitude.end_access(); CHKERRQ(ierr);
+      ierr = vMask.end_access(); CHKERRQ(ierr);
+
+      ierr = vubar.end_access(); CHKERRQ(ierr);
+      ierr = vvbar.end_access(); CHKERRQ(ierr);
   }
   return 0;
 }

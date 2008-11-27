@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler and Nathan Shemonski
+// Copyright (C) 2007-2008 Ed Bueler, Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,8 +61,8 @@ PetscErrorCode IceModel::initPDDFromOptions() {
   if (doPDD == PETSC_TRUE) {
 
     if (pddStuffCreated == PETSC_FALSE) {
-      ierr = VecDuplicate(vh, &vAccumSnow); CHKERRQ(ierr);
-      ierr = VecCopy(vAccum, vAccumSnow); CHKERRQ(ierr);  // assume vAccum *is* snow
+      ierr = vAccumSnow.create(grid, "vAccumSnow", true); CHKERRQ(ierr);
+      ierr = vAccumSnow.copy_from(vAccum); CHKERRQ(ierr);  // assume vAccum *is* snow
       pddStuffCreated = PETSC_TRUE;
     } else {
       SETERRQ(1, "ERROR: initPDDFromOptions() called with pddStuffCreated == TRUE\n");
@@ -116,7 +116,7 @@ PetscErrorCode IceModel::initPDDFromOptions() {
 PetscErrorCode IceModel::PDDCleanup() {
   PetscErrorCode ierr;
   if (pddStuffCreated == PETSC_TRUE) {
-    ierr = VecDestroy(vAccumSnow); CHKERRQ(ierr);
+    ierr = vAccumSnow.destroy(); CHKERRQ(ierr);
     pddStuffCreated = PETSC_FALSE;
   }  
   if (pddRandStuffCreated == PETSC_TRUE) {
@@ -144,15 +144,16 @@ Called if option "-pdd_monthly_temps" is given with a file name.
  */
 PetscErrorCode IceModel::readMonthlyTempDataPDD() {
   PetscErrorCode ierr;
+  NCTool nc(&grid);
 
-  int stat, ncid = 0;
   ierr = verbPrintf(2, grid.com, 
        "reading monthly surface temperature data for PDD from file %s ...\n", 
        monthlyTempsFile); CHKERRQ(ierr);
-  if (grid.rank == 0) {
-    stat = nc_open(monthlyTempsFile, 0, &ncid); CHKERRQ(nc_check(stat));
-  }
-  MPI_Bcast(&ncid, 1, MPI_INT, 0, grid.com);
+
+  bool file_exists = false;
+  ierr = nc.open_for_reading(monthlyTempsFile, file_exists); CHKERRQ(ierr);
+  if (!file_exists)
+    SETERRQ1(1, "Couldn't open '%s'.\n", monthlyTempsFile);
 
   ierr = verbPrintf(4, grid.com, 
          "  creating local interpolation context for monthly surface temps ...\n");
@@ -160,7 +161,7 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
   size_t dim[5];  // dimensions in monthly temp NetCDF file
   double bdy[7];  // limits and lengths in NetCDF file
   double *z_bif, *zb_bif;
-  ierr = nct.get_dims_limits_lengths_2d(ncid, dim, bdy); CHKERRQ(ierr);
+  ierr = nc.get_dims_limits_lengths_2d(dim, bdy); CHKERRQ(ierr);
   // the monthly temp data is 2d so fill in dummy stuff for regrid
   dim[3] = 1; 
   dim[4] = 1;
@@ -173,7 +174,7 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
   z_bif[0] = 0.0;
   zb_bif[0] = 0.0;
 
-  LocalInterpCtx lic(ncid, dim, bdy, z_bif, zb_bif, grid);
+  LocalInterpCtx lic(dim, bdy, z_bif, zb_bif, grid);
   //ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
   delete z_bif;
   delete zb_bif;
@@ -184,19 +185,24 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
 
   ierr = verbPrintf(2, grid.com, 
          "  reading (regridding) monthly surface temps ('temp_monN'):\n    month  ");
-         CHKERRQ(ierr);
+  CHKERRQ(ierr);
+
+  bool var_exists;
+  int varid;
   for (PetscInt j = 0; j < 12; ++j) {
     char monthlyTempName[20];
     snprintf(monthlyTempName, 20, "temp_mon%d", j);
-    ierr = nct.regrid_global_var(monthlyTempName, 2, lic, grid.da2, 
-                 vmonthlyTs[j], false); CHKERRQ(ierr);
+    ierr = nc.find_variable(monthlyTempName, NULL, &varid, var_exists);
+    if (!var_exists)
+      SETERRQ2(1, "Variable '%s' not found in '%s'\n.",
+	       monthlyTempName, monthlyTempsFile);
+    ierr = nc.regrid_global_var(varid, 2, lic, grid.da2, 
+				vmonthlyTs[j], false); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, " %d", j); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2, grid.com, "\n"); CHKERRQ(ierr);
-  
-  if (grid.rank == 0) {
-    stat = nc_close(ncid); CHKERRQ(nc_check(stat));
-  }
+
+  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -208,7 +214,7 @@ rate and not the surface mass balance (which is vAccum).
  */
 PetscErrorCode IceModel::putBackSnowAccumPDD() {
   PetscErrorCode ierr;
-  ierr = VecCopy(vAccumSnow, vAccum); CHKERRQ(ierr);  
+  ierr = vAccumSnow.copy_to(vAccum); CHKERRQ(ierr);  
   return 0;
 }
 
@@ -382,11 +388,11 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
   PetscErrorCode ierr;
 
   PetscScalar **accum, **Ts, **snow_accum, **h, **lat;
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
+  ierr =         vh.get_array(h);          CHKERRQ(ierr);
+  ierr =        vTs.get_array(Ts);         CHKERRQ(ierr);
+  ierr =     vAccum.get_array(accum);      CHKERRQ(ierr);
+  ierr = vAccumSnow.get_array(snow_accum); CHKERRQ(ierr);
+  ierr =  vLatitude.get_array(lat);        CHKERRQ(ierr);
 
   const PetscScalar     start = grid.year - dt / secpera; // grid.year has *end* of step
   const PetscScalar     startday = 365.24 * (start - floor(start));
@@ -463,11 +469,11 @@ PetscErrorCode IceModel::updateSurfaceBalanceFromPDD() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vAccumSnow, &snow_accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
+  ierr = vTs.end_access(); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vAccumSnow.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
+  ierr = vLatitude.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

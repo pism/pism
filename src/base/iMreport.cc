@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,10 +37,10 @@ PetscErrorCode IceModel::computeFlowUbarStats
   PetscScalar Ubarmax = 0.0, UbarSIAsum = 0.0, Ubarstreamsum = 0.0,
               Ubarshelfsum = 0.0, icecount = 0.0, SIAcount = 0.0, shelfcount = 0.0;
 
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr =    vH.get_array(H);    CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
@@ -63,10 +63,10 @@ PetscErrorCode IceModel::computeFlowUbarStats
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr =    vH.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&Ubarmax, gUbarmax, grid.com); CHKERRQ(ierr);
   
@@ -118,8 +118,8 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
   PetscScalar     **H, **mask;
   PetscScalar     volume=0.0, area=0.0, volSIA=0.0, volstream=0.0, volshelf=0.0;
   
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -133,8 +133,8 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
       }
     }
   }  
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&volSIA, &gvolSIA, grid.com); CHKERRQ(ierr);
@@ -155,14 +155,14 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 
   ierr = volumeArea(gvolume,garea,gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
   
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
   divideH = 0; 
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = T3.begin_access(); CHKERRQ(ierr);
     ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);
-    ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
-    ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = T3.end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
+    ierr = tau3.begin_access(); CHKERRQ(ierr);
     melt = 0; divideT = 0; orig = 0;
   }
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
@@ -198,11 +198,11 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     }
   }
   
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = DAVecGetArray(grid.da2, vWork2d[0], &Tbase); CHKERRQ(ierr);
-    ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+    ierr = tau3.end_access(); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&melt, &gmelt, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&orig, &gorig, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalMax(&divideT, &gdivideT, grid.com); CHKERRQ(ierr);

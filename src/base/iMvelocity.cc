@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,8 +43,8 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
 
     // communicate h_x[o], h_y[o] on staggered for basalSIA() and horizontalVelocitySIARegular()
     for (PetscInt k=0; k<4; ++k) { 
-      ierr = DALocalToLocalBegin(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2, vWork2d[k], INSERT_VALUES, vWork2d[k]); CHKERRQ(ierr);
+      ierr = vWork2d[k].beginGhostComm(); CHKERRQ(ierr);
+      ierr = vWork2d[k].endGhostComm(); CHKERRQ(ierr);
     }
 
     ierr = velocitySIAStaggered(); CHKERRQ(ierr);
@@ -52,24 +52,24 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
 
     // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
     // and velocities2DSIAToRegular()
-    ierr = DALocalToLocalBegin(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vuvbar[0], INSERT_VALUES, vuvbar[0]); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vuvbar[1], INSERT_VALUES, vuvbar[1]); CHKERRQ(ierr);
+    ierr = vuvbar[0].beginGhostComm();
+    ierr = vuvbar[0].endGhostComm();
+    ierr = vuvbar[1].beginGhostComm();
+    ierr = vuvbar[1].endGhostComm();
     ierr = verbPrintf(5,grid.com, "{comm after velocitySIAStaggered()}"); CHKERRQ(ierr);
 
     if (muSliding == 0.0) { // no need to spend time on nothing
-      ierr = VecSet(vub, 0.0); CHKERRQ(ierr);
-      ierr = VecSet(vvb, 0.0); CHKERRQ(ierr);
-      ierr = VecSet(vRb, 0.0); CHKERRQ(ierr);
+      ierr = vub.set(0.0); CHKERRQ(ierr);
+      ierr = vvb.set(0.0); CHKERRQ(ierr);
+      ierr = vRb.set(0.0); CHKERRQ(ierr);
     } else {
       // compute (and initialize values in) ub,vb and Rb; zero everything where floating
       ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
       ierr = verbPrintf(5,grid.com, "{basalSlidingHeatingSIA()}"); CHKERRQ(ierr);
-      ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-      ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr); 
+      ierr = vub.beginGhostComm(); CHKERRQ(ierr);
+      ierr = vub.endGhostComm(); CHKERRQ(ierr);
+      ierr = vvb.beginGhostComm(); CHKERRQ(ierr);
+      ierr = vvb.endGhostComm(); CHKERRQ(ierr);
       // no need to communicate vRb since not differenced in horizontal
     }
 
@@ -79,10 +79,10 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // also put staggered value of basal velocity onto regular grid
     ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocities2DSIAToRegular()}"); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr); 
+    ierr = vubar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vubar.endGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
   
     if (updateVelocityAtDepth) {  
       // communicate I on staggered for horizontalVelocitySIARegular()
@@ -104,15 +104,15 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   } else { // if computeSIAVelocities == PETSC_FALSE
     // do NOT zero out vuvbar[0],vuvbar[1]; they are used to communicate boundary
     // conditions to SSA calculation
-    ierr = VecSet(vubar,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vvbar,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vub,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vvb,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vRb,0.0); CHKERRQ(ierr);
+    ierr = vubar.set(0.0); CHKERRQ(ierr);
+    ierr = vvbar.set(0.0); CHKERRQ(ierr);
+    ierr = vub.set(0.0); CHKERRQ(ierr);
+    ierr = vvb.set(0.0); CHKERRQ(ierr);
+    ierr = vRb.set(0.0); CHKERRQ(ierr);
     if (updateVelocityAtDepth) {
-      ierr = u3.setToConstant(0.0); CHKERRQ(ierr);
-      ierr = v3.setToConstant(0.0); CHKERRQ(ierr);
-      ierr = Sigma3.setToConstant(0.0); CHKERRQ(ierr);
+      ierr = u3.set(0.0); CHKERRQ(ierr);
+      ierr = v3.set(0.0); CHKERRQ(ierr);
+      ierr = Sigma3.set(0.0); CHKERRQ(ierr);
     }
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
@@ -141,14 +141,15 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = broadcastSSAVelocity(updateVelocityAtDepth); CHKERRQ(ierr);
 
     // now communicate modified velocity fields
-    ierr = DALocalToLocalBegin(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vubar, INSERT_VALUES, vubar); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vvbar, INSERT_VALUES, vvbar); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+    ierr = vubar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vubar.endGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
+
+    ierr = vub.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vub.endGhostComm(); CHKERRQ(ierr);
+    ierr = vvb.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vvb.endGhostComm(); CHKERRQ(ierr);
 
     // note correctSigma() differences ub,vb in horizontal, so communication
     //   above is important
@@ -231,16 +232,16 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   PetscScalar **ub, **vb, **basalMeltRate, **mask, **b, **dbdt;
   PetscScalar *u, *v, *w;
 
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.begin_access(); CHKERRQ(ierr);
 
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuplift, &dbdt); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vuplift.get_array(dbdt); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -303,16 +304,16 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuplift, &dbdt); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
+  ierr =     vub.end_access(); CHKERRQ(ierr);
+  ierr =     vvb.end_access(); CHKERRQ(ierr);
+  ierr =   vMask.end_access(); CHKERRQ(ierr);
+  ierr =    vbed.end_access(); CHKERRQ(ierr);
+  ierr = vuplift.end_access(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
   
-  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

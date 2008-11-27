@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler
+// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -399,20 +399,20 @@ PetscErrorCode IceMISMIPModel::initFromOptions() {
              CHKERRQ(ierr); 
     const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
     ierr = grid.rescale_and_set_zlevels(Lx_desired, L, MISMIPmaxThick,PETSC_TRUE,PETSC_FALSE);
-             CHKERRQ(ierr); 
+    CHKERRQ(ierr); 
 
     // all of these relate to models which should be turned off ...
-    ierr = VecSet(vHmelt, 0.0); CHKERRQ(ierr);
+    ierr = vHmelt.set(0.0); CHKERRQ(ierr);
     // none use Goldsby-Kohlstedt or do age calc
     setInitialAgeYears(initial_age_years_default);
-    ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);  // no bed deformation
-    ierr = VecSet(vTs, ice->meltingTemp); CHKERRQ(ierr);
-    ierr = T3.setToConstant(ice->meltingTemp); CHKERRQ(ierr);
-    ierr = Tb3.setToConstant(ice->meltingTemp); CHKERRQ(ierr);
+    ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
+    ierr = vTs.set(ice->meltingTemp); CHKERRQ(ierr);
+    ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
+    ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
 
-    ierr = VecSet(vAccum, 0.3/secpera); CHKERRQ(ierr);
+    ierr = vAccum.set(0.3/secpera); CHKERRQ(ierr);
 
-    ierr = VecSet(vH, initialthickness); CHKERRQ(ierr);
+    ierr = vH.set(initialthickness); CHKERRQ(ierr);
 
     ierr = setBed(); CHKERRQ(ierr);
     ierr = setMask(); CHKERRQ(ierr);
@@ -500,7 +500,7 @@ PetscErrorCode IceMISMIPModel::setBed() {
   PetscErrorCode ierr;
   PetscScalar          **b;
 
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
@@ -523,11 +523,11 @@ PetscErrorCode IceMISMIPModel::setBed() {
 
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   // communicate b because it will be horizontally differentiated
-  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -539,7 +539,7 @@ PetscErrorCode IceMISMIPModel::setMask() {
   const PetscScalar calving_front = 1600.0e3;
 //  const PetscScalar calving_front = 10000.0e3;  // NOW NOTHING MARKED AS FLOATING_OCEAN0
 
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
@@ -556,11 +556,11 @@ PetscErrorCode IceMISMIPModel::setMask() {
 
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communicate it
-  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -576,8 +576,9 @@ PetscErrorCode IceMISMIPModel::calving() {
 
   const PetscScalar calving_thk_min = 100.0, calving_thk_max = 200.0; // meters
 
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (modMask(mask[i][j]) == MASK_FLOATING) {
@@ -590,12 +591,12 @@ PetscErrorCode IceMISMIPModel::calving() {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
 
   // communicate
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
 
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
   return 0;
@@ -619,7 +620,7 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   PetscErrorCode  ierr;
 
   PetscScalar     infnormdHdt;
-  ierr = VecNorm(vdHdt,NORM_INFINITY,&infnormdHdt); CHKERRQ(ierr);
+  ierr = vdHdt.norm(NORM_INFINITY, infnormdHdt); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
 
   if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
@@ -692,9 +693,9 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   ierr = PetscViewerSetFormat(view, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
   // just get all Vecs which might be needed
   PetscScalar     **H, **h, **bed;
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vh.get_array(h); CHKERRQ(ierr);
+  ierr = vbed.get_array(bed); CHKERRQ(ierr);
   if (mismiptype == 'f') {
     ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
                CHKERRQ(ierr);
@@ -718,9 +719,9 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
   ierr = PetscViewerFlush(view); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(view); CHKERRQ(ierr);
   return 0;
@@ -732,12 +733,12 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   
   PetscErrorCode  ierr;
   PetscScalar     **H, **b, **q;
-  
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
 
-  ierr = VecPointwiseMult(vWork2d[0], vvbar, vH); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &q); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
+
+  ierr = vvbar.multiply_by(vH, vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(q); CHKERRQ(ierr);
   // q[i][j] is signed flux in y direction, in units of m^2/s
   
   mstats.x1 = rstats.xg;
@@ -777,9 +778,9 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   ierr = PetscGlobalMax(&myb3, &mstats.b3, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myq3, &mstats.q3, grid.com); CHKERRQ(ierr);
 
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &q); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
   // perform MISMIP diagnostic computation here, to estimate dxg/dt:
   //   d xg            a - dq/dx
@@ -804,9 +805,9 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
                   Ngrounded = 0.0, Nfloating = 0.0;
   PetscScalar     gavubargrounded, gavubarfloating, gjg;
 
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -836,8 +837,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&jg, &gjg, grid.com); CHKERRQ(ierr);
   rstats.jg = gjg;
@@ -855,7 +856,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   } 
   ierr = PetscGlobalMax(&myhxg, &rstats.hxg, grid.com); CHKERRQ(ierr);
 
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxubar, &rstats.maxubar, grid.com); CHKERRQ(ierr);
     

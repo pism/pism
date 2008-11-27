@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -117,7 +117,7 @@ IceCompModel::~IceCompModel() {
     compVecsCreated = PETSC_FALSE;
   }
   if (vHexactLCreated == PETSC_TRUE) {
-    VecDestroy(vHexactL);
+    vHexactL.destroy();
     vHexactLCreated = PETSC_FALSE;
   }
 }
@@ -219,9 +219,9 @@ PetscErrorCode IceCompModel::initFromOptions() {
     // none use Goldsby-Kohlstedt or do age calc
     setInitialAgeYears(initial_age_years_default);
     // all have no uplift or Hmelt
-    ierr = VecSet(vuplift,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vHmelt,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
+    ierr = vuplift.set(0.0); CHKERRQ(ierr);
+    ierr = vHmelt.set(0.0); CHKERRQ(ierr);
+    ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
 
     ierr = createCompVecs(); CHKERRQ(ierr);
 
@@ -266,6 +266,7 @@ PetscErrorCode IceCompModel::initFromOptions() {
     ierr = verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
              CHKERRQ(ierr);
   }
+
   return 0;
 }
 
@@ -328,22 +329,22 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
-  ierr = VecSet(vTs, T0); CHKERRQ(ierr);
-  ierr = T3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
+  ierr =  vTs.set(T0); CHKERRQ(ierr);
+  ierr =   T3.set(T0); CHKERRQ(ierr);
+  ierr =  Tb3.set(T0); CHKERRQ(ierr);
+  ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
-  ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
   if (testname == 'E') {  // value is not used by IceCompModel::basalVelocity() below,
     muSliding = 1.0;      //    but this acts as flag to allow sliding
   } else {
     muSliding = 0.0;
   }
 
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
-    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = vMask.get_array(mask); CHKERRQ(ierr);
   }
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -376,23 +377,23 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
-    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = vMask.end_access(); CHKERRQ(ierr);
   }
 
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
 
   if (testname == 'H') {
-    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-    ierr = VecScale(vh,1-f); CHKERRQ(ierr);
-    ierr = VecCopy(vH,vbed); CHKERRQ(ierr);
-    ierr = VecScale(vbed,-f); CHKERRQ(ierr);
+    ierr = vH.copy_to(vh); CHKERRQ(ierr);
+    ierr = vh.scale(1-f); CHKERRQ(ierr);
+    ierr = vH.copy_to(vbed); CHKERRQ(ierr);
+    ierr = vbed.scale(-f); CHKERRQ(ierr);
   } else {  // flat bed case otherwise
-    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-    ierr = VecSet(vbed, 0.0); CHKERRQ(ierr);
+    ierr = vH.copy_to(vh); CHKERRQ(ierr);
+    ierr = vbed.set(0.0); CHKERRQ(ierr);
   }
 
   return 0;
@@ -409,12 +410,12 @@ PetscErrorCode IceCompModel::initTestL() {
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
-  ierr = VecSet(vTs, T0); CHKERRQ(ierr);
-  ierr = T3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = Tb3.setToConstant(T0); CHKERRQ(ierr);
-  ierr = VecSet(vGhf, Ggeo); CHKERRQ(ierr);
+  ierr =  vTs.set(T0); CHKERRQ(ierr);
+  ierr =   T3.set(T0); CHKERRQ(ierr);
+  ierr =  Tb3.set(T0); CHKERRQ(ierr);
+  ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
-  ierr = VecSet(vMask, MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
   muSliding = 0.0;  // note reimplementation of basalVelocity()
 
   // setup to evaluate test L; requires solving an ODE numerically
@@ -441,35 +442,35 @@ PetscErrorCode IceCompModel::initTestL() {
   // get soln to test L at these points; solves ODE only once (on each processor)
   ierr = exactL_list(rr, MM, HH, bb, aa);  CHKERRQ(ierr);
   
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vbed.get_array(bed); CHKERRQ(ierr);
   for (PetscInt k = 0; k < MM; k++) {
     const PetscInt i = ia[k],  j = ja[k];
     H[i][j] = HH[k];
     bed[i][j] = bb[k];
     accum[i][j] = aa[k];
   }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   delete [] rr;  delete [] HH;  delete [] bb;  delete [] aa;  delete [] ia;  delete [] ja; 
 
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
 
   // set surface to H+b
-  ierr = VecWAXPY(vh,1.0,vH,vbed); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = vH.add(1.0, vbed, vh); CHKERRQ(ierr);
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
 
   // store copy of vH for "-eo" runs and for evaluating geometry errors
-  ierr = VecDuplicate(vh, &vHexactL); CHKERRQ(ierr);
+  ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
   vHexactLCreated = PETSC_TRUE;
-  ierr = VecCopy(vH, vHexactL); CHKERRQ(ierr);
+  ierr = vH.copy_to(vHexactL); CHKERRQ(ierr);
   return 0;
 }
 
@@ -479,7 +480,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   PetscScalar     **accum, dummy;
 
   // before flow step, set accumulation from exact values;
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -498,7 +499,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -507,8 +508,8 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum;
 
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -535,24 +536,25 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
 
   if (testname == 'H') {
-    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
-    ierr = VecScale(vh,1-f); CHKERRQ(ierr);
-    ierr = VecCopy(vH,vbed); CHKERRQ(ierr);
-    ierr = VecScale(vbed,-f); CHKERRQ(ierr);
-    ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+    ierr = vH.copy_to(vh); CHKERRQ(ierr);
+    ierr = vh.scale(1-f); CHKERRQ(ierr);
+    ierr = vH.copy_to(vbed); CHKERRQ(ierr);
+    ierr = vbed.scale(-f); CHKERRQ(ierr);
+    ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   } else {
-    ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+    ierr = vH.copy_to(vh); CHKERRQ(ierr);
   }
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -561,10 +563,10 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum, **ub, **vb, dummy;
 
-  ierr = DAVecGetArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -572,19 +574,20 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
       exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&ub[i][j],&vb[i][j]);
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vAccum, &accum); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vH, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = VecCopy(vH,vh); CHKERRQ(ierr);
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
-  ierr = DALocalToLocalBegin(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vub, INSERT_VALUES, vub); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vvb, INSERT_VALUES, vvb); CHKERRQ(ierr);
+  ierr = vub.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vub.endGhostComm(); CHKERRQ(ierr);
+  ierr = vvb.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vvb.endGhostComm(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -592,12 +595,13 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
 PetscErrorCode IceCompModel::fillSolnTestL() {
   PetscErrorCode  ierr;
 
-  ierr = DALocalToLocalBegin(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vHexactL, INSERT_VALUES, vH); CHKERRQ(ierr);
+  ierr = vHexactL.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vHexactL.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.copy_from(vHexactL);
 
-  ierr = VecWAXPY(vh,1.0,vH,vbed); CHKERRQ(ierr);  // h = H + bed = 1 * H + bed
-  ierr = DALocalToLocalBegin(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vh, INSERT_VALUES, vh); CHKERRQ(ierr);
+  ierr = vbed.add(1.0, vH, vh);	CHKERRQ(ierr); //  h = H + bed = 1 * H + bed
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
 
   // note bed was filled at initialization and hasn't changed
   return 0;
@@ -618,9 +622,9 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
 
   PetscScalar     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
   if (testname == 'L') {
-    ierr = DAVecGetArray(grid.da2, vHexactL, &HexactL); CHKERRQ(ierr);
+    ierr = vHexactL.get_array(HexactL); CHKERRQ(ierr);
   }
 
   vol = 0; area = 0; domeH = 0;
@@ -702,9 +706,9 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
   if (testname == 'L') {
-    ierr = DAVecRestoreArray(grid.da2, vHexactL, &HexactL); CHKERRQ(ierr);
+    ierr = vHexactL.end_access(); CHKERRQ(ierr);
   }
   
   // globalize (find errors over all processors) 
@@ -742,10 +746,10 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   
   if (testname != 'E')
     SETERRQ(1,"basal velocity errors only computable for test E\n");
-    
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -764,9 +768,9 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);

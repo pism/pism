@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,9 +25,9 @@
 //! Each step of SSA uses previously saved values to start iteration; zero them here to start.
 PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
-  if (!haveSSAvelocities) {
-    ierr = VecSet(vubarSSA,0.0); CHKERRQ(ierr);
-    ierr = VecSet(vvbarSSA,0.0); CHKERRQ(ierr);
+  if (!have_ssa_velocities) {
+    ierr = vubarSSA.set(0.0); CHKERRQ(ierr);
+    ierr = vvbarSSA.set(0.0); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -72,15 +72,15 @@ than \c min_thickness_SSA.  The geometry is not changed, but this has the effect
 of producing a shelf extension in ice free ocean, which affects the driving stress
 and the force balance at the calving front.
  */
-PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilon) {
+PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon) {
   PetscErrorCode ierr;
 
   if (leaveNuAloneSSA == PETSC_TRUE) {
     return 0;
   }
   if (useConstantNuHForSSA == PETSC_TRUE) {
-    ierr = VecSet(vNuH[0], constantNuHForSSA); CHKERRQ(ierr);
-    ierr = VecSet(vNuH[1], constantNuHForSSA); CHKERRQ(ierr);
+    ierr = vNuH[0].set(constantNuHForSSA); CHKERRQ(ierr);
+    ierr = vNuH[1].set(constantNuHForSSA); CHKERRQ(ierr);
     return 0;
   }
     
@@ -89,18 +89,20 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilo
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
 
   // clear them out (why?)
-  ierr = VecSet(vNuH[0], 0.0); CHKERRQ(ierr);
-  ierr = VecSet(vNuH[1], 0.0); CHKERRQ(ierr);
+  ierr = vNuH[0].set(0.0); CHKERRQ(ierr);
+  ierr = vNuH[1].set(0.0); CHKERRQ(ierr);
 
   // We need to compute integrated effective viscosity (\bar\nu * H).
   // It is locally determined by the strain rates and temperature field.
   PetscScalar *Tij, *Toffset, **H, **nuH[2], **u, **v;  
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubarSSA, &u);
-  ierr = DAVecGetArray(grid.da2, vvbarSSA, &v);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
+  ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
+
+  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -154,18 +156,18 @@ PetscErrorCode IceModel::computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilo
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = vNuH[0].end_access(); CHKERRQ(ierr);
+  ierr = vNuH[1].end_access(); CHKERRQ(ierr);
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
 
   // Some communication
-  ierr = DALocalToLocalBegin(grid.da2, vNuH[0], INSERT_VALUES, vNuH[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vNuH[0], INSERT_VALUES, vNuH[0]); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vNuH[1], INSERT_VALUES, vNuH[1]); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vNuH[1], INSERT_VALUES, vNuH[1]); CHKERRQ(ierr);
+  ierr = vNuH[0].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vNuH[0].endGhostComm(); CHKERRQ(ierr);
+  ierr = vNuH[1].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vNuH[1].endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -183,11 +185,11 @@ and the norms are roughly equivalent on a subspace of smooth functions.  For PST
 the \f$L^1\f$ criterion gives faster runs with essentially the same results.
 Presumably that is because rapid (temporal and spatial) variation in 
 \f$\bar\nu H\f$ occurs at margins, occupying very few horizontal grid cells.
-For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ignor
-a bit of bad behavior at these few places, and \f$L^1\f$ ignors it more than
+For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ignore
+a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 \f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
  */
-PetscErrorCode IceModel::testConvergenceOfNu(Vec vNuH[2], Vec vNuHOld[2],
+PetscErrorCode IceModel::testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2],
                                              PetscReal *norm, PetscReal *normChange) {
   PetscErrorCode  ierr;
   PetscReal nuNorm[2], nuChange[2];
@@ -195,20 +197,20 @@ PetscErrorCode IceModel::testConvergenceOfNu(Vec vNuH[2], Vec vNuHOld[2],
 #define MY_NORM     NORM_1
 
   // Test for change in nu
-  ierr = VecAXPY(vNuHOld[0], -1, vNuH[0]); CHKERRQ(ierr);
-  ierr = VecAXPY(vNuHOld[1], -1, vNuH[1]); CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, vNuHOld[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = vNuHOld[0].add(-1, vNuH[0]); CHKERRQ(ierr);
+  ierr = vNuHOld[1].add(-1, vNuH[1]); CHKERRQ(ierr);
+  ierr = vNuHOld[0].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuChange[0]); CHKERRQ(ierr);
   nuChange[0] *= area;
-  ierr = DALocalToGlobal(grid.da2, vNuHOld[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = vNuHOld[1].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuChange[1]); CHKERRQ(ierr);
   nuChange[1] *= area;
   *normChange = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
 
-  ierr = DALocalToGlobal(grid.da2, vNuH[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = vNuH[0].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuNorm[0]); CHKERRQ(ierr);
   nuNorm[0] *= area;
-  ierr = DALocalToGlobal(grid.da2, vNuH[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = vNuH[1].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecNorm(g2, MY_NORM, &nuNorm[1]); CHKERRQ(ierr);
   nuNorm[1] *= area;
   *norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
@@ -265,7 +267,7 @@ This method assembles the matrix for the left side of the SSA equations.  The nu
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
 PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
-                                 Vec vNuH[2], Mat A) {
+                                 IceModelVec2 vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
@@ -275,12 +277,13 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
   /* matrix assembly loop */
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
+  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+  ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
+  ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt J = 2*j;
@@ -366,12 +369,14 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNuH[0], &nuH[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vNuH[1], &nuH[1]); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vtauc.end_access(); CHKERRQ(ierr);
+
+  ierr = vNuH[0].end_access(); CHKERRQ(ierr);
+  ierr = vNuH[1].end_access(); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -411,15 +416,15 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
 
   // get driving stress components
   ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMutil.cc
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &taudx); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &taudy); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
 
   /* matrix assembly loop */
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vh.get_array(h); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt J = 2*j;
@@ -459,14 +464,14 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
 
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &taudx); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &taudy); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);
@@ -493,8 +498,10 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
+
+  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       u[i][j] = uv[i*M + 2*j];
@@ -502,14 +509,15 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
     }
   }
   ierr = VecRestoreArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &u); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &v); CHKERRQ(ierr);
+
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
 
   // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
-  ierr = DALocalToLocalBegin(grid.da2, vubarSSA, INSERT_VALUES, vubarSSA); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vubarSSA, INSERT_VALUES, vubarSSA); CHKERRQ(ierr);
-  ierr = DALocalToLocalBegin(grid.da2, vvbarSSA, INSERT_VALUES, vvbarSSA); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vvbarSSA, INSERT_VALUES, vvbarSSA); CHKERRQ(ierr);
+  ierr = vubarSSA.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vubarSSA.endGhostComm(); CHKERRQ(ierr);
+  ierr = vvbarSSA.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vvbarSSA.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -567,7 +575,7 @@ iteration (the "outer" loop over \c k) has a chance to converge.
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
 
-  Vec vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
+  IceModelVec2 vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
   ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
   return 0;
 }
@@ -577,19 +585,19 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
 /*!
 Generally use velocitySSA(PetscInt*) unless you have a vNuH[2] already stored away.
  */
-PetscErrorCode IceModel::velocitySSA(Vec vNuH[2], PetscInt *numiter) {
+PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   PetscErrorCode ierr;
   KSP ksp = SSAKSP;
   Mat A = SSAStiffnessMatrix;
   Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
-  Vec vNuHOld[2] = {vWork2d[2], vWork2d[3]};
-  Vec vubarOld = vWork2d[4], vvbarOld = vWork2d[5];
+  IceModelVec2 vNuHOld[2] = {vWork2d[2], vWork2d[3]};
+  IceModelVec2 vubarOld = vWork2d[4], vvbarOld = vWork2d[5];
   PetscReal   norm, normChange, epsilon;
   PetscInt    its;
   KSPConvergedReason  reason;
 
-  ierr = VecCopy(vubarSSA, vubarOld); CHKERRQ(ierr);
-  ierr = VecCopy(vvbarSSA, vvbarOld); CHKERRQ(ierr);
+  ierr = vubarSSA.copy_to(vubarOld); CHKERRQ(ierr);
+  ierr = vvbarSSA.copy_to(vvbarOld); CHKERRQ(ierr);
   epsilon = ssaEpsilon;
 
   ierr = verbPrintf(4,grid.com, 
@@ -610,8 +618,8 @@ PetscErrorCode IceModel::velocitySSA(Vec vNuH[2], PetscInt *numiter) {
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
     
       // in preparation of measuring change of effective viscosity:
-      ierr = VecCopy(vNuH[0], vNuHOld[0]); CHKERRQ(ierr);
-      ierr = VecCopy(vNuH[1], vNuHOld[1]); CHKERRQ(ierr);
+      ierr = vNuH[0].copy_to(vNuHOld[0]); CHKERRQ(ierr);
+      ierr = vNuH[1].copy_to(vNuHOld[1]); CHKERRQ(ierr);
 
       // reform matrix, which depends on updated viscosity
       ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
@@ -650,12 +658,13 @@ PetscErrorCode IceModel::velocitySSA(Vec vNuH[2], PetscInt *numiter) {
        // this has no units; epsilon goes up by this ratio when previous value failed
        const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
        ierr = verbPrintf(1,grid.com,
-                  "WARNING: Effective viscosity not converged after %d iterations\n"
-                  "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
-                  ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
-           CHKERRQ(ierr);
-       ierr = VecCopy(vubarOld, vubar); CHKERRQ(ierr);
-       ierr = VecCopy(vvbarOld, vvbar); CHKERRQ(ierr);
+			 "WARNING: Effective viscosity not converged after %d iterations\n"
+			 "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
+			 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
+       CHKERRQ(ierr);
+
+       ierr = vubar.copy_from(vubarOld); CHKERRQ(ierr);
+       ierr = vvbar.copy_from(vvbarOld); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        SETERRQ1(1, 
@@ -700,17 +709,19 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   PetscScalar **mask, **ubar, **vbar, **ubarssa, **vbarssa, **ub, **vb, **uvbar[2];
   PetscScalar *u, *v;
   
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+
+  ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
+
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
 
   const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
                     outC_fofv = 2.0 / pi;
@@ -755,17 +766,17 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -779,11 +790,11 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
   PetscErrorCode  ierr;
   PetscScalar **ub, **vb, **mask, **Rb, **tauc;
 
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = vRb.get_array(Rb); CHKERRQ(ierr);
+  ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -802,11 +813,11 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = vtauc.end_access(); CHKERRQ(ierr);
+  ierr = vRb.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -822,12 +833,13 @@ PetscErrorCode IceModel::correctSigma() {
   PetscScalar **H, **mask, **ubarssa, **vbarssa;
   PetscScalar *Sigma, *T;
 
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
-  ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
+
+  ierr = Sigma3.begin_access(); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
 
   const PetscScalar dx = grid.dx, 
                     dy = grid.dy;
@@ -882,12 +894,14 @@ PetscErrorCode IceModel::correctSigma() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubarSSA, &ubarssa); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbarSSA, &vbarssa); CHKERRQ(ierr);
-  ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+
+  ierr = Sigma3.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

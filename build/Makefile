@@ -52,7 +52,7 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
-	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMIO.cc iMinverse.cc	\
+	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMIO.cc		\
 	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc	\
 	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc	\
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc		\

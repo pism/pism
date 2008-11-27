@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Ed Bueler
+// Copyright (C) 2006-2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ public:
     PetscErrorCode         readRIGGSandCompare();
 
 private:
-    Vec             obsAzimuth, obsMagnitude, obsAccurate;    
+    IceModelVec2    obsAzimuth, obsMagnitude, obsAccurate;    
     PetscErrorCode  createROSSVecs();
     PetscErrorCode  destroyROSSVecs();
     PetscErrorCode  fillinTemps();

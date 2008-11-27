@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -93,8 +93,9 @@ int main(int argc, char *argv[]) {
       SETERRQ(3,"PISMS: how did I get here?");
     }
 
-//    ierr = m->testIceModelVec3(); CHKERRQ(ierr);
-//    ierr = m->testIceModelVec3Bedrock(); CHKERRQ(ierr);
+    // Put these in a new 'software testing' executable:
+//     ierr = m->testIceModelVec3(); CHKERRQ(ierr);
+//     ierr = m->testIceModelVec3Bedrock(); CHKERRQ(ierr);
 
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);

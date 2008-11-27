@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -237,9 +237,9 @@ PetscErrorCode IcePSTexModel::setBedElev() {
   const PetscScalar    dx = grid.dx, dy = grid.dy;
   PetscScalar x_loc, y_loc;
 
-  ierr = VecSet(vbed, plateau); CHKERRQ(ierr);
+  ierr = vbed.set(plateau); CHKERRQ(ierr);
 
-  ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -255,11 +255,11 @@ PetscErrorCode IcePSTexModel::setBedElev() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   // communicate b because it will be horizontally differentiated
-  ierr = DALocalToLocalBegin(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vbed, INSERT_VALUES, vbed); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -303,12 +303,12 @@ PetscErrorCode IcePSTexModel::setTillPhi() {
   const PetscScalar    dx = grid.dx, dy = grid.dy;
   PetscScalar          x_loc, y_loc;
 
-  ierr = VecSet(vtillphi, DEFAULT_PHI_STRONG); CHKERRQ(ierr);
+  ierr = vtillphi.set(DEFAULT_PHI_STRONG); CHKERRQ(ierr);
 
   if (exper_chosen <= 1)
     return 0;  // nothing further for P0A and P0I
 
-  ierr = DAVecGetArray(grid.da2, vtillphi, &phi); CHKERRQ(ierr);
+  ierr = vtillphi.get_array(phi); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -335,7 +335,7 @@ PetscErrorCode IcePSTexModel::setTillPhi() {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vtillphi, &phi); CHKERRQ(ierr);
+  ierr = vtillphi.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -360,9 +360,9 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
   PetscScalar     x_loc, y_loc;
   const PetscScalar darea = grid.dx * grid.dy;
   
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
@@ -403,9 +403,9 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
 
   // globalize and actually compute averages
   ierr = PetscGlobalMax(&maxcbarALL, &gmaxcbarALL, grid.com); CHKERRQ(ierr);

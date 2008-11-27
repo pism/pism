@@ -1,4 +1,4 @@
-# Time-stamp: <macosx_macports, saved on Tue, May 13, 2008 at 02:43pm>
+# Time-stamp: <macosx_macports, saved on Tue, Nov 25, 2008 at 01:51pm>
 # This file contains fixes necessary to build PISM on MacOS X with MacPorts.
 # (Checked on MacOS X 10.5, but it should work on 10.4 too.)
 
@@ -19,4 +19,9 @@ CC += $(IFLAGS)
 # This is used by the .c.o rule defined in $PETSC_DIR/bmake/common/rules
 PETSC_COMPILE_SINGLE += $(MACPORTS_INCLUDE)
 
+# Creating the TAGS database
+etags:
+	@etags -o ../src/TAGS `find ../src -type f|grep -v .svn|grep -v TAGS`
 
+# Debugging
+#CFLAGS += -DPISM_DEBUG

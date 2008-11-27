@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler
+// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,32 +31,54 @@ public:
   IceModelVec();
   virtual ~IceModelVec();
 
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local); // done
-  virtual PetscErrorCode  destroy(); // done
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
+  virtual PetscErrorCode  destroy();
 
-  virtual PetscErrorCode  printInfo(const PetscInt verbosity); // done
- 
-  virtual PetscErrorCode  set_attrs(const char my_pism_intent[], const char my_long_name[], // done
-				   const char my_units[], const char my_standard_name[]);
-  virtual PetscErrorCode  write_attrs(const int ncid); // done
-  virtual PetscErrorCode  find(const int ncid, int *varid, PetscTruth *exists); // done
-  virtual PetscErrorCode  read(const char filename[], const unsigned int time); // done
-  virtual PetscErrorCode  putVecNC(const int ncid, const int *s, const int *c, int dims, 
-                                   void *a_mpi, int a_size);
+  virtual PetscErrorCode  printInfo(const PetscInt verbosity);
+  virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
+  virtual PetscErrorCode  norm(NormType n, PetscReal &out);
+  virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x);
+  virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x, IceModelVec &result);
+  virtual PetscErrorCode  sqrt();
+  virtual PetscErrorCode  shift(PetscScalar alpha);
+  virtual PetscErrorCode  scale(PetscScalar alpha);
+  virtual PetscErrorCode  multiply_by(IceModelVec &x, IceModelVec &result);
+  virtual PetscErrorCode  multiply_by(IceModelVec &x);
+  virtual PetscErrorCode  copy_to_global(Vec destination);
+  virtual PetscErrorCode  copy_to(IceModelVec &destination);
+  virtual PetscErrorCode  copy_from(IceModelVec &source);
+  virtual PetscErrorCode  set_name(const char name[]);
+  virtual PetscErrorCode  set_glaciological_units(const char units[], PetscReal factor);
+  virtual PetscErrorCode  set_attrs(const char my_pism_intent[], const char my_long_name[],
+				    const char my_units[], const char my_standard_name[]);
+  //  virtual PetscErrorCode  read_attrs(const int ncid);
+  virtual PetscErrorCode  write_attrs(const int ncid);
+  virtual PetscErrorCode  write(const char filename[], nc_type nctype);
+  virtual PetscErrorCode  read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
+  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
+  virtual PetscErrorCode  report_range();
 
-  virtual PetscErrorCode  regridVecNC(int dim_flag, LocalInterpCtx &lic);
-
-  virtual PetscErrorCode  needAccessToVals();
-  virtual PetscErrorCode  doneAccessToVals();
+  virtual PetscErrorCode  begin_access();
+  virtual PetscErrorCode  end_access();
   virtual PetscErrorCode  beginGhostComm();
   virtual PetscErrorCode  endGhostComm();
+  virtual PetscErrorCode  beginGhostComm(IceModelVec &destination);
+  virtual PetscErrorCode  endGhostComm(IceModelVec &destination);
 
-  virtual PetscErrorCode  setToConstant(const PetscScalar c);
+
+  virtual PetscErrorCode  set(const PetscScalar c);
  
-  // FIXME:  make this protected once IceModelVec fully implemented!
-  Vec          v;
-
+  MaskInterp interpolation_mask;
+  bool   use_interpolation_mask;
 protected:
+#ifdef PISM_DEBUG
+  int creation_counter, access_counter;
+#endif // PISM_DEBUG
+
+  Vec          v;
   char         varname[PETSC_MAX_PATH_LEN],       // usually the name of the NetCDF variable (unless
                                                   // there is no corresponding NetCDF var)
                long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
@@ -64,6 +86,9 @@ protected:
                pism_intent[PETSC_MAX_PATH_LEN],   // NetCDF attribute
                standard_name[PETSC_MAX_PATH_LEN]; // NetCDF attribute; sometimes specified in CF convention
   PetscTruth   has_standard_name;
+
+  char        glaciological_units[PETSC_MAX_PATH_LEN];
+  PetscScalar conversion_factor;
   
   IceGrid      *grid;
   DA           da;
@@ -76,8 +101,12 @@ protected:
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
   virtual PetscErrorCode  read_from_netcdf(const char filename[], const unsigned int time, const int dims,
 					   const int Mz);
-  virtual PetscErrorCode  write_to_netcdf(const int ncid, const int dims, nc_type nctype,
-					  const int Mz, void *a_mpi, int a_size);
+  virtual PetscErrorCode  regrid_from_netcdf(const char filename[], const int dim_flag,
+					     LocalInterpCtx &lic, bool critical,
+					     bool set_default_value,
+					     PetscScalar default_value);
+  virtual PetscErrorCode  write_to_netcdf(const char filename[], const int dims, nc_type nctype,
+					  const int Mz);
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
   //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);
@@ -93,7 +122,7 @@ struct planeBox {
 };
 
 
-// Class for a 2d DA-based Vec, with STAR stencil, for ice scalar quantities in IceModel.
+// Class for a 2d DA-based Vec, with BOX stencil, for ice scalar quantities in IceModel.
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
@@ -101,27 +130,16 @@ public:
   virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
 				       IceGrid &my_grid, const char my_varname[], bool local);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
+  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
+  virtual PetscErrorCode  write(const char filename[], nc_type nctype);
 
-  PetscScalar     getVal(const PetscInt i, const PetscInt j);
-  PetscErrorCode  getPlaneStar(const PetscInt i, const PetscInt j, planeStar *star); // do we need this?
-
-  PetscScalar**   get_array();  // FIXME: potentially dangerous
+  PetscErrorCode  get_array(PetscScalar** &a);
 
 protected:
   PetscErrorCode  create(IceGrid &my_grid, const char my_varname[], bool local, DAStencilType my_sten);
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
-
-
-// Class for a 2d DA-based Vec, with BOX stencil, for ice scalar quantities in IceModel.
-class IceModelVec2Box : public IceModelVec2 {
-public:
-  IceModelVec2Box();
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
-
-  PetscErrorCode  getPlaneBox(const PetscInt i, const PetscInt j, planeBox *box); // do we need this?
-};
-
 
 //! Class for a 3d DA-based Vec for bedrock scalar quantities in IceModel.
 class IceModelVec3Bedrock : public IceModelVec {
@@ -129,9 +147,12 @@ public:
   IceModelVec3Bedrock();
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_varname[], bool local);
   virtual PetscErrorCode read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical);
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
+  virtual PetscErrorCode write(const char filename[], nc_type nctype);
 
   PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
-  PetscErrorCode  setToConstantColumn(const PetscInt i, const PetscInt j,
+  PetscErrorCode  setColumn(const PetscInt i, const PetscInt j,
                                       const PetscScalar c);
   PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsOUT);
 
@@ -157,15 +178,18 @@ public:
                                        IceGrid &mygrid, const char my_varname[], bool local);
 
   virtual PetscErrorCode read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical);
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
+  virtual PetscErrorCode write(const char filename[], nc_type nctype);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 imv3_source);
   virtual PetscErrorCode  endGhostCommTransfer(IceModelVec3 imv3_source);
 
-  // need call needAccessToVals() before set...() or get...() *and* need call doneAccessToVals() afterward
+  // need call begin_access() before set...() or get...() *and* need call end_access() afterward
   PetscErrorCode  setValColumnPL(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
                                PetscScalar *levelsIN, PetscScalar *valsIN);
-  PetscErrorCode  setToConstantColumn(const PetscInt i, const PetscInt j, const PetscScalar c);
+  PetscErrorCode  setColumn(const PetscInt i, const PetscInt j, const PetscScalar c);
   PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
 
   PetscScalar     getValZ(const PetscInt i, const PetscInt j, const PetscScalar z);
@@ -185,9 +209,11 @@ public:
                                    PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsPTR);
 
-  PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z);
-  PetscErrorCode  getSurfaceValuesVec2d(Vec &gsurf, Vec myH);
-  PetscErrorCode  getSurfaceValuesArray2d(Vec &gsurf, PetscScalar **H);
+  PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z); // used in iMmatlab.cc
+  PetscErrorCode  getHorSlice(IceModelVec2 gslice, const PetscScalar z);
+  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2 myH); // used in iMviewers.cc
+  PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 myH);
+  PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H);
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);

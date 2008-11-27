@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -90,7 +90,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
   if (useSSAVelocity == PETSC_TRUE) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
-  ierr = VecSet(vtauc, tauc_default_value); CHKERRQ(ierr);
+  ierr = vtauc.set(tauc_default_value); CHKERRQ(ierr);
   // since vtillphi is part of model state it should not be set to default here, but 
   //   rather as part of initialization/bootstrapping
   return 0;
@@ -159,7 +159,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
 
   if (holdTillYieldStress == PETSC_TRUE) {  // don't modify tauc; use stored
     PetscScalar **mask; 
-    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = vMask.get_array(mask); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (modMask(mask[i][j]) != MASK_FLOATING) {
@@ -168,15 +168,17 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+    ierr = vMask.end_access(); CHKERRQ(ierr);
   } else { // usual case: use Hmelt to determine tauc
     PetscScalar **mask, **tauc, **H, **Hmelt, **bed, **tillphi; 
-    ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+
+    ierr =    vMask.get_array(mask);    CHKERRQ(ierr);
+    ierr =    vtauc.get_array(tauc);    CHKERRQ(ierr);
+    ierr =       vH.get_array(H);       CHKERRQ(ierr);
+    ierr =   vHmelt.get_array(Hmelt);   CHKERRQ(ierr);
+    ierr =     vbed.get_array(bed);     CHKERRQ(ierr); // is this used at all?
+    ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
+
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (modMask(mask[i][j]) == MASK_FLOATING) {
@@ -196,17 +198,17 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vtauc, &tauc); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vbed, &bed); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vtillphi, &tillphi); CHKERRQ(ierr);
+    ierr =    vMask.end_access(); CHKERRQ(ierr);
+    ierr =    vtauc.end_access(); CHKERRQ(ierr);
+    ierr =       vH.end_access(); CHKERRQ(ierr);
+    ierr =     vbed.end_access(); CHKERRQ(ierr);
+    ierr = vtillphi.end_access(); CHKERRQ(ierr);
+    ierr =   vHmelt.end_access(); CHKERRQ(ierr);
   }
 
   // communicate possibly updated mask; tauc does not need communication
-  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -239,12 +241,12 @@ PetscErrorCode IceModel::diffuseHmelt() {
   }
 
   // communicate ghosted values so neighbors are valid
-  ierr = DALocalToLocalBegin(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vHmelt, INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+  ierr = vHmelt.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vHmelt.endGhostComm(); CHKERRQ(ierr);
 
   PetscScalar **Hmelt, **Hmeltnew; 
-  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
+  ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(Hmeltnew); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       Hmeltnew[i][j] = oneM4R * Hmelt[i][j]
@@ -252,12 +254,12 @@ PetscErrorCode IceModel::diffuseHmelt() {
                        + Ry * (Hmelt[i][j+1] + Hmelt[i][j-1]);
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &Hmeltnew); CHKERRQ(ierr);
+  ierr = vHmelt.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
-  // finally copy new into vHmelt (and communicate ghosted values at same time)
-  ierr = DALocalToLocalBegin(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vWork2d[0], INSERT_VALUES, vHmelt); CHKERRQ(ierr);
+  // finally copy new into vHmelt (and communicate ghosted values at the same time)
+  ierr = vWork2d[0].beginGhostComm(vHmelt); CHKERRQ(ierr);
+  ierr = vWork2d[0].endGhostComm(vHmelt); CHKERRQ(ierr);
 
   return 0;
 }

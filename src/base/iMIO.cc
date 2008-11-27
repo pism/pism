@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -154,78 +154,164 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
   return 0;
 }
 
-
-PetscErrorCode IceModel::dumpToFile_netCDF(const char *fname) {
+PetscErrorCode IceModel::dumpToFile_netCDF(const char *filename) {
   PetscErrorCode ierr;
+  NCTool nc(&grid);
 
-// bring in the result of applying pism-state-ncgen.py to pism_state.cdl
-//   (see directory pism/src/netcdf/)
-#include "../netcdf/write_attributes.c"
+  // Prepare the file
+  ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
+  ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
+  ierr = nc.write_history(history); CHKERRQ(ierr);
+  ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
+  ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.0"); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
-  int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
-  int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
-  int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
+  // Write the data
 
-  // Allocate some memory.
-  void *a_mpi;
-  int a_len, max_a_len;
-  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
-  MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
+  // 2D model quantities
+  ierr =         vH.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vLongitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =  vLatitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =      vMask.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =     vHmelt.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =       vbed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =    vuplift.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
-// complete the output file
-#include "../netcdf/complete_dump.cc"
-
-  // We are done with these buffers
-  ierr = PetscFree(a_mpi); CHKERRQ(ierr);
-
-  if (grid.rank == 0) {
-    stat = nc_close(ncid);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  if (useSSAVelocity) {
+    ierr = vubarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = vvbarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   }
+
+  // 3D model quantities
+  ierr =   T3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =  Tb3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = tau3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  // 2D climate quantities
+  ierr =    vTs.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =   vGhf.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vAccum.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  // write tillphi = till friction angle in degrees
+  ierr = vtillphi.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  // 2D diagnostic quantities
+  // note h is diagnostic because it is recomputed by h=H+b at each time step
+  // these are not written in MKS units because they are intended to be viewed,
+  // not read by programs; IS THIS THE RIGHT CHOICE?
+  ierr = vh.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = vdHdt.scale(secpera); CHKERRQ(ierr); // convert to m a-1
+  ierr = vdHdt.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // Create the mask of zeros and ones
+  // 1 - ice thickness > 0
+  // 0 - ice-free location
+  PetscScalar **M, **H;
+  ierr = vWork2d[5].get_array(M);
+  ierr = vH.get_array(H);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0.0) {
+	M[i][j] = 1.0;
+      } else {
+	M[i][j] = 0.0;
+      }
+    }
+  }
+  ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  // compute cbar = sqrt(ubar^2 + vbar^2) and save it
+  ierr = getMagnitudeOf2dVectorField(vubar, vvbar, vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out the ice-free areas
+
+  ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("diagnostic", "magnitude of vertically-integrated horizontal velocity of ice",
+			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // compute cflx = cbar .* thk and save it
+  ierr = vWork2d[0].multiply_by(vH, vWork2d[1]); CHKERRQ(ierr);
+  ierr = vWork2d[1].set_name("cflx"); CHKERRQ(ierr);
+  ierr = vWork2d[1].set_attrs("diagnostic", "magnitude of vertically-integrated horizontal flux of ice",
+			      "m2 s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[1].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[1].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // compute cbase  = sqrt(u|_{z=0}^2 + v|_{z=0}^2) and save it
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr); // vWork2d[0] = u_{z=0}
+  ierr = v3.getHorSlice(vWork2d[1], 0.0); CHKERRQ(ierr); // vWork2d[1] = v_{z=0}
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
+  ierr = vWork2d[2].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out the ice-free areas
+
+  ierr = vWork2d[2].set_name("cbase"); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_attrs("diagnostic", "magnitude of horizontal velocity of ice at base of ice",
+			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = v3.getSurfaceValues(vWork2d[1], vH); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out the ice-free areas
+
+  ierr = vWork2d[0].set_name("csurf"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("diagnostic", "magnitude of horizontal velocity of ice at ice surface",
+			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // compute wsurf, the surface values of vertical velocity
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+
+  ierr = vWork2d[0].set_name("wsurf"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface",
+			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // compute magnitude of basal shear stress = rho g H |grad h|
+  ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
+  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
+
+  ierr = vWork2d[2].set_name("taud"); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_attrs("diagnostic", "magnitude of driving shear stress at base of ice",
+			      "Pa", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_glaciological_units("", 1.0); CHKERRQ(ierr); // reset the units
+  ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // write out yield stress
+  ierr = vtauc.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
   return 0;
 }
 
-
-PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *diag_fname) {
+PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *filename) {
   PetscErrorCode ierr;
 
-// bring in the result of applying pism-state-ncgen.py to pism_state.cdl
-//   and pism_diag.fragment
-//   (see directory pism/src/netcdf/)
-// ("ncid" defined in included file)
-#include "../netcdf/write_diag_attributes.c"
+  ierr = dumpToFile_netCDF(filename); CHKERRQ(ierr);
 
-  int s[] = {0, grid.xs, grid.ys, 0};            // Start local block: t dependent
-  int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
-  int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
+  ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = w3.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  // Allocate some memory.
-  void *a_mpi;
-  int a_len, max_a_len;
-  max_a_len = a_len = grid.xm * grid.ym * PetscMax(grid.Mz, grid.Mbz);
-  MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
-
-// complete the output file as in usual dump
-// ("uvel_id", "vvel_id", "wvel_id" defined in included file)
-#include "../netcdf/complete_dump.cc"
-
-  // now write additional 3-D diagnostic quantities
-  ierr = u3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = v3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = w3.putVecNC(ncid, s, c, 4, a_mpi, max_a_len); CHKERRQ(ierr);
-  
-  // We are done with these buffers
-  ierr = PetscFree(a_mpi); CHKERRQ(ierr);
-
-  if (grid.rank == 0) {
-    stat = nc_close(ncid);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
   return 0;
 }
-
 
 //! When reading a saved PISM model state, warn the user if options <tt>-Mx,-My,-Mz,-Mbz</tt> have been ignored.
 PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
@@ -266,29 +352,27 @@ The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" a
  */
 PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   PetscErrorCode  ierr;
-  int         ncid, stat;
+  int         stat;
+  NCTool nc(&grid);
 
-  if (hasSuffix(fname, ".pb") == true) {
-    SETERRQ1(1,"ERROR: .pb format not supported; cannot initialize from file %s", fname);
-  }
-  
   if (hasSuffix(fname, ".nc") == false) {
     ierr = verbPrintf(1,grid.com,
        "WARNING:  Unknown file format for %s.  Trying to read as NetCDF.\n",fname); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2,grid.com,"initializing from NetCDF file  %s  ...\n",
+  ierr = verbPrintf(2,grid.com,"initializing from NetCDF file '%s'...\n",
                      fname); CHKERRQ(ierr);
 
-  if (grid.rank == 0) {
-    stat = nc_open(fname, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
+  bool file_exists = false;
+  ierr = nc.open_for_reading(fname, file_exists); CHKERRQ(ierr);
+  if (!file_exists)
+    SETERRQ1(1, "Couldn't open file '%s'.\n", fname);
 
   size_t      dim[5];
   double      bdy[7];
   // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
   //   this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);
+  ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);
   grid.year = bdy[0] / secpera;
   grid.Mx = dim[1];
   grid.My = dim[2];
@@ -299,7 +383,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   double *zlevs, *zblevs;
   zlevs = new double[grid.Mz];
   zblevs = new double[grid.Mbz];
-  ierr = nct.get_vertical_dims(ncid, grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
+  ierr = nc.get_vertical_dims(grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
 
   // re-allocate and fill grid.zlevels & zblevels with read values
   delete [] grid.zlevels;
@@ -327,9 +411,9 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
 
   // Time to compute what we need.
-  int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent; 
-                                                 //   dim[0] is the number of t vals in file
-  int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
+//   int s[] = {dim[0] - 1, grid.xs, grid.ys, 0};   // Start local block: t dependent; 
+//                                                  //   dim[0] is the number of t vals in file
+//   int c[] = {1, grid.xm, grid.ym, grid.Mz};   // Count local block: t dependent
 //   int cb[] = {1, grid.xm, grid.ym, grid.Mbz}; // Count local block: bed
 
   void *a_mpi;
@@ -339,28 +423,21 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
 
   // 2-D mapping
-  ierr = nct.get_local_var(ncid, "lon", grid.da2, vLongitude, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "lat", grid.da2, vLatitude, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = vLongitude.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =  vLatitude.read(fname, dim[0] - 1); CHKERRQ(ierr);
 
   // 2-D model quantities: discrete
-  ierr = nct.get_local_var(ncid, "mask", grid.da2, vMask, g2, 
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr = vMask.read(fname, dim[0] - 1); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr = nct.get_local_var(ncid, "usurf", grid.da2, vh, g2,  // DEPRECATED: pism_intent = diagnostic;
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);             //   WE SHOULD NOT BE READING THIS
-                                                                              //   (CHOICES ABOUT WHAT -bif DOES ARE A
-                                                                              //   DIFFERENT ISSUE)
-  ierr = nct.get_local_var(ncid, "thk", grid.da2, vH, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "bwat", grid.da2, vHmelt, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "topg", grid.da2, vbed, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "dbdt", grid.da2, vuplift, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr =      vh.read(fname, dim[0] - 1); CHKERRQ(ierr);
+				// DEPRECATED: usurf:pism_intent = diagnostic;
+				// WE SHOULD NOT BE READING THIS (CHOICES ABOUT
+				// WHAT -bif DOES ARE A DIFFERENT ISSUE)
+  ierr =  vHmelt.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =      vH.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =    vbed.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr = vuplift.read(fname, dim[0] - 1); CHKERRQ(ierr);
 
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
@@ -370,30 +447,24 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   if ((grid.rank == 0) && useSSAVelocity && (!dontreadSSAvels)) {
 
     int flag;
-    stat = nc_get_att_int(ncid, NC_GLOBAL, "haveSSAvelocities", &flag);
+    stat = nc_get_att_int(nc.ncid, NC_GLOBAL, "ssa_velocities_are_valid", &flag);
     if (stat == NC_NOERR)
-      haveSSAvelocities = flag;
+      have_ssa_velocities = flag;
   }
-  ierr = MPI_Bcast(&haveSSAvelocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&have_ssa_velocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
-  if (haveSSAvelocities == 1) {
+  if (have_ssa_velocities == 1) {
     ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
-    ierr = nct.get_local_var(ncid, "vubarSSA", grid.da2, vubarSSA, g2,
-			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-    ierr = nct.get_local_var(ncid, "vvbarSSA", grid.da2, vvbarSSA, g2,
-			     s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+    ierr = vubarSSA.read(fname, dim[0] - 1);
+    ierr = vvbarSSA.read(fname, dim[0] - 1);
   }
 
   // 2-D climate/bdry quantities
-  ierr = nct.get_local_var(ncid, "artm", grid.da2, vTs, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "bheatflx", grid.da2, vGhf, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "acab", grid.da2, vAccum, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
-  ierr = nct.get_local_var(ncid, "tillphi", grid.da2, vtillphi, g2,
-                       s, c, 3, a_mpi, max_a_len); CHKERRQ(ierr);
+  ierr =      vTs.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =     vGhf.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =   vAccum.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr = vtillphi.read(fname, dim[0] - 1); CHKERRQ(ierr);
 
   // 3-D model quantities
   ierr =   T3.read(fname, dim[0] - 1); CHKERRQ(ierr);
@@ -405,13 +476,13 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   // actually read the polar_stereographic if present
   if (grid.rank == 0) {
     int psid;
-    stat = nc_inq_varid(ncid, "polar_stereographic", &psid); 
+    stat = nc_inq_varid(nc.ncid, "polar_stereographic", &psid); 
     if (stat == NC_NOERR) { // polar_stereo exists
-      stat = nc_get_att_double(ncid, psid, "straight_vertical_longitude_from_pole",
+      stat = nc_get_att_double(nc.ncid, psid, "straight_vertical_longitude_from_pole",
                               &psParams.svlfp); CHKERRQ(nc_check(stat));
-      stat = nc_get_att_double(ncid, psid, "latitude_of_projection_origin",
+      stat = nc_get_att_double(nc.ncid, psid, "latitude_of_projection_origin",
                               &psParams.lopo); CHKERRQ(nc_check(stat));
-      stat = nc_get_att_double(ncid, psid, "standard_parallel",
+      stat = nc_get_att_double(nc.ncid, psid, "standard_parallel",
                               &psParams.sp); CHKERRQ(nc_check(stat));
     }
   }
@@ -424,7 +495,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   unsigned int history_len;	// used for communication
   if (grid.rank == 0) {
     size_t H;
-    stat = nc_inq_attlen(ncid, NC_GLOBAL, "history", &H);
+    stat = nc_inq_attlen(nc.ncid, NC_GLOBAL, "history", &H);
     history_len = (int)H;
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
@@ -445,12 +516,11 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
 
   // Read the history string and close the file
   if (grid.rank == 0) {
-    stat = nc_get_att_text(ncid, NC_GLOBAL, "history", history);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_close(ncid);
+    stat = nc_get_att_text(nc.ncid, NC_GLOBAL, "history", history);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // Broadcast the string
   MPI_Bcast(history, history_size, MPI_CHAR, 0, grid.com);
@@ -460,7 +530,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
 }
 
 
-//! Manage regridding based on user options.  Call NCTool::regrid_local_var() to do each selected variable.
+//! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
 /*!
 For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from 
 the NetCDF file specified by <tt>-regrid</tt>.
@@ -470,15 +540,16 @@ quantities \c tau3, \c T3, \c Tb3.  This is consistent with one standard purpose
 regridding, which is to stick with current geometry through the downscaling procedure.  
 Most of the time the user should carefully specify which variables to regrid.
  */
-PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
+PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet;
   char regridVars[PETSC_MAX_PATH_LEN];
-  
+  NCTool nc(&grid);
+
   const int  npossible = 7;
   const char possible[20] = "bBehHLT";
   
-  if (!hasSuffix(regridFile, ".nc")) {
+  if (!hasSuffix(filename, ".nc")) {
     SETERRQ(1,"regridding is only possible if the source file has NetCDF format and extension '.nc'");
   }
 
@@ -489,27 +560,30 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   }
   ierr = verbPrintf(2,grid.com, 
            "regridding variables with single character flags `%s' from NetCDF file `%s':", 
-           regridVars,regridFile); CHKERRQ(ierr);
+           regridVars,filename); CHKERRQ(ierr);
 
   // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
   size_t dim[5];
   double bdy[7];
-  int ncid, stat;
 
   // create "local interpolation context" from dimensions, limits, and lengths extracted from regridFile,
   //   and from information about the part of the grid owned by this processor
-  if (grid.rank == 0) {
-    stat = nc_open(regridFile, 0, &ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-  ierr = nct.get_dims_limits_lengths(ncid, dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
+
+  bool file_exists = false;
+  ierr = nc.open_for_reading(filename, file_exists);
+  if (!file_exists)
+    SETERRQ1(1, "Couldn't open file '%s'.\n", filename);
+  
+  ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
   // from regridFile: Mz = dim[3], Mbz = dim[4]  
   double *zlevs, *zblevs;
   zlevs = new double[dim[3]];
   zblevs = new double[dim[4]];
-  ierr = nct.get_vertical_dims(ncid, dim[3], dim[4], zlevs, zblevs); CHKERRQ(ierr);
+  ierr = nc.get_vertical_dims(dim[3], dim[4], zlevs, zblevs); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   { // explicit scoping means destructor will be called for lic
-    LocalInterpCtx lic(ncid, dim, bdy, zlevs, zblevs, grid);
+    LocalInterpCtx lic(dim, bdy, zlevs, zblevs, grid);
     // ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
     
     for (PetscInt k = 0; k < npossible; k++) {
@@ -517,31 +591,31 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
        switch (possible[k]) {
          case 'b':
            ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("topg", 2, lic, grid.da2, vbed, g2, false); CHKERRQ(ierr);
+	   ierr = vbed.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'B':
            ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... "); CHKERRQ(ierr);
-           ierr = Tb3.regridVecNC(4, lic);  CHKERRQ(ierr);
+           ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'e':
            ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... "); CHKERRQ(ierr);
-           ierr = tau3.regridVecNC(3, lic);  CHKERRQ(ierr);
+           ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'h':
            ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("usurf", 2, lic, grid.da2, vh, g2, false); CHKERRQ(ierr);
+	   ierr = vh.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'H':
            ierr = verbPrintf(2, grid.com, "\n   H: regridding 'thk' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("thk", 2, lic, grid.da2, vH, g2, false); CHKERRQ(ierr);
+	   ierr = vH.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'L':
            ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... "); CHKERRQ(ierr);
-           ierr = nct.regrid_local_var("bwat", 2, lic, grid.da2, vHmelt, g2, false); CHKERRQ(ierr);
+	   ierr = vHmelt.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'T':
            ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... "); CHKERRQ(ierr);
-           ierr = T3.regridVecNC(3, lic);  CHKERRQ(ierr);
+           ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
        }
       }
@@ -550,11 +624,6 @@ PetscErrorCode IceModel::regrid_netCDF(const char *regridFile) {
   }
   
   delete [] zlevs;  delete [] zblevs;
-
-  if (grid.rank == 0) {
-    stat = nc_close(ncid);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
   ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);
   return 0;
 }

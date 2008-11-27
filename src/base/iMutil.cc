@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,20 +24,21 @@
 
 
 //! Compute the scalar magnitude of a two-dimensional vector field.
-PetscErrorCode IceModel::getMagnitudeOf2dVectorField(Vec vfx, Vec vfy, Vec vmag) {
+PetscErrorCode IceModel::getMagnitudeOf2dVectorField(IceModelVec2 vfx, IceModelVec2 vfy,
+						     IceModelVec2 vmag) {
   PetscErrorCode ierr;
   PetscScalar **fx, **fy, **mag;
-  ierr = DAVecGetArray(grid.da2, vfx, &fx); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vfy, &fy); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vmag, &mag); CHKERRQ(ierr);
+  ierr = vfx.get_array(fx); CHKERRQ(ierr);
+  ierr = vfy.get_array(fy); CHKERRQ(ierr);
+  ierr = vmag.get_array(mag); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       mag[i][j] = sqrt(PetscSqr(fx[i][j]) + PetscSqr(fy[i][j]));
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vfx, &fx); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vfy, &fy); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vmag, &mag); CHKERRQ(ierr);
+  ierr = vfx.end_access(); CHKERRQ(ierr);
+  ierr = vfy.end_access(); CHKERRQ(ierr);
+  ierr = vmag.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -185,7 +186,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 
   // make sure the first vertical velocities do not use junk from 
   //   uninitialized basal melt rate.
-  ierr = VecSet(vbasalMeltRate, 0.0); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
 
   ierr = initBasalTillModel(); CHKERRQ(ierr);
     
@@ -285,7 +286,7 @@ PetscErrorCode IceModel::afterInitHook() {
 
   // last task before proceeding: invert for basal till properties, if desired;
   //   reads options "-cbar_to_till foo.nc" and "-csurf_to_till foo.nc"
-  ierr = invertVelocitiesFromNetCDF(); CHKERRQ(ierr);
+  //   ierr = invertVelocitiesFromNetCDF(); CHKERRQ(ierr);
 
   return 0;
 }

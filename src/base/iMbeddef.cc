@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Ed Bueler
+// Copyright (C) 2004-2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,10 +103,12 @@ PetscErrorCode IceModel::bedDefSetup() {
   PetscErrorCode  ierr;
   
   if (doBedDef == PETSC_TRUE) {
-    ierr = VecDuplicate(vH,&vHlast); CHKERRQ(ierr);
-    ierr = VecCopy(vH,vHlast); CHKERRQ(ierr);
-    ierr = VecDuplicate(vbed,&vbedlast); CHKERRQ(ierr);
-    ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
+    ierr = vHlast.create(grid, "vHlast", true); CHKERRQ(ierr);
+    ierr = vHlast.copy_from(vH); CHKERRQ(ierr);
+
+    ierr = vbedlast.create(grid, "vbedlast", true);
+    ierr = vbedlast.copy_from(vbed);
+
     lastBedDefUpdateYear = grid.year;
     
     ierr = verbPrintf(2,grid.com,"initializing bed deformation model"); CHKERRQ(ierr);
@@ -134,9 +136,9 @@ PetscErrorCode IceModel::bedDefSetup() {
       // store initial H, bed, and uplift values on proc zero
       // note load is  - rho_i g (H-Hstart)
       // and  bed = bedstart + U_elastic + (U_plate - U_prebent)
-      ierr = putLocalOnProcZero(vH,Hstartp0); CHKERRQ(ierr);
-      ierr = putLocalOnProcZero(vbed,bedstartp0); CHKERRQ(ierr);
-      ierr = putLocalOnProcZero(vuplift,upliftp0); CHKERRQ(ierr);
+      ierr =      vH.put_on_proc0(Hstartp0,   top0ctx, g2, g2natural); CHKERRQ(ierr);
+      ierr =    vbed.put_on_proc0(bedstartp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
+      ierr = vuplift.put_on_proc0(upliftp0,   top0ctx, g2, g2natural); CHKERRQ(ierr);
 
       if (grid.rank == 0) {
         ierr = bdLC.settings(PETSC_FALSE, // turn off elastic model for now
@@ -160,8 +162,8 @@ PetscErrorCode IceModel::bedDefCleanup() {
   PetscErrorCode  ierr;
 
   if (doBedDef == PETSC_TRUE) {
-    ierr = VecDestroy(vHlast); CHKERRQ(ierr);
-    ierr = VecDestroy(vbedlast); CHKERRQ(ierr);
+    ierr = vHlast.destroy(); CHKERRQ(ierr);
+    ierr = vbedlast.destroy(); CHKERRQ(ierr);
 
     if (doBedIso == PETSC_FALSE) {
       ierr = VecDestroy(Hp0); CHKERRQ(ierr);
@@ -195,21 +197,22 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
     if (doBedIso == PETSC_TRUE) { // pointwise isostasy model: in parallel
       ierr = bed_def_step_iso(); CHKERRQ(ierr);
     } else { // L&C model: only on proc zero
-      ierr = putLocalOnProcZero(vH,Hp0); CHKERRQ(ierr);
-      ierr = putLocalOnProcZero(vbed,bedp0); CHKERRQ(ierr);
+      ierr =   vH.put_on_proc0(Hp0,   top0ctx, g2, g2natural); CHKERRQ(ierr);
+      ierr = vbed.put_on_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
       if (grid.rank == 0) {  // only processor zero does the step
         ierr = bdLC.step(dtBedDefYears, grid.year - startYear); CHKERRQ(ierr);
       }
-      ierr = getLocalFromProcZero(bedp0, vbed); CHKERRQ(ierr);
-      ierr = DALocalToLocalBegin(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
-      ierr = DALocalToLocalEnd(grid.da2,vbed,INSERT_VALUES,vbed); CHKERRQ(ierr);
+      ierr = vbed.get_from_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
+      ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+      ierr = vbed.endGhostComm(); CHKERRQ(ierr);
     }
     // update uplift: uplift = (bed - bedlast) / dt
-    ierr = VecWAXPY(vuplift,-1.0,vbedlast,vbed); CHKERRQ(ierr);  
-    ierr = VecScale(vuplift, 1.0 / (dtBedDefYears * secpera)); CHKERRQ(ierr); 
+    ierr = vbed.add(-1, vbedlast, vuplift); CHKERRQ(ierr);
+    ierr = vuplift.scale(1.0 / (dtBedDefYears * secpera)); CHKERRQ(ierr); 
     // copy current values of H, bed in prep for next step
-    ierr = VecCopy(vH,vHlast); CHKERRQ(ierr);
-    ierr = VecCopy(vbed,vbedlast); CHKERRQ(ierr);
+    
+    ierr = vH.copy_to(vHlast); CHKERRQ(ierr);
+    ierr = vbed.copy_to(vbedlast); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
     lastBedDefUpdateYear = grid.year;
     ierr = verbPrintf(2, grid.com, "b"); CHKERRQ(ierr);
@@ -222,11 +225,11 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
 
 PetscErrorCode IceModel::bed_def_step_iso() {
   PetscErrorCode ierr;
-  Vec vHdiff = vWork2d[0];
+  IceModelVec2 vHdiff = vWork2d[0];
 
   const PetscScalar  f = ice->rho / bed_deformable.rho;
-  ierr = VecWAXPY(vHdiff,-1.0,vHlast,vH); CHKERRQ(ierr);  // Hdiff = H - Hlast
-  ierr = VecWAXPY(vbed,-f,vHdiff,vbedlast); CHKERRQ(ierr);  // bed = bedlast - f (Hdiff)
+  ierr = vH.add(-1, vHlast, vHdiff); CHKERRQ(ierr);  // Hdiff = H - Hlast
+  ierr = vbedlast.add(-f, vHdiff, vbed); CHKERRQ(ierr);  // bed = bedlast - f (Hdiff)
   return 0;
 }
 

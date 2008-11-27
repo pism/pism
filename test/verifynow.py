@@ -86,7 +86,7 @@ def verify(test):
 NP = 1
 LEVELS = 2
 PREFIX = ''
-MPIDO = 'mpiexec'
+MPIDO = 'rm -f verify.nc; mpiexec'
 TESTS = 'CGIJ'
 KSPRTOL = 1e-12 # for test I
 SSARTOL = 5e-7   # ditto

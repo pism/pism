@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,12 +34,12 @@ PetscErrorCode IceModel::testIceModelVec3()    {
 
   ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3; setting to constant %f",
                     60402.70804); CHKERRQ(ierr);
-  ierr = test3.setToConstant(60402.70804); CHKERRQ(ierr);
+  ierr = test3.set(60402.70804); CHKERRQ(ierr);
 
-  ierr = test3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = test3.begin_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com,"\n\nIceModelVec3::getValZ() says value is %f",
                     test3.getValZ(grid.xs,grid.ys,0.0) ); CHKERRQ(ierr);
-  ierr = test3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = test3.end_access(); CHKERRQ(ierr);
 
   ierr = test3.beginGhostComm(); CHKERRQ(ierr);
   ierr = test3.endGhostComm(); CHKERRQ(ierr);
@@ -47,7 +47,7 @@ PetscErrorCode IceModel::testIceModelVec3()    {
   PetscScalar levels[10] = {0.0, 10.0, 100.0, 200.0, 500.0, 1000.0, 
                             1500.0, 2000.0, 2500.0, grid.Lz};
   PetscScalar valsIN[10], valsOUT[10];
-  ierr = test3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = test3.begin_access(); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,
     "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnPL()\n"); CHKERRQ(ierr);
@@ -75,7 +75,7 @@ PetscErrorCode IceModel::testIceModelVec3()    {
   }
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
-  ierr = test3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = test3.end_access(); CHKERRQ(ierr);
   ierr = test3.destroy(); CHKERRQ(ierr);
   return 0;
 }
@@ -104,12 +104,12 @@ PetscErrorCode IceModel::testIceModelVec3Bedrock()    {
 
   ierr = test3b.create(grid,"testMe",false); CHKERRQ(ierr);
 
-  ierr = test3b.needAccessToVals(); CHKERRQ(ierr);
+  ierr = test3b.begin_access(); CHKERRQ(ierr);
   const PetscScalar  tv = 60402.70804;
   ierr = verbPrintf(1,grid.com,
              "\ntesting IceModelVec3Bedrock\n\nsetting to constant %f",
              tv); CHKERRQ(ierr);
-  ierr = test3b.setToConstantColumn(grid.xs,grid.ys,tv); CHKERRQ(ierr);
+  ierr = test3b.setColumn(grid.xs,grid.ys,tv); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com,"\n\ngetInternalColumn() says ... ");
             CHKERRQ(ierr);
   PetscScalar *valscOUT;
@@ -118,10 +118,10 @@ PetscErrorCode IceModel::testIceModelVec3Bedrock()    {
   for (PetscInt k=0; k < grid.Mbz; k++) {
     maxdiff = PetscMax(maxdiff,PetscAbs(tv-valscOUT[k]));
   }
-  ierr = test3b.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = test3b.end_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, "max error is %5.4e\n\n", maxdiff); CHKERRQ(ierr);
 
-  ierr = test3b.needAccessToVals(); CHKERRQ(ierr);
+  ierr = test3b.begin_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com,
              "\ntesting setInternalColumn() and getInternalColumn ... "); CHKERRQ(ierr);
   PetscScalar *valsiIN, *valsiOUT;
@@ -136,7 +136,7 @@ PetscErrorCode IceModel::testIceModelVec3Bedrock()    {
     maxdiff = PetscMax(maxdiff,PetscAbs(valsiIN[k]-valsiOUT[k]));
   }
   delete [] valsiIN;
-  ierr = test3b.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = test3b.end_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, "max error is %5.4e\n\n", maxdiff); CHKERRQ(ierr);
 
 
@@ -147,7 +147,7 @@ PetscErrorCode IceModel::testIceModelVec3Bedrock()    {
     levels[k] = - grid.Lbz * levels[k];  
   }
 
-  ierr = test3b.needAccessToVals(); CHKERRQ(ierr);
+  ierr = test3b.begin_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com,
     "\ntesting setValColumn() and getValColumn():\n"); CHKERRQ(ierr);
   PetscScalar valsIN[N], valsOUT[N];
@@ -163,7 +163,7 @@ PetscErrorCode IceModel::testIceModelVec3Bedrock()    {
   }
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
-  ierr = test3b.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = test3b.end_access(); CHKERRQ(ierr);
   ierr = test3b.destroy(); CHKERRQ(ierr);
   return 0;
 }

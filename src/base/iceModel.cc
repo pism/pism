@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,14 +34,12 @@ const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
-  nct.set_grid(&grid);
-
   bootstrapLIC = PETSC_NULL;
   
   history_size = TEMPORARY_STRING_LENGTH;
   history = new char[history_size];
 
-  haveSSAvelocities = false;
+  have_ssa_velocities = false;
 
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
@@ -133,42 +131,148 @@ PetscErrorCode IceModel::createVecs() {
   if (createVecs_done == PETSC_TRUE) {
     ierr = destroyVecs(); CHKERRQ(ierr);
   }
-  
-  ierr = u3.create(grid,"uvel",true); CHKERRQ(ierr);
-  ierr = v3.create(grid,"vvel",true); CHKERRQ(ierr);
-  ierr = w3.create(grid,"wvel",false); CHKERRQ(ierr);        // never diff'ed in hor dirs
-  ierr = Sigma3.create(grid,"Sigma",false); CHKERRQ(ierr);   // never diff'ed in hor dirs
-  ierr = T3.create(grid,"temp",true); CHKERRQ(ierr);
-  ierr = tau3.create(grid,"age",true); CHKERRQ(ierr);
 
-  ierr = Tb3.create(grid,"litho_temp",false); CHKERRQ(ierr);
+  // The following code creates (and documents -- to some extent) the
+  // variables. The main (and only) principle here is using standard names from
+  // the CF conventions; see
+  // http://cf-pcmdi.llnl.gov/documents/cf-standard-names/11/cf-standard-name-table.html
 
-  ierr = DACreateLocalVector(grid.da2, &vh); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vH); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vbed); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vAccum); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vTs); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vMask); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vGhf); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vubar); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vvbar); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vub); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vvb); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vRb); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vHmelt); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vbasalMeltRate); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vuplift); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vdHdt); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vtauc); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vtillphi); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vLongitude); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vLatitude); CHKERRQ(ierr);
+  ierr =     u3.create(grid, "uvel", true); CHKERRQ(ierr);
+  ierr =     u3.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+			  "m s-1", NULL); CHKERRQ(ierr);
+  ierr =     v3.create(grid, "vvel", true); CHKERRQ(ierr);
+  ierr =     v3.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+			  "m s-1", NULL); CHKERRQ(ierr);
+  ierr =     w3.create(grid, "wvel", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr =     w3.set_attrs("diagnostic", "vertical velocity of ice",
+			  "m s-1", NULL); CHKERRQ(ierr);
+  ierr = Sigma3.create(grid, "Sigma", false); CHKERRQ(ierr); // never diff'ed in hor dirs
 
-  ierr = VecDuplicateVecs(vh, 2, &vuvbar); CHKERRQ(ierr);
+  // ice temperature
+  ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
+  ierr = T3.set_attrs("model_state","ice temperature",
+		      "K", "land_ice_temperature"); CHKERRQ(ierr);
 
-  ierr = VecDuplicateVecs(vh, nWork2d, &vWork2d); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vubarSSA); CHKERRQ(ierr);
-  ierr = VecDuplicate(vh, &vvbarSSA); CHKERRQ(ierr);
+  // age of ice
+  ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
+  ierr = tau3.set_attrs("model_state", "age of ice",
+			"s", "land_ice_age"); CHKERRQ(ierr);
+
+  // bedrock temperature
+  ierr = Tb3.create(grid,"litho_temp", false); CHKERRQ(ierr);
+  ierr = Tb3.set_attrs("model_state", "bedrock temperature",
+		       "K", "bedrock_temperature"); CHKERRQ(ierr);
+
+  // ice upper surface elevation
+  ierr = vh.create(grid, "usurf", true); CHKERRQ(ierr);
+  ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
+		      "m", "surface_altitude"); CHKERRQ(ierr);
+
+  // land ice thickness
+  ierr = vH.create(grid, "thk", true); CHKERRQ(ierr);
+  ierr = vH.set_attrs("model_state", "land ice thickness",
+		      "m", "land_ice_thickness"); CHKERRQ(ierr);
+
+  // bedrock surface elevation
+  ierr = vbed.create(grid, "topg", true); CHKERRQ(ierr);
+  ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
+			"m", "bedrock_altitude"); CHKERRQ(ierr);
+
+  // mean annual net ice equivalent accumulation (ablation) rate
+  ierr = vAccum.create(grid, "acab", true); CHKERRQ(ierr);
+  ierr = vAccum.set_attrs("climate_steady", "mean annual net ice equivalent accumulation (ablation) rate",
+			  "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+
+  // annual mean air temperature at ice surface
+  ierr = vTs.create(grid, "artm", true); CHKERRQ(ierr);
+  ierr = vTs.set_attrs("climate_steady", "annual mean air temperature at ice surface",
+		       "K", "surface_temperature"); CHKERRQ(ierr);
+
+  // grounded_dragging_floating integer mask
+  ierr = vMask.create(grid, "mask",     true); CHKERRQ(ierr);
+  ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
+			 "", NULL); CHKERRQ(ierr);
+
+  // upward geothermal flux at bedrock surface
+  ierr = vGhf.create(grid, "bheatflx", true); CHKERRQ(ierr);
+  ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
+			"W m-2", NULL); CHKERRQ(ierr);
+
+  // u bar and v bar
+  ierr = vubar.create(grid, "ubar", true); CHKERRQ(ierr);
+  ierr = vubar.set_attrs(NULL, "vertical mean of horizontal ice velocity in the X direction",
+			  "m s-1", "land_ice_vertical_mean_x_velocity"); CHKERRQ(ierr);
+  ierr = vubar.set_glaciological_units("m year-1", secpera);
+
+  ierr = vvbar.create(grid, "vbar", true); CHKERRQ(ierr);
+  ierr = vvbar.set_attrs(NULL, "vertical mean of horizontal ice velocity in the Y direction",
+			  "m s-1", "land_ice_vertical_mean_y_velocity"); CHKERRQ(ierr);
+  ierr = vvbar.set_glaciological_units("m year-1", secpera);
+
+  // basal velocities on standard grid
+  ierr = vub.create(grid, "ub", true); CHKERRQ(ierr);
+  ierr = vub.set_attrs(NULL, "basal ice velocity in the X direction",
+		       "m s-1", "land_ice_basal_x_velocity"); CHKERRQ(ierr);
+  ierr = vvb.create(grid, "vb", true); CHKERRQ(ierr);
+  ierr = vvb.set_attrs(NULL, "basal ice velocity in the Y direction",
+		       "m s-1", "land_ice_basal_y_velocity"); CHKERRQ(ierr);
+
+  // basal frictional heating on regular grid
+  ierr = vRb.create(grid, "Rb", true); CHKERRQ(ierr);
+  ierr = vRb.set_attrs(NULL, "basal frictional heating",
+		       NULL, NULL); CHKERRQ(ierr);
+
+  // effective thickness of subglacial melt water
+  ierr = vHmelt.create(grid, "bwat", true); CHKERRQ(ierr);
+  ierr = vHmelt.set_attrs("model_state", "effective thickness of subglacial melt water",
+			  "m", NULL); CHKERRQ(ierr);
+
+  // rate of change of ice thickness
+  ierr = vdHdt.create(grid, "dHdt", true); CHKERRQ(ierr);
+  ierr = vdHdt.set_attrs("diagnostic", "rate of change of ice thickness",
+			 "m year-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
+
+  // yield stress for basal till (plastic or pseudo-plastic model)
+  ierr = vtauc.create(grid, "tauc", true); CHKERRQ(ierr);
+  ierr = vtauc.set_attrs("diagnostic", "yield stress for basal till (plastic or pseudo-plastic model)",
+			 "Pa", NULL); CHKERRQ(ierr);
+
+  // bedrock uplift rate
+  ierr = vuplift.create(grid, "dbdt", true); CHKERRQ(ierr);
+  ierr = vuplift.set_attrs("model_state", "bedrock uplift rate",
+			   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
+
+  // basal melt rate
+  ierr = vbasalMeltRate.create(grid, "basal_melt_rate", true); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.set_attrs(NULL, "basal melt rate",
+				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
+
+  // friction angle for till under grounded ice sheet
+  ierr = vtillphi.create(grid, "tillphi", true);
+  ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
+			    "degrees", NULL); CHKERRQ(ierr);
+
+  // Longitude
+  ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
+  ierr = vLongitude.set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
+
+  // Latitude
+  ierr = vLatitude.create(grid, "lat", true); CHKERRQ(ierr);
+  ierr = vLatitude.set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
+
+  // u bar and v bar on staggered grid
+  ierr = vuvbar[0].create(grid, "vuvbar[0]", true); CHKERRQ(ierr);
+  ierr = vuvbar[1].create(grid, "vuvbar[1]", true); CHKERRQ(ierr);
+
+  // work vectors
+  for (int j = 0; j < nWork2d; j++) {
+    ierr = vWork2d[j].create(grid, "a_work_vector", true); CHKERRQ(ierr);
+  }
+
+  // initial guesses of SSA velocities
+  ierr = vubarSSA.create(grid, "vubarSSA", true);
+  ierr = vvbarSSA.create(grid, "vvbarSSA", true);
+
 
   ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
   ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
@@ -214,31 +318,40 @@ PetscErrorCode IceModel::destroyVecs() {
 
   ierr = Tb3.destroy(); CHKERRQ(ierr);
 
-  ierr = VecDestroy(vh); CHKERRQ(ierr);
-  ierr = VecDestroy(vH); CHKERRQ(ierr);
-  ierr = VecDestroy(vbed); CHKERRQ(ierr);
-  ierr = VecDestroy(vAccum); CHKERRQ(ierr);
-  ierr = VecDestroy(vTs); CHKERRQ(ierr);
-  ierr = VecDestroy(vMask); CHKERRQ(ierr);
-  ierr = VecDestroy(vGhf); CHKERRQ(ierr);
-  ierr = VecDestroy(vubar); CHKERRQ(ierr);
-  ierr = VecDestroy(vvbar); CHKERRQ(ierr);
-  ierr = VecDestroy(vub); CHKERRQ(ierr);
-  ierr = VecDestroy(vvb); CHKERRQ(ierr);
-  ierr = VecDestroy(vRb); CHKERRQ(ierr);
-  ierr = VecDestroy(vHmelt); CHKERRQ(ierr);
-  ierr = VecDestroy(vbasalMeltRate); CHKERRQ(ierr);
-  ierr = VecDestroy(vuplift); CHKERRQ(ierr);
-  ierr = VecDestroy(vdHdt); CHKERRQ(ierr);
-  ierr = VecDestroy(vtauc); CHKERRQ(ierr);
-  ierr = VecDestroy(vtillphi); CHKERRQ(ierr);
-  ierr = VecDestroy(vLongitude); CHKERRQ(ierr);
-  ierr = VecDestroy(vLatitude); CHKERRQ(ierr);
+  ierr = vh.destroy(); CHKERRQ(ierr);
+  ierr = vH.destroy(); CHKERRQ(ierr);
+  ierr = vbed.destroy(); CHKERRQ(ierr);
+  ierr = vAccum.destroy(); CHKERRQ(ierr);
+  ierr = vTs.destroy(); CHKERRQ(ierr);
+  ierr = vMask.destroy(); CHKERRQ(ierr);
+  ierr = vGhf.destroy(); CHKERRQ(ierr);
+  ierr = vubar.destroy(); CHKERRQ(ierr);
+  ierr = vvbar.destroy(); CHKERRQ(ierr);
+  ierr = vub.destroy(); CHKERRQ(ierr);
+  ierr = vvb.destroy(); CHKERRQ(ierr);
 
-  ierr = VecDestroyVecs(vuvbar, 2); CHKERRQ(ierr);
-  ierr = VecDestroyVecs(vWork2d, nWork2d); CHKERRQ(ierr);
-  ierr = VecDestroy(vubarSSA); CHKERRQ(ierr);
-  ierr = VecDestroy(vvbarSSA); CHKERRQ(ierr);
+  ierr = vRb.destroy(); CHKERRQ(ierr);
+
+  ierr = vHmelt.destroy(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.destroy(); CHKERRQ(ierr);
+  ierr = vuplift.destroy(); CHKERRQ(ierr);
+  ierr = vdHdt.destroy(); CHKERRQ(ierr);
+
+  ierr = vtauc.destroy(); CHKERRQ(ierr);
+  ierr = vtillphi.destroy(); CHKERRQ(ierr);
+
+  ierr = vLongitude.destroy(); CHKERRQ(ierr);
+  ierr = vLatitude.destroy(); CHKERRQ(ierr);
+
+  ierr = vuvbar[0].destroy(); CHKERRQ(ierr);
+  ierr = vuvbar[1].destroy(); CHKERRQ(ierr);
+
+  for (int j = 0; j < nWork2d; j++) {
+    ierr = vWork2d[j].destroy(); CHKERRQ(ierr);
+  }
+
+  ierr = vubarSSA.destroy(); CHKERRQ(ierr);
+  ierr = vvbarSSA.destroy(); CHKERRQ(ierr);
 
   ierr = Tnew3.destroy(); CHKERRQ(ierr);
   ierr = taunew3.destroy(); CHKERRQ(ierr);
@@ -287,7 +400,7 @@ PetscErrorCode IceModel::setEndYear(PetscScalar ye) {
 
 
 void  IceModel::setInitialAgeYears(PetscScalar d) {
-  tau3.setToConstant(d*secpera);
+  tau3.set(d*secpera);
 }
 
 

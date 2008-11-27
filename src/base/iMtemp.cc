@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -178,22 +178,22 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   rhs = new PetscScalar[Mz+k0];
   work = new PetscScalar[Mz+k0];
 
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
-  
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Tnew3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr =  vTs.get_array(Ts); CHKERRQ(ierr);
+  ierr =  vRb.get_array(Rb); CHKERRQ(ierr);
+  ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
 
-  ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = Sigma3.begin_access(); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Tnew3.begin_access(); CHKERRQ(ierr);
+
+  ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   PetscInt        myLowTempCount = 0;  // counts unreasonably low temperature values
 
@@ -202,7 +202,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       // this should *not* be replaced by call to grid.kBelowHeightEQ():
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
 
-      // if isMarginal then only do vertical conduction for ice (i.e. ignor advection
+      // if isMarginal then only do vertical conduction for ice (i.e. ignore advection
       // and strain heating if isMarginal)
       const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                              H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
@@ -290,7 +290,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           const PetscScalar brReff = bed_thermal.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
           const PetscScalar AA = dtTempAge * rho_c_ratio * w[0] / (2.0 * dzEQ);  //NEW
           if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0,
-                         // otherwise ignor advection; note 
+                         // otherwise ignore advection; note 
                          // jump in diffusivity coefficient
             L[k0] = - brReff;
             if (w[0] >= 0.0) {  // velocity upward
@@ -337,7 +337,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           L[k0+k] = - iceR - AA * (1.0 - lambda/2.0);
           D[k0+k] = 1.0 + 2.0 * iceR + AA * (1.0 - lambda);
           U[k0+k] = - iceR + AA * (lambda/2.0);
-        } else {  // velocity downward ward
+        } else {  // velocity downward
           L[k0+k] = - iceR - AA * (lambda/2.0);
           D[k0+k] = 1.0 + 2.0 * iceR - AA * (1.0 - lambda);
           U[k0+k] = - iceR + AA * (1.0 - lambda/2.0);
@@ -352,7 +352,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       if (ks>0) {
         L[k0+ks] = 0.0;
         D[k0+ks] = 1.0;
-        // ignor U[k0+ks]
+        // ignore U[k0+ks]
         rhs[k0+ks] = Ts[i][j];
       }
 
@@ -385,7 +385,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
             Tnew[k] = Tpmp;
             PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
             excessToFromBasalMeltLayer(rho_c_I, zlevEQ[k], dzEQ, &Texcess, &Hmeltnew);
-            // Texcess  will always come back zero here; ignor it
+            // Texcess  will always come back zero here; ignore it
           } else {
             Tnew[k] = x[k0 + k];
           }
@@ -480,22 +480,21 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   
   if (myLowTempCount > maxLowTempCount) { SETERRQ(1,"too many low temps"); }
 
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vGhf, &Ghf); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vHmelt, &Hmelt); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vbasalMeltRate, &basalMeltRate); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vHmelt.end_access(); CHKERRQ(ierr);
+  ierr = vTs.end_access(); CHKERRQ(ierr);
+  ierr = vRb.end_access(); CHKERRQ(ierr);
+  ierr = vGhf.end_access(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
 
-  ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
-
-  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Tnew3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = Tb3.end_access(); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = Sigma3.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Tnew3.end_access(); CHKERRQ(ierr);
   
   delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
 
@@ -623,12 +622,12 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   rhs = new PetscScalar[Mz];
   work = new PetscScalar[Mz];
   
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = taunew3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = tau3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = taunew3.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -643,7 +642,7 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
 
       if (ks == 0) { // if no ice, set the entire column to zero age
                      // and ignor the velocities in that column
-        ierr = taunew3.setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case
         ierr = tau3.getValColumnQUAD(i,j,Mz,zlevEQ,tau); CHKERRQ(ierr);
         ierr = u3.getValColumnQUAD(i,j,Mz,zlevEQ,u); CHKERRQ(ierr);
@@ -721,12 +720,12 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
     }
   }
 
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = tau3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = u3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = w3.doneAccessToVals();  CHKERRQ(ierr);
-  ierr = taunew3.doneAccessToVals();  CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = tau3.end_access();  CHKERRQ(ierr);
+  ierr = u3.end_access();  CHKERRQ(ierr);
+  ierr = v3.end_access();  CHKERRQ(ierr);
+  ierr = w3.end_access();  CHKERRQ(ierr);
+  ierr = taunew3.end_access();  CHKERRQ(ierr);
 
   delete [] Lp; delete [] D; delete [] U; delete [] x; delete [] rhs; delete [] work;
 

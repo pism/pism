@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler
+// Copyright (C) 2007-2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,6 +46,19 @@ PetscErrorCode IceModel::VecView_g2ToMatlab(PetscViewer v,
 
 
 PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName, 
+                               IceModelVec2 l2,
+                               const PetscScalar scale) {
+  PetscErrorCode ierr;
+  
+  if (matlabOutWanted(scName)) {
+    ierr = l2.copy_to_global(g2); CHKERRQ(ierr);
+    ierr = VecScale(g2,scale); CHKERRQ(ierr);
+    ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName, 
                                Vec l2, // a da2 Vec
                                const PetscScalar scale) {
   PetscErrorCode ierr;
@@ -64,9 +77,9 @@ PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName,
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
-    ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3.begin_access(); CHKERRQ(ierr);
     ierr = imv3.getHorSlice(g2, grid.zlevels[kd]); CHKERRQ(ierr);
-    ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3.end_access(); CHKERRQ(ierr);
     ierr = VecScale(g2,scale); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
   }
@@ -79,18 +92,18 @@ PetscErrorCode IceModel::writeSurfaceValuesToMatlab(PetscViewer v, const char sc
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
-    ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
-    ierr = imv3.getSurfaceValuesVec2d(g2, vH); CHKERRQ(ierr);
-    ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
-    ierr = VecScale(g2,scale); CHKERRQ(ierr);
+    ierr = imv3.begin_access(); CHKERRQ(ierr);
+    ierr = imv3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
+    ierr = imv3.end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[0].scale(scale);
+    ierr = vWork2d[0].copy_to_global(g2); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
   }
   return 0;
 }
 
-
 PetscErrorCode IceModel::writeSpeed2DToMatlab(
-                     PetscViewer v, const char scName, Vec lu, Vec lv, // two da2 Vecs
+                     PetscViewer v, const char scName, IceModelVec2 lu, IceModelVec2 lv,
                      const PetscScalar scale, const PetscTruth doLog, 
                      const PetscScalar log_missing) {
   PetscErrorCode ierr;
@@ -98,11 +111,11 @@ PetscErrorCode IceModel::writeSpeed2DToMatlab(
   if (matlabOutWanted(scName)) {
     PetscScalar **a, **H;
 
-    ierr = VecPointwiseMult(vWork2d[0], lu, lu); CHKERRQ(ierr);
-    ierr = VecPointwiseMult(vWork2d[1], lv, lv); CHKERRQ(ierr);
-    ierr = VecAXPY(vWork2d[0], 1, vWork2d[1]); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = lu.multiply_by(lu, vWork2d[0]); CHKERRQ(ierr);
+    ierr = lv.multiply_by(lv, vWork2d[1]); CHKERRQ(ierr);
+    ierr = vWork2d[0].add(1.0, vWork2d[1]); CHKERRQ(ierr);
+    ierr = vWork2d[0].get_array(a); CHKERRQ(ierr);
+    ierr = vH.get_array(H); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (doLog == PETSC_TRUE) {
@@ -121,9 +134,9 @@ PetscErrorCode IceModel::writeSpeed2DToMatlab(
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-    ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+    ierr = vH.end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[0].copy_to_global(g2); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
   }
   return 0;
@@ -137,12 +150,12 @@ PetscErrorCode IceModel::writeSpeedSurfaceValuesToMatlab(
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
-    ierr = imv3_u.needAccessToVals(); CHKERRQ(ierr);
-    ierr = imv3_v.needAccessToVals(); CHKERRQ(ierr); 
-    ierr = imv3_u.getSurfaceValuesVec2d(vWork2d[2], vH); CHKERRQ(ierr);
-    ierr = imv3_v.getSurfaceValuesVec2d(vWork2d[3], vH); CHKERRQ(ierr);  
-    ierr = imv3_u.doneAccessToVals(); CHKERRQ(ierr);
-    ierr = imv3_v.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = imv3_u.begin_access(); CHKERRQ(ierr);
+    ierr = imv3_v.begin_access(); CHKERRQ(ierr); 
+    ierr = imv3_u.getSurfaceValues(vWork2d[2], vH); CHKERRQ(ierr);
+    ierr = imv3_v.getSurfaceValues(vWork2d[3], vH); CHKERRQ(ierr);  
+    ierr = imv3_u.end_access(); CHKERRQ(ierr);
+    ierr = imv3_v.end_access(); CHKERRQ(ierr);
     ierr = writeSpeed2DToMatlab(v, scName, vWork2d[2], vWork2d[3], 
               scale, doLog, log_missing); CHKERRQ(ierr);
   }
@@ -151,15 +164,15 @@ PetscErrorCode IceModel::writeSpeedSurfaceValuesToMatlab(
 
 
 PetscErrorCode IceModel::writeLog2DToMatlab(
-                     PetscViewer v, const char scName, Vec l, // a da2 Vec
+                     PetscViewer v, const char scName, IceModelVec2 l,
                      const PetscScalar scale, const PetscScalar thresh,
                      const PetscScalar log_missing) {
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
     PetscScalar **a, **b;
-    ierr = DAVecGetArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, l, &b); CHKERRQ(ierr);
+    ierr = vWork2d[0].get_array(b); CHKERRQ(ierr);
+    ierr = l.get_array(a); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (a[i][j] > thresh) {
@@ -169,9 +182,9 @@ PetscErrorCode IceModel::writeLog2DToMatlab(
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &a); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, l, &b); CHKERRQ(ierr);
-    ierr = DALocalToGlobal(grid.da2, vWork2d[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+    ierr = l.end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[0].copy_to_global(g2); CHKERRQ(ierr);
     ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); 
              CHKERRQ(ierr);
   }
@@ -198,21 +211,21 @@ PetscErrorCode IceModel::writeSoundingToMatlab(
 
     if ((id >= grid.xs) && (id < grid.xs+grid.xm) && (jd >= grid.ys) && (jd < grid.ys+grid.ym)) {
       if (doTandTb == PETSC_TRUE) {
-        ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+        ierr = T3.begin_access(); CHKERRQ(ierr);
         ierr = T3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
-        ierr = Tb3.needAccessToVals(); CHKERRQ(ierr);
+        ierr = Tb3.begin_access(); CHKERRQ(ierr);
         PetscScalar *ibvals;
         ierr = Tb3.getInternalColumn(id, jd, &ibvals); CHKERRQ(ierr);
         ierr = VecSetValues(m, grid.Mbz, row, ibvals, INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValues(m, grid.Mz, &row[grid.Mbz], ivals, INSERT_VALUES);
                  CHKERRQ(ierr);
-        ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
-        ierr = Tb3.doneAccessToVals(); CHKERRQ(ierr);
+        ierr = T3.end_access(); CHKERRQ(ierr);
+        ierr = Tb3.end_access(); CHKERRQ(ierr);
       } else {
-        ierr = imv3.needAccessToVals(); CHKERRQ(ierr);
+        ierr = imv3.begin_access(); CHKERRQ(ierr);
         ierr = imv3.getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
         ierr = VecSetValues(m, rlen, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = imv3.doneAccessToVals(); CHKERRQ(ierr);
+        ierr = imv3.end_access(); CHKERRQ(ierr);
       }
     }
 
@@ -371,7 +384,7 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
 Writes out the matrix, the right-hand side, and the solution vector in a \em Matlab-readable
 format, a <tt>.m</tt> file.
 */
-PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
+PetscErrorCode IceModel::writeSSAsystemMatlab(IceModelVec2 vNu[2]) {
   PetscErrorCode ierr;
   PetscViewer    viewer;
   char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
@@ -438,14 +451,14 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(Vec vNu[2]) {
   // also save thickness and effective viscosity
   ierr = write2DToMatlab(viewer, 'H', vH, 1.0); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'h', vh, 1.0); CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, vNu[0], INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr = vNu[0].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecView_g2ToMatlab(viewer, "nu_0", 
             "effective viscosity times thickness (i offset)");
-            CHKERRQ(ierr);
-  ierr = DALocalToGlobal(grid.da2, vNu[1], INSERT_VALUES, g2); CHKERRQ(ierr);
+  CHKERRQ(ierr);
+  ierr = vNu[1].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecView_g2ToMatlab(viewer, "nu_1", 
             "effective viscosity times thickness (j offset)");
-            CHKERRQ(ierr);
+  CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);

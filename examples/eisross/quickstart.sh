@@ -32,8 +32,7 @@ echo
 echo "--------------------------------------------------"
 echo "Running PISM to compute velocity in Ross ice shelf:"
 echo
-mpiexec -n $NN pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \
- -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed
+mpiexec -n $NN pismd -ross -bif ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed
  
 echo 
 echo "--------------------------------------------------"

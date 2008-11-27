@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,11 +42,11 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   PetscScalar **h, **H, **uvbar[2], **D;
   PetscScalar Dmax = 0.0;
 
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
+  ierr =        vh.get_array(h); CHKERRQ(ierr);
+  ierr =        vH.get_array(H); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(D); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
@@ -74,11 +74,11 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &D); CHKERRQ(ierr);
+  ierr =        vh.end_access(); CHKERRQ(ierr);
+  ierr =        vH.end_access(); CHKERRQ(ierr);  
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
   if (updateDiffusViewer) { // view diffusivity (m^2/s)
     ierr = update2DViewer('D',vWork2d[0],1.0); CHKERRQ(ierr);
@@ -105,10 +105,10 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscScalar **H, *u, *v, *w;
   PetscScalar locCFLmaxdt = maxdt;
 
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.begin_access(); CHKERRQ(ierr);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
@@ -132,10 +132,10 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
     }
   }
 
-  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
@@ -159,8 +159,8 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscScalar **ub, **vb;
   PetscScalar locCFLmaxdt2D = maxdt;
   
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar denom = PetscAbs(ub[i][j])/grid.dx + PetscAbs(vb[i][j])/grid.dy;
@@ -168,8 +168,8 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
       locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
   return 0;

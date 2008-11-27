@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -97,8 +97,6 @@ protected:
 
   PolarStereoParams  psParams;
   
-  NCTool             nct;
-
   LocalInterpCtx     *bootstrapLIC;
 
   IceType               *ice;
@@ -110,22 +108,29 @@ protected:
   FreshWaterType        porewater;
 
   // state variables
-  Vec vh, vH, vbed,             // 2D vectors; Mx x My
-    vAccum, vTs,                // accumulation, surface temp
-    vAccumSnow,                 // see iMpdd.cc; vAccum is net (including ablation)
-    vMask,                      // mask for flow type
-    vGhf,                       // geothermal flux
-    vHmelt, vbasalMeltRate,     // thickness and rate of production of basal
-                                // meltwater (ice-equivalent)
-    vdHdt, vuplift,                 
-    vub, vvb,                   // basal vels on standard grid
-    vRb,                        // basal frictional heating on regular grid
-    vubar, vvbar,               // vertically-averaged vels (u bar and v bar) on
-                                // standard grid
-    vtauc, vtillphi;            // basal fields; plastic/pseudo-plastic coefficients
-  Vec*         vuvbar;                  // 2D; vuvbar[0] and vuvbar[1] are 
-                                        //   u bar and v bar on staggered grid,
-  Vec          vLongitude, vLatitude;
+  IceModelVec2 vh,		//!< ice surface elevation
+    vH,				//!< ice thickness
+    vdHdt,			//!< \frac{dH}{dt}
+    vtauc,
+    vHmelt, 			//!< thickness of the basal meltwater
+    vbasalMeltRate,		//!< basal meltwater production rate
+  /*!< rate of production of basal meltwater (ice-equivalent) */
+    vLongitude,		   //!< Longitude
+    vLatitude,		   //!< Latitude 
+    vbed,		   //!< bed topography
+    vuplift,		   //!< bed uplift rate
+    vub, vvb,		   //!< basal velocities on standard grid
+    vuvbar[2],		   //!< u bar and v bar on staggered grid
+  /*!< 2D; vuvbar[0] and vuvbar[1] are u bar and v bar on staggered grid, */
+    vubar, vvbar,	     	//!< vertically-averaged vels on standard grid
+  /*!< vertically-averaged vels (u bar and v bar) on standard grid */
+    vMask,		   //!< mask for flow type
+    vTs,		   //!< surface temperature
+    vAccum,		   //!< accumulation
+    vAccumSnow,		   //!< see iMpdd.cc; vAccum is net (including ablation)
+    vGhf,		   //!< geothermal flux
+    vRb,		   //!< basal frictional heating on regular grid
+    vtillphi;		   //!< basal fields; plastic/pseudo-plastic coefficients
 
   IceModelVec3        u3, v3, w3, Sigma3, T3, tau3;  // note gs3 was one of these
   IceModelVec3Bedrock Tb3;
@@ -237,8 +242,9 @@ protected:
   // see iMbeddef.cc
   BedDeformLC    bdLC;
   PetscScalar    lastBedDefUpdateYear;
-  Vec            vHlast, vbedlast;  // used for simple pointwise isostasy and to
-                                   // compute uplift
+  IceModelVec2   vbedlast;
+  IceModelVec2   vHlast;	// used for simple pointwise isostasy and to
+				// compute uplift
   Vec            Hp0, bedp0,                       // vecs on proc zero for
                  Hstartp0, bedstartp0, upliftp0;   // passing to bdLC
   virtual PetscErrorCode bedDefSetup();
@@ -247,8 +253,6 @@ protected:
   virtual PetscErrorCode bed_def_step_iso();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode reportBIFVarFoundMinMax(Vec myvar, const char *varname,
-                                         const char *varunits, const PetscScalar factor);
   virtual PetscErrorCode putTempAtDepth();
   virtual PetscErrorCode bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
                             const PetscScalar Ttopbedrock, const PetscScalar geothermflux);
@@ -265,7 +269,7 @@ protected:
   virtual PetscErrorCode forcingCleanup();
 
   // see iMgeometry.cc
-  virtual PetscErrorCode computeDrivingStress(Vec vtaudx, Vec vtaudy);
+  virtual PetscErrorCode computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 vtaudy);
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode massContExplicitStep();
 
@@ -275,21 +279,21 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
-  virtual PetscErrorCode invertVelocitiesFromNetCDF();
-  virtual PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
-                    Vec myC, Vec ub_out, Vec vb_out);
-  virtual PetscErrorCode computeBasalShearFromSSA(Vec myu, Vec myv, 
-                                          Vec taubx_out, Vec tauby_out);
-  virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
-                 const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
-                 Vec tauc_out, Vec tfa_out);
+//   virtual PetscErrorCode invertVelocitiesFromNetCDF();
+//   virtual PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
+//                     Vec myC, IceModelVec2 ub_out, IceModelVec2 vb_out);
+//   virtual PetscErrorCode computeBasalShearFromSSA(Vec myu, Vec myv, 
+//                                           Vec taubx_out, Vec tauby_out);
+//   virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
+//                  const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
+//                  IceModelVec2 tauc_out, Vec tfa_out);
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
   virtual PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
-  virtual PetscErrorCode dumpToFile_netCDF(const char *fname);
-  virtual PetscErrorCode dumpToFile_diagnostic_netCDF(const char *diag_fname);
+  virtual PetscErrorCode dumpToFile_netCDF(const char *filename);
+  virtual PetscErrorCode dumpToFile_diagnostic_netCDF(const char *filename);
   virtual PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMmatlab.cc
@@ -297,25 +301,27 @@ protected:
   virtual PetscErrorCode VecView_g2ToMatlab(PetscViewer v, 
                                     const char *varname, const char *shorttitle);
   virtual PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
+                                 IceModelVec2 l2, const PetscScalar scale);
+  virtual PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
                                  Vec l2, const PetscScalar scale);
   virtual PetscErrorCode writeSliceToMatlab(PetscViewer v, const char singleCharName, 
                                     IceModelVec3 imv3, const PetscScalar scale);
   virtual PetscErrorCode writeSurfaceValuesToMatlab(PetscViewer v, const char singleCharName, 
                                             IceModelVec3 imv3, const PetscScalar scale);
   virtual PetscErrorCode writeSpeed2DToMatlab(PetscViewer v, const char scName, 
-                          Vec lu, Vec lv, const PetscScalar scale, 
+                          IceModelVec2 lu, IceModelVec2 lv, const PetscScalar scale, 
                           const PetscTruth doLog, const PetscScalar log_missing);
   virtual PetscErrorCode writeSpeedSurfaceValuesToMatlab(PetscViewer v, const char scName, 
                           IceModelVec3 imv3_u, IceModelVec3 imv3_v, const PetscScalar scale, 
                           const PetscTruth doLog, const PetscScalar log_missing);
   virtual PetscErrorCode writeLog2DToMatlab(PetscViewer v, const char scName, 
-                          Vec l, const PetscScalar scale, const PetscScalar thresh,
+                          IceModelVec2 l, const PetscScalar scale, const PetscScalar thresh,
                           const PetscScalar log_missing);
   virtual PetscErrorCode writeSoundingToMatlab(PetscViewer v, const char scName, 
                           IceModelVec3 imv3,
                           const PetscScalar scale, const PetscTruth doTandTb);
   virtual PetscErrorCode writeMatlabVars(const char *fname);
-  virtual PetscErrorCode writeSSAsystemMatlab(Vec vNuH[2]);
+  virtual PetscErrorCode writeSSAsystemMatlab(IceModelVec2 vNuH[2]);
 
   // see iMnames.cc; note tn is statically-initialized in iMnames.cc
   int cIndex(const char singleCharName);
@@ -374,10 +380,10 @@ protected:
   // see iMssa.cc
   virtual PetscErrorCode initSSA();
   virtual PetscErrorCode velocitySSA(PetscInt *numiter);
-  virtual PetscErrorCode velocitySSA(Vec vNuH[2], PetscInt *numiter);
-  virtual PetscErrorCode computeEffectiveViscosity(Vec vNuH[2], PetscReal epsilon);
-  virtual PetscErrorCode testConvergenceOfNu(Vec vNuH[2], Vec vNuHOld[2], PetscReal *, PetscReal *);
-  virtual PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, Vec vNuH[2], Mat A);
+  virtual PetscErrorCode velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter);
+  virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon);
+  virtual PetscErrorCode testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2], PetscReal *, PetscReal *);
+  virtual PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, IceModelVec2 vNuH[2], Mat A);
   virtual PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   virtual PetscErrorCode moveVelocityToDAVectors(Vec x);
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
@@ -403,7 +409,8 @@ protected:
                                        PetscScalar *ta_zlevEQ, PetscScalar *ta_zblevEQ);
 
   // see iMutil.cc
-  virtual PetscErrorCode getMagnitudeOf2dVectorField(Vec vfx, Vec vfy, Vec vmag);
+  virtual PetscErrorCode getMagnitudeOf2dVectorField(IceModelVec2 vfx, IceModelVec2 vfy,
+						     IceModelVec2 vmag);
   virtual PetscTruth     checkOnInputFile(char *fname);
   virtual int endOfTimeStepHook();
   virtual PetscErrorCode afterInitHook();
@@ -429,9 +436,10 @@ protected:
                                           const char singleCharName, const char* title);
   virtual PetscErrorCode createViewers();
   virtual PetscErrorCode update2DViewer(const char scName, Vec l2, const PetscScalar scale);
+  virtual PetscErrorCode update2DViewer(const char scName, IceModelVec2 l2, const PetscScalar scale);
   virtual PetscErrorCode updateSliceViewer(const char scName, IceModelVec3 imv3, const PetscScalar scale);
   virtual PetscErrorCode updateSurfaceValuesViewer(const char scName, IceModelVec3 imv3, const PetscScalar scale);
-  virtual PetscErrorCode updateSpeed2DViewer(const char scName, Vec lu, Vec lv, 
+  virtual PetscErrorCode updateSpeed2DViewer(const char scName, IceModelVec2 lu, IceModelVec2 lv, 
                    const PetscScalar scale, const PetscTruth doLog, 
                    const PetscScalar log_missing);
   virtual PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v, 
@@ -441,20 +449,20 @@ protected:
                    const PetscScalar scale, const PetscScalar thresh, 
                    const PetscScalar log_missing);
   virtual PetscErrorCode updateViewers();  // it calls updateSoundings()
-  virtual PetscErrorCode updateNuViewers(Vec vNu[2], Vec vNuOld[2], bool updateNu_tView);
+  virtual PetscErrorCode updateNuViewers(IceModelVec2 vNu[2], IceModelVec2 vNuOld[2], bool updateNu_tView);
   virtual PetscErrorCode destroyViewers();
 
 protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
   Vec g2;    // Global work vector
-  Vec* vWork2d;
+  IceModelVec2 vWork2d[nWork2d];
 
 protected:
-  int haveSSAvelocities;	// use vubarSSA and vvbarSSA from a previous
+  int have_ssa_velocities;	// use vubarSSA and vvbarSSA from a previous
 				// run if 1, otherwise set them to zero in
 				// IceModel::initSSA
-  Vec vubarSSA, vvbarSSA;
+  IceModelVec2 vubarSSA, vvbarSSA;
 
 private:
   // 3D working space (with specific purposes)

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,10 +56,10 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   PetscScalar **h_x[2], **h_y[2];
 
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
   if (transformForSurfaceGradient == PETSC_TRUE) {
     PetscScalar **eta, **b, **H;
@@ -68,22 +68,22 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
                       invpow  = 1.0 / etapow,
                       dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
     // compute eta = H^{8/3}, which is more regular, on reg grid
-    ierr = DAVecGetArray(grid.da2, vWork2d[4], &eta); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
+    ierr = vH.get_array(H); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
         eta[i][j] = pow(H[i][j], etapow);
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &eta); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
+    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
+    ierr = vH.end_access(); CHKERRQ(ierr);
     // communicate eta: other processors will need ghosted for d/dx and d/dy
-    ierr = DALocalToLocalBegin(grid.da2, vWork2d[4], INSERT_VALUES, vWork2d[4]); CHKERRQ(ierr);
-    ierr = DALocalToLocalEnd(grid.da2, vWork2d[4], INSERT_VALUES, vWork2d[4]); CHKERRQ(ierr);
+    ierr = vWork2d[4].beginGhostComm(); CHKERRQ(ierr);
+    ierr = vWork2d[4].endGhostComm(); CHKERRQ(ierr);
     // now use Mahaffy on eta to get grad h on staggered;
     // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-    ierr = DAVecGetArray(grid.da2, vbed, &b); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vWork2d[4], &eta); CHKERRQ(ierr);
+    ierr = vbed.get_array(b); CHKERRQ(ierr);
+    ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
         for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -121,11 +121,11 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vWork2d[4], &eta); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vbed, &b); CHKERRQ(ierr);
+    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
+    ierr = vbed.end_access(); CHKERRQ(ierr);
   } else {  // if transformForSurfaceGradient == FALSE; the Mahaffy scheme
     PetscScalar **h;
-    ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+    ierr = vh.get_array(h); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
         for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -141,13 +141,13 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+    ierr = vh.end_access(); CHKERRQ(ierr);
   } // end if (transformForSurfaceGradient)
   
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -192,23 +192,23 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   const bool usetau3 = ((flowLawUsesGrainSize == PETSC_TRUE) && (realAgeForGrainSize == PETSC_TRUE));
   
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
 
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
   if (usetau3) {
-    ierr = tau3.needAccessToVals(); CHKERRQ(ierr);
+    ierr = tau3.begin_access(); CHKERRQ(ierr);
   }
-  ierr = w3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[0].needAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[1].needAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].needAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].needAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
+  ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
   
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
@@ -288,30 +288,30 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           ierr = Sigmastag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
         } else {  // zero thickness case
           uvbar[o][i][j] = 0;
-          ierr = Istag3[o].setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
-          ierr = Sigmastag3[o].setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
+          ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
+          ierr = Sigmastag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
         } 
       } // o
     } // j
   } // i
 
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
 
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
   if (usetau3) {
-    ierr = tau3.doneAccessToVals(); CHKERRQ(ierr);
+    ierr = tau3.end_access(); CHKERRQ(ierr);
   }
-  ierr = w3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[0].doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[1].doneAccessToVals(); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].end_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].end_access(); CHKERRQ(ierr);
+  ierr = Istag3[0].end_access(); CHKERRQ(ierr);
+  ierr = Istag3[1].end_access(); CHKERRQ(ierr);
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
   //delete [] gsij;  delete [] work_age_space;
@@ -339,16 +339,17 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
   PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **mask, **H;
 
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = T3.needAccessToVals(); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = vRb.get_array(Rb); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -381,16 +382,17 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
     }
   }
   
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vRb, &Rb); CHKERRQ(ierr);
-  ierr = T3.doneAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = vRb.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -416,10 +418,10 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
   PetscErrorCode ierr;
   PetscScalar **ubar, **vbar, **uvbar[2];
 
-  ierr = DAVecGetArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   if (muSliding == 0.0) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -431,8 +433,8 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
   } else {
     // this case is not recommended!  don't use -mu_sliding POSITIVE
     PetscScalar **ub, **vb;
-    ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+    ierr = vub.get_array(ub); CHKERRQ(ierr);
+    ierr = vvb.get_array(vb); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // as above, adding basal on regular grid
@@ -440,13 +442,13 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
         vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + vb[i][j];
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+    ierr = vub.end_access(); CHKERRQ(ierr);
+    ierr = vvb.end_access(); CHKERRQ(ierr);
   }
-  ierr = DAVecRestoreArray(grid.da2, vubar, &ubar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vvbar, &vbar); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[0], &uvbar[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vuvbar[1], &uvbar[1]); CHKERRQ(ierr);
+  ierr =     vubar.end_access(); CHKERRQ(ierr);
+  ierr =     vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -466,10 +468,10 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
 
   PetscScalar *Sigmareg, *SigmaEAST, *SigmaWEST, *SigmaNORTH, *SigmaSOUTH;
 
-  ierr = DAVecGetArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = Sigma3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].needAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].needAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = Sigma3.begin_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -489,14 +491,14 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
         }
         // no need to call Sigma3.setInternalColumn(); already set!
       } else { // zero thickness case
-        ierr = Sigma3.setToConstantColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = Sigma3.setColumn(i,j,0.0); CHKERRQ(ierr);
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vH, &H); CHKERRQ(ierr);
-  ierr = Sigma3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].doneAccessToVals(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = Sigma3.end_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].end_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].end_access(); CHKERRQ(ierr);
   
   return 0;
 }
@@ -518,14 +520,14 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   PetscScalar **h_x[2], **h_y[2];
   PetscScalar *u, *v, *IEAST, *IWEST, *INORTH, *ISOUTH;
 
-  ierr = DAVecGetArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = u3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.needAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[0].needAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[1].needAccessToVals(); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
+  ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
   
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -546,8 +548,8 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
 
   if (muSliding > 0.0) { // unusual case
     PetscScalar **ub, **vb;
-    ierr = DAVecGetArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+    ierr = vub.get_array(ub); CHKERRQ(ierr);
+    ierr = vvb.get_array(vb); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
@@ -558,18 +560,18 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
         }
       }
     }
-    ierr = DAVecRestoreArray(grid.da2, vub, &ub); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, vvb, &vb); CHKERRQ(ierr);
+    ierr = vub.end_access(); CHKERRQ(ierr);
+    ierr = vvb.end_access(); CHKERRQ(ierr);
   }
   
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[0], &h_x[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[1], &h_x[1]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[2], &h_y[0]); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vWork2d[3], &h_y[1]); CHKERRQ(ierr);
-  ierr = u3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = v3.doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[0].doneAccessToVals(); CHKERRQ(ierr);
-  ierr = Istag3[1].doneAccessToVals(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = Istag3[0].end_access(); CHKERRQ(ierr);
+  ierr = Istag3[1].end_access(); CHKERRQ(ierr);
 
   return 0;
 }

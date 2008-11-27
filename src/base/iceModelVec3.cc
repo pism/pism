@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler
+// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,9 +56,11 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_varname[], b
 
   localp = local;
   strcpy(varname,my_varname);
+#ifdef PISM_DEBUG
+  creation_counter += 1;
+#endif // PISM_DEBUG
   return 0;
 }
-
 
 //! Allocate a DA and a Vec from information in IceGrid; use an existing DA from an existing IceModelVec3.
 PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
@@ -81,6 +83,9 @@ PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
 
   localp = local;
   strcpy(varname,my_varname);
+#ifdef PISM_DEBUG
+  creation_counter += 1;
+#endif // PISM_DEBUG
   return 0;
 }
 
@@ -89,6 +94,25 @@ PetscErrorCode IceModelVec3::read(const char filename[], const unsigned int time
   ierr = read_from_netcdf(filename, time, 4, grid->Mz); CHKERRQ(ierr);
   return 0;
 }
+
+PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
+  PetscErrorCode ierr;
+  ierr = regrid_from_netcdf(filename, 3, lic, critical, false, 0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
+  PetscErrorCode ierr;
+  ierr = regrid_from_netcdf(filename, 3, lic, false, true, default_value); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec3::write(const char filename[], nc_type nctype) {
+  PetscErrorCode ierr;
+  ierr = write_to_netcdf(filename, 4, nctype, grid->Mz); CHKERRQ(ierr);
+  return 0;
+}
+
 
 //! Defines a netcdf variable corresponding to an IceModelVec3 object. The ncid
 // argument must refer to a dataset with dimensions t, x, y, z.
@@ -226,7 +250,7 @@ PetscErrorCode  IceModelVec3::setValColumnPL(
 
 
 //! Set all values of scalar quantity to given a single value in a particular column.
-PetscErrorCode  IceModelVec3::setToConstantColumn(
+PetscErrorCode  IceModelVec3::setColumn(
                    const PetscInt i, const PetscInt j, const PetscScalar c) {
 
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
@@ -435,27 +459,55 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, const PetscScalar z) {
   return 0;
 }
 
-
-PetscErrorCode  IceModelVec3::getSurfaceValuesVec2d(Vec &gsurf, Vec myH) {
+PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 gslice, const PetscScalar z) {
   PetscErrorCode ierr;
-  PetscScalar    **H;
-  ierr = DAVecGetArray(grid->da2, myH, &H); CHKERRQ(ierr);
-  ierr = getSurfaceValuesArray2d(gsurf, H); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid->da2, myH, &H); CHKERRQ(ierr);
+  PetscScalar    **slice_val;
+  ierr = gslice.get_array(slice_val); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
+      slice_val[i][j] = getValZ(i,j,z);
+    }
+  }
+  ierr = gslice.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode  IceModelVec3::getSurfaceValuesArray2d(Vec &gsurf, PetscScalar **H) {
+PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 myH) {
   PetscErrorCode ierr;
-  PetscScalar    **surf_val;
-  ierr = DAVecGetArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  PetscScalar    **H;
+  ierr = myH.get_array(H); CHKERRQ(ierr);
+  ierr = getSurfaceValues(gsurf, H); CHKERRQ(ierr);
+  ierr = myH.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 myH) {
+  PetscErrorCode ierr;
+  PetscScalar    **H, **surf_val;
+  ierr = DAVecGetArray(da, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = myH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       surf_val[i][j] = getValZ(i,j,H[i][j]);
     }
   }
-  ierr = DAVecRestoreArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = myH.end_access(); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(da, gsurf, &surf_val); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H) {
+  PetscErrorCode ierr;
+  PetscScalar    **surf_val;
+  ierr = gsurf.get_array(surf_val); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
+      surf_val[i][j] = getValZ(i,j,H[i][j]);
+    }
+  }
+  ierr = gsurf.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -509,6 +561,9 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
 
   localp = false;
+#ifdef PISM_DEBUG
+  creation_counter += 1;
+#endif // PISM_DEBUG
   return 0;
 }
 
@@ -517,6 +572,25 @@ PetscErrorCode IceModelVec3Bedrock::read(const char filename[], const unsigned i
   ierr = read_from_netcdf(filename, time, 4, grid->Mbz); CHKERRQ(ierr);
   return 0;
 }
+
+PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
+  PetscErrorCode ierr;
+  ierr = regrid_from_netcdf(filename, 4, lic, critical, false, 0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
+  PetscErrorCode ierr;
+  ierr = regrid_from_netcdf(filename, 4, lic, false, true, default_value); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec3Bedrock::write(const char filename[], nc_type nctype) {
+  PetscErrorCode ierr;
+  ierr = write_to_netcdf(filename, 4, nctype, grid->Mbz); CHKERRQ(ierr);
+  return 0;
+}
+
 
 //! Defines a netcdf variable corresponding to an IceModelVec3Bedrock object. The ncid
 // argument must refer to a dataset with dimensions t, x, y, zb.
@@ -560,7 +634,7 @@ PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(
 
 
 //! Set values of bedrock scalar quantity: set all values in a column to the same value.
-PetscErrorCode  IceModelVec3Bedrock::setToConstantColumn(
+PetscErrorCode  IceModelVec3Bedrock::setColumn(
                         const PetscInt i, const PetscInt j, const PetscScalar c) {
 
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
@@ -605,6 +679,10 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscI
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
   // check if in ownership ?
+
+//   for (PetscInt k=0; k < nlevels; k++)
+//     PetscPrintf(grid->com, "levels[%d] = %10.3f\n", k, levelsIN[k]);
+//   PetscPrintf(grid->com, "\n");
 
   if (levelsIN[0] > -grid->Lbz + 1.0e-3) {
     SETERRQ3(1,"levelsIN[0]=%10.9f is above base of bedrock at z=-%10.9f so *interpolation*\n"

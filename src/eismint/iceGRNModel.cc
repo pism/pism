@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2007-2008 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -132,7 +132,7 @@ PetscErrorCode IceGRNModel::initFromOptions() {
     ierr = verbPrintf(2, grid.com,
          "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
          EISMINT_G_geothermal);
-    ierr = VecSet(vGhf, EISMINT_G_geothermal); CHKERRQ(ierr);
+    ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
     if (haveSurfaceTemps == PETSC_FALSE) {
       ierr = verbPrintf(2, grid.com, 
          "computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
@@ -182,7 +182,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     } else {
       t_increase = 3.514;
     }
-    ierr = VecShift(vTs,t_increase); CHKERRQ(ierr);
+    ierr = vTs.shift(t_increase); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -216,18 +216,19 @@ PetscErrorCode IceGRNModel::updateTs() {
      "recomputing surface temperatures according to EISMINT-Greenland rule"
      " and setting TsOffset=0.0\n");
      CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vh, &h); CHKERRQ(ierr);
+
+  ierr =       vTs.get_array(Ts); CHKERRQ(ierr);
+  ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
+  ierr = vh.get_array(h); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       calculateMeanAnnual(h[i][j], lat[i][j], &val);
       Ts[i][j] = val + ice->meltingTemp;
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vTs, &Ts); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vh, &h); CHKERRQ(ierr);
+  ierr =       vTs.end_access(); CHKERRQ(ierr);
+  ierr = vLatitude.end_access(); CHKERRQ(ierr);
+  ierr =        vh.end_access(); CHKERRQ(ierr);
   
   TsOffset = 0.0;  // see IceModel::updateForcing(); note old offset is not 
                    //    in vTs because vTs is totally recomputed
@@ -254,9 +255,9 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   float ice_lon = 30, ice_lat = 67;
   PetscScalar **lat, **lon, **mask;
 
-  ierr = DAVecGetArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vLongitude, &lon); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  ierr = vLongitude.get_array(lon); CHKERRQ(ierr);
+  ierr =  vLatitude.get_array(lat); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       ellePiecewiseFunc(lon[i][j], &lat_line);
@@ -267,13 +268,15 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
       }
     }
   }
-  ierr = DAVecRestoreArray(grid.da2, vLatitude, &lat); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vLongitude, &lon); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid.da2, vMask, &mask); CHKERRQ(ierr);
+  
+  ierr = vLongitude.end_access(); CHKERRQ(ierr);
+  ierr =  vLatitude.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  
   // when mask is changed we must communicate the ghosted values
   //   because neighbor's mask matters
-  ierr = DALocalToLocalBegin(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
-  ierr = DALocalToLocalEnd(grid.da2, vMask, INSERT_VALUES, vMask); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

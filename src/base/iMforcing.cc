@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2008 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -85,8 +85,8 @@ PetscErrorCode IceModel::updateForcing() {
   PetscErrorCode ierr;
 
   if (dTforcing != PETSC_NULL) {
-    // TsOffset should be zero when startup!
-    ierr = VecShift(vTs,-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+    // TsOffset should be zero at startup!
+    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
 
     // read a new offset
     ierr = dTforcing->updateFromCoreClimateData(grid.year,&TsOffset); CHKERRQ(ierr);
@@ -94,9 +94,9 @@ PetscErrorCode IceModel::updateForcing() {
     ierr = verbPrintf(5,grid.com,"read TsOffset=%.6f from -dTforcing climate data\n",
        TsOffset); CHKERRQ(ierr);
        
-    ierr = VecShift(vTs,TsOffset); CHKERRQ(ierr);  // apply the offset
+    ierr = vTs.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
 
-    // no need to communicate vTs because no ghosts
+    // no need to communicate vTs because it has no ghosts
   }
 
   if (dSLforcing != PETSC_NULL) {
@@ -121,7 +121,7 @@ PetscErrorCode IceModel::updateForcing() {
 PetscErrorCode IceModel::forcingCleanup() {
   PetscErrorCode ierr;
   if (dTforcing != PETSC_NULL) {
-    ierr = VecShift(vTs,-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
     TsOffset = 0.0;
     delete dTforcing;
     dTforcing = PETSC_NULL;

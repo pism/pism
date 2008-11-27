@@ -24,7 +24,7 @@
 
 #include "iceModelVec.hh"
 
-// this file contains methods for derived classes IceModelVec2 and IceModelVec2Box
+// this file contains methods for derived classes IceModelVec2
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
@@ -36,7 +36,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], 
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec2 with varname='%s' already allocated\n",my_varname);
   }
-  PetscErrorCode ierr = create(my_grid, my_varname, local, DA_STENCIL_STAR); CHKERRQ(ierr);
+  PetscErrorCode ierr = create(my_grid, my_varname, local, DA_STENCIL_BOX); CHKERRQ(ierr);
   return 0;
 }
 
@@ -61,10 +61,12 @@ PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
 
   localp = local;
   strcpy(varname,my_varname);
+#ifdef PISM_DEBUG
+  creation_counter += 1;
+#endif // PISM_DEBUG
+
   return 0;
 }
-
-  
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], bool local,
                                      DAStencilType my_sten) {
@@ -78,7 +80,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], 
   ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
   IOwnDA = true;
-  
+
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
   } else {
@@ -87,12 +89,42 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], 
 
   localp = local;
   strcpy(varname,my_varname);
+#ifdef PISM_DEBUG
+  creation_counter += 1;
+#endif // PISM_DEBUG
   return 0;
 }
 
 PetscErrorCode IceModelVec2::read(const char filename[], const unsigned int time) {
   PetscErrorCode ierr;
+  // Signature: read_from_netcdf(filename, time, dims, Mz)
   ierr = read_from_netcdf(filename, time, 3, 1); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
+  PetscErrorCode ierr;
+  // Signature:
+  // regrid_from_netcdf(filename, dim_flag, lic, critical, set_default_value, default_value)
+  // Note that the dim_flag is two.
+  ierr = regrid_from_netcdf(filename, 2, lic, critical, false, 0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
+  PetscErrorCode ierr;
+  // Signature:
+  // regrid_from_netcdf(filename, dim_flag, lic, critical, set_default_value, default_value)
+  // Note that the dim_flag is two.
+  ierr = regrid_from_netcdf(filename, 2, lic, false, true, default_value); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::write(const char filename[], nc_type nctype) {
+  PetscErrorCode ierr;
+  // Signature: write_to_netcdf(filename, dims, nctype, Mz)
+  // dims = 3: t, x, y
+  ierr = write_to_netcdf(filename, 3, nctype, 1); CHKERRQ(ierr);
   return 0;
 }
 
@@ -120,80 +152,10 @@ PetscErrorCode IceModelVec2::define_netcdf_variable(int ncid, nc_type nctype, in
   return 0;
 }
 
-// Return value of ice scalar quantity stored in an IceModelVec2.
-PetscScalar     IceModelVec2::getVal(const PetscInt i, const PetscInt j) {
-  checkHaveArray();
-  PetscScalar **arr = (PetscScalar**) array;
-  return arr[i][j];
-}
-
-
-// Return values on planar star stencil of ice scalar quantity stored in an IceModelVec2.
-PetscErrorCode   IceModelVec2::getPlaneStar(const PetscInt i, const PetscInt j, planeStar *star) {
+PetscErrorCode IceModelVec2::get_array(PetscScalar** &a) {
   PetscErrorCode ierr;
-  ierr = checkHaveArray();  CHKERRQ(ierr);
-  // check ownership here?
-  if (!localp) {
-    SETERRQ1(1,"IceModelVec2 ERROR: IceModelVec2 with varname='%s' is GLOBAL and cannot do getPlaneStar()\n",
-             varname);
-  }
-  
-  PetscScalar **arr = (PetscScalar**) array;
-
-  star->ij = arr[i][j];
-  star->ip1 = arr[i+1][j];
-  star->im1 = arr[i-1][j];
-  star->jp1 = arr[i][j+1];
-  star->jm1 = arr[i][j-1];
+  ierr = begin_access(); CHKERRQ(ierr);
+  a = (PetscScalar**) array;
   return 0;
 }
-
-
-PetscScalar**   IceModelVec2::get_array() {
-  checkHaveArray();
-  return (PetscScalar**) array;
-}
-
-
-
-/********* IceModelVec2Box **********/
-
-IceModelVec2Box::IceModelVec2Box() : IceModelVec2() {}
-
-
-PetscErrorCode  IceModelVec2Box::create(IceGrid &my_grid, const char my_varname[], bool local) {
-
-  if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec2Box with varname='%s' already allocated\n",my_varname);
-  }
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_varname, local, DA_STENCIL_BOX); CHKERRQ(ierr);
-  return 0;
-}
-
-
-// Return values on planar BOX stencil of ice scalar quantity stored in an IceModelVec2Box.
-PetscErrorCode   IceModelVec2Box::getPlaneBox(const PetscInt i, const PetscInt j, planeBox *box) {
-  PetscErrorCode ierr;
-  ierr = checkHaveArray();  CHKERRQ(ierr);
-  // check ownership here?
-  if (!localp) {
-    SETERRQ1(1,"IceModelVec2Box ERROR: IceModelVec2Box with varname='%s' is GLOBAL and cannot do getPlaneBox()\n",
-             varname);
-  }
-
-  PetscScalar **arr = (PetscScalar**) array;
-
-  box->ij     = arr[i][j];
-  box->ip1    = arr[i+1][j];
-  box->im1    = arr[i-1][j];
-  box->jp1    = arr[i][j+1];
-  box->jm1    = arr[i][j-1];
-  box->ip1jp1 = arr[i+1][j+1];
-  box->im1jp1 = arr[i-1][j+1];
-  box->ip1jm1 = arr[i+1][j-1];
-  box->im1jm1 = arr[i-1][j-1];
-
-  return 0;
-}
-
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ public:
 protected:
     char       test;       // only 'I', 'J' supported
     PetscTruth exactOnly;
-    Vec*       vNuForJ;
+    IceModelVec2 vNuForJ[2];
           
     PetscErrorCode  fillFromExactSolution();
     PetscErrorCode  taucSetI();
