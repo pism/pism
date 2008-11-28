@@ -209,15 +209,14 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       
       ierr = Tb3.getValColumn(i,j,Mbz,zblevEQ,Tb); CHKERRQ(ierr);
 
-      if (Mbz > 1) { // bedrock present: build k=0:Mbz-1 eqns
+      if (Mbz > 1) { // bedrock present: build k=0:Mbz-2 eqns
         // gives O(\Delta t,\Delta z^2) convergence in Test K for equal spaced grid;
         // note L[0] not an allocated location:
         D[0] = (1.0 + 2.0 * brR);
         U[0] = - 2.0 * brR;  
         rhs[0] = Tb[0] + 2.0 * dtTempAge * Ghf[i][j] / (rho_c_br * dzbEQ);
       
-        // bedrock only: pure vertical conduction problem
-        // {from generic bedrock FV}
+        // bedrock only; pure vertical conduction problem
         for (PetscInt k=1; k < k0; k++) {
           L[k] = -brR;
           D[k] = 1.0 + 2.0 * brR;
@@ -241,17 +240,19 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         ierr = T3.getValColumnQUAD(i,j,Mz,zlevEQ,T); CHKERRQ(ierr);
       }
 
-      // bottom part of ice (and top of bedrock in some cases): k=Mbz eqn
+      // bottom part of ice (and top of bedrock in some cases): k=k0=Mbz-1 eqn
       if (ks == 0) { // no ice; set T[0] to surface temp if grounded
         if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
         D[k0] = 1.0;
         U[k0] = 0.0;
-        // if floating and no ice then worry only about bedrock temps;
-        // top of bedrock sees ocean
+        // if floating and no ice then worry only about bedrock temps
         if (modMask(mask[i][j]) == MASK_FLOATING) {
-          rhs[k0] = ice->meltingTemp;
+          if (k0 == 0) 
+            rhs[k0] = ice->meltingTemp;  // top of ocean temp; should make no difference
+          else 
+            rhs[k0] = ice->meltingTemp;  // FIXME: should be ocean bottom temp??
         } else { // top of bedrock sees atmosphere
-          rhs[k0] = Ts[i][j];
+          rhs[k0] = Ts[i][j]; // FIXME: will become call to atmos PISMClimateCoupler
         }
       } else { // ks > 0; there is ice
         planeStar ss;
@@ -262,20 +263,27 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
                                               v[0] * (ss.ij  - ss.jm1) / dy;
         // for w, always difference *up* from base, but make it implicit
         if (modMask(mask[i][j]) == MASK_FLOATING) {
-          // FIXME:  this comment makes no sense with respect to "dHmelt/dt";
-          //     also Potsdam reports the effect is that *bed depth* affects temperature
-          //     within ice
-          // at base of ice shelf, set T = Tpmp but also determine dHmelt/dt
-          // by ocean flux; note volume for which energy is being computed is 
-          // *half* a segment
+          // FIXME:  Potsdam reports that somehow *bed depth* affects temperature
+          //     within ice; probably not result of code here
+          // FIXME:  at base of ice shelf, set T = Tpmp (Dirichlet), not Neumann
+          // FIXME:  need to determine basal melt rate but not here; that is 
+          //     a mass continuity issue
+
+          // WRONG: this code is for a Neumann condition
+          //const PetscScalar AA = dtTempAge * w[0] / (2.0 * dzEQ);
+          //D[k0] = 1.0 + 2.0 * iceR - AA;
+          //U[k0] = - 2.0 * iceR + AA;
+          //rhs[k0] = T[0] + 2.0 * dtTempAge * oceanHeatFlux / (rho_c_I * dzEQ);
+          //if (!isMarginal) {
+          //  rhs[k0] += dtTempAge * (Sigma[0] / rho_c_I - UpTu - UpTv) / 2;
+          //}
+
+          // just apply Dirichlet condition to base of column of ice in an
+          //    ice shelf
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
-          const PetscScalar AA = dtTempAge * w[0] / (2.0 * dzEQ);
-          D[k0] = 1.0 + 2.0 * iceR - AA;
-          U[k0] = - 2.0 * iceR + AA;
-          rhs[k0] = T[0] + 2.0 * dtTempAge * oceanHeatFlux / (rho_c_I * dzEQ);
-          if (!isMarginal) {
-            rhs[k0] += dtTempAge * (Sigma[0] / rho_c_I - UpTu - UpTv) / 2;
-          }
+          D[k0] = 1.0;
+          U[k0] = 0.0;
+          rhs[k0] = ice->meltingTemp; // FIXME: will become call to ocean PISMClimateCoupler
         } else { 
           // there is *grounded* ice; ice/bedrock interface; from FV across interface
           const PetscScalar rho_c_ratio = rho_c_I / rho_c_av;
@@ -353,13 +361,12 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         L[k0+ks] = 0.0;
         D[k0+ks] = 1.0;
         // ignore U[k0+ks]
-        rhs[k0+ks] = Ts[i][j];
+        rhs[k0+ks] = Ts[i][j]; // FIXME: will become call to atmos PISMClimateCoupler
       }
 
       // solve system; melting not addressed yet
       if (k0+ks>0) {
         ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks+1);
-        // OLD:       ierr = solveTridiagonalSystem(L, D, U, x, rhs, work, k0+ks);
         if (ierr != 0) {
           SETERRQ3(1, "Tridiagonal solve failed at (%d,%d) with zero pivot in position %d.",
                i, j, ierr);
@@ -462,13 +469,15 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       // transfer column into Tnew3; communication later
       ierr = Tnew3.setValColumnPL(i,j,Mz,zlevEQ,Tnew); CHKERRQ(ierr);
 
-      // basaMeltRate[][] is rate of change of Hmelt[][]; thus it can be negative
+      // basaMeltRate[][] is rate of change of Hmelt[][]; thus it can be negative;
+      //   this is only a valid computation at grounded points
       basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
 
       // limit Hmelt by default max
       Hmeltnew = PetscMin(Hmelt_max, Hmeltnew);
 
-      // eliminate basal water if floating
+      // eliminate basal lubrication water if floating; 
+      //   FIXME: actual sub-ice shelf melting is computed in massContExplicitStep()
       if (modMask(mask[i][j]) == MASK_FLOATING) {
         Hmelt[i][j] = 0.0;
       } else {
@@ -757,7 +766,7 @@ PetscErrorCode IceModel::solveTridiagonalSystem(
   for (int i=1; i<n; ++i) {
     a[i] = U[i-1]/b;
     b = D[i] - L[i]*a[i];
-    if (b == 0) { return i+1; }
+    if (b == 0.0) { return i+1; }
     x[i] = (r[i] - L[i]*x[i-1]) / b;
   }
   for (int i=n-2; i>=0; --i) {

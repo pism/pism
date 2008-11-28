@@ -250,7 +250,9 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
 
       PetscScalar dbdx = 0.0, dbdy = 0.0;
+
       if (modMask(mask[i][j]) != MASK_FLOATING) {
+        // if grounded then basal kinematical equation gives w[0]
         // bed gradient needed if grounded; there is no reason to assume that the
         //   bed elevation has been periodized by the user
         if (i == 0) {
@@ -267,14 +269,14 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
         } else {
           dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
         }
-      }
-
-      // basal w from basal kinematical equation
-//      w[0] = dbdt[i][j] + ub[i][j] * dbdx + vb[i][j] * dbdy; // DEBUG?: remove dbdt
-      w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
-
-      if (includeBMRinContinuity == PETSC_TRUE) {
-        w[0] -= basalMeltRate[i][j];
+        w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
+        if (includeBMRinContinuity == PETSC_TRUE) {
+          w[0] -= basalMeltRate[i][j];
+        }
+        // DEBUG?: should dbdt be added?
+      } else {
+        // floating case
+        w[0] = 0.0;
       }
 
       // compute w above base by trapezoid rule 
