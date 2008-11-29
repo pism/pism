@@ -83,7 +83,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   ierr = nc.find_variable("x", NULL, NULL, xExists); CHKERRQ(ierr);
   ierr = nc.find_variable("y", NULL, NULL, yExists); CHKERRQ(ierr);
   ierr = nc.find_variable("polar_stereographic", NULL, &v_ps, psExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("usurf", "surface_altitude", NULL,  maskExists); CHKERRQ(ierr);
+  ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
   ierr = nc.find_variable("mask", NULL, NULL, maskExists); CHKERRQ(ierr);
 
 
@@ -190,31 +190,22 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   ierr = nc.read_polar_stereographic(psParams.svlfp,
 				     psParams.lopo,
 				     psParams.sp); CHKERRQ(ierr);
-
+  ierr = nc.close(); CHKERRQ(ierr);
   // now work through all the 2d variables, regridding if present and otherwise setting
   // to default values appropriately
 
   if (maskExists) {
     ierr = verbPrintf(2, grid.com, 
-        "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
+		      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
-  ierr = verbPrintf(2, grid.com, 
-       "  determining mask by floatation criterion:  grounded ice and ice-free\n"
-       "    land marked as 1, floating ice as 3, ice free ocean as 7\n");
-     CHKERRQ(ierr);
-
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-       "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n"); CHKERRQ(ierr);
+		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
-  ierr = verbPrintf(2, grid.com, 
-       "  determining surface elevation by using usurf = topg + thk where grounded\n"
-       "    and floatation criterion where floating\n"); CHKERRQ(ierr);
-  ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
 
 
   ierr = verbPrintf(2, grid.com, 
-       "Processing 2D model state variables...\n"); CHKERRQ(ierr);
+		    "Processing 2D model state variables...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
   ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
@@ -226,6 +217,15 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   ierr =   vtillphi.regrid(filename, *bootstrapLIC, DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =       vGhf.regrid(filename, *bootstrapLIC, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =    vuplift.regrid(filename, *bootstrapLIC, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, 
+		    "  determining mask by floatation criterion:  grounded ice and ice-free\n"
+		    "    land marked as 1, floating ice as 3, ice free ocean as 7\n");
+  CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+		    "  determining surface elevation by using usurf = topg + thk where grounded\n"
+		    "    and floatation criterion where floating\n"); CHKERRQ(ierr);
+  ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
   ierr = verbPrintf(2, grid.com, 
@@ -234,9 +234,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   setInitialAgeYears(initial_age_years_default);
-
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
   initialized_p = PETSC_TRUE;
