@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -17,26 +17,26 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /* 
-   extrasGSL.[hh|cc] is a collection of procedures which use the GSL library for numerical 
-   computations.  These are useful to the ice model but are not dependent on any members of the
-   class IceModel.  A number of the procedures here mimic Matlab functionality: 
+   extrasGSL.[hh|cc] includes procedures which use the GSL library for numerical 
+   computations.  These are useful to the ice model but are not dependent on 
+   any members of the class IceModel.  These procedures mimic Matlab functionality: 
       interp1_linear, dblquad_cubature.
    
-   The cubature program by Steven Johnson is used for double integration, rather than the iterated
-   use of a single-variable adaptive rule as in Matlab's actual dblquad.  cubature.[h|c] by Johnson
-   is based on HIntLib by Rudolf Schuerer as well on GSL itself.  Note cubature is distributed with GPL.
+   The cubature program by Steven Johnson is used for double integration, rather 
+   than the iterated use of a single-variable adaptive rule as in Matlab's 
+   dblquad.  cubature.[h|c] by Johnson is based on HIntLib by Rudolf Schuerer 
+   as well on GSL itself.  Note cubature is distributed with GPL.
    
-   The last heapsort code is not technically GSL, of course.
-
-ELB 7/18/06;  7/7/07
+   The heapsort code below is not GSL.
 */
 
 double interp1_linear(const double x[], const double Y[], int N, double xi);
 
 // get 'integrand' type
 #include "cubature.h"
-double dblquad_cubature(integrand f, const double ax, const double bx, const double ay, const double by,
-                        double reqRelError, void *fdata);
+double dblquad_cubature(integrand f, 
+          const double ax, const double bx, const double ay, const double by,
+          double reqRelError, void *fdata);
 
 // heapsort from 
 //   http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
@@ -48,23 +48,4 @@ double dblquad_cubature(integrand f, const double ax, const double bx, const dou
 // and gsl_sort_vector.h
 void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N);
 
-
-/*
-// these are moved to beddefLC.hh
-struct ge_params {
-   double dx, dy;
-   int p, q; 
-};
-
-double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN);
-
-struct vd_params {
-   double t, R0, rk, rho, grav, D, eta;
-};
-
-double viscDiscIntegrand (double kap, void * paramsIN);
-
-double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta);
-*/
 
