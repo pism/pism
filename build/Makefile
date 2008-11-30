@@ -48,7 +48,7 @@ VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/
 # Variables:
 executables := pismr pismd pismv pisms
 extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
-   simpleL gridL flowTable tryLCbd pant
+	simpleL simpleM gridL flowTable tryLCbd pant
 
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
@@ -61,14 +61,14 @@ ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 ice_csources := cubature.c pism_signal.c
 
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
-   exactTestK.c exactTestL.c
+	exactTestK.c exactTestL.c exactTestM.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
 	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
 	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc flowTable.cc		\
 	tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
-	simpleJ.c simpleK.c simpleL.c
+	simpleJ.c simpleK.c simpleL.c simpleM.c
 
 # this is the main derived class example so it is structured like an example
 #  derived class, including this make piece
@@ -170,13 +170,16 @@ simpleI : simpleI.o ${LIBTESTSNAME}
 simpleJ : simpleJ.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleL : simpleL.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
 simpleK : simpleK.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
+simpleL : simpleL.o ${LIBTESTSNAME}
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
 gridL : gridL.o ${LIBTESTSNAME}
+	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+
+simpleM : simpleM.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 # The GNU recommended procedure for automatically generating prerequisites.

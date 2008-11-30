@@ -33,10 +33,13 @@ extern "C"
 ! ice shelf, with calving front, attached to a grounded sheet and with
 ! Dirichlet (prescribed velocity) condition at the grounding line.  A
 ! first order ODE in the radial coordinate is solved numerically, as with
-! test L, for example.
+! test L, for example, so the solution is not exactly exact.
 !
 ! The velocity solution has
-!    u(r) = \alpha(r) \hat r + w(r,z) \hat z
+!    u(r) = alpha(r) \hat r + w(r,z) \hat z
+! alpha(r) is found for R_g=300km < r < R_c=600km.  For r < R_g, a smoothly
+! decreasing to zero value is returned for alpha, while for r > R_c
+! alpha(r)=0 is returned.
 !
 ! A supporting preprint is in preparation.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -45,16 +48,16 @@ extern "C"
 int exactM(double r,
            double *alpha,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* input    : r in m,  0 <= r <= 700000 */
-   /* output   : alpha in m s^-1; always positive */
-   /* numerical: EPS_ABS
+   /* input    : r in m,  r >= 0
+      output   : alpha in  m s^-1;  always positive
+      numerical: EPS_ABS
                  EPS_REL
-                 ode_method */
+                 ode_method
+   */
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif  /* __exactTestM_h */
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007 Ed Bueler
+   Copyright (C) 2007--2008 Ed Bueler
   
    This file is part of PISM.
   
@@ -68,57 +68,6 @@ void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N
    }
 }
 
-
-/*  DOESN'T SEEM TO WORK; PRESUMABLY BECAUSE OF ra[1..n] vs ra[0..n-1] issues
-//  heapsort adapted from Numerical Recipes in C, 2nd ed.
-//  modified to have two index arrays "follow along" and get rearranged the same way
-void hpsort2xtra(unsigned long n, double ra[], int inda[], int indb[]) {
-  // sorts ra[1],...,ra[n] into ascending order,
-  // and reorders inda[1..n],indb[1..n] the same way
-  unsigned long i,ir,j,l;
-  double rra;
-  int dda, ddb;
-
-  if (n < 2) return;
-  l = (n >> 1) + 1;
-  ir = n;
-  for (;;) {
-    if (l > 1) {
-      rra = ra[--l];
-      dda = inda[l];
-      ddb = indb[l];
-    } else {
-      rra = ra[ir];
-      dda = inda[ir];
-      ddb = indb[ir];
-      ra[ir] = ra[1];
-      inda[ir] = inda[1];
-      indb[ir] = indb[1];
-      if (--ir == 1) {
-        ra[1] = rra;
-        inda[1] = dda;
-        indb[1] = ddb;
-        break;
-      }
-    }
-    i = l;
-    j = l + 1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1])  j++;
-      if (rra < ra[j]) {
-        ra[i] = ra[j];
-        inda[i] = inda[j];
-        indb[i] = indb[j];
-        i = j;
-        j <<= 1;
-      } else  j = ir + 1;
-    }
-    ra[i] = rra;
-    inda[i] = dda;
-    indb[i] = ddb;
-  }
-}
-*/
 
 int main() {
 
@@ -237,3 +186,4 @@ int main() {
          maxHdiff/HH[imid][jmid]);
   return 0;
 }
+

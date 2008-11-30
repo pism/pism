@@ -51,7 +51,7 @@ int main() {
   printf("     H = %11.5f (m)   b = %10.5f (m)   a = %8.5f (m/a)\n",
          H,b,a*secpera);
 
-#define COMMENTARY 1
+#define COMMENTARY 0
 #if COMMENTARY
   printf("(*COMMENTARY*\n Above were produced with RK Cash-Karp method and default (tight) tolerances\n");
   printf(" EPS_ABS = %e, EPS_REL = %e.\n",EPS_ABS[0],EPS_REL[0]);
