@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2008 Jed Brown and Ed Bueler
+// Copyright (C) 2007--2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,6 +37,6 @@ PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt getVerbosityLevel();
 PetscErrorCode verbosityLevelFromOptions();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
-
+int compare_doubles (const void *a, const void *b);	// for sorting
 
 #endif

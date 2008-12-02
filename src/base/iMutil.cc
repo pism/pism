@@ -148,6 +148,8 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     }
   }
 
+  ierr = init_snapshots_from_options(); CHKERRQ(ierr);
+
   // FIXME:  shouldn't -ssaBC be allowed as an option to something more general
   //   than just the EISMINT-Ross example?  see also IceModel::diagnosticRun()
 

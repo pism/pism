@@ -31,20 +31,20 @@
 IceModelVec2::IceModelVec2() : IceModelVec() {}
 
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], bool local) {
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local) {
 
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec2 with varname='%s' already allocated\n",my_varname);
+    SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
   }
-  PetscErrorCode ierr = create(my_grid, my_varname, local, DA_STENCIL_BOX); CHKERRQ(ierr);
+  PetscErrorCode ierr = create(my_grid, my_short_name, local, DA_STENCIL_BOX); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
-					   IceGrid &my_grid, const char my_varname[], bool local) {
+					   IceGrid &my_grid, const char my_short_name[], bool local) {
 
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec2 with varname='%s' already allocated\n",my_varname);
+    SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
   }
 
   grid = &my_grid;
@@ -60,7 +60,7 @@ PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
   }
 
   localp = local;
-  strcpy(varname,my_varname);
+  strcpy(short_name,my_short_name);
 #ifdef PISM_DEBUG
   creation_counter += 1;
 #endif // PISM_DEBUG
@@ -68,7 +68,7 @@ PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], bool local,
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local,
                                      DAStencilType my_sten) {
 
   grid = &my_grid;
@@ -88,7 +88,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_varname[], 
   }
 
   localp = local;
-  strcpy(varname,my_varname);
+  strcpy(short_name,my_short_name);
 #ifdef PISM_DEBUG
   creation_counter += 1;
 #endif // PISM_DEBUG
@@ -128,8 +128,8 @@ PetscErrorCode IceModelVec2::write(const char filename[], nc_type nctype) {
   return 0;
 }
 
-//! Defines a netcdf variable corresponding to an IceModelVec3 object. The ncid
-// argument must refer to a dataset with dimensions t, x, y.
+//! Defines a netcdf variable corresponding to an IceModelVec2 object. The ncid
+//! argument must refer to a dataset with dimensions t, x, y.
 PetscErrorCode IceModelVec2::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
   int stat, dimids[3], var_id;
 
@@ -139,7 +139,7 @@ PetscErrorCode IceModelVec2::define_netcdf_variable(int ncid, nc_type nctype, in
     stat = nc_inq_dimid(ncid, "x", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "y", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    stat = nc_def_var(ncid, varname, nctype, 3, dimids, &var_id);
+    stat = nc_def_var(ncid, short_name, nctype, 3, dimids, &var_id);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));

@@ -189,7 +189,8 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
 
   ierr = nc.read_polar_stereographic(psParams.svlfp,
 				     psParams.lopo,
-				     psParams.sp); CHKERRQ(ierr);
+				     psParams.sp,
+				     true); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
   // now work through all the 2d variables, regridding if present and otherwise setting
   // to default values appropriately

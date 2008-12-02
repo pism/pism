@@ -363,6 +363,12 @@ Note that simplified-geometry experiments (section \ref{sect:simp}) and verifica
 
 \noindent then an error is generated.
 
+Also note that a PISM run with \verb|-ssa| saves the initial guess of the SSA
+velocities to the output file, \verb|vubarSSA| and \verb|vvbarSSA| for
+restarting. The \verb|ssa_velocities_are_valid| global attribute shows if the
+data present in these variables is valid. If you want to restart from a PISM
+output \emph{ignoring} these velocities, use the \verb|-dontreadSSAvels|
+option.
 
 \subsection{Bootstrapping}  ``Bootstrapping'' PISM\index{bootstrapping}\index{initialization!by bootstrapping} means giving it less than complete data, and letting it fill in the needed data according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option ``\intextoption{bif}''.
 
@@ -380,7 +386,7 @@ Subsection \ref{sect:green} does EISMINT-Greenland \cite{RitzEISMINT,HuybrechtsE
 When using \intextoption{bif} you will usually have to specify the height of the computational box for the ice with \intextoption{Lz} $Z$, and add option \intextoption{Lbz} $Z_b$ if you want a bedrock thermal layer.  This additional specification is natural: the data used in ``bootstrapping'' will usually be two-dimensional.
 
 \subsection{Input file formats} The NetCDF format of a PISM\index{PISM!NetCDF file format}\index{NetCDF} output model state file is described by the CDL file
-\begin{center}\verb|pism/src/netcdf/pism_state.cdl|\end{center}
+\begin{center}\verb|pism/doc/pism_state.cdl|\end{center}
 \noindent The file used with ``\intextoption{if}'' must have this format.
 
 The allowed formats for a bootstrapping file are relatively simple to describe.  The NetCDF dimensions \verb|t,x,y,z,zb| and corresponding variables must be present and match the choices in \verb|pism_state.cdl|, or in a PISM output file.  But any of the other two dimensional variables (depending on \verb|t,x,y|) may be missing, and for those missing values some heuristic will be applied.  All three dimensional variables (depending on \verb|t,x,y,z| or \verb|t,x,y,z|) will be ignored in bootstrapping.
@@ -588,6 +594,52 @@ Ctrl-C & \same & same, but only for foreground process(es)  \\ \hline
 \end{tabular}
 \end{table}
 
+\subsection{Saving snapshots of the model state}
+\label{sec:snapshots}
+
+As described in the previous section, one can monitor the state of a model run
+by sending the \verb|USR1| signal to a running PISM process, but this can be
+inconvenient if you need to check the model state every 1000 years, for example.
+
+One possible solution is to run PISM for a thousand years, which will make it
+save all the fields at the end of the run, then restart, run for another
+thousand, etc. There is a drawback, though: this forces the adaptive
+time-stepping mechanism to stop \emph{exactly} at 1000, then 2000 years and so
+on, so the result at year 10000 can be slightly different from the result of a
+run with same parameters, but going for 10000 years straight.
+
+If saving \emph{exactly} as specified times is not critical, then it's possible
+to automate the process by using the \verb|-save_to| and \verb|-save_at|
+options.
+
+For example
+\begin{verbatim}
+$ pismr -if foo.nc -y 10000 -o output -save_to snapshots.nc \
+        -save_at 1e3:1e3:1e4
+\end{verbatim}
+would start a PISM evolution run, initializing from \verb|foo.nc|, running for
+10000 years and saving snapshots to \verb|snapshots.nc| on the first time-step
+after years 1000,2000,...,10000.
+
+I.e. we use the MATLAB-style range specification: $a:\Delta t:b$. Note that
+since this does not affect the time-stepping scheme, we don't guarantee
+producing the exact number of snapshots requested.
+
+It is also possible to save snapshots at intervals that are not equally-spaced
+by giving the \verb|-save_at| option a comma-separated list. For example,
+\begin{verbatim}
+$ pismr -if foo.nc -y 10000 -o output -save_to snapshots.nc \
+        -save_at 1000,1500,2000,5000
+\end{verbatim}
+will save snapshots on the first time-step after years 1000,1500,2000 and 5000.
+(The list given to the \verb|-save_at| option can be at most 20 numbers long.)
+
+Another possible use of snapshots is restarting the run on a batch system.
+Suppose that we know that we have a 8 wall-clock hours limit and it's enough
+time to do a run 1000 model years long, maybe 1500. Then we can run PISM with
+options \verb|-y 1500 -save_at 1000:100:1400|. In this case, if the job is
+killed before completing the 1500 year run, we only lose the time needed for a
+run 100 years long, at the most.
 
 \subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
 
@@ -1599,9 +1651,10 @@ while Schoof \cite{SchoofStream} formula (2.4) gives this one
 	$$\tau_c = \mu N,$$
 with zero till cohesion.  We allow a positive till cohesion, though the default is zero, and we describe $\mu$ as the tangent of the friction angle $\phi$.
 
-\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|.
+\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|. See also \verb|-dontreadSSAvels|.
 
 \opt{super}  Superpose the velocity fields from the SIA and SSA models.  That is, add the velocity fields which result from the SIA and SSA versions of the balance of momentum equations.  Also has the effect of the option \verb|-mu_sliding 0.0|, that is, the SIA-type sliding law is set to zero so that all basal sliding is controlled by the SSA model.  Only effective if used with \verb|-ssa|.
+
 
 
 
@@ -1634,10 +1687,27 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \opt{o}  Give name of output file: \verb|-o foo| writes an output file named \verb|foo.nc|.  See the description of option \verb|-if|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
 
+\opt{a} Append to the output file.
+
 \opt{regrid}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sect:usage}.
 
 \optdef{regrid\und vars}{}  Which variables to regrid.  See section \ref{sect:usage}.
 
+\opt{dontreadSSAvels} Turns off reading the \verb|ubarSSA| and \verb|vbarSSA| velocities saved by a previous \verb|-ssa| run.
+
+\opt{save\und to} Give the name of the NetCDF file to save model state
+snapshots to. Requires setting \verb|-save_at|. See section \ref{sec:snapshots}
+for more details.
+
+\opt{save\und at} Takes two kinds of input: either a MATLAB-style range in the form
+$t_{0}:\Delta t:t_{f}$ or a comma-separated list of times in years. Saving the
+snapshots \emph{does not} affect the time-stepping determined by the adaptive
+scheme. As a result, snapshots are saved \emph{on the first time-step after the
+  time requested.} For example, if in a particular run PISM uses time-steps of
+60 years, then \verb|-save_at 50,80,100| will produce snapshots at 60 and 120
+years. In particular, we do not guarantee producing the exact number of
+snapshots requested. Also note the comma-separated list above can be at most 20
+numbers long. See section \ref{sec:snapshots} for more details.
 
 \subsubsect{Diagnostic viewers}
 

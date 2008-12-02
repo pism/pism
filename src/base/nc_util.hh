@@ -96,7 +96,7 @@ public:
   NCTool();
   PetscErrorCode set_grid(IceGrid *my_grid);
   PetscErrorCode open_for_reading(const char filename[], bool &exists);
-  PetscErrorCode open_for_writing(const char filename[]);
+  PetscErrorCode open_for_writing(const char filename[], bool replace = true);
   PetscErrorCode close();
   PetscErrorCode find_variable(const char short_name[], const char standard_name[],
 			       int *varid, bool &exists);
@@ -104,7 +104,7 @@ public:
   PetscErrorCode create_dimensions();
   PetscErrorCode append_time(PetscReal time);
   PetscErrorCode write_global_attrs(bool have_ssa_velocities, const char conventions[]);
-  PetscErrorCode write_history(const char history[]);
+  PetscErrorCode write_history(const char history[], bool overwrite = false);
   PetscErrorCode get_last_time(double *time);
   PetscErrorCode get_dims_limits_lengths(size_t dim[], double bdy[]);
   PetscErrorCode get_dims_limits_lengths_2d(size_t dim[], double bdy[]);
@@ -116,7 +116,8 @@ public:
 
   PetscErrorCode read_polar_stereographic(double &straight_vertical_longitude_from_pole,
 					  double &latitude_of_projection_origin,
-					  double &standard_parallel);
+					  double &standard_parallel,
+					  bool report = false);
   PetscErrorCode write_polar_stereographic(double straight_vertical_longitude_from_pole,
 					   double latitude_of_projection_origin,
 					   double standard_parallel);

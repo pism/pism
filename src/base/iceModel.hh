@@ -86,6 +86,7 @@ public:
   virtual PetscErrorCode writeFiles(const char* defaultbasename);
   virtual PetscErrorCode writeFiles(const char* defaultbasename, 
                                     const PetscTruth forceFullDiagnostics);
+  virtual PetscErrorCode write_model_state(const char filename[]);
 
 protected:
    static const int MASK_SHEET;
@@ -279,14 +280,14 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
-//   virtual PetscErrorCode invertVelocitiesFromNetCDF();
-//   virtual PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
-//                     Vec myC, IceModelVec2 ub_out, IceModelVec2 vb_out);
-//   virtual PetscErrorCode computeBasalShearFromSSA(Vec myu, Vec myv, 
-//                                           Vec taubx_out, Vec tauby_out);
-//   virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
-//                  const Vec myu, const Vec myv, const Vec mytaubx, const Vec mytauby, 
-//                  IceModelVec2 tauc_out, Vec tfa_out);
+  virtual PetscErrorCode invertVelocitiesFromNetCDF();
+  virtual PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
+                    IceModelVec2 myC, IceModelVec2 ub_out, IceModelVec2 vb_out);
+  virtual PetscErrorCode computeBasalShearFromSSA(IceModelVec2 myu, IceModelVec2 myv, 
+                                          IceModelVec2 taubx_out, IceModelVec2 tauby_out);
+  virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
+                 IceModelVec2 myu, IceModelVec2 myv, IceModelVec2 mytaubx, IceModelVec2 mytauby, 
+                 IceModelVec2 tauc_out, IceModelVec2 tfa_out);
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;
@@ -483,6 +484,23 @@ private:
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
   Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
   VecScatter SSAScatterGlobalToLocal;
+
+protected:
+  // This is related to the snapshot saving feature
+  char snapshots_filename[PETSC_MAX_PATH_LEN];
+  bool save_snapshots, file_is_ready;
+
+  // equally spaced snapshots
+  PetscTruth save_at_equal_intervals;
+  double first_snapshot, snapshot_dt, next_snapshot, last_snapshot;
+
+  // unequally spaced snapshots
+  static const int max_n_snapshots = 20;
+  double save_at[max_n_snapshots];
+  int n_snapshots, current_snapshot;
+
+  PetscErrorCode init_snapshots_from_options();
+  PetscErrorCode write_snapshot();
 };
 
 #endif /* __iceModel_hh */

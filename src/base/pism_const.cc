@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2008 Jed Brown and Ed Bueler
+// Copyright (C) 2007--2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,4 +195,12 @@ PetscErrorCode verbPrintf(const int thresh,
   PetscFunctionReturn(0);
 }
 
-
+//! Comparison function from the glibc manual
+//! http://www.gnu.org/software/libc/manual/index.html
+int compare_doubles (const void *a, const void *b)
+{
+  const double *da = (const double *) a;
+  const double *db = (const double *) b;
+  
+  return (*da > *db) - (*da < *db);
+}

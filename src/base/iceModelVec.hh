@@ -31,7 +31,7 @@ public:
   IceModelVec();
   virtual ~IceModelVec();
 
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual PetscErrorCode  destroy();
 
   virtual PetscErrorCode  printInfo(const PetscInt verbosity);
@@ -79,7 +79,7 @@ protected:
 #endif // PISM_DEBUG
 
   Vec          v;
-  char         varname[PETSC_MAX_PATH_LEN],       // usually the name of the NetCDF variable (unless
+  char         short_name[PETSC_MAX_PATH_LEN],    // usually the name of the NetCDF variable (unless
                                                   // there is no corresponding NetCDF var)
                long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
                units[PETSC_MAX_PATH_LEN],         // NetCDF attribute
@@ -87,7 +87,8 @@ protected:
                standard_name[PETSC_MAX_PATH_LEN]; // NetCDF attribute; sometimes specified in CF convention
   PetscTruth   has_standard_name;
 
-  char        glaciological_units[PETSC_MAX_PATH_LEN];
+  char        glaciological_units[PETSC_MAX_PATH_LEN]; //< for diagnostic variables: units to use when writing
+				//< to a NetCDF file.
   PetscScalar conversion_factor;
   
   IceGrid      *grid;
@@ -126,9 +127,9 @@ struct planeBox {
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
-  virtual PetscErrorCode  create(IceGrid &my_grid, const char my_varname[], bool local);
+  virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
   virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
-				       IceGrid &my_grid, const char my_varname[], bool local);
+				       IceGrid &my_grid, const char my_short_name[], bool local);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
@@ -137,7 +138,7 @@ public:
   PetscErrorCode  get_array(PetscScalar** &a);
 
 protected:
-  PetscErrorCode  create(IceGrid &my_grid, const char my_varname[], bool local, DAStencilType my_sten);
+  PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local, DAStencilType my_sten);
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
@@ -145,7 +146,7 @@ protected:
 class IceModelVec3Bedrock : public IceModelVec {
 public:
   IceModelVec3Bedrock();
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_varname[], bool local);
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual PetscErrorCode read(const char filename[], const unsigned int time);
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
@@ -173,9 +174,9 @@ protected:
 class IceModelVec3 : public IceModelVec {
 public:
   IceModelVec3();
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_varname[], bool local);
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   PetscErrorCode          createSameDA(IceModelVec3 imv3_dasource, 
-                                       IceGrid &mygrid, const char my_varname[], bool local);
+                                       IceGrid &mygrid, const char my_short_name[], bool local);
 
   virtual PetscErrorCode read(const char filename[], const unsigned int time);
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical);

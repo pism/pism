@@ -71,6 +71,8 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
   if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
   else                      flowLawUsesGrainSize = PETSC_FALSE;
+
+  save_snapshots = false;
 }
 
 
@@ -230,7 +232,8 @@ PetscErrorCode IceModel::createVecs() {
   // rate of change of ice thickness
   ierr = vdHdt.create(grid, "dHdt", true); CHKERRQ(ierr);
   ierr = vdHdt.set_attrs("diagnostic", "rate of change of ice thickness",
-			 "m year-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
+			 "m s-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
+  ierr = vdHdt.set_glaciological_units("m year-1", secpera);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   ierr = vtauc.create(grid, "tauc", true); CHKERRQ(ierr);
@@ -469,6 +472,8 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 
   // main loop for time evolution
   for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
+    write_snapshot();
+
     ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);
     dt_force = -1.0;
     maxdt_temporary = -1.0;

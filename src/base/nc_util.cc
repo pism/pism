@@ -785,7 +785,7 @@ PetscErrorCode NCTool::set_MaskInterp(MaskInterp *mi_in) {
 }
 
 
-//! Find a 2D or 3D variable in a NetCDF file and regrid it using a global \c Vec for storage.
+//! Regrid a 2D or 3D NetCDF variable using a global \c Vec for storage.
 /*!
 Simply calls regrid_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
@@ -1138,29 +1138,68 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInt
   return 0;
 }
 
-PetscErrorCode NCTool::write_history(const char history[]) {
+//! Writes \c history to the history global attribute of a NetCDF dataset.
+/*!
+  Appends if overwrite == false (default).
+ */
+PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
   int stat;
-  if (grid-> rank == 0) {
+  size_t history_len;
+  if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
-			   strlen(history), history);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_attlen(ncid, NC_GLOBAL, "history", &history_len);
+
+    if ((stat == NC_ENOTATT) || overwrite) { // no history attribute present or
+					     // asked to overwrite
+
+      stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
+			     strlen(history), history);
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    } else {
+
+      CHKERRQ(check_err(stat,__LINE__,__FILE__)); // check for other errors
+
+      history_len += 1;		// add the space for the trailing zero
+      // allocate some memory
+      char *tmp, *result;
+      int length = strlen(history) + history_len;
+      result = new char[length];
+      tmp = new char[history_len];
+
+      stat = nc_get_att_text(ncid, NC_GLOBAL, "history", tmp);
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      tmp[history_len - 1] = 0;	// terminate the string
+
+      // concatenate strings
+      strcpy(result, history);
+      strcat(result, tmp);
+
+      // write
+      stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
+			     strlen(result), result);
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+      delete[] tmp;
+      delete[] result;
+    }
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
+  } // if (grid->rank == 0)
   
   return 0;
 }
 
 PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longitude_from_pole,
 						double &latitude_of_projection_origin,
-						double &standard_parallel) {
+						double &standard_parallel,
+						bool report) {
   PetscErrorCode ierr;
   double lon, lat, par;
   int stat, varid, lon_exists, lat_exists, par_exists;
   bool ps_exists;
 
   ierr = find_variable("polar_stereographic", NULL, &varid, ps_exists); CHKERRQ(ierr);
-  if (!ps_exists) {
+  if (!ps_exists && report) {
     ierr = verbPrintf(2,grid->com,
 		      "  polar stereo not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
 		      straight_vertical_longitude_from_pole,
@@ -1200,11 +1239,13 @@ PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longit
   ierr = MPI_Bcast(&lat, 1, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&par, 1, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid->com,
-		    "  polar stereographic var found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
-		    "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
-		    lon_exists, lat_exists, par_exists,
-		    lon, lat, par); CHKERRQ(ierr); 
+  if (report) {
+    ierr = verbPrintf(2, grid->com,
+		      "  polar stereographic var found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
+		      "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
+		      lon_exists, lat_exists, par_exists,
+		      lon, lat, par); CHKERRQ(ierr);
+  }
 
   if (lon_exists)
     straight_vertical_longitude_from_pole = lon;
@@ -1342,6 +1383,7 @@ PetscErrorCode NCTool::create_dimensions() {
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     // set values:
+    // Note that the 't' dimension is not modified: it is handled by the append_time method.
     stat = put_dimension_regular(x, grid->Mx, -grid->Lx, grid->dx); CHKERRQ(stat);
     stat = put_dimension_regular(y, grid->My, -grid->Ly, grid->dy); CHKERRQ(stat);
     stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
@@ -1351,8 +1393,10 @@ PetscErrorCode NCTool::create_dimensions() {
   return 0;
 }
 
+//! Appends \c time to the \t dimension.
 PetscErrorCode NCTool::append_time(PetscReal time) {
   int stat, t_id;
+
 
   if (grid->rank == 0) {
     size_t t_len;
@@ -1406,21 +1450,48 @@ PetscErrorCode NCTool::close() {
 
   4) Define dimensions and create dimension variables. Go to step 5.
 
-  5) Return the NetCDF ID.
+  5) Set the NetCDF ID.
  */
-PetscErrorCode NCTool::open_for_writing(const char filename[]) {
+PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
   int stat;
 
   if (grid->rank == 0) {
     bool file_exists = false, dimensions_are_ok = false;
+    char tmp[PETSC_MAX_PATH_LEN];
 
-    // Open the file
-    stat = nc_open(filename, NC_WRITE, &ncid);
-    file_exists = (stat == NC_NOERR);
-    
-    // Check dimensions
-    if (file_exists)
-      dimensions_are_ok = check_dimensions();
+    // Check if the file exists:
+    if (FILE *f = fopen(filename, "r")) {
+      file_exists = true;
+      fclose(f);
+    } else {
+      file_exists = false;
+    }
+
+    if (file_exists) {
+      if (replace) {
+	strcpy(tmp, filename);
+	strcat(tmp, "~");	// tmp <- "foo.nc~"
+
+	stat = rename(filename, tmp);
+	if (stat != 0) {
+	  stat = verbPrintf(1, grid->com, "PISM ERROR: can't move '%s' to '%s'.\n",
+			    filename, tmp);
+	  PetscEnd();
+	}
+	stat = verbPrintf(2, grid->com, "\nPISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
+			  filename, tmp);
+	file_exists = false;
+      } else {
+	// Check dimensions
+	stat = nc_open(filename, NC_WRITE, &ncid);
+	if (stat != NC_NOERR) {
+	  stat = verbPrintf(1, grid->com, "PISM ERROR: NetCDF error: %s\n",
+			    nc_strerror(stat));
+	  PetscEnd();
+	}
+	dimensions_are_ok = check_dimensions();
+      }
+    }
 
     if (!file_exists || !dimensions_are_ok) {
       stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
@@ -1434,6 +1505,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
   return 0;
 }
 
+//! Writes global attributes to a NetCDF file.
 PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char conventions[]) {
   int stat, flag = 0;
 
