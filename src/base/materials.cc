@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -19,8 +19,8 @@
 #include "materials.hh"
 #include "pism_const.hh"
 
-PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
 PetscScalar IceType::rho    = 910;          // kg/m^3       density
+PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
 PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
 PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capacity
 PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
@@ -393,10 +393,31 @@ PetscScalar DeformableEarthType::rho   = 3300;    // kg/(m^3)     density
 PetscScalar DeformableEarthType::D     = 5.0e24;  // N m          lithosphere flexural rigidity
 PetscScalar DeformableEarthType::eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
 
-// WaterTypes have nothing but density
-PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density (Lingle & Borwn 1987)
 
+PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density
 PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m         density
+
+// re Clausius-Clapeyron gradients:  Paterson (3rd ed, 1994, p. 212) says 
+//   T = T_0 - beta' P  where  beta' = 9.8e-5 K / kPa = 9.8e-8 K / Pa.
+//   And   dT/dz = beta' rho g  because  dP = - rho g dz.
+//   Thus:
+//     SeaWaterType:   beta = 9.8e-8 * 1028.0 * 9.81 = 9.882986e-4
+//     FreshWaterType: beta = 9.8e-8 * 1000.0 * 9.81 = 9.613800e-4
+//   For IceType this would be 8.748558e-4, but we use EISMINT II
+//   (Payne et al 2000) value of 8.66e-4 by default; see above.
+
+PetscScalar SeaWaterType::beta_CC_grad   = 9.883e-4;// K/m; C-C gradient
+PetscScalar FreshWaterType::beta_CC_grad = 9.614e-4;// K/m; C-C gradient
+
+// in absence of PISMClimateCoupler, remove mass at this rate;
+//   rate of zero is merely intended to do no harm;
+//   Lingle et al (1991; "A flow band model of the Ross Ice Shelf ..."
+//   JGR 96 (B4), pp 6849--6871) gives 0.02 m/a freeze-on at one point as only 
+//   measurement available at that time (one ice core) and also gives
+//   0.16 m/a melting as average rate necessary to maintain equilibrium,
+//   but points out variability in -0.5 m/a (i.e. melting) to 
+//   +1.0 m/a (freeze-on) range from a flow band model (figure 5)
+PetscScalar SeaWaterType::defaultShelfBaseMassRate = 0.0; 
 
 
 PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,

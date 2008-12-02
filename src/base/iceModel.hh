@@ -457,6 +457,9 @@ protected:
   static const PetscInt nWork2d=6;
   Vec g2;    // Global work vector
   IceModelVec2 vWork2d[nWork2d];
+  // 3D working space (with specific purposes)
+  IceModelVec3 Tnew3, taunew3;
+  IceModelVec3 Sigmastag3[2], Istag3[2];
 
 protected:
   int have_ssa_velocities;	// use vubarSSA and vvbarSSA from a previous
@@ -465,10 +468,6 @@ protected:
   IceModelVec2 vubarSSA, vvbarSSA;
 
 private:
-  // 3D working space (with specific purposes)
-  IceModelVec3 Tnew3, taunew3;
-  IceModelVec3 Sigmastag3[2], Istag3[2];
-  
 #if (PISM_LOG_EVENTS)
   // for event logging; see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, 
