@@ -126,6 +126,9 @@ alltests = [
    ['L',[31,61,91,121,181],
         'isothermal SIA w non-flat bed',0,' -Mz 31 -y 25000.0',
         '(refine dx=60,30,20,15,10,km, dx=dy and Mx=My=31,61,91,121,181)'],
+   ['M',[31,61,91,121,181],'annular ice shelf with calving front',0,
+        ' -Mz 11 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
+        '(refine dx=50,25,16.666,12.5,8.333 km; dx=dy and My=31,61,91,121,181)'],
    ['F',[61,91,121,181,241],'thermocoupled SIA',2,' -y 25000.0',
         '(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m\n'
         + '  and Mx=My=Mz=61,91,121,181,241)',
