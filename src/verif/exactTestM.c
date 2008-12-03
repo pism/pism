@@ -64,25 +64,22 @@ int funcM_ode_G(double r, const double alpha[], double f[], void *params) {
           alpha' = G(alpha,r)      
      but where we solve this equation to find alpha':
           F(alpha',alpha,r) = 0 
-     heuristic: guess is about 1/7 th of solution to a nearby problem */
-  if ((r >= Rg - 1.0) && (r <= Rc + 1.0)) {
-    const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
-                 guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
-    /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));
-       we could call GSL to find root, but hand-coding Newton's is easier */
-    double old = guess, new;
-    int i;
-    for (i = 1; i < 100; i++) {
-      new = old - F_M(old,alpha[0],r,Q) / dF_M(old,alpha[0],r,Q);
-      if (fabs((new-old)/old) < 1.0e-12)   break;
-      old = new;
-    }
-    if (i >= 90)
-      printf("exactTestM WARNING: Newton iteration not converged in funcM_ode_G!\n");
-    f[0] = new;
-  } else {
-    f[0] = 0.0;  /* no changes outside of defined interval */
+     heuristic: guess is about 1/7 th of solution to a nearby problem;
+     no range checking on r, so use away from zero */
+  const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
+               guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
+  /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));
+     we could call GSL to find root, but hand-coding Newton's is easier */
+  double old = guess, new;
+  int i;
+  for (i = 1; i < 100; i++) {
+    new = old - F_M(old,alpha[0],r,Q) / dF_M(old,alpha[0],r,Q);
+    if (fabs((new-old)/old) < 1.0e-12)   break;
+    old = new;
   }
+  if (i >= 90)
+    printf("exactTestM WARNING: Newton iteration not converged in funcM_ode_G!\n");
+  f[0] = new;
   return GSL_SUCCESS;
 }
 
@@ -106,10 +103,17 @@ int exactM(double r,
      *Drr = 0.0;
      return GSL_SUCCESS;
    } else if (r <= Rg) {
-     /* smooth transition from alpha=0 to alpha=ug in   Rg/4 < r <= Rg  */
-     double ratio = (r - 0.25 * Rg) / (0.75 * Rg);
-     *alpha = (ug / 2.0) * (1.0 - cos(pi * ratio));
-     *Drr = (ug / 2.0) * sin(pi * ratio) * (pi / (0.75 * Rg));
+     /* quartic transition from alpha=0 to alpha=ug in   Rg/4 < r <= Rg;
+        f(r) w: f(Rg/4)=f'(Rg/4)=0 and f(Rg)=ug and f(Rg) = DrrRg         */
+     double DrrRg;
+     funcM_ode_G(Rg, &ug, &DrrRg, NULL);  /* first get Drr = alpha' at Rg where alpha=ug */
+     /* printf("DrrRg=%e (1/a)\n",DrrRg*SperA); */
+     const double xx = r - 0.25 * Rg,
+                  AA = 0.75 * Rg,
+                  aa = (DrrRg - 2.0 * ug / AA) / (2.0 * AA * sqrt(ug)),
+                  yy = aa * (xx - AA) + sqrt(ug) / AA;
+     *alpha = xx * xx * yy * yy;
+     *Drr = 2.0 * xx * yy * (yy + xx * aa);
      return GSL_SUCCESS;
    } else if (r >= Rc + 1.0) {
      *alpha = 0.0;  /* zero velocity beyond calving front */
