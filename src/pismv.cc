@@ -59,8 +59,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsHasName(PETSC_NULL, "-no_report", &dontReport); CHKERRQ(ierr);
 
     // actually construct and run one of the derived classes of IceModel
-    if ((test == 'I') || (test == 'J')) {
-      // run derived class for plastic till ice stream or linearized ice shelf
+    if ((test == 'I') || (test == 'J') || (test == 'M')) {
+      // run derived class for plastic till ice stream, or linearized ice shelf,
+      //   or annular ice shelf with calving front
       IceExactSSAModel mSSA(g, ice, test);  
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
@@ -99,3 +100,4 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+

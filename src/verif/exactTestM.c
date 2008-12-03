@@ -27,25 +27,59 @@
 #include <gsl/gsl_odeiv.h>
 #include "exactTestM.h"
 
+#define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a > b ? b : a)
+
 #define pi       3.1415926535897931
 #define SperA    31556926.0    /* seconds per year; 365.2422 days */
 #define g        9.81
-#define rho      910.0
+#define rho      910.0         /* ice density; kg/m^3 */
+#define rhow     1028.0        /* sea water density; kg/m^3 */
 #define n        3.0           /* Glen power */
-
+#define barB     3.7e8         /* strength of shelf; Pa s^(1/3); as in Schoof 2006;
+                                  compare 1.9e8 from MacAyeal et al 1996 */
 #define H0       500.0         /* m */
 #define Rg       300.0e3       /* m;    300 km */
 #define Rc       600.0e3       /* m;    600 km */
 
 
-int funcM(double r, const double alpha[], double f[], void *params) {
-  /*  RHS for differential equation:
-      dalpha   
-      ------ =       
-        dr     
-  */
-  if ((r > Rg) && (r < Rc)) {
-    f[0] = 0.0;  /* FIXME!! */
+double F_M(double x, double alpha, double r, double Q) {
+  const double 
+     aor = alpha / r,
+     DD = x * x + x * aor + pow(aor, 2.0); 
+  return Q * pow(DD, 1./3.) - 2.0 * r * x - alpha;
+}
+
+
+double dF_M(double x, double alpha, double r, double Q) {
+  const double 
+     aor = alpha / r,
+     DD = x * x + x * aor + pow(aor, 2.0); 
+  return (1. / 3.) * Q * pow(DD, - 2./3.) * (2.0 * x + aor) - 2.0 * r;
+}
+
+
+int funcM_ode_G(double r, const double alpha[], double f[], void *params) {
+  /*   RHS G for differential equation:
+          alpha' = G(alpha,r)      
+     but where we solve this equation to find alpha':
+          F(alpha',alpha,r) = 0 
+     heuristic: guess is about 1/7 th of solution to a nearby problem */
+  if ((r >= Rg - 1.0) && (r <= Rc + 1.0)) {
+    const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
+                 guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
+    /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));
+       we could call GSL to find root, but hand-coding Newton's is easier */
+    double old = guess, new;
+    int i;
+    for (i = 1; i < 100; i++) {
+      new = old - F_M(old,alpha[0],r,Q) / dF_M(old,alpha[0],r,Q);
+      if (fabs((new-old)/old) < 1.0e-12)   break;
+      old = new;
+    }
+    if (i >= 90)
+      printf("exactTestM WARNING: Newton iteration not converged in funcM_ode_G!\n");
+    f[0] = new;
   } else {
     f[0] = 0.0;  /* no changes outside of defined interval */
   }
@@ -53,16 +87,14 @@ int funcM(double r, const double alpha[], double f[], void *params) {
 }
 
 
-
 #define NOT_DONE       8966
 #define INVALID_METHOD 8968
 #define NEGATIVE_R     8969
 
 /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
-   is believed to be predictable and accurate ??? */
-/* returns GSL_SUCCESS=0 if success */
+ is believed to be predictable and accurate; returns GSL_SUCCESS=0 if success */
 int exactM(double r,
-           double *alpha,
+           double *alpha, double *Drr,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
    double ug = 100.0 / SperA;  /* velocity across grounding line is 100 m/a */
@@ -71,14 +103,17 @@ int exactM(double r,
      return NEGATIVE_R;  /* only nonnegative radial coord allowed */
    } else if (r <= Rg/4.0) {
      *alpha = 0.0;  /* zero velocity near center */
+     *Drr = 0.0;
      return GSL_SUCCESS;
    } else if (r <= Rg) {
      /* smooth transition from alpha=0 to alpha=ug in   Rg/4 < r <= Rg  */
-     double ratio = (r - 0.25 * Rg) / 0.75 * Rg;
-     *alpha = (ug / 2.0) * (1.0 - cos(pi * ratio));   
+     double ratio = (r - 0.25 * Rg) / (0.75 * Rg);
+     *alpha = (ug / 2.0) * (1.0 - cos(pi * ratio));
+     *Drr = (ug / 2.0) * sin(pi * ratio) * (pi / (0.75 * Rg));
      return GSL_SUCCESS;
-   } else if (r >= Rc) {
+   } else if (r >= Rc + 1.0) {
      *alpha = 0.0;  /* zero velocity beyond calving front */
+     *Drr = 0.0;
      return GSL_SUCCESS;
    }
    
@@ -86,7 +121,7 @@ int exactM(double r,
    const gsl_odeiv_step_type* T;
    switch (ode_method) {
      case 1:
-       T = gsl_odeiv_step_rkck;
+       T = gsl_odeiv_step_rkck; /* RK Cash-Karp */
        break;
      case 2:
        T = gsl_odeiv_step_rk2;
@@ -104,20 +139,21 @@ int exactM(double r,
    gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     /* one scalar ode */
    gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
    gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    /* one scalar ode */
-   gsl_odeiv_system sys = {funcM, NULL, 1, NULL};  /* Jac-free method and no params */
+   gsl_odeiv_system sys = {funcM_ode_G, NULL, 1, NULL};  /* Jac-free method and no params */
 
    /* initial conditions: (r,alf) = (Rg,ug);  r increases */
    double rr = Rg; 
    double myalf = ug;
-   printf (" r (km)        alpha (m/a)\n");
-   printf ("%12.5e %12.5e\n", rr/1000.0, myalf * SperA);
+   /* printf (" r (km)        alpha (m/a)\n");
+      printf (" %11.5e   %11.5e\n", rr/1000.0, myalf * SperA); */
    double step;
    int status = NOT_DONE;
    while (rr < r) {
-     step = r - rr;  /* try to get to solution in one step; trust stepping algorithm */
+     /* step = r - rr;  try to get to solution in one step; trust stepping algorithm */
+     step = MIN(r-rr,20.0e3);
      status = gsl_odeiv_evolve_apply(e, c, s, &sys, &rr, r, &step, &myalf);
      if (status != GSL_SUCCESS)   break;
-     printf ("%12.5e %12.5e\n", rr/1000.0, myalf * SperA);
+     /* printf (" %11.5e   %11.5e\n", rr/1000.0, myalf * SperA); */
    }
 
    gsl_odeiv_evolve_free(e);
@@ -125,6 +161,7 @@ int exactM(double r,
    gsl_odeiv_step_free(s);
 
    *alpha = myalf;
+   funcM_ode_G(r, alpha, Drr, NULL);
    return status;
 }
 

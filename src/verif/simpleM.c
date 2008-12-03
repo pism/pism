@@ -21,27 +21,23 @@
 /*  STANDARD DIALOGUE:
 
 $ ./simpleM
-Enter  r  (in km; e.g. 400.0):   400.0
+Enter  r  (in km; e.g. 600.0):   600.0
 Results from Test M:
-  alpha =  .... (m/a)
+     alpha = 1180.79793 (m/a),  D_rr = alpha' =  0.00115581 (1/a)
   
 */
 
-/* FIXME: add this to dialog?:
-(Parameters:
-  H0 = 500.0 (m), Rg = 300.0 (km), ug = 100.0 (m/a), barB = 1.900e8 (Pa s^1/3) ) 
-*/
 
 #include <stdio.h>
 #include "exactTestM.h"
 
 int main() {
 
-  double       r, alpha;
+  double       r, alpha, strainrate;
   int          scanret;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   
-  printf("Enter  r  (in km; e.g. 400.0):   ");
+  printf("Enter  r  (in km; e.g. 600.0):   ");
   scanret = scanf("%lf",&r);
   if (scanret != 1) {
     printf("... input error; exiting\n"); 
@@ -51,9 +47,15 @@ int main() {
   double EPS_ABS[] = { 1.0e-12, 1.0e-9, 1.0e-7 };
   double EPS_REL[] = { 0.0, 1.0e-14, 1.0e-11 }; 
   int eMresult;
-  eMresult = exactM(r*1000.0,&alpha,EPS_ABS[0],EPS_REL[0],1);
-
-  printf("Results from Test M (returned %d):\n", eMresult);
-  printf("     alpha = %8.5f (m/a)\n", alpha*secpera);
+  /*  use rkck method and stringent tolerance  */
+  eMresult = exactM(r*1000.0,&alpha,&strainrate,EPS_ABS[0],EPS_REL[0],1);
+  if (eMresult != 0) {
+    printf("\n\nFAILURE in evaluatine exactM() !!!!\n\n\n");
+  }
+  
+  printf("Results from Test M:\n");
+  printf("     alpha = %8.5f (m/a),  D_rr = alpha' = %11.8f (1/a)\n", 
+         alpha*secpera, strainrate*secpera);
   return 0;
 }
+

@@ -33,7 +33,7 @@ public:
     PetscErrorCode         reportErrors();
 
 protected:
-    char       test;       // only 'I', 'J' supported
+    char       test;       // only 'I', 'J', 'M' supported
     PetscTruth exactOnly;
     IceModelVec2 vNuForJ[2];
           
@@ -41,14 +41,19 @@ protected:
     PetscErrorCode  taucSetI();
     PetscErrorCode  setInitStateAndBoundaryVelsI();
     PetscErrorCode  setInitStateJ();
+    PetscErrorCode  setInitStateM();
+
+    void mapcoords(const PetscInt i, const PetscInt j,
+                   PetscScalar &x, PetscScalar &y, PetscScalar &r);
 
 private:
     // constants for I
     static const PetscScalar   
                m_schoof, L_schoof, aspect_schoof, H0_schoof,
                B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
-    // constants for J
-    static const PetscScalar LforJ;
+    // constants for J, M
+    static const PetscScalar LforJ, LforM;
 };
 
 #endif /* __iceExactSSAModel_hh */
+

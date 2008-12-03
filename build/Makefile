@@ -121,9 +121,11 @@ local_install: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
 ifneq ($(PISM_STATIC),1)
 libpism.so : ${ICE_OBJS}
 	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
+	@cp libpism.so ../lib/
 
 libtests.so : ${TESTS_OBJS}
 	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
+	@cp libtests.so ../lib/
 else
 libpism.a : ${ICE_OBJS}
 	ar r $@ ${ICE_OBJS} 
@@ -181,6 +183,7 @@ gridL : gridL.o ${LIBTESTSNAME}
 
 simpleM : simpleM.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+	@cp simpleM ../bin/
 
 # The GNU recommended procedure for automatically generating prerequisites.
 # (The obscure sed command comes straight from the GNU Make manual.)

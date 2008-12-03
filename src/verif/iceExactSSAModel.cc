@@ -21,6 +21,7 @@
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "exactTestsIJ.h"
+#include "exactTestM.h"
 #include "iceExactSSAModel.hh"
 
 const PetscScalar IceExactSSAModel::m_schoof = 10; // (pure number)
@@ -33,6 +34,7 @@ const PetscScalar IceExactSSAModel::B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 const PetscScalar IceExactSSAModel::p_schoof = 4.0/3.0; // = 1 + 1/n
 
 const PetscScalar IceExactSSAModel::LforJ = 300.0e3; // 300 km half-width
+const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 
 
 IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType *i, char mytest)
@@ -68,7 +70,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
 
   ierr = tau3.set(0.0); CHKERRQ(ierr);  // age (not yield stress)
 
-  // set initial velocities in shelf (for start of iteration)
+  // set initial velocities (for start of iteration)
   ierr = vubar.set(0.0); CHKERRQ(ierr);
   ierr = vvbar.set(0.0); CHKERRQ(ierr);
   ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
@@ -83,10 +85,10 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   useSSAVelocity = PETSC_TRUE;
   ssaMaxIterations = 500;  
   useConstantNuHForSSA = PETSC_FALSE;
-  doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J
+  doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J and M
   doSuperpose = PETSC_FALSE;
   
-  // do rest of base class initialization before final initialization for I and J (below)
+  // do rest of base class initialization before final initialization for I, J, M (below)
   initialized_p = PETSC_TRUE;
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
   // in preparation for rescale_and_set_zlevels() below:
@@ -124,7 +126,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true); CHKERRQ(ierr);
       ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true); CHKERRQ(ierr);
       // we set last two flags: grid is truely periodic both in x and in y
-      ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000, PETSC_TRUE, PETSC_TRUE);
+      ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000.0, PETSC_TRUE, PETSC_TRUE);
          CHKERRQ(ierr);
       ierr = afterInitHook(); CHKERRQ(ierr);
       ierr = setInitStateJ(); CHKERRQ(ierr);
@@ -134,8 +136,22 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
       useConstantHardnessForSSA = PETSC_FALSE;
       ssaEpsilon = 0.0;  // don't use this lower bound
       break;
+    case 'M': {
+      // set up 1500 km by 1500 m grid
+      // note Mx,My may have been set by options, but not others
+      ierr = grid.rescale_and_set_zlevels(LforM, LforM, 1000.0); CHKERRQ(ierr);
+      ierr = afterInitHook(); CHKERRQ(ierr);
+      ierr = setInitStateM(); CHKERRQ(ierr);
+      isDrySimulation = PETSC_FALSE;
+      computeSurfGradInwardSSA = PETSC_FALSE;
+      useConstantHardnessForSSA = PETSC_TRUE;  // use constant barB
+      ierr = verbPrintf(3,grid.com,
+        "IceExactSSAModel::initFromOptions: constantHardnessForSSA = %10.5e\n",
+        constantHardnessForSSA); CHKERRQ(ierr);
+      }
+      break;
     default:
-      SETERRQ(1,"Only tests I and J currently supported in IceExactSSAModel.");
+      SETERRQ(1,"Only tests I, J, M currently supported in IceExactSSAModel.");
   }
 
   // Communicate so that we can differentiate surface, and to set boundary conditions
@@ -268,9 +284,77 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
 }
 
 
+PetscErrorCode IceExactSSAModel::setInitStateM() {
+  PetscErrorCode ierr;
+  PetscScalar    **H, **h, **bed, **mask, **uvbar[2];
+
+  const PetscScalar
+            Rg = 300.0e3,     // radius for grounding line
+            Rc = 600.0e3,     // radius for calving front
+            H0 = 500.0,       // 500 m constant thickness
+            hicepresent = (1.0 - (ice->rho / ocean.rho)) * H0,
+            bedgrounded = - H0 * (ice->rho / ocean.rho);
+
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vh.get_array(h); CHKERRQ(ierr);    
+  ierr = vbed.get_array(bed); CHKERRQ(ierr);    
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar alpha, Drr, myu, myv;
+      PetscScalar r,xx,yy;
+      mapcoords(i,j,xx,yy,r);
+      // evaluate exact solution (though velocity info discarded for shelf)
+      ierr = exactM(r, &alpha, &Drr, 1.0e-12, 0.0, 1); // CHKERRQ(ierr);
+      if (ierr != 0) {
+        verbPrintf(1,grid.com,"exactM() not successful; gives alpha = %f (m/a), at\n",
+                   alpha*secpera);
+        verbPrintf(1,grid.com,"   i,j,xx,yy,r = %d,%d,%f,%f,%f\n", i,j,xx,yy,r);
+      }
+      if (r > 1.0) { // merely to avoid div by 0
+        myu = alpha * (xx / r); myv = alpha * (yy / r);
+      } else {
+        myu = 0.0; myv = 0.0;
+      }
+      if (r < Rg) {
+        // grounded case
+        H[i][j] = H0;
+        h[i][j] = hicepresent;
+        bed[i][j] = bedgrounded;
+        mask[i][j] = MASK_SHEET;
+        uvbar[0][i][j] = myu;
+        uvbar[1][i][j] = myv;
+      } else if (r <= Rc) {
+        // ice shelf case
+        H[i][j] = H0;
+        h[i][j] = hicepresent;
+        // drop away at 2 m per hor. km beyond grounding line:
+        bed[i][j] = bedgrounded - (r - Rg) * 0.002;  
+        mask[i][j] = MASK_FLOATING;
+      } else { // r > Rc
+        // ocean case
+        H[i][j] = 0.0;
+        h[i][j] = 0.0;
+        // continue to drop away at 2 m per hor. km beyond grounding line:
+        bed[i][j] = bedgrounded - (r - Rg) * 0.002;  
+        mask[i][j] = MASK_FLOATING_OCEAN0;
+      }
+    }
+  }  
+  ierr = vh.end_access(); CHKERRQ(ierr);    
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);    
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 PetscErrorCode IceExactSSAModel::reportErrors() {
   PetscErrorCode  ierr;
-  const PetscInt    Mx = grid.Mx, My = grid.My;
   PetscScalar exactmaxu, maxvecerr = 0.0, avvecerr = 0.0, 
               avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
   PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
@@ -290,16 +374,32 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2, uexact, vexact;
-      const PetscInt ifrom0 = (test == 'I') ? i - (Mx - 1)/2 : i - (Mx)/2,
-                     jfrom0 = (test == 'I') ? j - (My - 1)/2 : j - (My)/2;
-      const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
+      PetscScalar myr,myx,myy;
+      mapcoords(i,j,myx,myy,myr);
       // eval exact solution
       if (test == 'I') {
         exactI(m_schoof, myx, myy, &junk1, &junk2, &uexact, &vexact); 
       } else if (test == 'J') {
+        const PetscInt ifrom0 = i - (grid.Mx)/2,
+                       jfrom0 = j - (grid.My)/2;
+        const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
         exactJ(myx, myy, &junk1, &junk2, &uexact, &vexact);
+      } else if (test == 'M') {
+        PetscScalar alpha;
+        ierr = exactM(myr, &alpha, &junk1, 1.0e-12, 0.0, 1); //CHKERRQ(ierr);
+        if (ierr != 0) {
+          verbPrintf(1,grid.com,"exactM() not successful; gives alpha = %f (m/a), at\n",
+                     alpha*secpera);
+          verbPrintf(1,grid.com,"   i,j,xx,yy,r = %d,%d,%f,%f,%f\n", i,j,myx,myy,myr);
+        }
+        if (myr > 1.0) {
+          uexact = alpha * (myx / myr);
+          vexact = alpha * (myy / myr);
+        } else {
+          uexact = 0.0; vexact = 0.0;
+        }
       } else {
-        SETERRQ(1,"only tests I and J have computable errors");
+        SETERRQ(1,"only tests I,J,M have computable errors");
       }
       // compute maximum errors
       const PetscScalar uerr = PetscAbsReal(u[i][j] - uexact);
@@ -336,9 +436,14 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
             "           %11.4f%13.5f%10.4f%10.4f\n", 
             gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
             gmaxuerr*secpera, gavuerr*secpera); CHKERRQ(ierr);
-  } else if (test == 'J') {
-    // following from "pismv -test J -Mx 601 -My 601 -Mz 3 -verbose -eo"
-    exactmaxu = 181.366 / secpera;  
+  } else if ((test == 'J') || (test == 'M')) {
+    if (test == 'J') {
+      // following from "pismv -test J -Mx 601 -My 601 -Mz 3 -verbose -eo"
+      exactmaxu = 181.366 / secpera;
+    } else {
+      // from simpleM with r=600.0:
+      exactmaxu = 1180.79793 / secpera;
+    }
     ierr = verbPrintf(1,grid.com, 
        "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
        CHKERRQ(ierr);
@@ -370,19 +475,33 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2;
-      const PetscScalar 
-          ifrom0 = static_cast<PetscScalar>(i)
-                     - static_cast<PetscScalar>(grid.Mx - 1)/2.0,
-          jfrom0 = static_cast<PetscScalar>(j)
-                     - static_cast<PetscScalar>(grid.My - 1)/2.0;
-      const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
+      PetscScalar myr,myx,myy;
+      mapcoords(i,j,myx,myy,myr);
       if (test == 'I') {
         exactI(m_schoof, myx, myy, &junk1, &junk2, &ubar[i][j], &vbar[i][j]); 
       } else if (test == 'J') {
+        const PetscInt ifrom0 = i - (grid.Mx)/2,
+                       jfrom0 = j - (grid.My)/2;
+        const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
         ierr = exactJ(myx, myy, &junk1, &junk2, &ubar[i][j], &vbar[i][j]); CHKERRQ(ierr);
+      } else if (test == 'M') {
+        PetscScalar alpha;
+        ierr = exactM(myr, &alpha, &junk1, 1.0e-12, 0.0, 1); //CHKERRQ(ierr);
+        if (ierr != 0) {
+          verbPrintf(1,grid.com,"exactM() not successful; gives alpha = %f (m/a), at\n",
+                     alpha*secpera);
+          verbPrintf(1,grid.com,"   i,j,xx,yy,r = %d,%d,%f,%f,%f\n", i,j,myx,myy,myr);
+        }
+        if (myr > 1.0) {
+          ubar[i][j] = alpha * (myx / myr);
+          vbar[i][j] = alpha * (myy / myr);
+        } else {
+          ubar[i][j] = 0.0; vbar[i][j] = 0.0;
+        }
       } else {
-        SETERRQ(1,"only tests I and J supported in IceExactSSAModel");
+        SETERRQ(1,"only tests I,J,M supported in IceExactSSAModel");
       }
+      // now fill in velocity at depth
       for (PetscInt k=0; k<grid.Mz; k++) {
         ierr = u3.setColumn(i,j,ubar[i][j]); CHKERRQ(ierr);
         ierr = v3.setColumn(i,j,vbar[i][j]); CHKERRQ(ierr);
@@ -421,7 +540,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   } else { // numerically solve ice shelf/stream equations
     PetscInt numiter;
     ierr = initSSA(); CHKERRQ(ierr);
-    if (test == 'I') {
+    if ((test == 'I') || (test == 'M')) {
       ierr = velocitySSA(&numiter); CHKERRQ(ierr);
     } else if (test == 'J') {
       // use locally allocated space for (computed) nu:
@@ -451,5 +570,18 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
   return 0;
+}
+
+
+void IceExactSSAModel::mapcoords(const PetscInt i, const PetscInt j,
+                                 PetscScalar &x, PetscScalar &y, PetscScalar &r) {
+  // compute x,y,r on grid from i,j
+  PetscScalar ifrom0, jfrom0;
+
+  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
+  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+  x=grid.dx*ifrom0;
+  y=grid.dy*jfrom0;
+  r = sqrt(PetscSqr(x) + PetscSqr(y));
 }
 

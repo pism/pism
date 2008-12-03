@@ -46,13 +46,16 @@ extern "C"
 */
 
 int exactM(double r,
-           double *alpha,
+           double *alpha, double *Drr,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* input    : r in m,  r >= 0
-      output   : alpha in  m s^-1;  always positive
-      numerical: EPS_ABS
-                 EPS_REL
-                 ode_method
+   /* input    : r                             (m;   r >= 0)
+      output   : alpha(r)                      (m s^-1;  always positive)
+                 Drr = alpha'(r)               (s^-1; radial strain rate)
+      numerical: EPS_ABS                       (=1.0e-12 recommended)
+                 EPS_REL                       (=0.0     recommended)
+                 ode_method                    (=1       recommended; =Runge-Kutta-Cash-Karp)
+
+      return value = GSL_SUCCESS = 0 if successful
    */
 
 #ifdef __cplusplus

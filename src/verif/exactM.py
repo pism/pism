@@ -44,8 +44,8 @@ r  = linspace(Rg,Rc,((Rc-Rg)/dr)+1);
 # solve:
 print 'solving with odeint from scipy.integrate; it reports: ',
 alpha = odeint(GG, [ug], r, printmessg=1,
-               rtol=1.0e-12,      # ask for 12 digits
-               atol=0.001/SperA)  # ask for abs tol of 1 mm/a
+               rtol=0.0,            # ask for no change in digits
+               atol=0.00001/SperA)  # ask for abs tol of 0.01 mm/a
 
 # info to evaluate solution
 qual = array(qual)
@@ -55,8 +55,10 @@ guesserr   = qual[:,3]
 print 'maximum relative error in initial guess for fsolve() is %f' \
    % max(guesserr)
 
-print "at calving front:  alpha(Rc) = %f  (m/a),  alpha'(Rc) = %f  (1/a)" \
-   % (alpha[-1] * SperA, strainrate[-1] * SperA)
+print "at calving front:  alpha(Rc) = %f  (m/a)" \
+   % (alpha[-1] * SperA)
+#print "   (last r used = %f km; strain rate at last r = %f  (1/a))" \
+#   % (rused[-1] / 1000.0, strainrate[-1] * SperA)
 
 # plot velocity solution alpha(r), and also strain rate alpha'(r)
 figure(1)
