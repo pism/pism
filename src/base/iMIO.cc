@@ -238,16 +238,18 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", "magnitude of vertically-integrated horizontal velocity of ice",
-			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("diagnostic", 
+            "magnitude of vertically-integrated horizontal velocity of ice",
+	    "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // compute cflx = cbar .* thk and save it
   ierr = vWork2d[0].multiply_by(vH, vWork2d[1]); CHKERRQ(ierr);
   ierr = vWork2d[1].set_name("cflx"); CHKERRQ(ierr);
-  ierr = vWork2d[1].set_attrs("diagnostic", "magnitude of vertically-integrated horizontal flux of ice",
-			      "m2 s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[1].set_attrs("diagnostic", 
+             "magnitude of vertically-integrated horizontal flux of ice",
+	     "m2 s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[1].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[1].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -263,8 +265,9 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[2].set_name("cbase"); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_attrs("diagnostic", "magnitude of horizontal velocity of ice at base of ice",
-			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_attrs("diagnostic", 
+             "magnitude of horizontal velocity of ice at base of ice",
+	     "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[2].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -280,8 +283,9 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[0].set_name("csurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", "magnitude of horizontal velocity of ice at ice surface",
-			      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("diagnostic", 
+             "magnitude of horizontal velocity of ice at ice surface",
+	     "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -301,8 +305,9 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
 
   ierr = vWork2d[2].set_name("taud"); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_attrs("diagnostic", "magnitude of driving shear stress at base of ice",
-			      "Pa", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_attrs("diagnostic",
+             "magnitude of driving shear stress at base of ice",
+	     "Pa", NULL); CHKERRQ(ierr);
   ierr = vWork2d[2].set_glaciological_units("", 1.0); CHKERRQ(ierr); // reset units
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -333,22 +338,26 @@ PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
-             "WARNING: user option -Mx ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+             "WARNING: user option -Mx ignored; value read from file %s\n", fname);
+             CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
-             "WARNING: user option -My ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+             "WARNING: user option -My ignored; value read from file %s\n", fname);
+             CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
-             "WARNING: user option -Mz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+             "WARNING: user option -Mz ignored; value read from file %s\n", fname);
+             CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &ignor, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
-              "WARNING: user option -Mbz ignored; value read from file %s\n", fname); CHKERRQ(ierr);
+              "WARNING: user option -Mbz ignored; value read from file %s\n", fname);
+              CHKERRQ(ierr);
   }
   return 0;
 }
@@ -620,6 +629,7 @@ PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
   return 0;
 }
 
+
 PetscErrorCode IceModel::init_snapshots_from_options() {
   PetscErrorCode ierr;
   PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
@@ -667,21 +677,22 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
       parsing_failed = true;
 
     if (parsing_failed) {
-      ierr = verbPrintf(1, grid.com, "PISM ERROR: Parsing the -save_at argument failed.\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(1, grid.com, "PISM ERROR: Parsing the -save_at argument failed.\n");
+         CHKERRQ(ierr);
       PetscEnd();
     }
 
     if (first_snapshot >= last_snapshot) {
       ierr = verbPrintf(1, grid.com,
-			"PISM ERROR: Error in the -save_at argument: a >= b in the range specification '%s'.\n",
-			tmp); CHKERRQ(ierr);
+         "PISM ERROR: Error in the -save_at argument: a >= b in the range specification '%s'.\n",
+	 tmp); CHKERRQ(ierr);
       PetscEnd();
     }
 
     if (snapshot_dt <= 0) {
       ierr = verbPrintf(1, grid.com,
-			"PISM ERROR: Error in the -save_at argument: dt <= 0 in the range specification '%s'.\n",
-			tmp); CHKERRQ(ierr);
+	 "PISM ERROR: Error in the -save_at argument: dt <= 0 in the range specification '%s'.\n",
+	 tmp); CHKERRQ(ierr);
       PetscEnd();
     }
 
@@ -699,15 +710,15 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   if (save_to_set && save_at_set) {
     save_snapshots = true;
     file_is_ready = false;
-    ierr = verbPrintf(2, grid.com, "Saving snapshots to '%s'. ", snapshots_filename); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ", snapshots_filename); CHKERRQ(ierr);
     if (save_at_equal_intervals) {
-      ierr = verbPrintf(2, grid.com, "Times requested: %3.3f:%3.3f:%3.3f.\n", first_snapshot, snapshot_dt, last_snapshot); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n", first_snapshot, snapshot_dt, last_snapshot); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2, grid.com, "Times requested: "); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "times requested: "); CHKERRQ(ierr);
       for (int j = 0; j < n_snapshots; j++) {
 	ierr = verbPrintf(2, grid.com, "%3.3f, ", save_at[j]); CHKERRQ(ierr);
       }
-      ierr = verbPrintf(2, grid.com, "\b\b.\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "\b\b\n"); CHKERRQ(ierr);
     }
   } else {
     save_snapshots = false;
@@ -744,13 +755,13 @@ PetscErrorCode IceModel::write_snapshot() {
   }
 
   if (save_now) {
-    ierr = verbPrintf(2, grid.com, "Saving a model state snapshot at t = %3.3f.\n", grid.year);
+    ierr = verbPrintf(2, grid.com, "Saving a model state snapshot at t = %3.5f.\n", grid.year);
     CHKERRQ(ierr);
 
     char tmp[TEMPORARY_STRING_LENGTH];
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
-	     "PISM: saving a snaphot at %10.3f (years), the first time-step after %10.3f (years).\n",
-	     grid.year, saving_after);
+	     " %s: saving a snapshot at %10.5f (years), following time-step at %10.5f (years).\n",
+	     executable_short_name, grid.year, saving_after);
 
     if (!file_is_ready) {
       // Prepare the snapshots file:

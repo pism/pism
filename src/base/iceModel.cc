@@ -137,15 +137,18 @@ PetscErrorCode IceModel::createVecs() {
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
   // the CF conventions; see
-  // http://cf-pcmdi.llnl.gov/documents/cf-standard-names/11/cf-standard-name-table.html
+  // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
 
   ierr =     u3.create(grid, "uvel", true); CHKERRQ(ierr);
   ierr =     u3.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-			  "m s-1", NULL); CHKERRQ(ierr);
+			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
   ierr =     v3.create(grid, "vvel", true); CHKERRQ(ierr);
   ierr =     v3.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-			  "m s-1", NULL); CHKERRQ(ierr);
+			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
+
   ierr =     w3.create(grid, "wvel", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  // PROPOSED standard name = land_ice_upward_velocity
+  //   (compare "upward_air_velocity" and "upward_sea_water_velocity")
   ierr =     w3.set_attrs("diagnostic", "vertical velocity of ice",
 			  "m s-1", NULL); CHKERRQ(ierr);
   ierr = Sigma3.create(grid, "Sigma", false); CHKERRQ(ierr); // never diff'ed in hor dirs
@@ -157,13 +160,15 @@ PetscErrorCode IceModel::createVecs() {
 
   // age of ice
   ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
+  // PROPOSED standard_name = land_ice_age
   ierr = tau3.set_attrs("model_state", "age of ice",
-			"s", "land_ice_age"); CHKERRQ(ierr);
+			"s", NULL); CHKERRQ(ierr);
 
   // bedrock temperature
   ierr = Tb3.create(grid,"litho_temp", false); CHKERRQ(ierr);
-  ierr = Tb3.set_attrs("model_state", "bedrock temperature",
-		       "K", "bedrock_temperature"); CHKERRQ(ierr);
+  // PROPOSED standard_name = lithosphere_temperature
+  ierr = Tb3.set_attrs("model_state", "lithosphere (bedrock) temperature",
+		       "K", NULL); CHKERRQ(ierr);
 
   // ice upper surface elevation
   ierr = vh.create(grid, "usurf", true); CHKERRQ(ierr);
@@ -185,10 +190,12 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vAccum.set_attrs("climate_steady", "mean annual net ice equivalent accumulation (ablation) rate",
 			  "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
-  // annual mean air temperature at ice surface
+  // annual mean air temperature at "ice surface", i.e.
+  //   at level below all firn processes
+  // PROPOSED standard_name = land_ice_temperature_below_firn
   ierr = vTs.create(grid, "artm", true); CHKERRQ(ierr);
-  ierr = vTs.set_attrs("climate_steady", "annual mean air temperature at ice surface",
-		       "K", "surface_temperature"); CHKERRQ(ierr);
+  ierr = vTs.set_attrs("climate_steady", "temperature at ice surface but below firn",
+		       "K", NULL); CHKERRQ(ierr);
 
   // grounded_dragging_floating integer mask
   ierr = vMask.create(grid, "mask",     true); CHKERRQ(ierr);

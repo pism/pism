@@ -1369,14 +1369,14 @@ PetscErrorCode NCTool::create_dimensions() {
     stat = nc_def_var(ncid, "z", NC_DOUBLE, 1, &dimid, &z); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, z, "axis", 1, "Z"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, z, "long_name", 32, "z-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, z, "standard_name", 23, "projection_z_coordinate"); check_err(stat,__LINE__,__FILE__);
+    // PROPOSED standard_name = projection_z_coordinate
     stat = nc_put_att_text(ncid, z, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, z, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
     // zb
     stat = nc_def_dim(ncid, "zb", grid->Mbz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "zb", NC_DOUBLE, 1, &dimid, &zb); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, zb, "long_name", 23, "z-coordinate in bedrock"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, zb, "standard_name", 34, "projection_z_coordinate_in_bedrock"); check_err(stat,__LINE__,__FILE__);
+    // PROPOSED standard_name = projection_z_coordinate_in_lithosphere
     stat = nc_put_att_text(ncid, zb, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, zb, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
     // 
