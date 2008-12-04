@@ -96,7 +96,7 @@ public:
 
   virtual PetscErrorCode setFromOptions();
   using IceModel::initFromOptions;
-  virtual PetscErrorCode initFromOptions();
+  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
   virtual PetscErrorCode summaryPrintLine(

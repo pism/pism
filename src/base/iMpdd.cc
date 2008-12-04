@@ -152,8 +152,12 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
 
   bool file_exists = false;
   ierr = nc.open_for_reading(monthlyTempsFile, file_exists); CHKERRQ(ierr);
-  if (!file_exists)
-    SETERRQ1(1, "Couldn't open '%s'.\n", monthlyTempsFile);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: Can't open file '%s'.\n", monthlyTempsFile);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   ierr = verbPrintf(4, grid.com, 
          "  creating local interpolation context for monthly surface temps ...\n");
@@ -193,9 +197,13 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
     char monthlyTempName[20];
     snprintf(monthlyTempName, 20, "temp_mon%d", j);
     ierr = nc.find_variable(monthlyTempName, NULL, &varid, var_exists);
-    if (!var_exists)
-      SETERRQ2(1, "Variable '%s' not found in '%s'\n.",
-	       monthlyTempName, monthlyTempsFile);
+    if (!var_exists) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: Variable '%s' not found in file '%s'\n.",
+			 monthlyTempName, monthlyTempsFile);
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
     ierr = nc.regrid_global_var(varid, 2, lic, grid.da2, 
 				vmonthlyTs[j], false); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, " %d", j); CHKERRQ(ierr);

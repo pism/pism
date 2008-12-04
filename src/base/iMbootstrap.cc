@@ -49,7 +49,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   bool file_exists=false;
   NCTool nc(&grid);
   if (filename == NULL) {
-    SETERRQ(1, "No file name given for bootstrapping.\n");
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: No file name given for bootstrapping.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
 
@@ -58,7 +61,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
        "bootstrapping by PISM default method from file %s\n",filename); 
        CHKERRQ(ierr);
   } else {
-    SETERRQ1(2,"bootstrapping file '%s' does not exist\n",filename);
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: Can't open bootstrapping file '%s'.\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   
   // now allocate our model; when bootstrapFromFile_netCDF() is called 
@@ -90,22 +96,34 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
 
   // if the horizontal dimensions and time (FIXME) are absent then we can not proceed
   if (!tdimExists) {
-    SETERRQ1(3,"bootstrapping file '%s' has no time dimension 't'\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no time dimension 't'\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if (!xdimExists) {
-    SETERRQ1(4,"bootstrapping file '%s' has no horizontal dimension 'x'\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if (!ydimExists) {
-    SETERRQ1(5,"bootstrapping file '%s' has no horizontal dimension 'y'\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if (!tExists) {
-    SETERRQ1(6,"bootstrapping file '%s' has no variable 't' (=t(t))\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no variable 't' (=t(t))\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if (!xExists) {
-    SETERRQ1(7,"bootstrapping file '%s' has no variable 'x' (=x(x))\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no variable 'x' (=x(x))\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if (!yExists) {
-    SETERRQ1(8,"bootstrapping file '%s' has no variable 'y' (=y(y))\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no variable 'y' (=y(y))\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
  
   // our goal is to create "local interpolation context" from dimensions, 
@@ -259,8 +277,11 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *filename) 
   bool maskExists=false, ubarExists=false, vbarExists=false, bcflagExists=false; 
 
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists)
-    SETERRQ1(1, "Couldn't open '%s'.\n", filename);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", filename);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   ierr = nc.find_variable("mask", NULL, &maskid, maskExists); CHKERRQ(ierr);
   ierr = nc.find_variable("ubar", NULL, &ubarid, ubarExists); CHKERRQ(ierr);
@@ -268,12 +289,16 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *filename) 
   ierr = nc.find_variable("bcflag", NULL, &bcflagid, bcflagExists); CHKERRQ(ierr);
   
   if ((ubarExists != 1) || (vbarExists != 1)) {
-    SETERRQ1(1,"-ssaBC set but (ubar,vbar) not found in file %s\n",filename);
+    ierr = PetscPrintf(grid.com,"-ssaBC set but (ubar,vbar) not found in file %s\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if (bcflagExists != 1) {
-    SETERRQ1(1,
-    "-ssaBC set but bcflag (location of Dirichlet b.c.) not found in file %s\n",
-    filename);
+    ierr = PetscPrintf(grid.com,
+		       "-ssaBC set but bcflag (location of Dirichlet b.c.) not found in file %s\n",
+		       filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   ierr = vbcflag.create(grid, "bcflag", true); CHKERRQ(ierr);
 

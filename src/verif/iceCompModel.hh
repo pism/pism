@@ -31,7 +31,7 @@ public:
   IceCompModel(IceGrid &g, IceType *i, const char mytest);
   virtual ~IceCompModel();
   using IceModel::initFromOptions;
-  virtual PetscErrorCode initFromOptions();
+  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
   PetscErrorCode reportErrors();
 
 protected:

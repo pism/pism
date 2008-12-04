@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
 
     // We provide a default base name if no -o option.
-    ierr = m.writeFiles("unnamed"); CHKERRQ(ierr);
+    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
 
     delete ice;
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);

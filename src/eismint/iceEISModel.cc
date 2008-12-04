@@ -64,7 +64,10 @@ PetscErrorCode IceEISModel::setFromOptions() {
     if ((temp >= 'A') && (temp <= 'L')) {
       expername = temp;
     } else {
-      SETERRQ(1,"option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+      ierr = PetscPrintf(grid.com,
+			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+      CHKERRQ(ierr);
+      PetscEnd();
     }
   }
 
@@ -135,7 +138,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceEISModel::initFromOptions() {
+PetscErrorCode IceEISModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode      ierr;
   PetscTruth          inFileSet, bootFileSet;
 
@@ -147,8 +150,8 @@ PetscErrorCode IceEISModel::initFromOptions() {
   if (!infileused) { 
     // initialize from EISMINT II formulas
     ierr = verbPrintf(1,grid.com, 
-              "initializing EISMINT II experiment %c ... \n", 
-              expername); CHKERRQ(ierr);
+		      "initializing EISMINT II experiment %c ... \n", 
+		      expername); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
 
@@ -167,47 +170,54 @@ PetscErrorCode IceEISModel::initFromOptions() {
     // note height of grid must be great enough to handle max thickness
     const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-    switch (expername) {
+    switch (expername)
+      {
       case 'A':
       case 'E':
       case 'I':
-        ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
-        break;
+	ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
+	break;
       case 'B':
       case 'C':
       case 'D':
-        ierr = grid.rescale_and_set_zlevels(L, L, 4000); CHKERRQ(ierr);
-        break;
+	ierr = grid.rescale_and_set_zlevels(L, L, 4000); CHKERRQ(ierr);
+	break;
       case 'F':
-        switch (flowLawNumber) {
-          case 0:
-          case 3:
-            ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
-            break;
-          case 1:
-          case 4:
-          case 5:
-            ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
-            break;
-          case 2:
-            ierr = grid.rescale_and_set_zlevels(L, L, 7000); CHKERRQ(ierr);
-            break;
-          default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
-        }
-        break;
+	switch (flowLawNumber)
+	  {
+	  case 0:
+	  case 3:
+	    ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
+	    break;
+	  case 1:
+	  case 4:
+	  case 5:
+	    ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
+	    break;
+	  case 2:
+	    ierr = grid.rescale_and_set_zlevels(L, L, 7000); CHKERRQ(ierr);
+	    break;
+	  default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
+	  }
+	break;
       case 'G':
-        ierr = grid.rescale_and_set_zlevels(L, L, 3000); CHKERRQ(ierr);
-        break;
+	ierr = grid.rescale_and_set_zlevels(L, L, 3000); CHKERRQ(ierr);
+	break;
       case 'H':
       case 'J':
       case 'K':
       case 'L':
-        ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
-        break;
+	ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
+	break;
       default:  
-        SETERRQ1(1,"EISMINT II experiment name %c not valid\n",expername);
-    }
-
+	{
+	  ierr = PetscPrintf(grid.com,
+			     "EISMINT II experiment name %c not valid\n",expername);
+	  CHKERRQ(ierr);
+	  PetscEnd();
+	}
+      }	// end of switch(expername)
+    
     if ((expername == 'I') || (expername == 'J')) {
       ierr = generateTroughTopography(); CHKERRQ(ierr);
     } 
@@ -219,8 +229,8 @@ PetscErrorCode IceEISModel::initFromOptions() {
     ierr = fillintemps(); CHKERRQ(ierr);
 
     initialized_p = PETSC_TRUE;
-  }
-
+  } // end of if(!infileused)
+  
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
 
   if (infileused) {
@@ -232,7 +242,7 @@ PetscErrorCode IceEISModel::initFromOptions() {
   }
   
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
-             CHKERRQ(ierr);
+  CHKERRQ(ierr);
   return 0;
 }
 

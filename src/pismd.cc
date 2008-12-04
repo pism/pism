@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007, 2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     }
 
     // provide a default base name if no -o option.
-    ierr = m->writeFiles("unnamed_diag",PETSC_TRUE); CHKERRQ(ierr);
+    ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);
 
     delete ice;
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);

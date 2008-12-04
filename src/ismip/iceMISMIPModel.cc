@@ -233,19 +233,25 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-mismip", Ee, PETSC_MAX_PATH_LEN, PETSC_NULL); 
             CHKERRQ(ierr);
   if (strlen(Ee) != 2) {
-    SETERRQ(1,"IceMISMIPModel ERROR:  '-mismip' must be followed by two char argument;\n"
-              "  i.e. '-mismip Xx' where Xx=1a,1b,2a,2b,3a,3b");
+    ierr = PetscPrintf(grid.com,
+		       "IceMISMIPModel ERROR:  '-mismip' must be followed by two char argument;\n"
+		       "  i.e. '-mismip Xx' where Xx=1a,1b,2a,2b,3a,3b\n"); CHKERRQ(ierr);
+    PetscEnd();
   } else {
     if ((Ee[0] < '1') || (Ee[0] > '3')) {
-      SETERRQ(2,"IceMISMIPModel ERROR:  first character of string 'Xx' in"
-                " '-mismip Xx' must be 1, 2, or 3");
+      ierr = PetscPrintf(grid.com,
+			 "IceMISMIPModel ERROR:  first character of string 'Xx' in"
+			 " '-mismip Xx' must be 1, 2, or 3\n"); CHKERRQ(ierr);
+      PetscEnd();
     }
     exper = (int) Ee[0] - (int) '0';
     if ((Ee[1] == 'a') || (Ee[1] == 'b')) {
       sliding = Ee[1];
     } else {
-      SETERRQ(3,"IceMISMIPModel ERROR:  second character of string 'Xx' in"
-                " '-mismip Xx' must be a or b");
+      ierr = PetscPrintf(grid.com,
+			 "IceMISMIPModel ERROR:  second character of string 'Xx' in"
+			 " '-mismip Xx' must be a or b\n"); CHKERRQ(ierr);
+      PetscEnd();
     }
   }
 
@@ -268,7 +274,10 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   // read option    -model        [1]
   ierr = PetscOptionsGetInt(PETSC_NULL, "-model", &modelnum, PETSC_NULL); CHKERRQ(ierr);
   if ((modelnum < 1) || (modelnum > 2)) {
-    SETERRQ(8,"IceMISMIPModel ERROR:  modelnum must be 1 or 2; '-model 1' or '-model 2'");
+    PetscPrintf(grid.com,
+		"IceMISMIPModel ERROR:  modelnum must be 1 or 2; '-model 1' or '-model 2'\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
 
   // read option    -no_shelf_drag
@@ -288,27 +297,39 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   // read option    -step         [1]
   ierr = PetscOptionsGetInt(PETSC_NULL, "-step", &stepindex, PETSC_NULL); CHKERRQ(ierr);
   if (stepindex < 1) {
-    SETERRQ(4,"IceMISMIPModel ERROR:  run index N in '-run N' must be at least 1");
+    ierr = PetscPrintf(grid.com,
+		       "IceMISMIPModel ERROR:  run index N in '-run N' must be at least 1\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if ((exper == 1) || (exper == 2)) {
     if (stepindex > 9) {
-      SETERRQ(5,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
-                " <= 9 in experiments 1 or 2");
+      ierr = PetscPrintf(grid.com,
+			 "IceMISMIPModel ERROR:  run index N in '-run N' must be"
+			 " <= 9 in experiments 1 or 2\n");
+      CHKERRQ(ierr);
+      PetscEnd();
     }
     runtimeyears = 3.0e4;
     ierr = mismip_ice->setA(Aexper1or2[stepindex]); CHKERRQ(ierr);  
   } else if (exper == 3) {
     if (sliding == 'a') {
       if (stepindex > 13) {
-        SETERRQ(6,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
-                  " <= 13 in experiment 3a");
+        ierr = PetscPrintf(grid.com,
+			   "IceMISMIPModel ERROR:  run index N in '-run N' must be"
+			   " <= 13 in experiment 3a\n");
+	CHKERRQ(ierr);
+	PetscEnd();
       }
       runtimeyears = timeexper3a[stepindex];
       ierr = mismip_ice->setA(Aexper3a[stepindex]); CHKERRQ(ierr);  
     } else if (sliding == 'b') {
       if (stepindex > 15) {
-        SETERRQ(7,"IceMISMIPModel ERROR:  run index N in '-run N' must be"
-                  " <= 15 in experiment 3b");
+        ierr = PetscPrintf(grid.com,
+			   "IceMISMIPModel ERROR:  run index N in '-run N' must be"
+			   " <= 15 in experiment 3b\n");
+	CHKERRQ(ierr);
+	PetscEnd();
       }
       runtimeyears = timeexper3b[stepindex];
       ierr = mismip_ice->setA(Aexper3b[stepindex]); CHKERRQ(ierr);  
@@ -364,7 +385,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceMISMIPModel::initFromOptions() {
+PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
   bool infileused;
   PetscTruth inFileSet, bootFileSet;

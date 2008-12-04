@@ -110,16 +110,23 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
       CHKERRQ(ierr);
     if (optionset == PETSC_TRUE) {
       if (exper_chosen >= 0) {
-        SETERRQ(1,"Only one experiment name option allowed for IcePSTexModel.");
+        ierr = PetscPrintf(grid.com,
+			   "Only one experiment name option allowed for IcePSTexModel.\n");
+	CHKERRQ(ierr);
+	PetscEnd();
       } else {
         exper_chosen = j;
         strcpy(exper_chosen_name,e[j].name);
       }
     }
   }
-  if (exper_chosen < 0)
-    SETERRQ(2,"Unrecognized experiment name for IcePSTexModel.\n"
-              "  An experiment name option like '-P2' must be chosen.");
+  if (exper_chosen < 0) {
+    ierr = PetscPrintf(grid.com,
+		       "Unrecognized experiment name for IcePSTexModel.\n"
+		       "  An experiment name option like '-P2' must be chosen.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   doSkip = PETSC_TRUE;
   skipMax = 2;
@@ -155,7 +162,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
 }
 
 
-PetscErrorCode IcePSTexModel::initFromOptions() {
+PetscErrorCode IcePSTexModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode      ierr;
 
   ierr = verbPrintf(2,grid.com, 

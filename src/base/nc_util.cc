@@ -385,9 +385,12 @@ PetscErrorCode  NCTool::find_variable(const char short_name[], const char standa
 	    found = 1;
 	    my_varid = j;
 	  } else {    // if not unique
-	    fprintf(stderr, "Variables #%d and #%d have the same standard_name ('%s').\n",
-		   my_varid, j, attribute);
-	    SETERRQ(1,"Inconsistency in the input file: two variables have the same standard_name.");	  
+ 	    ierr = PetscPrintf(grid->com,
+			       "PISM ERROR: Inconsistency in the input file: "
+			       "Variables #%d and #%d have the same standard_name ('%s').\n",
+			       my_varid, j, attribute);
+	    CHKERRQ(ierr);
+	    PetscEnd();
 	  }
 	}
       }

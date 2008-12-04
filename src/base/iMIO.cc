@@ -21,7 +21,6 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-
 bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
   int flen = strlen(fname);
   int slen = strlen(suffix);
@@ -31,7 +30,6 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
     return false;
   }
 }
-
 
 PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID) {
   PetscErrorCode ierr;
@@ -52,9 +50,11 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   } // else do nothing; defaults are set
   if (yeSet == PETSC_TRUE) {
     if (usrEndYear < startYear) {
-      SETERRQ(1,
-        "ERROR: -ye value less than -ys value (or input file year or default).\n"
-        "PISM cannot run backward in time");
+      ierr = PetscPrintf(grid.com,
+			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
+			"PISM cannot run backward in time.\n",
+			usrEndYear, startYear); CHKERRQ(ierr);
+      PetscEnd();
     }
     if (ySet == PETSC_TRUE) {
       ierr = verbPrintf(1,grid.com,"WARNING: -y option ignored.  -ye used instead.\n"); CHKERRQ(ierr);
@@ -69,13 +69,6 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   yearsStartRunEndDetermined = PETSC_TRUE;
   return 0;
 }
-
-  
-PetscErrorCode  IceModel::writeFiles(const char* defaultbasename) {
-  PetscErrorCode ierr = writeFiles(defaultbasename,PETSC_FALSE); CHKERRQ(ierr);
-  return 0;
-}
-
   
 //! Save model state in NetCDF format (and save variables in Matlab format if desired).
 /*! 
@@ -84,13 +77,10 @@ Optionally allows saving of full velocity field.
 Calls dumpToFile_netCDF(), dumpToFile_diagnostic_netCDF(), and writeMatlabVars() to do 
 the actual work.
  */
-PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
+PetscErrorCode  IceModel::writeFiles(const char* default_filename,
                                      const PetscTruth forceFullDiagnostics) {
   PetscErrorCode ierr;
-
-  char b[PETSC_MAX_PATH_LEN];
-  char fmt[PETSC_MAX_PATH_LEN] = "n";
-  char ncf[PETSC_MAX_PATH_LEN]; // netCDF format
+  char filename[PETSC_MAX_PATH_LEN];
 
   if (doPDD == PETSC_TRUE) { // want to save snow accumulation map, not net accumulation
     ierr = putBackSnowAccumPDD(); CHKERRQ(ierr);
@@ -98,39 +88,36 @@ PetscErrorCode  IceModel::writeFiles(const char* defaultbasename,
   
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
-  // Use the defaults passed from the driver if not specified on command line.
-  // We should leave space for a suffix and null byte
-  strncpy(b, defaultbasename, PETSC_MAX_PATH_LEN-4);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-o", b, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-of", fmt, PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
+  PetscTruth o_set;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-o", filename, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
 
-  if (strchr(fmt, 'p') != NULL) {
-    strcat(b,"_pb");  // will write basename_pb.nc
-    strcat(fmt,"n");
-    ierr = verbPrintf(1, grid.com, 
-       "\nWARNING: .pb format no longer supported; writing to NetCDF file %s.nc\n",b);
-       CHKERRQ(ierr);
+  // Use the default if the output file name was not given:
+  if (!o_set)
+    strncpy(filename, default_filename, PETSC_MAX_PATH_LEN);
+
+  if (!hasSuffix(filename, ".nc")) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+    CHKERRQ(ierr);
   }
 
-  if (strchr(fmt, 'n') != NULL) {
-    strcpy(ncf, b);
-    strcat(ncf, ".nc");
-    PetscTruth userWantsFull;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-f3d", &userWantsFull); CHKERRQ(ierr);
-    if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
-      ierr = verbPrintf(2, grid.com, 
-            "Writing model state, with full 3D velocities, to file `%s'", ncf); CHKERRQ(ierr);
-      ierr = dumpToFile_diagnostic_netCDF(ncf); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'", ncf); CHKERRQ(ierr);
-      ierr = dumpToFile_netCDF(ncf); CHKERRQ(ierr);
-    }
-  }
+  PetscTruth userWantsFull;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-f3d", &userWantsFull); CHKERRQ(ierr);
 
-  if (strchr(fmt, 'm') != NULL) {
-    ierr = verbPrintf(1, grid.com, 
-       "\nWARNING: .m format no longer supported with '-o'; use '-mato' and '-matv'\n");
-       CHKERRQ(ierr);
+  if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
+    ierr = verbPrintf(2, grid.com, 
+		      "Writing model state, with full 3D velocities, to file `%s'",
+		      filename); CHKERRQ(ierr);
+
+    ierr = dumpToFile_netCDF(filename); CHKERRQ(ierr);
+    // Extra data:
+    ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = w3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'",
+		      filename); CHKERRQ(ierr);
+    ierr = dumpToFile_netCDF(filename); CHKERRQ(ierr);
   }
 
   // write out individual variables out to Matlab file
@@ -317,18 +304,6 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   return 0;
 }
 
-PetscErrorCode IceModel::dumpToFile_diagnostic_netCDF(const char *filename) {
-  PetscErrorCode ierr;
-
-  ierr = dumpToFile_netCDF(filename); CHKERRQ(ierr);
-
-  ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = w3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! When reading a saved PISM model state, warn the user if options <tt>-Mx,-My,-Mz,-Mbz</tt> have been ignored.
 PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
   PetscErrorCode ierr;
@@ -375,18 +350,15 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   int         stat;
   NCTool nc(&grid);
 
-  if (hasSuffix(fname, ".nc") == false) {
-    ierr = verbPrintf(1,grid.com,
-       "WARNING:  Unknown file format for %s.  Trying to read as NetCDF.\n",fname); CHKERRQ(ierr);
-  }
-
   ierr = verbPrintf(2,grid.com,"initializing from NetCDF file '%s'...\n",
                      fname); CHKERRQ(ierr);
 
   bool file_exists = false;
   ierr = nc.open_for_reading(fname, file_exists); CHKERRQ(ierr);
-  if (!file_exists)
-    SETERRQ1(1, "Couldn't open file '%s'.\n", fname);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", fname); CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   size_t      dim[5];
   double      bdy[7];
@@ -550,10 +522,6 @@ PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
   const int  npossible = 7;
   const char possible[20] = "bBehHLT";
   
-  if (!hasSuffix(filename, ".nc")) {
-    SETERRQ(1,"regridding is only possible if the source file has NetCDF format and extension '.nc'");
-  }
-
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
                                PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
   if (regridVarsSet == PETSC_FALSE) {
@@ -572,8 +540,10 @@ PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
 
   bool file_exists = false;
   ierr = nc.open_for_reading(filename, file_exists);
-  if (!file_exists)
-    SETERRQ1(1, "Couldn't open file '%s'.\n", filename);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", filename); CHKERRQ(ierr);
+    PetscEnd();
+  }
   
   ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
   // from regridFile: Mz = dim[3], Mbz = dim[4]  
@@ -642,13 +612,13 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
 			       TEMPORARY_STRING_LENGTH, &save_at_set); CHKERRQ(ierr);
 
   if (save_to_set && !save_at_set) {
-    ierr = verbPrintf(1, grid.com, "PISM ERROR: -save_to is set, but -save_at is not.\n");
+    ierr = PetscPrintf(grid.com, "PISM ERROR: -save_to is set, but -save_at is not.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
 
   if (save_at_set && !save_to_set) {
-    ierr = verbPrintf(1, grid.com, "PISM ERROR: -save_at is set, but -save_to is not.\n");
+    ierr = PetscPrintf(grid.com, "PISM ERROR: -save_at is set, but -save_to is not.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -677,20 +647,20 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
       parsing_failed = true;
 
     if (parsing_failed) {
-      ierr = verbPrintf(1, grid.com, "PISM ERROR: Parsing the -save_at argument failed.\n");
+      ierr = PetscPrintf(grid.com, "PISM ERROR: Parsing the -save_at argument failed.\n");
          CHKERRQ(ierr);
       PetscEnd();
     }
 
     if (first_snapshot >= last_snapshot) {
-      ierr = verbPrintf(1, grid.com,
+      ierr = PetscPrintf(grid.com,
          "PISM ERROR: Error in the -save_at argument: a >= b in the range specification '%s'.\n",
 	 tmp); CHKERRQ(ierr);
       PetscEnd();
     }
 
     if (snapshot_dt <= 0) {
-      ierr = verbPrintf(1, grid.com,
+      ierr = PetscPrintf(grid.com,
 	 "PISM ERROR: Error in the -save_at argument: dt <= 0 in the range specification '%s'.\n",
 	 tmp); CHKERRQ(ierr);
       PetscEnd();
@@ -710,6 +680,13 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   if (save_to_set && save_at_set) {
     save_snapshots = true;
     file_is_ready = false;
+
+    if (!hasSuffix(snapshots_filename, ".nc")) {
+      ierr = verbPrintf(2, grid.com,
+			"PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
+      CHKERRQ(ierr);
+    }
+
     ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ", snapshots_filename); CHKERRQ(ierr);
     if (save_at_equal_intervals) {
       ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n", first_snapshot, snapshot_dt, last_snapshot); CHKERRQ(ierr);

@@ -59,7 +59,7 @@ IceModelVec::~IceModelVec() {
 
 
 PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[], bool local) {
-  SETERRQ(1,"VIRTUAL ONLY: not implemented");
+  SETERRQ(1,"IceModelVec::create(...) is VIRTUAL ONLY: not implemented");
   return 0;
 }
 
@@ -331,7 +331,7 @@ PetscErrorCode  IceModelVec::set_attrs(const char my_pism_intent[],
 
 //! Defines a netcdf variable corresponding to an IceModelVec object. Virtual only.
 PetscErrorCode IceModelVec::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
-  SETERRQ(1, "define_netcdf_variable: virtual only");
+  SETERRQ(1, "IceModelVec::define_netcdf_variable: virtual only");
 }
 
 //! Writes NetCDF attributes to a dataset.
@@ -415,13 +415,24 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
 
   // Open the file:
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists)
-    SETERRQ2(1, "Could not open file '%s' while trying to read '%s'.", filename, short_name);
+  if (!file_exists) {
+    // SETERRQ2(1, "Could not open file '%s' while trying to read '%s'.", filename, short_name);
+    ierr = PetscPrintf(grid->com,
+		      "PISM ERROR: Could not open file '%s' while trying to read '%s'.\n", filename, short_name);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
   
   // Find the variable:
   ierr = nc.find_variable(short_name, standard_name, &varid, variable_exists); CHKERRQ(ierr);
-  if (!variable_exists)
-    SETERRQ2(1, "Can't find variable '%s' in '%s'.", short_name, filename);
+  if (!variable_exists) {
+    // SETERRQ2(1, "Can't find variable '%s' in '%s'.", short_name, filename);
+    ierr = PetscPrintf(grid->com,
+		      "PISM ERROR: Can't find variable '%s' in '%s' (tried both short_name and standard_name '%s'.\n",
+		      short_name, filename, standard_name);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   if (localp) {
     Vec g;
@@ -558,15 +569,27 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
 
   // Open the file
   ierr = nc.open_for_reading(filename, exists); CHKERRQ(ierr);
-  if (!exists)
-    SETERRQ1(1, "Regridding file '%s' does not exist.", filename);
+  if (!exists) {
+    // SETERRQ1(1, "Regridding file '%s' does not exist.", filename);
+    ierr = PetscPrintf(grid->com,
+		      "PISM ERROR: Can't open the regridding file '%s'.\n", filename);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   // Find the variable
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
 
   if (!exists) {		// couldn't find the variable
-    if (critical)		// if it's critical, raise an error
-      SETERRQ1(1, "Variable '%s' was not found.\n", short_name);
+    if (critical) {		// if it's critical, print an error message and stop
+      // SETERRQ1(1, "Variable '%s' was not found.\n", short_name);
+      ierr = PetscPrintf(grid->com,
+			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
+			short_name, filename);
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
     if (set_default_value) {	// if it's not and we have a default value, set it
       ierr = verbPrintf(2, grid->com, 
 			" ***  %-10s|%-60s| not found; using default constant %7.2f (%s)\n",

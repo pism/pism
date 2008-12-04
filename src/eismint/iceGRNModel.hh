@@ -31,7 +31,7 @@ public:
   IceGRNModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode setFromOptions();
   using IceModel::initFromOptions;
-  virtual PetscErrorCode initFromOptions();
+  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
 
 protected:
   int expernum;  // SSL2 is 1, CCL3 is 3, GWL3 is 4

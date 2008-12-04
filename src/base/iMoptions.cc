@@ -284,7 +284,10 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-real_age_grainsize", &realageSet); CHKERRQ(ierr);
   //if (realageSet == PETSC_TRUE)   realAgeForGrainSize = PETSC_TRUE;
   if (realageSet == PETSC_TRUE) {
-     SETERRQ(1,"-real_age_grainsize (sets realAgeForGrainSize) not implemented");
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: -real_age_grainsize (sets realAgeForGrainSize) not implemented\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
 
   // a parameter in regularizing the computation of effective viscosity from strain rates;

@@ -78,14 +78,13 @@ public:
   virtual PetscErrorCode testIceModelVec3Bedrock();
 
   // see iMutil.cc
-  virtual PetscErrorCode initFromOptions();
-  virtual PetscErrorCode initFromOptions(PetscTruth doHook);
+  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
 
   // see iMIO.cc
+  bool hasSuffix(const char* fname, const char* suffix) const;  
   virtual PetscErrorCode initFromFile_netCDF(const char *);
-  virtual PetscErrorCode writeFiles(const char* defaultbasename);
-  virtual PetscErrorCode writeFiles(const char* defaultbasename, 
-                                    const PetscTruth forceFullDiagnostics);
+  virtual PetscErrorCode writeFiles(const char* default_filename, 
+                                    const PetscTruth forceFullDiagnostics = PETSC_FALSE);
   virtual PetscErrorCode write_model_state(const char filename[]);
 
 protected:
@@ -112,7 +111,7 @@ protected:
   IceModelVec2 vh,		//!< ice surface elevation
     vH,				//!< ice thickness
     vdHdt,			//!< \frac{dH}{dt}
-    vtauc,
+    vtauc,			//!< yield stress for basal till (plastic or pseudo-plastic model)
     vHmelt, 			//!< thickness of the basal meltwater
     vbasalMeltRate,		//!< basal meltwater production rate
   /*!< rate of production of basal meltwater (ice-equivalent) */
@@ -131,7 +130,7 @@ protected:
     vAccumSnow,		   //!< see iMpdd.cc; vAccum is net (including ablation)
     vGhf,		   //!< geothermal flux
     vRb,		   //!< basal frictional heating on regular grid
-    vtillphi;		   //!< basal fields; plastic/pseudo-plastic coefficients
+    vtillphi;		   //!< friction angle for till under grounded ice sheet
 
   IceModelVec3        u3, v3, w3, Sigma3, T3, tau3;  // note gs3 was one of these
   IceModelVec3Bedrock Tb3;
@@ -290,11 +289,9 @@ protected:
                  IceModelVec2 tauc_out, IceModelVec2 tfa_out);
 
   // see iMIO.cc
-  bool hasSuffix(const char* fname, const char* suffix) const;
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
   virtual PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
   virtual PetscErrorCode dumpToFile_netCDF(const char *filename);
-  virtual PetscErrorCode dumpToFile_diagnostic_netCDF(const char *filename);
   virtual PetscErrorCode regrid_netCDF(const char *fname);
 
   // see iMmatlab.cc
@@ -412,7 +409,6 @@ protected:
   // see iMutil.cc
   virtual PetscErrorCode getMagnitudeOf2dVectorField(IceModelVec2 vfx, IceModelVec2 vfy,
 						     IceModelVec2 vmag);
-  virtual PetscTruth     checkOnInputFile(char *fname);
   virtual int endOfTimeStepHook();
   virtual PetscErrorCode afterInitHook();
   virtual PetscErrorCode stampHistoryCommand();

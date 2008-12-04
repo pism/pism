@@ -48,8 +48,11 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
-    SETERRQ(1,"EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
-            "Choose parameters yourself, by runtime options.\n");
+    ierr = PetscPrintf(grid.com,
+		       "EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
+		       "Choose parameters yourself, by runtime options.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
 
   enhancementFactor = 3;
@@ -81,7 +84,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceGRNModel::initFromOptions() {
+PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
   char inFile[PETSC_MAX_PATH_LEN];
   PetscTruth inFileSet, bootFileSet, nopddSet;
@@ -150,7 +153,10 @@ PetscErrorCode IceGRNModel::initFromOptions() {
       ierr = cleanExtraLand(); CHKERRQ(ierr);
     }
   } else {
-    SETERRQ(2, "ERROR: IceGRNModel needs an input file\n");
+    ierr = PetscPrintf(grid.com,
+		       "ERROR: IceGRNModel needs an input file\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
 
   if (!isInitialized()) {

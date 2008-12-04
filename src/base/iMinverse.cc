@@ -50,7 +50,10 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-csurf_to_till", filename, 
                                PETSC_MAX_PATH_LEN, &csurfTillSet); CHKERRQ(ierr);
   if ((cbarTillSet == PETSC_TRUE) && (csurfTillSet == PETSC_TRUE)) {
-    SETERRQ(1,"both -cbar_to_till and -csurf_to_till set; NOT ALLOWED\n");
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: both -cbar_to_till and -csurf_to_till set; NOT ALLOWED\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if ((cbarTillSet == PETSC_FALSE) && (csurfTillSet == PETSC_FALSE)) {
     return 0;  // if neither option set
@@ -63,17 +66,26 @@ PetscErrorCode IceModel::invertVelocitiesFromNetCDF() {
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
 
   if (!file_exists) {
-    SETERRQ(2,"NetCDF file with velocities (either cbar or csurf) not found.\n");
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: Can't open file '%s'.\n", filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   bool cbar_exists = false, csurf_exists = false;
   ierr = nc.find_variable("cbar",  NULL, NULL, cbar_exists); CHKERRQ(ierr);
   ierr = nc.find_variable("csurf", NULL, NULL, csurf_exists); CHKERRQ(ierr);
 
   if ((cbarTillSet == PETSC_TRUE) && (!cbar_exists)) {
-    SETERRQ1(3,"-cbar_to_till set but cbar not found in %s\n", filename);
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: -cbar_to_till set but cbar not found in %s\n", filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   if ((csurfTillSet == PETSC_TRUE) && (!csurf_exists)) {
-    SETERRQ1(4,"-csurf_to_till set but csurf not found in %s\n", filename);
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: -csurf_to_till set but csurf not found in %s\n", filename);
+    CHKERRQ(ierr);
+    PetscEnd();
   }
 
   char varName[10];

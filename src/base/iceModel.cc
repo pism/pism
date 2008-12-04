@@ -402,7 +402,9 @@ PetscErrorCode IceModel::setStartYear(PetscScalar y0) {
 
 PetscErrorCode IceModel::setEndYear(PetscScalar ye) {    
   if (ye < startYear)   {
-    SETERRQ(1, "ERROR: ye < startYear.  PISM cannot run backward in time.\n");
+    PetscPrintf(grid.com,
+		"PISM ERROR: ye < startYear. PISM cannot run backward in time.\n");
+    PetscEnd();
   }
   endYear = ye;
   return 0;

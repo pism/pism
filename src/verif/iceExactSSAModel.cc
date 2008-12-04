@@ -43,7 +43,7 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType *i, char mytest)
 }
 
 
-PetscErrorCode IceExactSSAModel::initFromOptions() {
+PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode  ierr;
   PetscTruth      inFileSet, bifFileSet;
   char            inFile[PETSC_MAX_PATH_LEN];
@@ -56,7 +56,10 @@ PetscErrorCode IceExactSSAModel::initFromOptions() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bifFileSet); CHKERRQ(ierr);
   if ((inFileSet == PETSC_TRUE) || (bifFileSet == PETSC_TRUE)) {
-    SETERRQ(2,"PISM input file not allowed for initialization of IceExactSSAModel");
+    ierr = PetscPrintf(grid.com,
+		       "PISM input file not allowed for initialization of IceExactSSAModel.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   
   ierr = grid.createDA(); CHKERRQ(ierr);

@@ -70,16 +70,17 @@ int funcM_ode_G(double r, const double alpha[], double f[], void *params) {
                guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
   /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));
      we could call GSL to find root, but hand-coding Newton's is easier */
-  double old = guess, new;
+  double Old = guess, New;	/* capitalized to avoid the C++ keyword name
+				   clash */
   int i;
   for (i = 1; i < 100; i++) {
-    new = old - F_M(old,alpha[0],r,Q) / dF_M(old,alpha[0],r,Q);
-    if (fabs((new-old)/old) < 1.0e-12)   break;
-    old = new;
+    New = Old - F_M(Old,alpha[0],r,Q) / dF_M(Old,alpha[0],r,Q);
+    if (fabs((New-Old)/Old) < 1.0e-12)   break;
+    Old = New;
   }
   if (i >= 90)
     printf("exactTestM WARNING: Newton iteration not converged in funcM_ode_G!\n");
-  f[0] = new;
+  f[0] = New;
   return GSL_SUCCESS;
 }
 

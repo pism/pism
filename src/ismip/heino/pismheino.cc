@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007, 2008 Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     ierr = mHEINO.setExecName("pismheino"); CHKERRQ(ierr);
     ierr = mHEINO.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
-    ierr = mHEINO.writeFiles("heino_exper"); CHKERRQ(ierr);
+    ierr = mHEINO.writeFiles("heino_exper.nc"); CHKERRQ(ierr);
     
     ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
 

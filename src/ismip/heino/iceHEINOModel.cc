@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -122,7 +122,10 @@ PetscErrorCode IceHEINOModel::setExperNameFromOptions() {
       ismipHeinoRun = 7;        
       strcpy(ismipRunName,"S3");
     } else {
-      SETERRQ(1,"ERROR setExperNameFromOptions(): known ISMIP-HEINO name not found");
+      ierr = PetscPrintf(grid.com,
+			 "ERROR setExperNameFromOptions(): known ISMIP-HEINO name not found\n");
+      CHKERRQ(ierr);
+      PetscEnd();
     }
   }
   return 0;
@@ -162,7 +165,7 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
     // set max_dt to 1.0 years unless explicit option -maxdt was set
     PetscScalar junk;
     PetscTruth  maxdtSet;
-    ierr = PetscOptionsGetScalar(PETSC_NULL, "-maxdt", &junk, &maxdtSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetScalar(PETSC_NULL, "-max_dt", &junk, &maxdtSet); CHKERRQ(ierr);
     if (maxdtSet == PETSC_FALSE)   setMaxTimeStepYears(1.0);
 
     // next block checks if experiment is implemented

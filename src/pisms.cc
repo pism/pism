@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -72,9 +72,13 @@ int main(int argc, char *argv[]) {
     
     int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
     if (choiceSum == 0) {
-      SETERRQ(1,"PISMS called with no simplified geometry experiment chosen");
+      ierr = PetscPrintf(com, "PISMS called with no simplified geometry experiment chosen.\n");
+      CHKERRQ(ierr);
+      PetscEnd();
     } else if (choiceSum > 1) {
-      SETERRQ(2,"PISMS called with more than one simplified geometry experiment chosen");
+      ierr = PetscPrintf(com, "PISMS called with more than one simplified geometry experiment chosen.\n");
+      CHKERRQ(ierr);
+      PetscEnd();
     }
     
     if (EISIIchosen == PETSC_TRUE) {
@@ -100,7 +104,7 @@ int main(int argc, char *argv[]) {
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
-    ierr = m->writeFiles("simp_exper"); CHKERRQ(ierr);
+    ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
     if (MISMIPchosen == PETSC_TRUE) {
       ierr = mMISMIP.writeMISMIPFinalFiles(); CHKERRQ(ierr);
     }

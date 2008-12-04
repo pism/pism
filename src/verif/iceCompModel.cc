@@ -123,7 +123,7 @@ IceCompModel::~IceCompModel() {
 }
 
 
-PetscErrorCode IceCompModel::initFromOptions() {
+PetscErrorCode IceCompModel::initFromOptions(PetscTruth doHook) {
   //  do this only after IceCompModel::setFromOptions()
   PetscErrorCode ierr;
   PetscTruth inFileSet;

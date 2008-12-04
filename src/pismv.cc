@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
       if (dontReport == PETSC_FALSE) {
         ierr = mSSA.reportErrors();  CHKERRQ(ierr);
       }
-      ierr = mSSA.writeFiles("verify",PETSC_TRUE); CHKERRQ(ierr);
+      ierr = mSSA.writeFiles("verify.nc",PETSC_TRUE); CHKERRQ(ierr);
     } else { // run derived class for compensatory source SIA solutions
              // (i.e. compensatory accumulation or compensatory heating)
       ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
       }
-      ierr = mComp.writeFiles("verify",PETSC_FALSE); CHKERRQ(ierr);
+      ierr = mComp.writeFiles("verify.nc",PETSC_FALSE); CHKERRQ(ierr);
     }
     
     delete ice;

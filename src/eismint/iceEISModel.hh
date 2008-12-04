@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ public:
     IceEISModel(IceGrid &g, IceType *i);
     virtual PetscErrorCode setFromOptions();
     using IceModel::initFromOptions;
-    virtual PetscErrorCode initFromOptions();
+    virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
     
 protected:
     char        expername;

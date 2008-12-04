@@ -54,98 +54,24 @@ PetscErrorCode IceModel::additionalAtEndTimestep() {
   return 0;
 }
 
-
-//! Check on whether -if or -bif file is actually present.
-/*!
-Checks first on whether "foo" is present, then whether "foo.nc" is.
-
-Returns a valid file name along with whether or not the file is present.
-
-If user sets one of '-if' or '-bif' and a valid file cannot be found, then
-stops PISM with an error.
- */
-PetscTruth IceModel::checkOnInputFile(char *fname) {
+//! Manages the initialization of IceModel, especially from input file options.
+PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
+  PetscErrorCode ierr;
   PetscTruth ifSet, bifSet;
-  PetscInt fileExists = 0;
-  int ncid,  stat;
-  char inFile[PETSC_MAX_PATH_LEN], inFileExted[PETSC_MAX_PATH_LEN];
+  char input_file[PETSC_MAX_PATH_LEN];
 
-  strcpy(inFileExted,"");  // zero length of inFileExted string has meaning
-
-  PetscOptionsGetString(PETSC_NULL, "-if", inFile, PETSC_MAX_PATH_LEN, &ifSet);
-  PetscOptionsGetString(PETSC_NULL, "-bif", inFile, PETSC_MAX_PATH_LEN, &bifSet);
+  PetscOptionsGetString(PETSC_NULL, "-if", input_file, PETSC_MAX_PATH_LEN, &ifSet);
+  PetscOptionsGetString(PETSC_NULL, "-bif", input_file, PETSC_MAX_PATH_LEN, &bifSet);
   if ((ifSet == PETSC_TRUE) && (bifSet == PETSC_TRUE)) {
-    verbPrintf(1,grid.com,
+    PetscPrintf(grid.com,
        "PISM ERROR: both options '-if' and '-bif' are used; not allowed!\n");
     PetscEnd();
   }
-  
-  if ((ifSet == PETSC_FALSE) && (bifSet == PETSC_FALSE)) {
-    strcpy(fname,""); // no input file given, so don't claim a valid name
-    return PETSC_FALSE;
-  }
-  
-  if (grid.rank == 0) {
-    stat = nc_open(inFile, 0, &ncid); fileExists = (stat == NC_NOERR);
-  }
-  MPI_Bcast(&fileExists, 1, MPI_INT, 0, grid.com);  
-  if (!fileExists) {
-    // try again after adding .nc extension
-    strcpy(inFileExted, inFile);
-    strcat(inFileExted,".nc");
-    if (grid.rank == 0) {
-      stat = nc_open(inFileExted, 0, &ncid); fileExists = (stat == NC_NOERR);
-    }
-    MPI_Bcast(&fileExists, 1, MPI_INT, 0, grid.com);
-  }
-  
-  if (fileExists) {
-    // close, return valid infile name, and report success
-    if (grid.rank == 0) {
-      stat = nc_close(ncid);
-    }
-    if (strlen(inFileExted) > 0) {
-      strcpy(fname,inFileExted);
-    } else {
-      strcpy(fname,inFile);
-    }
-    return PETSC_TRUE;
-  } else {
-    // try to exit cleanly
-    verbPrintf(1,grid.com,
-       "PISM ERROR: input file not found!  (Tried names '%s' and '%s'.)\n",
-       inFile, inFileExted);
-    PetscEnd();
-    return PETSC_FALSE; // never actually happens ...
-  }
-}
 
-
-//! Manages the initialization of IceModel, especially from input file options.
-PetscErrorCode IceModel::initFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = initFromOptions(PETSC_TRUE); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Version of initFromOptions() which allows turning off afterInitHook().
-PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
-  PetscErrorCode ierr;
-  PetscTruth     inFilePresent;
-  char inFile[PETSC_MAX_PATH_LEN];
-
-  inFilePresent = checkOnInputFile(inFile);  // get a valid file name if present
-
-  if (inFilePresent == PETSC_TRUE) {
-    PetscTruth bifSet;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
-    if (bifSet == PETSC_TRUE) {
-      ierr = bootstrapFromFile_netCDF(inFile); CHKERRQ(ierr);
-    } else {
-      ierr = initFromFile_netCDF(inFile); CHKERRQ(ierr);
-    }
+  if (bifSet == PETSC_TRUE) {
+    ierr = bootstrapFromFile_netCDF(input_file); CHKERRQ(ierr);
+  } else if (ifSet == PETSC_TRUE) {
+    ierr = initFromFile_netCDF(input_file); CHKERRQ(ierr);
   }
 
   ierr = init_snapshots_from_options(); CHKERRQ(ierr);

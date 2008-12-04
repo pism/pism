@@ -55,7 +55,7 @@ int main(int argc, char *argv[]){
     ierr = m.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);
 
-    ierr = m.writeFiles("grn_exper"); CHKERRQ(ierr);
+    ierr = m.writeFiles("grn_exper.nc"); CHKERRQ(ierr);
     delete ice;
     ierr = verbPrintf(2, com, "\n"); CHKERRQ(ierr);
   }
