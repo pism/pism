@@ -1765,7 +1765,7 @@ If \verb|-constant_hardness| is used then $\bar B$ is set to the given value.  T
 
 In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
-\optdef{constant\und nu}{30.0}  If this option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant viscosity $\nu$; see the option \verb|-constant_hardness| above.  Generally the viscosity is computed by a nonlinear iteration.  With option \verb|-constant_nu|, this iteration does not occur.  If \verb|-constant_nu| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
+\optdef{constant\und nuH}{30.0}  This option is used then the velocities in ice shelves and streams (see \verb|-mv| below) are computed with a constant value for the product of viscosity $\nu$ and thickness $H$.  Comparing the option \verb|-constant_hardness| above, where the ice is shear-thinning with constant coefficient, for this option the ice is linearly viscous and effectively has both constant viscosity and constant thickness (for computing its strength).  Generally the viscosity is computed by a nonlinear iteration, but for this option the iteration does not occur.  If \verb|-constant_nuH| is set then \verb|-constant_hardness| is ignored.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
 \optdef{e}{1.0}  Flow enhancement factor.
 

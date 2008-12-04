@@ -237,7 +237,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[1].set_attrs("diagnostic", 
              "magnitude of vertically-integrated horizontal flux of ice",
 	     "m2 s-1", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[1].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[1].set_glaciological_units("m2 year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[1].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // compute cbase  = sqrt(u|_{z=0}^2 + v|_{z=0}^2) and save it

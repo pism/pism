@@ -104,17 +104,18 @@ int exactM(double r,
      *Drr = 0.0;
      return GSL_SUCCESS;
    } else if (r <= Rg) {
-     /* quartic transition from alpha=0 to alpha=ug in   Rg/4 < r <= Rg;
+     /* power law from alpha=0 to alpha=ug in   Rg/4 < r <= Rg;
         f(r) w: f(Rg/4)=f'(Rg/4)=0 and f(Rg)=ug and f(Rg) = DrrRg         */
      double DrrRg;
      funcM_ode_G(Rg, &ug, &DrrRg, NULL);  /* first get Drr = alpha' at Rg where alpha=ug */
      /* printf("DrrRg=%e (1/a)\n",DrrRg*SperA); */
      const double xx = r - 0.25 * Rg,
-                  AA = 0.75 * Rg,
-                  aa = (DrrRg - 2.0 * ug / AA) / (2.0 * AA * sqrt(ug)),
-                  yy = aa * (xx - AA) + sqrt(ug) / AA;
-     *alpha = xx * xx * yy * yy;
-     *Drr = 2.0 * xx * yy * (yy + xx * aa);
+                  xA = 0.75 * Rg,
+                  nu = DrrRg * xA / ug,
+                  aa = ug / pow(xA, nu);
+     /* printf("power nu=%e\n",nu); */
+     *alpha = aa * pow(xx, nu);
+     *Drr = aa * nu * pow(xx, nu - 1);
      return GSL_SUCCESS;
    } else if (r >= Rc + 1.0) {
      *alpha = 0.0;  /* zero velocity beyond calving front */

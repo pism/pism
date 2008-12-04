@@ -140,17 +140,23 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
       ssaEpsilon = 0.0;  // don't use this lower bound
       break;
     case 'M': {
-      // set up 1500 km by 1500 m grid
+      // set up 1500 km by 1500 km grid
       // note Mx,My may have been set by options, but not others
       ierr = grid.rescale_and_set_zlevels(LforM, LforM, 1000.0); CHKERRQ(ierr);
+      //ierr = grid.rescale_and_set_zlevels(1500.0e3, 1500.0e3, 1000.0); CHKERRQ(ierr);
       ierr = afterInitHook(); CHKERRQ(ierr);
       ierr = setInitStateM(); CHKERRQ(ierr);
       isDrySimulation = PETSC_FALSE;
       computeSurfGradInwardSSA = PETSC_FALSE;
       useConstantHardnessForSSA = PETSC_TRUE;  // use constant barB
+      
+      // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
+      constantNuHForSSA = 6.5e+16;  // about optimal; compare 4.74340e+15 usual
+
       ierr = verbPrintf(3,grid.com,
-        "IceExactSSAModel::initFromOptions: constantHardnessForSSA = %10.5e\n",
-        constantHardnessForSSA); CHKERRQ(ierr);
+        "IceExactSSAModel::initFromOptions, for test M:\n"
+        "  constantHardnessForSSA = %10.5e, constantNuHForSSA = %10.5e, useConstantNuHForSSA=%d\n",
+        constantHardnessForSSA, constantNuHForSSA, useConstantNuHForSSA); CHKERRQ(ierr);
       }
       break;
     default:
@@ -289,7 +295,8 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
 
 PetscErrorCode IceExactSSAModel::setInitStateM() {
   PetscErrorCode ierr;
-  PetscScalar    **H, **h, **bed, **mask, **uvbar[2];
+  PetscScalar    **H, **h, **bed, **mask, **ubar, **vbar,
+                 **ub, **vb, **uvbar[2];
 
   const PetscScalar
             Rg = 300.0e3,     // radius for grounding line
@@ -302,6 +309,12 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vh.get_array(h); CHKERRQ(ierr);    
   ierr = vbed.get_array(bed); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vub.get_array(ub); CHKERRQ(ierr);
+  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -322,13 +335,23 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         myu = 0.0; myv = 0.0;
       }
       if (r < Rg) {
-        // grounded case
+        // grounded case: set velocities (to give boundary condition for shelf)
         H[i][j] = H0;
         h[i][j] = hicepresent;
         bed[i][j] = bedgrounded;
         mask[i][j] = MASK_SHEET;
-        uvbar[0][i][j] = myu;
-        uvbar[1][i][j] = myv;
+        // see IceModel::broadcastSSAVelocity() to see how velocity will be set
+        //   for floating portion; do that for grounded now
+        ubar[i][j] = myu; 
+        vbar[i][j] = myv;
+        ub[i][j] = myu;
+        vb[i][j] = myv;
+        ierr = u3.setColumn(i,j,myu); CHKERRQ(ierr);
+        ierr = v3.setColumn(i,j,myv); CHKERRQ(ierr);
+        // w3 is set by IceModel::vertVelocityFromIncompressibility()
+        // see IceModel::assembleSSARhs() to see why pairs are set here:
+        uvbar[0][i][j] = myu;  uvbar[0][i-1][j] = myu;
+        uvbar[1][i][j] = myv;  uvbar[1][i][j-1] = myv;
       } else if (r <= Rc) {
         // ice shelf case
         H[i][j] = H0;
@@ -350,6 +373,12 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);    
   ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
   return 0;
@@ -499,7 +528,8 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
           ubar[i][j] = alpha * (myx / myr);
           vbar[i][j] = alpha * (myy / myr);
         } else {
-          ubar[i][j] = 0.0; vbar[i][j] = 0.0;
+          ubar[i][j] = 0.0;
+          vbar[i][j] = 0.0;
         }
       } else {
         SETERRQ(1,"only tests I,J,M supported in IceExactSSAModel");

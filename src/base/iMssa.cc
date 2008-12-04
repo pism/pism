@@ -78,6 +78,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   if (leaveNuAloneSSA == PETSC_TRUE) {
     return 0;
   }
+
   if (useConstantNuHForSSA == PETSC_TRUE) {
     ierr = vNuH[0].set(constantNuHForSSA); CHKERRQ(ierr);
     ierr = vNuH[1].set(constantNuHForSSA); CHKERRQ(ierr);
@@ -87,10 +88,6 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   // this constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
-
-  // clear them out (why?)
-  ierr = vNuH[0].set(0.0); CHKERRQ(ierr);
-  ierr = vNuH[1].set(0.0); CHKERRQ(ierr);
 
   // We need to compute integrated effective viscosity (\bar\nu * H).
   // It is locally determined by the strain rates and temperature field.
@@ -108,8 +105,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (H[i][j] < min_thickness_SSA) {
           nuH[o][i][j] = constantNuHForSSA;  // this choice extends a shelf into the ice
-                       // free region, in terms of the resulting membrane stress though
-                       // not by adding or subtracting ice
+                       // free region, in terms of the resulting membrane stress (and
+                       // not by adding or subtracting ice)
         } else {
           const PetscInt      oi = 1-o, oj=o;
           const PetscScalar   dx = grid.dx, 
@@ -384,7 +381,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
 }
 
 
-//! Computes the right-hand side of the linear problem for the SSA equations.
+//! Computes the right-hand side ("rhs") of the linear problem for the SSA equations.
 /*! 
 The right side of the SSA equations is just the driving stress term
    \f[ - \rho g H \nabla h \f]
@@ -419,7 +416,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
 
-  /* matrix assembly loop */
+  /* rhs (= right-hand side) assembly loop */
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);

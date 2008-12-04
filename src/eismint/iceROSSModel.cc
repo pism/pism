@@ -60,14 +60,17 @@ PetscErrorCode IceROSSModel::createROSSVecs() {
   PetscErrorCode ierr;
 
   ierr = obsAzimuth.create(grid, "azi_obs", true); CHKERRQ(ierr);
-  ierr = obsAzimuth.set_attrs(NULL, "observed ice velocity azimuth", "degrees_east", NULL); CHKERRQ(ierr);
+  ierr = obsAzimuth.set_attrs(NULL, "observed ice velocity azimuth",
+                              "degrees_east", NULL); CHKERRQ(ierr);
 
   ierr = obsMagnitude.create(grid, "mag_obs", true); CHKERRQ(ierr);
-  ierr = obsMagnitude.set_attrs(NULL, "observed ice velocity magnitude", "m s-1", NULL); CHKERRQ(ierr);
+  ierr = obsMagnitude.set_attrs(NULL, "observed ice velocity magnitude",
+                                "m s-1", NULL); CHKERRQ(ierr);
   ierr = obsMagnitude.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
 
   ierr = obsAccurate.create(grid, "accur", true); CHKERRQ(ierr);
-  ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity", "", NULL); CHKERRQ(ierr);
+  ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity",
+                               "", NULL); CHKERRQ(ierr);
   return 0;
 }
 
@@ -86,7 +89,8 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com, 
-    "initializing EISMINT-Ross ice shelf velocity computation ... \n"); CHKERRQ(ierr);
+    "initializing EISMINT-Ross ice shelf velocity computation ... \n");
+    CHKERRQ(ierr);
 
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
@@ -97,11 +101,6 @@ PetscErrorCode IceROSSModel::initFromOptions() {
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, 1000.0); CHKERRQ(ierr);
   }
 
-  PetscTruth  ssaBCset;
-  char        ssaBCfile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
-                               PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
-
   // allocate observed velocity space
   ierr = createROSSVecs(); CHKERRQ(ierr);
   
@@ -109,22 +108,29 @@ PetscErrorCode IceROSSModel::initFromOptions() {
   // temp in column equals temp at surface
   ierr = fillinTemps();  CHKERRQ(ierr);
 
-  // zeros out vuvbar; SIA velocities will not be computed so this will stay
-  ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
-  ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
-
-  ierr = verbPrintf(5,grid.com,"  [using Schoof regularization constant = %10.5e]\n",
-              PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com,
+            "  [using Schoof regularization constant = %10.5e]\n",
+            PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
 
   ierr = afterInitHook(); CHKERRQ(ierr);
 
   // update surface elev
   ierr = verbPrintf(2,grid.com, 
      "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
-  CHKERRQ(ierr);
+     CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
   ierr = vh.scale(1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
 
+  // in preparation for SSA b.c. read;  zero out vuvbar;
+  //    SIA velocities will not be computed so this will stay
+  ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
+  ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
+
+  // read SSA b.c. from file
+  PetscTruth  ssaBCset;
+  char        ssaBCfile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
+                               PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
   if (ssaBCset == PETSC_TRUE) {
      ierr = verbPrintf(2, grid.com,
              "EIS-Ross: reading SSA boundary condition file %s and setting bdry conds\n",
