@@ -85,7 +85,7 @@ PetscErrorCode IceROSSModel::destroyROSSVecs() {
 }
 
 
-PetscErrorCode IceROSSModel::initFromOptions() {
+PetscErrorCode IceROSSModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com, 

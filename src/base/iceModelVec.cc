@@ -130,6 +130,7 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
 PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
   PetscReal my_min, my_max;
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
 
   ierr = VecMin(v, PETSC_NULL, &my_min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &my_max); CHKERRQ(ierr);
@@ -143,6 +144,8 @@ PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
 PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
   PetscErrorCode ierr;
   PetscReal tmp;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecNorm(v, n, &tmp); CHKERRQ(ierr);
   out = tmp;
   return 0;
@@ -151,6 +154,8 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
 //! Result: v <- sqrt(v). Calls VecSqrt(v).
 PetscErrorCode IceModelVec::sqrt() {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecSqrt(v); CHKERRQ(ierr);
   return 0;
 }
@@ -158,6 +163,9 @@ PetscErrorCode IceModelVec::sqrt() {
 //! Result: v <- v + alpha * x. Calls VecAXPY.
 PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = x.checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecAXPY(v, alpha, x.v); CHKERRQ(ierr);
   return 0;
 }
@@ -165,6 +173,10 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
 //! Result: result <- v + alpha * x. Calls VecWAXPY.
 PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x, IceModelVec &result) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = x.checkAllocated(); CHKERRQ(ierr);
+  ierr = result.checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecWAXPY(result.v, alpha, x.v, v); CHKERRQ(ierr);
   return 0;
 }
@@ -172,6 +184,8 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x, IceModelVec &
 //! Result: v[j] <- v[j] + alpha for all j. Calls VecShift.
 PetscErrorCode IceModelVec::shift(PetscScalar alpha) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecShift(v, alpha); CHKERRQ(ierr);
   return 0;
 }
@@ -179,6 +193,8 @@ PetscErrorCode IceModelVec::shift(PetscScalar alpha) {
 //! Result: v <- v * alpha. Calls VecScale.
 PetscErrorCode IceModelVec::scale(PetscScalar alpha) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecScale(v, alpha); CHKERRQ(ierr);
   return 0;
 }
@@ -186,6 +202,9 @@ PetscErrorCode IceModelVec::scale(PetscScalar alpha) {
 //! Result: result <- v .* x. Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = x.checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecPointwiseMult(result.v, v, x.v); CHKERRQ(ierr);
   return 0;
 }
@@ -193,6 +212,9 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
 //! Result: v <- v .* x. Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = x.checkAllocated(); CHKERRQ(ierr);
+
   ierr = VecPointwiseMult(v, v, x.v); CHKERRQ(ierr);
   return 0;
 }
@@ -203,6 +225,7 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
  */
 PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
     SETERRQ2(1, "Use copy_to(...). (Called %s.copy_to_global(...) and %s is global)", short_name, short_name);
@@ -215,6 +238,8 @@ PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
 PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
   PetscErrorCode ierr;
   PetscInt X_size, Y_size;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  ierr = destination.checkAllocated(); CHKERRQ(ierr);
 
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(destination.v, &Y_size); CHKERRQ(ierr);
@@ -230,7 +255,8 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
 PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   PetscErrorCode ierr;
   PetscInt X_size, Y_size;
-
+  ierr = checkAllocated(); CHKERRQ(ierr);
+  
   ierr = VecGetSize(source.v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(v, &Y_size); CHKERRQ(ierr);
 
@@ -251,6 +277,8 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
 */
 PetscErrorCode IceModelVec::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   if (!localp)
     SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", short_name);
 
@@ -274,6 +302,8 @@ PetscErrorCode IceModelVec::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g
 */
 PetscErrorCode IceModelVec::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
   PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   if (!localp)
     SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", short_name);
 
@@ -408,6 +438,8 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
   int s[] = {time, grid->xs, grid->ys, 0}; // Start local block: t dependent; 
   int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
 
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   // Memory allocation:
   max_a_len = a_len = grid->xm * grid->ym * Mz;
   ierr = MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
@@ -470,6 +502,8 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   NCTool nc(grid);
   int t, t_id, varid, max_a_len, a_len;
   void *a_mpi;
+
+  ierr = checkAllocated(); CHKERRQ(ierr);
 
   ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace = false, because
 				// we want to *append* at this point
@@ -567,6 +601,8 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
   PetscErrorCode ierr;
   NCTool nc(grid);
 
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
   // Open the file
   ierr = nc.open_for_reading(filename, exists); CHKERRQ(ierr);
   if (!exists) {
@@ -628,7 +664,7 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
 //! Checks if an IceModelVec is allocated.
 PetscErrorCode  IceModelVec::checkAllocated() {
   if (v == PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec ERROR: IceModelVec with short_name='%s' NOT allocated\n",
+    SETERRQ1(1,"IceModelVec ERROR: IceModelVec with short_name='%s' WAS NOT allocated\n",
              short_name);
   }
   return 0;
