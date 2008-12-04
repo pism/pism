@@ -56,7 +56,7 @@ ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc	\
 	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc	\
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc		\
-	pism_const.cc iMinverse.cc
+	pism_const.cc iMinverse.cc LocalInterpCtx.cc
 
 ice_csources := cubature.c pism_signal.c
 
