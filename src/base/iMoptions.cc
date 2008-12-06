@@ -206,7 +206,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-o" is in use for output file name; see iMIO.cc
 
-  // whether or not to kill ice if original condition was ice-free ocean
+  // whether or not to kill ice at locations where mask=FLOATING_OCEAN0;
+  //   also determines if mask=FLOATING_OCEAN0 or mask=FLOATING
+  //   at bootstrapping (-bif), if original condition was ice-free ocean
   ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &mydoOceanKill); CHKERRQ(ierr);
   if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
 

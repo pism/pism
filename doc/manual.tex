@@ -1178,31 +1178,43 @@ $ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
 \begin{verbatim}
 $  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
     -skip 1 -y 1 -o green20km_y1.nc
-PGRN (EISMINT Greenland mode)
+PGRN (EISMINT-Greenland mode)
+EISMINT-Greenland mode (IceGRNModel) setting flags equivalent to:
+  '-e 3 -ocean_kill -skip 20 -pdd', but user options will override
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   all dimensions t,x,y,z,zb found in file
   time t = 0.0000 years found; setting current year
-  rescaling computational box *for ice* from defaults, -bif file, and
+  rescaling computational box for ice from defaults, -bif file, and
     user options to dimensions:
     [-1400.00 km, 1400.00 km] x [-820.00 km, 820.00 km] x [0 m, 4000.00 m]
   polar stereographic var found; attributes present: svlfp=1, lopo=1, sp=1
      values: svlfp = -41.14, lopo =  71.65, sp =  71.00
-  variable lon found and regridded; min,max =  -94.194,  12.889 (degrees_east)
-  variable lat found and regridded; min,max =   58.275,  84.458 (degrees_north)
-  variable acab found and regridded; min,max =    0.030,   2.820 (m a-1)
-  variable thk found and regridded; min,max =    0.000,3200.000 (m)
-  variable topg found and regridded; min,max = -3859.000,2151.000 (m)
-  determining mask by floatation criterion:  grounded ice and ice-free
-    land marked as 1, floating ice as 3, ice free ocean as 7
   WARNING: surface elevation 'usurf' found; IGNORING IT!
-  determining surface elevation by using usurf = topg + thk where grounded
-    and floatation criterion where floating
-  WARNING: effective thickness of basal melt water 'bwat' not found;
-    using default constant  0.000 m
-  WARNING: surface temperature 'artm' not found; using default constant 263.15 K
-  WARNING: till friction angle 'tillphi' not found; using default constant 15.000 deg
-  WARNING: geothermal flux 'bheatflx' not found; using default constant  0.042 W/m^2
-  WARNING: uplift rate 'dbdt' not found; using default constant  0.000 m/s
+processing 2D model state variables...
+  FOUND  lon       /longitude                                                   
+                   \ min,max =   -94.194,   12.889 (degrees_east)
+  FOUND  lat       /latitude                                                    
+                   \ min,max =    58.275,   84.458 (degrees_north)
+  FOUND  acab      /mean annual net ice equivalent accumulation (ablation) rate 
+                   \ min,max =     0.000,    0.000 (m s-1)
+  FOUND  thk       /land ice thickness                                          
+                   \ min,max =     0.000, 3200.000 (m)
+  FOUND  topg      /bedrock surface elevation                                   
+                   \ min,max = -3859.000, 2151.000 (m)
+  absent bwat      /effective thickness of subglacial melt water                
+                   \ not found; using default constant    0.00 (m)
+  absent artm      /temperature at ice surface but below firn                   
+                   \ not found; using default constant  263.15 (K)
+  absent tillphi   /friction angle for till under grounded ice sheet            
+                   \ not found; using default constant   15.00 (degrees)
+  absent bheatflx  /upward geothermal flux at bedrock surface                   
+                   \ not found; using default constant    0.04 (W m-2)
+  absent dbdt      /bedrock uplift rate                                         
+                   \ not found; using default constant    0.00 (m s-1)
+  determining surface elevation by  usurf = topg + thk  where grounded
+    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating
+  determining mask:  grounded ice and ice-free land marked as 1,
+    floating ice as 3, and ice free ocean as 7 (from -ocean_kill)
   filling in temperatures at depth using quartic guess
 done reading eis_green_smoothed.nc; bootstrapping done
 resetting vertical levels based on options and user option -Lz ...
@@ -1211,6 +1223,19 @@ geothermal flux set to EISMINT-Greenland value 0.050000 W/m^2
 computing surface temps by EISMINT-Greenland elevation-latitude rule
 filling in temperatures at depth using quartic guess
 removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule
+\end{verbatim}
+\end{quote}
+\normalsize
+\bigskip
+
+\caption{Bootstrapping from the EISMINT-Greenland data and running for one model year continued on next page.}
+\label{bootstrapEISgreen}
+\end{table}
+
+\begin{table}
+\scriptsize
+\begin{quote}
+\begin{verbatim}
   [computational box for ice: ( 2800.00 km) x ( 1640.00 km) x ( 4000.00 m)]
   [hor. grid cell dimensions: (   20.00 km) x (   20.00 km)]
   [vertical grid spacing in ice not equal: 21.200 m < dz < 138.800 m]
@@ -1218,16 +1243,16 @@ removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
 U        years 10^6_km^3 10^6_km^2 (none)          m         K
 S      0.00000:  2.82500  1.6708   0.2071   3042.000  270.5156
- $$ SIA        v [BPsacr=2.6660%] atdh 0d  +0.18299
-S      0.18299:  2.82515  2.2300   0.1683   3041.886  270.5156
- $$ SIA        v [BPsacr=2.4695%] atdh 0d  +0.23532
-S      0.41832:  2.82534  2.2296   0.1681   3041.699  270.5157
- $$ SIA        v [BPsacr=2.1875%] atdh 0d  +0.26959
-S      0.68791:  2.82521  1.6832   0.2058   3041.450  270.5159
- $$ SIA        v [BPsacr=1.9653%] atdh 0d  +0.29938
-S      0.98729:  2.82525  1.6840   0.2055   3041.163  270.5161
- $$ SIA        v [BPsacr=1.7090%] atdh 0e  +0.01271
-S      1.00000:  2.82526  2.2288   0.1680   3041.151  270.5164
+ $$ SIA        vatdh 0d  +0.18294
+S      0.18294:  2.82515  2.2300   0.1688   3041.887  270.5156
+ $$ SIA        vatdh 0d  +0.23543
+S      0.41837:  2.82534  2.2296   0.1686   3041.702  270.5157
+ $$ SIA        vatdh 0d  +0.26969
+S      0.68807:  2.82521  1.6836   0.2065   3041.457  270.5159
+ $$ SIA        vatdh 0d  +0.29959
+S      0.98766:  2.82525  1.6840   0.2062   3041.173  270.5161
+ $$ SIA        vatdh 0e  +0.01234
+S      1.00000:  2.82526  2.2288   0.1685   3041.162  270.5163
 done with run ... 
 Writing model state to file `green20km_y1.nc'
 \end{verbatim}
@@ -1235,8 +1260,7 @@ Writing model state to file `green20km_y1.nc'
 \normalsize
 \bigskip
 
-\caption{Bootstrapping from the EISMINT-Greenland data and running for one model year.}
-\label{bootstrapEISgreen}
+\caption{Continuation of Table \ref{bootstrapEISgreen}.}
 \end{table}
 
 Let's explain what has happened.  The EISMINT-Greenland data, as with \emph{all} real ice sheet data, does not contain certain variables necessary to initialize PISM in the sense of complete initial values for time-dependent partial differential equations.  For instance, the data do not include the temperature of the ice anywhere but at the surface (and only there by a elevation and latitude dependent formula).  The data also do not include the amount of water stored in the till, for instance.  These are not omissions from the data sets but rather inevitable facts; one cannot observe ice sheets as fluids very well.  Therefore PISM fills in the unknown initial conditions based on some default guesses, as indicated by the messages in Table \ref{bootstrapEISgreen}.
@@ -1334,7 +1358,7 @@ $ mpiexec -n 8 pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \
 
 The resulting thickness difference, relative to the end of the SSL2 run, and the homologous basal temperature, are shown in Figure \ref{fig:cclthickThomol}.
 
-\begin{figure}[ht]
+\begin{figure}[h]
 \includegraphics[width=2.8in]{figs/Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{figs/Thomol_CCL}
 \caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice homologous basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickThomol}.}
 \label{fig:cclthickThomol}

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] = 
-  "Driver for PISM simulations based on EISMINT Greenland intercomparison.\n";
+  "Driver for PISM simulations based on EISMINT-Greenland intercomparison.\n";
 
 #include <cstring>
 #include <petscbag.h>
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
 
     IceGRNModel    m(g, ice);
 
-    ierr = verbPrintf(1, com, "PGRN (EISMINT Greenland mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1, com, "PGRN (EISMINT-Greenland mode)\n"); CHKERRQ(ierr);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);

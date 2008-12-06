@@ -576,8 +576,8 @@ PetscErrorCode IceModelVec::report_range() {
   max *= conversion_factor;
 
   ierr = verbPrintf(2, grid->com, 
-		    "%-10s|%-60s| min,max = %9.3f,%9.3f (%s)\n",
-		    short_name, long_name, min, max,
+		    " %-10s/%-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		    short_name, long_name, "", min, max,
 		    use_glaciological_units ? glaciological_units : units); CHKERRQ(ierr);
 
   return 0;
@@ -628,18 +628,18 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
 
     if (set_default_value) {	// if it's not and we have a default value, set it
       ierr = verbPrintf(2, grid->com, 
-			" ***  %-10s|%-60s| not found; using default constant %7.2f (%s)\n",
-			short_name, long_name, default_value, units);
+			"  absent %-10s/%-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
+			short_name, long_name, "", default_value, units);
       CHKERRQ(ierr);
       ierr = set(default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
       ierr = verbPrintf(2, grid->com, 
-			" ***  %-10s|%-60s| not found; continuing without setting it\n",
-			short_name, long_name);
+			"  absent %-10s/%-60s\n   %-16s\\ not found; continuing without setting it\n",
+			short_name, long_name, "");
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
-    ierr = verbPrintf(2, grid->com, "Found ");
+    ierr = verbPrintf(2, grid->com, "  FOUND ");
     // Check if it is discrete
     if (use_interpolation_mask)
       nc.set_MaskInterp(&interpolation_mask);

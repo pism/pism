@@ -55,9 +55,13 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     PetscEnd();
   }
 
-  enhancementFactor = 3;
-  
+  ierr = verbPrintf(2, grid.com, 
+     "EISMINT-Greenland mode (IceGRNModel) setting flags equivalent to:\n"
+     "  '-e 3 -ocean_kill -skip 20 -pdd', but user options will override\n"); CHKERRQ(ierr);
+  enhancementFactor = 3;  
   doOceanKill = PETSC_TRUE;
+  doSkip = PETSC_TRUE;
+  skipMax = 20;
   
   if (expernum == 1) { // no bed deformation for steady state (SSL2)
     doBedDef = PETSC_FALSE;
@@ -65,11 +69,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_FALSE;
   }
-  
-  muSliding = 0.0;  // no SIA-type sliding!
 
-  doSkip = PETSC_TRUE;
-  skipMax = 20;
+  muSliding = 0.0;  // no SIA-type sliding!
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
@@ -134,7 +135,7 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
     // the surface temp and geothermal flux at base and then set 3D temps again
     ierr = verbPrintf(2, grid.com,
          "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
-         EISMINT_G_geothermal);
+         EISMINT_G_geothermal); CHKERRQ(ierr);
     ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
     if (haveSurfaceTemps == PETSC_FALSE) {
       ierr = verbPrintf(2, grid.com, 

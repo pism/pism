@@ -190,7 +190,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   // report on resulting computational box, rescale grid, actually create
   //   local interpolation context    
   ierr = verbPrintf(2, grid.com, 
-         "  rescaling computational box *for ice* from defaults, -bif file, and\n"
+         "  rescaling computational box for ice from defaults, -bif file, and\n"
          "    user options to dimensions:\n"
          "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); 
@@ -224,7 +224,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
 
 
   ierr = verbPrintf(2, grid.com, 
-		    "Processing 2D model state variables...\n"); CHKERRQ(ierr);
+		    "processing 2D model state variables...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
   ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
@@ -237,13 +237,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   ierr =       vGhf.regrid(filename, *bootstrapLIC, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =    vuplift.regrid(filename, *bootstrapLIC, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, 
-		    "  determining mask by floatation criterion:  grounded ice and ice-free\n"
-		    "    land marked as 1, floating ice as 3, ice free ocean as 7\n");
-  CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com, 
-		    "  determining surface elevation by using usurf = topg + thk where grounded\n"
-		    "    and floatation criterion where floating\n"); CHKERRQ(ierr);
+  // set mask and h; tell user what happened:
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
   
   // fill in temps at depth in reasonable way using surface temps and Ghf
@@ -258,6 +252,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   initialized_p = PETSC_TRUE;
   return 0;
 }
+
 
 //! Read certain boundary conditions from a NetCDF file, for diagnostic SSA calculations.
 /*!
@@ -380,9 +375,24 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *filename) 
 }
 
 
+//! Determine surface and mask according to information in bootstrap file and options.
 PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
     PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask;
+
+  ierr = verbPrintf(2, grid.com, 
+    "  determining surface elevation by  usurf = topg + thk  where grounded\n"
+    "    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+           "  determining mask:  grounded ice and ice-free land marked as 1,\n"); CHKERRQ(ierr);
+  if (doOceanKill == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com,
+           "    floating ice as 3, and ice free ocean as 7 (from -ocean_kill)\n"); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, 
+           "    floating ice and ice-free ocean as 3\n"); CHKERRQ(ierr);
+  }
 
   ierr = vh.get_array(h); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -399,12 +409,12 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       if (H[i][j] < 0.001) {  // if no ice
         if (bed[i][j] < 0.0) {
           h[i][j] = 0.0;
-          mask[i][j] = MASK_FLOATING_OCEAN0;
+          mask[i][j] = (doOceanKill == PETSC_TRUE) ? MASK_FLOATING_OCEAN0 : MASK_FLOATING;
         } else {
           h[i][j] = bed[i][j];
           mask[i][j] = MASK_SHEET;
         } 
-      } else { // if some ice thickness then check floating criterion
+      } else { // if positive ice thickness then check floatation criterion
         const PetscScalar 
            hgrounded = bed[i][j] + H[i][j],
            hfloating = seaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
