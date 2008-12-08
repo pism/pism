@@ -588,13 +588,18 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   Mat A = SSAStiffnessMatrix;
   Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
   IceModelVec2 vNuHOld[2] = {vWork2d[2], vWork2d[3]};
-  IceModelVec2 vubarOld = vWork2d[4], vvbarOld = vWork2d[5];
+//  IceModelVec2 vubarOld = vWork2d[4],  // FIXME: these are the old names;
+//               vvbarOld = vWork2d[5];  //        is the renamed version right?
+  IceModelVec2 vubarSSAOld = vWork2d[4], 
+               vvbarSSAOld = vWork2d[5];
   PetscReal   norm, normChange, epsilon;
   PetscInt    its;
   KSPConvergedReason  reason;
 
-  ierr = vubarSSA.copy_to(vubarOld); CHKERRQ(ierr);
-  ierr = vvbarSSA.copy_to(vvbarOld); CHKERRQ(ierr);
+//  ierr = vubarSSA.copy_to(vubarOld); CHKERRQ(ierr);
+//  ierr = vvbarSSA.copy_to(vvbarOld); CHKERRQ(ierr);
+  ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
+  ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
   epsilon = ssaEpsilon;
 
   ierr = verbPrintf(4,grid.com, 
@@ -607,7 +612,9 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
      "   constantHardnessForSSA = %10.5e, ssaRelativeTolerance = %10.5e]\n",
     constantHardnessForSSA, ssaRelativeTolerance); CHKERRQ(ierr);
   
-  // this only needs to be done once; RHS does not depend on changing solution
+  // this only needs to be done once; right hand side of system
+  //   does not depend on solution; note solution changes under nonlinear iteration
+  //   so matrix must be recomputed in loop over k below
   ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) {
@@ -660,8 +667,10 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
 			 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
        CHKERRQ(ierr);
 
-       ierr = vubar.copy_from(vubarOld); CHKERRQ(ierr);
-       ierr = vvbar.copy_from(vvbarOld); CHKERRQ(ierr);
+//       ierr = vubar.copy_from(vubarOld); CHKERRQ(ierr);
+//       ierr = vvbar.copy_from(vvbarOld); CHKERRQ(ierr);
+       ierr = vubarSSA.copy_from(vubarSSAOld); CHKERRQ(ierr);
+       ierr = vvbarSSA.copy_from(vvbarSSAOld); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        SETERRQ1(1, 

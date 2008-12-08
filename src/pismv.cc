@@ -28,6 +28,7 @@ static char help[] =
 #include "base/materials.hh"
 #include "verif/iceCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
+#include "verif/iceCalvBCModel.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -59,7 +60,22 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsHasName(PETSC_NULL, "-no_report", &dontReport); CHKERRQ(ierr);
 
     // actually construct and run one of the derived classes of IceModel
-    if ((test == 'I') || (test == 'J') || (test == 'M')) {
+    if (test == '0') {
+      // run derived class for test M which includes new calving front stress
+      //   boundary condition implementation
+      ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
+      IceCalvBCModel mCBC(g, ice, 'M');  
+      ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
+      ierr = mCBC.setFromOptions(); CHKERRQ(ierr);
+      ierr = mCBC.initFromOptions(); CHKERRQ(ierr);
+      ierr = mCBC.diagnosticRun(); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
+      if (dontReport == PETSC_FALSE) {
+        ierr = mCBC.reportErrors();  CHKERRQ(ierr);
+      }
+      ierr = mCBC.writeFiles("verify.nc",PETSC_TRUE); CHKERRQ(ierr);
+      ierr = mCBC.writeCFfields("verify.nc"); CHKERRQ(ierr); // add three more fields
+    } else if ((test == 'I') || (test == 'J') || (test == 'M')) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
       //   or annular ice shelf with calving front
       IceExactSSAModel mSSA(g, ice, test);  

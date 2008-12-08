@@ -23,8 +23,7 @@ include $(PETSC_DIR)/bmake/common/base
 
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
-          -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -Woverloaded-virtual -pipe
+          -DPISM_REVISION='"$(PISM_REVISION)"' -Woverloaded-virtual -pipe
 
 SHARED = -shared # default (for Linux)
 
@@ -63,9 +62,13 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
+#other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
+#	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
+#	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc flowTable.cc		\
+#	tryLCbd.cc
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
 	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
-	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc flowTable.cc		\
+	iceCompModel.cc iceExactSSAModel.cc iceCalvBCModel.cc iCMthermo.cc flowTable.cc		\
 	tryLCbd.cc
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c simpleM.c
@@ -144,9 +147,12 @@ pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
 	${ICE_LIB_FLAGS} -o $@
 
-pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
+#pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
+#	${CXXLINKER} iCMthermo.o iceCompModel.o \
+#	iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
+pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o \
-	iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
+	iceExactSSAModel.o iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
 flowTable : flowTable.o materials.o
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
