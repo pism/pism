@@ -134,7 +134,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
       ierr = afterInitHook(); CHKERRQ(ierr);
       ierr = setInitStateJ(); CHKERRQ(ierr);
       isDrySimulation = PETSC_FALSE;
-      leaveNuAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
+      leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
       computeSurfGradInwardSSA = PETSC_FALSE;
       useConstantHardnessForSSA = PETSC_FALSE;
       ssaEpsilon = 0.0;  // don't use this lower bound

@@ -459,12 +459,17 @@ PetscErrorCode PlasticBasalType::printInfo(const int verbthresh, MPI_Comm com) {
   return 0;
 }
 
-    
+
+//! Compute the drag coefficient for the basal shear stress.
+/*!
+The basal shear stress term \f$\tau_b\f$ in the SSA stress balance for ice
+is minus the return value here times (vx,vy).
+
+Purely plastic is the pseudo_q = 0.0 case; linear is pseudo_q = 1.0; set 
+pseudo_q using PlasticBasalType constructor.
+ */
 PetscScalar PlasticBasalType::drag(const PetscScalar tauc, 
                                    const PetscScalar vx, const PetscScalar vy) {
-  // basal shear stress term tau_b in force balance for ice
-  //   is minus the return value here times (vx,vy)
-  // purely plastic is the pseudo_q==0.0 case; linear is q = 1.0
   const PetscScalar magreg = sqrt(PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy));
   if (pseudo_plastic == PETSC_TRUE) {
     return tauc / ( pow(magreg, 1.0 - pseudo_q) * pow(pseudo_u_threshold, pseudo_q) );
@@ -474,8 +479,12 @@ PetscScalar PlasticBasalType::drag(const PetscScalar tauc,
 }
 
 
+//! Find \f$\tau_c\f$ given magnitudes of sliding velocity and basal shear stress.
 /*!
+Computes
 \f[   \tau_c =  \frac{|\tau_{(b)}|\,|U_{\mathtt{thresh}}|^q}{|U|^q} \f]
+
+Used only in inverse modeling.
  */ 
 PetscScalar PlasticBasalType::taucFromMagnitudes(const PetscScalar taub_mag, 
                                                  const PetscScalar sliding_speed) {

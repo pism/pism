@@ -123,7 +123,7 @@ struct planeBox {
 };
 
 
-// Class for a 2d DA-based Vec, with BOX stencil, for ice scalar quantities in IceModel.
+//! Class for a 2d DA-based Vec for ice scalar quantities in IceModel.
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
@@ -142,7 +142,8 @@ protected:
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
-//! Class for a 3d DA-based Vec for bedrock scalar quantities in IceModel.
+
+//! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
 class IceModelVec3Bedrock : public IceModelVec {
 public:
   IceModelVec3Bedrock();
@@ -167,8 +168,6 @@ protected:
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
-
-// see iceModelVec3.cc for implementation of next class:
 
 //! Class for a 3d DA-based Vec for ice scalar quantities in IceModel.
 class IceModelVec3 : public IceModelVec {

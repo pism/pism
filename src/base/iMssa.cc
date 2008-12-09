@@ -75,7 +75,7 @@ and the force balance at the calving front.
 PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon) {
   PetscErrorCode ierr;
 
-  if (leaveNuAloneSSA == PETSC_TRUE) {
+  if (leaveNuHAloneSSA == PETSC_TRUE) {
     return 0;
   }
 
@@ -263,8 +263,8 @@ plastic till case \lo\cite{SchoofStream}\elo.
 This method assembles the matrix for the left side of the SSA equations.  The numerical method 
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
-PetscErrorCode IceModel::assembleSSAMatrix(const bool includeBasalShear,
-                                 IceModelVec2 vNuH[2], Mat A) {
+PetscErrorCode IceModel::assembleSSAMatrix(
+                    const bool includeBasalShear, IceModelVec2 vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;

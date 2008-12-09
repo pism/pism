@@ -213,8 +213,8 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   // last task before proceeding: invert for basal till properties, if desired;
-  //   reads options "-cbar_to_till foo.nc" and "-csurf_to_till foo.nc"
-  //   ierr = invertVelocitiesFromNetCDF(); CHKERRQ(ierr);
+  //   reads options "-surf_vel_to_tfa foo.nc"
+  ierr = invertSurfaceVelocitiesFromFile(PETSC_TRUE); CHKERRQ(ierr);
 
   return 0;
 }

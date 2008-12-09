@@ -43,6 +43,7 @@ invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
 derived class.
 *******************/
 
+//! Class containing physical constants and the constitutive relation describing ice.  (Mostly virtual base class.)
 class IceType {
 public:
   static PetscScalar rho;
@@ -76,6 +77,7 @@ public:
 };
 
 
+//! Derived class of IceType for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceType {
 public:
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
@@ -103,6 +105,7 @@ protected:
 };
 
 
+//! Derived class of IceType for Hooke (1981)-Glen ice.
 class ThermoGlenIceHooke : public ThermoGlenIce {
 public:
   virtual PetscScalar softnessParameter(PetscScalar T) const;
@@ -116,6 +119,7 @@ protected:
 };
 
 
+//! Derived class of IceType for Arrhenius-Glen ice; \e cold case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
   virtual PetscScalar softnessParameter(PetscScalar T) const;
@@ -127,6 +131,7 @@ public:
 };
 
 
+//! Derived class of IceType for Arrhenius-Glen ice; \e warm case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
   virtual PetscScalar A() const;  // returns A_warm for Paterson-Budd
@@ -139,6 +144,7 @@ struct GKparts {
   PetscScalar eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
 };
 
+//! Derived class of IceType for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form.
 class HybridIce : public ThermoGlenIce {
 public:
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
@@ -166,6 +172,7 @@ protected:
 };
 
 
+// Derived class of HybridIce; for testing only.
 class HybridIceStripped : public HybridIce {
 public:
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
@@ -178,6 +185,7 @@ protected:
 };
 
 
+//! Physical constants describing lithosphere thermal properties.
 class BedrockThermalType {
 public:
   static PetscScalar rho;
@@ -186,6 +194,7 @@ public:
 };
 
 
+//! Physical constants describing lithosphere mechanical properties.
 class DeformableEarthType {
 public:
   static PetscScalar rho;
@@ -194,6 +203,7 @@ public:
 };
 
 
+//! Physical constants describing ocean water properties.
 class SeaWaterType {
 public:
   static PetscScalar rho;
@@ -202,6 +212,7 @@ public:
 };
 
 
+//! Physical constants describing pure water properties.
 class FreshWaterType {
 public:
   static PetscScalar rho;
@@ -209,6 +220,7 @@ public:
 };
 
 
+// Class containing constitutive relation for till in SIA sliding law; NOT RECOMMENDED.
 class BasalTypeSIA {
 public:
   virtual PetscScalar velocity(PetscScalar sliding_coefficient,
@@ -217,6 +229,11 @@ public:
 };
 
 
+//! Class containing physical constants and the constitutive relation describing till for SSA.
+/*!
+This \e pseudo -plastic type can actually describe anything from linearly 
+viscous till to purely plastic till.
+ */
 class PlasticBasalType {
 public:
   PlasticBasalType(const PetscScalar regularizationConstant, const PetscTruth pseudoPlastic,

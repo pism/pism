@@ -165,7 +165,7 @@ protected:
   PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuHForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA,
-              leaveNuAloneSSA, shelvesDragToo;
+              leaveNuHAloneSSA, shelvesDragToo;
   PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
   PetscTruth  flowLawUsesGrainSize, realAgeForGrainSize;
   PetscTruth  showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
@@ -279,14 +279,17 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
-  virtual PetscErrorCode invertVelocitiesFromNetCDF();
-  virtual PetscErrorCode removeVerticalPlaneShearRateFromC(const PetscTruth CisSURF, 
-                    IceModelVec2 myC, IceModelVec2 ub_out, IceModelVec2 vb_out);
-  virtual PetscErrorCode computeBasalShearFromSSA(IceModelVec2 myu, IceModelVec2 myv, 
-                                          IceModelVec2 taubx_out, IceModelVec2 tauby_out);
+  virtual PetscErrorCode invertSurfaceVelocitiesFromFile(const PetscTruth writeWhenDone);
+  virtual PetscErrorCode removeVerticalPlaneShearRate(
+                             IceModelVec2 us_in, IceModelVec2 vs_in, 
+                             IceModelVec2 ub_out, IceModelVec2 vb_out);
+  virtual PetscErrorCode computeBasalShearFromSSA(
+                             IceModelVec2 ub_in, IceModelVec2 vb_in, 
+                             IceModelVec2 taubx_out, IceModelVec2 tauby_out);
   virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
-                 IceModelVec2 myu, IceModelVec2 myv, IceModelVec2 mytaubx, IceModelVec2 mytauby, 
-                 IceModelVec2 tauc_out, IceModelVec2 tfa_out);
+                             IceModelVec2 ub_in, IceModelVec2 ub_in,
+	               	     IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
+                             IceModelVec2 tauc_out, IceModelVec2 tfa_out);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

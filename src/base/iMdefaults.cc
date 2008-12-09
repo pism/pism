@@ -189,7 +189,7 @@ PetscErrorCode IceModel::setDefaults() {
   ssaEpsilon = DEFAULT_EPSILON_SSA;
   computeSurfGradInwardSSA = DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA;
   ssaSystemToASCIIMatlab = PETSC_FALSE;
-  leaveNuAloneSSA = PETSC_FALSE;
+  leaveNuHAloneSSA = PETSC_FALSE;
   strcpy(ssaMatlabFilePrefix, "pism_SSA");
 
   plastic_till_pw_fraction = DEFAULT_TILL_PW_FRACTION;
