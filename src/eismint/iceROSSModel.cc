@@ -135,7 +135,7 @@ PetscErrorCode IceROSSModel::initFromOptions(PetscTruth doHook) {
      ierr = verbPrintf(2, grid.com,
              "EIS-Ross: reading SSA boundary condition file %s and setting bdry conds\n",
              ssaBCfile); CHKERRQ(ierr);
-     ierr = readShelfStreamBCFromFile_netCDF(ssaBCfile); CHKERRQ(ierr);
+     ierr = readShelfStreamBCFromFile(ssaBCfile); CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(2,grid.com, "EIS-Ross: computing velocity ...\n"); CHKERRQ(ierr);
@@ -222,24 +222,15 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *filename) {
 
   // will create "local interpolation context" from dimensions, limits, and lengths extracted from
   //   bootstrap file and from information about the part of the grid owned by this processor;
-  //   note we require the bootstrap file to have dimensions z,zb, even if of length 1 and equal to zero
-  size_t dim[5];  // dimensions in bootstrap NetCDF file
-  double bdy[7];  // limits and lengths for bootstrap NetCDF file
-  ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);  // fills dim[0..4] and bdy[0..6]
-  double *z_bif, *zb_bif;
-  z_bif = new double[dim[3]];
-  zb_bif = new double[dim[4]];
-  ierr = nc.get_vertical_dims(dim[3], dim[4], z_bif, zb_bif); CHKERRQ(ierr);
+  grid_info g;
+  ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  LocalInterpCtx lic(dim, bdy, z_bif, zb_bif, grid);
+  LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
 
   ierr =  obsAccurate.regrid(filename, lic, true); CHKERRQ(ierr);
   ierr = obsMagnitude.regrid(filename, lic, true); CHKERRQ(ierr);
   ierr =   obsAzimuth.regrid(filename, lic, true); CHKERRQ(ierr);
-
-  delete z_bif;
-  delete zb_bif;
   
   return 0;
 }

@@ -47,12 +47,6 @@ def uvGet(mag,azi):
   uv[1] = mag * sin((pi/180.0) * azi)
   return uv
 
-# function to convert a (Mx,My) array into a (1,Mx,My) array; for NetCDF write
-def addTime(A):
-  shA = shape(A)
-  shB = (1,shA[0],shA[1])
-  return reshape(A,shB)
-
 ##### command line arguments #####
 try:
   opts, args = getopt.getopt(sys.argv[1:], "p:o:v:", ["prefix=", "out=", "verbose="])
@@ -250,36 +244,28 @@ historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
 # define the dimensions
-tdim = ncfile.createDimension('t', None)
 xdim = ncfile.createDimension('x', MxROSS)
 ydim = ncfile.createDimension('y', MyROSS)
-zdim = ncfile.createDimension('z', 1)  # dummy
-zbdim = ncfile.createDimension('zb', 1) # dummy
 # define the variables
-tvar = ncfile.createVariable('t', 'f8', ('t',))
 xvar = ncfile.createVariable('x', 'f8', ('x',))
 yvar = ncfile.createVariable('y', 'f8', ('y',))
-zvar = ncfile.createVariable('z', 'f8', ('z',))
-zbvar = ncfile.createVariable('zb', 'f8', ('zb',))
-latvar = ncfile.createVariable('lat', 'f4', ('t','x','y'))
-lonvar = ncfile.createVariable('lon', 'f4', ('t','x','y'))
-maskvar = ncfile.createVariable('mask', 'i4', ('t','x','y'))
-azivar = ncfile.createVariable('azi_obs', 'f4', ('t','x','y'))
-magvar = ncfile.createVariable('mag_obs', 'f4', ('t','x','y'))
-thkvar = ncfile.createVariable('thk', 'f4', ('t','x','y'))
-accurvar = ncfile.createVariable('accur', 'i4', ('t','x','y'))
-bedvar = ncfile.createVariable('topg', 'f4', ('t','x','y'))
-accumvar = ncfile.createVariable('acab', 'f4', ('t','x','y'))
-barBvar = ncfile.createVariable('barB', 'f4', ('t','x','y'))
-Tsvar = ncfile.createVariable('artm', 'f4', ('t','x','y'))
-ubarvar = ncfile.createVariable('ubar', 'f4', ('t','x','y'))
-vbarvar = ncfile.createVariable('vbar', 'f4', ('t','x','y'))
-bcflagvar = ncfile.createVariable('bcflag', 'i4', ('t','x','y'))
+latvar = ncfile.createVariable('lat', 'f4', ('x','y'))
+lonvar = ncfile.createVariable('lon', 'f4', ('x','y'))
+maskvar = ncfile.createVariable('mask', 'i4', ('x','y'))
+azivar = ncfile.createVariable('azi_obs', 'f4', ('x','y'))
+magvar = ncfile.createVariable('mag_obs', 'f4', ('x','y'))
+thkvar = ncfile.createVariable('thk', 'f4', ('x','y'))
+accurvar = ncfile.createVariable('accur', 'i4', ('x','y'))
+bedvar = ncfile.createVariable('topg', 'f4', ('x','y'))
+accumvar = ncfile.createVariable('acab', 'f4', ('x','y'))
+barBvar = ncfile.createVariable('barB', 'f4', ('x','y'))
+Tsvar = ncfile.createVariable('artm', 'f4', ('x','y'))
+ubarvar = ncfile.createVariable('ubar', 'f4', ('x','y'))
+vbarvar = ncfile.createVariable('vbar', 'f4', ('x','y'))
+bcflagvar = ncfile.createVariable('bcflag', 'i4', ('x','y'))
 
 ##### attributes in NetCDF file #####
 setattr(ncfile, 'Conventions', 'CF-1.0') # only global attribute
-
-setattr(tvar, 'units', 'seconds since 2007-01-01 00:00:00')
 
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
@@ -290,17 +276,6 @@ setattr(yvar, 'axis', 'Y')
 setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
 setattr(yvar, 'standard_name', 'projection_y_coordinate')
 setattr(yvar, 'units', 'm')
-
-setattr(zvar, 'axis', 'Z')
-setattr(zvar, 'long_name', 'z-coordinate in Cartesian system')
-setattr(zvar, 'standard_name', 'projection_z_coordinate')
-setattr(zvar, 'positive', 'up')
-setattr(zvar, 'units', 'm')
-
-setattr(zbvar, 'long_name', 'z-coordinate in bedrock')
-setattr(zbvar, 'standard_name', 'projection_z_coordinate_in_bedrock')
-setattr(zbvar, 'positive', 'up')
-setattr(zbvar, 'units', 'm')
 
 setattr(latvar, 'long_name', 'RIGGS grid south latitude')
 
@@ -355,27 +330,24 @@ setattr(vbarvar, 'missing_value', 1.0 / SECPERA)
 setattr(bcflagvar, 'long_name', 'location of Dirichlet boundary condition for velocity')
 
 ##### write data into and close NetCDF file #####
-tvar[0] = 0.0
 for i in range(MxROSS):
 	xvar[i] = dxROSS * float(i - (MxROSS - 1)/2)
 for j in range(MyROSS):
 	yvar[j] = dxROSS * float(j - (MyROSS - 1)/2)
-zvar[0] = 0.0  # dummy
-zbvar[0] = 0.0  # dummy
-latvar[:] = addTime(lat)
-lonvar[:] = addTime(lon)
-maskvar[:] = addTime(mask)
-azivar[:] = addTime(azi)
-magvar[:] = addTime(mag)
-thkvar[:] = addTime(thk)
-accurvar[:] = addTime(accur)
-bedvar[:] = addTime(bed)
-accumvar[:] = addTime(accum)
-barBvar[:] = addTime(barB)
-Tsvar[:] = addTime(Ts)
-ubarvar[:] = addTime(ubarOBS)
-vbarvar[:] = addTime(vbarOBS)
-bcflagvar[:] = addTime(bcflag)
+latvar[:] = lat
+lonvar[:] = lon
+maskvar[:] = mask
+azivar[:] = azi
+magvar[:] = mag
+thkvar[:] = thk
+accurvar[:] = accur
+bedvar[:] = bed
+accumvar[:] = accum
+barBvar[:] = barB
+Tsvar[:] = Ts
+ubarvar[:] = ubarOBS
+vbarvar[:] = vbarOBS
+bcflagvar[:] = bcflag
 # finish up
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"

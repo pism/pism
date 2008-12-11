@@ -31,7 +31,7 @@ This procedure is called when option <tt>-bif</tt> is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
-PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
+PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   PetscErrorCode  ierr;
 
   const PetscScalar DEFAULT_H_VALUE_NO_VAR = 0.0,  // m
@@ -67,20 +67,17 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
     PetscEnd();
   }
   
-  // now allocate our model; when bootstrapFromFile_netCDF() is called 
+  // now allocate our model; when bootstrapFromFile() is called 
   //   the grid dimensions (i.e. Mx,My,Mz,Mbz) must already be set
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
   // determine if dimensions and variables exist in bootstrapping file
-  bool tdimExists = false,
-    xdimExists = false, ydimExists = false, zdimExists = false, zbdimExists = false,
-    psExists=false, hExists=false, 
+  bool xdimExists = false, ydimExists = false, zdimExists = false, zbdimExists = false,
+    hExists=false, 
     maskExists=false,
     xExists=false, yExists=false, tExists=false;
-  int v_ps;
   
-  ierr = nc.find_dimension("t", NULL, tdimExists); CHKERRQ(ierr);
   ierr = nc.find_dimension("x", NULL, xdimExists); CHKERRQ(ierr);
   ierr = nc.find_dimension("y", NULL, ydimExists); CHKERRQ(ierr);
   ierr = nc.find_dimension("z", NULL, zdimExists); CHKERRQ(ierr);
@@ -88,18 +85,10 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   ierr = nc.find_variable("t", NULL, NULL, tExists); CHKERRQ(ierr);
   ierr = nc.find_variable("x", NULL, NULL, xExists); CHKERRQ(ierr);
   ierr = nc.find_variable("y", NULL, NULL, yExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("polar_stereographic", NULL, &v_ps, psExists); CHKERRQ(ierr);
   ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
   ierr = nc.find_variable("mask", NULL, NULL, maskExists); CHKERRQ(ierr);
 
-
-
-  // if the horizontal dimensions and time (FIXME) are absent then we can not proceed
-  if (!tdimExists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no time dimension 't'\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
+  // if the horizontal dimensions are absent then we can not proceed
   if (!xdimExists) {
     ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",filename);
     CHKERRQ(ierr);
@@ -107,11 +96,6 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   }
   if (!ydimExists) {
     ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (!tExists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no variable 't' (=t(t))\n",filename);
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -126,52 +110,31 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
     PetscEnd();
   }
  
-  // our goal is to create "local interpolation context" from dimensions, 
-  //   limits, and lengths
-  //   extracted from bootstrap file and from information about the part of the 
-  //   grid owned by this processor; this code fills dim[0..4] and bdy[0..6]
-  size_t dim[5];  // dimensions in bootstrap NetCDF file
-  double bdy[7];  // limits and lengths for bootstrap NetCDF file
-  double *z_bif, *zb_bif;
-  if ((zdimExists) && (zbdimExists)) {
+  // our goal is to create "local interpolation context" from dimensions,
+  //   limits, and lengths extracted from bootstrap file and from information
+  //   about the part of the grid owned by this processor
+  grid_info g;
+  ierr = nc.get_grid_info(g); CHKERRQ(ierr); // g.z_max is set to 0 if z does
+					     // not exist
+
+  if (tExists) {
+    grid.year = g.time / secpera; // set year from read-in time variable
     ierr = verbPrintf(2, grid.com, 
-         "  all dimensions t,x,y,z,zb found in file\n"); CHKERRQ(ierr);
-    ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);
-    z_bif = new double[dim[3]];
-    zb_bif = new double[dim[4]];
-    ierr = nc.get_vertical_dims(dim[3], dim[4], z_bif, zb_bif);
-             CHKERRQ(ierr);
-  } else if ((!zdimExists) && (!zbdimExists)) {
-    ierr = verbPrintf(2, grid.com, 
-         "  dimensions t,x,y found in file, but no vertical dimension (z,zb)\n");
-         CHKERRQ(ierr);
-    ierr = nc.get_dims_limits_lengths_2d(dim, bdy); CHKERRQ(ierr);
-    dim[3] = 1; 
-    dim[4] = 1;
-    bdy[5] = 0.0;
-    bdy[6] = 0.0;
-    MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
-    MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
-    z_bif = new double[dim[3]];
-    zb_bif = new double[dim[4]];
-    z_bif[0] = 0.0;
-    zb_bif[0] = 0.0;
+		      "  time t = %5.4f years found; setting current year\n",
+		      grid.year); CHKERRQ(ierr);
   } else {
-    SETERRQ(999,"FIXME: need to handle cases of not having ONE of z and zb");
+    grid.year = 0.0;
+    ierr = verbPrintf(2, grid.com, 
+		      "  time dimension was not found; setting current year to t = 0.0 years\n",
+		      grid.year); CHKERRQ(ierr);
   }
-  
-  // set year from read-in time variable
-  grid.year = bdy[0] / secpera;
-  ierr = verbPrintf(2, grid.com, 
-          "  time t = %5.4f years found; setting current year\n",
-          grid.year); CHKERRQ(ierr);
   ierr = setStartRunEndYearsFromOptions(PETSC_FALSE); CHKERRQ(ierr);
 
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
-  PetscScalar x_scale = (bdy[2] - bdy[1]) / 2.0,
-              y_scale = (bdy[4] - bdy[3]) / 2.0,
-              z_scale = bdy[6];
+  PetscScalar x_scale = (g.x_max - g.x_min) / 2.0,
+              y_scale = (g.y_max - g.y_min) / 2.0,
+              z_scale = g.z_max;
   PetscTruth LxSet, LySet, LzSet;
   PetscScalar  x_scale_in, y_scale_in, z_scale_in;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &x_scale_in, &LxSet); CHKERRQ(ierr);
@@ -201,9 +164,7 @@ PetscErrorCode IceModel::bootstrapFromFile_netCDF(const char *filename) {
   // now we have enough to actually create the lic
   // IceModel::bootstrapLIC is now a valid pointer which can be reused to
   // get more info out of the the -bif file
-  bootstrapLIC = new LocalInterpCtx(dim, bdy, z_bif, zb_bif, grid);
-  delete z_bif;  // already we can toss these out
-  delete zb_bif;
+  bootstrapLIC = new LocalInterpCtx(g, NULL, NULL, grid);
 
   ierr = nc.read_polar_stereographic(psParams.svlfp,
 				     psParams.lopo,
@@ -260,7 +221,7 @@ This is not really a bootstrap procedure, but it has to go somewhere.
 
 For now it is \e only called using "pismd -ross".
  */
-PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *filename) {
+PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscErrorCode  ierr;
   IceModelVec2 vbcflag;
   NCTool nc(&grid);
@@ -299,13 +260,10 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile_netCDF(const char *filename) 
 
   // create "local interpolation context" from dimensions, limits, and lengths extracted from
   //    file and from information about the part of the grid owned by this processor
-  size_t dim[5];  // dimensions in NetCDF file
-  double bdy[7];  // limits and lengths in NetCDF file
-  ierr = nc.get_dims_limits_lengths_2d(dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
-  dim[3] = grid.Mz;  // we ignore any 3D vars, if present, in NetCDF file, and use current grid info
-  dim[4] = grid.Mbz;  
-  // destructor is called at exit from readShelfStreamBCFromFile_netCDF():
-  LocalInterpCtx lic(dim, bdy, grid.zlevels, grid.zblevels, grid);  
+  grid_info g;
+  ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);  // see nc_util.cc
+  // destructor is called at exit from readShelfStreamBCFromFile():
+  LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
 
   if (maskExists) {
     vMask.interpolation_mask.number_allowed = 2;

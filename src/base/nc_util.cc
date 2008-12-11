@@ -46,6 +46,8 @@ NCTool::NCTool() {
   myMaskInterp = PETSC_NULL;
   grid = PETSC_NULL;
   ncid = -1;
+
+  // does not return a value
 }
 
 NCTool::NCTool(IceGrid *my_grid) {
@@ -79,7 +81,7 @@ PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool
   return 0;
 }
 
-//! Finds the variable by its standard_name attribute, which has to be set using set_attrs
+//! Finds the variable by its standard_name attribute.
 /*!
   Here's how it works:
   <ol>
@@ -160,133 +162,47 @@ PetscErrorCode  NCTool::find_variable(const char short_name[], const char standa
   return 0;
 }
 
+// FIXME: Consider removing this method.
 PetscErrorCode NCTool::set_grid(IceGrid *my_grid) {
   grid = my_grid;
   return 0;
 }
 
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
-/*!
-Correspondence between the parameters read into arrays \c dim[] and \c bdy[] by this procedure,
-and the values in \c IceGrid:
-  - <tt>dim[0]</tt> is the number of t values in the NetCDF file; it is ignored for many purposes
-  - <tt>dim[1]</tt> is the length of the x dimension; it becomes <tt>grid.Mx</tt>
-  - <tt>dim[2]</tt> is the length of the y dimension; it becomes <tt>grid.My</tt>
-  - <tt>dim[3]</tt> is the length of the z (ice) dimension; it becomes <tt>grid<tt>dim[0..2]</tt> 
-             and <tt>bdy[0..4]</tt>.Mz</tt>
-  - <tt>dim[4]</tt> is the length of the zb (bedrock) dimension; it becomes <tt>grid.Mbz</tt>
-  - <tt>bdy[0]</tt> is current time (and becomes <tt>grid.year</tt>)
-  - <tt>bdy[2]</tt>=-<tt>bdy[1]</tt> is \f$x\f$ half-length of computational domain; becomes <tt>grid.Lx</tt>
-  - <tt>bdy[4]</tt>=-<tt>bdy[3]</tt> is \f$y\f$ half-length of computational domain; becomes <tt>grid.Ly</tt>
-  - <tt>bdy[5]</tt> is the negative of the thickness (positive) of bedrock layer (for thermal model); 
-             <tt>grid.Lbz</tt>=-<tt>bdy[5]</tt>
-  - <tt>bdy[6]</tt> is thickness (positive) of ice layer; becomes <tt>grid.Lz</tt>
- */
-PetscErrorCode NCTool::get_dims_limits_lengths(size_t dim[], double bdy[]) {
+PetscErrorCode NCTool::get_grid_info(grid_info &g) {
   PetscErrorCode ierr;
+
+  ierr = get_grid_info_2d(g); CHKERRQ(ierr);
+
+  ierr = get_dim_length("z",  &g.z_len);  CHKERRQ(ierr);
+  ierr = get_dim_length("zb", &g.zb_len); CHKERRQ(ierr);
+  ierr = get_dim_limits("zb", &g.zb_min, NULL);     CHKERRQ(ierr);
+  ierr = get_dim_limits("z",  NULL,      &g.z_max); CHKERRQ(ierr);
   
-  // first fill dim[0..2] and bdy[0..4]
-  ierr = get_dims_limits_lengths_2d(dim, bdy); CHKERRQ(ierr);
-
-  int stat;
-  int z_dim, zb_dim;
-  int z_id, zb_id;
-  size_t z_len, zb_len;
-
-  if (grid->rank == 0) {
-    stat = nc_inq_dimid(ncid, "z", &z_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "zb", &zb_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_inq_dimlen(ncid, z_dim, &z_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimlen(ncid, zb_dim, &zb_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    dim[3] = z_len; 
-    dim[4] = zb_len;
-
-    stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    size_t z_bdy[] = {0, z_len - 1}; // Start at 0 in `zb', end at z_len - 1 of `z'
-
-    stat = nc_get_var1_double(ncid, zb_id, &z_bdy[0], &bdy[5]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_double(ncid, z_id, &z_bdy[1], &bdy[6]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-  MPI_Bcast(dim, 5, MPI_LONG, 0, grid->com);
-  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid->com);
-
   return 0;
 }
-
 
 //! Read the first and last values, and the lengths, of the x,y dimensions from a NetCDF file.  Read the last t.
-/*!
-See get_dims_limits_lengths() for the meaning of the returned entries of \c dim[] and \c bdy[].
-
-This version only sets sets <tt>dim[0..2]</tt> and <tt>bdy[0..4]</tt>.  It ignores the 3d information,
-if that information is present at all (e.g. when calling bootstrapFromFile_netCDF() it is not usually present).  
-This method does not modify <tt>dim[3,4]</tt> and <tt>bdy[5,6]</tt>, which may even be invalid.
- */
-PetscErrorCode NCTool::get_dims_limits_lengths_2d(size_t dim[], double bdy[]) {
+PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) {
   PetscErrorCode ierr;
 
-  ierr = get_last_time(&(bdy[0])); CHKERRQ(ierr);
+  ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
+  ierr = get_dim_length("x",  &g.x_len); CHKERRQ(ierr);
+  ierr = get_dim_length("y",  &g.y_len); CHKERRQ(ierr);
 
-  int stat;
-  int t_dim, x_dim, y_dim;
-  int x_id, y_id;
-  size_t t_len, x_len, y_len;
-
-  if (grid->rank == 0) {
-    stat = nc_inq_dimid(ncid, "t", &t_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &x_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "y", &y_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_inq_dimlen(ncid, t_dim, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimlen(ncid, x_dim, &x_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimlen(ncid, y_dim, &y_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    dim[0] = t_len; 
-    dim[1] = x_len; 
-    dim[2] = y_len;
-
-    stat = nc_inq_varid(ncid, "x", &x_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_varid(ncid, "y", &y_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    // get extent of grid by looking for last and first of variables x,y
-    size_t x_bdy[] = {0, x_len - 1};
-    size_t y_bdy[] = {0, y_len - 1};
-    stat = nc_get_var1_double(ncid, x_id, &x_bdy[0], &bdy[1]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_double(ncid, x_id, &x_bdy[1], &bdy[2]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_double(ncid, y_id, &y_bdy[0], &bdy[3]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_var1_double(ncid, y_id, &y_bdy[1], &bdy[4]);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-  
-  MPI_Bcast(dim, 5, MPI_LONG, 0, grid->com);
-  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid->com);
+  ierr = get_dim_limits("t", NULL, &g.time); CHKERRQ(ierr);
+  ierr = get_dim_limits("x", &g.x_min, &g.x_max); CHKERRQ(ierr);
+  ierr = get_dim_limits("y", &g.y_min, &g.y_max); CHKERRQ(ierr);
 
   return 0;
 }
-
 
 //! Read the last value of the time variable t from a NetCDF file.
 PetscErrorCode NCTool::get_last_time(double *time) {
-  int stat;
-  int t_dim;
-  int t_id;
-  size_t t_len;
-  double mytime;
+  PetscErrorCode ierr;
 
-  if (grid->rank == 0) {
-    stat = nc_inq_dimid(ncid, "t", &t_dim); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimlen(ncid, t_dim, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_varid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    size_t t_end = t_len - 1;
-    stat = nc_get_var1_double(ncid, t_id, &t_end, &mytime);  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
+  ierr = get_dim_limits("t", NULL, time);
 
-  MPI_Bcast(&mytime, 1, MPI_DOUBLE, 0, grid->com);
-
-  *time = mytime;
   return 0;
 }
 
@@ -295,7 +211,8 @@ PetscErrorCode NCTool::get_last_time(double *time) {
 /*!
 Arrays z_read[] and zb_read[] must be pre-allocated arrays of length at least z_len, zb_len, respectively.
 
-Get values of z_len, zb_len by using get_dims_limits_lengths() before this routine; z_len = dim[3] and zb_len = dim[4].
+Get values of z_len, zb_len by using get_grid_info() before this routine; z_len
+= grid_info.z_len and zb_len = grid_info.zb_len.
  */
 PetscErrorCode NCTool::get_vertical_dims(const int z_len, const int zb_len,
                                          double z_read[], double zb_read[]) {
@@ -470,7 +387,7 @@ PetscErrorCode NCTool::put_global_var(const int varid, DA da, Vec g,
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
   int stat;
-  int sc[sc_size]; // buffer to hold both `s' and `c'
+  int sc[sc_size];		// buffer to hold both `s' (start) and `c' (count)
   size_t sc_nc[sc_size];
   double *a_double = NULL;
 
@@ -532,7 +449,7 @@ PetscErrorCode NCTool::set_MaskInterp(MaskInterp *mi_in) {
 /*!
 Simply calls regrid_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
-PetscErrorCode NCTool::regrid_local_var(const int varid, int dim_flag, LocalInterpCtx &lic,
+PetscErrorCode NCTool::regrid_local_var(const int varid, GridType dim_flag, LocalInterpCtx &lic,
                                         DA da, Vec vec, Vec g, 
                                         bool useMaskInterp) {
   PetscErrorCode ierr;
@@ -606,77 +523,102 @@ levels on the source grid.  That is,
 Then we just do the two variable interpolation as before, finding \f$a_{m}\f$ and \f$a_p\f$ before
 computing \f$F(x,y,z)\f$.
  */
-PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInterpCtx &lic,
+PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, LocalInterpCtx &lic,
                                          DA da, Vec g, bool useMaskInterp) {
   PetscErrorCode ierr;
-
-  const int req_tag = 1; // MPI tag for request block
-  const int var_tag = 2; // MPI tag for data block
-  const int sc_len = 8;
+  const int N = 4, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
+  const int start_tag = 1; // MPI tag for the start array
+  const int count_tag = 2; // MPI tag for the count array
+  const int data_tag  = 3; // MPI tag for the data block
   MPI_Status mpi_stat;
-  int stat, dims;
-  int sc[sc_len];
-
+  int stat, dims = 0;
+  int start[N], count[N];	// enough space for t, x, y, z (or zb)
+  bool t_exists;
+ 
   switch (dim_flag) {
-    case 2:
+    case GRID_2D:
       dims = 3; // time, x, y
       break;
-    case 3:
+    case GRID_3D:
       dims = 4; // time, x, y, z
       if (lic.regrid_2d_only) {
-        SETERRQ(2, "regrid_2d_only is set, so dim_flag == 3 is not allowed");
+        SETERRQ(2, "regrid_2d_only is set, so dim_flag == GRID_3D is not allowed");
       }
       break;
-    case 4:
+    case GRID_3D_BEDROCK:
       dims = 4; // time, x, y, zb
       if (lic.no_regrid_bedrock) {
-        SETERRQ(2, "no_regrid_bedrock is set, so dim_flag == 4 is not allowed");
+        SETERRQ(2, "no_regrid_bedrock is set, so dim_flag == GRID_3D_BEDROCK is not allowed");
       }
-      break;
-    default:
-      SETERRQ(1, "Invalid value for `dim_flag'.");
   }
 
-  // pack start and count into a single buffer
-  for (int i = 0; i < 4; i++) sc[i] = lic.start[i];
-  for (int i = 0; i < 4; i++) sc[4 + i] = lic.count[i];
+  // make local copies of lic.start and lic.count
+  for (int i = 0; i < N; i++) {
+    start[i] = lic.start[i];
+    count[i] = lic.count[i];
+  }
 
-  // At this point, sc[] is set up correctly for ice 3-D quantities.  In order
+  // At this point, start and count are set up correctly for ice 3-D quantities.  In order
   // to avoid duplicating lots of code below, we play some tricks here.
-  if (dim_flag == 2) { // 2-D quantity
+  if (dim_flag == GRID_2D) { // 2-D quantity
     // Treat it as a 3-D quantity with extent 1 in the z-direction.  The netCDF
     // read actually will not use this information (it is passed in, but it
     // won't index these entries in the array, because it knows how many
-    // dimensions it there are), but sc[7] will be used when node 0 computes how
-    // much data it has to send back.  sc[3] should never be used in this case.
-    sc[3] = 0; sc[7] = 1;
-  } else if (dim_flag == 4) { // Bedrock quantity
+    // dimensions it there are), but count[3] will be used when node 0 computes how
+    // much data it has to send back.  start[3] should never be used in this case.
+    start[Z] = 0;
+    count[Z] = 1;
+  } else if (dim_flag == GRID_3D_BEDROCK) { // Bedrock quantity
     // Just fill in the appropriate values
-    sc[3] = lic.start[4]; sc[7] = lic.count[4];
+    start[Z] = lic.start[ZB];
+    count[Z] = lic.count[ZB];
   }
+
+  // The next line appears outside the if (grid->rank == 0) since it calls
+  // MPI_Bcast.
+  ierr = find_dimension("t", NULL, t_exists); CHKERRQ(ierr);
 
   if (grid->rank == 0) {
 
     // Node 0 will service all the other nodes before itself.  We need to save
-    // sc[] so that it knows how to get its block at the end.
-    int sc0[sc_len];
-    for (int i = 0; i < sc_len; i++) sc0[i] = sc[i];
+    // start[] and count[] so that it knows how to get its block at the end.
+    int start0[N];
+    int count0[N];
+
+    for (int i = 0; i < N; i++) {
+      start0[i] = start[i];
+      count0[i] = count[i];
+    }
 
     for (int proc = grid->size - 1; proc >= 0; proc--) {
       if (proc == 0) {// Get the bounds.
-        for (int i = 0; i < sc_len; i++) sc[i] = sc0[i];
+	for (int i = 0; i < N; i++) {
+	  start[i] = start0[i];
+	  count[i] = count0[i];
+	}
       } else {
-        MPI_Recv(sc, sc_len, MPI_INT, proc, req_tag, grid->com, &mpi_stat);
+        MPI_Recv(start, N, MPI_INT, proc, start_tag, grid->com, &mpi_stat);
+	MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
       }
 
       // It is not safe to cast memory.  In particular on amd64 int and size_t are
       // different sizes.  Since netCDF uses size_t for the offsets, we need to here too.
-      size_t sc_nc[sc_len];
-      for (int i = 0; i < sc_len; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
+      size_t start_nc[N], count_nc[N];
+
+      for (int i = 0; i < N; i++) {
+	start_nc[i] = (size_t) start[i];
+	count_nc[i] = (size_t) count[i];
+      }
 
       // Actually read the block into the buffer.
-      stat = nc_get_vara_double(ncid, varid, &sc_nc[0], &sc_nc[4], lic.a);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      if (t_exists) {
+	stat = nc_get_vara_double(ncid, varid, start_nc, count_nc, lic.a);
+	CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      } else {
+	// This ignores 't' values of start and count:
+	stat = nc_get_vara_double(ncid, varid, &start_nc[1], &count_nc[1], lic.a);
+	CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      }
 
       /*{
         printf("ncid, varid = %d %d\n", ncid, varid);
@@ -697,16 +639,17 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInt
       // buffer that will only be filled by if the process it is serving has a
       // maximal sized local domain.
       int a_len = 1;
-      for (int i = 0; i < dims; i++) a_len *= sc[4 + i];
+      for (int i = 0; i < dims; i++) a_len *= count[i];
 
       // send the filled buffer
       if (proc != 0) {
-        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, var_tag, grid->com);
+        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, data_tag, grid->com);
       }
     }
   } else { // not process 0:
-    MPI_Send(sc, sc_len, MPI_INT, 0, req_tag, grid->com);  // send out my bounds
-    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, var_tag, grid->com, &mpi_stat); // get back filled buffer
+    MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);  // send out my start
+    MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);  // send out my count
+    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, data_tag, grid->com, &mpi_stat); // get back filled buffer
   }
 
   // At this point, the buffer lic.a[] should contain lic.a_len doubles.  This is the 
@@ -716,14 +659,14 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInt
   //ierr = lic.printArray(grid.com); CHKERRQ(ierr);
   
   // indexing parameters
-  const int ycount = lic.count[2];
+  const int ycount = lic.count[Y];
   int myMz = 1, zcount = 1; // indexing trick so that we don't have to duplicate code for the 2-D case.
-  if (dim_flag == 3) {
+  if (dim_flag == GRID_3D) {
     myMz = grid->Mz;
-    zcount = lic.count[3];
-  } else if (dim_flag == 4) {
+    zcount = lic.count[Z];
+  } else if (dim_flag == GRID_3D_BEDROCK) {
     myMz = grid->Mbz;
-    zcount = lic.count[4];
+    zcount = lic.count[ZB];
   }
 
   // We'll work with the raw storage here so that the array we are filling is
@@ -738,14 +681,14 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInt
         // location (x,y,z) is in target computational domain
         const double x = -grid->Lx + i * grid->dx,
                      y = -grid->Ly + j * grid->dy,
-                     z = (dim_flag == 3) ? grid->zlevels[k] : grid->zblevels[k];
+                     z = (dim_flag == GRID_3D) ? grid->zlevels[k] : grid->zblevels[k];
 
         // We need to know how the point (x,y,z) sits within the local block we
         // pulled from the netCDF file.  This part is special to a regular
         // grid.  In particular floor(ic) is the index of the 'left neighbor'
         // and ceil(ic) is the index of the 'right neighbor'.
-        double ic = (x - lic.fstart[1]) / lic.delta[1];
-        double jc = (y - lic.fstart[2]) / lic.delta[2];
+        double ic = (x - lic.fstart[X]) / lic.delta[X];
+        double jc = (y - lic.fstart[Y]) / lic.delta[Y];
 
         // bounds checking on ic and jc; cases where this is essential *have* been observed
         if ((int)floor(ic) < 0) {
@@ -756,23 +699,23 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInt
           jc = 0.0;
           //SETERRQ2(102,"(int)floor(jc) < 0      [%d < 0; jc = %16.15f]",(int)floor(jc),jc);
         }
-        if ((int)ceil(ic) > lic.count[1]-1) {
-          ic = (double)(lic.count[1]-1);
+        if ((int)ceil(ic) > lic.count[X]-1) {
+          ic = (double)(lic.count[X]-1);
           //SETERRQ3(103,"(int)ceil(ic) > lic.count[1]-1      [%d > %d; ic = %16.15f]",
           //     (int)ceil(ic), lic.count[1]-1, ic);
         }
-        if ((int)ceil(jc) > lic.count[2]-1) {
-          jc = (double)(lic.count[2]-1);
+        if ((int)ceil(jc) > lic.count[Y]-1) {
+          jc = (double)(lic.count[Y]-1);
           //SETERRQ3(104,"(int)ceil(jc) > lic.count[2]-1      [%d > %d; jc = %16.15f]",
           //     (int)ceil(jc), lic.count[2]-1, jc);
         }
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
-        if (dim_flag == 3 || dim_flag == 4) {
+        if (dim_flag == GRID_3D || dim_flag == GRID_3D_BEDROCK) {
           // get the index into the source grid, for just below the level z
-          const int kc = (dim_flag == 3) ? lic.kBelowHeight(z,grid->com)
-                                           : lic.kbBelowHeight(z,grid->com);
+          const int kc = (dim_flag == GRID_3D) ? lic.kBelowHeight(z)
+                                               : lic.kbBelowHeight(z);
 
           // We pretend that there are always 8 neighbors.  And compute the
           // indices into the buffer for those neighbors.  
@@ -806,9 +749,9 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, int dim_flag, LocalInt
           //   kk = (km == kp) ? 0.0 : (z - Z(km)) / (Z(kp) - Z(km))
           // where Z(.) are the physical coordinates on the source grid.  Note
           // that any value in [0,1] would be okay when km == kp.
-          const double zkc = (dim_flag == 3) ? lic.zlevs[kc] : lic.zblevs[kc];
+          const double zkc = (dim_flag == GRID_3D) ? lic.zlevs[kc] : lic.zblevs[kc];
           double dz;
-          if (dim_flag == 3) {
+          if (dim_flag == GRID_3D) {
             if (kc == zcount - 1) {
               dz = lic.zlevs[kc] - lic.zlevs[kc-1];
             } else {
@@ -1044,12 +987,12 @@ PetscErrorCode NCTool::write_polar_stereographic(double straight_vertical_longit
     On processor 0 returns true if OK, false otherwise. Always returns true on
     processors other than 0.
  */
-bool NCTool::check_dimension(const char dim[], const int len) {
+bool NCTool::check_dimension(const char name[], const int len) {
   int stat, dimid;
   size_t dimlen;
 
   if (grid->rank == 0) {
-    stat = nc_inq_dimid(ncid, dim, &dimid);
+    stat = nc_inq_dimid(ncid, name, &dimid);
     if (stat == NC_NOERR) {
       stat = nc_inq_dimlen(ncid, dimid, &dimlen);
 
@@ -1136,7 +1079,7 @@ PetscErrorCode NCTool::create_dimensions() {
   return 0;
 }
 
-//! Appends \c time to the \t dimension.
+//! Appends \c time to the t dimension.
 PetscErrorCode NCTool::append_time(PetscReal time) {
   int stat, t_id;
 
@@ -1264,5 +1207,67 @@ PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char c
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
+  return 0;
+}
+
+//! Finds the length of a dimension. Returns 0 if failed.
+PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
+  int stat, dim_id;
+  
+  if (grid->rank == 0) {
+    size_t dim_len;
+    stat = nc_inq_dimid(ncid, name, &dim_id);
+    if (stat == NC_NOERR) {
+      stat = nc_inq_dimlen(ncid, dim_id, &dim_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    } else
+      dim_len = 0;
+
+    *len = dim_len;
+  }
+
+  stat = MPI_Bcast(len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  return 0;
+}
+
+//! Gets dimension limits.
+/*! Gets dimension limits (i.e min and max values of the coordinate variable).
+  Assumes that the coordinate variable corresponding to dimension \c name is
+  strictly ascending.
+
+  Sets min = 0 and max = 0 if the dimension \c name has length 0.
+
+  Set \c min or \c max to NULL to omit the corresponding value.
+ */
+PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *max) {
+  PetscErrorCode ierr;
+  int len, varid;
+  bool variable_exists;
+  double range[2] = {0, 0};
+
+  ierr = get_dim_length(name, &len); CHKERRQ(ierr);
+
+  if (len != 0) {
+    ierr = find_variable(name, NULL, &varid, variable_exists);
+    if (!variable_exists) {
+      ierr = PetscPrintf(grid->com, "NCTool::get_dim_limits: coordinate variable '%s' does not exist.\n",
+			 name);
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    if ((grid->rank == 0)) {
+      size_t index[2] = {0, len - 1};
+      ierr = nc_get_var1_double(ncid, varid, &index[0], &range[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+      ierr = nc_get_var1_double(ncid, varid, &index[1], &range[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+    ierr = MPI_Bcast(range, 2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+  }
+
+  if (min != NULL)
+    *min = range[0];
+  if (max != NULL)
+    *max = range[1];
+
   return 0;
 }

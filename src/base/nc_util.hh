@@ -29,6 +29,8 @@ struct MaskInterp {
   int allowed_levels[50]; // must be strictly increasing
 };
 
+typedef enum {GRID_2D = 2, GRID_3D, GRID_3D_BEDROCK} GridType;
+
 int nc_check(int stat);
 int check_err(const int stat, const int line, const char *file);
 
@@ -53,8 +55,10 @@ public:
   PetscErrorCode write_global_attrs(bool have_ssa_velocities, const char conventions[]);
   PetscErrorCode write_history(const char history[], bool overwrite = false);
   PetscErrorCode get_last_time(double *time);
-  PetscErrorCode get_dims_limits_lengths(size_t dim[], double bdy[]);
-  PetscErrorCode get_dims_limits_lengths_2d(size_t dim[], double bdy[]);
+  PetscErrorCode get_dim_length(const char name[], int *len);
+  PetscErrorCode get_dim_limits(const char name[], double *min, double *max);
+  PetscErrorCode get_grid_info(grid_info &g);
+  PetscErrorCode get_grid_info_2d(grid_info &g);
   PetscErrorCode get_vertical_dims(const int z_len, const int zb_len, 
 				   double z_read[], double zb_read[]);
 
@@ -84,10 +88,10 @@ public:
 				int dims, void *a_mpi, int a_size);
 
   PetscErrorCode set_MaskInterp(MaskInterp *mi_in);
-  PetscErrorCode regrid_local_var(const int varid, int dim_flag,
+  PetscErrorCode regrid_local_var(const int varid, GridType dim_flag,
 				  LocalInterpCtx &lic, DA da, Vec vec, Vec g,
 				  bool useMaskInterp);
-  PetscErrorCode regrid_global_var(const int varid, int dim_flag,
+  PetscErrorCode regrid_global_var(const int varid, GridType dim_flag,
 				   LocalInterpCtx &lic, DA da, Vec g,
 				   bool useMaskInterp);
 

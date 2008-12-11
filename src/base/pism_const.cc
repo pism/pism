@@ -18,6 +18,7 @@
 
 #include <petsc.h>
 #include <petscfix.h>
+#include "nc_util.hh"
 #include "pism_const.hh"
 
 PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN) {

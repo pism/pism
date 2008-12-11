@@ -106,7 +106,7 @@ IceModel::~IceModel() {
 	   defaults for (grid.)Mx,My,Mz,Mbz,Lx,Ly,Lz,Lbz,dx,dy,dz,year.
 	\li [1.5] derivedClass::setFromOptions() to get options special to derived class
 	\li 2. setFromOptions() to get all options *including* Mx,My,Mz,Mbz
-	\li [2.5] initFromFile_netCDF() which reads Mx,My,Mz,Mbz from file and overwrites previous; if 
+	\li [2.5] initFromFile() which reads Mx,My,Mz,Mbz from file and overwrites previous; if 
 	   this represents a change the user is warned
 	\li 3. createDA(), which uses only Mx,My,Mz,Mbz
 	\li 4. createVecs() uses DA to create/allocate Vecs
@@ -118,12 +118,12 @@ or derived class).
 
 Note IceModel::setFromOptions() should be called at the end of derivedClass:setFromOptions().
 
-Note 2.5, 3, and 4 are called from initFromFile_netCDF() in IceModel.
+Note 2.5, 3, and 4 are called from initFromFile() in IceModel.
 
 Note 3 and 4 are called from initFromOptions() in some derived classes (e.g. IceCompModel) 
-in cases where initFromFile_netCDF() is not called.
+in cases where initFromFile() is not called.
 
-Note step 2.5 is skipped when bootstrapping (-bif and bootstrapFromFile_netCDF()) or in
+Note step 2.5 is skipped when bootstrapping (-bif and bootstrapFromFile()) or in
 those derived classes which can start with no input files, e.g. IceCompModel and IceEISModel.
 That is, 2.5 is only done when starting from a saved model state.
 */

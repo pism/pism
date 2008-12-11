@@ -74,8 +74,7 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
 /*! 
 Optionally allows saving of full velocity field.
 
-Calls dumpToFile_netCDF(), dumpToFile_diagnostic_netCDF(), and writeMatlabVars() to do 
-the actual work.
+Calls dumpToFile() and writeMatlabVars() to do the actual work.
  */
 PetscErrorCode  IceModel::writeFiles(const char* default_filename,
                                      const PetscTruth forceFullDiagnostics) {
@@ -109,7 +108,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
 		      "Writing model state, with full 3D velocities, to file `%s'",
 		      filename); CHKERRQ(ierr);
 
-    ierr = dumpToFile_netCDF(filename); CHKERRQ(ierr);
+    ierr = dumpToFile(filename); CHKERRQ(ierr);
     // Extra data:
     ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
     ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -117,7 +116,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   } else {
     ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'",
 		      filename); CHKERRQ(ierr);
-    ierr = dumpToFile_netCDF(filename); CHKERRQ(ierr);
+    ierr = dumpToFile(filename); CHKERRQ(ierr);
   }
 
   // write out individual variables out to Matlab file
@@ -141,7 +140,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   return 0;
 }
 
-PetscErrorCode IceModel::dumpToFile_netCDF(const char *filename) {
+PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
   PetscTruth append = PETSC_FALSE;
   NCTool nc(&grid);
@@ -345,7 +344,7 @@ When initializing from a NetCDF input file, the input file determines
 the number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.   
 The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" are overridden.  
  */
-PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
+PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscErrorCode  ierr;
   int         stat;
   NCTool nc(&grid);
@@ -360,17 +359,16 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
     PetscEnd();
   }
 
-  size_t      dim[5];
-  double      bdy[7];
   // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
-  //   this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
-  ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);
-  grid.year = bdy[0] / secpera;
-  grid.Mx = dim[1];
-  grid.My = dim[2];
-  grid.Mz = dim[3];
-  grid.Mbz = dim[4];
-  // grid.Lx, grid.Ly set from bdy[1], bdy[3] below in call to grid.rescale_using_zlevels()
+  // this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
+  grid_info g;
+  ierr = nc.get_grid_info(g);
+  grid.year = g.time / secpera;
+  grid.Mx = g.x_len;
+  grid.My = g.y_len;
+  grid.Mz = g.z_len;
+  grid.Mbz = g.zb_len;
+  // grid.Lx, grid.Ly set from g.x_max, g.y_max below in call to grid.rescale_using_zlevels()
 
   double *zlevs, *zblevs;
   zlevs = new double[grid.Mz];
@@ -395,7 +393,7 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = grid.createDA(); CHKERRQ(ierr);
   // FIXME: note we *can* determine from the input file whether the hor. dims are truely periodic,
   // but this has not been done; here we simply require it is not periodic
-  ierr = grid.rescale_using_zlevels(-bdy[1], -bdy[3]); CHKERRQ(ierr);
+  ierr = grid.rescale_using_zlevels(-g.x_min, -g.y_min); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
   
   // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
@@ -409,21 +407,21 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
 
   // 2-D mapping
-  ierr = vLongitude.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr =  vLatitude.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr = vLongitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =  vLatitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 2-D model quantities: discrete
-  ierr = vMask.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr = vMask.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr =      vh.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =      vh.read(fname, g.t_len - 1); CHKERRQ(ierr);
 				// DEPRECATED: usurf:pism_intent = diagnostic;
 				// WE SHOULD NOT BE READING THIS (CHOICES ABOUT
 				// WHAT -bif DOES ARE A DIFFERENT ISSUE)
-  ierr =  vHmelt.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr =      vH.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr =    vbed.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr = vuplift.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =  vHmelt.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =      vH.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =    vbed.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr = vuplift.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
@@ -442,20 +440,20 @@ PetscErrorCode IceModel::initFromFile_netCDF(const char *fname) {
   if (have_ssa_velocities == 1) {
     ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
-    ierr = vubarSSA.read(fname, dim[0] - 1);
-    ierr = vvbarSSA.read(fname, dim[0] - 1);
+    ierr = vubarSSA.read(fname, g.t_len - 1);
+    ierr = vvbarSSA.read(fname, g.t_len - 1);
   }
 
   // 2-D climate/bdry quantities
-  ierr =      vTs.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr =     vGhf.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr =   vAccum.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr = vtillphi.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =      vTs.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =     vGhf.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =   vAccum.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr = vtillphi.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 3-D model quantities
-  ierr =   T3.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr =  Tb3.read(fname, dim[0] - 1); CHKERRQ(ierr);
-  ierr = tau3.read(fname, dim[0] - 1); CHKERRQ(ierr);
+  ierr =   T3.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =  Tb3.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr = tau3.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   ierr = PetscFree(a_mpi); CHKERRQ(ierr);
 
@@ -513,7 +511,7 @@ quantities \c tau3, \c T3, \c Tb3.  This is consistent with one standard purpose
 regridding, which is to stick with current geometry through the downscaling procedure.  
 Most of the time the user should carefully specify which variables to regrid.
  */
-PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
+PetscErrorCode IceModel::regrid(const char *filename) {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet;
   char regridVars[PETSC_MAX_PATH_LEN];
@@ -532,8 +530,6 @@ PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
            regridVars,filename); CHKERRQ(ierr);
 
   // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
-  size_t dim[5];
-  double bdy[7];
 
   // create "local interpolation context" from dimensions, limits, and lengths extracted from regridFile,
   //   and from information about the part of the grid owned by this processor
@@ -545,16 +541,17 @@ PetscErrorCode IceModel::regrid_netCDF(const char *filename) {
     PetscEnd();
   }
   
-  ierr = nc.get_dims_limits_lengths(dim, bdy); CHKERRQ(ierr);  // see nc_util.cc
-  // from regridFile: Mz = dim[3], Mbz = dim[4]  
+  grid_info g;
+  ierr = nc.get_grid_info(g); CHKERRQ(ierr);
+
   double *zlevs, *zblevs;
-  zlevs = new double[dim[3]];
-  zblevs = new double[dim[4]];
-  ierr = nc.get_vertical_dims(dim[3], dim[4], zlevs, zblevs); CHKERRQ(ierr);
+  zlevs = new double[g.z_len];
+  zblevs = new double[g.zb_len];
+  ierr = nc.get_vertical_dims(g.z_len, g.zb_len, zlevs, zblevs); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   { // explicit scoping means destructor will be called for lic
-    LocalInterpCtx lic(dim, bdy, zlevs, zblevs, grid);
+    LocalInterpCtx lic(g, zlevs, zblevs, grid);
     // ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
     
     for (PetscInt k = 0; k < npossible; k++) {

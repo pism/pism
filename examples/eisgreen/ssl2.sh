@@ -35,10 +35,10 @@ mpgrn()
 
 # the EISMINT-Greenland SSL2 experiment:
 
-mpgrn "-if green20km_Tsteady.nc -ys 0 -y 10000 -o green_SSL2_10k"
+mpgrn "-if green20km_Tsteady.nc -ys 0 -y 10000 -o green_SSL2_10k.nc"
 
 for ((kyear=20; kyear <= 110 ; kyear+=10)); do
   (( oldkyear = kyear - 10 ))
-  mpgrn "-if green_SSL2_${oldkyear}k.nc -y 10000 -o green_SSL2_${kyear}k"
+  mpgrn "-if green_SSL2_${oldkyear}k.nc -y 10000 -o green_SSL2_${kyear}k.nc"
 done
 

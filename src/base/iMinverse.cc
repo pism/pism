@@ -102,30 +102,16 @@ PetscErrorCode IceModel::invertSurfaceVelocitiesFromFile(
      NULL, "y component of basal shear stress", "Pa", NULL); CHKERRQ(ierr);
 
   // create "local interpolation context" from dimensions, 
-  //   limits, and lengths; compare code in bootstrapFromFile_netCDF()
-  size_t dim[5];
-  double bdy[7];
-  ierr = nc.get_dims_limits_lengths_2d(dim, bdy); CHKERRQ(ierr);
-  dim[3] = 1; 
-  dim[4] = 1;
-  bdy[5] = 0.0;
-  bdy[6] = 0.0;
-  MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
-  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
-  double *z_bif, *zb_bif;
-  z_bif = new double[dim[3]];
-  zb_bif = new double[dim[4]];
-  z_bif[0] = 0.0;
-  zb_bif[0] = 0.0;
-  LocalInterpCtx lic(dim, bdy, z_bif, zb_bif, grid);
-  delete z_bif;
-  delete zb_bif;
+  //   limits, and lengths; compare code in bootstrapFromFile()
+  grid_info g;
+  ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+  LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
   //DEBUG:  ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
 
   // read in surface velocity (by regridding)
   ierr = usIn.regrid(filename, lic, true); CHKERRQ(ierr);  // at this point it *is* critical
   ierr = vsIn.regrid(filename, lic, true); CHKERRQ(ierr);  // ditto
-  ierr = nc.close(); CHKERRQ(ierr);  // no more reading after this
 
   // do inverse model; result is tauc and tillphi fields
   ierr = verbPrintf(2, grid.com, 

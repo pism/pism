@@ -99,10 +99,11 @@ protected:
 
   virtual PetscErrorCode  checkAllocated();
   virtual PetscErrorCode  checkHaveArray();
+  virtual PetscErrorCode  check_range(const int ncid, const int varid);
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
   virtual PetscErrorCode  read_from_netcdf(const char filename[], const unsigned int time, const int dims,
 					   const int Mz);
-  virtual PetscErrorCode  regrid_from_netcdf(const char filename[], const int dim_flag,
+  virtual PetscErrorCode  regrid_from_netcdf(const char filename[], const GridType dim_flag,
 					     LocalInterpCtx &lic, bool critical,
 					     bool set_default_value,
 					     PetscScalar default_value);

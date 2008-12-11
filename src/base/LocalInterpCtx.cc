@@ -26,74 +26,81 @@
 
 //! Construct a local interpolation context from arrays of parameters.
 /*!
-This method constructs a class from existing information already read from a NetCDF file and stored
-in arrays.  
+  This method constructs a class from existing information already read from a NetCDF file and stored
+  in arrays.  
+  
+  The essential quantities to compute are where each processor should start within the NetCDF file grid
+  (<tt>start[]</tt>) and how many grid points, from the starting place, the processor has.  The resulting
+  portion of the grid is stored in array \c a (a field of the \c LocalInterCtx).
 
-The essential quantities to compute are where each processor should start within the NetCDF file grid
-(<tt>start[]</tt>) and how many grid points, from the starting place, the processor has.  The resulting
-portion of the grid is stored in array \c a (a field of the \c LocalInterCtx).
+  We make conservative choices about \c start[] and \c count[].  In particular, the portions owned by 
+  processors \e must overlap at one point in the NetCDF file grid, but they \e may overlap more than that
+  (as computed here).
 
-We make conservative choices about \c start[] and \c count[].  In particular, the portions owned by 
-processors \e must overlap at one point in the NetCDF file grid, but they \e may overlap more than that
-(as computed here).
+  Note this constructor doesn't extract new information from the NetCDF file or
+  do communication. The information from the NetCDF file must already be
+  extracted, validly stored in a grid_info structure \c g and preallocated arrays
+  \c zlevsIN[], \c zblevsIN[], and each processor must have the same values for
+  all of them.
 
-Note this constructor doesn't extract new information from the NetCDF file or do communication.
-The information from the NetCDF file must already be extracted, validly stored in preallocated arrays 
-\c dim[], \c bdy[], \c zlevsIN[], \c zblevsIN[], and each processor must have the same values for 
-all of these arrays.
-
-The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
-information will be interpolated) are owned by each processor.
- */
-LocalInterpCtx::LocalInterpCtx(const size_t dim[], const double bdy[],
-                               const double zlevsIN[], const double zblevsIN[], IceGrid &grid) {
+  The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
+  information will be interpolated) are owned by each processor.
+*/
+LocalInterpCtx::LocalInterpCtx(const grid_info g,
+			       const double zlevsIN[], const double zblevsIN[], IceGrid &grid) {
   PetscErrorCode ierr;
+  const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
   const double Lx = grid.Lx,
                Ly = grid.Ly,
                Lz = grid.Lz,
                Lbz = grid.Lbz,
                dx = grid.dx,
                dy = grid.dy;
+  com = grid.com;
 
-  if (bdy[1] > -Lx || bdy[2] < Lx) {
-    PetscPrintf(grid.com,
-        "target computational domain not a subset of source (in NetCDF file)\n"
-        "  computational domain:\n");
-    PetscPrintf(grid.com,
-        "    need  [-Lx,Lx] contained in [bdy[1],bdy[2]],  but Lx = %5.4f km while\n"
-        "    [bdy[1],bdy[2]]=[%5.4f,%5.4f] km;  ENDING ...\n",
-        Lx,bdy[1],bdy[2]);
-    PetscEnd();
-  }
-  if (bdy[3] > -Ly || bdy[4] < Ly) {
-    PetscPrintf(grid.com,
-        "target computational domain not a subset of source (in NetCDF file)\n"
-        "  computational domain:\n");
-    PetscPrintf(grid.com,
-        "    need  [-Ly,Ly] contained in [bdy[3],bdy[4]],  but Ly = %5.4f km while\n"
-        "    [bdy[3],bdy[4]]=[%5.4f,%5.4f] km;  ENDING ...\n",
-        Ly,bdy[3],bdy[4]);
-    PetscEnd();
-  }
-  if (bdy[6] < Lz) {
-    verbPrintf(3,grid.com,
-        "  WARNING: vertical dimension of target computational domain\n"
-        "    not a subset of source (in NetCDF file) computational domain;\n"
-        "    bdy[6] = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
-        bdy[6], Lz);
+  if ((zlevsIN == NULL) || (zblevsIN == NULL))
     regrid_2d_only = true;
-  } else {
-    regrid_2d_only = false;
+
+  if (g.x_min > -Lx || g.x_max < Lx) {
+    PetscPrintf(com,
+		"target computational domain not a subset of source (in NetCDF file)\n"
+		"  computational domain:\n");
+    PetscPrintf(com,
+		"    need  [-Lx,Lx] contained in [g.x_min,g.x_max],  but Lx = %5.4f km while\n"
+		"    [g.x_min,g.x_max]=[%5.4f,%5.4f] km;  ENDING ...\n",
+		Lx,g.x_min,g.x_max);
+    PetscEnd();
   }
-  if (-bdy[5] < Lbz) {
-    verbPrintf(3,grid.com,
-        "  LIC WARNING: vertical dimension of target BEDROCK computational domain\n"
-        "    not a subset of source (in NetCDF file) BEDROCK computational domain;\n"
-        "    -bdy[5] = %5.4f < Lbz = %5.4f; NOT ALLOWING BEDROCK REGRIDDING ...\n",
-        -bdy[5], Lbz);
-    no_regrid_bedrock = true;
-  } else {
-    no_regrid_bedrock = false;
+  if (g.y_min > -Ly || g.y_max < Ly) {
+    PetscPrintf(com,
+		"target computational domain not a subset of source (in NetCDF file)\n"
+		"  computational domain:\n");
+    PetscPrintf(com,
+		"    need  [-Ly,Ly] contained in [g.y_min,g.y_max],  but Ly = %5.4f km while\n"
+		"    [g.y_min,g.y_max]=[%5.4f,%5.4f] km;  ENDING ...\n",
+		Ly,g.y_min,g.y_max);
+    PetscEnd();
+  }
+  
+  if (regrid_2d_only == false) {
+    if (g.z_max < Lz) {
+      verbPrintf(3,com,
+		 "  WARNING: vertical dimension of target computational domain\n"
+		 "    not a subset of source (in NetCDF file) computational domain;\n"
+		 "    g.z_max = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
+		 g.z_max, Lz);
+      regrid_2d_only = true;
+    }
+    if (-g.zb_min < Lbz) {
+      verbPrintf(3,com,
+		 "  LIC WARNING: vertical dimension of target BEDROCK computational domain\n"
+		 "    not a subset of source (in NetCDF file) BEDROCK computational domain;\n"
+		 "    -g.zb_min = %5.4f < Lbz = %5.4f; NOT ALLOWING BEDROCK REGRIDDING ...\n",
+		 -g.zb_min, Lbz);
+      no_regrid_bedrock = true;
+    } else {
+      no_regrid_bedrock = false;
+    }
   }
 
   // limits of the processor's part of the target computational domain
@@ -120,55 +127,69 @@ and \c delta entries in the struct will not be meaningful.
  */
  
   // Distances between entries (i.e. dx and dy and dz) in the netCDF file (floating point).
-  delta[0] = NAN; // Delta probably will never make sense in the time dimension.
-  delta[1] = (bdy[2] - bdy[1]) / (dim[1] - 1);
-  delta[2] = (bdy[4] - bdy[3]) / (dim[2] - 1);
+  delta[T] = NAN; // Delta probably will never make sense in the time dimension.
+  delta[X] = (g.x_max - g.x_min) / (g.x_len - 1);
+  delta[Y] = (g.y_max - g.y_min) / (g.y_len - 1);
 
   // start[i] = index of the first needed entry in the source netCDF file; start[i] is of type int
-  start[0] = dim[0] - 1; // We use the latest time
-  start[1] = (int)floor((xbdy_tgt[0] - bdy[1]) / delta[1] - 0.5);
-  start[2] = (int)floor((ybdy_tgt[0] - bdy[3]) / delta[2] - 0.5);
+  start[T] = g.t_len - 1;	// We use the latest time
+  start[X] = (int)floor((xbdy_tgt[0] - g.x_min) / delta[X] - 0.5);
+  start[Y] = (int)floor((ybdy_tgt[0] - g.y_min) / delta[Y] - 0.5);
   // be sure the start[] are not too small:
   for (int m = 1; m < 3; m++) {
     if (start[m] < 0)
       start[m] = 0;
   }
-  start[3] = 0; // start at base of ice
-  start[4] = 0;  // start at lowest bedrock level
+  start[Z] = 0;			// start at base of ice
+  start[ZB] = 0;		// start at lowest bedrock level
 
-  fstart[0] = bdy[0];
-  fstart[1] = bdy[1] + start[1] * delta[1];
-  fstart[2] = bdy[3] + start[2] * delta[2];
+  fstart[T] = g.time;
+  fstart[X] = g.x_min + start[X] * delta[X];
+  fstart[Y] = g.y_min + start[Y] * delta[Y];
 
-  count[0] = 1; // Only take one time.
-  count[1] = 1 + (int)ceil((xbdy_tgt[1] - fstart[1]) / delta[1]);
-  count[2] = 1 + (int)ceil((ybdy_tgt[1] - fstart[2]) / delta[2]);
+  count[T] = 1;			// Only take one time.
+  count[X] = 1 + (int)ceil((xbdy_tgt[1] - fstart[X]) / delta[X]);
+  count[Y] = 1 + (int)ceil((ybdy_tgt[1] - fstart[Y]) / delta[Y]);
   // make count[] smaller if start[]+count[] would go past end of range:
-  for (int m = 1; m < 3; m++) {  
-    while (start[m]+count[m] > (int)(dim[m]))
-      count[m]--;
-  }
-  count[3] = dim[3];
-  count[4] = dim[4];
+  while (start[X]+count[X] > g.x_len)
+    count[X]--;
+  while (start[Y]+count[Y] > g.y_len)
+    count[Y]--;
 
-  nz = dim[3];
-  ierr = PetscMalloc(dim[3] * sizeof(double), &(zlevs)); //CHKERRQ(ierr);
-  for (size_t k = 0; k < dim[3]; k++) {
-    zlevs[k] = zlevsIN[k];
+  // This allows creating a local interpolation context for 2D regridding
+  // without specifying dummy z or zb-related information in the g argument.
+  if (regrid_2d_only) {
+    regrid_2d_only = true;
+    count[Z] = 1;
+    count[ZB] = 1;
+  } else {
+    count[Z] = g.z_len;
+    count[ZB] = g.zb_len;
   }
-  nzb = dim[4];
-  ierr = PetscMalloc(dim[4] * sizeof(double), &(zblevs)); //CHKERRQ(ierr);
-  for (size_t k = 0; k < dim[4]; k++) {
-    zblevs[k] = zblevsIN[k];
+
+  zlevs = new double[count[Z]];
+  zblevs = new double[count[ZB]];
+
+  if (regrid_2d_only) {
+    zlevs[0] = 0.0;
+    zblevs[0] = 0.0;
+  } else {
+    for (int k = 0; k < count[Z]; k++) {
+      zlevs[k] = zlevsIN[k];
+    }
+    for (int k = 0; k < count[ZB]; k++) {
+      zblevs[k] = zblevsIN[k];
+    }
   }
+
+  nz = count[Z]; nzb = count[ZB];
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  const int myzcount = (count[3] >= count[4]) ? count[3] : count[4];
-  a_len = count[1] * count[2] * myzcount;
+  a_len = count[X] * count[Y] * PetscMax(count[Z], count[ZB]);
   int my_a_len = a_len;
-  MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, grid.com);
+  MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
   ierr = PetscMalloc(a_len * sizeof(double), &(a)); //CHKERRQ(ierr);
 
   //return 0;  // can't return; its a constructor
@@ -178,8 +199,8 @@ and \c delta entries in the struct will not be meaningful.
 //! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
   PetscErrorCode ierr;
-  ierr = PetscFree(zlevs); 
-  ierr = PetscFree(zblevs);
+  delete[] zlevs;
+  delete[] zblevs;
   ierr = PetscFree(a);
 }
 
@@ -188,21 +209,22 @@ LocalInterpCtx::~LocalInterpCtx() {
 /*!
 Every processor in the communicator \c com must call this for it to work, I think.
  */
-PetscErrorCode LocalInterpCtx::printGrid(MPI_Comm com) {
+PetscErrorCode LocalInterpCtx::printGrid() {
   PetscErrorCode ierr;
+  const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
 
   PetscMPIInt rank;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printGrid():  rank = %d\n",
                     rank); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"  delta[1,2] = %5.4f, %5.4f\n",
-                    delta[1],delta[2]); CHKERRQ(ierr);
+                    delta[X],delta[Y]); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"  start[0,..,4] = %d, %d, %d, %d, %d\n",
-                    start[0],start[1],start[2],start[3],start[4]); CHKERRQ(ierr);
+                    start[T],start[X],start[Y],start[Z],start[ZB]); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"  fstart[0,1,2] = %5.4f, %5.4f, %5.4f\n",
-                    fstart[0],fstart[1],fstart[2]); CHKERRQ(ierr);
+                    fstart[T],fstart[X],fstart[Y]); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"  count[0,..,4] = %d, %d, %d, %d, %d\n",
-                    count[0],count[1],count[2],count[3],count[4]); CHKERRQ(ierr);
+                    count[T],count[X],count[Y],count[Z],count[ZB]); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"  zlevs[] = "); CHKERRQ(ierr);
   for (int k = 0; k < nz; k++) {
     ierr = PetscSynchronizedPrintf(com," %5.4f,",zlevs[k]); CHKERRQ(ierr);
@@ -221,7 +243,7 @@ PetscErrorCode LocalInterpCtx::printGrid(MPI_Comm com) {
 /*!
 Every processor in the communicator \c com must call this for it to work, I think.
  */
-PetscErrorCode LocalInterpCtx::printArray(MPI_Comm com) {
+PetscErrorCode LocalInterpCtx::printArray() {
   PetscErrorCode ierr;
 
   PetscMPIInt rank;
@@ -240,7 +262,7 @@ PetscErrorCode LocalInterpCtx::printArray(MPI_Comm com) {
 /*!
 This code duplicates that in IceGrid::kBelowHeight().
  */
-int LocalInterpCtx::kBelowHeight(const double height, MPI_Comm com) {
+int LocalInterpCtx::kBelowHeight(const double height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com, 
        "LocalInterpCtx kBelowHeight(): height = %5.4f is below base of ice (height must be nonnegative)\n",
@@ -263,7 +285,7 @@ int LocalInterpCtx::kBelowHeight(const double height, MPI_Comm com) {
 
 
 //! Get the index for the source grid below a given vertical elevation within the bedrock
-int LocalInterpCtx::kbBelowHeight(const double elevation, MPI_Comm com) {
+int LocalInterpCtx::kbBelowHeight(const double elevation) {
   if (elevation < zblevs[0] - 1.0e-6) {
     PetscPrintf(com, 
        "LocalInterpCtx kbBelowHeight(): elevation = %5.4f is below base of bedrock -Lbz = %5.4f\n",

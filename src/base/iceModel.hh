@@ -67,8 +67,8 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile_netCDF(const char *fname);
-  virtual PetscErrorCode readShelfStreamBCFromFile_netCDF(const char *fname);
+  virtual PetscErrorCode bootstrapFromFile(const char *fname);
+  virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname);
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -82,7 +82,7 @@ public:
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;  
-  virtual PetscErrorCode initFromFile_netCDF(const char *);
+  virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode writeFiles(const char* default_filename, 
                                     const PetscTruth forceFullDiagnostics = PETSC_FALSE);
   virtual PetscErrorCode write_model_state(const char filename[]);
@@ -294,8 +294,8 @@ protected:
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
   virtual PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
-  virtual PetscErrorCode dumpToFile_netCDF(const char *filename);
-  virtual PetscErrorCode regrid_netCDF(const char *fname);
+  virtual PetscErrorCode dumpToFile(const char *filename);
+  virtual PetscErrorCode regrid(const char *fname);
 
   // see iMmatlab.cc
   virtual bool           matlabOutWanted(const char name);

@@ -97,13 +97,13 @@ PetscErrorCode IceModelVec3::read(const char filename[], const unsigned int time
 
 PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
   PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, 3, lic, critical, false, 0.0); CHKERRQ(ierr);
+  ierr = regrid_from_netcdf(filename, GRID_3D, lic, critical, false, 0.0); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
   PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, 3, lic, false, true, default_value); CHKERRQ(ierr);
+  ierr = regrid_from_netcdf(filename, GRID_3D, lic, false, true, default_value); CHKERRQ(ierr);
   return 0;
 }
 
@@ -575,13 +575,13 @@ PetscErrorCode IceModelVec3Bedrock::read(const char filename[], const unsigned i
 
 PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
   PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, 4, lic, critical, false, 0.0); CHKERRQ(ierr);
+  ierr = regrid_from_netcdf(filename, GRID_3D_BEDROCK, lic, critical, false, 0.0); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
   PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, 4, lic, false, true, default_value); CHKERRQ(ierr);
+  ierr = regrid_from_netcdf(filename, GRID_3D_BEDROCK, lic, false, true, default_value); CHKERRQ(ierr);
   return 0;
 }
 

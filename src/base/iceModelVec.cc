@@ -439,6 +439,8 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
   int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
 
   ierr = checkAllocated(); CHKERRQ(ierr);
+  if (grid->da2 == PETSC_NULL)
+    SETERRQ(1, "IceModelVec::read_from_netcdf: grid.da2 is NULL.");
 
   // Memory allocation:
   max_a_len = a_len = grid->xm * grid->ym * Mz;
@@ -576,7 +578,7 @@ PetscErrorCode IceModelVec::report_range() {
   max *= conversion_factor;
 
   ierr = verbPrintf(2, grid->com, 
-		    " %-10s/%-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		    " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 		    short_name, long_name, "", min, max,
 		    use_glaciological_units ? glaciological_units : units); CHKERRQ(ierr);
 
@@ -592,7 +594,7 @@ PetscErrorCode IceModelVec::report_range() {
   <li> If \c critical == false, regrid the variable or set the default value if asked to.
   </ol>
  */
-PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int dim_flag,
+PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const GridType dim_flag,
 					       LocalInterpCtx &lic, bool critical,
 					       bool set_default_value,
 					       PetscScalar default_value) {
@@ -602,6 +604,8 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
   NCTool nc(grid);
 
   ierr = checkAllocated(); CHKERRQ(ierr);
+  if (grid->da2 == PETSC_NULL)
+    SETERRQ(1, "IceModelVec::regrid_from_netcdf: grid.da2 is NULL.");
 
   // Open the file
   ierr = nc.open_for_reading(filename, exists); CHKERRQ(ierr);
@@ -628,13 +632,13 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
 
     if (set_default_value) {	// if it's not and we have a default value, set it
       ierr = verbPrintf(2, grid->com, 
-			"  absent %-10s/%-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
+			"  absent %-10s/ %-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
 			short_name, long_name, "", default_value, units);
       CHKERRQ(ierr);
       ierr = set(default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
       ierr = verbPrintf(2, grid->com, 
-			"  absent %-10s/%-60s\n   %-16s\\ not found; continuing without setting it\n",
+			"  absent %-10s/ %-60s\n   %-16s\\ not found; continuing without setting it\n",
 			short_name, long_name, "");
       CHKERRQ(ierr);
     }
@@ -655,6 +659,7 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const int 
 				   use_interpolation_mask); CHKERRQ(ierr);
     }
     ierr = report_range(); CHKERRQ(ierr);
+    ierr = check_range(nc.ncid, varid); CHKERRQ(ierr);
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -772,7 +777,154 @@ PetscErrorCode  IceModelVec::set(const PetscScalar c) {
   return 0;
 }
 
+//! Checks the range of an IceModelVec read from a netCDF file.
+/*! Uses valid_range, valid_min, valid_max, missing_value and _FillValue
+    attributes, if present.
+ */
+PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
+  PetscErrorCode ierr;
+  double bounds[2];
+  int use_min = 0, use_max = 0;
+
+  if (grid->rank == 0) {
+    int stat;
+    bool missing_value_exists = false,
+      fillvalue_exists = false,
+      valid_min_exists = false,
+      valid_max_exists = false,
+      valid_range_exists = false;
+    double missing_value, fillvalue, valid_min, valid_max, valid_range[2];
+
+    stat = nc_get_att_double(ncid, varid, "missing_value", &missing_value);
+    if (stat == NC_NOERR)
+      missing_value_exists = true;
+
+    stat = nc_get_att_double(ncid, varid, "_FillValue", &fillvalue);
+    if (stat == NC_NOERR)
+      fillvalue_exists = true;
+
+    stat = nc_get_att_double(ncid, varid, "valid_min", &valid_min);
+    if (stat == NC_NOERR)
+      valid_min_exists = true;
+
+    stat = nc_get_att_double(ncid, varid, "valid_max", &valid_max);
+    if (stat == NC_NOERR)
+      valid_max_exists = true;
+
+    size_t valid_range_len;
+    stat = nc_inq_attlen(ncid, varid, "valid_range", &valid_range_len);
+    if ((stat == NC_NOERR) && (valid_range_len == 2))
+      stat = nc_get_att_double(ncid, varid, "valid_range", valid_range);
+    if (stat == NC_NOERR)
+      valid_range_exists = true;
+
+    if (valid_range_exists) {
+      // consistency check
+      if (valid_min_exists || valid_max_exists || missing_value_exists || fillvalue_exists) {
+	ierr = verbPrintf(2, grid->com,
+			   "PISM WARNING: both valid_range and at least one of valid_min, valid_max\n"
+			   " missing_value and _FillValue are set. Using valid_range.\n");
+	CHKERRQ(ierr);
+      }	// end of consistency check
+
+      use_min = use_max = 1;
+      bounds[0] = valid_range[0];
+      bounds[1] = valid_range[1];
+      // end of if(valid_range_exists)
+    } else if (valid_min_exists && valid_max_exists) {
+      // consistency check
+      if (missing_value_exists || fillvalue_exists) {
+	ierr = verbPrintf(2, grid->com,
+			   "PISM WARNING: both valid_min, valid_max and at least one of\n"
+			   " missing_value and _FillValue are set. Using the valid_min, valid_max pair.\n");
+	CHKERRQ(ierr);
+      }	// end of consistency check
+
+      use_min = use_max = 1;
+      bounds[0] = valid_min;
+      bounds[1] = valid_max;
+    } else if (valid_min_exists) {
+      // consistency check
+      if (missing_value_exists || fillvalue_exists) {
+	ierr = verbPrintf(2, grid->com,
+			   "PISM WARNING: both valid_min and at least one of\n"
+			   " missing_value and _FillValue are set. Using valid_min.\n");
+	CHKERRQ(ierr);
+      }	// end of consistency check
+
+      use_min = 1; use_max = 0;
+      bounds[0] = valid_min;
+      // end of if (valid_min_exists)
+    } else if (valid_max_exists) {
+      // consistency check
+      if (missing_value_exists || fillvalue_exists) {
+	ierr = verbPrintf(2, grid->com,
+			   "PISM WARNING: both valid_max and at least one of\n"
+			   " missing_value and _FillValue are set. Using valid_max.\n");
+	CHKERRQ(ierr);
+      }	// end of consistency check
+
+      use_min = 0; use_max = 1;
+      bounds[1] = valid_max;
+      // end of if (valid_max_exists)
+    } else if (fillvalue_exists) {
+      // consistency check
+      if (missing_value_exists) {
+	ierr = verbPrintf(2, grid->com,
+			   "PISM WARNING: both _FillValue and missing_value are set.\n"
+			   " Using _FillValue.\n");
+      }
+      
+      if (fillvalue < 0) {
+	use_min = 1; use_max = 0;
+	bounds[0] = fillvalue + 3e-6; // a trick to exclude this value
+      } else {
+	use_min = 0; use_max = 1;
+	bounds[1] = fillvalue - 3e-6; // a trick to exclude this value
+      }
+      // end of if (fillvalue_exists)
+    } else if (missing_value_exists) {
+      ierr = verbPrintf(2, grid->com,
+			 "PISM WARNING: missing_value attribute is deprecated by the NetCDF User's Guide. Ignoring it.\n"
+			 " Please use valid_min, valid_max, valid_range or _FillValue attributes.\n");
+      CHKERRQ(ierr);
+
+      use_min = use_max = 0;
+      // end of if(missing_value_exists)
+    }
+  } // end of if (grid->rank == 0)
+
+  ierr = MPI_Bcast(&use_min, 1, MPI_INT,    0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&use_max, 1, MPI_INT,    0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(bounds,   2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+
+  const double eps = 2e-16;
+  double min, max;
+  ierr = range(min, max); CHKERRQ(ierr);
+
+  if (use_min && use_max) {
+    if ((min < bounds[0] - eps) || (max > bounds[1] + eps)) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: some values of '%s' are outside the valid range [%f, %f].\n",
+			short_name, bounds[0], bounds[1]); CHKERRQ(ierr);
+    }
+  } else if (use_min) {
+    if (min < bounds[0] - eps) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: some values of '%s' are less than the valid minimum (%f).\n",
+			short_name, bounds[0]); CHKERRQ(ierr);
+    }
+  } else if (use_max) {
+    if (max > bounds[1] + eps) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: some values of '%s' are greater than the valid maximum (%f).\n",
+			short_name, bounds[0]); CHKERRQ(ierr);
+    }
+  }
+
+  return 0;
+}
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/
 
-/********* IceModelVec2 and IceModelVec2Box: SEE SEPARATE FILE  iceModelVec2.cc    **********/
+/********* IceModelVec2: SEE SEPARATE FILE  iceModelVec2.cc    **********/

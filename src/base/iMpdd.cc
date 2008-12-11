@@ -161,27 +161,11 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
 
   ierr = verbPrintf(4, grid.com, 
          "  creating local interpolation context for monthly surface temps ...\n");
-         CHKERRQ(ierr);
-  size_t dim[5];  // dimensions in monthly temp NetCDF file
-  double bdy[7];  // limits and lengths in NetCDF file
-  double *z_bif, *zb_bif;
-  ierr = nc.get_dims_limits_lengths_2d(dim, bdy); CHKERRQ(ierr);
-  // the monthly temp data is 2d so fill in dummy stuff for regrid
-  dim[3] = 1; 
-  dim[4] = 1;
-  bdy[5] = 0.0;
-  bdy[6] = 0.0;
-  MPI_Bcast(dim, 5, MPI_LONG, 0, grid.com);
-  MPI_Bcast(bdy, 7, MPI_DOUBLE, 0, grid.com);
-  z_bif = new double[dim[3]];
-  zb_bif = new double[dim[4]];
-  z_bif[0] = 0.0;
-  zb_bif[0] = 0.0;
-
-  LocalInterpCtx lic(dim, bdy, z_bif, zb_bif, grid);
+  CHKERRQ(ierr);
+  grid_info g;
+  ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);
+  LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
   //ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
-  delete z_bif;
-  delete zb_bif;
   
   ierr = verbPrintf(4, grid.com, 
          "  allocating space for monthly surface temps ...\n"); CHKERRQ(ierr);
@@ -204,7 +188,7 @@ PetscErrorCode IceModel::readMonthlyTempDataPDD() {
       CHKERRQ(ierr);
       PetscEnd();
     }
-    ierr = nc.regrid_global_var(varid, 2, lic, grid.da2, 
+    ierr = nc.regrid_global_var(varid, GRID_2D, lic, grid.da2, 
 				vmonthlyTs[j], false); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, " %d", j); CHKERRQ(ierr);
   }

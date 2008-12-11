@@ -107,7 +107,7 @@ PetscErrorCode IceModelVec2::regrid(const char filename[], LocalInterpCtx &lic, 
   // Signature:
   // regrid_from_netcdf(filename, dim_flag, lic, critical, set_default_value, default_value)
   // Note that the dim_flag is two.
-  ierr = regrid_from_netcdf(filename, 2, lic, critical, false, 0.0); CHKERRQ(ierr);
+  ierr = regrid_from_netcdf(filename, GRID_2D, lic, critical, false, 0.0); CHKERRQ(ierr);
   return 0;
 }
 
@@ -116,7 +116,7 @@ PetscErrorCode IceModelVec2::regrid(const char filename[], LocalInterpCtx &lic, 
   // Signature:
   // regrid_from_netcdf(filename, dim_flag, lic, critical, set_default_value, default_value)
   // Note that the dim_flag is two.
-  ierr = regrid_from_netcdf(filename, 2, lic, false, true, default_value); CHKERRQ(ierr);
+  ierr = regrid_from_netcdf(filename, GRID_2D, lic, false, true, default_value); CHKERRQ(ierr);
   return 0;
 }
 

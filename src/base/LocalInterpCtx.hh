@@ -23,6 +23,17 @@
 #include <petscmat.h>
 #include "grid.hh"
 
+struct grid_info {
+  // dimension lengths
+  int t_len, x_len, y_len, z_len, zb_len;
+  double time,			//!< current time (seconds)
+    x_min,			//!< [x_min, x_max] is the X extent of the grid
+    x_max,			//!< [x_min, x_max] is the X extent of the grid
+    y_min,			//!< [y_min, y_max] is the Y extent of the grid
+    y_max,			//!< [y_min, y_max] is the Y extent of the grid
+    zb_min,			//!< minimal value of the zb dimension
+    z_max;			//!< maximal value of the z dimension
+};
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).
 /*!
@@ -59,20 +70,22 @@ class LocalInterpCtx {
 public:
   double fstart[3], delta[3];
   int start[5], count[5];    // Indices in netCDF file.
-  double *a;
-  int a_len;
-  int nz, nzb;
+  double *a;		     //!< temporary buffer
+  int a_len;		     //!< the size of the buffer
+  int nz,		     //!< number of z-levels
+    nzb;		     //!< number of zb-levels 
   double *zlevs, *zblevs;
   bool regrid_2d_only, no_regrid_bedrock;
+  MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
 
 public:
-  LocalInterpCtx(const size_t dim[], const double bdy[],
+  LocalInterpCtx(const grid_info g,
                  const double zlevsIN[], const double zblevsIN[], IceGrid &grid);
   ~LocalInterpCtx();
-  int kBelowHeight(const double height, MPI_Comm com);
-  int kbBelowHeight(const double elevation, MPI_Comm com);
-  PetscErrorCode printGrid(MPI_Comm com);
-  PetscErrorCode printArray(MPI_Comm com);
+  int kBelowHeight(const double height);
+  int kbBelowHeight(const double elevation);
+  PetscErrorCode printGrid();
+  PetscErrorCode printArray();
 protected:
 };
 

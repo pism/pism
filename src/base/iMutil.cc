@@ -69,9 +69,9 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   }
 
   if (bifSet == PETSC_TRUE) {
-    ierr = bootstrapFromFile_netCDF(input_file); CHKERRQ(ierr);
+    ierr = bootstrapFromFile(input_file); CHKERRQ(ierr);
   } else if (ifSet == PETSC_TRUE) {
-    ierr = initFromFile_netCDF(input_file); CHKERRQ(ierr);
+    ierr = initFromFile(input_file); CHKERRQ(ierr);
   }
 
   ierr = init_snapshots_from_options(); CHKERRQ(ierr);
@@ -81,8 +81,8 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 
   // Status at this point:  Either a derived class has initialized from formulas
   // (e.g. IceCompModel or IceEISModel) or there has been initialization 
-  // from an input NetCDF file, by bootstrapFromFile_netCDF() or
-  // initFromFile_netCDF().  Anything else is an error.
+  // from an input NetCDF file, by bootstrapFromFile() or
+  // initFromFile().  Anything else is an error.
   if (! isInitialized()) {
     SETERRQ(1,"Model has not been initialized from a file or by a derived class.");
   }
@@ -207,7 +207,7 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
                                &regridFileSet); CHKERRQ(ierr);
   if (regridFileSet == PETSC_TRUE) {
-    ierr = regrid_netCDF(regridFile); CHKERRQ(ierr);
+    ierr = regrid(regridFile); CHKERRQ(ierr);
   }
 
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
@@ -252,7 +252,7 @@ int IceModel::endOfTimeStepHook() {
        "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
        file_name);
     pism_signal = 0;
-    dumpToFile_netCDF(file_name);
+    dumpToFile(file_name);
   }
 
   return 0;

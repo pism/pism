@@ -229,18 +229,18 @@ if __name__ == "__main__":
             elif adict.has_key("valid_min") and adict.has_key("valid_max"):
                 valid_min = adict["valid_min"]
                 valid_max = adict["valid_max"]
-                mask = ((data >= valid_min) & (data <= valid_max))
+                mask = ((data < valid_min) | (data > valid_max))
                 print """Using valid_min and valid_max attributes.
 valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
 
             elif adict.has_key("valid_min"):
                 valid_min = adict["valid_min"]
-                mask = data >= valid_min
+                mask = data < valid_min
                 print "Using the valid_min attribute; valid_min = %10f" % valid_min
 
             elif adict.has_key("valid_max"):
                 valid_max = adict["valid_max"]
-                mask = data <= valid_max
+                mask = data > valid_max
                 print "Using the valid_max attribute; valid_max = %10f" % valid_max
 
             elif adict.has_key("_FillValue"):
