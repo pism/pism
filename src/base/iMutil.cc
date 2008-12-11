@@ -214,7 +214,7 @@ PetscErrorCode IceModel::afterInitHook() {
 
   // last task before proceeding: invert for basal till properties, if desired;
   //   reads options "-surf_vel_to_tfa foo.nc"
-  ierr = invertSurfaceVelocitiesFromFile(PETSC_TRUE); CHKERRQ(ierr);
+  ierr = invertSurfaceVelocities(PETSC_TRUE); CHKERRQ(ierr);
 
   return 0;
 }

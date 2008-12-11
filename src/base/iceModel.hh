@@ -279,17 +279,20 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
-  virtual PetscErrorCode invertSurfaceVelocitiesFromFile(const PetscTruth writeWhenDone);
+  virtual PetscErrorCode invertSurfaceVelocities(const PetscTruth writeWhenDone);
+  virtual PetscErrorCode getIMV2FromFile(const char *fname, IceModelVec2 v);
+  virtual PetscErrorCode computeFofV(IceModelVec2 uSSA, IceModelVec2 vSSA, 
+                                     IceModelVec2 &fofv);
   virtual PetscErrorCode removeVerticalPlaneShearRate(
-                             IceModelVec2 us_in, IceModelVec2 vs_in, 
-                             IceModelVec2 ub_out, IceModelVec2 vb_out);
+                             IceModelVec2 us_in, IceModelVec2 vs_in, IceModelVec2 vfofv, 
+                             IceModelVec2 &ub_out, IceModelVec2 &vb_out);
   virtual PetscErrorCode computeBasalShearFromSSA(
                              IceModelVec2 ub_in, IceModelVec2 vb_in, 
-                             IceModelVec2 taubx_out, IceModelVec2 tauby_out);
+                             IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
   virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
                              IceModelVec2 ub_in, IceModelVec2 ub_in,
 	               	     IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
-                             IceModelVec2 tauc_out, IceModelVec2 tfa_out);
+                             IceModelVec2 &tauc_out, IceModelVec2 &tfa_out);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

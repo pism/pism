@@ -59,10 +59,6 @@ PetscErrorCode IceCalvBCModel::compute_nCF() {
 
   PetscScalar     **cfmask, **ncf[2], **H;
 
-  // toss out old values
-  ierr = vsmoothCFmask.set(0.0); CHKERRQ(ierr);
-  ierr = vnCF[0].set(0.0); CHKERRQ(ierr);  // temp storage in mask smooth
-
   // smoothCFmask is smoothed version of (H>100) mask
   ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -117,6 +113,9 @@ PetscErrorCode IceCalvBCModel::compute_nCF() {
   ierr = vnCF[0].end_access(); CHKERRQ(ierr);
   ierr = vnCF[1].end_access(); CHKERRQ(ierr);
 
+  // it is reasonable to scale to improve condition number; what scaling?
+//  ierr = vsmoothCFmask.scale(1.0); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -145,8 +144,9 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
-  PetscScalar     **mask, **nuH[2], **u, **v, **tauc;
+  PetscScalar     **mask, **nuH[2], **u, **v, **tauc, **cfmask;
 
+  // clear it out
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
   /* matrix assembly loop */
@@ -156,6 +156,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
+  ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -164,27 +165,28 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
       const PetscInt rowV = i*M + J+1;
       if (intMask(mask[i][j]) == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
-        //   this is where boundary value to SSA is set
+        //   this is where Dirichlet boundary value to SSA is set
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
         ierr = MatSetValues(A, 1, &rowV, 1, &rowV, &one, INSERT_VALUES); CHKERRQ(ierr);
       } else {
-        const PetscInt im = (i + Mx - 1) % Mx, ip = (i + 1) % Mx;
-        const PetscInt Jm = 2 * ((j + My - 1) % My), Jp = 2 * ((j + 1) % My);
-        const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
+        const PetscInt im = (i + Mx - 1) % Mx,
+                       ip = (i + 1) % Mx,
+                       Jm = 2 * ((j + My - 1) % My),
+                       Jp = 2 * ((j + 1) % My);
+        const PetscScalar dx2 = dx*dx, 
+                          d4 = dx*dy*4,
+                          dy2 = dy*dy;
         /* Provide shorthand for the following staggered coefficients
         *      c11
         *  c00     c01
         *      c10
         * Note that the positive i (x) direction is right and the positive j (y)
-        * direction is up. */
-
-        // thickness H is incorporated here because nuH[][][] is actually 
-        //   viscosity times thickness
-        const PetscScalar c00 = nuH[0][i-1][j];
-        const PetscScalar c01 = nuH[0][i][j];
-        const PetscScalar c10 = nuH[1][i][j-1];
-        const PetscScalar c11 = nuH[1][i][j];
-
+        * direction is up.  Thickness H is incorporated here because 
+        * nuH[][][] is actually viscosity times thickness. */
+        const PetscScalar c00 = nuH[0][i-1][j],
+                          c01 = nuH[0][i][j],
+                          c10 = nuH[1][i][j-1],
+                          c11 = nuH[1][i][j];
         const PetscInt stencilSize = 13;
         /* The locations of the stencil points for the U equation */
         const PetscInt colU[] = {
@@ -194,15 +196,6 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
           im*M+J+1,               ip*M+J+1,
           /*       */ i*M+Jm,
           im*M+Jm+1,  i*M+Jm+1,   ip*M+Jm+1};
-        /* The values at those points */
-        PetscScalar valU[] = {
-          /*               */ -c11/dy2,
-          (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
-          -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
-          (c11-c10)/d4,                                       (c10-c11)/d4,
-          /*               */ -c10/dy2,
-          -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
-
         /* The locations of the stencil points for the V equation */
         const PetscInt colV[] = {
           im*M+Jp,        i*M+Jp,     ip*M+Jp,
@@ -211,38 +204,75 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
           im*M+J+1,       i*M+J+1,    ip*M+J+1,
           im*M+Jm,        i*M+Jm,     ip*M+Jm,
           /*           */ i*M+Jm+1 };
-        /* The values at those points */
-        PetscScalar valV[] = {
-          (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
-          /*               */ -4*c11/dy2,
-          2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
-          -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
-          -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
-          /*               */ -4*c10/dy2 };
+ 
+        if ( (intMask(mask[i][j]) == MASK_FLOATING) 
+             && (cfmask[i][j] > 0.01) && (cfmask[i][j] < 0.99) ) {
+          // FIXME: put in the correct vals
+          PetscScalar valU[] = {
+            /*               */ -c11/dy2,
+            (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
+            -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
+            (c11-c10)/d4,                                       (c10-c11)/d4,
+            /*               */ -c10/dy2,
+            -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
+  
+          // values for generic PDE discretization point; "v" eqn
+          PetscScalar valV[] = {
+            (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
+            /*               */ -4*c11/dy2,
+            2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
+            -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
+            -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
+            /*               */ -4*c10/dy2 };
 
-        /* Dragging ice experiences friction at the bed determined by the
-         *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
-         *    or linear friction law according to basal->drag(), which gets called
-         *    by basalDragx(),basalDragy().  */
-        if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
-          // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
-          valU[5] += basalDragx(tauc, u, v, i, j);
-          valV[7] += basalDragy(tauc, u, v, i, j);
+          // now actually set the values in the matrix 
+          ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
+          ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);
+        } else {
+          // values for generic PDE discretization point; "u" eqn
+          PetscScalar valU[] = {
+            /*               */ -c11/dy2,
+            (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
+            -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
+            (c11-c10)/d4,                                       (c10-c11)/d4,
+            /*               */ -c10/dy2,
+            -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
+  
+          // values for generic PDE discretization point; "v" eqn
+          PetscScalar valV[] = {
+            (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
+            /*               */ -4*c11/dy2,
+            2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
+            -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
+            -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
+            /*               */ -4*c10/dy2 };
+
+          /* Dragging ice experiences friction at the bed determined by the
+           *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
+           *    or linear friction law according to basal->drag(), which gets called
+           *    by basalDragx(),basalDragy().  */
+          if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
+            // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
+            valU[5] += basalDragx(tauc, u, v, i, j);
+            valV[7] += basalDragy(tauc, u, v, i, j);
+          }
+
+          // make shelf drag a little bit if desired
+          if ((shelvesDragToo == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING)) {
+            valU[5] += betaShelvesDragToo;
+            valV[7] += betaShelvesDragToo;
+          }
+
+          // now actually set the values in the matrix 
+          ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
+          ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);
+
         }
-
-        // make shelf drag a little bit if desired
-        if ((shelvesDragToo == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING)) {
-          //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
-          valU[5] += betaShelvesDragToo;
-          valV[7] += betaShelvesDragToo;
-        }
-
-        ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);
       }
     }
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vsmoothCFmask.end_access(); CHKERRQ(ierr);
 
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
@@ -263,13 +293,18 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
 
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
+  PetscScalar  **mask, **h, **H, **uvbar[2], **taudx, **taudy,
+               **cfmask, **ncf[2];
 
   // first, find and store normal direction to calving front;
-  // used in forming both rhs and A
+  //   used in forming both rhs and A; also get access to it here
   ierr = compute_nCF(); CHKERRQ(ierr);
+  ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
+  ierr = vnCF[0].get_array(ncf[0]); CHKERRQ(ierr);
+  ierr = vnCF[1].get_array(ncf[1]); CHKERRQ(ierr);
+  const PetscScalar Gamma = 0.5 * (1.0 - ice->rho / ocean.rho) * ice->rho * grav;
 
-  PetscScalar     **mask, **h, **H, **uvbar[2], **taudx, **taudy;
-
+  // clear right-hand side
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
@@ -285,15 +320,26 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt J = 2*j;
-      const PetscInt rowU = i*M + J;
-      const PetscInt rowV = i*M + J+1;
+      const PetscInt J = 2*j,
+                     rowU = i*M + J,
+                     rowV = i*M + J+1;
       if (intMask(mask[i][j]) == MASK_SHEET) {
+        // non-SSA case: set the velocity; in some cases this is Dirichlet cond
+        //   for SSA region
         ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
+      } else if ( (intMask(mask[i][j]) == MASK_FLOATING) 
+                  && (cfmask[i][j] > 0.01) && (cfmask[i][j] < 0.99) ) {
+        // calving front case: use info in vnCF[2]
+        const PetscScalar GammaHsqr = Gamma * H[i][j] * H[i][j];
+        ierr = VecSetValue(rhs, rowU, GammaHsqr * ncf[0][i][j],
+                           INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(rhs, rowV, GammaHsqr * ncf[1][i][j],
+                           INSERT_VALUES); CHKERRQ(ierr);
       } else {
+        // general SSA case: get driving stress for right hand side
         bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
         if (surfGradInward && edge) {
           PetscScalar h_x, h_y;
@@ -331,6 +377,11 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
 
+  ierr = vsmoothCFmask.end_access(); CHKERRQ(ierr);
+  ierr = vnCF[0].end_access(); CHKERRQ(ierr);
+  ierr = vnCF[1].end_access(); CHKERRQ(ierr);
+
+  // now actually build Vec for rhs
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);
   return 0;
