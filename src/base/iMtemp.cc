@@ -29,7 +29,7 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
                myVertSacrCount = 0.0;  // because that type works with PetscGlobalSum()
 
-  // do CFL and vertical grid blow-out checking only in ageStep()
+  // note: 3D CFL check happens here in ageStep()
   ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
     
   // put vTnew in vWork3d[0]; update Hmelt
@@ -640,7 +640,10 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // this should *not* be replaced by call to grid.kBelowHeightEQ():
+      // re task #4218:  keep this check despite creation of
+      //   thicknessTooLargeCheck(); check here is slightly different;
+      //   later this one can be removed if never active
+      // this should *not* be replaced by call to grid.kBelowHeightEQ()
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
       if (ks > Mz-1) {
         SETERRQ3(1,

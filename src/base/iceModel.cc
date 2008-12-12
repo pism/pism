@@ -515,6 +515,10 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
+    // do vertical grid blow-out checking just before first 3D field gets
+    // FIXME:  this version just ends; task #4218: expand grid upward instead of ending!
+    ierr = thicknessTooLargeCheck(); CHKERRQ(ierr);
+
     // always do SIA velocity calculation; only update SSA and 
     //   only update velocities at depth if suggested by temp and age
     //   stability criterion; note *lots* of communication is avoided by 

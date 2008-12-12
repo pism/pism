@@ -70,6 +70,9 @@ public:
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
   virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname);
 
+  // see iMinverse.cc
+  virtual PetscErrorCode invertSurfaceVelocities(const PetscTruth writeWhenDone);
+
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
 
@@ -279,20 +282,26 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
-  virtual PetscErrorCode invertSurfaceVelocities(const PetscTruth writeWhenDone);
-  virtual PetscErrorCode getIMV2FromFile(const char *fname, IceModelVec2 v);
-  virtual PetscErrorCode computeFofV(IceModelVec2 uSSA, IceModelVec2 vSSA, 
-                                     IceModelVec2 &fofv);
-  virtual PetscErrorCode removeVerticalPlaneShearRate(
-                             IceModelVec2 us_in, IceModelVec2 vs_in, IceModelVec2 vfofv, 
-                             IceModelVec2 &ub_out, IceModelVec2 &vb_out);
+  virtual PetscErrorCode computeSIASurfaceVelocity(
+	        IceModelVec2 &usSIA_out, IceModelVec2 &vsSIA_out);
+  virtual PetscErrorCode getGforInverse(
+                const PetscScalar x, const PetscScalar diffsqr, const PetscScalar dot,
+                PetscScalar &G, PetscScalar &Gprime);
+  virtual PetscErrorCode computeFofVforInverse(
+                IceModelVec2 us_in, IceModelVec2 vs_in, 
+                IceModelVec2 usSIA_in, IceModelVec2 vsSIA_in, 
+                IceModelVec2 &fofv_out);
+  virtual PetscErrorCode removeSIApart(
+                IceModelVec2 us_in, IceModelVec2 vs_in, 
+                IceModelVec2 usSIA_in, IceModelVec2 vsSIA_in, IceModelVec2 fofv_in,
+		IceModelVec2 &ub_out, IceModelVec2 &vb_out);
   virtual PetscErrorCode computeBasalShearFromSSA(
-                             IceModelVec2 ub_in, IceModelVec2 vb_in, 
-                             IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
+                IceModelVec2 ub_in, IceModelVec2 vb_in, 
+                IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
   virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
-                             IceModelVec2 ub_in, IceModelVec2 ub_in,
-	               	     IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
-                             IceModelVec2 &tauc_out, IceModelVec2 &tfa_out);
+                IceModelVec2 ub_in, IceModelVec2 ub_in,
+	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
+                IceModelVec2 &tauc_out, IceModelVec2 &tfa_out);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
@@ -421,6 +430,7 @@ protected:
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(const char*);
   virtual PetscErrorCode stampHistoryAdd(const char*);
+  virtual PetscErrorCode thicknessTooLargeCheck();
 
   // see iMvelocity.cc
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    

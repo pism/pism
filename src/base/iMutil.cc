@@ -385,3 +385,26 @@ PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
   
   return 0;
 }
+
+
+//! Check if the thickness of the ice is so large that ice is above the top of the computational grid.  FIXME: This is the place to automatically expand 3D computational grid (task #4218).
+PetscErrorCode IceModel::thicknessTooLargeCheck() {
+  PetscErrorCode  ierr;
+
+  PetscScalar **H;
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > grid.Lz) {
+        PetscPrintf(grid.com,
+           "PISM ERROR thicknessTooLargeCheck(): ice thickness exceeds computational box;\n"
+           "  H[i][j] = %5.4f exceeds Lz = %5.4f  ... ENDING!!\n",
+           H[i][j], grid.Lz);
+        PetscEnd();
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
