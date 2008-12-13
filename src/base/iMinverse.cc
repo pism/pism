@@ -25,27 +25,28 @@
 
 //! Invert given ice surface velocities to find till friction angle using a pseudo-plastic model.
 /*!
-Reads user option <tt>-surf_vel_to_tfa foo.nc</tt>.  If this option is not found,
+Reads user option <tt>-surf_vel_to_tfa foo.nc</tt>.  If this option is \e not found,
 this method returns without doing anything.
 
-If the option is found, this method expects to find variables
+If the option is found, then expects to find variables
 \c us and \c vs, namely x and y components of observed surface velocity,
-in NetCDF file \c foo.nc.  If found, reads them.  Note that these
+in NetCDF file \c foo.nc.  If found, reads them.  (Note these
 "observed" values must have full area coverage with no missing values, so
 in practice these "observed" values will have a modeling or kriging procedure
-which fills holes in coverage.
+which fills holes in coverage.)
 
 First calls computeSIASurfaceVelocity() to get the value of the surface
-velocity which would be computed for the current geometry and temperature.
+velocity which would be computed from SIA flow model for the current
+geometry and temperature.
 
 If <tt>-super</tt> is also set, we call the method computeFofVforInverse()
 which computes the factor \f$f(|\mathbf{v}|)\f$ used in combining the SIA 
 and SSA velocities \lo\cite[equation (21)]{BBssasliding}\elo.  If
 <tt>-super</tt> is not set, we do not call computeFofVforInverse(), and
-instead just set \f$f(|\mathbf{v}|)=0\f$ so the observed surface velocity
-is treated as all for the SSA model.
+instead just set \f$f(|\mathbf{v}|)=0\f$.  (Thus the observed surface velocity
+is treated as all described by the SSA model.)
 
-This method then calls the three major steps in turn:
+This method then calls the three steps in turn:
 
 - removeSIApart() to compute the basal sliding velocity,
 
@@ -54,11 +55,11 @@ the SSA stress balance, and
 
 - computeTFAFromBasalShearStressUsingPseudoPlastic().
 
+There is no smoothing in this initial implementation.
+
 The current method must be called after initialization is essentially completed.
 It uses geometry, temperature field, and map of effective thickness of basal till
 water in the inversion.
-
-There is no smoothing in this initial implementation.
 
 The result is a field of values for till yield stress and the till friction angle in a 
 pseudo-plastic till model.  This model includes purely-plastic and linearly-viscous cases.
@@ -87,11 +88,11 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
   ierr = vsIn.create(grid, "vs", true); CHKERRQ(ierr);
   ierr = vsIn.set_attrs(
      NULL, "y component of ice surface velocity","m s-1", NULL); CHKERRQ(ierr);
-  ierr = usSIA.create(grid, "usSIA", true); CHKERRQ(ierr);
+  ierr = usSIA.create(grid, "usSIA", false); CHKERRQ(ierr);  // global
   ierr = usSIA.set_attrs(
      NULL, "x component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
-  ierr = vsSIA.create(grid, "vsSIA", true); CHKERRQ(ierr);
+  ierr = vsSIA.create(grid, "vsSIA", false); CHKERRQ(ierr);  // global
   ierr = vsSIA.set_attrs(
      NULL, "y component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
@@ -128,7 +129,8 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
 
   // compute the surface velocity which the SIA predicts
   ierr = verbPrintf(2, grid.com, 
-     "computing SIA surface velocity (for removal) ...\n"); CHKERRQ(ierr);
+    "computing SIA surface velocity (for removal from observed before inverting w SSA ...\n");
+    CHKERRQ(ierr);
   ierr = computeSIASurfaceVelocity(usSIA, vsSIA); CHKERRQ(ierr);
 
   // compute f(|v|) factor, or set to constant if -super not used
@@ -198,7 +200,10 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
 
 //! Compute the surface velocity from only the vertical plane shear predicted by the nonsliding SIA.
 /*!
-The nonsliding thermomechanically coupled SIA equations are used for this purpose.
+This is one of several routines called by invertSurfaceVelocities() for
+inverse model-based initialization.  See comments for that method.
+
+The nonsliding thermomechanically coupled SIA equations are used.
 
 This procedure calls surfaceGradientSIA(), velocitySIAStaggered(), and
 horizontalVelocitySIARegular().  Therefore these IceModel members get modified:
@@ -262,58 +267,69 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity(
 
 //! Computes G(x) and its derivative needed by computeFofVforInverse().
 /*!
-See comments for computeFofVforInverse() to find formula for \f$G(x\f$.
+See comments for computeFofVforInverse() for formula for \f$G(x)\f$.
  */
 PetscErrorCode IceModel::getGforInverse(const PetscScalar x, 
-                   const PetscScalar diffsqr, const PetscScalar dot,
-                   PetscScalar &G, PetscScalar &Gprime) {
+                   const PetscScalar UsuSIAdiffsqr, const PetscScalar UsuSIAdiffdotuSIA,
+                   const PetscScalar uSIAsqr, PetscScalar &G, PetscScalar &Gprime) {
 
-  const PetscScalar  inC  = 1.0e-4 * PetscSqr(secpera),
-                     outC = 2.0 / pi;
-  PetscScalar F      = outC * atan(inC * x),
-              Fprime = outC * inC * (1.0 / (1.0 + PetscSqr(inC * x)));
-  G      = x * F * F - 2.0 * dot * F - diffsqr;
-  Gprime = F * F + 2.0 * Fprime * ( x * F - dot );
+  const PetscScalar  v0sqr  = PetscSqr(100.0 / secpera),
+                     outC   = 2.0 / pi,
+                     F      = outC * atan(x / v0sqr),
+                     Fprime = outC * (1.0 / (1.0 + PetscSqr(x / v0sqr))) / v0sqr;
+  G      = (x - uSIAsqr) * F * F - 2.0 * F * UsuSIAdiffdotuSIA - UsuSIAdiffsqr;
+  Gprime = F * F + 2.0 * Fprime * ( (x - uSIAsqr) * F - UsuSIAdiffdotuSIA );
   return 0;
 }
 
 
-//! Given observed surface velocity and SIA computed surface velocity, find \f$f(|\mathbf{v}|)\f$ factor.
+//! Given observed surface velocity and SIA computed surface velocity, find f(|v|) factor.
 /*!
-The scalar field which gets computed is called \f$f(|\mathbf{v}|)\f$ in 
-\lo\cite{BBssasliding}\elo.
+This is one of several routines called by invertSurfaceVelocities() for
+inverse model-based initialization.  See comments for that method.
 
-In particular, if \f$\mathbf{U}_s\f$ is the observed surface velocity then
+The scalar field which gets computed is called \f$f(|\mathbf{v}|)\f$ in 
+\lo\cite[equations (21) and (22)]{BBssasliding}\elo.  In fact, if 
+\f$\mathbf{U}_s\f$ is the observed surface velocity then
 at each point in the map plane we seek \f$f(|\mathbf{v}|)\f$ in the equation
   \f[ \mathbf{U}_s = f(|\mathbf{v}|) \mathbf{u}_s
                    + \left(1 - f(|\mathbf{v}|)\right) \mathbf{v} \f]
-where \f$\mathbf{u}_s\f$ is the surface value of the nonsliding SIA, computed from
-the temperature and geometry, and \f$\mathbf{v}\f$ is the depth-independent velocity
-which goes in the SSA stress balance.  Recall
+where \f$\mathbf{u}_s\f$ is the surface value of the nonsliding SIA.  Thus 
+\f$\mathbf{u}_s\f$ is directly computable from the temperature and geometry,
+and \f$\mathbf{v}\f$ is the depth-independent velocity which goes in the 
+SSA stress balance.  Recall
   \f[ f(|\mathbf{v}|) 
-         = 1 - \frac{2}{\pi} \arctan\left(\frac{|\mathbf{v}|^2}{100^2}\right) \f]
+         = 1 - \frac{2}{\pi} \arctan\left(\frac{|\mathbf{v}|^2}{v_0^2}\right) \f]
+where \f$v_0=100\f$ m/a.
 
 Our approach here is to find \f$x = |\mathbf{v}|^2\f$ by solving a transcendental
-equation by numerical root-finding.  Define a new function \f$F\f$ by
-  \f[ F(x) = \frac{2}{\pi} \arctan\left(\frac{x}{100^2}\right) \f]
+equation by numerical root-finding.  Define
+  \f[ F(x) = \frac{2}{\pi} \arctan\left(\frac{x}{v_0^2}\right) \f]
 so \f$f(|\mathbf{v}|) = 1 - F(x)\f$ and \f$x\f$ solves
   \f[ |\mathbf{U}_s - (1-F(x))\mathbf{u}_s|^2 = F(x)^2 x. \f]
 We treat this as a root-finding problem \f$G(x)=0\f$ for \f$x\f$, where, with 
 a little more rewriting,
-  \f[ G(x) = x F(x)^2 - 2 (\mathbf{U}_s \cdot \mathbf{u}_s) F(x)
+  \f[ G(x) = (x - |\mathbf{u}_s|^2) F(x)^2 
+             - 2 F(x) (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{u}_s
              - |\mathbf{U}_s - \mathbf{u}_s|^2. \f]
 Note \f$F(0)=0\f$ and \f$F(x)\to 1\f$ as \f$x\to\infty\f$.  Thus \f$G(0)\le 0\f$ 
-and \f$G(x) \sim x\f$ as \f$x\to\infty\f$.  Because \f$G(x)\f$ is continuous, we expect
+and \f$G(x) \sim x\f$ as \f$x\to\infty\f$.  Because \f$G(x)\f$ is continuous, there is
 a nonnegative root.
 
-We use \f$G'(x) = F(x)^2 + 2 F'(x) \left(x F(x) - 
-\mathbf{U}_s \cdot \mathbf{u}_s\right)\f$ in Newton's method \f$x_{n+1} = 
-x_n - G(x_n)/G'(x_n)\f$.  getGforInverse() actually computes \f$G(x)\f$ and 
-\f$G'(x)\f$.  The initial guess \f$x_0\f$ solves
-  \f[ x\, \frac{1}{4} - 2 (\mathbf{U}_s \cdot \mathbf{u}_s)\, \frac{1}{2}
-             - |\mathbf{U}_s - \mathbf{u}_s|^2 = 0, \f]
-that is, it would be the root of \f$G(x)\f$ if \f$F(x)\f$ were equal to 1/2.
-We iterate to \f$10^{-12}\f$ relative tolerance.
+We use the derivative
+  \f[ G'(x) = F(x)^2 
+              + 2 F'(x) \left[(x - |\mathbf{u}_s|^2) F(x) 
+                              - (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{u}_s\right]\f]
+in Newton's method
+  \f[x_{n+1} = x_n - G(x_n)/G'(x_n).\f]
+The method getGforInverse() actually computes \f$G(x)\f$ and 
+\f$G'(x)\f$.  The initial guess
+  \f[x_0 = |\mathbf{u}_s|^2 + 4 (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{U}_s \f]
+solves the equation that results from replacing the \f$F(x)\f$ term in the equation
+\f$G(x)=0\f$ above by 1/2.  That is, \f$x_0\f$ would be the root of \f$G(x)\f$ if
+\f$F(x)\f$ were equal to 1/2.
+
+We iterate Newton's method to \f$10^{-12}\f$ relative tolerance and warn on nonconvergence.
  */
 PetscErrorCode IceModel::computeFofVforInverse(
                             IceModelVec2 us_in, IceModelVec2 vs_in, 
@@ -331,13 +347,18 @@ PetscErrorCode IceModel::computeFofVforInverse(
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // Newton's method:
       const PetscScalar 
-         Usmus2 = PetscSqr(us[i][j] - usSIA[i][j]) + PetscSqr(vs[i][j] - vsSIA[i][j]),
-         Usdotus = us[i][j] * usSIA[i][j] + vs[i][j] * vsSIA[i][j];
-      PetscScalar xold = 4.0 * ( Usdotus + Usmus2 );  // initial guess
+         Usmus_x = us[i][j] - usSIA[i][j],
+         Usmus_y = vs[i][j] - vsSIA[i][j];
+      const PetscScalar
+         us2        = PetscSqr(usSIA[i][j]) + PetscSqr(vsSIA[i][j]),
+         Usmus2     = PetscSqr(Usmus_x)     + PetscSqr(Usmus_y),
+         Usmusdotus = Usmus_x * usSIA[i][j] + Usmus_y * vsSIA[i][j],
+         UsmusdotUs = Usmus_x * us[i][j]    + Usmus_y * vs[i][j];
+      PetscScalar xold = us2 + 4.0 * UsmusdotUs;  // initial guess solves nearby eqn
       PetscScalar xnew, G, Gprime;
       PetscInt k;
       for (k=0; k<20; ++k) {
-         ierr = getGforInverse(xold, Usmus2, Usdotus, G, Gprime); CHKERRQ(ierr);
+         ierr = getGforInverse(xold, Usmus2, Usmusdotus, us2, G, Gprime); CHKERRQ(ierr);
          xnew = xold - G / Gprime;  // Newton; practicing unprotected steps here ...
          const PetscScalar rel = PetscAbs(xnew - xold) / PetscAbs(xold);
          if (rel < 1.0e-12)  break;
@@ -346,20 +367,21 @@ PetscErrorCode IceModel::computeFofVforInverse(
       if (k >= 10) {
         ierr = verbPrintf(1, grid.com, 
            "WARNING: failure of Newton to converge in IceModel::computeFofVforInverse();\n"
-           "  info: i=%d, j=%d, k=%d, Usmus2=%f, Usdotus=%f, xold=%f, xnew=%f\n",
-           i,j,k,Usmus2,Usdotus,xold,xnew); CHKERRQ(ierr);
+           "  info: i=%d, j=%d, k=%d, Usmus2=%f, Usmusdotus=%f, us2=%f, xold=%f, xnew=%f\n",
+           i,j,k,Usmus2,Usmusdotus,us2,xold,xnew); CHKERRQ(ierr);
       }
       // at this point xnew contains  x=|v|^2
-      const PetscScalar  inC_fofv = 1.0e-4 * PetscSqr(secpera),
-                         outC_fofv = 2.0 / pi;
-      f[i][j] = 1.0 - outC_fofv * atan(inC_fofv * xnew);
-      if ( (f[i][j] < 0.0) || (f[i][j] > 1.0) ) {
+      const PetscScalar  v0sqr  = PetscSqr(100.0 / secpera),
+                         outC   = 2.0 / pi,
+                         F      = outC * atan(xnew / v0sqr);
+      if ( (F < 0.0) || (F > 1.0) ) {
         ierr = verbPrintf(1, grid.com, 
            "ERROR: failure to compute reasonable f(|v|) in [0,1] in\n"
            "  IceModel::computeFofVforInverse(); info: i=%d, j=%d, f[i][j]=%f\n",
-           i,j,f[i][j]); CHKERRQ(ierr);
+           i,j,1.0 - F); CHKERRQ(ierr);
         PetscEnd();
       }
+      f[i][j] = 1.0 - F;
     }
   }
   ierr = fofv_out.end_access(); CHKERRQ(ierr);
@@ -374,11 +396,12 @@ PetscErrorCode IceModel::computeFofVforInverse(
 
 //! Remove the SIA surface velocity from ice surface velocity to give depth-independent, membrane stress-balanced (SSA) velocity.
 /*!
+This is one of several routines called by invertSurfaceVelocities() for
+inverse model-based initialization.  See comments for that method.
+
 This procedure computes a z-independent horizontal ice velocity, conceptually
 a basal sliding velocity, from a specified surface horizontal ice velocity
 (map).  The portion already found from SIA equations is removed.
-
-We use \f$f(|\mathbf{v}|)\f$ as in formula (21) of \lo\cite{BBssasliding}\elo.
 
 The results in IceModelVec2 s ub_out and vb_out
 must be allocated (created) before calling this procedure.
@@ -429,6 +452,9 @@ PetscErrorCode IceModel::removeSIApart(
 
 //! Compute basal shear stress from a given sliding velocity using SSA equations.
 /*!
+This is one of several routines called by invertSurfaceVelocities() for
+inverse model-based initialization.  See comments for that method.
+
 We assume the basal sliding velocity is known.  Using ice thickness, 
 ice surface elevation, and an ice temperature field, we use 
 SSA equations to compute the basal shear stress.
@@ -578,6 +604,9 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
 
 //! Compute till friction angle in degrees.
 /*!
+This is one of several routines called by invertSurfaceVelocities() for
+inverse model-based initialization.  See comments for that method.
+
 The more complete brief description might be: "Compute till friction angle in 
 degrees from saved basal shear stress map and saved basal velocity 
 (both vector-valued) using pseudo-plastic till constitutive relation 

@@ -285,7 +285,8 @@ protected:
   virtual PetscErrorCode computeSIASurfaceVelocity(
 	        IceModelVec2 &usSIA_out, IceModelVec2 &vsSIA_out);
   virtual PetscErrorCode getGforInverse(
-                const PetscScalar x, const PetscScalar diffsqr, const PetscScalar dot,
+                const PetscScalar x, const PetscScalar UsuSIAdiffsqr, 
+                const PetscScalar UsuSIAdiffdotuSIA, const PetscScalar uSIAsqr,
                 PetscScalar &G, PetscScalar &Gprime);
   virtual PetscErrorCode computeFofVforInverse(
                 IceModelVec2 us_in, IceModelVec2 vs_in, 
