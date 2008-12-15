@@ -14,7 +14,7 @@ import string
 
 # run a chosen verification   
 def verify(test):
-   print ' ++++ verifying ' + test[2] + ' using **TEST ' + test[0] + '** ++++'
+   print ' ++++  TEST ' + test[0] + ':  verifying with ' + test[2] + ' exact soln  ++++'
    print ' ' + test[5]
    # for myMx in test[1][:levs]:
    for lev_index in range(levs):

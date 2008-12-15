@@ -37,6 +37,7 @@ using namespace std;
 /// @endcond
  
 
+// see iMnames.cc
 struct titleNname {
   char title[100]; // these short titles appear on PETSc graphical viewers and 
                    //   in Matlab output file
@@ -44,11 +45,23 @@ struct titleNname {
 };
 
 
+// see iMIO.cc
 struct PolarStereoParams {
   // these are "double" and not "float" ultimately because of how ncgen works
   double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
          lopo,  // latitude_of_projection_origin; defaults to 90
          sp;    // standard_parallel; defaults to -71
+};
+
+
+// see iMinverseMat.cc
+struct RegPoissonTaucCtx {
+  // describes Poisson-like problem solved when inverting surface velocities
+  //   using a regularization
+  DA          da;             // must be first in struct
+  PetscReal   epsilon;
+  Vec         f;              // = f(x,y) in PDE
+  Vec         g;              // = g(x,y) in PDE
 };
 
 
@@ -303,8 +316,12 @@ protected:
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
                 IceModelVec2 &tauc_out);
+  virtual PetscErrorCode fillRegPoissonTaucData(
+                IceModelVec2 ub_in, IceModelVec2 vb_in,
+	        IceModelVec2 taubx_in, IceModelVec2 tauby_in,
+	        RegPoissonTaucCtx &user);
   virtual PetscErrorCode computeTFAFromYieldStress(
-                 IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
+                IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

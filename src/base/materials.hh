@@ -241,10 +241,8 @@ public:
   virtual PetscErrorCode printInfo(const int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(const PetscScalar tauc, 
                            const PetscScalar vx, const PetscScalar vy);
-  virtual PetscScalar taucFromMagnitudes(const PetscScalar taub_mag, 
-                                         const PetscScalar sliding_speed);
-  virtual ~PlasticBasalType() {}
-protected:
+//  virtual ~PlasticBasalType() {}  why?
+
   PetscScalar plastic_regularize, pseudo_q, pseudo_u_threshold;
   PetscTruth  pseudo_plastic;
 };

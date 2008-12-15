@@ -478,19 +478,3 @@ PetscScalar PlasticBasalType::drag(const PetscScalar tauc,
   }
 }
 
-
-//! Find \f$\tau_c\f$ given magnitudes of sliding velocity and basal shear stress.
-/*!
-Computes
-\f[   \tau_c =  \frac{|\tau_{(b)}|\,|U_{\mathtt{thresh}}|^q}{|U|^q} \f]
-
-Used only in inverse modeling.
- */ 
-PetscScalar PlasticBasalType::taucFromMagnitudes(const PetscScalar taub_mag, 
-                                                 const PetscScalar sliding_speed) {
-  if ((pseudo_plastic == PETSC_FALSE) || (pseudo_q == 0.0)) {
-    // FIXME: bonk?  bonk if sliding speed too low.
-  }
-  return taub_mag * pow(pseudo_u_threshold, pseudo_q) / pow(sliding_speed, pseudo_q);
-}
-

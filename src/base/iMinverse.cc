@@ -321,9 +321,8 @@ SSA stress balance.  Recall
 where \f$v_0=100\f$ m/a.
 
 Our approach here is to find \f$x = |\mathbf{v}|^2\f$ by solving a transcendental
-equation by numerical root-finding.  Define
-  \f[ F(x) = \frac{2}{\pi} \arctan\left(\frac{x}{v_0^2}\right) \f]
-so \f$f(|\mathbf{v}|) = 1 - F(x)\f$ and \f$x\f$ solves
+equation by numerical root-finding.  Define \f$F(x) = (2/\pi) \arctan\left(x\,v_0^{-2}\right)\f$
+so \f$f(|\mathbf{v}|) = 1 - F(x)\f$ and the scalar \f$x\f$ solves the scalar equation
   \f[ |\mathbf{U}_s - (1-F(x))\mathbf{u}_s|^2 = F(x)^2 x. \f]
 We treat this as a root-finding problem \f$G(x)=0\f$ for \f$x\f$, where, with 
 a little more rewriting,
@@ -340,9 +339,10 @@ We use the derivative
                               - (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{u}_s\right]\f]
 in Newton's method
   \f[x_{n+1} = x_n - G(x_n)/G'(x_n).\f]
+
 The method getGforInverse() actually computes \f$G(x)\f$ and 
-\f$G'(x)\f$.  The initial guess
-  \f[x_0 = |\mathbf{u}_s|^2 + 4 (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{U}_s \f]
+\f$G'(x)\f$.  The initial guess is \f$x_0 = |\mathbf{u}_s|^2 
++ 4 (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{U}_s \f$ because that value
 solves the equation that results from replacing the \f$F(x)\f$ term in the equation
 \f$G(x)=0\f$ above by 1/2.  That is, \f$x_0\f$ would be the root of \f$G(x)\f$ if
 \f$F(x)\f$ were equal to 1/2.
