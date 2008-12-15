@@ -3,13 +3,20 @@
 CFLAGS           =
 CPPFLAGS         =
 MANSEC           = SNES
-EXAMPLESC	 = ex5.c
+EXAMPLESC	 = ex5.c poisson.c
 
 include ${PETSC_DIR}/bmake/common/base
+
+
+poisson: poisson.o  chkopts
+	-${CLINKER} -o poisson poisson.o ${PETSC_SNES_LIB}
+	${RM} poisson.o
+
 
 ex5: ex5.o chkopts
 	-${CLINKER} -o ex5 ex5.o ${PETSC_SNES_LIB}
 	${RM} ex5.o
+
 
 runex5:
 	-@${MPIEXEC} -np 4 ./ex5 -snes_mf -da_processors_x 4 -da_processors_y 1 -snes_monitor_short -ksp_gmres_cgs_refinement_type refine_always > ex5_1.tmp 2>&1; \

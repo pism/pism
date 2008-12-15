@@ -1,5 +1,7 @@
-This directory merely contains a PETSc example source code.  This allows users
-to test whether their PETSc is installed properly, perhaps as a way of testing
+This directory merely contains two PETSc example source codes.
+
+Compiling and running these allows a user to test whether PETSc
+itself is installed properly, as a way of testing
 PETSc before building PISM.
 
 The following should work if PETSc is installed properly:
@@ -28,7 +30,11 @@ or similar then
 -----------------------
 DEVELOPER COMMENT
 -----------------------
-The example ex5.c is also useful to PISM developers because
+The example ex5.c is useful to PISM developers because
 it shows use of SNES on a nonlinear PDE.
 
+ex5.c has been modified to give poisson.c, which solves exactly the kind of
+Poisson-like problem which is needed as a regularization step in inverse 
+modeling (i.e. IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic()
+in src/base/iMinverseMat.cc).
 

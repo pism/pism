@@ -596,8 +596,6 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
-//  ierr = vubarSSA.copy_to(vubarOld); CHKERRQ(ierr);
-//  ierr = vvbarSSA.copy_to(vvbarOld); CHKERRQ(ierr);
   ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
   ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
   epsilon = ssaEpsilon;

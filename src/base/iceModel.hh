@@ -299,10 +299,12 @@ protected:
   virtual PetscErrorCode computeBasalShearFromSSA(
                 IceModelVec2 ub_in, IceModelVec2 vb_in, 
                 IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
-  virtual PetscErrorCode computeTFAFromBasalShearStressUsingPseudoPlastic(
-                IceModelVec2 ub_in, IceModelVec2 ub_in,
+  virtual PetscErrorCode computeYieldStressFromBasalShearUsingPseudoPlastic(
+                IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
-                IceModelVec2 &tauc_out, IceModelVec2 &tfa_out);
+                IceModelVec2 &tauc_out);
+  virtual PetscErrorCode computeTFAFromYieldStress(
+                 IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

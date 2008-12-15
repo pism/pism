@@ -190,15 +190,15 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
         const PetscInt stencilSize = 13;
         /* The locations of the stencil points for the U equation */
         const PetscInt colU[] = {
-          /*       */ i*M+Jp,
-          im*M+Jp+1,  i*M+Jp+1,   ip*M+Jp+1,
-          im*M+J,     i*M+J,      ip*M+J,
-          im*M+J+1,               ip*M+J+1,
-          /*       */ i*M+Jm,
-          im*M+Jm+1,  i*M+Jm+1,   ip*M+Jm+1};
+          /*       */ i*M+Jp,                 // U neighbors: x-dx,y+dy   x,y+dy   x+dx,y+dy
+          im*M+Jp+1,  i*M+Jp+1,   ip*M+Jp+1,  // V neighbors:     "        "           "
+          im*M+J,     i*M+J,      ip*M+J,     // U neighbors: x-dx,y      x,y      x+dx,y
+          im*M+J+1,               ip*M+J+1,   // V neighbors:     "        "           "
+          /*       */ i*M+Jm,                 // U neighbors: x-dx,y-dy   x,y-dy   x+dx,y-dy
+          im*M+Jm+1,  i*M+Jm+1,   ip*M+Jm+1}; // V neighbors:     "        "           "
         /* The locations of the stencil points for the V equation */
         const PetscInt colV[] = {
-          im*M+Jp,        i*M+Jp,     ip*M+Jp,
+          im*M+Jp,        i*M+Jp,     ip*M+Jp,// < same scheme as for colU >
           /*           */ i*M+Jp+1,
           im*M+J,                     ip*M+J,
           im*M+J+1,       i*M+J+1,    ip*M+J+1,

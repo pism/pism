@@ -30,12 +30,13 @@ this method returns without doing anything.
 
 If the option is found, then expects to find variables
 \c us and \c vs, namely x and y components of observed surface velocity,
-in NetCDF file \c foo.nc.  If found, reads them.  (Note these
-"observed" values must have full area coverage with no missing values, so
-in practice these "observed" values will have a modeling or kriging procedure
-which fills holes in coverage.)
+in NetCDF file \c foo.nc.  If found, reads them.
 
-First calls computeSIASurfaceVelocity() to get the value of the surface
+Note that these "observed" values must have full area coverage with no missing 
+values, so in practice they will come from a modeling or kriging procedure 
+which fills holes in coverage.
+
+Then calls computeSIASurfaceVelocity() to get the value of the surface
 velocity which would be computed from SIA flow model for the current
 geometry and temperature.
 
@@ -43,29 +44,32 @@ If <tt>-super</tt> is also set, we call the method computeFofVforInverse()
 which computes the factor \f$f(|\mathbf{v}|)\f$ used in combining the SIA 
 and SSA velocities \lo\cite[equation (21)]{BBssasliding}\elo.  If
 <tt>-super</tt> is not set, we do not call computeFofVforInverse(), and
-instead just set \f$f(|\mathbf{v}|)=0\f$.  (Thus the observed surface velocity
-is treated as all described by the SSA model.)
+instead just set \f$f(|\mathbf{v}|)=0\f$, so the observed surface velocity
+is treated as all described by the SSA model.
 
-This method then calls the three steps in turn:
+This method then calls four steps in turn:
 
-- removeSIApart() to compute the basal sliding velocity,
+- removeSIApart() to compute the basal sliding velocity \f$\mathbf{u}_b\f$ by removing the SIA
+modeled shear from the surface velocity,
 
-- computeBasalShearFromSSA() to compute the basal shear stress according to 
-the SSA stress balance, and
+- computeBasalShearFromSSA() to compute the basal shear stress \f$\tau_b\f$ which solves 
+the SSA stress balance in which the basal sliding velocity \f$\mathbf{u}_b\f$ is used as the
+depth independent velocity,
 
-- computeTFAFromBasalShearStressUsingPseudoPlastic().
+- computeYieldStressFromBasalShearUsingPseudoPlastic() to compute the yield stress \f$\tau_c\f$
+for the given basal shear stress \f$\tau_b\f$ and basal sliding velocity \f$\mathbf{u}_b\f$,
 
-There is no smoothing in this initial implementation.
+- computeTFAFromYieldStress() to compute the till friction angle \f$\phi\f$ from the 
+yield stress \f$\tau_c\f$.
 
-The current method must be called after initialization is essentially completed.
-It uses geometry, temperature field, and map of effective thickness of basal till
-water in the inversion.
-
-The result is a field of values for till yield stress and the till friction angle in a 
-pseudo-plastic till model.  This model includes purely-plastic and linearly-viscous cases.
-
-PISM can then do the forward time-stepping model from the resulting till friction angle
+The result is a field of values for till friction angle in a pseudo-plastic till model.  
+PISM can do the forward time-stepping model using the resulting till friction angle
 field.
+
+This model includes purely-plastic and linearly-viscous cases.  There is no 
+smoothing in this initial implementation.  This method must be called after 
+initialization is essentially completed.  It uses geometry, temperature field, 
+and map of effective thickness of basal till water in the inversion.
  */
 PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone) {
   PetscErrorCode ierr;
@@ -79,7 +83,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
   }
   ierr = PetscOptionsHasName(PETSC_NULL, "-super", &superSet); CHKERRQ(ierr);
 
-  IceModelVec2 usIn, vsIn, usSIA, vsSIA, taubxComputed, taubyComputed, fofv;
+  IceModelVec2 usIn, vsIn, usSIA, vsSIA, taubxComputed, taubyComputed, fofv, taucComputed;
 
   // create inverse model state variables with metadata
   ierr = usIn.create(grid, "us", true); CHKERRQ(ierr);
@@ -98,14 +102,20 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
      "m s-1", NULL); CHKERRQ(ierr);
   ierr = taubxComputed.create(grid, "taubxOUT", false);  // global
   ierr = taubxComputed.set_attrs(
-     NULL, "x component of basal shear stress", "Pa", NULL); CHKERRQ(ierr);
+     NULL, "inverse-model-computed x component of basal shear stress", 
+     "Pa", NULL); CHKERRQ(ierr);
   ierr = taubyComputed.create(grid, "taubyOUT", false);  // global
   ierr = taubyComputed.set_attrs(
-     NULL, "y component of basal shear stress", "Pa", NULL); CHKERRQ(ierr);
+     NULL, "inverse-model-computed y component of basal shear stress", 
+     "Pa", NULL); CHKERRQ(ierr);
   ierr = fofv.create(grid, "fofv", false);  // global
   ierr = fofv.set_attrs(
-     NULL, "fraction of final velocity which comes from SIA in hybrid model", 
+     NULL, "inverse-model-computed fraction of final velocity which comes from SIA in hybrid model", 
      "1", NULL); CHKERRQ(ierr);
+  ierr = taucComputed.create(grid, "taucOUT", false);  // global
+  ierr = taucComputed.set_attrs(
+     NULL, "inverse-model-computed yield stress for basal till (plastic or pseudo-plastic model)", 
+     "Pa", NULL); CHKERRQ(ierr);
 
   // read in surface velocity
   ierr = verbPrintf(2, grid.com, 
@@ -136,37 +146,43 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
   // compute f(|v|) factor, or set to constant if -super not used
   if (superSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
-       "option -super seen;  computing f(|v|) from observed surface velocities\n"
-       "  by solving transcendental equations ...\n",
+       "  option -super seen;  computing f(|v|) from observed surface velocities\n"
+       "    by solving transcendental equations ...\n",
        fofvname); CHKERRQ(ierr);
     ierr = computeFofVforInverse(usIn, vsIn, usSIA, vsSIA, fofv); CHKERRQ(ierr);
   } else {
     // compute an f(|v|) field from current ubarSSA, vbarSSA
     ierr = verbPrintf(2, grid.com, 
-       "option -super NOT seen;  setting f(|v|) to 0.0, so NONE of SIA velocity\n"
-       "  is removed from observed surface velocity ...\n");
+       "  option -super NOT seen;  setting f(|v|) to 0.0, so NONE of SIA velocity\n"
+       "    is removed from observed surface velocity ...\n");
        CHKERRQ(ierr);
     ierr = fofv.set(0.0); CHKERRQ(ierr);
   }
 
-  // do three steps of inverse model; result is tauc and tillphi fields
+  // do four steps of inverse model; result is tillphi field
   ierr = verbPrintf(2, grid.com, 
            "  removing SIA-computed (vertical shear) part of surface velocity ...\n");
            CHKERRQ(ierr);
   ierr = removeSIApart(
            usIn, vsIn, usSIA, vsSIA, fofv, vubarSSA, vvbarSSA);    CHKERRQ(ierr);
+
   ierr = verbPrintf(2, grid.com, 
            "  computing membrane stresses and basal shear stress from SSA;\n"
            "    (applying SSA differential operator ...)\n");
            CHKERRQ(ierr);
   ierr = computeBasalShearFromSSA(
            vubarSSA, vvbarSSA, taubxComputed, taubyComputed);   CHKERRQ(ierr);
+
   ierr = verbPrintf(2, grid.com, 
-           "  computing till friction angle using (pseudo-)plastic model ...\n"); 
+           "  computing till yield stress tau_c using (pseudo-)plastic model ...\n"); 
            CHKERRQ(ierr);
-  ierr = computeTFAFromBasalShearStressUsingPseudoPlastic(
-           vubarSSA, vvbarSSA, taubxComputed, taubyComputed, vtauc, vtillphi);
+  ierr = computeYieldStressFromBasalShearUsingPseudoPlastic(
+           vubarSSA, vvbarSSA, taubxComputed, taubyComputed, taucComputed); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, 
+           "  computing till friction angle phi from tau_c by Mohr-Coulomb criterion ...\n"); 
            CHKERRQ(ierr);
+  ierr = computeTFAFromYieldStress(taucComputed,vtillphi); CHKERRQ(ierr);
 
   // write out stored inverse info for user's edification; mostly for debug
   if (writeWhenDone == PETSC_TRUE) {
@@ -176,8 +192,8 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
                                  PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
     if (!o_set) {
       ierr = PetscPrintf(grid.com,
-		"WARNING: inverse model can only write to file if -o option given,\n"
-		"  so no writing of inverse model fields; sorry ...\n");
+		"WARNING: inverse model can only write to file if -o option given;\n"
+		"  NO writing of inverse model fields; sorry ...\n");
 		CHKERRQ(ierr);
     } else {
       ierr =          usIn.write(filename, NC_DOUBLE); CHKERRQ(ierr);
@@ -185,6 +201,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
       ierr = taubxComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
       ierr = taubyComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
       ierr =          fofv.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+      ierr =  taucComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
     }
   }
   
@@ -194,6 +211,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
   ierr = taubxComputed.destroy(); CHKERRQ(ierr);
   ierr = taubyComputed.destroy(); CHKERRQ(ierr);
   ierr =          fofv.destroy(); CHKERRQ(ierr);
+  ierr =  taucComputed.destroy(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -450,308 +468,72 @@ PetscErrorCode IceModel::removeSIApart(
 }
 
 
-//! Compute basal shear stress from a given sliding velocity using SSA equations.
+//! Compute till friction angle in degrees given the (scalar) till yield stress.
 /*!
+The more complete brief description might be: "Compute till friction angle 
+\f$\phi\f$ in degrees from pre-computed till yield stress \f$\tau_c\f$ 
+and modeled pore water pressure."
+
 This is one of several routines called by invertSurfaceVelocities() for
 inverse model-based initialization.  See comments for that method.
 
-We assume the basal sliding velocity is known.  Using ice thickness, 
-ice surface elevation, and an ice temperature field, we use 
-SSA equations to compute the basal shear stress.
-
-There is no smoothing in this initial implementation.
-
-In particular:
-\latexonly
-\def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
-\def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
-\def\ddy#1{\ensuremath{\frac{\partial #1}{\partial y}}}
-\begin{align*}
-  - 2 \ddx{}\left[\nu H \left(2 \ddx{u} + \ddy{v}\right)\right]
-        - \ddy{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
-        + \tau_{(b)x}  &=  - \rho g H \ddx{h}, \\
-    - \ddx{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
-      - 2 \ddy{}\left[\nu H \left(\ddx{u} + 2 \ddy{v}\right)\right]
-        + \tau_{(b)y}  &=  - \rho g H \ddy{h}, 
-\end{align*}
-\endlatexonly
-Note \f$\nu\f$ is temperature-dependent.
-
-In this case the known field is \f$(u,v)\f$.  We are solving for 
-\f$\tau_b = (\tau_{(b)x},\tau_{(b)y})\f$.  The equations are solved everywhere 
-that there is positive thickness; at other points this procedure returns 
-\f$\tau_b = 0\f$.
-
-This procedure calls
-
-- assembleSSAMatrix(),
-
-- assembleSSARhs(),
-
-- computeEffectiveViscosity().
-
-It saves temporary versions of various flags modified by those routines.
-
-The result in IceModelVec2 taubx_out, tauby_out must be allocated (created) 
-before calling this routine.
- */
-PetscErrorCode IceModel::computeBasalShearFromSSA(
-                          IceModelVec2 ub_in, IceModelVec2 vb_in,
-			  IceModelVec2 &taubx_out, IceModelVec2 &tauby_out) {
-  PetscErrorCode ierr;
-
-  // effective viscosity for ub_in, vb_in: save flags before changing them
-  const PetscTruth leaveNuHAloneSSA_save = leaveNuHAloneSSA, 
-                   useConstantNuHForSSA_save = useConstantNuHForSSA;
-  leaveNuHAloneSSA = PETSC_FALSE;
-  useConstantNuHForSSA = PETSC_FALSE;
-  IceModelVec2 myvNuH[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
-  IceModelVec2 vubarSSAold = vWork2d[2], 
-               vvbarSSAold = vWork2d[3];
-  ierr = vubarSSA.copy_to(vubarSSAold); CHKERRQ(ierr);
-  ierr = vvbarSSA.copy_to(vvbarSSAold); CHKERRQ(ierr);
-  ierr = ub_in.copy_to(vubarSSA); CHKERRQ(ierr);
-  ierr = vb_in.copy_to(vvbarSSA); CHKERRQ(ierr);
-  // eps=0.0 in bdd-below regularization; Schoof type regularization does occur;
-  ierr = computeEffectiveViscosity(myvNuH, 0.0); CHKERRQ(ierr);
-  ierr = vubarSSAold.copy_to(vubarSSA); CHKERRQ(ierr);
-  ierr = vvbarSSAold.copy_to(vvbarSSA); CHKERRQ(ierr);
-  leaveNuHAloneSSA = leaveNuHAloneSSA_save;
-  useConstantNuHForSSA = useConstantNuHForSSA_save;
-
-  // allocate Mat and Vecs; compare setup in IceModel::createVecs() and
-  //   IceModel::velocitySSA()
-  Mat A;
-  Vec x, result, rhs;
-  const PetscInt M = 2 * grid.Mx * grid.My;
-  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
-                         13, PETSC_NULL, 13, PETSC_NULL,
-                         &A); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &result); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &rhs); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &x); CHKERRQ(ierr);
-
-  // Build approximation of SSA equations (A x = rhs)
-  //   Generally we want basal shear as part of matrix:
-  //                L[U] + beta U = (driving),
-  //   so  A = L + beta I. In this case we don't want basal shear terms 
-  //   as part of the matrix:
-  //                tau_b := L[U] - (driving),
-  //   so  A = L.
-  ierr = assembleSSAMatrix(false, myvNuH, A); CHKERRQ(ierr);
- 
-  // Note rhs contains driving terms  - \rho g H \grad h
-  ierr = assembleSSARhs(false, rhs); CHKERRQ(ierr);
-
-  // Set x = [u v]'  (interleaved).
-  PetscScalar **ub, **vb;
-  const PetscInt  twoMy = 2 * grid.My;
-  ierr = VecSet(x, 0.0); CHKERRQ(ierr);
-  ierr = ub_in.get_array(ub); CHKERRQ(ierr);
-  ierr = vb_in.get_array(vb); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = VecSetValue(x, i*twoMy + 2*j, ub[i][j], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValue(x, i*twoMy + 2*j+1, vb[i][j], INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
-  ierr = ub_in.end_access(); CHKERRQ(ierr);
-  ierr = vb_in.end_access(); CHKERRQ(ierr);
-
-  // assemble matrix and vec before multiplication; communicate!
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
-
-  // With new A and x, compute  result = Ax - rhs = L[u] - (driving)
-  // HERE IS INVERSE MODEL!!
-  
-  ierr = MatMult(A,x,result); CHKERRQ(ierr);  
-  
-  ierr = VecAXPY(result,-1.0,rhs); CHKERRQ(ierr);  // note result = 0 if MASK_SHEET
-  
-  // transfer result to taub output vectors; compare code in
-  //   IceModel::moveVelocityToDAVectors()
-  PetscScalar     **tbx, **tby, *res;
-  Vec             resultLoc = SSAXLocal;
-  ierr = VecScatterBegin(SSAScatterGlobalToLocal, result, resultLoc, 
-           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(SSAScatterGlobalToLocal, result, resultLoc, 
-           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGetArray(resultLoc, &res); CHKERRQ(ierr);
-  ierr = taubx_out.get_array(tbx); CHKERRQ(ierr);
-  ierr = tauby_out.get_array(tby); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      tbx[i][j] = res[i*twoMy + 2*j];
-      tby[i][j] = res[i*twoMy + 2*j+1];
-    }
-  }
-  ierr = taubx_out.end_access(); CHKERRQ(ierr);
-  ierr = tauby_out.end_access(); CHKERRQ(ierr);
-  ierr = VecRestoreArray(resultLoc, &res); CHKERRQ(ierr);
-
-  // de-allocate
-  ierr = MatDestroy(A); CHKERRQ(ierr);
-  ierr = VecDestroy(x); CHKERRQ(ierr);
-  ierr = VecDestroy(result); CHKERRQ(ierr);
-  ierr = VecDestroy(rhs); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-//! Compute till friction angle in degrees.
-/*!
-This is one of several routines called by invertSurfaceVelocities() for
-inverse model-based initialization.  See comments for that method.
-
-The more complete brief description might be: "Compute till friction angle in 
-degrees from saved basal shear stress map and saved basal velocity 
-(both vector-valued) using pseudo-plastic till constitutive relation 
-and a pore water pressure model."
-
-FIXME:  This procedure should be minimizing a regularized L^2 norm
-(i.e. doing least squares).
-
-Values of both \f$\tau_c\f$ and \f$\phi\f$ are returned by this routine
-but it is envisioned that the value of \f$\tau_c\f$ may evolve in a run
+It is envisioned that in forward modeling the value of \f$\tau_c\f$ evolves
 while \f$\phi\f$ is treated as time-independent.
 
-Here is the context for this procedure:
-
-This procedure should not be called in the purely plastic case, that is, 
-if <tt>PlasticBasalType::pseudo_plastic</tt> is \c FALSE.
-
-In the pseudo plastic case PlasticBasalType::drag() will compute 
-the basal shear stress as
-    \f[ \tau_{(b)}
-           = - \frac{\tau_c}{|U|^{1-q} |U_{\mathtt{thresh}}|^q} U    \f]
-where \f$\tau_{(b)}=(\tau_{(b)x},\tau_{(b)y})\f$, \f$U=(u,v)\f$,
-\f$q=\f$ <tt>pseudo_q</tt>, and 
-\f$U_{\mathtt{thresh}}=\f$ <tt>pseudo_u_threshold</tt>.
-Typical values for the constants are \f$q=0.25\f$ 
-and 100 m/a for \f$U_{\mathtt{thresh}}\f$.
-
-The linearly viscous till case \f$q=1\f$ is allowed, in which case
-\f$\beta = \tau_c/|U_{\mathtt{thresh}}|\f$.
-
-On the other hand, updateYieldStressFromHmelt() computes
-the till yield stress \f$\tau_c\f$, a scalar, by 
-    \f[ \tau_c = c_0 + \tan\left(\frac{\pi}{180} \phi\right)\, N \f]
-where \f$\phi\f$ is the map of till friction angle, in degrees, stored in
+The scalar till yield stress \f$\tau_c\f$ is related to the till friction
+angle by the Mohr-Coulomb criterion \lo\cite{Paterson}\elo,
+    \f[ \tau_c = c_0 + \tan\left(\frac{\pi}{180} \phi\right)\,\left(\rho g H - p_w\right) \f]
+Here \f$\phi\f$ is the map of till friction angle, in degrees, stored in
 \c vtillphi.  The till cohesion \f$c_0\f$ (= \c plastic_till_c_0) may be zero.
-Here \f$N\f$ is the effective pressure on the till, namely \f$N = \rho g H - p_w\f$,
-where \f$p_w\f$ is the porewater pressure.  And \f$p_w\f$ is estimated in 
-terms of the stored basal water \c vHmelt; see getEffectivePressureOnTill().
 
-In this context, the current procedure uses a sliding velocity 
-and a basal shear stress (sign choice so that the stress is applied to the ice)
-to compute the yield stress and then the till friction angle.  
-There are some cases to check:
-  - If the velocity is below 1 m/a in magnitude then \f$\tau_c\f$ 
-    is set equal to \f$10 |\tau_{(b)}|\f$.
-  - It is not assumed that the vectors \f$U\f$ and \f$\tau_{(b)}\f$
-    at each grid point are pointing in the same direction 
-    on input to this routine.  If the velocity is larger in magnitude than
-    1 m/a then the angle between \f$U\f$ and \f$\tau_{(b)}\f$ is checked; 
-    if that angle exceeds 45 degrees then \f$\tau_c\f$ is set equal to 
-    \f$10 |\tau_{(b)}|\f$.
-  - If the last two cases did not apply, compute the yield stress through magnitudes:
-    \f[ \tau_c = \frac{|\tau_{(b)}|\,|U_{\mathtt{thresh}}|^q}{|U|^q} \f]
-    by PlasticBasalType::taucFromMagnitudes().
-  - Compute the till friction angle \e from the till yield stress
+The effective pressure on the till, namely \f$N = \rho g H - p_w\f$,
+where \f$p_w\f$ is the porewater pressure, is computed by 
+getEffectivePressureOnTill().  In summary, \f$p_w\f$ is estimated in 
+terms of the stored basal water \c vHmelt which is the time-integrated basal
+melt rate.
+
+This procedure computes
     \f[ \phi = \frac{180}{\pi} \arctan\left(\frac{\tau_c - c_0}{N}\right) \f]
+If \f$\tau_c - c_0 \le 0\f$ then the till friction angle is set to 
+0 degrees.  If the effective pressure \f$N\f$ is smaller than 1/10 of the 
+overburden then the till friction angle is set (arbitrarily) to twenty degrees.
 
-All of the above is done only if the ice is grounded and there is positive
-ice thickness.  If a point is marked \c MASK_FLOATING or \c MASK_FLOATING_OCEAN0 
-then the yield stress is set to zero and the friction angle (quite arbitrarily) to 
-30 degrees.  If a point is grounded but the ice thickness is zero the the
-yield stress is set to a high value of 1000 kPa = 10 bar and again the friction angle 
-is set to 30 degrees.
+No communication occurs in this routine.  This procedure reads the ice thickness
+\c vH and the effective thickness of basal meltwater \c vHmelt from the 
+current model state.
 
-No communication occurs in this routine.
-
-This procedure reads three fields from the current model state, namely ice 
-thickness \c vH, effective thickness of basal meltwater \c vHmelt, and the 
-mask \c vMask.
+Compare updateYieldStressFromHmelt() which uses the Mohr-Coulomb criterion
+to compute yield stress from till friction angle in a forward model.
  */
-PetscErrorCode IceModel::computeTFAFromBasalShearStressUsingPseudoPlastic(
-                 IceModelVec2 ub_in, IceModelVec2 vb_in,
-		 IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
-                 IceModelVec2 &tauc_out, IceModelVec2 &tfa_out) {
+PetscErrorCode IceModel::computeTFAFromYieldStress(
+                 IceModelVec2 tauc_in, IceModelVec2 &tfa_out) {
   PetscErrorCode ierr;
   
-  if (doPseudoPlasticTill == PETSC_FALSE) {
-    ierr = verbPrintf(1, grid.com, 
-       "WARNING: computeTFAFromBasalShearStress() should only be called with q > 0.0\n"
-       "  in pseudo-plastic model;  here is PlasticBasalType::printInfo() output:\n");
-       CHKERRQ(ierr);
-    ierr = basal->printInfo(1,grid.com); CHKERRQ(ierr);
-  }
-  
-  const PetscScalar slowOrWrongDirFactor = 10.0,
-                    sufficientSpeed = 1.0 / secpera,
-                    sameDirMaxAngle = pi/4.0,
-                    phiDefault = 30.0,
-                    largeYieldStress = 1000.0e3;  // large; 1000 kPa = 10 bar
-  PetscScalar **tauc, **phi, **ub, **vb, **taubx, **tauby, 
-              **Hmelt, **H, **mask;
-  ierr =    ub_in.get_array(ub);     CHKERRQ(ierr);
-  ierr =    vb_in.get_array(vb);     CHKERRQ(ierr);
-  ierr = taubx_in.get_array(taubx); CHKERRQ(ierr);
-  ierr = tauby_in.get_array(tauby); CHKERRQ(ierr);
-  ierr = tauc_out.get_array(tauc);  CHKERRQ(ierr);
-  ierr =  tfa_out.get_array(phi);   CHKERRQ(ierr);
-  ierr =   vHmelt.get_array(Hmelt); CHKERRQ(ierr);
-  ierr =       vH.get_array(H);     CHKERRQ(ierr);
-  ierr =    vMask.get_array(mask);  CHKERRQ(ierr);
+  const PetscScalar phiDefault = 20.0; // degrees
+  PetscScalar **tauc, **phi, **Hmelt, **H;
+  ierr = tauc_in.get_array(tauc);  CHKERRQ(ierr);
+  ierr = tfa_out.get_array(phi);   CHKERRQ(ierr);
+  ierr =  vHmelt.get_array(Hmelt); CHKERRQ(ierr);
+  ierr =      vH.get_array(H);     CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
-        tauc[i][j] = 0.0;
-        phi[i][j] = phiDefault;
-      } else if (H[i][j] <= 0.0) { // if no ice use large resistance
-        tauc[i][j] = largeYieldStress;
-        phi[i][j] = phiDefault;
-      } else { // case: grounded and ice is present
-        // get tauc = yield stress
-        const PetscScalar
-            speed = sqrt(PetscSqr(ub[i][j]) + PetscSqr(vb[i][j])),
-            taubmag = sqrt(PetscSqr(taubx[i][j]) + PetscSqr(tauby[i][j]));
-        if (speed < sufficientSpeed) {
-          tauc[i][j] = slowOrWrongDirFactor * taubmag;
-        } else {
-          const PetscScalar 
-              ubDOTtaub = ub[i][j] * taubx[i][j] + tauby[i][j] * vb[i][j],
-              angle = acos(ubDOTtaub / (speed * taubmag));
-          if (PetscAbs(angle) > sameDirMaxAngle) {
-            tauc[i][j] = slowOrWrongDirFactor * taubmag;
-          } else {
-            // use the formula which inverts PlasticBasalType::drag()
-            tauc[i][j] = basal->taucFromMagnitudes(taubmag, speed);
-          }
-        }
-        // get phi = till friction angle
-        if (tauc[i][j] > plastic_till_c_0) {
-          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
+      if (tauc[i][j] > plastic_till_c_0) {
+        const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
+        if (N > 0.1 * ice->rho * grav * H[i][j]) {
           phi[i][j] = (180.0 / pi) * atan( (tauc[i][j] - plastic_till_c_0) / N );
         } else {
-          phi[i][j] = 0.0;
+          phi[i][j] = phiDefault;
         }
+      } else {
+        phi[i][j] = 0.0;
       }
     }
   }
-  ierr =    ub_in.end_access(); CHKERRQ(ierr);
-  ierr =    vb_in.end_access(); CHKERRQ(ierr);
-  ierr = taubx_in.end_access(); CHKERRQ(ierr);
-  ierr = tauby_in.end_access(); CHKERRQ(ierr);
-  ierr = tauc_out.end_access(); CHKERRQ(ierr);
-  ierr =  tfa_out.end_access(); CHKERRQ(ierr);
-  ierr =   vHmelt.end_access(); CHKERRQ(ierr);
-  ierr =       vH.end_access(); CHKERRQ(ierr);
-  ierr =    vMask.end_access(); CHKERRQ(ierr);
+  ierr = tauc_in.end_access(); CHKERRQ(ierr);
+  ierr = tfa_out.end_access(); CHKERRQ(ierr);
+  ierr =  vHmelt.end_access(); CHKERRQ(ierr);
+  ierr =      vH.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
+

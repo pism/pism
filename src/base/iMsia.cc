@@ -242,7 +242,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               //  PetscPrintf(PETSC_COMM_WORLD,
               //        "flowLawUsesGrainSize and realAgeForGrainSize both TRUE\n");
               //else
-              /// PetscPrintf(PETSC_COMM_WORLD,
+              //  PetscPrintf(PETSC_COMM_WORLD,
               //        "flowLawUsesGrainSize TRUE and realAgeForGrainSize FALSE;\n"
               //        "   constantGrainSize=%f\n",constantGrainSize);              
               const PetscScalar grainsize = 

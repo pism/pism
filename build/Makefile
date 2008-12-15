@@ -51,21 +51,17 @@ extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
-	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMIO.cc		\
-	iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc iMreport.cc iMssa.cc	\
-	iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc iMviewers.cc	\
-	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc		\
-	pism_const.cc iMinverse.cc LocalInterpCtx.cc
+	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMinverse.cc    \
+	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc    \
+	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc \
+	iMviewers.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc	\
+	pism_const.cc LocalInterpCtx.cc
 
 ice_csources := cubature.c pism_signal.c
 
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-#other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
-#	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
-#	iceCompModel.cc iceExactSSAModel.cc iCMthermo.cc flowTable.cc		\
-#	tryLCbd.cc
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
 	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
 	iceCompModel.cc iceExactSSAModel.cc iceCalvBCModel.cc iCMthermo.cc flowTable.cc		\
