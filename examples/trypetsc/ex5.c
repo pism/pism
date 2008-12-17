@@ -509,9 +509,3 @@ PetscErrorCode MySNESDefaultComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,
   PetscFunctionReturn(0);
 }
 
-
-
-
-
-
-

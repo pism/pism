@@ -22,41 +22,57 @@ e.g.:
 
    ./poisson -da_grid_x 20 -da_grid_y 30 -snes_rtol 1e-2
 
-   mpiexec -np 2 ./poisson -dodraw -draw_pause 5 -display :0
+   mpiexec -np 2 ./poisson -dodraw -draw_pause 2 -display :0
 
 --------------------------------------------
+
+CHANGELOG relative to ex5.c:
+
+* the nonlinear Bratu equation is replaced by a nonconstant coefficient 
+  Poisson-like problem
+  
+* options for different SNES methods ("-fd_jacobian", "-adic_jacobian", etc) removed
+ 
+* DA_XYPERIODIC used in DA creation, like in IceModel code
+
+* indices i,j reversed to be like IceModel code
+
+* optional graphical viewers for solution and coefficient functions
+
+--------------------------------------------
+
 DEMONSTRATION OF CONVERGENCE:
 
-$ for M in 20 40 80 160 320 640; do 
->   mpiexec -np 2 ./poisson -da_grid_x $M -da_grid_y $M -snes_rtol 1e-15; done
+$ for M in 20 40 80 160 320 640; do
+>  mpiexec -np 2 ./poisson -da_grid_x $M -da_grid_y $M -snes_rtol 1e-15; done
  20 x  20 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 3.970e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 1.095e-02
+                max abs(residual) = |residual|_infty = 1.332e-15
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 8.558e-03
  40 x  40 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 4.110e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 2.590e-03
+                max abs(residual) = |residual|_infty = 4.996e-16
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 2.034e-03
  80 x  80 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 5.942e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 6.304e-04
+                max abs(residual) = |residual|_infty = 4.649e-16
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 4.959e-04
 160 x 160 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 3.856e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 1.558e-04
+                max abs(residual) = |residual|_infty = 4.246e-16
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 1.224e-04
 320 x 320 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 4.125e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 3.870e-05
+                max abs(residual) = |residual|_infty = 4.315e-16
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 3.042e-05
 640 x 640 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 4.206e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 9.644e-06
+                max abs(residual) = |residual|_infty = 5.024e-16
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 7.582e-06
 
 RELATED DEMOS OF GOOD BEHAVIOR (PARAMETER CHANGES):
 $ ./poisson -da_grid_x 320 -da_grid_y 207 -snes_rtol 1.0e-15  # NONEQUAL GRID
-320 x 207 grid: number of Newton iterations = 3
-                max abs(residual) = |residual|_infty = 4.477e-16
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 9.213e-05
+207 x 320 grid: number of Newton iterations = 3
+                max abs(residual) = |residual|_infty = 5.868e-16
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 3.094e-05
 $ mpiexec -np 2 ./poisson -da_grid_x 320 -da_grid_y 320 -snes_rtol 1.0e-2 # WEAK RTOL
 320 x 320 grid: number of Newton iterations = 1
-                max abs(residual) = |residual|_infty = 4.561e-07
-                max abs(u_NUM-u_EXACT) = |u_NUM - u_EXACT|_infty = 3.935e-05
+                max abs(residual) = |residual|_infty = 1.566e-06
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 1.381e-05
 
  */
 
@@ -113,16 +129,15 @@ int main(int argc,char **argv) {
   
   ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
   
-  /* use default method of Jacobian eval (i.e. uses FormJacobianLocal because of
-     DASetLocalJacobian() below); also preconditioner is same as Jacobian;
-     compare different approaches here in ex5.c */
-  ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr); // default
+  /* use method of function and Jacobian eval which comes from a DA-based
+     local function/Jacobian; i.e. uses FormFunction[Jacobian]Local through
+     DASetLocalFunction[Jacobian](); also preconditioner is same as Jacobian;
+     compare different approaches in ex5.c */
+  ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr);
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)FormFunctionLocal);CHKERRQ(ierr);
-
   ierr = DASetLocalJacobian(user.da,(DALocalFunction1)FormJacobianLocal);CHKERRQ(ierr); 
-
-  ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -135,7 +150,8 @@ int main(int argc,char **argv) {
   PetscInt Mx,My;
   PetscReal resnorm, uerrnorm;
   Vec uerr;
-  ierr = DAGetInfo(user.da,PETSC_IGNORE,&Mx,&My,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
+  /* use transpose as in IceModel: */
+  ierr = DAGetInfo(user.da,PETSC_IGNORE,&My,&Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
             PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);CHKERRQ(ierr);
   ierr = SNESGetIterationNumber(snes,&its);CHKERRQ(ierr); 
   ierr = VecNorm(r,NORM_INFINITY,&resnorm); CHKERRQ(ierr);
@@ -205,17 +221,20 @@ PetscErrorCode fillPoissonData(AppCtx* user) {
   user->epsilon = 1.0;
   
   pi = 3.14159265358979;
-  ierr = DAGetInfo(user->da,PETSC_IGNORE,&Mx,&My,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
+  /* use transpose as in IceModel: */
+  ierr = DAGetInfo(user->da,PETSC_IGNORE,&My,&Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
             PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);CHKERRQ(ierr);
   dx     = 1.0/(PetscReal)(Mx-1);
   dy     = 1.0/(PetscReal)(My-1);
-  ierr = DAGetCorners(user->da,&xs,&ys,PETSC_NULL,&xm,&ym,PETSC_NULL);CHKERRQ(ierr);
 
   ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
   ierr = DAVecGetArray(user->da, user->g, &gg); CHKERRQ(ierr);
   ierr = DAVecGetArray(user->da, user->uexact, &uuex); CHKERRQ(ierr);
-  for (j=ys; j<ys+ym; j++) {
-    for (i=xs; i<xs+xm; i++) {
+
+  /* use transpose as in IceModel: */
+  ierr = DAGetCorners(user->da,&ys,&xs,PETSC_NULL,&ym,&xm,PETSC_NULL);CHKERRQ(ierr);
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
       xx = (PetscReal)(i) * dx;
       yy = (PetscReal)(j) * dy;
       
@@ -224,9 +243,9 @@ PetscErrorCode fillPoissonData(AppCtx* user) {
          a solution.
          Note user->uexact is only evaluated at the end, for error,
          not during numerical run. */
-      ff[j][i] = 1000.0 * xx * yy;
-      uuex[j][i] = sin(pi * xx) * sin(3.0 * pi * yy);
-      gg[j][i] = (user->epsilon * 10.0 * pi * pi + ff[j][i]) * uuex[j][i];
+      ff[i][j] = 300.0 * (xx + 2.0) * yy;
+      uuex[i][j] = sin(pi * xx) * sin(3.0 * pi * yy);
+      gg[i][j] = (user->epsilon * 10.0 * pi * pi + ff[i][j]) * uuex[i][j];
     }
   }
   ierr = DAVecRestoreArray(user->da, user->f, &ff); CHKERRQ(ierr);
@@ -241,31 +260,36 @@ PetscErrorCode fillPoissonData(AppCtx* user) {
 PetscErrorCode FormFunctionLocal(DALocalInfo *info,PetscScalar **x,PetscScalar **F,AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscInt       i,j;
+  PetscInt       i,j,Mx,My,xs,ys,xm,ym;
   PetscReal      dx,dy,sc,scxx,scyy,eps;
   PetscScalar    u,neguxx,neguyy;
   PetscScalar    **ff, **gg;
 
   PetscFunctionBegin;
 
-  dx     = 1.0/(PetscReal)(info->mx-1);
-  dy     = 1.0/(PetscReal)(info->my-1);
-  sc     = dx*dy;
-  scxx   = sc/(dx*dx);
-  scyy   = sc/(dy*dy);
+  /* use transpose as in IceModel: */
+  Mx = info->my; My = info->mx;
+  xs = info->ys; ys = info->xs;
+  xm = info->ym; ym = info->xm;
+
+  dx     = 1.0/(PetscReal)(Mx-1);
+  dy     = 1.0/(PetscReal)(My-1);
+  sc     = dx * dy;
+  scxx   = sc / (dx * dx);
+  scyy   = sc / (dy * dy);
   eps    = user->epsilon;
 
   ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
   ierr = DAVecGetArray(user->da, user->g, &gg); CHKERRQ(ierr);
-  for (j=info->ys; j<info->ys+info->ym; j++) {
-    for (i=info->xs; i<info->xs+info->xm; i++) {
-      if (i == 0 || j == 0 || i == info->mx-1 || j == info->my-1) {
-        F[j][i] = x[j][i];
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      if (i == 0 || j == 0 || i == Mx-1 || j == My-1) {
+        F[i][j] = x[i][j];
       } else {
-        u       = x[j][i];
-        neguxx  = (2.0*u - x[j][i-1] - x[j][i+1])*scxx;
-        neguyy  = (2.0*u - x[j-1][i] - x[j+1][i])*scyy;
-        F[j][i] = eps * (neguxx + neguyy) + sc * ff[j][i] * u - sc * gg[j][i];
+        u       = x[i][j];
+        neguxx  = (2.0*u - x[i-1][j] - x[i+1][j])*scxx;
+        neguyy  = (2.0*u - x[i][j-1] - x[i][j+1])*scyy;
+        F[i][j] = eps * (neguxx + neguyy) + sc * ff[i][j] * u - sc * gg[i][j];
       }
     }
   }
@@ -280,35 +304,43 @@ PetscErrorCode FormFunctionLocal(DALocalInfo *info,PetscScalar **x,PetscScalar *
 PetscErrorCode FormJacobianLocal(DALocalInfo *info,PetscScalar **x,Mat jac,AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscInt       i,j;
+  PetscInt       i,j,Mx,My,xs,ys,xm,ym;
   MatStencil     col[5],row;
   PetscScalar    v[5],dx,dy,sc,scxx,scyy,eps;
   PetscScalar    **ff;
 
   PetscFunctionBegin;
 
-  dx     = 1.0/(PetscReal)(info->mx-1);
-  dy     = 1.0/(PetscReal)(info->my-1);
-  sc     = dx*dy;
-  scxx = sc/(dx * dx);
-  scyy = sc/(dy * dy);
+  /* use transpose as in IceModel: */
+  Mx = info->my; My = info->mx;
+  xs = info->ys; ys = info->xs;
+  xm = info->ym; ym = info->xm;
+
+  dx   = 1.0/(PetscReal)(Mx-1);
+  dy   = 1.0/(PetscReal)(My-1);
+  /* these scale factors do help with debugging; i.e. -snes_type test -snes_test_display */
+  sc   = dx * dy;
+  scxx = sc / (dx * dx);
+  scyy = sc / (dy * dy);
   eps  = user->epsilon;
 
+  ierr = MatZeroEntries(jac); CHKERRQ(ierr);
+  
   ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
-  for (j=info->ys; j<info->ys+info->ym; j++) {
-    for (i=info->xs; i<info->xs+info->xm; i++) {
-      row.j = j; row.i = i;
-      /* boundary points */
-      if (i == 0 || j == 0 || i == info->mx-1 || j == info->my-1) {
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      /* when using MatStencil and MatSetStencil(), additional transpose apparently needed: */
+      row.i = j; 
+      row.j = i;
+      if (i == 0 || j == 0 || i == Mx-1 || j == My-1) { /* boundary points */
         v[0] = 1.0;
         ierr = MatSetValuesStencil(jac,1,&row,1,&row,v,INSERT_VALUES);CHKERRQ(ierr);
-      } else {
-      /* interior grid points */
-        v[0] = -scyy;                                     col[0].j = j - 1; col[0].i = i;
-        v[1] = -scxx;                                     col[1].j = j;     col[1].i = i-1;
-        v[2] = eps * 2.0 * (scxx + scyy) + sc * ff[j][i]; col[2].j = row.j; col[2].i = row.i;
-        v[3] = -scxx;                                     col[3].j = j;     col[3].i = i+1;
-        v[4] = -scyy;                                     col[4].j = j + 1; col[4].i = i;
+      } else {  /* interior grid points */
+        v[0] = -scyy;                                     col[0].j = i;   col[0].i = j-1;
+        v[1] = -scxx;                                     col[1].j = i-1; col[1].i = j;
+        v[2] = eps * 2.0 * (scxx + scyy) + sc * ff[i][j]; col[2].j = i;   col[2].i = j;
+        v[3] = -scxx;                                     col[3].j = i+1; col[3].i = j;
+        v[4] = -scyy;                                     col[4].j = i;   col[4].i = j+1;
         ierr = MatSetValuesStencil(jac,1,&row,5,col,v,INSERT_VALUES);CHKERRQ(ierr);
       }
     }

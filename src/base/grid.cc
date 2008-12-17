@@ -460,6 +460,7 @@ PetscErrorCode IceGrid::createDA() {
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
+  // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
 
