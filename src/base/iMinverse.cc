@@ -22,6 +22,18 @@
 #include "iceModelVec.hh"
 #include "iceModel.hh"
 
+/*
+example usage:
+
+[START from P1.nc in examples/pst/pst.sh]
+
+pisms -pst -P1 -if P1.nc -y 10 -f3d -o P1plus10.nc  # writes uvelsurf,vvelsurf in addition to 3D
+
+[NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1]
+
+pisms -pst -P1 -if P1plus10.nc -y 1 -surf_vel_to_tfa P1plus10.nc -write_inverse_fields foo.nc
+
+*/
 
 //! Invert given ice surface velocities to find till friction angle using a pseudo-plastic model.
 /*!
@@ -29,7 +41,7 @@ Reads user option <tt>-surf_vel_to_tfa foo.nc</tt>.  If this option is \e not fo
 this method returns without doing anything.
 
 If the option is found, then expects to find variables
-\c us and \c vs, namely x and y components of observed surface velocity,
+\c uvelsurf and \c vvelsurf, namely x and y components of observed surface velocity,
 in NetCDF file \c foo.nc.  If found, reads them.
 
 Note that these "observed" values must have full area coverage with no missing 
@@ -71,32 +83,35 @@ smoothing in this initial implementation.  This method must be called after
 initialization is essentially completed.  It uses geometry, temperature field, 
 and map of effective thickness of basal till water in the inversion.
  */
-PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone) {
+PetscErrorCode IceModel::invertSurfaceVelocities() {
   PetscErrorCode ierr;
   
-  PetscTruth svTOtfaSet, superSet;
-  char filename[PETSC_MAX_PATH_LEN], fofvname[PETSC_MAX_PATH_LEN];
+  PetscTruth svTOtfaSet,invfieldsSet;
+  char filename[PETSC_MAX_PATH_LEN], invfieldsname[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_tfa", filename, 
                                PETSC_MAX_PATH_LEN, &svTOtfaSet); CHKERRQ(ierr);
   if (svTOtfaSet == PETSC_FALSE) {
     return 0;  // leave if you are not wanted ...
   }
-  ierr = PetscOptionsHasName(PETSC_NULL, "-super", &superSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-write_inverse_fields", invfieldsname, 
+                               PETSC_MAX_PATH_LEN, &invfieldsSet); CHKERRQ(ierr);
+  // note computeYieldStressFromBasalShearUsingPseudoPlastic() reads additional
+  //   option "-inverse_reg_eps"
 
   IceModelVec2 usIn, vsIn, usSIA, vsSIA, taubxComputed, taubyComputed, fofv, taucComputed;
 
   // create inverse model state variables with metadata
-  ierr = usIn.create(grid, "us", true); CHKERRQ(ierr);
+  ierr = usIn.create(grid, "uvelsurf", true); CHKERRQ(ierr);
   ierr = usIn.set_attrs(
-     NULL, "x component of ice surface velocity","m s-1", NULL); CHKERRQ(ierr);
-  ierr = vsIn.create(grid, "vs", true); CHKERRQ(ierr);
+     NULL, "x component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+  ierr = vsIn.create(grid, "vvelsurf", true); CHKERRQ(ierr);
   ierr = vsIn.set_attrs(
-     NULL, "y component of ice surface velocity","m s-1", NULL); CHKERRQ(ierr);
-  ierr = usSIA.create(grid, "usSIA", false); CHKERRQ(ierr);  // global
+     NULL, "y component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+  ierr = usSIA.create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = usSIA.set_attrs(
      NULL, "x component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
-  ierr = vsSIA.create(grid, "vsSIA", false); CHKERRQ(ierr);  // global
+  ierr = vsSIA.create(grid, "vvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = vsSIA.set_attrs(
      NULL, "y component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
@@ -143,11 +158,12 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
     CHKERRQ(ierr);
   ierr = computeSIASurfaceVelocity(usSIA, vsSIA); CHKERRQ(ierr);
 
+#if 1
   // compute f(|v|) factor, or set to constant if -super not used
-  if (superSet == PETSC_TRUE) {
+  if (doSuperpose == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
-       "  option -super seen;  computing f(|v|) from observed surface velocities\n"
-       "    by solving transcendental equations ...\n",
+       "  flag doSuperpose (option -super) seen;  computing f(|v|) from observed\n"
+       "    surface velocities by solving transcendental equations ...\n",
        fofvname); CHKERRQ(ierr);
     ierr = computeFofVforInverse(usIn, vsIn, usSIA, vsSIA, fofv); CHKERRQ(ierr);
   } else {
@@ -183,26 +199,27 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const PetscTruth writeWhenDone)
            "  computing till friction angle phi from tau_c by Mohr-Coulomb criterion ...\n"); 
            CHKERRQ(ierr);
   ierr = computeTFAFromYieldStress(taucComputed,vtillphi); CHKERRQ(ierr);
+#endif
 
   // write out stored inverse info for user's edification; mostly for debug
-  if (writeWhenDone == PETSC_TRUE) {
-    char filename[PETSC_MAX_PATH_LEN];
-    PetscTruth o_set;
-    ierr = PetscOptionsGetString(PETSC_NULL, "-o", filename, 
-                                 PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
-    if (!o_set) {
-      ierr = PetscPrintf(grid.com,
-		"WARNING: inverse model can only write to file if -o option given;\n"
-		"  NO writing of inverse model fields; sorry ...\n");
-		CHKERRQ(ierr);
-    } else {
-      ierr =          usIn.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-      ierr =          vsIn.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-      ierr = taubxComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-      ierr = taubyComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-      ierr =          fofv.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-      ierr =  taucComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-    }
+  if (invfieldsSet == PETSC_TRUE) {
+    // FIXME: message that we are writing to file here
+    // prepare the file
+    ierr = nc.open_for_writing(invfieldsname,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
+    ierr = nc.write_history("-write_inverse_fields option read"); CHKERRQ(ierr);
+    ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
+    ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.0"); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+    // write the fields
+    ierr =          usIn.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr =          vsIn.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr =         usSIA.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr =         vsSIA.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = taubxComputed.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = taubyComputed.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr =          fofv.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr =  taucComputed.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
   }
   
   // clean up

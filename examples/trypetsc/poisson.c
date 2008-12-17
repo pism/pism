@@ -1,16 +1,17 @@
 
 static char help[] = "\nSolves Poisson-like problem.\n\n"
-"Greatly simplified modification of code src/snes/examples/tutorials/ex5.c\n"
+"Greatly simplified modification of code src/snes/examples/tutorials/ex5.c,\n"
 "in PETSc src tree, which solves Bratu nonlinear problem.\n\n"
-"Here we treat a linear problem like a generic nonlinear problem.\n\n";
+"Here we treat a linear problem like a generic nonlinear problem\n"
+"and use PETSc's SNES.\n\n";
 
 /* Solves
 
-            - epsilon Laplacian u + f(x,y) u = g(x,y),  0 < x,y < 1,
+        - epsilon Laplacian u + f(x,y) u = g(x,y),  0 < x,y < 1,
   
 with boundary conditions
    
-             u = 0  for  x = 0, x = 1, y = 0, y = 1.
+        u = 0  for  x = 0, x = 1, y = 0, y = 1.
   
 A finite difference approximation with the usual 5-point stencil is used 
 to discretize the boundary value problem to obtain a nonlinear system of

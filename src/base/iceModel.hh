@@ -59,11 +59,17 @@ struct RegPoissonTaucCtx {
   // describes Poisson-like problem solved when inverting surface velocities
   //   using a regularization
   DA          da;             // must be first in struct
+  IceGrid     *grid;
   PetscReal   epsilon;
   Vec         f;              // = f(x,y) in PDE
   Vec         g;              // = g(x,y) in PDE
 };
-
+extern PetscErrorCode RegPoissonTaucFunctionLocal(
+                DALocalInfo *info, PetscScalar **x, PetscScalar **F,
+                RegPoissonTaucCtx *user);
+extern PetscErrorCode RegPoissonTaucJacobianLocal(
+                DALocalInfo *info, PetscScalar **x, Mat jac,
+                RegPoissonTaucCtx *user);
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -84,7 +90,7 @@ public:
   virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname);
 
   // see iMinverse.cc
-  virtual PetscErrorCode invertSurfaceVelocities(const PetscTruth writeWhenDone);
+  virtual PetscErrorCode invertSurfaceVelocities();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -320,6 +326,14 @@ protected:
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in,
 	        RegPoissonTaucCtx &user);
+/*
+  virtual PetscErrorCode RegPoissonTaucFunctionLocal(
+                DALocalInfo *info, PetscScalar **x, PetscScalar **F,
+                RegPoissonTaucCtx *user);
+  virtual PetscErrorCode RegPoissonTaucJacobianLocal(
+                DALocalInfo *info, PetscScalar **x, Mat jac,
+                RegPoissonTaucCtx *user);
+*/
   virtual PetscErrorCode computeTFAFromYieldStress(
                 IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
 
@@ -327,6 +341,7 @@ protected:
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
   virtual PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
   virtual PetscErrorCode dumpToFile(const char *filename);
+  virtual PetscErrorCode write3DPlusToFile(const char filename[]);
   virtual PetscErrorCode regrid(const char *fname);
 
   // see iMmatlab.cc

@@ -234,7 +234,8 @@ We write the equation in slightly abstracted form as
 This is a \e linear equation but nonetheless we just use the general PETSc \c SNES
 nonlinear methods.  We call fillRegPoissonTaucData() to fill in the
 coefficients \f$f(x,y)\f$ and \f$g(x,y)\f$ from known values \f$\tau_{(b)}\f$ 
-and \f$\mathbf{U}\f$ and parameters <tt>pseudo_q</tt>, <tt>pseudo_u_threshold</tt> in PlasticBasalType.
+and \f$\mathbf{U}\f$ and parameters <tt>pseudo_q</tt>, <tt>pseudo_u_threshold</tt>
+in PlasticBasalType.
 
 An example code in the PISM source, examples/trypetsc/poisson.c, gives
 a standalone example of solving this kind of Poisson-like equation.  It also
@@ -282,13 +283,15 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
     ierr = verbPrintf(1, grid.com, "  CONTINUING.  May crash.\n"); CHKERRQ(ierr);
   }
 
-  // compare examples/trypetsc/poisson.c, which descends from 
-  //   $PETSC_DIR/src/snes/examples/tutorials/ex5.c, the Bratu example;
-  //   the approach here is different than that for the SSA operator because we
-  //   are solving a scalar problem; see IceGrid for creation of corresponding DA
+  RegPoissonTaucCtx  user;        // user-defined work context; see iceModel.hh
 
+  // choose regularization; see guesses in comment at top
+  user.epsilon = 1.0e8; 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-inverse_reg_eps", &user.epsilon, PETSC_NULL);
+             CHKERRQ(ierr);
 
-  RegPoissonTaucCtx  user;        /* user-defined work context; see iceModel.hh */
+  user.da = grid.da2;
+  user.grid = &grid;
 
   SNES               snes;        /* nonlinear solver */
   Vec                x,r;         /* solution, residual vectors */
@@ -297,39 +300,34 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
 
-  user.da = grid.da2;  // note NO deallocate at end
-
   ierr = DACreateGlobalVector(user.da,&x);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&r);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&user.f);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&user.g);CHKERRQ(ierr);
 
-  /* main added content re ex5: nontrivial coeffs */
+  // main added content relative to ex5: fill nontrivial coeffs
   ierr = fillRegPoissonTaucData(ub_in,vb_in,taubx_in,tauby_in,user); CHKERRQ(ierr);
   
   ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
   
-  /* use default method of Jacobian eval (i.e. uses FormJacobianLocal because of
-     DASetLocalJacobian() below); also preconditioner is same as Jacobian;
-     compare different approaches here in ex5.c */
+  // use default method of Jacobian eval (use SNESDAComputeJacobian option and
+  //   DASetLocalJacobian() below); also preconditioner is same as Jacobian;
+  //   compare different approaches here in ex5.c
   ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr); // default
 
-SETERRQ(1,"NOT IMPLEMENTED YET");
-//FIXME
-//  ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonTaucFunctionLocal);CHKERRQ(ierr);
-//  ierr = DASetLocalJacobian(user.da,(DALocalFunction1)RegPoissonTaucJacobianLocal);CHKERRQ(ierr); 
+  ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonTaucFunctionLocal);CHKERRQ(ierr);
+  ierr = DASetLocalJacobian(user.da,(DALocalFunction1)RegPoissonTaucJacobianLocal);CHKERRQ(ierr); 
 
   ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
-  ierr = VecSet(x,0.0); CHKERRQ(ierr); /* a linear problem, so initial guess is easy ... */
+  ierr = VecSet(x,0.0); CHKERRQ(ierr); // a linear problem, so initial guess is easy ...
 
-  /* choose regularization and solve! */
-  user.epsilon = 1.0e8;  // SEE GUESSES ABOVE; FIXME: obviously needs to be an option
+  // solve the linear problem as though it is nonlinear!
   ierr = SNESSolve(snes,PETSC_NULL,x);CHKERRQ(ierr);
 
-  /* some feedback appropriate, but FIXME */
+  // some feedback appropriate, but FIXME
   PetscReal resnorm;
   ierr = SNESGetIterationNumber(snes,&its);CHKERRQ(ierr); 
   ierr = VecNorm(r,NORM_INFINITY,&resnorm); CHKERRQ(ierr);
@@ -337,8 +335,7 @@ SETERRQ(1,"NOT IMPLEMENTED YET");
             "number of Newton iterations = %d;  |residual|_infty = %9.3e\n",
             its, resnorm); CHKERRQ(ierr);
 
-  // FIXME: suggest need for   PetscErrorCode  copy_from_global(Vec source)  ??
-  // method for IceModelVec; here would be "tauc_out.copy_from_global(x);"  
+  // copy solution in x into tauc_out, zeroing the yield stress where floating 
   PetscScalar **tauc, **mask, **result;
   ierr = tauc_out.get_array(tauc);  CHKERRQ(ierr);
   ierr =    vMask.get_array(mask);  CHKERRQ(ierr);
@@ -348,7 +345,7 @@ SETERRQ(1,"NOT IMPLEMENTED YET");
       if (modMask(mask[i][j]) == MASK_FLOATING) {
         tauc[i][j] = 0.0;
       } else {
-        tauc[i][j] = result[i][j]; // FIXME: beware transpose!
+        tauc[i][j] = result[i][j];
       }
     }
   }
@@ -368,50 +365,148 @@ SETERRQ(1,"NOT IMPLEMENTED YET");
 }
 
 
-//! Compute non-constant coefficients in Poisson-like problem for yield stress.
+//! Compute non-constant coefficients in Poisson-like regularized problem for yield stress in inverse modeling.
 PetscErrorCode IceModel::fillRegPoissonTaucData(
                     IceModelVec2 ub_in, IceModelVec2 vb_in,
 	            IceModelVec2 taubx_in, IceModelVec2 tauby_in,
 	            RegPoissonTaucCtx &user) {
   PetscErrorCode ierr;
 
-  PetscScalar **ub, **vb, **ff, **gg;
-  PetscReal   dx,dy;
-
+  PetscScalar **ub, **vb, **taubx, **tauby, **ff, **gg;
   const PetscReal q   = basal->pseudo_q,
                   Uth = basal->pseudo_u_threshold;
-  user.epsilon = 1.0;
 
-  // compute                  U
-  //              V = ------------------
-  //                  |U|^{1-q} |U_th|^q
-  // and f(x,y) = + |V|^2
-  // and g(x,y) = - tau_b . V            (dot product)
-  
-  dx     = 1.0/(PetscReal)(grid.Mx-1);
-  dy     = 1.0/(PetscReal)(grid.My-1);
-
+  ierr = taubx_in.get_array(taubx); CHKERRQ(ierr);
+  ierr = tauby_in.get_array(tauby); CHKERRQ(ierr);
   ierr = ub_in.get_array(ub); CHKERRQ(ierr);
   ierr = vb_in.get_array(vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(user.da, user.f, &ff); CHKERRQ(ierr);
   ierr = DAVecGetArray(user.da, user.g, &gg); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // compute                  U
+      //              V = ------------------
+      //                  |U|^{1-q} U_th^q
       const PetscScalar 
               U_x = ub[i][j],
               U_y = vb[i][j],
               denom = pow(PetscSqr(U_x)+PetscSqr(U_y),(1.0-q)/2.0) * pow(Uth,q),
               V_x = U_x / denom,
               V_y = U_y / denom;
+      // and  f(x,y) = + |V|^2  and  g(x,y) = - tau_b . V  (dot product)
       ff[i][j] = PetscSqr(V_x) + PetscSqr(V_y);
-      gg[i][j] = 0.0;  //FIXME
+      gg[i][j] = - taubx[i][j] * V_x - tauby[i][j] * V_y;
     }
   }
   ierr = DAVecRestoreArray(user.da, user.f, &ff); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(user.da, user.g, &gg); CHKERRQ(ierr);
   ierr = ub_in.end_access(); CHKERRQ(ierr);
   ierr = vb_in.end_access(); CHKERRQ(ierr);
+  ierr = taubx_in.end_access(); CHKERRQ(ierr);
+  ierr = tauby_in.end_access(); CHKERRQ(ierr);
 
   return 0; 
+}
+
+
+//! Evaluates function F(x) for SNES, corresponding to Poisson-like regularized problem for yield stress in inverse modeling.
+/*!
+This method is used in computeYieldStressFromBasalShearUsingPseudoPlastic().  It is handed to
+the SNES.
+
+Compare examples/trypetsc/poisson.c.
+ */
+PetscErrorCode RegPoissonTaucFunctionLocal(
+                  DALocalInfo *info, PetscScalar **x, PetscScalar **F,
+                  RegPoissonTaucCtx *user) {
+  PetscErrorCode ierr;
+  PetscInt       i,j;
+  PetscReal      dx,dy,sc,scxx,scyy;
+  PetscScalar    u,neguxx,neguyy;
+  PetscScalar    **ff, **gg;
+
+  PetscFunctionBegin;
+
+  // scaling constants
+  dx   = (user->grid)->dx;
+  dy   = (user->grid)->dy;
+  sc   = dx * dy;
+  scxx = sc / (dx * dx);
+  scyy = sc / (dy * dy);
+
+  ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
+  ierr = DAVecGetArray(user->da, user->g, &gg); CHKERRQ(ierr);
+  for (i=info->xs; i<info->xs+info->xm; i++) {
+    for (j=info->ys; j<info->ys+info->ym; j++) {
+      if (i == 0 || j == 0 || i == info->mx-1 || j == info->my-1) {
+        F[i][j] = x[i][j];
+      } else {
+        u       = x[i][j];
+        neguxx  = (2.0*u - x[i-1][j] - x[i+1][j]) * scxx;
+        neguyy  = (2.0*u - x[i][j-1] - x[i][j+1]) * scyy;
+        F[i][j] = user->epsilon * (neguxx + neguyy) + sc * ff[i][j] * u - sc * gg[i][j];
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(user->da, user->f, &ff); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(user->da, user->g, &gg); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0); 
+} 
+
+
+//! Evaluates Jacobian J=dF(x) for SNES, corresponding to Poisson-like regularized problem for yield stress in inverse modeling.
+/*!
+This method is used in computeYieldStressFromBasalShearUsingPseudoPlastic().  It is handed to
+the SNES.
+
+Compare examples/trypetsc/poisson.c.
+ */
+PetscErrorCode RegPoissonTaucJacobianLocal(
+                  DALocalInfo *info, PetscScalar **x, Mat jac,
+                  RegPoissonTaucCtx *user) {
+  PetscErrorCode ierr;
+  PetscInt       i,j;
+  MatStencil     col[5],row;
+  PetscScalar    v[5],dx,dy,sc,scxx,scyy,eps;
+  PetscScalar    **ff;
+
+  PetscFunctionBegin;
+
+  dx   = (user->grid)->dx;
+  dy   = (user->grid)->dy;
+  sc   = dx * dy;
+  scxx = sc/(dx * dx);
+  scyy = sc/(dy * dy);
+  eps  = user->epsilon;
+
+  ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
+  for (i=info->xs; i<info->xs+info->xm; i++) {
+    for (j=info->ys; j<info->ys+info->ym; j++) {
+      row.j = j; row.i = i;
+      /* boundary points */
+      if (i == 0 || j == 0 || i == info->mx-1 || j == info->my-1) {
+        v[0] = 1.0;
+        ierr = MatSetValuesStencil(jac,1,&row,1,&row,v,INSERT_VALUES);CHKERRQ(ierr);
+      } else {
+      /* interior grid points */
+        v[0] = -scyy;                                     col[0].j = j - 1; col[0].i = i;
+        v[1] = -scxx;                                     col[1].j = j;     col[1].i = i-1;
+        v[2] = eps * 2.0 * (scxx + scyy) + sc * ff[i][j]; col[2].j = row.j; col[2].i = row.i;
+        v[3] = -scxx;                                     col[3].j = j;     col[3].i = i+1;
+        v[4] = -scyy;                                     col[4].j = j + 1; col[4].i = i;
+        ierr = MatSetValuesStencil(jac,1,&row,5,col,v,INSERT_VALUES);CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = DAVecRestoreArray(user->da, user->f, &ff); CHKERRQ(ierr);
+
+  /* Assemble matrix, using the 2-step process */
+  ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  /* Tell the matrix we will never add a new nonzero location to the
+     matrix. If we do, it will generate an error. */
+  ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
 }
 

@@ -109,10 +109,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
 		      filename); CHKERRQ(ierr);
 
     ierr = dumpToFile(filename); CHKERRQ(ierr);
-    // Extra data:
-    ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-    ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-    ierr = w3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = write3DPlusToFile(filename); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'",
 		      filename); CHKERRQ(ierr);
@@ -275,12 +272,12 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  // compute wsurf, the surface values of vertical velocity
+  // compute wvelsurf, the surface values of vertical velocity
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = w3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);
 
-  ierr = vWork2d[0].set_name("wsurf"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_name("wvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface",
 			      "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
@@ -302,6 +299,42 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
   return 0;
 }
+
+
+PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
+  PetscErrorCode ierr;
+
+  // 3D velocity fields
+  ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = w3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // horizontal components of surface values of velocity; note wvelsurf already written
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+
+  ierr = vWork2d[0].set_name("uvelsurf"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs(
+              "diagnostic", "x component of velocity of ice at ice surface",
+	      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = vWork2d[0].set_name("vvelsurf"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs(
+              "diagnostic", "y component of velocity of ice at ice surface",
+	      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 //! When reading a saved PISM model state, warn the user if options <tt>-Mx,-My,-Mz,-Mbz</tt> have been ignored.
 PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
