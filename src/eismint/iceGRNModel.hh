@@ -39,7 +39,7 @@ protected:
 
 private:
   PetscTruth inFileSet, noEllesmereIcelandDelete,
-             haveSurfaceTemps;
+             haveSurfaceTemp, haveGeothermalFlux;
   PetscErrorCode updateTs();
   PetscErrorCode calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val);
   virtual PetscScalar getSummerWarming(

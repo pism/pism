@@ -326,14 +326,11 @@ protected:
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in,
 	        RegPoissonTaucCtx &user);
-/*
-  virtual PetscErrorCode RegPoissonTaucFunctionLocal(
-                DALocalInfo *info, PetscScalar **x, PetscScalar **F,
-                RegPoissonTaucCtx *user);
-  virtual PetscErrorCode RegPoissonTaucJacobianLocal(
-                DALocalInfo *info, PetscScalar **x, Mat jac,
-                RegPoissonTaucCtx *user);
-*/
+  virtual PetscErrorCode writeInvFields(const char *filename,
+                IceModelVec2 us, IceModelVec2 vs,
+                IceModelVec2 usSIA, IceModelVec2 vsSIA,
+                IceModelVec2 taubxComputed, IceModelVec2 taubyComputed,
+                IceModelVec2 fofv, IceModelVec2 taucComputed);
   virtual PetscErrorCode computeTFAFromYieldStress(
                 IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
 

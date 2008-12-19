@@ -74,7 +74,9 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
-  ierr = PetscOptionsHasName(PETSC_NULL, "-have_artm", &haveSurfaceTemps);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-have_artm", &haveSurfaceTemp);
+     CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-have_bheatflx", &haveGeothermalFlux);
      CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_EI_delete", &noEllesmereIcelandDelete);
      CHKERRQ(ierr);
@@ -131,19 +133,23 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
          CHKERRQ(ierr);
     }
   } else if (bootFileSet == PETSC_TRUE) {
-    // though default bootstrapping has set the new temperatures, we need to set 
+    // though default bootstrapping has set the new temperatures, we usually need to set 
     // the surface temp and geothermal flux at base and then set 3D temps again
-    ierr = verbPrintf(2, grid.com,
+    if (haveGeothermalFlux == PETSC_FALSE) {
+      ierr = verbPrintf(2, grid.com,
          "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
          EISMINT_G_geothermal); CHKERRQ(ierr);
-    ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
-    if (haveSurfaceTemps == PETSC_FALSE) {
+      ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
+    }
+    if (haveSurfaceTemp == PETSC_FALSE) {
       ierr = verbPrintf(2, grid.com, 
          "computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
          CHKERRQ(ierr);
       ierr = updateTs(); CHKERRQ(ierr);
+    }
+    if ((haveGeothermalFlux == PETSC_FALSE) || (haveSurfaceTemp == PETSC_FALSE)) {
       ierr = verbPrintf(2, grid.com, 
-         "filling in temperatures at depth using quartic guess\n");
+         "filling in temperatures AGAIN at depth using quartic guess (for EISMINT-Greenland)\n");
          CHKERRQ(ierr);
       ierr = putTempAtDepth(); CHKERRQ(ierr);
     }
@@ -175,7 +181,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
   // for all experiments, at each time step we need to recompute
   // surface temperatures from surface elevation and latitude, unless the 
   // user supplies an additional map of mean annual surface temps
-  if (haveSurfaceTemps == PETSC_FALSE) {
+  if (haveSurfaceTemp == PETSC_FALSE) {
     ierr = updateTs(); CHKERRQ(ierr);
   }
 

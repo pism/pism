@@ -420,12 +420,17 @@ PetscErrorCode RegPoissonTaucFunctionLocal(
                   DALocalInfo *info, PetscScalar **x, PetscScalar **F,
                   RegPoissonTaucCtx *user) {
   PetscErrorCode ierr;
-  PetscInt       i,j;
+  PetscInt       i,j,Mx,My,xs,ys,xm,ym;
   PetscReal      dx,dy,sc,scxx,scyy;
   PetscScalar    u,neguxx,neguyy;
   PetscScalar    **ff, **gg;
 
   PetscFunctionBegin;
+
+  // use transpose as in IceModel
+  Mx = info->my; My = info->mx;
+  xs = info->ys; ys = info->xs;
+  xm = info->ym; ym = info->xm;
 
   // scaling constants
   dx   = (user->grid)->dx;
@@ -436,9 +441,9 @@ PetscErrorCode RegPoissonTaucFunctionLocal(
 
   ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
   ierr = DAVecGetArray(user->da, user->g, &gg); CHKERRQ(ierr);
-  for (i=info->xs; i<info->xs+info->xm; i++) {
-    for (j=info->ys; j<info->ys+info->ym; j++) {
-      if (i == 0 || j == 0 || i == info->mx-1 || j == info->my-1) {
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      if (i == 0 || j == 0 || i == Mx-1 || j == My-1) {
         F[i][j] = x[i][j];
       } else {
         u       = x[i][j];

@@ -241,7 +241,7 @@ public:
   virtual PetscErrorCode printInfo(const int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(const PetscScalar tauc, 
                            const PetscScalar vx, const PetscScalar vy);
-//  virtual ~PlasticBasalType() {}  why?
+  virtual ~PlasticBasalType() {} // class w virtual methods needs virtual destructor?
 
   PetscScalar plastic_regularize, pseudo_q, pseudo_u_threshold;
   PetscTruth  pseudo_plastic;

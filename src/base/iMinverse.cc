@@ -29,11 +29,33 @@ example usage:
 
 pisms -pst -P1 -if P1.nc -y 10 -f3d -o P1plus10.nc  # writes uvelsurf,vvelsurf in addition to 3D
 
-[NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1]
+[NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1:
+//STARTSCRIPT
+#!/bin/bash
 
-pisms -pst -P1 -if P1plus10.nc -y 1 -surf_vel_to_tfa P1plus10.nc -write_inverse_fields foo.nc
+INFILE=P1plus10.nc
+OUTFILE=goodP1plus10.nc
+
+cp $INFILE $OUTFILE 
+
+# convert to m s-1
+ncap -O -s "uvelsurf=uvelsurf/31556926.0" $OUTFILE $OUTFILE
+ncatted -O -a units,uvelsurf,c,c,"m s-1" $OUTFILE
+ncap -O -s "vvelsurf=vvelsurf/31556926.0" $OUTFILE $OUTFILE
+ncatted -O -a units,vvelsurf,c,c,"m s-1" $OUTFILE
+//ENDSCRIPT
+
+// THIS ONE OVERWRITES phi DERIVED FROM INVERSE:
+pisms -pst -P1 -if goodP1plus10.nc -y 1 -pseudo_plastic_q 0.25 \
+  -surf_vel_to_tfa goodP1plus10.nc -write_inverse_fields foo.nc
+
+// TRY THIS; BAD SIA VELOCITIES:
+pismr -ssa -super -plastic -if goodP1plus10.nc -y 1 -pseudo_plastic_q 0.25 \
+  -surf_vel_to_tfa goodP1plus10.nc -write_inverse_fields foo.nc -snes_type tr
 
 */
+
+
 
 //! Invert given ice surface velocities to find till friction angle using a pseudo-plastic model.
 /*!
@@ -104,17 +126,21 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
   ierr = usIn.create(grid, "uvelsurf", true); CHKERRQ(ierr);
   ierr = usIn.set_attrs(
      NULL, "x component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+  ierr = usIn.set_glaciological_units("m year-1", secpera);
   ierr = vsIn.create(grid, "vvelsurf", true); CHKERRQ(ierr);
   ierr = vsIn.set_attrs(
      NULL, "y component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+  ierr = vsIn.set_glaciological_units("m year-1", secpera);
   ierr = usSIA.create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = usSIA.set_attrs(
      NULL, "x component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = usSIA.set_glaciological_units("m year-1", secpera);
   ierr = vsSIA.create(grid, "vvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = vsSIA.set_attrs(
      NULL, "y component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vsSIA.set_glaciological_units("m year-1", secpera);
   ierr = taubxComputed.create(grid, "taubxOUT", false);  // global
   ierr = taubxComputed.set_attrs(
      NULL, "inverse-model-computed x component of basal shear stress", 
@@ -154,27 +180,33 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
 
   // compute the surface velocity which the SIA predicts
   ierr = verbPrintf(2, grid.com, 
-    "computing SIA surface velocity (for removal from observed before inverting w SSA ...\n");
+    "  computing SIA surface velocity (for removal from observed before inverting w SSA ...\n");
     CHKERRQ(ierr);
   ierr = computeSIASurfaceVelocity(usSIA, vsSIA); CHKERRQ(ierr);
 
-#if 1
+#if 0
   // compute f(|v|) factor, or set to constant if -super not used
   if (doSuperpose == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
        "  flag doSuperpose (option -super) seen;  computing f(|v|) from observed\n"
-       "    surface velocities by solving transcendental equations ...\n",
-       fofvname); CHKERRQ(ierr);
+       "    surface velocities by solving transcendental equations ...\n"); CHKERRQ(ierr);
     ierr = computeFofVforInverse(usIn, vsIn, usSIA, vsSIA, fofv); CHKERRQ(ierr);
   } else {
     // compute an f(|v|) field from current ubarSSA, vbarSSA
     ierr = verbPrintf(2, grid.com, 
-       "  option -super NOT seen;  setting f(|v|) to 0.0, so NONE of SIA velocity\n"
-       "    is removed from observed surface velocity ...\n");
+       "  flag doSuperpose (option -super) NOT seen;  setting f(|v|) to 0.0, so NONE\n"
+       "    of SIA velocity is removed from observed surface velocity ...\n");
        CHKERRQ(ierr);
     ierr = fofv.set(0.0); CHKERRQ(ierr);
   }
+#else
+    ierr = verbPrintf(2, grid.com, 
+       "  bypassing f(|v|) computation;  setting f(|v|) to 0.0 ...\n");
+       CHKERRQ(ierr);
+    ierr = fofv.set(0.0); CHKERRQ(ierr);
+#endif
 
+#if 1
   // do four steps of inverse model; result is tillphi field
   ierr = verbPrintf(2, grid.com, 
            "  removing SIA-computed (vertical shear) part of surface velocity ...\n");
@@ -188,6 +220,10 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
            CHKERRQ(ierr);
   ierr = computeBasalShearFromSSA(
            vubarSSA, vvbarSSA, taubxComputed, taubyComputed);   CHKERRQ(ierr);
+
+//DEBUG
+ierr = writeInvFields("foobar.nc",usIn,vsIn,usSIA,vsSIA,
+         taubxComputed,taubyComputed,fofv,taucComputed); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
            "  computing till yield stress tau_c using (pseudo-)plastic model ...\n"); 
@@ -203,28 +239,18 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
 
   // write out stored inverse info for user's edification; mostly for debug
   if (invfieldsSet == PETSC_TRUE) {
-    // FIXME: message that we are writing to file here
-    // prepare the file
-    ierr = nc.open_for_writing(invfieldsname,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
-    ierr = nc.write_history("-write_inverse_fields option read"); CHKERRQ(ierr);
-    ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
-    ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.0"); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
-    // write the fields
-    ierr =          usIn.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr =          vsIn.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr =         usSIA.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr =         vsSIA.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr = taubxComputed.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr = taubyComputed.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr =          fofv.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
-    ierr =  taucComputed.write(invfieldsname, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, 
+             "  writing inverse fields to file %s ...\n",invfieldsname); 
+             CHKERRQ(ierr);
+    ierr = writeInvFields(invfieldsname,usIn,vsIn,usSIA,vsSIA,
+             taubxComputed,taubyComputed,fofv,taucComputed); CHKERRQ(ierr);
   }
   
   // clean up
   ierr =          usIn.destroy(); CHKERRQ(ierr);
   ierr =          vsIn.destroy(); CHKERRQ(ierr);
+  ierr =         usSIA.destroy(); CHKERRQ(ierr);
+  ierr =         vsSIA.destroy(); CHKERRQ(ierr);
   ierr = taubxComputed.destroy(); CHKERRQ(ierr);
   ierr = taubyComputed.destroy(); CHKERRQ(ierr);
   ierr =          fofv.destroy(); CHKERRQ(ierr);
@@ -232,6 +258,41 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
   return 0;
 }
 
+
+PetscErrorCode IceModel::writeInvFields(const char *filename,
+                          IceModelVec2 usIn, IceModelVec2 vsIn,
+                          IceModelVec2 usSIA, IceModelVec2 vsSIA,
+                          IceModelVec2 taubxComputed, IceModelVec2 taubyComputed,
+                          IceModelVec2 fofv, IceModelVec2 taucComputed) {
+  PetscErrorCode ierr;
+
+  // prepare the file
+  NCTool nc(&grid);
+  ierr = nc.open_for_writing(filename,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
+  ierr = nc.write_history("PISM: -write_inverse_fields option read"); CHKERRQ(ierr);
+  ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
+  ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.0"); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // write the fields
+  ierr =          usIn.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =          vsIn.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =         usSIA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =         vsSIA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = taubxComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = taubyComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =          fofv.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr =  taucComputed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  ierr = vubarSSA.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vubarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vvbarSSA.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = vvbarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vtillphi.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! Compute the surface velocity from only the vertical plane shear predicted by the nonsliding SIA.
 /*!
@@ -380,43 +441,54 @@ PetscErrorCode IceModel::computeFofVforInverse(
   ierr = fofv_out.get_array(f);     CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // Newton's method:
-      const PetscScalar 
-         Usmus_x = us[i][j] - usSIA[i][j],
-         Usmus_y = vs[i][j] - vsSIA[i][j];
       const PetscScalar
-         us2        = PetscSqr(usSIA[i][j]) + PetscSqr(vsSIA[i][j]),
-         Usmus2     = PetscSqr(Usmus_x)     + PetscSqr(Usmus_y),
-         Usmusdotus = Usmus_x * usSIA[i][j] + Usmus_y * vsSIA[i][j],
-         UsmusdotUs = Usmus_x * us[i][j]    + Usmus_y * vs[i][j];
-      PetscScalar xold = us2 + 4.0 * UsmusdotUs;  // initial guess solves nearby eqn
-      PetscScalar xnew, G, Gprime;
-      PetscInt k;
-      for (k=0; k<20; ++k) {
-         ierr = getGforInverse(xold, Usmus2, Usmusdotus, us2, G, Gprime); CHKERRQ(ierr);
-         xnew = xold - G / Gprime;  // Newton; practicing unprotected steps here ...
-         const PetscScalar rel = PetscAbs(xnew - xold) / PetscAbs(xold);
-         if (rel < 1.0e-12)  break;
-         xold = xnew;
-      }
-      if (k >= 10) {
+         us2        = PetscSqr(usSIA[i][j]) + PetscSqr(vsSIA[i][j]);
+      if (us2 < PetscSqr(1.0/secpera)) {
+        f[i][j] = 0.0;  // treat all observed velocity as sliding
+      } else {
+        // Newton's method
+        const PetscScalar
+          Us2        = PetscSqr(us[i][j]) + PetscSqr(vs[i][j]), // DEBUG
+          Usmus_x    = us[i][j] - usSIA[i][j],
+          Usmus_y    = vs[i][j] - vsSIA[i][j],
+          Usmus2     = PetscSqr(Usmus_x)     + PetscSqr(Usmus_y),
+          Usmusdotus = Usmus_x * usSIA[i][j] + Usmus_y * vsSIA[i][j],
+          UsmusdotUs = Usmus_x * us[i][j]    + Usmus_y * vs[i][j];
+        PetscScalar xold = us2 + 4.0 * UsmusdotUs;  // initial guess solves nearby eqn
         ierr = verbPrintf(1, grid.com, 
-           "WARNING: failure of Newton to converge in IceModel::computeFofVforInverse();\n"
-           "  info: i=%d, j=%d, k=%d, Usmus2=%f, Usmusdotus=%f, us2=%f, xold=%f, xnew=%f\n",
-           i,j,k,Usmus2,Usmusdotus,us2,xold,xnew); CHKERRQ(ierr);
+           "  info: i=%d, j=%d, us2=%e, Us2=%e, UsmusdotUs=%e, xold=%e\n",
+           i,j,us2,Us2, UsmusdotUs,xold); CHKERRQ(ierr);
+        PetscScalar xnew, G, Gprime;
+        PetscInt k;
+        for (k=0; k<20; ++k) {
+          ierr = getGforInverse(xold, Usmus2, Usmusdotus, us2, G, Gprime); CHKERRQ(ierr);
+          xnew = xold - G / Gprime;  // Newton; practicing unprotected steps here ...
+          const PetscScalar rel = PetscAbs(xnew - xold) / PetscAbs(xold);
+//          if (rel < 1.0e-12)  break;
+          if (rel < 1.0e-6)  break;
+          xold = xnew;
+        }
+        if (k >= 10) {
+          ierr = verbPrintf(1, grid.com, 
+//             "WARNING: failure of Newton to converge in IceModel::computeFofVforInverse();\n"
+             "ERROR: failure of Newton to converge in IceModel::computeFofVforInverse();\n"
+             "  info: i=%d, j=%d, k=%d, Usmus2=%e, Usmusdotus=%e, us2=%e, xold=%e, xnew=%e\n",
+             i,j,k,Usmus2,Usmusdotus,us2,xold,xnew); CHKERRQ(ierr);
+          PetscEnd();
+        }
+        // at this point xnew contains  x=|v|^2
+        const PetscScalar  v0sqr  = PetscSqr(100.0 / secpera),
+                           outC   = 2.0 / pi,
+                           F      = outC * atan(xnew / v0sqr);
+        if ( (F < 0.0) || (F > 1.0) ) {
+          ierr = verbPrintf(1, grid.com, 
+             "ERROR: failure to compute reasonable f(|v|) in [0,1] in\n"
+             "  IceModel::computeFofVforInverse(); info: i=%d, j=%d, f[i][j]=%f\n",
+             i,j,1.0 - F); CHKERRQ(ierr);
+          PetscEnd();
+        }
+        f[i][j] = 1.0 - F;
       }
-      // at this point xnew contains  x=|v|^2
-      const PetscScalar  v0sqr  = PetscSqr(100.0 / secpera),
-                         outC   = 2.0 / pi,
-                         F      = outC * atan(xnew / v0sqr);
-      if ( (F < 0.0) || (F > 1.0) ) {
-        ierr = verbPrintf(1, grid.com, 
-           "ERROR: failure to compute reasonable f(|v|) in [0,1] in\n"
-           "  IceModel::computeFofVforInverse(); info: i=%d, j=%d, f[i][j]=%f\n",
-           i,j,1.0 - F); CHKERRQ(ierr);
-        PetscEnd();
-      }
-      f[i][j] = 1.0 - F;
     }
   }
   ierr = fofv_out.end_access(); CHKERRQ(ierr);
