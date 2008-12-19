@@ -368,13 +368,12 @@ PetscErrorCode IceModelVec::define_netcdf_variable(int ncid, nc_type nctype, int
 /*! Call this <b>after</b> making sure that the NetCDF variable is defined.
  */
 PetscErrorCode IceModelVec::write_attrs(const int ncid) {
-  bool exists, use_glaciological_units = false;
+  bool exists;
   int varid, ierr;
   NCTool nc(grid);
   nc.ncid = ncid;
 
-  // Use glaciological units if \c conversion_factor is not 1.0.
-  use_glaciological_units = PetscAbsReal(1.0 - conversion_factor) > 1e-6;
+  bool use_glaciological_units_for_write = (strcmp(pism_intent,"diagnostic") == 0);
 
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
   if (!exists)
@@ -385,8 +384,8 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid) {
     ierr = nc_put_att_text(ncid, varid,"pism_intent", strlen(pism_intent), pism_intent);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     ierr = nc_put_att_text(ncid, varid,"units",
-			   use_glaciological_units ? strlen(glaciological_units) : strlen(units),
-			   use_glaciological_units ? glaciological_units : units);
+           use_glaciological_units_for_write ? strlen(glaciological_units) : strlen(units),
+	   use_glaciological_units_for_write ? glaciological_units : units);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     ierr = nc_put_att_text(ncid, varid,"long_name", strlen(long_name), long_name);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -505,8 +504,11 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   int t, t_id, varid, max_a_len, a_len;
   void *a_mpi;
 
+  bool use_glaciological_units_for_write = (strcmp(pism_intent,"diagnostic")==0);
+
   ierr = checkAllocated(); CHKERRQ(ierr);
 
+  
   ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace = false, because
 				// we want to *append* at this point
 
@@ -528,7 +530,7 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
     ierr = define_netcdf_variable(nc.ncid, nctype, &varid); CHKERRQ(ierr);
   }
 
-  if (PetscAbsReal(1.0 - conversion_factor) > 1e-6) {
+  if (use_glaciological_units_for_write) {
     ierr = scale(conversion_factor); CHKERRQ(ierr); // change the units
   }
 
@@ -553,7 +555,7 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   }
 
   
-  if (PetscAbsReal(1.0 - conversion_factor) > 1e-6) {
+  if (use_glaciological_units_for_write) {
     ierr = scale(1.0/conversion_factor); CHKERRQ(ierr); // restore the units
   }
 
@@ -569,9 +571,9 @@ PetscErrorCode IceModelVec::report_range() {
 
   PetscErrorCode ierr;
   PetscReal min, max;
-  bool use_glaciological_units;
 
-  use_glaciological_units = PetscAbsReal(1.0 - conversion_factor) > 1e-6;
+  // for reporting range, always use glaciological_units if conversion is present at all
+  bool use_glaciological_units = PetscAbsReal(1.0 - conversion_factor) > 1e-6;
 
   ierr = range(min, max);
   min *= conversion_factor;

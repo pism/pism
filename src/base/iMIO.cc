@@ -291,7 +291,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].set_attrs("diagnostic",
              "magnitude of driving shear stress at base of ice",
 	     "Pa", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_glaciological_units("", 1.0); CHKERRQ(ierr); // reset units
+  ierr = vWork2d[2].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr);
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // write out yield stress

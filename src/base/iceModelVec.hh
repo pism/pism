@@ -88,7 +88,7 @@ protected:
   PetscTruth   has_standard_name;
 
   char        glaciological_units[PETSC_MAX_PATH_LEN]; //< for diagnostic variables: units to use when writing
-				//< to a NetCDF file.
+				//< to a NetCDF file and for standard out reports
   PetscScalar conversion_factor;
   
   IceGrid      *grid;
