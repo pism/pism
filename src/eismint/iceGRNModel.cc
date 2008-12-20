@@ -49,9 +49,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
     ierr = PetscPrintf(grid.com,
-		       "EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
-		       "Choose parameters yourself, by runtime options.\n");
-    CHKERRQ(ierr);
+       "EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
+       "Choose parameters yourself, by runtime options.\n"); CHKERRQ(ierr);
     PetscEnd();
   }
 
@@ -62,7 +61,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   doOceanKill = PETSC_TRUE;
   doSkip = PETSC_TRUE;
   skipMax = 20;
-  
+  doPDD = PETSC_TRUE;
+
   if (expernum == 1) { // no bed deformation for steady state (SSL2)
     doBedDef = PETSC_FALSE;
   } else { // use Lingle-Clark bed deformation model for CCL3 and GWL3
@@ -99,17 +99,12 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
                                PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_pdd", &nopddSet); CHKERRQ(ierr);
 
+  // set up PDD
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_pdd", &nopddSet); CHKERRQ(ierr);
   if (nopddSet == PETSC_TRUE) {
     doPDD = PETSC_FALSE;
   } else { 
-    // in this case, turn the PDD on for this derived class, so no "-pdd" option
-    //   is needed to turn it on
-    doPDD = PETSC_TRUE;
-    if (pddStuffCreated == PETSC_FALSE) {
-      ierr = initPDDFromOptions(); CHKERRQ(ierr);
-    }
     PetscTruth pddSummerWarmingSet, pddStdDevSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
               &pddSummerWarmingSet); CHKERRQ(ierr);
@@ -117,16 +112,19 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
     if (pddSummerWarmingSet == PETSC_TRUE) { 
       ierr = verbPrintf(1, grid.com, 
          "WARNING: -pdd_summer_warming option ignored.\n"
-         "  Using EISMINT-GREENLAND summer temperature formula\n");
-         CHKERRQ(ierr);
+         "  Using EISMINT-GREENLAND summer temperature formula\n"); CHKERRQ(ierr);
     }
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); 
        CHKERRQ(ierr);
     if (pddStdDevSet == PETSC_FALSE) {
-      pddStdDev = 5.0;  // EISMINT-GREENLAND default; note we allow user to override
+      pddStdDev = 5.0;  // EISMINT-GREENLAND default; user may override
+    }
+    if (pddStuffCreated == PETSC_FALSE) {
+      ierr = initPDDFromOptions(); CHKERRQ(ierr);
     }
   }
   
+  // set up surface temperature, geothermal flux, and Ellesmere/Iceland delete
   if (inFileSet == PETSC_TRUE) {
     if (bootFileSet) {
       ierr = verbPrintf(1, grid.com, "WARNING: -bif and -if given; using -if\n");
@@ -160,9 +158,7 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
       ierr = cleanExtraLand(); CHKERRQ(ierr);
     }
   } else {
-    ierr = PetscPrintf(grid.com,
-		       "ERROR: IceGRNModel needs an input file\n");
-    CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com,"ERROR: IceGRNModel needs an input file\n"); CHKERRQ(ierr);
     PetscEnd();
   }
 

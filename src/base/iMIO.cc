@@ -591,31 +591,31 @@ PetscErrorCode IceModel::regrid(const char *filename) {
       if (strchr(regridVars, possible[k])) {
        switch (possible[k]) {
          case 'b':
-           ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... \n"); CHKERRQ(ierr);
 	   ierr = vbed.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'B':
-           ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
            ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'e':
-           ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... \n"); CHKERRQ(ierr);
            ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'h':
-           ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... \n"); CHKERRQ(ierr);
 	   ierr = vh.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'H':
-           ierr = verbPrintf(2, grid.com, "\n   H: regridding 'thk' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   H: regridding 'thk' ... \n"); CHKERRQ(ierr);
 	   ierr = vH.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'L':
-           ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... \n"); CHKERRQ(ierr);
 	   ierr = vHmelt.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'T':
-           ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... "); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... \n"); CHKERRQ(ierr);
            ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
        }

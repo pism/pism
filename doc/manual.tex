@@ -1686,7 +1686,11 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \opt{dTforcing}    Use the specified NetCDF file to apply changes in surface \emph{T}emperature from a climate ``forcing'' record.  See section \ref{sect:green} for an example.
 
-\opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.  Has the effect of (roughly) doubling the size of the output model state NetCDF file.
+\opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  These are saved as \verb|uvel|, \verb|vvel|, and \verb|wvel|, respectively.  Also saves \verb|uvelsurf| and \verb|vvelsurf|, the surface values of the $x$ and $y$ components of the velocity.
+
+Has the effect of (very roughly) doubling the size of the output model state NetCDF file.
+
+Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.
 
 \opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
 
@@ -1950,15 +1954,25 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 \optrestrict{track\und Hmelt}{pisms -eisII}    Turn on the part of the conservation of energy model which accumulates (tracks) locally-stored basal melt water.
 
 
-\subsubsect{EISMINT-Greenland}
+\subsubsect{EISMINT-Greenland}  
 
-\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-GREENLAND climate control experiment. See section \ref{sect:green}
+\noindent \emph{See section \ref{sect:green} to understand these options.  ``Specification'' refers to the EISMINT-Greenland specification in \cite{RitzEISMINT}.}
 
-\optrestrict{gwl3}{pgrn}    Run EISMINT-GREENLAND greenhouse warming. See section \ref{sect:green}.
+\optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-Greenland climate control experiment.
 
-\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2. See section \ref{sect:green}.
+\optrestrict{gwl3}{pgrn}    Run EISMINT-Greenland greenhouse warming scenario.
 
-\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.  See section \ref{sect:green}.
+\optrestrict{have\und artm}{pgrn}  Use a surface temperature map in the input file, instead of elevation-latitude formula in specification.
+
+\optrestrict{have\und bheatflx}{pgrn}  Use a geothermal flux map in the input file, instead of the constant value in the specification (namely $50\,\text{mW}\,\text{m}^{-2}$).
+
+\optrestrict{no\und EI\und delete}{pgrn}  Do not remove Ellesmere Island and Iceland from computational domain.  I.e.~leave the mask alone and allow ice to spread onto these pieces of land; very unlikely for Iceland!
+
+\optrestrict{no\und pdd}{pgrn}  Do not use a PDD (positive degree-day) model, despite EISMINT-Greenland specification.
+
+\optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2.
+
+\optrestrict{ssl3}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 3.  Use with option \verb|-gk|: ``\verb|pgrn -ssl3 -gk|.
 
 
 \subsubsect{EISMINT-Ross}

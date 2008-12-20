@@ -125,18 +125,25 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
 }
 
 //! Result: min <- min(v[j]), max <- max(v[j]).
-/*! Note that VecMin and VecMax are collective on Vec.
+/*! 
+PETSc manual says "VecMin and VecMax are collective on Vec" but GlobalMax,GlobalMin
+\e are needed to get correct values.  This is probably a PETSc bug.
  */
 PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
-  PetscReal my_min, my_max;
+  PetscReal my_min, my_max, gmin, gmax;
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
+  // needs a reduce operation; use PetscGlobalMax;
+  // the need for PetscGlobalMax must be a bug,
+  // but it *is* needed and it *does* make a difference!
   ierr = VecMin(v, PETSC_NULL, &my_min); CHKERRQ(ierr);
+  ierr = PetscGlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &my_max); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
 
-  min = my_min; max = my_max;
-
+  min = gmin;
+  max = gmax;
   return 0;
 }
 

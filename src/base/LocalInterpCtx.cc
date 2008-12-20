@@ -55,13 +55,14 @@ LocalInterpCtx::LocalInterpCtx(const grid_info g,
                Lz = grid.Lz,
                Lbz = grid.Lbz,
                dx = grid.dx,
-               dy = grid.dy;
+               dy = grid.dy,
+               slop = 1.000001; // allowed slop; grids must subsets within this factor
   com = grid.com;
 
   if ((zlevsIN == NULL) || (zblevsIN == NULL))
     regrid_2d_only = true;
 
-  if (g.x_min > -Lx || g.x_max < Lx) {
+  if (g.x_min*slop > -Lx || g.x_max*slop < Lx) {
     PetscPrintf(com,
 		"target computational domain not a subset of source (in NetCDF file)\n"
 		"  computational domain:\n");
@@ -71,7 +72,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info g,
 		Lx,g.x_min,g.x_max);
     PetscEnd();
   }
-  if (g.y_min > -Ly || g.y_max < Ly) {
+  if (g.y_min*slop > -Ly || g.y_max*slop < Ly) {
     PetscPrintf(com,
 		"target computational domain not a subset of source (in NetCDF file)\n"
 		"  computational domain:\n");
@@ -83,7 +84,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info g,
   }
   
   if (regrid_2d_only == false) {
-    if (g.z_max < Lz) {
+    if (g.z_max*slop < Lz) {
       verbPrintf(3,com,
 		 "  WARNING: vertical dimension of target computational domain\n"
 		 "    not a subset of source (in NetCDF file) computational domain;\n"
@@ -91,7 +92,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info g,
 		 g.z_max, Lz);
       regrid_2d_only = true;
     }
-    if (-g.zb_min < Lbz) {
+    if (-g.zb_min*slop < Lbz) {
       verbPrintf(3,com,
 		 "  LIC WARNING: vertical dimension of target BEDROCK computational domain\n"
 		 "    not a subset of source (in NetCDF file) BEDROCK computational domain;\n"
