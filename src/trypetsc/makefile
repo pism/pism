@@ -3,7 +3,7 @@
 CFLAGS           =
 CPPFLAGS         =
 MANSEC           = SNES
-EXAMPLESC	 = ex5.c poisson.c
+EXAMPLESC	 = ex5.c poisson.c bugVecMax.c
 
 include ${PETSC_DIR}/bmake/common/base
 
@@ -11,6 +11,11 @@ include ${PETSC_DIR}/bmake/common/base
 poisson: poisson.o  chkopts
 	-${CLINKER} -o poisson poisson.o ${PETSC_SNES_LIB}
 	${RM} poisson.o
+
+
+bugVecMax: bugVecMax.o  chkopts
+	-${CLINKER} -o bugVecMax bugVecMax.o ${PETSC_SNES_LIB}
+	${RM} bugVecMax.o
 
 
 ex5: ex5.o chkopts
