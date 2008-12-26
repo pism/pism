@@ -511,7 +511,11 @@ PetscErrorCode RegPoissonTaucJacobianLocal(
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   /* Tell the matrix we will never add a new nonzero location to the
      matrix. If we do, it will generate an error. */
+#if (PISM_HAVE_PETSC3)
+  ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+#else
   ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR);CHKERRQ(ierr);
+#endif
   PetscFunctionReturn(0);
 }
 

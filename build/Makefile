@@ -19,11 +19,23 @@ endif
 DISPLAY = :0.0
 
 # Get PETSc environment and rules:
-include $(PETSC_DIR)/bmake/common/base
+PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
+# PETSC3_BASE is empty string if not 3.0.0
+ifeq ($(strip $(PETSC3_BASE)),) 
+  # include file which is only present in 2.3.3 and earlier
+  PISM_HAVE_PETSC3 ?= 0
+  include ${PETSC_DIR}/bmake/common/base
+else
+  # include file which is only present in 3.0.0 and later
+  PISM_HAVE_PETSC3 ?= 1
+  include ${PETSC_DIR}/conf/base
+endif
 
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
-          -DPISM_REVISION='"$(PISM_REVISION)"' -Woverloaded-virtual -pipe
+          -DPISM_REVISION='"$(PISM_REVISION)"' \
+          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} \
+          -Woverloaded-virtual -pipe
 
 SHARED = -shared # default (for Linux)
 
@@ -221,15 +233,21 @@ showEnv:
 	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
 	@echo 'ICE_OBJS = ' ${ICE_OBJS}
 	@echo 'PISM_REVISION = ' "$(PISM_REVISION)"
+	@echo 'PISM_HAVE_PETSC3 = ' ${PISM_HAVE_PETSC3}
 
 depend: ;
 
+.PHONY: clean distclean depclean
+
+ifeq (${PISM_HAVE_PETSC3}, 1)
+# PETSc 3.0.0 apparently adds a "clean::" target
+clean:: depclean
+else
+clean: depclean
+endif
+
 depclean:
 	@rm -f $(depfiles)
-
-clean: depclean
-
-.PHONY: clean distclean depclean
 
 distclean: clean
 	@rm -f \

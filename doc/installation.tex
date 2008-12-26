@@ -205,8 +205,7 @@ These Python packages are needed to do all the examples in the \emph{User's Manu
 
 \item PISM optionally uses the \href{http://www.fftw.org/}{``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the
       West})}\index{FFTW (\emph{Fastest Fourier Transform in the West})} in one approximation of the deformation of the solid earth (bed) under
-  ice loads.\footnote{Bueler and others 2007. \emph{Fast computation of a viscoelastic deformable Earth
-model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–105}  If you want the functionality of this bed deformation model, which is coupled to the ice flow and which we
+  ice loads.\footnote{Bueler and others (2007). \emph{Fast computation of a viscoelastic deformable Earth model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–-105.}  If you want the functionality of this bed deformation model, which is coupled to the ice flow and which we
   recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt
   to build with it by setting the environment variable |PISM_HAVE_FFTW=0|.  If this library is absent, all of PISM will work
   \emph{except} for this bed deformation model.
@@ -257,11 +256,10 @@ no need to retype it each time you use MPI.
   libraries by default:\index{PETSC\und ARCH}
 \begin{verbatim}
 $  export PETSC_ARCH=linux-gnu-cxx
-$  ./config/configure.py --with-shared --with-c-support \
-   --with-clanguage=cxx --with-debugging=no
+$  ./config/configure.py --with-shared --with-dynamic --with-debugging=no
 \end{verbatim}
 
-Turning off the inclusion of the debugging symbols gives a significant speed improvement.
+Turning off the inclusion of the debugging symbols gives a significant speed improvement.  Using shared and dynamic libraries may be unwise on certain clusters, etc.; check with your system administrator.
 
 Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
 

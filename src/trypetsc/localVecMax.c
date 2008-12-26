@@ -1,22 +1,27 @@
 
 static char help[] = 
 "\nDemonstrates that on DA-created *local* Vecs, the functions\n"
-"VecMax(), VecMin(), VecNorm() do not work as expected.  Is this\n"
-"a bug?  A solution used in PISM is to add a PetscGlobalMax(), etc.\n"
-"after VecMax().\n\n"
-"(Based vaguely on PETSc src/snes/examples/tutorials/ex5.c.)\n\n";
+"VecMax(), VecMin(), VecNorm() do not work well because these\n"
+"local Vecs are actually of type VECSEQ.  A solution used in PISM\n"
+"is to add a PetscGlobalMax(), etc. after VecMax().\n\n"
+"Note that the synopsis of DACreateLocalVector() is\n"
+"'Creates a Seq PETSc vector that may be used with the DAXXX routines.'\n\n";
 
 /*
 
 compare single processor behavior:
 
-$ ./bugVecMax
+$ ./localVecMax
+global Vec has VecType = mpi
+local Vec has VecType = seq
 for global Vec:  max = 1.00, min = 0.00, infnorm = 1.00, twonorm = 6.51
 for local  Vec:  max = 1.00, min = 0.00, infnorm = 1.00, twonorm = 6.51
 
 to four processor behavior:
 
-$ mpiexec -n 4 ./bugVecMax
+$ mpiexec -n 4 ./localVecMax
+global Vec has VecType = mpi
+local Vec has VecType = seq
 for global Vec:  max = 1.00, min = 0.00, infnorm = 1.00, twonorm = 6.51
 for local  Vec:  max = 0.50, min = 0.00, infnorm = 0.50, twonorm = 1.82
 
@@ -49,6 +54,12 @@ int main(int argc,char **argv) {
 
   ierr = fillWithData(da,&xglobal,&xlocal); CHKERRQ(ierr);
 
+  // I was unable to make VecGetType() work, but direct access to Vec as a struct* works:
+  ierr = PetscPrintf(PETSC_COMM_WORLD, 
+            "global Vec has VecType = %s\nlocal Vec has VecType = %s\n",
+            ((PetscObject)xglobal)->type_name,((PetscObject)xlocal)->type_name);
+            CHKERRQ(ierr);
+  
   ierr = VecMax(xglobal,PETSC_NULL,&maxglobal); CHKERRQ(ierr);
   ierr = VecMin(xglobal,PETSC_NULL,&minglobal); CHKERRQ(ierr);
   ierr = VecMax(xlocal,PETSC_NULL,&maxlocal); CHKERRQ(ierr);

@@ -511,7 +511,11 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
   strcpy(tfilename,mprefix);
   strcat(tfilename,"_t");
   ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
+#if (PISM_HAVE_PETSC3)
+  ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_DEFAULT); CHKERRQ(ierr);
+#else
   ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+#endif
 
   return 0;
 }
@@ -711,7 +715,11 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   PetscErrorCode ierr;
   PetscViewer  view;
   ierr = PetscViewerASCIIOpen(grid.com, filename, &view); CHKERRQ(ierr);
+#if (PISM_HAVE_PETSC3)
+  ierr = PetscViewerSetFormat(view, PETSC_VIEWER_DEFAULT); CHKERRQ(ierr);
+#else
   ierr = PetscViewerSetFormat(view, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+#endif
   // just get all Vecs which might be needed
   PetscScalar     **H, **h, **bed;
   ierr = vH.get_array(H); CHKERRQ(ierr);
