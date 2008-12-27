@@ -25,16 +25,17 @@
 /*
 example usage:
 
-[START from P1.nc in examples/pst/pst.sh]
+[START from P0A.nc in examples/pst/pst.sh; e.g. at ftp://ftp.gi.alaska.edu/pub/bueler/P0A.nc ]
 
-pisms -pst -P1 -if P1.nc -y 10 -f3d -o P1plus10.nc  # writes uvelsurf,vvelsurf in addition to 3D
+pisms -pst -P1 -if P0A.nc -y 100 -f3d -pseudo_plastic_q 0.25 -o pseudoq0.25_P0A_plus100.nc
 
-[NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1:
-//STARTSCRIPT
+[NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1:]
+[following is convert script]
+-----------------------------------------------------------
 #!/bin/bash
 
-INFILE=P1plus10.nc
-OUTFILE=goodP1plus10.nc
+INFILE=pseudoq0.25_P0A_plus100.nc
+OUTFILE=inv_me.nc
 
 cp $INFILE $OUTFILE 
 
@@ -43,15 +44,20 @@ ncap -O -s "uvelsurf=uvelsurf/31556926.0" $OUTFILE $OUTFILE
 ncatted -O -a units,uvelsurf,c,c,"m s-1" $OUTFILE
 ncap -O -s "vvelsurf=vvelsurf/31556926.0" $OUTFILE $OUTFILE
 ncatted -O -a units,vvelsurf,c,c,"m s-1" $OUTFILE
-//ENDSCRIPT
+-----------------------------------------------------------
+
+[NOW DO INVERSE MODEL; FOR NOW *DON'T* REGULARIZE CALC OF YIELD STRESS:]
+
+pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 \
+   -surf_vel_to_tfa inv_me.nc -write_inverse_fields foo.nc \
+   -draw_pause 5 -no_inv_reg -o inv_result.nc
+
+
 
 // THIS ONE OVERWRITES phi DERIVED FROM INVERSE:
-pisms -pst -P1 -if goodP1plus10.nc -y 1 -pseudo_plastic_q 0.25 \
-  -surf_vel_to_tfa goodP1plus10.nc -write_inverse_fields foo.nc
+pisms -pst -P1 -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 \
+  -surf_vel_to_tfa inv_me.nc -write_inverse_fields foo.nc
 
-// TRY THIS; BAD SIA VELOCITIES:
-pismr -ssa -super -plastic -if goodP1plus10.nc -y 1 -pseudo_plastic_q 0.25 \
-  -surf_vel_to_tfa goodP1plus10.nc -write_inverse_fields foo.nc -snes_type tr
 
 */
 
@@ -184,7 +190,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
     CHKERRQ(ierr);
   ierr = computeSIASurfaceVelocity(usSIA, vsSIA); CHKERRQ(ierr);
 
-#if 0
+#if 1
   // compute f(|v|) factor, or set to constant if -super not used
   if (doSuperpose == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
@@ -221,9 +227,14 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
   ierr = computeBasalShearFromSSA(
            vubarSSA, vvbarSSA, taubxComputed, taubyComputed);   CHKERRQ(ierr);
 
+#if 0
 //DEBUG
+ierr = verbPrintf(2, grid.com, 
+     "  writing inverse fields BEFORE tauc, tillphi COMPUTATION to file foobar.nc ...\n"); 
+     CHKERRQ(ierr);
 ierr = writeInvFields("foobar.nc",usIn,vsIn,usSIA,vsSIA,
          taubxComputed,taubyComputed,fofv,taucComputed); CHKERRQ(ierr);
+#endif
 
   ierr = verbPrintf(2, grid.com, 
            "  computing till yield stress tau_c using (pseudo-)plastic model ...\n"); 
@@ -239,9 +250,12 @@ ierr = writeInvFields("foobar.nc",usIn,vsIn,usSIA,vsSIA,
 
   // write out stored inverse info for user's edification; mostly for debug
   if (invfieldsSet == PETSC_TRUE) {
+    //ierr = verbPrintf(2, grid.com, 
+    //         "  writing inverse fields to file %s ...\n",invfieldsname); 
+    //         CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, 
-             "  writing inverse fields to file %s ...\n",invfieldsname); 
-             CHKERRQ(ierr);
+             "  writing inverse fields AFTER tauc, tillphi COMPUTATION to file %s ...\n",
+             invfieldsname); CHKERRQ(ierr);
     ierr = writeInvFields(invfieldsname,usIn,vsIn,usSIA,vsSIA,
              taubxComputed,taubyComputed,fofv,taucComputed); CHKERRQ(ierr);
   }
@@ -390,17 +404,17 @@ The scalar field which gets computed is called \f$f(|\mathbf{v}|)\f$ in
 at each point in the map plane we seek \f$f(|\mathbf{v}|)\f$ in the equation
   \f[ \mathbf{U}_s = f(|\mathbf{v}|) \mathbf{u}_s
                    + \left(1 - f(|\mathbf{v}|)\right) \mathbf{v} \f]
-where \f$\mathbf{u}_s\f$ is the surface value of the nonsliding SIA.  Thus 
-\f$\mathbf{u}_s\f$ is directly computable from the temperature and geometry,
-and \f$\mathbf{v}\f$ is the depth-independent velocity which goes in the 
-SSA stress balance.  Recall
-  \f[ f(|\mathbf{v}|) 
-         = 1 - \frac{2}{\pi} \arctan\left(\frac{|\mathbf{v}|^2}{v_0^2}\right) \f]
-where \f$v_0=100\f$ m/a.
+where \f$\mathbf{u}_s\f$ is the surface value of the nonsliding SIA and 
+\f$\mathbf{v}\f$ is the depth-independent velocity which goes in the 
+SSA stress balance.  Note \f$\mathbf{u}_s\f$ is directly computable from
+the temperature and geometry.  Recall \f$ f(|\mathbf{v}|) = 1 - (2/\pi)
+\arctan\left(|\mathbf{v}|^2 v_0^{-2}\right) \f$ where \f$v_0=100\f$ m/a.  The 
+unknown in the equation above is \f$\mathbf{v}\f$.
 
-Our approach here is to find \f$x = |\mathbf{v}|^2\f$ by solving a transcendental
-equation by numerical root-finding.  Define \f$F(x) = (2/\pi) \arctan\left(x\,v_0^{-2}\right)\f$
-so \f$f(|\mathbf{v}|) = 1 - F(x)\f$ and the scalar \f$x\f$ solves the scalar equation
+Our approach is to find \f$x = |\mathbf{v}|^2\f$ by solving a transcendental
+equation by numerical root-finding.  Define 
+\f$F(x) = (2/\pi) \arctan\left(x\,v_0^{-2}\right)\f$
+so \f$f(|\mathbf{v}|) = 1 - F(x)\f$.  The scalar \f$x\f$ solves the scalar equation
   \f[ |\mathbf{U}_s - (1-F(x))\mathbf{u}_s|^2 = F(x)^2 x. \f]
 We treat this as a root-finding problem \f$G(x)=0\f$ for \f$x\f$, where, with 
 a little more rewriting,
@@ -408,8 +422,8 @@ a little more rewriting,
              - 2 F(x) (\mathbf{U}_s - \mathbf{u}_s) \cdot \mathbf{u}_s
              - |\mathbf{U}_s - \mathbf{u}_s|^2. \f]
 Note \f$F(0)=0\f$ and \f$F(x)\to 1\f$ as \f$x\to\infty\f$.  Thus \f$G(0)\le 0\f$ 
-and \f$G(x) \sim x\f$ as \f$x\to\infty\f$.  Because \f$G(x)\f$ is continuous, there is
-a nonnegative root.
+and \f$G(x) \sim x\f$ as \f$x\to\infty\f$.  Because \f$G(x)\f$ is continuous, we
+know it has a nonnegative root.
 
 We use the derivative
   \f[ G'(x) = F(x)^2 
@@ -448,24 +462,26 @@ PetscErrorCode IceModel::computeFofVforInverse(
       } else {
         // Newton's method
         const PetscScalar
-          Us2        = PetscSqr(us[i][j]) + PetscSqr(vs[i][j]), // DEBUG
+//          Us2        = PetscSqr(us[i][j]) + PetscSqr(vs[i][j]), // DEBUG
           Usmus_x    = us[i][j] - usSIA[i][j],
           Usmus_y    = vs[i][j] - vsSIA[i][j],
           Usmus2     = PetscSqr(Usmus_x)     + PetscSqr(Usmus_y),
           Usmusdotus = Usmus_x * usSIA[i][j] + Usmus_y * vsSIA[i][j],
           UsmusdotUs = Usmus_x * us[i][j]    + Usmus_y * vs[i][j];
         PetscScalar xold = us2 + 4.0 * UsmusdotUs;  // initial guess solves nearby eqn
-        ierr = verbPrintf(1, grid.com, 
-           "  info: i=%d, j=%d, us2=%e, Us2=%e, UsmusdotUs=%e, xold=%e\n",
-           i,j,us2,Us2, UsmusdotUs,xold); CHKERRQ(ierr);
+//        ierr = verbPrintf(1, grid.com, 
+//           "  info: i=%d, j=%d, us2=%e, Us2=%e, UsmusdotUs=%e, xold=%e\n",
+//           i,j,us2,Us2, UsmusdotUs,xold); CHKERRQ(ierr);
         PetscScalar xnew, G, Gprime;
         PetscInt k;
-        for (k=0; k<20; ++k) {
+//        for (k=0; k<20; ++k) {
+        for (k=0; k<4; ++k) {  // a fixed # of steps
           ierr = getGforInverse(xold, Usmus2, Usmusdotus, us2, G, Gprime); CHKERRQ(ierr);
           xnew = xold - G / Gprime;  // Newton; practicing unprotected steps here ...
-          const PetscScalar rel = PetscAbs(xnew - xold) / PetscAbs(xold);
+//          const PetscScalar rel = PetscAbs(xnew - xold) / PetscAbs(xold);
 //          if (rel < 1.0e-12)  break;
-          if (rel < 1.0e-6)  break;
+//          if (rel < 1.0e-6)  break;
+//          if (k > 12)  break;
           xold = xnew;
         }
         if (k >= 10) {
@@ -477,17 +493,23 @@ PetscErrorCode IceModel::computeFofVforInverse(
           PetscEnd();
         }
         // at this point xnew contains  x=|v|^2
-        const PetscScalar  v0sqr  = PetscSqr(100.0 / secpera),
-                           outC   = 2.0 / pi,
-                           F      = outC * atan(xnew / v0sqr);
-        if ( (F < 0.0) || (F > 1.0) ) {
-          ierr = verbPrintf(1, grid.com, 
-             "ERROR: failure to compute reasonable f(|v|) in [0,1] in\n"
-             "  IceModel::computeFofVforInverse(); info: i=%d, j=%d, f[i][j]=%f\n",
-             i,j,1.0 - F); CHKERRQ(ierr);
-          PetscEnd();
-        }
-        f[i][j] = 1.0 - F;
+        const PetscScalar  v0sqr = PetscSqr(100.0 / secpera);
+        PetscScalar        fofv  = 1.0 - (2.0 / pi) * atan(xnew / v0sqr);
+
+        // ad hoc: make SIA matter less:
+        fofv = 0.8 * fofv;
+
+        if (fofv < 0.0)    fofv = 0.0;
+        if (fofv > 1.0)    fofv = 1.0;
+        f[i][j] = fofv;
+
+//        if ( (f[i][j] < 0.0) || (f[i][j] > 1.0) ) {
+//          ierr = verbPrintf(1, grid.com, 
+//             "ERROR: failure to compute reasonable f(|v|) in [0,1] in\n"
+//             "  IceModel::computeFofVforInverse(); info: i=%d, j=%d, f[i][j]=%f\n",
+//             i,j,f[i][j]); CHKERRQ(ierr);
+//          PetscEnd();
+//        }
       }
     }
   }
@@ -607,15 +629,18 @@ PetscErrorCode IceModel::computeTFAFromYieldStress(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (tauc[i][j] > plastic_till_c_0) {
-        const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
-        if (N > 0.1 * ice->rho * grav * H[i][j]) {
-          phi[i][j] = (180.0 / pi) * atan( (tauc[i][j] - plastic_till_c_0) / N );
-        } else {
+        if ((tauc[i][j] > 1.0e8) || (Hmelt[i][j] < 0.5)) {
           phi[i][j] = phiDefault;
+        } else {
+//        } else if (N > 0.1 * ice->rho * grav * H[i][j]) {
+          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
+          phi[i][j] = (180.0 / pi) * atan( (tauc[i][j] - plastic_till_c_0) / N );
         }
       } else {
-        phi[i][j] = 0.0;
+        phi[i][j] = phiDefault;
       }
+      if (phi[i][j] < 0.0) phi[i][j] = 0.0;
+      if (phi[i][j] > phiDefault) phi[i][j] = phiDefault;
     }
   }
   ierr = tauc_in.end_access(); CHKERRQ(ierr);

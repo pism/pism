@@ -212,7 +212,7 @@ parallel.  Thus we refine the goal to the minimization of the functional
            + \tau_c \mathbf{V}\right|^2\,dx\,dy  \f]
 and we do not expect a minimum of zero.
 
-Even the minimization of \f$I[\tau_c\f$ is probably too strong of a goal because the
+Even the minimization of \f$I[\tau_c]\f$ is probably too strong of a goal because the
 input \f$\tau_{(b)}\f$ will have significant artifacts from the original observed
 surface velocity and from the application of the SSA differential operator.
 Thus we seek a smoother function \f$\tau_c\f$ which minimizes the regularized functional
@@ -282,10 +282,9 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
     ierr = basal->printInfo(1,grid.com); CHKERRQ(ierr);
     ierr = verbPrintf(1, grid.com, "  CONTINUING.  May crash.\n"); CHKERRQ(ierr);
   }
-
-  RegPoissonTaucCtx  user;        // user-defined work context; see iceModel.hh
-
+  
   // choose regularization; see guesses in comment at top
+  RegPoissonTaucCtx  user;        // user-defined work context; see iceModel.hh
   user.epsilon = 1.0e8; 
   ierr = PetscOptionsGetReal(PETSC_NULL, "-inverse_reg_eps", &user.epsilon, PETSC_NULL);
              CHKERRQ(ierr);
@@ -293,21 +292,63 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   user.da = grid.da2;
   user.grid = &grid;
 
+  ierr = DACreateGlobalVector(user.da,&user.f);CHKERRQ(ierr);
+  ierr = VecDuplicate(user.f,&user.g);CHKERRQ(ierr);
+
+  // main added content relative to ex5: fill nontrivial coeffs for reg version
+  ierr = fillRegPoissonTaucData(ub_in,vb_in,taubx_in,tauby_in,user); CHKERRQ(ierr);
+  
+  PetscViewer viewer;
+  ierr = PetscViewerDrawOpen(grid.com,PETSC_NULL,"f(x,y), coeff in Poisson-like eqn",
+           PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,
+           &viewer); CHKERRQ(ierr);
+  ierr = VecView(user.f,viewer); CHKERRQ(ierr);
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw,"g(x,y), r.h.s. in Poisson-like eqn"); CHKERRQ(ierr);
+  ierr = VecView(user.g,viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+
+  PetscTruth noInvReg;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-no_inv_reg", &noInvReg); CHKERRQ(ierr);
+  if (noInvReg == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com, 
+       "  -no_inv_reg option seen; NOT regularizing in computeTFAFromBasalShearStress()\n");
+       CHKERRQ(ierr);
+    PetscScalar **tauc, **mask, **ff, **gg;
+    ierr = tauc_out.get_array(tauc);  CHKERRQ(ierr);
+    ierr =    vMask.get_array(mask);  CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, user.f, &ff); CHKERRQ(ierr);
+    ierr = DAVecGetArray(grid.da2, user.g, &gg); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+          tauc[i][j] = 0.0;
+        } else {
+          tauc[i][j] = gg[i][j] / (ff[i][j] + 0.5e-6);
+        }
+      }
+    }
+    ierr = tauc_out.end_access(); CHKERRQ(ierr);
+    ierr =    vMask.end_access(); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, user.f, &ff); CHKERRQ(ierr);
+    ierr = DAVecRestoreArray(grid.da2, user.g, &gg); CHKERRQ(ierr);
+    // de-allocate before departure ...
+    ierr = VecDestroy(user.f);CHKERRQ(ierr);      
+    ierr = VecDestroy(user.g);CHKERRQ(ierr);      
+    return 0;
+  }
+
+  // since we are going to regularize, create appropriate SNES, Mat
   SNES               snes;        /* nonlinear solver */
   Vec                x,r;         /* solution, residual vectors */
   Mat                J;           /* Jacobian matrix */
   PetscInt           its;         /* iterations for convergence */
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
+  ierr = VecDuplicate(user.f,&x);CHKERRQ(ierr);
+  ierr = VecDuplicate(user.f,&r);CHKERRQ(ierr);
 
-  ierr = DACreateGlobalVector(user.da,&x);CHKERRQ(ierr);
-  ierr = VecDuplicate(x,&r);CHKERRQ(ierr);
-  ierr = VecDuplicate(x,&user.f);CHKERRQ(ierr);
-  ierr = VecDuplicate(x,&user.g);CHKERRQ(ierr);
-
-  // main added content relative to ex5: fill nontrivial coeffs
-  ierr = fillRegPoissonTaucData(ub_in,vb_in,taubx_in,tauby_in,user); CHKERRQ(ierr);
-  
   ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
   
   // use default method of Jacobian eval (use SNESDAComputeJacobian option and
@@ -387,15 +428,19 @@ PetscErrorCode IceModel::fillRegPoissonTaucData(
       // compute                  U
       //              V = ------------------
       //                  |U|^{1-q} U_th^q
+      // but regularized: |U|^2 --> |U|^2 + (0.01 m/a)^2
       const PetscScalar 
+              delta2 = PetscSqr(0.01/secpera),
               U_x = ub[i][j],
               U_y = vb[i][j],
-              denom = pow(PetscSqr(U_x)+PetscSqr(U_y),(1.0-q)/2.0) * pow(Uth,q),
+              denom = pow(delta2 + PetscSqr(U_x)+PetscSqr(U_y),(1.0-q)/2.0) * pow(Uth,q),
               V_x = U_x / denom,
               V_y = U_y / denom;
       // and  f(x,y) = + |V|^2  and  g(x,y) = - tau_b . V  (dot product)
       ff[i][j] = PetscSqr(V_x) + PetscSqr(V_y);
       gg[i][j] = - taubx[i][j] * V_x - tauby[i][j] * V_y;
+      // ad hoc: g(x,y) should not be negative; fix it
+      if (gg[i][j] < 0.0)  gg[i][j] = 0.0;
     }
   }
   ierr = DAVecRestoreArray(user.da, user.f, &ff); CHKERRQ(ierr);
@@ -477,6 +522,13 @@ PetscErrorCode RegPoissonTaucJacobianLocal(
   PetscScalar    **ff;
 
   PetscFunctionBegin;
+
+#if 1
+ierr = PetscPrintf(PETSC_COMM_WORLD,
+          "RegPoissonTaucJacobianLocal() is supposed to be turned off.\n");
+          CHKERRQ(ierr);
+PetscEnd();
+#endif
 
   dx   = (user->grid)->dx;
   dy   = (user->grid)->dy;
