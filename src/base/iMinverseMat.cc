@@ -255,9 +255,8 @@ Supposing we want
         \f[ \epsilon|\nabla\tau_c|^2 = (10^4\, \text{Pa})^2 = 10^8 \,\text{Pa}^2, \f]
 we conclude with a value:
 	\f[ \epsilon = 10^6\,\text{m}^2. \f]
-This seems to be comparable to the area of a grid cell, i.e. related to the steady state
-of a notional diffusion (smoothing) process for \f$\tau_c\f$.  It may be that 
-\f$\epsilon = 10^8\,\text{m}^2\f$ is a good value to start with.
+This is the area of a 1 km grid cell, so it may be fair to relate it to the steady state
+of a notional diffusion (smoothing) process for \f$\tau_c\f$.
 
 The above is the whole story if the ice is grounded and there is positive
 ice thickness.  If a point is marked \c MASK_FLOATING or \c MASK_FLOATING_OCEAN0, 
@@ -269,6 +268,7 @@ This procedure reads N??? fields from the current model state, namely ice
 thickness \c vH, the mask \c vMask, ???
  */
 PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
+                const PetscScalar invRegEps, const PetscTruth invShowFG,
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
                 IceModelVec2 &tauc_out) {               
@@ -276,8 +276,9 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   
   if (doPseudoPlasticTill == PETSC_FALSE) {
     ierr = verbPrintf(1, grid.com, 
-       "WARNING: computeTFAFromBasalShearStress() should only be called with q > 0.0\n"
-       "  in pseudo-plastic model;  here is PlasticBasalType::printInfo() output:\n");
+       "WARNING: computeYieldStressFromBasalShearUsingPseudoPlastic() should only\n"
+       "  be called with q > 0.0 in pseudo-plastic model;  here is \n"
+       "  PlasticBasalType::printInfo() output:\n");
        CHKERRQ(ierr);
     ierr = basal->printInfo(1,grid.com); CHKERRQ(ierr);
     ierr = verbPrintf(1, grid.com, "  CONTINUING.  May crash.\n"); CHKERRQ(ierr);
@@ -285,10 +286,9 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   
   // choose regularization; see guesses in comment at top
   RegPoissonTaucCtx  user;        // user-defined work context; see iceModel.hh
-  user.epsilon = 1.0e8; 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-inverse_reg_eps", &user.epsilon, PETSC_NULL);
-             CHKERRQ(ierr);
-
+  user.epsilon = invRegEps; 
+  bool noInvReg = (invRegEps == 0.0);
+  
   user.da = grid.da2;
   user.grid = &grid;
 
@@ -298,22 +298,22 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   // main added content relative to ex5: fill nontrivial coeffs for reg version
   ierr = fillRegPoissonTaucData(ub_in,vb_in,taubx_in,tauby_in,user); CHKERRQ(ierr);
   
-  PetscViewer viewer;
-  ierr = PetscViewerDrawOpen(grid.com,PETSC_NULL,"f(x,y), coeff in Poisson-like eqn",
-           PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,
-           &viewer); CHKERRQ(ierr);
-  ierr = VecView(user.f,viewer); CHKERRQ(ierr);
-  PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
-  ierr = PetscDrawSetTitle(draw,"g(x,y), r.h.s. in Poisson-like eqn"); CHKERRQ(ierr);
-  ierr = VecView(user.g,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+  if (invShowFG == PETSC_TRUE) {
+    PetscViewer viewer;
+    ierr = PetscViewerDrawOpen(grid.com,PETSC_NULL,"f(x,y), coeff in Poisson-like eqn",
+             PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,
+             &viewer); CHKERRQ(ierr);
+    ierr = VecView(user.f,viewer); CHKERRQ(ierr);
+    PetscDraw draw;
+    ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
+    ierr = PetscDrawSetTitle(draw,"g(x,y), r.h.s. in Poisson-like eqn"); CHKERRQ(ierr);
+    ierr = VecView(user.g,viewer); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+  }
 
-  PetscTruth noInvReg;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_inv_reg", &noInvReg); CHKERRQ(ierr);
-  if (noInvReg == PETSC_TRUE) {
+  if (noInvReg) {
     ierr = verbPrintf(2, grid.com, 
-       "  -no_inv_reg option seen; NOT regularizing in computeTFAFromBasalShearStress()\n");
+       "    NOT regularizing tau_c computation (epsilon = 0.0)\n");
        CHKERRQ(ierr);
     PetscScalar **tauc, **mask, **ff, **gg;
     ierr = tauc_out.get_array(tauc);  CHKERRQ(ierr);
@@ -338,6 +338,9 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
     ierr = VecDestroy(user.g);CHKERRQ(ierr);      
     return 0;
   }
+  ierr = verbPrintf(2, grid.com, 
+           "    regularizing tau_c computation using epsilon = %.3e\n",
+           user.epsilon); CHKERRQ(ierr);
 
   // since we are going to regularize, create appropriate SNES, Mat
   SNES               snes;        /* nonlinear solver */
@@ -351,15 +354,12 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
 
   ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
   
-  // use default method of Jacobian eval (use SNESDAComputeJacobian option and
-  //   DASetLocalJacobian() below); also preconditioner is same as Jacobian;
-  //   compare different approaches here in ex5.c
+  // see src/trypetsc/poisson.c for ideas here
+  ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr); // default
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonTaucFunctionLocal);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(user.da,(DALocalFunction1)RegPoissonTaucJacobianLocal);CHKERRQ(ierr); 
-
-  ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
+  ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);  // no Jacobian
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -373,7 +373,7 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   ierr = SNESGetIterationNumber(snes,&its);CHKERRQ(ierr); 
   ierr = VecNorm(r,NORM_INFINITY,&resnorm); CHKERRQ(ierr);
   ierr = PetscPrintf(grid.com,
-            "number of Newton iterations = %d;  |residual|_infty = %9.3e\n",
+            "    done ... number of Newton iterations = %d;  |residual|_infty = %9.3e\n",
             its, resnorm); CHKERRQ(ierr);
 
   // copy solution in x into tauc_out, zeroing the yield stress where floating 
@@ -503,71 +503,4 @@ PetscErrorCode RegPoissonTaucFunctionLocal(
 
   PetscFunctionReturn(0); 
 } 
-
-
-//! Evaluates Jacobian J=dF(x) for SNES, corresponding to Poisson-like regularized problem for yield stress in inverse modeling.
-/*!
-This method is used in computeYieldStressFromBasalShearUsingPseudoPlastic().  It is handed to
-the SNES.
-
-Compare examples/trypetsc/poisson.c.
- */
-PetscErrorCode RegPoissonTaucJacobianLocal(
-                  DALocalInfo *info, PetscScalar **x, Mat jac,
-                  RegPoissonTaucCtx *user) {
-  PetscErrorCode ierr;
-  PetscInt       i,j;
-  MatStencil     col[5],row;
-  PetscScalar    v[5],dx,dy,sc,scxx,scyy,eps;
-  PetscScalar    **ff;
-
-  PetscFunctionBegin;
-
-#if 1
-ierr = PetscPrintf(PETSC_COMM_WORLD,
-          "RegPoissonTaucJacobianLocal() is supposed to be turned off.\n");
-          CHKERRQ(ierr);
-PetscEnd();
-#endif
-
-  dx   = (user->grid)->dx;
-  dy   = (user->grid)->dy;
-  sc   = dx * dy;
-  scxx = sc/(dx * dx);
-  scyy = sc/(dy * dy);
-  eps  = user->epsilon;
-
-  ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
-  for (i=info->xs; i<info->xs+info->xm; i++) {
-    for (j=info->ys; j<info->ys+info->ym; j++) {
-      row.j = j; row.i = i;
-      /* boundary points */
-      if (i == 0 || j == 0 || i == info->mx-1 || j == info->my-1) {
-        v[0] = 1.0;
-        ierr = MatSetValuesStencil(jac,1,&row,1,&row,v,INSERT_VALUES);CHKERRQ(ierr);
-      } else {
-      /* interior grid points */
-        v[0] = -scyy;                                     col[0].j = j - 1; col[0].i = i;
-        v[1] = -scxx;                                     col[1].j = j;     col[1].i = i-1;
-        v[2] = eps * 2.0 * (scxx + scyy) + sc * ff[i][j]; col[2].j = row.j; col[2].i = row.i;
-        v[3] = -scxx;                                     col[3].j = j;     col[3].i = i+1;
-        v[4] = -scyy;                                     col[4].j = j + 1; col[4].i = i;
-        ierr = MatSetValuesStencil(jac,1,&row,5,col,v,INSERT_VALUES);CHKERRQ(ierr);
-      }
-    }
-  }
-  ierr = DAVecRestoreArray(user->da, user->f, &ff); CHKERRQ(ierr);
-
-  /* Assemble matrix, using the 2-step process */
-  ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  /* Tell the matrix we will never add a new nonzero location to the
-     matrix. If we do, it will generate an error. */
-#if (PISM_HAVE_PETSC3)
-  ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-#else
-  ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR);CHKERRQ(ierr);
-#endif
-  PetscFunctionReturn(0);
-}
 

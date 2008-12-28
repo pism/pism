@@ -297,22 +297,20 @@ At this point you have configured the environment which PISM needs.  You are rea
 \begin{verbatim}
 $  svn co http://svn.gna.org/svn/pism/trunk pism-dev
 \end{verbatim}
-\item A directory called ``\verb|pism-dev/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make} and \t{make install} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
+\item A directory called ``\verb|pism-dev/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make all} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
 \end{enumerate}
 
 \item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
 \begin{verbatim}
 $  cd pism-dev
-$  make
-$  make install
+$  make all
 \end{verbatim}
 
 If your operating system does not support shared libraries, then run
 \begin{verbatim}
 $  cd pism-dev
 $  export PISM_STATIC=1
-$  make
-$  make install
+$  make all
 \end{verbatim}
 \noindent instead. (This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.) You might also
 want to add
@@ -322,7 +320,7 @@ export PISM_STATIC=1
 \noindent to your |.bashrc| file if you're working with the development version of PISM (i.e. if you are likely to rebuild it
 later).
 
-\noindent  Note that the ``\verb|make install|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory. Object files created during the build process (located in the \verb|build| subdirectory) are not deleted by the \verb|install| target, so please do ``\verb|make clean|'' if space is an issue. Note ``\verb|make install|'' does not require root permission as it only writes to the local \verb|pism-dev/bin| and \verb|pism-dev/lib|.
+\noindent  Note that the ``\verb|make all|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted.   Do ``\verb|make clean|'' if space is an issue.
 
 \item PISM executables can be run most easily by adding the directories \verb|pism-dev/bin/| and \verb|pism-dev/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
 \begin{verbatim}
@@ -367,10 +365,9 @@ export PETSC_ARCH=linux-gnu-c-opt
 export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
 \end{verbatim}
 to your |.bashrc| equivalent.  (See ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, for example.)
-\item Next, enter |pism-dev| (or |pism0.1|) and build PISM by running
+\item Next, enter |pism-dev| and build PISM by running
 \begin{verbatim}
-$  make
-$  make install
+$  make all
 \end{verbatim}
 \end{enumerate}
 
@@ -473,8 +470,7 @@ $  make all test
   PISM sources, do
 \begin{verbatim}
 $  export CONFIG=config/macosx_macports
-$  make
-$  make install
+$  make all
 \end{verbatim}
   The first command includes the file |config/macosx_macports| into |build/Makefile|, modifying compiler and linker flags. See
   section \ref{subsec:config} for more info.

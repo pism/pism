@@ -40,9 +40,8 @@ CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS
 SHARED = -shared # default (for Linux)
 
 # Linker flags:
-TESTS_LIB_FLAGS := -L. -Wl,-rpath,$(PISM_PREFIX) -Wl,-rpath,$(PISM_PREFIX)/lib \
+TESTS_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
                    -ltests -lm -lgsl -lgslcblas
-
 ICE_LIB_FLAGS := -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf 
 ifeq (${PISM_HAVE_FFTW}, 1)
   ICE_LIB_FLAGS += -lfftw3
@@ -58,8 +57,10 @@ VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/
 
 # Variables:
 executables := pismr pismd pismv pisms
-extra_execs := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
-	simpleL simpleM gridL flowTable tryLCbd pant
+extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
+	simpleL simpleM gridL flowTable tryLCbd
+exec_default := $(addprefix ../bin/, $(executables))
+exec_extras := $(addprefix ../bin/, $(extras))
 
 ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
 	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
@@ -100,104 +101,83 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
 
-# Build shared libraries by default, static if PISM_STATIC=1
-ifneq ($(PISM_STATIC),1)
-  LIBPISMNAME := libpism.so
-  LIBTESTSNAME := libtests.so
-else
-  LIBPISMNAME := libpism.a
-  LIBTESTSNAME := libtests.a
-endif
-
-all: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
+all: ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default)
 	@svnversion ../src/ > ../src/revision
-ifeq ($(findstring install,$(GOALS)),)
-	@echo "All the PISM libraries and executables are in $(PWD)."
-	@echo "Please don't forget to run 'make install'."
-endif
 
-local_install: ${LIBPISMNAME} ${LIBTESTSNAME} $(executables)
-	@cp ${LIBPISMNAME} ${PISM_PREFIX}/lib/
-	@cp ${LIBTESTSNAME} ${PISM_PREFIX}/lib/
-	@echo 'PISM libraries installed in ' ${PISM_PREFIX}'/lib/'
-	@cp $(executables) ${PISM_PREFIX}/bin/
-	@rm -f ${LIBPISMNAME}
-	@rm -f ${LIBTESTSNAME}
-	@rm -f $(executables)
-	@echo 'PISM executables installed in ' ${PISM_PREFIX}'/bin/'
-	@echo 'Note: Object files created during the build process were not deleted.'
-	@echo "      Please run 'make clean' if space is an issue."
+extras : ${exec_extras}
 
-# Build shared libraries by default, static if PISM_STATIC=1.
+# build libraries; shared by default, static if PISM_STATIC=1.
+
 ifneq ($(PISM_STATIC),1)
-libpism.so : ${ICE_OBJS}
+LIBPISMNAME := ../lib/libpism.so
+LIBTESTSNAME := ../lib/libtests.so
+../lib/libpism.so : ${ICE_OBJS}
 	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
-	@cp libpism.so ../lib/
-
-libtests.so : ${TESTS_OBJS}
+../lib/libtests.so : ${TESTS_OBJS}
 	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
-	@cp libtests.so ../lib/
 else
-libpism.a : ${ICE_OBJS}
+LIBPISMNAME := ../lib/libpism.a
+LIBTESTSNAME := ../lib/libtests.a
+../lib/libpism.a : ${ICE_OBJS}
 	ar r $@ ${ICE_OBJS} 
-
-libtests.a : ${TESTS_OBJS}
+../lib/libtests.a : ${TESTS_OBJS}
 	ar r $@ ${TESTS_OBJS} 
 endif
 
-pismr : pismr.o ${LIBPISMNAME}
+#build default executables
+
+../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-pismd : pismd.o iceROSSModel.o ${LIBPISMNAME}
+../bin/pismd : pismd.o iceROSSModel.o ${LIBPISMNAME}
 	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
+../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
 	${ICE_LIB_FLAGS} -o $@
 
-#pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
-#	${CXXLINKER} iCMthermo.o iceCompModel.o \
-#	iceExactSSAModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
-pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
+../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
+ pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o \
 	iceExactSSAModel.o iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
 
-flowTable : flowTable.o materials.o
+#build extra executables
+
+../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-tryLCbd : tryLCbd.o beddefLC.o materials.o
+../bin/tryLCbd : tryLCbd.o beddefLC.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-simpleABCD : simpleABCD.o ${LIBTESTSNAME}
+../bin/simpleABCD : simpleABCD.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleE : simpleE.o ${LIBTESTSNAME}
+../bin/simpleE : simpleE.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleFG : simpleFG.o ${LIBTESTSNAME}
+../bin/simpleFG : simpleFG.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleH : simpleH.o ${LIBTESTSNAME}
+../bin/simpleH : simpleH.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleI : simpleI.o ${LIBTESTSNAME}
+../bin/simpleI : simpleI.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleJ : simpleJ.o ${LIBTESTSNAME}
+../bin/simpleJ : simpleJ.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleK : simpleK.o ${LIBTESTSNAME}
+../bin/simpleK : simpleK.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleL : simpleL.o ${LIBTESTSNAME}
+../bin/simpleL : simpleL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-gridL : gridL.o ${LIBTESTSNAME}
+../bin/gridL : gridL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-simpleM : simpleM.o ${LIBTESTSNAME}
+../bin/simpleM : simpleM.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-	@cp simpleM ../bin/
 
 # The GNU recommended procedure for automatically generating prerequisites.
 # (The obscure sed command comes straight from the GNU Make manual.)
@@ -250,11 +230,7 @@ depclean:
 	@rm -f $(depfiles)
 
 distclean: clean
-	@rm -f \
-	${LIBPISMNAME} ${LIBTESTSNAME} \
-	$(PISM_PREFIX)/lib/${LIBPISMNAME} $(PISM_PREFIX)/lib/${LIBTESTSNAME} \
-	$(executables) $(extra_execs) \
-	$(addprefix $(PISM_PREFIX)/bin/, $(executables) $(extra_execs))
+	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default) $(exec_extras)
 
 # This is to avoid recreating .d files if you all you need is 'make clean' or
 # 'make distclean':

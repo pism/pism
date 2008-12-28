@@ -137,7 +137,14 @@ int main(int argc,char **argv) {
   ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr);
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)FormFunctionLocal);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(user.da,(DALocalFunction1)FormJacobianLocal);CHKERRQ(ierr); 
+
+  PetscTruth nojac = PETSC_FALSE;
+  ierr = PetscOptionsGetTruth(PETSC_NULL,"-no_jacobian",&nojac,0); CHKERRQ(ierr);
+  if (nojac == PETSC_TRUE) {
+    ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);
+  } else {
+    ierr = DASetLocalJacobian(user.da,(DALocalFunction1)FormJacobianLocal);CHKERRQ(ierr); 
+  }
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -308,6 +315,8 @@ PetscErrorCode FormJacobianLocal(DALocalInfo *info,PetscScalar **x,Mat jac,AppCt
   MatStencil     col[5],row;
   PetscScalar    v[5],dx,dy,sc,scxx,scyy,eps;
   PetscScalar    **ff;
+
+  ierr = PetscPrintf(MPI_COMM_WORLD,"entering FormJacobianLocal() ...\n"); CHKERRQ(ierr);
 
   PetscFunctionBegin;
 

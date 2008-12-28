@@ -319,6 +319,7 @@ protected:
                 IceModelVec2 ub_in, IceModelVec2 vb_in, 
                 IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
   virtual PetscErrorCode computeYieldStressFromBasalShearUsingPseudoPlastic(
+                const PetscScalar invRegEps, const PetscTruth invShowFG,
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
                 IceModelVec2 &tauc_out);
@@ -326,13 +327,14 @@ protected:
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in,
 	        RegPoissonTaucCtx &user);
+  virtual PetscErrorCode computeTFAFromYieldStress(
+                const PetscScalar phi_low, const PetscScalar phi_high,
+                IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
   virtual PetscErrorCode writeInvFields(const char *filename,
                 IceModelVec2 us, IceModelVec2 vs,
                 IceModelVec2 usSIA, IceModelVec2 vsSIA,
                 IceModelVec2 taubxComputed, IceModelVec2 taubyComputed,
                 IceModelVec2 fofv, IceModelVec2 taucComputed);
-  virtual PetscErrorCode computeTFAFromYieldStress(
-                IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
