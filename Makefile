@@ -23,10 +23,8 @@ ifeq ($(shell touch src/revision; svnversion src/ | diff src/revision -),)
 	@echo "src/ directory is up to date."
 else
 	@echo "Rebuilding PISM..."
-	@$(MAKE) all install
+	@$(MAKE) all
 endif
-
-install: local_install
 
 depclean:
 	@rm -f $(BUILD_DIR)/*.d

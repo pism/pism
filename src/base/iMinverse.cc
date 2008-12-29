@@ -55,20 +55,20 @@ pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_t
    -inv_write_fields foo_noreg.nc -inv_reg_eps 0.0 -o inv_result_noreg.nc
 
 pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_tfa inv_me.nc \
-   -inv_write_fields foo.nc -o inv_result.nc
+    -inv_show_fg -draw_pause 5 -inv_phi_min 3.0 -inv_phi_max 20.0
 
 
 INVERSE MODEL options:
 
    -inv_phi_min 5.0    
    -inv_phi_max 15.0   
-   -inv_write_fields foo.nc
-   -inv_show_fg
+   -inv_write_fields foo.nc  write several fields associated to inverse model to foo.nc
+   -inv_show_fg              show fields f(x,y), g(x,y) in regularization PDE
+                                - \epsilon Laplacian \tau_c + f(x,y) \tau_c = g(x,y)
 
 OTHER OPTIONS:
 
-   -draw_pause 2             show fields f(x,y), g(x,y) in regularization PDE
-                               - \epsilon Laplacian \tau_c + f(x,y) \tau_c = g(x,y)
+   -draw_pause N             use with -inv_show_fg above to show viewers for N seconds
 
 */
 
@@ -107,7 +107,7 @@ modeled shear from the surface velocity,
 the SSA stress balance in which the basal sliding velocity \f$\mathbf{u}_b\f$ is used as the
 depth independent velocity,
 
-- computeYieldStressFromBasalShearUsingPseudoPlastic() to compute the yield stress \f$\tau_c\f$
+- computeYieldStressFromBasalShear() to compute the yield stress \f$\tau_c\f$
 for the given basal shear stress \f$\tau_b\f$ and basal sliding velocity \f$\mathbf{u}_b\f$,
 
 - computeTFAFromYieldStress() to compute the till friction angle \f$\phi\f$ from the 
@@ -250,7 +250,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
   ierr = verbPrintf(2, grid.com, 
            "  computing till yield stress tau_c using (pseudo-)plastic model ...\n"); 
            CHKERRQ(ierr);
-  ierr = computeYieldStressFromBasalShearUsingPseudoPlastic(invRegEps, invShowFG,
+  ierr = computeYieldStressFromBasalShear(invRegEps, invShowFG,
            vubarSSA, vvbarSSA, taubxComputed, taubyComputed, taucComputed); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 

@@ -412,7 +412,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
-  ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMutil.cc
+  ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMgeometry.cc
   ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
 
@@ -588,8 +588,6 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   Mat A = SSAStiffnessMatrix;
   Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
   IceModelVec2 vNuHOld[2] = {vWork2d[2], vWork2d[3]};
-//  IceModelVec2 vubarOld = vWork2d[4],  // FIXME: these are the old names;
-//               vvbarOld = vWork2d[5];  //        is the renamed version right?
   IceModelVec2 vubarSSAOld = vWork2d[4], 
                vvbarSSAOld = vWork2d[5];
   PetscReal   norm, normChange, epsilon;
@@ -665,8 +663,6 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
 			 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
        CHKERRQ(ierr);
 
-//       ierr = vubar.copy_from(vubarOld); CHKERRQ(ierr);
-//       ierr = vvbar.copy_from(vvbarOld); CHKERRQ(ierr);
        ierr = vubarSSA.copy_from(vubarSSAOld); CHKERRQ(ierr);
        ierr = vvbarSSA.copy_from(vvbarSSAOld); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;

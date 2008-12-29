@@ -54,6 +54,31 @@ struct PolarStereoParams {
 };
 
 
+struct SSASNESNode {
+  PetscScalar u, v;
+};
+
+class IceModel;
+
+struct SSASNESCtx {
+  DA             ssada;
+  IceGrid        *grid;
+  IceModel       *model;
+  IceModelVec2   ctxH,
+                 ctxMask,
+                 ctxtauc,
+                 ctxtaudx,
+                 ctxtaudy,
+                 ctxNuH[2];
+  Vec            ctxBV;
+  PetscScalar    schoofReg,
+                 constantHardness;
+  PetscTruth     leaveNuHAlone,
+                 useConstantHardness;
+  PetscInt       callcount;
+};
+
+
 // see iMinverseMat.cc
 struct RegPoissonTaucCtx {
   // describes Poisson-like problem solved when inverting surface velocities
@@ -64,12 +89,7 @@ struct RegPoissonTaucCtx {
   Vec         f;              // = f(x,y) in PDE
   Vec         g;              // = g(x,y) in PDE
 };
-extern PetscErrorCode RegPoissonTaucFunctionLocal(
-                DALocalInfo *info, PetscScalar **x, PetscScalar **F,
-                RegPoissonTaucCtx *user);
-extern PetscErrorCode RegPoissonTaucJacobianLocal(
-                DALocalInfo *info, PetscScalar **x, Mat jac,
-                RegPoissonTaucCtx *user);
+
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -109,6 +129,8 @@ public:
                                     const PetscTruth forceFullDiagnostics = PETSC_FALSE);
   virtual PetscErrorCode write_model_state(const char filename[]);
 
+  PlasticBasalType      *basal;
+
 protected:
    static const int MASK_SHEET;
    static const int MASK_DRAGGING;
@@ -122,7 +144,7 @@ protected:
   LocalInterpCtx     *bootstrapLIC;
 
   IceType               *ice;
-  PlasticBasalType      *basal;
+//  PlasticBasalType      *basal; // made public above
   BasalTypeSIA          *basalSIA;
   BedrockThermalType    bed_thermal;
   DeformableEarthType   bed_deformable;
@@ -318,7 +340,7 @@ protected:
   virtual PetscErrorCode computeBasalShearFromSSA(
                 IceModelVec2 ub_in, IceModelVec2 vb_in, 
                 IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
-  virtual PetscErrorCode computeYieldStressFromBasalShearUsingPseudoPlastic(
+  virtual PetscErrorCode computeYieldStressFromBasalShear(
                 const PetscScalar invRegEps, const PetscTruth invShowFG,
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
@@ -436,6 +458,12 @@ protected:
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
   virtual PetscErrorCode correctSigma();
   virtual PetscErrorCode correctBasalFrictionalHeating();
+
+  // see iMssaSNES.cc
+  virtual PetscErrorCode mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX);
+  virtual PetscErrorCode mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX);
+  virtual PetscErrorCode setbdryvalSSA(DA ssasnesda, Vec &ssasnesBV);
+  virtual PetscErrorCode velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its);
 
   // see iMtemp.cc
   virtual PetscErrorCode temperatureAgeStep();

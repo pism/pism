@@ -62,13 +62,14 @@ extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
 
-ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc		\
-	forcing.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		\
+ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc \
+	forcing.cc pism_const.cc LocalInterpCtx.cc \
+	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc \
+	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		        \
 	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMinverse.cc    \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc    \
-	iMreport.cc iMssa.cc iMsia.cc iMtemp.cc iMtests.cc iMutil.cc iMvelocity.cc \
-	iMviewers.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc iceModel.cc	\
-	pism_const.cc LocalInterpCtx.cc
+	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
+	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc
 
 ice_csources := cubature.c pism_signal.c
 

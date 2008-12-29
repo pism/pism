@@ -176,6 +176,11 @@ PetscErrorCode IceModel::computeBasalShearFromSSA(
 }
 
 
+extern PetscErrorCode RegPoissonTaucFunctionLocal(
+                DALocalInfo *info, PetscScalar **x, PetscScalar **F,
+                RegPoissonTaucCtx *user);
+
+
 //! Compute the yield stress for the given basal shear stress using a regularized objective.
 /*!
 The more complete brief description might be: "Compute till yield stress
@@ -267,7 +272,7 @@ thickness is zero then the yield stress is set to a high value of
 This procedure reads N??? fields from the current model state, namely ice 
 thickness \c vH, the mask \c vMask, ???
  */
-PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
+PetscErrorCode IceModel::computeYieldStressFromBasalShear(
                 const PetscScalar invRegEps, const PetscTruth invShowFG,
                 IceModelVec2 ub_in, IceModelVec2 vb_in,
 	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
@@ -345,18 +350,14 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   // since we are going to regularize, create appropriate SNES, Mat
   SNES               snes;        /* nonlinear solver */
   Vec                x,r;         /* solution, residual vectors */
-  Mat                J;           /* Jacobian matrix */
   PetscInt           its;         /* iterations for convergence */
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
   ierr = VecDuplicate(user.f,&x);CHKERRQ(ierr);
   ierr = VecDuplicate(user.f,&r);CHKERRQ(ierr);
-
-  ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
   
   // see src/trypetsc/poisson.c for ideas here
   ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr); // default
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonTaucFunctionLocal);CHKERRQ(ierr);
   ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);  // no Jacobian
@@ -395,7 +396,6 @@ PetscErrorCode IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic(
   ierr = DAVecRestoreArray(grid.da2, x, &result); CHKERRQ(ierr);
 
   // de-allocate SNES stuff
-  ierr = MatDestroy(J);CHKERRQ(ierr);
   ierr = VecDestroy(x);CHKERRQ(ierr);
   ierr = VecDestroy(r);CHKERRQ(ierr);      
   ierr = VecDestroy(user.f);CHKERRQ(ierr);      

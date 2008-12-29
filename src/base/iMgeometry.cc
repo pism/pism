@@ -50,6 +50,8 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 
                     invpow  = 1.0 / etapow,  // = 3/8
                     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const PetscScalar minThickEtaTransform = 5.0; // m
+  const PetscInt    Mx=grid.Mx, My=grid.My;
+  const PetscScalar dx=grid.dx, dy=grid.dy;
 
   ierr =    vh.get_array(h);    CHKERRQ(ierr);
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
@@ -67,27 +69,46 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 
         taudy[i][j] = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
+        bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
         if ( ( (intMask(mask[i][j]) == MASK_SHEET)
                 || (intMask(mask[i][j]) == MASK_DRAGGING) )
-             && (transformForSurfaceGradient == PETSC_TRUE) ) {
+             && (transformForSurfaceGradient == PETSC_TRUE)
+             && (!edge)                                     ) {
           // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (H[i][j] > 0.0) {
             const PetscScalar myH = (H[i][j] < minThickEtaTransform)
                                     ? minThickEtaTransform : H[i][j];
             const PetscScalar eta = pow(myH, etapow),
                               factor = invpow * pow(eta, dinvpow);
-            h_x = factor * (pow(H[i+1][j],etapow) - pow(H[i-1][j],etapow)) / (2*grid.dx);
-            h_y = factor * (pow(H[i][j+1],etapow) - pow(H[i][j-1],etapow)) / (2*grid.dy);
+            h_x = factor * (pow(H[i+1][j],etapow) - pow(H[i-1][j],etapow)) / (2*dx);
+            h_y = factor * (pow(H[i][j+1],etapow) - pow(H[i][j-1],etapow)) / (2*dy);
           }
           // now add bed slope to get actual h_x,h_y
           // FIXME: there is no reason to assume user's bed is periodized; see vertical
           //   velocity computation
-          h_x += (b[i+1][j] - b[i-1][j]) / (2*grid.dx);
-          h_y += (b[i][j+1] - b[i][j-1]) / (2*grid.dy);
+          h_x += (b[i+1][j] - b[i-1][j]) / (2*dx);
+          h_y += (b[i][j+1] - b[i][j-1]) / (2*dy);
         } else {  // floating or whatever
-          h_x = (h[i+1][j] - h[i-1][j]) / (2*grid.dx);
-          h_y = (h[i][j+1] - h[i][j-1]) / (2*grid.dy);
+          if ((computeSurfGradInwardSSA == PETSC_TRUE) && edge) {
+            if (i == 0) {
+              h_x = (h[i+1][j] - h[i][j]) / (dx);
+              h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+            } else if (i == Mx-1) {
+              h_x = (h[i][j] - h[i-1][j]) / (dx);
+              h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+            } else if (j == 0) {
+              h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
+              h_y = (h[i][j+1] - h[i][j]) / (dy);
+            } else if (j == My-1) {        
+              h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
+              h_y = (h[i][j] - h[i][j-1]) / (dy);
+            }
+          } else {
+            h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
+            h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
+          }
         }
+
         taudx[i][j] = - pressure * h_x;
         taudy[i][j] = - pressure * h_y;
       }
