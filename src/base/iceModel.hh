@@ -22,8 +22,7 @@
 #include <signal.h>
 #include <netcdf.h>
 #include <gsl/gsl_rng.h>
-#include <petscda.h>
-#include <petscksp.h>
+#include <petscsnes.h>
 #include "materials.hh"
 #include "pism_const.hh"
 #include "grid.hh"
@@ -69,13 +68,14 @@ struct SSASNESCtx {
                  ctxtauc,
                  ctxtaudx,
                  ctxtaudy,
-                 ctxNuH[2];
+                 ctxNu[2];
   Vec            ctxBV;
   PetscScalar    schoofReg,
                  constantHardness;
-  PetscTruth     leaveNuHAlone,
-                 useConstantHardness;
-  PetscInt       callcount;
+  PetscTruth     useConstantHardness,
+                 useConstantNu,
+                 useStoredNu,
+                 useIceModelBasal;
 };
 
 
@@ -463,6 +463,8 @@ protected:
   virtual PetscErrorCode mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX);
   virtual PetscErrorCode mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX);
   virtual PetscErrorCode setbdryvalSSA(DA ssasnesda, Vec &ssasnesBV);
+  virtual PetscErrorCode solvefeedback(SNES snes, Vec residual);
+  virtual PetscErrorCode getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user);
   virtual PetscErrorCode velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its);
 
   // see iMtemp.cc
