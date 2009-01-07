@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,6 +128,7 @@ public:
   virtual PetscErrorCode writeFiles(const char* default_filename, 
                                     const PetscTruth forceFullDiagnostics = PETSC_FALSE);
   virtual PetscErrorCode write_model_state(const char filename[]);
+  virtual PetscErrorCode write_extra_fields(const char filename[]);
 
   PlasticBasalType      *basal;
 
@@ -564,7 +565,7 @@ private:
 protected:
   // This is related to the snapshot saving feature
   char snapshots_filename[PETSC_MAX_PATH_LEN];
-  bool save_snapshots, file_is_ready;
+  bool save_snapshots, file_is_ready, split_snapshots;
 
   // equally spaced snapshots
   PetscTruth save_at_equal_intervals;

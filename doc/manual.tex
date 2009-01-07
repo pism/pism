@@ -646,6 +646,14 @@ options \verb|-y 1500 -save_at 1000:100:1400|. In this case, if the job is
 killed before completing the 1500 year run, we only lose the time needed for a
 run 100 years long, at the most.
 
+Also note that it's possible to save snapshots to separate files using the
+\verb|-split_snapshots| option. For example, the run above can be changed to
+\begin{verbatim}
+$ pismr -if foo.nc -y 10000 -o output.nc -save_to snapshots \
+        -save_at 1000,1500,2000,5000 -split_snapshots
+\end{verbatim}
+for this purpose. This will produce files called \verb|snapshots-|year\verb|.nc|.
+
 \subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
 
 Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
@@ -1710,7 +1718,12 @@ Not needed when using \verb|pismd|, for which saving the full three-dimensional 
 
 \opt{save\und to} Give the name of the NetCDF file to save model state
 snapshots to. Requires setting \verb|-save_at|. See section \ref{sec:snapshots}
-for more details.
+for more details. Note that in presence of the \verb|-split_snapshots| option
+\verb|-save_to| value is interpreted as a \emph{basename}. That is,
+\begin{verbatim}
+$ pismv -test G -y 1000 -save_to foo -save_at 0:100:1000 -o verify.nc
+\end{verbatim}
+will produce files with names such as \verb|foo-000112.nc|.
 
 \opt{save\und at} Takes two kinds of input: either a MATLAB-style range in the form
 $t_{0}:\Delta t:t_{f}$ or a comma-separated list of times in years. Saving the
@@ -1721,6 +1734,9 @@ scheme. As a result, snapshots are saved \emph{on the first time-step after the
 years. In particular, we do not guarantee producing the exact number of
 snapshots requested. Also note the comma-separated list above can be at most 20
 numbers long. See section \ref{sec:snapshots} for more details.
+
+\opt{split\und snapshots} Save model state snapshots to separate files. See the
+\verb|-save_to| option documentation above for details.
 
 \subsubsect{Diagnostic viewers}
 

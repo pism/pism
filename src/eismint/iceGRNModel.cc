@@ -270,10 +270,10 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       ellePiecewiseFunc(lon[i][j], &lat_line);
-      if (lat[i][j]>lat_line) {
+      if (lat[i][j]>lat_line) {	// Ellesmere case
           mask[i][j] = MASK_FLOATING_OCEAN0;
       } else if (lat[i][j] < ice_lat && lon[i][j] > -ice_lon) {
-        mask[i][j] = MASK_FLOATING_OCEAN0;
+        mask[i][j] = MASK_FLOATING_OCEAN0; // Iceland case
       }
     }
   }

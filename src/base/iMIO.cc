@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -155,7 +155,8 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.0"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write_model_state(filename); CHKERRQ(ierr);
+  ierr = write_model_state(filename);  CHKERRQ(ierr);
+  ierr = write_extra_fields(filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -300,6 +301,12 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   return 0;
 }
 
+// Writes extra fields to the output file \c filename. Does nothing in the base
+// class.
+PetscErrorCode IceModel::write_extra_fields(const char filename[]) {
+  // Do nothing.
+  return 0;
+}
 
 PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   PetscErrorCode ierr;
@@ -447,10 +454,6 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = vMask.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr =      vh.read(fname, g.t_len - 1); CHKERRQ(ierr);
-				// DEPRECATED: usurf:pism_intent = diagnostic;
-				// WE SHOULD NOT BE READING THIS (CHOICES ABOUT
-				// WHAT -bif DOES ARE A DIFFERENT ISSUE)
   ierr =  vHmelt.read(fname, g.t_len - 1); CHKERRQ(ierr);
   ierr =      vH.read(fname, g.t_len - 1); CHKERRQ(ierr);
   ierr =    vbed.read(fname, g.t_len - 1); CHKERRQ(ierr);
@@ -710,14 +713,24 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   if (save_to_set && save_at_set) {
     save_snapshots = true;
     file_is_ready = false;
+    split_snapshots = false;
 
-    if (!hasSuffix(snapshots_filename, ".nc")) {
+    PetscTruth split;
+    ierr = PetscOptionsHasName(PETSC_NULL, "-split_snapshots", &split); CHKERRQ(ierr);
+    if (split) {
+      split_snapshots = true;
+    } else if (!hasSuffix(snapshots_filename, ".nc")) {
       ierr = verbPrintf(2, grid.com,
 			"PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
       CHKERRQ(ierr);
     }
 
-    ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ", snapshots_filename); CHKERRQ(ierr);
+    if (split) {
+      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'+year.nc; ", snapshots_filename); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ", snapshots_filename); CHKERRQ(ierr);
+    }
+
     if (save_at_equal_intervals) {
       ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n", first_snapshot, snapshot_dt, last_snapshot); CHKERRQ(ierr);
     } else {
@@ -739,10 +752,18 @@ PetscErrorCode IceModel::write_snapshot() {
   NCTool nc(&grid);
   bool save_now = false;
   double saving_after;
+  char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_at and -save_to options
   if (!save_snapshots)
     return 0;
+
+  if (split_snapshots) {
+    file_is_ready = false;	// each snapshot is written to a separate file
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc", snapshots_filename, grid.year);
+  } else {
+    strncpy(filename, snapshots_filename, PETSC_MAX_PATH_LEN);
+  }
 
   // do we need to save *now*?
   if (save_at_equal_intervals) {
@@ -772,7 +793,7 @@ PetscErrorCode IceModel::write_snapshot() {
 
     if (!file_is_ready) {
       // Prepare the snapshots file:
-      ierr = nc.open_for_writing(snapshots_filename, true); CHKERRQ(ierr);
+      ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
       ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
       ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
       ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.0"); CHKERRQ(ierr);
@@ -780,12 +801,13 @@ PetscErrorCode IceModel::write_snapshot() {
       file_is_ready = true;
     }
     
-    ierr = nc.open_for_writing(snapshots_filename, false); CHKERRQ(ierr); // replace == false
+    ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace == false
     ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
     ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = write_model_state(snapshots_filename); CHKERRQ(ierr);
+    ierr = write_model_state(filename);  CHKERRQ(ierr);
+    ierr = write_extra_fields(filename); CHKERRQ(ierr);
   }
 
   return 0;
