@@ -571,9 +571,17 @@ iteration (the "outer" loop over \c k) has a chance to converge.
  */
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
-
+  
   IceModelVec2 vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
-  ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
+
+  PetscTruth     dosnes;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_snes", &dosnes); CHKERRQ(ierr);  
+  if (dosnes == PETSC_TRUE) {
+    ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr); 
+  } else {
+    ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -615,6 +623,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
 
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
+    ierr = updateNuViewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
     
       // in preparation of measuring change of effective viscosity:

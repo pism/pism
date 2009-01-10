@@ -575,16 +575,15 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
     ierr = initSSA(); CHKERRQ(ierr);
     if ((test == 'I') || (test == 'M')) {
       ierr = velocitySSA(&numiter); CHKERRQ(ierr);
-/* TO USE SSA-by-SNES implementation: 
-      IceModelVec2 vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
-      ierr = velocitySSA_SNES(vNuDefault,&numiter); CHKERRQ(ierr); 
-*/
     } else if (test == 'J') {
       // use locally allocated space for (computed) nu:
-      ierr = velocitySSA(vNuForJ,&numiter); CHKERRQ(ierr); 
-/* TO USE SSA-by-SNES implementation:
-      ierr = velocitySSA_SNES(vNuForJ,&numiter); CHKERRQ(ierr);
-*/
+      PetscTruth     dosnes;
+      ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_snes", &dosnes); CHKERRQ(ierr);  
+      if (dosnes == PETSC_TRUE) {
+        ierr = velocitySSA_SNES(vNuForJ, &numiter); CHKERRQ(ierr); 
+      } else {
+        ierr = velocitySSA(vNuForJ, &numiter); CHKERRQ(ierr);
+      }
       ierr = vNuForJ[0].destroy(); CHKERRQ(ierr); // immediately de-allocate
       ierr = vNuForJ[1].destroy(); CHKERRQ(ierr); // immediately de-allocate
     }

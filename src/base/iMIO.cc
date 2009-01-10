@@ -783,13 +783,15 @@ PetscErrorCode IceModel::write_snapshot() {
       strncpy(filename, snapshots_filename, PETSC_MAX_PATH_LEN);
     }
 
-    ierr = verbPrintf(2, grid.com, "Saving a model state snapshot at t = %3.5f.\n", grid.year);
+    ierr = verbPrintf(2, grid.com, 
+       "Saving a model state snapshot at %3.5f (years), the time-step after goal %3.5f.\n",
+       grid.year,saving_after);
     CHKERRQ(ierr);
 
     char tmp[TEMPORARY_STRING_LENGTH];
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
-	     " %s: saving a snapshot at %10.5f (years), following time-step at %10.5f (years).\n",
-	     executable_short_name, grid.year, saving_after);
+       " %s: saving model state snapshot at %10.5f (years), the time-step after goal %10.5f.\n",
+       executable_short_name, grid.year, saving_after);
 
     if (!file_is_ready) {
       // Prepare the snapshots file:

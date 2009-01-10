@@ -60,22 +60,22 @@ struct SSASNESNode {
 class IceModel;
 
 struct SSASNESCtx {
-  DA             ssada;
-  IceGrid        *grid;
-  IceModel       *model;
-  IceModelVec2   ctxH,
-                 ctxMask,
-                 ctxtauc,
-                 ctxtaudx,
-                 ctxtaudy,
-                 ctxNu[2];
-  Vec            ctxBV;
-  PetscScalar    schoofReg,
-                 constantHardness;
-  PetscTruth     useConstantHardness,
-                 useConstantNu,
-                 useStoredNu,
-                 useIceModelBasal;
+  DA               ssada;
+  IceGrid          *grid;
+  PlasticBasalType *basal;
+  IceModelVec2     ctxH,
+                   ctxMask,
+                   ctxtauc,
+                   ctxtaudx,
+                   ctxtaudy,
+                   ctxNu[2];
+  Vec              ctxBV;
+  PetscScalar      schoofReg,
+                   constantHardness;
+  PetscTruth       useConstantHardness,
+                   useConstantNu,
+                   useStoredNu,
+                   usePlasticBasalType;
 };
 
 
@@ -130,22 +130,20 @@ public:
   virtual PetscErrorCode write_model_state(const char filename[]);
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
-  PlasticBasalType      *basal;
-
 protected:
    static const int MASK_SHEET;
    static const int MASK_DRAGGING;
    static const int MASK_FLOATING;
    static const int MASK_FLOATING_OCEAN0;
 
-  IceGrid            &grid;
+  IceGrid               &grid;
 
-  PolarStereoParams  psParams;
+  PolarStereoParams     psParams;
   
-  LocalInterpCtx     *bootstrapLIC;
+  LocalInterpCtx        *bootstrapLIC;
 
   IceType               *ice;
-//  PlasticBasalType      *basal; // made public above
+  PlasticBasalType      *basal;
   BasalTypeSIA          *basalSIA;
   BedrockThermalType    bed_thermal;
   DeformableEarthType   bed_deformable;

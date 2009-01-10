@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -65,6 +65,11 @@ PetscErrorCode IceModel::mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX) {
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
 
+  // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
+  ierr = vubarSSA.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vubarSSA.endGhostComm(); CHKERRQ(ierr);
+  ierr = vvbarSSA.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vvbarSSA.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -94,14 +99,6 @@ PetscErrorCode IceModel::setbdryvalSSA(DA ssasnesda, Vec &ssasnesBV) {
 }
 
 
-extern PetscScalar nu_eff(PetscScalar schoofReg, PetscScalar barB, 
-                          PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y);
-extern PetscErrorCode basalstress(PetscTruth useIceModelBasal, IceModel* model,
-                                  PetscScalar u, PetscScalar v, PetscScalar tauc,
-                                  PetscScalar &taubx, PetscScalar &tauby);
-extern PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
-                                               SSASNESNode **f, SSASNESCtx *ctx);
-
 PetscErrorCode IceModel::solvefeedback(SNES snes, Vec residual) {
   PetscErrorCode      ierr;
   PetscInt            its;
@@ -120,6 +117,10 @@ PetscErrorCode IceModel::solvefeedback(SNES snes, Vec residual) {
 PetscErrorCode IceModel::getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user) {
   PetscErrorCode ierr;
   PetscScalar **H, **nuH[2], **nu[2];
+
+  // communicate to get ghosts for H
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
 
   ierr =             vH.get_array(H);      CHKERRQ(ierr);
   ierr =        vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
@@ -140,8 +141,23 @@ PetscErrorCode IceModel::getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user) {
   ierr =        vNuH[1].end_access(); CHKERRQ(ierr);
   ierr = user->ctxNu[0].end_access(); CHKERRQ(ierr);
   ierr = user->ctxNu[1].end_access(); CHKERRQ(ierr);
+
+  // communicate to get ghosts for ctxNu[2]
+  ierr = user->ctxNu[0].beginGhostComm(); CHKERRQ(ierr);
+  ierr = user->ctxNu[1].beginGhostComm(); CHKERRQ(ierr);
+  ierr = user->ctxNu[0].endGhostComm(); CHKERRQ(ierr);
+  ierr = user->ctxNu[1].endGhostComm(); CHKERRQ(ierr);  
   return 0;
 }
+
+
+extern PetscScalar nu_eff(PetscScalar schoofReg, PetscScalar barB, 
+                          PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y);
+extern PetscErrorCode basalstress(PetscTruth useIceModelBasal, PlasticBasalType *basal,
+                                  PetscScalar u, PetscScalar v, PetscScalar tauc,
+                                  PetscScalar &taubx, PetscScalar &tauby);
+extern PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
+                                               SSASNESNode **f, SSASNESCtx *ctx);
 
 
 PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
@@ -157,109 +173,135 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
   ierr = DACreate2d(grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
   	            grid.My, grid.Mx, PETSC_DECIDE, PETSC_DECIDE, 2, 1,
   	            PETSC_NULL, PETSC_NULL, &user.ssada); CHKERRQ(ierr);
-  user.grid = &grid;
-  user.model = this;
-  
+
   // space for solution and residual
   ierr = DACreateGlobalVector(user.ssada, &X); CHKERRQ(ierr);
   ierr = VecDuplicate(X, &R); CHKERRQ(ierr);
   
-  // fill fields in application context from current geometry
+  // build application context:
+  //   get needed members of IceModel
+  user.grid = &grid;
+  user.basal = basal;
+  //   fill fields in application context from current geometry
   user.ctxH = vH;
   user.ctxMask = vMask;
   user.ctxtauc = vtauc;
-
-  // get driving stress
+  //   get driving stress
   user.ctxtaudx = vWork2d[2];  // note that vNuH[2] might be {vWork2d[0],vWork2d[1]}
   user.ctxtaudy = vWork2d[3];
   ierr = computeDrivingStress(user.ctxtaudx,user.ctxtaudy); CHKERRQ(ierr);
-
-  // space for effective viscosity under iteration
+  //   space for effective viscosity under iteration
   ierr = user.ctxNu[0].create(grid, "nu[0]_SSASNES", true); CHKERRQ(ierr);
   ierr = user.ctxNu[1].create(grid, "nu[1]_SSASNES", true); CHKERRQ(ierr);
-
-  // fill in boundary values
+  //   fill in boundary values
   ierr = VecDuplicate(X, &user.ctxBV); CHKERRQ(ierr);
   ierr = setbdryvalSSA(user.ssada, user.ctxBV); CHKERRQ(ierr);
 
-  // fill in parameters and flags in app ctx
+  //   fill in parameters and flags in app ctx
   user.schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
   user.constantHardness = constantHardnessForSSA;
   user.useConstantHardness = useConstantHardnessForSSA;
+  user.useConstantNu = useConstantNuHForSSA;  
+  user.usePlasticBasalType = PETSC_TRUE;
   
-  // set up SNES and matrix-free matrix for Jacobian
-  Mat J;
+  // set up SNES function
   ierr = SNESSetFunction(snes,R,SNESDAFormFunction,&user); CHKERRQ(ierr);
-  ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);
-  ierr = MatCreateSNESMF(snes,&J); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr);
   ierr = DASetLocalFunction(user.ssada,(DALocalFunction1)SSASNESFormFunctionLocal);
             CHKERRQ(ierr);
 
-  // compute Nu from NuH if that is supposed to be the source
-  if (leaveNuHAloneSSA == PETSC_TRUE) {
-    ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
-  }
+  // last stage: ask for user options to override these settings
+  ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
-/*
+  ierr = mapUVbarSSAToSSASNESVec(user.ssada, X); CHKERRQ(ierr);
+
+#if 0
   PetscViewer viewer;
   ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INDEX); CHKERRQ(ierr);
   ierr = VecView(user.ctxBV,viewer); CHKERRQ(ierr);
-*/
+#endif
 
-  // OLD:  (REMOVE IT: FIXME) solve sequence:
-  //   (1) move ubarSSA,vbarSSA into X for first guess
-  //   (2) linearize: choose constant viscosity of ice
-  //   (3) linearize: choose  linear basal resistance
-  //   (4) solve
-  //   (5) store velocity in ubarSSA,vbarSSA
-  //   (6) compute effective viscosity usual way
-  //   (7) set basal model to regularized plastic
-  //   (8) solve again
-  //   (9) store velocity in ubarSSA,vbarSSA
-  
-  // FIXME: new sequence:
-  //   111 picard loop:
+  // possible sequence:
+  //   picard loop:
   //      compute user.ctxNu[2]
   //      set flag so solve holds user.ctxNu[2] fixed
   //      solve
-  //      check (loose!) nu convergence criterion
-  //      goto 111
-  //   Newton-Kyrlov = snes_mf:
+  //      check weak (1e-2) nu convergence criterion
+  //   Newton-Krylov:
   //      set flag so solve recomputes viscosity as needed
 
-  ierr = mapUVbarSSAToSSASNESVec(user.ssada, X); CHKERRQ(ierr);
-//  user.useConstantNu = PETSC_TRUE;  
-  user.useConstantNu = PETSC_FALSE;  
-  user.useIceModelBasal = PETSC_FALSE;
-  user.useStoredNu = PETSC_TRUE;  // FIXME:  check on this; true for Picard iteration
+#if 0
+    // linear till
+    basal->pseudo_plastic = PETSC_TRUE;
+    basal->pseudo_q = 1.0;
+    ierr = user.ctxtauc.set(5.703978e+03); CHKERRQ(ierr);
+    //ierr = user.ctxtauc.set(0.0); CHKERRQ(ierr);
+    //ierr = user.ctxtauc.scale(1.0e-3); CHKERRQ(ierr);
+#endif
+
+  // compute Nu from NuH if that is supposed to be the source
+  if (leaveNuHAloneSSA == PETSC_TRUE) {
+    ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr);
+    ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
+    user.useStoredNu = PETSC_TRUE;
+  } else {
+    // idea here is to use three steps of Picard (just to try something)
+
+#if 1
+    KSP ksp = SSAKSP;
+    Mat A = SSAStiffnessMatrix;
+    Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
+    PetscInt    kspits;
+    KSPConvergedReason  kspreason;
+    ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
+    ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
+    ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr);
+    ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
+    // call PETSc to solve linear system by iterative method
+    ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+    ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
+    ierr = KSPGetIterationNumber(ksp, &kspits); CHKERRQ(ierr);
+    ierr = KSPGetConvergedReason(ksp, &kspreason); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com, "S:%d,%d: ", kspits, kspreason); CHKERRQ(ierr);
+    // finish iteration and report to standard out
+    ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
+#endif
+
+    ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
+    ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr);
+    ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
+
+    user.useStoredNu = PETSC_TRUE;
+    ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
+    ierr = solvefeedback(snes, R); CHKERRQ(ierr);
+
+    ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
+    ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
+    ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr);
+    ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
+
+    user.useStoredNu = PETSC_TRUE;
+    ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
+    ierr = solvefeedback(snes, R); CHKERRQ(ierr);
+
+    ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
+    ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
+    ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr);
+    ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
+
+    user.useStoredNu = PETSC_TRUE;
+    ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
+    ierr = solvefeedback(snes, R); CHKERRQ(ierr);
+
+    user.useStoredNu = PETSC_FALSE;
+  }
+  
   ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
   ierr = solvefeedback(snes, R); CHKERRQ(ierr);
-  ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
 
-/*
-
-  // user.useConstantNu = PETSC_FALSE;  
-  user.useIceModelBasal = PETSC_TRUE;
-  user.useStoredNu = PETSC_FALSE;  // FIXME:  check on this; false for actual SNES use
-  //basal->pseudo_plastic = PETSC_TRUE;
-  basal->pseudo_q = 1.0;
-  //ierr = user.ctxtauc.set(0.0); CHKERRQ(ierr);
-  //ierr = user.ctxtauc.set(5.703978e+03); CHKERRQ(ierr);
-  //ierr = user.ctxtauc.scale(1.0e-3); CHKERRQ(ierr);
-  ierr = user.ctxtauc.set(5.703978e+03); CHKERRQ(ierr);
-  ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
-  ierr = solvefeedback(snes, R); CHKERRQ(ierr);
   ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
-
-  user.useConstantNu = PETSC_FALSE;  
-  user.useIceModelBasal = PETSC_TRUE;
-  basal->pseudo_plastic = PETSC_TRUE;
-  ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
-  ierr = solvefeedback(grid.com, snes, R); CHKERRQ(ierr);
-  ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
-*/
 
   // de-allocate
   ierr = VecDestroy(user.ctxBV);CHKERRQ(ierr);      
@@ -276,9 +318,10 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 #define sqr PetscSqr
 PetscScalar nu_eff(PetscTruth useConstantNu, PetscScalar schoofReg, PetscScalar barB, 
                    PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) {
+  //PetscPrintf(PETSC_COMM_WORLD, "nu_eff() turned off\n"); PetscEnd();
   if (useConstantNu == PETSC_TRUE) {
     //return 30.0 * 1e6 * secpera; // 30 MPa a^-1 = 9.45e14 Pa s^-1
-    const PetscScalar strainrate = (100.0 / secpera) / 100.0e3;  // = s^-1; typical strain rate
+    const PetscScalar strainrate = (100.0 / secpera) / 100.0e3;  // = 1e-3 s^-1; typical strain rate
     return barB * 0.5 * pow(PetscSqr(strainrate), -(1.0/3.0));
   } else {
     // constant \bar B case; for Test I and EISMINT-Ross and MISMIP
@@ -290,25 +333,19 @@ PetscScalar nu_eff(PetscTruth useConstantNu, PetscScalar schoofReg, PetscScalar 
 }
 
 
-PetscErrorCode basalstress(PetscTruth useIceModelBasal, IceModel* model,
+PetscErrorCode basalstress(PetscTruth usePlasticBasalType, PlasticBasalType *basal,
                            PetscScalar u, PetscScalar v, PetscScalar tauc,
                            PetscScalar &taubx, PetscScalar &tauby) {
-  if (useIceModelBasal == PETSC_TRUE) {
-    taubx = - model->basal->drag(tauc, u, v) * u;
-    tauby = - model->basal->drag(tauc, u, v) * v;
+//  PetscPrintf(PETSC_COMM_WORLD, "basalstress() turned off\n"); PetscEnd();
+  if (usePlasticBasalType == PETSC_TRUE) {
+    taubx = - basal->drag(tauc, u, v) * u;
+    tauby = - basal->drag(tauc, u, v) * v;
   } else {
     // value stated in Hulbe&MacAyeal1999 for ice stream E
     const PetscScalar beta = 1.8e9;  // Pa s m^{-1}
     taubx = - beta * u;
     tauby = - beta * v;
   }
-  /* alternative: bypasses IceModel::basalDragx(), IceModel::basalDragy()
-          const PetscScalar smallVel = 0.01 / secpera;
-          const PetscScalar denom = sqrt(PetscSqr(smallVel) 
-                                         + PetscSqr(x[i][j].u) + PetscSqr(x[i][j].v));
-          f[i][j].u -= sc * tauc[i][j] * x[i][j].u / denom;
-          f[i][j].v -= sc * tauc[i][j] * x[i][j].v / denom;
-  */
   return 0;
 }
 
@@ -421,10 +458,12 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
   
         if (maskval == MASK_DRAGGING) {
           PetscScalar mytaubx, mytauby;
-          ierr = basalstress(ctx->useIceModelBasal, ctx->model,
+          ierr = basalstress(ctx->usePlasticBasalType, ctx->basal,
                       x[i][j].u,  x[i][j].v, tauc[i][j], mytaubx, mytauby); CHKERRQ(ierr);
           f[i][j].u += sc * mytaubx;
           f[i][j].v += sc * mytauby;
+//          f[i][j].u -= sc * mytaubx;
+//          f[i][j].v -= sc * mytauby;
         }
 
       }
