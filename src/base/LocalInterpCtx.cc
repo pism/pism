@@ -58,6 +58,8 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
                dy = grid.dy,
                slop = 1.000001; // allowed slop; grids must subsets within this factor
   com = grid.com;
+  regrid_2d_only = false;
+  no_regrid_bedrock = false;
 
   g.print(com);
 
@@ -105,6 +107,9 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
       no_regrid_bedrock = false;
     }
   }
+
+  verbPrintf(3, com, "LIC INFO: regrid_2d_only = %d, no_regrid_bedrock = %d\n",
+	     regrid_2d_only, no_regrid_bedrock);
 
   // limits of the processor's part of the target computational domain
   double xbdy_tgt[2] = {-Lx + dx * grid.xs, -Lx + dx * (grid.xs + grid.xm - 1)};
@@ -325,7 +330,7 @@ grid_info::grid_info() {
 PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
   PetscErrorCode ierr;
   double zero = 0;
-  ierr = verbPrintf(threshold, com, "Regridding file grid info:\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "\nRegridding file grid info:\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(threshold, com, "  x:  %05d points, [%010.3f, %010.3f] m\n",
 		    x_len, x_min, x_max); CHKERRQ(ierr);
