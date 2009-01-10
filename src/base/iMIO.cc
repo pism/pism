@@ -758,13 +758,6 @@ PetscErrorCode IceModel::write_snapshot() {
   if (!save_snapshots)
     return 0;
 
-  if (split_snapshots) {
-    file_is_ready = false;	// each snapshot is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc", snapshots_filename, grid.year);
-  } else {
-    strncpy(filename, snapshots_filename, PETSC_MAX_PATH_LEN);
-  }
-
   // do we need to save *now*?
   if (save_at_equal_intervals) {
     if (grid.year >= next_snapshot && grid.year < last_snapshot) {
@@ -783,6 +776,13 @@ PetscErrorCode IceModel::write_snapshot() {
   }
 
   if (save_now) {
+    if (split_snapshots) {
+      file_is_ready = false;	// each snapshot is written to a separate file
+      snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc", snapshots_filename, grid.year);
+    } else {
+      strncpy(filename, snapshots_filename, PETSC_MAX_PATH_LEN);
+    }
+
     ierr = verbPrintf(2, grid.com, "Saving a model state snapshot at t = %3.5f.\n", grid.year);
     CHKERRQ(ierr);
 
