@@ -1,4 +1,4 @@
-// Copyright (C) 2007, 2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007, 2008, 2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -23,7 +23,8 @@
 #include <petscmat.h>
 #include "grid.hh"
 
-struct grid_info {
+class grid_info {
+public:
   // dimension lengths
   int t_len, x_len, y_len, z_len, zb_len;
   double time,			//!< current time (seconds)
@@ -33,6 +34,8 @@ struct grid_info {
     y_max,			//!< [y_min, y_max] is the Y extent of the grid
     zb_min,			//!< minimal value of the zb dimension
     z_max;			//!< maximal value of the z dimension
+  grid_info();
+  PetscErrorCode print(MPI_Comm com, int threshold = 3);
 };
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).
@@ -79,7 +82,7 @@ public:
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
 
 public:
-  LocalInterpCtx(const grid_info g,
+  LocalInterpCtx(grid_info g,
                  const double zlevsIN[], const double zblevsIN[], IceGrid &grid);
   ~LocalInterpCtx();
   int kBelowHeight(const double height);

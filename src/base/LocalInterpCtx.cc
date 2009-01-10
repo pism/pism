@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,7 @@
   The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
   information will be interpolated) are owned by each processor.
 */
-LocalInterpCtx::LocalInterpCtx(const grid_info g,
+LocalInterpCtx::LocalInterpCtx(grid_info g,
 			       const double zlevsIN[], const double zblevsIN[], IceGrid &grid) {
   PetscErrorCode ierr;
   const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
@@ -58,6 +58,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info g,
                dy = grid.dy,
                slop = 1.000001; // allowed slop; grids must subsets within this factor
   com = grid.com;
+
+  g.print(com);
 
   if ((zlevsIN == NULL) || (zblevsIN == NULL))
     regrid_2d_only = true;
@@ -160,7 +162,6 @@ and \c delta entries in the struct will not be meaningful.
   // This allows creating a local interpolation context for 2D regridding
   // without specifying dummy z or zb-related information in the g argument.
   if (regrid_2d_only) {
-    regrid_2d_only = true;
     count[Z] = 1;
     count[ZB] = 1;
   } else {
@@ -307,3 +308,34 @@ int LocalInterpCtx::kbBelowHeight(const double elevation) {
   return mcurr;
 }
 
+grid_info::grid_info() {
+  t_len  = 0;
+  x_len  = 0;
+  y_len  = 0;
+  z_len  = 0;
+  zb_len = 0;
+  x_min  = 0;
+  x_max  = 0;
+  y_min  = 0;
+  y_max  = 0;
+  z_max  = 0;
+  zb_min = 0;
+}
+
+PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
+  PetscErrorCode ierr;
+  double zero = 0;
+  ierr = verbPrintf(threshold, com, "Regridding file grid info:\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(threshold, com, "  x:  %05d points, [%010.3f, %010.3f] m\n",
+		    x_len, x_min, x_max); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  y:  %05d points, [%010.3f, %010.3f] m\n",
+		    y_len, y_min, y_max); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  z:  %05d points, [%010.3f, %010.3f] m\n",
+		    z_len, zero, z_max); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  zb: %05d points, [%010.3f, %010.3f] m\n",
+		    zb_len, zb_min, zero); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  t:  %05d points, last time = %f seconds\n",
+		    t_len, time); CHKERRQ(ierr);
+  return 0;
+}
