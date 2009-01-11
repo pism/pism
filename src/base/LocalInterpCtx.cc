@@ -108,7 +108,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
     }
   }
 
-  verbPrintf(3, com, "LIC INFO: regrid_2d_only = %d, no_regrid_bedrock = %d\n",
+  verbPrintf(5, com, "LIC INFO: regrid_2d_only = %d, no_regrid_bedrock = %d\n",
 	     regrid_2d_only, no_regrid_bedrock);
 
   // limits of the processor's part of the target computational domain
@@ -332,15 +332,15 @@ PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
   double zero = 0;
   ierr = verbPrintf(threshold, com, "\nRegridding file grid info:\n"); CHKERRQ(ierr);
 
-  ierr = verbPrintf(threshold, com, "  x:  %05d points, [%010.3f, %010.3f] m\n",
-		    x_len, x_min, x_max); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  y:  %05d points, [%010.3f, %010.3f] m\n",
-		    y_len, y_min, y_max); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  z:  %05d points, [%010.3f, %010.3f] m\n",
+  ierr = verbPrintf(threshold, com, "  x:  %5d points, [%10.3f, %10.3f] km\n",
+		    x_len, x_min/1000.0, x_max/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  y:  %5d points, [%10.3f, %10.3f] km\n",
+		    y_len, y_min/1000.0, y_max/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  z:  %5d points, [%10.3f, %10.3f] m\n",
 		    z_len, zero, z_max); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  zb: %05d points, [%010.3f, %010.3f] m\n",
+  ierr = verbPrintf(threshold, com, "  zb: %5d points, [%10.3f, %10.3f] m\n",
 		    zb_len, zb_min, zero); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  t:  %05d points, last time = %f seconds\n",
-		    t_len, time); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  t:  %5d points, last time = %.3f years\n\n",
+		    t_len, time/secpera); CHKERRQ(ierr);
   return 0;
 }

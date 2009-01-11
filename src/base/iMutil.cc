@@ -145,59 +145,66 @@ PetscErrorCode IceModel::afterInitHook() {
   
   // report on computational box
   ierr = verbPrintf(2,grid.com, 
-           "  [computational box for ice: (%8.2f km) x (%8.2f km)",
+           "  [computational box for ice: %8.2f km x %8.2f km",
            2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
   if (grid.Mbz > 1) {
     ierr = verbPrintf(2,grid.com,
          "\n                                 x (%8.2f m + %7.2f m bedrock)]\n"
          ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,grid.com," x (%8.2f m)]\n",grid.Lz); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com," x %8.2f m]\n",grid.Lz); CHKERRQ(ierr);
   }
   
   // report on grid cell dims
   if (grid.isEqualVertSpacing()) {
     ierr = verbPrintf(2,grid.com, 
-           "  [grid cell dims (equal dz): (%8.2f km) x (%8.2f km) x (%8.2f m)]\n",
+           "  [grid cell dims (equal dz): %8.2f km x %8.2f km x %8.2f m",
            grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
-           "  [hor. grid cell dimensions: (%8.2f km) x (%8.2f km)]\n",
+           "  [hor. grid cell dimensions: %8.2f km x %8.2f km\n",
            grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, 
-           "  [vertical grid spacing in ice not equal: %.3f m < dz < %.3f m]\n",
+           "   vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
            grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
     PetscInt    myMz, dummyM;
     ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com, 
+         "\n   fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m",
+           myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
     if (myMz > 1000) {
       ierr = verbPrintf(1,grid.com,
         "\n\n WARNING: Using more than 1000 vertical levels internally\n"
         "   in temperatureStep()!\n\n");  CHKERRQ(ierr);
     }
-    ierr = verbPrintf(2,grid.com, 
-           "  [fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m]\n",
-           myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
-    if (grid.Mbz > 1) {
-      ierr = verbPrintf(2,grid.com, 
-         "  [vertical spacing in bedrock: dz = %.3f m]\n",
-         grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
-    }
   }
 
-  // if -verbose then actually list all members of grid
+  if (grid.Mbz > 1) {
+    ierr = verbPrintf(2,grid.com, 
+       "\n   vertical spacing in bedrock: dz = %.3f m]\n",
+         grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com,"]\n"); CHKERRQ(ierr);
+  }
+
+  // if -verbose (=-verbose 3) then actually list parameters of grid
   ierr = verbPrintf(3,grid.com,
-           "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
-                    grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
+         "  [grid parameters list (verbose output):\n"); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
-           "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
-           grid.Lx/1000.0,grid.Ly/1000.0,grid.Lz,grid.Lbz); CHKERRQ(ierr);
+         "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
+         grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
-           "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
-           grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
-  ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
+         "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
+         grid.Lx/1000.0,grid.Ly/1000.0,grid.Lz,grid.Lbz); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f]\n",
+         grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
+
+  // if -verbose 5 then more stuff
   ierr = verbPrintf(5,grid.com,
-     "            history = ****************\n%s            **************************\n"
-     ,history); CHKERRQ(ierr);
+       "\n  [vertical levels (REALLY verbose output):\n"); CHKERRQ(ierr);
+  ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
+  ierr = verbPrintf(5,grid.com,"]\n"); CHKERRQ(ierr);
   
   // miscellaneous
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
@@ -210,6 +217,7 @@ PetscErrorCode IceModel::afterInitHook() {
     ierr = regrid(regridFile); CHKERRQ(ierr);
   }
 
+  // consistency of geometry after initialization:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   // last task before proceeding: invert for basal till properties, if desired;

@@ -18,7 +18,7 @@ else
 endif
 
 # Compiler flags:
-CFLAGS += -DHAVE_PETSC3=${HAVE_PETSC3}
+CFLAGS += -DHAVE_PETSC3=${HAVE_PETSC3} -g
 
 
 poisson: poisson.o  chkopts

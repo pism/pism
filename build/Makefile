@@ -36,7 +36,9 @@ CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS
           -DPISM_REVISION='"$(PISM_REVISION)"' \
           -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} \
           -Woverloaded-virtual -pipe
-
+ifeq (${PISM_USE_DEBUG}, 1)
+  CFLAGS += -g
+endif
 SHARED = -shared # default (for Linux)
 
 # Linker flags:

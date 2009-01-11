@@ -562,7 +562,7 @@ PetscErrorCode IceModel::regrid(const char *filename) {
     strcpy(regridVars, "");
   }
   ierr = verbPrintf(2,grid.com, 
-           "regridding variables with single character flags `%s' from NetCDF file `%s':", 
+           "regridding variables with single character flags `%s' from NetCDF file `%s':\n", 
            regridVars,filename); CHKERRQ(ierr);
 
   // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
@@ -594,31 +594,31 @@ PetscErrorCode IceModel::regrid(const char *filename) {
       if (strchr(regridVars, possible[k])) {
        switch (possible[k]) {
          case 'b':
-           ierr = verbPrintf(2, grid.com, "\n   b: regridding 'topg' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  b: regridding 'topg' ... \n"); CHKERRQ(ierr);
 	   ierr = vbed.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'B':
-           ierr = verbPrintf(2, grid.com, "\n   B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
            ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'e':
-           ierr = verbPrintf(2, grid.com, "\n   e: regridding 'age' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  e: regridding 'age' ... \n"); CHKERRQ(ierr);
            ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'h':
-           ierr = verbPrintf(2, grid.com, "\n   h: regridding 'usurf' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  h: regridding 'usurf' ... \n"); CHKERRQ(ierr);
 	   ierr = vh.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'H':
-           ierr = verbPrintf(2, grid.com, "\n   H: regridding 'thk' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  H: regridding 'thk' ... \n"); CHKERRQ(ierr);
 	   ierr = vH.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'L':
-           ierr = verbPrintf(2, grid.com, "\n   L: regridding 'bwat' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  L: regridding 'bwat' ... \n"); CHKERRQ(ierr);
 	   ierr = vHmelt.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'T':
-           ierr = verbPrintf(2, grid.com, "\n   T: regridding 'temp' ... \n"); CHKERRQ(ierr);
+           ierr = verbPrintf(2, grid.com, "  T: regridding 'temp' ... \n"); CHKERRQ(ierr);
            ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
        }
@@ -628,7 +628,6 @@ PetscErrorCode IceModel::regrid(const char *filename) {
   }
   
   delete [] zlevs;  delete [] zblevs;
-  ierr = verbPrintf(2,grid.com, "\n"); CHKERRQ(ierr);
   return 0;
 }
 

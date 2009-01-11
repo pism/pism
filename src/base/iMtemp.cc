@@ -140,7 +140,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
 
   ierr = getVertLevsForTempAge(Mz, Mbz, dzEQ, dzbEQ, zlevEQ, zblevEQ); CHKERRQ(ierr);
 
-  ierr = verbPrintf((grid.isEqualVertSpacing()) ? 5 : 3,grid.com,
+  ierr = verbPrintf(5,grid.com,
     "\n  [entering temperatureStep(); Mz = %d, dzEQ = %5.3f, Mbz = %d, dzbEQ = %5.3f]",
     Mz, dzEQ, Mbz, dzbEQ); CHKERRQ(ierr);
 
