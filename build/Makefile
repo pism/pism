@@ -42,12 +42,13 @@ endif
 SHARED = -shared # default (for Linux)
 
 # Linker flags:
-TESTS_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
-                   -ltests -lm -lgsl -lgslcblas
-ICE_LIB_FLAGS := -lpism ${TESTS_LIB_FLAGS} ${PETSC_LIB} -lnetcdf 
+BASE_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
+                  -lm -lgsl -lgslcblas
 ifeq (${PISM_HAVE_FFTW}, 1)
-  ICE_LIB_FLAGS += -lfftw3
+  BASE_LIB_FLAGS += -lfftw3
 endif
+TESTS_LIB_FLAGS := ${BASE_LIB_FLAGS} -ltests
+ICE_LIB_FLAGS := ${BASE_LIB_FLAGS} ${PETSC_LIB} -lnetcdf -lpism
 
 # Override PETSc's choice of the linker (if asked to):
 ifeq ($(USE_MPICXX), 1)
@@ -141,8 +142,8 @@ endif
 
 ../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
  pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
-	${CXXLINKER} iCMthermo.o iceCompModel.o \
-	iceExactSSAModel.o iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} -o $@
+	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
+	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
 #build extra executables
 

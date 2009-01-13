@@ -78,9 +78,9 @@ mpst_vg()
 # P0A: run without trough on refining grid for total of 200k years:
 mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -skip 20 -o P0A_100k.nc"
 mpst $NN "-P0A -if P0A_100k.nc -y 50000 -skip 20 -o P0A_150k.nc"
-mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 \
+mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 -ys 150000 \
  -skip 20 -regrid P0A_150k.nc -regrid_vars LTBHhe -o P0A_190k.nc"
-mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 \
+mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -ys 190000 \
  -skip 20 -regrid P0A_190k.nc -regrid_vars LTBHhe -o P0A.nc"
 
 
@@ -97,9 +97,9 @@ mpst $NN "-P4 -if P0A.nc -ys 0 -y 5000 -o P4.nc"
 
 # P0I: run with troughs on refining grid for total of 200k years:
 mpst $NN "-P0I -if P0A_100k.nc -y 50000 -skip 20 -o P0I_150k.nc"
-mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 \
+mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 -ys 150000 \
  -skip 20 -regrid P0I_150k.nc -regrid_vars LTBHhe -o P0I_190k.nc"
-mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 \
+mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -ys 190000 \
  -skip 20 -regrid P0I_190k.nc -regrid_vars LTBHhe -o P0I.nc"
 
 

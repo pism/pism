@@ -93,7 +93,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
 \end{center}
 \bigskip
-\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu), subsection \ref{subsec:debian}, then install a Python package following section \ref{sec:python}, and then use the online manuals.
+\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu), subsection \ref{subsec:debian}, and then install a Python package following section \ref{sec:python}.
 \vfill
 
 \noindent\emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \bigskip
@@ -102,7 +102,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
 \vfill
 
 \begin{quote}
-\textsl{Copyright (C) 2004--2008 Ed Bueler and Constantine Khroulev}
+\textsl{Copyright (C) 2004--2009 Ed Bueler and Constantine Khroulev}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -232,34 +232,27 @@ no need to retype it each time you use MPI.
 \end{center}
 \medskip
 
-\item PISM uses \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/index.html}{PETSc (= \emph{Portable Extensible Toolkit for
-      Scientific Computation})}.\index{PETSc (\emph{Portable Extensible Toolkit for Scientific computation})} As mentions of this
-  library will occur frequently in this manual, note ``PETSc'' is pronounced ``pet-see''. Download the PETSc source by grabbing
-  the current gzipped tarball at
-   \begin{center}
-    \href{http://www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}{\t{www-unix.mcs.anl.gov/petsc/petsc-as/download/index.html}}
-  \end{center}
-  PISM requires a version of PETSc which is \texttt{\PETSCREL} or later. The ``lite'' form of PETSc is fine if you are willing to
-  depend on an internet connection for accessing the PETSc documentation.
+\item PISM uses \href{http://www-unix.mcs.anl.gov/petsc/}{PETSc (= \emph{Portable Extensible Toolkit for
+ Scientific Computation})}.\index{PETSc (\emph{Portable Extensible Toolkit for Scientific computation})}  Let's get this out of the way: note ``PETSc'' is pronounced ``pet-see''.  Download the PETSc source by grabbing the current gzipped tarball:
+\begin{center}
+    \href{http://www-unix.mcs.anl.gov/petsc/}{\t{www-unix.mcs.anl.gov/petsc/}}
+\end{center}
+PISM requires a version of PETSc which is \texttt{\PETSCREL} or later.  The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation.
 
-  You should configure and build PETSc \emph{essentially} as described on the
-  \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}, but it might be best
-  to read the following comments on the PETSc configure and build process first:
+You should configure and build PETSc \emph{essentially} as described on the PETSc installation page, but it might be best to read the following comments on the PETSc configure and build process first:
 
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges. Note that you
-  will need to define the environment variable |PETSC_DIR|\index{PETSC\und DIR} before configuring PETSc (next). For instance,
-  once you have entered the PETSc directory just untarred, \verb|export PETSC_DIR=$PWD|. (Or \verb|PETSC_DIR=`pwd`|. In this case,
-  note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe |'|.)
+\item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges.  Note that you will need to define the environment variable |PETSC_DIR|\index{PETSC\und DIR} before configuring PETSc (next).  For instance, once you have entered the PETSc directory just untarred, \verb|export PETSC_DIR=$PWD|. (Or \verb|PETSC_DIR=`pwd`|.  In this case, note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe |'|.)
 
-\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared
-  libraries by default:\index{PETSC\und ARCH}
+\item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default:\index{PETSC\und ARCH}
 \begin{verbatim}
-$  export PETSC_ARCH=linux-gnu-cxx
+$  export PETSC_ARCH=linux-gnu-opt
 $  ./config/configure.py --with-shared --with-dynamic --with-debugging=no
 \end{verbatim}
 
-Turning off the inclusion of the debugging symbols gives a significant speed improvement.  Using shared and dynamic libraries may be unwise on certain clusters, etc.; check with your system administrator.
+Turning off the inclusion of the debugging symbols gives a significant speed improvement.
+
+Using shared and dynamic libraries may be unwise on certain clusters, etc.; check with your system administrator.
 
 Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
 
@@ -306,21 +299,10 @@ $  cd pism-dev
 $  make all
 \end{verbatim}
 
-If your operating system does not support shared libraries, then run
-\begin{verbatim}
-$  cd pism-dev
-$  export PISM_STATIC=1
-$  make all
-\end{verbatim}
-\noindent instead. (This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.) You might also
-want to add
-\begin{verbatim}
-export PISM_STATIC=1
-\end{verbatim}
-\noindent to your |.bashrc| file if you're working with the development version of PISM (i.e. if you are likely to rebuild it
+If your operating system does not support shared libraries, then do \verb|export PISM_STATIC=1| before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.  You might also add \verb|export PISM_STATIC=1| to your |.bashrc| file if you're working with the development version of PISM (i.e.~if you are likely to rebuild it
 later).
 
-\noindent  Note that the ``\verb|make all|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted.   Do ``\verb|make clean|'' if space is an issue.
+Note that the ``\verb|make all|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted, so do ``\verb|make clean|'' to delete these if space is an issue.
 
 \item PISM executables can be run most easily by adding the directories \verb|pism-dev/bin/| and \verb|pism-dev/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
 \begin{verbatim}
@@ -331,7 +313,7 @@ export PATH=/home/user/pism-dev/bin:/home/user/pism-dev/util:$PATH
 
 \clearpage
 \subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
-It is quicker to install all the PISM prerequisites on a Debian-based system (such as Ubuntu) using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
+Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
 
 \begin{enumerate}
 \item Find and install (using |apt-get| or |synaptic|, for example) the following packages:
@@ -357,7 +339,7 @@ It is quicker to install all the PISM prerequisites on a Debian-based system (su
 \begin{verbatim}
 $  svn co http://svn.gna.org/svn/pism/trunk pism-dev
 \end{verbatim}
-(for |stable0.1|, do \quad\small |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1| \normalsize \quad).
+\noindent For |stable0.1|, do \quad\small |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1|
 \item Based on the locations of installed files, add the lines similar to
 \begin{verbatim}
 export PETSC_DIR=/usr/lib/petscdir/2.3.3/
@@ -394,13 +376,12 @@ According to this comment found online at \url{http://lists.alioth.debian.org/pi
 \end{quote}
 \bigskip
 
-\subsubsection*{About \texttt{ncview}}  There seems to be no |ncview| Debian package
-yet.  But this sequence worked with minimal pain: grab latest source
+\subsubsection*{NCVIEW}  There seems to be no |ncview| Debian package
+yet.  But this sequence worked with minimal pain.  Grab latest source from
 \begin{center}
-  \url{ftp://cirrus.ucsd.edu/pub/ncview/ncview-1.93f.tar.gz}
+  \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}
 \end{center}
-Next, basically follow install instructions in top-level ``|README|''. But error about missing |X| headers etc is resolved by two
-things, first to get Debian |xorg-dev| package, and second to tell the |ncview| |configure| script where to find |X|:
+Basically just get the |.tar.gz| and follow install instructions in top-level ``|README|''.  But error about missing |X| headers etc is resolved by two things, first to get Debian |xorg-dev| package, and second to tell the |ncview| |configure| script where to find |X|:
 \begin{verbatim}
 $  ./configure --x-libraries=/usr/lib
 \end{verbatim}
@@ -435,7 +416,7 @@ to install NetCDF, ncview, GSL and FFTW.
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
   \href{ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/}{PETSc website}. Untar, then change to the directory just created.
   Unfortunately, the current\footnote{As of October 2008.} version (2.3.3-p15) has some issues and it is necessary to add the following lines to
-  |bmake/common/rules.shared.basic| {\scriptsize
+  |bmake/common/rules.shared.basic| {\tiny
 \begin{verbatim}
 shared_darwin9:
 	-@cd ${SHARED_LIBRARY_TMPDIR}; \
@@ -454,7 +435,7 @@ shared_darwin9:
               -o ${INSTALL_LIB_DIR}/$$LIBNAME.dylib *.o -L${PETSC_LIB_DIR}  ${OTHERSHAREDLIBS} ${SL_LINKER_LIBS} $$OTHERLIBS
 \end{verbatim}
 }
-to make PETSc link shared libraries on Mac OS X 10.5 and add |'.dylib'| to lists of file extensions in
+\noindent to make PETSc link shared libraries on Mac OS X 10.5 and add |'.dylib'| to lists of file extensions in
 |python/PETSc/packages/X11.py| to make PETSc configure script find the X Window System.\footnote{Note that according to Matthew
   Knepley these bugs were actually fixed in the development version. (Which breaks for some other reason. -- CK)}
 
