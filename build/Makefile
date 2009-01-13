@@ -34,8 +34,10 @@ endif
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} \
-          -Woverloaded-virtual -pipe
+          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3}
+ifeq (${PISM_USE_GNU_FLAGS}, 1)
+  CFLAGS += -Woverloaded-virtual -pipe -O2
+endif
 ifeq (${PISM_USE_DEBUG}, 1)
   CFLAGS += -g
 endif
@@ -223,6 +225,7 @@ showEnv:
 	@echo 'PISM_STATIC = ' ${PISM_STATIC}
 	@echo 'PISM_USE_DEBUG = ' ${PISM_USE_DEBUG}
 	@echo 'PISM_USE_MPICXX = ' ${PISM_USE_MPICXX}
+	@echo 'PISM_USE_GNU_FLAGS = ' ${PISM_USE_GNU_FLAGS}
 
 depend: ;
 
