@@ -51,7 +51,7 @@ TESTS_LIB_FLAGS := ${BASE_LIB_FLAGS} -ltests
 ICE_LIB_FLAGS := ${BASE_LIB_FLAGS} ${PETSC_LIB} -lnetcdf -lpism
 
 # Override PETSc's choice of the linker (if asked to):
-ifeq ($(USE_MPICXX), 1)
+ifeq ($(PISM_USE_MPICXX), 1)
   CXXLINKER = $(subst mpicc,mpicxx,$(CLINKER))
 endif
 
@@ -217,7 +217,12 @@ showEnv:
 	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
 	@echo 'ICE_OBJS = ' ${ICE_OBJS}
 	@echo 'PISM_REVISION = ' "$(PISM_REVISION)"
+	@echo 'PISM_PREFIX = ' "$(PISM_PREFIX)"
 	@echo 'PISM_HAVE_PETSC3 = ' ${PISM_HAVE_PETSC3}
+	@echo 'PISM_HAVE_FFTW = ' ${PISM_HAVE_FFTW}
+	@echo 'PISM_STATIC = ' ${PISM_STATIC}
+	@echo 'PISM_USE_DEBUG = ' ${PISM_USE_DEBUG}
+	@echo 'PISM_USE_MPICXX = ' ${PISM_USE_MPICXX}
 
 depend: ;
 

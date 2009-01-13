@@ -19,8 +19,7 @@
 static char help[] = 
   "Driver for PISM simulations based on EISMINT-Greenland intercomparison.\n";
 
-#include <cstring>
-#include <petscbag.h>
+#include <petsc.h>
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
