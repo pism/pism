@@ -1,0 +1,10 @@
+These files are (as of 14 Jan 2009) a draft/empty PISMClimateCoupler
+demonstration.
+
+There is an empty shell for a nontrivial PISMClimateCoupler.  There is an
+empty shell of IcePCCModel, a derived class of IceModel.
+
+A nontrivial PISMClimateCoupler for ice shelves was written by Ricarda Winkelmann (PIK),
+with help from Ed Bueler, on 2 Dec 2008.  That source is in icerepo/Potsdam-Antarctica,
+a password-protected svn repo.  Contact Bueler for further info on that.
+

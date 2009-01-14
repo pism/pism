@@ -1,0 +1,9 @@
+VPATH += :../src/coupler/
+
+exec_default += ../bin/pcc
+
+other_sources += pccoupler.cc pcc.cc
+
+../bin/pcc : pcc.o pccoupler.o ${LIBPISMNAME}
+	${CXXLINKER} pccoupler.o pcc.o ${ICE_LIB_FLAGS} -o $@
+

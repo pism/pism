@@ -49,8 +49,8 @@ BASE_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
-TESTS_LIB_FLAGS := ${BASE_LIB_FLAGS} -ltests
-ICE_LIB_FLAGS := ${BASE_LIB_FLAGS} ${PETSC_LIB} -lnetcdf -lpism
+TESTS_LIB_FLAGS := -ltests ${BASE_LIB_FLAGS}
+ICE_LIB_FLAGS := -lpism -lnetcdf ${PETSC_LIB} ${BASE_LIB_FLAGS}
 
 # Override PETSc's choice of the linker (if asked to):
 ifeq ($(PISM_USE_MPICXX), 1)
@@ -88,9 +88,14 @@ other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c simpleM.c
 
-# this is the main derived class example so it is structured like an example
-#  derived class, including this make piece
+# this is the primary derived class example so it is structured as an example
+#   derived class; as an example it includes "grn_make"; creates executable
+#   "pgrn"
 include ../src/eismint/grn_make
+
+# this is a derived class example demonstrating use of PISMClimateCoupler;
+#   including it creates executable "pcc"
+include ../src/coupler/pcc_make
 
 # Import additional make include files:
 ifdef CONFIG
@@ -205,27 +210,28 @@ endif
 	 rm -f $@.$$$$
 
 showEnv:
+	@echo 'ICE_OBJS = ' ${ICE_OBJS}
+	@echo 'ICE_LIB_FLAGS = ' ${ICE_LIB_FLAGS}
+	@echo 'TESTS_LIB_FLAGS = ' ${TESTS_LIB_FLAGS}
+	@echo 'PETSC_LIB = ' ${PETSC_LIB}
+	@echo 'CFLAGS = ' ${CFLAGS}
 	@echo 'VPATH = ' ${VPATH}
 	@echo 'CC = ' ${CC}
 	@echo 'CLINKER = ' ${CLINKER}
 	@echo 'CXXLINKER = ' ${CXXLINKER}
 	@echo 'PETSC_DIR = ' ${PETSC_DIR}
 	@echo 'PETSC_ARCH = ' ${PETSC_ARCH}
-	@echo 'PETSC_LIB = ' ${PETSC_LIB}
-	@echo 'CFLAGS = ' ${CFLAGS}
-	@echo 'ICE_LIB_FLAGS = ' ${ICE_LIB_FLAGS}
-	@echo 'TESTS_LIB_FLAGS = ' ${TESTS_LIB_FLAGS}
 	@echo 'LIBPISMNAME = ' ${LIBPISMNAME}
 	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
-	@echo 'ICE_OBJS = ' ${ICE_OBJS}
-	@echo 'PISM_REVISION = ' "$(PISM_REVISION)"
-	@echo 'PISM_PREFIX = ' "$(PISM_PREFIX)"
+	@echo 'PISM_REVISION = ' ${PISM_REVISION}
+	@echo 'PISM_PREFIX = ' ${PISM_PREFIX}
 	@echo 'PISM_HAVE_PETSC3 = ' ${PISM_HAVE_PETSC3}
 	@echo 'PISM_HAVE_FFTW = ' ${PISM_HAVE_FFTW}
 	@echo 'PISM_STATIC = ' ${PISM_STATIC}
 	@echo 'PISM_USE_DEBUG = ' ${PISM_USE_DEBUG}
 	@echo 'PISM_USE_MPICXX = ' ${PISM_USE_MPICXX}
 	@echo 'PISM_USE_GNU_FLAGS = ' ${PISM_USE_GNU_FLAGS}
+	@echo 'CONFIG = ' ${CONFIG}
 
 depend: ;
 

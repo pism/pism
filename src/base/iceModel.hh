@@ -101,8 +101,6 @@ public:
   // see iceModel.cc
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
-  virtual PetscErrorCode additionalAtStartTimestep();
-  virtual PetscErrorCode additionalAtEndTimestep();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
 
   // see iMbootstrap.cc 
@@ -121,6 +119,8 @@ public:
 
   // see iMutil.cc
   virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode additionalAtStartTimestep();
+  virtual PetscErrorCode additionalAtEndTimestep();
 
   // see iMIO.cc
   bool hasSuffix(const char* fname, const char* suffix) const;  
