@@ -23,6 +23,14 @@
  *
  */
 
+/*  CHANGELOG:
+
+15jan09 E. Bueler: initialization values for esterr struct; stops warnings
+                   from -Wall
+
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -98,6 +106,8 @@ typedef struct {
 static region make_region(const hypercube *h)
 {
      region R;
+     /* initialization values by E. Bueler 1/15/09 */
+     R.ee.err = 1.0e30; R.ee.val = 1.0e30;
      R.h = make_hypercube(h->dim, h->data, h->data + h->dim);
      R.splitDim = 0;
      return R;
@@ -685,6 +695,8 @@ int adapt_integrate(integrand f, void *fdata,
      rule *r;
      hypercube h;
      esterr ee;
+     /* initialization values by E. Bueler 1/15/09 */
+     ee.err = 1.0e30; ee.val = 1.0e30;
 
      if (dim == 0) { /* trivial integration */
       ee.val = f(0, xmin, fdata);

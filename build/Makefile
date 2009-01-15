@@ -45,15 +45,16 @@ SHARED = -shared # default (for Linux)
 
 # Linker flags:
 BASE_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
-                  -lm -lgsl -lgslcblas
+                  -lstdc++ -lm -lgsl -lgslcblas
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
 TESTS_LIB_FLAGS := -ltests ${BASE_LIB_FLAGS}
 ICE_LIB_FLAGS := -lpism -lnetcdf ${PETSC_LIB} ${BASE_LIB_FLAGS}
 
-# Override PETSc's choice of the linker (if asked to):
 ifeq ($(PISM_USE_MPICXX), 1)
+  # Override PETSc's choice of CXX and of linker
+  CXX = $(subst mpicc,mpicxx,$(CC))
   CXXLINKER = $(subst mpicc,mpicxx,$(CLINKER))
 endif
 
@@ -197,7 +198,7 @@ endif
 %.d : %.cc
 	@echo "Prerequisites from" $< "-->" $@
 	@set -e; rm -f $@; \
-	 $(CC) -w -c -MM $< > $@.$$$$; \
+	 $(CXX) $(CFLAGS) -w -c -MM $< > $@.$$$$; \
 	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 rm -f $@.$$$$
 
@@ -217,6 +218,7 @@ showEnv:
 	@echo 'CFLAGS = ' ${CFLAGS}
 	@echo 'VPATH = ' ${VPATH}
 	@echo 'CC = ' ${CC}
+	@echo 'CXX = ' ${CXX}
 	@echo 'CLINKER = ' ${CLINKER}
 	@echo 'CXXLINKER = ' ${CXXLINKER}
 	@echo 'PETSC_DIR = ' ${PETSC_DIR}
