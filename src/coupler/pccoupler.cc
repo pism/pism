@@ -25,6 +25,8 @@
 #include "pccoupler.hh"
 
 
+/******************* VIRTUAL BASE CLASS:  PISMClimateCoupler ********************/
+
 PISMClimateCoupler::PISMClimateCoupler() {
 }
 
@@ -33,16 +35,12 @@ PISMClimateCoupler::~PISMClimateCoupler() {
 }
 
 
+//! User like IceModel will call this to set the grid, so that PISMClimateCoupler can use it.
 PetscErrorCode PISMClimateCoupler::setGrid(IceGrid* g) {
   grid = g;
   return 0;
 }
 
-
-PetscErrorCode PISMClimateCoupler::init() {
-  SETERRQ(1,"not implemented");
-  return 0;
-}
 
 PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filename) {
   SETERRQ(1,"not implemented");
@@ -50,9 +48,48 @@ PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filenam
 }
 
 
+/******************* ATMOSPHERE:  PISMAtmosphereCoupler ********************/
+
+/*!
+We set attributes here but do not allocate space.  A derived class must
+allocate.  (Attempting to get an array pointer to vsurfmassflux, vsurftemp
+will fail in this base class.)
+ */
 PISMAtmosphereCoupler::PISMAtmosphereCoupler() : PISMClimateCoupler() {
+
+  // check whether standard_name is on CF table
+  //   http://cf-pcmdi.llnl.gov/documents/cf-standard-names/current/cf-standard-name-table.html
+  // i.e. COMPARE TO CURRENT VERSION IN IceModel: vAccum, vTs
+  
+  // arguments to set_attrs() are: pism_intent, long_name, units, standard_name;
+
+  vsurfmassflux.set_attrs(
+           "climatecoupler",
+           "ice equivalent net mass balance at surface of ice",
+	   "m/s",
+	   NULL); 	
+  vsurfmassflux.set_glaciological_units("m year-1", secpera);
+  vsurftemp.set_attrs(
+           "climatecoupler",
+           "absolute ice temperature at surface of ice",
+	   "K",
+	   NULL);
 }
 
+
+PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
+  vsurfmassflux.destroy();
+  vsurftemp.destroy();
+}
+
+
+PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *filename) {
+  SETERRQ(1,"not implemented");
+  return 0;
+}
+
+
+/*******************  OCEAN:  PISMOceanCoupler ********************/
 
 PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
 }

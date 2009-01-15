@@ -95,7 +95,7 @@ include ../src/eismint/grn_make
 
 # this is a derived class example demonstrating use of PISMClimateCoupler;
 #   including it creates executable "pcc"
-include ../src/coupler/pcc_make
+#include ../src/coupler/pcc_make
 
 # Import additional make include files:
 ifdef CONFIG

@@ -24,7 +24,11 @@
 #include "../base/grid.hh"
 
 
-//! An essentially virtual base class for coupling PISM to other climate components.
+//! A virtual base class for coupling PISM to other climate components.
+/*!
+Methods and members here are common to all possible implementations and 
+derived classes.
+ */
 class PISMClimateCoupler {
 
 public:
@@ -33,9 +37,8 @@ public:
 
   virtual PetscErrorCode setGrid(IceGrid* g);
 
-  // the implementations of these in the base class just terminate; to use,
+  // the implementations of this in the base class just terminates; to use,
   //   re-implement in the derived class
-  virtual PetscErrorCode init();
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
 protected:
@@ -43,13 +46,55 @@ protected:
 };
 
 
-//! A draft derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.
+//! A basic derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.
+/*!
+It is expected that a derived class of this will actually be used.
+ */
 class PISMAtmosphereCoupler : public PISMClimateCoupler {
 
 public:
   PISMAtmosphereCoupler();
+  virtual ~PISMAtmosphereCoupler(); // destroys IceModelVec2 below
+  
+  virtual PetscErrorCode getArrayForSurfMassFlux(PetscScalar** &a);
+  virtual PetscErrorCode getArrayForSurfTemp(PetscScalar** &a);
 
-  // nothing here yet!
+  virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+
+protected:
+  IceModelVec2 vsurfmassflux;
+  IceModelVec2 vsurftemp;
+};
+
+
+//! A derived class of PISMAtmosphereCoupler which provides a constant-in-time surface climate.
+/*!
+Reads surface temperature and mass balance from a NetCDF file.
+ */
+class PISMConstAtmosCoupler : public PISMAtmosphereCoupler {
+
+public:
+  PISMConstAtmosCoupler();
+
+  PetscErrorCode readSurfaceTempFromFile(const char *filename);
+  PetscErrorCode readSurfaceMassBalanceFromFile(const char *filename);
+};
+
+
+//! A derived class of PISMAtmosphereCoupler which provides a PDD to PISM.
+/*!
+The PDD here is the one already implemented in PISM.  That is, it is the one
+from EISMINT-Greenland.  Thus it has various constants parameterizing the 
+melt and refreeze processes.
+ */
+class PISMPDDCoupler : public PISMAtmosphereCoupler {
+
+public:
+  PISMPDDCoupler();
+  ~PISMPDDCoupler();  // destroys PDD
+
+  PetscErrorCode initPDD(/* parameters here */);
+  PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 };
 
 
@@ -63,11 +108,11 @@ public:
   // ~PISMOceanCoupler();
 
   // this procedure would initialize the IceModelVec2 below
-  // virtual PetscErrorCode init();
+  // PetscErrorCode init();
   
   // this procedure would write the two IceModelVec2 fields to 
   //   a NetCDF file; needed for debugging at least
-  // virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+  // PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
   // these two fields would store (map-plane, scalar) fields for ice shelf
   //   base temperature and ice shelf base mass flux
