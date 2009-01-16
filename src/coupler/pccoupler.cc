@@ -116,7 +116,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   // short names "acab" and "artm" match GLIMMER (& CISM, presumably)
   
   // mean annual net ice equivalent surface mass balance rate
-  ierr = vsurfmassflux.create(*g, "acab", true); CHKERRQ(ierr);
+  ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);  // global; no ghosts
   ierr = vsurfmassflux.set_attrs(
             "climate_state", 
             "mean annual net ice equivalent accumulation (ablation) rate",
@@ -128,7 +128,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
 
   // annual mean air temperature at "ice surface", at level below all firn processes
   // possibly should be reported in deg C; would require shift version of glaciological_units
-  ierr = vsurftemp.create(*g, "artm", true); CHKERRQ(ierr);
+  ierr = vsurftemp.create(*g, "artm", false); CHKERRQ(ierr);  // global; no ghosts
   ierr = vsurftemp.set_attrs(
             "climate_state",
             "temperature at ice surface but below firn",
@@ -188,7 +188,7 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
 
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
 
-  ierr = findPISMInputFile(&filename, lic); CHKERRQ(ierr);
+  ierr = findPISMInputFile(&filename, lic); CHKERRQ(ierr); // allocates lic
 
   ierr = verbPrintf(2, g->com, 
      "initializing constant atmospheric climate: reading net surface mass balance\n"
@@ -198,6 +198,7 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
   ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
 
+  delete lic;
   return 0;
 }
 

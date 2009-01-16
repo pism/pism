@@ -33,13 +33,37 @@ class PISMPDDCoupler : public PISMAtmosphereCoupler {
 
 public:
   PISMPDDCoupler();
-  ~PISMPDDCoupler();  // destroys PDD
+  virtual ~PISMPDDCoupler();  // destroys PDD
 
+  PetscErrorCode userOptionsChoosePDD(PetscTruth &userWantsPDD);
   virtual PetscErrorCode initFromOptions(IceGrid* g);
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
+  virtual PetscScalar getSummerWarming(
+             const PetscScalar elevation, const PetscScalar latitude,
+             const PetscScalar Tma);
+  virtual PetscScalar getTemperatureFromYearlyCycle(
+       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day,
+       const PetscInt i, const PetscInt j);
+  double CalovGreveIntegrand(const double Tac);
+
 protected:
   IceModelVec2 vsurfaccum;
+  gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which
+                                 //   does not use actual random numbers
+  IceModelVec2 vmonthlysurftemp[12]; // usually these are not created; if user supplies monthly
+                                 //   temperature maps then we will allocate 12 IceModelVec2's 
+  PetscScalar  pddStdDev,        // K; daily amount of randomness
+               pddFactorSnow,    // m day^-1 K^-1; amount of snow melted,
+                                 //    as ice equivalent, per positive degree day
+               pddFactorIce,     // m day^-1 K^-1; amount of ice melted
+                                 //    per positive degree day
+               pddRefreezeFrac,  // [pure fraction]; amount of melted snow which refreezes
+                                 //    as ice
+               pddSummerWarming, // K; amplitude of yearly temperature cycle
+               pddSummerPeakDay; // Julian day of summer temperature peak
+
+  PetscErrorCode readMonthlyTemps(const char *filename);
 };
 
 

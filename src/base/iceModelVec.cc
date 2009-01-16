@@ -64,6 +64,12 @@ PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[],
 }
 
 
+//! Returns true if create() was called and false otherwise.
+bool IceModelVec::was_created() {
+  return (v == PETSC_NULL);
+}
+
+
 PetscErrorCode  IceModelVec::destroy() {
   PetscErrorCode ierr;
   if (v != PETSC_NULL) {
@@ -675,7 +681,7 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
   return 0;
 }
 
-//! Checks if an IceModelVec is allocated.
+//! Checks if an IceModelVec is allocated.  Terminates if not.
 PetscErrorCode  IceModelVec::checkAllocated() {
   if (v == PETSC_NULL) {
     SETERRQ1(1,"IceModelVec ERROR: IceModelVec with short_name='%s' WAS NOT allocated\n",

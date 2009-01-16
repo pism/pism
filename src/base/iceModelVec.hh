@@ -32,6 +32,7 @@ public:
   virtual ~IceModelVec();
 
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
+  virtual bool            was_created();
   virtual PetscErrorCode  destroy();
 
   virtual PetscErrorCode  printInfo(const PetscInt verbosity);
