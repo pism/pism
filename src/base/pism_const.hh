@@ -27,6 +27,13 @@ const PetscScalar grav       = 9.81;         // m/s^2        acceleration of gra
 const PetscScalar secpera    = 3.1556926e7;
 const PetscScalar pi         = 3.14159265358979;
 
+// Standard C++ does not have a "NaN", or an "isnan()".  We need an alternative
+//   and this is an admittedly lame one.  If there is a realiable way to check if
+//   IEEE 754 NAN is available, then PISM_NAN could be set to that.  Note most
+//   negative number in IEEE double is ~= -1.8e308, and that if PetscScalar !=
+//   double, use of this may through an error (and that would probably be good).
+const double PISM_DOUBLE_NAN = -1.234567890123456e308;
+
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN);

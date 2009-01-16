@@ -45,7 +45,8 @@ SHARED = -shared # default (for Linux)
 
 # Linker flags:
 BASE_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
-                  -lstdc++ -lm -lgsl -lgslcblas
+                  -lm -lgsl -lgslcblas \
+                  $(PISM_EXTRA_LIBS)
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
@@ -233,6 +234,7 @@ showEnv:
 	@echo 'PISM_USE_DEBUG = ' ${PISM_USE_DEBUG}
 	@echo 'PISM_USE_MPICXX = ' ${PISM_USE_MPICXX}
 	@echo 'PISM_USE_GNU_FLAGS = ' ${PISM_USE_GNU_FLAGS}
+	@echo 'PISM_EXTRA_LIBS = ' ${PISM_EXTRA_LIBS}
 	@echo 'CONFIG = ' ${CONFIG}
 
 depend: ;

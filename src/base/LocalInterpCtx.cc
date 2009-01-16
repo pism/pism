@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <netcdf.h>
 #include "nc_util.hh"
+#include "pism_const.hh"
 #include "iceModel.hh"
 #include "LocalInterpCtx.hh"
 
@@ -135,7 +136,7 @@ and \c delta entries in the struct will not be meaningful.
  */
  
   // Distances between entries (i.e. dx and dy and dz) in the netCDF file (floating point).
-  delta[T] = NAN; // Delta probably will never make sense in the time dimension.
+  delta[T] = PISM_DOUBLE_NAN; // Delta probably will never make sense in the time dimension.
   delta[X] = (g.x_max - g.x_min) / (g.x_len - 1);
   delta[Y] = (g.y_max - g.y_min) / (g.y_len - 1);
 
