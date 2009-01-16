@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 #ifndef __pccoupler_hh
 #define __pccoupler_hh
 
 #include <petsc.h>
 #include "../base/grid.hh"
+#include "../base/LocalInterpCtx.hh"
 
 
 //! A virtual base class for coupling PISM to other climate components.
@@ -35,8 +35,13 @@ public:
   PISMClimateCoupler();
   virtual ~PISMClimateCoupler();
 
-  virtual PetscErrorCode setGrid(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
 
+  // since climate fields may be in the same file as the one used by
+  //   PISM for input, get the info needed to read them; this is normally
+  //   a helper routine for derived classes
+  virtual PetscErrorCode findPISMInputFile(char* *filename, LocalInterpCtx* &lic);
+  
   // the implementations of this in the base class just terminates; to use,
   //   re-implement in the derived class
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
@@ -55,15 +60,23 @@ class PISMAtmosphereCoupler : public PISMClimateCoupler {
 public:
   PISMAtmosphereCoupler();
   virtual ~PISMAtmosphereCoupler(); // destroys IceModelVec2 below
-  
-  virtual PetscErrorCode getArrayForSurfMassFlux(PetscScalar** &a);
-  virtual PetscErrorCode getArrayForSurfTemp(PetscScalar** &a);
 
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
+  // an atmosphere model could run non-trivially during these calls
+  virtual PetscErrorCode updateSurfMassFluxAndProvide(
+             PetscScalar t_years, PetscScalar dt_years, 
+             IceModelVec2 mask, IceModelVec2 surface_elev,
+             IceModelVec2* &vsmf);  // provides pointer to vsurfmassflux
+  virtual PetscErrorCode updateSurfTempAndProvide(
+             PetscScalar t_years, PetscScalar dt_years,
+             IceModelVec2 mask, IceModelVec2 surface_elev,
+             IceModelVec2* &vst);  // provides pointer to vsurfmassflux
+
 protected:
-  IceModelVec2 vsurfmassflux;
-  IceModelVec2 vsurftemp;
+  // the two essential fields that must be available for IceModel (base class)
+  IceModelVec2 vsurfmassflux, vsurftemp;
 };
 
 
@@ -76,25 +89,7 @@ class PISMConstAtmosCoupler : public PISMAtmosphereCoupler {
 public:
   PISMConstAtmosCoupler();
 
-  PetscErrorCode readSurfaceTempFromFile(const char *filename);
-  PetscErrorCode readSurfaceMassBalanceFromFile(const char *filename);
-};
-
-
-//! A derived class of PISMAtmosphereCoupler which provides a PDD to PISM.
-/*!
-The PDD here is the one already implemented in PISM.  That is, it is the one
-from EISMINT-Greenland.  Thus it has various constants parameterizing the 
-melt and refreeze processes.
- */
-class PISMPDDCoupler : public PISMAtmosphereCoupler {
-
-public:
-  PISMPDDCoupler();
-  ~PISMPDDCoupler();  // destroys PDD
-
-  PetscErrorCode initPDD(/* parameters here */);
-  PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
 };
 
 
@@ -107,12 +102,12 @@ public:
   // a destructor will be needed to destroy pair of IceModelVec2 below
   // ~PISMOceanCoupler();
 
-  // this procedure would initialize the IceModelVec2 below
-  // PetscErrorCode init();
+  // this procedure would initialize the two IceModelVec2 below
+  // virtual PetscErrorCode initFromOptions(IceGrid* g);
   
   // this procedure would write the two IceModelVec2 fields to 
   //   a NetCDF file; needed for debugging at least
-  // PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+  // virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
   // these two fields would store (map-plane, scalar) fields for ice shelf
   //   base temperature and ice shelf base mass flux

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Ricarda Winkelmann
+// Copyright (C) 2009 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,14 +26,13 @@ static char help[] =
 #include "pccoupler.hh"
 
 
-//! A draft derived class which shows how to use atmosphere and ocean instances of PISMClimateCoupler.
+//! A draft derived class which shows how to use atmosphere and ocean instances of PISMClimateCoupler, to duplicate functionality of 'pismr'.
 /*!
 This class could be moved to a pair of files as usual (e.g. icePCCModel.hh
 and icePCCModel.cc).
 
-As is stands, IcePCCModel has two new members "atmosPCC" and "oceanPCC", instances of 
-derived classes of PISMClimateCoupler.  Perhaps only one
-of these is needed, and perhaps more. 
+As is stands, IcePCCModel has two new members "atmosPCC" and "oceanPCC", 
+instances of derived classes of PISMClimateCoupler.
 
 IcePCCModel could re-implement most IceModel procedures.  These
 re-implementations would include climate data by calling the atmosPCC
@@ -42,11 +41,10 @@ as candidates for re-implementation.  They are just suggestions; re-implemention
 of either just one or many IceModel procedures can be imagined.
 
 For example, a re-implementation of IceModel::massContExplicitStep() could 
-call atmosPCC.???() with the current ice flow model state, including the time, 
-and get back a net surface mass balance.  Likewise, a re-implementation of
-IceModel::temperatureStep() for ice shelves could call atmosPCC.???() to 
-get a surface boundary temperature and also call oceanPCC.???() to get a
-basal boundary temperature.
+call atmosPCC.updateSurfMassFluxAndProvide() with the current ice flow 
+model state and time-step information and get back a net surface mass balance.  
+It could call atmosPCC.updateSurfTempAndProvide() with the current ice flow 
+model state and time-step information and get back a surface temperature.
 
 IcePCCModel could be changed to be a derived class \e of a derived
 class of IceModel, such as IceEISModel or IceGRNModel.
@@ -54,8 +52,7 @@ class of IceModel, such as IceEISModel or IceGRNModel.
 Re-implementations could call the IceModel version and then do additional 
 computation.  Or they could completely replace the existing computation.
 
-The current empty implementation merely calls the IceModel version.  The
-PISMClimateCoupler methods are not actually used.  Thus the executable 
+The intention of this draft implementation is that the executable 
 \c pcc, if built, has identical function to \c pismr.
  */
 class IcePCCModel : public IceModel {
@@ -63,57 +60,67 @@ class IcePCCModel : public IceModel {
 public:
   IcePCCModel(IceGrid &g, IceType *i);
 
-  PISMAtmosphereCoupler atmosPCC;
+  //PISMAtmosphereCoupler atmosPCC;
+  PISMConstAtmosCoupler atmosPCC;
   PISMOceanCoupler oceanPCC;
 
+  // calls initialization for atmosPCC, oceanPCC
+  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+
   // could re-implement these procedures
+  PetscErrorCode write_model_state(const char filename[]);
   PetscErrorCode massContExplicitStep();
   PetscErrorCode temperatureStep(PetscScalar* vertSacrCount);
-  PetscErrorCode additionalAtStartTimestep();
-  PetscErrorCode additionalAtEndTimestep();
 };
 
 
-//! Does nothing except call to parent's constructor.  Could initialize stuff.
+//! Does nothing except call to parent's constructor.
 IcePCCModel::IcePCCModel(IceGrid &g, IceType *i) : IceModel(g, i) {
-  atmosPCC.setGrid(&g);
-  oceanPCC.setGrid(&g);
 }
 
+
+PetscErrorCode IcePCCModel::initFromOptions(PetscTruth doHook) {
+  PetscErrorCode ierr;
+  ierr = IceModel::initFromOptions(doHook); CHKERRQ(ierr);
+  ierr = atmosPCC.initFromOptions(&grid); CHKERRQ(ierr);
+  ierr = oceanPCC.initFromOptions(&grid); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IcePCCModel::write_model_state(const char filename[]) {
+  PetscErrorCode ierr;
+  ierr = IceModel::write_model_state(filename); CHKERRQ(ierr);
+  ierr = atmosPCC.writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  return 0;
+}
 
 // see procedure in src/base/iMgeometry.cc
 PetscErrorCode IcePCCModel::massContExplicitStep() {
   PetscErrorCode ierr;
+  IceModelVec2* my_vsmf;
   
+  ierr = atmosPCC.updateSurfMassFluxAndProvide(
+             grid.year, dt / secpera, vMask, vh,
+             my_vsmf); CHKERRQ(ierr);
+  ierr = vAccum.copy_from(*my_vsmf); CHKERRQ(ierr);
   ierr = IceModel::massContExplicitStep(); CHKERRQ(ierr);
   return 0;
 }
 
+
 // see procedure in src/base/iMtemp.cc
 PetscErrorCode IcePCCModel::temperatureStep(PetscScalar* vertSacrCount) {
   PetscErrorCode ierr;
+  IceModelVec2* my_vst;
   
+  ierr = atmosPCC.updateSurfTempAndProvide(
+             grid.year, dt / secpera, vMask, vh,
+             my_vst); CHKERRQ(ierr);
+  ierr = vTs.copy_from(*my_vst); CHKERRQ(ierr);
   ierr = IceModel::temperatureStep(vertSacrCount); CHKERRQ(ierr);
   return 0;
 }
-
-
-// empty implementation found in src/base/iMutil.cc
-PetscErrorCode IcePCCModel::additionalAtStartTimestep() {
-  PetscErrorCode ierr;
-  
-  ierr = IceModel::additionalAtStartTimestep(); CHKERRQ(ierr);
-  return 0;
-}
-
-// empty implementation found in src/base/iMutil.cc
-PetscErrorCode IcePCCModel::additionalAtEndTimestep() {
-  PetscErrorCode ierr;
-  
-  ierr = IceModel::additionalAtEndTimestep(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 
 // The executable 'pcc' is this procedure.

@@ -93,6 +93,7 @@ IceModel::~IceModel() {
   }
   if (bootstrapLIC != PETSC_NULL) {
     delete bootstrapLIC;
+    bootstrapLIC = PETSC_NULL;
   }
   //verbPrintf(1,grid.com, "Cleaning up the history string.\n");
   delete[] history;

@@ -2,8 +2,12 @@ VPATH += :../src/coupler/
 
 exec_default += ../bin/pcc
 
-other_sources += pccoupler.cc pcc.cc
+pcc_sources += pccoupler.cc pPDDcoupler.cc pcc.cc
 
-../bin/pcc : pcc.o pccoupler.o ${LIBPISMNAME}
-	${CXXLINKER} pccoupler.o pcc.o ${ICE_LIB_FLAGS} -o $@
+PCC_OBJS := $(pcc_sources:.cc=.o)
+
+other_sources += $(pcc_sources)
+
+../bin/pcc : ${PCC_OBJS} ${LIBPISMNAME}
+	${CXXLINKER} ${PCC_OBJS} ${ICE_LIB_FLAGS} -o $@
 

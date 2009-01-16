@@ -2,12 +2,11 @@ as of 14 Jan 2009:
 
 These files are a PISMClimateCoupler demonstration.
 
-There is an empty shell for a nontrivial PISMClimateCoupler.  There are
-empty shell for PISMAtmosphereCoupler and PISMOceanCoupler, derived classes
-of PISMClimateCoupler.
+There is an essentially virual PISMClimateCoupler.  There are
+derived classes PISMAtmosphereCoupler and PISMOceanCoupler.
 
-There is an empty shell of IcePCCModel, a derived class of IceModel, which
-uses instances of PISMAtmosphereCoupler and PISMOceanCoupler.
+There is demonstration implementation of IcePCCModel, a derived class 
+of IceModel, using instances of PISMAtmosphereCoupler and PISMOceanCoupler.
 
 A nontrivial PISMClimateCoupler for ice shelves was written by Ricarda 
 Winkelmann (PIK), with help from Ed Bueler, on 2 Dec 2008.  That source is
