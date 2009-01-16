@@ -206,10 +206,9 @@ and \c delta entries in the struct will not be meaningful.
 
 //! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
-  PetscErrorCode ierr;
   delete[] zlevs;
   delete[] zblevs;
-  ierr = PetscFree(a);
+  PetscFree(a);
 }
 
 

@@ -200,9 +200,7 @@ PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) {
 //! Read the last value of the time variable t from a NetCDF file.
 PetscErrorCode NCTool::get_last_time(double *time) {
   PetscErrorCode ierr;
-
-  ierr = get_dim_limits("t", NULL, time);
-
+  ierr = get_dim_limits("t", NULL, time); CHKERRQ(ierr);
   return 0;
 }
 

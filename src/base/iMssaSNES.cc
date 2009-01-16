@@ -300,6 +300,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
   
   ierr = SNESSolve(snes,PETSC_NULL,X); CHKERRQ(ierr);
   ierr = solvefeedback(snes, R); CHKERRQ(ierr);
+  ierr = SNESGetIterationNumber(snes,its); CHKERRQ(ierr); 
 
   ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
 
@@ -356,10 +357,9 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
 
   PetscScalar **H, **mask, **tauc, **taudx, **taudy, **nu[2];
   SSASNESNode **xBV;
-  PetscInt Mx, My, xs, ys, xm, ym;
+  PetscInt xs, ys, xm, ym;
 
   // use transpose as in IceModel
-  Mx = info->my; My = info->mx;
   xs = info->ys; ys = info->xs;
   xm = info->ym; ym = info->xm;
 

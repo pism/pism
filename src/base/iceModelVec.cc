@@ -58,9 +58,9 @@ IceModelVec::~IceModelVec() {
 }
 
 
-PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[], bool local) {
+PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[], 
+                                    bool local) {
   SETERRQ(1,"IceModelVec::create(...) is VIRTUAL ONLY: not implemented");
-  return 0;
 }
 
 
@@ -415,21 +415,20 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid) {
 }
 
 //! Virtual only. Reimplemented in derived classes.
-PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {           
+PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {
   SETERRQ(1, "IceModelVec::read(...) is virtual only.");
-  return 0;
 }
 
 //! Virtual only. Reimplemented in derived classes.
-PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
+PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, 
+                                   bool critical) {
   SETERRQ(1, "IceModelVec::regrid(...) is virtual only");
-  return 0;
 }
 
 //! Virtual only. Reimplemented in derived classes.
-PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
+PetscErrorCode IceModelVec::regrid(const char filename[], 
+                                   LocalInterpCtx &lic, PetscScalar default_value) {
   SETERRQ(1, "IceModelVec::regrid(...) is virtual only");
-  return 0;
 }
 
 //! Calls the appropriate NCTool method to read a NetCDF variable into the IceModelVec.
@@ -500,7 +499,6 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
 //! Virtual only. Reimplemented in derived classes.
 PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   SETERRQ(1, "IceModelVec::write(const char filename[], nc_type nctype) is virtual only.")
-  return 0;
 }
 
 //! Writes an IceModelVec to a NetCDF file.

@@ -26,12 +26,7 @@ const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 
 const PetscScalar DEFAULT_ADAPT_TIMESTEP_RATIO = 0.12;  // yes, I'm confident this is o.k.
 
-const PetscScalar DEFAULT_MIN_SHEET_TO_DRAGGING = 50.0;   // m/a; critical SIA speed for switch SIA --> SSA
-const PetscScalar DEFAULT_MAX_SPEED_DRAGGING_TO_SHEET = 5.0;  // m/a; crit Mac speed for switch SSA --> SIA
-const PetscScalar DEFAULT_MAX_SPEEDSIA_DRAGGING_TO_SHEET = 50.0;    // m/a; crit SIA speed for switch SSA --> SIA
-const PetscScalar DEFAULT_MAXSLOPE_SSA = 1.0e-3; // no units/pure number; cap to avoid bad behavior
 const PetscScalar DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
-const PetscScalar DEFAULT_VERT_VEL_SSA = 0.0;  // temp evolution uses this value; incompressibility not satisfied
 const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 //used in iMvelocity.C and iMutil.C
 const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 

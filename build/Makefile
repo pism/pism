@@ -39,14 +39,14 @@ ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
 ifeq (${PISM_USE_DEBUG}, 1)
-  CFLAGS += -g
+  CFLAGS += -g -Wall -Wextra
 endif
 SHARED = -shared # default (for Linux)
 
 # Linker flags:
-BASE_LIB_FLAGS := -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
-                  -lm -lgsl -lgslcblas \
-                  $(PISM_EXTRA_LIBS)
+BASE_LIB_FLAGS := ${PISM_EXTRA_LIBS} \
+                  -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
+                  -lm -lgsl -lgslcblas                  
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
@@ -220,6 +220,7 @@ showEnv:
 	@echo 'VPATH = ' ${VPATH}
 	@echo 'CC = ' ${CC}
 	@echo 'CXX = ' ${CXX}
+	@echo 'CFLAGS = ' ${CFLAGS}
 	@echo 'CLINKER = ' ${CLINKER}
 	@echo 'CXXLINKER = ' ${CXXLINKER}
 	@echo 'PETSC_DIR = ' ${PETSC_DIR}

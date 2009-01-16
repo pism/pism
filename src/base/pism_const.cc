@@ -39,7 +39,7 @@ PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN)
 
 PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice) {
     PetscErrorCode ierr;
-    ierr = userChoosesIceType(com, ice, 0);  // use Paterson-Budd by default
+    ierr = userChoosesIceType(com, ice, 0); CHKERRQ(ierr); // use Paterson-Budd by default
     return 0;
 }
 

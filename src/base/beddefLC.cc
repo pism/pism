@@ -180,20 +180,19 @@ BedDeformLC::BedDeformLC() {
 
 BedDeformLC::~BedDeformLC() {
   if (allocDone == PETSC_TRUE) {
-    PetscErrorCode  ierr;
 #if (PISM_HAVE_FFTW)
     fftw_destroy_plan(bdplanfor);
     fftw_destroy_plan(bdplanback);
     fftw_free(bdin);
     fftw_free(bdout);
 #endif
-    ierr = VecDestroy(Hdiff);
-    ierr = VecDestroy(dbedElastic);
-    ierr = VecDestroy(platefat);
-    ierr = VecDestroy(plateoffset);
-    ierr = VecDestroy(vleft);
-    ierr = VecDestroy(vright);
-    ierr = VecDestroy(lrmE);
+    VecDestroy(Hdiff);
+    VecDestroy(dbedElastic);
+    VecDestroy(platefat);
+    VecDestroy(plateoffset);
+    VecDestroy(vleft);
+    VecDestroy(vright);
+    VecDestroy(lrmE);
     delete [] cx;  delete [] cy;
   }
   allocDone = PETSC_FALSE;
