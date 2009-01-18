@@ -20,8 +20,10 @@
 #define __pccoupler_hh
 
 #include <petsc.h>
+#include "../base/pism_const.hh"
 #include "../base/grid.hh"
 #include "../base/LocalInterpCtx.hh"
+#include "../base/iceModelVec.hh"
 
 
 //! A virtual base class for coupling PISM to other climate components.
@@ -66,13 +68,13 @@ public:
 
   // an atmosphere model could run non-trivially during these calls
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, 
-             IceModelVec2 mask, IceModelVec2 surface_elev,
-             IceModelVec2* &vsmf);  // provides pointer to vsurfmassflux
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             IceModelVec2 vmask, IceModelVec2 vsurfelev,
+             IceModelVec2* &pvsmf);  // vsmf = pointer to vsurfmassflux
   virtual PetscErrorCode updateSurfTempAndProvide(
-             PetscScalar t_years, PetscScalar dt_years,
-             IceModelVec2 mask, IceModelVec2 surface_elev,
-             IceModelVec2* &vst);  // provides pointer to vsurfmassflux
+             const PetscScalar t_years, const PetscScalar dt_years,
+             IceModelVec2 vmask, IceModelVec2 vsurfelev,
+             IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
 protected:
   // the two essential fields that must be available for IceModel (base class)

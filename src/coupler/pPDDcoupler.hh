@@ -39,20 +39,17 @@ public:
   virtual PetscErrorCode initFromOptions(IceGrid* g);
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
-  virtual PetscScalar getSummerWarming(
-             const PetscScalar elevation, const PetscScalar latitude,
-             const PetscScalar Tma);
-  virtual PetscScalar getTemperatureFromYearlyCycle(
-       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day,
-       const PetscInt i, const PetscInt j);
-  double CalovGreveIntegrand(const double Tac);
+
+  virtual PetscErrorCode updateSurfTempAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years,
+             IceModelVec2 mask, IceModelVec2 surface_elev,
+             IceModelVec2* &vst);
+
 
 protected:
   IceModelVec2 vsurfaccum;
   gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which
                                  //   does not use actual random numbers
-  IceModelVec2 vmonthlysurftemp[12]; // usually these are not created; if user supplies monthly
-                                 //   temperature maps then we will allocate 12 IceModelVec2's 
   PetscScalar  pddStdDev,        // K; daily amount of randomness
                pddFactorSnow,    // m day^-1 K^-1; amount of snow melted,
                                  //    as ice equivalent, per positive degree day
@@ -63,7 +60,24 @@ protected:
                pddSummerWarming, // K; amplitude of yearly temperature cycle
                pddSummerPeakDay; // Julian day of summer temperature peak
 
+  PetscScalar getSummerWarming(
+             const PetscScalar elevation, const PetscScalar latitude,
+             const PetscScalar Tma);
+  PetscScalar getTemperatureFromYearlyCycle(
+       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day);
+
+  PetscTruth   usingMonthlyTemps;
+  IceModelVec2 vmonthlysurftemp[12]; // usually these are not created; if user supplies monthly
+                                 //   temperature maps then we will allocate 12 IceModelVec2's 
   PetscErrorCode readMonthlyTemps(const char *filename);
+  PetscErrorCode getMonthIndicesFromDay(const PetscScalar day, PetscInt &curr, PetscInt &next);
+  PetscScalar getTemperatureFromMonthlyData(
+       PetscScalar **currMonthSurfTemps, PetscScalar **nextMonthSurfTemps,
+       const PetscInt i, const PetscInt j, const PetscScalar day);
+
+  PetscScalar getSurfaceBalanceFromSnowAndPDD(const PetscScalar snowrate,
+                    const PetscScalar dt, const PetscScalar pddsum);
+  double CalovGreveIntegrand(const double Tac);  // double because handed to gsl quadrature routine
 };
 
 

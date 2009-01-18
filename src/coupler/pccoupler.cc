@@ -116,7 +116,10 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   // short names "acab" and "artm" match GLIMMER (& CISM, presumably)
   
   // mean annual net ice equivalent surface mass balance rate
-  ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);  // global; no ghosts
+  //   FIXME re create(): IceModelVec2 is local even though ghosts are not needed;
+  //   this is so that vsurfmassflux duplicates IceModel::vAccum; later we
+  //   can make global with no ghosts
+  ierr = vsurfmassflux.create(*g, "acab", true); CHKERRQ(ierr);
   ierr = vsurfmassflux.set_attrs(
             "climate_state", 
             "mean annual net ice equivalent accumulation (ablation) rate",
@@ -128,7 +131,8 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
 
   // annual mean air temperature at "ice surface", at level below all firn processes
   // possibly should be reported in deg C; would require shift version of glaciological_units
-  ierr = vsurftemp.create(*g, "artm", false); CHKERRQ(ierr);  // global; no ghosts
+  //   FIXME re create(): ditto above; vsurftemp follows vTs
+  ierr = vsurftemp.create(*g, "artm", true); CHKERRQ(ierr);
   ierr = vsurftemp.set_attrs(
             "climate_state",
             "temperature at ice surface but below firn",
@@ -156,20 +160,20 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
 
 //! Just provides access.  Generally, the surface mass flux is updated here, by atmosphere model.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-                  PetscScalar t_years, PetscScalar dt_years, 
+                  const PetscScalar t_years, const PetscScalar dt_years, 
                   IceModelVec2 mask, IceModelVec2 surface_elev,
-                  IceModelVec2* &vsmf) {
-  vsmf = &vsurfmassflux;
+                  IceModelVec2* &pvsmf) {
+  pvsmf = &vsurfmassflux;
   return 0;
 }
 
 
 //! Just provides access.  Generally, the surface temp is updated here, by atmosphere model.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
-                  PetscScalar t_years, PetscScalar dt_years, 
-                  IceModelVec2 mask, IceModelVec2 surface_elev,
-                  IceModelVec2* &vst) {
-  vst = &vsurftemp;
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  IceModelVec2 vmask, IceModelVec2 vsurfelev,
+                  IceModelVec2* &pvst) {
+  pvst = &vsurftemp;
   return 0;
 }
 

@@ -99,7 +99,7 @@ PetscErrorCode IcePCCModel::write_model_state(const char filename[]) {
 PetscErrorCode IcePCCModel::massContExplicitStep() {
   PetscErrorCode ierr;
   IceModelVec2* my_vsmf;
-  
+
   ierr = atmosPCC.updateSurfMassFluxAndProvide(
              grid.year, dt / secpera, vMask, vh,
              my_vsmf); CHKERRQ(ierr);
@@ -113,7 +113,7 @@ PetscErrorCode IcePCCModel::massContExplicitStep() {
 PetscErrorCode IcePCCModel::temperatureStep(PetscScalar* vertSacrCount) {
   PetscErrorCode ierr;
   IceModelVec2* my_vst;
-  
+
   ierr = atmosPCC.updateSurfTempAndProvide(
              grid.year, dt / secpera, vMask, vh,
              my_vst); CHKERRQ(ierr);
@@ -123,7 +123,7 @@ PetscErrorCode IcePCCModel::temperatureStep(PetscScalar* vertSacrCount) {
 }
 
 
-// The executable 'pcc' is this procedure.
+// The executable 'pccr' is this procedure.
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
@@ -142,11 +142,11 @@ int main(int argc, char *argv[]) {
     IceType*   ice = PETSC_NULL;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PCC (demo of climate coupling mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PCCR (demo of climate coupling mode)\n"); CHKERRQ(ierr);
     
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
     IcePCCModel m(g, ice);
-    ierr = m.setExecName("pcc"); CHKERRQ(ierr);
+    ierr = m.setExecName("pccr"); CHKERRQ(ierr);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
 
     // We provide a default base name if no -o option.
-    ierr = m.writeFiles("unnamed_pcc.nc"); CHKERRQ(ierr);
+    ierr = m.writeFiles("unnamed_pccr.nc"); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);
 
     delete ice;
