@@ -44,12 +44,24 @@ public:
   //   a helper routine for derived classes
   virtual PetscErrorCode findPISMInputFile(char* *filename, LocalInterpCtx* &lic);
   
+  virtual PetscErrorCode updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded);
+
   // the implementations of this in the base class just terminates; to use,
   //   re-implement in the derived class
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
 protected:
   IceGrid* grid;
+};
+
+
+struct IceInfoNeededByAtmosphereCoupler {
+  IceModelVec2 *vlatitude,
+               *vlongitude,
+               *vmask,
+               *vsurfelev;
 };
 
 
@@ -69,12 +81,17 @@ public:
   // an atmosphere model could run non-trivially during these calls
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 
-             IceModelVec2 vmask, IceModelVec2 vsurfelev,
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvsmf);  // vsmf = pointer to vsurfmassflux
   virtual PetscErrorCode updateSurfTempAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years,
-             IceModelVec2 vmask, IceModelVec2 vsurfelev,
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // vst = pointer to vsurftemp
+
+  // this calls the two above
+  virtual PetscErrorCode updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded);
 
 protected:
   // the two essential fields that must be available for IceModel (base class)
@@ -92,6 +109,16 @@ public:
   PISMConstAtmosCoupler();
 
   virtual PetscErrorCode initFromOptions(IceGrid* g);
+
+  // because climate is constant, no update occurs in these; they just provide a pointer
+  virtual PetscErrorCode updateSurfMassFluxAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
+             IceModelVec2* &pvsmf);  // vsmf = pointer to vsurfmassflux
+  virtual PetscErrorCode updateSurfTempAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years,
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
+             IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 };
 
 

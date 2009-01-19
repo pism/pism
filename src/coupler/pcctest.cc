@@ -24,18 +24,18 @@ static char help[] =
 #include "../base/LocalInterpCtx.hh"
 #include "../base/nc_util.hh"
 #include "pccoupler.hh"
-// FIXME: #include "pPDDcoupler.hh"
+#include "pPDDcoupler.hh"
 
 
-/* example run: pcctest extracts 'mask' and 'usurf' = surface elevation from sheet.nc;
+/* example run: here pcctest extracts 'mask' and 'usurf' = surface elevation from sheet.nc;
    extracts 'acab' and 'artm' from sheet.nc, because they are stored there by EISMINT
    II choices, and initializes PISMConstAtmosCoupler;
    (FIXME: will allow PISMPDDCoupler instead); "computes", i.e. no actual computation,
    surface mass balance and surface temp at ys:dt:ye and saves these in pccmovie.nc
 
-$ mpiexec -n 2 pisms -eisII A -y 10000 -o sheet.nc
+$ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
 
-$ pcctest -if sheet.nc -ys 0.0 -ye 1000.0 -dt 100.0 -of pccmovie.nc
+$ pcctest -if state.nc -ys 0.0 -ye 300.0 -dt 100.0 -of pccmovie.nc
 
 */
 
@@ -47,23 +47,23 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
 
   NCTool nc(&grid);
 
+  // read grid params
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
   if (!file_exists) {
     ierr = PetscPrintf(com, "PCCTEST ERROR: can't open file '%s'\n", filename); CHKERRQ(ierr);
     PetscEnd();
   }
-
   ierr = nc.get_grid_info(gi);
   grid.year = gi.time / secpera;
   grid.Mx = gi.x_len;
   grid.My = gi.y_len;
   grid.Mz = gi.z_len;
   grid.Mbz = gi.zb_len;
-  // grid.Lx, grid.Ly set from gi.x_max, gi.y_max below in call to grid.rescale_using_zlevels()
-
   zlevs = new double[grid.Mz];
   zblevs = new double[grid.Mbz];
   ierr = nc.get_vertical_dims(grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
   // re-allocate and fill grid.zlevels & zblevels with read values
   delete [] grid.zlevels;  delete [] grid.zblevels;
   grid.zlevels = new PetscScalar[grid.Mz];
@@ -74,11 +74,97 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
   for (PetscInt k = 0; k < grid.Mbz; k++) {
     grid.zblevels[k] = (PetscScalar) zblevs[k];
   }
-  delete [] zlevs;  delete [] zblevs;  // done with these
+  delete [] zlevs;  delete [] zblevs;
   
   // finally, set DA 
   ierr = grid.createDA(); CHKERRQ(ierr);
+  // sets grid.Lx, grid.Ly:
   ierr = grid.rescale_using_zlevels(-gi.x_min, -gi.y_min); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode writePCCStateAtTimes(
+                 PISMClimateCoupler *pcc,
+                 const char *filename, const MPI_Comm com, IceGrid* grid,
+                 int argc, char *argv[],
+                 const PetscReal ys, const PetscReal ye, const PetscReal dt_years) {
+
+  PetscErrorCode ierr;
+  NCTool nc(grid);
+
+  // put calling command in history string
+  char cmdstr[TEMPORARY_STRING_LENGTH], timestr[TEMPORARY_STRING_LENGTH];
+  strcpy(cmdstr, "");
+  strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
+  cmdstr[sizeof(cmdstr) - 1] = '\0';
+  for (PetscInt i=1; i < argc; i++) {
+    PetscInt remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
+    // strncat promises to null terminate, so we must only make sure that the
+    // end of the buffer is not overwritten.
+    strncat(cmdstr, " ", remaining_bytes--);
+    strncat(cmdstr, argv[i], remaining_bytes);
+  }
+//  strcat(cmdstr,"\n");
+  cmdstr[sizeof(cmdstr) - 1] = '\0';
+  
+  // compare IceModel::stampHistory() for this way of getting date etc in file
+  time_t now;
+  tm tm_now;
+  now = time(NULL);
+  localtime_r(&now, &tm_now);
+  char date_str[50], username[50], hostname[100], wwstr[TEMPORARY_STRING_LENGTH];
+  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+  ierr = PetscGetUserName(username, sizeof(username)); CHKERRQ(ierr);
+  ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
+  int length = snprintf(wwstr, sizeof(wwstr), "%s@%s %s:  %s\n",
+                        username, hostname, date_str, cmdstr);  
+  if (length < 0) {
+    SETERRQ(3, "PCCTEST ERROR: snprintf() is not C99 compliant?");
+  }
+  if (length > (int)sizeof(wwstr)) {
+    ierr = PetscPrintf(com,
+       "PCCTEST WARNING: command line truncated to %d chars in history.\n",
+       length + 1 - sizeof(wwstr)); CHKERRQ(ierr);
+    wwstr[sizeof(wwstr) - 2] = '\n';
+    wwstr[sizeof(wwstr) - 1] = '\0';
+  }
+
+  ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
+  ierr = nc.write_history(wwstr); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // get NN = number of times at which PCC state is written
+  PetscInt NN;
+  if (dt_years < 0.0001) {
+    ierr = PetscPrintf(com,
+      "PCCTEST WARNING: dt_years less than 10^-4 year so just writing state for year %f\n",
+      ys); CHKERRQ(ierr);
+    NN = 1;
+  } else {
+    NN = 1 + (int) ceil((ye - ys) / dt_years);
+  }
+  if (NN > 1000)  SETERRQ(2,"PCCTEST ERROR: refuse to write more than 1000 times");
+  if (NN > 50) {
+    ierr = PetscPrintf(com, "\n\nPCCTEST WARNING: writing more than 50 times to '%s'!!\n\n\n",
+                       filename); CHKERRQ(ierr);
+  }
+
+  // write the states
+  for (PetscInt k=0; k < NN; k++) {
+    const PetscReal pccyear = ys + k * dt_years;
+    ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr);
+    ierr = nc.append_time(pccyear * secpera); CHKERRQ(ierr);
+    snprintf(timestr, sizeof(timestr), "  pcc state at year %11.3f ...\n", pccyear);
+    ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    // FIXME:  need to fill struct* with ice info needed for non-trivial update; here NULL
+    ierr = pcc->updateClimateFields(pccyear, dt_years, NULL); CHKERRQ(ierr);
+
+    ierr = pcc->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -103,45 +189,39 @@ int main(int argc, char *argv[]) {
     IceGrid grid(com, rank, size);
 
     PISMConstAtmosCoupler pcac;
-    // PISMPDDCoupler ppddc;  FIXME: test this one too, in same program; user chooses
+    PISMPDDCoupler        ppddc;
+    PISMClimateCoupler*   PCC;
     
     ierr = PetscPrintf(com, "PCCTEST (test of climate couplers offline from PISM)\n"); CHKERRQ(ierr);
     
     PetscTruth optSet;
     ierr = PetscOptionsGetString(PETSC_NULL, "-if", inname, 
                                PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-    if (optSet != PETSC_TRUE) {
-      ierr = PetscPrintf(com, "PCCTEST ERROR: no -if to initialize from\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
+    if (optSet != PETSC_TRUE) { SETERRQ(1,"PCCTEST ERROR: no -if to initialize from\n"); }
 
     ierr = PetscPrintf(com, "  initializing grid from NetCDF file '%s'...\n",
                        inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,com,grid); CHKERRQ(ierr);
     
-    ierr = pcac.initFromOptions(&grid); CHKERRQ(ierr);
+    // FIXME:  set PCC from options
+    PCC = (PISMClimateCoupler*) &pcac;
+    
+    ierr = PCC->initFromOptions(&grid); CHKERRQ(ierr);
 
     ierr = PetscOptionsGetString(PETSC_NULL, "-of", outname, 
                                PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-    if (optSet != PETSC_TRUE) {
-      ierr = PetscPrintf(com, "PCCTEST ERROR: no -of to write to\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
+    if (optSet != PETSC_TRUE) { SETERRQ(2,"PCCTEST ERROR: no -of to write to\n"); }
 
-    NCTool nc(&grid);
-    PetscInt NN = 3; // FIXME: read options -ys, -ye, -dt to get when to write
-    for (PetscInt k=0; k<NN; k++) {
-      ierr = nc.open_for_writing(outname, false); CHKERRQ(ierr); // replace == false
-      ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
-      //ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
-      ierr = nc.close(); CHKERRQ(ierr);
+    PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, PETSC_NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, PETSC_NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, PETSC_NULL); CHKERRQ(ierr);
 
-      // FIXME: call updateSurfMassFluxAndProvide() and updateSurfTempAndProvide()
-      //        here so that nontrivial PISMClimateCoupler can change fields 
+    ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
+                       outname); CHKERRQ(ierr);
+    ierr = writePCCStateAtTimes(PCC,outname,com,&grid,
+                                argc,argv,ys,ye,dt_years); CHKERRQ(ierr);
 
-      ierr = pcac.writeCouplingFieldsToFile(outname);
-    }
-    
     ierr = PetscPrintf(com, "... done\n"); CHKERRQ(ierr);
   }
 

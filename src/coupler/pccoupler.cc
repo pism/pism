@@ -86,8 +86,16 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
 }
 
 
+PetscErrorCode PISMClimateCoupler::updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded) {
+  SETERRQ(1,"VIRTUAL in PISMClimateCoupler ... not implemented");
+  return 0;
+}
+
+
 PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filename) {
-  SETERRQ(1,"not implemented");
+  SETERRQ(1,"VIRTUAL in PISMClimateCoupler ... not implemented");
   return 0;
 }
 
@@ -158,22 +166,29 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
 }
 
 
-//! Just provides access.  Generally, the surface mass flux is updated here, by atmosphere model.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
-                  IceModelVec2 mask, IceModelVec2 surface_elev,
-                  IceModelVec2* &pvsmf) {
-  pvsmf = &vsurfmassflux;
+                  void *iceInfoNeeded, IceModelVec2* &pvsmf) {
+  SETERRQ(1,"VIRTUAL in PISMAtmosphereCoupler ... not implemented");
   return 0;
 }
 
 
-//! Just provides access.  Generally, the surface temp is updated here, by atmosphere model.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
-                  IceModelVec2 vmask, IceModelVec2 vsurfelev,
-                  IceModelVec2* &pvst) {
-  pvst = &vsurftemp;
+                  void *iceInfoNeeded, IceModelVec2* &pvst) {
+  SETERRQ(1,"VIRTUAL in PISMAtmosphereCoupler ... not implemented");
+  return 0;
+}
+
+
+PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded) {
+  PetscErrorCode ierr;
+  IceModelVec2* ignored;
+  ierr = updateSurfMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
+  ierr = updateSurfTempAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
   return 0;
 }
 
@@ -203,6 +218,24 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
 
   delete lic;
+  return 0;
+}
+
+
+//! Just provides access.  Nothing to update.
+PetscErrorCode PISMConstAtmosCoupler::updateSurfMassFluxAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvsmf) {
+  pvsmf = &vsurfmassflux;
+  return 0;
+}
+
+
+//! Just provides access.  Nothing to update
+PetscErrorCode PISMConstAtmosCoupler::updateSurfTempAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvst) {
+  pvst = &vsurftemp;
   return 0;
 }
 

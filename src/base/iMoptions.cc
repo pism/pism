@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004--2009 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -67,8 +67,8 @@ PetscErrorCode  IceModel::setFromOptions() {
      It is also o.k. to have a local variable for "value", and then proceed to set the IceModel
      member accordingly.
   */
-  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
+
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &mydoBedIso); CHKERRQ(ierr);
@@ -97,14 +97,14 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-chebZ" read in determineSpacingTypeFromOptions()
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
   // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
   if (my_useConstantNuH == PETSC_TRUE) {
     useConstantNuHForSSA = PETSC_TRUE;
     setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s m
   }
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);
            CHKERRQ(ierr);
   // user gives \bar B in Pa s^{1/3}; typical value is 1.9e8 Pa s^{1/3} (MacAyeal et al 1996)
   if (my_useConstantHardness == PETSC_TRUE) {
@@ -138,7 +138,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-dTforcing" read by initForcingFromOptions() in iMforcing.cc
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-eta", &etaSet); CHKERRQ(ierr);
   if (etaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
@@ -151,7 +151,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // note "-gk" is used for specifying Goldsby-Kohlstedt ice; see also pism_const.cc
   //   this form allows a constant value of grain size to be input in mm
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-gk", &constantGrainSize, &mygsConstantSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-gk", &constantGrainSize, &mygsConstantSet); CHKERRQ(ierr);
   if (mygsConstantSet == PETSC_TRUE)  constantGrainSize *= 1.0e-3;
 
   // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice; see also pism_const.cc
@@ -168,7 +168,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-low_temp", &globalMinAllowedTemp, 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-low_temp", &globalMinAllowedTemp, 
            PETSC_NULL); CHKERRQ(ierr);
 
 // note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
@@ -177,12 +177,12 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // note "-matv" caught in writeFiles() in iMIO.cc
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-max_dt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-max_dt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
   if (maxdtSet == PETSC_TRUE)    setMaxTimeStepYears(my_maxdt);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-max_low_temps", &maxLowTempCount, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &grid.Mx, PETSC_NULL); CHKERRQ(ierr);
 
@@ -233,26 +233,26 @@ PetscErrorCode  IceModel::setFromOptions() {
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
   // option given in kPa so convert to Pa
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_c0", &myplastic_till_c_0, 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_c0", &myplastic_till_c_0, 
      &plasticc0Set);  CHKERRQ(ierr);
   if (plasticc0Set == PETSC_TRUE)   plastic_till_c_0 = myplastic_till_c_0 * 1.0e3;
 
   // plastic_till_pw_fraction is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
   // option a pure number (a fraction); no conversion
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_pwfrac", &plastic_till_pw_fraction, 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_pwfrac", &plastic_till_pw_fraction, 
      PETSC_NULL);  CHKERRQ(ierr);
 
   // controls regularization of plastic basal sliding law
   // option given in m/a so convert to m/s
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_reg", &myPlasticRegularization, 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_reg", &myPlasticRegularization, 
      &plasticRegSet);  CHKERRQ(ierr);
   if (plasticRegSet == PETSC_TRUE)  plasticRegularization = myPlasticRegularization / secpera;
 
   // plastic_till_mu is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
   // option in degrees is the "friction angle"
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-plastic_phi", &myplastic_phi, 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_phi", &myplastic_phi, 
      &plasticphiSet);  CHKERRQ(ierr);
   if (plasticphiSet == PETSC_TRUE)
      plastic_till_mu = tan((pi/180.0) * myplastic_phi);
@@ -264,7 +264,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pseudo_plastic_q", &mypseudo_plastic_q, 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-pseudo_plastic_q", &mypseudo_plastic_q, 
      &pseudoplasticqSet);  CHKERRQ(ierr);
   if (pseudoplasticqSet == PETSC_TRUE) {
      doPseudoPlasticTill = PETSC_TRUE;
@@ -272,7 +272,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
   // threshold; at this velocity tau_c is basal shear stress
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pseudo_plastic_uthreshold", 
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-pseudo_plastic_uthreshold", 
      &mypseudo_plastic_uthreshold, &pseudoplasticuthresholdSet);  CHKERRQ(ierr);
   if (pseudoplasticuthresholdSet == PETSC_TRUE) {
      doPseudoPlasticTill = PETSC_TRUE;
@@ -295,14 +295,14 @@ PetscErrorCode  IceModel::setFromOptions() {
   // a parameter in regularizing the computation of effective viscosity from strain rates;
   // see computeEffectiveViscosity() in iMssa.cc
   // option given in m/a so convert to m/s
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_vel_schoof", &myRegVelSchoof, &regVelSet);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-reg_vel_schoof", &myRegVelSchoof, &regVelSet);
            CHKERRQ(ierr);
   if (regVelSet == PETSC_TRUE)   regularizingVelocitySchoof = myRegVelSchoof / secpera;
     
   // a parameter in regularizing the computation of effective viscosity from strain rates;
   // see computeEffectiveViscosity() in iMssa.cc
   // option given in m; no conversion
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-reg_length_schoof", &regularizingLengthSchoof,
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-reg_length_schoof", &regularizingLengthSchoof,
            PETSC_NULL); CHKERRQ(ierr);
   
 // note "-regrid" is in use for regrid file name; see iMregrid.cc
@@ -316,7 +316,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &myuseSSAVelocity); CHKERRQ(ierr);
   if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
   
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_eps", &ssaEpsilon, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-ssa_eps", &ssaEpsilon, PETSC_NULL); CHKERRQ(ierr);
   
   // option to save linear system in Matlab-readable ASCII format at end of each
   // numerical solution of SSA equations; can be given with or without filename prefix
@@ -336,7 +336,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-ssa_maxi", &ssaMaxIterations,
            PETSC_NULL); CHKERRQ(ierr);
            
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
            PETSC_NULL); CHKERRQ(ierr);
 
 // -ssaBC used in IceROSSModel

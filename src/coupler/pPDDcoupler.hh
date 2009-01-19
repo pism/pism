@@ -20,34 +20,59 @@
 #define __pPDDcoupler_hh
 
 #include <petsc.h>
+#include <gsl/gsl_rng.h>
 #include "../base/grid.hh"
+#include "../base/iceModelVec.hh"
 #include "pccoupler.hh"
 
-//! A derived class of PISMConstAtmosCoupler which provides a PDD to PISM.
+//! A derived class of PISMAtmosphereCoupler which provides a PDD to PISM.
 /*!
 The PDD here is the one already implemented in PISM.  That is, it is the one
-from EISMINT-Greenland.  Thus it has various constants parameterizing the 
-melt and refreeze processes.
+from EISMINT-Greenland.
+
+If <tt>-pdd_monthly_temps</tt> is not used, it reads 'artm' from input file
+and interprets it as the (location dependent) mean annual surface temperature 
+vannmeansurftemp (K).  Then the surface temperature at a time, vsurftemp, 
+comes from a standard yearly cycle without randomness.  Note 
+vannmeansurftemp is written to output files as 'annavartm'.
+
+If <tt>-pdd_monthly_temps</tt> is used then it reads 12 monthly temperature
+data sets, 'temp_mon0', ..., 'temp_mon11', from input file and linearly
+interpolates these to get vsurftemp.
+
+It reads 'acab' from input file and interprets it as ice-equivalent snow
+accumulation rate, vsurfaccum.  The PDD is used to convert to ice-equivalent 
+net surface mass flux, vsurfmassflux.  Note vsurfaccum is writen to output
+files as 'accum'.
+
+It has various constants parameterizing the melt and refreeze processes.  See REFERENCE
  */
-class PISMPDDCoupler : public PISMAtmosphereCoupler {
+class PISMPDDCoupler : public PISMConstAtmosCoupler {
 
 public:
   PISMPDDCoupler();
   virtual ~PISMPDDCoupler();  // destroys PDD
 
   PetscErrorCode userOptionsChoosePDD(PetscTruth &userWantsPDD);
+  
   virtual PetscErrorCode initFromOptions(IceGrid* g);
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
+  virtual PetscErrorCode updateSurfMassFluxAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
+             IceModelVec2* &pvsmf);  // vsmf = pointer to vsurfmassflux
 
   virtual PetscErrorCode updateSurfTempAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years,
-             IceModelVec2 mask, IceModelVec2 surface_elev,
-             IceModelVec2* &vst);
+             void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
+             IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
 
 protected:
-  IceModelVec2 vsurfaccum;
+  IceModelVec2 vannmeansurftemp,
+               vsurfaccum;
+
   gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which
                                  //   does not use actual random numbers
   PetscScalar  pddStdDev,        // K; daily amount of randomness
@@ -76,8 +101,9 @@ protected:
        const PetscInt i, const PetscInt j, const PetscScalar day);
 
   PetscScalar getSurfaceBalanceFromSnowAndPDD(const PetscScalar snowrate,
-                    const PetscScalar dt, const PetscScalar pddsum);
+                    const PetscScalar dt_secs, const PetscScalar pddsum);
   double CalovGreveIntegrand(const double Tac);  // double because handed to gsl quadrature routine
+
 };
 
 

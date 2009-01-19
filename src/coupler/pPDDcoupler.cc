@@ -29,7 +29,7 @@
 #include "pPDDcoupler.hh"
 
 
-PISMPDDCoupler::PISMPDDCoupler() : PISMAtmosphereCoupler() {
+PISMPDDCoupler::PISMPDDCoupler() : PISMConstAtmosCoupler() {
 
   // normally use Calov-Greve expectation integral; if this is non-NULL
   //   then using actual random numbers
@@ -52,6 +52,7 @@ PISMPDDCoupler::PISMPDDCoupler() : PISMAtmosphereCoupler() {
 
 
 PISMPDDCoupler::~PISMPDDCoupler() {
+  vannmeansurftemp.destroy();
   vsurfaccum.destroy();
   if (pddRandGen != NULL) {
     gsl_rng_free(pddRandGen);
@@ -131,6 +132,16 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
 
   // mean annual ice equivalent accumulation rate
+  //   we READ by name 'artm' but change to name 'annavartm' below
+  ierr = vannmeansurftemp.create(*g, "artm", true); CHKERRQ(ierr);
+  ierr = vannmeansurftemp.set_attrs(
+            "climate_state",
+            "annual mean temperature at ice surface but below firn",
+            "K", NULL); CHKERRQ(ierr);
+  ierr = vannmeansurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
+
+  // mean annual ice equivalent accumulation rate
+  //   we READ by name 'acab' but change name to 'accum' below
   ierr = vsurfaccum.create(*g, "acab", false); CHKERRQ(ierr);  // global; no ghosts
   ierr = vsurfaccum.set_attrs(
             "climate_state", 
@@ -152,8 +163,9 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   ierr = vsurfaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
   ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
 
-  // now that they are read, reset vsurfaccum name to output name
+  // now that they are read, reset names to output name
   ierr = vsurfaccum.set_name("accum"); CHKERRQ(ierr);
+  ierr = vannmeansurftemp.set_name("annavartm"); CHKERRQ(ierr);
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr); // initialize to have some values
 
   // check on whether we should read monthly temperatures from file  
@@ -180,8 +192,10 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
 PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
   PetscErrorCode ierr;
   
-  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = PISMConstAtmosCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
   
+  ierr = vannmeansurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
   ierr = vsurfaccum.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   if (usingMonthlyTemps == PETSC_TRUE) {
@@ -252,22 +266,6 @@ PetscScalar PISMPDDCoupler::getSummerWarming(
 }
 
 
-/*!
-Returns indices in {0,..,11} for the current and next months.  For the purpose
-of indexing the monthly surface temperature data.
- */
-PetscErrorCode PISMPDDCoupler::getMonthIndicesFromDay(const PetscScalar day, 
-       PetscInt &curr, PetscInt &next) {
-  PetscScalar month = 12.0 * day / 365.24;
-  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
-  curr = (int) floor(month);
-  curr = curr % 12;
-  next = curr+1;
-  if (next == 12)   next = 0;
-  return 0;
-}
-
-
 //! Get the surface temperature at a point for a given time (in days) from yearly cycle.
 /*!
 A standard sinusoidal formula is used:
@@ -284,6 +282,22 @@ PetscScalar PISMPDDCoupler::getTemperatureFromYearlyCycle(
        const PetscScalar day) {
   const PetscScalar  rad_per_day = 2.0 * PETSC_PI / 365.24;
   return Tma + summer_warming * cos(rad_per_day * (day - pddSummerPeakDay));
+}
+
+
+/*!
+Returns indices in {0,..,11} for the current and next months.  For the purpose
+of indexing the monthly surface temperature data.
+ */
+PetscErrorCode PISMPDDCoupler::getMonthIndicesFromDay(const PetscScalar day, 
+       PetscInt &curr, PetscInt &next) {
+  PetscScalar month = 12.0 * day / 365.24;
+  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
+  curr = (int) floor(month);
+  curr = curr % 12;
+  next = curr+1;
+  if (next == 12)   next = 0;
+  return 0;
 }
 
 
@@ -330,21 +344,21 @@ The default values for the factors come from EISMINT-Greenland, \lo\cite{RitzEIS
 Arguments are snow fall rate snowrate in m * s^-1, dt in s, pddsum in degree (K) * day.
  */
 PetscScalar PISMPDDCoupler::getSurfaceBalanceFromSnowAndPDD(
-             const PetscScalar snowrate, const PetscScalar dt, const PetscScalar pddsum) {
+             const PetscScalar snowrate, const PetscScalar dt_secs, const PetscScalar pddsum) {
 
   if (snowrate < 0.0) {
-    return snowrate - (pddsum * pddFactorIce / dt);  // neg snowrate interpreted as ablation
+    return snowrate - (pddsum * pddFactorIce / dt_secs);  // neg snowrate interpreted as ablation
   } else {
-    const PetscScalar snow        = snowrate * dt,  // units of m of ice-equivalent
+    const PetscScalar snow        = snowrate * dt_secs,  // units of m of ice-equivalent
                       snow_melted = pddsum * pddFactorSnow;  // m of ice-equivalent
     if (snow_melted <= snow) {
-      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt;
+      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt_secs;
     } else { // it is snowing, but all the snow melts and refreezes; this ice is
              // then removed, plus possibly more of the underlying ice
       const PetscScalar ice_created   = snow * pddRefreezeFrac,
                         excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!
                         ice_melted    = excess_pddsum * pddFactorIce;
-      return (ice_created - ice_melted) / dt;
+      return (ice_created - ice_melted) / dt_secs;
     }
   }
 }
@@ -407,64 +421,77 @@ with the 12 monthly temperature maps, the temperature on a given day at a given
 location is found by linear interpolation (in time) of the monthly temps.
  */
 PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years,
-                  IceModelVec2 vmask, IceModelVec2 vsurfelev,
-                  IceModelVec2* &pvsmf) {
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
+             IceModelVec2* &pvsmf) {
 
-  pvsmf = &vsurfmassflux;
-  return 0;
-}
-
-
-PetscErrorCode FOOBAR::updateSurfaceBalanceFromPDD() {
   PetscErrorCode ierr;
+  IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
 
-  PetscScalar **accum, **Ts, **snow_accum, **h, **lat;
-  ierr =         vh.get_array(h);          CHKERRQ(ierr);
-  ierr =        vTs.get_array(Ts);         CHKERRQ(ierr);
-  ierr =     vAccum.get_array(accum);      CHKERRQ(ierr);
-  ierr = vAccumSnow.get_array(snow_accum); CHKERRQ(ierr);
-  ierr =  vLatitude.get_array(lat);        CHKERRQ(ierr);
+  PetscScalar **smflux, **amstemp, **saccum, **h, **lat, **smonthtemp[12];
+  ierr = info->vsurfelev->get_array(h);   CHKERRQ(ierr);
+  ierr = info->vlatitude->get_array(lat); CHKERRQ(ierr);
 
-  const PetscScalar     start = grid.year - dt / secpera; // grid.year has *end* of step
-  const PetscScalar     startday = 365.24 * (start - floor(start));
+  ierr =    vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
+  ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
+  ierr =       vsurfaccum.get_array(saccum);  CHKERRQ(ierr);
+
+  if (usingMonthlyTemps == PETSC_TRUE) {
+    for (PetscInt j = 0; j < 12; ++j) {
+      if (vmonthlysurftemp[j].was_created()) {
+        ierr = vmonthlysurftemp[j].get_array(smonthtemp[j]); CHKERRQ(ierr);
+      } else {
+        SETERRQ1(1,"vmonthlysurftemp[%d] not created",j);
+      }
+    }
+  }
+
+  const PetscScalar startday = 365.24 * (t_years - floor(t_years));
 
   // set up for Calov-Greve method; use Simpson's rule to do integral, so number
   // of evaluations of integrand always odd; at least 53 evals per year (i.e. approximately
   // weekly); see trials at end of this file;  at least 3 evals in any case:
-  PetscInt              CGsumcount = (int) ceil(52 * (dt / secpera) + 1);
-//  PetscInt              CGsumcount = (int) ceil(366 * (dt / secpera) + 1);
-  if (CGsumcount < 3)   CGsumcount = 3;
+  PetscInt            CGsumcount = (int) ceil(52 * (dt_years) + 1);
+  if (CGsumcount < 3) CGsumcount = 3;
   if ((CGsumcount % 2) == 0)  CGsumcount++;  // guarantee it is odd
-  const PetscScalar     CGsumstep = dt / CGsumcount;     // seconds
-  const PetscScalar     CGsumstepdays = (365.24 / secpera) * CGsumstep; // days
+
+  const PetscScalar CGsumstep     = dt_years * secpera / CGsumcount, // seconds
+                    CGsumstepdays = (365.24 / secpera) * CGsumstep;  // days
 
   // set up for monte carlo method
-  const PetscInt        intstartday = (int) ceil(startday);
-  const PetscInt        num_days = (int) ceil(365.24 * (dt / secpera));
+  const PetscInt    intstartday = (int) ceil(startday),
+                    num_days    = (int) ceil(365.24 * dt_years);
 
   PetscScalar pdd_sum;  // units of day^-1 (deg C)-1
-
+       
   // run through grid and compute PDDs and then surface balance at each point
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar mean_annual = Ts[i][j] - ice->meltingTemp;  // in deg C
-      const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
+  for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+      const PetscScalar mean_annual = amstemp[i][j] - 273.15,  // in deg C
+                        summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
 
       // use one of the two methods for computing the number of positive degree days
       // at the given i,j grid point for the duration of time step (=dt)
-      if (doPDDTrueRand == PETSC_TRUE) { // monte carlo
+      if (pddRandGen != NULL) { // since random stuff set up, do monte carlo
         pdd_sum = 0.0;
         // compute # of pos deg day:
         for (PetscInt day = intstartday; day < intstartday + num_days; day++){ 
-          const PetscScalar mytemp
-                      = getTemperatureFromYearlyCycle(
-                             summer_warming, mean_annual,(PetscScalar) day, i,j);
+          PetscScalar mytemp;
+          if (usingMonthlyTemps == PETSC_TRUE) {
+            PetscInt currMonthInd, nextMonthInd;
+            ierr = getMonthIndicesFromDay((PetscScalar) day, currMonthInd, nextMonthInd);
+                       CHKERRQ(ierr);
+            mytemp = getTemperatureFromMonthlyData(
+                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], 
+                       i, j, (PetscScalar) day);
+          } else {
+            mytemp = getTemperatureFromYearlyCycle(summer_warming, mean_annual,(PetscScalar) day);
+          }
           const double randadd = gsl_ran_gaussian(pddRandGen, pddStdDev);
           const PetscScalar temp = mytemp + (PetscScalar) randadd;
           if (temp > 0.0)   pdd_sum += temp;
-          if ((i == id) && (j == jd)) {
-            ierr = verbPrintf(5,grid.com,
+          if ((i == grid->Mx/2) && (j == grid->My/2)) {
+            ierr = PetscPrintf(grid->com,
               "  day=%d: mytemp=%5.4f, randadd=%5.4f, temp=%5.4f, pdd_sum=%5.4f\n",
               day, mytemp, randadd, temp, pdd_sum); CHKERRQ(ierr);
           }
@@ -476,44 +503,124 @@ PetscErrorCode FOOBAR::updateSurfaceBalanceFromPDD() {
           PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
           if ( (m == 0) || (m == (CGsumcount - 1)) )  coeff = 1.0;
           const PetscScalar day = startday + m * CGsumstepdays;
-          const PetscScalar temp = getTemperatureFromYearlyCycle(
-                                       summer_warming,mean_annual,day, i,j);
+          PetscScalar temp;
+          if (usingMonthlyTemps == PETSC_TRUE) {
+            PetscInt currMonthInd, nextMonthInd;
+            ierr = getMonthIndicesFromDay(day, currMonthInd, nextMonthInd); CHKERRQ(ierr);
+            temp = getTemperatureFromMonthlyData(
+                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], 
+                       i, j, day);
+          } else {
+            temp = getTemperatureFromYearlyCycle(summer_warming, mean_annual,day);
+          }
           pdd_sum += coeff * CalovGreveIntegrand(temp);
         }
         pdd_sum = (CGsumstepdays / 3.0) * pdd_sum;
       }
 
       // now that we have the number of PDDs, compute mass balance from snow rate
-      accum[i][j] = getSurfaceBalanceFromSnowAndPDD(snow_accum[i][j], dt, pdd_sum);
+      smflux[i][j] = getSurfaceBalanceFromSnowAndPDD(saccum[i][j], dt_years * secpera, pdd_sum);
 
-      if ((i == id) && (j == jd)) {
-        ierr = verbPrintf(5,grid.com,
-          "\nPDD at (i,j)=(id,jd)=(%d,%d):\n"
+      if ((i == grid->Mx/2) && (j == grid->My/2)) {
+        ierr = PetscPrintf(grid->com,
+          "\nPDD at (i,j)=(%d,%d):\n"
             "  mean_annual=%5.4f, summer_warming=%5.4f\n",
             i, j, mean_annual, summer_warming); CHKERRQ(ierr);
-        ierr = verbPrintf(5,grid.com,
+        ierr = PetscPrintf(grid->com,
             "  CGsumcount = %d, CGsumstepdays = %5.2f, num_days = %d, intstartday = %d,\n"
-            "  h = %6.2f, pdd_sum = %5.2f, snow_accum = %5.4f, accum = %5.4f\n",
+            "  h = %6.2f, pdd_sum = %5.2f, saccum = %5.4f, smflux = %5.4f\n",
             CGsumcount, CGsumstepdays, num_days, intstartday,
-            h[i][j], pdd_sum, snow_accum[i][j]*secpera, accum[i][j]*secpera); CHKERRQ(ierr);
+            h[i][j], pdd_sum, saccum[i][j]*secpera, smflux[i][j]*secpera); CHKERRQ(ierr);
       }
 
     }
   }
 
-  ierr = vTs.end_access(); CHKERRQ(ierr);
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
-  ierr = vAccumSnow.end_access(); CHKERRQ(ierr);
-  ierr = vh.end_access(); CHKERRQ(ierr);
-  ierr = vLatitude.end_access(); CHKERRQ(ierr);
+  if (usingMonthlyTemps == PETSC_TRUE) {
+    for (PetscInt j = 0; j < 12; ++j) {
+      if (vmonthlysurftemp[j].was_created()) {
+        ierr = vmonthlysurftemp[j].end_access(); CHKERRQ(ierr);
+      } else {
+        SETERRQ1(2,"vmonthlysurftemp[%d] not created",j);
+      }
+    }
+  }
+
+  ierr = info->vsurfelev->end_access(); CHKERRQ(ierr);
+  ierr = info->vlatitude->end_access(); CHKERRQ(ierr);
+
+  ierr =    vsurfmassflux.end_access(); CHKERRQ(ierr);
+  ierr = vannmeansurftemp.end_access(); CHKERRQ(ierr);
+  ierr =       vsurfaccum.end_access(); CHKERRQ(ierr);
+  
+  // now that it is up to date, return pointer to it
+  pvsmf = &vsurfmassflux;
   return 0;
 }
 
 
 PetscErrorCode PISMPDDCoupler::updateSurfTempAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years,
-                  IceModelVec2 pmask, IceModelVec2 psurfelev,
-                  IceModelVec2* &pvst) {
+             const PetscScalar t_years, const PetscScalar dt_years,
+             void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
+             IceModelVec2* &pvst) {
+
+  PetscErrorCode ierr;
+
+  IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
+
+  // need surface temperature representative of period [t_years,t_years+dt_years]
+  //   get this by using midpoint of this interval
+  const PetscScalar mid_years = t_years + (dt_years/2.0),
+                    mid_day = 365.24 * (mid_years - floor(mid_years));
+  PetscScalar **stemp;
+
+  ierr = vsurftemp.get_array(stemp); CHKERRQ(ierr);
+
+  if (usingMonthlyTemps == PETSC_TRUE) {
+    PetscScalar **smonthtemp[12];
+  
+    for (PetscInt j = 0; j < 12; ++j) {
+      if (vmonthlysurftemp[j].was_created()) {
+        ierr = vmonthlysurftemp[j].get_array(smonthtemp[j]); CHKERRQ(ierr);
+      } else {
+        SETERRQ1(1,"vmonthlysurftemp[%d] not created",j);
+      }
+    }
+  
+    PetscInt currMonthInd, nextMonthInd;
+    ierr = getMonthIndicesFromDay(mid_day, currMonthInd, nextMonthInd); CHKERRQ(ierr);
+    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+        stemp[i][j] = getTemperatureFromMonthlyData(
+                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], i, j, mid_day);
+      }
+    }
+
+    for (PetscInt j = 0; j < 12; ++j) {
+      if (vmonthlysurftemp[j].was_created()) {
+        ierr = vmonthlysurftemp[j].end_access(); CHKERRQ(ierr);
+      } else {
+        SETERRQ1(2,"vmonthlysurftemp[%d] not created",j);
+      }
+    }
+  } else {
+    PetscScalar **h, **lat, **amstemp;
+    ierr = info->vsurfelev->get_array(h);   CHKERRQ(ierr);
+    ierr = info->vlatitude->get_array(lat); CHKERRQ(ierr);
+    ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
+    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+        const PetscScalar mean_annual = amstemp[i][j] - 273.15,  // in deg C
+                          summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
+        stemp[i][j] = getTemperatureFromYearlyCycle(summer_warming, mean_annual, mid_day);
+      }
+    }
+    ierr = info->vsurfelev->end_access(); CHKERRQ(ierr);
+    ierr = info->vlatitude->end_access(); CHKERRQ(ierr);
+    ierr = vannmeansurftemp.end_access(); CHKERRQ(ierr);
+  }
+
+  ierr = vsurftemp.end_access(); CHKERRQ(ierr);
 
   pvst = &vsurftemp;
   return 0;
