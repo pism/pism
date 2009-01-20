@@ -49,7 +49,6 @@
 */
 LocalInterpCtx::LocalInterpCtx(grid_info g,
 			       const double zlevsIN[], const double zblevsIN[], IceGrid &grid) {
-  PetscErrorCode ierr;
   const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
   const double Lx = grid.Lx,
                Ly = grid.Ly,
@@ -198,9 +197,7 @@ and \c delta entries in the struct will not be meaningful.
   a_len = count[X] * count[Y] * PetscMax(count[Z], count[ZB]);
   int my_a_len = a_len;
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
-  ierr = PetscMalloc(a_len * sizeof(double), &(a)); //CHKERRQ(ierr);
-
-  //return 0;  // can't return; its a constructor
+  PetscMalloc(a_len * sizeof(double), &(a));
 }
 
 

@@ -1703,24 +1703,44 @@ Not needed when using \verb|pismd|, for which saving the full three-dimensional 
 
 \opt{dontreadSSAvels} Turns off reading the \verb|ubarSSA| and \verb|vbarSSA| velocities saved by a previous \verb|-ssa| run.
 
-\opt{save\und to} Give the name of the NetCDF file to save model state
-snapshots to. Requires setting \verb|-save_at|. See section \ref{sec:snapshots}
-for more details. Note that in presence of the \verb|-split_snapshots| option
+\opt{save\und to} Give the name of the NetCDF file to which to save PISM model states
+(snapshots).  Requires setting \verb|-save_at|.  Saving the
+snapshots \emph{does not} affect the time-stepping determined by the adaptive
+scheme.
+
+For example,
+\begin{verbatim}
+$ pismv -test G -y 1000 -save_to foo.nc -save_at 0:100:900 -o bar.nc
+\end{verbatim}
+produces two files.  File \verb|foo.nc| has snapshots at 10 times, each a time 
+following a regular PISM timestep.  File \verb|bar.nc| has the final PISM state,
+at time 1000.0 in this case.
+
+Note that in presence of the \verb|-split_snapshots| option
 \verb|-save_to| value is interpreted as a \emph{basename}. That is,
 \begin{verbatim}
-$ pismv -test G -y 1000 -save_to foo -save_at 0:100:1000 -o verify.nc
+$ pismv -test G -y 1000 -save_to foo -save_at 0:100:900 -split_snapshots
 \end{verbatim}
 will produce files with names such as \verb|foo-000112.nc|.
 
-\opt{save\und at} Takes two kinds of input: either a MATLAB-style range in the form
-$t_{0}:\Delta t:t_{f}$ or a comma-separated list of times in years. Saving the
-snapshots \emph{does not} affect the time-stepping determined by the adaptive
-scheme. As a result, snapshots are saved \emph{on the first time-step after the
-  time requested.} For example, if in a particular run PISM uses time-steps of
-60 years, then \verb|-save_at 50,80,100| will produce snapshots at 60 and 120
-years. In particular, we do not guarantee producing the exact number of
-snapshots requested. Also note the comma-separated list above can be at most 20
-numbers long. See section \ref{sec:snapshots} for more details.
+Compare option \verb|-o| which merely saves the final state.  
+See section \ref{sec:snapshots} for more details. 
+
+\opt{save\und at} Used in combination with option \verb|-save_to| above.
+Takes two kinds of input: either a MATLAB-style range in the form
+$t_{0}:\Delta t:t_{f}$ or a comma-separated list of times in years.  The
+comma-separated list above can be at most 20 numbers long.
+
+Saving the snapshots \emph{does not} affect the time-stepping determined 
+by the adaptive scheme.  As a result, snapshots are saved
+\emph{on the first time-step after the time requested}, and there is
+no guarantee of producing the exact number of snapshots requested.
+
+For example, if in a particular run PISM uses time-steps of
+60 years, then \verb|-save_at 50,80,100| might produce snapshots at 60 and 120
+years if 0.0, 60.0, 120.0, \dots were the usual PISM timesteps.
+
+See section \ref{sec:snapshots} for more details.
 
 \opt{split\und snapshots} Save model state snapshots to separate files. See the
 \verb|-save_to| option documentation above for details.

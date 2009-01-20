@@ -45,7 +45,7 @@ PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
 
 
 PetscErrorCode PISMClimateCoupler::findPISMInputFile(
-                     char* *filename, LocalInterpCtx* &lic) {
+                     char* filename, LocalInterpCtx* &lic) {
   if (grid == NULL) {
     SETERRQ(1,"findPISMInputFile(): grid not initialized");
   }
@@ -59,9 +59,9 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", bif_file, 
                                PETSC_MAX_PATH_LEN, &bifSet); CHKERRQ(ierr);
   if (bifSet == PETSC_TRUE) {
-    strcpy(*filename,bif_file);
+    strcpy(filename,bif_file);
   } else if (ifSet == PETSC_TRUE) {
-    strcpy(*filename,if_file);
+    strcpy(filename,if_file);
   } else {
     SETERRQ(2,"findPISMInputFile(): no -if and no -bif?; how did I get here?");
   }
@@ -70,7 +70,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
   NCTool nc(grid);
   grid_info gi;
 
-  ierr = nc.open_for_reading(*filename, file_exists); CHKERRQ(ierr);
+  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
   if (!file_exists) {
     ierr = PetscPrintf(grid->com,
              "PISMClimateCoupler ERROR: Can't open file '%s'.\n",
@@ -201,21 +201,20 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
-  char actualfilename[PETSC_MAX_PATH_LEN];
-  char* filename=&(actualfilename[0]);
+  char filename[PETSC_MAX_PATH_LEN];
   LocalInterpCtx* lic;
 
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
 
-  ierr = findPISMInputFile(&filename, lic); CHKERRQ(ierr); // allocates lic
+  ierr = findPISMInputFile((char*) filename, lic); CHKERRQ(ierr); // allocates lic
 
   ierr = verbPrintf(2, g->com, 
-     "initializing constant atmospheric climate: reading net surface mass balance\n"
-     "  'acab' and absolute surface temperature 'artm' from %s ...\n",
+     "initializing constant atmospheric climate: reading net surface mass\n"
+     "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
      filename); CHKERRQ(ierr); 
 
-  ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
-  ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+  ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
 
   delete lic;
   return 0;

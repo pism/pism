@@ -41,8 +41,8 @@ public:
 
   // since climate fields may be in the same file as the one used by
   //   PISM for input, get the info needed to read them; this is normally
-  //   a helper routine for derived classes
-  virtual PetscErrorCode findPISMInputFile(char* *filename, LocalInterpCtx* &lic);
+  //   a helper routine for derived classes; filename needs to be pre-allocated
+  virtual PetscErrorCode findPISMInputFile(char* filename, LocalInterpCtx* &lic);
   
   virtual PetscErrorCode updateClimateFields(
              const PetscScalar t_years, const PetscScalar dt_years, 

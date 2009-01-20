@@ -19,6 +19,7 @@
 static char help[] = 
   "Driver which allows testing PISMClimateCoupler without IceModel.\n";
 
+#include <ctime>
 #include <petscda.h>
 #include "../base/grid.hh"
 #include "../base/LocalInterpCtx.hh"
@@ -27,15 +28,23 @@ static char help[] =
 #include "pPDDcoupler.hh"
 
 
-/* example run: here pcctest extracts 'mask' and 'usurf' = surface elevation from sheet.nc;
-   extracts 'acab' and 'artm' from sheet.nc, because they are stored there by EISMINT
-   II choices, and initializes PISMConstAtmosCoupler;
-   (FIXME: will allow PISMPDDCoupler instead); "computes", i.e. no actual computation,
-   surface mass balance and surface temp at ys:dt:ye and saves these in pccmovie.nc
+/* example runs: 
+here pcctest extracts 'mask' and 'usurf' = surface elevation from sheet.nc;
+
+set up a ice sheet state file:
 
 $ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
 
-$ pcctest -if state.nc -ys 0.0 -ye 300.0 -dt 100.0 -of pccmovie.nc
+extracts 'acab' and 'artm' from state.nc, because they are stored there by EISMINT
+II choices, and initializes PISMConstAtmosCoupler; "computes", though no actual 
+computation, surface mass balance and surface temp at ys:dt:ye and saves 
+these in pccmovie.nc:
+
+$ pcctest -if state.nc -ys 0.0 -ye 2.5 -dt 0.1 -of camovie.nc
+
+version which does similar for PISMPDDCoupler:
+
+$ pcctest -if state.nc -ys 0.0 -ye 2.5 -dt 0.1 -pdd -of pddmovie.nc
 
 */
 
@@ -84,11 +93,55 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
 }
 
 
+PetscErrorCode readInfoFromFile(PISMClimateCoupler *pcc,
+                                char *filename, const MPI_Comm com, IceGrid *grid,
+                                IceInfoNeededByAtmosphereCoupler &info) {
+  PetscErrorCode ierr;
+  LocalInterpCtx* lic;
+
+  ierr = pcc->findPISMInputFile(filename, lic); CHKERRQ(ierr); // allocates lic
+
+  info.vlatitude = new IceModelVec2;
+  info.vlongitude = new IceModelVec2;
+  info.vmask = new IceModelVec2;
+  info.vsurfelev = new IceModelVec2;
+
+  ierr = info.vlatitude->create(*grid, "lat", true); CHKERRQ(ierr);
+  ierr = info.vlongitude->create(*grid, "lon", true); CHKERRQ(ierr);
+  ierr = info.vmask->create(*grid, "mask", true); CHKERRQ(ierr);
+  ierr = info.vsurfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
+
+  ierr = info.vlatitude->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.vlongitude->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.vmask->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.vsurfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
+
+  delete lic;
+
+  return 0;
+}
+
+
+PetscErrorCode doneWithInfo(IceInfoNeededByAtmosphereCoupler &info) {
+  PetscErrorCode ierr;
+  ierr = info.vlatitude->destroy(); CHKERRQ(ierr);
+  ierr = info.vlongitude->destroy(); CHKERRQ(ierr);
+  ierr = info.vmask->destroy(); CHKERRQ(ierr);
+  ierr = info.vsurfelev->destroy(); CHKERRQ(ierr);
+  delete info.vlatitude;
+  delete info.vlongitude;
+  delete info.vmask;
+  delete info.vsurfelev;
+  return 0;
+}
+
+
 PetscErrorCode writePCCStateAtTimes(
                  PISMClimateCoupler *pcc,
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
-                 const PetscReal ys, const PetscReal ye, const PetscReal dt_years) {
+                 const PetscReal ys, const PetscReal ye, const PetscReal dt_years,
+                 void *iceInfoNeeded) {
 
   PetscErrorCode ierr;
   NCTool nc(grid);
@@ -105,7 +158,6 @@ PetscErrorCode writePCCStateAtTimes(
     strncat(cmdstr, " ", remaining_bytes--);
     strncat(cmdstr, argv[i], remaining_bytes);
   }
-//  strcat(cmdstr,"\n");
   cmdstr[sizeof(cmdstr) - 1] = '\0';
   
   // compare IceModel::stampHistory() for this way of getting date etc in file
@@ -159,8 +211,12 @@ PetscErrorCode writePCCStateAtTimes(
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    // FIXME:  need to fill struct* with ice info needed for non-trivial update; here NULL
-    ierr = pcc->updateClimateFields(pccyear, dt_years, NULL); CHKERRQ(ierr);
+    // FIXME: need to fill struct* with info according to PISMClimateCoupler need;
+    //   for now only works with derived class of PISMAtmosphereCoupler
+    // FIXME: should write out t axis in years?
+    ierr = PetscPrintf(com, "  writing pcc state at year %11.3f to '%s' ...\n",
+             pccyear,filename); CHKERRQ(ierr);
+    ierr = pcc->updateClimateFields(pccyear, dt_years, iceInfoNeeded); CHKERRQ(ierr);
 
     ierr = pcc->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
   }
@@ -192,21 +248,34 @@ int main(int argc, char *argv[]) {
     PISMPDDCoupler        ppddc;
     PISMClimateCoupler*   PCC;
     
-    ierr = PetscPrintf(com, "PCCTEST (test of climate couplers offline from PISM)\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, 
+             "PCCTEST (test of climate couplers offline from PISM)\n"); CHKERRQ(ierr);
     
     PetscTruth optSet;
     ierr = PetscOptionsGetString(PETSC_NULL, "-if", inname, 
                                PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
     if (optSet != PETSC_TRUE) { SETERRQ(1,"PCCTEST ERROR: no -if to initialize from\n"); }
 
-    ierr = PetscPrintf(com, "  initializing grid from NetCDF file '%s'...\n",
-                       inname); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, 
+             "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,com,grid); CHKERRQ(ierr);
-    
-    // FIXME:  set PCC from options
-    PCC = (PISMClimateCoupler*) &pcac;
+
+    // set PCC from options
+    //   FIXME:  for now only works with derived classes of PISMAtmosphereCoupler
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &optSet); CHKERRQ(ierr);
+    if (optSet == PETSC_TRUE) { 
+      PCC = (PISMClimateCoupler*) &ppddc;
+    } else {
+      PCC = (PISMClimateCoupler*) &pcac;
+    }
     
     ierr = PCC->initFromOptions(&grid); CHKERRQ(ierr);
+
+    ierr = PetscPrintf(com, 
+             "  reading fields 'usurf', 'mask', 'lat', 'lon' from NetCDF file '%s'...\n",
+             inname); CHKERRQ(ierr);
+    IceInfoNeededByAtmosphereCoupler info;
+    ierr = readInfoFromFile(PCC,inname,com,&grid,info); CHKERRQ(ierr);
 
     ierr = PetscOptionsGetString(PETSC_NULL, "-of", outname, 
                                PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
@@ -220,8 +289,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
                        outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid,
-                                argc,argv,ys,ye,dt_years); CHKERRQ(ierr);
+                                argc,argv,ys,ye,dt_years,
+                                &info); CHKERRQ(ierr);
 
+    ierr = doneWithInfo(info); CHKERRQ(ierr);
     ierr = PetscPrintf(com, "... done\n"); CHKERRQ(ierr);
   }
 
