@@ -195,7 +195,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // mean annual net ice equivalent accumulation (ablation) rate
   ierr = vAccum.create(grid, "acab", true); CHKERRQ(ierr);
-  ierr = vAccum.set_attrs("climate_steady_GUNITS", 
+  ierr = vAccum.set_attrs("climate_steady", 
           "mean annual net ice equivalent accumulation (ablation) rate",
 	  "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = vAccum.set_glaciological_units("m year-1", secpera);
@@ -215,7 +215,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // upward geothermal flux at bedrock surface
   ierr = vGhf.create(grid, "bheatflx", true); CHKERRQ(ierr);
-  ierr = vGhf.set_attrs("climate_steady_GUNITS", "upward geothermal flux at bedrock surface",
+  ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
 			"W m-2", NULL); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2", 1000.0);
 
