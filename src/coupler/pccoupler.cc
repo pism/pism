@@ -129,7 +129,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   //   can make global with no ghosts
   ierr = vsurfmassflux.create(*g, "acab", true); CHKERRQ(ierr);
   ierr = vsurfmassflux.set_attrs(
-            "climate_state", 
+            "climate_state_GUNITS", 
             "mean annual net ice equivalent accumulation (ablation) rate",
 	    "m s-1", 
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name

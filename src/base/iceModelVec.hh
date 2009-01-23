@@ -40,7 +40,7 @@ public:
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
   virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x);
   virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x, IceModelVec &result);
-  virtual PetscErrorCode  sqrt();
+  virtual PetscErrorCode  squareroot();
   virtual PetscErrorCode  shift(PetscScalar alpha);
   virtual PetscErrorCode  scale(PetscScalar alpha);
   virtual PetscErrorCode  multiply_by(IceModelVec &x, IceModelVec &result);

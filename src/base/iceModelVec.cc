@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
 #include <petscda.h>
 #include <netcdf.h>
 #include "pism_const.hh"
@@ -132,46 +133,84 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
 
 //! Result: min <- min(v[j]), max <- max(v[j]).
 /*! 
-PETSc manual says "VecMin and VecMax are collective on Vec" but GlobalMax,GlobalMin
-\e are needed to get correct values.  This is probably a PETSc bug.
+PETSc manual correctly says "VecMin and VecMax are collective on Vec" but
+GlobalMax,GlobalMin \e are needed, when localp==true, to get correct 
+values because Vecs created with DACreateLocalVector() are of type 
+VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
 PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
   PetscReal my_min, my_max, gmin, gmax;
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
-  // needs a reduce operation; use PetscGlobalMax;
-  // the need for PetscGlobalMax must be a bug,
-  // but it *is* needed and it *does* make a difference!
   ierr = VecMin(v, PETSC_NULL, &my_min); CHKERRQ(ierr);
-  ierr = PetscGlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &my_max); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
 
-  min = gmin;
-  max = gmax;
+  if (localp) {
+    // needs a reduce operation; use PetscGlobalMax;
+    ierr = PetscGlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
+    ierr = PetscGlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
+    min = gmin;
+    max = gmax;
+  } else {
+    min = my_min;
+    max = my_max;
+  }
   return 0;
 }
 
-//! Computes the norm of an IceModelVec by calling VecNorm.
+
+//! Computes the norm of an IceModelVec by calling PETSc VecNorm.
+/*! 
+See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
+See src/trypetsc/localVecMax.c.
+ */
 PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
   PetscErrorCode ierr;
-  PetscReal tmp;
+  PetscReal my_norm, gnorm;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
-  ierr = VecNorm(v, n, &tmp); CHKERRQ(ierr);
-  out = tmp;
+  ierr = VecNorm(v, n, &my_norm); CHKERRQ(ierr);
+
+  if (localp) {
+    // needs a reduce operation; use PetscGlobalMax if NORM_INFINITY,
+    //   otherwise PetscGlobalSum; carefully in NORM_2 case
+    if (n == NORM_1_AND_2) {
+      SETERRQ1(1, 
+         "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
+         short_name);
+    } else if (n == NORM_1) {
+      ierr = PetscGlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+    } else if (n == NORM_2) {
+      my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
+      ierr = PetscGlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      gnorm = sqrt(gnorm);
+    } else if (n == NORM_INFINITY) {
+      ierr = PetscGlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+    } else {
+      SETERRQ1(2, "IceModelVec::norm(...): unknown NormType (called as %s.norm(...))\n",
+         short_name);
+    }
+    out = gnorm;
+  } else {
+    out = my_norm;
+  }
   return 0;
 }
 
-//! Result: v <- sqrt(v). Calls VecSqrt(v).
-PetscErrorCode IceModelVec::sqrt() {
+
+//! Result: v <- sqrt(v), elementwise.  Calls VecSqrt(v).
+/*!
+Name avoids clash with sqrt() in math.h.
+ */
+PetscErrorCode IceModelVec::squareroot() {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   ierr = VecSqrt(v); CHKERRQ(ierr);
   return 0;
 }
+
 
 //! Result: v <- v + alpha * x. Calls VecAXPY.
 PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
@@ -241,7 +280,8 @@ PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
-    SETERRQ2(1, "Use copy_to(...). (Called %s.copy_to_global(...) and %s is global)", short_name, short_name);
+    SETERRQ2(1, "Use copy_to(...). (Called %s.copy_to_global(...) and %s is global)", 
+    short_name, short_name);
 
   ierr = DALocalToGlobal(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
   return 0;
@@ -331,20 +371,29 @@ PetscErrorCode IceModelVec::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec
   return 0;
 }
 
+
 //! Sets the variable name to \c name.
 PetscErrorCode  IceModelVec::set_name(const char name[]) {
   strcpy(short_name, name);
   return 0;
 }
 
+
 //! Sets the glaciological units and the conversion factor of an IceModelVec.
-/*! This affects IceModelVec::report_range() and IceModelVec::write().
+/*!
+This affects IceModelVec::report_range() and IceModelVec::write().  In write(),
+if the pism_intent attribute string contains "GUNITS" then that variable is written
+with a conversion to the glaciological units set here.  In report_range(), if there
+is a nonconstant conversion factor or the pism_intent attribute string contains
+"GUNITS" then that variable is reported to standard out---the min and max are reported---
+in these glaciological units.
  */
 PetscErrorCode  IceModelVec::set_glaciological_units(const char units[], PetscReal factor) {
   strcpy(glaciological_units, units);
   conversion_factor = factor;
   return 0;
 }
+
 
 //! Sets NetCDF attributes of an IceModelVec object.
 /*! Call set_attrs("new long name", "new units", "new pism_intent", NULL) if a
@@ -386,7 +435,7 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid) {
   NCTool nc(grid);
   nc.ncid = ncid;
 
-  bool use_glaciological_units_for_write = (strcmp(pism_intent,"diagnostic") == 0);
+  bool use_glaciological_units_for_write = (strstr(pism_intent,"GUNITS") != NULL);
 
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
   if (!exists)
@@ -515,7 +564,7 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   int t, t_id, varid, max_a_len, a_len;
   void *a_mpi;
 
-  bool use_glaciological_units_for_write = (strcmp(pism_intent,"diagnostic")==0);
+  bool use_glaciological_units_for_write = (strstr(pism_intent,"GUNITS") != NULL);
 
   ierr = checkAllocated(); CHKERRQ(ierr);
 

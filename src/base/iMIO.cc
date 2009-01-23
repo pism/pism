@@ -222,7 +222,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", 
+  ierr = vWork2d[0].set_attrs("diagnostic_GUNITS", 
             "magnitude of vertically-integrated horizontal velocity of ice",
 	    "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
@@ -231,7 +231,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   // compute cflx = cbar .* thk and save it
   ierr = vWork2d[0].multiply_by(vH, vWork2d[1]); CHKERRQ(ierr);
   ierr = vWork2d[1].set_name("cflx"); CHKERRQ(ierr);
-  ierr = vWork2d[1].set_attrs("diagnostic", 
+  ierr = vWork2d[1].set_attrs("diagnostic_GUNITS", 
              "magnitude of vertically-integrated horizontal flux of ice",
 	     "m2 s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[1].set_glaciological_units("m2 year-1", secpera); CHKERRQ(ierr);
@@ -249,7 +249,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[2].set_name("cbase"); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_attrs("diagnostic", 
+  ierr = vWork2d[2].set_attrs("diagnostic_GUNITS", 
              "magnitude of horizontal velocity of ice at base of ice",
 	     "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[2].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
@@ -267,7 +267,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[0].set_name("csurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", 
+  ierr = vWork2d[0].set_attrs("diagnostic_GUNITS", 
              "magnitude of horizontal velocity of ice at ice surface",
 	     "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
@@ -279,7 +279,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = w3.end_access(); CHKERRQ(ierr);
 
   ierr = vWork2d[0].set_name("wvelsurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface",
+  ierr = vWork2d[0].set_attrs("diagnostic_GUNITS", "vertical velocity of ice at ice surface",
 			      "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -292,7 +292,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].set_attrs("diagnostic",
              "magnitude of driving shear stress at base of ice",
 	     "Pa", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr); // clears old
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // write out yield stress
@@ -323,7 +323,7 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
 
   ierr = vWork2d[0].set_name("uvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs(
-              "diagnostic", "x component of velocity of ice at ice surface",
+              "diagnostic_GUNITS", "x component of velocity of ice at ice surface",
 	      "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -334,7 +334,7 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
 
   ierr = vWork2d[0].set_name("vvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs(
-              "diagnostic", "y component of velocity of ice at ice surface",
+              "diagnostic_GUNITS", "y component of velocity of ice at ice surface",
 	      "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);

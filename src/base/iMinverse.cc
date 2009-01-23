@@ -159,37 +159,45 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
 
   ierr = usIn.create(grid, "uvelsurf", true); CHKERRQ(ierr);
   ierr = usIn.set_attrs(
-     NULL, "x component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+     "inverse_input_GUNITS", 
+     "x component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
   ierr = usIn.set_glaciological_units("m year-1", secpera);
   ierr = vsIn.create(grid, "vvelsurf", true); CHKERRQ(ierr);
   ierr = vsIn.set_attrs(
-     NULL, "y component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+     "inverse_input_GUNITS", 
+     "y component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
   ierr = vsIn.set_glaciological_units("m year-1", secpera);
   ierr = usSIA.create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = usSIA.set_attrs(
-     NULL, "x component of ice surface velocity predicted by non-sliding SIA",
+     "inverse_output_GUNITS", 
+     "x component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
   ierr = usSIA.set_glaciological_units("m year-1", secpera);
   ierr = vsSIA.create(grid, "vvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = vsSIA.set_attrs(
-     NULL, "y component of ice surface velocity predicted by non-sliding SIA",
+     "inverse_output_GUNITS",
+     "y component of ice surface velocity predicted by non-sliding SIA",
      "m s-1", NULL); CHKERRQ(ierr);
   ierr = vsSIA.set_glaciological_units("m year-1", secpera);
   ierr = taubxComputed.create(grid, "taubxOUT", false);  // global
   ierr = taubxComputed.set_attrs(
-     NULL, "inverse-model-computed x component of basal shear stress", 
+     "inverse_output", 
+     "inverse-model-computed x component of basal shear stress", 
      "Pa", NULL); CHKERRQ(ierr);
   ierr = taubyComputed.create(grid, "taubyOUT", false);  // global
   ierr = taubyComputed.set_attrs(
-     NULL, "inverse-model-computed y component of basal shear stress", 
+     "inverse_output",
+     "inverse-model-computed y component of basal shear stress", 
      "Pa", NULL); CHKERRQ(ierr);
   ierr = fofv.create(grid, "fofv", false);  // global
   ierr = fofv.set_attrs(
-     NULL, "inverse-model-computed fraction of velocity from SIA in hybrid model", 
+     "inverse_output",
+     "inverse-model-computed fraction of velocity from SIA in hybrid model", 
      "1", NULL); CHKERRQ(ierr);
   ierr = taucComputed.create(grid, "taucOUT", false);  // global
   ierr = taucComputed.set_attrs(
-     NULL, "inverse-model-computed yield stress for basal till", 
+     "inverse_output",
+     "inverse-model-computed yield stress for basal till", 
      "Pa", NULL); CHKERRQ(ierr);
 
   // read in surface velocity
@@ -317,10 +325,10 @@ PetscErrorCode IceModel::writeInvFields(const char *filename,
   ierr = taubyComputed.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = getMagnitudeOf2dVectorField(taubxComputed,taubyComputed,vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic",
+  ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of basal shear stress applied at base of ice",
 	     "Pa", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr); // clear out
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr =          fofv.write(filename, NC_FLOAT); CHKERRQ(ierr);

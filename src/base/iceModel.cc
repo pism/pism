@@ -141,22 +141,24 @@ PetscErrorCode IceModel::createVecs() {
   // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
 
   ierr =     u3.create(grid, "uvel", true); CHKERRQ(ierr);
-  ierr =     u3.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+  ierr =     u3.set_attrs("diagnostic_GUNITS", "horizontal velocity of ice in the X direction",
 			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
   ierr =     u3.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr =     v3.create(grid, "vvel", true); CHKERRQ(ierr);
-  ierr =     v3.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+  ierr =     v3.set_attrs("diagnostic_GUNITS", "horizontal velocity of ice in the Y direction",
 			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
   ierr =     v3.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
 
   ierr =     w3.create(grid, "wvel", false); CHKERRQ(ierr); // never diff'ed in hor dirs
   // PROPOSED standard name = land_ice_upward_velocity
   //   (compare "upward_air_velocity" and "upward_sea_water_velocity")
-  ierr =     w3.set_attrs("diagnostic", "vertical velocity of ice",
+  ierr =     w3.set_attrs("diagnostic_GUNITS", "vertical velocity of ice",
 			  "m s-1", NULL); CHKERRQ(ierr);
   ierr =     w3.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
 
   ierr = Sigma3.create(grid, "Sigma", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = Sigma3.set_attrs("internal","rate of strain heating",
+	        	  "J s-1 m-3", NULL); CHKERRQ(ierr);
 
   // ice temperature
   ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
@@ -180,7 +182,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vh.create(grid, "usurf", true); CHKERRQ(ierr);
   ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
 		      "m", "surface_altitude"); CHKERRQ(ierr);
-  ierr = vh.set_glaciological_units("m", 1.0); CHKERRQ(ierr);
 
   // land ice thickness
   ierr = vH.create(grid, "thk", true); CHKERRQ(ierr);
@@ -194,7 +195,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // mean annual net ice equivalent accumulation (ablation) rate
   ierr = vAccum.create(grid, "acab", true); CHKERRQ(ierr);
-  ierr = vAccum.set_attrs("climate_steady", 
+  ierr = vAccum.set_attrs("climate_steady_GUNITS", 
           "mean annual net ice equivalent accumulation (ablation) rate",
 	  "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = vAccum.set_glaciological_units("m year-1", secpera);
@@ -214,34 +215,36 @@ PetscErrorCode IceModel::createVecs() {
 
   // upward geothermal flux at bedrock surface
   ierr = vGhf.create(grid, "bheatflx", true); CHKERRQ(ierr);
-  ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
+  ierr = vGhf.set_attrs("climate_steady_GUNITS", "upward geothermal flux at bedrock surface",
 			"W m-2", NULL); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2", 1000.0);
 
   // u bar and v bar
   ierr = vubar.create(grid, "ubar", true); CHKERRQ(ierr);
-  ierr = vubar.set_attrs("diagnostic", "vertical mean of horizontal ice velocity in the X direction",
-			  "m s-1", "land_ice_vertical_mean_x_velocity"); CHKERRQ(ierr);
+  ierr = vubar.set_attrs("diagnostic_GUNITS", 
+                         "vertical mean of horizontal ice velocity in the X direction",
+			 "m s-1", "land_ice_vertical_mean_x_velocity"); CHKERRQ(ierr);
   ierr = vubar.set_glaciological_units("m year-1", secpera);
 
   ierr = vvbar.create(grid, "vbar", true); CHKERRQ(ierr);
-  ierr = vvbar.set_attrs("diagnostic", "vertical mean of horizontal ice velocity in the Y direction",
-			  "m s-1", "land_ice_vertical_mean_y_velocity"); CHKERRQ(ierr);
+  ierr = vvbar.set_attrs("diagnostic_GUNITS", 
+                         "vertical mean of horizontal ice velocity in the Y direction",
+			 "m s-1", "land_ice_vertical_mean_y_velocity"); CHKERRQ(ierr);
   ierr = vvbar.set_glaciological_units("m year-1", secpera);
 
   // basal velocities on standard grid
   ierr = vub.create(grid, "ub", true); CHKERRQ(ierr);
-  ierr = vub.set_attrs(NULL, "basal ice velocity in the X direction",
+  ierr = vub.set_attrs("diagnostic_GUNITS", "basal ice velocity in the X direction",
 		       "m s-1", "land_ice_basal_x_velocity"); CHKERRQ(ierr);
   ierr = vub.set_glaciological_units("m year-1", secpera);
   ierr = vvb.create(grid, "vb", true); CHKERRQ(ierr);
-  ierr = vvb.set_attrs(NULL, "basal ice velocity in the Y direction",
+  ierr = vvb.set_attrs("diagnostic_GUNITS", "basal ice velocity in the Y direction",
 		       "m s-1", "land_ice_basal_y_velocity"); CHKERRQ(ierr);
   ierr = vvb.set_glaciological_units("m year-1", secpera);
 
   // basal frictional heating on regular grid
   ierr = vRb.create(grid, "Rb", true); CHKERRQ(ierr);
-  ierr = vRb.set_attrs(NULL, "basal frictional heating",
+  ierr = vRb.set_attrs("diagnostic_GUNITS", "basal frictional heating",
 		       "W m-2", NULL); CHKERRQ(ierr);
   ierr = vRb.set_glaciological_units("mW m-2", 1000.0);
 
@@ -252,7 +255,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // rate of change of ice thickness
   ierr = vdHdt.create(grid, "dHdt", true); CHKERRQ(ierr);
-  ierr = vdHdt.set_attrs("diagnostic", "rate of change of ice thickness",
+  ierr = vdHdt.set_attrs("diagnostic_GUNITS", "rate of change of ice thickness",
 			 "m s-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
   ierr = vdHdt.set_glaciological_units("m year-1", secpera);
 
@@ -261,7 +264,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vtauc.set_attrs("diagnostic", 
              "yield stress for basal till (plastic or pseudo-plastic model)",
 	     "Pa", NULL); CHKERRQ(ierr);
-  ierr = vtauc.set_glaciological_units("Pa", 1.0); CHKERRQ(ierr);
 
   // bedrock uplift rate
   ierr = vuplift.create(grid, "dbdt", true); CHKERRQ(ierr);
@@ -271,7 +273,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // basal melt rate
   ierr = vbasalMeltRate.create(grid, "basal_melt_rate", true); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set_attrs("diagnostic", "basal melt rate",
+  ierr = vbasalMeltRate.set_attrs("diagnostic_GUNITS", "basal melt rate",
 				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
   ierr = vbasalMeltRate.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
 
@@ -290,7 +292,13 @@ PetscErrorCode IceModel::createVecs() {
 
   // u bar and v bar on staggered grid
   ierr = vuvbar[0].create(grid, "vuvbar[0]", true); CHKERRQ(ierr);
+  ierr = vuvbar[0].set_attrs("internal", 
+            "vertically averaged ice velocity, on staggered grid offset in X direction, from SIA, in the X direction",
+	    "m s-1", NULL); CHKERRQ(ierr);
   ierr = vuvbar[1].create(grid, "vuvbar[1]", true); CHKERRQ(ierr);
+  ierr = vuvbar[1].set_attrs("internal", 
+            "vertically averaged ice velocity, on staggered grid offset in Y direction, from SIA, in the Y direction",
+	    "m s-1", NULL); CHKERRQ(ierr);
 
   // work vectors
   for (int j = 0; j < nWork2d; j++) {
@@ -299,20 +307,33 @@ PetscErrorCode IceModel::createVecs() {
 
   // initial guesses of SSA velocities
   ierr = vubarSSA.create(grid, "vubarSSA", true);
-  ierr = vubarSSA.set_attrs("efficiency_restart", "SSA model ice velocity in the X direction",
+  ierr = vubarSSA.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
                             "m s-1", NULL); CHKERRQ(ierr);
   ierr = vubarSSA.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vvbarSSA.create(grid, "vvbarSSA", true);
-  ierr = vvbarSSA.set_attrs("efficiency_restart", "SSA model ice velocity in the Y direction",
+  ierr = vvbarSSA.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
                             "m s-1", NULL); CHKERRQ(ierr);
   ierr = vvbarSSA.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
 
+  // various internal quantities
   ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
+  ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
+                         "K", NULL); CHKERRQ(ierr);
   ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
+  ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
+                           "s", NULL); CHKERRQ(ierr);
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].set_attrs("internal",
+             "rate of strain heating; on staggered grid offset in X direction",
+	     "J s-1 m-3", NULL); CHKERRQ(ierr);
   ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].set_attrs("internal",
+             "rate of strain heating; on staggered grid offset in Y direction",
+	     "J s-1 m-3", NULL); CHKERRQ(ierr);
   ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
+  ierr = Istag3[0].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
+  ierr = Istag3[1].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
 
