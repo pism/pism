@@ -79,8 +79,21 @@ struct SSASNESCtx {
 };
 
 
-// see iMinverseMat.cc
-struct RegPoissonTaucCtx {
+// two structs needed in iMinverse.cc, iMinverseMat.cc
+struct InverseModelCtx {
+  // all the fields involved in the inverse model, which is invoked using option
+  //   -surf_vel_to_tfa
+  IceModelVec2 *usIn,
+               *vsIn,
+               *velInMask,
+               *usSIA,
+               *vsSIA, 
+               *fofv,
+               *taubxComputed,
+               *taubyComputed,
+               *oldtillphi;
+};
+struct RegPoissonMuCtx {
   // describes Poisson-like problem solved when inverting surface velocities
   //   using a regularization
   DA          da;             // must be first in struct
@@ -150,6 +163,8 @@ protected:
   SeaWaterType          ocean;
   FreshWaterType        porewater;
 
+  InverseModelCtx       inv;
+  
   // state variables
   IceModelVec2 vh,		//!< ice surface elevation
     vH,				//!< ice thickness
@@ -322,40 +337,24 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
-  virtual PetscErrorCode computeSIASurfaceVelocity(
-	        IceModelVec2 &usSIA_out, IceModelVec2 &vsSIA_out);
+  virtual PetscErrorCode createInvFields();
+  virtual PetscErrorCode destroyInvFields();
+  virtual PetscErrorCode writeInvFields(const char *filename);
+  virtual PetscErrorCode getObservedMask();
+  virtual PetscErrorCode computeSIASurfaceVelocity();
   virtual PetscErrorCode getGforInverse(
                 const PetscScalar x, const PetscScalar UsuSIAdiffsqr, 
                 const PetscScalar UsuSIAdiffdotuSIA, const PetscScalar uSIAsqr,
                 PetscScalar &G, PetscScalar &Gprime);
-  virtual PetscErrorCode computeFofVforInverse(
-                IceModelVec2 us_in, IceModelVec2 vs_in, 
-                IceModelVec2 usSIA_in, IceModelVec2 vsSIA_in, 
-                IceModelVec2 &fofv_out);
-  virtual PetscErrorCode removeSIApart(
-                IceModelVec2 us_in, IceModelVec2 vs_in, 
-                IceModelVec2 usSIA_in, IceModelVec2 vsSIA_in, IceModelVec2 fofv_in,
-		IceModelVec2 &ub_out, IceModelVec2 &vb_out);
-  virtual PetscErrorCode computeBasalShearFromSSA(
-                IceModelVec2 ub_in, IceModelVec2 vb_in, 
-                IceModelVec2 &taubx_out, IceModelVec2 &tauby_out);
-  virtual PetscErrorCode computeYieldStressFromBasalShear(
-                const PetscScalar invRegEps, const PetscTruth invShowFG,
-                IceModelVec2 ub_in, IceModelVec2 vb_in,
-	        IceModelVec2 taubx_in, IceModelVec2 tauby_in, 
-                IceModelVec2 &tauc_out);
-  virtual PetscErrorCode fillRegPoissonTaucData(
-                IceModelVec2 ub_in, IceModelVec2 vb_in,
-	        IceModelVec2 taubx_in, IceModelVec2 tauby_in,
-	        RegPoissonTaucCtx &user);
-  virtual PetscErrorCode computeTFAFromYieldStress(
-                const PetscScalar phi_low, const PetscScalar phi_high,
-                IceModelVec2 tauc_in, IceModelVec2 &tfa_out);
-  virtual PetscErrorCode writeInvFields(const char *filename,
-                IceModelVec2 us, IceModelVec2 vs,
-                IceModelVec2 usSIA, IceModelVec2 vsSIA,
-                IceModelVec2 taubxComputed, IceModelVec2 taubyComputed,
-                IceModelVec2 fofv, IceModelVec2 taucComputed);
+  virtual PetscErrorCode computeFofVforInverse();
+  virtual PetscErrorCode removeSIApart();
+  virtual PetscErrorCode computeBasalShearFromSSA();
+  virtual PetscErrorCode fillRegPoissonMuData(
+                IceModelVec2 &ub_in, IceModelVec2 &vb_in,
+	        IceModelVec2 &taubx_in, IceModelVec2 &tauby_in,
+	        RegPoissonMuCtx &user);
+  virtual PetscErrorCode computeTFAFromBasalShear(
+                const PetscScalar invRegEps, const PetscTruth invShowFG);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

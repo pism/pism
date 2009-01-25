@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -81,11 +81,16 @@ this method returns without doing anything.
 
 If the option is found, then expects to find variables
 \c uvelsurf and \c vvelsurf, namely x and y components of observed surface velocity,
-in NetCDF file \c foo.nc.  If found, reads them.
+in NetCDF file \c foo.nc.  If found, reads them.  They need to be in m/s.
 
-Note that these "observed" values must have full area coverage with no missing 
-values, so in practice they will come from a modeling or kriging procedure 
-which fills holes in coverage.
+If the option is found, enough space for nine IceModelVec2's is allocated.  In particular,
+this procedure creates and destroys the InverseModelCtx (instance IceModel::inv) members.
+
+The first goal is to construct a mask showing where velocities are present.  Calls
+getObservedMask() for this purpose.  A point is marked as not having a velocity
+if either x or y component has magnitude exceeding \f$10^6\f$ m/a 
+(or rather the m/s equivalent).  Thus huge values can and should be used
+as fill values in missing areas. 
 
 Then calls computeSIASurfaceVelocity() to get the value of the surface
 velocity which would be computed from SIA flow model for the current
@@ -98,7 +103,7 @@ and SSA velocities \lo\cite[equation (21)]{BBssasliding}\elo.  If
 instead just set \f$f(|\mathbf{v}|)=0\f$, so the observed surface velocity
 is treated as all described by the SSA model.
 
-This method then calls four steps in turn:
+This method then calls three steps in turn:
 
 - removeSIApart() to compute the basal sliding velocity \f$\mathbf{u}_b\f$ by removing the SIA
 modeled shear from the surface velocity,
@@ -107,17 +112,15 @@ modeled shear from the surface velocity,
 the SSA stress balance in which the basal sliding velocity \f$\mathbf{u}_b\f$ is used as the
 depth independent velocity,
 
-- computeYieldStressFromBasalShear() to compute the yield stress \f$\tau_c\f$
-for the given basal shear stress \f$\tau_b\f$ and basal sliding velocity \f$\mathbf{u}_b\f$,
-
-- computeTFAFromYieldStress() to compute the till friction angle \f$\phi\f$ from the 
-yield stress \f$\tau_c\f$.
+- computeTFAFromBasalShear() to compute the till friction angle \f$\phi\f$
+for the given basal shear stress \f$\tau_b\f$ and basal sliding velocity \f$\mathbf{u}_b\f$.
 
 The result is a field of values for till friction angle in a pseudo-plastic till model.  
 PISM can do the forward time-stepping model using the resulting till friction angle
 field.
 
-This model includes purely-plastic and linearly-viscous cases.  There is no 
+This model includes purely-plastic and linearly-viscous cases, but is expected to 
+be most effective in intermediate pseudo-plastic cases.  There is no 
 smoothing in this initial implementation.  This method must be called after 
 initialization is essentially completed.  It uses geometry, temperature field, 
 and map of effective thickness of basal till water in the inversion.
@@ -153,53 +156,12 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-inv_write_fields", invfieldsname, 
            PETSC_MAX_PATH_LEN, &invfieldsSet); CHKERRQ(ierr);
 
+  // allocate
+  ierr = createInvFields(); CHKERRQ(ierr);
 
-  // create inverse model state variables with metadata
-  IceModelVec2 usIn, vsIn, usSIA, vsSIA, taubxComputed, taubyComputed, fofv, taucComputed;
-
-  ierr = usIn.create(grid, "uvelsurf", true); CHKERRQ(ierr);
-  ierr = usIn.set_attrs(
-     "inverse_input_GUNITS", 
-     "x component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
-  ierr = usIn.set_glaciological_units("m year-1", secpera);
-  ierr = vsIn.create(grid, "vvelsurf", true); CHKERRQ(ierr);
-  ierr = vsIn.set_attrs(
-     "inverse_input_GUNITS", 
-     "y component of velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
-  ierr = vsIn.set_glaciological_units("m year-1", secpera);
-  ierr = usSIA.create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
-  ierr = usSIA.set_attrs(
-     "inverse_output_GUNITS", 
-     "x component of ice surface velocity predicted by non-sliding SIA",
-     "m s-1", NULL); CHKERRQ(ierr);
-  ierr = usSIA.set_glaciological_units("m year-1", secpera);
-  ierr = vsSIA.create(grid, "vvelsurfSIA", false); CHKERRQ(ierr);  // global
-  ierr = vsSIA.set_attrs(
-     "inverse_output_GUNITS",
-     "y component of ice surface velocity predicted by non-sliding SIA",
-     "m s-1", NULL); CHKERRQ(ierr);
-  ierr = vsSIA.set_glaciological_units("m year-1", secpera);
-  ierr = taubxComputed.create(grid, "taubxOUT", false);  // global
-  ierr = taubxComputed.set_attrs(
-     "inverse_output", 
-     "inverse-model-computed x component of basal shear stress", 
-     "Pa", NULL); CHKERRQ(ierr);
-  ierr = taubyComputed.create(grid, "taubyOUT", false);  // global
-  ierr = taubyComputed.set_attrs(
-     "inverse_output",
-     "inverse-model-computed y component of basal shear stress", 
-     "Pa", NULL); CHKERRQ(ierr);
-  ierr = fofv.create(grid, "fofv", false);  // global
-  ierr = fofv.set_attrs(
-     "inverse_output",
-     "inverse-model-computed fraction of velocity from SIA in hybrid model", 
-     "1", NULL); CHKERRQ(ierr);
-  ierr = taucComputed.create(grid, "taucOUT", false);  // global
-  ierr = taucComputed.set_attrs(
-     "inverse_output",
-     "inverse-model-computed yield stress for basal till", 
-     "Pa", NULL); CHKERRQ(ierr);
-
+  // copy till phi to old
+  ierr = inv.oldtillphi->copy_from(vtillphi); CHKERRQ(ierr);
+  
   // read in surface velocity
   ierr = verbPrintf(2, grid.com, 
      "option -surf_vel_to_tfa seen;  doing ad hoc inverse model;\n"
@@ -217,87 +179,169 @@ PetscErrorCode IceModel::invertSurfaceVelocities() {
   ierr = nc.close(); CHKERRQ(ierr);
   LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
   // read in by regridding; checks for existence of file and variable in file
-  ierr = usIn.regrid(filename, lic, true); CHKERRQ(ierr);// it *is* critical
-  ierr = vsIn.regrid(filename, lic, true); CHKERRQ(ierr);
+  ierr = inv.usIn->regrid(filename, lic, true); CHKERRQ(ierr);// it *is* critical
+  ierr = inv.vsIn->regrid(filename, lic, true); CHKERRQ(ierr);
+
+  // observed mask
+  ierr = verbPrintf(2, grid.com, 
+    "  computing mask for where observed surfaced velocities are present ...\n");
+    CHKERRQ(ierr);
+  ierr = getObservedMask(); CHKERRQ(ierr);
 
   // compute the surface velocity which the SIA predicts
   ierr = verbPrintf(2, grid.com, 
     "  computing SIA surface velocity (for removal from observed before inverting w SSA ...\n");
     CHKERRQ(ierr);
-  ierr = computeSIASurfaceVelocity(usSIA, vsSIA); CHKERRQ(ierr);
+  ierr = computeSIASurfaceVelocity(); CHKERRQ(ierr);
 
   // compute f(|v|) factor, or set to constant if -super not used
   if (doSuperpose == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
        "  flag doSuperpose (option -super) seen;  computing f(|v|) from observed\n"
        "    surface velocities by solving transcendental equations ...\n"); CHKERRQ(ierr);
-    ierr = computeFofVforInverse(usIn, vsIn, usSIA, vsSIA, fofv); CHKERRQ(ierr);
+    ierr = computeFofVforInverse(); CHKERRQ(ierr);
   } else {
     // compute an f(|v|) field from current ubarSSA, vbarSSA
     ierr = verbPrintf(2, grid.com, 
        "  flag doSuperpose (option -super) NOT seen;  setting f(|v|) to 0.0, so NONE\n"
        "    of SIA velocity is removed from observed surface velocity ...\n");
        CHKERRQ(ierr);
-    ierr = fofv.set(0.0); CHKERRQ(ierr);
+    ierr = inv.fofv->set(0.0); CHKERRQ(ierr);
   }
 
   // do four steps of inverse model; result is tillphi field
   ierr = verbPrintf(2, grid.com, 
            "  removing SIA-computed (vertical shear) part of surface velocity ...\n");
            CHKERRQ(ierr);
-  ierr = removeSIApart(
-           usIn, vsIn, usSIA, vsSIA, fofv, vubarSSA, vvbarSSA);    CHKERRQ(ierr);
+  ierr = removeSIApart();    CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
            "  computing membrane stresses and basal shear stress from SSA;\n"
            "    (applying SSA differential operator ...)\n");
            CHKERRQ(ierr);
-  ierr = computeBasalShearFromSSA(
-           vubarSSA, vvbarSSA, taubxComputed, taubyComputed);   CHKERRQ(ierr);
+  ierr = computeBasalShearFromSSA();   CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
-           "  computing till yield stress tau_c using (pseudo-)plastic model ...\n"); 
+           "  computing till friction angle phi using (pseudo-)plastic model\n"
+           "    and Mohr-Coulomb criterion ...\n"); 
            CHKERRQ(ierr);
-  ierr = computeYieldStressFromBasalShear(invRegEps, invShowFG,
-           vubarSSA, vvbarSSA, taubxComputed, taubyComputed, taucComputed); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com, 
-           "  computing till friction angle phi from tau_c by Mohr-Coulomb criterion ...\n"); 
-           CHKERRQ(ierr);
-  ierr = computeTFAFromYieldStress(invPhiMin,invPhiMax,taucComputed,vtillphi); CHKERRQ(ierr);
+  ierr = computeTFAFromBasalShear(invRegEps, invShowFG); CHKERRQ(ierr);
 
   // write out stored inverse info for user's edification; mostly for debug
   if (invfieldsSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
              "  writing inverse fields (from tauc, tillphi computation) to file %s ...\n",
              invfieldsname); CHKERRQ(ierr);
-    ierr = writeInvFields(invfieldsname,usIn,vsIn,usSIA,vsSIA,
-             taubxComputed,taubyComputed,fofv,taucComputed); CHKERRQ(ierr);
+    ierr = writeInvFields(invfieldsname); CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(2, grid.com, 
      "done with ad hoc inverse model; running forward with new t.f.a. phi ...\n",
      filename); CHKERRQ(ierr);
   
-  // clean up
-  ierr =          usIn.destroy(); CHKERRQ(ierr);
-  ierr =          vsIn.destroy(); CHKERRQ(ierr);
-  ierr =         usSIA.destroy(); CHKERRQ(ierr);
-  ierr =         vsSIA.destroy(); CHKERRQ(ierr);
-  ierr = taubxComputed.destroy(); CHKERRQ(ierr);
-  ierr = taubyComputed.destroy(); CHKERRQ(ierr);
-  ierr =          fofv.destroy(); CHKERRQ(ierr);
-  ierr =  taucComputed.destroy(); CHKERRQ(ierr);
+  ierr = destroyInvFields(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Allocate IceModelVec2's for inverse model and set metadata.
+PetscErrorCode IceModel::createInvFields() {
+  PetscErrorCode ierr;
+  inv.usIn = new IceModelVec2;
+  ierr = inv.usIn->create(grid, "uvelsurf", true); CHKERRQ(ierr);
+  ierr = inv.usIn->set_attrs(
+     "inverse_input_GUNITS", 
+     "x component of observed velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+  ierr = inv.usIn->set_glaciological_units("m year-1", secpera);
+  inv.vsIn = new IceModelVec2;
+  ierr = inv.vsIn->create(grid, "vvelsurf", true); CHKERRQ(ierr);
+  ierr = inv.vsIn->set_attrs(
+     "inverse_input_GUNITS", 
+     "y component of observed velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+  ierr = inv.vsIn->set_glaciological_units("m year-1", secpera);
+  inv.velInMask = new IceModelVec2;
+  ierr = inv.velInMask->create(grid, "velobsMask", true); CHKERRQ(ierr);
+  ierr = inv.velInMask->set_attrs(
+     "inverse_input_GUNITS", 
+     "mask for presence of velocity of ice at ice surface","1", NULL); CHKERRQ(ierr);
+  inv.usSIA = new IceModelVec2;
+  ierr = inv.usSIA->create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
+  ierr = inv.usSIA->set_attrs(
+     "inverse_output_GUNITS", 
+     "x component of ice surface velocity predicted by non-sliding SIA",
+     "m s-1", NULL); CHKERRQ(ierr);
+  ierr = inv.usSIA->set_glaciological_units("m year-1", secpera);
+  inv.vsSIA = new IceModelVec2;
+  ierr = inv.vsSIA->create(grid, "vvelsurfSIA", false); CHKERRQ(ierr);  // global
+  ierr = inv.vsSIA->set_attrs(
+     "inverse_output_GUNITS",
+     "y component of ice surface velocity predicted by non-sliding SIA",
+     "m s-1", NULL); CHKERRQ(ierr);
+  ierr = inv.vsSIA->set_glaciological_units("m year-1", secpera);
+  inv.taubxComputed = new IceModelVec2;
+  ierr = inv.taubxComputed->create(grid, "taubxOUT", false);  // global
+  ierr = inv.taubxComputed->set_attrs(
+     "inverse_output", 
+     "inverse-model-computed x component of basal shear stress", 
+     "Pa", NULL); CHKERRQ(ierr);
+  inv.taubyComputed = new IceModelVec2;
+  ierr = inv.taubyComputed->create(grid, "taubyOUT", false);  // global
+  ierr = inv.taubyComputed->set_attrs(
+     "inverse_output",
+     "inverse-model-computed y component of basal shear stress", 
+     "Pa", NULL); CHKERRQ(ierr);
+  inv.fofv = new IceModelVec2;
+  ierr = inv.fofv->create(grid, "fofv", false);  // global
+  ierr = inv.fofv->set_attrs(
+     "inverse_output",
+     "inverse-model-computed fraction of velocity from SIA in hybrid model", 
+     "1", NULL); CHKERRQ(ierr);
+  inv.oldtillphi = new IceModelVec2;
+  ierr = inv.oldtillphi->create(grid, "tillphiOLD", true);  // local like vtillphi
+  ierr = inv.oldtillphi->set_attrs(
+     "inverse_output",
+     "till friction angle at start of inverse model", 
+     "1", NULL); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! De-allocate IceModelVec2's for inverse model.
+PetscErrorCode IceModel::destroyInvFields() {
+  PetscErrorCode ierr;
+  ierr = inv.usIn->destroy(); CHKERRQ(ierr);
+  delete inv.usIn;
+  inv.usIn = PETSC_NULL;
+  ierr = inv.vsIn->destroy(); CHKERRQ(ierr);
+  delete inv.vsIn;
+  inv.vsIn = PETSC_NULL;
+  ierr = inv.velInMask->destroy(); CHKERRQ(ierr);
+  delete inv.velInMask;
+  inv.velInMask = PETSC_NULL;
+  ierr = inv.usSIA->destroy(); CHKERRQ(ierr);
+  delete inv.usSIA;
+  inv.usSIA = PETSC_NULL;
+  ierr = inv.vsSIA->destroy(); CHKERRQ(ierr);
+  delete inv.vsSIA;
+  inv.vsSIA = PETSC_NULL;
+  ierr = inv.taubxComputed->destroy(); CHKERRQ(ierr);
+  delete inv.taubxComputed;
+  inv.taubxComputed = PETSC_NULL;
+  ierr = inv.taubyComputed->destroy(); CHKERRQ(ierr);
+  delete inv.taubyComputed;
+  inv.taubyComputed = PETSC_NULL;
+  ierr = inv.fofv->destroy(); CHKERRQ(ierr);
+  delete inv.fofv;
+  inv.fofv = PETSC_NULL;
+  ierr = inv.oldtillphi->destroy(); CHKERRQ(ierr);
+  delete inv.oldtillphi;
+  inv.oldtillphi = PETSC_NULL;
   return 0;
 }
 
 
 //! Write fields associated to inverse model to NetCDF file.
-PetscErrorCode IceModel::writeInvFields(const char *filename,
-                          IceModelVec2 usIn, IceModelVec2 vsIn,
-                          IceModelVec2 usSIA, IceModelVec2 vsSIA,
-                          IceModelVec2 taubxComputed, IceModelVec2 taubyComputed,
-                          IceModelVec2 fofv, IceModelVec2 taucComputed) {
+PetscErrorCode IceModel::writeInvFields(const char *filename) {
   PetscErrorCode ierr;
 
   // prepare the file
@@ -310,35 +354,72 @@ PetscErrorCode IceModel::writeInvFields(const char *filename,
   ierr = nc.close(); CHKERRQ(ierr);
 
   // write the fields
-  ierr =          usIn.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr =          vsIn.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.usIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  ierr =         usSIA.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr =         vsSIA.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.velInMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.usSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.vsSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = vubarSSA.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vubarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vvbarSSA.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
   ierr = vvbarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  ierr = taubxComputed.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = taubyComputed.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = getMagnitudeOf2dVectorField(taubxComputed,taubyComputed,vWork2d[0]); CHKERRQ(ierr);
+  ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.taubyComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = getMagnitudeOf2dVectorField(*(inv.taubxComputed),*(inv.taubyComputed),
+                                     vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of basal shear stress applied at base of ice",
 	     "Pa", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr); // clear out
+  ierr = vWork2d[0].set_glaciological_units("Pa", 1.0); CHKERRQ(ierr); // clear out old
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  ierr =          fofv.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr =  taucComputed.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.fofv->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.oldtillphi->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // write this IceModel field for comparison
   ierr = vtillphi.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   return 0;
 }
 
-//! Compute the surface velocity from only the vertical plane shear predicted by the nonsliding SIA.
+
+//! Compute mask which is 1 where observed velocity is present and zero otherwise.
+PetscErrorCode IceModel::getObservedMask() {
+  PetscErrorCode ierr;
+  PetscScalar **us, **vs, **obsmask;
+
+  const PetscScalar UHUGE = 1.0e6 / secpera;
+  ierr = inv.usIn->get_array(us);      CHKERRQ(ierr);
+  ierr = inv.vsIn->get_array(vs);      CHKERRQ(ierr);
+  ierr = inv.velInMask->get_array(obsmask); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ((PetscAbs(us[i][j]) < UHUGE) && (PetscAbs(vs[i][j]) < UHUGE)) {
+        obsmask[i][j] = 1.0;
+      } else {
+        obsmask[i][j] = 0.0;
+      }
+    }
+  }
+  ierr = inv.usIn->end_access(); CHKERRQ(ierr);
+  ierr = inv.vsIn->end_access(); CHKERRQ(ierr);
+  ierr = inv.velInMask->end_access(); CHKERRQ(ierr);
+
+  // will need stencil width on velInMask
+  ierr = inv.velInMask->beginGhostComm(); CHKERRQ(ierr);
+  ierr = inv.velInMask->endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Compute the surface velocity predicted by the nonsliding SIA.
 /*!
 This is one of several routines called by invertSurfaceVelocities() for
 inverse model-based initialization.  See comments for that method.
@@ -357,11 +438,10 @@ horizontalVelocitySIARegular().  Therefore these IceModel members get modified:
 - IceModelVec3 vu
 - IceModelVec3 vv
  
-Only \c vu and \c vv are directly used here, however; they are evaluated for 
+Only \c vu and \c vv are directly used here, however.  They are evaluated for 
 their surface velocity.
  */
-PetscErrorCode IceModel::computeSIASurfaceVelocity(
-		 IceModelVec2 &usSIA_out, IceModelVec2 &vsSIA_out) {
+PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   PetscErrorCode ierr;
 
   ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
@@ -396,8 +476,8 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity(
   ierr = v3.endGhostComm(); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getSurfaceValues(usSIA_out, vH); CHKERRQ(ierr);
-  ierr = v3.getSurfaceValues(vsSIA_out, vH); CHKERRQ(ierr);
+  ierr = u3.getSurfaceValues(*(inv.usSIA), vH); CHKERRQ(ierr);
+  ierr = v3.getSurfaceValues(*(inv.vsSIA), vH); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   
@@ -429,9 +509,9 @@ This is one of several routines called by invertSurfaceVelocities() for
 inverse model-based initialization.  See comments for that method.
 
 The scalar field which gets computed is called \f$f(|\mathbf{v}|)\f$ in 
-\lo\cite[equations (21) and (22)]{BBssasliding}\elo.  In fact, if 
-\f$\mathbf{U}_s\f$ is the observed surface velocity then
-at each point in the map plane we seek \f$f(|\mathbf{v}|)\f$ in the equation
+\lo\cite[equations (21) and (22)]{BBssasliding}\elo.  Let 
+\f$\mathbf{U}_s\f$ be the observed surface velocity.  At each point
+in the map plane we seek \f$f(|\mathbf{v}|)\f$ in the equation
   \f[ \mathbf{U}_s = f(|\mathbf{v}|) \mathbf{u}_s
                    + \left(1 - f(|\mathbf{v}|)\right) \mathbf{v} \f]
 where \f$\mathbf{u}_s\f$ is the surface value of the nonsliding SIA and 
@@ -471,18 +551,15 @@ solves the equation that results from replacing the \f$F(x)\f$ term in the equat
 
 We iterate Newton's method to \f$10^{-12}\f$ relative tolerance and warn on nonconvergence.
  */
-PetscErrorCode IceModel::computeFofVforInverse(
-                            IceModelVec2 us_in, IceModelVec2 vs_in, 
-                            IceModelVec2 usSIA_in, IceModelVec2 vsSIA_in, 
-                            IceModelVec2 &fofv_out) {
+PetscErrorCode IceModel::computeFofVforInverse() {
   PetscErrorCode ierr;
   PetscScalar **us, **vs, **usSIA, **vsSIA, **f;
 
-  ierr =    us_in.get_array(us);    CHKERRQ(ierr);
-  ierr =    vs_in.get_array(vs);    CHKERRQ(ierr);
-  ierr = usSIA_in.get_array(usSIA); CHKERRQ(ierr);
-  ierr = vsSIA_in.get_array(vsSIA); CHKERRQ(ierr);
-  ierr = fofv_out.get_array(f);     CHKERRQ(ierr);
+  ierr = inv.usIn->get_array(us);    CHKERRQ(ierr);
+  ierr = inv.vsIn->get_array(vs);    CHKERRQ(ierr);
+  ierr = inv.usSIA->get_array(usSIA); CHKERRQ(ierr);
+  ierr = inv.vsSIA->get_array(vsSIA); CHKERRQ(ierr);
+  ierr = inv.fofv->get_array(f);     CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar
@@ -517,11 +594,11 @@ PetscErrorCode IceModel::computeFofVforInverse(
       }
     }
   }
-  ierr = fofv_out.end_access(); CHKERRQ(ierr);
-  ierr =    us_in.end_access(); CHKERRQ(ierr);
-  ierr =    vs_in.end_access(); CHKERRQ(ierr);
-  ierr = usSIA_in.end_access(); CHKERRQ(ierr);
-  ierr = vsSIA_in.end_access(); CHKERRQ(ierr);
+  ierr = inv.fofv->end_access(); CHKERRQ(ierr);
+  ierr = inv.usIn->end_access(); CHKERRQ(ierr);
+  ierr = inv.vsIn->end_access(); CHKERRQ(ierr);
+  ierr = inv.usSIA->end_access(); CHKERRQ(ierr);
+  ierr = inv.vsSIA->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -535,28 +612,21 @@ inverse model-based initialization.  See comments for that method.
 This procedure computes a z-independent horizontal ice velocity, conceptually
 a basal sliding velocity, from a specified surface horizontal ice velocity
 (map).  The portion already found from SIA equations is removed.
-
-The results in IceModelVec2 s ub_out and vb_out
-must be allocated (created) before calling this procedure.
  */
-PetscErrorCode IceModel::removeSIApart(
-                 IceModelVec2 us_in, IceModelVec2 vs_in, 
-                 IceModelVec2 usSIA_in, IceModelVec2 vsSIA_in, 
-                 IceModelVec2 fofv_in,
-		 IceModelVec2 &ub_out, IceModelVec2 &vb_out) {
+PetscErrorCode IceModel::removeSIApart() {
   PetscErrorCode ierr;
 
   // max amount before div by (1-f) will be bypassed:
   const PetscScalar maxfofv = 0.999;
 
   PetscScalar **us, **vs, **ub, **vb, **usSIA, **vsSIA, **fofv;
-  ierr =    us_in.get_array(us);    CHKERRQ(ierr);
-  ierr =    vs_in.get_array(vs);    CHKERRQ(ierr);
-  ierr = usSIA_in.get_array(usSIA); CHKERRQ(ierr);
-  ierr = vsSIA_in.get_array(vsSIA); CHKERRQ(ierr);
-  ierr =  fofv_in.get_array(fofv);  CHKERRQ(ierr);
-  ierr =   ub_out.get_array(ub);    CHKERRQ(ierr);
-  ierr =   vb_out.get_array(vb);    CHKERRQ(ierr);
+  ierr = inv.usIn->get_array(us);    CHKERRQ(ierr);
+  ierr = inv.vsIn->get_array(vs);    CHKERRQ(ierr);
+  ierr = inv.usSIA->get_array(usSIA); CHKERRQ(ierr);
+  ierr = inv.vsSIA->get_array(vsSIA); CHKERRQ(ierr);
+  ierr = inv.fofv->get_array(fofv);  CHKERRQ(ierr);
+  ierr = vubarSSA.get_array(ub);    CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(vb);    CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar f = fofv[i][j];
@@ -571,18 +641,19 @@ PetscErrorCode IceModel::removeSIApart(
       }
     }
   }
-  ierr =    us_in.end_access(); CHKERRQ(ierr);
-  ierr =    vs_in.end_access(); CHKERRQ(ierr);
-  ierr = usSIA_in.end_access(); CHKERRQ(ierr);
-  ierr = vsSIA_in.end_access(); CHKERRQ(ierr);
-  ierr =  fofv_in.end_access(); CHKERRQ(ierr);
-  ierr =   ub_out.end_access(); CHKERRQ(ierr);
-  ierr =   vb_out.end_access(); CHKERRQ(ierr);
+  ierr = inv.usIn->end_access(); CHKERRQ(ierr);
+  ierr = inv.vsIn->end_access(); CHKERRQ(ierr);
+  ierr = inv.usSIA->end_access(); CHKERRQ(ierr);
+  ierr = inv.vsSIA->end_access(); CHKERRQ(ierr);
+  ierr = inv.fofv->end_access(); CHKERRQ(ierr);
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
   
   return 0;
 }
 
 
+#if 0
 //! Compute till friction angle in degrees given the (scalar) till yield stress.
 /*!
 The more complete brief description might be: "Compute till friction angle 
@@ -654,4 +725,4 @@ PetscErrorCode IceModel::computeTFAFromYieldStress(
 
   return 0;
 }
-
+#endif
