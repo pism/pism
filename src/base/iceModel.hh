@@ -91,9 +91,10 @@ struct InverseModelCtx {
                *fofv,
                *taubxComputed,
                *taubyComputed,
+               *effPressureN,
                *oldtillphi;
 };
-struct RegPoissonMuCtx {
+struct RegPoissonCtx {
   // describes Poisson-like problem solved when inverting surface velocities
   //   using a regularization
   DA          da;             // must be first in struct
@@ -349,11 +350,12 @@ protected:
   virtual PetscErrorCode computeFofVforInverse();
   virtual PetscErrorCode removeSIApart();
   virtual PetscErrorCode computeBasalShearFromSSA();
-  virtual PetscErrorCode fillRegPoissonMuData(
-                IceModelVec2 &ub_in, IceModelVec2 &vb_in,
-	        IceModelVec2 &taubx_in, IceModelVec2 &tauby_in,
-	        RegPoissonMuCtx &user);
+  virtual PetscErrorCode fillRegPoissonData(RegPoissonCtx &user);
+  virtual PetscErrorCode getEffectivePressureForInverse();
+  virtual PetscErrorCode computeTFAFromBasalShearNoReg(
+                const PetscScalar phi_low, const PetscScalar phi_high);
   virtual PetscErrorCode computeTFAFromBasalShear(
+                const PetscScalar phi_low, const PetscScalar phi_high,
                 const PetscScalar invRegEps, const PetscTruth invShowFG);
 
   // see iMIO.cc

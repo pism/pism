@@ -53,6 +53,15 @@ endif
 TESTS_LIB_FLAGS := -ltests ${BASE_LIB_FLAGS}
 ICE_LIB_FLAGS := -lpism -lnetcdf ${PETSC_LIB} ${BASE_LIB_FLAGS}
 
+# set names for libraries
+ifneq ($(PISM_STATIC),1)
+LIBPISMNAME := ../lib/libpism.so
+LIBTESTSNAME := ../lib/libtests.so
+else
+LIBPISMNAME := ../lib/libpism.a
+LIBTESTSNAME := ../lib/libtests.a
+endif
+
 ifeq ($(PISM_USE_MPICXX), 1)
   # Override PETSc's choice of CXX and of linker
   CXX = $(subst mpicc,mpicxx,$(CC))
@@ -119,18 +128,13 @@ all: ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default)
 
 extras : ${exec_extras}
 
-# build libraries; shared by default, static if PISM_STATIC=1.
-
+# how to build libraries; shared by default, static if PISM_STATIC=1.
 ifneq ($(PISM_STATIC),1)
-LIBPISMNAME := ../lib/libpism.so
-LIBTESTSNAME := ../lib/libtests.so
 ../lib/libpism.so : ${ICE_OBJS}
 	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
 ../lib/libtests.so : ${TESTS_OBJS}
 	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
 else
-LIBPISMNAME := ../lib/libpism.a
-LIBTESTSNAME := ../lib/libtests.a
 ../lib/libpism.a : ${ICE_OBJS}
 	ar r $@ ${ICE_OBJS} 
 ../lib/libtests.a : ${TESTS_OBJS}

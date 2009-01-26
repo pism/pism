@@ -124,9 +124,7 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
 
-  // With new A and x, compute  result = Ax - rhs = L[u] - (driving)
-  // (key step of the inverse model)
-  
+  // major action: With new A and x, compute  result = Ax - rhs = L[u] - (driving)
   ierr = MatMult(A,x,result); CHKERRQ(ierr);  
   
   ierr = VecAXPY(result,-1.0,rhs); CHKERRQ(ierr);  // note result = 0 if MASK_SHEET
@@ -162,9 +160,9 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
 }
 
 
-extern PetscErrorCode RegPoissonMuFunctionLocal(
+extern PetscErrorCode RegPoissonFunctionLocal(
                 DALocalInfo *info, PetscScalar **x, PetscScalar **F,
-                RegPoissonMuCtx *user);
+                RegPoissonCtx *user);
 
 
 //! Compute the till friction angle for the given basal shear stress by minimizing a regularized objective.
@@ -245,13 +243,18 @@ Assume the initial field \f$\mu_i\f$ is smooth.  We seek a smooth function
 This functional is quadratic in \f$\mu\f$.  It is positive definite on the space 
 of functions \f$\mu\f$ which have a square-integrable gradient and which go to
 \f$\mu_i\f$ at the boundary (i.e. \f$\mu-\mu_i \in H_0^1(\Omega)\f$).  The minimum
-condition for this functional is a linear equation for \f$\mu\f$, the Poisson-like
-problem
-	\f[ - \epsilon \triangle \mu + N |\mathbf{V}|^2 \chi_O\, \mu
-	       = - N \tau_b \cdot \mathbf{V} \chi_O - \epsilon \triangle \mu_i. \f]
+condition for this functional is a linear equation for \f$\mu\f$.  One form
+of the equation, a Poisson-like PDE, is
+	\f[ - \epsilon \triangle (\mu - \mu_i) + N |\mathbf{V}|^2 \chi_O\, \mu
+	       = - N \tau_b \cdot \mathbf{V} \chi_O. \f]
+Let \f$\omega=\mu-\mu_i\f$.  The equation above is equivalent to
+	\f[ - \epsilon \triangle \omega + N |\mathbf{V}|^2 \chi_O\, \omega
+	       = - N (\tau_b \cdot \mathbf{V} - |\mathbf{V}|^2\,\mu_i) \chi_O. \f]
+This is the one we solve numerically, for \f$\omega\f$.  To recover the till
+friction angle: \f$\phi = \arctan\left(\omega + \mu_i\right)\f$.
 
-To solve the Poisson-like problem numerically we use a PETSc \c SNES object
-to set up and solve.  We write the equation in slightly abstracted form as 
+To solve the Poisson-like problem numerically we use a PETSc \c SNES object.  We
+write the equation in slightly abstracted form as 
 	\f[-\epsilon \triangle \mu + f(x,y) \mu = g(x,y).\f]
 This is a \e linear equation but nonetheless we use the general PETSc SNES methods
 for nonlinear problems.  We call fillRegPoissonMuData() to fill in the
@@ -261,63 +264,55 @@ in PlasticBasalType.  Also the starting till friction angle \f$\phi_i\f$ giving
 \f$\mu_i\f$, and the fields in IceModel which determine the \f$N\f$, are needed
 to compute the coefficients.
 
-Note that \f$f(x,y) = g(x,y) = 0\f$ outside of \f$\Omega_O\f$, and these coefficients
-are generally discontinuous if \f$\Omega_O\f$ is nontrivial, even if the other data
-of the problem are smooth.
+Note that \f$f(x,y) = g(x,y) = 0\f$ outside of \f$\Omega_O\f$.  Thus \f$f(x,y)\f$
+and \f$g(x,y)\f$ are generally discontinuous if \f$\Omega_O\f$ is nontrivial, 
+even if the other data of the problem are smooth.
 
 An example code in the PISM source, src/trypetsc/poisson.c, gives
 a standalone example of solving this kind of Poisson-like equation.  It also
 verifies our solution method.
 
 Regarding the size of the regularization constant \f$\epsilon>0\f$, we obviously
-expect smooth \f$\mu\f$ for larger values of \f$\epsilon\f$.
+expect smoother \f$\mu\f$ for larger values of \f$\epsilon\f$.
 In the functional (objective) above, the terms \f$\left|\tau_b + 
 \mu N \mathbf{V}\right|^2\f$ and \f$\epsilon|\nabla(\mu - \mu_i)|^2\f$ are compared.
 Since \f$|\mathbf{V}|\f$ is of size one at locations where there is significant sliding
-but also some deformation, i.e. when \f$|\mathbf{V}| \sim U_{\mathtt{th}}\f$, minimal
-regularization corresponds to a value for \f$\epsilon\f$ satisfying
+but also some deformation, i.e. when \f$|\mathbf{V}| \sim U_{\mathtt{th}}\f$, a
+small amount of regularization corresponds to a value for \f$\epsilon\f$ satisfying
 	\f[ \epsilon|\nabla(\mu - \mu_i)|^2 \ll \max\left\{|\tau_b|^2,\mu^2 N^2\right\}. \f]
-On the other hand, a scale for spatial variation of \f$\tau_c = \mu N\f$ might be
-	\f[ \frac{\delta (\mu N)}{\delta x} = \frac{10^5\,\text{Pa}}{10^4\,\text{m}} 
-	            = 10 \frac{\text{Pa}}{\text{m}}. \f]
-Suppose 1 bar \f$= 10^5\f$ Pa is a scale for \f$N\f$ and we suppose there is minimal
-variation in \f$N\f$ in regions of interest (uhhh ...).  Then a scale for spatial 
-variation of \f$\mu\f$ might be
-	\f[ \frac{\delta \mu}{\delta x} = 10^{-4}\, \text{m}^{-1}. \f]
-Minimal regularization might be
-        \f[ \epsilon|\nabla(\mu-\mu_i)|^2 \ll 10^{10}\, \text{Pa}^2, \f]
-if \f$10^5\f$ Pa is a scale for \f$\tau_b\f$, or
-	\f[ \epsilon \ll 10^{18}\,\text{Pa}^2\,\text{m}^2. \f]
+A scale for spatial variation of \f$\omega = \mu-\mu_i\f$ might be a change of one degree 
+in \f$\phi\f$ in one kilometer, or a change of \f$\delta \omega \approx 
+(\pi/180) \delta \phi = \pi/180 \approx 0.02\f$ in one kilometer,
+	\f[ \frac{\delta \omega}{\delta x} = 2\times 10^{-5}\, \text{m}^{-1}. \f]
+If \f$10^5\f$ Pa = 1 bar is a scale for \f$\tau_b\f$ then, by the above standard, small
+regularization might be
+        \f[ \epsilon|\nabla \omega|^2 \ll 10^{10}\, \text{Pa}^2, \f]
+Using the above estimate of spatial variation of \f$\omega\f$ as a size for the
+gradient of \f$\omega\f$, we get
+	\f[ \epsilon \ll  \frac{10^{10}}{4 \times 10^{-10}} 
+	                  = 0.25 \times 10^{20}\,\text{Pa}^2\,\text{m}^2. \f]
 
 It may be fair to relate values for \f$\epsilon\f$ to the steady state
-of a notional diffusion (smoothing) process for \f$\mu\f$.
+of a notional diffusion (smoothing) process for \f$\omega = \mu-\mu_i\f$.
 
 The above is the whole story if the ice is grounded and there is positive
 ice thickness.  If a point is marked \c MASK_FLOATING or \c MASK_FLOATING_OCEAN0, 
-however, then \f$\mu=0\f$.  If a point is grounded but the ice
-thickness is zero then \f$\mu=\tan(\text{phi\underline{ }max})\f$. 
+however, or if a point is grounded but the ice thickness is zero, then 
+\f$\mu=\mu_i\f$.
+
+Finally we enforce the limits \c phi_min, \c phi_max.
 
 This procedure reads ??? fields from the current IceModel state, namely ice 
 thickness \c vH, the mask \c vMask, ???
  */
 PetscErrorCode IceModel::computeTFAFromBasalShear(
+                const PetscScalar phi_low, const PetscScalar phi_high,
                 const PetscScalar invRegEps, const PetscTruth invShowFG) {               
   PetscErrorCode ierr;
   
-  if (doPseudoPlasticTill == PETSC_FALSE) {
-    ierr = verbPrintf(1, grid.com, 
-       "WARNING: computeYieldStressFromBasalShearUsingPseudoPlastic() should only\n"
-       "  be called with q > 0.0 in pseudo-plastic model;  here is \n"
-       "  PlasticBasalType::printInfo() output:\n");
-       CHKERRQ(ierr);
-    ierr = basal->printInfo(1,grid.com); CHKERRQ(ierr);
-    ierr = verbPrintf(1, grid.com, "  CONTINUING.  May crash.\n"); CHKERRQ(ierr);
-  }
-  
   // choose regularization; see guesses in comment at top
-  RegPoissonTaucCtx  user;        // user-defined work context; see iceModel.hh
+  RegPoissonCtx  user;        // user-defined work context; see iceModel.hh
   user.epsilon = invRegEps; 
-  bool noInvReg = (invRegEps == 0.0);
   
   user.da = grid.da2;
   user.grid = &grid;
@@ -325,54 +320,22 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   ierr = DACreateGlobalVector(user.da,&user.f);CHKERRQ(ierr);
   ierr = VecDuplicate(user.f,&user.g);CHKERRQ(ierr);
 
-  // main added content relative to ex5: fill nontrivial coeffs for reg version
-  ierr = fillRegPoissonTaucData(ub_in,vb_in,taubx_in,tauby_in,user); CHKERRQ(ierr);
-  
-  if (invShowFG == PETSC_TRUE) {
+  // main added content relative to ex5: fill nontrivial coeffs f,g for reg version
+  ierr = fillRegPoissonData(user); CHKERRQ(ierr);
+  if (invShowFG == PETSC_TRUE) {  // show f,g if desired
     PetscViewer viewer;
+    PetscDraw   draw;
     ierr = PetscViewerDrawOpen(grid.com,PETSC_NULL,"f(x,y), coeff in Poisson-like eqn",
              PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,
              &viewer); CHKERRQ(ierr);
     ierr = VecView(user.f,viewer); CHKERRQ(ierr);
-    PetscDraw draw;
     ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
     ierr = PetscDrawSetTitle(draw,"g(x,y), r.h.s. in Poisson-like eqn"); CHKERRQ(ierr);
     ierr = VecView(user.g,viewer); CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
   }
 
-  if (noInvReg) {
-    ierr = verbPrintf(2, grid.com, 
-       "    NOT regularizing tau_c computation (epsilon = 0.0)\n");
-       CHKERRQ(ierr);
-    PetscScalar **tauc, **mask, **ff, **gg;
-    ierr = tauc_out.get_array(tauc);  CHKERRQ(ierr);
-    ierr =    vMask.get_array(mask);  CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, user.f, &ff); CHKERRQ(ierr);
-    ierr = DAVecGetArray(grid.da2, user.g, &gg); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
-          tauc[i][j] = 0.0;
-        } else {
-          tauc[i][j] = gg[i][j] / (ff[i][j] + 0.5e-6);
-        }
-      }
-    }
-    ierr = tauc_out.end_access(); CHKERRQ(ierr);
-    ierr =    vMask.end_access(); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, user.f, &ff); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, user.g, &gg); CHKERRQ(ierr);
-    // de-allocate before departure ...
-    ierr = VecDestroy(user.f);CHKERRQ(ierr);      
-    ierr = VecDestroy(user.g);CHKERRQ(ierr);      
-    return 0;
-  }
-  ierr = verbPrintf(2, grid.com, 
-           "    regularizing tau_c computation using epsilon = %.3e\n",
-           user.epsilon); CHKERRQ(ierr);
-
-  // since we are going to regularize, create appropriate SNES, Mat
+  // create appropriate SNES, Mat
   SNES               snes;        /* nonlinear solver */
   Vec                x,r;         /* solution, residual vectors */
   PetscInt           its;         /* iterations for convergence */
@@ -384,41 +347,42 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   // see src/trypetsc/poisson.c for ideas here
   ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
 
-  ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonTaucFunctionLocal);CHKERRQ(ierr);
-  ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);  // no Jacobian
+  ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonFunctionLocal);CHKERRQ(ierr);
+  ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);  // no Jacobian!!
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
-  ierr = VecSet(x,0.0); CHKERRQ(ierr); // a linear problem, so initial guess is easy ...
+  ierr = VecSet(x,0.0); CHKERRQ(ierr); // initial guess \omega = 0 is \mu = \mu_i
 
   // solve the linear problem as though it is nonlinear!
-  ierr = SNESSolve(snes,PETSC_NULL,x);CHKERRQ(ierr);
+  ierr = SNESSolve(snes, PETSC_NULL, x);CHKERRQ(ierr);
 
-  // some feedback appropriate, but FIXME
+  // some feedback appropriate
   PetscReal resnorm;
   ierr = SNESGetIterationNumber(snes,&its);CHKERRQ(ierr); 
   ierr = VecNorm(r,NORM_INFINITY,&resnorm); CHKERRQ(ierr);
-  ierr = PetscPrintf(grid.com,
-            "    done ... number of Newton iterations = %d;  |residual|_infty = %9.3e\n",
+  ierr = verbPrintf(2,grid.com,
+            "    done; number of Newton iterations = %d;  |residual|_infty = %9.3e\n",
             its, resnorm); CHKERRQ(ierr);
 
-  // copy solution in x into tauc_out, zeroing the yield stress where floating 
-  PetscScalar **tauc, **mask, **result;
-  ierr = tauc_out.get_array(tauc);  CHKERRQ(ierr);
-  ierr =    vMask.get_array(mask);  CHKERRQ(ierr);
+  // convert solution in x = \omega = \mu - \mu_i into phi 
+  PetscScalar **phi, **oldphi, **result;
+  ierr = vtillphi.get_array(phi);  CHKERRQ(ierr);
+  ierr = inv.oldtillphi->get_array(oldphi); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, x, &result); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
-        tauc[i][j] = 0.0;
-      } else {
-        tauc[i][j] = result[i][j];
-      }
+      const PetscScalar muinitial = tan((pi/180.0) * oldphi[i][j]);
+      phi[i][j] = (180.0/pi) * atan(result[i][j] + muinitial);
+      // enforce phi_min, phi_max:
+      if (phi[i][j] > phi_high)  phi[i][j] = phi_high;
+      if (phi[i][j] < phi_low)   phi[i][j] = phi_low;
     }
   }
-  ierr = tauc_out.end_access(); CHKERRQ(ierr);
-  ierr =    vMask.end_access(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(grid.da2, x, &result); CHKERRQ(ierr);
+  ierr = vtillphi.end_access();  CHKERRQ(ierr);
+  ierr = inv.oldtillphi->end_access(); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid.da2, x, &result); CHKERRQ(ierr);
 
   // de-allocate SNES stuff
   ierr = VecDestroy(x);CHKERRQ(ierr);
@@ -431,64 +395,98 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
 }
 
 
-//! Compute non-constant coefficients in Poisson-like regularized problem for yield stress in inverse modeling.
-PetscErrorCode IceModel::fillRegPoissonTaucData(
-                    IceModelVec2 ub_in, IceModelVec2 vb_in,
-	            IceModelVec2 taubx_in, IceModelVec2 tauby_in,
-	            RegPoissonTaucCtx &user) {
+//! Compute N, the effective pressure on the till, following basal model conventions.
+PetscErrorCode IceModel::getEffectivePressureForInverse() {
   PetscErrorCode ierr;
 
-  PetscScalar **ub, **vb, **taubx, **tauby, **ff, **gg;
+  PetscScalar **N, **H, **Hmelt;
+  ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
+  ierr = vH.get_array(H);  CHKERRQ(ierr);
+  ierr = vHmelt.get_array(Hmelt);  CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]); // iMbasal.cc
+    }
+  }
+  ierr = vH.end_access();  CHKERRQ(ierr);
+  ierr = vHmelt.end_access();  CHKERRQ(ierr);
+  ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Compute non-constant coefficients in Poisson-like regularized problem for yield stress in inverse modeling.
+PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
+  PetscErrorCode ierr;
+
+  PetscScalar **oldphi, **obsmask, **N, **taubx, **tauby, **ub, **vb, 
+              **ff, **gg;
   const PetscReal q   = basal->pseudo_q,
                   Uth = basal->pseudo_u_threshold;
 
-  ierr = taubx_in.get_array(taubx); CHKERRQ(ierr);
-  ierr = tauby_in.get_array(tauby); CHKERRQ(ierr);
-  ierr = ub_in.get_array(ub); CHKERRQ(ierr);
-  ierr = vb_in.get_array(vb); CHKERRQ(ierr);
+  ierr = inv.oldtillphi->get_array(oldphi);  CHKERRQ(ierr);
+  ierr = inv.velInMask->get_array(obsmask);  CHKERRQ(ierr);
+  ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
+  ierr = inv.taubxComputed->get_array(taubx); CHKERRQ(ierr);
+  ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
+  ierr = vubarSSA.get_array(ub); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(vb); CHKERRQ(ierr);
   ierr = DAVecGetArray(user.da, user.f, &ff); CHKERRQ(ierr);
   ierr = DAVecGetArray(user.da, user.g, &gg); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // compute                  U
-      //              V = ------------------
-      //                  |U|^{1-q} U_th^q
-      // but regularized: |U|^2 --> |U|^2 + (0.01 m/a)^2
-      const PetscScalar 
+      if (obsmask[i][j] < 0.5) { // coeffs f,g have factor \chi_O
+        ff[i][j] = 0.0;
+        gg[i][j] = 0.0;
+      } else {
+        // compute                  U
+        //              V = ------------------
+        //                  |U|^{1-q} U_th^q
+        // but regularized: |U|^2 --> |U|^2 + (0.01 m/a)^2
+        const PetscScalar 
               delta2 = PetscSqr(0.01/secpera),
               U_x = ub[i][j],
               U_y = vb[i][j],
               denom = pow(delta2 + PetscSqr(U_x)+PetscSqr(U_y),(1.0-q)/2.0) * pow(Uth,q),
               V_x = U_x / denom,
-              V_y = U_y / denom;
-      // and  f(x,y) = + |V|^2  and  g(x,y) = - tau_b . V  (dot product)
-      ff[i][j] = PetscSqr(V_x) + PetscSqr(V_y);
-      gg[i][j] = - taubx[i][j] * V_x - tauby[i][j] * V_y;
-      // ad hoc: g(x,y) should not be negative; fix it
-      if (gg[i][j] < 0.0)  gg[i][j] = 0.0;
+              V_y = U_y / denom,
+              magVsqr = PetscSqr(V_x) + PetscSqr(V_y),
+              taubdotV = taubx[i][j] * V_x + tauby[i][j] * V_y,
+              muinitial = tan((pi/180.0) * oldphi[i][j]);
+        // f(x,y) = + N |V|^2 \chi_O
+        ff[i][j] = N[i][j] * magVsqr;
+        // g(x,y) = - N (tau_b . V - |V|^2 \mu_i) \chi_O         [. = dot product]
+        gg[i][j] = - N[i][j] * (taubdotV - magVsqr * muinitial);
+      }
     }
   }
   ierr = DAVecRestoreArray(user.da, user.f, &ff); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(user.da, user.g, &gg); CHKERRQ(ierr);
-  ierr = ub_in.end_access(); CHKERRQ(ierr);
-  ierr = vb_in.end_access(); CHKERRQ(ierr);
-  ierr = taubx_in.end_access(); CHKERRQ(ierr);
-  ierr = tauby_in.end_access(); CHKERRQ(ierr);
+  ierr = inv.oldtillphi->end_access();  CHKERRQ(ierr);
+  ierr = inv.velInMask->end_access();  CHKERRQ(ierr);
+  ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
+  ierr = inv.taubxComputed->end_access(); CHKERRQ(ierr);
+  ierr = inv.taubyComputed->end_access(); CHKERRQ(ierr);
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
 
   return 0; 
 }
 
 
-//! Evaluates function F(x) for SNES, corresponding to Poisson-like regularized problem for yield stress in inverse modeling.
+//! Evaluates function F(x) for SNES for a Poisson-like regularized problem in inverse modeling.
 /*!
-This method is used in computeYieldStressFromBasalShearUsingPseudoPlastic().  It is handed to
-the SNES.
+This method is used in IceModel::computeTFAFromBasalShear().  It is handed to the SNES.
+
+This is one of several routines called by IceModel::invertSurfaceVelocities() for
+inverse model-based initialization.  See comments for that method.
 
 Compare examples/trypetsc/poisson.c.
  */
-PetscErrorCode RegPoissonTaucFunctionLocal(
+PetscErrorCode RegPoissonFunctionLocal(
                   DALocalInfo *info, PetscScalar **x, PetscScalar **F,
-                  RegPoissonTaucCtx *user) {
+                  RegPoissonCtx *user) {
   PetscErrorCode ierr;
   PetscInt       i,j,Mx,My,xs,ys,xm,ym;
   PetscReal      dx,dy,sc,scxx,scyy;
