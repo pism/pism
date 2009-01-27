@@ -65,6 +65,10 @@ LIBPISMNAME := ../lib/libpism.a
 LIBTESTSNAME := ../lib/libtests.a
 endif
 
+# The UDUNITS library:
+UDUNITS_H = $(PISM_PREFIX)/$(UDUNITS)/include/udunits.h
+LIBUDUNITS = ../lib/libudunits.a
+
 ifeq ($(PISM_USE_MPICXX), 1)
   # Override PETSc's choice of CXX and of linker
   CXX = $(subst mpicc,mpicxx,$(CC))
@@ -125,7 +129,7 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
-all: ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default)
+all: $(UDUNITS_H) ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default)
 	@svnversion ../src/ > ../src/revision
 
 extras : ${exec_extras}
@@ -143,16 +147,16 @@ $(LIBPISMNAME)  : ${ICE_OBJS} libudunits.a
 $(LIBTESTSNAME) : ${TESTS_OBJS}
 	$(BUILD_LIB) $@ $^
 
-# The UDUNITS library:
-UDUNITS_H = $(PISM_PREFIX)/$(UDUNITS)/include/udunits.h
-LIBUDUNITS = ../lib/libudunits.a
-
+# For some reason the UDUNITS build process messes up src/lib/udunits.h, so we
+# restore its original condition here (so that the changes do not get
+# committed). In stable0.2 the last line of this rule should go away.
 $(UDUNITS_H) $(LIBUDUNITS):
 	cd $(PISM_PREFIX)/$(UDUNITS)/src; \
 	CPPFLAGS=$(UDUNITS_CPPFLAGS) ./configure --prefix=$(PISM_PREFIX)/$(UDUNITS); \
 	cd $(PISM_PREFIX)/$(UDUNITS)/src/lib; \
 	$(MAKE) all installed_library installed_headers installed_etcfiles
 	ln -sf $(PISM_PREFIX)/$(UDUNITS)/lib/libudunits.a $(PISM_PREFIX)/lib
+	svn revert $(PISM_PREFIX)/$(UDUNITS)/src/lib/utparse.h
 
 #build default executables
 
