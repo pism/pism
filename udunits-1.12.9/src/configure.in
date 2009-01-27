@@ -1,0 +1,54 @@
+dnl $Id: configure.in,v 1.8 2008/04/07 17:15:02 steve Exp $
+dnl
+dnl Process this file with GNU autoconf(1) to produce a configure script.
+dnl
+AC_INIT(udunits)
+UC_INIT
+
+UC_ENSURE(PORT_MANIFEST, udalloc.c udalloc.h)dnl
+
+UC_PREFIX(..)
+
+UC_DEFAULT(CFLAGS, -O)
+UC_DEFAULT(CPPFLAGS, )
+
+UC_PROG_NEQN
+UC_PROG_TBL
+UC_PROG_AR
+
+libdir=`pwd`/lib
+UC_LINK_REF(LD_UDUNITS, $libdir, udunits)
+AC_SUBST(LD_UDUNITS)
+UC_LIB_YACC
+AC_CHECK_FUNC([floor], ,
+    AC_CHECK_LIB([m], [floor], 
+        AC_SUBST([LD_MATH], "-lm"),
+	AC_MSG_ERROR("Couldn't find math functions. Set LD_MATH and retry")
+    )dnl
+)dnl
+
+UC_CFORTRAN
+UC_FORTRAN_PTR(UD_POINTER)
+
+UC_UDPOSIX_STDDEF
+UC_UDPOSIX_FLOAT
+UC_UDPOSIX_STDLIB
+UC_UDPOSIX_STRING
+UC_UDPOSIX_TIME
+UC_UDPOSIX_LIMITS
+UC_UDPOSIX_SEARCH
+
+UL_PROG_PERL
+UL_PERL_LINKTYPE
+UL_PIC
+UL_SUBDIR_PERL
+
+UC_FTPDIR(udunits)
+
+UC_FINISH(
+    Makefile
+    lib/Makefile
+    lib/udunits.inc
+    udunits/Makefile
+    perl/Makefile.PL
+)

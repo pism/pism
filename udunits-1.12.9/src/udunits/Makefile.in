@@ -1,0 +1,55 @@
+# Makefile for the Unidata units program udunits(1)).
+#
+# $Id: Makefile.in,v 1.8 2006/04/24 19:06:28 steve Exp $
+
+.POSIX:
+
+PROGRAM		= udunits
+
+CPPFLAGS	= -I../lib -I../port/misc @CPPFLAGS@
+CFLAGS		= @CFLAGS@
+
+OBJS		= udunits.o
+ld_yacc		= @LD_YACC@
+ld_math		= @LD_MATH@
+ld_udport	= @LD_UDPORT@
+ld_udunits	= @LD_UDUNITS@
+LIBS		= $(ld_udunits) $(ld_udport) $(ld_yacc) $(ld_math) @LIBS@
+
+MANUALS		= udunits.1
+prefix		= ../..
+exec_prefix	= $(prefix)/bin
+
+GARBAGE		= test.out *.log
+MANIFEST	= Makefile.in \
+		  depend \
+		  test.in test.out.expect \
+		  udunits.1 udunits.c
+
+all:		program
+
+test:		program FORCE
+	./udunits ../lib/udunits.dat <test.in | sed 's/\.00* UTC/.00 UTC/' \
+	    >test.out
+	@if diff test.out test.out.expect; then \
+	    echo 'Success!'; \
+	else \
+	    echo '### Failure ###'; \
+	fi
+
+install:	installed_program installed_manuals
+
+clean:		default_clean
+
+distclean:	default_distclean
+
+tags:		FORCE ../lib/utlib.c ../lib/utparse.c
+	ctags -t utlib.c ../lib/utlib.c ../lib/utparse.c
+
+include ../port/master.mk
+
+$(PROGRAM):	../lib/libudunits.a
+
+### Everything after the following line might be overwritten ###
+### DO NOT DELETE THIS LINE.  make depend DEPENDS ON IT ###
+include depend

@@ -1,0 +1,492 @@
+VERSION		CHANGE
+
+1.12.9	2008-07-23
+		Corrected utInvCalendar() and utCalendar().  The
+		origin field of timestamp units wasn't being handled
+		correctly.
+
+1.12.8	2008-07-22
+		Corrected utPrint()'s printing of timestamp units.  The
+		unit created by parsing the string "hours since 1-1-1
+		00:00:0.0 UTC" was printed as "3600 seconds since
+		2000-06-12 02:05:12.00000 UTC".  It is now printed
+		correctly.
+
+1.12.7	2008-04-07
+		Corrected timestamps in "tar.gz" file to maintain correct
+		dependency information (e.g., .c depends on .l).
+
+1.12.6	2008-04-07
+		Added missing "const" qualifiers to file "lib/utlib.c".
+
+		Modified "udunits.h":
+		    Added missing declaration for utIsInit().h".
+
+		    Added support for C++.h".
+
+		Added missing definition "_XOPEN_SOURCE=500" to top of
+		file "udunits/udunits.c".
+
+1.12.5		2006-04-24
+
+		Corrected definition of metric horsepower in database.
+
+		Corrected handling of timestamp unit origins.
+
+1.12.4
+		Changed implementation of utTerm() to support multi-
+		threaded environments.
+
+		Added @LIBS@ to udunits/Makefile.in
+
+1.12.3
+                Improved resolution of time-handling to fix the
+		following:
+
+		    $ udunits
+		    You have: months since 1870-1-1
+		    You want: 
+			Definition: "2629743.831225 seconds since 1869-12-31 23:59:60.000 UTC"
+
+1.12.2	2004-10-17
+		Ported build example to Red Hat's "Fedora" Linux.
+
+		Improved configure-script test for math library.
+
+		Corrected floating-point roundoff-error in utCalendar().
+
+1.12.1	2003-12-01
+		Corrected omission of file "lib/udunits.inc.in" from 
+		distribution.
+
+		Ported to Mac OSX (I hope).
+
+1.12.0	2003-08-29
+		Corrected definition of "apothecary_pound".
+
+		Corrected documentation of "common_year" in the units
+		database.
+
+                Modified the syntax of a couple of statements in
+                file "src/utlib.c" to accomodate the, apparently,
+                non-conforming C/SX C compiler on NEC SX-4 SUPER-UX
+                systems, which can't dereference a pointer returned by a
+                function.
+
+		Added "mi" to database as alias for "mile".
+
+		Corrected documentation on origin-shift in unit 
+		specifications.
+
+		Ported to systems with sizeof(double) < 
+		sizeof(DOUBLE PRECISION).
+
+		Added determination of Fortran type equivalent to C pointer
+		to configuration script.
+
+		Added utIsInit() and utisopen() to the API.
+
+		Corrected Hertz symbol: changed from "hz" to "Hz".
+
+		Corrected reference to udunits(3) library in udunitsperl(1) 
+		manual-page.
+
+		Added support for Absoft Fortran.
+
+1.11.7	1998-11-25
+		Ported to the following systems:
+		    AIX 4.3 (both /bin/c89 and /usr/vac/bin/c89)
+		    HP-UX B.11.00.
+
+1.11.6	1998-02-10
+		Corrected definitions of "perm_0C" and "perm_23C" in the
+		database.  The definitions used "Pa" before it was
+		defined as "pascal".
+
+		Added "L" as an abbreviation for "liter".
+
+		Added declaration of the Fortran function UTICALTIME to
+		the header-file "udunits.inc".
+
+		Changed installation of manual pages on HP-UX systems: 
+		the manual page is no longer preprocessed with tbl(1)
+		and neqn(1) because the man(1) utility incorporates
+		that.
+
+                Corrected bug in Fortran UTENC() function: a blank
+                output character variable no longer results in a
+                UT_ENOROOM return status.
+
+1.11.5	1997-08-18
+		Corrected return value of valtocal(): it now matches the 
+		specification (returns 0 on success).  Corrected "test.pl"
+		to match.
+
+		Corrected "test.pl" to not test clear() return value since 
+		it doesn't have one.
+
+1.11.4	1997-06-10
+		Removed `-traditional' from gcc(1) example in INSTALL
+		and CUSTOMIZE files because it doesn't work.
+
+		Fixed bug in the dectime() of lib/utlib.c that caused 
+		timestamps around 1925-01-01 (and erlier) to be 
+		misinterpreted.
+
+                Added caution to file INSTALL about building the perl
+                extension module using the same environment that built
+                the perl package.
+
+		Modified FORTRAN header file "udunits.inc": should
+		be more robust now and work under more compilers.
+
+                Made more explicit in the README file what needs to be
+                included in a request for help.
+
+		Fixed udunits(3f) manual page: included missing file
+		"testcal2.f" in the distribution and modified the
+		build procedure to make "lib/udunits.3f" from
+		"lib/udunits.3fi" and "lib/testcal2.f".
+
+		Added missing "meters" to definition of "light_year"
+
+		Ported to UNICOS-9/J90 (including Perl extension module).
+		Something seems to be wrong with installing the new, static
+		perl(1) utility, however.
+
+		Ported to CFORTRAN version 3.9.
+
+1.11.3	1996-12-2
+                Corrected and updated the units database.  There were
+                three major corrections due to typo's:
+		
+		    Unit		Was		Now Is
+		    ----		---		------
+		    assay_ton		2.916667e2 kg	2.916667e-2 kg
+		    register_ton	3.831685 m3	2.831685 m3
+		    pond		1.806650e-3 N	9.806650e-3 N
+		
+                Other modifications were basically updates to the
+                conversion factors based on the latest information from
+                the National Institute for Standards and Technology
+                (NIST).  The database was originally bsed on the 1991
+                "Guide for the Use of the International System of Units
+                (SI)"; the more recent information is based on the 1995
+                publication by the same name.  See the following URL for
+                more information than you could possibly want:
+
+		    http://physics.nist.gov/Divisions/Div840/SI.html
+
+1.11.2	1996-11-15
+		Improved accounting for finite-precision in computations
+		involving time.  Should eliminate incorrect utCalendar()
+		returns when the time is an exact multiple of an
+		integral number of seconds.
+
+1.11.1	1996-11-14
+                Improved support for generating `whatis' database:
+                switched from use of catman(1)'s `-M' option to use of
+                MANPATH environment variable.  This adds creation of the
+                manual-page database to AIX and should provide better
+                support for Linix.
+
+                Added missing files (port/misc/udalloc.{c,h}) to
+                distribution (sorry 'bout that) and tested installation
+                from scratch.
+
+                Improved accounting for finite-precision in computations
+                involving time.  Should eliminate utCalendar() returns
+                with 59 minutes and 60 seconds.
+
+		Added function prototype for utInvCalendar() to UDUNITS
+		header file (udunits.h).
+
+1.11	1996-11-04
+                Converted support for FORTRAN-calling-C from the fortc(1)
+		utility to the `cfortran.h' header-file.
+
+		Modified installation procedure to install the FORTRAN
+		include file mentioned in the manual page (udunits.inc).
+
+		Corrected definition of the International Table British
+		Thermal Unit (It_Btu) from 1.055056 joules to 1.055056e3
+		joules).
+
+		Corrected error message when the database contains too
+		many base units.
+
+		Added `count' as a base unit.  Moved `bit' to a non-base
+		unit of `count'.
+
+		Added routine declarations to FORTRAN header-file
+		(udunits.inc).
+
+		Corrected spelling of `termporal' in the perl
+		test-script.
+
+		Fixed memory-leak in utTerm() (UTCLS) routine.
+
+                Added ignoring of trailing whitespace in unit
+                specifications.
+
+1.10.8	1996-06-27
+		Added missing file (port/fortc/bsdos.m4) to distribution.
+
+1.10.7	1996-05-02
+                Ported to BSD/OS 2.1 (but with no FORTRAN or perl
+		support).
+
+1.10.6	1996-04-23
+		Added missing tfind() to package-supplied, portability
+		functions (port/misc/tfind.c).
+
+1.10.5	1996-04-19
+		More corrections to accomodate ConvexOS (sigh):
+		    1.  Made configure script consider typedefs as undefined
+			if header-file doesn't exist.
+		    2.  Added port/misc/search-node.h to MANIFEST.
+
+1.10.4	1996-04-17
+		Modified configuration mechanism to treat any function as
+		undeclared if its header-file doesn't exist.
+
+1.10.3	1996-04-16
+		Added making of symbolic link from man/man3f/udunits.3f
+		to man/man3/udunits.3f to accomodate SunOS 5.4.
+
+		Ported master makefile to GNU make.  Should eliminate
+		warnings about `ignoring old commands for target'.
+
+		Added missing check for <limits.h> to configuration script
+		(used by lib/utlib.fc).
+
+		Added commentary about using a mixed Gregorian/Julian
+		calendar system.
+
+                Added support for systems that lack the tsearch(3)
+                family of functions (e.g. at least on version of
+                ConvexOS).
+
+                Added support for systems that lack the ptrdiff_t type
+                in <stddef.h> (e.g. at least on version of ConvexOS).
+
+                Added support for systems that lack declarations for
+                getenv(), strcpy(), and strncpy() in the appropriate
+                header-files (at least on version of ConvexOS does this).
+
+1.10.2	1995-10-19
+		Dulled the rule for the `test' target in the udunits/
+		subdirectory so that an output of `00.0000 UTC' compares
+		equal to `00.00 UTC'.
+
+		Corrected definition of installation directories bin & lib:
+		before, they were mistakenly created as bin/bin and bin/lib.
+
+1.10.1	1995-10-16
+                Changed cannonical format for printing date and
+                time.  The month, day, hours, & minutes fields
+                are now printed with two digits and the seconds
+                field is now printed with two digits before the
+                decimal point.  Fields are left padded with 0's
+                as necessary.  This change was made to conform
+                to ISO8601:1988 Date/Time Representations (see
+                http://www.ft.uni-erlangen.de/~mskuhn/iso-time.html).
+
+                Ported to UNICOS 8.0.4 and c89(1).
+
+                Removed dependence of the `binftp' make(1) target on the
+                `intstall' target.  This change should only affect the
+		Unidata Program Center.
+
+		Added commentary to README and INSTALL about version 5
+		of perl being necessary.
+
+1.10	1995-8-31
+		Made changes to database:
+		    Added 'firkin' (barrel/4) to database because my dad
+		    stumped me on this one (figures).
+
+		    Changed `mean_year' (365.2425 days) to `Gregorian_year'.
+
+                    Changed definition of `year' from `mean_year'
+                    to `tropical_year' (see the database file
+                    lib/udunits.dat).
+
+		    Corrected `lunar_month' from 29.530859 days to
+		    29.530589 days.
+
+                Changed handling of dates in library.  Removed
+                requirement of valid Gregorian dates (i.e. on or after
+                October 15, 1582) by extending algorithms to Julian day
+                number 0 (January 1, 4713 BCE).
+
+1.9.1	1995-8-8
+		Corrected interpertation of PERL variable set to the
+		empty string by the configure script.  It should now
+		cause the perl 5 extension module to be ignored.
+
+1.9	1995-8-4
+                Added some additional units to the database; in
+                particular `mean_year', `common_year', & `leap_year'.
+
+                Changed definition of `year' from 365 days to
+		`mean_year'.
+
+		Changed directory layout: moved library stuff into lib/
+		and udunits utility into udunits/
+
+		Added perl extension module, UDUNITS.
+
+1.8.2	1995-7-26
+		Corrected I/O redirection syntax in INSTALL file.
+
+		Ported makefiles to POSIX standard.
+
+		Ported build mechanism UNICOS 8.0.2.
+
+		Corrected bug that prevented the package-supplied 
+		header-file float.h from being created on systems that
+		don't have one.
+
+1.8.1	1995-6-16
+		Ported to new port/ directory-structure.
+
+		Replaced bison-generated parser with OSF/1-generated one
+		to eliminate dependence on alloca().
+
+1.8	1995-6-6
+		Made more robust the determination of whether or not
+		the units database defines `second'.
+
+		Migrated to bison(1) and flex(1) from yacc(1) and lex(1)
+		in order to generate a parser and scanner that is
+		specific to this package (i.e. that won't interfere with
+		other scanners and parsers).  The prefix is `ut'.  This
+		entailed adding a portable alloca().
+
+		Ported to autoconf 2.3.
+
+		Added `const' to appropriate arguments of API functions.
+
+1.7.2	1995-2-8
+		Eliminated installing of `port' stuff when making `all'
+		target to allow user to build as self but install as
+		root.
+
+		Ported to /bin/cc under SunOS 4.1.3.
+
+                Ensured that `distclean' target also performs `clean'
+		action.
+
+1.7.1   1994-12-16
+                Fixed bug that prevented conversions between units with
+                origins (e.g. Celsius) and those without (e.g. Kelvin).
+
+                Fixed bug in shifting the origin of a unit that, itself,
+                had an origin (e.g. `Celsius @ 100').  Thanks to Harry
+                Edmon at the University of Washington.
+
+1.7	1994-12-15
+		Added utInvCalendar() (FORTRAN: UTICALTIME) to convert
+		a Gregorian date and time into a time-unit-based scalar
+		value.
+
+                Fixed bug that caused interpretation of `ms' as a
+                plural form of `meter' rather than as 'milliseconds'.
+
+                Added to units database: `degree_west', `work_year', and
+                `work_month'.
+
+                Corrected definition of `slug': it was an order of
+                magnitude too small.
+
+		Modified library to permit product of unit with origin
+		and scalar and division of unit with origin by scalar.
+
+		Converted configuration engineering support to autoconf
+		2.1.
+
+		Ported to HP-UX A.09.05.
+
+		Added casts to eliminate some compiler warnings.
+
+                Modified lexical analyzer to allow `60' in seconds
+                field.
+
+                Fixed printing of time origin to eliminate `60' in
+                seconds field.
+
+1.6.3	1993-10-5
+		Ported to Solaris 2.1: changed bcopy() to memmove() in 
+		udunits.c for better POSIX compliance.
+
+1.6.2	1993-6-14
+		Corrected test for conforming <float.h>.
+
+1.6.1	1993-6-11
+		Ported to OSF1.
+
+		Simplified file `configure.in' consonant with new
+		autoconf(1) support.
+
+		Made `configure' script more robust.  It now works under 
+		UNICOS and SunOS 5.1 (alias Solaris).
+
+		Removed extraneous function prototype for julnum() from
+		utlib.fc.
+
+1.6		Added the functions to support users who wish to explicitly 
+		handle time.
+		    C:		utCalendar(value, unit, year, month, day
+					   hour, minute, second)
+		    FORTRAN:	UTCALTIME(value, UNIT, YEAR, MONTH, DAY
+					  HOUR, MINUTE, SECOND)
+
+		Modified the FORTRAN API to support platforms having
+		pointers that are larger than integers (e.g. DEC's Alpha).
+		As a consequence, it is up to the FORTRAN user to 
+		    1) declare the return value of UTMAKE() appropriately; and 
+		    2) use an appropriately capacious data type for holding
+		       the unit-structure pointers.
+
+		Upgraded the `configure' generator to autoconf(1) 1.3.  This
+		should result in better `configure' scripts -- especially
+		for AIX and OSF1.
+
+1.5		Added the following SI prefixes:
+		    yotta	1e24
+		    zetta	1e21
+		    zepto	1e-21
+		    yocto	1e-24
+
+		Modified udgetprefix() so that it returns an empty string,
+		"", rather than NULL if an appropriate installation prefix 
+		can't be found; thus preventing a subsequent crash.
+
+1.4.2		Corrected port/Makefile.in so that it knows how to make
+		`fortc/{all,install,clean,...}'.
+
+		Eliminated warning message from some compilers about
+		multiple definitions for `utdebug'.
+
+1.4.1		Replaced compile-time default pathname for the units file 
+		with run-time determination based on several possibilities,
+		the last of which is the Unidata user account.
+
+1.4		Added FORTRAN interface and associated manual page.
+
+1.3.2           Increased precision of values printed by utPrint() to
+		maximum number of decimal digits guaranteed by the
+		compiler.
+
+1.3.1		Removed dependence on lex(1) runtime library for the
+		function yywrap().  Thus, referencing the lex library (-ll)
+		is no longer necessary for programs linking against the
+		udunits(3) library.
+
+1.3		Switched from hand-coded C lexical analyzer to a
+		lex(1)-generated one.
+
+		Added support for temporal specifications of the form
+
+			milliseconds since 1992-10-17 15:10:42.57 -600

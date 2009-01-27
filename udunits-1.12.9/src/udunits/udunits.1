@@ -1,0 +1,71 @@
+." $Id: udunits.1,v 1.1.1.1 1995/08/04 20:54:10 steve Exp $
+.TH UDUNITS 1 "$Date: 1995/08/04 20:54:10 $" "Printed: \n(yr.\n(mo.\n(dy" "UNIDATA UTILITIES"
+.SH NAME
+udunits \- Unidata units utility
+.SH SYNOPSIS
+.ft B
+udunits [-d] [\fIunits-file\fP]
+.ft
+.SH DESCRIPTION
+.LP
+This utility uses the Unidata udunits(3) library to display the
+transformation necessary to convert from one unit to another.
+.LP
+\fIunits-file\fP contains unit definitions and is used to initialize
+the udunits(3) library.  If not specified, then the default units-file 
+determined by the udunits(3) library is used.
+.LP
+This utility works interactively and has two modes.  In one mode, both an
+input and output unit specification are given, causing the utility to
+print the conversion between them:
+.sp
+.nf
+.RS +4
+You have: inch
+You want: cm
+    <cm> = <inch>*2.54
+    <cm> = <inch>/0.393701
+.sp
+You have: (15 lbs force/in)^2
+You want: atm2
+    <atm2> = <(15 lbs force/in)^2>*0.995719
+    <atm2> = <(15 lbs force/in)^2>/1.0043
+.sp
+You have: celsius
+You want: fahrenheit
+    <fahrenheit> = <celsius>*1.8 + 32
+    <fahrenheit> = <celsius>/0.555556 + 32
+.RE
+.fi
+.LP
+In the other mode, only an input unit specification is given.  This
+causes the utility to print the definition \-\- in standard units \-\- of the
+input unit:
+.sp
+.nf
+.RS
+You have: fahrenheit
+You want:
+    Definition: "0.555556 kelvin @ 255.372"
+.sp
+You have: geopotential meters
+You want:
+    Definition: "9.80665 meter2 second-2"
+.RE
+.fi
+.LP
+See the manual page on the udunits(3) library for a description of the
+unit-specification grammar.
+.SH OPTIONS
+.TP
+.B -d
+Have the yacc(1)-generated parser print diagnostic messages.
+The default is no messages.
+This only works if the parser was compiled with the C preprocessor macro 
+\fBYYDEBUG\fP defined.
+.SH DIAGNOSTICS
+.LP
+This package prints (hopefully) self-explanatory error-messages.
+.SH "SEE ALSO"
+.LP
+.BR udunits (3).

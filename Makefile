@@ -10,6 +10,8 @@ PISM_USE_DEBUG ?= 0
 PISM_USE_MPICXX ?= 1
 # if ==1 then adds -Woverloaded-virtual -pipe to CFLAGS
 PISM_USE_GNU_FLAGS ?= 1
+# Directory containing the Unidata UDUNITS library source:
+UDUNITS=udunits-1.12.9
 
 # Put additional make include files here: 
 #CONFIG = config/macosx_macports
@@ -49,4 +51,3 @@ userman refman browser summary fullbib installation:
 	@cd $(BUILD_DIR) && $(MAKE) $@
 
 .EXPORT_ALL_VARIABLES: ;
-

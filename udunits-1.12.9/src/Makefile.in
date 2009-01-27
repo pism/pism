@@ -1,0 +1,91 @@
+# Makefile for the Unidata units package, UDUNITS.
+#
+# $Id: Makefile.in,v 1.5 2003/08/29 18:27:07 steve Exp $
+
+.POSIX:
+
+PACKAGE		= udunits
+
+SUBDIRS		= port lib udunits
+SUBDIR_TARGETS	= port/all port/install port/clean port/distclean \
+		  lib/all lib/install lib/clean lib/distclean \
+		  @PERL_ALL@ @PERL_TEST@ @PERL_INSTALL@ @PERL_CLEAN@ \
+		  @PERL_DISTCLEAN@ \
+		  udunits/all udunits/test udunits/install udunits/clean \
+		      udunits/distclean
+MANIFEST	= COPYRIGHT CUSTOMIZE INSTALL Makefile.in ORIGIN \
+		  README RELEASE_NOTES VERSION configure configure.in \
+		  aclocal.m4 \
+		  perl/MANIFEST \
+		  perl/Makefile.PL.in \
+		  perl/UDUNITS.pm \
+		  perl/UDUNITS.xs \
+		  perl/typemap \
+		  perl/udunitsperl.1 \
+		  perl/test.pl
+
+MANUALS		= @PERL_MANUAL@
+GARBAGE		= $(MANUALS)
+PERL		= @PERL@
+
+all:		port/all lib/all udunits/all @PERL_ALL@
+
+test:		FORCE udunits/test perl_test
+
+install:	port/install lib/install udunits/install \
+		@PERL_INSTALL@ installed_manuals
+
+clean:		port/clean lib/clean udunits/clean @PERL_CLEAN@
+
+distclean:	port/distclean lib/distclean \
+	        udunits/distclean @PERL_DISTCLEAN@
+
+perl_test:	@PERL_ALL@
+	@case "@PERL_TEST@" in \
+	    '') ;; \
+	    *) \
+		case @LINKTYPE@ in \
+		    static) \
+			set -x; \
+			cd perl; \
+			./perl -I . test.pl; \
+			set +x; \
+			;; \
+		    *) \
+			$(MAKE) $(MFLAGS) @PERL_TEST@; \
+			;; \
+		esac \
+		;; \
+	esac
+
+$(MANUALS) dummy:
+	ln -s perl/$(MANUALS) .
+
+@PERL_ALL@ dummy:	perl/Makefile
+@PERL_TEST@ dummy:	perl/Makefile
+@PERL_INSTALL@ dummy:	perl/Makefile
+@PERL_CLEAN@ dummy:	perl/Makefile
+@PERL_DISTCLEAN@ dummy:	perl/Makefile
+
+perl/Makefile:		perl/Makefile.PL
+	-cd perl && $(PERL) Makefile.PL
+
+install:	whatis
+
+dev-install:
+	rsync -a --rsync-path=/opt/bin/rsync etc man \
+	    dev:/content/software/udunits
+	rsync -a --rsync-path=/opt/bin/rsync --copy-links \
+	    COPYRIGHT \
+	    INSTALL \
+	    README \
+	    RELEASE_NOTES \
+	    dev:/content/software/udunits
+
+uninstall:
+	rm -f $(MANDIR)/$(WHATIS)
+
+include port/master.mk
+
+### Everything after the following line might be overwritten ###
+### DO NOT DELETE THIS LINE.  make depend DEPENDS ON IT ###

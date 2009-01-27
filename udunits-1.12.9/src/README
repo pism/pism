@@ -1,0 +1,93 @@
+$Id: README,v 1.8 1997/05/22 14:53:36 steve Exp $
+
+
+INTRODUCTION:
+
+This package contains sources for the Unidata units library (udunits(3))
+the conversion utility (udunits(1)) and an optional perl extension
+module (UDUNITS).
+
+
+
+PACKAGE COMPONENTS:
+
+    Directory		Contents
+    ---------		--------
+
+    lib			Source for the units library, libudunits.a.
+
+    udunits		Source for the units program, udunits.
+
+    perl		Source for the perl 5 extension for UDUNITS.
+			This only works for version 5 of perl.
+
+    port		Portability stuff and miscellaneous support
+			functions.
+
+
+
+INSTALLATION:
+
+Please read the file INSTALL and follow its instructions.
+
+If you have a problem installing the package, then please include the
+following in any request for assistance from the Unidata Program Center:
+
+    1.  The standard output of the command "uname -a".
+
+    2.  The standard and error output of the configure script.
+
+    3.  The file "config.log".
+
+    4.  The standard and error output of the "make" command.
+
+SunOS 4 Note:
+    If you use Sun's unbundled C compiler (acc), then you might have to 
+    change the `char *' argument declarations in memory.h to `void *' 
+    in order to compile utparse.y.  This is a problem with Sun's header 
+    files: the declarations in memory.h conflict with those in string.h.
+
+Time-handling Note:
+    There is a problem in the handling of time in all versions of the
+    UDUNITS library prior to version 1.10.  The temporal algorithms in
+    the pre-1.10 libraries are valid only for times after October 15,
+    1582 (when the Gregorian calendar was adopted).  At some time prior
+    to that point, the algorithms return incorrect results.  This has
+    caused problems for at least one user who used a temporal unit of
+    "hours since 1-1-1".  The exact time at which the algorithms break
+    down is unknown, but year 1 is definitely in the invalid region.
+
+
+
+USE:
+
+To use the UDUNITS package, reference it in your compile and link 
+commands, e.g.
+
+    cc -c -I/usr/local/include ...
+    cc ... -L/usr/local/lib -ludunits ...
+
+Here are some notes for specific operating systems:
+
+    AIX:
+
+	Use the "-qextname" when compiling FORTRAN sources that use the
+	UDUNITS package.  This option separates the FORTRAN and C
+	namespaces -- obviating many problems.  The UDUNITS library
+	should have been built using this option.
+
+    HP-UX:
+
+	Use the "+ppu" when compiling FORTRAN sources that use the
+	UDUNITS package.  This option separates the FORTRAN and C
+	namespaces -- obviating many problems.  The UDUNITS library
+	should have been built using this option.
+
+
+
+FEEDBACK:
+
+Please send questions, bug reports, complaints, praise, criticisms, etc. to
+the following address at the Unidata Program Center:
+
+	support@unidata.ucar.edu

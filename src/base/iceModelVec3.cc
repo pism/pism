@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,6 +34,10 @@ IceModelVec3::IceModelVec3() : IceModelVec() {}
 
 //! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[], bool local) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
+
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec3 with short_name='%s' already allocated\n",short_name);
   }
@@ -65,6 +69,10 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[]
 //! Allocate a DA and a Vec from information in IceGrid; use an existing DA from an existing IceModelVec3.
 PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
                                            IceGrid &mygrid, const char my_short_name[], bool local) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
+
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec3 with short_name='%s' already allocated\n",short_name);
   }
@@ -537,15 +545,17 @@ IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {}
 //! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, 
                                const char my_short_name[], bool local) {
-
-  strcpy(short_name,my_short_name);
-
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec3Bedrock with short_name='%s' already allocated\n",short_name);
   }
   if (local) {
     SETERRQ1(2,"IceModelVec3Bedrock must be GLOBAL (short_name='%s')\n",short_name);
   }
+
+  strcpy(short_name,my_short_name);
 
   grid = &my_grid;
   

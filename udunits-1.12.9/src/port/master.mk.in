@@ -1,0 +1,794 @@
+# This is the master makefile.  It contains general rules.
+#
+# $Id: master.mk.in,v 1.55 2008/04/07 20:25:16 steve Exp $
+
+
+.SUFFIXES:
+.SUFFIXES:	.so .o .S .ln .i .c .fc .f .F .cc .l .y .cdl .nc .sh
+
+############################################################################
+# General Macros:
+############################################################################
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+AR		= @AR@
+CC		= @CC@
+CPP		= @CPP@
+CC_MAKEDEPEND	= @CC_MAKEDEPEND@
+CXX		= @CXX@
+FC		= @FC@
+LINT		= lint
+LINTFLAGS	= -u
+MAKEINFO	= @MAKEINFO@
+NCDUMP		= @NCDUMP@
+NCGEN		= @NCGEN@
+NEQN		= @NEQN@
+OS		= @OPSYS@
+SHELL		= /bin/sh
+TBL		= @TBL@
+WHICH		= @WHICH@
+
+
+
+############################################################################
+# Recursive make(1)s in Subdirectories:
+############################################################################
+
+subdir_dummy_target $(SUBDIR_TARGETS):
+	@echo ""
+	@dir=`echo $@ | sed 's,/.*,,'`; \
+	    target=`echo $@ | sed "s,$$dir/,,"`; \
+	    cd $$dir && \
+	    echo "making \`$$target' in directory `pwd`" && \
+	    echo "" && \
+	    $(MAKE) $(MFLAGS) \
+		prefix=$(prefix) exec_prefix=$(exec_prefix) \
+		$$target || exit 1
+	@echo ""
+	@echo "returning to directory `pwd`"
+	@echo ""
+
+subdirs/all \
+subdirs/test \
+subdirs/install \
+subdirs/clean \
+subdirs/distclean:	FORCE
+	@case "$(SUBDIRS)" in \
+	    '') ;; \
+	    *)	filename=`echo $@ | sed 's:.*/::'`; \
+		targets=`echo $(SUBDIRS) | tr ' ' '\012' | \
+		    sed 's:$$:/'$$filename':'`; \
+		$(MAKE) $$targets;; \
+	esac
+
+
+############################################################################
+# Compilation:
+############################################################################
+FORTC		= @FORTC@
+
+# Compile C++ code.
+.cc.o:
+	$(CXX) -c $(CXXFLAGS) $(CXXCPPFLAGS) $<
+
+# Compile FORTRAN code.
+#
+.f.o:
+	$(FC) -c $(FFLAGS) $<
+.F.o:
+	ln -s $< $*.c && \
+	    ($(CPP) -DUD_FORTRAN_SOURCE $(CPPFLAGS) $*.c >$*.i && \
+	    sed '/^# *[0-9]/d' $*.i > $*.f) || \
+	    (rm -f $*.f $*.i $*.c ; exit 1) && \
+	    rm $*.i
+	$(FC) -c $(FFLAGS) $*.f && rm $*.f $*.c
+.F.f:
+	ln -s $< $*.c && \
+	    ($(CPP) -DUD_FORTRAN_SOURCE $(CPPFLAGS) $*.c >$*.i && \
+	    grep -v '^#' $*.i > $@) || \
+	    (rm -f $@ $*.i $*.c; exit 1) && \
+	    rm $*.i $*.c
+.F.i:
+	ln -s $< $*.c && \
+	    $(CPP) -DUD_FORTRAN_SOURCE $(CPPFLAGS) $*.c >$*.i
+
+# Generate FORTRAN-callable C code.
+#
+.fc.o:
+	$(FORTC) -O $(OS) $< > $*.c \
+	    || ( rm -f $*.c; exit 1)
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $*.c
+.fc.c:
+	$(FORTC) -O $(OS) $< > $@ \
+	    || (rm -f $*.c; exit 1)
+
+# Compile assembler code.
+#
+.S.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $<
+
+# Compile C code.
+#
+.c.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $<
+
+# Compile lex(1) code.  This rule is here to ensure the use of CPPFLAGS.
+# 
+.l.o:
+	rm -f $*.c
+	$(LEX) -t $< > $*.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $*.c
+	rm $*.c
+
+# C preprocess.  
+#   NB: 
+#	1. Line numbering information is kept.
+#
+.c.i:
+	$(CPP) $(CPPFLAGS) $< > $@
+
+.cdl.nc:
+	$(NCGEN) -o $*.nc $*.cdl
+
+.sh:
+	cp $< $@; chmod +x $@
+
+############################################################################
+# Lint:
+############################################################################
+.c.ln:
+	$(LINT) -c $(LINTFLAGS) $(CPPFLAGS) $<
+
+
+############################################################################
+# Libraries:
+############################################################################
+RANLIB		= @RANLIB@
+LIBDIR		= $(exec_prefix)/lib
+LIB_A		= lib$(LIBRARY).a
+LIBFILE		= dummy-libfile		# to silence GNU make(1)
+
+library:		$(LIB_A)
+
+remote_library:		$(REMOTE_LIBRARY)
+
+# The following rule is forced because the library can be created by a
+# makefile in another directory prior to the execution of the following rule.
+#
+$(LIB_A):		$(LIBOBJS) $(LIBOBJS2) FORCE
+	$(AR) rcuv $@ $(LIBOBJS)
+	case "$(LIBOBJS2)" in \
+	'') ;; \
+	*)  $(AR) rucv $@ $(LIBOBJS2);; \
+	esac
+	$(RANLIB) $@
+
+# The following rule is for those makefiles needing to install object
+# modules in a library in another directory.  They need only define 
+# REMOTE_LIBRARY and LIBOBJS.  The rule is forced for the same reason as the
+# $(LIB_A) rule.
+#
+lib_dummy $(REMOTE_LIBRARY):	$(LIBOBJS) FORCE
+	$(AR) rcuv $@ $(LIBOBJS)
+	$(RANLIB) $@
+
+installed_libfiles:	FORCE
+	@if [ -n "$(LIBFILES)" ]; then \
+	    libfiles="$(LIBFILES)"; \
+	    for libfile in $$libfiles; do \
+		$(MAKE) $(MFLAGS) \
+		    LIBDIR=$(LIBDIR) LIBFILE=$$libfile \
+		    installed_libfile || exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+installed_library:	FORCE
+	@$(MAKE) $(MFLAGS) \
+	    LIBDIR=$(LIBDIR) LIBFILE=$(LIB_A) \
+	    installed_libfile
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_libfile:	$(LIBDIR)/$(LIBFILE)
+
+$(LIBDIR)/dummy.a $(LIBDIR)/$(LIBFILE):	$(LIBDIR) $(LIBFILE)
+	cp $(LIBFILE) $@
+
+dummy_libdir $(LIBDIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+LIB_SO		= lib$(LIBRARY).so.$(MAJOR_NO).$(MINOR_NO)
+LIB_SA		= lib$(LIBRARY).sa.$(MAJOR_NO).$(MINOR_NO)
+
+#library:		FORCE
+#	@so_objs=`echo $(LIBOBJS) | sed 's/\.o/.so/g'`; \
+#	if [ -z "$$so_objs" ]; then \
+#	    :; \
+#	else \
+#	    $(MAKE) $(MFLAGS) $(LIB_SO) \
+#		SO_OBJS="$$so_objs"; \
+#	fi
+#	@if [ -z "$(SA_OBJS)" ]; then \
+#	    :; \
+#	else \
+#	    $(MAKE) $(MFLAGS) $(LIB_SA); \
+#	fi
+
+$(LIB_SO):	$(SO_OBJS)
+	ld -assert pure-text $(SO_OBJS) -o $@
+$(LIB_SA):	$(SA_OBJS) FORCE
+	$(AR) rcuv $@ $(SA_OBJS)
+
+.fc.so:
+	$(FORTC) -O $(OS) $< > $*.c \
+	    || (rm -f $*.c; exit 1)
+	$(CC) -c -o $$$$.o -pic $(CFLAGS) $(CPPFLAGS) $*.c \
+	    || (rm -f $$$$.o; exit 1)
+	mv $$$$.o $@
+.c.so:
+	$(CC) -c -o $$$$.o -pic $(CFLAGS) $(CPPFLAGS) $< \
+	    || (rm -f $$$$.o; exit 1)
+	mv $$$$.o $@
+
+#installed_library:	$(LIBDIR)/$(LIB_SO)
+#	@if [ -z "$(SA_OBJS)" ]; then \
+#	    :; \
+#	else \
+#	    $(MAKE) $(MFLAGS) $(LIBDIR)/$(LIB_SA); \
+#	fi
+
+$(LIBDIR)/dummy.so $(LIBDIR)/$(LIB_SO):	$(LIBDIR) $(LIB_SO)
+	cp $(LIB_SO) $(LIBDIR)/$(LIB_SO)
+$(LIBDIR)/dummy.sa $(LIBDIR)/$(LIB_SA):	$(LIBDIR) $(LIB_SA)
+	cp $(LIB_SA) $(LIBDIR)/$(LIB_SA)
+
+
+############################################################################
+# Programs:
+############################################################################
+BINDIR		= $(exec_prefix)/bin
+BINFILE		= dummy-binfile
+
+programs:	$(PROGRAMS)
+program:
+	@if [ -z "$(PROGRAM)" ]; then \
+	    : true; \
+	else \
+	    $(MAKE) $(MFLAGS) $(PROGRAM); \
+	fi
+
+dummy_prog $(PROGRAM):	$(OBJS)
+	@if [ -r $@.f -o -r $@.F ]; then \
+	    ld='$(FC) -o $@ $(FFLAGS)'; \
+	elif [ -r $@.cc ]; then \
+	    ld='$(CXX) -o $@ $(CXXFLAGS)'; \
+	else \
+	    ld='$(CC) -o $@ $(CFLAGS)'; \
+	fi; \
+	cmd="$$ld $(LDFLAGS) $(OBJS) $(LIBS)"; \
+	echo $$cmd; \
+	$$cmd \
+	    || (rm -f $@; exit 1)
+
+installed_programs:	FORCE
+	@$(MAKE) $(MFLAGS) installed_binfiles \
+	    BINDIR=$(BINDIR) BINFILES="$(PROGRAMS)"
+
+installed_binfiles:	FORCE
+	@if [ -n "$(BINFILES)" ]; then \
+	    binfiles="$(BINFILES)"; \
+	    for binfile in $$binfiles; do \
+		$(MAKE) $(MFLAGS) \
+		    BINDIR=$(BINDIR) BINFILE=$$binfile \
+		    installed_binfile || exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+installed_program:	FORCE
+	@$(MAKE) $(MFLAGS) \
+	    BINDIR=$(BINDIR) BINFILE=$(PROGRAM) \
+	    installed_binfile
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_binfile:	$(BINDIR)/$(BINFILE)
+
+$(BINDIR)/dummy $(BINDIR)/$(BINFILE):	$(BINDIR) $(BINFILE)
+	cp $(BINFILE) $@
+
+dummy_bindir $(BINDIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+$(PROGRAM).pure:	$(OBJS)
+	purify -best-effort $(PURIFYFLAGS) $(CC) -o $@ \
+	    $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS) $(LIBS)
+
+pure:	purify
+
+purify:		$(PROGRAM).pure FORCE
+	$(MAKE) $(MFLAGS) PROGRAM=$(PROGRAM).pure test.pure.out
+
+
+############################################################################
+# Header files:
+############################################################################
+INCDIR		= $(prefix)/include
+HEADER		= dummy-header		# to silence GNU make(1)
+
+installed_headers:	FORCE
+	@if [ -n "$(HEADERS)" ]; then \
+	    headers="$(HEADERS)"; \
+	    for header in $$headers; do \
+		$(MAKE) $(MFLAGS) \
+		    INCDIR=$(INCDIR) HEADER=$$header \
+		    installed_header || exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_header:	$(INCDIR)/$(HEADER)
+
+$(INCDIR)/dummy.h $(INCDIR)/$(HEADER):	$(INCDIR) $(HEADER)
+	cp $(HEADER) $@
+
+dummy_incdir $(INCDIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+
+############################################################################
+# `etc/' files:
+############################################################################
+ETCDIR	= $(prefix)/etc
+ETCFILE	= dummy-etcfile		# to silence GNU make(1)
+
+installed_etcfiles:
+	@if [ -n "$(ETCFILES)" ]; then \
+	    etcfiles="$(ETCFILES)"; \
+	    for etcfile in $$etcfiles; do \
+		$(MAKE) $(MFLAGS) \
+		    ETCDIR=$(ETCDIR) ETCFILE=$$etcfile \
+		    installed_etcfile || exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_etcfile:	$(ETCDIR)/$(ETCFILE)
+
+$(ETCDIR)/dummy $(ETCDIR)/$(ETCFILE):	$(ETCDIR) $(ETCFILE)
+	cp $(ETCFILE) $@
+
+dummy_etcdir $(ETCDIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+
+############################################################################
+# Manual Pages:
+############################################################################
+MANDIR		= $(prefix)/man
+MANUAL		= dummy-manual	# to slience GNU make
+WHATIS		= @WHATIS@
+# The following macro should be empty on systems that don't
+# allow users to create their own manual-page indexes.
+MAKEWHATIS_CMD	= @MAKEWHATIS_CMD@
+
+installed_manuals:	FORCE
+	@if [ -n "$(MANUALS)" ]; then \
+	    manuals="$(MANUALS)"; \
+	    for manual in $$manuals; do \
+		extension=`echo $$manual | sed 's/[^.]*\.//'`; \
+		chapter=`echo $$extension | sed 's/\(.\).*/\1/'`; \
+		subchapter=`echo $$extension | sed 's/.//'`; \
+		mandir=$(MANDIR)/man$$chapter; \
+		$(MAKE) $(MFLAGS) \
+		    MANDIR=$$mandir MANUAL=$$manual \
+		    installed_manual || exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_manual:	$(MANDIR)/$(MANUAL)
+
+# The first sed(1) editing command in the following replaces the expanded
+# RCS keyword `$Date ...' in the `.TH' macro line with something more 
+# appropriate to a manual page.
+#
+# We don't preprocess the manual page with tbl(1) and neqn(1) on OSF1
+# IRIX, and HP-UX systems because their man(1) always does that.
+#
+# NB: Manual pages like `man3/udunits.3f' cause the subdirectory man3f/
+# to be created as a symbolic link to man3/.  This accomodates
+# operating-systems like SunOS 5.4 which require files like *.3f to be in
+# their own man3f/ subdirectory.
+#
+$(MANDIR)/dummy.man $(MANDIR)/$(MANUAL):	$(MANDIR) $(MANUAL)
+	case `uname -s` in \
+	    OSF1*|IRIX*|HP-UX) \
+		sed \
+     -e '/^\.TH/s/$$D\ate: \([0-9]*\)\/\([0-9]*\)\/\([0-9]*\).*\$$/\1-\2-\3/'\
+		 $(MANUAL) > $@;; \
+	    *) \
+		sed \
+     -e '/^\.TH/s/$$D\ate: \([0-9]*\)\/\([0-9]*\)\/\([0-9]*\).*\$$/\1-\2-\3/'\
+		 $(MANUAL) | $(TBL) | $(NEQN) > $@;; \
+	esac
+	extension=`echo $(MANUAL) | sed 's/[^.]*\.//'`; \
+	subchapter=`echo $$extension | sed 's/.//'`; \
+	case "$$subchapter" in \
+	    '') ;; \
+	    *)  chapter=`echo $$extension | sed 's/\(.\).*/\1/'`; \
+		if test -d $(MANDIR)$$subchapter; then \
+		    : true; \
+		else \
+		    mkdir $(MANDIR)$$subchapter; \
+		fi; \
+		rm -f $(MANDIR)$$subchapter/$(MANUAL); \
+		ln -s ../`basename $(MANDIR)`/$(MANUAL) \
+		    $(MANDIR)$$subchapter/$(MANUAL); \
+		;; \
+	esac
+
+dummy_mandir $(MANDIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+whatis:		$(MANDIR)/$(WHATIS)
+$(MANDIR)/$(WHATIS):	$(MANDIR)
+	$(MAKEWHATIS_CMD)
+
+
+############################################################################
+# Documents:
+############################################################################
+DOCDIR		= $(prefix)/doc
+DOCUMENT	= dummy-document	# to silence GNU make(1)
+
+installed_documents:	FORCE
+	case "$(DOCUMENTS)" in \
+	    '') : true \
+		;; \
+	    *)  documents="$(DOCUMENTS)"; \
+		for document in $$documents; do \
+		    $(MAKE) $(MFLAGS) \
+			DOCUMENT=$$document installed_document || exit 1; \
+		done \
+		;; \
+	esac
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_document:	$(DOCDIR)/$(DOCUMENT)
+
+$(DOCDIR)/dummy.doc $(DOCDIR)/$(DOCUMENT):	$(DOCDIR) $(DOCUMENT)
+	cp $(DOCUMENT) $(DOCDIR)
+
+dummy_docdir $(DOCDIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+
+############################################################################
+# TeX-Info Pages:
+############################################################################
+INFODIR	= $(prefix)/info
+INFO	= dummy-info	# to silence GNU make(1)
+
+installed_infos:	FORCE
+	if [ -z "$(MAKEINFO)" ]; then \
+	    echo 1>&2 "GNU info-pages won't be installed" \
+		"because makeinfo program doesn't exist"; \
+	else \
+	    if [ -n "$(INFOS)" ]; then \
+		infos="$(INFOS)"; \
+		for info in $$infos; do \
+		    $(MAKE) $(MFLAGS) \
+			INFODIR=$(INFODIR) INFO=$$info \
+			installed_info || exit 1; \
+		done; \
+	    else \
+		:; \
+	    fi; \
+	fi;
+
+# The following target decouples the previous targets from the actual rule;
+# thus, eliminating extraneous make(1) messages.
+#
+installed_info:	$(INFODIR)/$(INFO)
+
+$(INFODIR)/dummy.info $(INFODIR)/$(INFO):	$(INFODIR) $(INFO)
+	cp $(INFO) $@
+
+dummy_infodir $(INFODIR):
+	mkdir -p $@
+	chmod u+rwx,g+rws,o=rx $@
+
+# Rules for generating info pages:
+#
+.SUFFIXES:	.info .texi .texinfo .txn
+.texi.info:
+	@if [ -z "$(MAKEINFO)" ]; then \
+	    echo 1>&2 "Can't create $@ because no makeinfo(1)"; \
+	else \
+	    $(MAKEINFO) $< --no-split --output=$@; \
+	fi
+.texinfo.info:
+	@if [ -z "$(MAKEINFO)" ]; then \
+	    echo 1>&2 "Can't create $@ because no makeinfo(1)"; \
+	else \
+	    $(MAKEINFO) $< --no-split --output=$@; \
+	fi
+.txn.info:
+	@if [ -z "$(MAKEINFO)" ]; then \
+	    echo 1>&2 "Can't create $@ because no makeinfo(1)"; \
+	else \
+	    $(MAKEINFO) $< --no-split --output=$@; \
+	fi
+
+# Ensure that info page depends on canonical TeX-Info macros.
+#
+dummy_info $(INFO):	texinfo.tex
+
+
+############################################################################
+# Cleanup:
+############################################################################
+clean:			default_clean
+distclean:		realclean
+realclean:		default_realclean
+default_clean:		FORCE
+	rm -f $(GARBAGE) $(PROGRAM) a.out core *.o *.i *.a *.so.* *.sa.* \
+	    *.so *.u *.pure *.pure_hardlink *.pure_linkinfo conftest* \
+	    test.out test.pure.out \
+	    *.aux *.toc *.dvi \
+	    config.cache *.Z tags MANIFEST *~
+default_distclean:	default_realclean
+default_realclean:	FORCE
+	rm -f $(GARBAGE) $(PROGRAM) a.out core *.o *.i *.a *.so.* *.sa.* \
+	    *.so *.u *.pure *.pure_hardlink *.pure_linkinfo conftest* \
+	    test.out \
+	    *.aux *.toc *.dvi \
+	    config.cache *.Z *.log tags TAGS MANIFEST *~ \
+	    Makefile config.status cc_id
+
+
+############################################################################
+# Configuration:
+############################################################################
+
+# The following target is touched because config.status won't update it if
+# it hasn't changed.
+#
+# The following is commented-out because the HPUX make(1) goes into a loop.
+#
+#Makefile:	config.status
+#	./config.status
+#	touch $@
+
+config.status:	cc_id configure
+	./configure --no-create
+
+cc_id:		FORCE
+	if test -r $@ && test "`cat $@`" = "$(CC)"; then \
+	    :; \
+	else \
+	    echo "$(CC)" > $@; \
+	fi
+
+# The following is commented-out because autoconf is currently only
+# available on Zero.
+#
+#configure:		configure.in
+#	autoconf
+
+
+############################################################################
+# Dependency maintenance:
+############################################################################
+.PRECIOUS:	depend
+#
+# Note: The following rule will only work if the C compiler behaves correctly
+# when given the `-M' option.  AIX's cc(1) and SunOS's acc(1) behave
+# incorrectly.  --Steve Emmerson 1992-09-24
+#
+# Furthermore, we do not attempt to maintain dependencies on installed
+# header files (e.g. those in $(INCDIR)) for two reasons: 1) the dependency
+# list generated at Unidata mightn't correspond to the situation at a client
+# site; and 2) clients using broken compilers (c.f. previous note) can't
+# regenerate the dependency list.
+#
+# We try to ensure that all C files exist in a distribution that
+# includes fortc(1), yacc(1), or lex(1) sources.
+#
+depend:		FORCE
+#	csrcs=`echo $(MANIFEST) | tr ' ' '\012' | egrep -s '\.fc|\.y|\.l'`; \
+	if [ "$$csrcs" ]; then \
+	    echo 1>&2 "Ensuring that all C files exist for target depend"; \
+	    echo 1>&2 "csrcs = $$csrcs"; \
+	    $(MAKE) $(MFLAGS) $$csrcs; \
+	fi
+	-incdir=`echo $(INCDIR) | sed s',/,\\\/,g'`; \
+	(case $(OS) in \
+	    aix*) \
+		$(CC) -M -E $(CPPFLAGS) *.c > /dev/null; \
+		cat *.u; \
+		;; \
+	    *) \
+		$(CC_MAKEDEPEND) $(CPPFLAGS) *.c *.S 2> /dev/null; \
+		;; \
+	esac) | awk '{ \
+		if ($$0 ~ /:/) { \
+		    target	= $$1; \
+		    if (target ~ /:/) { \
+			target	= substr(target,1,length(target)-1); \
+			start	= 2; \
+		    } else { \
+			start	= 3; \
+		    } \
+		} else { \
+		    start	= 1; \
+		} \
+		for (i = start; i <= NF; ++i) { \
+		    if ($$i !~ /^\\/ && \
+			$$i !~ /port\// && \
+			$$i !~ /^\//) \
+		    { \
+			if ($$i ~ /^\.\//) \
+			    $$i = substr($$i, 3, 99); \
+			print target ": " $$i \
+		    } \
+		} \
+	    }' >>$@
+	sort -u -o $@ $@
+	tag='### DO NOT DELETE THIS LINE.  make depend DEPENDS ON IT ###'; \
+	    sed -e "/^$$tag$$/r depend" \
+		-e "/^$$tag$$/q" Makefile > Makefile.new
+	mv Makefile.new Makefile
+
+
+############################################################################
+# Distributions:
+############################################################################
+FTPDIR		= @FTPDIR@
+FTPBINDIR	= @FTPBINDIR@
+VERSION		= @VERSION@
+TARFLAGS	= @TARFLAGS@
+
+tag:
+	@tag=$(PACKAGE)-`sed 's/\./_/g' VERSION`; \
+	cvs tag -F $$tag .
+
+tar.gz:
+	version=`cat VERSION`; \
+	$(MAKE) $(MFLAGS) $(PACKAGE)-$$version.tar.gz VERSION=$$version
+
+$(PACKAGE)-$(VERSION).tar.gz:	FORCE
+	dir=$(PACKAGE)-$(VERSION); \
+	srcdir=$$dir/src; \
+	pax -x ustar -w -s ";^;$$srcdir/;" < MANIFEST | gzip -c >$@
+
+$(FTPDIR)/$(PACKAGE)-$(VERSION).tar.gz:	$(PACKAGE)-$(VERSION).tar.gz
+	scp $(PACKAGE)-$(VERSION).tar.gz ftp:$@ 
+	ssh ftp chmod u+rw,g+rw,o=r $@
+
+ftp:
+	if cvs status . 2>/dev/null | grep Status: \
+		| grep -v Up-to-date >/dev/null; then \
+	    echo 1>&2 'Package needs "cvs commit"'; \
+	    exit 1; \
+	else true; fi
+	$(MAKE) tag
+	version=`cat VERSION`; \
+	$(MAKE) FTPDIR=$(FTPDIR) PACKAGE=$(PACKAGE) VERSION=$$version \
+	    $(FTPDIR)/$(PACKAGE)-$$version.tar.gz; \
+	test ! -h $(FTPDIR)/$(PACKAGE).tar.gz && exit 0; \
+
+zip:		FORCE
+	version=`cat VERSION | sed 's/\.//g;s/-//g`; \
+	$(MAKE) $(MFLAGS) $(PACKAGE)$$version.zip VERSION=$$version
+
+$(PACKAGE)$(VERSION).zip:	MANIFEST
+	id=$(PACKAGE)$(VERSION) \
+	&& rm -rf $$id \
+	&& mkdir $$id \
+	&& ln -s .. $$id/src \
+	&& sed "s|^|$$id/src/|" MANIFEST | zip -@ $@ \
+	&& rm -r $$id
+
+tar.Z:		FORCE
+	version=`cat VERSION`; \
+	$(MAKE) $(MFLAGS) $(PACKAGE)-$$version.tar.Z VERSION=$$version
+
+$(FTPDIR)/$(PACKAGE)-$(VERSION).tar.Z:	$(PACKAGE)-$(VERSION).tar.Z
+	cp $(PACKAGE)-$(VERSION).tar.Z $@ 
+	chmod u+rw,g+rw,o=r $@
+
+$(PACKAGE)-$(VERSION).tar.Z:	MANIFEST
+	id=$(PACKAGE)-$(VERSION) \
+	&& rm -rf $$id \
+	&& mkdir $$id \
+	&& ln -s .. $$id/src \
+	&& tar $(TARFLAGS) - `sed "s|^|$$id/src/|" MANIFEST` | compress > $@ \
+	&& rm -r $$id
+
+binftp:		FORCE
+	version=`cat VERSION`; \
+	$(MAKE) $(MFLAGS) $(FTPBINDIR)/$(PACKAGE)-$$version.tar.Z \
+	    VERSION=$$version
+ftpbin:		binftp
+
+$(FTPBINDIR)/$(PACKAGE)-$(VERSION).tar.Z:	FORCE
+	id=$(PACKAGE)-$(VERSION) \
+	&& rm -f $$id \
+	&& ln -s $(prefix) $$id \
+	&& tar $(TARFLAGS) - README $$id/bin $$id/doc $$id/etc $$id/include \
+	    $$id/lib $$id/man | compress > $@ \
+	&& rm $$id
+	chmod u+rw,g+rw,o=r $@
+	test -r $(FTPBINDIR)/$(PACKAGE).tar.Z || exit 0; \
+	    cd $(FTPBINDIR) || exit 1; \
+	    rm $(PACKAGE).tar.Z || exit 1; \
+	    ln -s $(PACKAGE)-$(VERSION).tar.Z $(PACKAGE).tar.Z;
+
+MANIFEST:	FORCE
+	@echo 1>&2 Creating MANIFEST
+	@$(MAKE) -s $(MFLAGS) MANIFEST.echo > $@
+
+MANIFEST.echo:	FORCE
+	@echo $(MANIFEST) | tr ' ' '\012'
+	@if [ -n "$(SUBDIRS)" ]; then \
+	    subdirs="$(SUBDIRS)"; \
+	    for subdir in $$subdirs; do \
+		(cd $$subdir && \
+		$(MAKE) -s $(MFLAGS) MANIFEST.echo | \
+		    sed "s|^|$$subdir/|") || exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+ensure_manifest:	FORCE
+	@$(MAKE) $(MFLAGS) \
+	    `echo $(MANIFEST) | sed 's/MANIFEST//'`
+	@if [ -n "$(SUBDIRS)" ]; then \
+	    subdirs="$(SUBDIRS)"; \
+	    for subdir in $$subdirs; do \
+		(cd $$subdir && \
+		echo 1>&2 Creating $@ in `pwd` && \
+		$(MAKE) $(MFLAGS) ensure_manifest ) || \
+		    exit 1; \
+	    done; \
+	else \
+	    :; \
+	fi
+
+
+############################################################################
+# Miscellaneous:
+############################################################################
+
+# The following dummy target is useful as a dependency to ensure that a
+# rule is always executed.
+#
+FORCE:

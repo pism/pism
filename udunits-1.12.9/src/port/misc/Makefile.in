@@ -1,0 +1,81 @@
+# This is the makefile for miscellaneous Unidata portability functions.
+#
+# $Id: Makefile.in,v 1.9 2004/10/15 00:08:44 steve Exp $
+
+
+.POSIX:
+
+LIBRARY		= udport
+
+cpp_ldm		= @PORT_CPP_LDM@
+CPPFLAGS	= -I. $(cpp_ldm) -D_REENTRANT @CPPFLAGS@
+CFLAGS		= @CFLAGS@
+
+PORT_HEADERS	= @PORT_HEADERS@
+config_headers	= search.h signal.h stdarg.h stddef.h stdio.h stdlib.h \
+		  string.h time.h udconfig.h udposix.h uthread.h
+made_headers	= float.h
+LIBOBJS		= uddummy.o @UC_LIBOBJS@
+
+MANIFEST        = \
+		  Makefile.in \
+		  @PORT_MANIFEST@ \
+		  depend \
+		  uddummy.c
+
+all:		$(PORT_HEADERS) library
+
+# We install the portability library modules directly into an installed
+# portability library even though the package using this portability library
+# (the client package) probably doesn't reference the installed one.  This is
+# done because the client package might be another library and linking
+# against it might require some modules of this library.  We don't install
+# the portability library just created because different packages can require
+# different modules.
+#
+install:	$(LIBOBJS)
+	$(MAKE) $(MFLAGS) $(LIBDIR) LIBDIR=$(LIBDIR)
+	$(AR) rcuv $(LIBDIR)/libudport.a $(LIBOBJS)
+	$(RANLIB) $(LIBDIR)/libudport.a
+
+clean:		default_clean
+	rm -f $(made_headers) config
+
+distclean:	default_distclean
+	rm -f limits.h $(made_headers) $(config_headers) config
+
+# If the following invocation of `config' exits with a bad
+# status, then see the output file for the problem.
+#
+float.h:	config
+	./config -f > $@
+
+# C-compiler information program:
+#
+# NB: config(1) must be compiled unoptimized.  We first assume that `signed
+# char' is valid; if that doesn't work, then we assume it's invalid.  If
+# that doesn't work, the user will have to determine the appropriate
+# compilation flags (see config.c).
+#
+# If the following program won't compile, then contact
+# support@unidata.ucar.edu (ask for Steve).
+#
+config:		config.c
+	case `uname -s` in \
+	sn*) \
+	    $(CC) -O0 config.c -o config; \
+	    ;; \
+	*) \
+	    if $(CC) config.c -o config 2> /dev/null; then \
+		: true; \
+	    else \
+		$(CC) -DNO_SC config.c -o config; \
+	    fi \
+	    ;; \
+	esac
+
+include ../master.mk
+
+### Everything after the following line might be overwritten ###
+### DO NOT DELETE THIS LINE.  make depend DEPENDS ON IT ###
+include depend

@@ -1,9 +1,12 @@
-# Time-stamp: <macosx_macports, saved on Tue, Nov 25, 2008 at 01:51pm>
+# Time-stamp: <macosx_macports, saved on Mon, Jan 26, 2009 at 09:50am>
 # This file contains fixes necessary to build PISM on MacOS X with MacPorts.
 # (Checked on MacOS X 10.5, but it should work on 10.4 too.)
 
 # MacOS's gcc needs different switches to link shared libraries.
 SHARED = -dynamiclib -undefined dynamic_lookup
+
+# UDUNITS:
+UDUNITS_CPPFLAGS = "-DNDEBUG -Df2cFortran"
 
 # The location of headers and libraries installed via MacPorts.
 MACPORTS_INCLUDE = -I/opt/local/include

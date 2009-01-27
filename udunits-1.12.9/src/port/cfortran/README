@@ -1,0 +1,154 @@
+
+
+
+                CFORTRAN :  Interfacing C and FORTRAN
+
+
+0 Abstract
+----------
+
+This is a draft of the article which will accompany the introduction of
+CFORTRAN into the CERN PROGRAM LIBRARY, Release 204.
+
+cfortran.h with its accompanying documentation and examples are currently
+available by anonymous ftp at:
+                                 zebra.desy.de [131.169.2.244]
+
+
+1 Introduction
+--------------
+
+CFORTRAN provides tools to help create an easy-to-use and machine independent
+interface between C and FORTRAN routines and global data.
+
+FORTRAN routines and global data can now be used as easily from C as they can
+from FORTRAN. Similarly FORTRAN programmers can now use C routines and global
+data just as easily as FORTRAN routines and data. In short, even without a deep
+understanding of the 'foreign' language, programmers can trivially call
+routines and use data from the 'foreign' language.
+
+The interface which gives programmers the above freedoms is easily created. The
+source code for the 'foreign' routines and data is not required; a description
+of the global data and of the routines' arguments and return values is
+sufficient. The interface can be created with little or no knowledge of any
+machine/OS/compiler/linker subtleties.
+
+The description of the routines and data is passed as arguments to C
+preprocessor directives, defined in cfortran.h, which generate the code needed
+for the interface. Note that there are no special preprocessors or other
+programs involved in creating the interface.
+
+The complete CFORTRAN package consists of 4 files: the documentation in
+cfortran.doc, the engine in cfortran.h, examples in cfortest.c and cfortex.for. 
+The single cfortran.h file currently supports the following machines/OS: 
+
+VAX VMS or Ultrix, DECstation, Silicon Graphics, IBM RS/6000, Sun, CRAY, 
+Apollo and HP9000.
+
+
+2 The Interface
+---------------
+
+CFORTRAN's main aim is to provide the 'best' possible interface between the two
+languages. 'Best' implies that it is complete and easy, perhaps even trivially
+easy.
+
+Global data is fairly easily interfaced across C and FORTRAN. cfortran.h
+provides machinery to help make the interface machine independant, but the
+largest part of the interface, mapping the individual variables of a C structure
+onto those of a FORTRAN COMMON block, is left open.
+CFORTRAN can only, in cfortex.for and cfortest.c, give examples
+of how such a mapping may be done. CFORTRAN also provides routines for C to
+insert/extract strings to/from FORTRAN COMMON blocks.
+
+CFORTRAN's emphasis is on the interface for routines, where it is quite
+complete; providing for the most common types of numeric and character
+arguments and return values. New types are easily added and can even be defined
+outside of cfortran.h.
+
+C's interface to FORTRAN routines has been designed to mimic the original
+FORTRAN call. This places C programmers on equal footing with FORTRAN
+programmers when calling FORTRAN routines. e.g. C programmers can follow and
+easily try out the examples of the original documentation written for FORTRAN
+programmers. The following example, calling HBOOK1, should demonstrate how
+closely CFORTRAN imitates the original FORTRAN call.
+
+           HBOOK1(1,"pT spectrum of pi+",100,0.,5.,0.);     /* C       */
+      CALL HBOOK1(1,'pT spectrum of pi+',100,0.,5.,0.)      !  FORTRAN
+
+
+The FORTRAN interface to C routines provides the machinery to convert the
+limited number of FORTRAN argument types into the large variety given by C.
+This implies that no C routines are 'out of reach' for FORTRAN, and even exotic
+arguments such the value of a structure can be passed via a CFORTRAN interface.
+
+
+3 Creating the Interface
+------------------------
+
+The interface described in the brief outline above hopefully meets most
+requirements. Equally important is the fact that the interface is easily
+created. This ease is demonstrated by the C interface to CERN's HBOOK library
+of routines, contained entirely in the C header file hbook.h. The following
+excerpt shows how the interface to HBOOK1 is defined.
+
+/* hbook.h */
+#include "cfortran.h"
+        :
+#define HBOOK1(ID,CHTITLE,NX,XMI,XMA,VMX) \
+     CCALLSFSUB6(HBOOK1,hbook1,INT,STRING,INT,FLOAT,FLOAT,FLOAT, \
+               ID,CHTITLE,NX,XMI,XMA,VMX) 
+        :
+/* end hbook.h */
+
+To use the interface to HBOOK, C programmers merely #include "hbook.h" at the
+top of their source code. Please note that hbook.h was created following only
+the [admittedly excellent] HBOOK documentation, without even a single peek at
+any HBOOK source code.
+
+
+Creating an interface for FORTRAN to C routines is similar. For example, to
+access C's memcpy routine, the following file would be compiled, and linked
+with the FORTRAN code and the library containing memcpy.
+
+/* string.c */
+#include <string.h>                 /* string.h prototypes memcpy() */
+#include "cfortran.h"
+FCALLSCSUB3(memcpy,MEMCPY,memcpy,PVOID,PVOID,INT)
+
+and a FORTRAN call would look like:      CALL MEMCPY(I,J,7)
+
+In reality, we would probably also want to also set up in string.c the other
+routines described by string.h.
+
+Note that when we compile string.c, FCALLSCSUB3(...), is expanded into a
+'wrapper' function, so called because it is wrapped around the original C 
+function and interfaces the format of the original C functions arguments and
+return value with the format of the FORTRAN call.
+
+
+4 Getting Started
+-----------------
+
+cfortran.doc provides fairly extensive documentation for CFORTRAN, and perhaps
+more importantly it lists the few simple commands needed to run the examples in
+cfortest.c and cfortex.for on the variety of machine supported. Although the
+examples are slightly more complicated than really necessary, they are
+nonetheless probably the best place to start understanding what CFORTRAN does.
+
+Users of interfaces created with CFORTRAN, e.g. hbook.h, can perhaps get by
+with the information in this note, but a casual knowledge of the information in
+cfortran.doc is probably desirable.
+
+Those wishing to create interfaces using CFORTRAN will have to become familiar
+with most of the information in cfortran.doc, especially the description of the
+set of types available for routines' arguments and return values. cfortran.doc
+also presents many of the constraints that have to be met in order to create an
+interface that is portable across the variety of machines supported by
+cfortran.h.
+
+Understanding cfortran.h is required only by those who wish to support a new
+type of argument or return value or by those who wish to port cfortran.h to
+another machine.
+
+Burkhard burow@desy.de

@@ -1,0 +1,10 @@
+Anonymous FTP:
+
+    host: unidata.ucar.edu
+    file: pub/sdm/udunits-<version>.tar.Z
+
+    where <version> is the version ID.
+
+World Wide Web:
+
+    http://www.unidata.ucar.edu/packages/udunits/

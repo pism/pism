@@ -21,6 +21,7 @@
 #include <cmath>
 #include <petscda.h>
 #include <netcdf.h>
+#include <udunits.h>
 #include "pism_const.hh"
 #include "nc_util.hh"
 #include "iceModelVec.hh"
@@ -35,19 +36,10 @@ IceModelVec::IceModelVec() {
   localp = true;
   IOwnDA = true;
   use_interpolation_mask = false;
-  
+
   strcpy(short_name,"*****UNKNOWN***** variable name");
 
-  strcpy(long_name,"unknown long name");
-  strcpy(units,"unknown units");
-  strcpy(pism_intent,"unknown pism_intent");
-
-  has_standard_name = PETSC_FALSE;
-  strcpy(standard_name,"unknown NetCDF CF 1.0 standard_name");
-
-  conversion_factor = 1.0;
-  strcpy(glaciological_units, "unknown glaciological units");
-
+  reset_attrs();
 #ifdef PISM_DEBUG
   creation_counter = 0;
   access_counter = 0;
@@ -125,7 +117,7 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
   ierr = verbPrintf(verbosity,grid->com,
            "                  standard_name = '%s'\n", standard_name);  CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,grid->com,
-           "                  units = '%s'\n", units);  CHKERRQ(ierr);
+           "                  units = '%s'\n", units_string);  CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,grid->com,
            "                  pism_intent = '%s'\n\n", pism_intent);  CHKERRQ(ierr);
   return 0;
@@ -374,48 +366,115 @@ PetscErrorCode IceModelVec::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec
 
 //! Sets the variable name to \c name.
 PetscErrorCode  IceModelVec::set_name(const char name[]) {
+  reset_attrs();
   strcpy(short_name, name);
   return 0;
 }
 
 
-//! Sets the glaciological units and the conversion factor of an IceModelVec.
+//! Sets the glaciological units of an IceModelVec.
 /*!
 This affects IceModelVec::report_range() and IceModelVec::write().  In write(),
-if the pism_intent attribute string contains "GUNITS" then that variable is written
-with a conversion to the glaciological units set here.  In report_range(), if there
-is a nonconstant conversion factor or the pism_intent attribute string contains
-"GUNITS" then that variable is reported to standard out---the min and max are reported---
-in these glaciological units.
+if IceModelVec::write_in_glaciological_units == true, then that variable is written
+with a conversion to the glaciological units set here.
  */
-PetscErrorCode  IceModelVec::set_glaciological_units(const char units[], PetscReal factor) {
-  strcpy(glaciological_units, units);
-  conversion_factor = factor;
+PetscErrorCode  IceModelVec::set_glaciological_units(const char my_units[]) {
+  double a, b;			// dummy variables
+  if (utScan(my_units, &glaciological_units) != 0) {
+    SETERRQ2(1, "PISM ERROR: IceModelVec '%s': unknown or invalid units specification '%s'.", short_name, my_units);
+  }
+  
+  if (utConvert(&units, &glaciological_units, &a, &b) == UT_ECONVERT) {
+    SETERRQ3(1, "PISM ERROR: IceModelVec '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
+	     short_name, my_units, units);
+  }
+
+  // Save the human-friendly version of the string; this is to avoid getting
+  // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
+  // (and thus violating the CF conventions).
+  strncpy(glaciological_units_string, my_units, PETSC_MAX_PATH_LEN);
   return 0;
 }
 
+//! Resets most IceModelVec attributes.
+PetscErrorCode IceModelVec::reset_attrs() {
+
+  write_in_glaciological_units = false;
+
+  strcpy(long_name,                  "unknown long name");
+  has_long_name = false;
+
+  strcpy(units_string,               "unknown units");
+  strcpy(glaciological_units_string, "unknown units");
+  has_units = false;
+
+  strcpy(pism_intent,                "unknown pism_intent");
+  has_pism_intent = false;
+
+  strcpy(standard_name,"unknown NetCDF CF 1.0 standard_name");
+  has_standard_name = false;
+
+  strcpy(coordinates, "lat lon");
+  has_coordinates = true;	// true by default
+
+  has_valid_min = false;
+  has_valid_max = false;
+  valid_min = 0;
+  valid_max = 0;
+
+  utClear(&units);
+  utClear(&glaciological_units);
+
+  return 0;
+}
 
 //! Sets NetCDF attributes of an IceModelVec object.
 /*! Call set_attrs("new long name", "new units", "new pism_intent", NULL) if a
   variable does not have a standard name. Similarly, by putting NULL in an
   appropriate spot, it is possible tp leave long_name, units or pism_intent
   unmodified.
+
+  If my_units != NULL, this also resets glaciological_units, so that they match
+  internal units.
  */
 PetscErrorCode  IceModelVec::set_attrs(const char my_pism_intent[],
 				       const char my_long_name[], const char my_units[],
 				       const char my_standard_name[]) {
-  if (my_long_name != NULL)
+
+  if (my_long_name != NULL) {
+    has_long_name = true;
     strcpy(long_name,my_long_name);
+  } else {
+    has_long_name = false;
+  }
 
-  if (my_units != NULL)
-    strcpy(units,my_units);
+  if (my_units != NULL) {
+    has_units = true;
+    strcpy(units_string, my_units);
 
-  if (my_pism_intent != NULL)
+    if (utScan(my_units, &units) != 0) {
+      SETERRQ2(1, "PISM ERROR: IceModelVec '%s': unknown or invalid units specification '%s'.", short_name, my_units);
+    }
+
+    // Set the glaciological units too:
+    utCopy(&units, &glaciological_units);
+    strncpy(glaciological_units_string, my_units, PETSC_MAX_PATH_LEN);
+  } else {
+    has_units = false;
+  }
+
+  if (my_pism_intent != NULL) {
+    has_pism_intent = true;
     strcpy(pism_intent,my_pism_intent);
+  } else {
+    has_pism_intent = false;
+  }
 
   if (my_standard_name != NULL) {
     strcpy(standard_name,my_standard_name);
-    has_standard_name = PETSC_TRUE;
+    has_standard_name = true;
+  } else {
+    has_standard_name = false;
   }
   return 0;
 }
@@ -429,13 +488,11 @@ PetscErrorCode IceModelVec::define_netcdf_variable(int ncid, nc_type nctype, int
 //! Writes NetCDF attributes to a dataset.
 /*! Call this <b>after</b> making sure that the NetCDF variable is defined.
  */
-PetscErrorCode IceModelVec::write_attrs(const int ncid) {
+PetscErrorCode IceModelVec::write_attrs(const int ncid, nc_type nctype) {
   bool exists;
   int varid, ierr;
   NCTool nc(grid);
   nc.ncid = ncid;
-
-  bool use_glaciological_units_for_write = (strstr(pism_intent,"GUNITS") != NULL);
 
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
   if (!exists)
@@ -443,17 +500,58 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid) {
 
   if (grid->rank == 0) {
     ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    ierr = nc_put_att_text(ncid, varid,"pism_intent", strlen(pism_intent), pism_intent);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    ierr = nc_put_att_text(ncid, varid,"units",
-           use_glaciological_units_for_write ? strlen(glaciological_units) : strlen(units),
-	   use_glaciological_units_for_write ? glaciological_units : units);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    ierr = nc_put_att_text(ncid, varid,"long_name", strlen(long_name), long_name);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    if (has_pism_intent) {
+      ierr = nc_put_att_text(ncid, varid,"pism_intent", strlen(pism_intent), pism_intent);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    if (has_units) {
+      char *output_units = units_string;
+      if (write_in_glaciological_units)
+	output_units = glaciological_units_string;
+      ierr = nc_put_att_text(ncid, varid,"units", strlen(output_units), output_units);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    if (has_long_name) {
+      ierr = nc_put_att_text(ncid, varid,"long_name", strlen(long_name), long_name);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
 
     if (has_standard_name) {
       ierr = nc_put_att_text(ncid, varid,"standard_name", strlen(standard_name), standard_name);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    if (has_coordinates) {
+      ierr = nc_put_att_text(ncid, varid,"coordinates", strlen(coordinates), coordinates);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    double bounds[2];
+    // We need to save valid_min, valid_max and valid_range in the units
+    // matching the ones in the output.
+    if (write_in_glaciological_units) {
+      double slope, intercept;
+
+      ierr = utConvert(&units, &glaciological_units, &slope, &intercept); CHKERRQ(ierr);
+
+      bounds[0] = intercept + slope*valid_min;
+      bounds[1] = intercept + slope*valid_max;
+    } else {
+      bounds[0] = valid_min;
+      bounds[1] = valid_max;
+    }
+
+    if (has_valid_min && has_valid_max) {
+      ierr = nc_put_att_double(ncid, varid, "valid_range", nctype, 2, bounds);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    } else if (has_valid_min) {
+      ierr = nc_put_att_double(ncid, varid, "valid_min", nctype, 1, &bounds[0]);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    } else if (has_valid_max) {
+      ierr = nc_put_att_double(ncid, varid, "valid_max", nctype, 1, &bounds[1]);
       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     }
 
@@ -564,15 +662,14 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   int t, t_id, varid, max_a_len, a_len;
   void *a_mpi;
 
-  bool use_glaciological_units_for_write = (strstr(pism_intent,"GUNITS") != NULL);
-
   ierr = checkAllocated(); CHKERRQ(ierr);
-
   
   ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace = false, because
 				// we want to *append* at this point
 
   // get the last time (index, not the value):
+  ierr = nc.get_dim_length("t", &t); CHKERRQ(ierr);
+
   if (grid->rank == 0) {
     size_t t_len;
     ierr = nc_inq_dimid(nc.ncid, "t", &t_id); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -590,12 +687,12 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
     ierr = define_netcdf_variable(nc.ncid, nctype, &varid); CHKERRQ(ierr);
   }
 
-  if (use_glaciological_units_for_write) {
-    ierr = scale(conversion_factor); CHKERRQ(ierr); // change the units
+  if (write_in_glaciological_units) {
+    ierr = change_units(&units, &glaciological_units); CHKERRQ(ierr);
   }
 
   // write the attributes
-  write_attrs(nc.ncid);
+  write_attrs(nc.ncid, nctype);
 
   // Memory allocation:
   max_a_len = a_len = grid->xm * grid->ym * Mz;
@@ -615,8 +712,8 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   }
 
   
-  if (use_glaciological_units_for_write) {
-    ierr = scale(1.0/conversion_factor); CHKERRQ(ierr); // restore the units
+  if (write_in_glaciological_units) {
+    ierr = change_units(&glaciological_units, &units); CHKERRQ(ierr); // restore the units
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -625,24 +722,26 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
 }
 
 //! Reports the range of an IceModelVec, with the appropriate units.
-/*! Uses glaciological_units if set.
+/*! Always uses the glaciological units, since they match the internal units if
+    not set.
  */
 PetscErrorCode IceModelVec::report_range() {
-
+  double slope, intercept;
   PetscErrorCode ierr;
   PetscReal min, max;
 
-  // for reporting range, always use glaciological_units if conversion is present at all
-  bool use_glaciological_units = PetscAbsReal(1.0 - conversion_factor) > 1e-6;
+  // Get the conversion coefficients:
+  utConvert(&units, &glaciological_units, &slope, &intercept);
 
   ierr = range(min, max);
-  min *= conversion_factor;
-  max *= conversion_factor;
+  // Note that in some cases the following conversion does nothing
+  min = min * slope + intercept;
+  max = max * slope + intercept;
 
   ierr = verbPrintf(2, grid->com, 
 		    " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 		    short_name, long_name, "", min, max,
-		    use_glaciological_units ? glaciological_units : units); CHKERRQ(ierr);
+		    glaciological_units_string); CHKERRQ(ierr);
 
   return 0;
 }
@@ -720,9 +819,46 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
       ierr = nc.regrid_global_var(varid, dim_flag, lic, da, v,
 				   use_interpolation_mask); CHKERRQ(ierr);
     }
-    ierr = report_range(); CHKERRQ(ierr);
+    // We are done reading, and the data is in the units specified in the
+    // bootstrapping file now. We need to check the range before changing the
+    // units to avoid converting all the NetCDF attributes (i.e. valid_range
+    // and others).
     ierr = check_range(nc.ncid, varid); CHKERRQ(ierr);
-  }
+    // Now we need to get the units string from the file and convert the units,
+    // because report_range expects the data to be in PISM (SI) units.
+    
+    char tmp[PETSC_MAX_PATH_LEN];
+    utUnit input_units;
+    memset(tmp, 0, PETSC_MAX_PATH_LEN);
+
+    // Read the 'units' attribute:
+    if (grid->rank == 0) {
+      ierr = nc_get_att_text(nc.ncid, varid, "units", tmp);
+      if (ierr != NC_NOERR) {
+	ierr = verbPrintf(2, grid->com,
+			  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+			  "              Assuming that it is in '%s'.\n",
+			  short_name, long_name, units_string); CHKERRQ(ierr);
+	strncpy(tmp, units_string, PETSC_MAX_PATH_LEN);
+      }
+    } // end of if (grid->rank == 0)
+    ierr = MPI_Bcast(&tmp, PETSC_MAX_PATH_LEN, MPI_BYTE, 0, grid->com); CHKERRQ(ierr);
+
+    // Try to parse the units:
+    if (utScan(tmp, &input_units) != 0) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: Variable '%s' ('%s') has a units attribute with an unknown units specification (%s).\n"
+			"              Assuming that it is in '%s'.\n",
+			short_name, long_name, tmp, units_string); CHKERRQ(ierr);
+      utCopy(&units, &input_units);
+    }
+
+    // Do the conversion:
+    ierr = change_units(&input_units, &units); CHKERRQ(ierr);
+
+    // We can report the range now:
+    ierr = report_range(); CHKERRQ(ierr);
+  } // if(exists)
 
   ierr = nc.close(); CHKERRQ(ierr);
   return 0;
@@ -842,6 +978,8 @@ PetscErrorCode  IceModelVec::set(const PetscScalar c) {
 //! Checks the range of an IceModelVec read from a netCDF file.
 /*! Uses valid_range, valid_min, valid_max, missing_value and _FillValue
     attributes, if present.
+
+    This should be done after reading but before units conversion.
  */
 PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
   PetscErrorCode ierr;
@@ -986,6 +1124,154 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
 
   return 0;
 }
+
+//! Unit conversion.
+/*! Convert the data stored in an IceModelVec from the units corresponding the
+  the \from argument to ones corresponding to \c to.
+
+  Note that this method *does not* change the units_string, so it has to be
+  updated manually to reflect the change.
+
+  Returns 0 on success, 1 if given units are incompatible, 2 on all the other
+  UDUNITS-related errors.
+*/
+PetscErrorCode IceModelVec::change_units(utUnit *from, utUnit *to) {
+  PetscErrorCode ierr;
+  double slope, intercept;
+  char from_name[PETSC_MAX_PATH_LEN], to_name[PETSC_MAX_PATH_LEN], *tmp;
+  bool use_slope, use_intercept;
+
+  // Get string representations of units:
+  utPrint(from, &tmp);
+  strncpy(from_name, tmp, PETSC_MAX_PATH_LEN);
+  utPrint(to, &tmp);
+  strncpy(to_name, tmp, PETSC_MAX_PATH_LEN);
+
+  // Get the slope and the intercept of the linear transformation.
+  ierr = utConvert(from, to, &slope, &intercept);
+
+  if (ierr != 0) { 		// can't convert
+    if (ierr == UT_ECONVERT) {	// because units are incompatible
+      ierr = verbPrintf(2, grid->com,
+			"PISM ERROR: IceModelVec '%s': attempted to change units from '%s' to '%s'.\n"
+			"            IceModelVec '%s' was not modified.\n",
+			short_name, from_name, to_name, short_name);
+      return 1;
+    } else {			// some other error
+      return 2;
+    }
+  }
+
+  use_slope     = PetscAbsReal(slope - 1.0) > 1e-16;
+  use_intercept = PetscAbsReal(intercept)   > 1e-16;
+
+  if (use_slope && use_intercept) {
+    ierr = scale(slope); CHKERRQ(ierr);
+    ierr = shift(intercept); CHKERRQ(ierr);
+  } else if (use_slope && !use_intercept) {
+    ierr = scale(slope); CHKERRQ(ierr);
+  } else if (!use_slope && use_intercept) {
+    ierr = shift(intercept); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! Write an extra text attribute (not stored in IceModelVec).
+/*! Call this after making sure that the variable exists in the output.
+
+  \c tp has to point to a null-terminated string.
+ */
+PetscErrorCode IceModelVec::write_text_attr(const char filename[], const char name[], const char *tp) {
+  bool exists;
+  int varid, ierr;
+  NCTool nc(grid);
+
+  ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // do not replace the file
+
+  ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
+  if (!exists)
+    SETERRQ(1, "Can't write attributes of an undefined variable.");
+
+  if (grid->rank == 0) {
+    ierr = nc_redef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc_put_att_text(nc.ncid, varid, name, strlen(tp), tp); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc_enddef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  return 0;
+}
+
+//! Write an extra scalar attribute (not stored in IceModelVec).
+/*! Call this after making sure that the variable exists in the output 
+ */
+PetscErrorCode IceModelVec::write_scalar_attr(const char filename[], const char name[], nc_type nctype, size_t len, const double *dp) {
+  bool exists;
+  int varid, ierr;
+  NCTool nc(grid);
+
+  ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // do not replace the file
+
+  ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
+  if (!exists)
+    SETERRQ(1, "Can't write attributes of an undefined variable.");
+
+  if (grid->rank == 0) {
+    ierr = nc_redef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc_put_att_double(nc.ncid, varid, name, nctype, len, dp); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc_enddef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+  return 0;
+}
+
+//! Sets the valid_min NetCDF attribute.
+PetscErrorCode IceModelVec::set_valid_min(PetscReal new_min) {
+  valid_min = new_min;
+  has_valid_min = true;
+  return 0;
+}
+
+//! Sets the valid_max NetCDF attribute.
+PetscErrorCode IceModelVec::set_valid_max(PetscReal new_max) {
+  valid_max = new_max;
+  has_valid_max = true;
+  return 0;
+}
+
+//! Sets the valid_range NetCDF attribute.
+PetscErrorCode IceModelVec::set_valid_range(PetscReal new_min, PetscReal new_max) {
+  valid_min = new_min;
+  has_valid_min = true;
+  valid_max = new_max;
+  has_valid_max = true;
+  return 0;
+}
+
+//! Sets the coordinates NetCDF attribute.
+/*! Coordinates are present by default; this method is here only to allow
+    removing the attribute if it is not applicable.
+ */
+PetscErrorCode IceModelVec::set_coordinates(const char name[]) {
+  if (name != NULL) {
+    strncpy(coordinates, name, PETSC_MAX_PATH_LEN);
+    has_coordinates = true;
+  } else {
+    has_coordinates = false;
+  }
+
+  return 0;
+}
+
+// //! Checks if a value \c a in in the range of valid values of and IceModelVec.
+// bool IceModelVec::is_valid(PetscScalar a) {
+
+  
+  
+// }
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/
 

@@ -1,0 +1,15 @@
+use ExtUtils::MakeMaker;
+# See lib/ExtUtils/MakeMaker.pm for details of how to influence
+# the contents of the Makefile that is written.
+$version = `cat ../VERSION`;
+WriteMakefile(
+    'NAME'	=> 'UDUNITS',
+    'VERSION'	=> $version,
+    'CC'	=> '@CC@',
+    'LIBS'	=> "-L../lib -ludunits -lm @LIBS@",
+    'DEFINE'	=> '@CPPFLAGS@',     # e.g., '-DHAVE_SOMETHING' 
+    'INC'	=> '-I../lib -I../port/misc',     # e.g., '-I/usr/include/other' 
+    'LINKTYPE'	=> '@LINKTYPE@',	# 'static' or 'dynamic'
+    'clean' => {'FILES' => "*.bs *.i"},
+    'realclean' => {'FILES' => "*.old"}
+);

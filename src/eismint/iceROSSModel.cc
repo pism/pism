@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2006-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ PetscErrorCode IceROSSModel::createROSSVecs() {
   ierr = obsMagnitude.create(grid, "mag_obs", true); CHKERRQ(ierr);
   ierr = obsMagnitude.set_attrs(NULL, "observed ice velocity magnitude",
                                 "m s-1", NULL); CHKERRQ(ierr);
-  ierr = obsMagnitude.set_glaciological_units("m year-1", secpera); CHKERRQ(ierr);
+  ierr = obsMagnitude.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ierr = obsAccurate.create(grid, "accur", true); CHKERRQ(ierr);
   ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity",

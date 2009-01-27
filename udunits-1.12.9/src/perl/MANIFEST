@@ -1,0 +1,7 @@
+MANIFEST
+Makefile.PL.in
+UDUNITS.pm
+UDUNITS.xs
+typemap
+udunitsperl.1
+test.pl

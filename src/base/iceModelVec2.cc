@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,6 +32,9 @@ IceModelVec2::IceModelVec2() : IceModelVec() {}
 
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
 
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
@@ -42,6 +45,9 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
 
 PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
 					   IceGrid &my_grid, const char my_short_name[], bool local) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
 
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
@@ -70,6 +76,9 @@ PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local,
                                      DAStencilType my_sten) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
 
   grid = &my_grid;
   

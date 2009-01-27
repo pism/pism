@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Ricarda Winkelmann
+// Copyright (C) 2009 Ed Bueler, Ricarda Winkelmann and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -129,12 +129,13 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   //   can make global with no ghosts
   ierr = vsurfmassflux.create(*g, "acab", true); CHKERRQ(ierr);
   ierr = vsurfmassflux.set_attrs(
-            "climate_state_GUNITS", 
+            "climate_state", 
             "mean annual net ice equivalent accumulation (ablation) rate",
 	    "m s-1", 
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);
-  ierr = vsurfmassflux.set_glaciological_units("m year-1", secpera);
+  ierr = vsurfmassflux.set_glaciological_units("m year-1");
+  vsurfmassflux.write_in_glaciological_units = true;
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);  // merely a default value
 
   // annual mean air temperature at "ice surface", at level below all firn processes

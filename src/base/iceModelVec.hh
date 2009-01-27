@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <petscda.h>
 #include <netcdf.h>
+#include <udunits.h>
 #include "nc_util.hh"
 
 #ifndef __IceModelVec_hh
@@ -49,11 +50,16 @@ public:
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual PetscErrorCode  set_name(const char name[]);
-  virtual PetscErrorCode  set_glaciological_units(const char units[], PetscReal factor);
+  virtual PetscErrorCode  set_glaciological_units(const char units[]);
   virtual PetscErrorCode  set_attrs(const char my_pism_intent[], const char my_long_name[],
 				    const char my_units[], const char my_standard_name[]);
-  //  virtual PetscErrorCode  read_attrs(const int ncid);
-  virtual PetscErrorCode  write_attrs(const int ncid);
+  virtual PetscErrorCode  set_valid_range(PetscReal min, PetscReal max);
+  virtual PetscErrorCode  set_valid_min(PetscReal min);
+  virtual PetscErrorCode  set_valid_max(PetscReal min);
+  virtual PetscErrorCode  set_coordinates(const char name[]);
+  virtual PetscErrorCode  write_attrs(const int ncid, nc_type nctype);
+  virtual PetscErrorCode  write_text_attr(const char filaname[], const char name[], const char *tp);
+  virtual PetscErrorCode  write_scalar_attr(const char filename[], const char name[], nc_type nctype, size_t len, const double *dp);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
@@ -73,25 +79,33 @@ public:
   virtual PetscErrorCode  set(const PetscScalar c);
  
   MaskInterp interpolation_mask;
-  bool   use_interpolation_mask;
+  bool   use_interpolation_mask, write_in_glaciological_units;
 protected:
 #ifdef PISM_DEBUG
   int creation_counter, access_counter;
 #endif // PISM_DEBUG
 
-  Vec          v;
-  char         short_name[PETSC_MAX_PATH_LEN],    // usually the name of the NetCDF variable (unless
-                                                  // there is no corresponding NetCDF var)
-               long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
-               units[PETSC_MAX_PATH_LEN],         // NetCDF attribute
-               pism_intent[PETSC_MAX_PATH_LEN],   // NetCDF attribute
-               standard_name[PETSC_MAX_PATH_LEN]; // NetCDF attribute; sometimes specified in CF convention
-  PetscTruth   has_standard_name;
+  Vec  v;
+  char short_name[PETSC_MAX_PATH_LEN],    // usually the name of the NetCDF
+					  // variable (unless there is no
+					  // corresponding NetCDF var)
+    long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
+    standard_name[PETSC_MAX_PATH_LEN], // NetCDF attribute; sometimes specified in CF convention
+    units_string[PETSC_MAX_PATH_LEN],  // NetCDF attribute
+    glaciological_units_string[PETSC_MAX_PATH_LEN], // a human-friendly units string
+    coordinates[PETSC_MAX_PATH_LEN],		    // a list of coordinates, usually "lat lon"
+    pism_intent[PETSC_MAX_PATH_LEN];	  // NetCDF attribute
 
-  char        glaciological_units[PETSC_MAX_PATH_LEN]; //< for diagnostic variables: units to use when writing
+  // An IceModelVec always has a short_name, but it may not have the following attributes:
+  bool has_long_name, has_units, has_pism_intent, has_standard_name,
+    has_valid_min, has_valid_max, has_coordinates;
+
+  PetscReal valid_min, valid_max;
+
+  utUnit units,		 //< internal (PISM) units
+    glaciological_units; //< for diagnostic variables: units to use when writing
 				//< to a NetCDF file and for standard out reports
-  PetscScalar conversion_factor;
-  
+
   IceGrid      *grid;
   DA           da;
   bool         localp, IOwnDA;
@@ -110,6 +124,8 @@ protected:
 					     PetscScalar default_value);
   virtual PetscErrorCode  write_to_netcdf(const char filename[], const int dims, nc_type nctype,
 					  const int Mz);
+  virtual PetscErrorCode  change_units(utUnit *from, utUnit *to);
+  virtual PetscErrorCode  reset_attrs();
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
   //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);

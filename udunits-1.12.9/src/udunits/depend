@@ -1,0 +1,2 @@
+udunits.o: ../lib/udunits.h
+udunits.o: udunits.c

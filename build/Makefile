@@ -34,19 +34,22 @@ endif
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3}
+          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} -I$(PISM_PREFIX)/$(UDUNITS)/include
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
 ifeq (${PISM_USE_DEBUG}, 1)
   CFLAGS += -g -Wall -Wextra
 endif
-SHARED = -shared # default (for Linux)
+
+# Flags related to building libraries; defaults are for GNU/Linux
+SHARED = -shared
+UDUNITS_CPPFLAGS = "-DNDEBUG -Df2cFortran -fPIC"
 
 # Linker flags:
 BASE_LIB_FLAGS := ${PISM_EXTRA_LIBS} \
                   -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
-                  -lm -lgsl -lgslcblas                  
+                  -lm -lgsl -lgslcblas
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
@@ -69,7 +72,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/)
+VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/):../lib
 
 # Variables:
 executables := pismr pismd pismv pisms
@@ -122,7 +125,6 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
-
 all: ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default)
 	@svnversion ../src/ > ../src/revision
 
@@ -130,16 +132,27 @@ extras : ${exec_extras}
 
 # how to build libraries; shared by default, static if PISM_STATIC=1.
 ifneq ($(PISM_STATIC),1)
-../lib/libpism.so : ${ICE_OBJS}
-	${CXXLINKER} $(SHARED) ${ICE_OBJS} -o $@
-../lib/libtests.so : ${TESTS_OBJS}
-	${CLINKER} $(SHARED) ${TESTS_OBJS} -o $@
+  BUILD_LIB := ${CXXLINKER} $(SHARED) -o
 else
-../lib/libpism.a : ${ICE_OBJS}
-	ar r $@ ${ICE_OBJS} 
-../lib/libtests.a : ${TESTS_OBJS}
-	ar r $@ ${TESTS_OBJS} 
+  BUILD_LIB := ar r
 endif
+
+# $@ should go first here:
+$(LIBPISMNAME)  : ${ICE_OBJS} libudunits.a
+	$(BUILD_LIB) $@ $^
+$(LIBTESTSNAME) : ${TESTS_OBJS}
+	$(BUILD_LIB) $@ $^
+
+# The UDUNITS library:
+UDUNITS_H = $(PISM_PREFIX)/$(UDUNITS)/include/udunits.h
+LIBUDUNITS = ../lib/libudunits.a
+
+$(UDUNITS_H) $(LIBUDUNITS):
+	cd $(PISM_PREFIX)/$(UDUNITS)/src; \
+	CPPFLAGS=$(UDUNITS_CPPFLAGS) ./configure --prefix=$(PISM_PREFIX)/$(UDUNITS); \
+	cd $(PISM_PREFIX)/$(UDUNITS)/src/lib; \
+	$(MAKE) all installed_library installed_headers installed_etcfiles
+	ln -sf $(PISM_PREFIX)/$(UDUNITS)/lib/libudunits.a $(PISM_PREFIX)/lib
 
 #build default executables
 

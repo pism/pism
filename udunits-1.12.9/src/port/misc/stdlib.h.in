@@ -1,0 +1,47 @@
+/*
+ * $Id: stdlib.h.in,v 1.3 1997/01/23 21:24:06 steve Exp $
+ */
+
+#ifndef UD_SYSTEM_STDLIB_H
+#   define	UD_SYSTEM_STDLIB_H	"///usr/include/stdlib.h"
+#endif
+#include UD_SYSTEM_STDLIB_H
+
+
+#ifndef UD_stdlib_h
+#define UD_stdlib_h
+
+
+#undef	UD_NO_STDLIB_H_SIZE_T
+#undef	UD_NO_ATEXIT_DECL
+#undef	UD_NO_GETENV_DECL
+
+
+#include "udposix.h"
+
+
+#ifndef RAND_MAX
+#   define RAND_MAX	32767
+#endif
+
+
+#ifdef	UD_NO_STDLIB_H_SIZE_T
+#   ifndef UD_SIZE_T
+	typedef unsigned int	size_t;
+#   endif
+#endif
+#ifndef UD_SIZE_T
+#   define UD_SIZE_T
+#endif
+
+
+#ifdef	UD_NO_ATEXIT_DECL
+    UD_EXTERN_FUNC(int atexit, (void (*fcn)(void)));
+#endif
+
+#ifdef	UD_NO_GETENV_DECL
+    UD_EXTERN_FUNC(char *getenv, (const char *name));
+#endif
+
+
+#endif	/* UD_stdlib_h not defined above */

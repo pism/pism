@@ -144,12 +144,13 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   //   we READ by name 'acab' but change name to 'accum' below
   ierr = vsurfaccum.create(*g, "acab", false); CHKERRQ(ierr);  // global; no ghosts
   ierr = vsurfaccum.set_attrs(
-            "climate_state_GUNITS", 
+            "climate_state", 
             "mean annual ice equivalent accumulation rate",
 	    "m s-1", 
 	    NULL);  // no CF standard_name
 	    CHKERRQ(ierr);
-  ierr = vsurfaccum.set_glaciological_units("m year-1", secpera);
+  ierr = vsurfaccum.set_glaciological_units("m year-1");
+  vsurfaccum.write_in_glaciological_units = true;
   ierr = vsurfaccum.set(0.0); CHKERRQ(ierr);  // merely a default value
 
   // now read two fields
