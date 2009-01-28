@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
     ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
 
     delete ice;
-    ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

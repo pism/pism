@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler and Nathan Shemonski
+// Copyright (C) 2007-2009 Ed Bueler and Nathan Shemonski
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,6 @@ int main(int argc, char *argv[]){
 
     ierr = m.writeFiles("grn_exper.nc"); CHKERRQ(ierr);
     delete ice;
-    ierr = verbPrintf(2, com, "\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

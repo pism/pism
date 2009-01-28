@@ -111,7 +111,6 @@ int main(int argc, char *argv[]) {
 
     delete mismipice;
     delete ice;
-    ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

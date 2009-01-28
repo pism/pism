@@ -804,7 +804,6 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
-    ierr = verbPrintf(2, grid->com, "  FOUND ");
     // Check if it is discrete
     if (use_interpolation_mask)
       nc.set_MaskInterp(&interpolation_mask);
@@ -856,7 +855,8 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
     // Do the conversion:
     ierr = change_units(&input_units, &units); CHKERRQ(ierr);
 
-    // We can report the range now:
+    // We can report the success, and the range now:
+    ierr = verbPrintf(2, grid->com, "  FOUND ");
     ierr = report_range(); CHKERRQ(ierr);
   } // if(exists)
 
@@ -1182,7 +1182,8 @@ PetscErrorCode IceModelVec::change_units(utUnit *from, utUnit *to) {
 
   \c tp has to point to a null-terminated string.
  */
-PetscErrorCode IceModelVec::write_text_attr(const char filename[], const char name[], const char *tp) {
+PetscErrorCode IceModelVec::write_text_attr(const char filename[], const char name[], 
+                                            const char *tp) {
   bool exists;
   int varid, ierr;
   NCTool nc(grid);
@@ -1196,7 +1197,8 @@ PetscErrorCode IceModelVec::write_text_attr(const char filename[], const char na
   if (grid->rank == 0) {
     ierr = nc_redef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
-    ierr = nc_put_att_text(nc.ncid, varid, name, strlen(tp), tp); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_put_att_text(nc.ncid, varid, name, strlen(tp), tp);
+       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
     ierr = nc_enddef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
@@ -1207,7 +1209,8 @@ PetscErrorCode IceModelVec::write_text_attr(const char filename[], const char na
 //! Write an extra scalar attribute (not stored in IceModelVec).
 /*! Call this after making sure that the variable exists in the output 
  */
-PetscErrorCode IceModelVec::write_scalar_attr(const char filename[], const char name[], nc_type nctype, size_t len, const double *dp) {
+PetscErrorCode IceModelVec::write_scalar_attr(const char filename[], const char name[], 
+                                              nc_type nctype, size_t len, const double *dp) {
   bool exists;
   int varid, ierr;
   NCTool nc(grid);
@@ -1221,7 +1224,8 @@ PetscErrorCode IceModelVec::write_scalar_attr(const char filename[], const char 
   if (grid->rank == 0) {
     ierr = nc_redef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
-    ierr = nc_put_att_double(nc.ncid, varid, name, nctype, len, dp); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_put_att_double(nc.ncid, varid, name, nctype, len, dp);
+       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
     ierr = nc_enddef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }

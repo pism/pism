@@ -58,8 +58,10 @@ public:
   virtual PetscErrorCode  set_valid_max(PetscReal min);
   virtual PetscErrorCode  set_coordinates(const char name[]);
   virtual PetscErrorCode  write_attrs(const int ncid, nc_type nctype);
-  virtual PetscErrorCode  write_text_attr(const char filaname[], const char name[], const char *tp);
-  virtual PetscErrorCode  write_scalar_attr(const char filename[], const char name[], nc_type nctype, size_t len, const double *dp);
+  virtual PetscErrorCode  write_text_attr(const char filename[], const char name[], 
+                                          const char *tp);
+  virtual PetscErrorCode  write_scalar_attr(const char filename[], const char name[],
+                                            nc_type nctype, size_t len, const double *dp);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);

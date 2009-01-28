@@ -307,32 +307,35 @@ thickness \c vH, the mask \c vMask, ???
  */
 PetscErrorCode IceModel::computeTFAFromBasalShear(
                 const PetscScalar phi_low, const PetscScalar phi_high,
-                const PetscScalar invRegEps, const PetscTruth invShowFG) {               
+                const PetscScalar invRegEps, const char *filename) {               
   PetscErrorCode ierr;
   
   // choose regularization; see guesses in comment at top
   RegPoissonCtx  user;        // user-defined work context; see iceModel.hh
   user.epsilon = invRegEps; 
-  
   user.da = grid.da2;
   user.grid = &grid;
 
-  ierr = DACreateGlobalVector(user.da,&user.f);CHKERRQ(ierr);
-  ierr = VecDuplicate(user.f,&user.g);CHKERRQ(ierr);
+  //ierr = DACreateGlobalVector(user.da,&user.f);CHKERRQ(ierr);
+  //ierr = VecDuplicate(user.f,&user.g);CHKERRQ(ierr);
+  user.f = new IceModelVec2;
+  ierr = user.f->create(grid, "f_invmodel", false); CHKERRQ(ierr);
+  user.g = new IceModelVec2;
+  ierr = user.g->create(grid, "g_invmodel", false); CHKERRQ(ierr);
 
   // main added content relative to ex5: fill nontrivial coeffs f,g for reg version
   ierr = fillRegPoissonData(user); CHKERRQ(ierr);
-  if (invShowFG == PETSC_TRUE) {  // show f,g if desired
-    PetscViewer viewer;
-    PetscDraw   draw;
-    ierr = PetscViewerDrawOpen(grid.com,PETSC_NULL,"f(x,y), coeff in Poisson-like eqn",
-             PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,PETSC_DECIDE,
-             &viewer); CHKERRQ(ierr);
-    ierr = VecView(user.f,viewer); CHKERRQ(ierr);
-    ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
-    ierr = PetscDrawSetTitle(draw,"g(x,y), r.h.s. in Poisson-like eqn"); CHKERRQ(ierr);
-    ierr = VecView(user.g,viewer); CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+
+  // write to file if given
+  if (strlen(filename) > 0) {
+    ierr = user.f->set_attrs(
+       "inverse_output", "f(x,y), coeff in Poisson-like eqn for regularizing mu",
+       NULL, NULL); CHKERRQ(ierr);
+    ierr = user.f->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = user.g->set_attrs(
+       "inverse_output", "g(x,y), coeff in Poisson-like eqn for regularizing mu",
+       NULL, NULL); CHKERRQ(ierr);
+    ierr = user.g->write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
 
   // create appropriate SNES, Mat
@@ -341,8 +344,8 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   PetscInt           its;         /* iterations for convergence */
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
-  ierr = VecDuplicate(user.f,&x);CHKERRQ(ierr);
-  ierr = VecDuplicate(user.f,&r);CHKERRQ(ierr);
+  ierr = DACreateGlobalVector(user.da,&x);CHKERRQ(ierr);
+  ierr = VecDuplicate(x,&r);CHKERRQ(ierr);
   
   // see src/trypetsc/poisson.c for ideas here
   ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
@@ -387,8 +390,8 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   // de-allocate SNES stuff
   ierr = VecDestroy(x);CHKERRQ(ierr);
   ierr = VecDestroy(r);CHKERRQ(ierr);      
-  ierr = VecDestroy(user.f);CHKERRQ(ierr);      
-  ierr = VecDestroy(user.g);CHKERRQ(ierr);      
+  delete user.f;  user.f = PETSC_NULL;
+  delete user.g;  user.g = PETSC_NULL;
   ierr = SNESDestroy(snes);CHKERRQ(ierr);
 
   return 0;
@@ -432,8 +435,8 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ub); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vb); CHKERRQ(ierr);
-  ierr = DAVecGetArray(user.da, user.f, &ff); CHKERRQ(ierr);
-  ierr = DAVecGetArray(user.da, user.g, &gg); CHKERRQ(ierr);
+  ierr = user.f->get_array(ff); CHKERRQ(ierr);
+  ierr = user.g->get_array(gg); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (obsmask[i][j] < 0.5) { // coeffs f,g have factor \chi_O
@@ -461,8 +464,8 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
       }
     }
   }
-  ierr = DAVecRestoreArray(user.da, user.f, &ff); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user.da, user.g, &gg); CHKERRQ(ierr);
+  ierr = user.f->end_access(); CHKERRQ(ierr);
+  ierr = user.g->end_access(); CHKERRQ(ierr);
   ierr = inv.oldtillphi->end_access();  CHKERRQ(ierr);
   ierr = inv.velInMask->end_access();  CHKERRQ(ierr);
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
@@ -507,8 +510,8 @@ PetscErrorCode RegPoissonFunctionLocal(
   scxx = sc / (dx * dx);
   scyy = sc / (dy * dy);
 
-  ierr = DAVecGetArray(user->da, user->f, &ff); CHKERRQ(ierr);
-  ierr = DAVecGetArray(user->da, user->g, &gg); CHKERRQ(ierr);
+  ierr = user->f->get_array(ff); CHKERRQ(ierr);
+  ierr = user->g->get_array(gg); CHKERRQ(ierr);
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       if (i == 0 || j == 0 || i == Mx-1 || j == My-1) {
@@ -521,8 +524,8 @@ PetscErrorCode RegPoissonFunctionLocal(
       }
     }
   }
-  ierr = DAVecRestoreArray(user->da, user->f, &ff); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user->da, user->g, &gg); CHKERRQ(ierr);
+  ierr = user->f->end_access(); CHKERRQ(ierr);
+  ierr = user->g->end_access(); CHKERRQ(ierr);
 
   PetscFunctionReturn(0); 
 } 

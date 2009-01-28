@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1163,7 +1163,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
 	  PetscEnd();
 	}
 	stat = verbPrintf(2, grid->com, 
-	   "\nPISM WARNING: output file '%s' already exists. Moving it to '%s'.",
+	   "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
 	   filename, tmp);
 	file_exists = false;
       } else {

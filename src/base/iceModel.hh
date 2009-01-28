@@ -97,11 +97,11 @@ struct InverseModelCtx {
 struct RegPoissonCtx {
   // describes Poisson-like problem solved when inverting surface velocities
   //   using a regularization
-  DA          da;             // must be first in struct
-  IceGrid     *grid;
-  PetscReal   epsilon;
-  Vec         f;              // = f(x,y) in PDE
-  Vec         g;              // = g(x,y) in PDE
+  DA           da;              // must be first in struct
+  IceGrid      *grid;
+  PetscReal    epsilon;
+  IceModelVec2 *f,              // = f(x,y) in PDE
+               *g;              // = g(x,y) in PDE
 };
 
 
@@ -341,7 +341,7 @@ protected:
   virtual PetscErrorCode createInvFields();
   virtual PetscErrorCode destroyInvFields();
   virtual PetscErrorCode writeInvFields(const char *filename);
-  virtual PetscErrorCode getObservedMask();
+  virtual PetscErrorCode readObservedSurfVels(const char *filename);
   virtual PetscErrorCode computeSIASurfaceVelocity();
   virtual PetscErrorCode getGforInverse(
                 const PetscScalar x, const PetscScalar UsuSIAdiffsqr, 
@@ -356,7 +356,7 @@ protected:
                 const PetscScalar phi_low, const PetscScalar phi_high);
   virtual PetscErrorCode computeTFAFromBasalShear(
                 const PetscScalar phi_low, const PetscScalar phi_high,
-                const PetscScalar invRegEps, const PetscTruth invShowFG);
+                const PetscScalar invRegEps, const char *filename);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

@@ -105,13 +105,13 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
 
   if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
     ierr = verbPrintf(2, grid.com, 
-		      "Writing model state, with full 3D velocities, to file `%s'",
+		      "Writing model state, with full 3D velocities, to file `%s'\n",
 		      filename); CHKERRQ(ierr);
 
     ierr = dumpToFile(filename); CHKERRQ(ierr);
     ierr = write3DPlusToFile(filename); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'",
+    ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n",
 		      filename); CHKERRQ(ierr);
     ierr = dumpToFile(filename); CHKERRQ(ierr);
   }
@@ -486,7 +486,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = MPI_Bcast(&have_ssa_velocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
   if (have_ssa_velocities == 1) {
-    ierr = verbPrintf(2,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
     ierr = vubarSSA.read(fname, g.t_len - 1);
     ierr = vvbarSSA.read(fname, g.t_len - 1);
