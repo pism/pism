@@ -582,7 +582,7 @@ char *yytext;
 #   define _ANSI_C_SOURCE
 #endif
 
-#include <udposix.h>
+#include "udposix.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>

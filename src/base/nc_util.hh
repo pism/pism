@@ -1,4 +1,4 @@
-// Copyright (C) 2007, 2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -69,6 +69,8 @@ public:
 					  double &latitude_of_projection_origin,
 					  double &standard_parallel,
 					  bool report = false);
+  PetscErrorCode get_text_attr(const int varid, const char name[], char **result);
+  PetscErrorCode get_double_attr(const int varid, const char name[], int& length, double **result);
   PetscErrorCode write_polar_stereographic(double straight_vertical_longitude_from_pole,
 					   double latitude_of_projection_origin,
 					   double standard_parallel);

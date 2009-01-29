@@ -19,7 +19,7 @@
 #ifndef	UTPRIVATE_H_INCLUDED
 #define	UTPRIVATE_H_INCLUDED
 
-#include <udposix.h>
+#include "udposix.h"
 
 
 /*

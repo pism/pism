@@ -1270,3 +1270,104 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 
   return 0;
 }
+
+//! Reads a text attribute from a NetCDF file.
+/*! \c result is set to a pointer to a newly-allocated string, which has to be
+    freed using delete[].
+
+    Sets \c result to NULL on error.
+
+    Note that it allocates one byte more than needed to store the string -- to
+    make sure that the returned string is zero-terminated.
+ */
+PetscErrorCode NCTool::get_text_attr(const int varid, const char name[], char** result) {
+  char *str = NULL;
+  int stat, len;
+
+  // Read and broadcast the attribute length:
+  if (grid->rank == 0) {
+    size_t attlen;
+    stat = nc_inq_attlen(ncid, varid, name, &attlen);
+    if (stat == NC_NOERR)
+      len = attlen;
+    else
+      len = 0;
+  }
+  stat = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  // Allocate some memory or set result to NULL and return:
+  if (len == 0) {
+    *result = NULL;
+    return 0;
+  }
+  str = new char[len + 1];
+  str[len] = '\0';		// zero-terminate the string
+
+  // Now read the string and broadcast stat to see if we succeeded:
+  if (grid->rank == 0) {
+    stat = nc_get_att_text(ncid, varid, name, str);
+  }
+  stat = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  
+  // On success, broadcast the string. On error, delete the string and set str
+  // to NULL.
+  if (stat == NC_NOERR) {
+    stat = MPI_Bcast(str, len, MPI_CHAR, 0, grid->com); CHKERRQ(stat);
+  } else {
+    delete[] str;
+    str = NULL;
+  }
+
+  *result = str;
+  return 0;
+}
+
+//! Reads a scalar attribute from a NetCDF file.
+/*! \c result is set to a pointer to a newly-allocated double array, which has to be
+    freed using delete[]. \c length contains the number of elements in \c result.
+
+    Sets \c result to NULL and length to 0 on error.
+ */
+PetscErrorCode NCTool::get_double_attr(const int varid, const char name[],
+				       int &length, double **result) {
+  double *data = NULL;
+  int stat, len;
+
+  // Read and broadcast the attribute length:
+  if (grid->rank == 0) {
+    size_t attlen;
+    stat = nc_inq_attlen(ncid, varid, name, &attlen);
+    if (stat == NC_NOERR)
+      len = attlen;
+    else
+      len = 0;
+  }
+  stat = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  // Allocate some memory or set result to NULL and return:
+  if (len == 0) {
+    length = 0;
+    *result = NULL;
+    return 0;
+  }
+  data = new double[len];
+
+  // Now read the data and broadcast stat to see if we succeeded:
+  if (grid->rank == 0) {
+    stat = nc_get_att_double(ncid, varid, name, data);
+  }
+  stat = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  
+  // On success, broadcast the data. On error, delete the data and set data
+  // to NULL.
+  if (stat == NC_NOERR) {
+    stat = MPI_Bcast(data, len, MPI_DOUBLE, 0, grid->com); CHKERRQ(stat);
+  } else {
+    delete[] data;
+    data = NULL;
+    length = 0;
+  }
+
+  *result = data;
+  return 0;
+}

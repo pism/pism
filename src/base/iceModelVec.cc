@@ -1270,6 +1270,29 @@ PetscErrorCode IceModelVec::set_coordinates(const char name[]) {
   return 0;
 }
 
+//! Reads the valid_range, valid_min valid_max sttributes from an input file.
+/*! Reads these attributes and and sets IceModelVec::valid_min and
+  IceModelVec::valid_max they were not set already.
+
+  Note that if valid_range is present, then valid_min and valid_max are
+  ignored.
+ */
+PetscErrorCode IceModelVec::read_valid_range(const int ncid, const int varid) {
+  NCTool nc(grid);
+  PetscErrorCode ierr;
+  double bounds[2];
+  utUnit input_units;
+  char input_units_string[PETSC_MAX_PATH_LEN];
+
+  // Never reset valid_min/max if set internally.
+  if (has_valid_min || has_valid_max)
+    return 0;
+
+  
+
+  return 0;
+}
+
 // //! Checks if a value \c a in in the range of valid values of and IceModelVec.
 // bool IceModelVec::is_valid(PetscScalar a) {
 

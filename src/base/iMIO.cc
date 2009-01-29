@@ -170,7 +170,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr =  vLatitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   ierr = vMask.write(filename, NC_BYTE); CHKERRQ(ierr);
-  double mask_values[4] = {1, 2, 3, 7};
+  double mask_values[4] = {MASK_SHEET, MASK_DRAGGING, MASK_FLOATING, MASK_FLOATING_OCEAN0};
   ierr = vMask.write_scalar_attr(filename, "flag_values", NC_BYTE, 4, mask_values); CHKERRQ(ierr);
   ierr = vMask.write_text_attr(filename, "flag_meanings",
 			       "sheet dragging floating floating_at_time_0"); CHKERRQ(ierr);
@@ -233,6 +233,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 	    "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
+  vWork2d[0].set_valid_min(0.0);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // compute cflx = cbar .* thk and save it
@@ -243,6 +244,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 	     "m2 s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[1].set_glaciological_units("m2 year-1"); CHKERRQ(ierr);
   vWork2d[1].write_in_glaciological_units = true;
+  vWork2d[1].set_valid_min(0.0);
   ierr = vWork2d[1].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // compute cbase  = sqrt(u|_{z=0}^2 + v|_{z=0}^2) and save it
@@ -262,6 +264,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 	     "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[2].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[2].write_in_glaciological_units = true;
+  vWork2d[2].set_valid_min(0.0);
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
@@ -281,6 +284,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 	     "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
+  vWork2d[0].set_valid_min(0.0);
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // compute wvelsurf, the surface values of vertical velocity
@@ -303,6 +307,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].set_attrs("diagnostic",
              "magnitude of driving shear stress at base of ice",
 	     "Pa", NULL); CHKERRQ(ierr);
+  vWork2d[2].set_valid_min(0.0);
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // write out yield stress

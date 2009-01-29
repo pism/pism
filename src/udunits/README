@@ -1,0 +1,13 @@
+This directory contains the stripped-down source code for the UDUNITS
+(http://www.unidata.ucar.edu/software/udunits/) library, version 1.12.9.
+
+Please see the file COPYRIGHT for the copyright information.
+
+The main difference between this and the original version of UDUNITS is in the
+build process: we don't use autoconf and we build a shared library, installed
+*with* PISM, by default.
+
+Also, the Fortran API is removed and all the sources generated using Perl, lex
+and yacc are pre-generated to be able to compile the library without them.
+
+As a consequence: blame me (CK) and *not* Unidata if it breaks.

@@ -1,3 +1,0 @@
-TYPEMAP
-utUnit *	T_PTROBJ
-float		T_FLOAT

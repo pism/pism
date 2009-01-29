@@ -1,3 +1,4 @@
+/* port/misc/udposix.h.  Generated from udposix.h.in by configure.  */
 /*
  * $Id: udposix.h.in,v 1.2 1997/05/02 22:37:36 steve Exp $
  *
@@ -12,7 +13,7 @@
  * General environmental macros:
  */
 #undef	_ALL_SOURCE	/* AIX */
-#undef	_HPUX_SOURCE
+/* #undef	_HPUX_SOURCE */
 
 
 /*
@@ -27,49 +28,49 @@
  * Variadic functions.  Define the following if your compiler doesn't
  * support <stdarg.h>.
  */
-#undef UD_NO_STDARG
+/* #undef UD_NO_STDARG */
 
 
 /*
  * Compiler keywords.  Define whatever your compiler doesn't support.
  */
-#undef UD_NO_CONST
-#undef UD_NO_SIGNED
-#undef UD_NO_VOLATILE
+/* #undef UD_NO_CONST */
+/* #undef UD_NO_SIGNED */
+/* #undef UD_NO_VOLATILE */
 
 
 /*
  * Function prototyping.  Define the following if your compiler 
  * doesn't support function prototyping.
  */
-#undef	UD_NO_PROTOTYPES
+/* #undef	UD_NO_PROTOTYPES */
 
 
 /*
  * String generation.  Define the following if your compiler
  * doesn't support Standard C stringization.
  */
-#undef	UD_NO_HASH
+/* #undef	UD_NO_HASH */
 
 
 /*
  * Token pasting.  Define the following if your compiler doesn't support
  * Standard C token pasting.
  */
-#undef	UD_NO_HASHHASH
+/* #undef	UD_NO_HASHHASH */
 
 
 /*
  * Void pointer type.  Define the following if your compiler doesn't
  * support the void pointer type.
  */
-#undef	UD_NO_VOIDSTAR
+/* #undef	UD_NO_VOIDSTAR */
 
 
 /*
  * Size of various pointers:
  */
-#undef SIZEOF_CHARP
+/* #undef SIZEOF_CHARP */
 
 
 /*****************************************************************************
@@ -84,19 +85,19 @@
 #ifdef	UD_NO_CONST
 #define	const
 #else
-#undef	const
+/* #undef	const */
 #endif
 
 #ifdef	UD_NO_SIGNED
 #define signed
 #else
-#undef	signed
+/* #undef	signed */
 #endif
 
 #ifdef	UD_NO_VOLATILE
 #define	volatile
 #else
-#undef	volatile
+/* #undef	volatile */
 #endif
 
 

@@ -124,6 +124,7 @@ protected:
 					     LocalInterpCtx &lic, bool critical,
 					     bool set_default_value,
 					     PetscScalar default_value);
+  virtual PetscErrorCode read_valid_range(const int ncid, const int varid);
   virtual PetscErrorCode  write_to_netcdf(const char filename[], const int dims, nc_type nctype,
 					  const int Mz);
   virtual PetscErrorCode  change_units(utUnit *from, utUnit *to);

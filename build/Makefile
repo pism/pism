@@ -34,7 +34,7 @@ endif
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} -I$(PISM_PREFIX)/$(UDUNITS)/include
+          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} -I../src/udunits
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
@@ -42,9 +42,12 @@ ifeq (${PISM_USE_DEBUG}, 1)
   CFLAGS += -g -Wall -Wextra
 endif
 
+# Flags needed by UDUNITS:
+UDUNITS_CFLAGS   = -c -O2 -fPIC
+UDUNITS_CPPFLAGS = -DUT_DEFAULT_PATH='"$(PISM_PREFIX)/lib/udunits.dat"' -DNDEBUG -Df2cFortran
+
 # Flags related to building libraries; defaults are for GNU/Linux
 SHARED = -shared
-UDUNITS_CPPFLAGS = "-DNDEBUG -Df2cFortran -fPIC"
 
 # Linker flags:
 BASE_LIB_FLAGS := ${PISM_EXTRA_LIBS} \
@@ -54,20 +57,18 @@ ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
 TESTS_LIB_FLAGS := -ltests ${BASE_LIB_FLAGS}
-ICE_LIB_FLAGS := -lpism -lnetcdf ${PETSC_LIB} ${BASE_LIB_FLAGS}
+ICE_LIB_FLAGS := -lpism -lnetcdf -ludunits ${PETSC_LIB} ${BASE_LIB_FLAGS}
 
 # set names for libraries
 ifneq ($(PISM_STATIC),1)
 LIBPISMNAME := ../lib/libpism.so
 LIBTESTSNAME := ../lib/libtests.so
+LIBUDUNITS = ../lib/libudunits.so
 else
 LIBPISMNAME := ../lib/libpism.a
 LIBTESTSNAME := ../lib/libtests.a
-endif
-
-# The UDUNITS library:
-UDUNITS_H = $(PISM_PREFIX)/$(UDUNITS)/include/udunits.h
 LIBUDUNITS = ../lib/libudunits.a
+endif
 
 ifeq ($(PISM_USE_MPICXX), 1)
   # Override PETSc's choice of CXX and of linker
@@ -76,7 +77,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits):../lib
 
 # Variables:
 executables := pismr pismd pismv pisms
@@ -129,7 +130,7 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
-all: $(UDUNITS_H) ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default)
+all: ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default)
 	@svnversion ../src/ > ../src/revision
 
 extras : ${exec_extras}
@@ -142,36 +143,37 @@ else
 endif
 
 # $@ should go first here:
-$(LIBPISMNAME)  : ${ICE_OBJS} libudunits.a
+$(LIBPISMNAME)  : ${ICE_OBJS}
 	$(BUILD_LIB) $@ $^
 $(LIBTESTSNAME) : ${TESTS_OBJS}
 	$(BUILD_LIB) $@ $^
 
-# For some reason the UDUNITS build process messes up src/lib/udunits.h, so we
-# restore its original condition here (so that the changes do not get
-# committed). In stable0.2 the last line of this rule should go away.
-$(UDUNITS_H) $(LIBUDUNITS):
-	cd $(PISM_PREFIX)/$(UDUNITS)/src; \
-	CPPFLAGS=$(UDUNITS_CPPFLAGS) ./configure --prefix=$(PISM_PREFIX)/$(UDUNITS); \
-	cd $(PISM_PREFIX)/$(UDUNITS)/src/lib; \
-	$(MAKE) all installed_library installed_headers installed_etcfiles
-	ln -sf $(PISM_PREFIX)/$(UDUNITS)/lib/libudunits.a $(PISM_PREFIX)/lib
-	svn revert $(PISM_PREFIX)/$(UDUNITS)/src/lib/utparse.h
+# Build UDUNITS:
+ud_objects := utlib.o utparse.o utscan.o udalloc.o
+# This ensures that UDUNITS is built using its special flags:
+$(ud_objects): %.o: %.c
+	$(CC) $(UDUNITS_CPPFLAGS) $(UDUNITS_CFLAGS) $< -o $@
+
+$(LIBUDUNITS): $(ud_objects)
+	$(BUILD_LIB) $@ $^
+	cp ../src/udunits/udunits.dat ../lib/
 
 #build default executables
 
-../bin/pismr : pismr.o ${LIBPISMNAME}
+$(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
+
+../bin/pismr : pismr.o
 	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
 
-../bin/pismd : pismd.o iceROSSModel.o ${LIBPISMNAME}
+../bin/pismd : pismd.o iceROSSModel.o
 	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
+../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
 	${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
- pismv.o ${LIBPISMNAME} ${LIBTESTSNAME}
+ pismv.o ${LIBTESTSNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
@@ -183,35 +185,12 @@ $(UDUNITS_H) $(LIBUDUNITS):
 ../bin/tryLCbd : tryLCbd.o beddefLC.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/simpleABCD : simpleABCD.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleE : simpleE.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleFG : simpleFG.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleH : simpleH.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleI : simpleI.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleJ : simpleJ.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleK : simpleK.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
-../bin/simpleL : simpleL.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
-
 ../bin/gridL : gridL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-../bin/simpleM : simpleM.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
+# This pattern rule is for building all the simple* executables.
+../bin/simple% : simple%.o $(LIBTESTSNAME)
+	$(CLINKER) $< $(TESTS_LIB_FLAGS) -o $@
 
 # The GNU recommended procedure for automatically generating prerequisites.
 # (The obscure sed command comes straight from the GNU Make manual.)
@@ -258,6 +237,8 @@ showEnv:
 	@echo 'PISM_USE_GNU_FLAGS = ' ${PISM_USE_GNU_FLAGS}
 	@echo 'PISM_EXTRA_LIBS = ' ${PISM_EXTRA_LIBS}
 	@echo 'CONFIG = ' ${CONFIG}
+	@echo 'UDUNITS_CFLAGS = ' $(UDUNITS_CFLAGS)
+	@echo 'UDUNITS_CPPFLAGS = ' $(UDUNITS_CPPFLAGS)
 
 depend: ;
 
@@ -274,7 +255,8 @@ depclean:
 	@rm -f $(depfiles)
 
 distclean: clean
-	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(exec_default) $(exec_extras)
+	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
+            ../lib/udunits.dat
 
 # This is to avoid recreating .d files if you all you need is 'make clean' or
 # 'make distclean':

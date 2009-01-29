@@ -13,7 +13,7 @@
 #   define _ANSI_C_SOURCE
 #endif
 
-#include <udposix.h>
+#include "udposix.h"
 #include <stddef.h>		/* for ptrdiff_t */
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,48 +26,9 @@
 #include <math.h>		/* for modf(), floor(), log10(), ceil() */
 #include <limits.h>		/* for *PATH_MAX */
 #include <float.h>		/* for DBL_DIG */
-#include "cfortran.h"		/* for FORTRAN support */
 #include "udunits.h"
 #include "utscan.h"
 #include "utprivate.h"
-
-/*
- * cfortran.h support for unit arguments:
- */
-/* C-returning-to-FORTRAN: */
-#define PUNIT_cfFZ(UN,LN)		utUnit* fcallsc(UN,LN)(void
-/* The following might be wrong and require modification for the next
- * version of cfortran.h */
-#define PUNIT_cfINT(N,A,B,X,Y,Z)	SIMPLE_cfINT(N,A,B,X,Y,Z)
-#define PUNIT_cfUU(PUNIT,A0)		utUnit* A0
-#define PUNIT_cfL			A0 =
-#define PUNIT_cfI			return A0;
-#define PUNIT_cfK
-#define PUNIT_cfSTR(N,T,A,B,C,D,E)	SIMPLE_cfSTR(N,T,A,B,C,D,E)
-
-/* FORTRAN-calling-C: */
-#define PPUNIT_cfV(  T,A,B,F)       SIMPLE_cfV(T,A,B,F)
-#define PPUNIT_cfSEP(T,  B)         SIMPLE_cfSEP(T,B)
-#define PPUNIT_cfINT(N,A,B,X,Y,Z)   SIMPLE_cfINT(N,A,B,X,Y,Z)
-#define PPUNIT_cfSTR(N,T,A,B,C,D,E) SIMPLE_cfSTR(N,T,A,B,C,D,E)
-#define PPUNIT_cfCC( T,A,B)         SIMPLE_cfCC(T,A,B)
-#define PPUNIT_cfAA( T,A,B)         PPUNIT_cfB(T,A) /* Argument B not used. */
-#define PPUNIT_cfU(  T,A)           PPUNIT_cfN(T,A)
-#define PPUNIT_cfN(  T,A)	    utUnit** A
-#define PPUNIT_cfT(M,I,A,B,D)	    *A
-
-/* Output, Fortran character buffer: */
-#define CBUF_cfINT(N,A,B,X,Y,Z)		STRING_cfINT(N,A,B,X,Y,Z)
-#define CBUF_cfSEP(T,  B)		STRING_cfSEP(T,B)
-#define CBUF_cfN(  T,A)			STRING_cfN(T,A)
-#define CBUF_cfSTR(N,T,A,B,C,D,E)	STRING_cfSTR(N,T,A,B,C,D,E)
-#if defined(vmsFortran)
-#   define CBUF_cfT(M,I,A,B,D)		A->dsc$a_pointer, A->dsc$w_length
-#elif defined(CRAYFortran)
-#   define CBUF_cfT(M,I,A,B,D)		_fcdtocp(A), _fcdlen(A)
-#else
-#   define CBUF_cfT(M,I,A,B,D)		A, D
-#endif
 
 #ifndef PATH_MAX
 #   define PATH_MAX	_POSIX_PATH_MAX
@@ -490,11 +451,6 @@ utIsTime(up)
 }
 
 
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN1(INT,utIsTime,UTTIME,uttime,
-    PPUNIT)
 
 
 /*
@@ -510,13 +466,6 @@ utHasOrigin(up)
 {
     return initialized && up->hasorigin;
 }
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN1(INT,utHasOrigin,UTORIGIN,utorigin,
-    PPUNIT)
 
 
 /*
@@ -543,13 +492,6 @@ utClear(unit)
 
 
 /*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB1(utClear,UTCLR,utclr,
-    PPUNIT)
-
-
-/*
  *  Copy a unit structure.
  *
  *  This function returns a pointer to the destination unit structure.
@@ -567,12 +509,6 @@ utCopy(source, dest)
     return dest;
 }
 
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB2(utCopy,UTCPY,utcpy,
-    PPUNIT,PPUNIT)
 
 
 /*
@@ -624,13 +560,6 @@ utShift(source, amount, result)
 }
 
 
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB3(utShift,UTORIG,utorig,
-    PPUNIT,DOUBLE,PPUNIT)
-
-
 /* 
  *  Scale a "unit" structure.
  *
@@ -652,13 +581,6 @@ utScale(source, factor, result)
 
     return result;
 }
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB3(utScale,UTSCAL,utscal,
-    PPUNIT,DOUBLE,PPUNIT)
 
 
 /* 
@@ -697,13 +619,6 @@ utMultiply(term1, term2, result)
 
 
 /*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB3(utMultiply,UTMULT,utmult,
-    PPUNIT,PPUNIT,PPUNIT)
-
-
-/*
  *  Form the reciprocal of an internal unit specification.
  *
  *  This function returns
@@ -734,13 +649,6 @@ utInvert(source, result)
 
     return res;
 }
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB2(utInvert,UTINV,utinv,
-    PPUNIT,PPUNIT)
 
 
 /* 
@@ -776,13 +684,6 @@ utDivide(numer, denom, result)
 }
 
 
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB3(utDivide,UTDIV,utdiv,
-    PPUNIT,PPUNIT,PPUNIT)
-
-
 /* 
  *  Raise a unit-structure to a given power.
  *
@@ -816,13 +717,6 @@ utRaise(source, power, result)
 
     return res;
 }
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCSUB3(utRaise,UTEXP,utexp,
-    PPUNIT,INT,PPUNIT)
 
 
 /*
@@ -1155,13 +1049,6 @@ utInit(path)
 
 
 /*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN1(INT,utInit,UTOPEN,utopen,
-    STRING)
-
-
-/*
  *  Indicate if the units(3) package has been initialized.
  *
  *  This function returns:
@@ -1173,12 +1060,6 @@ utIsInit()
 {
     return initialized;
 }
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN0(LOGICAL,utIsInit,UTISOPEN,utisopen)
 
 
 /*
@@ -1217,13 +1098,6 @@ utScan(spec, up)
 
     return status;
 }
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN2(INT,utScan,UTDEC,utdec,
-    STRING,PPUNIT)
 
 
 /*
@@ -1336,46 +1210,6 @@ utPrint(unit, s)
 
     return status;
 }
-
-
-/*
- * FORTRAN helper function for the above.
- */
-static int
-utPrint_help(unit, buf, size)
-    utUnit	*unit;
-    char	*buf;
-    size_t	size;
-{
-    char	*s;
-    int		status	= utPrint(unit, &s);
-
-    if (status == 0)
-    {
-	size_t	len = strlen(s);
-
-	if (len <= size)
-	{
-	    (void) memcpy(buf, s, len);
-	    (void) memset(buf+len, ' ', size-len);
-	}
-	else
-	{
-	    (void) memcpy(buf, s, size);
-	    status	= UT_ENOROOM;
-	}
-    }
-
-    return status;
-}
-
-
-/*
- * FORTRAN interface to the above functionality.
- */
-FCALLSCFUN2(INT,utPrint_help,UTENC,utenc,
-    PPUNIT,CBUF)
-
 
 /*
  *  Compare two strings.
@@ -1836,30 +1670,6 @@ utConvert(from, to, slope, intercept)
     return status;
 }
 
-    static int
-f_utConvert(from, to, slope, intercept)
-    const utUnit	*from;
-    const utUnit	*to;
-    DOUBLE_PRECISION	*slope;
-    DOUBLE_PRECISION	*intercept;
-{
-    double	tmpSlope;
-    double	tmpIntercept;
-    int		status;
-    status = utConvert(from, to, &tmpSlope, &tmpIntercept);
-    *slope = tmpSlope;
-    *intercept = tmpIntercept;
-    return status;
-}
-
-
-/*
- * FORTRAN interface to the above functionality.
- */
-FCALLSCFUN4(INT,f_utConvert,UTCVT,utcvt,
-    PPUNIT,PPUNIT,PDOUBLE,PDOUBLE)
-
-
 /*
  * Convert a Gregorian/Julian date and time into a temporal value.
  *
@@ -1892,33 +1702,6 @@ utInvCalendar(year, month, day, hour, minute, second, unit, value)
 
     return status;
 }
-
-
-    static int
-f_utInvCalendar(year, month, day, hour, minute, second, unit, value)
-    int			year;
-    int			month;
-    int			day;
-    int			hour;
-    int			minute;
-    double		second;
-    utUnit		*unit;
-    DOUBLE_PRECISION	*value;
-{
-    double	tmpValue;
-    int		status =
-	utInvCalendar(year, month, day, hour, minute, second, unit, &tmpValue);
-    *value = tmpValue;
-    return status;
-}
-
-
-/*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN8(INT,f_utInvCalendar,UTICALTIME,uticaltime,
-    INT,INT,INT,INT,
-	    INT,FLOAT,PPUNIT,PDOUBLE)
 
 
 /*
@@ -1954,13 +1737,6 @@ utCalendar(value, unit, year, month, day, hour, minute, second)
 
 
 /*
- * FORTRAN interface to the above function.
- */
-FCALLSCFUN8(INT,utCalendar,UTCALTIME,utcaltime,
-    DOUBLE,PPUNIT,PINT,PINT,PINT,PINT,PINT,PFLOAT)
-
-
-/*
  * Create a unit structure.
  */
     utUnit*
@@ -1968,12 +1744,6 @@ utNew()
 {
     return utClear((utUnit*)malloc(sizeof(utUnit)));
 }
-
-
-/*
- * FORTRAN interface to the above functionality.
- */
-FCALLSCFUN0(PUNIT,utNew,UTMAKE,utmake)
 
 
 /*
@@ -1986,13 +1756,6 @@ utDestroy(unit)
     if (unit != NULL)
 	free((voidp)unit);
 }
-
-
-/*
- * FORTRAN interface to the above functionality.
- */
-FCALLSCSUB1(utDestroy,UTFREE,utfree,
-    PPUNIT)
 
 
 /*
@@ -2015,12 +1778,6 @@ utTerm()
     UnitsFilePath[0]	= 0;
     HaveStdTimeUnit	= 0;
 }
-
-
-/*
- * FORTRAN interface to the above functionality.
- */
-FCALLSCSUB0(utTerm,UTCLS,utcls)
 
 
 /*
