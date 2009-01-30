@@ -205,7 +205,7 @@ and \c delta entries in the struct will not be meaningful.
 LocalInterpCtx::~LocalInterpCtx() {
   delete[] zlevs;
   delete[] zblevs;
-  PetscFree(a);
+  PetscFreeVoid(a);
 }
 
 

@@ -101,54 +101,47 @@ PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool
 PetscErrorCode  NCTool::find_variable(const char short_name[], const char standard_name[],
 				      int *varidp, bool &exists) {
   int ierr;
-  size_t attlen;
   int stat, found = 0, my_varid = -1, nvars;
-  char attribute[TEMPORARY_STRING_LENGTH];
+  char *attribute;
 
-  // Processor 0 does all the job here.
-  if (grid->rank == 0) {
-    if (standard_name != NULL) {
+  if (standard_name != NULL) {
+    if (grid->rank == 0) {
       ierr = nc_inq_nvars(ncid, &nvars); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+    ierr = MPI_Bcast(&nvars, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
-      for (int j = 0; j < nvars; j++) {
-	stat = nc_get_att_text(ncid, j, "standard_name", attribute);
-	if (stat != NC_NOERR) {
-	  continue;
-	}
+    for (int j = 0; j < nvars; j++) {
+      ierr = get_att_text(j, "standard_name", NULL, &attribute); CHKERRQ(ierr);
+      if (attribute == NULL)
+	continue;
 
-	// text attributes are not always zero-terminated, so we need to add the
-	// trailing zero:
-	stat = nc_inq_attlen(ncid, j, "standard_name", &attlen);
-	CHKERRQ(check_err(stat,__LINE__,__FILE__));
-	attribute[attlen] = 0;
-
-	if (strcmp(attribute, standard_name) == 0) {
-	  if (!found) {		// if unique
-	    found = 1;
-	    my_varid = j;
-	  } else {    // if not unique
- 	    ierr = PetscPrintf(grid->com,
-			       "PISM ERROR: Inconsistency in the input file: "
-			       "Variables #%d and #%d have the same standard_name ('%s').\n",
-			       my_varid, j, attribute);
-	    CHKERRQ(ierr);
-	    PetscEnd();
-	  }
+      if (strcmp(attribute, standard_name) == 0) {
+	if (!found) {
+	  found = true;
+	  my_varid = j;
+	} else {
+	  ierr = PetscPrintf(grid->com,
+			     "PISM ERROR: Inconsistency in the input file: "
+			     "Variables #%d and #%d have the same standard_name ('%s').\n",
+			     my_varid, j, attribute);
+	  CHKERRQ(ierr);
+	  PetscEnd();
 	}
       }
-    } // end of if(standard_name != NULL)
+      delete[] attribute;
+    } // end of for (int j = 0; j < nvars; j++)
+  } // end of if (standard_name != NULL)
 
-    if (!found) {
-      // look for short_name
+  // Check the short name:
+  if (!found) {
+    if (grid->rank == 0) {
       stat = nc_inq_varid(ncid, short_name, &my_varid);
       if (stat == NC_NOERR)
-	found = 1;
+	found = true;
     }
-  } // end of if(grid->rank == 0)
-
-  // Broadcast the existence flag and the variable ID.
-  ierr = MPI_Bcast(&found, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&my_varid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&found,    1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&my_varid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  }
 
   if (found) {
     exists = true;
@@ -827,49 +820,29 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
   Appends if overwrite == false (default).
  */
 PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
-  int stat;
-  size_t history_len;
+  int stat, old_history_len = 0;
+  char *old_history, *new_history;
+
+  // Produce the new history string:
+  stat = get_att_text(NC_GLOBAL, "history", &old_history_len, &old_history);
+  new_history = new char[strlen(history) + old_history_len + 1];
+  strcpy(new_history, history);
+  if (!overwrite && (old_history != NULL))
+      strcat(new_history, old_history);
+
+  // Write it:
   if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_attlen(ncid, NC_GLOBAL, "history", &history_len);
-
-    if ((stat == NC_ENOTATT) || overwrite) { // no history attribute present or
-					     // asked to overwrite
-
-      stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
-			     strlen(history), history);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    } else {
-
-      CHKERRQ(check_err(stat,__LINE__,__FILE__)); // check for other errors
-
-      history_len += 1;		// add the space for the trailing zero
-      // allocate some memory
-      char *tmp, *result;
-      int length = strlen(history) + history_len;
-      result = new char[length];
-      tmp = new char[history_len];
-
-      stat = nc_get_att_text(ncid, NC_GLOBAL, "history", tmp);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      tmp[history_len - 1] = 0;	// terminate the string
-
-      // concatenate strings
-      strcpy(result, history);
-      strcat(result, tmp);
-
-      // write
-      stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
-			     strlen(result), result);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-      delete[] tmp;
-      delete[] result;
-    }
+    
+    stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
+			   strlen(new_history), new_history);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  } // if (grid->rank == 0)
-  
+  }
+
+  delete[] new_history;
+  delete[] old_history;
   return 0;
 }
 
@@ -879,53 +852,34 @@ PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longit
 						bool report) {
   PetscErrorCode ierr;
   double lon, lat, par;
-  int stat, varid, lon_exists, lat_exists, par_exists;
-  bool ps_exists;
+  int varid;
+  bool ps_exists, lon_exists = false, lat_exists = false, par_exists = false;
 
   ierr = find_variable("polar_stereographic", NULL, &varid, ps_exists); CHKERRQ(ierr);
   if (!ps_exists && report) {
     ierr = verbPrintf(2,grid->com,
-		      "  polar stereo not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
+		      "  polar stereographic variable not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
 		      straight_vertical_longitude_from_pole,
 		      latitude_of_projection_origin,
 		      standard_parallel); CHKERRQ(ierr);
     return 0;
   }
 
-  if (grid->rank == 0) {
-    stat = nc_inq_attid(ncid, varid, "straight_vertical_longitude_from_pole",
-			NULL);
-    lon_exists = (stat == NC_NOERR);
-    stat = nc_inq_attid(ncid,varid,"latitude_of_projection_origin", NULL);
-    lat_exists = (stat == NC_NOERR);
-    stat = nc_inq_attid(ncid,varid,"standard_parallel", NULL);
-    par_exists = (stat == NC_NOERR);
-  }
-  ierr = MPI_Bcast(&lon_exists, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&lat_exists, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&par_exists, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = get_att_double(varid, "straight_vertical_longitude_from_pole", 1, &lon);
+  if (ierr != 0)
+    lon_exists = true;
 
-  if (grid->rank == 0) {
-    if (lon_exists) {
-      stat = nc_get_att_double(ncid, varid, "straight_vertical_longitude_from_pole",
-			       &lon); CHKERRQ(nc_check(stat));
-    } 
-    if (lon_exists) {
-      stat = nc_get_att_double(ncid, varid, "latitude_of_projection_origin",
-			       &lat); CHKERRQ(nc_check(stat));
-    }
-    if (par_exists) {
-      stat = nc_get_att_double(ncid, varid, "standard_parallel", &par);
-      CHKERRQ(nc_check(stat));
-    }
-  }
-  ierr = MPI_Bcast(&lon, 1, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&lat, 1, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&par, 1, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+  ierr = get_att_double(varid, "latitude_of_projection_origin", 1, &lat);
+  if (ierr != 0)
+    lat_exists = true;
+
+  ierr = get_att_double(varid, "standard_parallel", 1, &par);
+  if (ierr != 0)
+    par_exists = true;
 
   if (report) {
     ierr = verbPrintf(2, grid->com,
-		      "  polar stereographic var found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
+		      "  polar stereographic variable found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
 		      "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
 		      lon_exists, lat_exists, par_exists,
 		      lon, lat, par); CHKERRQ(ierr);
@@ -1279,10 +1233,13 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 
     Note that it allocates one byte more than needed to store the string -- to
     make sure that the returned string is zero-terminated.
+
+    On success, \c length contains the number of bytes allocated for the
+    string. (This is to allow reading strings with zeros in them.)
  */
-PetscErrorCode NCTool::get_text_attr(const int varid, const char name[], char** result) {
+PetscErrorCode NCTool::get_att_text(const int varid, const char name[], int *length, char** result) {
   char *str = NULL;
-  int stat, len;
+  int ierr, stat, len;
 
   // Read and broadcast the attribute length:
   if (grid->rank == 0) {
@@ -1293,10 +1250,12 @@ PetscErrorCode NCTool::get_text_attr(const int varid, const char name[], char** 
     else
       len = 0;
   }
-  stat = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  ierr = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
+    if (length != NULL)
+      *length = 0;
     *result = NULL;
     return 0;
   }
@@ -1307,7 +1266,7 @@ PetscErrorCode NCTool::get_text_attr(const int varid, const char name[], char** 
   if (grid->rank == 0) {
     stat = nc_get_att_text(ncid, varid, name, str);
   }
-  stat = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
   
   // On success, broadcast the string. On error, delete the string and set str
   // to NULL.
@@ -1318,20 +1277,22 @@ PetscErrorCode NCTool::get_text_attr(const int varid, const char name[], char** 
     str = NULL;
   }
 
+  if (length != NULL)
+    *length = len + 1;
   *result = str;
   return 0;
 }
 
 //! Reads a scalar attribute from a NetCDF file.
-/*! \c result is set to a pointer to a newly-allocated double array, which has to be
-    freed using delete[]. \c length contains the number of elements in \c result.
+/*! Returns zero on success.
 
-    Sets \c result to NULL and length to 0 on error.
+  If an error occurs or if \c length does not match the attribute length, returns 1.
+
+  In either of these two cases \c result is left unmodified.
  */
-PetscErrorCode NCTool::get_double_attr(const int varid, const char name[],
-				       int &length, double **result) {
-  double *data = NULL;
-  int stat, len;
+PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
+				      const int length, double *result) {
+  int ierr, stat, len;
 
   // Read and broadcast the attribute length:
   if (grid->rank == 0) {
@@ -1342,32 +1303,24 @@ PetscErrorCode NCTool::get_double_attr(const int varid, const char name[],
     else
       len = 0;
   }
-  stat = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  ierr = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
-  // Allocate some memory or set result to NULL and return:
-  if (len == 0) {
-    length = 0;
-    *result = NULL;
-    return 0;
+  if ((len == 0) || (len != length)) {
+    return 1;
   }
-  data = new double[len];
 
   // Now read the data and broadcast stat to see if we succeeded:
   if (grid->rank == 0) {
-    stat = nc_get_att_double(ncid, varid, name, data);
+    stat = nc_get_att_double(ncid, varid, name, result);
   }
-  stat = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
   
-  // On success, broadcast the data. On error, delete the data and set data
-  // to NULL.
+  // On success, broadcast the data. On error, return 1.
   if (stat == NC_NOERR) {
-    stat = MPI_Bcast(data, len, MPI_DOUBLE, 0, grid->com); CHKERRQ(stat);
+    ierr = MPI_Bcast(result, len, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
   } else {
-    delete[] data;
-    data = NULL;
-    length = 0;
+    return 1;
   }
 
-  *result = data;
   return 0;
 }

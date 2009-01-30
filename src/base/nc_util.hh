@@ -69,8 +69,9 @@ public:
 					  double &latitude_of_projection_origin,
 					  double &standard_parallel,
 					  bool report = false);
-  PetscErrorCode get_text_attr(const int varid, const char name[], char **result);
-  PetscErrorCode get_double_attr(const int varid, const char name[], int& length, double **result);
+  PetscErrorCode get_att_text(const int varid, const char name[], int *length, char **result);
+  PetscErrorCode get_att_double(const int varid, const char name[],
+				const int length, double *result);
   PetscErrorCode write_polar_stereographic(double straight_vertical_longitude_from_pole,
 					   double latitude_of_projection_origin,
 					   double standard_parallel);

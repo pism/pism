@@ -57,17 +57,17 @@ ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
 TESTS_LIB_FLAGS := -ltests ${BASE_LIB_FLAGS}
-ICE_LIB_FLAGS := -lpism -lnetcdf -ludunits ${PETSC_LIB} ${BASE_LIB_FLAGS}
+ICE_LIB_FLAGS := -lpism -lnetcdf -lpismudunits ${PETSC_LIB} ${BASE_LIB_FLAGS}
 
 # set names for libraries
 ifneq ($(PISM_STATIC),1)
 LIBPISMNAME := ../lib/libpism.so
 LIBTESTSNAME := ../lib/libtests.so
-LIBUDUNITS = ../lib/libudunits.so
+LIBUDUNITS = ../lib/libpismudunits.so
 else
 LIBPISMNAME := ../lib/libpism.a
 LIBTESTSNAME := ../lib/libtests.a
-LIBUDUNITS = ../lib/libudunits.a
+LIBUDUNITS = ../lib/libpismudunits.a
 endif
 
 ifeq ($(PISM_USE_MPICXX), 1)

@@ -457,12 +457,6 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   // which came from -if file, _unless_ -ys set by user
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
 
-  void *a_mpi;
-  int a_len, max_a_len;
-  max_a_len = a_len = grid.xm * grid.ym * grid.Mz;
-  MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid.com);
-  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
-
   // 2-D mapping
   ierr = vLongitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
   ierr =  vLatitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
@@ -476,21 +470,20 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr =    vbed.read(fname, g.t_len - 1); CHKERRQ(ierr);
   ierr = vuplift.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
+
+  if (useSSAVelocity) {
+    double flag;
+    stat = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", 1, &flag);
+    if (stat == 0)
+      have_ssa_velocities = flag;
+  }
+
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
   PetscTruth dontreadSSAvels = PETSC_FALSE;
   ierr = PetscOptionsHasName(PETSC_NULL, "-dontreadSSAvels", &dontreadSSAvels); CHKERRQ(ierr);
-
-  if ((grid.rank == 0) && useSSAVelocity && (!dontreadSSAvels)) {
-
-    int flag;
-    stat = nc_get_att_int(nc.ncid, NC_GLOBAL, "ssa_velocities_are_valid", &flag);
-    if (stat == NC_NOERR)
-      have_ssa_velocities = flag;
-  }
-  ierr = MPI_Bcast(&have_ssa_velocities, 1, MPI_INT, 0, grid.com); CHKERRQ(ierr);
   
-  if (have_ssa_velocities == 1) {
+  if ((have_ssa_velocities == 1)  && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
     ierr = vubarSSA.read(fname, g.t_len - 1);
@@ -508,46 +501,21 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr =  Tb3.read(fname, g.t_len - 1); CHKERRQ(ierr);
   ierr = tau3.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
-  ierr = PetscFree(a_mpi); CHKERRQ(ierr);
-
   // read the polar_stereographic if present
   ierr = nc.read_polar_stereographic(psParams.svlfp,
 				     psParams.lopo,
 				     psParams.sp); CHKERRQ(ierr);
 
-  // Get the current history length
-  unsigned int history_len;	// used for communication
-  if (grid.rank == 0) {
-    size_t H;
-    stat = nc_inq_attlen(nc.ncid, NC_GLOBAL, "history", &H);
-    history_len = (int)H;
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-
-  // Broadcast the history length
-  MPI_Bcast(&history_len, 1, MPI_INT, 0, grid.com);
-
-  // Allocate some memory (if necessary)
-  if (history_len > history_size - 1) {
-    history_size = history_len + 1;
+  int hist_len;
+  char *hist;
+  stat = nc.get_att_text(NC_GLOBAL, "history", &hist_len, &hist);
+  if (hist != NULL) {
     delete[] history;
-    history = new char[history_size];
-  }
-
-  // Zero out the allocated memory so that we don't need to worry about the
-  // trailing zero in the history string (which might be absent).
-  memset(history, 0, history_size);
-
-  // Read the history string and close the file
-  if (grid.rank == 0) {
-    stat = nc_get_att_text(nc.ncid, NC_GLOBAL, "history", history);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    history = hist;
+    history_size = hist_len;
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
-
-  // Broadcast the string
-  MPI_Bcast(history, history_size, MPI_CHAR, 0, grid.com);
 
   initialized_p = PETSC_TRUE;
   return 0;

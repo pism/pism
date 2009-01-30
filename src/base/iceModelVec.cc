@@ -386,7 +386,7 @@ PetscErrorCode  IceModelVec::set_glaciological_units(const char my_units[]) {
   
   if (utConvert(&units, &glaciological_units, &a, &b) == UT_ECONVERT) {
     SETERRQ3(1, "PISM ERROR: IceModelVec '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
-	     short_name, my_units, units);
+	     short_name, my_units, units_string);
   }
 
   // Save the human-friendly version of the string; this is to avoid getting
@@ -404,8 +404,8 @@ PetscErrorCode IceModelVec::reset_attrs() {
   strcpy(long_name,                  "unknown long name");
   has_long_name = false;
 
-  strcpy(units_string,               "unknown units");
-  strcpy(glaciological_units_string, "unknown units");
+  strcpy(units_string,               "unitless");
+  strcpy(glaciological_units_string, "unitless");
   has_units = false;
 
   strcpy(pism_intent,                "unknown pism_intent");
@@ -495,8 +495,9 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid, nc_type nctype) {
   nc.ncid = ncid;
 
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
-  if (!exists)
+  if (!exists) {
     SETERRQ(1, "Can't write attributes of an undefined variable.");
+  }
 
   if (grid->rank == 0) {
     ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -659,7 +660,7 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   PetscErrorCode ierr;
   bool exists;
   NCTool nc(grid);
-  int t, t_id, varid, max_a_len, a_len;
+  int t, varid, max_a_len, a_len;
   void *a_mpi;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -669,14 +670,6 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
 
   // get the last time (index, not the value):
   ierr = nc.get_dim_length("t", &t); CHKERRQ(ierr);
-
-  if (grid->rank == 0) {
-    size_t t_len;
-    ierr = nc_inq_dimid(nc.ncid, "t", &t_id); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    ierr = nc_inq_dimlen(nc.ncid, t_id, &t_len); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    t = (int)t_len;
-  }
-  ierr = MPI_Bcast(&t, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
   int s[] = {t - 1, grid->xs, grid->ys, 0}; // Start local block: t dependent; 
   int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
@@ -794,7 +787,7 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
     if (set_default_value) {	// if it's not and we have a default value, set it
       ierr = verbPrintf(2, grid->com, 
 			"  absent %-10s/ %-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
-			short_name, long_name, "", default_value, units);
+			short_name, long_name, "", default_value, units_string);
       CHKERRQ(ierr);
       ierr = set(default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
@@ -826,39 +819,42 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
     // Now we need to get the units string from the file and convert the units,
     // because report_range expects the data to be in PISM (SI) units.
     
-    char tmp[PETSC_MAX_PATH_LEN];
+    char *tmp;
     utUnit input_units;
-    memset(tmp, 0, PETSC_MAX_PATH_LEN);
 
     // Read the 'units' attribute:
-    if (grid->rank == 0) {
-      ierr = nc_get_att_text(nc.ncid, varid, "units", tmp);
-      if (ierr != NC_NOERR) {
+    ierr = nc.get_att_text(varid, "units", NULL, &tmp); CHKERRQ(ierr);
+    if (tmp == NULL) {		// units are absent
+      if (has_units) {
 	ierr = verbPrintf(2, grid->com,
 			  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
 			  "              Assuming that it is in '%s'.\n",
 			  short_name, long_name, units_string); CHKERRQ(ierr);
-	strncpy(tmp, units_string, PETSC_MAX_PATH_LEN);
       }
-    } // end of if (grid->rank == 0)
-    ierr = MPI_Bcast(&tmp, PETSC_MAX_PATH_LEN, MPI_BYTE, 0, grid->com); CHKERRQ(ierr);
-
-    // Try to parse the units:
-    if (utScan(tmp, &input_units) != 0) {
-      ierr = verbPrintf(2, grid->com,
-			"PISM WARNING: Variable '%s' ('%s') has a units attribute with an unknown units specification (%s).\n"
-			"              Assuming that it is in '%s'.\n",
-			short_name, long_name, tmp, units_string); CHKERRQ(ierr);
       utCopy(&units, &input_units);
+    } else {			// units are present
+
+      if (utScan(tmp, &input_units) != 0) {
+	ierr = verbPrintf(2, grid->com,
+			  "PISM WARNING: Variable '%s' ('%s') has a units attribute with an unknown units specification (%s).\n"
+			  "              Assuming that it is in '%s'.\n",
+			  short_name, long_name, tmp, units_string); CHKERRQ(ierr);
+	utCopy(&units, &input_units);
+      }
+
+      delete[] tmp;
     }
 
-    // Do the conversion:
+    // Convert data:
     ierr = change_units(&input_units, &units); CHKERRQ(ierr);
+
+    // Read the valid range info:
+    ierr = read_valid_range(nc.ncid, varid); CHKERRQ(ierr);
 
     // We can report the success, and the range now:
     ierr = verbPrintf(2, grid->com, "  FOUND ");
     ierr = report_range(); CHKERRQ(ierr);
-  } // if(exists)
+  } // end of if(exists)
 
   ierr = nc.close(); CHKERRQ(ierr);
   return 0;
@@ -983,124 +979,122 @@ PetscErrorCode  IceModelVec::set(const PetscScalar c) {
  */
 PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
   PetscErrorCode ierr;
-  double bounds[2];
+  double bounds[2] = {0, 0};
   int use_min = 0, use_max = 0;
+  NCTool nc(grid);
+  nc.ncid = ncid;
 
-  if (grid->rank == 0) {
-    int stat;
-    bool missing_value_exists = false,
-      fillvalue_exists = false,
-      valid_min_exists = false,
-      valid_max_exists = false,
-      valid_range_exists = false;
-    double missing_value, fillvalue, valid_min, valid_max, valid_range[2];
+  int stat;
+  bool missing_value_exists = false,
+    fillvalue_exists = false,
+    valid_min_exists = false,
+    valid_max_exists = false,
+    valid_range_exists = false;
+  double missing_value, fillvalue, valid_min, valid_max, valid_range[2];
 
-    stat = nc_get_att_double(ncid, varid, "missing_value", &missing_value);
-    if (stat == NC_NOERR)
-      missing_value_exists = true;
+  // Try to read all the attributes:
 
-    stat = nc_get_att_double(ncid, varid, "_FillValue", &fillvalue);
-    if (stat == NC_NOERR)
-      fillvalue_exists = true;
+  stat = nc.get_att_double(varid, "missing_value", 1, &missing_value);
+  if (stat == 0)
+    missing_value_exists = true;
 
-    stat = nc_get_att_double(ncid, varid, "valid_min", &valid_min);
-    if (stat == NC_NOERR)
-      valid_min_exists = true;
+  stat = nc.get_att_double(varid, "_FillValue", 1, &fillvalue);
+  if (stat == 0)
+    fillvalue_exists = true;
 
-    stat = nc_get_att_double(ncid, varid, "valid_max", &valid_max);
-    if (stat == NC_NOERR)
-      valid_max_exists = true;
+  stat = nc.get_att_double(varid, "valid_min", 1, &valid_min);
+  if (stat == 0)
+    valid_min_exists = true;
 
-    size_t valid_range_len;
-    stat = nc_inq_attlen(ncid, varid, "valid_range", &valid_range_len);
-    if ((stat == NC_NOERR) && (valid_range_len == 2))
-      stat = nc_get_att_double(ncid, varid, "valid_range", valid_range);
-    if (stat == NC_NOERR)
-      valid_range_exists = true;
+  stat = nc.get_att_double(varid, "valid_max", 1, &valid_max);
+  if (stat == 0)
+    valid_max_exists = true;
 
-    if (valid_range_exists) {
-      // consistency check
-      if (valid_min_exists || valid_max_exists || missing_value_exists || fillvalue_exists) {
-	ierr = verbPrintf(2, grid->com,
-			   "PISM WARNING: both valid_range and at least one of valid_min, valid_max\n"
-			   " missing_value and _FillValue are set. Using valid_range.\n");
-	CHKERRQ(ierr);
-      }	// end of consistency check
+  stat = nc.get_att_double(varid, "valid_range", 2, valid_range);
+  if (stat == NC_NOERR)
+    valid_range_exists = true;
 
-      use_min = use_max = 1;
-      bounds[0] = valid_range[0];
-      bounds[1] = valid_range[1];
-      // end of if(valid_range_exists)
-    } else if (valid_min_exists && valid_max_exists) {
-      // consistency check
-      if (missing_value_exists || fillvalue_exists) {
-	ierr = verbPrintf(2, grid->com,
-			   "PISM WARNING: both valid_min, valid_max and at least one of\n"
-			   " missing_value and _FillValue are set. Using the valid_min, valid_max pair.\n");
-	CHKERRQ(ierr);
-      }	// end of consistency check
-
-      use_min = use_max = 1;
-      bounds[0] = valid_min;
-      bounds[1] = valid_max;
-    } else if (valid_min_exists) {
-      // consistency check
-      if (missing_value_exists || fillvalue_exists) {
-	ierr = verbPrintf(2, grid->com,
-			   "PISM WARNING: both valid_min and at least one of\n"
-			   " missing_value and _FillValue are set. Using valid_min.\n");
-	CHKERRQ(ierr);
-      }	// end of consistency check
-
-      use_min = 1; use_max = 0;
-      bounds[0] = valid_min;
-      // end of if (valid_min_exists)
-    } else if (valid_max_exists) {
-      // consistency check
-      if (missing_value_exists || fillvalue_exists) {
-	ierr = verbPrintf(2, grid->com,
-			   "PISM WARNING: both valid_max and at least one of\n"
-			   " missing_value and _FillValue are set. Using valid_max.\n");
-	CHKERRQ(ierr);
-      }	// end of consistency check
-
-      use_min = 0; use_max = 1;
-      bounds[1] = valid_max;
-      // end of if (valid_max_exists)
-    } else if (fillvalue_exists) {
-      // consistency check
-      if (missing_value_exists) {
-	ierr = verbPrintf(2, grid->com,
-			   "PISM WARNING: both _FillValue and missing_value are set.\n"
-			   " Using _FillValue.\n");
-      }
-      
-      if (fillvalue < 0) {
-	use_min = 1; use_max = 0;
-	bounds[0] = fillvalue + 3e-6; // a trick to exclude this value
-      } else {
-	use_min = 0; use_max = 1;
-	bounds[1] = fillvalue - 3e-6; // a trick to exclude this value
-      }
-      // end of if (fillvalue_exists)
-    } else if (missing_value_exists) {
+  // Process attributes:
+  if (valid_range_exists) {
+    // consistency check
+    if (valid_min_exists || valid_max_exists || missing_value_exists || fillvalue_exists) {
       ierr = verbPrintf(2, grid->com,
-			 "PISM WARNING: missing_value attribute is deprecated by the NetCDF User's Guide. Ignoring it.\n"
-			 " Please use valid_min, valid_max, valid_range or _FillValue attributes.\n");
+			"PISM WARNING: both valid_range and at least one of valid_min, valid_max\n"
+			" missing_value and _FillValue are set. Using valid_range.\n");
       CHKERRQ(ierr);
+    }	// end of consistency check
 
-      use_min = use_max = 0;
-      // end of if(missing_value_exists)
+    use_min = use_max = 1;
+    bounds[0] = valid_range[0];
+    bounds[1] = valid_range[1];
+    // end of if(valid_range_exists)
+  } else if (valid_min_exists && valid_max_exists) {
+    // consistency check
+    if (missing_value_exists || fillvalue_exists) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: both valid_min, valid_max and at least one of\n"
+			" missing_value and _FillValue are set. Using the valid_min, valid_max pair.\n");
+      CHKERRQ(ierr);
+    }	// end of consistency check
+
+    use_min = use_max = 1;
+    bounds[0] = valid_min;
+    bounds[1] = valid_max;
+  } else if (valid_min_exists) {
+    // consistency check
+    if (missing_value_exists || fillvalue_exists) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: both valid_min and at least one of\n"
+			" missing_value and _FillValue are set. Using valid_min.\n");
+      CHKERRQ(ierr);
+    }	// end of consistency check
+
+    use_min = 1; use_max = 0;
+    bounds[0] = valid_min;
+    // end of if (valid_min_exists)
+  } else if (valid_max_exists) {
+    // consistency check
+    if (missing_value_exists || fillvalue_exists) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: both valid_max and at least one of\n"
+			" missing_value and _FillValue are set. Using valid_max.\n");
+      CHKERRQ(ierr);
+    }	// end of consistency check
+
+    use_min = 0; use_max = 1;
+    bounds[1] = valid_max;
+    // end of if (valid_max_exists)
+  } else if (fillvalue_exists) {
+    // consistency check
+    if (missing_value_exists) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: both _FillValue and missing_value are set.\n"
+			" Using _FillValue.\n");
     }
-  } // end of if (grid->rank == 0)
+      
+    if (fillvalue < 0) {
+      use_min = 1; use_max = 0;
+      bounds[0] = fillvalue + 3e-6; // a trick to exclude this value
+    } else {
+      use_min = 0; use_max = 1;
+      bounds[1] = fillvalue - 3e-6; // a trick to exclude this value
+    }
+    // end of if (fillvalue_exists)
+  } else if (missing_value_exists) {
+    ierr = verbPrintf(2, grid->com,
+		      "PISM WARNING: missing_value attribute is deprecated by the NetCDF User's Guide. Ignoring it.\n"
+		      " Please use valid_min, valid_max, valid_range or _FillValue attributes.\n");
+    CHKERRQ(ierr);
 
-  ierr = MPI_Bcast(&use_min, 1, MPI_INT,    0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&use_max, 1, MPI_INT,    0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(bounds,   2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+    use_min = use_max = 0;
+    // end of if(missing_value_exists)
+  }
 
   const double eps = 2e-16;
   double min, max;
-  ierr = range(min, max); CHKERRQ(ierr);
+  if (use_min || use_max) {
+    ierr = range(min, max); CHKERRQ(ierr);
+  }
 
   if (use_min && use_max) {
     if ((min < bounds[0] - eps) || (max > bounds[1] + eps)) {
@@ -1279,26 +1273,70 @@ PetscErrorCode IceModelVec::set_coordinates(const char name[]) {
  */
 PetscErrorCode IceModelVec::read_valid_range(const int ncid, const int varid) {
   NCTool nc(grid);
-  PetscErrorCode ierr;
-  double bounds[2];
+  char  *input_units_string;
   utUnit input_units;
-  char input_units_string[PETSC_MAX_PATH_LEN];
+  double bounds[2], slope, intercept;
+  int stat;
 
-  // Never reset valid_min/max if set internally.
+  // Never reset valid_min/max if any of them was set internally.
   if (has_valid_min || has_valid_max)
     return 0;
 
-  
+  nc.ncid = ncid;
+
+  // Read the units: The following code ignores the units in the input file if
+  // a) they are absent :-) b) they are invalid c) they are not compatible with
+  // internal units.
+  stat = nc.get_att_text(varid, "units", NULL, &input_units_string); CHKERRQ(stat);
+  if (input_units_string != NULL) {
+    stat = utScan(input_units_string, &input_units);
+    if (stat != 0)
+      utCopy(&units, &input_units);
+
+    delete[] input_units_string;
+  }
+
+  if (utConvert(&input_units, &units, &slope, &intercept) != 0) {
+    slope = 1;
+    intercept = 0;
+  }
+
+  stat = nc.get_att_double(varid, "valid_range", 2, bounds);
+  if (stat == 0) {		// valid_range is present
+      has_valid_min = true;
+      valid_min = intercept + slope*bounds[0];
+      has_valid_max = true;
+      valid_max = intercept + slope*bounds[1];
+  } else {			// valid_range is absent or an error occured
+    stat = nc.get_att_double(varid, "valid_min", 1, bounds);
+    if (stat == 0) {		// valid_min is present
+	has_valid_min = true;
+	valid_min = intercept + slope*bounds[0];
+    }
+
+    stat = nc.get_att_double(varid, "valid_max", 1, bounds);
+    if (stat == 0) {		// valid_max is present
+	has_valid_max = true;
+	valid_max = intercept + slope*bounds[0];
+    }
+  }
 
   return 0;
 }
 
-// //! Checks if a value \c a in in the range of valid values of and IceModelVec.
-// bool IceModelVec::is_valid(PetscScalar a) {
+//! Checks if a value \c a in in the range of valid values of an IceModelVec.
+bool IceModelVec::is_valid(PetscScalar a) {
+  if (has_valid_min && has_valid_max)
+    return (a >= valid_min) && (a <= valid_max);
 
-  
-  
-// }
+  if (has_valid_min)
+    return a >= valid_min;
+
+  if (has_valid_max)       
+    return a <= valid_max;
+
+  return true;
+}
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/
 

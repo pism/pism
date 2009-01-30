@@ -34,9 +34,11 @@ const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
-  if (utInit(NULL) != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: UDUNITS initialization failed.\n");
-    PetscEnd();
+  if (utIsInit() == 0) {
+    if (utInit(NULL) != 0) {
+      PetscPrintf(grid.com, "PISM ERROR: UDUNITS initialization failed.\n");
+      PetscEnd();
+    }
   }
 
   bootstrapLIC = PETSC_NULL;

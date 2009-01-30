@@ -1005,7 +1005,7 @@ utInit(path)
     char	pathbuf[PATH_MAX+1];
 
     if (path == NULL || path[0] == 0) {
-        path    = getenv("UDUNITS_PATH");
+        path    = getenv("PISMUDUNITS_PATH");
         if (path == NULL || path[0] == 0)
 	    path = strcpy(pathbuf, UT_DEFAULT_PATH);
     }

@@ -56,6 +56,7 @@ public:
   virtual PetscErrorCode  set_valid_range(PetscReal min, PetscReal max);
   virtual PetscErrorCode  set_valid_min(PetscReal min);
   virtual PetscErrorCode  set_valid_max(PetscReal min);
+  virtual bool            is_valid(PetscScalar a);
   virtual PetscErrorCode  set_coordinates(const char name[]);
   virtual PetscErrorCode  write_attrs(const int ncid, nc_type nctype);
   virtual PetscErrorCode  write_text_attr(const char filename[], const char name[], 
@@ -125,8 +126,8 @@ protected:
 					     bool set_default_value,
 					     PetscScalar default_value);
   virtual PetscErrorCode read_valid_range(const int ncid, const int varid);
-  virtual PetscErrorCode  write_to_netcdf(const char filename[], const int dims, nc_type nctype,
-					  const int Mz);
+  virtual PetscErrorCode write_to_netcdf(const char filename[], const int dims, nc_type nctype,
+					 const int Mz);
   virtual PetscErrorCode  change_units(utUnit *from, utUnit *to);
   virtual PetscErrorCode  reset_attrs();
   // FIXME: consider adding 

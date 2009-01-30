@@ -278,13 +278,15 @@ setattr(yvar, 'standard_name', 'projection_y_coordinate')
 setattr(yvar, 'units', 'm')
 
 setattr(latvar, 'long_name', 'RIGGS grid south latitude')
+latvar.units = 'degrees_north'
 
 setattr(lonvar, 'long_name', 'RIGGS grid west longitude')
+lonvar.units = 'degrees_east'
 
 setattr(maskvar, 'long_name', 'grounded or floating integer mask')
 
 setattr(azivar, 'long_name', 'EISMINT ROSS observed ice velocity azimuth')
-setattr(azivar, 'units', 'degrees east')
+setattr(azivar, 'units', 'degrees_east')
 setattr(azivar, 'missing_value', 9999.)
 
 setattr(magvar, 'long_name', 'EISMINT ROSS observed ice velocity magnitude')

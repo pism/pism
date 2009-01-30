@@ -70,7 +70,7 @@ PetscErrorCode IceROSSModel::createROSSVecs() {
 
   ierr = obsAccurate.create(grid, "accur", true); CHKERRQ(ierr);
   ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity",
-                               "", NULL); CHKERRQ(ierr);
+                               NULL, NULL); CHKERRQ(ierr);
   return 0;
 }
 

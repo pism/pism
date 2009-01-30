@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2008 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2007--2009 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -91,12 +91,13 @@ PetscErrorCode Data1D::getInterpolationCode(int ncid, int vid, int *code) {
 
   if (rank == 0) {
     int stat;
-    char attr[NC_MAX_NAME+1];
+    char *attr;
     size_t len;
 
-    stat = nc_get_att_text(ncid, vid, "interpolation", attr);
+    stat = nc_inq_attlen(ncid, vid, "interpolation", &len);
     if (stat == NC_NOERR) {
-      stat = nc_inq_attlen(ncid, vid, "interpolation", &len); CHKERRQ(nc_check(stat));
+      attr = new char[len];
+      stat = nc_get_att_text(ncid, vid, "interpolation", attr); CHKERRQ(nc_check(stat));
       attr[len] = '\0';
       if (strcmp(attr, "constant_piecewise_forward") == 0) {
         *code = DATA1D_CONST_PIECE_FWD_INTERP;
@@ -110,6 +111,7 @@ PetscErrorCode Data1D::getInterpolationCode(int ncid, int vid, int *code) {
             attr,datavarname); CHKERRQ(ierr);
         *code = DATA1D_LINEAR_INTERP;
       }
+      delete[] attr;
     } else {
       ierr = verbPrintf(5, com, 
           "ATTENTION: interpolation attribute for 1D data %s is not found; defaulting to linear\n",
