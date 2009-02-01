@@ -1,7 +1,7 @@
 \documentclass[11pt,final]{amsart}
 
 \newcommand{\PISMREV}{\input{revision.tex}}
-\newcommand{\PETSCREL}{2.3.3-p2}
+\newcommand{\PETSCREL}{2.3.3 or 3.0.0}
 
 %\addtolength\topmargin{-.1in}
 \addtolength\textheight{0.1in}
@@ -1847,6 +1847,16 @@ Hybrid of Goldsby-Kohlstedt &  \t{-law 4} &     Goldsby-Kohlstedt law with a com
 \end{table}
 
 \optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
+
+\opt{surf\und vel\und to\und phi}  Computes till friction angle $\phi$=\texttt{tillphi} by inverting provided surface velocities in file.  Under development.  See \emph{Reference Manual} and source files \texttt{iMinverse.cc,iMinverseMat.cc}.
+
+\optdef{topg\und to\und phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
+
+\verb|pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -quadZ \|
+
+\verb|   -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000|
+
+\noindent See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding}.
 
 
 \subsubsect{Positive degree day model (PDD) parameters}

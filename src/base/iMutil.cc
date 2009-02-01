@@ -115,13 +115,9 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   // make sure the first vertical velocities do not use junk from 
   //   uninitialized basal melt rate.
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
-
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
     
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-
+  // these initializations can not use info from -regrid:
   ierr = initPDDFromOptions(); CHKERRQ(ierr);
-
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
 
   skipCountDown = 0;
@@ -220,9 +216,16 @@ PetscErrorCode IceModel::afterInitHook() {
   // consistency of geometry after initialization:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
-  // last task before proceeding: invert for basal till properties, if desired;
-  //   reads options "-surf_vel_to_tfa foo.nc"
-  ierr = invertSurfaceVelocities(); CHKERRQ(ierr);
+  // last tasks in initialization; might be using info from -regrid:
+
+  // allocate and setup bed deformation model
+  ierr = bedDefSetup(); CHKERRQ(ierr);
+
+  // init basal till model, possibly inverting for phi, if desired;
+  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
+  //   or "-surf_vel_to_phi foo.nc";
+  //   initializes PlasticBasalType* basal; sets fields vtauc, vtillphi
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
 
   return 0;
 }

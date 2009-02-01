@@ -492,6 +492,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
     ierr = verbPrintf(3,grid.com, 
        "(exact maximum of u is %11.4f (m/a))\n",exactmaxu*secpera); CHKERRQ(ierr);
   }
+
+  ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
   return 0;
 }
 

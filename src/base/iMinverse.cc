@@ -48,10 +48,10 @@ ncatted -O -a units,vvelsurf,c,c,"m s-1" $OUTFILE
 
 INVERSE MODEL; with and w/o regularization:
 
-pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_tfa inv_me.nc \
+pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
    -inv_write_fields foo.nc -o inv_result.nc
 
-pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_tfa inv_me.nc \
+pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
    -inv_write_fields foo_noreg.nc -inv_reg_eps 0.0 -o inv_result_noreg.nc
 
 
@@ -68,15 +68,11 @@ INVERSE MODEL options:
 
 //! Invert given ice surface velocities to find till friction angle using a pseudo-plastic model.
 /*!
-Reads user option <tt>-surf_vel_to_tfa foo.nc</tt>.  If this option is \e not found,
-this method returns without doing anything.
+Expects to find variables \c uvelsurf and \c vvelsurf, namely x and y components
+of observed surface velocity, in NetCDF file \c filename.  Calls 
+readObservedSurfVels() for this purpose.  If found, reads them.
 
-If the option is found, then expects to find variables
-\c uvelsurf and \c vvelsurf, namely x and y components of observed surface velocity,
-in NetCDF file \c foo.nc.  Calls readObservedSurfVels() for this purpose.
-If found, reads them.  They need to be in m/s.
-
-If the option is found, enough space for nine IceModelVec2's is allocated.  In particular,
+Enough space for nine IceModelVec2's is allocated.  In particular,
 this procedure creates and destroys the InverseModelCtx (instance IceModel::inv) members.
 
 The first goal is to construct a mask showing where velocities are present; this is
@@ -126,24 +122,15 @@ this option is found, writes most intermediate fields from the inverse model
 computation to bar.nc.
 
  */
-PetscErrorCode IceModel::invertSurfaceVelocities() {
+PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
   PetscErrorCode ierr;
   
   // read options
-  PetscTruth  svTOtfaSet,invfieldsSet;
+  PetscTruth  invfieldsSet;
   PetscScalar invPhiMax = 15.0, 
               invPhiMin = 5.0,
               invRegEps = 1.0e23;
-  char filename[PETSC_MAX_PATH_LEN], invfieldsname[PETSC_MAX_PATH_LEN];
-
-  ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_tfa", filename, 
-                               PETSC_MAX_PATH_LEN, &svTOtfaSet); CHKERRQ(ierr);
-  if (svTOtfaSet == PETSC_FALSE) {
-    return 0;  // leave if you are not wanted ...
-  }
-
-  ierr = verbPrintf(2, grid.com, 
-     "option -surf_vel_to_tfa seen;  doing ad hoc inverse model;\n"); CHKERRQ(ierr);
+  char invfieldsname[PETSC_MAX_PATH_LEN];
 
   if (doPseudoPlasticTill == PETSC_FALSE) {
     ierr = verbPrintf(1, grid.com, 

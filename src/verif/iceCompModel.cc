@@ -1011,6 +1011,8 @@ PetscErrorCode IceCompModel::reportErrors() {
                   (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
   }
+
+  ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
   return 0;
 }
 

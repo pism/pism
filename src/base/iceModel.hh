@@ -81,8 +81,7 @@ struct SSASNESCtx {
 
 // two structs needed in iMinverse.cc, iMinverseMat.cc
 struct InverseModelCtx {
-  // all the fields involved in the inverse model, which is invoked using option
-  //   -surf_vel_to_tfa
+  // all the fields involved in the inverse model which determines till friction angle phi
   IceModelVec2 *usIn,
                *vsIn,
                *velInMask,
@@ -120,9 +119,6 @@ public:
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
   virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname);
-
-  // see iMinverse.cc
-  virtual PetscErrorCode invertSurfaceVelocities();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -277,6 +273,7 @@ protected:
 
   // see iMbasal.cc
   virtual PetscErrorCode initBasalTillModel();
+  virtual PetscErrorCode computePhiFromBedElevation();
   virtual PetscScalar    getEffectivePressureOnTill(
             const PetscScalar thk, const PetscScalar melt_thk);
   virtual PetscErrorCode updateYieldStressFromHmelt();
@@ -338,6 +335,7 @@ protected:
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
+  virtual PetscErrorCode invertSurfaceVelocities(const char *filename);
   virtual PetscErrorCode createInvFields();
   virtual PetscErrorCode destroyInvFields();
   virtual PetscErrorCode writeInvFields(const char *filename);

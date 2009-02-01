@@ -61,9 +61,7 @@ def verify(test):
       print ' finished in %7.4f seconds; reported numerical errors as follows:' % elapsetime
       errpos = output.find('NUMERICAL ERRORS')
       if errpos >= 0:
-         # errreport = output[errpos:output.rfind('Writing')-1]
-         # print '  |' + string.replace(errreport,'\n','\n  |')
-         errreport = output[errpos:output.find('Writing')]
+         errreport = output[errpos:output.find('NUM ERRORS DONE')]
          endline = errreport.find('\n')
          print '    ' + errreport[0:endline]
          errreport = errreport[endline+1:]

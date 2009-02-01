@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,8 @@
 
 //! Compute the coefficient of surface gradient, for basal sliding velocity as a function of driving stress in SIA regions.
 /*!
-THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
-ZERO BY DEFAULT.                
+THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY COUPLED MODEL.
+THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.                
 
 In SIA regions a basal sliding law of the form
   \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
@@ -71,10 +71,13 @@ PetscScalar IceModel::basalDragy(PetscScalar **tauc,
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
 See PlasticBasalType and updateYieldStressFromHmelt() and getEffectivePressureOnTill()
-for model equations.  See also invertVelocitiesFromNetCDF() for one way to 
-get a map of till friction angle.
+for model equations.  
 
-Also initializes the SIA-type sliding law, but use of that model is not recommended
+Calls either invertSurfaceVelocities(), for one way to get a map of till friction angle
+\c vtillphi, or computePhiFromBedElevation() for another way, or leaves \c vtillphi
+unchanged, according to options \c -surf_vel_to_phi and \c -topg_to_phi, respectively.
+
+Also initializes a SIA-type sliding law, but use of that model is not recommended
 and is turned off by default.
  */
 PetscErrorCode IceModel::initBasalTillModel() {
@@ -90,9 +93,123 @@ PetscErrorCode IceModel::initBasalTillModel() {
   if (useSSAVelocity == PETSC_TRUE) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
+
   ierr = vtauc.set(tauc_default_value); CHKERRQ(ierr);
-  // since vtillphi is part of model state it should not be set to default here, but 
-  //   rather as part of initialization/bootstrapping
+
+  // initialize till friction angle (vtillphi) from options
+  PetscTruth  topgphiSet,svphiSet;
+  char filename[PETSC_MAX_PATH_LEN];
+  
+  //FIXME:  really the option should not be read here?
+  ierr = PetscOptionsHasName(PETSC_NULL, "-topg_to_phi", &topgphiSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_phi", filename, 
+                               PETSC_MAX_PATH_LEN, &svphiSet); CHKERRQ(ierr);
+  if ((svphiSet == PETSC_TRUE) && (topgphiSet == PETSC_TRUE)) {
+    SETERRQ(1,"conflicting options for initializing till friction angle ... ending...\n");
+  }
+  if (topgphiSet == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com, 
+      "option -topg_to_phi seen ... creating till friction angle map from function of bed elev\n");
+      CHKERRQ(ierr);
+    // note option -topg_to_phi will be read again to get comma separated array of parameters
+    ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
+  }
+  if (svphiSet == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com, 
+      "option -surf_vel_to_phi seen;  doing ad hoc inverse model;\n"); CHKERRQ(ierr);
+    ierr = invertSurfaceVelocities(filename); CHKERRQ(ierr);
+  }
+  // if neither -surf_vel_to_phi OR -topg_to_phi then vtillphi is set from
+  //   default constant, or -if value, or -bif (?)
+  return 0;
+}
+
+
+//! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
+/*!
+Computes the till friction angle \f$\phi(x,y)\f$ at a location, namely
+\c IceModel::vtillphi, as the following increasing, piecewise-linear function of 
+the bed elevation \f$b(x,y)\f$.  Let 
+	\f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
+be the slope of the nontrivial part.  Then
+	\f[ \phi(x,y) = \begin{cases}
+	        \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
+	        \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
+	                          &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
+	        \phi_{\text{max}}, & b_{\text{max}} \le b(x,y), \end{cases} \f]
+The exception is if the point is marked as floating, in which case the till friction angle
+is set to the value \c phi_ocean.
+
+The default values are vaguesly suitable for Antarctica, perhaps:
+- \c phi_min = 5.0 degrees,
+- \c phi_max = 15.0 degrees,
+- \c topg_min = -1000.0 m,
+- \c topg_max = 1000.0 m,
+- \c phi_ocean = 10.0 degrees.
+ */
+PetscErrorCode IceModel::computePhiFromBedElevation() {
+
+  PetscErrorCode ierr;
+
+  PetscInt    Nparam=5;
+  PetscReal   inarray[5] = {5.0, 15.0, -1000.0, 1000.0, 10.0};
+
+  // read comma-separated array of zero to five values
+  PetscTruth  topgphiSet;
+  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-topg_to_phi", inarray, &Nparam, &topgphiSet);
+     CHKERRQ(ierr);
+  if (topgphiSet != PETSC_TRUE) {
+    SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
+  }
+  if (Nparam > 5) {
+    ierr = verbPrintf(1, grid.com, 
+      "WARNING: option -topg_to_phi read more than 5 parameters ... effect may be bad ...\n");
+      CHKERRQ(ierr);
+  }
+  PetscReal   phi_min = inarray[0],
+              phi_max = inarray[1],
+              topg_min = inarray[2],
+              topg_max = inarray[3],
+              phi_ocean = inarray[4];
+
+  ierr = verbPrintf(2, grid.com, 
+      "  computing till friction angle (phi) as piecewise-linear function of bed elev (topg):\n"
+      "            /  %5.2f                                 for   topg < %.f\n"
+      "      phi = |  %5.2f + (topg - %.f) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+      "            \\  %5.2f                                 for   %.f < topg\n",
+      phi_min, topg_min,
+      phi_min, topg_min, phi_max-phi_min, topg_max - topg_min, topg_min, topg_max,
+      phi_max, topg_max);
+      CHKERRQ(ierr);
+
+  PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
+  PetscScalar **phi, **bed, **mask; 
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vbed.get_array(bed); CHKERRQ(ierr);
+  ierr = vtillphi.get_array(phi); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (modMask(mask[i][j]) != MASK_FLOATING) {
+        if (bed[i][j] <= topg_min) {
+          phi[i][j] = phi_min;
+        } else if (bed[i][j] >= topg_max) {
+          phi[i][j] = phi_max;
+        } else {
+          phi[i][j] = phi_min + (bed[i][j] - topg_min) * slope;
+        }
+      } else {
+        phi[i][j] = phi_ocean;
+      }
+    }
+  }
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vtillphi.end_access(); CHKERRQ(ierr);
+
+  // when in doubt ...
+  ierr = vtillphi.beginGhostComm();
+  ierr = vtillphi.endGhostComm();
+
   return 0;
 }
 

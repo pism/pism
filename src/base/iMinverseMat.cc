@@ -385,7 +385,6 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   ierr = DAVecRestoreArray(grid.da2, x, &result); CHKERRQ(ierr);
   ierr = vtillphi.end_access();  CHKERRQ(ierr);
   ierr = inv.oldtillphi->end_access(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid.da2, x, &result); CHKERRQ(ierr);
 
   // de-allocate SNES stuff
   ierr = VecDestroy(x);CHKERRQ(ierr);
