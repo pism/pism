@@ -105,11 +105,11 @@ PetscErrorCode IceModel::initBasalTillModel() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_phi", filename, 
                                PETSC_MAX_PATH_LEN, &svphiSet); CHKERRQ(ierr);
   if ((svphiSet == PETSC_TRUE) && (topgphiSet == PETSC_TRUE)) {
-    SETERRQ(1,"conflicting options for initializing till friction angle ... ending...\n");
+    SETERRQ(1,"conflicting options for initializing till friction angle; ending...\n");
   }
   if (topgphiSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
-      "option -topg_to_phi seen ... creating till friction angle map from function of bed elev\n");
+      "option -topg_to_phi seen;  creating till friction angle map from bed elev ...\n");
       CHKERRQ(ierr);
     // note option -topg_to_phi will be read again to get comma separated array of parameters
     ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
@@ -173,7 +173,7 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
               phi_ocean = inarray[4];
 
   ierr = verbPrintf(2, grid.com, 
-      "  computing till friction angle (phi) as piecewise-linear function of bed elev (topg):\n"
+      "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
       "            /  %5.2f                                 for   topg < %.f\n"
       "      phi = |  %5.2f + (topg - %.f) * (%.2f / %.f)   for   %.f < topg < %.f\n"
       "            \\  %5.2f                                 for   %.f < topg\n",

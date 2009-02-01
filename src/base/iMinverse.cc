@@ -31,7 +31,7 @@ pisms -pst -P1 -if P0A.nc -y 100 -f3d -pseudo_plastic_q 0.25 -o pseudoq0.25_P0A_
 
 NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1:
 
------------------------------------------------------------
+-------------------  convertinv.sh  -----------------------
 #!/bin/bash
 
 INFILE=pseudoq0.25_P0A_plus100.nc

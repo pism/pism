@@ -9,7 +9,7 @@ PISM_USE_DEBUG ?= 0
 # this to zero would let PETSc choose a linker.
 PISM_USE_MPICXX ?= 1
 # if ==1 then adds -Woverloaded-virtual -pipe to CFLAGS
-PISM_USE_GNU_FLAGS ?= 1
+PISM_USE_GNU_FLAGS ?= 0
 
 # Put additional make include files here: 
 #CONFIG = config/macosx_macports
