@@ -75,7 +75,8 @@ for model equations.
 
 Calls either invertSurfaceVelocities(), for one way to get a map of till friction angle
 \c vtillphi, or computePhiFromBedElevation() for another way, or leaves \c vtillphi
-unchanged, according to options \c -surf_vel_to_phi and \c -topg_to_phi, respectively.
+unchanged.  First two of these are according to options \c -surf_vel_to_phi
+and \c -topg_to_phi, respectively.
 
 Also initializes a SIA-type sliding law, but use of that model is not recommended
 and is turned off by default.
@@ -99,27 +100,25 @@ PetscErrorCode IceModel::initBasalTillModel() {
   // initialize till friction angle (vtillphi) from options
   PetscTruth  topgphiSet,svphiSet;
   char filename[PETSC_MAX_PATH_LEN];
-  
-  //FIXME:  really the option should not be read here?
   ierr = PetscOptionsHasName(PETSC_NULL, "-topg_to_phi", &topgphiSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_phi", filename, 
                                PETSC_MAX_PATH_LEN, &svphiSet); CHKERRQ(ierr);
   if ((svphiSet == PETSC_TRUE) && (topgphiSet == PETSC_TRUE)) {
-    SETERRQ(1,"conflicting options for initializing till friction angle; ending...\n");
+    SETERRQ(1,"conflicting options for initializing till friction angle; ENDING ...\n");
   }
   if (topgphiSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
-      "option -topg_to_phi seen;  creating till friction angle map from bed elev ...\n");
+      "option -topg_to_phi seen; creating till friction angle map from bed elev ...\n");
       CHKERRQ(ierr);
     // note option -topg_to_phi will be read again to get comma separated array of parameters
     ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
   }
   if (svphiSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
-      "option -surf_vel_to_phi seen;  doing ad hoc inverse model;\n"); CHKERRQ(ierr);
+      "option -surf_vel_to_phi seen; doing ad hoc inverse model ...\n"); CHKERRQ(ierr);
     ierr = invertSurfaceVelocities(filename); CHKERRQ(ierr);
   }
-  // if neither -surf_vel_to_phi OR -topg_to_phi then vtillphi is set from
+  // if neither -surf_vel_to_phi OR -topg_to_phi then pass through; vtillphi is set from
   //   default constant, or -if value, or -bif (?)
   return 0;
 }

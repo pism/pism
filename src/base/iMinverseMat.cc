@@ -130,7 +130,8 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   ierr = VecAXPY(result,-1.0,rhs); CHKERRQ(ierr);  // note result = 0 if MASK_SHEET
   
   // transfer result to taub output vectors; compare code in
-  //   IceModel::moveVelocityToDAVectors()
+  //   IceModel::moveVelocityToDAVectors(); only transfer if full 9 pt
+  //   neighborhood had valid velocities
   PetscScalar     **tbx, **tby, *res;
   Vec             resultLoc = SSAXLocal;
   ierr = VecScatterBegin(SSAScatterGlobalToLocal, result, resultLoc, 
@@ -142,6 +143,8 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   ierr = inv.taubyComputed->get_array(tby); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // note that computed taub should only be used to get new phi at
+      //   points where inv.taubValidMask is 1.0
       tbx[i][j] = res[i*twoMy + 2*j];
       tby[i][j] = res[i*twoMy + 2*j+1];
     }
@@ -392,27 +395,6 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   delete user.f;  user.f = PETSC_NULL;
   delete user.g;  user.g = PETSC_NULL;
   ierr = SNESDestroy(snes);CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-//! Compute N, the effective pressure on the till, following basal model conventions.
-PetscErrorCode IceModel::getEffectivePressureForInverse() {
-  PetscErrorCode ierr;
-
-  PetscScalar **N, **H, **Hmelt;
-  ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
-  ierr = vH.get_array(H);  CHKERRQ(ierr);
-  ierr = vHmelt.get_array(Hmelt);  CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]); // iMbasal.cc
-    }
-  }
-  ierr = vH.end_access();  CHKERRQ(ierr);
-  ierr = vHmelt.end_access();  CHKERRQ(ierr);
-  ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
 
   return 0;
 }

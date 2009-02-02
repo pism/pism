@@ -27,33 +27,21 @@ example usage:
 
 START from P0A.nc in examples/pst/pst.sh; e.g. at ftp://ftp.gi.alaska.edu/pub/bueler/P0A.nc :
 
-pisms -pst -P1 -if P0A.nc -y 100 -f3d -pseudo_plastic_q 0.25 -o pseudoq0.25_P0A_plus100.nc
+$ pisms -pst -P1 -if P0A.nc -y 100 -f3d -pseudo_plastic_q 0.25 -o P1earlypseudo.nc
 
-NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1:
+NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1;
+also build a "valid observed surface velocity" mask:
 
--------------------  convertinv.sh  -----------------------
-#!/bin/bash
-
-INFILE=pseudoq0.25_P0A_plus100.nc
-OUTFILE=inv_me.nc
-
-cp $INFILE $OUTFILE 
-
-# convert to m s-1
-ncap -O -s "uvelsurf=uvelsurf/31556926.0" $OUTFILE $OUTFILE
-ncatted -O -a units,uvelsurf,c,c,"m s-1" $OUTFILE
-ncap -O -s "vvelsurf=vvelsurf/31556926.0" $OUTFILE $OUTFILE
-ncatted -O -a units,vvelsurf,c,c,"m s-1" $OUTFILE
------------------------------------------------------------
+$ cd examples/pst/
+$ ./convert_to_inv.sh
 
 INVERSE MODEL; with and w/o regularization:
 
-pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
+$ pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
    -inv_write_fields foo.nc -o inv_result.nc
 
-pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
+$ pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
    -inv_write_fields foo_noreg.nc -inv_reg_eps 0.0 -o inv_result_noreg.nc
-
 
 INVERSE MODEL options:
 
@@ -61,9 +49,7 @@ INVERSE MODEL options:
    -inv_phi_min              default = 5.0
    -inv_phi_max              default = 15.0
    -inv_write_fields foo.nc  write several fields associated to inverse model to foo.nc
-
 */
-
 
 
 //! Invert given ice surface velocities to find till friction angle using a pseudo-plastic model.
@@ -76,10 +62,12 @@ Enough space for nine IceModelVec2's is allocated.  In particular,
 this procedure creates and destroys the InverseModelCtx (instance IceModel::inv) members.
 
 The first goal is to construct a mask showing where velocities are present; this is
-also done by readObservedSurfVels().  A point is marked as not having a velocity
-if either x or y component has magnitude exceeding \f$10^6\f$ m/a 
-(or rather the m/s equivalent).  Thus huge values can and should be used
-as fill values in missing areas. 
+also done by readObservedSurfVels().  A point is marked as not having a valid
+observed velocity if either x or y component has value outside the valid range
+specified in the NetCDF file for that variable.  (Thus the creator of the input file
+is in charge of setting \c valid_range or \c valid_min and \c valid_max attributes
+for both variables \c uvelsurf and \c vvelsurf.  \c _FillValue, if set, should
+be outside the valid range.)
 
 Then calls computeSIASurfaceVelocity() to get the value of the surface
 velocity which would be computed from SIA flow model for the current
@@ -120,7 +108,6 @@ and map of effective thickness of basal till water in the inversion.
 This method also reads user option <tt>-inv_write_fields bar.nc</tt>.  If
 this option is found, writes most intermediate fields from the inverse model
 computation to bar.nc.
-
  */
 PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
   PetscErrorCode ierr;
@@ -147,7 +134,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-inv_phi_max", &invPhiMax, PETSC_NULL);
            CHKERRQ(ierr);
   ierr = PetscOptionsGetReal(PETSC_NULL,   "-inv_reg_eps", &invRegEps, PETSC_NULL);
-             CHKERRQ(ierr);
+           CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-inv_write_fields", invfieldsname, 
            PETSC_MAX_PATH_LEN, &invfieldsSet); CHKERRQ(ierr);
 
@@ -175,7 +162,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
   
   // read in surface velocity
   ierr = verbPrintf(2, grid.com, 
-     "  reading observed surface velocities us, vs from file %s ...\n"
+     "  reading observed surface velocities from file %s ...\n"
      "  computing mask for where observed surfaced velocities are present ...\n",
      filename); CHKERRQ(ierr);
   ierr = readObservedSurfVels(filename); CHKERRQ(ierr);
@@ -193,7 +180,6 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
        "    surface velocities by solving transcendental equations ...\n"); CHKERRQ(ierr);
     ierr = computeFofVforInverse(); CHKERRQ(ierr);
   } else {
-    // compute an f(|v|) field from current ubarSSA, vbarSSA
     ierr = verbPrintf(2, grid.com, 
        "  flag doSuperpose (option -super) NOT seen;  setting f(|v|) to 0.0, so NONE\n"
        "    of SIA velocity is removed from observed surface velocity ...\n");
@@ -231,7 +217,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = computeTFAFromBasalShear(invPhiMin,invPhiMax,invRegEps,invfieldsname); CHKERRQ(ierr);
   }
 
-  // write out stored inverse info for user's edification; mostly for debug
+  // write out stored inverse info; mostly for debug
   if (invfieldsSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
              "  writing various fields from inverse model computation to file %s ...\n",
@@ -301,6 +287,12 @@ PetscErrorCode IceModel::createInvFields() {
      "inverse-model-computed y component of basal shear stress", 
      "Pa", NULL); CHKERRQ(ierr);
 
+  inv.taubValidMask = new IceModelVec2;
+  ierr = inv.taubValidMask->create(grid, "taubMask", true); CHKERRQ(ierr);
+  ierr = inv.taubValidMask->set_attrs(
+     "inverse_output", 
+     "mask for validity of computed basal shear stress", NULL, NULL); CHKERRQ(ierr);
+
   inv.fofv = new IceModelVec2;
   ierr = inv.fofv->create(grid, "fofv", false);  // global
   ierr = inv.fofv->set_attrs(
@@ -350,6 +342,9 @@ PetscErrorCode IceModel::destroyInvFields() {
   ierr = inv.taubyComputed->destroy(); CHKERRQ(ierr);
   delete inv.taubyComputed;
   inv.taubyComputed = PETSC_NULL;
+  ierr = inv.taubValidMask->destroy(); CHKERRQ(ierr);
+  delete inv.taubValidMask;
+  inv.taubValidMask = PETSC_NULL;
   ierr = inv.fofv->destroy(); CHKERRQ(ierr);
   delete inv.fofv;
   inv.fofv = PETSC_NULL;
@@ -358,73 +353,6 @@ PetscErrorCode IceModel::destroyInvFields() {
   inv.oldtillphi = PETSC_NULL;
   delete inv.effPressureN;
   inv.effPressureN = PETSC_NULL;
-  return 0;
-}
-
-
-//! Write fields associated to inverse model to prepared NetCDF file.
-PetscErrorCode IceModel::writeInvFields(const char *filename) {
-  PetscErrorCode ierr;
-
-  // write the fields; velocities first
-  PetscScalar fill_ma  = 2.0 * secpera; // 2.0 m/s is the fill value; huge
-
-  ierr = inv.usIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  inv.usIn->write_in_glaciological_units = true;
-  ierr = inv.usIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.usIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
-
-  ierr = inv.vsIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  inv.vsIn->write_in_glaciological_units = true;
-  ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.vsIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
-
-  ierr = inv.usSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  inv.usSIA->write_in_glaciological_units = true;
-  ierr = inv.usSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = inv.vsSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  inv.vsSIA->write_in_glaciological_units = true;
-  ierr = inv.vsSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  bool oldwritegu = vubarSSA.write_in_glaciological_units;
-  ierr = vubarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vubarSSA.write_in_glaciological_units = true;
-  ierr = vubarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vubarSSA.write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
-  if (!oldwritegu)   vubarSSA.write_in_glaciological_units = false;
-
-  oldwritegu = vvbarSSA.write_in_glaciological_units;
-  ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vvbarSSA.write_in_glaciological_units = true;
-  ierr = vvbarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vvbarSSA.write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
-  if (!oldwritegu)   vvbarSSA.write_in_glaciological_units = false;
-
-  ierr = inv.velInMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.taubyComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.effPressureN->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = getMagnitudeOf2dVectorField(*(inv.taubxComputed),*(inv.taubyComputed),
-                                     vWork2d[0]); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("inverse_output",
-             "magnitude of basal shear stress applied at base of ice",
-	     "Pa", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = inv.fofv->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.fofv->write_text_attr(filename, "more_info", 
-          "value of 1 means velocity is all SIA, value of 0 means velocity is all SSA");
-          CHKERRQ(ierr);
-
-  ierr = inv.oldtillphi->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // write this IceModel field for comparison
-  ierr = vtillphi.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -448,15 +376,14 @@ PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
   ierr = inv.usIn->regrid(filename, lic, true); CHKERRQ(ierr);// it *is* critical
   ierr = inv.vsIn->regrid(filename, lic, true); CHKERRQ(ierr);
 
-  PetscScalar **us, **vs, **obsmask;
+  PetscScalar **us, **vs, **obsmask, **taubmask;
 
-  const PetscScalar UHUGE = 1.0; // 1.0 m/s is a huge velocity; _FillValue should exceed this
   ierr = inv.usIn->get_array(us);      CHKERRQ(ierr);
   ierr = inv.vsIn->get_array(vs);      CHKERRQ(ierr);
   ierr = inv.velInMask->get_array(obsmask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((PetscAbs(us[i][j]) < UHUGE) && (PetscAbs(vs[i][j]) < UHUGE)) {
+      if (inv.usIn->is_valid(us[i][j]) && inv.vsIn->is_valid(vs[i][j])) {
         obsmask[i][j] = 1.0;
       } else {
         obsmask[i][j] = 0.0;
@@ -467,13 +394,102 @@ PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
   ierr = inv.vsIn->end_access(); CHKERRQ(ierr);
   ierr = inv.velInMask->end_access(); CHKERRQ(ierr);
 
-  // may need stencil width on all:
+  // need stencil width on all:
   ierr = inv.usIn->beginGhostComm(); CHKERRQ(ierr);
   ierr = inv.vsIn->beginGhostComm(); CHKERRQ(ierr);
   ierr = inv.velInMask->beginGhostComm(); CHKERRQ(ierr);
   ierr = inv.usIn->endGhostComm(); CHKERRQ(ierr);
   ierr = inv.vsIn->endGhostComm(); CHKERRQ(ierr);
   ierr = inv.velInMask->endGhostComm(); CHKERRQ(ierr);
+
+  ierr = inv.velInMask->get_array(obsmask); CHKERRQ(ierr);
+  ierr = inv.taubValidMask->get_array(taubmask); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // taubValidMask is 1 if SSA differential operator has 9 pt stencil
+      //   for observed surface velocities
+      if (   (obsmask[i-1][j-1] > 0.5) && (obsmask[i][j-1] > 0.5) && (obsmask[i+1][j-1] > 0.5)
+          && (obsmask[i-1][j] > 0.5)   && (obsmask[i][j] > 0.5)   && (obsmask[i+1][j] > 0.5)
+          && (obsmask[i-1][j+1] > 0.5) && (obsmask[i][j+1] > 0.5) && (obsmask[i+1][j+1] > 0.5)
+          ) {
+        taubmask[i][j] = 1.0;
+      } else {
+        taubmask[i][j] = 0.0;
+      }
+    }
+  }
+  ierr = inv.velInMask->end_access(); CHKERRQ(ierr);
+  ierr = inv.taubValidMask->end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Write fields associated to inverse model to prepared NetCDF file.
+PetscErrorCode IceModel::writeInvFields(const char *filename) {
+  PetscErrorCode ierr;
+  PetscScalar fill_ma  = 2.0 * secpera; // 2.0 m/s is the fill value; huge
+
+  ierr = inv.usIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  inv.usIn->write_in_glaciological_units = true;
+  ierr = inv.usIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.usIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
+
+  ierr = inv.vsIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  inv.vsIn->write_in_glaciological_units = true;
+  ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.vsIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
+
+  ierr = inv.velInMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.usSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  inv.usSIA->write_in_glaciological_units = true;
+  ierr = inv.usSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.vsSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  inv.vsSIA->write_in_glaciological_units = true;
+  ierr = inv.vsSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  bool oldwritegu = vubarSSA.write_in_glaciological_units;
+  ierr = vubarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vubarSSA.write_in_glaciological_units = true;
+  ierr = vubarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vubarSSA.write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
+  if (!oldwritegu)   vubarSSA.write_in_glaciological_units = false;
+
+  oldwritegu = vvbarSSA.write_in_glaciological_units;
+  ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vvbarSSA.write_in_glaciological_units = true;
+  ierr = vvbarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vvbarSSA.write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
+  if (!oldwritegu)   vvbarSSA.write_in_glaciological_units = false;
+
+  ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.taubyComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.taubValidMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.effPressureN->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = getMagnitudeOf2dVectorField(*(inv.taubxComputed),*(inv.taubyComputed),
+                                     vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("inverse_output",
+             "magnitude of basal shear stress applied at base of ice",
+	     "Pa", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  ierr = inv.fofv->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.fofv->write_text_attr(filename, "more_info", 
+          "value of 1 means velocity is all SIA, value of 0 means velocity is all SSA");
+          CHKERRQ(ierr);
+
+  // input till phi
+  ierr = inv.oldtillphi->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // output till phi
+  ierr = vtillphi.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -721,7 +737,33 @@ PetscErrorCode IceModel::removeSIApart() {
   ierr = inv.fofv->end_access(); CHKERRQ(ierr);
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
-  
+
+  // SSA differential op will be applied; communicate
+  ierr = vubarSSA.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vvbarSSA.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vubarSSA.endGhostComm(); CHKERRQ(ierr);
+  ierr = vvbarSSA.endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Compute N, the effective pressure on the till, following basal model conventions.
+PetscErrorCode IceModel::getEffectivePressureForInverse() {
+  PetscErrorCode ierr;
+
+  PetscScalar **N, **H, **Hmelt;
+  ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
+  ierr = vH.get_array(H);  CHKERRQ(ierr);
+  ierr = vHmelt.get_array(Hmelt);  CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]); // iMbasal.cc
+    }
+  }
+  ierr = vH.end_access();  CHKERRQ(ierr);
+  ierr = vHmelt.end_access();  CHKERRQ(ierr);
+  ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   return 0;
 }
 
@@ -732,9 +774,9 @@ This is one of several routines called by invertSurfaceVelocities() for
 inverse model-based initialization.  See comments for that method.
 
 Normally computeTFAFromBasalShear() should be called to do this job with a
-regularization scheme.
+regularization scheme; see comments for that method.
 
-In this case we do something \e very simple, namely to divide magnitudes 
+Here we do something \e very simple, namely to divide magnitudes 
 to get the till friction angle:
 	\f[ \phi = \arctan\left(\frac{|\tau_b|}{N |\mathbf{V}|}\right).  \f]
 This formula applies in \f$\Omega_O\f$; elsewhere we set \f$\phi=\phi_i\f$.
@@ -747,19 +789,20 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
   const PetscReal q   = basal->pseudo_q,
                   Uth = basal->pseudo_u_threshold;  
 
-  PetscScalar **phi, **oldphi, **ub, **vb, **obsmask, **N, **taubx, **tauby;
+  PetscScalar **phi, **oldphi, **ub, **vb, **taubmask, **N, **fofv, **taubx, **tauby;
   ierr = vtillphi.get_array(phi);  CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ub);  CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vb);  CHKERRQ(ierr);
   ierr = inv.oldtillphi->get_array(oldphi);  CHKERRQ(ierr);
-  ierr = inv.velInMask->get_array(obsmask);  CHKERRQ(ierr);
+  ierr = inv.taubValidMask->get_array(taubmask);  CHKERRQ(ierr);
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
+  ierr = inv.fofv->get_array(fofv);  CHKERRQ(ierr);
   ierr = inv.taubxComputed->get_array(taubx); CHKERRQ(ierr);
   ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (obsmask[i][j] < 0.5) {
-        phi[i][j] = oldphi[i][j];
+      if (taubmask[i][j] < 0.5) {
+        phi[i][j] = oldphi[i][j];  // if no observed velocities, don't change phi
       } else {
         // compute                  U
         //              V = ------------------
@@ -772,7 +815,13 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
             magV = sqrt(magUsqr) / denom,
             magtaub = sqrt(PetscSqr(taubx[i][j]) + PetscSqr(tauby[i][j]));
         // note   tau_b = - mu N V   while   mu = tan(phi)
-        phi[i][j] = (180.0/pi) * atan(magtaub / (N[i][j] * magV));
+        const PetscScalar idealphi = (180.0/pi) * atan(magtaub / (N[i][j] * magV));
+        if (fofv[i][j] > 0.8) {  // if mostly SIA, gently turn off result and use old
+          const PetscScalar lambda = (fofv[i][j] - 0.8) / 0.2;  // in [0,1]
+          phi[i][j] =   (1.0 - lambda) * idealphi + lambda * oldphi[i][j];
+        } else {
+          phi[i][j] = idealphi;
+        }
       }
       if (phi[i][j] > phi_high)  phi[i][j] = phi_high;
       if (phi[i][j] < phi_low)   phi[i][j] = phi_low;
@@ -782,7 +831,8 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
   ierr = vubarSSA.end_access();  CHKERRQ(ierr);
   ierr = vvbarSSA.end_access();  CHKERRQ(ierr);
   ierr = inv.oldtillphi->end_access();  CHKERRQ(ierr);
-  ierr = inv.velInMask->end_access();  CHKERRQ(ierr);
+  ierr = inv.fofv->end_access();  CHKERRQ(ierr);
+  ierr = inv.taubValidMask->end_access();  CHKERRQ(ierr);
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   ierr = inv.taubxComputed->end_access(); CHKERRQ(ierr);
   ierr = inv.taubyComputed->end_access(); CHKERRQ(ierr);

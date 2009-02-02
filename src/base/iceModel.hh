@@ -90,6 +90,7 @@ struct InverseModelCtx {
                *fofv,
                *taubxComputed,
                *taubyComputed,
+               *taubValidMask,
                *effPressureN,
                *oldtillphi;
 };
@@ -347,11 +348,13 @@ protected:
                 PetscScalar &G, PetscScalar &Gprime);
   virtual PetscErrorCode computeFofVforInverse();
   virtual PetscErrorCode removeSIApart();
-  virtual PetscErrorCode computeBasalShearFromSSA();
-  virtual PetscErrorCode fillRegPoissonData(RegPoissonCtx &user);
   virtual PetscErrorCode getEffectivePressureForInverse();
   virtual PetscErrorCode computeTFAFromBasalShearNoReg(
                 const PetscScalar phi_low, const PetscScalar phi_high);
+
+  // see iMinverseMat.cc
+  virtual PetscErrorCode computeBasalShearFromSSA();
+  virtual PetscErrorCode fillRegPoissonData(RegPoissonCtx &user);
   virtual PetscErrorCode computeTFAFromBasalShear(
                 const PetscScalar phi_low, const PetscScalar phi_high,
                 const PetscScalar invRegEps, const char *filename);
