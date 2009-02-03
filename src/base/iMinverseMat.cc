@@ -21,19 +21,23 @@
 #include "iceModel.hh"
 
 
-/* THIS SOURCE FILE CONTAINS THE TWO MOST NONTRIVIAL ROUTINES IN THE INVERSE
-   MODEL COMPONENTS OF IceModel, NAMELY THE TWO WHICH BUILD Mat and SNES OBJECTS  */
+/* THIS SOURCE FILE CONTAINS THE TWO LEAST TRIVIAL ROUTINES IN THE INVERSE
+   MODEL COMPONENTS OF IceModel, NAMELY THE TWO WHICH BUILD PETSc Mat AND SNES
+   OBJECTS.  SEE src/base/iMinverse.cc FOR OTHER INVERSE MODEL-RELATED ROUTINES.  */
+
 
 //! Compute basal shear stress from a given sliding velocity using SSA equations.
 /*!
 This is one of several routines called by invertSurfaceVelocities() for
 inverse model-based initialization.  See comments for that method.
 
-We assume the basal sliding velocity is known.  Using ice thickness, ice surface
-elevation, and an ice temperature field, we use SSA equations to compute the
-basal shear stress.  There is no smoothing in this initial implementation.
+We assume the basal sliding velocity is known, though this ``basal'' velocity
+is usually the vertically-average horizontal velocity computed by subtracting the
+nonsliding SIA part of an observed surface velocity.
 
-In particular:
+Using ice thickness, ice surface elevation, and an ice temperature field, 
+we use SSA equations on the to compute the basal shear stress.  There is no 
+smoothing in this implementation.  In particular:
 \latexonly
 \def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
 \def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
@@ -50,16 +54,15 @@ In particular:
 Note \f$\nu\f$ is temperature-dependent.
 
 In this case the known field is \f$(u,v)\f$.  We are solving for 
-\f$\tau_b = (\tau_{(b)x},\tau_{(b)y})\f$.  The equations are solved everywhere 
-that there is positive thickness; at other points this procedure returns 
-\f$\tau_b = 0\f$.
+\f$\tau_b = (\tau_{(b)x},\tau_{(b)y})\f$.  The equations are solved everywhere, 
+regardless of whether there were observed surface velocities or even positive
+ice thickness.  Because the SSA differential operator only reads in a 9 point
+stencil, the condition (invMask == 2) determines whether the result of this
+routine could be meaningful.
 
 This procedure calls
-
 - assembleSSAMatrix(),
-
 - assembleSSARhs(),
-
 - computeEffectiveViscosity().
 
 It saves temporary versions of various flags modified by those routines, to
@@ -181,14 +184,13 @@ of a smoothness norm and the norm of the difference between the basal
 shear stress from the observed velocity and that from the pseudo-plastic 
 model using \f$\mu\f$. The smoothness norm is the square of the gradient of 
 the difference between \f$\mu\f$ and the value of \f$\tan\phi=\mu_i\f$
-for the IceModel state at the point the inverse model is invoked.
+for the IceModel state at the time the inverse model is invoked.
 
-This procedure should not be called in the purely plastic case, that is, 
-if PlasticBasalType::pseudo_plastic is \c FALSE.  Recall that 
-when <tt>pseudo_plastic</tt> is \c TRUE, the method PlasticBasalType::drag() 
-will compute the basal shear stress as
-    \f[ \tau_b
-           = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U} \f]
+This procedure should not be called in the purely plastic case.  It requires 
+PlasticBasalType::pseudo_plastic to be \c TRUE, which occurs if the 
+<tt>-pseudo_plastic_q</tt> option is used with a positive value.  Recall that 
+in this case the method PlasticBasalType::drag() computes the basal shear stress as
+    \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U} \f]
 where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$, \f$U=(u,v)\f$,
 \f$q=\f$ <tt>pseudo_q</tt>, and \f$U_{\mathtt{th}}=\f$ <tt>pseudo_u_threshold</tt>.
 Typical values for the constants are \f$q=0.25\f$ and \f$U_{\mathtt{th}} = 100\f$
@@ -207,81 +209,81 @@ function of overburden pressure \f$\rho g H\f$ and of modeled pore water pressur
 
 Let
 	\f[ \mathbf{V} = \frac{\mathbf{U}}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q}. \f]
-Pseudo-plastic till satisfies \f$\tau_b = - \tau_c \mathbf{V}\f$, by definition 
-from now on.  In this procedure, \f$\mathbf{V}\f$ is a known vector field (in the map-plane).
+Pseudo-plastic till satisfies \f$\tau_b = - \tau_c \mathbf{V}\f$.  In the current
+procedure, \f$\mathbf{V}\f$ is a known vector field (in the map-plane).
 
 We want to determine \f$\mu\f$ and \f$\tau_c\f$ given \f$\tau_b\f$, 
-\f$\mathbf{U}\f$ (thus \f$\mathbf{V}\f$), and \f$N\f$.  But according to the above relations 
+\f$\mathbf{U}\f$, and \f$N\f$.  But according to the above relations 
 \f$\tau_b\f$ and \f$\mathbf{V}\f$ are supposed to be proportional vectors, while in this 
 context they may not even be parallel.  (Otherwise we could merely divide in the 
-equation for pseudo-plastic till.)  Thus we first refine the goal to the 
+equation for pseudo-plastic till.  Which is essentially what is done by
+computeTFAFromBasalShearNoReg().)  Thus we first refine the goal to the 
 minimization of the functional
     \f[ I[\mu] = \frac{1}{2} \int_\Omega \left|\tau_b + \tau_c \mathbf{V}\right|^2\,dx\,dy 
             = \frac{1}{2} \int_\Omega \left|\tau_b + \mu N \mathbf{V}\right|^2\,dx\,dy.  \f]
-There is no regularization yet, but still we do not expect a minimum of zero.
+There is no regularization yet, but still we do not expect a minimum of zero because
+the vectors \f$\tau_b\f$ and \f$\mathbf{V}\f$ are not generally parallel.
 
-Even the minimization of \f$I[\mu]\f$ is probably too strong of a goal because the
+The minimization of \f$I[\mu]\f$ is presumably too strong of a goal because the
 input \f$\tau_b\f$ will have significant artifacts from the original observed
 surface velocity and from the application of the SSA differential operator.  Also there
 are large gaps in observed surface velocity and it follows that there will be large
 gaps in \f$\tau_b\f$ as well.  Furthermore the run which preceded the use of 
 this inverse model involved a map of till friction angle \f$\phi\f$, and thus we may
-assume there is an initial/existing field of values \f$\mu_i = \tan\phi_i\f$.
+assume there is an initial and existing field of values \f$\mu_i = \tan\phi_i\f$.
 
 Let \f$\Omega_O\f$ be the \e open set on which observed velocities are available,
 and thus \f$\tau_b\f$ is valid.  (The idea that observations are given
 an open set is an artifact of the mathematical formulation below.  The point 
 is that smooth functions defined on an open set can be differentiated on the
-same open set.)  In regions where there are \e no observed velocities
+same open set.  Here this amounts to the condition invMask == 2 because of the way
+invMask is constructed by readObservedSurfVels().)
+
+In regions where there are \e no observed velocities
 we want the result \f$\mu\f$ to deviate from \f$\mu_i\f$ only as necessary to 
 smoothly transition to meet the goal in \f$\Omega_O\f$.  Let \f$\chi_O\f$ be the
 function which is one on \f$\Omega_O\f$ and zero otherwise so \f$\chi_O\f$ 
-is the ``characteristic function'' of the open set \f$\Omega_O\f$.
-
-Assume the initial field \f$\mu_i\f$ is smooth.  We seek a smooth function
-\f$\mu\f$ which minimizes the regularized functional
+is the ``characteristic function'' of the open set \f$\Omega_O\f$.  Assume the 
+initial field \f$\mu_i\f$ is smooth.  We seek a smooth function \f$\mu\f$ which 
+minimizes the regularized functional
 	\f[ I_\epsilon[\mu] = \frac{1}{2} \int_{\Omega_O} \left|\tau_b
               + \mu N \mathbf{V}\right|^2\,dx\,dy 
            + \frac{1}{2} \int_{\Omega} \epsilon|\nabla(\mu - \mu_i)|^2\,dx\,dy  \f]
 This functional is quadratic in \f$\mu\f$.  It is positive definite on the space 
 of functions \f$\mu\f$ which have a square-integrable gradient and which go to
-\f$\mu_i\f$ at the boundary (i.e. \f$\mu-\mu_i \in H_0^1(\Omega)\f$).  The minimum
-condition for this functional is a linear equation for \f$\mu\f$.  One form
-of the equation, a Poisson-like PDE, is
-	\f[ - \epsilon \triangle (\mu - \mu_i) + N |\mathbf{V}|^2 \chi_O\, \mu
-	       = - N \tau_b \cdot \mathbf{V} \chi_O. \f]
-Let \f$\omega=\mu-\mu_i\f$.  The equation above is equivalent to
+\f$\mu_i\f$ at the boundary (i.e. \f$\mu-\mu_i \in H_0^1(\Omega)\f$).
+
+Let \f$\omega=\mu-\mu_i\f$.  The minimum condition for the functional \f$I_\epsilon[\mu]\f$
+is a linear equation for \f$\omega\f$.  It is the Poisson-like PDE
 	\f[ - \epsilon \triangle \omega + N |\mathbf{V}|^2 \chi_O\, \omega
 	       = - N (\tau_b \cdot \mathbf{V} - |\mathbf{V}|^2\,\mu_i) \chi_O. \f]
-This is the one we solve numerically, for \f$\omega\f$.  To recover the till
-friction angle: \f$\phi = \arctan\left(\omega + \mu_i\right)\f$.
+We solve this PDE numerically, for \f$\omega\f$, and recover the till
+friction angle by \f$\phi = \arctan\left(\omega + \mu_i\right)\f$.
 
-To solve the Poisson-like problem numerically we use a PETSc \c SNES object.  We
-write the equation in slightly abstracted form as 
-	\f[-\epsilon \triangle \mu + f(x,y) \mu = g(x,y).\f]
-This is a \e linear equation but nonetheless we use the general PETSc SNES methods
-for nonlinear problems.  We call fillRegPoissonMuData() to fill in the
-coefficients \f$f(x,y)\f$ and \f$g(x,y)\f$ from known values \f$\tau_b\f$ 
-and \f$\mathbf{U}\f$, using parameters <tt>pseudo_q</tt>, <tt>pseudo_u_threshold</tt>
-in PlasticBasalType.  Also the starting till friction angle \f$\phi_i\f$ giving
-\f$\mu_i\f$, and the fields in IceModel which determine the \f$N\f$, are needed
-to compute the coefficients.
+To solve the PDE numerically we use a PETSc \c SNES object.  We write the equation
+in slightly abstracted form as 
+	\f[-\epsilon \triangle \omega + f(x,y) \omega = g(x,y).\f]
+This is a \e linear equation but nonetheless we use the general, nonlinear PETSc
+SNES tools because they are convenient and tunable.  An example code in the PISM
+source, src/trypetsc/poisson.c, gives a standalone example of solving this kind
+of Poisson-like equation.  It is a verification code for our solution method.
 
-Note that \f$f(x,y) = g(x,y) = 0\f$ outside of \f$\Omega_O\f$.  Thus \f$f(x,y)\f$
-and \f$g(x,y)\f$ are generally discontinuous if \f$\Omega_O\f$ is nontrivial, 
-even if the other data of the problem are smooth.
+We call fillRegPoissonData() to fill in the coefficients \f$f(x,y)\f$ and \f$g(x,y)\f$
+from known values \f$\tau_b\f$, \f$\mathbf{V}\f$, \f$N\f$ and the mask which corresponds
+to \f$O\f$.  The starting till friction angle \f$\phi_i\f$ gives \f$\mu_i\f$.  Note
+that the fields in IceModel which determine the effective pressure \f$N\f$, namely \c vH
+and \c vHmelt, are needed to compute the coefficients; see getEffectivePressureForInverse().
+Also note that \f$f(x,y)\f$ and \f$g(x,y)\f$ are identically zero outside of \f$\Omega_O\f$.
+Thus \f$f(x,y)\f$ and \f$g(x,y)\f$ are generally discontinuous even if the other data
+of the problem are smooth.
 
-An example code in the PISM source, src/trypetsc/poisson.c, gives
-a standalone example of solving this kind of Poisson-like equation.  It also
-verifies our solution method.
-
-Regarding the size of the regularization constant \f$\epsilon>0\f$, we obviously
-expect smoother \f$\mu\f$ for larger values of \f$\epsilon\f$.
-In the functional (objective) above, the terms \f$\left|\tau_b + 
+Regarding the size of the regularization constant \f$\epsilon>0\f$, which is input
+argument \c invRegEps, we obviously expect smoother \f$\mu\f$ for larger values of
+\f$\epsilon\f$.  In the functional (objective) above, the terms \f$\left|\tau_b + 
 \mu N \mathbf{V}\right|^2\f$ and \f$\epsilon|\nabla(\mu - \mu_i)|^2\f$ are compared.
 Since \f$|\mathbf{V}|\f$ is of size one at locations where there is significant sliding
 but also some deformation, i.e. when \f$|\mathbf{V}| \sim U_{\mathtt{th}}\f$, a
-small amount of regularization corresponds to a value for \f$\epsilon\f$ satisfying
+small amount of regularization is a value for \f$\epsilon\f$ satisfying
 	\f[ \epsilon|\nabla(\mu - \mu_i)|^2 \ll \max\left\{|\tau_b|^2,\mu^2 N^2\right\}. \f]
 A scale for spatial variation of \f$\omega = \mu-\mu_i\f$ might be a change of one degree 
 in \f$\phi\f$ in one kilometer, or a change of \f$\delta \omega \approx 
@@ -290,13 +292,14 @@ in \f$\phi\f$ in one kilometer, or a change of \f$\delta \omega \approx
 If \f$10^5\f$ Pa = 1 bar is a scale for \f$\tau_b\f$ then, by the above standard, small
 regularization might be
         \f[ \epsilon|\nabla \omega|^2 \ll 10^{10}\, \text{Pa}^2, \f]
-Using the above estimate of spatial variation of \f$\omega\f$ as a size for the
+Using the above estimate of \f$\delta \omega/\delta x\f$ as a size for the
 gradient of \f$\omega\f$, we get
 	\f[ \epsilon \ll  \frac{10^{10}}{4 \times 10^{-10}} 
-	                  = 0.25 \times 10^{20}\,\text{Pa}^2\,\text{m}^2. \f]
+	                  \approx 10^{19}\,\text{Pa}^2\,\text{m}^2. \f]
 
-It may be fair to relate values for \f$\epsilon\f$ to the steady state
-of a notional diffusion (smoothing) process for \f$\omega = \mu-\mu_i\f$.
+It may also be fair to relate values for \f$\epsilon\f$ to the steady state
+of a notional diffusion (smoothing) process for \f$\omega = \mu-\mu_i\f$, but this idea
+has not been pursued, yet.
 
 The above is the whole story if the ice is grounded and there is positive
 ice thickness.  If a point is marked \c MASK_FLOATING or \c MASK_FLOATING_OCEAN0, 
@@ -304,13 +307,10 @@ however, or if a point is grounded but the ice thickness is zero, then
 \f$\mu=\mu_i\f$.
 
 Finally we enforce the limits \c phi_min, \c phi_max.
-
-This procedure reads ??? fields from the current IceModel state, namely ice 
-thickness \c vH, the mask \c vMask, ???
  */
 PetscErrorCode IceModel::computeTFAFromBasalShear(
                 const PetscScalar phi_low, const PetscScalar phi_high,
-                const PetscScalar invRegEps, const char *filename) {               
+                const PetscScalar invRegEps, const char *invfieldsfilename) {               
   PetscErrorCode ierr;
   
   // choose regularization; see guesses in comment at top
@@ -319,8 +319,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   user.da = grid.da2;
   user.grid = &grid;
 
-  //ierr = DACreateGlobalVector(user.da,&user.f);CHKERRQ(ierr);
-  //ierr = VecDuplicate(user.f,&user.g);CHKERRQ(ierr);
+  // space for f(x,y) and g(x,y)
   user.f = new IceModelVec2;
   ierr = user.f->create(grid, "f_invmodel", false); CHKERRQ(ierr);
   user.g = new IceModelVec2;
@@ -329,16 +328,16 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   // main added content relative to ex5: fill nontrivial coeffs f,g for reg version
   ierr = fillRegPoissonData(user); CHKERRQ(ierr);
 
-  // write to file if given
-  if (strlen(filename) > 0) {
+  // write f,g to file, if a filename is given
+  if (strlen(invfieldsfilename) > 0) {
     ierr = user.f->set_attrs(
        "inverse_output", "f(x,y), coeff in Poisson-like eqn for regularizing mu",
        NULL, NULL); CHKERRQ(ierr);
-    ierr = user.f->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = user.f->write(invfieldsfilename, NC_FLOAT); CHKERRQ(ierr);
     ierr = user.g->set_attrs(
        "inverse_output", "g(x,y), coeff in Poisson-like eqn for regularizing mu",
        NULL, NULL); CHKERRQ(ierr);
-    ierr = user.g->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = user.g->write(invfieldsfilename, NC_FLOAT); CHKERRQ(ierr);
   }
 
   // create appropriate SNES, Mat
@@ -354,16 +353,16 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)RegPoissonFunctionLocal);CHKERRQ(ierr);
-  ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);  // no Jacobian!!
+  ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);  // FIXME?: no Jacobian!!
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
   ierr = VecSet(x,0.0); CHKERRQ(ierr); // initial guess \omega = 0 is \mu = \mu_i
 
-  // solve the linear problem as though it is nonlinear!
+  // solve the linear problem as though it is nonlinear
   ierr = SNESSolve(snes, PETSC_NULL, x);CHKERRQ(ierr);
 
-  // some feedback appropriate
+  // some feedback
   PetscReal resnorm;
   ierr = SNESGetIterationNumber(snes,&its);CHKERRQ(ierr); 
   ierr = VecNorm(r,NORM_INFINITY,&resnorm); CHKERRQ(ierr);
@@ -380,7 +379,6 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar muinitial = tan((pi/180.0) * oldphi[i][j]);
       phi[i][j] = (180.0/pi) * atan(result[i][j] + muinitial);
-      // enforce phi_min, phi_max:
       if (phi[i][j] > phi_high)  phi[i][j] = phi_high;
       if (phi[i][j] < phi_low)   phi[i][j] = phi_low;
     }
@@ -404,13 +402,12 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
 PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   PetscErrorCode ierr;
 
-  PetscScalar **oldphi, **obsmask, **N, **taubx, **tauby, **ub, **vb, 
+  PetscScalar **oldphi, **imask, **N, **taubx, **tauby, **ub, **vb, 
               **ff, **gg;
-  const PetscReal q   = basal->pseudo_q,
-                  Uth = basal->pseudo_u_threshold;
+  PetscScalar magVsqr, V_x, V_y;
 
   ierr = inv.oldtillphi->get_array(oldphi);  CHKERRQ(ierr);
-  ierr = inv.velInMask->get_array(obsmask);  CHKERRQ(ierr);
+  ierr = inv.invMask->get_array(imask);  CHKERRQ(ierr);
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
   ierr = inv.taubxComputed->get_array(taubx); CHKERRQ(ierr);
   ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
@@ -420,27 +417,17 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = user.g->get_array(gg); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (obsmask[i][j] < 0.5) { // coeffs f,g have factor \chi_O
+      if (imask[i][j] < 1.5) { // coeffs f,g have factor \chi_O; stencil width needed to be in O
         ff[i][j] = 0.0;
         gg[i][j] = 0.0;
       } else {
-        // compute                  U
-        //              V = ------------------
-        //                  |U|^{1-q} U_th^q
-        // but regularized: |U|^2 --> |U|^2 + (0.01 m/a)^2
+        ierr = getVfromUforInverse(ub[i][j], vb[i][j], V_x, V_y, magVsqr); CHKERRQ(ierr);
         const PetscScalar 
-              delta2 = PetscSqr(0.01/secpera),
-              U_x = ub[i][j],
-              U_y = vb[i][j],
-              denom = pow(delta2 + PetscSqr(U_x)+PetscSqr(U_y),(1.0-q)/2.0) * pow(Uth,q),
-              V_x = U_x / denom,
-              V_y = U_y / denom,
-              magVsqr = PetscSqr(V_x) + PetscSqr(V_y),
               taubdotV = taubx[i][j] * V_x + tauby[i][j] * V_y,
               muinitial = tan((pi/180.0) * oldphi[i][j]);
         // f(x,y) = + N |V|^2 \chi_O
         ff[i][j] = N[i][j] * magVsqr;
-        // g(x,y) = - N (tau_b . V - |V|^2 \mu_i) \chi_O         [. = dot product]
+        // g(x,y) = - N (tau_b . V - |V|^2 \mu_i) \chi_O
         gg[i][j] = - N[i][j] * (taubdotV - magVsqr * muinitial);
       }
     }
@@ -448,7 +435,7 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = user.f->end_access(); CHKERRQ(ierr);
   ierr = user.g->end_access(); CHKERRQ(ierr);
   ierr = inv.oldtillphi->end_access();  CHKERRQ(ierr);
-  ierr = inv.velInMask->end_access();  CHKERRQ(ierr);
+  ierr = inv.invMask->end_access();  CHKERRQ(ierr);
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   ierr = inv.taubxComputed->end_access(); CHKERRQ(ierr);
   ierr = inv.taubyComputed->end_access(); CHKERRQ(ierr);

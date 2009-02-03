@@ -82,15 +82,15 @@ struct SSASNESCtx {
 // two structs needed in iMinverse.cc, iMinverseMat.cc
 struct InverseModelCtx {
   // all the fields involved in the inverse model which determines till friction angle phi
-  IceModelVec2 *usIn,
-               *vsIn,
-               *velInMask,
+  IceModelVec2 *usIn,     // x component of observed surf vel
+               *vsIn,     // y component of observed surf vel
+               *invMask,  // either 0, 1, or 2; 0 if no valid velocity, 1 if valid, 2 if valid
+                          // and stencil width
                *usSIA,
                *vsSIA, 
                *fofv,
                *taubxComputed,
                *taubyComputed,
-               *taubValidMask,
                *effPressureN,
                *oldtillphi;
 };
@@ -349,6 +349,9 @@ protected:
   virtual PetscErrorCode computeFofVforInverse();
   virtual PetscErrorCode removeSIApart();
   virtual PetscErrorCode getEffectivePressureForInverse();
+  virtual PetscErrorCode getVfromUforInverse(
+                const PetscScalar U_x, const PetscScalar U_y,
+                PetscScalar &V_x, PetscScalar &V_y, PetscScalar &magVsqr);
   virtual PetscErrorCode computeTFAFromBasalShearNoReg(
                 const PetscScalar phi_low, const PetscScalar phi_high);
 
@@ -357,7 +360,7 @@ protected:
   virtual PetscErrorCode fillRegPoissonData(RegPoissonCtx &user);
   virtual PetscErrorCode computeTFAFromBasalShear(
                 const PetscScalar phi_low, const PetscScalar phi_high,
-                const PetscScalar invRegEps, const char *filename);
+                const PetscScalar invRegEps, const char *invfieldsfilename);
 
   // see iMIO.cc
   virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);

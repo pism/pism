@@ -22,19 +22,10 @@
 #include "iceModelVec.hh"
 #include "iceModel.hh"
 
+/*  for example usage see comments in examples/pst/convert_to_inv.sh; note 
+P0A.nc is at ftp://ftp.gi.alaska.edu/pub/bueler/P0A.nc  */
+
 /*
-example usage:
-
-START from P0A.nc in examples/pst/pst.sh; e.g. at ftp://ftp.gi.alaska.edu/pub/bueler/P0A.nc :
-
-$ pisms -pst -P1 -if P0A.nc -y 100 -f3d -pseudo_plastic_q 0.25 -o P1earlypseudo.nc
-
-NOW USE NCO to convert units on uvelsurf,vvelsurf; saved in m a-1, needed in m s-1;
-also build a "valid observed surface velocity" mask:
-
-$ cd examples/pst/
-$ ./convert_to_inv.sh
-
 INVERSE MODEL; with and w/o regularization:
 
 $ pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
@@ -58,16 +49,17 @@ Expects to find variables \c uvelsurf and \c vvelsurf, namely x and y components
 of observed surface velocity, in NetCDF file \c filename.  Calls 
 readObservedSurfVels() for this purpose.  If found, reads them.
 
-Enough space for nine IceModelVec2's is allocated.  In particular,
+Enough space for ten IceModelVec2's is allocated.  In particular,
 this procedure creates and destroys the InverseModelCtx (instance IceModel::inv) members.
 
 The first goal is to construct a mask showing where velocities are present; this is
 also done by readObservedSurfVels().  A point is marked as not having a valid
-observed velocity if either x or y component has value outside the valid range
+observed velocity (=0) if either x or y component has value outside the valid range
 specified in the NetCDF file for that variable.  (Thus the creator of the input file
 is in charge of setting \c valid_range or \c valid_min and \c valid_max attributes
 for both variables \c uvelsurf and \c vvelsurf.  \c _FillValue, if set, should
-be outside the valid range.)
+be outside the valid range.)  A valid point is marked as 2 if there is stencil width for
+differentiating the observed velocity, and 1 otherwise.
 
 Then calls computeSIASurfaceVelocity() to get the value of the surface
 velocity which would be computed from SIA flow model for the current
@@ -253,11 +245,11 @@ PetscErrorCode IceModel::createInvFields() {
   // only needed for display message at read:
   ierr = inv.vsIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  inv.velInMask = new IceModelVec2;
-  ierr = inv.velInMask->create(grid, "velobsMask", true); CHKERRQ(ierr);
-  ierr = inv.velInMask->set_attrs(
-     "inverse_input", 
-     "mask for presence of velocity of ice at ice surface", NULL, NULL); CHKERRQ(ierr);
+  inv.invMask = new IceModelVec2;
+  ierr = inv.invMask->create(grid, "invMask", true); CHKERRQ(ierr);
+  ierr = inv.invMask->set_attrs(
+     "inverse_output", 
+     "mask for presence of observed velocity at ice surface", NULL, NULL); CHKERRQ(ierr);
 
   inv.usSIA = new IceModelVec2;
   ierr = inv.usSIA->create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
@@ -286,12 +278,6 @@ PetscErrorCode IceModel::createInvFields() {
      "inverse_output",
      "inverse-model-computed y component of basal shear stress", 
      "Pa", NULL); CHKERRQ(ierr);
-
-  inv.taubValidMask = new IceModelVec2;
-  ierr = inv.taubValidMask->create(grid, "taubMask", true); CHKERRQ(ierr);
-  ierr = inv.taubValidMask->set_attrs(
-     "inverse_output", 
-     "mask for validity of computed basal shear stress", NULL, NULL); CHKERRQ(ierr);
 
   inv.fofv = new IceModelVec2;
   ierr = inv.fofv->create(grid, "fofv", false);  // global
@@ -327,9 +313,9 @@ PetscErrorCode IceModel::destroyInvFields() {
   ierr = inv.vsIn->destroy(); CHKERRQ(ierr);
   delete inv.vsIn;
   inv.vsIn = PETSC_NULL;
-  ierr = inv.velInMask->destroy(); CHKERRQ(ierr);
-  delete inv.velInMask;
-  inv.velInMask = PETSC_NULL;
+  ierr = inv.invMask->destroy(); CHKERRQ(ierr);
+  delete inv.invMask;
+  inv.invMask = PETSC_NULL;
   ierr = inv.usSIA->destroy(); CHKERRQ(ierr);
   delete inv.usSIA;
   inv.usSIA = PETSC_NULL;
@@ -342,9 +328,6 @@ PetscErrorCode IceModel::destroyInvFields() {
   ierr = inv.taubyComputed->destroy(); CHKERRQ(ierr);
   delete inv.taubyComputed;
   inv.taubyComputed = PETSC_NULL;
-  ierr = inv.taubValidMask->destroy(); CHKERRQ(ierr);
-  delete inv.taubValidMask;
-  inv.taubValidMask = PETSC_NULL;
   ierr = inv.fofv->destroy(); CHKERRQ(ierr);
   delete inv.fofv;
   inv.fofv = PETSC_NULL;
@@ -357,7 +340,19 @@ PetscErrorCode IceModel::destroyInvFields() {
 }
 
 
-//! Read observed surface velocities and form mask which is 1 where observed velocity is present and zero otherwise.
+//! Read observed surface velocities and build mask for validity.
+/*!
+Mask is 0 where no observed velocity is present, and 1 or 2 where it is present.
+Mask is 2 when a 9 point stencil of valid velocities surrounds the point, so that
+the SSA differential operator can be applied.
+
+Validity is determined entirely by querying the input file.  The input file
+should have x,y components of velocity called "uvelsurf", "vvelsurf".  These
+variables should each have either valid_range or both valid_min and valid_max.
+The mask is set to zero where the value is outside of this range.  Presumably
+the invalid points have a value which matches _FillValue for that variable, but
+all that is required is that the fill value is outside the valid range.
+ */
 PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
   PetscErrorCode ierr;
   bool file_exists = false; // check whether file exists
@@ -372,60 +367,59 @@ PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
   LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
-  // read in by regridding; checks for existence of file and variable in file
+  // read in by regridding; checks for existence of file and variable in file,
+  //   and reads valid_ attributes
   ierr = inv.usIn->regrid(filename, lic, true); CHKERRQ(ierr);// it *is* critical
   ierr = inv.vsIn->regrid(filename, lic, true); CHKERRQ(ierr);
 
-  PetscScalar **us, **vs, **obsmask, **taubmask;
+  PetscScalar **us, **vs, **imask;
 
   ierr = inv.usIn->get_array(us);      CHKERRQ(ierr);
   ierr = inv.vsIn->get_array(vs);      CHKERRQ(ierr);
-  ierr = inv.velInMask->get_array(obsmask); CHKERRQ(ierr);
+  ierr = inv.invMask->get_array(imask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (inv.usIn->is_valid(us[i][j]) && inv.vsIn->is_valid(vs[i][j])) {
-        obsmask[i][j] = 1.0;
+        imask[i][j] = 1.0;
       } else {
-        obsmask[i][j] = 0.0;
+        imask[i][j] = 0.0;
       }
     }
   }
   ierr = inv.usIn->end_access(); CHKERRQ(ierr);
   ierr = inv.vsIn->end_access(); CHKERRQ(ierr);
-  ierr = inv.velInMask->end_access(); CHKERRQ(ierr);
+  ierr = inv.invMask->end_access(); CHKERRQ(ierr);
 
   // need stencil width on all:
   ierr = inv.usIn->beginGhostComm(); CHKERRQ(ierr);
   ierr = inv.vsIn->beginGhostComm(); CHKERRQ(ierr);
-  ierr = inv.velInMask->beginGhostComm(); CHKERRQ(ierr);
+  ierr = inv.invMask->beginGhostComm(); CHKERRQ(ierr);
   ierr = inv.usIn->endGhostComm(); CHKERRQ(ierr);
   ierr = inv.vsIn->endGhostComm(); CHKERRQ(ierr);
-  ierr = inv.velInMask->endGhostComm(); CHKERRQ(ierr);
+  ierr = inv.invMask->endGhostComm(); CHKERRQ(ierr);
 
-  ierr = inv.velInMask->get_array(obsmask); CHKERRQ(ierr);
-  ierr = inv.taubValidMask->get_array(taubmask); CHKERRQ(ierr);
+  ierr = inv.invMask->get_array(imask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // taubValidMask is 1 if SSA differential operator has 9 pt stencil
-      //   for observed surface velocities
-      if (   (obsmask[i-1][j-1] > 0.5) && (obsmask[i][j-1] > 0.5) && (obsmask[i+1][j-1] > 0.5)
-          && (obsmask[i-1][j] > 0.5)   && (obsmask[i][j] > 0.5)   && (obsmask[i+1][j] > 0.5)
-          && (obsmask[i-1][j+1] > 0.5) && (obsmask[i][j+1] > 0.5) && (obsmask[i+1][j+1] > 0.5)
-          ) {
-        taubmask[i][j] = 1.0;
-      } else {
-        taubmask[i][j] = 0.0;
+      // invMask is 2 if SSA differential operator can differentiate 9 point stencil
+      if (    (imask[i-1][j-1] > 0.5) && (imask[i][j-1] > 0.5) && (imask[i+1][j-1] > 0.5)
+           && (imask[i-1][j] > 0.5)   && (imask[i][j] > 0.5)   && (imask[i+1][j] > 0.5)
+           && (imask[i-1][j+1] > 0.5) && (imask[i][j+1] > 0.5) && (imask[i+1][j+1] > 0.5)  ) {
+        imask[i][j] = 2.0;
       }
     }
   }
-  ierr = inv.velInMask->end_access(); CHKERRQ(ierr);
-  ierr = inv.taubValidMask->end_access(); CHKERRQ(ierr);
+  ierr = inv.invMask->end_access(); CHKERRQ(ierr);
+
+  // again, for the mask
+  ierr = inv.invMask->beginGhostComm(); CHKERRQ(ierr);
+  ierr = inv.invMask->endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-//! Write fields associated to inverse model to prepared NetCDF file.
+//! Write fields associated to inverse model to a prepared NetCDF file.
 PetscErrorCode IceModel::writeInvFields(const char *filename) {
   PetscErrorCode ierr;
   PetscScalar fill_ma  = 2.0 * secpera; // 2.0 m/s is the fill value; huge
@@ -440,7 +434,7 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = inv.vsIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
 
-  ierr = inv.velInMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.invMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = inv.usSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.usSIA->write_in_glaciological_units = true;
@@ -467,8 +461,6 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = inv.taubyComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = inv.taubValidMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = inv.effPressureN->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -635,13 +627,13 @@ We iterate Newton's method to \f$10^{-12}\f$ relative tolerance and warn on nonc
  */
 PetscErrorCode IceModel::computeFofVforInverse() {
   PetscErrorCode ierr;
-  PetscScalar **us, **vs, **usSIA, **vsSIA, **obsmask, **H, **f;
+  PetscScalar **us, **vs, **usSIA, **vsSIA, **imask, **H, **f;
 
   ierr = inv.usIn->get_array(us);    CHKERRQ(ierr);
   ierr = inv.vsIn->get_array(vs);    CHKERRQ(ierr);
   ierr = inv.usSIA->get_array(usSIA); CHKERRQ(ierr);
   ierr = inv.vsSIA->get_array(vsSIA); CHKERRQ(ierr);
-  ierr = inv.velInMask->get_array(obsmask); CHKERRQ(ierr);
+  ierr = inv.invMask->get_array(imask); CHKERRQ(ierr);
   ierr = vH.get_array(H);    CHKERRQ(ierr);
   ierr = inv.fofv->get_array(f);     CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -652,7 +644,7 @@ PetscErrorCode IceModel::computeFofVforInverse() {
       } else if (USIAsqr < PetscSqr(1.0/secpera)) {
         f[i][j] = 0.0;  // treat all observed velocity as sliding if ice is present
                         //   but there is almost no surface velocity
-      } else if (obsmask[i][j] < 0.5) {
+      } else if (imask[i][j] < 0.5) {
         f[i][j] = 1.0;  // treat all as SIA, but should not matter since SSA not applied there
       } else {
         // Newton's method on norm equation from convex combination using f
@@ -688,7 +680,7 @@ PetscErrorCode IceModel::computeFofVforInverse() {
   ierr = inv.usSIA->end_access(); CHKERRQ(ierr);
   ierr = inv.vsSIA->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access();    CHKERRQ(ierr);
-  ierr = inv.velInMask->end_access(); CHKERRQ(ierr);
+  ierr = inv.invMask->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -768,6 +760,33 @@ PetscErrorCode IceModel::getEffectivePressureForInverse() {
 }
 
 
+//! Compute normalized velocity appropriate to inverse model.
+/*!
+Computes
+  \f[ V = \frac{U}{|U|^{1-q} U_{th}^q} \f]
+where \f$q=\f$ \c basal->pseudo_q and \f$U_{th}=\f$ \c basal->pseudo_u_threshold.
+But regularizes the denominator by the replacement
+  \f[ |U| \to \left(|U|^2 + (0.01 \text{ m/a})^2\right)^{1/2}. \f]
+   
+Used by computeTFAFromBasalShear() and computeTFAFromBasalShearNoReg(); see
+comments for those methods.
+ */
+PetscErrorCode IceModel::getVfromUforInverse(
+                  const PetscScalar U_x, const PetscScalar U_y,
+                  PetscScalar &V_x, PetscScalar &V_y, PetscScalar &magVsqr) {
+  const PetscScalar
+              q       = basal->pseudo_q,
+              Uth     = basal->pseudo_u_threshold,
+              delta2  = PetscSqr(0.01/secpera),
+              regUsqr = delta2 + PetscSqr(U_x)+ PetscSqr(U_y),
+              denom   = pow(regUsqr, (1.0 - q) / 2.0) * pow(Uth,q);
+  V_x = U_x / denom;
+  V_y = U_y / denom;
+  magVsqr = PetscSqr(V_x) + PetscSqr(V_y);
+  return 0;
+}
+
+
 //! Compute the till friction angle for the given basal shear stress by minimizing an un-regularized objective.
 /*!
 This is one of several routines called by invertSurfaceVelocities() for
@@ -780,39 +799,34 @@ Here we do something \e very simple, namely to divide magnitudes
 to get the till friction angle:
 	\f[ \phi = \arctan\left(\frac{|\tau_b|}{N |\mathbf{V}|}\right).  \f]
 This formula applies in \f$\Omega_O\f$; elsewhere we set \f$\phi=\phi_i\f$.
+This calculation is only done where there is stencil width so that the SSA differential
+operator could actually comput the basal shear stress \f$\tau_b\f$.
 
 Finally we enforce the limits \c phi_min, \c phi_max.
  */
 PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
                            const PetscScalar phi_low, const PetscScalar phi_high) {               
   PetscErrorCode ierr;
-  const PetscReal q   = basal->pseudo_q,
-                  Uth = basal->pseudo_u_threshold;  
+  PetscScalar    magVsqr, junk1, junk2;
 
-  PetscScalar **phi, **oldphi, **ub, **vb, **taubmask, **N, **fofv, **taubx, **tauby;
+  PetscScalar **phi, **oldphi, **ub, **vb, **imask, **N, **fofv, **taubx, **tauby;
   ierr = vtillphi.get_array(phi);  CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ub);  CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vb);  CHKERRQ(ierr);
   ierr = inv.oldtillphi->get_array(oldphi);  CHKERRQ(ierr);
-  ierr = inv.taubValidMask->get_array(taubmask);  CHKERRQ(ierr);
+  ierr = inv.invMask->get_array(imask);  CHKERRQ(ierr);
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
   ierr = inv.fofv->get_array(fofv);  CHKERRQ(ierr);
   ierr = inv.taubxComputed->get_array(taubx); CHKERRQ(ierr);
   ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (taubmask[i][j] < 0.5) {
-        phi[i][j] = oldphi[i][j];  // if no observed velocities, don't change phi
+      if (imask[i][j] < 1.5) {
+        phi[i][j] = oldphi[i][j];  // no observed velocities or no stencil width
       } else {
-        // compute                  U
-        //              V = ------------------
-        //                  |U|^{1-q} U_th^q
+        ierr = getVfromUforInverse(ub[i][j], vb[i][j], junk1, junk2, magVsqr); CHKERRQ(ierr);
         const PetscScalar
-            deltasqr = PetscSqr(0.01/secpera),
-            magUsqr = PetscSqr(ub[i][j]) + PetscSqr(vb[i][j]),
-            // regularized: |U|^2 --> (0.01 m/a)^2 + |U|^2
-            denom = pow(deltasqr + magUsqr,(1.0-q)/2.0) * pow(Uth,q),
-            magV = sqrt(magUsqr) / denom,
+            magV    = sqrt(magVsqr),
             magtaub = sqrt(PetscSqr(taubx[i][j]) + PetscSqr(tauby[i][j]));
         // note   tau_b = - mu N V   while   mu = tan(phi)
         const PetscScalar idealphi = (180.0/pi) * atan(magtaub / (N[i][j] * magV));
@@ -832,7 +846,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
   ierr = vvbarSSA.end_access();  CHKERRQ(ierr);
   ierr = inv.oldtillphi->end_access();  CHKERRQ(ierr);
   ierr = inv.fofv->end_access();  CHKERRQ(ierr);
-  ierr = inv.taubValidMask->end_access();  CHKERRQ(ierr);
+  ierr = inv.invMask->end_access();  CHKERRQ(ierr);
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   ierr = inv.taubxComputed->end_access(); CHKERRQ(ierr);
   ierr = inv.taubyComputed->end_access(); CHKERRQ(ierr);

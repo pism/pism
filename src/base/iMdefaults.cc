@@ -88,7 +88,8 @@ const PetscTruth  DEFAULT_USE_CONSTANT_HARDNESS_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA = PETSC_FALSE;
 const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
 const PetscScalar DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-const PetscScalar DEFAULT_MINH_SSA = 5.0;  
+//const PetscScalar DEFAULT_MINH_SSA = 5.0;  
+const PetscScalar DEFAULT_MINH_SSA = 50.0;  
           // m; minimum thickness (for SSA velocity computation) at which 
           // NuH switches from vertical integral to constant value
           // this value strongly related to calving front

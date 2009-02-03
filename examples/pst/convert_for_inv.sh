@@ -4,14 +4,19 @@
 #   and the associated inverse model
 
 # generate INFILE below by running pst.sh to get P0A.nc, and then:
-#   $  pisms -pst -P1 -if P0A.nc -y 100 -f3d -pseudo_plastic_q 0.25 -o P1earlypseudo.nc
+#   $  pisms -pst -P1 -if P0A.nc -y 1 -pseudo_plastic_q 0.25 -o P1earlypseudo.nc # writes a tillphi
+#   $  pismr -ssa -super -plastic -pseudo_plastic_q 0.25 -eta -if P1earlypseudo.nc -y 199 -f3d -o basestate.nc
 # then do:
 #   $  ./convert_for_inv.sh
-#   $  pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 \
-#        -surf_vel_to_phi inv_me.nc -inv_write_fields foo.nc
+# and try inverse method versus no inverse:
+#   $  pismr -ssa -super -plastic -pseudo_plastic_q 0.25 -eta -if inv_me.nc -y 100 \
+#   >   -surf_vel_to_phi inv_me.nc -inv_reg_eps 0.0 -inv_write_fields ifields_noreg.nc -o result_noreg.nc
+#   $  pismr -ssa -super -plastic -pseudo_plastic_q 0.25 -eta -if inv_me.nc -y 100 \
+#   >   -o result_noinv.nc
+
 # also see comments in src/base/iMinverse.cc
 
-INFILE=P1earlypseudo.nc
+INFILE=basestate.nc
 OUTFILE=inv_me.nc
 
 cp $INFILE $OUTFILE 
