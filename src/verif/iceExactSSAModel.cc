@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,6 +51,17 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   ierr = verbPrintf(2,grid.com,"initializing Test %c ... \n",test); CHKERRQ(ierr);
 
   // input file not allowed
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
+                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", inFile,
+                               PETSC_MAX_PATH_LEN, &bifFileSet); CHKERRQ(ierr);
+  if ((inFileSet == PETSC_TRUE) || (bifFileSet == PETSC_TRUE)) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM input file not allowed for initialization of IceExactSSAModel.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+  // OLD OPTIONS:
   ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,

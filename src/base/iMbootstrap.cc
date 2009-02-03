@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2009 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -27,7 +27,7 @@
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
-This procedure is called when option <tt>-bif</tt> is used.
+This procedure is called when option <tt>-boot_from</tt> is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
@@ -153,7 +153,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // report on resulting computational box, rescale grid, actually create
   //   local interpolation context    
   ierr = verbPrintf(2, grid.com, 
-         "  rescaling computational box for ice from defaults, -bif file, and\n"
+         "  rescaling computational box for ice from defaults, -boot_from file, and\n"
          "    user options to dimensions:\n"
          "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); 
@@ -163,7 +163,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   
   // now we have enough to actually create the lic
   // IceModel::bootstrapLIC is now a valid pointer which can be reused to
-  // get more info out of the the -bif file
+  // get more info out of the the -boot_from file
   bootstrapLIC = new LocalInterpCtx(g, NULL, NULL, grid);
 
   ierr = nc.read_polar_stereographic(psParams.svlfp,

@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -391,8 +391,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
   PetscTruth inFileSet, bootFileSet;
 
   // check if input file was used
-  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &inFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bootFileSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &inFileSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &bootFileSet); CHKERRQ(ierr);
   infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
 
   ierr = verbPrintf(2,grid.com, 
@@ -401,7 +401,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
       mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
   if (infileused) {
     ierr = verbPrintf(1,grid.com, 
-       "IceMISMIPModel: -if or -bif option used; not using"
+       "IceMISMIPModel: -i or -boot_from option used; not using"
        "  certain MISMIP formulas to initialize\n");
        CHKERRQ(ierr);
   } else { // usual case: initialize grid and variables from MISMIP formulas

@@ -28,6 +28,8 @@ public:
   // dimension lengths
   int t_len, x_len, y_len, z_len, zb_len;
   double time,			//!< current time (seconds)
+    x0,				//!< x-coordinate of the grid center
+    y0,				//!< y-coordinate of the grid center
     x_min,			//!< [x_min, x_max] is the X extent of the grid
     x_max,			//!< [x_min, x_max] is the X extent of the grid
     y_min,			//!< [y_min, y_max] is the Y extent of the grid

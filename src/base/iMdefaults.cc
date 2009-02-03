@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -135,10 +135,10 @@ The order of precedence for setting parameters in PISM is:
     IceModel (or a derived class) is constructed.  setFromOptions() is virtual but should 
     usually be called first if a derived class has a setFromOptions.
 
-The input file (\c -if or \c -bif) will not contain (in Feb 2008 version of PISM) any values 
+The input file (\c -i or \c -boot_from) will not contain (in Feb 2008 version of PISM) any values 
 for the quantities which are set in setDefaults().  (There are parameters which can be set at
-the command line or by the input file, like \c grid.Mx.  For \c -if the data file has the final
-word but for -bif the command line options have the final word.)
+the command line or by the input file, like \c grid.Mx.  For \c -i the data file has the final
+word but for -boot_from the command line options have the final word.)
  
 The defaults should be reasonable values under all circumstances or they should indicate 
 missing values in some manner.

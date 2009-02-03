@@ -454,7 +454,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = createVecs(); CHKERRQ(ierr);
   
   // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
-  // which came from -if file, _unless_ -ys set by user
+  // which came from -i file, _unless_ -ys set by user
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
 
   // 2-D mapping
@@ -475,7 +475,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
     double flag;
     stat = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", 1, &flag);
     if (stat == 0)
-      have_ssa_velocities = flag;
+      have_ssa_velocities = (int)flag;
   }
 
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
@@ -525,7 +525,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
 /*!
 For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from 
-the NetCDF file specified by <tt>-regrid</tt>.
+the NetCDF file specified by <tt>-regrid_from</tt>.
 
 The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3 dimensional 
 quantities \c tau3, \c T3, \c Tb3.  This is consistent with one standard purpose of 

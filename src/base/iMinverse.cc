@@ -28,10 +28,10 @@ P0A.nc is at ftp://ftp.gi.alaska.edu/pub/bueler/P0A.nc  */
 /*
 INVERSE MODEL; with and w/o regularization:
 
-$ pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
+$ pismr -ssa -super -plastic -i inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
    -inv_write_fields foo.nc -o inv_result.nc
 
-$ pismr -ssa -super -plastic -if inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
+$ pismr -ssa -super -plastic -i inv_me.nc -y 1 -pseudo_plastic_q 0.25 -surf_vel_to_phi inv_me.nc \
    -inv_write_fields foo_noreg.nc -inv_reg_eps 0.0 -o inv_result_noreg.nc
 
 INVERSE MODEL options:

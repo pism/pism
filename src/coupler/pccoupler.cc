@@ -52,18 +52,70 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
 
   PetscErrorCode ierr;
   PetscTruth ifSet, bifSet;
+  PetscTruth i_set, boot_from_set;
   char if_file[PETSC_MAX_PATH_LEN], bif_file[PETSC_MAX_PATH_LEN];
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", if_file, 
-                               PETSC_MAX_PATH_LEN, &ifSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", bif_file, 
-                               PETSC_MAX_PATH_LEN, &bifSet); CHKERRQ(ierr);
-  if (bifSet == PETSC_TRUE) {
-    strcpy(filename,bif_file);
-  } else if (ifSet == PETSC_TRUE) {
-    strcpy(filename,if_file);
+  // OLD OPTIONS
+  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
+  // NEW OPTIONS
+  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
+  // Print warnings to let users get used to the change:
+  if (ifSet) {
+    ierr = verbPrintf(2, grid->com,
+		      "PISM WARNING: '-if' command line option is deprecated. Please use '-i' instead.\n");
+    CHKERRQ(ierr);
+  }
+  if (bifSet) {
+    ierr = verbPrintf(2, grid->com, 
+		      "PISM WARNING: '-bif' command line option is deprecated. Please use '-boot_from' instead.\n");
+    CHKERRQ(ierr);
+  }
+
+  if (i_set) {
+    if (boot_from_set) {
+      ierr = PetscPrintf(grid->com,
+			 "PISM ERROR: both '-i' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    if (ifSet) {		// OLD OPTION
+      ierr = PetscPrintf(grid->com,
+			 "PISM ERROR: both '-i' and '-if' are used. Ignoring '-if'...\n"); CHKERRQ(ierr);
+    }
+
+    ierr = PetscOptionsGetString(PETSC_NULL, "-i", if_file, 
+				 PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+    strcpy(filename, if_file);
+  }
+  else if (boot_from_set) {
+    if (ifSet) {		// OLD OPTION
+      ierr = PetscPrintf(grid->com,
+			 "PISM ERROR: both '-if' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    
+    ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", bif_file, 
+				 PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+    strcpy(filename, bif_file);
+  }
+  else if (ifSet) {		// OLD OPTION
+    if (bifSet) {
+      ierr = PetscPrintf(grid->com,
+			 "PISM ERROR: both '-bif' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    ierr = PetscOptionsGetString(PETSC_NULL, "-if", if_file, 
+				 PETSC_MAX_PATH_LEN, &ifSet); CHKERRQ(ierr);
+    strcpy(filename, if_file);
+  }
+  else if (bifSet) {		// OLD OPTION
+    ierr = PetscOptionsGetString(PETSC_NULL, "-bif", bif_file, 
+				 PETSC_MAX_PATH_LEN, &bifSet); CHKERRQ(ierr);
+    strcpy(filename, bif_file);
   } else {
-    SETERRQ(2,"findPISMInputFile(): no -if and no -bif?; how did I get here?");
+    PetscPrintf(grid->com, "PISM ERROR: no -i and no -boo_from specified. Exiting...\n");
+    PetscEnd();
   }
 
   bool file_exists = false;

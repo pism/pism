@@ -162,7 +162,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-id", &id, PETSC_NULL); CHKERRQ(ierr);
 
-// note "-if" is in use for input file name; see initFromOptions() in iMutil.cc
+// note "-i" is in use for input file name; see initFromOptions() in iMutil.cc
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-jd", &jd, PETSC_NULL); CHKERRQ(ierr);
 
@@ -208,7 +208,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // whether or not to kill ice at locations where mask=FLOATING_OCEAN0;
   //   also determines if mask=FLOATING_OCEAN0 or mask=FLOATING
-  //   at bootstrapping (-bif), if original condition was ice-free ocean
+  //   at bootstrapping (-boot_from), if original condition was ice-free ocean
   ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &mydoOceanKill); CHKERRQ(ierr);
   if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
 
@@ -305,7 +305,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetReal(PETSC_NULL, "-reg_length_schoof", &regularizingLengthSchoof,
            PETSC_NULL); CHKERRQ(ierr);
   
-// note "-regrid" is in use for regrid file name; see iMregrid.cc
+// note "-regrid_from" is in use for regrid file name; see iMregrid.cc
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 

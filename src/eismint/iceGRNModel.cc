@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Nathan Shemonski, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2009 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -95,9 +95,9 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   // wait on init hook; possible regridding!:
   ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", inFile,
                                PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
 
   // set up PDD
@@ -127,7 +127,7 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   // set up surface temperature, geothermal flux, and Ellesmere/Iceland delete
   if (inFileSet == PETSC_TRUE) {
     if (bootFileSet) {
-      ierr = verbPrintf(1, grid.com, "WARNING: -bif and -if given; using -if\n");
+      ierr = verbPrintf(1, grid.com, "WARNING: both -boot_from and -i given; using -i\n");
          CHKERRQ(ierr);
     }
   } else if (bootFileSet == PETSC_TRUE) {

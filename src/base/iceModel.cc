@@ -134,7 +134,7 @@ Note 2.5, 3, and 4 are called from initFromFile() in IceModel.
 Note 3 and 4 are called from initFromOptions() in some derived classes (e.g. IceCompModel) 
 in cases where initFromFile() is not called.
 
-Note step 2.5 is skipped when bootstrapping (-bif and bootstrapFromFile()) or in
+Note step 2.5 is skipped when bootstrapping (-boot_from and bootstrapFromFile()) or in
 those derived classes which can start with no input files, e.g. IceCompModel and IceEISModel.
 That is, 2.5 is only done when starting from a saved model state.
 */

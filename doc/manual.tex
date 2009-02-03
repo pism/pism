@@ -181,7 +181,7 @@ In a moment we will address the standard output information provided by PISM, as
 \small
 \begin{quote}
 \begin{verbatim}
-$ mpiexec -n 2 pisms -eisII A -if simp_exper.nc -skip 5 -y 198000 \
+$ mpiexec -n 2 pisms -eisII A -i simp_exper.nc -skip 5 -y 198000 \
           -o eisIIA200k.nc >> eisIIA.out &
 \end{verbatim}
 \end{quote}\normalsize
@@ -192,11 +192,11 @@ To get the model state in the midst of a PISM run, send all running \verb|pisms|
 
 While the two processor \verb|pisms| run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{d}
 
-\verb|$ pisms -eisII A -if simp_exper.nc -y 1000 -d HTt|
+\verb|$ pisms -eisII A -i simp_exper.nc -y 1000 -d HTt|
 
 Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.  When the full 200,000 year run finishes, one may watch its evolving state, including the ice flow speed, by
 
-\verb|$ pisms -eisII A -if eisIIA200k.nc -d HTc|
+\verb|$ pisms -eisII A -i eisIIA200k.nc -d HTc|
 
 \noindent for example.  Figure \ref{fig:screenshot} will appear.
 
@@ -269,13 +269,13 @@ Note that, as explained in the next section, the ``shallow ice approximation'' (
 
 As a diagnostic example, using the quantities already computed in this section, try\index{pismd}
 
-\verb|pismd -if eisIIA200k.nc -o eisIIA200k_diag.nc|
+\verb|pismd -i eisIIA200k.nc -o eisIIA200k_diag.nc|
 
 \noindent The result of this command is a NetCDF file \verb|eisIIA200k_diag.nc| which contains the full three-dimensional velocity field in the scalar NetCDF variables \verb|uvel|, \verb|vvel|, and \verb|wvel|.
 
 The velocity field saved by \verb|pismd| is the one which would be computed at the \emph{next} time step in an evolution run.  That is, if we also run\index{pisms}
 
-\verb|pisms -eisII A -if eisIIA200k.nc -y 0.001 -o eisIIA200k_plus.nc|
+\verb|pisms -eisII A -i eisIIA200k.nc -y 0.001 -o eisIIA200k_plus.nc|
 
 \noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIA200k_diag.nc|.\footnote{For this example, one can use a NetCDF Operator\index{NCO (NetCDF Operators)} to check that the two saved NetCDF files contain essentially the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}
 
@@ -331,7 +331,7 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 2 & \verb|MASK_DRAGGING| & ice is grounded (and the SSA is applied if option \verb|-ssa| is given) \\
 3 & \verb|MASK_FLOATING| & ice is floating (and the SSA is applied if option \verb|-ssa| is given) \\
 7 & \verb|MASK_FLOATING_OCEAN0| & same as \verb|MASK_FLOATING|, but the grid point was ice free   \\
- & & ocean at initialization of the model by \verb|-bif|;  \\
+ & & ocean at initialization of the model by \verb|-boot_from|;  \\
  & & ice with \verb|MASK_FLOATING_OCEAN0| will calve off  \\
  & & if option \verb|-ocean_kill| is given.\\
 \hline\end{tabular}
@@ -359,13 +359,13 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 
 \begin{verbatim}
 $ pisms -eisII A -y 100 -o foo.nc
-$ pisms -eisII A -if foo.nc -y 100 bar.nc
+$ pisms -eisII A -i foo.nc -y 100 bar.nc
 \end{verbatim}
 \smallskip
 
-Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all.  They initialize from formulas in the source code, but they can be continued from saved model states using \verb|-if|.  As in the above example, however, specifying which simplified geometry experiment (or verification test) is in use \emph{is} necessary.  For instance, if the second line above is replaced by
+Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all.  They initialize from formulas in the source code, but they can be continued from saved model states using \verb|-i|.  As in the above example, however, specifying which simplified geometry experiment (or verification test) is in use \emph{is} necessary.  For instance, if the second line above is replaced by
 
-\verb|$ pisms -if foo.nc -y 100 bar.nc|
+\verb|$ pisms -i foo.nc -y 100 bar.nc|
 
 \noindent then an error is generated.
 
@@ -399,7 +399,7 @@ The allowed formats for a bootstrapping file are relatively simple to describe. 
 
 The heuristics themselves are, for now, only documented in the source code:
 \begin{center}\verb|pism/src/base/iMbootstrap.cc|\end{center}
-\noindent Also see the \emph{PISM Reference Manual}.  Serious modeling is likely to start with the default bootstrapping method in \verb|iMbootstrap.cc|, called by the option ``\verb|-bif|'', but then add additional source code to add information.  This additional source code is likely to be a derived class of \verb|IceModel|.  The code in 
+\noindent Also see the \emph{PISM Reference Manual}.  Serious modeling is likely to start with the default bootstrapping method in \verb|iMbootstrap.cc|, called by the option ``\verb|-boot_from|'', but then add additional source code to add information.  This additional source code is likely to be a derived class of \verb|IceModel|.  The code in 
 \begin{center}\verb|pism/src/eismint/iceGRNModel.hh|\end{center}
 \noindent and
 \begin{center}\verb|pism/src/eismint/iceGRNModel.cc|\end{center}
@@ -444,7 +444,7 @@ One is allowed to specify the grid when PISM is started \emph{without} a pre-exi
 
 \noindent If one initializes PISM from a saved model state then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
 
-\verb|$  pisms -eisII A -if foo.nc -Mz 201 -y 100|
+\verb|$  pisms -eisII A -i foo.nc -Mz 201 -y 100|
 
 \noindent will give a warning that ``\verb|user option -Mz ignored; value read from file foo.nc|.''  To change the model grid one must explicitly ``regrid'', as described next.
 
@@ -455,7 +455,7 @@ Such ``regridding'' is done using the \intextoption{regrid} and \intextoption{re
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
-         -regrid foo.nc -regrid_vars HT -o bar.nc
+         -regrid_from foo.nc -regrid_vars HT -o bar.nc
 \end{verbatim}
 \noindent By specifying regridded variables ``\verb|HT|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
@@ -464,7 +464,7 @@ A slightly different use of regridding occurs when ``bootstrapping'' as describe
 See table \ref{tab:regridvar} for the regriddable variables.  Only modeled variables are regriddable, while climate and boundary data is not.
 
 \begin{table}[ht]
-\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid$\underline{\phantom{b}}$var} with given flag.}\label{tab:regridvar}
+\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid$\underline{\phantom{b}}$vars} with given flag.}\label{tab:regridvar}
 \begin{tabular}{@{}llll}\hline
 \textbf{Flag} & \textbf{Name in NetCDF file} & \textbf{Description}\\ \hline
 \verb|b| & \texttt{topg}       & bed elevation \\
@@ -549,7 +549,7 @@ Suppose, on the other hand, that the run needs to be stopped.  One may use the i
 
 \noindent appear in the log file \verb|log.txt|.  In this case the NetCDF model state file \verb|testGmillion.nc| appears; note this file has the original output name specified by the option \verb|-o|.  One can restart and finish the run by the command (for example)
 
-\verb|pismv -test G -if testGmillion.nc -ye 1e6 -o testGmillion_finish.nc >> log_cont.txt &|
+\verb|pismv -test G -i testGmillion.nc -ye 1e6 -o testGmillion_finish.nc >> log_cont.txt &|
 \smallskip
 
 Finally we consider a multiple process (MPI) run of PISM.  Here each of the processes must be sent the same signal at the same time.  For example, consider the dialog
@@ -608,7 +608,7 @@ One possible solution is to run PISM for a thousand years, which will make it sa
 
 If saving exactly as specified times is not critical, then use of \verb|-save_to| and \verb|-save_at| options is recommended.  For example
 \begin{verbatim}
-$ pismr -if foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
+$ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
         -save_at 1e3:1e3:1e4
 \end{verbatim}
 starts a PISM evolution run, initializing from \verb|foo.nc|, running for
@@ -620,7 +620,7 @@ We use a MATLAB-style range specification, $a:\Delta t:b$, where $a,\Delta t,b$ 
 It is also possible to save snapshots at intervals that are not equally-spaced
 by giving the \verb|-save_at| option a comma-separated list. For example,
 \begin{verbatim}
-$ pismr -if foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
+$ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
         -save_at 1000,1500,2000,5000
 \end{verbatim}
 will save snapshots on the first time-step after years 1000,1500,2000 and 5000.
@@ -635,7 +635,7 @@ multiple of 100 years.
 It is possible to save snapshots to separate files using the
 \verb|-split_snapshots| option.  For example, the run above can be changed to
 \begin{verbatim}
-$ pismr -if foo.nc -y 10000 -o output.nc -save_to snapshots \
+$ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots \
         -save_at 1000,1500,2000,5000 -split_snapshots
 \end{verbatim}
 for this purpose. This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot when \verb|-split_snapshots| is not used.  Note that tools like NCO and \verb|ncview| usually behave as desired with wildcards like \verb|snapshots-*.nc|.
@@ -660,15 +660,15 @@ The PDD model is applied in section \ref{sect:green} to modeling the Greenland i
 To directly compare the two methods, try\index{pgrn}
 
 \begin{verbatim}
-$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
        -ocean_kill -y 50 -o green_50yr_pdd.nc -d Aa
 \end{verbatim}
 \noindent versus
 \begin{verbatim}
-$ pgrn -bif eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
        -ocean_kill -y 50 -o green_50yr_pdd_rand.nc -pdd_rand -d Aa
 \end{verbatim}
-\noindent (See section \ref{sect:green} on how to create the file \verb|eis_green_smoothed.nc| from publically available data.  See the same section for the meaning of ``\verb|-bif|''.)
+\noindent (See section \ref{sect:green} on how to create the file \verb|eis_green_smoothed.nc| from publically available data.  See the same section for the meaning of ``\verb|-boot_from|''.)
 
 
 \subsection{Floatation criterion and mask} \label{subsect:float} FIXME: add this section to explain semantics of mask, \verb|MASK_FLOATING_OCEAN0|, and \intextoption{ocean\und kill}; add and document option \intextoption{dry}
@@ -761,7 +761,8 @@ The goal is not to see that the error is zero at any stage on the refinement pat
 Knowing the error decay rate may even give a prediction as to how fine a grid is necessary to achieve a desired smallness for the numerical error.  ``Other errors'' includes critically the error from using the wrong (or over-simplified) continuum model, and also observational (or pre-processing) errors present in the data used in the realistic run.
 
 For an example of a refinement path, consider the runs\index{refinement path!example}\index{pismv}
-\begin{quote}\small\begin{verbatim}
+\begin{quote}\small
+\begin{verbatim}
 pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
@@ -773,7 +774,8 @@ Here we seek to measure the basic function of the isothermal shallow ice approxi
 The data produced by the above four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
 
 For thermocoupled tests one refines in three dimensions.  For example, the runs\index{refinement path!example}
-\begin{quote}\small\begin{verbatim}
+\begin{quote}\small
+\begin{verbatim}
 pismv -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
 pismv -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
 pismv -test G -max_dt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
@@ -876,17 +878,17 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms}'' $+$} & \textbf{Relation to experiment A} \\ \hline
 \verb|-eisII A -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIA.nc| & \\
-\verb|-eisII B -if eisIIA.nc -y 2e5 -o eisIIB.nc| & warmer \\
-\verb|-eisII C -if eisIIA.nc -y 2e5 -o eisIIC.nc| & less snow (lower accumulation)\\
-\verb|-eisII D -if eisIIA.nc -y 2e5 -o eisIID.nc| & only smaller area of accumulation \\
+\verb|-eisII B -i eisIIA.nc -y 2e5 -o eisIIB.nc| & warmer \\
+\verb|-eisII C -i eisIIA.nc -y 2e5 -o eisIIC.nc| & less snow (lower accumulation)\\
+\verb|-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc| & only smaller area of accumulation \\
 \verb|-eisII F -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIF.nc| & colder; famous spokes \cite{BBL} \\
 \verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIG.nc| & sliding (regardless of temperature) \\
 \verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH.nc| & melt-temperature activated sliding \\ \hline
-\verb|-eisII E -if eisIIA.nc -y 2e5 -o eisIIE.nc| & shifted accumulation/temperature maps \\
+\verb|-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc| & shifted accumulation/temperature maps \\
 \verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIII.nc| & trough topography \\
-\verb|-eisII J -if eisIII -y 2e5 -o eisIIJ.nc| & trough topography and less snow \\
+\verb|-eisII J -i eisIII -y 2e5 -o eisIIJ.nc| & trough topography and less snow \\
 \verb|-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK.nc| & mound topography \\
-\verb|-eisII L -if eisIIK -y 2e5 -o eisIIL.nc| & mound topography and less snow \\
+\verb|-eisII L -i eisIIK -y 2e5 -o eisIIL.nc| & mound topography and less snow \\
 \hline\normalsize
 \end{tabular}\end{table}
 
@@ -925,12 +927,12 @@ HEINO is a relatively expensive intercomparison in terms of computer time.  For 
 \begin{verbatim}
 $ mpiexec -n 8 pisms -ismip H -run ST -Mx 81 -My 81 -Mz 281 \
           -y 150000 -dat_prefix XYZ_START -o XYZ_ST_150k.nc
-$ mpiexec -n 8 pisms -ismip H -run ST -if XYZ_ST_150k.nc \
+$ mpiexec -n 8 pisms -ismip H -run ST -i XYZ_ST_150k.nc \
           -y 50000 -dat_prefix XYZ_END -o XYZ_ST_200k.nc
 \end{verbatim}
 [use Matlab to determine max/min]
 
-\verb|mpiexec -n 8 pisms -ismip H -run ST -if XYZ_ST_150k.nc \|
+\verb|mpiexec -n 8 pisms -ismip H -run ST -i XYZ_ST_150k.nc \|
 
 \verb|    -y 50000 -time1 -time2 -time3 -time4 -dat_prefix XYZ_RERUN|
 
@@ -1029,7 +1031,7 @@ To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional option
 
 MISMIP runs are done in sequence using the result of a previous run but with a step change in ice hardness.  That is, you initialize as usual in PISM from a saved \verb|.nc| file.  The next run is
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -extras -step 2 -if ABC1_1a_M1_A1.nc|
+\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -extras -step 2 -i ABC1_1a_M1_A1.nc|
 
 \noindent The result is \verb|ABC1_1a_M1_A2_t|, etc.
 
@@ -1068,13 +1070,13 @@ We see immediately that the PISM result does not put the grounding line in the s
 
 We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially 10 m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
 
-But \verb|solverSM.py| has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \verb|-regrid| (section \ref{sect:usage}).
+But \verb|solverSM.py| has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \verb|-regrid_from| (section \ref{sect:usage}).
 
 The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
 
 \verb|$ ./solverSM.py  --My=601 -e 1 --sliding=a -s 1 -n SM.nc|
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid SM.nc \|
+\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \|
 
 \verb|  -regrid_vars H -ksp_rtol 1.0e-7 -Mx 3 -Mz 15 -My 601|
 
@@ -1160,9 +1162,9 @@ Next we use the script which converts the time series data files \verb|specmap.0
 
 \subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
-Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-bif| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|\index{pgrn}
+Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|\index{pgrn}
 \begin{verbatim}
-$ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
        -skip 1 -y 1 -o green20km_y1.nc
 \end{verbatim}
 \noindent The run takes a few seconds of real time.
@@ -1171,7 +1173,7 @@ $ pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-$  pgrn -bif eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
+$  pgrn -boot_from eis_green_smoothed.nc -Mx 141 -My 83 -Lz 4000 -Mz 51 -quadZ \
     -skip 1 -y 1 -o green20km_y1.nc
 PGRN (EISMINT-Greenland mode)
 EISMINT-Greenland mode (IceGRNModel) setting flags equivalent to:
@@ -1179,7 +1181,7 @@ EISMINT-Greenland mode (IceGRNModel) setting flags equivalent to:
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   all dimensions t,x,y,z,zb found in file
   time t = 0.0000 years found; setting current year
-  rescaling computational box for ice from defaults, -bif file, and
+  rescaling computational box for ice from defaults, -boot_from file, and
     user options to dimensions:
     [-1400.00 km, 1400.00 km] x [-820.00 km, 820.00 km] x [0 m, 4000.00 m]
   polar stereographic var found; attributes present: svlfp=1, lopo=1, sp=1
@@ -1266,7 +1268,7 @@ Note that EISMINT-Greenland specifies an 83 by 141 point grid, but you may use o
 But there is a transpose: In order to make the diagnostic viewers described in Appendix \ref{sect:viewers} have the correct orientation, the x and y axes are switched internally in PISM.  Of course the physics approximated by PISM does not care about orientation.  The consequence of using ``\verb|-Mx 83 -My 141|'', instead of the correct pair shown, would be to have grid cells which are far from square, and to have squashed viewers.
 \end{comment}
 
-The option \verb|-bif| stands for ``bootstrapping input file''.  This option is an alternative to \verb|-if| (stands for ``input file'') which is used for a file which has full initial conditions.  In practice, \verb|-if| is only used with a NetCDF file which was previously saved by PISM; that is, \verb|-if| is used to continue a run from a saved state.
+The option \verb|-boot_from| stands for ``bootstrap from''.  This option is an alternative to \verb|-i| (stands for ``input file'') which is used for a file which has full initial conditions.  In practice, \verb|-i| is only used with a NetCDF file which was previously saved by PISM; that is, \verb|-i| is used to continue a run from a saved state.
 
 Note the choice of the height of the computational box (``\verb|-Lz 4000|''), of the number of vertical levels (``\verb|-Mz 51|''), and of a not-equally-spaced grid (``\verb|-quadZ|'').  The messages to standard out show that the vertical spacing is less than 30 m near the base and more than 130 m at the top of the computational box (where it matters less).
 
@@ -1280,7 +1282,7 @@ Before seeking a good steady state for the entire thermo-mechanically-coupled ic
 
 We create this temperature field by running for 10000 years\footnote{In fact a much longer run might be called for because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
-\verb|$ mpiexec -n 2 pgrn -if green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady.nc|
+\verb|$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady.nc|
 
 This last run takes on the order of one processor hour.  Parallel processing is effective here, up to perhaps peak real time speed with 40 processors for this coarse 83 by 141 grid.  (Finer grid computations are easier to parallelize in the sense that greater a maximum speedup over one processor is attainable.)
 
@@ -1290,13 +1292,13 @@ The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree d
 \subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
 
 \begin{verbatim}
-$ mpiexec -n 8 pgrn -ssl2 -if green20km_Tsteady.nc -y 10000 -ys 0 \
+$ mpiexec -n 8 pgrn -ssl2 -i green20km_Tsteady.nc -y 10000 -ys 0 \
           -o green_SSL2_10k.nc
 \end{verbatim}
 \noindent We can continue for another ten thousand years by
 
 \begin{verbatim}
-$ mpiexec -n 8 pgrn -ssl2 -if green_SSL2_10k.nc -y 10000 \
+$ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
           -o green_SSL2_20k.nc
 \end{verbatim}
 \noindent And so on.   The script \verb|ssh2.sh| is useful to automate this, and we will now assume that the user \emph{actually} did a run like  
@@ -1346,7 +1348,7 @@ In addition to the more standardized EISMINT-Greenland intercomparison called ``
 \subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka.}
 
 \begin{verbatim}
-$ mpiexec -n 8 pgrn -ccl3 -if green_SSL2_110k.nc -dTforcing grip_dT.nc \
+$ mpiexec -n 8 pgrn -ccl3 -i green_SSL2_110k.nc -dTforcing grip_dT.nc \
           -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y-0.nc
 \end{verbatim}
 \noindent Note option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
@@ -1361,11 +1363,11 @@ The resulting thickness difference, relative to the end of the SSL2 run, and the
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing (noting no GRIP or SPECMAP data are known from the future!):
 
-\verb|mpiexec -n 8 pgrn -ccl3 -if green_CCL3_y-0.nc -y 500 -o green_CCL3_y500.nc|
+\verb|mpiexec -n 8 pgrn -ccl3 -i green_CCL3_y-0.nc -y 500 -o green_CCL3_y500.nc|
 
 A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\verb|mpiexec -n 8 pgrn -gwl3 -if green_CCL3_y-0.nc -y 500 -o green_GWL3_y500.nc|
+\verb|mpiexec -n 8 pgrn -gwl3 -i green_CCL3_y-0.nc -y 500 -o green_GWL3_y500.nc|
 
 
 
@@ -1410,9 +1412,9 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eis_ross.py| e
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 
-\verb|$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3|
+\verb|$ pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3|
 
-\noindent Here we bootstrap (\verb|-bif|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
+\noindent Here we bootstrap (\verb|-boot_from|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
 
 At the end of this run the computed velocity field is compared to the interpolated observed velocities stored in \verb|ross.nc|.  The value called ``average relative error in vector vel'' is most relevant.  A value of 0.07 here means that the averaged absolute difference between the computed and the observed velocity, in the ``accurate'' region, is 7\%.
 
@@ -1427,13 +1429,13 @@ The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal s
 There are many variations on this basic ``\verb|pismd -ross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\index{pismd} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
 
 \begin{verbatim}
-$ pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \
+$ pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
         -Mx 147 -My 147 -Mz 3 -Lz 1e3 -d cnmu -verbose -pause 10
 \end{verbatim}
 \noindent Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
 \begin{verbatim}
-$ mpiexec -n 4 pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \
+$ mpiexec -n 4 pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
           -Mx 201 -My 201 -Mz 3 -Lz 1e3
 \end{verbatim}
 \noindent The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
@@ -1441,7 +1443,7 @@ $ mpiexec -n 4 pismd -ross -bif ross.nc -ssa -ssaBC ross.nc \
 Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use lower (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\und rtol}) and the linear iteration (\intextoption{ksp\und rtol}) to get more confidence in the numerical scheme:
 
 \begin{verbatim}
-$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 -ssa \
+$ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 -ssa \
         -constant_hardness 1.8e8 -ssa_rtol 1e-6 -ksp_rtol 1e-10 -o ross_out_1p8.nc
 \end{verbatim}
 \noindent Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnostic velocity computation.
@@ -1474,7 +1476,7 @@ Now, \verb|pismd -ross| can read this data and compute a $\chi^2$ statistic comp
 
 \small
 \begin{verbatim}
-$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa -riggs riggs.nc
+$ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa -riggs riggs.nc
 PISMD (diagnostic velocity computation mode)
 initializing EISMINT Ross ice shelf velocity computation ...
 . . .
@@ -1510,20 +1512,20 @@ Grenoble & 5237 & 1508 \\
 \begin{verbatim}
 $ ./tune.py -n 2
 TUNE.PY (for EISMINT Ross; compare to table 1 in MacAyeal et al 1996)
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc
+trying "mpiexec -n 2 pismd -ross -boot_from ross.nc -ssaBC ross.nc -riggs riggs.nc
 -ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa
 -constant_hardness 1.5e8"
   finished in 116.7409 seconds; max computed speed and Chi^2 as follows:
   |maximum computed speed in ice shelf is   2355.752 (m/a)
   |Chi^2 statistic for computed results compared to RIGGS is  28157.4
 . . .
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc
+trying "mpiexec -n 2 pismd -ross -boot_from ross.nc -ssaBC ross.nc -riggs riggs.nc
 -ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa
 -constant_hardness 1.8e8"
   finished in 114.4815 seconds; max computed speed and Chi^2 as follows:
   |maximum computed speed in ice shelf is   1437.704 (m/a)
   |Chi^2 statistic for computed results compared to RIGGS is   3967.9
-trying "mpiexec -n 2 pismd -ross -bif ross.nc -ssaBC ross.nc -riggs riggs.nc
+trying "mpiexec -n 2 pismd -ross -boot_from ross.nc -ssaBC ross.nc -riggs riggs.nc
 -ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa
 -constant_hardness 1.9e8"
   finished in 104.6139 seconds; max computed speed and Chi^2 as follows:
@@ -1541,7 +1543,7 @@ We see that hardnesses $\bar B = 1.8,1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/
 Assuming that \verb|rossComputed.nc| was produced by the following PISM run
 
 \begin{verbatim}
-$ pismd -ross -bif ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \
+$ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \
         -ssa -o rossComputed
 \end{verbatim}
 \noindent and the RIGGS data is in \verb|riggs_clean.dat| described above,
@@ -1675,7 +1677,7 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \subsubsect{File input and output from PISM}
 
-\opt{bif}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-if|.
+\opt{boot\und from}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-i|.
 
 \opt{dSLforcing}    Use the specified NetCDF file to apply changes in \emph{S}ea \emph{L}evel from a climate ``forcing'' record.  See section \ref{sect:green} for an example.
 
@@ -1687,17 +1689,17 @@ Has the effect of (very roughly) doubling the size of the output model state Net
 
 Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.
 
-\opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-bif|.
+\opt{if}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo -of n|.  Compare \verb|-boot_from|.
 
 \optdef{mato}{pism\und views}  Specifies the name of the \Matlab-readable file in which to save the views.  Use with \verb|-matv|, to set which views to save; if \verb|-matv| is not set then \verb|-mato| has no effect.
 
 \opt{matv}  Specifies which \Matlab ``views'' to save at end of run.  See Appendix \ref{sect:viewers} for list of single character names of the views.  The default is for \emph{no} \Matlab views.  See \verb|-mato| for setting the name of the \Matlab-readable file in which to save the views.  Typically the user will write \verb|-mato foo -matv HT0c| to save four views in the \Matlab-readable ASCII file \verb|foo.m|.
 
-\opt{o}  Give name of output file: \verb|-o foo.nc| writes an output file named \verb|foo.nc|.  See the description of option \verb|-if|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
+\opt{o}  Give name of output file: \verb|-o foo.nc| writes an output file named \verb|foo.nc|.  See the description of option \verb|-i|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
 
 \opt{a} Append to the output file.
 
-\opt{regrid}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sect:usage}.
+\opt{regrid\und from}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sect:usage}.
 
 \optdef{regrid\und vars}{}  Which variables to regrid.  See section \ref{sect:usage}.
 
@@ -1895,7 +1897,7 @@ Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
 \subsect{Options controlling the computational grid and box}
 
-\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
+\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-boot_from| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
 
 \opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
 
@@ -1911,7 +1913,7 @@ Only effective if used with \verb|-plastic| and \verb|-ssa|.
 
 \optdef{Mz}{31}  Number of grid points in z (vertical) direction.
 
-\opt{quadZ}  Specify quadratically-spaced grid in the vertical.  Use only in combination with the option \verb|-bif| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
+\opt{quadZ}  Specify quadratically-spaced grid in the vertical.  Use only in combination with the option \verb|-boot_from| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::setVertLevels()| in the \emph{PISM Reference Manual}.
 
 
 \subsect{Options controlling numerical methods}
@@ -2288,9 +2290,9 @@ An example usage is
 
 \noindent Note that multiple runs can have their standard out concatenated, and \verb|series.py| will (generally) give reasonable behavior.  For example,
 
-\verb|$  pisms -eisII A -if simp_exper.nc -y 1000 >> eisIIA.out|
+\verb|$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out|
 
-\verb|$  pisms -eisII A -if simp_exper.nc -y 1000 >> eisIIA.out|
+\verb|$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out|
 
 \verb|$  series.py -f eisIIA.out -o eisIIA_ser_more.nc|
 

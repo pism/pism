@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,23 +57,83 @@ PetscErrorCode IceModel::additionalAtEndTimestep() {
 //! Manages the initialization of IceModel, especially from input file options.
 PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
-  PetscTruth ifSet, bifSet;
+  PetscTruth ifSet, bifSet;	// OLD OPTIONS
+  PetscTruth i_set, boot_from_set;
   char input_file[PETSC_MAX_PATH_LEN];
 
-  PetscOptionsGetString(PETSC_NULL, "-if", input_file, PETSC_MAX_PATH_LEN, &ifSet);
-  PetscOptionsGetString(PETSC_NULL, "-bif", input_file, PETSC_MAX_PATH_LEN, &bifSet);
-  if ((ifSet == PETSC_TRUE) && (bifSet == PETSC_TRUE)) {
-    PetscPrintf(grid.com,
-       "PISM ERROR: both options '-if' and '-bif' are used; not allowed!\n");
-    PetscEnd();
+  // OLD OPTIONS
+  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
+  // NEW OPTIONS
+  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
+
+  // Print warnings to let users get used to the change:
+  if (ifSet) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: '-if' command line option is deprecated. Please use '-i' instead.\n");
+    CHKERRQ(ierr);
+  }
+  if (bifSet) {
+    ierr = verbPrintf(2, grid.com, 
+		      "PISM WARNING: '-bif' command line option is deprecated. Please use '-boot_from' instead.\n");
+    CHKERRQ(ierr);
   }
 
-  if (bifSet == PETSC_TRUE) {
-    ierr = bootstrapFromFile(input_file); CHKERRQ(ierr);
-  } else if (ifSet == PETSC_TRUE) {
+  if (i_set) {
+    if (boot_from_set) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: both '-boot_from' and '-i' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    if (bifSet) {		// OLD OPTION
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: both '-bif' and '-i' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    if (ifSet) {		// OLD OPTION
+      ierr = verbPrintf(2, grid.com,
+			"PISM WARNING: both '-i' and '-if' are used. Ignoring '-if'...\n"); CHKERRQ(ierr);
+    }
+    
+    ierr = PetscOptionsGetString(PETSC_NULL, "-i",
+				 input_file, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
     ierr = initFromFile(input_file); CHKERRQ(ierr);
+  } // end of if(i_set)
+  else if (boot_from_set) {
+    if (ifSet) {		// OLD OPTION
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: both '-boot_from' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    if (bifSet) {		// OLD OPTION
+      ierr = verbPrintf(2, grid.com,
+			"PISM WARNING: both '-boot_from' and '-bif' are used. Ignoring '-bif'...\n"); CHKERRQ(ierr);
+    }
+
+    ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
+				 input_file, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+    ierr = bootstrapFromFile(input_file); CHKERRQ(ierr);
+  } // end of if(boof_from_set)
+  else if (ifSet) {		// OLD OPTION
+    if (bifSet) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: both '-bif' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    ierr = PetscOptionsGetString(PETSC_NULL, "-if", input_file, PETSC_MAX_PATH_LEN, &ifSet);
+    CHKERRQ(ierr);
+
+    ierr = initFromFile(input_file); CHKERRQ(ierr);
+  } else if (bifSet) {		// OLD OPTION
+    ierr =  PetscOptionsGetString(PETSC_NULL, "-bif", input_file, PETSC_MAX_PATH_LEN, &bifSet);
+    CHKERRQ(ierr);
+
+    ierr = bootstrapFromFile(input_file); CHKERRQ(ierr);
   }
 
+  // Init snapshots:
   ierr = init_snapshots_from_options(); CHKERRQ(ierr);
 
   // FIXME:  shouldn't -ssaBC be allowed as an option to something more general
@@ -84,7 +144,11 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   // from an input NetCDF file, by bootstrapFromFile() or
   // initFromFile().  Anything else is an error.
   if (! isInitialized()) {
-    SETERRQ(1,"Model has not been initialized from a file or by a derived class.");
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: IceModel::initFromOptions():\n"
+		       "            Model has not been initialized from a file or by a derived class.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
   }
   
   if (yearsStartRunEndDetermined == PETSC_FALSE) {
@@ -116,7 +180,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   //   uninitialized basal melt rate.
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
     
-  // these initializations can not use info from -regrid:
+  // these initializations can not use info from -regrid_from:
   ierr = initPDDFromOptions(); CHKERRQ(ierr);
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
 
@@ -207,7 +271,13 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = createViewers(); CHKERRQ(ierr);
 
   // read new values from regrid file, and overwrite current, if desired
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN, // OLD OPTION
+                               &regridFileSet); CHKERRQ(ierr);
+  if (regridFileSet == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com, "PISM WARNING: '-regrid' is outdated. Please use '-regrid_from' instead.\n");
+    CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", regridFile, PETSC_MAX_PATH_LEN,
                                &regridFileSet); CHKERRQ(ierr);
   if (regridFileSet == PETSC_TRUE) {
     ierr = regrid(regridFile); CHKERRQ(ierr);
@@ -216,7 +286,7 @@ PetscErrorCode IceModel::afterInitHook() {
   // consistency of geometry after initialization:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
-  // last tasks in initialization; might be using info from -regrid:
+  // last tasks in initialization; might be using info from -regrid_from:
 
   // allocate and setup bed deformation model
   ierr = bedDefSetup(); CHKERRQ(ierr);

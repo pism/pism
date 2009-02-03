@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -139,7 +139,7 @@ PetscErrorCode IceHEINOModel::initFromOptions() {
 
   ierr = setExperNameFromOptions(); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
   if (inFileSet == PETSC_TRUE) {
     ierr = initFromFile(inFile); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler
+// Copyright (C) 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,11 +40,11 @@ II choices, and initializes PISMConstAtmosCoupler; "computes", though no actual
 computation, surface mass balance and surface temp at ys:dt:ye and saves 
 these in pccmovie.nc:
 
-$ pcctest -if state.nc -ys 0.0 -ye 2.5 -dt 0.1 -of camovie.nc
+$ pcctest -i state.nc -ys 0.0 -ye 2.5 -dt 0.1 -of camovie.nc
 
 version which does similar for PISMPDDCoupler:
 
-$ pcctest -if state.nc -ys 0.0 -ye 2.5 -dt 0.1 -pdd -of pddmovie.nc
+$ pcctest -i state.nc -ys 0.0 -ye 2.5 -dt 0.1 -pdd -of pddmovie.nc
 
 */
 
@@ -251,10 +251,12 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, 
              "PCCTEST (test of climate couplers offline from PISM)\n"); CHKERRQ(ierr);
     
-    PetscTruth optSet;
+    PetscTruth ifSet, i_set;
     ierr = PetscOptionsGetString(PETSC_NULL, "-if", inname, 
-                               PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-    if (optSet != PETSC_TRUE) { SETERRQ(1,"PCCTEST ERROR: no -if to initialize from\n"); }
+                               PETSC_MAX_PATH_LEN, &ifSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 
+                               PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+    if (!ifSet && !i_set) { SETERRQ(1,"PCCTEST ERROR: no -i (or -if) to initialize from\n"); }
 
     ierr = PetscPrintf(com, 
              "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
@@ -262,6 +264,7 @@ int main(int argc, char *argv[]) {
 
     // set PCC from options
     //   FIXME:  for now only works with derived classes of PISMAtmosphereCoupler
+    PetscTruth optSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &optSet); CHKERRQ(ierr);
     if (optSet == PETSC_TRUE) { 
       PCC = (PISMClimateCoupler*) &ppddc;

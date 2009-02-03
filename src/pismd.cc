@@ -1,4 +1,4 @@
-// Copyright (C) 2007, 2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007, 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,8 +32,8 @@ static char help[] =
 file, using only SIA:
 
   $ pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 6000 -o foo
-  $ pisms -eisII A -if foo.nc -y 0.00001 -f3d -o bar
-  $ pismd -if foo.nc -o full_foo
+  $ pisms -eisII A -i foo.nc -y 0.00001 -f3d -o bar
+  $ pismd -i foo.nc -o full_foo
   $ ncdiff -O full_foo.nc bar.nc pismddiff.nc  # velocities nearly equal, not quite at margin; why?
 
 2. see example of diagnostic computation of Ross ice shelf velocities in manual

@@ -193,7 +193,7 @@ of \c IceModel, or a derived class thereof, and tell the instance to run itself.
 source files \c pgrn.cc, \c pismd.cc, \c pismr.cc, \c pisms.cc, and \c pismv.cc, corresponding to 
 the executables with the same names.  The drivers \c pismr.cc and \c pismd.cc only use the base 
 class \c IceModel, so one is required to initialize from a PISM model state NetCDF file with 
-\c -if or from an incomplete model state NetCDF file using \c -bif.
+\c -i or from an incomplete model state NetCDF file using \c -boot_from.
 
 The different derived classes generally invoke the same numerical procedures to handle the various 
 partial differential equations of the continuum model.  In the case of \c IceCompModel and

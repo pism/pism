@@ -1185,8 +1185,6 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
 
 //! Gets dimension limits.
 /*! Gets dimension limits (i.e min and max values of the coordinate variable).
-  Assumes that the coordinate variable corresponding to dimension \c name is
-  strictly ascending.
 
   Sets min = 0 and max = 0 if the dimension \c name has length 0.
 
@@ -1196,6 +1194,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   PetscErrorCode ierr;
   int len, varid;
   bool variable_exists;
+  size_t start = 0, count;
   double range[2] = {0, 0};
 
   ierr = get_dim_length(name, &len); CHKERRQ(ierr);
@@ -1209,13 +1208,23 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       PetscEnd();
     }
 
-    if ((grid->rank == 0)) {
-      size_t index[2] = {0, len - 1};
-      ierr = nc_get_var1_double(ncid, varid, &index[0], &range[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-      ierr = nc_get_var1_double(ncid, varid, &index[1], &range[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    }
+    if (grid->rank == 0) {
+      double *data;
+      data = new double[len];
+
+      count = len;		// convert to size_t
+      ierr = nc_get_vara_double(ncid, varid, &start, &count, data); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+      range[0] = data[0];
+      range[1] = data[0];
+      for (int j = 1; j < len; j++) {
+	range[0] = PetscMin(data[j], range[0]);
+	range[1] = PetscMax(data[j], range[1]);
+      }
+      delete[] data;
+    } // end of if(grid->rank == 0)
     ierr = MPI_Bcast(range, 2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
-  }
+  } // if (len != 0)
 
   if (min != NULL)
     *min = range[0];

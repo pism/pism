@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -140,12 +140,17 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
 PetscErrorCode IceEISModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode      ierr;
-  PetscTruth          inFileSet, bootFileSet;
+  PetscTruth          inFileSet, bootFileSet, i_set, boot_from_set;
 
   // check if input file was used
-  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &inFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bootFileSet); CHKERRQ(ierr);
-  infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
+  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &inFileSet); CHKERRQ(ierr); // OLD OPTION
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bootFileSet); CHKERRQ(ierr); // OLD OPTION
+  infileused = ((inFileSet == PETSC_TRUE) ||
+		(bootFileSet == PETSC_TRUE) ||
+		(i_set == PETSC_TRUE) ||
+		(boot_from_set == PETSC_TRUE));
   
   if (!infileused) { 
     // initialize from EISMINT II formulas

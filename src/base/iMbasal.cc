@@ -119,7 +119,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
     ierr = invertSurfaceVelocities(filename); CHKERRQ(ierr);
   }
   // if neither -surf_vel_to_phi OR -topg_to_phi then pass through; vtillphi is set from
-  //   default constant, or -if value, or -bif (?)
+  //   default constant, or -i value, or -boot_from (?)
   return 0;
 }
 
@@ -139,7 +139,7 @@ be the slope of the nontrivial part.  Then
 The exception is if the point is marked as floating, in which case the till friction angle
 is set to the value \c phi_ocean.
 
-The default values are vaguesly suitable for Antarctica, perhaps:
+The default values are vaguely suitable for Antarctica, perhaps:
 - \c phi_min = 5.0 degrees,
 - \c phi_max = 15.0 degrees,
 - \c topg_min = -1000.0 m,

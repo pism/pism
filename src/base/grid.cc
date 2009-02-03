@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -438,7 +438,7 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 This procedure should only be called 
 after the parameters describing the horizontal computational box (Lx,Ly) and the parameters for 
 the horizontal grid (Mx,My) are already determined.  In particular, the input file (either 
-\c -if or \c -bif) and user options (like \c -Mx) must have already been read to determine 
+\c -i or \c -boot_from) and user options (like \c -Mx) must have already been read to determine 
 the parameters, and any conflicts must have been resolved.
  */
 PetscErrorCode IceGrid::createDA() {
