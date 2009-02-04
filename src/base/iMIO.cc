@@ -48,6 +48,7 @@ PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p
   } else if (grid_p_year_VALID == PETSC_TRUE) {
     ierr = setStartYear(grid.year); CHKERRQ(ierr);
   } // else do nothing; defaults are set
+
   if (yeSet == PETSC_TRUE) {
     if (usrEndYear < startYear) {
       ierr = PetscPrintf(grid.com,
@@ -452,11 +453,11 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   // but this has not been done; here we simply require it is not periodic
   ierr = grid.rescale_using_zlevels(-g.x_min, -g.y_min); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
-  
+
   // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
   // which came from -i file, _unless_ -ys set by user
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
-
+ 
   // 2-D mapping
   ierr = vLongitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
   ierr =  vLatitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
@@ -535,6 +536,7 @@ Most of the time the user should carefully specify which variables to regrid.
 PetscErrorCode IceModel::regrid(const char *filename) {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet;
+  bool regrid_2d_only = false;
   char regridVars[PETSC_MAX_PATH_LEN];
   NCTool nc(&grid);
 
@@ -563,12 +565,23 @@ PetscErrorCode IceModel::regrid(const char *filename) {
   }
   
   grid_info g;
+  // Note that after this call g.z_len and g.zb_len are zero if the
+  // corresponding dimension does not exist.
   ierr = nc.get_grid_info(g); CHKERRQ(ierr);
 
-  double *zlevs, *zblevs;
-  zlevs = new double[g.z_len];
-  zblevs = new double[g.zb_len];
-  ierr = nc.get_vertical_dims(g.z_len, g.zb_len, zlevs, zblevs); CHKERRQ(ierr);
+  double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
+  if ((g.z_len != 0) && (g.zb_len != 0)) {
+    zlevs  = new double[g.z_len];
+    zblevs = new double[g.zb_len];
+    ierr = nc.get_vertical_dims(g.z_len, g.zb_len, zlevs, zblevs); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: at least one of 'z' and 'zb' is absent in '%s'.\n"
+		      "              3D regridding is disabled.\n",
+		      filename);
+    regrid_2d_only = true;
+    CHKERRQ(ierr);
+  }
   ierr = nc.close(); CHKERRQ(ierr);
 
   { // explicit scoping means destructor will be called for lic
@@ -583,12 +596,20 @@ PetscErrorCode IceModel::regrid(const char *filename) {
 	   ierr = vbed.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'B':
-           ierr = verbPrintf(2, grid.com, "  B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
-           ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
+	   if (regrid_2d_only) {
+	     ierr = verbPrintf(2, grid.com, "  B: skipping 'litho_temp'...\n"); CHKERRQ(ierr);
+	   } else {
+	     ierr = verbPrintf(2, grid.com, "  B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
+	     ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
+	   }
            break;
          case 'e':
-           ierr = verbPrintf(2, grid.com, "  e: regridding 'age' ... \n"); CHKERRQ(ierr);
-           ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
+	   if (regrid_2d_only) {
+	     ierr = verbPrintf(2, grid.com, "  e: skipping 'age'...\n"); CHKERRQ(ierr);
+	   } else {
+	     ierr = verbPrintf(2, grid.com, "  e: regridding 'age' ... \n"); CHKERRQ(ierr);
+	     ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
+	   }
            break;
          case 'h':
            ierr = verbPrintf(2, grid.com, "  h: regridding 'usurf' ... \n"); CHKERRQ(ierr);
@@ -603,15 +624,20 @@ PetscErrorCode IceModel::regrid(const char *filename) {
 	   ierr = vHmelt.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'T':
-           ierr = verbPrintf(2, grid.com, "  T: regridding 'temp' ... \n"); CHKERRQ(ierr);
-           ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);
+	   if (regrid_2d_only) {
+	     ierr = verbPrintf(2, grid.com, "  T: skipping 'temp'...\n"); CHKERRQ(ierr);
+	   } else {
+	     ierr = verbPrintf(2, grid.com, "  T: regridding 'temp' ... \n"); CHKERRQ(ierr);
+	     ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);
+	   }
            break;
        }
       }
     }
 
   }
-  
+
+  // Note that deleting a null pointer is safe.
   delete [] zlevs;  delete [] zblevs;
   return 0;
 }

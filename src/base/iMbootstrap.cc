@@ -128,7 +128,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 		      "  time dimension was not found; setting current year to t = 0.0 years\n",
 		      grid.year); CHKERRQ(ierr);
   }
-  ierr = setStartRunEndYearsFromOptions(PETSC_FALSE); CHKERRQ(ierr);
+  ierr = setStartRunEndYearsFromOptions(PETSC_TRUE); CHKERRQ(ierr);
 
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
