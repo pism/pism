@@ -159,7 +159,16 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
      filename); CHKERRQ(ierr);
   ierr = readObservedSurfVels(filename); CHKERRQ(ierr);
 
-  // compute the surface velocity which the SIA predicts
+#if 1
+  // smooth input velocities (FIXME: keeping mask as is, for now)
+  ierr = verbPrintf(2, grid.com, 
+    "  smoothing observed velocities ...\n");
+    CHKERRQ(ierr);
+  const PetscInt smoothingPasses = 1;
+  ierr = smoothObservedSurfVels(smoothingPasses); CHKERRQ(ierr);
+#endif
+
+  // compute the surface velocity which the nonsliding SIA predicts
   ierr = verbPrintf(2, grid.com, 
     "  computing SIA surface velocity (for removal from observed before inverting w SSA ...\n");
     CHKERRQ(ierr);
@@ -487,6 +496,54 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
 }
 
 
+PetscErrorCode IceModel::smoothObservedSurfVels(const PetscInt passes) {
+  PetscErrorCode ierr;
+  PetscScalar **us, **vs, **usNEW, **vsNEW, **imask;
+
+  // following is [0.35 0.30 0.35] outer product w itself; ref conversation with Orion L.;
+  //   retrieved from src/base/iMvelocity.cc in r174
+  const PetscScalar c[3][3] = {{0.1225, 0.105,  0.1225},
+                               {0.105,  0.09,   0.105},
+                               {0.1225, 0.105,  0.1225}};
+  // note communication on inv.usIn, inv.vsIn should have happened in readObservedSurfVels()
+  ierr = verbPrintf(2, grid.com, "    smoothing pass: "); CHKERRQ(ierr);
+  for (PetscInt m=0; m<passes; ++m) {
+    ierr = verbPrintf(2, grid.com, "%d ...", m+1); CHKERRQ(ierr);
+    ierr =  inv.usIn->get_array(us);    CHKERRQ(ierr);
+    ierr =  inv.vsIn->get_array(vs);    CHKERRQ(ierr);
+    ierr = vWork2d[0].get_array(usNEW); CHKERRQ(ierr);
+    ierr = vWork2d[1].get_array(vsNEW); CHKERRQ(ierr);
+    ierr = inv.invMask->get_array(imask); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (imask[i][j] > 1.5) {
+          usNEW[i][j] =  c[0][0]*us[i-1][j-1] + c[0][1]*us[i-1][j] + c[0][2]*us[i-1][j+1]
+                       + c[1][0]*us[i][j-1]   + c[1][1]*us[i][j]   + c[1][2]*us[i][j+1]
+                       + c[2][0]*us[i+1][j-1] + c[2][1]*us[i+1][j] + c[2][2]*us[i+1][j+1];
+          vsNEW[i][j] =  c[0][0]*vs[i-1][j-1] + c[0][1]*vs[i-1][j] + c[0][2]*vs[i-1][j+1]
+                       + c[1][0]*vs[i][j-1]   + c[1][1]*vs[i][j]   + c[1][2]*vs[i][j+1]
+                       + c[2][0]*vs[i+1][j-1] + c[2][1]*vs[i+1][j] + c[2][2]*vs[i+1][j+1];
+        } else { // no change if sans stencil width
+          usNEW[i][j] = us[i][j];
+          vsNEW[i][j] = vs[i][j];
+        }
+      }
+    }
+    ierr =    inv.usIn->end_access(); CHKERRQ(ierr);
+    ierr =    inv.vsIn->end_access(); CHKERRQ(ierr);
+    ierr =   vWork2d[0].end_access(); CHKERRQ(ierr);
+    ierr =   vWork2d[1].end_access(); CHKERRQ(ierr);
+    ierr = inv.invMask->end_access(); CHKERRQ(ierr);
+
+    ierr = vWork2d[0].beginGhostComm(*(inv.usIn)); CHKERRQ(ierr);
+    ierr = vWork2d[1].beginGhostComm(*(inv.vsIn)); CHKERRQ(ierr);
+    ierr = vWork2d[0].endGhostComm(); CHKERRQ(ierr);
+    ierr = vWork2d[1].endGhostComm(); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(2, grid.com, "done ...\n"); CHKERRQ(ierr);
+  return 0;
+}
+
 //! Compute the surface velocity predicted by the nonsliding SIA.
 /*!
 This is one of several routines called by invertSurfaceVelocities() for
@@ -511,7 +568,10 @@ their surface velocity.
  */
 PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   PetscErrorCode ierr;
-
+  PetscScalar    OLDmuSliding = muSliding;
+  
+  muSliding = 0.0;  // turn off SIA type sliding even if wanted for forward model (a bad idea ...)
+  
   ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
   // surface gradient temporarily stored in vWork2d[0..3] ...
 
@@ -555,6 +615,7 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   
+  muSliding = OLDmuSliding;
   return 0;
 }
 

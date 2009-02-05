@@ -341,6 +341,7 @@ protected:
   virtual PetscErrorCode destroyInvFields();
   virtual PetscErrorCode writeInvFields(const char *filename);
   virtual PetscErrorCode readObservedSurfVels(const char *filename);
+  virtual PetscErrorCode smoothObservedSurfVels(const PetscInt passes);
   virtual PetscErrorCode computeSIASurfaceVelocity();
   virtual PetscErrorCode getGforInverse(
                 const PetscScalar x, const PetscScalar UsuSIAdiffsqr, 
