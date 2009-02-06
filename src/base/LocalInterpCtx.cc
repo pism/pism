@@ -66,25 +66,32 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
   if ((zlevsIN == NULL) || (zblevsIN == NULL))
     regrid_2d_only = true;
 
-  if (g.x_min*slop > -Lx || g.x_max*slop < Lx) {
-    PetscPrintf(com,
-		"target computational domain not a subset of source (in NetCDF file)\n"
-		"  computational domain:\n");
-    PetscPrintf(com,
-		"    need  [-Lx,Lx] contained in [g.x_min,g.x_max],  but Lx = %5.4f km while\n"
-		"    [g.x_min,g.x_max]=[%5.4f,%5.4f] km;  ENDING ...\n",
-		Lx,g.x_min,g.x_max);
+  PetscScalar dx0 = grid.x0 - g.x0,
+              dy0 = grid.y0 - g.y0;
+  if (sqrt(dx0*dx0 + dy0*dy0) > 1e-6) {
+    PetscPrintf(com, "PISM ERROR: Grid centers do not match!\n");
     PetscEnd();
   }
-  if (g.y_min*slop > -Ly || g.y_max*slop < Ly) {
+
+  if (g.Lx*slop < Lx) {
     PetscPrintf(com,
 		"target computational domain not a subset of source (in NetCDF file)\n"
 		"  computational domain:\n");
     PetscPrintf(com,
-		"    need  [-Ly,Ly] contained in [g.y_min,g.y_max],  but Ly = %5.4f km while\n"
-		"    [g.y_min,g.y_max]=[%5.4f,%5.4f] km;  ENDING ...\n",
-		Ly,g.y_min,g.y_max);
+		"    need  Lx < g.Lx,  but Lx = %5.4f km while g.Lx = %5.4f km\n"
+		"    ENDING ...\n",
+		Lx, g.Lx);
     PetscEnd();
+  }
+  if (g.Ly*slop < Ly) {
+    PetscPrintf(com,
+		"target computational domain not a subset of source (in NetCDF file)\n"
+		"  computational domain:\n");
+    PetscPrintf(com,
+		"    need  Ly < g.Ly,  but Ly = %5.4f km while g.Ly = %5.4f km\n"
+		"    ENDING ...\n",
+		Ly, g.Ly);
+   PetscEnd();
   }
   
   if (regrid_2d_only == false) {
@@ -141,8 +148,8 @@ and \c delta entries in the struct will not be meaningful.
 
   // start[i] = index of the first needed entry in the source netCDF file; start[i] is of type int
   start[T] = g.t_len - 1;	// We use the latest time
-  start[X] = (int)floor((xbdy_tgt[0] - g.x_min) / delta[X] - 0.5);
-  start[Y] = (int)floor((ybdy_tgt[0] - g.y_min) / delta[Y] - 0.5);
+  start[X] = (int)floor((xbdy_tgt[0] + g.Lx) / delta[X] - 0.5);
+  start[Y] = (int)floor((ybdy_tgt[0] + g.Ly) / delta[Y] - 0.5);
   // be sure the start[] are not too small:
   for (int m = 1; m < 3; m++) {
     if (start[m] < 0)
@@ -152,8 +159,8 @@ and \c delta entries in the struct will not be meaningful.
   start[ZB] = 0;		// start at lowest bedrock level
 
   fstart[T] = g.time;
-  fstart[X] = g.x_min + start[X] * delta[X];
-  fstart[Y] = g.y_min + start[Y] * delta[Y];
+  fstart[X] = -g.Lx + start[X] * delta[X];
+  fstart[Y] = -g.Ly + start[Y] * delta[Y];
 
   count[T] = 1;			// Only take one time.
   count[X] = 1 + (int)ceil((xbdy_tgt[1] - fstart[X]) / delta[X]);
@@ -316,6 +323,10 @@ grid_info::grid_info() {
   y_len  = 0;
   z_len  = 0;
   zb_len = 0;
+  x0     = 0;
+  y0     = 0;
+  Lx     = 0;
+  Ly     = 0;
   x_min  = 0;
   x_max  = 0;
   y_min  = 0;
@@ -329,10 +340,10 @@ PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
   double zero = 0;
   ierr = verbPrintf(threshold, com, "\nRegridding file grid info:\n"); CHKERRQ(ierr);
 
-  ierr = verbPrintf(threshold, com, "  x:  %5d points, [%10.3f, %10.3f] km\n",
-		    x_len, x_min/1000.0, x_max/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  y:  %5d points, [%10.3f, %10.3f] km\n",
-		    y_len, y_min/1000.0, y_max/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+		    x_len, x_min/1000.0, x_max/1000.0, x0/1000.0, Lx/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(threshold, com, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+		    y_len, y_min/1000.0, y_max/1000.0, y0/1000.0, Ly/1000.0); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  z:  %5d points, [%10.3f, %10.3f] m\n",
 		    z_len, zero, z_max); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  zb: %5d points, [%10.3f, %10.3f] m\n",

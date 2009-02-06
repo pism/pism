@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,6 +68,7 @@ public:
                                    // which are represented in 3d Vecs
   PetscScalar dzMIN, dzMAX;
 
+  PetscScalar x0, y0;		// grid center (from an input or bootstrapping file)
   PetscScalar Lx, Ly;  // half width of the ice model grid in x-direction, y-direction (m)
   PetscInt    Mx, My; // number of grid points in x-direction, y-direction
   PetscScalar dx, dy; // spacing of grid

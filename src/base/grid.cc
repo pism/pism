@@ -58,6 +58,10 @@ IceGrid::IceGrid(MPI_Comm c,
                  PetscMPIInt s):
   com(c), rank(r), size(s) { 
 
+  // The grid in symmetric with respect to zero by default.
+  x0 = 0.0;
+  y0 = 0.0;
+
   Lx = DEFAULT_ICEPARAM_Lx;
   Ly = DEFAULT_ICEPARAM_Ly;
   Lz = DEFAULT_ICEPARAM_Lz;

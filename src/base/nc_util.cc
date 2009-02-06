@@ -187,6 +187,12 @@ PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) {
   ierr = get_dim_limits("x", &g.x_min, &g.x_max); CHKERRQ(ierr);
   ierr = get_dim_limits("y", &g.y_min, &g.y_max); CHKERRQ(ierr);
 
+  g.x0 = (g.x_max + g.x_min) / 2.0;
+  g.y0 = (g.y_max + g.y_min) / 2.0;
+
+  g.Lx = (g.x_max - g.x_min) / 2.0;
+  g.Ly = (g.y_max - g.y_min) / 2.0;
+
   return 0;
 }
 
@@ -229,19 +235,32 @@ PetscErrorCode NCTool::get_vertical_dims(const int z_len, const int zb_len,
 }
 
 
-//! Put the variable for a dimension in a NetCDF file.  Uses starting value and a spacing for regularly-spaced values.
-/*!
-Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
+//! Put the variable for a dimension in a NetCDF file.
+/*! Uses starting and ending values and a grid length for regularly-spaced
+values.
  */
-PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, double delta) {
+PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, double end) {
   PetscErrorCode ierr;
   int stat;
-  double *v;
+  double *v, delta;
+
+  if (end <= start)
+    SETERRQ2(1, "Can't write dimension: start = %f, end = %f",
+	     start, end);
+
+  delta = (end - start) / (len - 1);
 
   ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
   for (int i = 0; i < len; i++) {
     v[i] = start + i * delta;
   }
+
+  // Sometimes v[len - 1] turns out to be greater than end (because of rounding
+  // errors). If that happens, we need to fix v[len - 1] by setting it equal to
+  // end.
+  if (v[len - 1] > end)
+    v[len - 1] = end;
+  
   stat = nc_put_var_double(ncid, varid, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   ierr = PetscFree(v); CHKERRQ(ierr);
 
@@ -565,7 +584,7 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
     count[Z] = lic.count[ZB];
   }
 
-  // The next line appears outside the if (grid->rank == 0) since it calls
+  // The next line appears outside the if (grid->rank == 0) because it calls
   // MPI_Bcast.
   ierr = find_dimension("t", NULL, t_exists); CHKERRQ(ierr);
 
@@ -866,15 +885,15 @@ PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longit
   }
 
   ierr = get_att_double(varid, "straight_vertical_longitude_from_pole", 1, &lon);
-  if (ierr != 0)
+  if (ierr == 0)
     lon_exists = true;
 
   ierr = get_att_double(varid, "latitude_of_projection_origin", 1, &lat);
-  if (ierr != 0)
+  if (ierr == 0)
     lat_exists = true;
 
   ierr = get_att_double(varid, "standard_parallel", 1, &par);
-  if (ierr != 0)
+  if (ierr == 0)
     par_exists = true;
 
   if (report) {
@@ -991,16 +1010,16 @@ PetscErrorCode NCTool::create_dimensions() {
     // x
     stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, x, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "long_name", 32, "x-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, x, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, x, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, x, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
     // y
     stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, y, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "long_name", 32, "y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, y, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, y, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, y, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
     // z
     stat = nc_def_dim(ncid, "z", grid->Mz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -1022,8 +1041,12 @@ PetscErrorCode NCTool::create_dimensions() {
 
     // set values:
     // Note that the 't' dimension is not modified: it is handled by the append_time method.
-    stat = put_dimension_regular(x, grid->Mx, -grid->Lx, grid->dx); CHKERRQ(stat);
-    stat = put_dimension_regular(y, grid->My, -grid->Ly, grid->dy); CHKERRQ(stat);
+    stat = put_dimension_regular(x, grid->Mx,
+				 grid->x0 - grid->Lx,
+				 grid->x0 + grid->Lx); CHKERRQ(stat);
+    stat = put_dimension_regular(y, grid->My,
+				 grid->y0 - grid->Ly,
+				 grid->y0 + grid->Ly); CHKERRQ(stat);
     stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
     stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
   }
@@ -1138,7 +1161,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
       stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
       stat = create_dimensions(); CHKERRQ(stat);
     }
-  }
+  } // end of if(grid->rank == 0)
 
   stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
   return 0;

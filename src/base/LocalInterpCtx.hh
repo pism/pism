@@ -30,6 +30,8 @@ public:
   double time,			//!< current time (seconds)
     x0,				//!< x-coordinate of the grid center
     y0,				//!< y-coordinate of the grid center
+    Lx,				//!< half-width in the X-direction
+    Ly,				//!< half-width in the Y-direction
     x_min,			//!< [x_min, x_max] is the X extent of the grid
     x_max,			//!< [x_min, x_max] is the X extent of the grid
     y_min,			//!< [y_min, y_max] is the Y extent of the grid

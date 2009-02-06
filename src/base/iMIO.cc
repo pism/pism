@@ -153,7 +153,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
   ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
   ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
-  ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.0"); CHKERRQ(ierr);
+  ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.3"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
@@ -422,11 +422,13 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   grid_info g;
   ierr = nc.get_grid_info(g);
   grid.year = g.time / secpera;
-  grid.Mx = g.x_len;
-  grid.My = g.y_len;
-  grid.Mz = g.z_len;
-  grid.Mbz = g.zb_len;
-  // grid.Lx, grid.Ly set from g.x_max, g.y_max below in call to grid.rescale_using_zlevels()
+  grid.Mx   = g.x_len;
+  grid.My   = g.y_len;
+  grid.Mz   = g.z_len;
+  grid.Mbz  = g.zb_len;
+  grid.x0   = g.x0;
+  grid.y0   = g.y0;
+  // grid.Lx, grid.Ly are set from g.Lx, g.Ly below in call to grid.rescale_using_zlevels()
 
   double *zlevs, *zblevs;
   zlevs = new double[grid.Mz];
@@ -451,7 +453,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = grid.createDA(); CHKERRQ(ierr);
   // FIXME: note we *can* determine from the input file whether the hor. dims are truely periodic,
   // but this has not been done; here we simply require it is not periodic
-  ierr = grid.rescale_using_zlevels(-g.x_min, -g.y_min); CHKERRQ(ierr);
+  ierr = grid.rescale_using_zlevels(g.Lx, g.Ly); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
 
   // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
@@ -711,7 +713,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
 
     save_at_equal_intervals = PETSC_TRUE;
     next_snapshot = first_snapshot;
-    last_snapshot += snapshot_dt; // make it save after the last time in the range, too
+    last_snapshot += snapshot_dt; // make it saves after the last time in the range, too
   } else {			// no colon; it must be a list of numbers
     n_snapshots = max_n_snapshots;
     ierr = PetscOptionsGetRealArray(PETSC_NULL, "-save_at", save_at, &n_snapshots, PETSC_NULL);
@@ -742,7 +744,8 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
     }
 
     if (save_at_equal_intervals) {
-      ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n", first_snapshot, snapshot_dt, last_snapshot); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n",
+			first_snapshot, snapshot_dt, last_snapshot - snapshot_dt); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, grid.com, "times requested: "); CHKERRQ(ierr);
       for (int j = 0; j < n_snapshots; j++) {
@@ -808,7 +811,7 @@ PetscErrorCode IceModel::write_snapshot() {
       ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
       ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
       ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
-      ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.0"); CHKERRQ(ierr);
+      ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.3"); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
       file_is_ready = true;
     }

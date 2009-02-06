@@ -130,6 +130,10 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   }
   ierr = setStartRunEndYearsFromOptions(PETSC_TRUE); CHKERRQ(ierr);
 
+  // Record the coordinates of the grid center:
+  grid.x0 = g.x0;
+  grid.y0 = g.y0;
+
   // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
   // if initialization is from an input file
   PetscScalar x_scale = (g.x_max - g.x_min) / 2.0,

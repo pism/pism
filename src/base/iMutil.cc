@@ -251,6 +251,9 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = verbPrintf(3,grid.com,
          "  [grid parameters list (verbose output):\n"); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
+         "            x0 = %6.2f km, y0 = %6.2f km,\n",
+		    grid.x0/1000.0, grid.y0/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
          "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
          grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,
