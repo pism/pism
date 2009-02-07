@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -639,8 +639,18 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
-      ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
+      if (reason < 0) {
+        char kspdivergedreasons[9][20] = { // see man page for KSPConvergedReason
+                 "NULL", "ITS", "DTOL", "BREAKDOWN",  // -2,...,-5
+                 "BREAKDOWN_BICG", "NONSYMMETRIC", "INDEFINITE_PC", "NAN", "MAT"}; // -6,...,-10
+        ierr = verbPrintf(1,grid.com, 
+            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = 'KSP_DIVERGED_%s';\n"
+                  "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
+            reason,kspdivergedreasons[(-reason)-2]); CHKERRQ(ierr);
+        PetscEnd();
+      }
+      ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com, "S:%d,%d: ", its, reason); CHKERRQ(ierr);
 
       // finish iteration and report to standard out

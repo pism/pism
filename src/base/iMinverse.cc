@@ -161,10 +161,9 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
 
 #if 1
   // smooth input velocities (FIXME: keeping mask as is, for now)
-  ierr = verbPrintf(2, grid.com, 
-    "  smoothing observed velocities ...\n");
-    CHKERRQ(ierr);
-  const PetscInt smoothingPasses = 1;
+  ierr = verbPrintf(2, grid.com,
+     "  smoothing observed velocities ...\n"); CHKERRQ(ierr);
+  const PetscInt smoothingPasses = 3;
   ierr = smoothObservedSurfVels(smoothingPasses); CHKERRQ(ierr);
 #endif
 
@@ -304,7 +303,7 @@ PetscErrorCode IceModel::createInvFields() {
 
   inv.effPressureN = new IceModelVec2;
   ierr = inv.effPressureN->create(grid, "effpress", false);
-  ierr = inv.oldtillphi->set_attrs(
+  ierr = inv.effPressureN->set_attrs(
      "inverse_output",
      "effective pressure on till material", 
      "Pa", NULL); CHKERRQ(ierr);
@@ -443,6 +442,15 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = inv.vsIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
 
+  ierr = getMagnitudeOf2dVectorField(*(inv.usIn), *(inv.usIn), vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_name("magvelsurf"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("inverse_output",
+             "magnitude of observed velocity of ice at ice surface",
+	     "m s-1", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vWork2d[0].write_in_glaciological_units = true;
+  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+
   ierr = inv.invMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = inv.usSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
@@ -479,6 +487,7 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of basal shear stress applied at base of ice",
 	     "Pa", NULL); CHKERRQ(ierr);
+  vWork2d[0].write_in_glaciological_units = false;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = inv.fofv->write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -508,7 +517,7 @@ PetscErrorCode IceModel::smoothObservedSurfVels(const PetscInt passes) {
   // note communication on inv.usIn, inv.vsIn should have happened in readObservedSurfVels()
   ierr = verbPrintf(2, grid.com, "    smoothing pass: "); CHKERRQ(ierr);
   for (PetscInt m=0; m<passes; ++m) {
-    ierr = verbPrintf(2, grid.com, "%d ...", m+1); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, " %d ...", m+1); CHKERRQ(ierr);
     ierr =  inv.usIn->get_array(us);    CHKERRQ(ierr);
     ierr =  inv.vsIn->get_array(vs);    CHKERRQ(ierr);
     ierr = vWork2d[0].get_array(usNEW); CHKERRQ(ierr);
