@@ -204,12 +204,15 @@ PetscErrorCode IceModel::setDefaults() {
   Hmelt_max = DEFAULT_MAX_HMELT;
   oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
 
+#if 0
+in PCC
   pddFactorSnow = DEFAULT_PDD_FACTOR_SNOW;
   pddFactorIce = DEFAULT_PDD_FACTOR_ICE;
   pddRefreezeFrac = DEFAULT_PDD_REFREEZE_FRAC;
   pddSummerPeakDay = DEFAULT_PDD_SUMMER_PEAK_DAY;
   pddSummerWarming = DEFAULT_PDD_SUMMER_WARMING;
   pddStdDev = DEFAULT_PDD_STD_DEV;
+#endif
 
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);
@@ -244,8 +247,12 @@ PetscErrorCode IceModel::setDefaults() {
   doBedIso = DEFAULT_DO_BED_ISO;
   bedDefIntervalYears = DEFAULT_BED_DEF_INTERVAL_YEARS;
   noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
+
+#if 0
+in PCC
   doPDD = PETSC_FALSE;
   doPDDTrueRand = PETSC_FALSE;
+#endif
   
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;

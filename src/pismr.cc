@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
   {
     IceGrid g(com, rank, size);
     IceType*   ice = PETSC_NULL;
+    PISMConstAtmosCoupler pcac; // FIXME: either constant or PDD should be allowed
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMR (basic evolution run mode)\n"); CHKERRQ(ierr);
@@ -48,6 +49,8 @@ int main(int argc, char *argv[]) {
     IceModel m(g, ice);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
+    pcac.initializeFromFile = true;  // climate will always come from input file in pismr
+    ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);

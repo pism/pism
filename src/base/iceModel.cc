@@ -61,13 +61,19 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   }
   createViewers_done = PETSC_FALSE;
 
+#if 0
+in PCC
   pddStuffCreated = PETSC_FALSE;
   pddRandStuffCreated = PETSC_FALSE;
+#endif
+
+  atmosPCC = PETSC_NULL;
+  oceanPCC = PETSC_NULL;
 
   dTforcing = PETSC_NULL;
   dSLforcing = PETSC_NULL;
 
-  vmonthlyTs = PETSC_NULL;
+//in PCC:  vmonthlyTs = PETSC_NULL;
   
   ierr = setDefaults();  // lots of parameters and flags set here
   if (ierr != 0) {
@@ -84,29 +90,24 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
 
 
 IceModel::~IceModel() {
+  // actions to de-allocate Vecs first
   if (createVecs_done == PETSC_TRUE) {
-    //verbPrintf(1,grid.com, "calling destroyVecs()\n");
     destroyVecs();
   }
+  // other deallocations
   if (createViewers_done == PETSC_TRUE) {
-    //verbPrintf(1,grid.com, "calling destroyViewers()\n");
     destroyViewers();
   }
   if (createBasal_done == PETSC_TRUE) {
-    //verbPrintf(1,grid.com, "deleting basal()\n");
     delete basal;
-    //verbPrintf(1,grid.com, "deleting basalSIA()\n");
     delete basalSIA;
   }
   if (bootstrapLIC != PETSC_NULL) {
     delete bootstrapLIC;
     bootstrapLIC = PETSC_NULL;
   }
-  //verbPrintf(1,grid.com, "Cleaning up the history string.\n");
   delete[] history;
-
-  // Clean up after UDUNITS:
-  utTerm();
+  utTerm(); // Clean up after UDUNITS
 }
 
 
@@ -211,6 +212,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
 
+#if 0
+in PCC
   // mean annual net ice equivalent accumulation (ablation) rate
   ierr = vAccum.create(grid, "acab", true); CHKERRQ(ierr);
   ierr = vAccum.set_attrs("climate_steady", 
@@ -226,6 +229,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vTs.set_attrs("climate_steady", "temperature at ice surface but below firn",
 		       "K", NULL); CHKERRQ(ierr);
   ierr = vTs.set_valid_min(0.0); CHKERRQ(ierr);
+#endif
 
   // grounded_dragging_floating integer mask
   ierr = vMask.create(grid, "mask",     true); CHKERRQ(ierr);
@@ -377,6 +381,12 @@ PetscErrorCode IceModel::createVecs() {
                           &SSAScatterGlobalToLocal); CHKERRQ(ierr);
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
 
+  // so that we can let atmosPCC know about these fields in IceModel state
+  iinbac.lat = &vLatitude;
+  iinbac.lon = &vLongitude;  
+  iinbac.mask = &vMask;
+  iinbac.surfelev = &vh;
+
   createVecs_done = PETSC_TRUE;
   return 0;
 }
@@ -390,7 +400,7 @@ PetscErrorCode IceModel::destroyVecs() {
   PetscErrorCode ierr;
 
   ierr = bedDefCleanup(); CHKERRQ(ierr);
-  ierr = PDDCleanup(); CHKERRQ(ierr);
+//in PCC:  ierr = PDDCleanup(); CHKERRQ(ierr);
 
   ierr = u3.destroy(); CHKERRQ(ierr);
   ierr = v3.destroy(); CHKERRQ(ierr);
@@ -404,8 +414,11 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = vh.destroy(); CHKERRQ(ierr);
   ierr = vH.destroy(); CHKERRQ(ierr);
   ierr = vbed.destroy(); CHKERRQ(ierr);
+#if 0
+in PCC
   ierr = vAccum.destroy(); CHKERRQ(ierr);
   ierr = vTs.destroy(); CHKERRQ(ierr);
+#endif
   ierr = vMask.destroy(); CHKERRQ(ierr);
   ierr = vGhf.destroy(); CHKERRQ(ierr);
   ierr = vubar.destroy(); CHKERRQ(ierr);
@@ -452,6 +465,18 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = VecDestroy(SSAXLocal); CHKERRQ(ierr);
   ierr = VecScatterDestroy(SSAScatterGlobalToLocal); CHKERRQ(ierr);
 
+  return 0;
+}
+
+
+PetscErrorCode IceModel::attachAtmospherePCC(PISMAtmosphereCoupler &aPCC) {
+  atmosPCC = &aPCC;
+  return 0;
+}
+
+
+PetscErrorCode IceModel::attachOceanPCC(PISMOceanCoupler &oPCC) {
+  oceanPCC = &oPCC;
   return 0;
 }
 
@@ -636,6 +661,8 @@ PetscLogEventEnd(tempEVENT,0,0,0,0);
 PetscLogEventBegin(pddEVENT,0,0,0,0);
 #endif
 
+#if 0
+in PCC:
     // compute PDD; generates surface mass balance, with appropriate ablation area,
     //   using snow accumulation
     if (doPDD == PETSC_TRUE) {
@@ -644,7 +671,8 @@ PetscLogEventBegin(pddEVENT,0,0,0,0);
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
-    
+#endif
+
 #if (PISM_LOG_EVENTS)
 PetscLogEventEnd(pddEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);

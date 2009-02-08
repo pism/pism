@@ -44,8 +44,7 @@ PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-PetscErrorCode PISMClimateCoupler::findPISMInputFile(
-                     char* filename, LocalInterpCtx* &lic) {
+PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterpCtx* &lic) {
   if (grid == NULL) {
     SETERRQ(1,"findPISMInputFile(): grid not initialized");
   }
@@ -53,7 +52,6 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
   PetscErrorCode ierr;
   PetscTruth ifSet, bifSet;
   PetscTruth i_set, boot_from_set;
-  char if_file[PETSC_MAX_PATH_LEN], bif_file[PETSC_MAX_PATH_LEN];
 
   // OLD OPTIONS
   ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr);
@@ -61,7 +59,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
   // NEW OPTIONS
   ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
-  // Print warnings to let users get used to the change:
+  // warnings to let users get used to the change:
   if (ifSet) {
     ierr = verbPrintf(2, grid->com,
 		      "PISM WARNING: '-if' command line option is deprecated. Please use '-i' instead.\n");
@@ -73,6 +71,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
     CHKERRQ(ierr);
   }
 
+  char i_file[PETSC_MAX_PATH_LEN], boot_from_file[PETSC_MAX_PATH_LEN];
   if (i_set) {
     if (boot_from_set) {
       ierr = PetscPrintf(grid->com,
@@ -84,9 +83,9 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
 			 "PISM ERROR: both '-i' and '-if' are used. Ignoring '-if'...\n"); CHKERRQ(ierr);
     }
 
-    ierr = PetscOptionsGetString(PETSC_NULL, "-i", if_file, 
+    ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
 				 PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-    strcpy(filename, if_file);
+    strcpy(filename, i_file);
   }
   else if (boot_from_set) {
     if (ifSet) {		// OLD OPTION
@@ -95,9 +94,9 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
       PetscEnd();
     }
     
-    ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", bif_file, 
+    ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", boot_from_file, 
 				 PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
-    strcpy(filename, bif_file);
+    strcpy(filename, boot_from_file);
   }
   else if (ifSet) {		// OLD OPTION
     if (bifSet) {
@@ -105,23 +104,26 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
 			 "PISM ERROR: both '-bif' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
     }
-    ierr = PetscOptionsGetString(PETSC_NULL, "-if", if_file, 
+    ierr = PetscOptionsGetString(PETSC_NULL, "-if", i_file, 
 				 PETSC_MAX_PATH_LEN, &ifSet); CHKERRQ(ierr);
-    strcpy(filename, if_file);
+    strcpy(filename, i_file);
   }
   else if (bifSet) {		// OLD OPTION
-    ierr = PetscOptionsGetString(PETSC_NULL, "-bif", bif_file, 
+    ierr = PetscOptionsGetString(PETSC_NULL, "-bif", boot_from_file, 
 				 PETSC_MAX_PATH_LEN, &bifSet); CHKERRQ(ierr);
-    strcpy(filename, bif_file);
+    strcpy(filename, boot_from_file);
   } else {
-    PetscPrintf(grid->com, "PISM ERROR: no -i and no -boo_from specified. Exiting...\n");
+    PetscPrintf(grid->com, "PISM ERROR: no -i and no -boot_from specified. Exiting...\n");
     PetscEnd();
   }
 
+  // file name now contains name of PISM input file;
+  //   now we check it is really there and, if so, we read the dimensions of
+  //   the computational grid so that we can set up a LocalInterpCtx for further
+  //   reading of actual climate data from the file
   bool file_exists = false;
   NCTool nc(grid);
   grid_info gi;
-
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
   if (!file_exists) {
     ierr = PetscPrintf(grid->com,
@@ -132,22 +134,22 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  lic = new LocalInterpCtx(gi, NULL, NULL, *grid); // 2D only; 
-  // caller is in charge of destroying
+  // *caller* of findPISMInputFile() is in charge of destroying
+  lic = new LocalInterpCtx(gi, NULL, NULL, *grid); // 2D only
+
   return 0;
 }
 
 
 PetscErrorCode PISMClimateCoupler::updateClimateFields(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded) {
-  SETERRQ(1,"VIRTUAL in PISMClimateCoupler ... not implemented");
+             const PetscScalar t_years, const PetscScalar dt_years, void *iceInfoNeeded) {
+  SETERRQ(1,"PCC ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
   return 0;
 }
 
 
 PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filename) {
-  SETERRQ(1,"VIRTUAL in PISMClimateCoupler ... not implemented");
+  SETERRQ(1,"PCC ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
   return 0;
 }
 
@@ -249,27 +251,34 @@ PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
 /*******************  ATMOSPHERE:  PISMConstAtmosCoupler ********************/
 
 PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
+  initializeFromFile = true; // default
 }
 
 
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
-  char filename[PETSC_MAX_PATH_LEN];
-  LocalInterpCtx* lic;
 
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
+  
+  if (initializeFromFile) {
+    char filename[PETSC_MAX_PATH_LEN];
+    LocalInterpCtx* lic;
 
-  ierr = findPISMInputFile((char*) filename, lic); CHKERRQ(ierr); // allocates lic
+    ierr = findPISMInputFile((char*) filename, lic); CHKERRQ(ierr); // allocates lic
+    ierr = verbPrintf(2, g->com, 
+       "initializing constant atmospheric climate: reading net surface mass\n"
+       "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
+       filename); CHKERRQ(ierr); 
 
-  ierr = verbPrintf(2, g->com, 
-     "initializing constant atmospheric climate: reading net surface mass\n"
-     "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
-     filename); CHKERRQ(ierr); 
+    ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
 
-  ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
-
-  delete lic;
+    delete lic;
+  } else {
+    ierr = verbPrintf(2, g->com, 
+       "constant atmospheric climate already initialized; not read from any file ...\n");
+       CHKERRQ(ierr); 
+  }
   return 0;
 }
 

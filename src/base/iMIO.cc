@@ -82,10 +82,13 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   PetscErrorCode ierr;
   char filename[PETSC_MAX_PATH_LEN];
 
+#if 0
+in PCC
   if (doPDD == PETSC_TRUE) { // want to save snow accumulation map, not net accumulation
     ierr = putBackSnowAccumPDD(); CHKERRQ(ierr);
   }
-  
+#endif
+
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   PetscTruth o_set;
@@ -138,6 +141,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   return 0;
 }
 
+
 PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
   PetscTruth append = PETSC_FALSE;
@@ -157,10 +161,18 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
-  ierr = write_extra_fields(filename); CHKERRQ(ierr);
+
+  if (atmosPCC != PETSC_NULL) {
+    ierr = atmosPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+
+  ierr = write_extra_fields(filename); CHKERRQ(ierr); // chance for derived classes to do more
 
   return 0;
 }
+
 
 PetscErrorCode IceModel::write_model_state(const char filename[]) {
   PetscErrorCode ierr;
@@ -190,10 +202,11 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr =  Tb3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   ierr = tau3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
-  // 2D climate quantities
-  ierr =    vTs.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  // 2D earth quantity; like climate but always steady and always owned by IceModel
   ierr =   vGhf.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr = vAccum.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+//in PCC:  ierr =    vTs.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+//in PCC:  ierr = vAccum.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   // write tillphi = till friction angle in degrees
   ierr = vtillphi.write(filename, NC_DOUBLE); CHKERRQ(ierr);
@@ -317,12 +330,14 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   return 0;
 }
 
+
 // Writes extra fields to the output file \c filename. Does nothing in the base
 // class.
 PetscErrorCode IceModel::write_extra_fields(const char filename[]) {
   // Do nothing.
   return 0;
 }
+
 
 PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   PetscErrorCode ierr;
@@ -468,10 +483,11 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = vMask.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr =  vHmelt.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =      vH.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =    vbed.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr = vuplift.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =   vHmelt.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =       vH.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =     vbed.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =  vuplift.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr = vtillphi.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
 
   if (useSSAVelocity) {
@@ -493,11 +509,11 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
     ierr = vvbarSSA.read(fname, g.t_len - 1);
   }
 
-  // 2-D climate/bdry quantities
-  ierr =      vTs.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  // 2-D earth quantity; like climate but owned by IceModel
   ierr =     vGhf.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =   vAccum.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr = vtillphi.read(fname, g.t_len - 1); CHKERRQ(ierr);
+
+//in PCC:  ierr =   vAccum.read(fname, g.t_len - 1); CHKERRQ(ierr);
+//in PCC:  ierr =      vTs.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 3-D model quantities
   ierr =   T3.read(fname, g.t_len - 1); CHKERRQ(ierr);
@@ -760,6 +776,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   return 0;
 }
 
+
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
   NCTool nc(&grid);
@@ -822,6 +839,13 @@ PetscErrorCode IceModel::write_snapshot() {
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = write_model_state(filename);  CHKERRQ(ierr);
+
+    if (atmosPCC != PETSC_NULL) {
+      ierr = atmosPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+    } else {
+      SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    }
+    
     ierr = write_extra_fields(filename); CHKERRQ(ierr);
   }
 

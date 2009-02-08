@@ -295,7 +295,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
 
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  IceModelVec2 *pccsmf;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccsmf to point to IceModelVec2 with current surface mass flux
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccsmf);
+        CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+  ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
+//in PCC:  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
@@ -383,7 +393,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   }
 
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
@@ -391,6 +400,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vvb.end_access(); CHKERRQ(ierr);
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+
+  ierr = pccsmf->end_access(); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);

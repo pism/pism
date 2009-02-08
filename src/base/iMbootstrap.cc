@@ -36,8 +36,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   const PetscScalar DEFAULT_H_VALUE_NO_VAR = 0.0,  // m
                     DEFAULT_BED_VALUE_NO_VAR = 1.0, // m;  grounded if no bed topo
-                    DEFAULT_ACCUM_VALUE_NO_VAR = -0.5 / secpera, // m/s
-                    DEFAULT_SURF_TEMP_VALUE_NO_VAR = 263.15, // K
+                    //in PCC: DEFAULT_ACCUM_VALUE_NO_VAR = -0.5 / secpera, // m/s
+                    //in PCC: DEFAULT_SURF_TEMP_VALUE_NO_VAR = 263.15, // K
                     DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR = 0.042, // J/m^2 s
                     DEFAULT_UPLIFT_VALUE_NO_VAR = 0.0, // m/s
                     DEFAULT_HMELT_VALUE_NO_VAR = 0.0, // m
@@ -193,25 +193,25 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
   ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
-  ierr =     vAccum.regrid(filename, *bootstrapLIC, DEFAULT_ACCUM_VALUE_NO_VAR); CHKERRQ(ierr);
+//in PCC:  ierr =     vAccum.regrid(filename, *bootstrapLIC, DEFAULT_ACCUM_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =         vH.regrid(filename, *bootstrapLIC, DEFAULT_H_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =       vbed.regrid(filename, *bootstrapLIC, DEFAULT_BED_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =     vHmelt.regrid(filename, *bootstrapLIC, DEFAULT_HMELT_VALUE_NO_VAR); CHKERRQ(ierr);
-  ierr =        vTs.regrid(filename, *bootstrapLIC, DEFAULT_SURF_TEMP_VALUE_NO_VAR); CHKERRQ(ierr);
+//in PCC:  ierr =        vTs.regrid(filename, *bootstrapLIC, DEFAULT_SURF_TEMP_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =   vtillphi.regrid(filename, *bootstrapLIC, DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =       vGhf.regrid(filename, *bootstrapLIC, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =    vuplift.regrid(filename, *bootstrapLIC, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
 
   // set mask and h; tell user what happened:
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
+
+  setInitialAgeYears(initial_age_years_default);
   
-  // fill in temps at depth in reasonable way using surface temps and Ghf
+  // fill in temps at depth in reasonable way using surface temps (from atmosPCC) and Ghf
   ierr = verbPrintf(2, grid.com, 
      "  filling in temperatures at depth using quartic guess\n");
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
-
-  setInitialAgeYears(initial_age_years_default);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
   initialized_p = PETSC_TRUE;
@@ -444,9 +444,19 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscScalar *T;
   T = new PetscScalar[grid.Mz];
 
+  IceModelVec2    *pccTs;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+        CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
+//in PCC:  ierr = vTs.get_array(Ts);  CHKERRQ(ierr);
+
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
   ierr = vbed.get_array(b);   CHKERRQ(ierr);
-  ierr =  vTs.get_array(Ts);  CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
 
   ierr =  T3.begin_access(); CHKERRQ(ierr);
@@ -481,11 +491,12 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr =   vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
-  ierr =  vTs.end_access(); CHKERRQ(ierr);
   ierr =   T3.end_access(); CHKERRQ(ierr);
   ierr =  Tb3.end_access(); CHKERRQ(ierr);
 
   delete [] T;
+
+  ierr = pccTs->end_access(); CHKERRQ(ierr);
   
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);

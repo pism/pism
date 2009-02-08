@@ -155,7 +155,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   const PetscScalar   iceR = iceK * dtTempAge / PetscSqr(dzEQ);
   const PetscScalar   brK = bed_thermal.k / rho_c_br;
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dzbEQ);
-
+  
   PetscScalar *Tb, *Tbnew;
   PetscScalar **Ts, **H, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate, **bed;
 
@@ -178,11 +178,21 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   rhs = new PetscScalar[Mz+k0];
   work = new PetscScalar[Mz+k0];
 
+  IceModelVec2    *pccTs;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+        CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
+//in PCC:   ierr =  vTs.get_array(Ts); CHKERRQ(ierr);
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr =  vTs.get_array(Ts); CHKERRQ(ierr);
   ierr =  vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);  // only needed to compute temp at top
@@ -491,11 +501,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vHmelt.end_access(); CHKERRQ(ierr);
-  ierr = vTs.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
+
+  ierr = pccTs->end_access(); CHKERRQ(ierr);
+//in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

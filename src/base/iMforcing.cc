@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Nathan Shemonski, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2009 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -85,8 +85,19 @@ PetscErrorCode IceModel::updateForcing() {
   PetscErrorCode ierr;
 
   if (dTforcing != PETSC_NULL) {
+    //FIXME:  THIS WHOLE MECHANISM SHOULD MOVE INTO PCC
+    IceModelVec2 *pccTs;
+    if (atmosPCC != PETSC_NULL) {
+      // call sets pccTs to point to IceModelVec2 with current surface temps
+      ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+          CHKERRQ(ierr);
+    } else {
+      SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    }
+
     // TsOffset should be zero at startup!
-    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+    ierr = pccTs->shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+//in PCC:    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
 
     // read a new offset
     ierr = dTforcing->updateFromCoreClimateData(grid.year,&TsOffset); CHKERRQ(ierr);
@@ -94,7 +105,8 @@ PetscErrorCode IceModel::updateForcing() {
     ierr = verbPrintf(5,grid.com,"read TsOffset=%.6f from -dTforcing climate data\n",
        TsOffset); CHKERRQ(ierr);
        
-    ierr = vTs.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
+    ierr = pccTs->shift(TsOffset); CHKERRQ(ierr);  // apply the offset
+//in PCC:    ierr = vTs.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
 
     // no need to communicate vTs because it has no ghosts
   }
@@ -121,7 +133,19 @@ PetscErrorCode IceModel::updateForcing() {
 PetscErrorCode IceModel::forcingCleanup() {
   PetscErrorCode ierr;
   if (dTforcing != PETSC_NULL) {
-    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+    //FIXME:  THIS WHOLE MECHANISM SHOULD MOVE INTO PCC
+    IceModelVec2 *pccTs;
+    if (atmosPCC != PETSC_NULL) {
+      // call sets pccTs to point to IceModelVec2 with current surface temps
+      ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+          CHKERRQ(ierr);
+    } else {
+      SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    }
+
+    ierr = pccTs->shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+//in PCC:    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+
     TsOffset = 0.0;
     delete dTforcing;
     dTforcing = PETSC_NULL;

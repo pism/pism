@@ -77,10 +77,11 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits:src/coupler):../lib
 
 # Variables:
-executables := pismr pismd pismv pisms
+#FIXME TEMPORARY OFF executables := pismr pismd pismv pisms
+executables := pismr pisms
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
@@ -91,30 +92,32 @@ ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc \
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc \
 	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		        \
 	iMdefaults.cc iMforcing.cc iMgeometry.cc iMgrainsize.cc iMinverse.cc    \
-	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc iMpdd.cc    \
+	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
 	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc
+# in PCC:  iMpdd.cc
 
 ice_csources := cubature.c pism_signal.c
 
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
-	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pPDDcoupler.cc pccoupler.cc	\
+	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
 	iceCompModel.cc iceExactSSAModel.cc iceCalvBCModel.cc iCMthermo.cc flowTable.cc		\
 	tryLCbd.cc
+
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c simpleM.c
 
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
-include ../src/eismint/grn_make
+#include ../src/eismint/grn_make
 
 # this is a derived class example demonstrating use of PISMClimateCoupler;
 #   including it creates executable "pcc"
-include ../src/coupler/pcc_make
+#include ../src/coupler/pcc_make
 
 # Import additional make include files:
 ifdef CONFIG
@@ -162,18 +165,18 @@ $(LIBUDUNITS): $(ud_objects)
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-../bin/pismr : pismr.o
-	${CXXLINKER} $< ${ICE_LIB_FLAGS} -o $@
+../bin/pismr : pismr.o pPDDcoupler.o pccoupler.o
+	${CXXLINKER} pismr.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/pismd : pismd.o iceROSSModel.o
-	${CXXLINKER} iceROSSModel.o pismd.o ${ICE_LIB_FLAGS} -o $@
+../bin/pismd : pismd.o iceROSSModel.o pPDDcoupler.o pccoupler.o
+	${CXXLINKER} iceROSSModel.o pismd.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o
-	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
+../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o pPDDcoupler.o pccoupler.o
+	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o pPDDcoupler.o pccoupler.o \
 	${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
- pismv.o ${LIBTESTSNAME}
+ pismv.o pPDDcoupler.o pccoupler.o ${LIBTESTSNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -289,8 +289,9 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = write2DToMatlab(viewer, '4', vub, secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, '5', vvb, secpera);  CHKERRQ(ierr);
 
-  ierr = write2DToMatlab(viewer,'A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, 
-                         secpera); CHKERRQ(ierr);
+//in PCC:  ierr = write2DToMatlab(viewer,'A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, 
+//                         secpera); CHKERRQ(ierr);
+
   ierr = write2DToMatlab(viewer, 'C', vtauc, 0.001);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'E', tau3, 1.0/secpera);  CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'F', vGhf, 1000.0);  CHKERRQ(ierr);
@@ -310,7 +311,8 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = writeSliceToMatlab(viewer, 'Y', v3, secpera);  CHKERRQ(ierr);
   ierr = writeSliceToMatlab(viewer, 'Z', w3, secpera);  CHKERRQ(ierr);
 
-  ierr = write2DToMatlab(viewer, 'a', vAccum, secpera); CHKERRQ(ierr);
+//in PCC:  ierr = write2DToMatlab(viewer, 'a', vAccum, secpera); CHKERRQ(ierr);
+
   ierr = write2DToMatlab(viewer, 'b', vbed, 1.0); CHKERRQ(ierr);
   ierr = writeSpeed2DToMatlab(viewer, 'c', vubar, vvbar, secpera, PETSC_TRUE, -3.0);
            CHKERRQ(ierr);
@@ -325,7 +327,9 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
   ierr = write2DToMatlab(viewer, 'p', vuplift, secpera);  CHKERRQ(ierr);
   ierr = writeSpeed2DToMatlab(viewer, 'q', vub, vvb, secpera, PETSC_TRUE, -3.0);
            CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'r', vTs, 1.0);  CHKERRQ(ierr);
+
+//in PCC:  ierr = write2DToMatlab(viewer, 'r', vTs, 1.0);  CHKERRQ(ierr);
+
   ierr = writeSoundingToMatlab(viewer,'s', Sigma3, secpera, PETSC_FALSE); CHKERRQ(ierr);
   ierr = writeSoundingToMatlab(viewer,'t', T3, 1.0, PETSC_TRUE); CHKERRQ(ierr);
   ierr = write2DToMatlab(viewer, 'u', vubar, secpera);  CHKERRQ(ierr);

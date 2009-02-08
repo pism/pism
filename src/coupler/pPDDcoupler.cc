@@ -25,7 +25,6 @@
 #include "../base/pism_const.hh"
 #include "../base/grid.hh"
 #include "../base/iceModelVec.hh"
-#include "pccoupler.hh"
 #include "pPDDcoupler.hh"
 
 
@@ -428,8 +427,8 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
   IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
 
   PetscScalar **smflux, **amstemp, **saccum, **h, **lat, **smonthtemp[12];
-  ierr = info->vsurfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = info->vlatitude->get_array(lat); CHKERRQ(ierr);
+  ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
+  ierr = info->lat->get_array(lat); CHKERRQ(ierr);
 
   ierr =    vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
   ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
@@ -547,8 +546,8 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
     }
   }
 
-  ierr = info->vsurfelev->end_access(); CHKERRQ(ierr);
-  ierr = info->vlatitude->end_access(); CHKERRQ(ierr);
+  ierr = info->surfelev->end_access(); CHKERRQ(ierr);
+  ierr = info->lat->end_access(); CHKERRQ(ierr);
 
   ierr =    vsurfmassflux.end_access(); CHKERRQ(ierr);
   ierr = vannmeansurftemp.end_access(); CHKERRQ(ierr);
@@ -609,8 +608,8 @@ PetscErrorCode PISMPDDCoupler::updateSurfTempAndProvide(
     //   annual mean (vannmeansurftemp) with additional yearly cycle controlled
     //   by summer_warming
     PetscScalar **h, **lat, **amstemp;
-    ierr = info->vsurfelev->get_array(h);   CHKERRQ(ierr);
-    ierr = info->vlatitude->get_array(lat); CHKERRQ(ierr);
+    ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
+    ierr = info->lat->get_array(lat); CHKERRQ(ierr);
     ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
     for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
       for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
@@ -619,8 +618,8 @@ PetscErrorCode PISMPDDCoupler::updateSurfTempAndProvide(
         stemp[i][j] = getTemperatureFromYearlyCycle(summer_warming, mean_annual, mid_day);
       }
     }
-    ierr = info->vsurfelev->end_access(); CHKERRQ(ierr);
-    ierr = info->vlatitude->end_access(); CHKERRQ(ierr);
+    ierr = info->surfelev->end_access(); CHKERRQ(ierr);
+    ierr = info->lat->end_access(); CHKERRQ(ierr);
     ierr = vannmeansurftemp.end_access(); CHKERRQ(ierr);
   }
 
@@ -629,7 +628,4 @@ PetscErrorCode PISMPDDCoupler::updateSurfTempAndProvide(
   pvst = &vsurftemp;
   return 0;
 }
-
-
-
 

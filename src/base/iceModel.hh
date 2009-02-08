@@ -23,12 +23,15 @@
 #include <netcdf.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
+
 #include "materials.hh"
 #include "pism_const.hh"
 #include "grid.hh"
 #include "forcing.hh"
 #include "beddefLC.hh"
 #include "iceModelVec.hh"
+
+#include "../coupler/pccoupler.hh"
 
 // remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -130,6 +133,8 @@ public:
 
   // see iMutil.cc
   virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode attachAtmospherePCC(PISMAtmosphereCoupler &aPCC);
+  virtual PetscErrorCode attachOceanPCC(PISMOceanCoupler &oPCC);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -161,6 +166,11 @@ protected:
   SeaWaterType          ocean;
   FreshWaterType        porewater;
 
+  PISMAtmosphereCoupler *atmosPCC;
+  IceInfoNeededByAtmosphereCoupler iinbac;
+
+  PISMOceanCoupler      *oceanPCC;
+
   InverseModelCtx       inv;
   
   // state variables
@@ -181,9 +191,10 @@ protected:
     vubar, vvbar,	     	//!< vertically-averaged vels on standard grid
   /*!< vertically-averaged vels (u bar and v bar) on standard grid */
     vMask,		   //!< mask for flow type
-    vTs,		   //!< surface temperature
-    vAccum,		   //!< accumulation
-    vAccumSnow,		   //!< see iMpdd.cc; vAccum is net (including ablation)
+//THESE THREE ARE PCC:
+//    vTs,		   //!< surface temperature
+//    vAccum,		   //!< accumulation
+//    vAccumSnow,		   //!< see iMpdd.cc; vAccum is net (including ablation)
     vGhf,		   //!< geothermal flux
     vRb,		   //!< basal frictional heating on regular grid
     vtillphi;		   //!< friction angle for till under grounded ice sheet
@@ -404,6 +415,8 @@ protected:
   virtual PetscErrorCode determineSpacingTypeFromOptions(
                       const PetscTruth forceEqualIfNoOption);
 
+#if 0
+in PCC
   // see iMpdd.cc (positive degree day model)
   gsl_rng     *pddRandGen;
   char        monthlyTempsFile[PETSC_MAX_PATH_LEN];
@@ -426,6 +439,7 @@ protected:
                   const PetscScalar Tma) const;
   virtual double getSurfaceBalanceFromSnowAndPDD(
                      const double snowrate, const double mydt, const double pdds);
+#endif
 
   // see iMreport.cc
   virtual PetscErrorCode computeFlowUbarStats
@@ -456,7 +470,8 @@ protected:
   virtual PetscErrorCode velocitySSA(PetscInt *numiter);
   virtual PetscErrorCode velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter);
   virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon);
-  virtual PetscErrorCode testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2], PetscReal *, PetscReal *);
+  virtual PetscErrorCode testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2],
+                                             PetscReal *norm, PetscReal *normChange);
   virtual PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, IceModelVec2 vNuH[2], Mat A);
   virtual PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   virtual PetscErrorCode moveVelocityToDAVectors(Vec x);

@@ -223,27 +223,24 @@ PetscErrorCode IceEISModel::initFromOptions(PetscTruth doHook) {
 	}
       }	// end of switch(expername)
     
+    initialized_p = PETSC_TRUE;
+  } // end of if(!infileused)
+  
+  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
+
+  ierr = initAccumTs(); CHKERRQ(ierr); // climate is always set to EISMINT II
+
+  if (!infileused) { // only clear out and replace temps only if initialized from scratch
+    ierr = fillintemps(); CHKERRQ(ierr);
+  }
+
+  if (!infileused) { // only generate topology if not in input file
     if ((expername == 'I') || (expername == 'J')) {
       ierr = generateTroughTopography(); CHKERRQ(ierr);
     } 
     if ((expername == 'K') || (expername == 'L')) {
       ierr = generateMoundTopography(); CHKERRQ(ierr);
     } 
-
-    ierr = initAccumTs(); CHKERRQ(ierr);
-    ierr = fillintemps(); CHKERRQ(ierr);
-
-    initialized_p = PETSC_TRUE;
-  } // end of if(!infileused)
-  
-  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
-
-  if (infileused) {
-    ierr = initAccumTs(); CHKERRQ(ierr); // just overwrite accum and Ts with EISMINT II vals
-  }
-  
-  if (infileused && ((expername == 'I') || (expername == 'J'))) { // always regenerate topography
-    ierr = generateTroughTopography(); CHKERRQ(ierr); 
   }
   
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
@@ -256,9 +253,24 @@ PetscErrorCode IceEISModel::initAccumTs() {
   PetscErrorCode    ierr;
   PetscScalar       **accum, **Ts;
 
+  IceModelVec2 *pccsmf, *pccTs;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccsmf to point to IceModelVec2 with current surface massflux
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccsmf);
+        CHKERRQ(ierr);
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+        CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+
   // now fill in accum and surface temp
-  ierr =    vTs.get_array(Ts); CHKERRQ(ierr);
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr =  pccTs->get_array(Ts); CHKERRQ(ierr);
+  ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
+//in PCC:  ierr =    vTs.get_array(Ts); CHKERRQ(ierr);
+//in PCC:  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -271,8 +283,11 @@ PetscErrorCode IceEISModel::initAccumTs() {
       Ts[i][j] = T_min + S_T * r;                 // formula (8) in (Payne et al 2000)
     }
   }
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
-  ierr = vTs.end_access(); CHKERRQ(ierr);
+
+  ierr = pccsmf->end_access(); CHKERRQ(ierr);
+  ierr =  pccTs->end_access(); CHKERRQ(ierr);
+//in PCC:  ierr = vAccum.end_access(); CHKERRQ(ierr);
+//in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -280,12 +295,24 @@ PetscErrorCode IceEISModel::initAccumTs() {
 PetscErrorCode IceEISModel::fillintemps() {
   PetscErrorCode      ierr;
   PetscScalar         **Ts;
-  const PetscScalar   G_geothermal   = 0.042; // J/m^2 s; geo. heat flux; only matters if
-                                              // (nonstandard case) bedrock is present
+  const PetscScalar   G_geothermal   = 0.042; // J/m^2 s; geothermal flux
+
+  IceModelVec2 *pccTs;
+  IceInfoNeededByAtmosphereCoupler iinbac; // set info needed by atmosPCC
+  iinbac.lat = &vLatitude;  iinbac.lon = &vLongitude;  
+  iinbac.mask = &vMask;     iinbac.surfelev = &vh;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+        CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+  ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
+//in PCC:  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
 
   // fill in all ice temps with Ts and then have bedrock (if present despite EISMINT
   //   standard) temperatures reflect default geothermal rate
-  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -294,9 +321,11 @@ PetscErrorCode IceEISModel::fillintemps() {
       ierr = bootstrapSetBedrockColumnTemp(i,j,Ts[i][j],G_geothermal); CHKERRQ(ierr);
     }
   }
-  ierr = vTs.end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = Tb3.end_access(); CHKERRQ(ierr);
+
+  ierr = pccTs->end_access(); CHKERRQ(ierr);
+//in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
 
   // communicate T because it will be horizontally differentiated
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);

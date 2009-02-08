@@ -58,10 +58,7 @@ protected:
 
 
 struct IceInfoNeededByAtmosphereCoupler {
-  IceModelVec2 *vlatitude,
-               *vlongitude,
-               *vmask,
-               *vsurfelev;
+  IceModelVec2 *lat, *lon, *mask, *surfelev;
 };
 
 
@@ -75,8 +72,12 @@ public:
   PISMAtmosphereCoupler();
   virtual ~PISMAtmosphereCoupler(); // destroys IceModelVec2 below
 
+  // next three override PISMClimateCoupler versions
   virtual PetscErrorCode initFromOptions(IceGrid* g);
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+  virtual PetscErrorCode updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded);
 
   // an atmosphere model could run non-trivially during these calls
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
@@ -88,14 +89,8 @@ public:
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
-  // this calls the two above
-  virtual PetscErrorCode updateClimateFields(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded);
-
 protected:
-  // the two essential fields that must be available for IceModel (base class)
-  IceModelVec2 vsurfmassflux, vsurftemp;
+  IceModelVec2 vsurfmassflux, vsurftemp; // access these through update...() above
 };
 
 
@@ -119,6 +114,8 @@ public:
              const PetscScalar t_years, const PetscScalar dt_years,
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // vst = pointer to vsurftemp
+
+  bool initializeFromFile;
 };
 
 

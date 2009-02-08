@@ -145,8 +145,8 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   // initFromFile().  Anything else is an error.
   if (! isInitialized()) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: IceModel::initFromOptions():\n"
-		       "            Model has not been initialized from a file or by a derived class.\n");
+        "PISM ERROR: IceModel::initFromOptions():\n"
+	"            Model has not been initialized from a file or by a derived class.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -181,8 +181,14 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
     
   // these initializations can not use info from -regrid_from:
-  ierr = initPDDFromOptions(); CHKERRQ(ierr);
+//in PCC:  ierr = initPDDFromOptions(); CHKERRQ(ierr);
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
+  
+  if (atmosPCC != PETSC_NULL) {
+    ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
 
   skipCountDown = 0;
 

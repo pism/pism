@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -427,11 +427,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
     // none use Goldsby-Kohlstedt or do age calc
     setInitialAgeYears(initial_age_years_default);
     ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
-    ierr = vTs.set(ice->meltingTemp); CHKERRQ(ierr);
     ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
     ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
-
-    ierr = vAccum.set(0.3/secpera); CHKERRQ(ierr);
 
     ierr = vH.set(initialthickness); CHKERRQ(ierr);
 
@@ -449,6 +446,23 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
     SETERRQ(1, "ERROR: IceMISMIPModel has not been initialized!\n");
   }
 
+  // set climate
+  IceModelVec2 *pccsmf, *pccTs;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccsmf to point to IceModelVec2 with current surface massflux
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccsmf);
+        CHKERRQ(ierr);
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
+        CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+  ierr = pccTs->set(ice->meltingTemp); CHKERRQ(ierr);
+  ierr = pccsmf->set(0.3/secpera); CHKERRQ(ierr);
+//in PCC:    ierr = vTs.set(ice->meltingTemp); CHKERRQ(ierr);
+//in PCC:    ierr = vAccum.set(0.3/secpera); CHKERRQ(ierr);
+
   // determine gridmode from My
   if (grid.My == 151) 
     gridmode = 1;
@@ -462,17 +476,18 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
   snprintf(mprefix, sizeof(mprefix), "%s%d_%d%c_M%d_A%d",
            initials, modelnum, exper, sliding, gridmode, stepindex);
 
-  // if user says "-o foo"
+  // if user says "-o foo.nc"
   PetscTruth  oused;
   char        oname[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
            CHKERRQ(ierr);
   if (oused == PETSC_FALSE) {
+    strcpy(oname,mprefix);
+    strcat(oname,".nc");
     // act like user set the output name
-    ierr = PetscOptionsSetValue("-o",mprefix);  CHKERRQ(ierr);
+    ierr = PetscOptionsSetValue("-o",oname);  CHKERRQ(ierr);
   }
-  ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
-           CHKERRQ(ierr);
+
   ierr = verbPrintf(2,grid.com,
        "IceMISMIPModel:  MISMIP options read.  Will save file\n"
        "  %s_t during run, %s.nc at end of run,\n"
@@ -707,6 +722,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
     ierr = verbPrintf(2, grid.com, " and %s", efilename); CHKERRQ(ierr);
     ierr = writeMISMIPasciiFile('e',efilename); CHKERRQ(ierr);
   }
+  ierr = verbPrintf(2, grid.com, "\n"); CHKERRQ(ierr);
   return 0;
 }
 

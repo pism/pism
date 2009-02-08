@@ -101,20 +101,20 @@ PetscErrorCode readInfoFromFile(PISMClimateCoupler *pcc,
 
   ierr = pcc->findPISMInputFile(filename, lic); CHKERRQ(ierr); // allocates lic
 
-  info.vlatitude = new IceModelVec2;
-  info.vlongitude = new IceModelVec2;
-  info.vmask = new IceModelVec2;
-  info.vsurfelev = new IceModelVec2;
+  info.lat = new IceModelVec2;
+  info.lon = new IceModelVec2;
+  info.mask = new IceModelVec2;
+  info.surfelev = new IceModelVec2;
 
-  ierr = info.vlatitude->create(*grid, "lat", true); CHKERRQ(ierr);
-  ierr = info.vlongitude->create(*grid, "lon", true); CHKERRQ(ierr);
-  ierr = info.vmask->create(*grid, "mask", true); CHKERRQ(ierr);
-  ierr = info.vsurfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
+  ierr = info.lat->create(*grid, "lat", true); CHKERRQ(ierr);
+  ierr = info.lon->create(*grid, "lon", true); CHKERRQ(ierr);
+  ierr = info.mask->create(*grid, "mask", true); CHKERRQ(ierr);
+  ierr = info.surfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
 
-  ierr = info.vlatitude->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.vlongitude->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.vmask->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.vsurfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
 
   delete lic;
 
@@ -124,14 +124,14 @@ PetscErrorCode readInfoFromFile(PISMClimateCoupler *pcc,
 
 PetscErrorCode doneWithInfo(IceInfoNeededByAtmosphereCoupler &info) {
   PetscErrorCode ierr;
-  ierr = info.vlatitude->destroy(); CHKERRQ(ierr);
-  ierr = info.vlongitude->destroy(); CHKERRQ(ierr);
-  ierr = info.vmask->destroy(); CHKERRQ(ierr);
-  ierr = info.vsurfelev->destroy(); CHKERRQ(ierr);
-  delete info.vlatitude;
-  delete info.vlongitude;
-  delete info.vmask;
-  delete info.vsurfelev;
+  ierr = info.lat->destroy(); CHKERRQ(ierr);
+  ierr = info.lon->destroy(); CHKERRQ(ierr);
+  ierr = info.mask->destroy(); CHKERRQ(ierr);
+  ierr = info.surfelev->destroy(); CHKERRQ(ierr);
+  delete info.lat;
+  delete info.lon;
+  delete info.mask;
+  delete info.surfelev;
   return 0;
 }
 

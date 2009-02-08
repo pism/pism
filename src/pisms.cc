@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for EISMINT II and MISMIP simplified geometry\n"
+  "Ice sheet driver for EISMINT II, MISMIP, and other constant climate, simplified geometry\n"
   "intercomparison simulations.\n";
 
 #include <cstring>
@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
     IceGrid    g(com, rank, size);
     IceType*   ice = PETSC_NULL;
     MISMIPIce* mismipice = new MISMIPIce;
+    PISMConstAtmosCoupler pcac; // FIXME: either constant or PDD should be allowed
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
@@ -82,16 +83,16 @@ int main(int argc, char *argv[]) {
     }
     
     if (EISIIchosen == PETSC_TRUE) {
-      ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
-      ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
+//      ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
+//      ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
     } else if (PSTexchosen == PETSC_TRUE) {
-      ierr = mPSTex.setFromOptions(); CHKERRQ(ierr);
-      ierr = mPSTex.initFromOptions(); CHKERRQ(ierr);
+//      ierr = mPSTex.setFromOptions(); CHKERRQ(ierr);
+//      ierr = mPSTex.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mPSTex;
     } else if (MISMIPchosen == PETSC_TRUE) {
-      ierr = mMISMIP.setFromOptions(); CHKERRQ(ierr);
-      ierr = mMISMIP.initFromOptions(); CHKERRQ(ierr);
+//      ierr = mMISMIP.setFromOptions(); CHKERRQ(ierr);
+//      ierr = mMISMIP.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mMISMIP;
     } else {
       SETERRQ(3,"PISMS: how did I get here?");
@@ -101,6 +102,10 @@ int main(int argc, char *argv[]) {
 //     ierr = m->testIceModelVec3(); CHKERRQ(ierr);
 //     ierr = m->testIceModelVec3Bedrock(); CHKERRQ(ierr);
 
+    ierr = m->setFromOptions(); CHKERRQ(ierr);
+    pcac.initializeFromFile = false;  // climate will always come from intercomparison formulas, for pisms
+    ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
+    ierr = m->initFromOptions(); CHKERRQ(ierr);
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
