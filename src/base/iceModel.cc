@@ -382,10 +382,16 @@ in PCC
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
 
   // so that we can let atmosPCC know about these fields in IceModel state
-  iinbac.lat = &vLatitude;
-  iinbac.lon = &vLongitude;  
-  iinbac.mask = &vMask;
-  iinbac.surfelev = &vh;
+  info_atmoscoupler.lat = &vLatitude;
+  info_atmoscoupler.lon = &vLongitude;  
+  info_atmoscoupler.mask = &vMask;
+  info_atmoscoupler.surfelev = &vh;
+
+  // so that we can let oceanPCC know about these fields in IceModel state
+  info_oceancoupler.lat = &vLatitude;
+  info_oceancoupler.lon = &vLongitude;  
+  info_oceancoupler.mask = &vMask;
+  info_oceancoupler.thk = &vH;
 
   createVecs_done = PETSC_TRUE;
   return 0;

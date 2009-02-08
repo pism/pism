@@ -33,7 +33,7 @@
 
 #include "../coupler/pccoupler.hh"
 
-// remove trivial namespace browser from doxygen-erated HTML source browser
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
 /// @endcond
@@ -59,9 +59,6 @@ struct PolarStereoParams {
 struct SSASNESNode {
   PetscScalar u, v;
 };
-
-class IceModel;
-
 struct SSASNESCtx {
   DA               ssada;
   IceGrid          *grid;
@@ -167,9 +164,10 @@ protected:
   FreshWaterType        porewater;
 
   PISMAtmosphereCoupler *atmosPCC;
-  IceInfoNeededByAtmosphereCoupler iinbac;
+  IceInfoNeededByAtmosphereCoupler info_atmoscoupler;
 
   PISMOceanCoupler      *oceanPCC;
+  IceInfoNeededByOceanCoupler info_oceancoupler;
 
   InverseModelCtx       inv;
   

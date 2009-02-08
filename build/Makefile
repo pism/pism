@@ -77,7 +77,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits:src/coupler):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 #FIXME TEMPORARY OFF executables := pismr pismd pismv pisms
@@ -102,10 +102,11 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := pismr.cc pismd.cc pismv.cc pisms.cc pPDDcoupler.cc pccoupler.cc	\
-	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc	\
-	iceCompModel.cc iceExactSSAModel.cc iceCalvBCModel.cc iCMthermo.cc flowTable.cc		\
-	tryLCbd.cc
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc \
+	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
+	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
+	pPDDcoupler.cc pccoupler.cc \
+	flowTable.cc tryLCbd.cc
 
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c simpleM.c
@@ -113,11 +114,11 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
-#include ../src/eismint/grn_make
+#FIXME TEMPORARY: include ../src/eismint/grn_make
 
 # this is a derived class example demonstrating use of PISMClimateCoupler;
 #   including it creates executable "pcc"
-#include ../src/coupler/pcc_make
+#FIXME PERMANENT? include ../src/coupler/pcc_make
 
 # Import additional make include files:
 ifdef CONFIG

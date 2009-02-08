@@ -157,7 +157,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   const PetscScalar   brR = brK * dtTempAge / PetscSqr(dzbEQ);
   
   PetscScalar *Tb, *Tbnew;
-  PetscScalar **Ts, **H, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate, **bed;
+  PetscScalar **Ts, **Tshelfbase, **H, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate, **bmr_float;
 
   PetscScalar *u, *v, *w, *Sigma, *T, *Tnew;
   u = new PetscScalar[Mz];
@@ -178,16 +178,28 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   rhs = new PetscScalar[Mz+k0];
   work = new PetscScalar[Mz+k0];
 
-  IceModelVec2    *pccTs;
+  IceModelVec2    *pccTs, *pccsbt, *pccsbmf;
+
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
-        CHKERRQ(ierr);
+    ierr = atmosPCC->updateSurfTempAndProvide(
+              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
 //in PCC:   ierr =  vTs.get_array(Ts); CHKERRQ(ierr);
+
+  if (oceanPCC != PETSC_NULL) {
+    ierr = oceanPCC->updateShelfBaseTempAndProvide(
+              grid.year, dt * secpera, (void*)(&info_oceancoupler), pccsbt); CHKERRQ(ierr);
+    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
+              grid.year, dt * secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+  ierr = pccsbt->get_array(Tshelfbase);  CHKERRQ(ierr);
+  ierr = pccsbmf->get_array(bmr_float);  CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
@@ -195,8 +207,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr =  vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
-  ierr = vbed.get_array(bed); CHKERRQ(ierr);  // only needed to compute temp at top
-                                              // of bedrock in ocean
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
@@ -259,15 +269,10 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         U[k0] = 0.0;
         // if floating and no ice then worry only about bedrock temps
         if (modMask(mask[i][j]) == MASK_FLOATING) {
-          if (k0 == 0) 
-            rhs[k0] = ice->meltingTemp;  // top of ocean temp; should make no difference
-          else {  // we are computing temp at top of bedrock
-            // FIXME: should split k0 into two grid points, one for top of 
-            //   bedrock and one for bottom of ice shelf
-            rhs[k0] = ice->meltingTemp - ocean.beta_CC_grad * (seaLevel - bed[i][j]);
-          }
-        } else { // top of bedrock sees atmosphere
-          // FIXME: next line will become call to atmosphere PISMClimateCoupler
+          // essentially no ice but floating ... ask PISMOceanCoupler
+          rhs[k0] = Tshelfbase[i][j];
+          // FIXME: split k0 into two grid points?
+        } else { // top of bedrock sees atmosphere; set by PISMAtmosphereCoupler
           rhs[k0] = Ts[i][j]; 
         }
       } else { // ks > 0; there is ice
@@ -284,9 +289,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
           D[k0] = 1.0;
           U[k0] = 0.0;
-          // FIXME: next line will become call to ocean PISMClimateCoupler
-          const PetscScalar base_depth = (ice->rho/ocean.rho) * H[i][j];
-          rhs[k0] = ice->meltingTemp - ocean.beta_CC_grad * base_depth; 
+          rhs[k0] = Tshelfbase[i][j]; // set by PISMOceanCoupler
         } else { 
           // there is *grounded* ice; ice/bedrock interface; from FV across interface
           const PetscScalar rho_c_ratio = rho_c_I / rho_c_av;
@@ -364,8 +367,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         L[k0+ks] = 0.0;
         D[k0+ks] = 1.0;
         // ignore U[k0+ks]
-        // FIXME: next line will become call to atmos PISMClimateCoupler
-        rhs[k0+ks] = Ts[i][j];
+        rhs[k0+ks] = Ts[i][j]; // set by PISMAtmosphereCoupler
       }
 
       // solve system; melting not addressed yet
@@ -444,11 +446,10 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       if (ks > 0) {
         Tbnew[k0] = Tnew[0];
       } else {
-        // if floating then top of bedrock sees ocean
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
-          Tbnew[k0] = ice->meltingTemp;
+        if (modMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
+          Tbnew[k0] = Tshelfbase[i][j]; // set by PISMOceanCoupler
         } else { // top of bedrock sees atmosphere
-          Tbnew[k0] = Ts[i][j];
+          Tbnew[k0] = Ts[i][j]; // set by PISMAtmosphereCoupler
         }
       }
       // check bedrock solution        
@@ -473,15 +474,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       // transfer column into Tnew3; communication later
       ierr = Tnew3.setValColumnPL(i,j,Mz,zlevEQ,Tnew); CHKERRQ(ierr);
 
+      // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
+      //   note massContExplicitStep() calls PISMOceanCoupler separately
       if (modMask(mask[i][j]) == MASK_FLOATING) {
-        // basalMeltRate[][] is rate of mass loss at bottom of ice shelf;
-        //   it can be negative (marine freeze-on)
-        // FIXME: next line will become call to ocean PISMClimateCoupler
-        basalMeltRate[i][j] = ocean.defaultShelfBaseMassRate;
+        // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
+        basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
       } else {
-        // basalMeltRate[][] is rate of change of Hmelt[][]; it can be
-        //   negative (till water freeze-on)
-        // this is only a valid computation at grounded points
+        // rate of change of Hmelt[][];  can be negative (till water freeze-on)
         basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
       }
 
@@ -504,10 +503,11 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   ierr = pccTs->end_access(); CHKERRQ(ierr);
 //in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
+  ierr = pccsbt->end_access();  CHKERRQ(ierr);
+  ierr = pccsbmf->end_access();  CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

@@ -447,16 +447,24 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
   }
 
   // set climate
+  if (oceanPCC != PETSC_NULL) {
+    // FIXME: dangerous cast to PISMConstOceanCoupler; should be done differently
+    PISMConstOceanCoupler *coPCC = (PISMConstOceanCoupler*) oceanPCC;
+    coPCC->constOceanHeatFlux = 0.0;  // NO sub ice shelf melting
+  } else {
+    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
+  }
+
   IceModelVec2 *pccsmf, *pccTs;
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface massflux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccsmf);
-        CHKERRQ(ierr);
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(
+              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccsmf); CHKERRQ(ierr);
     // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
-        CHKERRQ(ierr);
+    ierr = atmosPCC->updateSurfTempAndProvide(
+              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(3,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   ierr = pccTs->set(ice->meltingTemp); CHKERRQ(ierr);
   ierr = pccsmf->set(0.3/secpera); CHKERRQ(ierr);
@@ -519,8 +527,7 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
 
   ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
   
-  // automatic parallel layout from DACreate2d(...PETSC_DECIDE...) in grid.cc
-  //   LOOKS GOOD:  DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD);
+  // view parallel layout:  DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD);
 
   // create ABC1_..._t file for every 50 year results
   strcpy(tfilename,mprefix);

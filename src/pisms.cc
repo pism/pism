@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
     IceType*   ice = PETSC_NULL;
     MISMIPIce* mismipice = new MISMIPIce;
     PISMConstAtmosCoupler pcac; // FIXME: either constant or PDD should be allowed
+    PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
@@ -105,6 +106,7 @@ int main(int argc, char *argv[]) {
     ierr = m->setFromOptions(); CHKERRQ(ierr);
     pcac.initializeFromFile = false;  // climate will always come from intercomparison formulas, for pisms
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
+    ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
     ierr = m->initFromOptions(); CHKERRQ(ierr);
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);

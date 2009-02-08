@@ -32,11 +32,18 @@ const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
 const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
      // ice.meltingTemp; if above this value then decide to slide
 const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
+
+#if 0 
+in PCC
 const PetscScalar DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
         // about 4 times more heating than peak of 
         // Shapiro&Ritzwoller geothermal fluxes for Antarctica (i.e. about 130 mW/m^2)
+#endif
+
 const PetscScalar DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
 
+#if 0
+in PCC
 // see iMpdd.cc
 const PetscScalar DEFAULT_PDD_STD_DEV = 5.0;  // K
 const PetscScalar DEFAULT_PDD_FACTOR_SNOW = 0.003;  // (m ice-equivalent) day^-1 (deg C)^-1
@@ -48,6 +55,7 @@ const PetscScalar DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
      //                   =  15.32   K
      // is result of EISMINT-GREENLAND formulas for h=1000.0 m and lat=75.0 deg N
 const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY = 243.0;  //  Julian day; August 1st
+#endif
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
@@ -202,7 +210,8 @@ PetscErrorCode IceModel::setDefaults() {
   betaShelvesDragToo = DEFAULT_BETA_SHELVES_DRAG_TOO;
   
   Hmelt_max = DEFAULT_MAX_HMELT;
-  oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
+
+//in PCC:  oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
 
 #if 0
 in PCC

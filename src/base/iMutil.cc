@@ -189,6 +189,11 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
+  if (oceanPCC != PETSC_NULL) {
+    ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
+  } else {
+    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
+  }
 
   skipCountDown = 0;
 

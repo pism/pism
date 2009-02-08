@@ -253,6 +253,9 @@ In these equations \f$H\f$ is the ice thickness,
 mass balance (e.g. basal melt or freeze-on), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
 horizontal velocity of the ice.  This procedure uses conservation of mass to update the ice thickness.
 
+The PISMAtmosphereCoupler pointed to by IceModel::atmosPCC provides \f$M\f$.  The PISMOceanCoupler
+pointed to by IceModel::oceanPCC provides \f$S\f$ at locations below floating ice (ice shelves).
+
 The map-plane flux of the ice \f$\mathbf{q}\f$ is defined by the above formula.  Nonetheless
 the mass flux is split into the parts caused by non-sliding SIA-type deformation and 
 caused by a nonzero basal sliding velocity:
@@ -285,26 +288,35 @@ PetscErrorCode IceModel::massContExplicitStep() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
   PetscScalar **H, **Hnew, **uvbar[2], **ubarssa, **vbarssa;
-  PetscScalar **ub, **vb, **accum, **basalMeltRate, **mask;
+  PetscScalar **ub, **vb, **accum, **bmr_gnded, **bmr_float, **mask;
   IceModelVec2 vHnew = vWork2d[0];
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.get_array(bmr_gnded); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
 
-  IceModelVec2 *pccsmf;
+  IceModelVec2 *pccsmf, *pccsbmf;
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface mass flux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccsmf);
-        CHKERRQ(ierr);
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(
+              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccsmf); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
 //in PCC:  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+
+  if (oceanPCC != PETSC_NULL) {
+    // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
+    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
+              grid.year, dt * secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
+  } else {
+    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
+  }
+  ierr = pccsbmf->get_array(bmr_float); CHKERRQ(ierr);
 
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
@@ -370,9 +382,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
       divQ += H[i][j] * ( (ub[i+1][j] - ub[i-1][j]) / (2.0*dx)
                           + (vb[i][j+1] - vb[i][j-1]) / (2.0*dy) );
 
-      Hnew[i][j] += (accum[i][j] - divQ) * dt;
-      if (includeBMRinContinuity == PETSC_TRUE) {
-         Hnew[i][j] -= basalMeltRate[i][j] * dt;
+      Hnew[i][j] += (accum[i][j] - divQ) * dt; // include M
+
+      if (includeBMRinContinuity == PETSC_TRUE) { // include S
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
+           Hnew[i][j] -= bmr_float[i][j] * dt;
+        } else {
+           Hnew[i][j] -= bmr_gnded[i][j] * dt;
+        }
       }
 
       // apply free boundary rule: negative thickness becomes zero
@@ -402,6 +419,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
 
   ierr = pccsmf->end_access(); CHKERRQ(ierr);
+  ierr = pccsbmf->end_access(); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);

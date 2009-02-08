@@ -20,11 +20,11 @@
 #include <petscda.h>
 #include "../base/grid.hh"
 #include "../base/materials.hh"
-#include "../base/iceModel.hh"
 #include "../base/iceModelVec.hh"
 #include "../base/LocalInterpCtx.hh"
 #include "../base/nc_util.hh"
 #include "pccoupler.hh"
+// note we do NOT depend on IceModel.hh; deliberate!
 
 
 /******************* VIRTUAL BASE CLASS:  PISMClimateCoupler ********************/
@@ -212,9 +212,8 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   
   // We assume file is prepared in the sense that it exists and that global attributes 
   //   are already written.  See IceModel::dumpToFile() for how main PISM output file is
-  //   prepared.  Note calls below do handle opening and closing the file.
-  //   Note we write in FLOAT not DOUBLE because these are expected to be for diagnosis,
-  //   not (e.g.) restart etc.
+  //   prepared.  Note calls here handle opening and closing the file.  We write in
+  //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   return 0;
@@ -305,4 +304,141 @@ PetscErrorCode PISMConstAtmosCoupler::updateSurfTempAndProvide(
 
 PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
 }
+
+
+PISMOceanCoupler::~PISMOceanCoupler() {
+  vshelfbasetemp.destroy();
+  vshelfbasemassflux.destroy();
+}
+
+
+/*!
+Derived class implementations will check user options to configure the PISMOceanCoupler.
+This version allocates space and sets attributes for the two essential fields.
+ */
+PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
+  PetscErrorCode ierr;
+
+  ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
+
+  // ice boundary tempature at the base of the ice shelf
+  ierr = vshelfbasetemp.create(*grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = vshelfbasetemp.set_attrs(
+           "climate_state", "absolute temperature at ice shelf base",
+	   "K", NULL); CHKERRQ(ierr);
+	   // check whether a standard_name is on CF table
+	   //   http://cf-pcmdi.llnl.gov/documents/cf-standard-names/current/cf-standard-name-table.html
+  ierr = vshelfbasetemp.set(273.15); CHKERRQ(ierr);  // merely a default value to clear nonsense
+
+  // ice mass balance rate at the base of the ice shelf
+  ierr = vshelfbasemassflux.create(*grid, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = vshelfbasemassflux.set_attrs(
+           "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+	   "m s-1", NULL); CHKERRQ(ierr); 
+	   // check whether standard_name is on CF table
+  ierr = vshelfbasemassflux.set(0.0); CHKERRQ(ierr);  // merely a default value to clear nonsense
+  // rescales from m/s to m/a when writing to NetCDF and std out:
+  vshelfbasemassflux.write_in_glaciological_units = true;
+  ierr = vshelfbasemassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
+  PetscErrorCode ierr;
+  
+  // We assume file is prepared in the sense that it exists and that global attributes 
+  //   are already written.  See IceModel::dumpToFile() for how main PISM output file is
+  //   prepared.  Note calls here handle opening and closing the file.  We write in
+  //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
+  ierr = vshelfbasetemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vshelfbasemassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
+  SETERRQ(1,"VIRTUAL in PISMOceanCoupler ... not implemented");
+  return 0;
+}
+
+
+PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvsbt) {
+  SETERRQ(1,"VIRTUAL in PISMOceanCoupler ... not implemented");
+  return 0;
+}
+
+
+PetscErrorCode PISMOceanCoupler::updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded) {
+  PetscErrorCode ierr;
+  IceModelVec2* ignored;
+  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
+  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
+  return 0;
+}
+
+
+/*******************  OCEAN:  PISMConstOceanCoupler ********************/
+
+PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
+  constOceanHeatFlux = 0.5;   // W m-2 = J m-2 s-1; naively chosen default value
+        // presumably irrelevant:  about 4 times more heating than peak of 
+        //   Shapiro & Ritzwoller (2004) geothermal fluxes for Antarctica of about 130 mW/m^2
+}
+
+
+PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvsbt) {
+  // ignors everything from IceModel except ice thickness; also ignors t_years and dt_years
+  PetscErrorCode ierr;
+  const PetscScalar icerho       = 910.0,   // kg/m^3   ice shelf mean density
+                    oceanrho     = 1028.0,  // kg/m^3   sea water mean density
+                    beta_CC_grad = 8.66e-4, // K/m      Clausius-Clapeyron gradient
+                    T0           = 273.15;  // K        triple point = naively assumed
+                                            //          sea water temperature at sea level
+
+  IceInfoNeededByOceanCoupler* info = (IceInfoNeededByOceanCoupler*) iceInfoNeeded;
+  PetscScalar **H, **temp;
+
+  ierr = info->thk->get_array(H);   CHKERRQ(ierr);
+  ierr = vshelfbasetemp.get_array (temp); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      const PetscScalar shelfbaseelev = - (icerho / oceanrho) * H[i][j];
+      // temp is set to melting point at depth
+      temp[i][j] = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so this is below T0
+    }
+  }
+  ierr = info->thk->end_access(); CHKERRQ(ierr);
+  ierr = vshelfbasetemp.end_access(); CHKERRQ(ierr);
+  
+  pvsbt = &vshelfbasetemp;
+  return 0;                                 
+}
+
+
+PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
+  PetscErrorCode ierr;
+
+  const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity
+                    icerho        = 910.0,    // kg m-3   ice shelf mean density
+                    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
+                    meltrate      = constOceanHeatFlux / (icelatentheat * icerho); // m s-1
+
+  // vshelfbasemassflux is positive if ice is freezing on; here it is always negative
+  ierr = vshelfbasemassflux.set(- meltrate); CHKERRQ(ierr);
+
+  pvsbmf = &vshelfbasemassflux;
+  return 0;
+};
 

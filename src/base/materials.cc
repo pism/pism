@@ -394,8 +394,8 @@ PetscScalar DeformableEarthType::D     = 5.0e24;  // N m          lithosphere fl
 PetscScalar DeformableEarthType::eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
 
 
-PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m         density
-PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m         density
+PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m^3         density
+PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m^3         density
 
 // re Clausius-Clapeyron gradients:  Paterson (3rd ed, 1994, p. 212) says 
 //   T = T_0 - beta' P  where  beta' = 9.8e-5 K / kPa = 9.8e-8 K / Pa.

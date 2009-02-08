@@ -57,12 +57,17 @@ protected:
 };
 
 
+//! An atmosphere model might need to know these things about IceModel to update through PISMAtmosphereCoupler.
 struct IceInfoNeededByAtmosphereCoupler {
-  IceModelVec2 *lat, *lon, *mask, *surfelev;
+  // "might need to know" for these reasons:
+  IceModelVec2 *lat,      // location dependence
+               *lon,      // location dependence
+               *mask,     // ice surface type dependence (potentially; e.g. ice shelf vs interior)
+               *surfelev; // surface elevation dependence
 };
 
 
-//! A basic derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.
+//! A basic derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.  Essentially virtual.
 /*!
 It is expected that a derived class of this will actually be used.
  */
@@ -119,48 +124,72 @@ public:
 };
 
 
-//! A draft derived class of PISMClimateCoupler for coupling PISM to an ocean model.
+//! An ocean model might need to know these things about IceModel to update through PISMOceanCoupler.
+struct IceInfoNeededByOceanCoupler {
+  // "might need to know" for these reasons:
+  IceModelVec2 *lat,      // location dependence
+               *lon,      // location dependence
+               *mask,     // ice model type dependence (floating ice shelf vs grounded)
+               *thk;      // shelf base elevation dependence; ice thickness gives base elevation
+                          //   through floatation criterion; potentially need separate
+                          //   base elevation field
+};
+
+
+//! A basic derived class of PISMClimateCoupler for coupling PISM to an ocean model.  Essentially virtual.
+/*!
+It is expected that a derived class of this will actually be used.
+ */
 class PISMOceanCoupler : public PISMClimateCoupler {
 
 public:
   PISMOceanCoupler();
 
-  // a destructor will be needed to destroy pair of IceModelVec2 below
-  // ~PISMOceanCoupler();
+  ~PISMOceanCoupler();
 
-  // this procedure would initialize the two IceModelVec2 below
-  // virtual PetscErrorCode initFromOptions(IceGrid* g);
-  
-  // this procedure would write the two IceModelVec2 fields to 
-  //   a NetCDF file; needed for debugging at least
-  // virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
 
-  // these two fields would store (map-plane, scalar) fields for ice shelf
-  //   base temperature and ice shelf base mass flux
-  // IceModelVec2 vShelfBTemp;
-  // IceModelVec2 vShelfBFlux;
+  virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
-  // this procedure would put ice shelf base absolute temperature
-  //   into vShelfBTemp;  units K;  the average over time interval [t,t+dt];
-  //   shelf_base_elev is elevation of ice shelf base above sea level
-  //   (thus always negative);
-  // THIS PROCEDURE WOULD CALL THE OCEAN MODEL SOMEHOW
-  // PetscErrorCode getShelfBasalTemp(PetscScalar t, PetscScalar dt, 
-  //                   IceModelVec2 mask, IceModelVec2 shelf_base_elev);
-                      
-             
-  // this procedure would put returns net ice shelf basal mass balance 
-  //   into vShelfBFlux;  units of meters of ice per second;
-  //   the average over time interval [t,t+dt];  positive means ice is added to shelf;
-  //   shelf_base_elev as above
-  // THIS PROCEDURE WOULD CALL THE OCEAN MODEL SOMEHOW
-  // PetscErrorCode getShelfBasalMassFlux(PetscScalar t, PetscScalar dt,
-  //                   IceModelVec2 mask, IceModelVec2 shelf_base_elev);
+  // an ocean model could run non-trivially during these calls
+  virtual PetscErrorCode updateShelfBaseMassFluxAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByOceanCoupler*
+             IceModelVec2* &pvsbmf);  // pvsbmf = pointer to vshelfbasemassflux
+
+  virtual PetscErrorCode updateShelfBaseTempAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years,
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByOceanCoupler*
+             IceModelVec2* &pvsbt);  // pvsbt = pointer to vshelfbasetemp
+
+  virtual PetscErrorCode updateClimateFields(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded); // will be interpreted as type IceInfoNeededByOceanCoupler*
 
 protected:
-  // additional fields here if not needed by calling instance of IceModel (or derived)
+  IceModelVec2 vshelfbasetemp, vshelfbasemassflux;
 };
 
+
+//! A derived class of PISMOceanCoupler for coupling PISM to an ocean model.  Essentially virtual.
+class PISMConstOceanCoupler : public PISMOceanCoupler {
+
+public:
+  PISMConstOceanCoupler();
+
+  virtual PetscErrorCode updateShelfBaseMassFluxAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByOceanCoupler*
+             IceModelVec2* &pvsbmf);  // pvsbmf = pointer to vshelfbasemassflux
+
+  virtual PetscErrorCode updateShelfBaseTempAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years,
+             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByOceanCoupler*
+             IceModelVec2* &pvsbt);  // pvsbt = pointer to vshelfbasetemp
+
+  PetscReal constOceanHeatFlux;  // in W m-2; directly converted to constant mass flux
+                                 //   by updateShelfBaseMassFluxAndProvide()
+};
 
 #endif
 

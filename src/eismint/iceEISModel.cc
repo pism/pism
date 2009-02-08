@@ -256,11 +256,11 @@ PetscErrorCode IceEISModel::initAccumTs() {
   IceModelVec2 *pccsmf, *pccTs;
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface massflux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccsmf);
-        CHKERRQ(ierr);
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(
+              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccsmf); CHKERRQ(ierr);
     // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, dt * secpera, (void*)(&iinbac), pccTs);
-        CHKERRQ(ierr);
+    ierr = atmosPCC->updateSurfTempAndProvide(
+              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
