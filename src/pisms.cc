@@ -25,6 +25,7 @@ static char help[] =
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "base/iceModel.hh"
+#include "coupler/pccoupler.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/icePSTexModel.hh"
 #include "ismip/iceMISMIPModel.hh"
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]) {
     IceGrid    g(com, rank, size);
     IceType*   ice = PETSC_NULL;
     MISMIPIce* mismipice = new MISMIPIce;
-    PISMConstAtmosCoupler pcac; // FIXME: either constant or PDD should be allowed
+    PISMConstAtmosCoupler pcac;
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
@@ -60,7 +61,15 @@ int main(int argc, char *argv[]) {
     IceMISMIPModel mMISMIP(g, mismipice);
     IceModel*      m;
 
-    PetscTruth  EISIIchosen, PSTexchosen, MISMIPchosen;
+    PetscTruth  pddSet, EISIIchosen, PSTexchosen, MISMIPchosen;
+
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
+    if (pddSet == PETSC_TRUE) {
+      ierr = PetscPrintf(com, "PISM ERROR: -pdd is not currently allowed as option to pisms\n");
+                CHKERRQ(ierr);
+      PetscEnd();
+    }
+
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
@@ -74,26 +83,22 @@ int main(int argc, char *argv[]) {
     
     int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
     if (choiceSum == 0) {
-      ierr = PetscPrintf(com, "PISMS called with no simplified geometry experiment chosen.\n");
-      CHKERRQ(ierr);
+      ierr = PetscPrintf(com, 
+         "PISM ERROR: pisms called with no simplified geometry experiment chosen.\n");
+         CHKERRQ(ierr);
       PetscEnd();
     } else if (choiceSum > 1) {
-      ierr = PetscPrintf(com, "PISMS called with more than one simplified geometry experiment chosen.\n");
-      CHKERRQ(ierr);
+      ierr = PetscPrintf(com,
+         "PISM ERROR: pisms called with more than one simplified geometry experiment chosen.\n");
+         CHKERRQ(ierr);
       PetscEnd();
     }
     
     if (EISIIchosen == PETSC_TRUE) {
-//      ierr = mEISII.setFromOptions(); CHKERRQ(ierr);
-//      ierr = mEISII.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mEISII;
     } else if (PSTexchosen == PETSC_TRUE) {
-//      ierr = mPSTex.setFromOptions(); CHKERRQ(ierr);
-//      ierr = mPSTex.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mPSTex;
     } else if (MISMIPchosen == PETSC_TRUE) {
-//      ierr = mMISMIP.setFromOptions(); CHKERRQ(ierr);
-//      ierr = mMISMIP.initFromOptions(); CHKERRQ(ierr);
       m = (IceModel*) &mMISMIP;
     } else {
       SETERRQ(3,"PISMS: how did I get here?");

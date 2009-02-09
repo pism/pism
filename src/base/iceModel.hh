@@ -189,10 +189,6 @@ protected:
     vubar, vvbar,	     	//!< vertically-averaged vels on standard grid
   /*!< vertically-averaged vels (u bar and v bar) on standard grid */
     vMask,		   //!< mask for flow type
-//THESE THREE ARE PCC:
-//    vTs,		   //!< surface temperature
-//    vAccum,		   //!< accumulation
-//    vAccumSnow,		   //!< see iMpdd.cc; vAccum is net (including ablation)
     vGhf,		   //!< geothermal flux
     vRb,		   //!< basal frictional heating on regular grid
     vtillphi;		   //!< friction angle for till under grounded ice sheet
@@ -296,7 +292,6 @@ protected:
                                  PetscInt i, PetscInt j) const;
 
   // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
-  // (e.g. also used by derived class IceHEINOModel)
   Vec            g2natural;
   VecScatter     top0ctx;
   PetscTruth     top0ctx_created;
@@ -309,8 +304,7 @@ protected:
   BedDeformLC    bdLC;
   PetscScalar    lastBedDefUpdateYear;
   IceModelVec2   vbedlast;
-  IceModelVec2   vHlast;	// used for simple pointwise isostasy and to
-				// compute uplift
+  IceModelVec2   vHlast;	// used for simple pointwise isostasy and to compute uplift
   Vec            Hp0, bedp0,                       // vecs on proc zero for
                  Hstartp0, bedstartp0, upliftp0;   // passing to bdLC
   virtual PetscErrorCode bedDefSetup();
@@ -328,8 +322,8 @@ protected:
   PetscErrorCode setDefaults();
 
   // see iMforcing.cc
-  IceSheetForcing  *dTforcing, *dSLforcing;
-  PetscScalar    TsOffset;
+  IceSheetForcing        *dTforcing, *dSLforcing;
+  PetscScalar            TsOffset;
   virtual PetscErrorCode initForcingFromOptions();
   virtual PetscErrorCode updateForcing();
   virtual PetscErrorCode forcingCleanup();
@@ -340,8 +334,6 @@ protected:
   virtual PetscErrorCode massContExplicitStep();
 
   // see iMgrainsize.cc
-//  PetscErrorCode computeGrainSize_PseudoAge(const PetscScalar H, const PetscInt Mz, 
-//                          PetscScalar *w, PetscScalar *age_wspace, PetscScalar **gs);
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMinverse.cc
@@ -412,32 +404,6 @@ protected:
   // see iMoptions.cc
   virtual PetscErrorCode determineSpacingTypeFromOptions(
                       const PetscTruth forceEqualIfNoOption);
-
-#if 0
-in PCC
-  // see iMpdd.cc (positive degree day model)
-  gsl_rng     *pddRandGen;
-  char        monthlyTempsFile[PETSC_MAX_PATH_LEN];
-  Vec*        vmonthlyTs;                  // will allocate 12 2D Vecs 
-  PetscTruth  doPDD, doPDDTrueRand, pddStuffCreated, pddRandStuffCreated,
-              pddHaveMonthlyTempData;
-  PetscScalar pddStdDev, pddFactorSnow, pddFactorIce, pddRefreezeFrac, 
-              pddSummerWarming, pddSummerPeakDay;
-  virtual PetscErrorCode initPDDFromOptions();
-  virtual PetscErrorCode readMonthlyTempDataPDD();
-  virtual PetscErrorCode updateSurfaceBalanceFromPDD();
-  virtual PetscErrorCode putBackSnowAccumPDD();
-  virtual PetscErrorCode PDDCleanup();
-  virtual double         CalovGreveIntegrand(const double Tac);
-  virtual PetscScalar getTemperatureFromYearlyCycle(
-                  const PetscScalar summer_warming, const PetscScalar Tma, 
-                  const PetscScalar day, const PetscInt i, const PetscInt j) const;
-  virtual PetscScalar getSummerWarming(
-                  const PetscScalar elevation, const PetscScalar latitude, 
-                  const PetscScalar Tma) const;
-  virtual double getSurfaceBalanceFromSnowAndPDD(
-                     const double snowrate, const double mydt, const double pdds);
-#endif
 
   // see iMreport.cc
   virtual PetscErrorCode computeFlowUbarStats
@@ -533,11 +499,13 @@ in PCC
   virtual PetscErrorCode update2DViewer(const char scName, Vec l2, const PetscScalar scale);
   virtual PetscErrorCode update2DViewer(const char scName, IceModelVec2 l2, const PetscScalar scale);
   virtual PetscErrorCode updateSliceViewer(const char scName, IceModelVec3 imv3, const PetscScalar scale);
-  virtual PetscErrorCode updateSurfaceValuesViewer(const char scName, IceModelVec3 imv3, const PetscScalar scale);
+  virtual PetscErrorCode updateSurfaceValuesViewer(const char scName, 
+                   IceModelVec3 imv3, const PetscScalar scale);
   virtual PetscErrorCode updateSpeed2DViewer(const char scName, IceModelVec2 lu, IceModelVec2 lv, 
                    const PetscScalar scale, const PetscTruth doLog, 
                    const PetscScalar log_missing);
-  virtual PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v, 
+  virtual PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, 
+                   IceModelVec3 imv3_u, IceModelVec3 imv3_v, 
                    const PetscScalar scale, const PetscTruth doLog, 
                    const PetscScalar log_missing);
   virtual PetscErrorCode updateLog2DViewer(const char scName, Vec l,
@@ -565,8 +533,7 @@ protected:
 private:
 #if (PISM_LOG_EVENTS)
   // for event logging; see run() and velocity()
-  int siaEVENT, ssaEVENT, velmiscEVENT, 
-      beddefEVENT, pddEVENT, massbalEVENT, tempEVENT;
+  int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
 #endif
 
   // Pieces of the SSA Velocity routine defined in iMssa.cc.

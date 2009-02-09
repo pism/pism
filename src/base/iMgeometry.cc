@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -307,7 +307,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
-//in PCC:  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
 
   if (oceanPCC != PETSC_NULL) {
     // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base

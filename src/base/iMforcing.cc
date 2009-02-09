@@ -96,8 +96,7 @@ PetscErrorCode IceModel::updateForcing() {
     }
 
     // TsOffset should be zero at startup!
-    ierr = pccTs->shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
-//in PCC:    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
+    ierr = pccTs->shift(-TsOffset); CHKERRQ(ierr); // return pccTs to unshifted state
 
     // read a new offset
     ierr = dTforcing->updateFromCoreClimateData(grid.year,&TsOffset); CHKERRQ(ierr);
@@ -106,9 +105,8 @@ PetscErrorCode IceModel::updateForcing() {
        TsOffset); CHKERRQ(ierr);
        
     ierr = pccTs->shift(TsOffset); CHKERRQ(ierr);  // apply the offset
-//in PCC:    ierr = vTs.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
 
-    // no need to communicate vTs because it has no ghosts
+    // no need to communicate pccTs because it has no ghosts
   }
 
   if (dSLforcing != PETSC_NULL) {
@@ -144,7 +142,6 @@ PetscErrorCode IceModel::forcingCleanup() {
     }
 
     ierr = pccTs->shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
-//in PCC:    ierr = vTs.shift(-TsOffset); CHKERRQ(ierr); // return vTs to unshifted state
 
     TsOffset = 0.0;
     delete dTforcing;

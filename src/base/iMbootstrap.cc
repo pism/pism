@@ -36,8 +36,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   const PetscScalar DEFAULT_H_VALUE_NO_VAR = 0.0,  // m
                     DEFAULT_BED_VALUE_NO_VAR = 1.0, // m;  grounded if no bed topo
-                    //in PCC: DEFAULT_ACCUM_VALUE_NO_VAR = -0.5 / secpera, // m/s
-                    //in PCC: DEFAULT_SURF_TEMP_VALUE_NO_VAR = 263.15, // K
                     DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR = 0.042, // J/m^2 s
                     DEFAULT_UPLIFT_VALUE_NO_VAR = 0.0, // m/s
                     DEFAULT_HMELT_VALUE_NO_VAR = 0.0, // m
@@ -193,11 +191,9 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
   ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
-//in PCC:  ierr =     vAccum.regrid(filename, *bootstrapLIC, DEFAULT_ACCUM_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =         vH.regrid(filename, *bootstrapLIC, DEFAULT_H_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =       vbed.regrid(filename, *bootstrapLIC, DEFAULT_BED_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =     vHmelt.regrid(filename, *bootstrapLIC, DEFAULT_HMELT_VALUE_NO_VAR); CHKERRQ(ierr);
-//in PCC:  ierr =        vTs.regrid(filename, *bootstrapLIC, DEFAULT_SURF_TEMP_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =   vtillphi.regrid(filename, *bootstrapLIC, DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =       vGhf.regrid(filename, *bootstrapLIC, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
   ierr =    vuplift.regrid(filename, *bootstrapLIC, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
@@ -453,7 +449,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
-//in PCC:  ierr = vTs.get_array(Ts);  CHKERRQ(ierr);
 
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
   ierr = vbed.get_array(b);   CHKERRQ(ierr);

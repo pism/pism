@@ -416,9 +416,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('4', vub, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
-//in PCC:  ierr = update2DViewer('A', (pddStuffCreated == PETSC_TRUE) ? vAccumSnow : vAccum, secpera);
-//            CHKERRQ(ierr);
-
+  // 'A' was for accumulation (snow, if present)
   ierr = update2DViewer('C', vtauc, 0.001); CHKERRQ(ierr); // display in kPa
   ierr = updateSliceViewer('E', tau3, 1.0/secpera); CHKERRQ(ierr); // display in years
   ierr = update2DViewer('F', vGhf, 1000.0); CHKERRQ(ierr); // is in W/m^2; display in mW/m^2
@@ -440,8 +438,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = updateSliceViewer('Y', v3, secpera); CHKERRQ(ierr);
   ierr = updateSliceViewer('Z', w3, secpera); CHKERRQ(ierr);
 
-//in PCC:  ierr = update2DViewer('a', vAccum, secpera); CHKERRQ(ierr);
-
+  // 'a' was for accumulation  
   ierr = update2DViewer('b', vbed, 1.0); CHKERRQ(ierr);
   ierr = updateSpeed2DViewer('c', vubar, vvbar, secpera, PETSC_TRUE, -3.0); CHKERRQ(ierr);
   // 'e' is sounding
@@ -451,9 +448,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('m', vMask, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('p', vuplift, secpera); CHKERRQ(ierr);
   ierr = updateSpeed2DViewer('q', vub, vvb, secpera, PETSC_TRUE, -3.0); CHKERRQ(ierr);
-
-//in PCC:  ierr = update2DViewer('r', vTs, 1.0); CHKERRQ(ierr);
-
+  // 'r' was for surface temperature
   // 's' is sounding
   // 't' is sounding
   ierr = update2DViewer('u', vubar, secpera); CHKERRQ(ierr);

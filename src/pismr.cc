@@ -17,12 +17,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for PISM ice sheet simulations initialized from data.\n";
+  "Ice sheet driver for PISM ice sheet simulations, initialized from data as usual.\n";
 
 #include <petsc.h>
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "base/iceModel.hh"
+#include "coupler/pccoupler.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -40,7 +41,8 @@ int main(int argc, char *argv[]) {
   {
     IceGrid g(com, rank, size);
     IceType*   ice = PETSC_NULL;
-    PISMConstAtmosCoupler pcac; // FIXME: either constant or PDD should be allowed
+    PISMConstAtmosCoupler pcac;
+    PISMPDDCoupler        ppdd;
     PISMConstOceanCoupler pcoc;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
@@ -50,9 +52,20 @@ int main(int argc, char *argv[]) {
     IceModel m(g, ice);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
-    pcac.initializeFromFile = true;  // climate will always come from input file in pismr
-    ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+
+    PetscTruth  pddSet;
+    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
+    if (pddSet == PETSC_TRUE) { // note climate will always come from input file in pismr
+      ierr = verbPrintf(2,com, "pismr attaching PISMPDDCoupler to IceModel\n"); CHKERRQ(ierr);
+      ppdd.initializeFromFile = true;
+      ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,com, "pismr attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
+      pcac.initializeFromFile = true;
+      ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+    }
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);
@@ -60,7 +73,7 @@ int main(int argc, char *argv[]) {
 
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
 
-    // We provide a default base name if no -o option.
+    // provide a default base name if no -o option.
     ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
 
     delete ice;

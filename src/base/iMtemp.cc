@@ -188,7 +188,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
-//in PCC:   ierr =  vTs.get_array(Ts); CHKERRQ(ierr);
 
   if (oceanPCC != PETSC_NULL) {
     ierr = oceanPCC->updateShelfBaseTempAndProvide(
@@ -505,7 +504,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
 
   ierr = pccTs->end_access(); CHKERRQ(ierr);
-//in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
   ierr = pccsbt->end_access();  CHKERRQ(ierr);
   ierr = pccsbmf->end_access();  CHKERRQ(ierr);
 

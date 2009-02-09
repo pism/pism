@@ -25,7 +25,7 @@
 #include "../base/pism_const.hh"
 #include "../base/grid.hh"
 #include "../base/iceModelVec.hh"
-#include "pPDDcoupler.hh"
+#include "pccoupler.hh"
 
 
 PISMPDDCoupler::PISMPDDCoupler() : PISMConstAtmosCoupler() {

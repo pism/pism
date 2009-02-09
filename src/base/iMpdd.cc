@@ -23,6 +23,11 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
+
+// ENTIRE FILE SHOULD BE DELETED AFTER CHECK THAT PISMPDDCoupler (src/coupler/pPDDcoupler.cc) works as 
+//    expected
+
+
 //! Initialize the positive degree day (PDD) model
 /*!
 The default PDD is deterministic, but there is also a monte carlo (random)

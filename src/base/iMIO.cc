@@ -82,13 +82,6 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   PetscErrorCode ierr;
   char filename[PETSC_MAX_PATH_LEN];
 
-#if 0
-in PCC
-  if (doPDD == PETSC_TRUE) { // want to save snow accumulation map, not net accumulation
-    ierr = putBackSnowAccumPDD(); CHKERRQ(ierr);
-  }
-#endif
-
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   PetscTruth o_set;
@@ -204,9 +197,6 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
   // 2D earth quantity; like climate but always steady and always owned by IceModel
   ierr =   vGhf.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-
-//in PCC:  ierr =    vTs.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-//in PCC:  ierr = vAccum.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   // write tillphi = till friction angle in degrees
   ierr = vtillphi.write(filename, NC_DOUBLE); CHKERRQ(ierr);
@@ -511,9 +501,6 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 
   // 2-D earth quantity; like climate but owned by IceModel
   ierr =     vGhf.read(fname, g.t_len - 1); CHKERRQ(ierr);
-
-//in PCC:  ierr =   vAccum.read(fname, g.t_len - 1); CHKERRQ(ierr);
-//in PCC:  ierr =      vTs.read(fname, g.t_len - 1); CHKERRQ(ierr);
 
   // 3-D model quantities
   ierr =   T3.read(fname, g.t_len - 1); CHKERRQ(ierr);

@@ -61,20 +61,12 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   }
   createViewers_done = PETSC_FALSE;
 
-#if 0
-in PCC
-  pddStuffCreated = PETSC_FALSE;
-  pddRandStuffCreated = PETSC_FALSE;
-#endif
-
   atmosPCC = PETSC_NULL;
   oceanPCC = PETSC_NULL;
 
   dTforcing = PETSC_NULL;
   dSLforcing = PETSC_NULL;
 
-//in PCC:  vmonthlyTs = PETSC_NULL;
-  
   ierr = setDefaults();  // lots of parameters and flags set here
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
@@ -212,25 +204,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
 
-#if 0
-in PCC
-  // mean annual net ice equivalent accumulation (ablation) rate
-  ierr = vAccum.create(grid, "acab", true); CHKERRQ(ierr);
-  ierr = vAccum.set_attrs("climate_steady", 
-          "mean annual net ice equivalent accumulation (ablation) rate",
-	  "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = vAccum.set_glaciological_units("m year-1");
-
-  // annual mean air temperature at "ice surface", i.e.
-  //   at level below all firn processes
-  // PROPOSED standard_name = land_ice_temperature_below_firn
-  // possibly should be reported in deg C; would require shift version of glaciological_units
-  ierr = vTs.create(grid, "artm", true); CHKERRQ(ierr);
-  ierr = vTs.set_attrs("climate_steady", "temperature at ice surface but below firn",
-		       "K", NULL); CHKERRQ(ierr);
-  ierr = vTs.set_valid_min(0.0); CHKERRQ(ierr);
-#endif
-
   // grounded_dragging_floating integer mask
   ierr = vMask.create(grid, "mask",     true); CHKERRQ(ierr);
   ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
@@ -315,11 +288,11 @@ in PCC
   ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
 			    "degrees", NULL); CHKERRQ(ierr);
 
-  // Longitude
+  // longitude
   ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
   ierr = vLongitude.set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
 
-  // Latitude
+  // latitude
   ierr = vLatitude.create(grid, "lat", true); CHKERRQ(ierr);
   ierr = vLatitude.set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
 
@@ -406,7 +379,6 @@ PetscErrorCode IceModel::destroyVecs() {
   PetscErrorCode ierr;
 
   ierr = bedDefCleanup(); CHKERRQ(ierr);
-//in PCC:  ierr = PDDCleanup(); CHKERRQ(ierr);
 
   ierr = u3.destroy(); CHKERRQ(ierr);
   ierr = v3.destroy(); CHKERRQ(ierr);
@@ -420,11 +392,6 @@ PetscErrorCode IceModel::destroyVecs() {
   ierr = vh.destroy(); CHKERRQ(ierr);
   ierr = vH.destroy(); CHKERRQ(ierr);
   ierr = vbed.destroy(); CHKERRQ(ierr);
-#if 0
-in PCC
-  ierr = vAccum.destroy(); CHKERRQ(ierr);
-  ierr = vTs.destroy(); CHKERRQ(ierr);
-#endif
   ierr = vMask.destroy(); CHKERRQ(ierr);
   ierr = vGhf.destroy(); CHKERRQ(ierr);
   ierr = vubar.destroy(); CHKERRQ(ierr);
@@ -664,23 +631,6 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
 
 #if (PISM_LOG_EVENTS)
 PetscLogEventEnd(tempEVENT,0,0,0,0);
-PetscLogEventBegin(pddEVENT,0,0,0,0);
-#endif
-
-#if 0
-in PCC:
-    // compute PDD; generates surface mass balance, with appropriate ablation area,
-    //   using snow accumulation
-    if (doPDD == PETSC_TRUE) {
-      ierr = updateSurfaceBalanceFromPDD();  CHKERRQ(ierr);
-      ierr = verbPrintf(2,grid.com, "d"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
-#endif
-
-#if (PISM_LOG_EVENTS)
-PetscLogEventEnd(pddEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);
 #endif
 

@@ -1,15 +1,18 @@
-as of 14 Jan 2009: 
+as of 8 Feb 2009: 
 
 These files are a PISMClimateCoupler demonstration.
 
-There is an essentially virual PISMClimateCoupler.  There are
-derived classes PISMAtmosphereCoupler and PISMOceanCoupler.
+There is an essentially virtual PISMClimateCoupler.  There are
+derived classes PISMAtmosphereCoupler and PISMOceanCoupler, but these 
+are essentially intended as virtual too.
 
-There is demonstration implementation of IcePCCModel, a derived class 
-of IceModel, using instances of PISMAtmosphereCoupler and PISMOceanCoupler.
+PISMConstAtmosCoupler and PISMPDDCoupler are used as very simplified atmosphere 
+models.  They are attached to the IceModel instance by the driver.  See pismr.cc,
+for example.
 
-A nontrivial PISMClimateCoupler for ice shelves was written by Ricarda 
-Winkelmann (PIK), with help from Ed Bueler, on 2 Dec 2008.  That source is
-in icerepo/Potsdam-Antarctica, a password-protected svn repo.  Contact Bueler 
-for further info on that.
+PISMConstOceanCoupler is the only (simplified!) ocean model provided with
+the PISM source.  It is based on a nontrivial PISMClimateCoupler for ice shelves
+which was written by Ricarda Winkelmann (PIK), with input from Bueler, on 2 Dec 2008.
+That source is in icerepo/Potsdam-Antarctica, a password-protected svn repo.
+Contact Bueler for further info on that.
 

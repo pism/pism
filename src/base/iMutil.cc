@@ -181,7 +181,6 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
     
   // these initializations can not use info from -regrid_from:
-//in PCC:  ierr = initPDDFromOptions(); CHKERRQ(ierr);
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
   
   if (atmosPCC != PETSC_NULL) {

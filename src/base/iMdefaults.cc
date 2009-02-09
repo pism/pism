@@ -26,36 +26,15 @@ const PetscScalar DEFAULT_RUN_YEARS = 1000.0;  // years
 
 const PetscScalar DEFAULT_ADAPT_TIMESTEP_RATIO = 0.12;  // yes, I'm confident this is o.k.
 
-const PetscScalar DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;  initial amount of (denominator) regularization in computation of effective viscosity
+const PetscScalar DEFAULT_EPSILON_SSA = 1.0e15;  // kg m^-1 s^-1;
+         // initial amount of (denominator) regularization in computation of effective viscosity
 const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
-//used in iMvelocity.C and iMutil.C
+         // used in iMvelocity.C and iMutil.C
 const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
-     // ice.meltingTemp; if above this value then decide to slide
+         // ice.meltingTemp; if above this value then decide to slide
 const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
 
-#if 0 
-in PCC
-const PetscScalar DEFAULT_OCEAN_HEAT_FLUX = 0.5;  // 0.5 W/m^2;
-        // about 4 times more heating than peak of 
-        // Shapiro&Ritzwoller geothermal fluxes for Antarctica (i.e. about 130 mW/m^2)
-#endif
-
 const PetscScalar DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
-
-#if 0
-in PCC
-// see iMpdd.cc
-const PetscScalar DEFAULT_PDD_STD_DEV = 5.0;  // K
-const PetscScalar DEFAULT_PDD_FACTOR_SNOW = 0.003;  // (m ice-equivalent) day^-1 (deg C)^-1
-const PetscScalar DEFAULT_PDD_FACTOR_ICE  = 0.008;  // (m ice-equivalent) day^-1 (deg C)^-1
-const PetscScalar DEFAULT_PDD_REFREEZE_FRAC = 0.6;  // [pure fraction]
-const PetscScalar DEFAULT_PDD_SUMMER_WARMING = 15.0;  //  K
-     // re SUMMER_WARMING:  (30.38 - 0.006277 * 1000.0 - 0.3262 * 75.0)
-     //                    - (49.13 - 0.007992 * 1000.0 -0.7576 * 75.0)
-     //                   =  15.32   K
-     // is result of EISMINT-GREENLAND formulas for h=1000.0 m and lat=75.0 deg N
-const PetscScalar DEFAULT_PDD_SUMMER_PEAK_DAY = 243.0;  //  Julian day; August 1st
-#endif
 
 const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
 
@@ -211,18 +190,6 @@ PetscErrorCode IceModel::setDefaults() {
   
   Hmelt_max = DEFAULT_MAX_HMELT;
 
-//in PCC:  oceanHeatFlux = DEFAULT_OCEAN_HEAT_FLUX;
-
-#if 0
-in PCC
-  pddFactorSnow = DEFAULT_PDD_FACTOR_SNOW;
-  pddFactorIce = DEFAULT_PDD_FACTOR_ICE;
-  pddRefreezeFrac = DEFAULT_PDD_REFREEZE_FRAC;
-  pddSummerPeakDay = DEFAULT_PDD_SUMMER_PEAK_DAY;
-  pddSummerWarming = DEFAULT_PDD_SUMMER_WARMING;
-  pddStdDev = DEFAULT_PDD_STD_DEV;
-#endif
-
   setMaxTimeStepYears(DEFAULT_MAX_TIME_STEP_YEARS);
   setAdaptTimeStepRatio(DEFAULT_ADAPT_TIMESTEP_RATIO);
   setAllGMaxVelocities(-1.0);
@@ -257,19 +224,12 @@ in PCC
   bedDefIntervalYears = DEFAULT_BED_DEF_INTERVAL_YEARS;
   noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
 
-#if 0
-in PCC
-  doPDD = PETSC_FALSE;
-  doPDDTrueRand = PETSC_FALSE;
-#endif
-  
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;
   kd = 0;
 
-  // default polar stereographic projection settings; not currently used anyway;
-  //   merely propogate into output file if found in input file
+  // default polar stereographic projection settings: South Pole
   psParams.svlfp = 0.0;
   psParams.lopo = 90.0;
   psParams.sp = -71.0;

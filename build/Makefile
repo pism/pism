@@ -81,7 +81,7 @@ VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/
 
 # Variables:
 #FIXME TEMPORARY OFF executables := pismr pismd pismv pisms
-executables := pismr pisms
+executables := pismr pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
@@ -95,7 +95,6 @@ ice_sources := extrasGSL.cc grid.cc materials.cc nc_util.cc beddefLC.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
 	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc
-# in PCC:  iMpdd.cc
 
 ice_csources := cubature.c pism_signal.c
 
@@ -105,7 +104,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
-	pPDDcoupler.cc pccoupler.cc \
+	pPDDcoupler.cc pccoupler.cc pcctest.cc \
 	flowTable.cc tryLCbd.cc
 
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
@@ -114,11 +113,7 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
-#FIXME TEMPORARY: include ../src/eismint/grn_make
-
-# this is a derived class example demonstrating use of PISMClimateCoupler;
-#   including it creates executable "pcc"
-#FIXME PERMANENT? include ../src/coupler/pcc_make
+#include ../src/eismint/grn_make
 
 # Import additional make include files:
 ifdef CONFIG
@@ -166,22 +161,25 @@ $(LIBUDUNITS): $(ud_objects)
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-../bin/pismr : pismr.o pPDDcoupler.o pccoupler.o
+../bin/pismr : pismr.o pPDDcoupler.o pccoupler.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/pismd : pismd.o iceROSSModel.o pPDDcoupler.o pccoupler.o
+../bin/pismd : pismd.o iceROSSModel.o pPDDcoupler.o pccoupler.o ${LIBPISMNAME}
 	${CXXLINKER} iceROSSModel.o pismd.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o pPDDcoupler.o pccoupler.o
+../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o pPDDcoupler.o pccoupler.o ${LIBPISMNAME}
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o pPDDcoupler.o pccoupler.o \
 	${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
- pismv.o pPDDcoupler.o pccoupler.o ${LIBTESTSNAME}
+ pismv.o pPDDcoupler.o pccoupler.o ${LIBTESTSNAME} ${LIBPISMNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
 #build extra executables
+
+../bin/pcctest : pcctest.o pccoupler.o pPDDcoupler.o ${LIBPISMNAME}
+	${CXXLINKER} pcctest.o pccoupler.o pPDDcoupler.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
