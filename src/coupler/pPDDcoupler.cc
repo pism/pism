@@ -135,9 +135,8 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates lic
 
-  // mean annual ice equivalent accumulation rate
-  //   we READ by name 'artm' but change to name 'annavartm' below
-  ierr = vannmeansurftemp.create(*g, "artm", false); CHKERRQ(ierr);
+  // mean annual surface temperature (no yearly cycle info here; artm=Ts(t) while anavartm is yearly av)
+  ierr = vannmeansurftemp.create(*g, "annavartm", false); CHKERRQ(ierr);
   ierr = vannmeansurftemp.set_attrs(
             "climate_state",
             "annual mean temperature at ice surface but below firn",
@@ -145,8 +144,7 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   ierr = vannmeansurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
 
   // mean annual ice equivalent accumulation rate
-  //   we READ by name 'acab' but change name to 'accum' below
-  ierr = vsurfaccum.create(*g, "acab", false); CHKERRQ(ierr);  // global; no ghosts
+  ierr = vsurfaccum.create(*g, "accum", false); CHKERRQ(ierr);
   ierr = vsurfaccum.set_attrs(
             "climate_state", 
             "mean annual ice equivalent accumulation rate",
@@ -162,28 +160,24 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
      "initializing positive degree-day model (PDD) for atmospheric climate ... \n"); CHKERRQ(ierr); 
   if (initialize_vannmeansurftemp_FromFile) {
     ierr = verbPrintf(2, g->com, 
-      "  reading mean annual surface temperature 'artm' from %s ... \n",
+      "  reading mean annual surface temperature 'annavartm' from %s ... \n",
       filename); CHKERRQ(ierr); 
     ierr = vannmeansurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
   } else {
     ierr = verbPrintf(2, g->com, 
-      "  not reading mean annual surface temperature 'artm' from a file; formulas must fill it ... \n");
+      "  not reading mean annual surface temperature 'annavartm' from a file; formulas must fill it ... \n");
       CHKERRQ(ierr); 
   }
   if (initialize_vsurfaccum_FromFile) {
     ierr = verbPrintf(2, g->com, 
-      "  reading ice surface accumulation rate 'acab' from %s ... \n",
+      "  reading ice surface accumulation rate 'accum' from %s ... \n",
       filename); CHKERRQ(ierr); 
     ierr = vsurfaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
   } else {
     ierr = verbPrintf(2, g->com, 
-      "  not reading ice surface accumulation rate 'acab' from a file; formulas must fill it ... \n");
+      "  not reading ice surface accumulation rate 'accum' from a file; formulas must fill it ... \n");
       CHKERRQ(ierr); 
   }
-
-  // now that they are read, reset names to output name
-  ierr = vsurfaccum.set_name("accum"); CHKERRQ(ierr);
-  ierr = vannmeansurftemp.set_name("annavartm"); CHKERRQ(ierr);
 
   // initialize time dependent fields to have some values
   ierr = vsurfmassflux.copy_from(vsurfaccum); CHKERRQ(ierr);

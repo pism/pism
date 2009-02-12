@@ -23,7 +23,7 @@ def vprint(s):
     print s
 
 # function to read a 2d variable from EISMINT-ROSS data file
-# allows choice of missing_value, shifting, and scaling
+# allows choice of _FillValue, shifting, and scaling
 def read2dROSSfloat(mygrid,myarray,xs,xm,My,mymissing,myshift,myscale):
   vprint(mygrid.readline()) # ignor two lines
   vprint(mygrid.readline())
@@ -188,7 +188,7 @@ read2dROSSfloat(grid,Ts,xsROSS,xmROSS,MyROSS,248.0,273.15,1.0)
 grid.close()
 
 
-##### create arrays for observed ubar, vbar and fill with missing_value #####
+##### create arrays for observed ubar, vbar and fill with _FillValue #####
 ubarOBS = zeros((MxROSS, MyROSS), float32)
 vbarOBS = zeros((MxROSS, MyROSS), float32)
 bcflag = zeros((MxROSS, MyROSS), int16)
@@ -287,47 +287,47 @@ setattr(maskvar, 'long_name', 'grounded or floating integer mask')
 
 setattr(azivar, 'long_name', 'EISMINT ROSS observed ice velocity azimuth')
 setattr(azivar, 'units', 'degrees_east')
-setattr(azivar, 'missing_value', 9999.)
+setattr(azivar, '_FillValue', 9999.)
 
 setattr(magvar, 'long_name', 'EISMINT ROSS observed ice velocity magnitude')
 setattr(magvar, 'units', 'm s-1')
-setattr(magvar, 'missing_value', 9999.)
+setattr(magvar, '_FillValue', 9999.)
 
 setattr(thkvar, 'long_name', 'floating ice shelf thickness')
 setattr(thkvar, 'units', 'm')
-setattr(thkvar, 'missing_value', 1.)
+setattr(thkvar, '_FillValue', 1.)
 
 setattr(accurvar, 'long_name', 'EISMINT ROSS flag for accurate observed velocity')
-setattr(accurvar, 'missing_value', -1)
+setattr(accurvar, '_FillValue', -1)
 
 setattr(bedvar, 'long_name', 'bedrock surface elevation')
 setattr(bedvar, 'standard_name', 'bedrock_altitude')
 setattr(bedvar, 'units', 'm')
-setattr(bedvar, 'missing_value', -600.0)
+setattr(bedvar, '_FillValue', -600.0)
 
 setattr(accumvar, 'long_name', 'mean annual net ice equivalent accumulation rate')
 setattr(accumvar, 'standard_name', 'land_ice_surface_specific_mass_balance')
 setattr(accumvar, 'units', 'm s-1')
-setattr(accumvar, 'missing_value', 0.2 / SECPERA)
+setattr(accumvar, '_FillValue', 0.2 / SECPERA)
 
 setattr(barBvar, 'long_name', 'vertically-averaged ice hardness coefficient')
 setattr(barBvar, 'units', 'Pa^(1/3)')
-setattr(barBvar, 'missing_value', 9999.)
+setattr(barBvar, '_FillValue', 9999.)
 
 setattr(Tsvar, 'long_name', 'annual mean air temperature at ice surface')
 setattr(Tsvar, 'standard_name', 'surface_temperature')
 setattr(Tsvar, 'units', 'K')
-setattr(Tsvar, 'missing_value', 248.0)
+setattr(Tsvar, '_FillValue', 248.0)
 
 setattr(ubarvar, 'long_name', 
         'vertical average of horizontal velocity of ice in projection_x_coordinate direction')
 setattr(ubarvar, 'units', 'm s-1')
-setattr(ubarvar, 'missing_value', 1.0 / SECPERA)
+setattr(ubarvar, '_FillValue', 1.0 / SECPERA)
 
 setattr(vbarvar, 'long_name', 
         'vertical average of horizontal velocity of ice in projection_y_coordinate direction')
 setattr(vbarvar, 'units', 'm s-1')
-setattr(vbarvar, 'missing_value', 1.0 / SECPERA)
+setattr(vbarvar, '_FillValue', 1.0 / SECPERA)
 
 setattr(bcflagvar, 'long_name', 'location of Dirichlet boundary condition for velocity')
 

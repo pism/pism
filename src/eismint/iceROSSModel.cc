@@ -49,7 +49,9 @@ IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
   // but we might want to make it depend on options
   const PetscScalar typicalStrainRate = (100.0 / secpera) / (100.0 * 1.0e3);  
      // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  constantNuHForSSA = min_thickness_SSA * constantHardnessForSSA
+//  constantNuHForSSA = min_thickness_SSA * constantHardnessForSSA
+//                      / (2.0 * pow(typicalStrainRate,2./3.));
+  constantNuHForSSA = 5.0 * constantHardnessForSSA
                       / (2.0 * pow(typicalStrainRate,2./3.));
      // Pa s m; critical quantity for adjusting force boundary
      // condition at calving front 
@@ -189,7 +191,14 @@ PetscErrorCode IceROSSModel::fillinTemps() {
   PetscScalar         **Ts;
 
   // fill in all temps with Ts
-  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
+  IceModelVec2    *pccTs;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(
+              grid.year, 0.0, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
+  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL  in  IceROSSModel::fillinTemps()");  }
+
+  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -200,7 +209,8 @@ PetscErrorCode IceROSSModel::fillinTemps() {
   }
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = Tb3.end_access(); CHKERRQ(ierr);
-  ierr = vTs.end_access(); CHKERRQ(ierr);
+  ierr = pccTs->end_access();  CHKERRQ(ierr);
+
   return 0;
 }
 

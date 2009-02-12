@@ -80,8 +80,8 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-#FIXME TEMPORARY OFF executables := pismr pismd pismv pisms
-executables := pismr pisms pcctest
+#FIXME TEMPORARY OFF : pismv
+executables := pismr pismd pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))

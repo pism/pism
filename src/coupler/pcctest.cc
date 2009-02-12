@@ -40,9 +40,14 @@ these in camovie.nc:
 
 $ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
 
-Similar for PISMPDDCoupler and PISMConstOceanCoupler:
+Similar for PISMPDDCoupler, but expects 'accum' and 'annavartm', so we change
+names before running:
 
-$ pcctest -i state.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+$ ncrename -v acab,accum state.nc restate.nc
+$ ncrename -O -v artm,annavartm restate.nc
+$ pcctest -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+
+For PISMConstOceanCoupler; boring:
 
 $ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
 

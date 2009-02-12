@@ -146,7 +146,7 @@ latvar = ncfile.createVariable('lat', 'f4', dimensions=('x', 'y'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('x', 'y'))
 Hvar = ncfile.createVariable('thk', 'f4', dimensions=('x', 'y'))
 Bvar = ncfile.createVariable('topg', 'f4', dimensions=('x', 'y')) 
-Accvar = ncfile.createVariable('acab', 'f4', dimensions=('x', 'y'))
+Accvar = ncfile.createVariable('accum', 'f4', dimensions=('x', 'y'))
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
@@ -184,9 +184,9 @@ setattr(Bvar, 'long_name', 'bedrock surface elevation')
 setattr(Bvar, 'standard_name', 'bedrock_altitude')
 setattr(Bvar, 'units', 'm')
 setattr(Bvar, 'valid_min', topg_valid_min)
+setattr(Bvar, '_FillValue', topg_fill_value)
 
-setattr(Accvar, 'long_name', 'mean annual net ice equivalent accumulation (ablation) rate')
-setattr(Accvar, 'standard_name', 'land_ice_surface_specific_mass_balance')
+setattr(Accvar, 'long_name', 'mean annual net ice equivalent accumulation rate')
 setattr(Accvar, 'units', 'm s-1')
 
 # write the data to the NetCDF file
@@ -206,6 +206,6 @@ print "NetCDF file ",WRIT_FILE," created"
 
 
 ## this NCO command transposes, if needed:
-##   ncpdq -a y,x -v lat,lon,thk,usurf,acab,topg eis_green20.nc eg20_transpose.nc
+##   ncpdq -a y,x -v lat,lon,thk,usurf,accum,topg eis_green20.nc eg20_transpose.nc
 
 

@@ -20,6 +20,7 @@
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "base/iceModel.hh"
+#include "coupler/pccoupler.hh"
 #include "eismint/iceROSSModel.hh"
 
 static char help[] =
@@ -31,9 +32,9 @@ static char help[] =
 1.  example of diagnostic computation of velocities from saved model state
 file, using only SIA:
 
-  $ pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 6000 -o foo
-  $ pisms -eisII A -i foo.nc -y 0.00001 -f3d -o bar
-  $ pismd -i foo.nc -o full_foo
+  $ pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 6000 -o foo.nc
+  $ pisms -eisII A -i foo.nc -y 0.00001 -f3d -o bar.nc
+  $ pismd -i foo.nc -o full_foo.nc
   $ ncdiff -O full_foo.nc bar.nc pismddiff.nc  # velocities nearly equal, not quite at margin; why?
 
 2. see example of diagnostic computation of Ross ice shelf velocities in manual
@@ -53,6 +54,8 @@ int main(int argc, char *argv[]) {
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     IceGrid    g(com, rank, size);
     IceType*   ice = PETSC_NULL;
+    PISMConstAtmosCoupler pcac;
+    PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMD (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
@@ -73,6 +76,10 @@ int main(int argc, char *argv[]) {
     } else 
       m = (IceModel*) &mPlain;
     ierr = m->setExecName("pismd"); CHKERRQ(ierr);
+
+    ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
+    ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
+
     ierr = m->setFromOptions(); CHKERRQ(ierr);
     ierr = m->initFromOptions(); CHKERRQ(ierr);
 
