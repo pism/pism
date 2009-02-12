@@ -207,8 +207,15 @@ PetscErrorCode IceModelVec::squareroot() {
 //! Result: v <- v + alpha * x. Calls VecAXPY.
 PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
   PetscErrorCode ierr;
+  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
+
+  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
+  ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
+
+  if (X_size != Y_size)
+    SETERRQ1(1, "IceModelVec::add(...): incompatible Vec sizes (called as %s.add(...))\n", short_name);
 
   ierr = VecAXPY(v, alpha, x.v); CHKERRQ(ierr);
   return 0;
@@ -246,8 +253,15 @@ PetscErrorCode IceModelVec::scale(PetscScalar alpha) {
 //! Result: result <- v .* x.  Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
   PetscErrorCode ierr;
+  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
+
+  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
+  ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
+
+  if (X_size != Y_size)
+    SETERRQ1(1, "IceModelVec::multiply_by(...): incompatible Vec sizes (called as %s.multiply_by(...))\n", short_name);
 
   ierr = VecPointwiseMult(result.v, v, x.v); CHKERRQ(ierr);
   return 0;
@@ -256,8 +270,15 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
 //! Result: v <- v .* x.  Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
   PetscErrorCode ierr;
+  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
+
+  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
+  ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
+
+  if (X_size != Y_size)
+    SETERRQ1(1, "IceModelVec::multiply_by(...): incompatible Vec sizes (called as %s.multiply_by(...))\n", short_name);
 
   ierr = VecPointwiseMult(v, v, x.v); CHKERRQ(ierr);
   return 0;
