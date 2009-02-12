@@ -113,7 +113,7 @@ other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
-#include ../src/eismint/grn_make
+include ../src/eismint/grn_make
 
 # Import additional make include files:
 ifdef CONFIG

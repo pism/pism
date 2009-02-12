@@ -72,10 +72,9 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   // determine if dimensions and variables exist in bootstrapping file
   bool xdimExists = false, ydimExists = false, zdimExists = false, zbdimExists = false,
-    hExists=false, 
-    maskExists=false,
-    xExists=false, yExists=false, tExists=false;
-  
+       xExists=false, yExists=false, tExists=false,
+       hExists=false, maskExists=false;
+
   ierr = nc.find_dimension("x", NULL, xdimExists); CHKERRQ(ierr);
   ierr = nc.find_dimension("y", NULL, ydimExists); CHKERRQ(ierr);
   ierr = nc.find_dimension("z", NULL, zdimExists); CHKERRQ(ierr);

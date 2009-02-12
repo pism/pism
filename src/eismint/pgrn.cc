@@ -23,6 +23,7 @@ static char help[] =
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
+#include "../coupler/pccoupler.hh"
 #include "iceGRNModel.hh"
 
 int main(int argc, char *argv[]){
@@ -40,6 +41,8 @@ int main(int argc, char *argv[]){
   { // explicit scoping does deconstructors before PetscFinalize() 
     IceGrid g(com, rank, size);
     IceType *ice = PETSC_NULL;
+    PISMEISGREENPDDCoupler ppdd;
+    PISMConstOceanCoupler  pcoc;
  
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
@@ -49,6 +52,11 @@ int main(int argc, char *argv[]){
     ierr = verbPrintf(1, com, "PGRN (EISMINT-Greenland mode)\n"); CHKERRQ(ierr);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
     ierr = m.setFromOptions(); CHKERRQ(ierr);
+
+    ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
+    ierr = m.attachEISGREENPDDPCC(ppdd); CHKERRQ(ierr);
+    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+
     ierr = m.initFromOptions(); CHKERRQ(ierr);
  
     ierr = m.run(); CHKERRQ(ierr);

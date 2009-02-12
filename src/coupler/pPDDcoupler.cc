@@ -94,6 +94,8 @@ PetscErrorCode PISMPDDCoupler::userOptionsChoosePDD(PetscTruth &userWantsPDD) {
 PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
+ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+
   // check options; we assume the PDD is desired; only overriding defaults here
   // check if truly random PDD is desired, and, if so, initialize it
   PetscTruth  pddRandSet, pddRepeatableSet;
@@ -127,7 +129,7 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   char  filename[PETSC_MAX_PATH_LEN];
   LocalInterpCtx* lic;
 
-  ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
+  ierr = PISMConstAtmosCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates lic
 
   // mean annual ice equivalent accumulation rate
@@ -183,6 +185,9 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   }
   
   delete lic;
+
+ierr = verbPrintf(1,g->com,"ending PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+
   return 0;
 }
 

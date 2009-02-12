@@ -126,8 +126,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   grid_info gi;
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
   if (!file_exists) {
-    ierr = PetscPrintf(grid->com,
-             "PISMClimateCoupler ERROR: Can't open file '%s'.\n",
+    ierr = PetscPrintf(grid->com, "PISMClimateCoupler ERROR: Can't open file '%s'.\n",
              filename); CHKERRQ(ierr);
     PetscEnd();
   }
@@ -172,6 +171,8 @@ This version allocates space and sets attributes for the two essential fields.
  */
 PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
+
+ierr = verbPrintf(1,g->com,"entering PISMAtmosphereCoupler::initFromOptions()\n"); CHKERRQ(ierr);
 
   ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
   
@@ -257,6 +258,8 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
+ierr = verbPrintf(1,g->com,"entering PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
   
   if (initializeFromFile) {
@@ -278,6 +281,9 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
        "constant atmospheric climate already initialized; not read from any file ...\n");
        CHKERRQ(ierr); 
   }
+
+ierr = verbPrintf(1,g->com,"ending PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -303,6 +309,8 @@ PetscErrorCode PISMConstAtmosCoupler::updateSurfTempAndProvide(
 /*******************  OCEAN:  PISMOceanCoupler ********************/
 
 PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
+  reportInitializationToStdOut = true;  // derived classes etc. can turn off before calling
+                                        // initFromOptions(), but its on by default
 }
 
 
@@ -320,6 +328,8 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
   ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
+
+  // no report to std out; otherwise reportInitializationToStdOut should be checked before report
 
   // ice boundary tempature at the base of the ice shelf
   ierr = vshelfbasetemp.create(*grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
@@ -391,6 +401,22 @@ PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
   constOceanHeatFlux = 0.5;   // W m-2 = J m-2 s-1; naively chosen default value
         // presumably irrelevant:  about 4 times more heating than peak of 
         //   Shapiro & Ritzwoller (2004) geothermal fluxes for Antarctica of about 130 mW/m^2
+}
+
+
+PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
+  PetscErrorCode ierr;
+
+  ierr = PISMOceanCoupler::initFromOptions(g); CHKERRQ(ierr);
+  
+  if (reportInitializationToStdOut) {
+    ierr = verbPrintf(2, g->com, 
+       "initializing constant sub-ice shelf ocean climate: heat flux from ocean\n"
+       "  set to %.3f W m-2 determines mass balance; ice shelf base temperature set to\n"
+       "  pressure-melting temperature ...\n",
+       constOceanHeatFlux); CHKERRQ(ierr); 
+  }
+  return 0;
 }
 
 

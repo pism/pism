@@ -24,6 +24,16 @@
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "../base/forcing.hh"
+#include "../coupler/pccoupler.hh"
+
+
+class PISMEISGREENPDDCoupler : public PISMPDDCoupler {
+
+protected:
+  virtual PetscScalar getSummerWarming(
+       const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma);
+};
+
 
 class IceGRNModel : public IceModel {
 
@@ -31,19 +41,23 @@ public:
   IceGRNModel(IceGrid &g, IceType *i);
   virtual PetscErrorCode setFromOptions();
   using IceModel::initFromOptions;
+  PetscErrorCode attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p);
   virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
 
 protected:
+  PISMEISGREENPDDCoupler *pddPCC; // points to same PISMAtmosCoupler as IceModel::atmosPCC,
+                                  //   but we access PDD parameters through this pointer
+
   int expernum;  // SSL2 is 1, CCL3 is 3, GWL3 is 4
   virtual PetscErrorCode additionalAtStartTimestep();
 
 private:
-  PetscTruth inFileSet, noEllesmereIcelandDelete,
-             haveSurfaceTemp, haveGeothermalFlux;
+  PetscTruth     inFileSet, 
+                 noEllesmereIcelandDelete,
+                 haveSurfaceTemp,
+                 haveGeothermalFlux;
+  PetscScalar    calculateMeanAnnual(PetscScalar h, PetscScalar lat);
   PetscErrorCode updateTs();
-  PetscErrorCode calculateMeanAnnual(PetscScalar h, PetscScalar lat, PetscScalar *val);
-  virtual PetscScalar getSummerWarming(
-       const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Ta) const;
   PetscErrorCode ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat);
   PetscErrorCode cleanExtraLand();
 };

@@ -170,13 +170,6 @@ public:
              void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
-
-protected:
-  IceModelVec2 vannmeansurftemp,
-               vsurfaccum;
-
-  gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which
-                                 //   does not use actual random numbers
   PetscScalar  pddStdDev,        // K; daily amount of randomness
                pddFactorSnow,    // m day^-1 K^-1; amount of snow melted,
                                  //    as ice equivalent, per positive degree day
@@ -187,11 +180,11 @@ protected:
                pddSummerWarming, // K; amplitude of yearly temperature cycle
                pddSummerPeakDay; // Julian day of summer temperature peak
 
-  PetscScalar getSummerWarming(
-             const PetscScalar elevation, const PetscScalar latitude,
-             const PetscScalar Tma);
-  PetscScalar getTemperatureFromYearlyCycle(
-       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day);
+  IceModelVec2 vannmeansurftemp, vsurfaccum;
+
+protected:
+  gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which
+                                 //   does not use actual random numbers
 
   PetscTruth   usingMonthlyTemps;
   IceModelVec2 vmonthlysurftemp[12]; // usually these are not created; if user supplies monthly
@@ -202,9 +195,15 @@ protected:
        PetscScalar **currMonthSurfTemps, PetscScalar **nextMonthSurfTemps,
        const PetscInt i, const PetscInt j, const PetscScalar day);
 
-  PetscScalar getSurfaceBalanceFromSnowAndPDD(const PetscScalar snowrate,
+  virtual PetscScalar getSummerWarming(
+             const PetscScalar elevation, const PetscScalar latitude,
+             const PetscScalar Tma);
+  virtual PetscScalar getTemperatureFromYearlyCycle(
+       const PetscScalar summer_warming, const PetscScalar Tma, const PetscScalar day);
+
+  virtual PetscScalar getSurfaceBalanceFromSnowAndPDD(const PetscScalar snowrate,
                     const PetscScalar dt_secs, const PetscScalar pddsum);
-  double CalovGreveIntegrand(const double Tac);  // double because handed to gsl quadrature routine
+  virtual double CalovGreveIntegrand(const double Tac);  // double because handed to gsl quadrature routine
 
 };
 
@@ -253,6 +252,9 @@ public:
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded); // will be interpreted as type IceInfoNeededByOceanCoupler*
 
+  bool      reportInitializationToStdOut;  // can turn off report on initialization if
+                                           // there can be no floating ice (for example)
+
 protected:
   IceModelVec2 vshelfbasetemp, vshelfbasemassflux;
 };
@@ -263,6 +265,8 @@ class PISMConstOceanCoupler : public PISMOceanCoupler {
 
 public:
   PISMConstOceanCoupler();
+
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
 
   virtual PetscErrorCode updateShelfBaseMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 

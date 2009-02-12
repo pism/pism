@@ -268,8 +268,6 @@ PetscErrorCode IceEISModel::initAccumTs() {
   // now fill in accum and surface temp
   ierr =  pccTs->get_array(Ts); CHKERRQ(ierr);
   ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
-//in PCC:  ierr =    vTs.get_array(Ts); CHKERRQ(ierr);
-//in PCC:  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
 
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
@@ -286,8 +284,6 @@ PetscErrorCode IceEISModel::initAccumTs() {
 
   ierr = pccsmf->end_access(); CHKERRQ(ierr);
   ierr =  pccTs->end_access(); CHKERRQ(ierr);
-//in PCC:  ierr = vAccum.end_access(); CHKERRQ(ierr);
-//in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -308,11 +304,10 @@ PetscErrorCode IceEISModel::fillintemps() {
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
-  ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
-//in PCC:  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
 
   // fill in all ice temps with Ts and then have bedrock (if present despite EISMINT
   //   standard) temperatures reflect default geothermal rate
+  ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -323,9 +318,7 @@ PetscErrorCode IceEISModel::fillintemps() {
   }
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = Tb3.end_access(); CHKERRQ(ierr);
-
   ierr = pccTs->end_access(); CHKERRQ(ierr);
-//in PCC:  ierr = vTs.end_access(); CHKERRQ(ierr);
 
   // communicate T because it will be horizontally differentiated
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);

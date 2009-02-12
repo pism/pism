@@ -80,6 +80,7 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     CHKERRQ(ierr);
   }
 
+  // main initialization of IceModel
   if (i_set) {
     if (boot_from_set) {
       ierr = PetscPrintf(grid.com,
@@ -176,25 +177,25 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);
   }
 
-  // make sure the first vertical velocities do not use junk from 
-  //   uninitialized basal melt rate.
-  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
-    
-  // these initializations can not use info from -regrid_from:
+  skipCountDown = 0;
+
+  // initializations of forcing
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
-  
+
+  // initializations of PISMClimateCouplers
   if (atmosPCC != PETSC_NULL) {
     ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   if (oceanPCC != PETSC_NULL) {
+    if (isDrySimulation == PETSC_TRUE) {
+      oceanPCC->reportInitializationToStdOut = false;
+    }
     ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
   }
-
-  skipCountDown = 0;
 
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);
@@ -215,11 +216,11 @@ PetscErrorCode IceModel::afterInitHook() {
   
   // report on computational box
   ierr = verbPrintf(2,grid.com, 
-           "  [computational box for ice: %8.2f km x %8.2f km",
+           "[computational box for ice: %8.2f km x %8.2f km",
            2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
   if (grid.Mbz > 1) {
     ierr = verbPrintf(2,grid.com,
-         "\n                                 x (%8.2f m + %7.2f m bedrock)]\n"
+         "\n                               x (%8.2f m + %7.2f m bedrock)]\n"
          ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com," x %8.2f m]\n",grid.Lz); CHKERRQ(ierr);
@@ -228,19 +229,19 @@ PetscErrorCode IceModel::afterInitHook() {
   // report on grid cell dims
   if (grid.isEqualVertSpacing()) {
     ierr = verbPrintf(2,grid.com, 
-           "  [grid cell dims (equal dz): %8.2f km x %8.2f km x %8.2f m",
+           "[grid cell dims (equal dz): %8.2f km x %8.2f km x %8.2f m",
            grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
-           "  [hor. grid cell dimensions: %8.2f km x %8.2f km\n",
+           "[hor. grid cell dimensions: %8.2f km x %8.2f km\n",
            grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, 
-           "   vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
+           " vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
            grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
     PetscInt    myMz, dummyM;
     ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com, 
-         "\n   fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m",
+         "\n fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m",
            myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
     if (myMz > 1000) {
       ierr = verbPrintf(1,grid.com,
@@ -251,7 +252,7 @@ PetscErrorCode IceModel::afterInitHook() {
 
   if (grid.Mbz > 1) {
     ierr = verbPrintf(2,grid.com, 
-       "\n   vertical spacing in bedrock: dz = %.3f m]\n",
+       "\n vertical spacing in bedrock: dz = %.3f m]\n",
          grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,"]\n"); CHKERRQ(ierr);
@@ -287,8 +288,9 @@ PetscErrorCode IceModel::afterInitHook() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN, // OLD OPTION
                                &regridFileSet); CHKERRQ(ierr);
   if (regridFileSet == PETSC_TRUE) {
-    ierr = verbPrintf(2, grid.com, "PISM WARNING: '-regrid' is outdated. Please use '-regrid_from' instead.\n");
-    CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, 
+       "PISM WARNING: '-regrid' is outdated. Please use '-regrid_from' instead.\n");
+       CHKERRQ(ierr);
   }
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", regridFile, PETSC_MAX_PATH_LEN,
                                &regridFileSet); CHKERRQ(ierr);
@@ -296,10 +298,10 @@ PetscErrorCode IceModel::afterInitHook() {
     ierr = regrid(regridFile); CHKERRQ(ierr);
   }
 
+  // last tasks in initialization; might be using info from -regrid_from:
+
   // consistency of geometry after initialization:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-
-  // last tasks in initialization; might be using info from -regrid_from:
 
   // allocate and setup bed deformation model
   ierr = bedDefSetup(); CHKERRQ(ierr);

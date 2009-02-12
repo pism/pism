@@ -280,6 +280,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vbasalMeltRate.create(grid, "basal_melt_rate", true); CHKERRQ(ierr);
   ierr = vbasalMeltRate.set_attrs("diagnostic", "basal melt rate",
 				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);  // so vertical velocities do not use junk from 
+                                                  //   uninitialized basal melt rate.
   ierr = vbasalMeltRate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vbasalMeltRate.write_in_glaciological_units = true;
 
