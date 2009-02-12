@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2004-2009 Nathan Shemonski and Ed Bueler
 //
 // This file is part of PISM.
 //

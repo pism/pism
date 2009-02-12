@@ -27,23 +27,24 @@ static char help[] =
 #include "pccoupler.hh"
 
 
-/* example runs: 
-here pcctest extracts 'mask' and 'usurf' = surface elevation from sheet.nc;
+/* example usage: 
 
 set up a ice sheet state file:
 
 $ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
 
-extracts 'acab' and 'artm' from state.nc, because they are stored there by EISMINT
-II choices, and initializes PISMConstAtmosCoupler; "computes", though no actual 
-computation, surface mass balance and surface temp at ys:dt:ye and saves 
-these in pccmovie.nc:
+next line extracts 'acab' and 'artm' from state.nc, because they are stored there 
+by EISMINT II choices, and initializes PISMConstAtmosCoupler; "computes", though 
+no actual computation, surface mass balance and surface temp at ys:dt:ye and saves 
+these in camovie.nc:
 
-$ pcctest -i state.nc -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
+$ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
 
-version which does similar for PISMPDDCoupler:
+Similar for PISMPDDCoupler and PISMConstOceanCoupler:
 
-$ pcctest -i state.nc -ys 0.0 -ye 2.5 -dt 0.1 -pdd -o pddmovie.nc
+$ pcctest -i state.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+
+$ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
 
 */
 
@@ -90,7 +91,6 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
     grid.zblevels[k] = (PetscScalar) zblevs[k];
   }
   delete [] zlevs;  delete [] zblevs;
-  
   //ierr = grid.printVertLevels(1); CHKERRQ(ierr);
   
   // finally, set DA 
@@ -102,7 +102,8 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
 
 
 PetscErrorCode readAtmosInfoFromFile(char *filename, const MPI_Comm com, IceGrid *grid,
-                                     LocalInterpCtx* &lic, IceInfoNeededByAtmosphereCoupler &info) {
+                                     LocalInterpCtx* &lic, 
+                                     IceInfoNeededByAtmosphereCoupler &info) {
   PetscErrorCode ierr;
 
   info.lat = new IceModelVec2;
@@ -134,7 +135,8 @@ PetscErrorCode readAtmosInfoFromFile(char *filename, const MPI_Comm com, IceGrid
 
 
 PetscErrorCode readOceanInfoFromFile(char *filename, const MPI_Comm com, IceGrid *grid,
-                                     LocalInterpCtx* &lic, IceInfoNeededByOceanCoupler &info) {
+                                     LocalInterpCtx* &lic, 
+                                     IceInfoNeededByOceanCoupler &info) {
   PetscErrorCode ierr;
 
   info.lat = new IceModelVec2;
@@ -264,15 +266,12 @@ PetscErrorCode writePCCStateAtTimes(
   for (PetscInt k=0; k < NN; k++) {
     const PetscReal pccyear = ys + k * dt_years;
     ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr);
-    ierr = nc.append_time(pccyear * secpera); CHKERRQ(ierr);
+    ierr = nc.append_time(pccyear * secpera); CHKERRQ(ierr); // should write t axis in years?
     snprintf(timestr, sizeof(timestr), "  pcc state at year %11.3f ...\n", pccyear);
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    // FIXME: need to fill struct* with info according to PISMClimateCoupler need;
-    //   for now only works with derived class of PISMAtmosphereCoupler
-    // FIXME: should write out t axis in years?
-    ierr = PetscPrintf(com, "  updating pcc stat at year %.3f and writing to %s ...\n",
+    ierr = PetscPrintf(com, "  updating pcc state at year %.3f and writing to %s ...\n",
              pccyear,filename); CHKERRQ(ierr);
     ierr = pcc->updateClimateFields(pccyear, dt_years, iceInfoNeeded); CHKERRQ(ierr);
     ierr = pcc->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
@@ -381,7 +380,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, PETSC_NULL); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, PETSC_NULL); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "  writing PISM...Coupler states to NetCDF file '%s'...\n",
+    ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
                        outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid, argc,argv, ys,ye,dt_years,
                                 info); CHKERRQ(ierr);

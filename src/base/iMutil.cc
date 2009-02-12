@@ -183,19 +183,16 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   ierr = initForcingFromOptions(); CHKERRQ(ierr);
 
   // initializations of PISMClimateCouplers
+  // FIXME:  these should go earlier so climate data (if present) is read before bootstrapping
+  //   BUT at this point bootstrapFromFile() is calling createDA() so we can't init these 
+  //   before bootstrapping because the IceGrid is not ready
   if (atmosPCC != PETSC_NULL) {
     ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
+  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
   if (oceanPCC != PETSC_NULL) {
-    if (isDrySimulation == PETSC_TRUE) {
-      oceanPCC->reportInitializationToStdOut = false;
-    }
+    if (isDrySimulation == PETSC_TRUE) {  oceanPCC->reportInitializationToStdOut = false;  }
     ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
-  } else {
-    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
-  }
+  } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
 
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);

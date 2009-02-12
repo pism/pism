@@ -47,21 +47,18 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   bool file_exists=false;
   NCTool nc(&grid);
   if (filename == NULL) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: No file name given for bootstrapping.\n");
-    CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "PISM ERROR: No file name given for bootstrapping.\n");
+       CHKERRQ(ierr);
     PetscEnd();
   }
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
 
   if (file_exists) {
     ierr = verbPrintf(2, grid.com, 
-       "bootstrapping by PISM default method from file %s\n",filename); 
-       CHKERRQ(ierr);
+       "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: Can't open bootstrapping file '%s'.\n",filename);
-    CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com,"PISM ERROR: Can't open bootstrapping file '%s'.\n",filename);
+       CHKERRQ(ierr);
     PetscEnd();
   }
   
@@ -206,6 +203,15 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
      "  filling in temperatures at depth using quartic guess\n");
      CHKERRQ(ierr);
+#if 0
+#else
+  // FIXME: kludge to deal with hosed initialization sequence
+  ierr = vWork2d[0].set_name("artm"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs(
+            "climate_state", "temperature at ice surface but below firn",
+            "K", NULL); CHKERRQ(ierr);
+  ierr = vWork2d[0].regrid(filename, *bootstrapLIC, 273.15); CHKERRQ(ierr);
+#endif
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
@@ -440,15 +446,18 @@ PetscErrorCode IceModel::putTempAtDepth() {
   T = new PetscScalar[grid.Mz];
 
   IceModelVec2    *pccTs;
+#if 0
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
               grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
-  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
+  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
+#else
+  // FIXME: kludge to deal with hosed initialization sequence
+  pccTs = &(vWork2d[0]);
+#endif
 
+  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
   ierr = vbed.get_array(b);   CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
@@ -487,10 +496,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr =   T3.end_access(); CHKERRQ(ierr);
   ierr =  Tb3.end_access(); CHKERRQ(ierr);
+  ierr = pccTs->end_access(); CHKERRQ(ierr);
 
   delete [] T;
-
-  ierr = pccTs->end_access(); CHKERRQ(ierr);
   
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);

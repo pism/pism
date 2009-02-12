@@ -51,21 +51,19 @@ int main(int argc, char *argv[]) {
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
     IceModel m(g, ice);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
-    ierr = m.setFromOptions(); CHKERRQ(ierr);
 
     PetscTruth  pddSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) { // note climate will always come from input file in pismr
       ierr = verbPrintf(2,com, "pismr attaching PISMPDDCoupler to IceModel\n"); CHKERRQ(ierr);
-      ppdd.initializeFromFile = true;
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,com, "pismr attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
-      pcac.initializeFromFile = true;
       ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     }
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
+    ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);

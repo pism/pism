@@ -28,7 +28,7 @@
 #include "pccoupler.hh"
 
 
-PISMPDDCoupler::PISMPDDCoupler() : PISMConstAtmosCoupler() {
+PISMPDDCoupler::PISMPDDCoupler() : PISMAtmosphereCoupler() {
 
   // normally use Calov-Greve expectation integral; if this is non-NULL
   //   then using actual random numbers
@@ -47,6 +47,9 @@ PISMPDDCoupler::PISMPDDCoupler() : PISMConstAtmosCoupler() {
   pddSummerPeakDay = 243.0;  // Julian day; = August 1st
   
   usingMonthlyTemps = PETSC_FALSE; // -pdd_monthly_temps option required to use them
+  
+  initialize_vannmeansurftemp_FromFile = true;
+  initialize_vsurfaccum_FromFile = true;
 }
 
 
@@ -94,7 +97,7 @@ PetscErrorCode PISMPDDCoupler::userOptionsChoosePDD(PetscTruth &userWantsPDD) {
 PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
-ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  //ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
 
   // check options; we assume the PDD is desired; only overriding defaults here
   // check if truly random PDD is desired, and, if so, initialize it
@@ -129,12 +132,12 @@ ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKE
   char  filename[PETSC_MAX_PATH_LEN];
   LocalInterpCtx* lic;
 
-  ierr = PISMConstAtmosCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
+  ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates lic
 
   // mean annual ice equivalent accumulation rate
   //   we READ by name 'artm' but change to name 'annavartm' below
-  ierr = vannmeansurftemp.create(*g, "artm", true); CHKERRQ(ierr);
+  ierr = vannmeansurftemp.create(*g, "artm", false); CHKERRQ(ierr);
   ierr = vannmeansurftemp.set_attrs(
             "climate_state",
             "annual mean temperature at ice surface but below firn",
@@ -156,17 +159,35 @@ ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKE
 
   // now read two fields
   ierr = verbPrintf(2, g->com, 
-     "initializing constant atmospheric climate and PDD: reading surface\n"
-     "  accumulation 'acab' and surface temperature 'artm' from %s ... \n",
-     filename); CHKERRQ(ierr); 
-
-  ierr = vsurfaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
-  ierr = vannmeansurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+     "initializing positive degree-day model (PDD) for atmospheric climate ... \n"); CHKERRQ(ierr); 
+  if (initialize_vannmeansurftemp_FromFile) {
+    ierr = verbPrintf(2, g->com, 
+      "  reading mean annual surface temperature 'artm' from %s ... \n",
+      filename); CHKERRQ(ierr); 
+    ierr = vannmeansurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+  } else {
+    ierr = verbPrintf(2, g->com, 
+      "  not reading mean annual surface temperature 'artm' from a file; formulas must fill it ... \n");
+      CHKERRQ(ierr); 
+  }
+  if (initialize_vsurfaccum_FromFile) {
+    ierr = verbPrintf(2, g->com, 
+      "  reading ice surface accumulation rate 'acab' from %s ... \n",
+      filename); CHKERRQ(ierr); 
+    ierr = vsurfaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+  } else {
+    ierr = verbPrintf(2, g->com, 
+      "  not reading ice surface accumulation rate 'acab' from a file; formulas must fill it ... \n");
+      CHKERRQ(ierr); 
+  }
 
   // now that they are read, reset names to output name
   ierr = vsurfaccum.set_name("accum"); CHKERRQ(ierr);
   ierr = vannmeansurftemp.set_name("annavartm"); CHKERRQ(ierr);
-  ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr); // initialize to have some values
+
+  // initialize time dependent fields to have some values
+  ierr = vsurfmassflux.copy_from(vsurfaccum); CHKERRQ(ierr);
+  ierr = vsurftemp.copy_from(vannmeansurftemp); CHKERRQ(ierr);
 
   // check on whether we should read monthly temperatures from file  
   char monthlyTempsFile[PETSC_MAX_PATH_LEN];
@@ -186,7 +207,7 @@ ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKE
   
   delete lic;
 
-ierr = verbPrintf(1,g->com,"ending PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  //ierr = verbPrintf(1,g->com,"ending PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -195,7 +216,7 @@ ierr = verbPrintf(1,g->com,"ending PISMPDDCoupler::initFromOptions()\n"); CHKERR
 PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
   PetscErrorCode ierr;
   
-  ierr = PISMConstAtmosCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
   
   ierr = vannmeansurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -213,6 +234,7 @@ PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
 }
 
 
+//! If option \c -pdd_monthly_temps given, reads monthly temperatures \c temp_monN, for N=0,..,11, from file.  Temperatures must be in K.
 PetscErrorCode PISMPDDCoupler::readMonthlyTemps(const char *filename) {
   PetscErrorCode ierr;
   
@@ -242,7 +264,6 @@ PetscErrorCode PISMPDDCoupler::readMonthlyTemps(const char *filename) {
     snprintf(mTstring, 100, 
              "temperature at ice surface but below firn during month %d of {0,..,11}", j);
     ierr = vmonthlysurftemp[j].set_attrs("climate_state",mTstring,"K",NULL); CHKERRQ(ierr);
-    ierr = vmonthlysurftemp[j].set(273.15); CHKERRQ(ierr);  // merely a default value
     ierr = vmonthlysurftemp[j].regrid(filename, lic, true); CHKERRQ(ierr); // it *is* critical
   }
   return 0;
@@ -256,7 +277,10 @@ annual surface temperature.
 
 The date of peak summer warming is controlled by option <tt>-pdd_summer_peak_day</tt> 
 with a given Julian day.  The magnitude of the yearly cycle is controlled by 
-<tt>-pdd_summer_warming</tt> with a temperature change in degrees C.
+<tt>-pdd_summer_warming</tt> with a temperature change in K (= degrees C because it is a change).
+
+On input to this procedure, \c elevation is in m above sea level, \c latitude is in degrees 
+north and \c Tma is in K.
 
 This procedure is \e virtual and replacable.
  */
@@ -274,9 +298,9 @@ PetscScalar PISMPDDCoupler::getSummerWarming(
 A standard sinusoidal formula is used:
       \f[ T_s(d,i,j) = T_{ma} + S \cos((2\pi/365.24) * (d - P)) \f]
 where \f$d\f$ is the day on a 365.24 day calendar, \f$T_{ma}\f$ is the annual
-mean temperature in degrees C, \f$S\f$ is the amplitude of the sinusoid
-(the ``summer warming'') in degrees C, and \f$P\f$ is the day of peak summer warming,
-pddSummerPeakDay, which is taken to be 1 August by default.
+mean temperature in K, \f$S\f$ is the amplitude of the sinusoid
+(the ``summer warming'') in K (= degrees C because it is a change in temperature), and \f$P\f$
+is the day of peak summer warming, pddSummerPeakDay, which is taken to be 1 August by default.
 
 This follows EISMINT-Greenland \lo\cite{RitzEISMINT}\elo.  See also IceGRNModel.
  */
@@ -314,8 +338,8 @@ PetscScalar PISMPDDCoupler::getTemperatureFromMonthlyData(
   month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
   PetscInt  curr = (int) floor(month);
   curr = curr % 12;
-  return (currMonthSurfTemps[i][j] - 273.15) 
-       + (month - (PetscScalar)curr) * (nextMonthSurfTemps[i][j] - 273.15);
+  return currMonthSurfTemps[i][j] 
+       + (month - (PetscScalar)curr) * nextMonthSurfTemps[i][j];
 }
 
 
@@ -344,7 +368,7 @@ on ice sheets, however.
 
 The default values for the factors come from EISMINT-Greenland, \lo\cite{RitzEISMINT}\elo.
 
-Arguments are snow fall rate snowrate in m * s^-1, dt in s, pddsum in degree (K) * day.
+Arguments are snow fall rate snowrate in m * s^-1, dt in s, pddsum in K * day.
  */
 PetscScalar PISMPDDCoupler::getSurfaceBalanceFromSnowAndPDD(
              const PetscScalar snowrate, const PetscScalar dt_secs, const PetscScalar pddsum) {
@@ -381,12 +405,17 @@ user selects a random PDD implementation with <tt>-pdd_rand</tt> or
 <tt>-pdd_rand_repeatable</tt>.  The user can choose \f$\sigma\f$ by option
 <tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
 \c dt instead of a whole year as stated in \lo\cite{CalovGreve05}\elo.
+
+The single argument \c Tac is the temperature in K.  The value \f$T_{ac}(t)\f$
+in the above integral must be in degrees C, so the shift is done within this 
+procedure.
  */
 double PISMPDDCoupler::CalovGreveIntegrand(const double Tac) {
 
+  const PetscScalar TacC = Tac - 273.15;
   return (pddStdDev / sqrt(2.0 * PETSC_PI))
-         * exp(- Tac * Tac / (2.0 * pddStdDev * pddStdDev)) 
-         + (Tac / 2.0) * gsl_sf_erfc(- Tac / (sqrt(2.0) * pddStdDev));
+         * exp(- TacC * TacC / (2.0 * pddStdDev * pddStdDev)) 
+         + (TacC / 2.0) * gsl_sf_erfc(- TacC / (sqrt(2.0) * pddStdDev));
 }
 
 
@@ -465,13 +494,12 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
   const PetscInt    intstartday = (int) ceil(startday),
                     num_days    = (int) ceil(365.24 * dt_years);
 
-  PetscScalar pdd_sum;  // units of day^-1 (deg C)-1
+  PetscScalar pdd_sum;  // units of day^-1 K-1
        
   // run through grid and compute PDDs and then surface balance at each point
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-      const PetscScalar mean_annual = amstemp[i][j] - 273.15,  // in deg C
-                        summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
+      const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],amstemp[i][j]);
 
       // use one of the two methods for computing the number of positive degree days
       // at the given i,j grid point for the duration of time step (=dt)
@@ -488,15 +516,14 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
                        smonthtemp[currMonthInd], smonthtemp[nextMonthInd], 
                        i, j, (PetscScalar) day);
           } else {
-            mytemp = getTemperatureFromYearlyCycle(summer_warming, mean_annual,
-                                                   (PetscScalar) day);
+            mytemp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], (PetscScalar) day);
           }
           const double randadd = gsl_ran_gaussian(pddRandGen, pddStdDev);
           const PetscScalar temp = mytemp + (PetscScalar) randadd;
-          if (temp > 0.0)   pdd_sum += temp;
+          if (temp > 273.15)   pdd_sum += (temp - 273.15);
           //if ((i == grid->Mx/2) && (j == grid->My/2)) {
           //  ierr = PetscPrintf(grid->com,
-          //    "  day=%d: mytemp=%5.4f, randadd=%5.4f, temp=%5.4f, pdd_sum=%5.4f\n",
+          //    "  day=%d: mytemp=%5.4f K, randadd=%5.4f, temp=%5.4f K, pdd_sum=%5.4f day^-1 K-1\n",
           //    day, mytemp, randadd, temp, pdd_sum); CHKERRQ(ierr);
           //}
         }
@@ -515,9 +542,9 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
                        smonthtemp[currMonthInd], smonthtemp[nextMonthInd], 
                        i, j, day);
           } else {
-            temp = getTemperatureFromYearlyCycle(summer_warming, mean_annual,day);
+            temp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], day);
           }
-          pdd_sum += coeff * CalovGreveIntegrand(temp);
+          pdd_sum += coeff * CalovGreveIntegrand(temp);  // temp in K
         }
         pdd_sum = (CGsumstepdays / 3.0) * pdd_sum;
       }
@@ -529,11 +556,11 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
       //if ((i == grid->Mx/2) && (j == grid->My/2)) {
       //  ierr = PetscPrintf(grid->com,
       //    "\nPDD at (i,j)=(%d,%d):\n"
-      //      "  mean_annual=%5.4f, summer_warming=%5.4f\n",
+      //      "  mean_annual=%5.4f K, summer_warming=%5.4f K\n",
       //      i, j, mean_annual, summer_warming); CHKERRQ(ierr);
       //  ierr = PetscPrintf(grid->com,
       //      "  CGsumcount = %d, CGsumstepdays = %5.2f, num_days = %d, intstartday = %d,\n"
-      //      "  h = %6.2f, pdd_sum = %5.2f, saccum = %5.4f, smflux = %5.4f\n",
+      //      "  h = %6.2f, pdd_sum = %5.2f day-1 K-1, saccum = %5.4f m a-1, smflux = %5.4f m a-1\n",
       //      CGsumcount, CGsumstepdays, num_days, intstartday,
       //      h[i][j], pdd_sum, saccum[i][j]*secpera, smflux[i][j]*secpera); CHKERRQ(ierr);
       //}
@@ -618,9 +645,8 @@ PetscErrorCode PISMPDDCoupler::updateSurfTempAndProvide(
     ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
     for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
       for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        const PetscScalar mean_annual = amstemp[i][j] - 273.15,  // in deg C
-                          summer_warming = getSummerWarming(h[i][j],lat[i][j],mean_annual);
-        stemp[i][j] = getTemperatureFromYearlyCycle(summer_warming, mean_annual, mid_day);
+        const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],amstemp[i][j]);
+        stemp[i][j] = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], mid_day);
       }
     }
     ierr = info->surfelev->end_access(); CHKERRQ(ierr);

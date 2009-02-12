@@ -105,9 +105,9 @@ protected:
 
   PetscReal valid_min, valid_max;
 
-  utUnit units,		 //< internal (PISM) units
-    glaciological_units; //< for diagnostic variables: units to use when writing
-				//< to a NetCDF file and for standard out reports
+  utUnit units,		      //< internal (PISM) units
+         glaciological_units; //< for diagnostic variables: units to use when writing
+			      //< to a NetCDF file and for standard out reports
 
   IceGrid      *grid;
   DA           da;

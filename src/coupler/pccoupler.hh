@@ -97,7 +97,7 @@ public:
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
-protected:
+//FIXME: should be protected:
   IceModelVec2 vsurfmassflux, vsurftemp; // access these through update...() above
 };
 
@@ -123,7 +123,7 @@ public:
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
-  bool initializeFromFile;
+  bool initializeFromFile;  // default is true
 };
 
 
@@ -149,7 +149,7 @@ files as 'accum'.
 
 It has various constants parameterizing the melt and refreeze processes.  See REFERENCE
  */
-class PISMPDDCoupler : public PISMConstAtmosCoupler {
+class PISMPDDCoupler : public PISMAtmosphereCoupler {
 
 public:
   PISMPDDCoupler();
@@ -180,6 +180,10 @@ public:
                pddSummerWarming, // K; amplitude of yearly temperature cycle
                pddSummerPeakDay; // Julian day of summer temperature peak
 
+  bool         initialize_vannmeansurftemp_FromFile,  // default is true
+               initialize_vsurfaccum_FromFile;        // default is true
+
+// FIXME: should be protected:
   IceModelVec2 vannmeansurftemp, vsurfaccum;
 
 protected:

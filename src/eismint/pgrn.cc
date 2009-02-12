@@ -51,12 +51,13 @@ int main(int argc, char *argv[]){
 
     ierr = verbPrintf(1, com, "PGRN (EISMINT-Greenland mode)\n"); CHKERRQ(ierr);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
-    ierr = m.setFromOptions(); CHKERRQ(ierr);
 
     ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     ierr = m.attachEISGREENPDDPCC(ppdd); CHKERRQ(ierr);
-    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);  // note this reports initialization to stdout even though
+                                                   // EISMINT-Greenland has no ice shelves (-ocean_kill)
 
+    ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
  
     ierr = m.run(); CHKERRQ(ierr);

@@ -59,7 +59,7 @@ PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[],
 
 //! Returns true if create() was called and false otherwise.
 bool IceModelVec::was_created() {
-  return (v == PETSC_NULL);
+  return (v != PETSC_NULL);
 }
 
 
@@ -243,7 +243,7 @@ PetscErrorCode IceModelVec::scale(PetscScalar alpha) {
   return 0;
 }
 
-//! Result: result <- v .* x. Calls VecPointwiseMult.
+//! Result: result <- v .* x.  Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -253,7 +253,7 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
   return 0;
 }
 
-//! Result: v <- v .* x. Calls VecPointwiseMult.
+//! Result: v <- v .* x.  Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -279,7 +279,7 @@ PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
   return 0;
 }
 
-//! Result: destination <- v. Uses VecCopy.
+//! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
   PetscErrorCode ierr;
   PetscInt X_size, Y_size;
@@ -296,7 +296,7 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
   return 0;
 }
 
-//! Result: v <- source. Uses VecCopy.
+//! Result: v <- source.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   PetscErrorCode ierr;
   PetscInt X_size, Y_size;

@@ -35,8 +35,12 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
      const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) {
   // this is virtual in IceModel
   // EISMINT-Greenland summer surface temperature model (expressed as
-  // warming above mean annual); Tma,Ts in deg C; Tma is mean annual, Ts is summer peak
-  const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
+
+//OLD:  // warming above mean annual); Tma,Ts in deg C; Tma is mean annual, Ts is summer peak
+//OLD:  const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
+
+  // warming above mean annual); Tma,Ts in K; Tma is mean annual, Ts is summer peak
+  const PetscScalar Ts = 273.15 + 30.38 - 0.006277 * elevation - 0.3262 * latitude;
   return Ts - Tma;
 }
 
@@ -95,6 +99,11 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   
   // note: user value for -e, and -gk, and so on, will override settings above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
+  
+  if (doOceanKill == PETSC_TRUE) {
+    oceanPCC->reportInitializationToStdOut = false;
+  }
+    
   return 0;
 }
 
@@ -109,6 +118,11 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
   char inFile[PETSC_MAX_PATH_LEN];
   PetscTruth inFileSet, bootFileSet;
+
+  pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
+  if (haveSurfaceTemp == PETSC_FALSE) { // default case: EISMINT-Greenland provides formulas
+    pddPCC->initialize_vannmeansurftemp_FromFile = false;
+  }
   
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);  
 
@@ -119,7 +133,6 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
 
   // PDD is already set by atmosPCC->initFromOptions() in IceModel::initFromOptions();
   //   here we just warn if nondefault values are used
-  pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
   PetscTruth pddSummerWarmingSet, pddStdDevSet;
   ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
               &pddSummerWarmingSet); CHKERRQ(ierr);
@@ -206,11 +219,11 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
 }
 
 
-// Used below in IceGRNModel::updateTs().
+// Used below in IceGRNModel::updateTs().  Returns value in K.
 PetscScalar IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat) {
   // EISMINT-Greenland surface temperature model
   PetscScalar Z = PetscMax(h, 20 * (lat - 65));
-  return 49.13 - 0.007992 * Z - 0.7576 * (lat);
+  return 49.13 - 0.007992 * Z - 0.7576 * (lat) + ice->meltingTemp;
 }
 
 
@@ -223,18 +236,36 @@ PetscErrorCode IceGRNModel::updateTs() {
      " and setting TsOffset=0.0\n");
      CHKERRQ(ierr);
 
+  // PDD will use vannmeansurftemp to determine yearly cycle from parameters
   ierr = pddPCC->vannmeansurftemp.get_array(Ts); CHKERRQ(ierr);
   ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      Ts[i][j] = calculateMeanAnnual(h[i][j], lat[i][j]) + ice->meltingTemp;
+      Ts[i][j] = calculateMeanAnnual(h[i][j], lat[i][j]);
     }
   }
   ierr = pddPCC->vannmeansurftemp.end_access(); CHKERRQ(ierr);
   ierr = vLatitude.end_access(); CHKERRQ(ierr);
   ierr =        vh.end_access(); CHKERRQ(ierr);
-  
+
+//FIXME: additional kludge to deal with hosed initialization sequence
+  // also set pddPCC->vsurftemp because it is used at initialization
+  ierr = pddPCC->vsurftemp.copy_from(pddPCC->vannmeansurftemp); CHKERRQ(ierr);
+  PetscScalar **foo;
+  ierr = pddPCC->vannmeansurftemp.get_array(Ts); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(foo); CHKERRQ(ierr);
+  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+      foo[i][j] = Ts[i][j];
+    }
+  }
+  ierr = pddPCC->vannmeansurftemp.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vWork2d[0].endGhostComm(); CHKERRQ(ierr);
+//FIXME: end kludge  
+
   TsOffset = 0.0;  // see IceModel::updateForcing()
   return 0;
 }

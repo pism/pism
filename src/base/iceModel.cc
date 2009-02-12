@@ -62,7 +62,15 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   createViewers_done = PETSC_FALSE;
 
   atmosPCC = PETSC_NULL;
+  info_atmoscoupler.lat = PETSC_NULL;
+  info_atmoscoupler.lon = PETSC_NULL;  
+  info_atmoscoupler.mask = PETSC_NULL;
+  info_atmoscoupler.surfelev = PETSC_NULL;
   oceanPCC = PETSC_NULL;
+  info_oceancoupler.lat = PETSC_NULL;
+  info_oceancoupler.lon = PETSC_NULL;  
+  info_oceancoupler.mask = PETSC_NULL;
+  info_oceancoupler.thk = PETSC_NULL;
 
   dTforcing = PETSC_NULL;
   dSLforcing = PETSC_NULL;

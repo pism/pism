@@ -39,7 +39,9 @@ PISMClimateCoupler::~PISMClimateCoupler() {
 
 
 PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
+  //PetscErrorCode ierr = verbPrintf(1,g->com,"entering PISMClimateCoupler::initFromOptions()\n"); CHKERRQ(ierr);
   grid = g;
+  //ierr = verbPrintf(1,g->com,"ending PISMClimateCoupler::initFromOptions()\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -172,17 +174,17 @@ This version allocates space and sets attributes for the two essential fields.
 PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
-ierr = verbPrintf(1,g->com,"entering PISMAtmosphereCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  //ierr = verbPrintf(1,g->com,"entering PISMAtmosphereCoupler::initFromOptions()\n"); CHKERRQ(ierr);
 
   ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
   
   // short names "acab" and "artm" match GLIMMER (& CISM, presumably)
   
   // mean annual net ice equivalent surface mass balance rate
-  //   FIXME re create(): IceModelVec2 is local even though ghosts are not needed;
-  //   this is so that vsurfmassflux duplicates IceModel::vAccum; later we
-  //   can make global with no ghosts
-  ierr = vsurfmassflux.create(*g, "acab", true); CHKERRQ(ierr);
+  ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);
+
+  //ierr = verbPrintf(1,g->com,"in PISMAtmosphereCoupler::initFromOptions():  vsurfmassflux created\n"); CHKERRQ(ierr);
+
   ierr = vsurfmassflux.set_attrs(
             "climate_state", 
             "mean annual net ice equivalent accumulation (ablation) rate",
@@ -195,8 +197,7 @@ ierr = verbPrintf(1,g->com,"entering PISMAtmosphereCoupler::initFromOptions()\n"
 
   // annual mean air temperature at "ice surface", at level below all firn processes
   // possibly should be reported in deg C; would require shift version of glaciological_units
-  //   FIXME re create(): ditto above; vsurftemp follows vTs
-  ierr = vsurftemp.create(*g, "artm", true); CHKERRQ(ierr);
+  ierr = vsurftemp.create(*g, "artm", false); CHKERRQ(ierr);
   ierr = vsurftemp.set_attrs(
             "climate_state",
             "temperature at ice surface but below firn",
@@ -204,6 +205,9 @@ ierr = verbPrintf(1,g->com,"entering PISMAtmosphereCoupler::initFromOptions()\n"
             NULL);  // PROPOSED CF standard_name = land_ice_temperature_below_firn
             CHKERRQ(ierr);
   ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
+
+  //ierr = verbPrintf(1,g->com,"ending PISMAtmosphereCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -258,8 +262,7 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
-ierr = verbPrintf(1,g->com,"entering PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
-
+  //ierr = verbPrintf(1,g->com,"entering PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
   
   if (initializeFromFile) {
@@ -276,14 +279,9 @@ ierr = verbPrintf(1,g->com,"entering PISMConstAtmosCoupler::initFromOptions()\n"
     ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
 
     delete lic;
-  } else {
-    ierr = verbPrintf(2, g->com, 
-       "constant atmospheric climate already initialized; not read from any file ...\n");
-       CHKERRQ(ierr); 
   }
 
-ierr = verbPrintf(1,g->com,"ending PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
-
+  //ierr = verbPrintf(1,g->com,"ending PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -292,7 +290,9 @@ ierr = verbPrintf(1,g->com,"ending PISMConstAtmosCoupler::initFromOptions()\n");
 PetscErrorCode PISMConstAtmosCoupler::updateSurfMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsmf) {
-  pvsmf = &vsurfmassflux;
+  if (vsurfmassflux.was_created())
+    pvsmf = &vsurfmassflux;
+  else {  SETERRQ(1,"vsurfmassflux not created in PISMConstAtmosCoupler::updateSurfMassFluxAndProvide()");  }
   return 0;
 }
 
@@ -301,7 +301,9 @@ PetscErrorCode PISMConstAtmosCoupler::updateSurfMassFluxAndProvide(
 PetscErrorCode PISMConstAtmosCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvst) {
-  pvst = &vsurftemp;
+  if (vsurftemp.was_created())
+    pvst = &vsurftemp;
+  else {  SETERRQ(1,"vsurftemp not created in PISMConstAtmosCoupler::updateSurfTempAndProvide()");  }
   return 0;
 }
 
