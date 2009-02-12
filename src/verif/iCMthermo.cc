@@ -106,10 +106,17 @@ PetscErrorCode IceCompModel::initTestFG() {
   T = new PetscScalar[grid.Mz];
   Tb = new PetscScalar[grid.Mbz];
 
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccTs, *pccaccum;
+  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
+  ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vTs.get_array(Ts); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
@@ -142,11 +149,12 @@ PetscErrorCode IceCompModel::initTestFG() {
     }
   }
 
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
   ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr =    vTs.end_access(); CHKERRQ(ierr);
   ierr =     T3.end_access(); CHKERRQ(ierr);
   ierr =    Tb3.end_access(); CHKERRQ(ierr);
+
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
+  ierr = pccTs->end_access(); CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
@@ -169,7 +177,12 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   PetscScalar     **accum;
   PetscScalar     dummy0;
   PetscScalar     *dummy1, *dummy2, *dummy3, *dummy4;
-  
+
+  // need pointer to surface accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccaccum;
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
   dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
   dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
 
@@ -177,7 +190,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   SigmaC = new PetscScalar[Mz];
 
   // before temperature and flow step, set Sigma_c and accumulation from exact values
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -201,7 +214,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
       }
     }
   }
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
   ierr = SigmaComp3.end_access(); CHKERRQ(ierr);
 
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -218,6 +231,11 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   PetscScalar     **H, **accum;
   PetscScalar     Ts, *Uradial;
 
+  // need pointer to surface accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccaccum;
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
   Uradial = new PetscScalar[Mz];
 
   PetscScalar *T, *u, *v, *w, *Sigma, *SigmaC;
@@ -229,7 +247,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   SigmaC = new PetscScalar[grid.Mz];
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -284,8 +302,8 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = Sigma3.end_access(); CHKERRQ(ierr);
   ierr = SigmaComp3.end_access(); CHKERRQ(ierr);
   
-  ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
 
   delete [] Uradial;
 
@@ -714,9 +732,18 @@ PetscErrorCode IceCompModel::fillSolnTestK() {
 PetscErrorCode IceCompModel::initTestK() {
   PetscErrorCode    ierr;
 
+
+  // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccTs, *pccaccum;
+  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+  
+  ierr = pccaccum->set(0.0); CHKERRQ(ierr);
+  ierr = pccTs->set(223.15); CHKERRQ(ierr);
+
   ierr = vbed.set(0.0); CHKERRQ(ierr);
-  ierr = vAccum.set(0.0); CHKERRQ(ierr);
-  ierr = vTs.set(223.15); CHKERRQ(ierr);
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);
   ierr = vH.set(3000.0); CHKERRQ(ierr);

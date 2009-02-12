@@ -102,26 +102,13 @@ public:
 };
 
 
-//! A derived class of PISMAtmosphereCoupler which provides a constant-in-time surface climate.
-/*!
-Reads surface temperature and mass balance from a NetCDF file.
- */
+//! A derived class of PISMAtmosphereCoupler which reads a constant-in-time surface climate from a NetCDF file.
 class PISMConstAtmosCoupler : public PISMAtmosphereCoupler {
 
 public:
   PISMConstAtmosCoupler();
 
   virtual PetscErrorCode initFromOptions(IceGrid* g);
-
-  // because climate is constant, no update occurs in these; they just provide a pointer
-  virtual PetscErrorCode updateSurfMassFluxAndProvide(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
-             IceModelVec2* &pvsmf);  // vsmf = pointer to vsurfmassflux
-  virtual PetscErrorCode updateSurfTempAndProvide(
-             const PetscScalar t_years, const PetscScalar dt_years,
-             void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
-             IceModelVec2* &pvst);  // vst = pointer to vsurftemp
 
   bool initializeFromFile;  // default is true
 };

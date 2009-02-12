@@ -80,8 +80,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-#FIXME TEMPORARY OFF : pismv
-executables := pismr pismd pisms pcctest
+executables := pismr pismd pismv pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
@@ -174,7 +173,7 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
  pismv.o pPDDcoupler.o pccoupler.o ${LIBTESTSNAME} ${LIBPISMNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
-	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
+	iceCalvBCModel.o pismv.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
 #build extra executables
 

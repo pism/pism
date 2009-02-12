@@ -26,6 +26,7 @@
 #include "exactTestL.h" 
 #include "../num/extrasGSL.hh"
 
+#include "../coupler/pccoupler.hh"
 #include "iceCompModel.hh"
 
 PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
@@ -64,7 +65,6 @@ IceCompModel::IceCompModel(IceGrid &g, IceType *i, const char mytest)
   useSSAVelocity = PETSC_FALSE;
   includeBMRinContinuity = PETSC_FALSE;
   doPlasticTill = PETSC_FALSE;
-  doPDD = PETSC_FALSE;
   if (testname == 'H') {
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_TRUE;
@@ -124,47 +124,33 @@ IceCompModel::~IceCompModel() {
 
 
 PetscErrorCode IceCompModel::initFromOptions(PetscTruth doHook) {
-  //  do this only after IceCompModel::setFromOptions()
   PetscErrorCode ierr;
-  PetscTruth inFileSet;
+
+  PetscTruth inFileSet, ifSet, bootSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &bootSet); CHKERRQ(ierr);
+  if (bootSet == PETSC_TRUE) {
+     ierr = PetscPrintf(grid.com, 
+        "PISM ERROR: IceCompModel (pismv) does not allow -boot_from ... ENDING ...\n");
+        CHKERRQ(ierr);
+     ierr = PetscEnd(); CHKERRQ(ierr);
+  }
+
   char inFile[PETSC_MAX_PATH_LEN];
-
-  if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
-    ierr = verbPrintf(1,grid.com, 
-           "[ IceCompModel WARNING: Test H should be run with option\n"
-           "  -bed_def_iso  for the reported errors to be correct.   ]\n");
-    CHKERRQ(ierr);
-  }
-
-  /* This switch turns off actual numerical evolution and simply reports the
-     exact solution. */
-  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
-
-  /* This switch turns changes Test K to make material properties for bedrock
-     the same as for the ice. */
-  PetscTruth biiSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bedrock_is_ice", &biiSet); CHKERRQ(ierr);
-  if (biiSet == PETSC_TRUE) {
-    if (testname == 'K') {
-      ierr = verbPrintf(1,grid.com,
-              "setting material properties of bedrock to those of ice in Test K\n");
-              CHKERRQ(ierr);
-      bed_thermal.rho = tgaIce->rho;
-      bed_thermal.c_p = tgaIce->c_p;
-      bed_thermal.k = tgaIce->k;
-      bedrock_is_ice_forK = PETSC_TRUE;
-    } else {
-      ierr = verbPrintf(1,grid.com,
-              "WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
-              CHKERRQ(ierr);
-    }
-  }
-
   ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr); // OLD OPTIONS
+  if (ifSet) {
+    ierr = verbPrintf(2, grid.com,
+	"PISM WARNING: '-if' command line option is deprecated. Please use '-i' instead.\n");
+    ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
+                                 PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
+    inFileSet = PETSC_TRUE;
+  }
 
   if (inFileSet == PETSC_FALSE) {
-    ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com, 
+       "creating grid and calling createVecs() for IceCompModel from options ... Test %c ...\n",
+       testname);  CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
     ierr = createVecs(); CHKERRQ(ierr);
     ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
@@ -190,9 +176,6 @@ PetscErrorCode IceCompModel::initFromOptions(PetscTruth doHook) {
         // use 1800km by 1800km by 4000m rectangular domain
         ierr = grid.rescale_and_set_zlevels(900e3, 900e3, 4000); CHKERRQ(ierr);
         break;
-//      case 'H':  // MOVED TO ABOVE WITH B
-//        // use 1500km by 1500km by 4000m rectangular domain
-//        ierr = grid.rescale_and_set_zlevels(1500e3, 1500e3, 4000); CHKERRQ(ierr);
       case 'K':
         // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
         ierr = grid.rescale_and_set_zlevels(1000e3, 1000e3, 4000, PETSC_TRUE, PETSC_TRUE);
@@ -216,14 +199,21 @@ PetscErrorCode IceCompModel::initFromOptions(PetscTruth doHook) {
       default:  SETERRQ(1,"IceCompModel ERROR : desired test not implemented\n");
     }
 
+    initialized_p = PETSC_TRUE;
+  }
+
+  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // call hook later
+
+  ierr = createCompVecs(); CHKERRQ(ierr);
+
+  if (inFileSet == PETSC_FALSE) {
+    ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
     // none use Goldsby-Kohlstedt or do age calc
     setInitialAgeYears(initial_age_years_default);
     // all have no uplift or Hmelt
     ierr = vuplift.set(0.0); CHKERRQ(ierr);
     ierr = vHmelt.set(0.0); CHKERRQ(ierr);
     ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
-
-    ierr = createCompVecs(); CHKERRQ(ierr);
 
     if (yearsStartRunEndDetermined == PETSC_FALSE) {
       ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
@@ -251,21 +241,47 @@ PetscErrorCode IceCompModel::initFromOptions(PetscTruth doHook) {
       default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
     }
 
-    initialized_p = PETSC_TRUE;
-  }
-
-  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
-
-  if (inFileSet == PETSC_TRUE) {
-    ierr = createCompVecs(); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com, "starting Test %c using -i file %s ...\n",
+    testname, inFile);  CHKERRQ(ierr);
   }
 
   ierr = createCompViewers(); CHKERRQ(ierr);
 
+  if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
+    ierr = verbPrintf(1,grid.com, 
+           "IceCompModel WARNING: Test H should be run with option\n"
+           "  -bed_def_iso  for the reported errors to be correct.\n"); CHKERRQ(ierr);
+  }
+
+  // switch changes Test K to make material properties for bedrock the same as for ice
+  PetscTruth biiSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bedrock_is_ice", &biiSet); CHKERRQ(ierr);
+  if (biiSet == PETSC_TRUE) {
+    if (testname == 'K') {
+      ierr = verbPrintf(1,grid.com,
+         "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
+      bed_thermal.rho = tgaIce->rho;
+      bed_thermal.c_p = tgaIce->c_p;
+      bed_thermal.k = tgaIce->k;
+      bedrock_is_ice_forK = PETSC_TRUE;
+    } else {
+      ierr = verbPrintf(1,grid.com,
+         "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+         CHKERRQ(ierr);
+    }
+  }
+
+  /* This switch turns off actual numerical evolution and simply reports the
+     exact solution. */
+  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
   if (exactOnly == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
              CHKERRQ(ierr);
   }
+  
+  // late call to afterInitHook() means -regrid overwrites formulas (as desired)
+  ierr = afterInitHook(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -325,11 +341,18 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscScalar     A0, T0, **H, **accum, **mask, dummy1, dummy2, dummy3;
   const PetscScalar LforAE = 750e3; // m
 
+  // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccTs, *pccaccum;
+  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
-  ierr =  vTs.set(T0); CHKERRQ(ierr);
+  ierr = pccTs->set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
@@ -341,7 +364,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
     muSliding = 0.0;
   }
 
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
     ierr = vMask.get_array(mask); CHKERRQ(ierr);
@@ -377,7 +400,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
       }
     }
   }
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
     ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -406,11 +429,18 @@ PetscErrorCode IceCompModel::initTestL() {
 
   if (testname != 'L')  { SETERRQ(1,"test must be 'L'"); }
   
+  // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccTs, *pccaccum;
+  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
-  ierr =  vTs.set(T0); CHKERRQ(ierr);
+  ierr = pccTs->set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
@@ -442,7 +472,7 @@ PetscErrorCode IceCompModel::initTestL() {
   // get soln to test L at these points; solves ODE only once (on each processor)
   ierr = exactL_list(rr, MM, HH, bb, aa);  CHKERRQ(ierr);
   
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
   for (PetscInt k = 0; k < MM; k++) {
@@ -451,7 +481,7 @@ PetscErrorCode IceCompModel::initTestL() {
     bed[i][j] = bb[k];
     accum[i][j] = aa[k];
   }
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
 
@@ -479,8 +509,13 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   PetscErrorCode  ierr;
   PetscScalar     **accum, dummy;
 
+  // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccaccum;
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
   // before flow step, set accumulation from exact values;
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -499,7 +534,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
       }
     }
   }
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -508,7 +543,12 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum;
 
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccaccum;
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -537,7 +577,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
     }
   }
 
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
@@ -563,7 +603,12 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum, **ub, **vb, dummy;
 
-  ierr = vAccum.get_array(accum); CHKERRQ(ierr);
+  // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccaccum;
+  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+
+  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
@@ -574,7 +619,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
       exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&ub[i][j],&vb[i][j]);
     }
   }
-  ierr = vAccum.end_access(); CHKERRQ(ierr);
+  ierr = pccaccum->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vub.end_access(); CHKERRQ(ierr);
   ierr = vvb.end_access(); CHKERRQ(ierr);

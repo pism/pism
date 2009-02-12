@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-"Ice sheet driver for SIA and SSA verification.  Uses exact solutions to various coupled\n"
-"subsystems.  Currently implements tests A, B, C, D, E, F, G, H, I, J, L.\n\n";
+"Ice sheet driver for PISM (SIA and SSA) verification.  Uses exact solutions to various\n"
+"  coupled subsystems.  Computes difference between exact solution and numerical solution.\n"
+"  Can also just compute exact solution (-eo).\n"
+"  Currently implements tests A, B, C, D, E, F, G, H, I, J, L, M.\n\n";
 
 #include <cstring>
 #include <cstdio>
@@ -26,6 +28,7 @@ static char help[] =
 #include <petscbag.h>
 #include "base/grid.hh"
 #include "base/materials.hh"
+#include "coupler/pccoupler.hh"
 #include "verif/iceCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
 #include "verif/iceCalvBCModel.hh"
@@ -45,6 +48,9 @@ int main(int argc, char *argv[]) {
   {
     IceGrid      g(com, rank, size);
     IceType*     ice = PETSC_NULL;
+    PISMAtmosphereCoupler pcac;
+    PISMConstOceanCoupler pcoc;
+
     char         testname[20];
     PetscTruth   testchosen, dontReport;
 
@@ -66,6 +72,8 @@ int main(int argc, char *argv[]) {
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
       IceCalvBCModel mCBC(g, ice, 'M');  
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
+      ierr = mCBC.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+      ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mCBC.setFromOptions(); CHKERRQ(ierr);
       ierr = mCBC.initFromOptions(); CHKERRQ(ierr);
       ierr = mCBC.diagnosticRun(); CHKERRQ(ierr);
@@ -80,6 +88,8 @@ int main(int argc, char *argv[]) {
       //   or annular ice shelf with calving front
       IceExactSSAModel mSSA(g, ice, test);  
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
+      ierr = mSSA.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+      ierr = mSSA.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
@@ -93,6 +103,8 @@ int main(int argc, char *argv[]) {
       ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
       IceCompModel       mComp(g, tgaice, test);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
+      ierr = mComp.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+      ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mComp.setFromOptions(); CHKERRQ(ierr);
       ierr = mComp.initFromOptions(); CHKERRQ(ierr);
       ierr = mComp.run(); CHKERRQ(ierr);

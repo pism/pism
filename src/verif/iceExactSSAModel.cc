@@ -75,10 +75,19 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   
   ierr = grid.createDA(); CHKERRQ(ierr);
   ierr = createVecs(); CHKERRQ(ierr);
-    
+
+  // do rest of base class initialization before test initialization for I, J, M (below)
+  initialized_p = PETSC_TRUE;
+  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
+
+  // need pointer to surface temp from PISMAtmosphereCoupler atmosPCC*
+  IceModelVec2  *pccTs;
+  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
+                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+
   // fill in temperature and age; not critical
   const PetscScalar T0 = 263.15;  // completely arbitrary
-  ierr = vTs.set(T0); CHKERRQ(ierr);
+  ierr = pccTs->set(T0); CHKERRQ(ierr);
   ierr =  T3.set(T0); CHKERRQ(ierr);
   ierr = Tb3.set(T0); CHKERRQ(ierr);
 
@@ -102,9 +111,6 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J and M
   doSuperpose = PETSC_FALSE;
   
-  // do rest of base class initialization before final initialization for I, J, M (below)
-  initialized_p = PETSC_TRUE;
-  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
   // in preparation for rescale_and_set_zlevels() below:
   ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  
 

@@ -64,12 +64,12 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   // warnings to let users get used to the change:
   if (ifSet) {
     ierr = verbPrintf(2, grid->com,
-		      "PISM WARNING: '-if' command line option is deprecated. Please use '-i' instead.\n");
+       "PISMClimateCoupler WARNING: '-if' command line option is deprecated.  Please use '-i' instead.\n");
     CHKERRQ(ierr);
   }
   if (bifSet) {
     ierr = verbPrintf(2, grid->com, 
-		      "PISM WARNING: '-bif' command line option is deprecated. Please use '-boot_from' instead.\n");
+       "PISMClimateCoupler WARNING: '-bif' command line option is deprecated.  Please use '-boot_from' instead.\n");
     CHKERRQ(ierr);
   }
 
@@ -77,12 +77,12 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   if (i_set) {
     if (boot_from_set) {
       ierr = PetscPrintf(grid->com,
-			 "PISM ERROR: both '-i' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
+	"PISMClimateCoupler ERROR: both '-i' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
     }
     if (ifSet) {		// OLD OPTION
       ierr = PetscPrintf(grid->com,
-			 "PISM ERROR: both '-i' and '-if' are used. Ignoring '-if'...\n"); CHKERRQ(ierr);
+	"PISMClimateCoupler WARNING: both '-i' and '-if' are used.  Ignoring '-if'...\n"); CHKERRQ(ierr);
     }
 
     ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
@@ -92,7 +92,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   else if (boot_from_set) {
     if (ifSet) {		// OLD OPTION
       ierr = PetscPrintf(grid->com,
-			 "PISM ERROR: both '-if' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
+	"PISMClimateCoupler ERROR: both '-if' and '-boot_from' are used.  Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
     }
     
@@ -103,7 +103,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   else if (ifSet) {		// OLD OPTION
     if (bifSet) {
       ierr = PetscPrintf(grid->com,
-			 "PISM ERROR: both '-bif' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
+	"PISMClimateCoupler ERROR: both '-bif' and '-if' are used.  Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
     }
     ierr = PetscOptionsGetString(PETSC_NULL, "-if", i_file, 
@@ -115,7 +115,8 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 				 PETSC_MAX_PATH_LEN, &bifSet); CHKERRQ(ierr);
     strcpy(filename, boot_from_file);
   } else {
-    PetscPrintf(grid->com, "PISM ERROR: no -i and no -boot_from specified. Exiting...\n");
+    PetscPrintf(grid->com, 
+       "PISMClimateCoupler ERROR: no -i and no -boot_from specified.  Exiting...\n");
     PetscEnd();
   }
 
@@ -225,18 +226,23 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
 }
 
 
+//! Just provides access.  No update.  Real atmosphere models do update, so derived class should redefine!
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsmf) {
-  SETERRQ(1,"VIRTUAL in PISMAtmosphereCoupler ... not implemented");
+  if (vsurfmassflux.was_created())
+    pvsmf = &vsurfmassflux;
+  else {  SETERRQ(1,"vsurfmassflux not created in PISMAtmosphereCoupler::updateSurfMassFluxAndProvide()");  }
   return 0;
 }
 
-
+//! Just provides access.  No update.  Real atmosphere models do update, so derived class should redefine!
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvst) {
-  SETERRQ(1,"VIRTUAL in PISMAtmosphereCoupler ... not implemented");
+  if (vsurftemp.was_created())
+    pvst = &vsurftemp;
+  else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
   return 0;
 }
 
@@ -282,28 +288,6 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   }
 
   //ierr = verbPrintf(1,g->com,"ending PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Just provides access.  Nothing to update.
-PetscErrorCode PISMConstAtmosCoupler::updateSurfMassFluxAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvsmf) {
-  if (vsurfmassflux.was_created())
-    pvsmf = &vsurfmassflux;
-  else {  SETERRQ(1,"vsurfmassflux not created in PISMConstAtmosCoupler::updateSurfMassFluxAndProvide()");  }
-  return 0;
-}
-
-
-//! Just provides access.  Nothing to update
-PetscErrorCode PISMConstAtmosCoupler::updateSurfTempAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvst) {
-  if (vsurftemp.was_created())
-    pvst = &vsurftemp;
-  else {  SETERRQ(1,"vsurftemp not created in PISMConstAtmosCoupler::updateSurfTempAndProvide()");  }
   return 0;
 }
 

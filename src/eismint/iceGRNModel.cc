@@ -252,6 +252,7 @@ PetscErrorCode IceGRNModel::updateTs() {
 //FIXME: additional kludge to deal with hosed initialization sequence
   // also set pddPCC->vsurftemp because it is used at initialization
   ierr = pddPCC->vsurftemp.copy_from(pddPCC->vannmeansurftemp); CHKERRQ(ierr);
+
   PetscScalar **foo;
   ierr = pddPCC->vannmeansurftemp.get_array(Ts); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(foo); CHKERRQ(ierr);
