@@ -1,0 +1,20 @@
+#!/bin/bash
+
+source ../functions.sh
+
+# Test name:
+test="Test #xx: "
+# The list of files to delete when done.
+files=""
+dir=`pwd`
+
+run_test ()
+{
+    cleanup
+
+
+    pass
+    return 0
+}
+
+run_test
