@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   {
     IceGrid      g(com, rank, size);
     IceType*     ice = PETSC_NULL;
-    PISMAtmosphereCoupler pcac;
+    PISMAtmosphereCoupler pac;
     PISMConstOceanCoupler pcoc;
 
     char         testname[20];
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
       IceCalvBCModel mCBC(g, ice, 'M');  
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mCBC.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+      ierr = mCBC.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mCBC.setFromOptions(); CHKERRQ(ierr);
       ierr = mCBC.initFromOptions(); CHKERRQ(ierr);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
       //   or annular ice shelf with calving front
       IceExactSSAModel mSSA(g, ice, test);  
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mSSA.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+      ierr = mSSA.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mSSA.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
       ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
       ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
       IceCompModel       mComp(g, tgaice, test);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mComp.attachAtmospherePCC(pcac); CHKERRQ(ierr);
+      ierr = mComp.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mComp.setFromOptions(); CHKERRQ(ierr);
       ierr = mComp.initFromOptions(); CHKERRQ(ierr);
@@ -127,4 +127,3 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
-

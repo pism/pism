@@ -24,7 +24,16 @@
 #include "../base/LocalInterpCtx.hh"
 #include "../base/nc_util.hh"
 #include "pccoupler.hh"
-// note we do NOT depend on IceModel.hh; deliberate!
+// note we do NOT depend on IceModel.hh; this is deliberate!
+
+// change to true if entry and exit messages for initFromOptions() needed
+#define PCCDEBUG false
+
+PetscErrorCode printIfDebug(const char *message) {
+  PetscErrorCode ierr;
+  if (PCCDEBUG) {  ierr = verbPrintf(1,PETSC_COMM_WORLD,message); CHKERRQ(ierr);  }
+  return 0;
+}
 
 
 /******************* VIRTUAL BASE CLASS:  PISMClimateCoupler ********************/
@@ -38,24 +47,32 @@ PISMClimateCoupler::~PISMClimateCoupler() {
 }
 
 
+/*!
+Just set grid to provided IceGrid*.
+ */
 PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
-  //PetscErrorCode ierr = verbPrintf(1,g->com,"entering PISMClimateCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  printIfDebug("entering PISMClimateCoupler::initFromOptions()\n");
   grid = g;
-  //ierr = verbPrintf(1,g->com,"ending PISMClimateCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  printIfDebug("ending PISMClimateCoupler::initFromOptions()\n");
   return 0;
 }
 
 
-PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterpCtx* &lic) {
-  if (grid == NULL) {
-    SETERRQ(1,"findPISMInputFile(): grid not initialized");
-  }
+/*!
+Read PISM options -i, -boot_from to determine if a PISM input or bootstrap file was given
+Open the file for reading and determine its computational grid parameters; these parameters
+are in return \c LocalInterpCtx.
 
+\e Caller of findPISMInputFile() is in charge of destroying the returned lic.
+ */
+PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
   PetscTruth ifSet, bifSet;
   PetscTruth i_set, boot_from_set;
 
-  // OLD OPTIONS
+  if (grid == NULL) {  SETERRQ(1,"findPISMInputFile(): grid not initialized");  }
+
+  // just see what options set:  OLD OPTIONS
   ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
   // NEW OPTIONS
@@ -65,14 +82,15 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   if (ifSet) {
     ierr = verbPrintf(2, grid->com,
        "PISMClimateCoupler WARNING: '-if' command line option is deprecated.  Please use '-i' instead.\n");
-    CHKERRQ(ierr);
+       CHKERRQ(ierr);
   }
   if (bifSet) {
     ierr = verbPrintf(2, grid->com, 
        "PISMClimateCoupler WARNING: '-bif' command line option is deprecated.  Please use '-boot_from' instead.\n");
-    CHKERRQ(ierr);
+       CHKERRQ(ierr);
   }
 
+  // actually read file names
   char i_file[PETSC_MAX_PATH_LEN], boot_from_file[PETSC_MAX_PATH_LEN];
   if (i_set) {
     if (boot_from_set) {
@@ -94,8 +112,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
       ierr = PetscPrintf(grid->com,
 	"PISMClimateCoupler ERROR: both '-if' and '-boot_from' are used.  Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
-    }
-    
+    }  
     ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", boot_from_file, 
 				 PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
     strcpy(filename, boot_from_file);
@@ -120,10 +137,9 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
     PetscEnd();
   }
 
-  // file name now contains name of PISM input file;
-  //   now we check it is really there and, if so, we read the dimensions of
-  //   the computational grid so that we can set up a LocalInterpCtx for further
-  //   reading of actual climate data from the file
+  // filename now contains name of PISM input file;  now check it is really there;
+  // if so, read the dimensions of computational grid so that we can set up a
+  // LocalInterpCtx for actual reading of climate data
   bool file_exists = false;
   NCTool nc(grid);
   grid_info gi;
@@ -143,15 +159,17 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 }
 
 
+//! A virtual method which just calls specific updates.
 PetscErrorCode PISMClimateCoupler::updateClimateFields(
              const PetscScalar t_years, const PetscScalar dt_years, void *iceInfoNeeded) {
-  SETERRQ(1,"PCC ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
+  SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
   return 0;
 }
 
 
+//! A virtual method which writes fields associated to the derived class.
 PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filename) {
-  SETERRQ(1,"PCC ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
+  SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
   return 0;
 }
 
@@ -163,32 +181,28 @@ PISMAtmosphereCoupler::PISMAtmosphereCoupler() : PISMClimateCoupler() {
 
 
 PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
-  vsurfmassflux.destroy();
+  vsurfmassflux.destroy();  // destroy if created
   vsurftemp.destroy();
 }
 
 
+//! Initialize a PISMAtmosphereCoupler by allocating space for surface mass flux and surface temperature variables.
 /*!
-Derived class implementations will check user options to configure the PISMAtmosphereCoupler.
-This version allocates space and sets attributes for the two essential fields.
+Allocates space and sets attributes, including CF standard_name, for the two essential fields.
+Derived class implementations will check user options to configure.
  */
 PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
-
-  //ierr = verbPrintf(1,g->com,"entering PISMAtmosphereCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  printIfDebug("entering PISMAtmosphereCoupler::initFromOptions()\n");
 
   ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
   
   // short names "acab" and "artm" match GLIMMER (& CISM, presumably)
-  
   // mean annual net ice equivalent surface mass balance rate
   ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);
-
-  //ierr = verbPrintf(1,g->com,"in PISMAtmosphereCoupler::initFromOptions():  vsurfmassflux created\n"); CHKERRQ(ierr);
-
   ierr = vsurfmassflux.set_attrs(
             "climate_state", 
-            "mean annual net ice equivalent accumulation (ablation) rate",
+            "instantaneous net ice equivalent accumulation (ablation) rate",
 	    "m s-1", 
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);
@@ -201,32 +215,35 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   ierr = vsurftemp.create(*g, "artm", false); CHKERRQ(ierr);
   ierr = vsurftemp.set_attrs(
             "climate_state",
-            "temperature at ice surface but below firn",
+            "temperature at ice surface but below firn processes",
             "K", 
-            NULL);  // PROPOSED CF standard_name = land_ice_temperature_below_firn
+            NULL);  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);
   ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
 
-  //ierr = verbPrintf(1,g->com,"ending PISMAtmosphereCoupler::initFromOptions()\n"); CHKERRQ(ierr);
-
+  printIfDebug("ending PISMAtmosphereCoupler::initFromOptions()\n");
   return 0;
 }
 
 
+//! Writes surface mass flux and surface temperature to prepared file.
+/*!
+Assumes file is prepared in the sense that it exists and that global attributes are
+already written.  See IceModel::dumpToFile() for how main PISM output file is
+prepared.  Calls here do handle opening and closing the file.  We write in FLOAT 
+not DOUBLE because these are expected to be imprecise at that level and not be
+essential for restart accuracy.
+ */
 PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *filename) {
   PetscErrorCode ierr;
   
-  // We assume file is prepared in the sense that it exists and that global attributes 
-  //   are already written.  See IceModel::dumpToFile() for how main PISM output file is
-  //   prepared.  Note calls here handle opening and closing the file.  We write in
-  //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   return 0;
 }
 
 
-//! Just provides access.  No update.  Real atmosphere models do update, so derived class should redefine!
+//! Just provides access.  No update.  Real atmosphere models, derived classes, will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsmf) {
@@ -236,7 +253,8 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
   return 0;
 }
 
-//! Just provides access.  No update.  Real atmosphere models do update, so derived class should redefine!
+
+//! Just provides access.  No update.  Real atmosphere models, derived classes, will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvst) {
@@ -247,6 +265,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
 }
 
 
+//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(), but ignors returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded) {
@@ -265,10 +284,15 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 }
 
 
+//! Initializes surface mass flux and surface temperature from the PISM input file.
+/*!
+Because the PISMAtmosphereCoupler update procedures are not redefined, the climate
+is read from file when PISM is started, but then does not change.
+ */
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
+  printIfDebug("entering PISMConstAtmosCoupler::initFromOptions()\n");
 
-  //ierr = verbPrintf(1,g->com,"entering PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
   
   if (initializeFromFile) {
@@ -287,9 +311,129 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
     delete lic;
   }
 
-  //ierr = verbPrintf(1,g->com,"ending PISMConstAtmosCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  printIfDebug("ending PISMConstAtmosCoupler::initFromOptions()\n");
   return 0;
 }
+
+
+/*******************  ATMOSPHERE:  PISMMonthlyTempsAtmosCoupler ********************/
+
+
+
+PISMMonthlyTempsAtmosCoupler::PISMMonthlyTempsAtmosCoupler() : PISMAtmosphereCoupler() {
+  readMonthlyTempsFromFile = true;
+  strcpy(monthlyTempsFile,""); // zero length file name; causes error if readMonthlyTemps() called
+}
+
+
+PISMMonthlyTempsAtmosCoupler::~PISMMonthlyTempsAtmosCoupler() {
+  for (PetscInt j = 0; j < 12; ++j) {
+    vmonthlysurftemp[j].destroy();  // destroys if allocated (created)
+  }
+}
+
+
+//! Initializes by reading monthly temperatures from the PISM input file.
+/*!
+Stored temperatures must have names \c temp_mon0, ...,\c temp_mon11 and be in units of K.
+Call setMonthlyTempsFilename() and make sure readMonthlyTempsFromFile == true before 
+using this initFromOptions().
+ */
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::initFromOptions(IceGrid* g) {
+  PetscErrorCode ierr;
+  printIfDebug("entering PISMMonthlyTempsAtmosCoupler::initFromOptions()\n");
+
+  ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
+
+  if (readMonthlyTempsFromFile) {
+    ierr = readMonthlyTemps(); CHKERRQ(ierr);
+  }
+
+  printIfDebug("ending PISMMonthlyTempsAtmosCoupler::initFromOptions()\n");
+  return 0;
+}
+
+
+//! Write monthly temperatures to a prepared file.
+/*!
+Adds \c temp_mon0, ...,\c temp_mon11 after other PISMAtmosphereCoupler fields.
+ */
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(const char *filename) {
+  PetscErrorCode ierr;
+  
+  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+
+  for (PetscInt j = 0; j < 12; ++j) {
+    if (vmonthlysurftemp[j].was_created()) {
+      ierr = vmonthlysurftemp[j].write(filename, NC_FLOAT); CHKERRQ(ierr);
+    }
+  }
+  return 0;
+}
+
+
+//! Set the name of the NetCDF file from which we read monthly temperatures.
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::setMonthlyTempsFilename(const char* filename) {
+  strcpy(monthlyTempsFile,filename);
+  return 0;
+}
+
+
+//! Read monthly temperatures from a prepared file.
+/*!
+Reads \c temp_mon0, ...,\c temp_mon11 from file with name monthlyTempsFile.
+ */
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
+  PetscErrorCode ierr;
+
+  if (!readMonthlyTempsFromFile) {
+    ierr = PetscPrintf(grid->com, 
+       "PISMMonthlyTempsAtmosCoupler ERROR:  readMonthlyTempsFromFile == false\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+  if (strlen(monthlyTempsFile) == 0) {
+    ierr = PetscPrintf(grid->com, 
+       "PISMMonthlyTempsAtmosCoupler ERROR:  empty filename for file from which to read\n"
+       "                                     temps (monthlyTempsFile)\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+  
+  // find file and set up info so regrid works
+  bool file_exists = false;
+  NCTool nc(grid);
+  grid_info gi;
+  ierr = nc.open_for_reading(monthlyTempsFile, file_exists); CHKERRQ(ierr);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid->com,
+       "PISMMonthlyTempsAtmosCoupler ERROR: Can't open file '%s' for reading monthly temps.\n",
+       monthlyTempsFile); CHKERRQ(ierr);
+    PetscEnd();
+  }
+  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+  LocalInterpCtx lic(gi, NULL, NULL, *grid); // 2D only; destructed by end of scope
+
+  // for each month, create an IceModelVec2 and assign attributes
+  for (PetscInt j = 0; j < 12; ++j) {
+    char monthlyTempName[20], mTstring[100];
+    snprintf(monthlyTempName, 20, "temp_mon%d", j);
+    ierr = verbPrintf(2, grid->com, 
+       "  reading month %d surface temperature '%s' ...\n", j, monthlyTempName); CHKERRQ(ierr); 
+    ierr = vmonthlysurftemp[j].create(*grid, monthlyTempName, false); // global; no ghosts
+       CHKERRQ(ierr);
+    snprintf(mTstring, 100, 
+             "temperature at ice surface during month %d of {0,..,11}", j);
+    ierr = vmonthlysurftemp[j].set_attrs(
+               "climate_state",
+               mTstring, // note simplified, not-very-specific long name
+               "K",
+               NULL); // CF standard name?  may exist when derived class has additional semantics
+               CHKERRQ(ierr);
+    ierr = vmonthlysurftemp[j].regrid(monthlyTempsFile, lic, true); CHKERRQ(ierr); // it *is* critical
+  }
+  return 0;
+}
+
 
 
 /*******************  OCEAN:  PISMOceanCoupler ********************/
@@ -312,6 +456,7 @@ This version allocates space and sets attributes for the two essential fields.
  */
 PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
+  printIfDebug("entering PISMOceanCoupler::initFromOptions()\n");
 
   ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
 
@@ -337,6 +482,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   vshelfbasemassflux.write_in_glaciological_units = true;
   ierr = vshelfbasemassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
+  printIfDebug("ending PISMOceanCoupler::initFromOptions()\n");
   return 0;
 }
 
@@ -392,6 +538,7 @@ PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
 
 PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
+  printIfDebug("entering PISMConstOceanCoupler::initFromOptions()\n");
 
   ierr = PISMOceanCoupler::initFromOptions(g); CHKERRQ(ierr);
   
@@ -402,6 +549,8 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
        "  pressure-melting temperature ...\n",
        constOceanHeatFlux); CHKERRQ(ierr); 
   }
+
+  printIfDebug("ending PISMConstOceanCoupler::initFromOptions()\n");
   return 0;
 }
 
@@ -453,4 +602,3 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
   pvsbmf = &vshelfbasemassflux;
   return 0;
 };
-

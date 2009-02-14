@@ -1,4 +1,4 @@
-ALL : installation userman refman browser
+ALL : installation userman browser refman
 
 update: svn_update
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
@@ -22,13 +22,13 @@ userman : manual.tex ice_bib.bib
 	pdflatex manual.tex
 	pdflatex manual.tex
 
-refman : Doxyfile_tex
-	doxygen Doxyfile_tex
+refman : doxyfile_refman
+	doxygen doxyfile_refman
 	(cd doxy/latex/; ${MAKE} all)
 	cp doxy/latex/refman.pdf .
 
-browser : Doxyfile_html
-	doxygen Doxyfile_html
+browser : doxyfile_browser
+	doxygen doxyfile_browser
 
 
 # not default targets; generally not needed by users:

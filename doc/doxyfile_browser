@@ -88,10 +88,14 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../src/base/ \
+INPUT                  = ../src/ \
+                         ../src/base/ \
+                         ../src/coupler/ \
+                         ../src/netcdf/ \
+                         ../src/num/ \
+                         ../src/udunits/ \
                          ../src/verif/ \
                          ../src/eismint/ \
-                         ../src/netcdf/ \
                          ../src/ismip/
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
@@ -136,13 +140,15 @@ FILE_PATTERNS          = *.c \
                          *.MM \
                          *.PY
 RECURSIVE              = YES
-EXCLUDE                = ../src/base/.svn/ \
+EXCLUDE                = ../src/.svn/ \
+                         ../src/base/.svn/ \
+                         ../src/coupler/.svn/ \
+                         ../src/num/.svn/ \
+                         ../src/udunits/.svn/ \
                          ../src/verif/.svn/ \
                          ../src/eismint/.svn/ \
                          ../src/netcdf/.svn/ \
-                         ../src/base/old/ \
-                         ../src/ismip/iceHEINOModel.cc \
-                         ../src/ismip/iceHEINOModel.hh \
+                         ../src/ismip/heino/ \
                          ../src/verif/exactM.py
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 

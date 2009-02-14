@@ -58,7 +58,7 @@ protected:
 };
 
 
-/*******************  ATMOSPHERE:  PISMAtmosphereCoupler and derived ********************/
+/*******************  ATMOSPHERE:  PISMAtmosphereCoupler ********************/
 
 //! An atmosphere model might need to know these things about IceModel to update through PISMAtmosphereCoupler.
 struct IceInfoNeededByAtmosphereCoupler {
@@ -70,9 +70,21 @@ struct IceInfoNeededByAtmosphereCoupler {
 };
 
 
-//! A basic derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.  Essentially virtual.
+//! A basic derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.
 /*!
+No files are read to initialize this PISMClimateCoupler, so it is essentially virtual.  Space
+for time-dependent surface mass flux (vsurfmassflux) and time-dependent surface temperature 
+(vsurftemp) is allocated, however.  A pointer to these is provided by appropriate methods.
 It is expected that a derived class of this will actually be used.
+
+The IceModelVec2 members vsurfmassflux and vsurftemp are exactly the surface fields needed 
+as boundary conditions for IceModel.  In particular, vsurfmassflux is the instantaneous net
+surface mass balance in ice-thickness-equivalent m s-1.  That is vsurfmassflux is a term 
+in the mass continuity equation.
+
+And vsurftemp is the temperature (K) at the ice surface but below firn processes.  It is the
+upper surface boundary condition for the conservation of energy partial differential equation
+within the ice.
  */
 class PISMAtmosphereCoupler : public PISMClimateCoupler {
 
@@ -80,7 +92,7 @@ public:
   PISMAtmosphereCoupler();
   virtual ~PISMAtmosphereCoupler(); // destroys IceModelVec2 below
 
-  // next three override PISMClimateCoupler versions
+  // next three redefine PISMClimateCoupler versions
   virtual PetscErrorCode initFromOptions(IceGrid* g);
   virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
   virtual PetscErrorCode updateClimateFields(
@@ -114,6 +126,43 @@ public:
 };
 
 
+//! A derived class of PISMAtmosphereCoupler which reads monthly surface temperatures from a NetCDF file.
+/*!
+Stored temperatures must have names \c temp_mon0, ...,\c temp_mon11 and be in units of K.
+These monthly surface temperatures are typically used in a PDD; see PISMPDDCoupler.  These
+monthly surface temperatures are not "deep", unlike PISMAtmosphereCoupler::vsurftemp.
+Instead they are typically the output of an atmospheric model.  These temperatures are used in
+determining snowfall and firn processes.
+ */
+class PISMMonthlyTempsAtmosCoupler : public PISMAtmosphereCoupler {
+
+public:
+  PISMMonthlyTempsAtmosCoupler();
+  virtual ~PISMMonthlyTempsAtmosCoupler();
+
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+
+  bool readMonthlyTempsFromFile;  // default is false
+                                  // if set to false this derived class reverts to PISMAtmosphereCoupler
+                                  // set this bool *before* call to initFromOptions()
+  PetscErrorCode setMonthlyTempsFilename(const char* filename); // call *before* initFromOptions()
+
+protected:
+  PetscErrorCode readMonthlyTemps();
+/*
+  PetscErrorCode getMonthIndicesFromDay(const PetscScalar day, PetscInt &curr, PetscInt &next);
+  PetscScalar getTemperatureFromMonthlyData(
+       PetscScalar **currMonthSurfTemps, PetscScalar **nextMonthSurfTemps,
+       const PetscInt i, const PetscInt j, const PetscScalar day);
+*/
+
+private:
+  char monthlyTempsFile[PETSC_MAX_PATH_LEN];
+  IceModelVec2 vmonthlysurftemp[12]; // if readMonthlyTempsFromFile then allocated by initFromOptions()
+};
+
+
 //! A derived class of PISMAtmosphereCoupler which provides a PDD to PISM.
 /*!
 The PDD here is the one already implemented in PISM.  That is, it is the one
@@ -136,7 +185,7 @@ files as 'accum'.
 
 It has various constants parameterizing the melt and refreeze processes.  See REFERENCE
  */
-class PISMPDDCoupler : public PISMAtmosphereCoupler {
+class PISMPDDCoupler : public PISMAtmosphereCoupler {  // implemented in pPDDcoupler.cc
 
 public:
   PISMPDDCoupler();
@@ -274,4 +323,3 @@ public:
 };
 
 #endif
-

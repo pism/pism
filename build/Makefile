@@ -12,8 +12,7 @@ ifeq ($(findstring branches,$(url)),branches)
   PISM_REVISION = branch $(lastword $(subst /, ,$(url))): revision $(rev)
 endif
 ifndef PISM_REVISION
-  $(error Can't determine PISM's revision number. \
-  Please define PISM_REVISION in the top-level Makefile)
+  $(error Can't determine revision number.  Please define PISM_REVISION in the top-level Makefile)
 endif
 
 DISPLAY = :0.0
@@ -175,10 +174,10 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
-#build extra executables
-
 ../bin/pcctest : pcctest.o pccoupler.o pPDDcoupler.o ${LIBPISMNAME}
 	${CXXLINKER} pcctest.o pccoupler.o pPDDcoupler.o ${ICE_LIB_FLAGS} -o $@
+
+#build extra executables
 
 ../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
@@ -189,7 +188,7 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/gridL : gridL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
-# This pattern rule is for building all the simple* executables.
+# pattern rule for building all the simple* executables.
 ../bin/simple% : simple%.o $(LIBTESTSNAME)
 	$(CLINKER) $< $(TESTS_LIB_FLAGS) -o $@
 

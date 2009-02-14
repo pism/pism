@@ -21,10 +21,10 @@ static char help[] =
 
 #include <ctime>
 #include <petscda.h>
-#include "../base/grid.hh"
-#include "../base/LocalInterpCtx.hh"
-#include "../base/nc_util.hh"
-#include "pccoupler.hh"
+#include "base/grid.hh"
+#include "base/LocalInterpCtx.hh"
+#include "base/nc_util.hh"
+#include "coupler/pccoupler.hh"
 
 
 /* example usage: 
@@ -39,6 +39,8 @@ no actual computation, surface mass balance and surface temp at ys:dt:ye and sav
 these in camovie.nc:
 
 $ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
+
+FIXME: add test of PISMMonthlyTempsAtmosCoupler
 
 Similar for PISMPDDCoupler, but expects 'accum' and 'annavartm', so we change
 names before running:
@@ -306,7 +308,7 @@ int main(int argc, char *argv[]) {
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = PetscPrintf(com, 
-             "PCCTEST (test of climate couplers offline from PISM)\n"); CHKERRQ(ierr);
+             "PCCTEST (test of PISMClimateCoupler offline from IceModel)\n"); CHKERRQ(ierr);
     
     PetscTruth i_set;
     ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 
