@@ -23,7 +23,7 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../base/forcing.hh"
+#include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"
 #include "iceGRNModel.hh"
 
@@ -36,8 +36,8 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
   // this is virtual in IceModel
   // EISMINT-Greenland summer surface temperature model (expressed as
 
-//OLD:  // warming above mean annual); Tma,Ts in deg C; Tma is mean annual, Ts is summer peak
-//OLD:  const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
+  //OLD:  // warming above mean annual); Tma,Ts in deg C; Tma is mean annual, Ts is summer peak
+  //OLD:  const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
 
   // warming above mean annual); Tma,Ts in K; Tma is mean annual, Ts is summer peak
   const PetscScalar Ts = 273.15 + 30.38 - 0.006277 * elevation - 0.3262 * latitude;
@@ -267,7 +267,8 @@ PetscErrorCode IceGRNModel::updateTs() {
   ierr = vWork2d[0].endGhostComm(); CHKERRQ(ierr);
 //FIXME: end kludge  
 
-  TsOffset = 0.0;  // see IceModel::updateForcing()
+//FIXME: make sure this is correcly handled by PISMEISGREENPDDCoupler:
+//    TsOffset = 0.0;  // see IceModel::updateForcing()
   return 0;
 }
 

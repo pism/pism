@@ -143,6 +143,10 @@ neighbors).  When the \c MASK_DRAGGING points have plastic till bases this is no
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask, **Tbase;
+
+  if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+  PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+
   const int MASK_GROUNDED_TO_DETERMINE = 999;
 
   ierr = T3.begin_access(); CHKERRQ(ierr);
@@ -163,7 +167,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
       }
 
       const PetscScalar hgrounded = bed[i][j] + H[i][j],
-                        hfloating = seaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
+                        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
 
       if (isDrySimulation == PETSC_TRUE) {
         // Don't update mask; potentially one would want to do SSA
@@ -454,11 +458,13 @@ Only call this when hard floatation criterion already shows it is floating.
 #if 0
 const PetscTruth  DEFAULT_DO_SOFT_FLOAT_CRIT = PETSC_FALSE;
 const PetscScalar DEFAULT_SOFT_FLOAT_CRIT_FLOATINESS_MAX = 0.2;
+if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
 PetscScalar IceModel::softFloatationSurface(const PetscScalar thk, const PetscScalar bedelev) const {
-  const PetscScalar  h_hard = seaLevel + (1.0 - ice->rho/ocean.rho) * thk;
+  const PetscScalar  h_hard = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * thk;
   if ((doSoftFloatCrit == PETSC_TRUE) && (thk > 1.0)) {
-    // apply soft floatation criterion; gap = (h_hard - thk) - (bedelev - seaLevel)
-    const PetscScalar  floatiness = ((h_hard - thk) - (bedelev - seaLevel)) / thk;
+    // apply soft floatation criterion; gap = (h_hard - thk) - (bedelev - currentSeaLevel)
+    const PetscScalar  floatiness = ((h_hard - thk) - (bedelev - currentSeaLevel)) / thk;
     if (floatiness >= softFloatCritFloatinessMax) {
       return h_hard;
     } else {

@@ -357,6 +357,9 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
            "    floating ice and ice-free ocean as 3\n"); CHKERRQ(ierr);
   }
 
+  if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+  PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+           
   ierr = vh.get_array(h); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
@@ -366,7 +369,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // take this opportunity to check that H[i][j] >= 0
       if (H[i][j] < 0.0) {
-        SETERRQ3(1,"Thickness H=%5.4f is negative at point i=%d, j=%d",H[i][j],i,j);
+        SETERRQ3(2,"Thickness H=%5.4f is negative at point i=%d, j=%d",H[i][j],i,j);
       }
       
       if (H[i][j] < 0.001) {  // if no ice
@@ -380,7 +383,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       } else { // if positive ice thickness then check floatation criterion
         const PetscScalar 
            hgrounded = bed[i][j] + H[i][j],
-           hfloating = seaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
+           hfloating = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
         // check whether you are actually floating or grounded
         if (hgrounded > hfloating) {
           h[i][j] = hgrounded; // actually grounded so set h

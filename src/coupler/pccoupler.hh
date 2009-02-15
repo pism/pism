@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Ricarda Winkelmann
+// Copyright (C) 2008-2009 Ed Bueler and Ricarda Winkelmann
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "../base/grid.hh"
 #include "../base/LocalInterpCtx.hh"
 #include "../base/iceModelVec.hh"
+#include "forcing.hh"
 
 
 //! A virtual base class for coupling PISM to other climate components.
@@ -111,6 +112,10 @@ public:
 
 //FIXME: should be protected:
   IceModelVec2 vsurfmassflux, vsurftemp; // access these through update...() above
+
+protected:
+  PetscReal           TsOffset;
+  PISMClimateForcing* dTforcing; 
 };
 
 
@@ -292,11 +297,18 @@ public:
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded); // will be interpreted as type IceInfoNeededByOceanCoupler*
 
+  virtual PetscReal reportSeaLevelElevation();
+
   bool      reportInitializationToStdOut;  // can turn off report on initialization if
                                            // there can be no floating ice (for example)
 
 protected:
   IceModelVec2 vshelfbasetemp, vshelfbasemassflux;
+  PISMClimateForcing* 
+               dSLforcing; // possibly the source of sea level offset data, e.g. from sea bed core data
+  PetscReal    seaLevel; /*!<  IceModel will read PISMOceanCoupler to determine surface elevation
+                               of floating ice, and thus the grounding line.  seaLevel here can
+                               be defined as the surface elevation of zero thickness floating ice. */
 };
 
 

@@ -72,9 +72,6 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   info_oceancoupler.mask = PETSC_NULL;
   info_oceancoupler.thk = PETSC_NULL;
 
-  dTforcing = PETSC_NULL;
-  dSLforcing = PETSC_NULL;
-
   ierr = setDefaults();  // lots of parameters and flags set here
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
@@ -549,7 +546,6 @@ PetscLogEventRegister(&siaEVENT,    "sia velocity",0);
 PetscLogEventRegister(&ssaEVENT,    "ssa velocity",0);
 PetscLogEventRegister(&velmiscEVENT,"misc vel calc",0);
 PetscLogEventRegister(&beddefEVENT, "bed deform",0);
-PetscLogEventRegister(&pddEVENT,    "pos deg day",0);
 PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
 PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 #endif
@@ -568,10 +564,6 @@ PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
-    
-    // read in forcing data if present; (typically from ice/seabed core;
-    //   modifies vTs and seaLevel)
-    ierr = updateForcing(); CHKERRQ(ierr);
     
 #if (PISM_LOG_EVENTS)
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
@@ -669,8 +661,6 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
 
     if (endOfTimeStepHook() != 0) break;
   }
-  
-  ierr = forcingCleanup(); CHKERRQ(ierr);  // puts back bed and Ts (removes offsets)
 
   return 0;
 }

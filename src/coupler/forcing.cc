@@ -19,8 +19,8 @@
 #include <petscda.h>
 #include <cstring>
 #include <netcdf.h>
-#include "pism_const.hh"
-#include "nc_util.hh"
+#include "../base/pism_const.hh"
+#include "../base/nc_util.hh"
 #include "forcing.hh"
 
 
@@ -255,26 +255,26 @@ PetscErrorCode Data1D::getInterpolatedDataValue(PetscScalar myindep, PetscScalar
 
 
 
-IceSheetForcing::IceSheetForcing() : Data1D() {
+PISMClimateForcing::PISMClimateForcing() : Data1D() {
   forcingActive = PETSC_FALSE;
   index = 0;
 }
 
 
-IceSheetForcing::~IceSheetForcing() {
+PISMClimateForcing::~PISMClimateForcing() {
   forcingActive = PETSC_FALSE;
 }
 
 
-PetscErrorCode IceSheetForcing::readCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
+PetscErrorCode PISMClimateForcing::readClimateForcingData(MPI_Comm mycom, PetscMPIInt myrank,
         int ncid, PetscScalar curr_year, PetscInt datatype) {
   PetscErrorCode ierr;
   
   switch (datatype) {
-    case ISF_DELTA_T:
+    case PCF_DELTA_T:
       ierr = readData(mycom,myrank,ncid,"t","delta_T"); CHKERRQ(ierr);
       break;
-    case ISF_DELTA_SEA_LEVEL:
+    case PCF_DELTA_SEA_LEVEL:
       ierr = readData(mycom,myrank,ncid,"t","delta_sea_level"); CHKERRQ(ierr);
       break;
     default:
@@ -283,12 +283,12 @@ PetscErrorCode IceSheetForcing::readCoreClimateData(MPI_Comm mycom, PetscMPIInt 
   // times are positive (years b.p.) in data; change to negative (years *after* present)
   vtimeinyears = vindep;
   ierr = VecScale(vtimeinyears,-1.0); CHKERRQ(ierr);
-  ierr = initIndexCoreClimateData(curr_year); CHKERRQ(ierr);
+  ierr = initIndexClimateForcingData(curr_year); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode IceSheetForcing::initIndexCoreClimateData(PetscScalar curr_year) {
+PetscErrorCode PISMClimateForcing::initIndexClimateForcingData(PetscScalar curr_year) {
   PetscErrorCode ierr;
   PetscInt       len;
   PetscScalar    *timeinyears;
@@ -330,7 +330,7 @@ PetscErrorCode IceSheetForcing::initIndexCoreClimateData(PetscScalar curr_year) 
 Consecutive calls to this must use non-decreasing values of curr_year.  An internal index is
 advanced at the call, for efficiency.  There is no backward index movement allowed.
  */
-PetscErrorCode IceSheetForcing::updateFromCoreClimateData(PetscScalar curr_year, PetscScalar *value) {
+PetscErrorCode PISMClimateForcing::updateFromClimateForcingData(PetscScalar curr_year, PetscScalar *value) {
   PetscErrorCode ierr;
   PetscScalar *timeinyears, *data;
   PetscInt    len;

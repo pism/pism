@@ -7,10 +7,11 @@ derived classes PISMAtmosphereCoupler and PISMOceanCoupler, but these
 are essentially intended as virtual too.
 
 PISMConstAtmosCoupler and PISMPDDCoupler are used as very simplified atmosphere 
-models.  They are attached to the IceModel instance by the driver.  See pismr.cc,
-for example.
+models.  PISMMonthlyTempsCoupler adds to PISM AtmosphereCoupler the ability to read
+monthly temperatures.  They are attached to the IceModel instance by the driver.  See pismr.cc
+and pgrn.cc for examples.
 
-PISMConstOceanCoupler is the only (simplified!) ocean model provided with
+PISMConstOceanCoupler is the only (quite simplified!) ocean model provided with
 the PISM source.  It is based on a nontrivial PISMClimateCoupler for ice shelves
 which was written by Ricarda Winkelmann (PIK), with input from Bueler, on 2 Dec 2008.
 That source is in icerepo/Potsdam-Antarctica, a password-protected svn repo.

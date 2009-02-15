@@ -62,7 +62,6 @@ const PetscTruth  DEFAULT_DO_BED_ISO = PETSC_FALSE;
 const PetscScalar DEFAULT_BED_DEF_INTERVAL_YEARS = 10.0;  
 
 const PetscTruth  DEFAULT_IS_DRY_SIMULATION = PETSC_FALSE;
-const PetscScalar DEFAULT_SEA_LEVEL = 0.0;  // used in updateSurfaceElevationAndMask()
 const PetscTruth  DEFAULT_OCEAN_KILL = PETSC_FALSE;
 const PetscTruth  DEFAULT_FLOATING_ICE_KILLED = PETSC_FALSE;
 
@@ -210,7 +209,6 @@ PetscErrorCode IceModel::setDefaults() {
   min_temperature_for_SIA_sliding = DEFAULT_MIN_TEMP_FOR_SLIDING;  
   includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
 
-  seaLevel = DEFAULT_SEA_LEVEL;
   isDrySimulation = DEFAULT_IS_DRY_SIMULATION;
   
   updateHmelt = PETSC_TRUE;
@@ -234,7 +232,5 @@ PetscErrorCode IceModel::setDefaults() {
   psParams.lopo = 90.0;
   psParams.sp = -71.0;
 
-  // see updateForcing() and what it calls
-  TsOffset = 0.0;
   return 0;
 }

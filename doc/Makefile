@@ -9,7 +9,7 @@ else
 	$(MAKE) ALL
 endif
 
-# manuals:
+# default manuals and browser:
 
 installation : installation.tex
 	pdflatex installation.tex
@@ -30,8 +30,14 @@ refman : doxyfile_refman
 browser : doxyfile_browser
 	doxygen doxyfile_browser
 
+# non-default targets; sometimes useful:
+#   browsenow      rebuild browser and then open it with firefox
+#   summary        build a PDF summarizing PISM features; not always up to date
+#   fullbib        build a PDF which merely lists every reference in ice_bib.bib
+#   vfigs          create PDF figures from a test/verifynow.py output
 
-# not default targets; generally not needed by users:
+browsenow : update browser
+	firefox doxy/html/index.html &
 
 summary : pism_summary.tex
 	pdflatex pism_summary
@@ -48,7 +54,7 @@ fullbib : fullbib.tex
 
 PISMREV ?= 327 # revision stamp for verification results in User's Manual figures;
                # generally not the current trunk revision
-VFNOW_OUT=vfnow_r327_L5_23june08.txt
+VFNOW_OUT=vfnow_r327_L5_23june08.txt  # keep old ones for comparison
 vfigs : $(VFNOW_OUT)
 	# producing figures thickerrs_B.pdf, thickerrs_G.df, etc. 
 	# in subdirectory figs/ for use in manual
@@ -66,7 +72,7 @@ vfigs : $(VFNOW_OUT)
 
 clean :
 	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc
-	@rm -f manual.bbl refman.bbl pism_summary.bbl  # I like to keep fullbib.bbl
+	@rm -f manual.bbl refman.bbl pism_summary.bbl  # keep fullbib.bbl around for cut and paste
 
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."

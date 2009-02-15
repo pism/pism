@@ -179,9 +179,6 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
 
   skipCountDown = 0;
 
-  // initializations of forcing
-  ierr = initForcingFromOptions(); CHKERRQ(ierr);
-
   // initializations of PISMClimateCouplers
   // FIXME:  these should go earlier so climate data (if present) is read before bootstrapping
   //   BUT at this point bootstrapFromFile() is calling createDA() so we can't init these 

@@ -89,8 +89,7 @@ WARN_LOGFILE           =
 # configuration options related to the input files
 #---------------------------------------------------------------------------
 INPUT                  = ../src/base/ \
-                         ../src/verif/ \
-                         ../src/netcdf/
+                         ../src/verif/
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \

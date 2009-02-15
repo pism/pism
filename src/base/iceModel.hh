@@ -27,10 +27,10 @@
 #include "materials.hh"
 #include "pism_const.hh"
 #include "grid.hh"
-#include "forcing.hh"
 #include "beddefLC.hh"
 #include "iceModelVec.hh"
 
+#include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
@@ -172,67 +172,73 @@ protected:
   InverseModelCtx       inv;
   
   // state variables
-  IceModelVec2 vh,		//!< ice surface elevation
-    vH,				//!< ice thickness
-    vdHdt,			//!< \frac{dH}{dt}
-    vtauc,			//!< yield stress for basal till (plastic or pseudo-plastic model)
-    vHmelt, 			//!< thickness of the basal meltwater
-    vbasalMeltRate,		//!< basal meltwater production rate
-  /*!< rate of production of basal meltwater (ice-equivalent) */
-    vLongitude,		   //!< Longitude
-    vLatitude,		   //!< Latitude 
-    vbed,		   //!< bed topography
-    vuplift,		   //!< bed uplift rate
-    vub, vvb,		   //!< basal velocities on standard grid
-    vuvbar[2],		   //!< u bar and v bar on staggered grid
-  /*!< 2D; vuvbar[0] and vuvbar[1] are u bar and v bar on staggered grid, */
-    vubar, vvbar,	     	//!< vertically-averaged vels on standard grid
-  /*!< vertically-averaged vels (u bar and v bar) on standard grid */
-    vMask,		   //!< mask for flow type
-    vGhf,		   //!< geothermal flux
-    vRb,		   //!< basal frictional heating on regular grid
-    vtillphi;		   //!< friction angle for till under grounded ice sheet
+  IceModelVec2
+        vh,		//!< ice surface elevation
+        vH,		//!< ice thickness
+        vdHdt,		//!< \frac{dH}{dt}
+        vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model)
+        vHmelt,		//!< thickness of the basal meltwater
+        vbasalMeltRate,	//!< rate of production of basal meltwater (ice-equivalent)
+        vLongitude,	//!< Longitude
+        vLatitude,	//!< Latitude 
+        vbed,		//!< bed topography
+        vuplift,		//!< bed uplift rate
+        vMask,		//!< mask for flow type with values SHEET, DRAGGING, FLOATING
+        vGhf,		//!< geothermal flux
+        vRb,		//!< basal frictional heating on regular grid
+        vtillphi,	//!< friction angle for till under grounded ice sheet
+        vuvbar[2],	//!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
+        vub, vvb,	//!< basal velocities on standard grid
+        vubar, vvbar;	//!< vertically-averaged horizontal velocity on standard grid
 
-  IceModelVec3        u3, v3, w3, Sigma3, T3, tau3;  // note gs3 was one of these
-  IceModelVec3Bedrock Tb3;
+  IceModelVec3
+        u3, v3, w3,	//!< velocity of ice; m s-1
+        Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3
+        T3,		//!< absolute temperature of ice; K
+        tau3;		//!< age of ice; s
+
+  IceModelVec3Bedrock
+        Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K
 
   // parameters
-  PetscScalar maxdt, muSliding, enhancementFactor, initial_age_years_default;
-  PetscScalar dt, dtTempAge, dt_force; // current mass cont. and temp/age 
-                                       //   time steps in seconds
-  PetscScalar constantNuHForSSA, constantHardnessForSSA, min_thickness_SSA,
+  PetscReal   maxdt, muSliding, enhancementFactor, initial_age_years_default,
+              dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
+              dt_force,
+              constantNuHForSSA, constantHardnessForSSA, min_thickness_SSA,
               regularizingVelocitySchoof, regularizingLengthSchoof,
-              ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo;
-  PetscScalar plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
-              tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold;
-  PetscScalar startYear, endYear, run_year_default, maxdt_temporary;
-  PetscScalar ssaIntervalYears, bedDefIntervalYears, adaptTimeStepRatio;
-  PetscScalar CFLviolcount;    // really is just a count, but PetscGlobalSum requires this type
-  PetscScalar dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax;
-  PetscScalar gmaxu, gmaxv, gmaxw;  // global maximums on 3D grid for abs value 
-                                    // of 3D components of velocities
-  PetscScalar gdHdtav, dvoldt; // average value in map-plane (2D) of dH/dt (where there is ice) 
-                               //   [units m/s] and d(volume)/dt [units m^3/s]
-  PetscScalar min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp, 
-              oceanHeatFlux, seaLevel;
-  PetscScalar constantGrainSize;
-  PetscInt    skipCountDown, skipMax, noSpokesLevel, maxLowTempCount,
-              flowLawNumber,ssaMaxIterations;
+              ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo,
+              plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
+              tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold,
+              startYear, endYear, run_year_default, maxdt_temporary,
+              ssaIntervalYears, bedDefIntervalYears, adaptTimeStepRatio,
+              CFLviolcount,    // really is just a count, but PetscGlobalSum requires this type
+              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
+              gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
+              gdHdtav,  // average value in map-plane (2D) of dH/dt, where there is ice; m s-1
+              dvoldt,  // d(total ice volume)/dt; m3 s-1
+              min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp,
+              constantGrainSize;
+  PetscInt    skipCountDown,
+              skipMax,
+              noSpokesLevel,
+              maxLowTempCount,
+              flowLawNumber,
+              ssaMaxIterations;
 
   // flags
-  PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso;
-  PetscTruth  initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
-              isDrySimulation, holdTillYieldStress, useConstantTillPhi;
-  PetscTruth  useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
+  PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso,
+              initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
+              isDrySimulation, holdTillYieldStress, useConstantTillPhi,
+              useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuHForSSA, 
               useConstantHardnessForSSA, computeSurfGradInwardSSA,
-              leaveNuHAloneSSA, shelvesDragToo;
-  PetscTruth  yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled;
-  PetscTruth  flowLawUsesGrainSize, realAgeForGrainSize;
-  PetscTruth  showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
-              allowAboveMelting;
-  PetscTruth  createVecs_done, createViewers_done, createBasal_done;
-  PetscTruth  computeSIAVelocities, transformForSurfaceGradient;
+              leaveNuHAloneSSA, shelvesDragToo,
+              yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled,
+              flowLawUsesGrainSize, realAgeForGrainSize,
+              showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
+              allowAboveMelting,
+              createVecs_done, createViewers_done, createBasal_done,
+              computeSIAVelocities, transformForSurfaceGradient;
   char        adaptReasonFlag;
 
   // file names
@@ -247,10 +253,9 @@ protected:
                matlabOutVars[PETSC_MAX_PATH_LEN]; // see iMmatlab.cc
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
-  Vec          Td, wd, ud, vd, Sigmad, taud;
+  Vec          Td, wd, ud, vd, Sigmad, taud; // hold soundings
 
-  char *history; // history of commands used to generate this 
-		 // instance of IceModel
+  char *history; // history of commands used to generate this instance of IceModel
   size_t history_size;	// the number of bytes allocated for the
 			// history string
   char executable_short_name[PETSC_MAX_PATH_LEN];
@@ -291,16 +296,14 @@ protected:
   virtual PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
 
-  // see iMbeddef.cc: possibly useful general tool for putting Vecs on processor zero
+  // see iMbeddef.cc
   Vec            g2natural;
-  VecScatter     top0ctx;
+  VecScatter     top0ctx; // possibly useful general tool for putting Vecs on processor zero
   PetscTruth     top0ctx_created;
   PetscErrorCode createScatterToProcZero(Vec& samplep0);
   PetscErrorCode destroyScatterToProcZero();
   PetscErrorCode putLocalOnProcZero(Vec& vlocal, Vec& onp0);
   PetscErrorCode getLocalFromProcZero(Vec& onp0, Vec& vlocal);
-
-  // see iMbeddef.cc
   BedDeformLC    bdLC;
   PetscScalar    lastBedDefUpdateYear;
   IceModelVec2   vbedlast;
@@ -320,13 +323,6 @@ protected:
 
   // see iMdefaults.cc
   PetscErrorCode setDefaults();
-
-  // see iMforcing.cc
-  IceSheetForcing        *dTforcing, *dSLforcing;
-  PetscScalar            TsOffset;
-  virtual PetscErrorCode initForcingFromOptions();
-  virtual PetscErrorCode updateForcing();
-  virtual PetscErrorCode forcingCleanup();
 
   // see iMgeometry.cc
   virtual PetscErrorCode computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 vtaudy);
@@ -443,7 +439,7 @@ protected:
   virtual PetscErrorCode correctSigma();
   virtual PetscErrorCode correctBasalFrictionalHeating();
 
-  // see iMssaSNES.cc
+  // see iMssaSNES.cc; UNDER DEVELOPMENT
   virtual PetscErrorCode mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX);
   virtual PetscErrorCode mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX);
   virtual PetscErrorCode setbdryvalSSA(DA ssasnesda, Vec &ssasnesBV);

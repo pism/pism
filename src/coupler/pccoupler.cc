@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler, Ricarda Winkelmann and Constantine Khroulev
+// Copyright (C) 2008-2009 Ed Bueler, Ricarda Winkelmann and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -177,12 +177,19 @@ PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filenam
 /******************* ATMOSPHERE:  PISMAtmosphereCoupler ********************/
 
 PISMAtmosphereCoupler::PISMAtmosphereCoupler() : PISMClimateCoupler() {
+  dTforcing = PETSC_NULL;
+  TsOffset = 0.0;
 }
 
 
 PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
   vsurfmassflux.destroy();  // destroy if created
   vsurftemp.destroy();
+  if (dTforcing != PETSC_NULL) {
+    TsOffset = 0.0;
+    delete dTforcing; // calls destructor for this PISMClimateForcing instance
+    dTforcing = PETSC_NULL;
+  }
 }
 
 
@@ -220,6 +227,27 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
             NULL);  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);
   ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
+
+  // check user option -dTforcing for a surface temperature forcing data set
+  char dTfile[PETSC_MAX_PATH_LEN];
+  PetscTruth dTforceSet;
+  if (dTforcing != PETSC_NULL) {
+    SETERRQ(1, "dTforcing should be PETSC_NULL at start of PISMAtmosphereCoupler::initFromOptions()\n");
+  }
+  ierr = PetscOptionsGetString(PETSC_NULL, "-dTforcing", dTfile,
+                               PETSC_MAX_PATH_LEN, &dTforceSet); CHKERRQ(ierr);
+  if (dTforceSet == PETSC_TRUE) {
+    dTforcing = new PISMClimateForcing;
+    TsOffset = 0.0;
+    int stat, ncid = 0;
+    ierr = verbPrintf(2, grid->com, 
+         "  reading delta T data from forcing file %s for PISMAtmosphereCoupler...\n", dTfile); 
+         CHKERRQ(ierr);
+    if (grid->rank == 0) {   stat = nc_open(dTfile, 0, &ncid); CHKERRQ(nc_check(stat));   }
+    ierr = dTforcing->readClimateForcingData(grid->com, grid->rank, ncid, 
+         grid->year,PCF_DELTA_T); CHKERRQ(ierr);
+    if (grid->rank == 0) {   stat = nc_close(ncid); CHKERRQ(nc_check(stat));  }
+  }
 
   printIfDebug("ending PISMAtmosphereCoupler::initFromOptions()\n");
   return 0;
@@ -441,12 +469,19 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
 PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
   reportInitializationToStdOut = true;  // derived classes etc. can turn off before calling
                                         // initFromOptions(), but its on by default
+  dSLforcing = PETSC_NULL;
+  seaLevel = 0.0; // the obvious default value
 }
 
 
 PISMOceanCoupler::~PISMOceanCoupler() {
   vshelfbasetemp.destroy();
   vshelfbasemassflux.destroy();
+  if (dSLforcing != PETSC_NULL) {
+    seaLevel = 0.0;
+    delete dSLforcing;
+    dSLforcing = PETSC_NULL;
+  }
 }
 
 
@@ -481,6 +516,25 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   // rescales from m/s to m/a when writing to NetCDF and std out:
   vshelfbasemassflux.write_in_glaciological_units = true;
   ierr = vshelfbasemassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  char dSLfile[PETSC_MAX_PATH_LEN];
+  PetscTruth dSLforceSet;
+  if (dSLforcing != PETSC_NULL) {
+    SETERRQ(2, "dSLforcing should be PETSC_NULL at start of PISMOceanCoupler::initFromOptions()\n");
+  }
+  ierr = PetscOptionsGetString(PETSC_NULL, "-dSLforcing", dSLfile,
+                               PETSC_MAX_PATH_LEN, &dSLforceSet); CHKERRQ(ierr);
+  if (dSLforceSet == PETSC_TRUE) {
+    dSLforcing = new PISMClimateForcing;
+    int stat, ncid = 0;
+    ierr = verbPrintf(2, grid->com, 
+         "reading delta sea level data from forcing file %s ...\n", 
+         dSLfile); CHKERRQ(ierr);
+    if (grid->rank == 0) {    stat = nc_open(dSLfile, 0, &ncid); CHKERRQ(nc_check(stat));   }
+    ierr = dSLforcing->readClimateForcingData(grid->com, grid->rank, 
+             ncid, grid->year,PCF_DELTA_SEA_LEVEL); CHKERRQ(ierr);
+    if (grid->rank == 0) {    stat = nc_close(ncid); CHKERRQ(nc_check(stat));   }
+  }
 
   printIfDebug("ending PISMOceanCoupler::initFromOptions()\n");
   return 0;
@@ -524,6 +578,11 @@ PetscErrorCode PISMOceanCoupler::updateClimateFields(
   ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
   ierr = updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
   return 0;
+}
+
+
+PetscReal PISMOceanCoupler::reportSeaLevelElevation() {
+  return seaLevel;
 }
 
 

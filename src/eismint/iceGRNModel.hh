@@ -23,7 +23,6 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../base/forcing.hh"
 #include "../coupler/pccoupler.hh"
 
 

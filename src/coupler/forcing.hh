@@ -73,24 +73,25 @@ private:
 };
 
 
-// codes for datatype in call to IceSheetForcing::readCoreClimateData()
-#define ISF_DELTA_T          0
-#define ISF_DELTA_SEA_LEVEL  1
+// codes for datatype in call to PISMClimateForcing::readClimateForcingData()
+#define PCF_DELTA_T          0
+#define PCF_DELTA_SEA_LEVEL  1
 
-//! Class for reading and storing data ice or seabed core climate data from NetCDF file.
+
+//! Class for reading and storing climate data, like ice or seabed core data, from NetCDF file, and providing it to a PISMClimateCoupler.
 /*! 
 This derived class of Data1D maintains an additional index into the time series data
-based on a current year.  The method updateFromCoreClimateData() returns the value of
+based on a current year.  The method updateFromClimateForcingData() returns the value of
 the climate variable.  Usually this value is a change from present.
  */
-class IceSheetForcing : public Data1D {
+class PISMClimateForcing : public Data1D {
 public:
-  IceSheetForcing();
-  ~IceSheetForcing();
+  PISMClimateForcing();
+  ~PISMClimateForcing();
   
-  PetscErrorCode readCoreClimateData(MPI_Comm mycom, PetscMPIInt myrank,
-                             int ncid, PetscScalar curr_year, PetscInt datatype);
-  PetscErrorCode updateFromCoreClimateData(PetscScalar curr_year, PetscScalar *value);
+  PetscErrorCode readClimateForcingData(MPI_Comm mycom, PetscMPIInt myrank,
+                                     int ncid, PetscScalar curr_year, PetscInt datatype);
+  PetscErrorCode updateFromClimateForcingData(PetscScalar curr_year, PetscScalar *value);
 
 protected:
   PetscInt     index;
@@ -98,7 +99,7 @@ protected:
   PetscTruth   forcingActive;
 
 private:
-  PetscErrorCode initIndexCoreClimateData(PetscScalar curr_year);
+  PetscErrorCode initIndexClimateForcingData(PetscScalar curr_year);
 };
 
 #endif /* __forcing_hh */

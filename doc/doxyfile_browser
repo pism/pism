@@ -91,7 +91,6 @@ WARN_LOGFILE           =
 INPUT                  = ../src/ \
                          ../src/base/ \
                          ../src/coupler/ \
-                         ../src/netcdf/ \
                          ../src/num/ \
                          ../src/udunits/ \
                          ../src/verif/ \

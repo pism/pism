@@ -22,8 +22,8 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../base/forcing.hh"
 #include "../base/nc_util.hh"
+#include "../coupler/forcing.hh"
 #include "iceROSSModel.hh"
 
 

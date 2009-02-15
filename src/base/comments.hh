@@ -96,7 +96,7 @@ PISM root directory and then view <tt>manual.pdf</tt> and
 before getting too far into this <i>Reference Manual.</i>
  
 The C++ source files which contain the comments which generated this manual
-are in the <tt>src/base</tt>, <tt>src/netcdf</tt>, and <tt>src/verif</tt> subdirectories.
+are in the <tt>src/base</tt> and <tt>src/verif</tt> subdirectories.
 Among other omissions, this \e Reference \e Manual does not contain documentation on 
 PISMClimateCoupler or on derived classes of IceModel (e.g. IceEISModel, IceGRNModel, IceROSSModel,
 IceMISMIPModel, etc.).  See the Browser for those purposes; the HTML class 
