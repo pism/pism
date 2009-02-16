@@ -25,16 +25,18 @@
 
 
 Data1D::Data1D() {
-  vecsAllocated = PETSC_FALSE;
+  vindep = PETSC_NULL;
+  vdata = PETSC_NULL;
   interpCode = DATA1D_LINEAR_INTERP;
 }
 
 
 Data1D::~Data1D() {
-  if (vecsAllocated == PETSC_TRUE) {
+  if (vindep != PETSC_NULL) {
     VecDestroy(vindep);
+  }
+  if (vdata != PETSC_NULL) {
     VecDestroy(vdata);
-    vecsAllocated = PETSC_FALSE;
   }
 }
 
@@ -52,7 +54,7 @@ PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank,
   PetscErrorCode ierr;
   int stat, ncid = 0;
   if (myrank == 0) {
-      stat = nc_open(myncfilename, 0, &ncid); CHKERRQ(nc_check(stat));
+    stat = nc_open(myncfilename, 0, &ncid); CHKERRQ(nc_check(stat));
   }
   MPI_Bcast(&ncid, 1, MPI_INT, 0, mycom);
   ierr = readData(mycom, myrank, ncid, myindepvarname, mydatavarname); CHKERRQ(ierr);
@@ -63,7 +65,9 @@ PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank,
 }
 
 
-PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank, int myncid, 
+//! Read data from NetCDF file (specified by a NetCDF integer id) into a Data1D.
+PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank,
+                                int myncid, 
                                 const char *myindepvarname, const char *mydatavarname) {
   PetscErrorCode ierr;
   int indepid, dataid;
@@ -81,7 +85,6 @@ PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank, int myncid,
   MPI_Bcast(&interpCode, 1, MPI_INT, 0, com);
   ierr = ncVarBcastVec(myncid, indepid, &vindep); CHKERRQ(ierr);  // creates this Vec
   ierr = ncVarBcastVec(myncid, dataid, &vdata); CHKERRQ(ierr);  // creates this Vec
-  vecsAllocated = PETSC_TRUE;
   return 0;
 }
 
@@ -125,7 +128,7 @@ PetscErrorCode Data1D::getInterpolationCode(int ncid, int vid, int *code) {
 }
 
 
-//! Broadcast sequential Vecs containing ice or sea bed core-derived climate data to each processor.
+//! Broadcast sequential Vecs containing 1D climate data to each processor.
 PetscErrorCode Data1D::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
   
   PetscErrorCode ierr;
@@ -150,9 +153,8 @@ PetscErrorCode Data1D::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
     stat = nc_get_var_float(ncid, vid, f); CHKERRQ(nc_check(stat));
   }
   ierr = MPI_Bcast(&M, 1, MPI_INT, 0, com); CHKERRQ(ierr); // broadcast the length
- 
-  // if you're not rank 0, you still need to create the array
-  if (rank != 0){
+
+  if (rank != 0){ // if you're not rank 0, you still need to create the array
     f = new float[M];
   }
   ierr = MPI_Bcast(f, M, MPI_FLOAT, 0, com); CHKERRQ(ierr);
@@ -162,6 +164,7 @@ PetscErrorCode Data1D::ncVarBcastVec(int ncid, int vid, Vec *vecg) {
   }
   ierr = VecAssemblyBegin(*vecg); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(*vecg); CHKERRQ(ierr);
+
   delete [] f;
   return 0;
 }
@@ -192,6 +195,38 @@ PetscErrorCode Data1D::getIndexedDataValue(PetscInt index, PetscScalar *value) {
 }
 
 
+/*!
+Binary search into a 1D array, <tt>double indep[length]</tt>, to return index \c l so that
+<tt>indep[l] <= myval <= indep[l+1]</tt>, or so that <tt>l=length-1</tt> and <tt>indep[l] <= myval</tt>,
+or so that <tt>l=0</tt> and <tt>myval <= indep[l]</tt>.
+
+In every case, <tt>indep[l]</tt> will be valid, where \c l is the return value, but
+when <tt>l=length-1</tt> then <tt>indep[l+1]</tt> is not valid.
+
+It is suggested that calling procedures first check if \c myval is outside the range 
+[<tt>indep[0],indep[length-1]</tt>].
+ */
+PetscInt Data1D::binarySearch(double *indep, const PetscInt length, const double myval) {
+
+  if (myval <= indep[0])           return 0;
+  if (myval >= indep[length-1])    return length-1;
+
+  PetscInt l = 0,       // left
+           r = length;  // right+1
+
+  while (r > l + 1) {
+    PetscInt j = (r + l)/2;
+    if (myval < indep[j]) { //     indep[l]  <=  myval  <  indep[j]             <=  indep[r]
+      r = j;
+    } else {                //     indep[l]  <=            indep[j]  <=  myval  <=  indep[r]
+      l = j;
+    }
+  }
+
+  return l;
+}
+
+
 PetscErrorCode Data1D::getInterpolatedDataValue(PetscScalar myindep, PetscScalar *value) {
   PetscErrorCode ierr;
   PetscScalar *indep, *data;
@@ -200,18 +235,9 @@ PetscErrorCode Data1D::getInterpolatedDataValue(PetscScalar myindep, PetscScalar
   // determine index into data
   ierr = VecGetLocalSize(vindep, &len); CHKERRQ(ierr);
   ierr = VecGetArray(vindep, &indep); CHKERRQ(ierr);
-  PetscInt r, l=0;
-  r = len;
-  // do a binary search to find where our value of the independent variable fits in.
-  while (r > l + 1) {
-    PetscInt j = (r + l)/2;
-    if (myindep < indep[j]) {
-      r = j;
-    } else {
-      l = j;
-    }
-  }    
-  index = l;
+  // do a binary search to find where our value of the independent variable fits in;
+  //   here we need independent variable to be sorted into increasing order!
+  index = binarySearch(indep, len, myindep);
   if (index < 0) {
     SETERRQ(1,"computed index is negative");
   }
@@ -220,6 +246,7 @@ PetscErrorCode Data1D::getInterpolatedDataValue(PetscScalar myindep, PetscScalar
   }
   ierr = VecRestoreArray(vindep, &indep); CHKERRQ(ierr);
 
+  // interpolate
   ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
   if (myindep == indep[index]) {
     *value = data[index]; // if we have exact data, use it
@@ -256,13 +283,7 @@ PetscErrorCode Data1D::getInterpolatedDataValue(PetscScalar myindep, PetscScalar
 
 
 PISMClimateForcing::PISMClimateForcing() : Data1D() {
-  forcingActive = PETSC_FALSE;
   index = 0;
-}
-
-
-PISMClimateForcing::~PISMClimateForcing() {
-  forcingActive = PETSC_FALSE;
 }
 
 
@@ -280,9 +301,10 @@ PetscErrorCode PISMClimateForcing::readClimateForcingData(MPI_Comm mycom, PetscM
     default:
       SETERRQ(1,"invalid datatype\n");
   } 
-  // times are positive (years b.p.) in data; change to negative (years *after* present)
-  vtimeinyears = vindep;
-  ierr = VecScale(vtimeinyears,-1.0); CHKERRQ(ierr);
+
+  // times are positive ages (= years b.p.) in data; change to negative (years *after* present)
+  ierr = VecScale(vindep,-1.0); CHKERRQ(ierr); // puts in increasing order!! FIXME: SILLY!
+
   ierr = initIndexClimateForcingData(curr_year); CHKERRQ(ierr);
   return 0;
 }
@@ -293,34 +315,25 @@ PetscErrorCode PISMClimateForcing::initIndexClimateForcingData(PetscScalar curr_
   PetscInt       len;
   PetscScalar    *timeinyears;
 
-  ierr = VecGetArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
-  ierr = VecGetLocalSize(vtimeinyears, &len); CHKERRQ(ierr);
+  ierr = VecGetArray(vindep, &timeinyears); CHKERRQ(ierr);
+  ierr = VecGetLocalSize(vindep, &len); CHKERRQ(ierr);
 
-  int r, l=0;
-  r = len;
-  // do a binary search to find where our year fits in.
-  while (r > l + 1) {
-    PetscInt j = (r + l)/2;
-    if(curr_year < timeinyears[j]) {
-      r = j;
-    } else {
-      l = j;
-    }
-  }    
-  index = l;
-  ierr = verbPrintf(3, com, "index into forcing data %s found using current year: index = %d\n",
+  // do a binary search to find where our current year fits in
+  index = binarySearch(timeinyears, len, curr_year);
+
+  ierr = VecRestoreArray(vindep, &timeinyears); CHKERRQ(ierr);
+
+  ierr = verbPrintf(3, com, "index into PISMClimateForcing data %s found using current year: index = %d\n",
           datavarname, index); CHKERRQ(ierr);
   // maybe we are already past our place.
-  if (l >= len) {
-    forcingActive = PETSC_FALSE;
+  if (index >= len - 1) {
     ierr = verbPrintf(1, com, 
-             "ATTENTION: past end of climate forcing data %s.  Using last value.\n",datavarname);
-             CHKERRQ(ierr);
-  } else {
-    forcingActive = PETSC_TRUE;
+      "PISMClimateForcing ATTENTION:  At or past end of climate forcing data %s when initializing indexing.\n",
+      datavarname); CHKERRQ(ierr);
+    index = len - 1; // presumably redundant, but guarantee timeinyears[index] valid
   }
+  if (index < 0) { SETERRQ(1,"index negative in PISMClimateForcing::initIndexClimateForcingData()"); }
 
-  ierr = VecRestoreArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
   return 0;
 }
 
@@ -329,86 +342,74 @@ PetscErrorCode PISMClimateForcing::initIndexClimateForcingData(PetscScalar curr_
 /*!
 Consecutive calls to this must use non-decreasing values of curr_year.  An internal index is
 advanced at the call, for efficiency.  There is no backward index movement allowed.
+
+If this call is made when PISMClimateForcing::index is out of range, it generates lots of
+"PISMClimateForcing ATTENTION: ..." messages at stdout.  Caller beware ...
  */
 PetscErrorCode PISMClimateForcing::updateFromClimateForcingData(PetscScalar curr_year, PetscScalar *value) {
   PetscErrorCode ierr;
-  PetscScalar *timeinyears, *data;
-  PetscInt    len;
+  PetscScalar    *timeinyears, *data;
+  PetscInt       len;
 
-  ierr = VecGetArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
+  if (index < 0) { SETERRQ(1, "PISMClimateForcing ERROR: index < 0");  }
 
-  ierr = VecGetLocalSize(vtimeinyears, &len); CHKERRQ(ierr);
+  ierr = VecGetArray(vindep, &timeinyears); CHKERRQ(ierr);
+  ierr = VecGetLocalSize(vindep, &len); CHKERRQ(ierr);
 
-  // do a binary search to find where our year fits in.
-  int r, l=0;
-  r = len;
-  while (r > l + 1) {
-    PetscInt j = (r + l)/2;
-    if(curr_year < timeinyears[j]) {
-      r = j;
-    } else {
-      l = j;
-    }
-  }    
-  index = l;
+  // do a binary search to find where our current year fits in
+  index = binarySearch(timeinyears, len, curr_year);
 
-  // DEBUG: show current values
-  //ierr = PetscPrintf(PETSC_COMM_WORLD, 
-  //     "DEBUG: climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
-  //     datavarname,curr_year,len,index); CHKERRQ(ierr);
-  //ierr = PetscPrintf(PETSC_COMM_SELF, 
-  //     "DEBUG (rank=%d): climate forcing %s: curr_year = %f, len = %d, index = %d\n", 
-  //     rank,datavarname,curr_year,len,index); CHKERRQ(ierr);
+  ierr = VecRestoreArray(vindep, &timeinyears); CHKERRQ(ierr);
 
-  if (index >= len) {
+  if (index < 0) { SETERRQ(2, "PISMClimateForcing ERROR: index < 0");  }
+
+  if (index >= len - 1) {
     ierr = verbPrintf(1, com, 
-       "ATTENTION: no more data for climate forcing %s; curr_year = %f;\n"
-       "   len = %d; index = %d; using forcing value 0.0\n", 
+       "PISMClimateForcing ATTENTION: no more data for climate forcing %s;\n"
+       "   curr_year = %f; len = %d; index = %d; returning forcing value 0.0\n", 
        datavarname,curr_year,len,index); CHKERRQ(ierr);
-    forcingActive = PETSC_FALSE;
+    index = len - 1; // guarantee timeinyears[index] valid for now
     *value = 0.0;
-  } else if (index < 0) {
+    return 0;
+  }
+
+  // if we don't check these cases then we will try "data[index-1]" and get seg fault
+  if ( (index == 0) && (    (interpCode == DATA1D_CONST_PIECE_BCK_INTERP)
+                         || (interpCode == DATA1D_LINEAR_INTERP)          ) ) {
     ierr = verbPrintf(1, com, 
-       "ATTENTION: model year precedes beginning of data for climate forcing %s;\n"
-       "   curr_year = %f; index = %d; using forcing value 0.0\n", 
+       "PISMClimateForcing ATTENTION: model year not far enough after beginning of data for interpolation\n"
+       "   of climate forcing %s; curr_year = %f; index = %d; returning forcing value 0.0\n",
        datavarname,curr_year,index); CHKERRQ(ierr);
     *value = 0.0;
-  } else if ( (index == 0) && (   (interpCode == DATA1D_CONST_PIECE_BCK_INTERP)
-                               || (interpCode == DATA1D_LINEAR_INTERP)         ) ) {
-    ierr = verbPrintf(1, com, 
-       "ATTENTION: model year not far enough after beginning of data for interpolation\n"
-       "   of climate forcing %s; curr_year = %f; index = %d; using forcing value 0.0\n",
-       datavarname,curr_year,index); CHKERRQ(ierr);
-    *value = 0.0;
-  } else {
-    ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
-    if (curr_year == timeinyears[index]) {
-      *value = data[index]; // if we have exact data, use it
-    } else { // otherwise we need to interpolate
-      switch (interpCode) {
-        case DATA1D_CONST_PIECE_BCK_INTERP:
-          // use the data point we are infront of
-          *value = data[index-1];
-          break;
-        case DATA1D_CONST_PIECE_FWD_INTERP:
-          *value = data[index];
-          break;
-        case DATA1D_LINEAR_INTERP:
-          PetscScalar y0, y1;
-          y0 = data[index-1];
-          y1 = data[index];
-          *value = y0 + ((y1-y0) / (timeinyears[index] - timeinyears[index-1]))
-                                 * (curr_year - timeinyears[index-1]);
-          break;
-        default:
-          SETERRQ1(1, "Unknown interpolation method for climate forcing %s\n",
-            datavarname);
-      } // end switch
-    }
-    ierr = VecRestoreArray(vdata, &data); CHKERRQ(ierr);
+    return 0;
   }
   
-  ierr = VecRestoreArray(vtimeinyears, &timeinyears); CHKERRQ(ierr);
+  // so now we should actually look at the data ...
+  ierr = VecGetArray(vdata, &data); CHKERRQ(ierr);
+  if (curr_year == timeinyears[index]) {
+    *value = data[index]; // if we have exact data, use it
+  } else { // otherwise we need to interpolate
+    switch (interpCode) {
+      case DATA1D_CONST_PIECE_BCK_INTERP:
+        *value = data[index-1]; // use the data point we are in front of
+        break;
+      case DATA1D_CONST_PIECE_FWD_INTERP:
+        *value = data[index];
+        break;
+      case DATA1D_LINEAR_INTERP:
+        { // scope needed when declaring vars ... C is silly ...
+          PetscScalar z0 = data[index-1],
+                      z1 = data[index],
+                      slope = (z1 - z0) / (timeinyears[index] - timeinyears[index-1]);
+          *value = z0 + slope * (curr_year - timeinyears[index-1]);
+        }
+        break;
+      default:
+        SETERRQ1(3,"unknown interpolation method in PISMClimateForcing %s\n", datavarname);
+    } // end switch
+  } // end else
+  ierr = VecRestoreArray(vdata, &data); CHKERRQ(ierr);
+
   return 0;
 }
 

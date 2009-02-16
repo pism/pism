@@ -55,8 +55,7 @@ PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt de
         "3=Hooke,4=Goldsby-Kohlstedt)]\n",
         myflowLawNum); CHKERRQ(ierr);
     
-    switch (myflowLawNum)
-      {
+    switch (myflowLawNum) {
       case 0: // Paterson-Budd
         ice = new ThermoGlenIce;  
         break;
@@ -77,8 +76,7 @@ PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt de
         break;
       default:
 	{
-	  ierr = PetscPrintf(com, "\n PISM ERROR: flow law number must be 0,1,2,3,4\n");
-	  CHKERRQ(ierr);
+	  PetscPrintf(com, "\n PISM ERROR: flow law number must be 0,1,2,3,4\n");
 	  PetscEnd();
 	}
     }

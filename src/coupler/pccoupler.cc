@@ -26,20 +26,13 @@
 #include "pccoupler.hh"
 // note we do NOT depend on IceModel.hh; this is deliberate!
 
-// change to true if entry and exit messages for initFromOptions() needed
-#define PCCDEBUG false
-
-PetscErrorCode printIfDebug(const char *message) {
-  PetscErrorCode ierr;
-  if (PCCDEBUG) {  ierr = verbPrintf(1,PETSC_COMM_WORLD,message); CHKERRQ(ierr);  }
-  return 0;
-}
-
 
 /******************* VIRTUAL BASE CLASS:  PISMClimateCoupler ********************/
 
 PISMClimateCoupler::PISMClimateCoupler() {
   grid = NULL;
+  PCCDEBUG = true;  // set to true and recompile if entry and exit messages for initFromOptions(),
+                     // both base class and derived classes, are needed for debugging
 }
 
 
@@ -58,10 +51,17 @@ PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
 }
 
 
+PetscErrorCode PISMClimateCoupler::printIfDebug(const char *message) {
+  PetscErrorCode ierr;
+  if (PCCDEBUG) {  ierr = verbPrintf(1,PETSC_COMM_WORLD,message); CHKERRQ(ierr);  }
+  return 0;
+}
+
+
 /*!
 Read PISM options -i, -boot_from to determine if a PISM input or bootstrap file was given
 Open the file for reading and determine its computational grid parameters; these parameters
-are in return \c LocalInterpCtx.
+are in returned \c LocalInterpCtx.
 
 \e Caller of findPISMInputFile() is in charge of destroying the returned lic.
  */
@@ -197,6 +197,8 @@ PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
 /*!
 Allocates space and sets attributes, including CF standard_name, for the two essential fields.
 Derived class implementations will check user options to configure.
+
+g->year must be valid before this can be called.
  */
 PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
@@ -267,11 +269,13 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  // FIXME:  it would be good to also write the forcing value to a t-dependent variable:
+  //   surftempoffset(t)
   return 0;
 }
 
 
-//! Just provides access.  No update.  Real atmosphere models, derived classes, will update.
+//! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Real atmosphere models in derived classes will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsmf) {
@@ -282,13 +286,25 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
 }
 
 
-//! Just provides access.  No update.  Real atmosphere models, derived classes, will update.
+//! Updates forcing and provides access to vsurftemp.  No update of vsurftemp.  Real atmosphere models, derived classes, will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvst) {
+  PetscErrorCode ierr;
+
+  if (dTforcing != PETSC_NULL) {
+    ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
+    ierr = dTforcing->updateFromClimateForcingData(grid->year,&TsOffset); CHKERRQ(ierr); // read a new offset
+    ierr = verbPrintf(5,grid->com,
+       "PISMAtmosphereCoupler says: read TsOffset=%.6f from -dTforcing data\n",
+       TsOffset); CHKERRQ(ierr);
+    ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
+  }
+
   if (vsurftemp.was_created())
     pvst = &vsurftemp;
   else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
+
   return 0;
 }
 
@@ -344,9 +360,8 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
 }
 
 
+
 /*******************  ATMOSPHERE:  PISMMonthlyTempsAtmosCoupler ********************/
-
-
 
 PISMMonthlyTempsAtmosCoupler::PISMMonthlyTempsAtmosCoupler() : PISMAtmosphereCoupler() {
   readMonthlyTempsFromFile = true;
@@ -356,14 +371,14 @@ PISMMonthlyTempsAtmosCoupler::PISMMonthlyTempsAtmosCoupler() : PISMAtmosphereCou
 
 PISMMonthlyTempsAtmosCoupler::~PISMMonthlyTempsAtmosCoupler() {
   for (PetscInt j = 0; j < 12; ++j) {
-    vmonthlysurftemp[j].destroy();  // destroys if allocated (created)
+    vmonthlytemp[j].destroy();  // destroys if allocated (created)
   }
 }
 
 
 //! Initializes by reading monthly temperatures from the PISM input file.
 /*!
-Stored temperatures must have names \c temp_mon0, ...,\c temp_mon11 and be in units of K.
+Stored temperatures must have names \c monsnowtemp1, ...,\c monsnowtemp12 and be in units of K.
 Call setMonthlyTempsFilename() and make sure readMonthlyTempsFromFile == true before 
 using this initFromOptions().
  */
@@ -384,7 +399,7 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::initFromOptions(IceGrid* g) {
 
 //! Write monthly temperatures to a prepared file.
 /*!
-Adds \c temp_mon0, ...,\c temp_mon11 after other PISMAtmosphereCoupler fields.
+Adds \c monsnowtemp1, ...,\c monsnowtemp12 after other PISMAtmosphereCoupler fields.
  */
 PetscErrorCode PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(const char *filename) {
   PetscErrorCode ierr;
@@ -392,8 +407,8 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(const cha
   ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
 
   for (PetscInt j = 0; j < 12; ++j) {
-    if (vmonthlysurftemp[j].was_created()) {
-      ierr = vmonthlysurftemp[j].write(filename, NC_FLOAT); CHKERRQ(ierr);
+    if (vmonthlytemp[j].was_created()) {
+      ierr = vmonthlytemp[j].write(filename, NC_FLOAT); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -409,7 +424,7 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::setMonthlyTempsFilename(const char*
 
 //! Read monthly temperatures from a prepared file.
 /*!
-Reads \c temp_mon0, ...,\c temp_mon11 from file with name monthlyTempsFile.
+Reads \c monsnowtemp1, ...,\c monsnowtemp12 from file with name monthlyTempsFile.
  */
 PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
   PetscErrorCode ierr;
@@ -444,24 +459,54 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
   // for each month, create an IceModelVec2 and assign attributes
   for (PetscInt j = 0; j < 12; ++j) {
     char monthlyTempName[20], mTstring[100];
-    snprintf(monthlyTempName, 20, "temp_mon%d", j);
+    snprintf(monthlyTempName, 20, "monsnowtemp%d", j+1);
     ierr = verbPrintf(2, grid->com, 
        "  reading month %d surface temperature '%s' ...\n", j, monthlyTempName); CHKERRQ(ierr); 
-    ierr = vmonthlysurftemp[j].create(*grid, monthlyTempName, false); // global; no ghosts
+    ierr = vmonthlytemp[j].create(*grid, monthlyTempName, false); // global; no ghosts
        CHKERRQ(ierr);
     snprintf(mTstring, 100, 
-             "temperature at ice surface during month %d of {0,..,11}", j);
-    ierr = vmonthlysurftemp[j].set_attrs(
+             "temperature at ice surface during month %d of {1,..,12}", j+1);
+    ierr = vmonthlytemp[j].set_attrs(
                "climate_state",
                mTstring, // note simplified, not-very-specific long name
                "K",
                NULL); // CF standard name?  may exist when derived class has additional semantics
                CHKERRQ(ierr);
-    ierr = vmonthlysurftemp[j].regrid(monthlyTempsFile, lic, true); CHKERRQ(ierr); // it *is* critical
+    ierr = vmonthlytemp[j].regrid(monthlyTempsFile, lic, true); CHKERRQ(ierr); // it *is* critical
   }
   return 0;
 }
 
+
+/*!
+Returns indices in {0,..,11} for the current and next months.  Used for indexing
+the monthly surface temperature data.
+ */
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::getMonthIndicesFromDay(
+       const PetscScalar day, PetscInt &curr, PetscInt &next) {
+  PetscScalar month = 12.0 * day / 365.24;
+  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
+  curr = (int) floor(month);
+  curr = curr % 12;
+  next = curr+1;
+  if (next == 12)   next = 0;
+  return 0;
+}
+
+
+/*!
+Linearly interpolates between stored monthly temps.
+ */
+PetscScalar PISMMonthlyTempsAtmosCoupler::getTemperatureFromMonthlyData(
+       PetscScalar **currMonthTemps, PetscScalar **nextMonthTemps,
+       const PetscInt i, const PetscInt j, const PetscScalar day) {
+  PetscScalar month = 12.0 * day / 365.24;
+  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
+  PetscInt  curr = (int) floor(month);
+  curr = curr % 12;
+  return currMonthTemps[i][j] 
+       + (month - (PetscScalar)curr) * nextMonthTemps[i][j];
+}
 
 
 /*******************  OCEAN:  PISMOceanCoupler ********************/
@@ -488,6 +533,8 @@ PISMOceanCoupler::~PISMOceanCoupler() {
 /*!
 Derived class implementations will check user options to configure the PISMOceanCoupler.
 This version allocates space and sets attributes for the two essential fields.
+
+g->year must be valid before this can be called.
  */
 PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
@@ -498,7 +545,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   // no report to std out; otherwise reportInitializationToStdOut should be checked before report
 
   // ice boundary tempature at the base of the ice shelf
-  ierr = vshelfbasetemp.create(*grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = vshelfbasetemp.create(*g, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = vshelfbasetemp.set_attrs(
            "climate_state", "absolute temperature at ice shelf base",
 	   "K", NULL); CHKERRQ(ierr);
@@ -507,7 +554,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasetemp.set(273.15); CHKERRQ(ierr);  // merely a default value to clear nonsense
 
   // ice mass balance rate at the base of the ice shelf
-  ierr = vshelfbasemassflux.create(*grid, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = vshelfbasemassflux.create(*g, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = vshelfbasemassflux.set_attrs(
            "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
 	   "m s-1", NULL); CHKERRQ(ierr); 
@@ -528,7 +575,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
     dSLforcing = new PISMClimateForcing;
     int stat, ncid = 0;
     ierr = verbPrintf(2, grid->com, 
-         "reading delta sea level data from forcing file %s ...\n", 
+         "  reading delta sea level data from forcing file %s ...\n", 
          dSLfile); CHKERRQ(ierr);
     if (grid->rank == 0) {    stat = nc_open(dSLfile, 0, &ncid); CHKERRQ(nc_check(stat));   }
     ierr = dSLforcing->readClimateForcingData(grid->com, grid->rank, 
@@ -550,22 +597,58 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
   //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
   ierr = vshelfbasetemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vshelfbasemassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  // FIXME:  it would be good to also write the forcing value to a t-dependent variable:
+  //   sealevel(t)
   return 0;
 }
 
 
+//! Updates seaLevel from forcing and provides access to vshelfbasemassflux.  No update of vshelfbasemassflux.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
-  SETERRQ(1,"VIRTUAL in PISMOceanCoupler ... not implemented");
+  PetscErrorCode ierr;
+
+  if (dSLforcing != PETSC_NULL) {
+    // read new sea level (delta from modern)
+    ierr = dSLforcing->updateFromClimateForcingData(grid->year,&seaLevel); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
+       seaLevel); CHKERRQ(ierr);
+    // comment: IceModel::updateSurfaceElevationAndMask() needs to be called before effect of changed
+    //   sea level is seen in ice dynamics (e.g. on grounding line)
+  }
+
+  if (vshelfbasemassflux.was_created())
+    pvsbmf = &vshelfbasemassflux;
+  else {  
+    SETERRQ(1,"vvshelfbasemassflux not created in PISMOceanCoupler::updatehelfBaseMassFluxAndProvide()");
+  }
+
   return 0;
 }
 
 
+//! Updates seaLevel from forcing and provides access to vshelfbasetemp.  No update of vshelfbasetemp.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
-  SETERRQ(1,"VIRTUAL in PISMOceanCoupler ... not implemented");
+  PetscErrorCode ierr;
+
+  if (dSLforcing != PETSC_NULL) {
+    // read new sea level (delta from modern)
+    ierr = dSLforcing->updateFromClimateForcingData(grid->year,&seaLevel); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
+       seaLevel); CHKERRQ(ierr);
+    // comment: IceModel::updateSurfaceElevationAndMask() needs to be called before effect of changed
+    //   sea level is seen in ice dynamics (e.g. on grounding line)
+  }
+
+  if (vshelfbasetemp.was_created())
+    pvsbt = &vshelfbasetemp;
+  else {  
+    SETERRQ(1,"vvshelfbasetemp not created in PISMOceanCoupler::updatehelfBaseTempAndProvide()");
+  }
+
   return 0;
 }
 
@@ -617,8 +700,12 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
-  // ignors everything from IceModel except ice thickness; also ignors t_years and dt_years
   PetscErrorCode ierr;
+
+  // call base class to update seaLevel (if -dSLforcing); pvsbt ignored
+  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, pvsbt); CHKERRQ(ierr);
+
+  // ignors everything from IceModel except ice thickness; also ignors t_years and dt_years
   const PetscScalar icerho       = 910.0,   // kg/m^3   ice shelf mean density
                     oceanrho     = 1028.0,  // kg/m^3   sea water mean density
                     beta_CC_grad = 8.66e-4, // K/m      Clausius-Clapeyron gradient
@@ -649,6 +736,9 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
+
+  // call base class to update seaLevel (if -dSLforcing); pvsbmf ignored
+  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, pvsbmf); CHKERRQ(ierr);
 
   const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity
                     icerho        = 910.0,    // kg m-3   ice shelf mean density

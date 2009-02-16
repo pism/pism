@@ -28,7 +28,7 @@
 #include "pccoupler.hh"
 
 
-PISMPDDCoupler::PISMPDDCoupler() : PISMAtmosphereCoupler() {
+PISMPDDCoupler::PISMPDDCoupler() : PISMMonthlyTempsAtmosCoupler() {
 
   // normally use Calov-Greve expectation integral; if this is non-NULL
   //   then using actual random numbers
@@ -46,29 +46,23 @@ PISMPDDCoupler::PISMPDDCoupler() : PISMAtmosphereCoupler() {
      // is result of EISMINT-Greenland formulas for h=1000.0 m and lat=75.0 deg N
   pddSummerPeakDay = 243.0;  // Julian day; = August 1st
   
-  usingMonthlyTemps = PETSC_FALSE; // -pdd_monthly_temps option required to use them
-  
-  initialize_vannmeansurftemp_FromFile = true;
-  initialize_vsurfaccum_FromFile = true;
+  initialize_vsurftemp_FromFile = true;   // normally we expect this in the file
+  initialize_vsnowaccum_FromFile = true;  // ditto
 }
 
 
 PISMPDDCoupler::~PISMPDDCoupler() {
-  vannmeansurftemp.destroy();
-  vsurfaccum.destroy();
+  vsnowaccum.destroy();
   if (pddRandGen != NULL) {
     gsl_rng_free(pddRandGen);
     pddRandGen = NULL;
-  }
-  for (PetscInt j = 0; j < 12; ++j) {
-    vmonthlysurftemp[j].destroy();
   }
 }
 
 
 //! Check if a positive degree day (PDD) model is desired.
 /*!
-This procedure determines if any PDD relates options are set.
+This procedure determines if any of ten PDD related options are set.
 If so, returns PETSC_TRUE in userWantsPDD, otherwise PETSC_FALSE.
  */
 PetscErrorCode PISMPDDCoupler::userOptionsChoosePDD(PetscTruth &userWantsPDD) {
@@ -76,10 +70,15 @@ PetscErrorCode PISMPDDCoupler::userOptionsChoosePDD(PetscTruth &userWantsPDD) {
   const int nNames = 10;
   const char pddOptNames[nNames][30] = {
            "-pdd",
-           "-pdd_factor_snow", "-pdd_factor_ice", "-pdd_refreeze", 
-           "-pdd_rand", "-pdd_rand_repeatable", "-pdd_std_dev",
-           "-pdd_summer_warming", "-pdd_summer_peak_day",
-           "-pdd_monthly_temps"};
+           "-pdd_factor_snow",
+           "-pdd_factor_ice",
+           "-pdd_refreeze", 
+           "-pdd_rand",
+           "-pdd_rand_repeatable",
+           "-pdd_std_dev",
+           "-pdd_summer_warming",
+           "-pdd_summer_peak_day",
+           "-pdd_monthly_temps"        };
 
   for (int k=0; k<nNames; k++) {
     PetscTruth check;
@@ -97,7 +96,8 @@ PetscErrorCode PISMPDDCoupler::userOptionsChoosePDD(PetscTruth &userWantsPDD) {
 PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
 
-  //ierr = verbPrintf(1,g->com,"entering PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  printIfDebug("entering PISMPDDCoupler::initFromOptions()\n");
+  ierr = PISMMonthlyTempsAtmosCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
 
   // check options; we assume the PDD is desired; only overriding defaults here
   // check if truly random PDD is desired, and, if so, initialize it
@@ -131,77 +131,78 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   // read accumulation and surface temperature
   char  filename[PETSC_MAX_PATH_LEN];
   LocalInterpCtx* lic;
-
-  ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr); // sets grid and metadata
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates lic
 
-  // mean annual surface temperature (no yearly cycle info here; artm=Ts(t) while anavartm is yearly av)
-  ierr = vannmeansurftemp.create(*g, "annavartm", false); CHKERRQ(ierr);
-  ierr = vannmeansurftemp.set_attrs(
+  // mean annual surface temperature, the upper boundary condition for conservation of energy
+  // vsurftemp.create() was already called by PISMAtmosphereCoupler::initFromOptions()
+  ierr = vsurftemp.set_attrs(
             "climate_state",
-            "annual mean temperature at ice surface but below firn",
-            "K", NULL); CHKERRQ(ierr);
-  ierr = vannmeansurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
+            "mean annual temperature at ice surface but below firn", // slight change of long_name, for emphasis
+            "K",
+            NULL); CHKERRQ(ierr);  // no CF standard_name ??
+  ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
 
-  // mean annual ice equivalent accumulation rate
-  ierr = vsurfaccum.create(*g, "accum", false); CHKERRQ(ierr);
-  ierr = vsurfaccum.set_attrs(
+  // mean annual ice equivalent snow accumulation rate (before melt, and not including rain)
+  ierr = vsnowaccum.create(*g, "snowaccum", false); CHKERRQ(ierr);
+  ierr = vsnowaccum.set_attrs(
             "climate_state", 
-            "mean annual ice equivalent accumulation rate",
+            "mean annual ice-equivalent snow accumulation rate",
 	    "m s-1", 
-	    NULL);  // no CF standard_name
+	    NULL);  // no CF standard_name ??
 	    CHKERRQ(ierr);
-  ierr = vsurfaccum.set_glaciological_units("m year-1");
-  vsurfaccum.write_in_glaciological_units = true;
-  ierr = vsurfaccum.set(0.0); CHKERRQ(ierr);  // merely a default value
+  ierr = vsnowaccum.set_glaciological_units("m year-1");
+  vsnowaccum.write_in_glaciological_units = true;
+  ierr = vsnowaccum.set(0.0); CHKERRQ(ierr);  // merely a default value
 
-  // now read two fields
+  // now read two fields, 'artm', 'snowaccum', unless told not to
   ierr = verbPrintf(2, g->com, 
      "initializing positive degree-day model (PDD) for atmospheric climate ... \n"); CHKERRQ(ierr); 
-  if (initialize_vannmeansurftemp_FromFile) {
+  if (initialize_vsurftemp_FromFile) {
     ierr = verbPrintf(2, g->com, 
-      "  reading mean annual surface temperature 'annavartm' from %s ... \n",
+      "  reading mean annual temperature at ice surface (but below firn processes) 'artm' from %s ... \n",
       filename); CHKERRQ(ierr); 
-    ierr = vannmeansurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+    ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
   } else {
     ierr = verbPrintf(2, g->com, 
-      "  not reading mean annual surface temperature 'annavartm' from a file; formulas must fill it ... \n");
-      CHKERRQ(ierr); 
-  }
-  if (initialize_vsurfaccum_FromFile) {
-    ierr = verbPrintf(2, g->com, 
-      "  reading ice surface accumulation rate 'accum' from %s ... \n",
-      filename); CHKERRQ(ierr); 
-    ierr = vsurfaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
-  } else {
-    ierr = verbPrintf(2, g->com, 
-      "  not reading ice surface accumulation rate 'accum' from a file; formulas must fill it ... \n");
+      "  not reading mean annual temperature at ice surface (but below firn processes) 'artm'\n"
+      "    from a file; formulas must fill it ... \n");
       CHKERRQ(ierr); 
   }
 
-  // initialize time dependent fields to have some values
-  ierr = vsurfmassflux.copy_from(vsurfaccum); CHKERRQ(ierr);
-  ierr = vsurftemp.copy_from(vannmeansurftemp); CHKERRQ(ierr);
+  if (initialize_vsnowaccum_FromFile) {
+    ierr = verbPrintf(2, g->com, 
+      "  reading mean annual ice-equivalent snow accumulation rate 'snowaccum' from %s ... \n",
+      filename); CHKERRQ(ierr); 
+    ierr = vsnowaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+  } else {
+    ierr = verbPrintf(2, g->com, 
+      "  not reading mean annual ice-equivalent snow accumulation rate 'snowaccum' from a file;\n"
+      "    formulas must fill it ... \n");
+      CHKERRQ(ierr); 
+  }
+
+  // initialize time dependent mass flux field to have some values, same as snowaccum
+  ierr = vsurfmassflux.copy_from(vsnowaccum); CHKERRQ(ierr);
 
   // check on whether we should read monthly temperatures from file  
   char monthlyTempsFile[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_monthly_temps", 
              monthlyTempsFile, PETSC_MAX_PATH_LEN, &pSet); CHKERRQ(ierr);
   if (pSet == PETSC_TRUE) {
-    usingMonthlyTemps = PETSC_TRUE;
     ierr = verbPrintf(2,grid->com,
        "using PDD based on monthly temperatures; reading from %s ...\n",
        monthlyTempsFile); CHKERRQ(ierr);
-    ierr = readMonthlyTemps(monthlyTempsFile); CHKERRQ(ierr);
+    readMonthlyTempsFromFile = true;
+    ierr = setMonthlyTempsFilename(monthlyTempsFile); CHKERRQ(ierr);
+    ierr = readMonthlyTemps(); CHKERRQ(ierr); // puts month-by-month "reading ..." to stdout
   } else {
-    usingMonthlyTemps = PETSC_FALSE;
     ierr = verbPrintf(2,grid->com,
        "using PDD based on standard yearly surface temp cycle ...\n"); CHKERRQ(ierr);
+    readMonthlyTempsFromFile = false;
   }
   
   delete lic;
-
-  //ierr = verbPrintf(1,g->com,"ending PISMPDDCoupler::initFromOptions()\n"); CHKERRQ(ierr);
+  printIfDebug("ending PISMPDDCoupler::initFromOptions()\n");
 
   return 0;
 }
@@ -210,56 +211,9 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
 PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
   PetscErrorCode ierr;
   
-  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
-  
-  ierr = vannmeansurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = vsnowaccum.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  ierr = vsurfaccum.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  if (usingMonthlyTemps == PETSC_TRUE) {
-    for (PetscInt j = 0; j < 12; ++j) {
-      if (vmonthlysurftemp[j].was_created()) {
-        ierr = vmonthlysurftemp[j].write(filename, NC_FLOAT); CHKERRQ(ierr);
-      }
-    }
-  }
-
-  return 0;
-}
-
-
-//! If option \c -pdd_monthly_temps given, reads monthly temperatures \c temp_monN, for N=0,..,11, from file.  Temperatures must be in K.
-PetscErrorCode PISMPDDCoupler::readMonthlyTemps(const char *filename) {
-  PetscErrorCode ierr;
-  
-  // find file and set up info so regrid works
-  bool file_exists = false;
-  NCTool nc(grid);
-  grid_info gi;
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid->com,
-       "PISMPDDCoupler ERROR: Can't open file '%s' for reading monthly temps.\n",
-       filename); CHKERRQ(ierr);
-    PetscEnd();
-  }
-  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-  LocalInterpCtx lic(gi, NULL, NULL, *grid); // 2D only; 
-
-  // for each month, create an IceModelVec2 and assign attributes
-  for (PetscInt j = 0; j < 12; ++j) {
-    char monthlyTempName[20], mTstring[100];
-    snprintf(monthlyTempName, 20, "temp_mon%d", j);
-    ierr = verbPrintf(2, grid->com, 
-       "  reading month %d surface temperature '%s' ...\n", j, monthlyTempName); CHKERRQ(ierr); 
-    ierr = vmonthlysurftemp[j].create(*grid, monthlyTempName, false); // global; no ghosts
-       CHKERRQ(ierr);
-    snprintf(mTstring, 100, 
-             "temperature at ice surface but below firn during month %d of {0,..,11}", j);
-    ierr = vmonthlysurftemp[j].set_attrs("climate_state",mTstring,"K",NULL); CHKERRQ(ierr);
-    ierr = vmonthlysurftemp[j].regrid(filename, lic, true); CHKERRQ(ierr); // it *is* critical
-  }
   return 0;
 }
 
@@ -303,37 +257,6 @@ PetscScalar PISMPDDCoupler::getTemperatureFromYearlyCycle(
        const PetscScalar day) {
   const PetscScalar  rad_per_day = 2.0 * PETSC_PI / 365.24;
   return Tma + summer_warming * cos(rad_per_day * (day - pddSummerPeakDay));
-}
-
-
-/*!
-Returns indices in {0,..,11} for the current and next months.  For the purpose
-of indexing the monthly surface temperature data.
- */
-PetscErrorCode PISMPDDCoupler::getMonthIndicesFromDay(const PetscScalar day, 
-       PetscInt &curr, PetscInt &next) {
-  PetscScalar month = 12.0 * day / 365.24;
-  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
-  curr = (int) floor(month);
-  curr = curr % 12;
-  next = curr+1;
-  if (next == 12)   next = 0;
-  return 0;
-}
-
-
-/*!
-Linearly interpolates between stored monthly temps.
- */
-PetscScalar PISMPDDCoupler::getTemperatureFromMonthlyData(
-       PetscScalar **currMonthSurfTemps, PetscScalar **nextMonthSurfTemps,
-       const PetscInt i, const PetscInt j, const PetscScalar day) {
-  PetscScalar month = 12.0 * day / 365.24;
-  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
-  PetscInt  curr = (int) floor(month);
-  curr = curr % 12;
-  return currMonthSurfTemps[i][j] 
-       + (month - (PetscScalar)curr) * nextMonthSurfTemps[i][j];
 }
 
 
@@ -413,7 +336,7 @@ double PISMPDDCoupler::CalovGreveIntegrand(const double Tac) {
 }
 
 
-//! Compute the net surface mass balance from the PDD model and a stored map of snow rate. 
+//! Compute the net surface mass balance from the PDD model, a surface temperature model, and a stored map of snow accumulation rate. 
 /*!
 PISM implements two positive degree day models for computing surface mass balance 
 from a stored map of snow fall rate.  There is a deterministic default method and an 
@@ -450,24 +373,27 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvsmf) {
-
   PetscErrorCode ierr;
+  
+  ierr = PISMMonthlyTempsAtmosCoupler::updateSurfMassFluxAndProvide(
+     t_years, dt_years, iceInfoNeeded, pvsmf); CHKERRQ(ierr);
+ 
   IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
 
   PetscScalar **smflux, **amstemp, **saccum, **h, **lat, **smonthtemp[12];
   ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
   ierr = info->lat->get_array(lat); CHKERRQ(ierr);
 
-  ierr =    vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
-  ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
-  ierr =       vsurfaccum.get_array(saccum);  CHKERRQ(ierr);
+  ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
+  ierr =     vsurftemp.get_array(amstemp); CHKERRQ(ierr);
+  ierr =    vsnowaccum.get_array(saccum);  CHKERRQ(ierr);
 
-  if (usingMonthlyTemps == PETSC_TRUE) {
+  if (readMonthlyTempsFromFile) {
     for (PetscInt j = 0; j < 12; ++j) {
-      if (vmonthlysurftemp[j].was_created()) {
-        ierr = vmonthlysurftemp[j].get_array(smonthtemp[j]); CHKERRQ(ierr);
+      if (vmonthlytemp[j].was_created()) {
+        ierr = vmonthlytemp[j].get_array(smonthtemp[j]); CHKERRQ(ierr);
       } else {
-        SETERRQ1(1,"vmonthlysurftemp[%d] not created",j);
+        SETERRQ1(1,"vmonthlytemp[%d] not created",j);
       }
     }
   }
@@ -502,7 +428,7 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
         // compute # of pos deg day:
         for (PetscInt day = intstartday; day < intstartday + num_days; day++){ 
           PetscScalar mytemp;
-          if (usingMonthlyTemps == PETSC_TRUE) {
+          if (readMonthlyTempsFromFile) {
             PetscInt currMonthInd, nextMonthInd;
             ierr = getMonthIndicesFromDay((PetscScalar) day, currMonthInd, nextMonthInd);
                        CHKERRQ(ierr);
@@ -529,7 +455,7 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
           if ( (m == 0) || (m == (CGsumcount - 1)) )  coeff = 1.0;
           const PetscScalar day = startday + m * CGsumstepdays;
           PetscScalar temp;
-          if (usingMonthlyTemps == PETSC_TRUE) {
+          if (readMonthlyTempsFromFile) {
             PetscInt currMonthInd, nextMonthInd;
             ierr = getMonthIndicesFromDay(day, currMonthInd, nextMonthInd); CHKERRQ(ierr);
             temp = getTemperatureFromMonthlyData(
@@ -562,12 +488,12 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
     }
   }
 
-  if (usingMonthlyTemps == PETSC_TRUE) {
+  if (readMonthlyTempsFromFile) {
     for (PetscInt j = 0; j < 12; ++j) {
-      if (vmonthlysurftemp[j].was_created()) {
-        ierr = vmonthlysurftemp[j].end_access(); CHKERRQ(ierr);
+      if (vmonthlytemp[j].was_created()) {
+        ierr = vmonthlytemp[j].end_access(); CHKERRQ(ierr);
       } else {
-        SETERRQ1(2,"vmonthlysurftemp[%d] not created",j);
+        SETERRQ1(2,"vmonthlytemp[%d] not created",j);
       }
     }
   }
@@ -575,82 +501,12 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
   ierr = info->surfelev->end_access(); CHKERRQ(ierr);
   ierr = info->lat->end_access(); CHKERRQ(ierr);
 
-  ierr =    vsurfmassflux.end_access(); CHKERRQ(ierr);
-  ierr = vannmeansurftemp.end_access(); CHKERRQ(ierr);
-  ierr =       vsurfaccum.end_access(); CHKERRQ(ierr);
+  ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
+  ierr =     vsurftemp.end_access(); CHKERRQ(ierr);
+  ierr =    vsnowaccum.end_access(); CHKERRQ(ierr);
   
   // now that it is up to date, return pointer to it
   pvsmf = &vsurfmassflux;
-  return 0;
-}
-
-
-PetscErrorCode PISMPDDCoupler::updateSurfTempAndProvide(
-             const PetscScalar t_years, const PetscScalar dt_years,
-             void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
-             IceModelVec2* &pvst) {
-
-  PetscErrorCode ierr;
-
-  IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
-
-  // need surface temperature representative of period [t_years,t_years+dt_years]
-  //   get this by using midpoint of this interval
-  const PetscScalar mid_years = t_years + (dt_years/2.0),
-                    mid_day = 365.24 * (mid_years - floor(mid_years));
-  PetscScalar **stemp;
-
-  ierr = vsurftemp.get_array(stemp); CHKERRQ(ierr);
-
-  if (usingMonthlyTemps == PETSC_TRUE) {
-    PetscScalar **smonthtemp[12];
-  
-    for (PetscInt j = 0; j < 12; ++j) {
-      if (vmonthlysurftemp[j].was_created()) {
-        ierr = vmonthlysurftemp[j].get_array(smonthtemp[j]); CHKERRQ(ierr);
-      } else {
-        SETERRQ1(1,"vmonthlysurftemp[%d] not created",j);
-      }
-    }
-  
-    PetscInt currMonthInd, nextMonthInd;
-    ierr = getMonthIndicesFromDay(mid_day, currMonthInd, nextMonthInd); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        stemp[i][j] = getTemperatureFromMonthlyData(
-                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], i, j, mid_day);
-      }
-    }
-
-    for (PetscInt j = 0; j < 12; ++j) {
-      if (vmonthlysurftemp[j].was_created()) {
-        ierr = vmonthlysurftemp[j].end_access(); CHKERRQ(ierr);
-      } else {
-        SETERRQ1(2,"vmonthlysurftemp[%d] not created",j);
-      }
-    }
-  } else {
-    // no monthly temps; usual case where surface temperature comes from stored
-    //   annual mean (vannmeansurftemp) with additional yearly cycle controlled
-    //   by summer_warming
-    PetscScalar **h, **lat, **amstemp;
-    ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
-    ierr = info->lat->get_array(lat); CHKERRQ(ierr);
-    ierr = vannmeansurftemp.get_array(amstemp); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],amstemp[i][j]);
-        stemp[i][j] = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], mid_day);
-      }
-    }
-    ierr = info->surfelev->end_access(); CHKERRQ(ierr);
-    ierr = info->lat->end_access(); CHKERRQ(ierr);
-    ierr = vannmeansurftemp.end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = vsurftemp.end_access(); CHKERRQ(ierr);
-
-  pvst = &vsurftemp;
   return 0;
 }
 

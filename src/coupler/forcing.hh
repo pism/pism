@@ -31,16 +31,24 @@ For now, when using pgrn, for each of the -dTforcing and -dSLforcing options, a 
 #ifndef __forcing_hh
 #define __forcing_hh
 
+
 // codes for interpolation
 #define DATA1D_CONST_PIECE_FWD_INTERP  0
 #define DATA1D_CONST_PIECE_BCK_INTERP  1
 #define DATA1D_LINEAR_INTERP           2
 
 //! Class for reading and storing one-dimensional data on each processor.
-/*! This class is a general facility for reading one-dimensional data from a
-    NetCDF file and putting a copy of it on each processor, and for accessing it
-    either by integer index or by giving the value of the independent variable and
-    interpolating.
+/*!
+This class is a general facility for reading one-dimensional data from a NetCDF file
+and putting a copy of it on each processor, and for accessing it either by integer index
+or by giving the value of the independent variable and interpolating.
+
+There are two vectors of numbers, \c vindep is the independent variable (frequently
+the time axis) and \c vdata is the dependent variable.  Thus if t=\c vindep and z=\c vdata
+then z=z(t).
+
+The independent variable \c vindep is assumed to be in increasing order when the method
+getInterpolatedDataValue() gets called, because that method does binary search.
  */
 class Data1D {
 public:
@@ -65,11 +73,12 @@ protected:
   PetscInt     interpCode;
   MPI_Comm     com;
   PetscMPIInt  rank;
-  
+ 
+  PetscInt     binarySearch(double *indep, const PetscInt length, const double myval);
+ 
 private:
   PetscErrorCode getInterpolationCode(int ncid, int vid, int *code);
   PetscErrorCode ncVarBcastVec(int ncid, int vid, Vec *vecg);
-  PetscTruth     vecsAllocated;
 };
 
 
@@ -77,17 +86,28 @@ private:
 #define PCF_DELTA_T          0
 #define PCF_DELTA_SEA_LEVEL  1
 
-
 //! Class for reading and storing climate data, like ice or seabed core data, from NetCDF file, and providing it to a PISMClimateCoupler.
 /*! 
 This derived class of Data1D maintains an additional index into the time series data
 based on a current year.  The method updateFromClimateForcingData() returns the value of
 the climate variable.  Usually this value is a change from present.
+
+The vindep member of Data1D is interpreted as a time in years.
+
+FIXME:  THIS COMMENT IS ACCURATE BUT THE CHOICES ARE SILLY:
+The semantics of the independent variable vindep are that vindep must be increasing for the calls
+to the Data1D methods to work.  But it is assumed that the read NetCDF data has positive ages
+(i.e. years before present).  So vindep is the t variable of the NetCDF file, *but multiplied
+by -1.0*.  Thus vindep is a bunch of negative real numbers in increasing order, increasing
+as real numbers.  For example, in the grip case,
+   indep[0] = -249900.0, indep[1] = -249850.0, indep[2] = -249800.0, ...
+        indep[N-3] = -100.0, indep[N-2] = -50, indep[N-1] = -0.0
+while in the NetCDF file we see
+   t = 249900, 249850, 249800, ..., 100, 50, 0
  */
 class PISMClimateForcing : public Data1D {
 public:
   PISMClimateForcing();
-  ~PISMClimateForcing();
   
   PetscErrorCode readClimateForcingData(MPI_Comm mycom, PetscMPIInt myrank,
                                      int ncid, PetscScalar curr_year, PetscInt datatype);
@@ -95,8 +115,6 @@ public:
 
 protected:
   PetscInt     index;
-  Vec          vtimeinyears;
-  PetscTruth   forcingActive;
 
 private:
   PetscErrorCode initIndexClimateForcingData(PetscScalar curr_year);

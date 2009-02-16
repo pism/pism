@@ -99,10 +99,6 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   
   // note: user value for -e, and -gk, and so on, will override settings above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
-  
-  if (doOceanKill == PETSC_TRUE) {
-    oceanPCC->reportInitializationToStdOut = false;
-  }
     
   return 0;
 }
@@ -121,7 +117,11 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
 
   pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
   if (haveSurfaceTemp == PETSC_FALSE) { // default case: EISMINT-Greenland provides formulas
-    pddPCC->initialize_vannmeansurftemp_FromFile = false;
+    pddPCC->initialize_vsurftemp_FromFile = false;
+  }
+
+  if (doOceanKill == PETSC_TRUE) {
+    oceanPCC->reportInitializationToStdOut = false;
   }
   
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);  
@@ -213,7 +213,8 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
     } else {
       temp_increase = 3.514;
     }
-    ierr = pddPCC->vannmeansurftemp.shift(temp_increase); CHKERRQ(ierr);
+    if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL"); }
+    ierr = pddPCC->vsurftemp.shift(temp_increase); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -237,7 +238,7 @@ PetscErrorCode IceGRNModel::updateTs() {
      CHKERRQ(ierr);
 
   // PDD will use vannmeansurftemp to determine yearly cycle from parameters
-  ierr = pddPCC->vannmeansurftemp.get_array(Ts); CHKERRQ(ierr);
+  ierr = pddPCC->vsurftemp.get_array(Ts); CHKERRQ(ierr);
   ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -245,30 +246,27 @@ PetscErrorCode IceGRNModel::updateTs() {
       Ts[i][j] = calculateMeanAnnual(h[i][j], lat[i][j]);
     }
   }
-  ierr = pddPCC->vannmeansurftemp.end_access(); CHKERRQ(ierr);
+  ierr = pddPCC->vsurftemp.end_access(); CHKERRQ(ierr);
   ierr = vLatitude.end_access(); CHKERRQ(ierr);
   ierr =        vh.end_access(); CHKERRQ(ierr);
 
 //FIXME: additional kludge to deal with hosed initialization sequence
   // also set pddPCC->vsurftemp because it is used at initialization
-  ierr = pddPCC->vsurftemp.copy_from(pddPCC->vannmeansurftemp); CHKERRQ(ierr);
 
   PetscScalar **foo;
-  ierr = pddPCC->vannmeansurftemp.get_array(Ts); CHKERRQ(ierr);
+  ierr = pddPCC->vsurftemp.get_array(Ts); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(foo); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       foo[i][j] = Ts[i][j];
     }
   }
-  ierr = pddPCC->vannmeansurftemp.end_access(); CHKERRQ(ierr);
+  ierr = pddPCC->vsurftemp.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].beginGhostComm(); CHKERRQ(ierr);
   ierr = vWork2d[0].endGhostComm(); CHKERRQ(ierr);
 //FIXME: end kludge  
 
-//FIXME: make sure this is correcly handled by PISMEISGREENPDDCoupler:
-//    TsOffset = 0.0;  // see IceModel::updateForcing()
   return 0;
 }
 
