@@ -1,0 +1,15 @@
+
+1) To run all PISM tests, do
+
+$ ./run_tests.sh pism
+
+or simply 
+
+$ make
+
+The summary will be in the file "pism.txt".
+
+2) To run an individual PISM test, (test 1, for example) do
+
+$ cd pism; ./test_01.sh
+

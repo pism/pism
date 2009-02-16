@@ -77,6 +77,7 @@ class LocalInterpCtx {
 public:
   double fstart[3], delta[3];
   int start[5], count[5];    // Indices in netCDF file.
+  double *a_raw;	     //!< temporary buffer (only used on processor zero)
   double *a;		     //!< temporary buffer
   int a_len;		     //!< the size of the buffer
   int nz,		     //!< number of z-levels
@@ -84,6 +85,7 @@ public:
   double *zlevs, *zblevs;
   bool regrid_2d_only, no_regrid_bedrock;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
+  PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
 
 public:
   LocalInterpCtx(grid_info g,

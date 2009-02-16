@@ -99,6 +99,10 @@ public:
 				   bool useMaskInterp);
 
 private:
+  PetscErrorCode compute_start_and_count(const int varid, int *pism_start, int *pism_count,
+					 size_t* &nc_start, size_t* &nc_count);
+  PetscErrorCode transpose(int varid, GridType dim_flag, int *count,
+			   double* in, double* out);
   bool check_dimension(const char dim[], const int len);
   bool check_dimensions();
   MaskInterp  *myMaskInterp;

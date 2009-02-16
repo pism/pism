@@ -536,31 +536,12 @@ computing \f$F(x,y,z)\f$.
 PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, LocalInterpCtx &lic,
                                          DA da, Vec g, bool useMaskInterp) {
   PetscErrorCode ierr;
-  const int N = 4, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
+  const int N = 5, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
   const int start_tag = 1; // MPI tag for the start array
   const int count_tag = 2; // MPI tag for the count array
   const int data_tag  = 3; // MPI tag for the data block
   MPI_Status mpi_stat;
-  int stat, dims = 0;
-  int start[N], count[N];	// enough space for t, x, y, z (or zb)
-  bool t_exists;
- 
-  switch (dim_flag) {
-    case GRID_2D:
-      dims = 3; // time, x, y
-      break;
-    case GRID_3D:
-      dims = 4; // time, x, y, z
-      if (lic.regrid_2d_only) {
-        SETERRQ(2, "regrid_2d_only is set, so dim_flag == GRID_3D is not allowed");
-      }
-      break;
-    case GRID_3D_BEDROCK:
-      dims = 4; // time, x, y, zb
-      if (lic.no_regrid_bedrock) {
-        SETERRQ(2, "no_regrid_bedrock is set, so dim_flag == GRID_3D_BEDROCK is not allowed");
-      }
-  }
+  int stat, start[N], count[N];	// enough space for t, x, y, z, zb
 
   // make local copies of lic.start and lic.count
   for (int i = 0; i < N; i++) {
@@ -568,25 +549,27 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
     count[i] = lic.count[i];
   }
 
-  // At this point, start and count are set up correctly for ice 3-D quantities.  In order
-  // to avoid duplicating lots of code below, we play some tricks here.
-  if (dim_flag == GRID_2D) { // 2-D quantity
-    // Treat it as a 3-D quantity with extent 1 in the z-direction.  The netCDF
-    // read actually will not use this information (it is passed in, but it
-    // won't index these entries in the array, because it knows how many
-    // dimensions it there are), but count[3] will be used when node 0 computes how
-    // much data it has to send back.  start[3] should never be used in this case.
-    start[Z] = 0;
+  // This ensures that we don't read too many values (i.e. if varid refers to a
+  // 3D variable and 2D-only regridding is requested) and that the size of the
+  // buffer (a_len) is calculated correctly.
+  switch (dim_flag) {
+  case GRID_2D:
     count[Z] = 1;
-  } else if (dim_flag == GRID_3D_BEDROCK) { // Bedrock quantity
-    // Just fill in the appropriate values
-    start[Z] = lic.start[ZB];
-    count[Z] = lic.count[ZB];
+    count[ZB] = 1;
+    break;
+  case GRID_3D:
+    if (lic.regrid_2d_only) {
+      SETERRQ(2, "regrid_2d_only is set, so dim_flag == GRID_3D is not allowed");
+    }
+    count[ZB] = 1;
+    break;
+  case GRID_3D_BEDROCK:
+    if (lic.no_regrid_bedrock) {
+      SETERRQ(2, "no_regrid_bedrock is set, so dim_flag == GRID_3D_BEDROCK is not allowed");
+    }
+    count[Z] = 1;
+    break;
   }
-
-  // The next line appears outside the if (grid->rank == 0) because it calls
-  // MPI_Bcast.
-  ierr = find_dimension("t", NULL, t_exists); CHKERRQ(ierr);
 
   if (grid->rank == 0) {
 
@@ -611,45 +594,24 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
 	MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
       }
 
-      // It is not safe to cast memory.  In particular on amd64 int and size_t are
-      // different sizes.  Since netCDF uses size_t for the offsets, we need to here too.
-      size_t start_nc[N], count_nc[N];
+      // Assemble nc_start and nc_count that are used below in the call to
+      // nc_get_vara_double(...)
+      size_t *nc_start, *nc_count;
+      ierr = compute_start_and_count(varid, start, count, nc_start, nc_count); CHKERRQ(ierr);
 
-      for (int i = 0; i < N; i++) {
-	start_nc[i] = (size_t) start[i];
-	count_nc[i] = (size_t) count[i];
-      }
+      stat = nc_get_vara_double(ncid, varid, nc_start, nc_count, lic.a_raw);
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-      // Actually read the block into the buffer.
-      if (t_exists) {
-	stat = nc_get_vara_double(ncid, varid, start_nc, count_nc, lic.a);
-	CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      } else {
-	// This ignores 't' values of start and count:
-	stat = nc_get_vara_double(ncid, varid, &start_nc[1], &count_nc[1], lic.a);
-	CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      }
+      delete[] nc_start;
+      delete[] nc_count;
 
-      /*{
-        printf("ncid, varid = %d %d\n", ncid, varid);
-        printf("a[] ni {%f %f %f %f}\n", lic.a[50], lic.a[150], lic.a[250], lic.a[350]);
-
-        const int blen = 9;
-        float *buf = (float *)malloc(blen * sizeof(float));
-        sc_nc[5] = sc_nc[6] = 3; sc_nc[7] = 1;
-        stat = nc_get_vara_float(ncid, varid, &sc_nc[0], &sc_nc[4], buf);
-        CHKERRQ(check_err(stat,__LINE__,__FILE__));
-        printf("buf = ");
-        for (int i = 0; i < blen; i++) printf(" %7.2e ", buf[i]);
-        printf("\n");
-        free(buf);
-      }*/
+      ierr = transpose(varid, dim_flag, count, lic.a_raw, lic.a); CHKERRQ(ierr);
 
       // Find out how big the buffer actually is.  Remember that node 0 has a
       // buffer that will only be filled by if the process it is serving has a
       // maximal sized local domain.
-      int a_len = 1;
-      for (int i = 0; i < dims; i++) a_len *= count[i];
+      // Also note that at least one of count[Z] and count[ZB] is 1.
+      int a_len = count[X] * count[Y] * count[Z] * count[ZB];
 
       // send the filled buffer
       if (proc != 0) {
@@ -669,14 +631,18 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
   //ierr = lic.printArray(grid.com); CHKERRQ(ierr);
   
   // indexing parameters
-  const int ycount = lic.count[Y];
   int myMz = 1, zcount = 1; // indexing trick so that we don't have to duplicate code for the 2-D case.
-  if (dim_flag == GRID_3D) {
+  switch (dim_flag) {
+  case GRID_3D:
     myMz = grid->Mz;
-    zcount = lic.count[Z];
-  } else if (dim_flag == GRID_3D_BEDROCK) {
+    zcount = count[Z];
+    break;
+  case GRID_3D_BEDROCK:
     myMz = grid->Mbz;
-    zcount = lic.count[ZB];
+    zcount = count[ZB];
+    break;
+  default:
+    break;
   }
 
   // We'll work with the raw storage here so that the array we are filling is
@@ -743,14 +709,14 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
           // to not handle all the cases explicitly.
           // 
           // (These comments do not apply to the z case.)
-          const int mmm = ((int)floor(ic) * ycount + (int)floor(jc)) * zcount + kc;
-          const int mmp = ((int)floor(ic) * ycount + (int)floor(jc)) * zcount + kc + 1;
-          const int mpm = ((int)floor(ic) * ycount + (int)ceil(jc)) * zcount + kc;
-          const int mpp = ((int)floor(ic) * ycount + (int)ceil(jc)) * zcount + kc + 1;
-          const int pmm = ((int)ceil(ic) * ycount + (int)floor(jc)) * zcount + kc;
-          const int pmp = ((int)ceil(ic) * ycount + (int)floor(jc)) * zcount + kc + 1;
-          const int ppm = ((int)ceil(ic) * ycount + (int)ceil(jc)) * zcount + kc;
-          const int ppp = ((int)ceil(ic) * ycount + (int)ceil(jc)) * zcount + kc + 1;
+          const int mmm = ((int)floor(ic) * count[Y] + (int)floor(jc)) * zcount + kc;
+          const int mmp = ((int)floor(ic) * count[Y] + (int)floor(jc)) * zcount + kc + 1;
+          const int mpm = ((int)floor(ic) * count[Y] + (int)ceil(jc)) * zcount + kc;
+          const int mpp = ((int)floor(ic) * count[Y] + (int)ceil(jc)) * zcount + kc + 1;
+          const int pmm = ((int)ceil(ic) * count[Y] + (int)floor(jc)) * zcount + kc;
+          const int pmp = ((int)ceil(ic) * count[Y] + (int)floor(jc)) * zcount + kc + 1;
+          const int ppm = ((int)ceil(ic) * count[Y] + (int)ceil(jc)) * zcount + kc;
+          const int ppp = ((int)ceil(ic) * count[Y] + (int)ceil(jc)) * zcount + kc + 1;
 
           // We know how to index the neighbors, but we don't yet know where the
           // point lies within this box.  This is represented by kk in [0,1].
@@ -783,10 +749,10 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
           a_pp = (double)(lic.a[ppm]) * (1.0 - kk) + (double)(lic.a[ppp]) * kk;
         } else {
           // we don't need to interpolate vertically for the 2-D case
-          a_mm = (double)(lic.a[(int)floor(ic) * ycount + (int)floor(jc)]);
-          a_mp = (double)(lic.a[(int)floor(ic) * ycount + (int)ceil(jc)]);
-          a_pm = (double)(lic.a[(int)ceil(ic) * ycount + (int)floor(jc)]);
-          a_pp = (double)(lic.a[(int)ceil(ic) * ycount + (int)ceil(jc)]);
+          a_mm = (double)(lic.a[(int)floor(ic) * count[Y] + (int)floor(jc)]);
+          a_mp = (double)(lic.a[(int)floor(ic) * count[Y] + (int)ceil(jc)]);
+          a_pm = (double)(lic.a[(int)ceil(ic) * count[Y] + (int)floor(jc)]);
+          a_pp = (double)(lic.a[(int)ceil(ic) * count[Y] + (int)ceil(jc)]);
         }
 
         const double jj = jc - floor(jc);
@@ -984,8 +950,8 @@ bool NCTool::check_dimensions() {
   bool t, x, y, z, zb;
 
   t  = check_dimension("t", -1); // length does not matter
-  x  = check_dimension("x", grid->Mx);
-  y  = check_dimension("y", grid->My);
+  x  = check_dimension("x", grid->Mx); // NB!
+  y  = check_dimension("y", grid->My); // NB!
   z  = check_dimension("z", grid->Mz);
   zb = check_dimension("zb", grid->Mbz);
   
@@ -1352,6 +1318,188 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
     ierr = MPI_Bcast(result, len, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
   } else {
     return 1;
+  }
+
+  return 0;
+}
+
+//! Assembles start and count arrays for a particular variable.
+/*!
+  Does nothing on processors other than zero.
+
+  Arrays \c start and \c count have to have length 5, to be able to hold
+  values for t,x,y,z,zb (in this order).
+
+  Arrays nc_start and nc_count will be allocated *by* this function and have to
+  be freed by the user.
+
+  Also note that here x and y have PISM (internal) meaning.
+  This is one of the places where the "fundamental transpose" is hidden.
+ */
+PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int *count,
+					       size_t* &nc_start, size_t* &nc_count) {
+  int stat, ndims;
+  // Indices:
+  const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4;
+  // IDs of interesting dimensions:
+  int t_id, x_id, y_id, z_id, zb_id;
+  // IDs of all the dimensions a variables depends on:
+  int *dimids;
+
+  // Quit if this is not processor zero:
+  if (grid->rank != 0) return 0;
+
+  // Get the number of dimensions a variable depends on:
+  stat = nc_inq_varndims(ncid, varid, &ndims);
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  // Allocate all the arrays we need:
+  nc_start = new size_t[ndims];
+  nc_count = new size_t[ndims];
+  dimids   = new int[ndims];
+
+  // Find all the dimensions we care about:
+  // t
+  stat = nc_inq_dimid(ncid, "t", &t_id);
+  if (stat != NC_NOERR) t_id = -1;
+  // x
+  stat = nc_inq_dimid(ncid, "x", &x_id);
+  if (stat != NC_NOERR) x_id = -1;
+  // y
+  stat = nc_inq_dimid(ncid, "y", &y_id);
+  if (stat != NC_NOERR) y_id = -1;
+  // z
+  stat = nc_inq_dimid(ncid, "z", &z_id);
+  if (stat != NC_NOERR) z_id = -1;
+  // zb
+  stat = nc_inq_dimid(ncid, "zb", &zb_id);
+  if (stat != NC_NOERR) zb_id = -1;
+
+  // Get the list of dimensions a variable depends on:
+  stat = nc_inq_vardimid(ncid, varid, dimids);
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  // Assemble nc_start and nc_count:
+  for (int j = 0; j < ndims; j++) {
+    if (dimids[j] == t_id) {
+      nc_start[j] = start[T];
+      nc_count[j] = count[T];
+    } else if (dimids[j] == x_id) {
+      nc_start[j] = start[X];	// NB!
+      nc_count[j] = count[X];	// NB!
+    } else if (dimids[j] == y_id) {
+      nc_start[j] = start[Y];	// NB!
+      nc_count[j] = count[Y];	// NB!
+    } else if (dimids[j] == z_id) {
+      nc_start[j] = start[Z];
+      nc_count[j] = count[Z];
+    } else if (dimids[j] == zb_id) {
+      nc_start[j] = start[ZB];
+      nc_count[j] = count[ZB];
+    } else {
+      nc_start[j] = 0;
+      nc_count[j] = 1;
+    }
+    fprintf(stderr, "start[%d] = %ld, count[%d] = %ld\n",
+	    j, nc_start[j], j, nc_count[j]); 
+  }
+
+  delete[] dimids;
+  return 0;
+}
+
+PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
+				 double* in, double* out) {
+  const int N = 3;		// process at most 3 dimensions
+  const int X = 1, Y = 2, Z = 3, ZB = 4;
+  int stat, ndims, *dimids;
+  int x_id, y_id, z_id = -1;
+
+  if (grid->rank != 0) return 0;
+
+  stat = nc_inq_varndims(ncid, varid, &ndims);
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  // Find all the dimensions we care about:
+  // x
+  stat = nc_inq_dimid(ncid, "x", &x_id);
+  if (stat != NC_NOERR) x_id = -1;
+
+  // y
+  stat = nc_inq_dimid(ncid, "y", &y_id);
+  if (stat != NC_NOERR) y_id = -1;
+
+  // z or zb, depending on dim_flag
+  if (dim_flag == GRID_3D) {
+    stat = nc_inq_dimid(ncid, "z", &z_id);
+    if (stat != NC_NOERR) z_id = -1;
+  } else if (dim_flag == GRID_3D_BEDROCK) {
+    stat = nc_inq_dimid(ncid, "zb", &z_id);
+    if (stat != NC_NOERR) z_id = -1;
+  }
+
+  // Get the list of dimensions a variable depends on:
+  dimids = new int[ndims];
+  stat = nc_inq_vardimid(ncid, varid, dimids);
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  // Create arrays of IDs of spatial dimensions, in PISM and input orders (they
+  // are used to create the map):
+  int pism_dimids[N] = {x_id, y_id, z_id};
+  int input_dimids[N];
+  int m = 0;
+  for (int j = 0; j < ndims; j++) {
+    if (dimids[j] == x_id || dimids[j] == y_id || dimids[j] == z_id) {
+
+      if (m == 3) {
+	PetscPrintf(grid->com,
+		    "PISM ERROR: Can't process a variable because a spatial dimension appears twice in its specification.\n"
+		    "     Please see ncdump -h <filename> for details.\n");
+	PetscEnd();
+      }
+
+      input_dimids[m] = dimids[j];
+      m++;
+    }
+  }
+  delete[] dimids;
+
+  // Create the array describing the permutation:
+  int Map[N] = {0, 1, 2};
+  for (int j = 0; j < N; j++)
+    for (int k = 0; k < N; k++)
+      if (pism_dimids[j] == input_dimids[k])
+	Map[j] = k;
+
+  for (int j = 0; j < N; j++)
+    fprintf(stderr, "Map[%d] = %d\n", j, Map[j]);
+
+  // Create arrays of counts, in PISM and input orders:
+  int pism_count[N] = {count[X], count[Y], 1};
+  if (dim_flag == GRID_3D)         pism_count[2] = count[Z];
+  if (dim_flag == GRID_3D_BEDROCK) pism_count[2] = count[ZB];
+
+  int input_count[N];
+  for (int j = 0; j < N; j++)
+    input_count[j] = pism_count[Map[j]];
+
+  // Permute dimensions:
+  for (int i = 0; i < pism_count[0]; i++) {
+    for (int j = 0; j < pism_count[1]; j++) {
+      for (int k = 0; k < pism_count[2]; k++) {
+	int A[N] = {i,j,k};
+	// row-column-level-style indices in the input array:
+	int I = A[Map[0]];
+	int J = A[Map[1]];
+	int K = A[Map[2]];
+	// index in the input array:
+	int N = (I * input_count[1] + J) * input_count[2] + K;
+	// index int the PISM array:
+	int M = (i *  pism_count[1] + j) *  pism_count[2] + k;
+	
+	out[M] = in[N];
+      }
+    }
   }
 
   return 0;

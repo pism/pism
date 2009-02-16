@@ -10,9 +10,13 @@ test_03 ()
 {
     cleanup
 
-    pismv -test G -Mx 61 -My 61 -Mz 61 -y 100 -verbose 1 -o foo.nc > /dev/null
-    pismv -test G -i foo.nc -y 0 -o bar.nc > /dev/null
+    # Create a file to start from:
+    run pismv -test G -Mx 61 -My 61 -Mz 61 -y 100 -verbose 1 -o foo.nc
 
+    # Run for 0 years:
+    run pismv -test G -i foo.nc -y 0 -o bar.nc
+
+    # Compare:
     run nccmp.py -t 1e-6 -x -v usurf,dHdt,cbar,cflx,cbase,csurf,wvelsurf,taud,tauc foo.nc bar.nc
     if [ ! $? ];
     then

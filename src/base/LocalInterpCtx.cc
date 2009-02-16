@@ -58,6 +58,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
                dy = grid.dy,
                slop = 1.000001; // allowed slop; grids must subsets within this factor
   com = grid.com;
+  rank = grid.rank;
   regrid_2d_only = false;
   no_regrid_bedrock = false;
 
@@ -134,7 +135,7 @@ not be a performance bottleneck.  It would also be more general.  Of course, for
 a special case like Chebyshev-Gauss-Lobatto we can compute the indices.  A good
 approach would be to have a structure representing the layout in each dimension.
 Then we can have a function which takes a floating point value and returns the
-largest index which is not greater than that valie.
+largest index which is not greater than that value.
 
 Note that \c lic.start and \c lic.count is all that is necessary to pull the correct
 data from the netCDF file, so if we implement this general scheme, the \c fstart
@@ -147,14 +148,22 @@ and \c delta entries in the struct will not be meaningful.
   delta[Y] = (g.y_max - g.y_min) / (g.y_len - 1);
 
   // start[i] = index of the first needed entry in the source netCDF file; start[i] is of type int
-  start[T] = g.t_len - 1;	// We use the latest time
-  start[X] = (int)floor((xbdy_tgt[0] + g.Lx) / delta[X] - 0.5);
-  start[Y] = (int)floor((ybdy_tgt[0] + g.Ly) / delta[Y] - 0.5);
-  // be sure the start[] are not too small:
-  for (int m = 1; m < 3; m++) {
-    if (start[m] < 0)
-      start[m] = 0;
-  }
+  // We use the latest time.
+  start[T] = g.t_len - 1;
+
+  // The following intentionally under-counts the number of times delta[X] fits in the
+  // interval (xbdy_tgt[0], -g.Lx), which is the number of points to skip in
+  // the X-direction, and therefore the index of the first needed point
+  // (because indices start at zero).
+  start[X] = (int)floor((xbdy_tgt[0] - (-g.Lx)) / delta[X] - 0.5);
+
+  // Same in the Y-direction.
+  start[Y] = (int)floor((ybdy_tgt[0] - (-g.Ly)) / delta[Y] - 0.5);
+
+  // be sure the start[X] and start[Y] are not too small:
+  if (start[X] < 0) start[X] = 0;
+  if (start[Y] < 0) start[Y] = 0;
+
   start[Z] = 0;			// start at base of ice
   start[ZB] = 0;		// start at lowest bedrock level
 
@@ -205,6 +214,11 @@ and \c delta entries in the struct will not be meaningful.
   int my_a_len = a_len;
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
   PetscMalloc(a_len * sizeof(double), &(a));
+
+  // This array is used to hold the data in the input storage order. It is only
+  // used on processor zero.
+  if (rank == 0)
+    PetscMalloc(a_len * sizeof(double), &(a_raw));
 }
 
 
@@ -213,6 +227,8 @@ LocalInterpCtx::~LocalInterpCtx() {
   delete[] zlevs;
   delete[] zblevs;
   PetscFreeVoid(a);
+  if (rank == 0)
+    PetscFreeVoid(a_raw);
 }
 
 
