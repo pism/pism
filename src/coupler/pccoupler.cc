@@ -31,7 +31,7 @@
 
 PISMClimateCoupler::PISMClimateCoupler() {
   grid = NULL;
-  PCCDEBUG = true;  // set to true and recompile if entry and exit messages for initFromOptions(),
+  PCCDEBUG = false;  // set to true and recompile if entry and exit messages for initFromOptions(),
                      // both base class and derived classes, are needed for debugging
 }
 
@@ -633,7 +633,8 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
-
+  //  printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
+  
   if (dSLforcing != PETSC_NULL) {
     // read new sea level (delta from modern)
     ierr = dSLforcing->updateFromClimateForcingData(grid->year,&seaLevel); CHKERRQ(ierr);
@@ -649,6 +650,7 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
     SETERRQ(1,"vvshelfbasetemp not created in PISMOceanCoupler::updatehelfBaseTempAndProvide()");
   }
 
+  //  printIfDebug("leaving PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
   return 0;
 }
 
@@ -703,7 +705,8 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
   PetscErrorCode ierr;
 
   // call base class to update seaLevel (if -dSLforcing); pvsbt ignored
-  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, pvsbt); CHKERRQ(ierr);
+  ierr = PISMOceanCoupler::updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, pvsbt);
+            CHKERRQ(ierr);
 
   // ignors everything from IceModel except ice thickness; also ignors t_years and dt_years
   const PetscScalar icerho       = 910.0,   // kg/m^3   ice shelf mean density
@@ -738,7 +741,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
   PetscErrorCode ierr;
 
   // call base class to update seaLevel (if -dSLforcing); pvsbmf ignored
-  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, pvsbmf); CHKERRQ(ierr);
+  ierr = PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, pvsbmf); CHKERRQ(ierr);
 
   const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity
                     icerho        = 910.0,    // kg m-3   ice shelf mean density
