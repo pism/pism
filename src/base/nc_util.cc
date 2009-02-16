@@ -1400,8 +1400,8 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
       nc_start[j] = 0;
       nc_count[j] = 1;
     }
-    fprintf(stderr, "start[%d] = %ld, count[%d] = %ld\n",
-	    j, nc_start[j], j, nc_count[j]); 
+//     fprintf(stderr, "start[%d] = %ld, count[%d] = %ld\n",
+// 	    j, nc_start[j], j, nc_count[j]); 
   }
 
   delete[] dimids;
@@ -1471,8 +1471,8 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
       if (pism_dimids[j] == input_dimids[k])
 	Map[j] = k;
 
-  for (int j = 0; j < N; j++)
-    fprintf(stderr, "Map[%d] = %d\n", j, Map[j]);
+//   for (int j = 0; j < N; j++)
+//     fprintf(stderr, "Map[%d] = %d\n", j, Map[j]);
 
   // Create arrays of counts, in PISM and input orders:
   int pism_count[N] = {count[X], count[Y], 1};
@@ -1494,7 +1494,7 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
 	int K = A[Map[2]];
 	// index in the input array:
 	int N = (I * input_count[1] + J) * input_count[2] + K;
-	// index int the PISM array:
+	// index in the PISM array:
 	int M = (i *  pism_count[1] + j) *  pism_count[2] + k;
 	
 	out[M] = in[N];
