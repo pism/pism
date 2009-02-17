@@ -364,7 +364,7 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
 /*******************  ATMOSPHERE:  PISMMonthlyTempsAtmosCoupler ********************/
 
 PISMMonthlyTempsAtmosCoupler::PISMMonthlyTempsAtmosCoupler() : PISMAtmosphereCoupler() {
-  readMonthlyTempsFromFile = true;
+  readMonthlyTempsFromFile = false;
   strcpy(monthlyTempsFile,""); // zero length file name; causes error if readMonthlyTemps() called
 }
 

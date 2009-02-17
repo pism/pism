@@ -28,6 +28,9 @@
 
 class PISMEISGREENPDDCoupler : public PISMPDDCoupler {
 
+public:
+  PISMEISGREENPDDCoupler();
+
 protected:
   virtual PetscScalar getSummerWarming(
        const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma);

@@ -31,6 +31,10 @@
 const PetscScalar EISMINT_G_geothermal = 0.050;      // J/m^2 s; geothermal flux
 
 
+PISMEISGREENPDDCoupler::PISMEISGREENPDDCoupler() : PISMPDDCoupler() {
+}
+
+
 PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
      const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) {
   // this is virtual in IceModel

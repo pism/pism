@@ -146,7 +146,7 @@ latvar = ncfile.createVariable('lat', 'f4', dimensions=('x', 'y'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('x', 'y'))
 Hvar = ncfile.createVariable('thk', 'f4', dimensions=('x', 'y'))
 Bvar = ncfile.createVariable('topg', 'f4', dimensions=('x', 'y')) 
-Accvar = ncfile.createVariable('accum', 'f4', dimensions=('x', 'y'))
+Accvar = ncfile.createVariable('snowaccum', 'f4', dimensions=('x', 'y'))
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
@@ -186,7 +186,7 @@ setattr(Bvar, 'units', 'm')
 setattr(Bvar, 'valid_min', topg_valid_min)
 setattr(Bvar, '_FillValue', topg_fill_value)
 
-setattr(Accvar, 'long_name', 'mean annual net ice equivalent accumulation rate')
+setattr(Accvar, 'long_name', 'mean annual ice-equivalent snow accumulation rate')
 setattr(Accvar, 'units', 'm s-1')
 
 # write the data to the NetCDF file
