@@ -1,4 +1,4 @@
-// Copyright (C) 2007, 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //

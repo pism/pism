@@ -270,9 +270,15 @@ Warning: this attribute is deprecated by the NUG.""" % missing
             laplace(data, mask, -1, eps, initial_guess=initial_guess)
             var[:] = data
             
-            # now REMOVE missing_value and _FillValue attributes; HOW??
-            #setattr(var, '_FillValue', '')
-            #setattr(var, 'missing_value', '')
+            # now REMOVE missing_value and _FillValue attributes
+            try:
+                delattr(var, '_FillValue')
+            except:
+                pass
+            try:
+                delattr(var, 'missing_value')
+            except:
+                pass
 
             print "This took %5f seconds." % (time() - t0)
         except Exception, message:

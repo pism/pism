@@ -369,28 +369,28 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
 //! When reading a saved PISM model state, warn the user if options <tt>-Mx,-My,-Mz,-Mbz</tt> have been ignored.
 PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
   PetscErrorCode ierr;
-  PetscInt       ignor;
+  PetscInt       ignore;
   PetscTruth     M_Set;
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignor, &M_Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignore, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
              "WARNING: user option -Mx ignored; value read from file %s\n", fname);
              CHKERRQ(ierr);
   }
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &ignor, &M_Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &ignore, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
              "WARNING: user option -My ignored; value read from file %s\n", fname);
              CHKERRQ(ierr);
   }
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &ignor, &M_Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &ignore, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
              "WARNING: user option -Mz ignored; value read from file %s\n", fname);
              CHKERRQ(ierr);
   }
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &ignor, &M_Set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &ignore, &M_Set); CHKERRQ(ierr);
   if (M_Set == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com,
               "WARNING: user option -Mbz ignored; value read from file %s\n", fname);
@@ -741,7 +741,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
     }
 
     if (split) {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'+year.nc; ", snapshots_filename); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ", snapshots_filename); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ", snapshots_filename); CHKERRQ(ierr);
     }

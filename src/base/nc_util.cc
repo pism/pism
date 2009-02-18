@@ -251,15 +251,13 @@ PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, d
   delta = (end - start) / (len - 1);
 
   ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
-  for (int i = 0; i < len; i++) {
+  for (int i = 0; i < len; i++)
     v[i] = start + i * delta;
-  }
 
   // Sometimes v[len - 1] turns out to be greater than end (because of rounding
   // errors). If that happens, we need to fix v[len - 1] by setting it equal to
   // end.
-  if (v[len - 1] > end)
-    v[len - 1] = end;
+  if (v[len - 1] > end) v[len - 1] = end;
   
   stat = nc_put_var_double(ncid, varid, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   ierr = PetscFree(v); CHKERRQ(ierr);
@@ -269,9 +267,6 @@ PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, d
 
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
-/*!
-Note the variable corresponding to a dimension is always \c double in a PISM NetCDF file.
- */
 PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) {
   PetscErrorCode ierr;
   int stat;
