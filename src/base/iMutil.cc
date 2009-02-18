@@ -191,6 +191,13 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
   } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
 
+
+  // FIXME this is a KLUDGE that comes from confused initialization sequence; see
+  //   bootstrapFromFile() in iMbootstrap.cc
+  if ((boot_from_set == PETSC_TRUE) || (bifSet == PETSC_TRUE)) {
+    ierr = putTempAtDepth(); CHKERRQ(ierr);
+  }
+
   if (doHook == PETSC_TRUE) {
     ierr = afterInitHook(); CHKERRQ(ierr);
   }

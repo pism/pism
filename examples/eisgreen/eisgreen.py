@@ -144,9 +144,9 @@ yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
 lonvar = ncfile.createVariable('lon', 'f4', dimensions=('x', 'y'))
 latvar = ncfile.createVariable('lat', 'f4', dimensions=('x', 'y'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('x', 'y'))
-Hvar = ncfile.createVariable('thk', 'f4', dimensions=('x', 'y'))
-Bvar = ncfile.createVariable('topg', 'f4', dimensions=('x', 'y')) 
-Accvar = ncfile.createVariable('snowaccum', 'f4', dimensions=('x', 'y'))
+thkvar = ncfile.createVariable('thk', 'f4', dimensions=('x', 'y'))
+bedvar = ncfile.createVariable('topg', 'f4', dimensions=('x', 'y')) 
+accvar = ncfile.createVariable('snowaccum', 'f4', dimensions=('x', 'y'))
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
@@ -176,18 +176,18 @@ setattr(hvar, 'long_name', 'ice upper surface elevation')
 setattr(hvar, 'standard_name', 'surface_altitude')
 setattr(hvar, 'units', 'm')
 
-setattr(Hvar, 'long_name', 'land ice thickness')
-setattr(Hvar, 'standard_name', 'land_ice_thickness')
-setattr(Hvar, 'units', 'm')
+setattr(thkvar, 'long_name', 'land ice thickness')
+setattr(thkvar, 'standard_name', 'land_ice_thickness')
+setattr(thkvar, 'units', 'm')
 
-setattr(Bvar, 'long_name', 'bedrock surface elevation')
-setattr(Bvar, 'standard_name', 'bedrock_altitude')
-setattr(Bvar, 'units', 'm')
-setattr(Bvar, 'valid_min', topg_valid_min)
-setattr(Bvar, '_FillValue', topg_fill_value)
+setattr(bedvar, 'long_name', 'bedrock surface elevation')
+setattr(bedvar, 'standard_name', 'bedrock_altitude')
+setattr(bedvar, 'units', 'm')
+setattr(bedvar, 'valid_min', topg_valid_min)
+setattr(bedvar, '_FillValue', topg_fill_value)
 
-setattr(Accvar, 'long_name', 'mean annual ice-equivalent snow accumulation rate')
-setattr(Accvar, 'units', 'm s-1')
+setattr(accvar, 'long_name', 'mean annual ice-equivalent snow accumulation rate')
+setattr(accvar, 'units', 'm s-1')
 
 # write the data to the NetCDF file
 spacing = float(dim[2])*1000
@@ -198,9 +198,9 @@ for i in range(int(dim[1])):
 latvar[:] = lat
 lonvar[:] = lon
 hvar[:] = S
-Hvar[:] = H
-Bvar[:] = B
-Accvar[:] = acc
+thkvar[:] = H
+bedvar[:] = B
+accvar[:] = acc
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"
 

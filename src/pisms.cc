@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "PISMS (simplified geometry mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "PISMS  (simplified geometry mode)\n"); CHKERRQ(ierr);
 
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
     

@@ -156,7 +156,8 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
 
   // now read two fields, 'artm', 'snowaccum', unless told not to
   ierr = verbPrintf(2, g->com, 
-     "initializing positive degree-day model (PDD) for atmospheric climate ... \n"); CHKERRQ(ierr); 
+     "initializing positive degree-day model (PDD) for atmospheric climate ... \n"); CHKERRQ(ierr);
+
   if (initialize_vsurftemp_FromFile) {
     ierr = verbPrintf(2, g->com, 
       "  reading mean annual temperature at ice surface (but below firn processes) 'artm' from %s ... \n",
@@ -164,8 +165,7 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
     ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
   } else {
     ierr = verbPrintf(2, g->com, 
-      "  not reading mean annual temperature at ice surface (but below firn processes) 'artm'\n"
-      "    from a file; formulas must fill it ... \n");
+      "  not reading mean annual temperature at ice surface from a file; formulas must fill it ... \n");
       CHKERRQ(ierr); 
   }
 

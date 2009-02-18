@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler pcoc;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMR (basic evolution run mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMR  (basic evolution run mode)\n"); CHKERRQ(ierr);
     
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
     IceModel m(g, ice);

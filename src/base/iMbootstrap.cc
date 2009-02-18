@@ -199,20 +199,15 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   setInitialAgeYears(initial_age_years_default);
   
+#if 0
+  // FIXME: will do putTempAtDepth() late because of confused initialization sequence
+  //   see afterInitHook()
   // fill in temps at depth in reasonable way using surface temps (from atmosPCC) and Ghf
   ierr = verbPrintf(2, grid.com, 
      "  filling in temperatures at depth using quartic guess\n");
      CHKERRQ(ierr);
-#if 0
-#else
-  // FIXME: kludge to deal with hosed initialization sequence
-  ierr = vWork2d[0].set_name("artm"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs(
-            "climate_state", "temperature at ice surface but below firn",
-            "K", NULL); CHKERRQ(ierr);
-  ierr = vWork2d[0].regrid(filename, *bootstrapLIC, 273.15); CHKERRQ(ierr);
-#endif
   ierr = putTempAtDepth(); CHKERRQ(ierr);
+#endif
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
   initialized_p = PETSC_TRUE;
@@ -449,18 +444,14 @@ PetscErrorCode IceModel::putTempAtDepth() {
   T = new PetscScalar[grid.Mz];
 
   IceModelVec2    *pccTs;
-#if 0
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
               grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
-#else
-  // FIXME: kludge to deal with hosed initialization sequence
-  pccTs = &(vWork2d[0]);
-#endif
 
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
+
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
   ierr = vbed.get_array(b);   CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);

@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
 
     IceGRNModel    m(g, ice);
 
-    ierr = verbPrintf(1, com, "PGRN (EISMINT-Greenland mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1, com, "PGRN  (PISM EISMINT-Greenland mode)\n"); CHKERRQ(ierr);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
 
     ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);

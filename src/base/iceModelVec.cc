@@ -1040,8 +1040,9 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
     // consistency check
     if (valid_min_exists || valid_max_exists || missing_value_exists || fillvalue_exists) {
       ierr = verbPrintf(2, grid->com,
-	 "PISM WARNING: both valid_range and at least one of valid_min, valid_max\n"
-	 "  missing_value and _FillValue are set; using valid_range\n");
+	 "PISM WARNING (variable '%s'): both valid_range and at least one of valid_min, valid_max\n"
+	 "  missing_value and _FillValue are set; using valid_range\n",
+	 short_name);
       CHKERRQ(ierr);
     }	// end of consistency check
 
@@ -1053,8 +1054,9 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
     // consistency check
     if (missing_value_exists || fillvalue_exists) {
       ierr = verbPrintf(2, grid->com,
-	 "PISM WARNING: both valid_min, valid_max and at least one of\n"
-	 "  missing_value and _FillValue are set; using the valid_min, valid_max pair\n");
+	 "PISM WARNING (variable '%s'): both valid_min, valid_max and at least one of\n"
+	 "  missing_value and _FillValue are set; using the valid_min, valid_max pair\n",
+	 short_name);
          CHKERRQ(ierr);
     }	// end of consistency check
 
@@ -1065,8 +1067,8 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
     // consistency check
     if (missing_value_exists || fillvalue_exists) {
       ierr = verbPrintf(2, grid->com,
-	 "PISM WARNING: both valid_min and at least one of\n"
-	 "  missing_value and _FillValue are set; using valid_min\n");
+	 "PISM WARNING (variable '%s'): both valid_min and at least one of\n"
+	 "  missing_value and _FillValue are set; using valid_min\n",short_name);
          CHKERRQ(ierr);
     }	// end of consistency check
 
@@ -1077,8 +1079,8 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
     // consistency check
     if (missing_value_exists || fillvalue_exists) {
       ierr = verbPrintf(2, grid->com,
-	 "PISM WARNING: both valid_max and at least one of\n"
-	 "  missing_value and _FillValue are set; using valid_max\n");
+	 "PISM WARNING (variable '%s'): both valid_max and at least one of\n"
+	 "  missing_value and _FillValue are set; using valid_max\n",short_name);
          CHKERRQ(ierr);
     }	// end of consistency check
 
@@ -1089,8 +1091,8 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
     // consistency check
     if (missing_value_exists) {
       ierr = verbPrintf(2, grid->com,
-	 "PISM WARNING: both _FillValue and missing_value are set;\n"
-	 "  using _FillValue\n");
+	 "PISM WARNING (variable '%s'): both _FillValue and missing_value are set;\n"
+	 "  using _FillValue\n",short_name);
 	 CHKERRQ(ierr);
     }
       
@@ -1104,8 +1106,9 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
     // end of if (fillvalue_exists)
   } else if (missing_value_exists) {
     ierr = verbPrintf(2, grid->com,
-       "PISM WARNING: missing_value attribute is deprecated by the NetCDF User's Guide;\n"
-       "  ignoring it; please use valid_min, valid_max, valid_range or _FillValue attributes\n");
+       "PISM WARNING (variable '%s'): missing_value attribute is deprecated by the NetCDF User's Guide;\n"
+       "  ignoring it; please use valid_min, valid_max, valid_range or _FillValue attributes\n",
+       short_name);
        CHKERRQ(ierr);
     use_min = use_max = 0;
     // end of if(missing_value_exists)

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     PetscTruth   testchosen, dontReport;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1, com, "PISMV (verification mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1, com, "PISMV  (verification mode)\n"); CHKERRQ(ierr);
     ierr = userChoosesIceType(com, ice, 1); CHKERRQ(ierr); // allocates ice
     
     // determine test (and whether to report error)

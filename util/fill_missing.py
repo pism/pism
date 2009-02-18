@@ -269,6 +269,11 @@ Warning: this attribute is deprecated by the NUG.""" % missing
             t0 = time()
             laplace(data, mask, -1, eps, initial_guess=initial_guess)
             var[:] = data
+            
+            # now REMOVE missing_value and _FillValue attributes; HOW??
+            #setattr(var, '_FillValue', '')
+            #setattr(var, 'missing_value', '')
+
             print "This took %5f seconds." % (time() - t0)
         except Exception, message:
             print "ERROR:", message

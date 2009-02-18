@@ -287,6 +287,14 @@ PISMClimateForcing::PISMClimateForcing() : Data1D() {
 }
 
 
+//FIXME:  the user of readClimateForcingData() should provide a context (struct) with
+//   STRUCT FIELD               EXAMPLE (values for -dTforcing)
+//   char     indepname;        "t"
+//   char     dataname[30];     "delta_T"
+//   char     interpname[30];   "constant_piecewise_forward"
+//   char     units[30];        "K"
+//   bool     scalebyminus;     true
+
 PetscErrorCode PISMClimateForcing::readClimateForcingData(MPI_Comm mycom, PetscMPIInt myrank,
         int ncid, PetscScalar curr_year, PetscInt datatype) {
   PetscErrorCode ierr;

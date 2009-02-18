@@ -269,7 +269,7 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  // FIXME:  it would be good to also write the forcing value to a t-dependent variable:
+  // FIXME:  it would be good to also write the -dTforcing value to a t-dependent variable:
   //   surftempoffset(t)
   return 0;
 }
@@ -460,8 +460,6 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
   for (PetscInt j = 0; j < 12; ++j) {
     char monthlyTempName[20], mTstring[100];
     snprintf(monthlyTempName, 20, "monsnowtemp%d", j+1);
-    ierr = verbPrintf(2, grid->com, 
-       "  reading month %d surface temperature '%s' ...\n", j, monthlyTempName); CHKERRQ(ierr); 
     ierr = vmonthlytemp[j].create(*grid, monthlyTempName, false); // global; no ghosts
        CHKERRQ(ierr);
     snprintf(mTstring, 100, 
@@ -472,6 +470,8 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
                "K",
                NULL); // CF standard name?  may exist when derived class has additional semantics
                CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid->com, 
+       "  reading month %d surface temperature '%s' ...\n", j, monthlyTempName); CHKERRQ(ierr); 
     ierr = vmonthlytemp[j].regrid(monthlyTempsFile, lic, true); CHKERRQ(ierr); // it *is* critical
   }
   return 0;
@@ -488,7 +488,7 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::getMonthIndicesFromDay(
   month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
   curr = (int) floor(month);
   curr = curr % 12;
-  next = curr+1;
+  next = curr + 1;
   if (next == 12)   next = 0;
   return 0;
 }

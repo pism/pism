@@ -120,6 +120,9 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   PetscTruth inFileSet, bootFileSet;
 
   pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
+  
+  pddPCC->initialize_vsnowaccum_FromFile = true;
+
   if (haveSurfaceTemp == PETSC_FALSE) { // default case: EISMINT-Greenland provides formulas
     pddPCC->initialize_vsurftemp_FromFile = false;
   }
@@ -241,7 +244,7 @@ PetscErrorCode IceGRNModel::updateTs() {
      " and setting TsOffset=0.0\n");
      CHKERRQ(ierr);
 
-  // PDD will use vannmeansurftemp to determine yearly cycle from parameters
+  // PDD will use vsurftemp to determine yearly cycle from parameters
   ierr = pddPCC->vsurftemp.get_array(Ts); CHKERRQ(ierr);
   ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);

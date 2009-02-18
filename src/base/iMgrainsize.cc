@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Craig Lingle and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown and Craig Lingle and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,104 +18,6 @@
 
 #include <petscda.h>
 #include "iceModel.hh"
-
-
-// FIXME:  This code should be removed once we have experience with the new
-//   -gk N and -gk_age options in Antarctic runs.  Also close bug #11242 at that
-//   time.
-// Compute a grain size from a pseudo-age, which is determined only by the vertical velocity component.
-/*
-PISM allows the choice of the Goldsby-Kohlstedt flow law with option <tt>-gk</tt>.  
-That flow law requires a grain size to compute the softness/viscosity.  To determine 
-the grain size we use the Vostok core \lo\cite{VostokCore}\elo as a source for a 
-universal relation between the age of the ice and its grain size; see grainSizeVostok().
-
-By default we do not use the full model age, which takes a very long time
-to equilibriate.  (If you want to use the full model age for this purpose add 
-option <tt>-real_age_grainsize</tt>.)  Instead we compute a pseudo age which uses only 
-the vertical (scalar) component of the velocity field and makes a steady state assumption.
-
-In fact we solve this equation in each ice column:
-     \f[w\frac{\partial a}{\partial z} \stackrel{\ast}{=} 1,\f]
-where \f$a\f$ is the pseudo-age.  This represents a major simplification of 
-the actual age equation
-    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
-        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-which is solved in ageStep().  There are two simplifications, first that we 
-assume steady state for the age field, and secondly that the horizontal velocity 
-is assumed to be zero.  (Alternately we could explain dropping the
-horizontal advection terms by assuming the age field does not vary in horizontal 
-directions; each column is assumed to have the same age profile as its neighbor.)
-
-The boundary value for the first order hyperbolic equation \f$\ast\f$ is 
-\f$a(z=H)=0\f$, where \f$H\f$ is the elevation of the surface of the ice.  We 
-work down the column from the top, using the downward velocity to add
-to the age.  If at any point the vertical velocity is positive then we assume 
-the ice is old below that level; in the Vostok time scale, for producing a 
-grain size, ``old'' means \f$10^6\f$ years; see grainSizeVostok().
-
-The numerical method is to approximate \f$\ast\f$ by
-    \f[\left(\frac{w_k + w_{k+1}}{2}\right)\,
-         \left(\frac{a_{k+1} - a_k}{z_{k+1}-z_k}\right) = 1.\f]
-or
-    \f[a_k = a_{k+1} - \frac{2(z_{k+1}-z_k)}{w_k + w_{k+1}}.\f]
-This has second order truncation error (at \f$z_{k+1/2}\f$) whether or not 
-vertical grid is equally-spaced.
- */
-#if 0
-PetscErrorCode  IceModel::computeGrainSize_PseudoAge(
-                     const PetscScalar H, const PetscInt Mz, 
-                     PetscScalar *w, PetscScalar *age_wspace,
-                     PetscScalar **gs) {
-
-  // see velocitySIAStaggered() to make sense of this comment:
-  //PetscScalar *wij, *gsij, *work_age_space;
-  //gsij = new PetscScalar[grid.Mz];
-  //work_age_space = new PetscScalar[grid.Mz];
-  //if ((flowLawUsesGrainSize == PETSC_TRUE) && (realAgeForGrainSize == PETSC_FALSE)) {
-  //  // compute grainsize from pseudo age FIXME: IF DESIRED
-  //  ierr = w3.getInternalColumn(i,j,&wij); CHKERRQ(ierr);
-  //  ierr = computeGrainSize_PseudoAge(
-  //             thickness, grid.Mz, wij, work_age_space, &gsij); CHKERRQ(ierr);
-  //}
-  // this other method is O(dx) because e.g. gs[i+1/2,j] is approximated by gs[i][j]
-  // BUG: as of 3/12/08 bug #11242, this did not work:
-  //delta[k] = (2 * pressure * enhancementFactor
-  //            * ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
-  //            pressure, gsij[k]) );
-
-
-  SETERRQ(1,"IceModel::computeGrainSize_PseudoAge() currently broken\n");
-
-  // don't call this method when realAgeForGrainSize == PETSC_TRUE
-  PetscScalar *age = age_wspace;
-  
-  const PetscScalar  old_ice = 1.0e6 * secpera; // A million years
-  const PetscInt     ks = grid.kBelowHeight(H);
-  bool               downward = true;
-  age[Mz-1] = 0.0;  // top always new
-  for (PetscInt k = Mz-2; k >= 0; k--) {
-    if (k+1 >= ks) {          // if either z_k or z_k+1 are at top of ice
-      age[k] = 0.0;
-    } else if (!downward) {   // once upward vel has been set, rest of column is old
-      age[k] = old_ice;
-    } else if (w[k] >= 0.0) { // upward (non-downward) velocity found; from now on will be old
-      age[k] = old_ice;
-      downward = false;
-    } else { // at this point we know:   z_k < H,   z_k+1 < H,   w_k < 0,   w_k+1 < 0
-      // implement a_k = a_{k+1} - \frac{2(z_{k+1}-z_k)}{w_k + w_{k+1}}
-      const PetscScalar dz = grid.zlevels[k+1] - grid.zlevels[k];
-      age[k] = age[k+1] - (2.0 * dz) / (w[k] + w[k+1]);
-    }
-  }
-  // convert age or pseudo-age to grainsize and put in gs3
-  for (PetscInt k = 0; k < Mz; k++) {
-    (*gs)[k] = grainSizeVostok(age[k]);
-  }
-
-  return 0;
-}
-#endif
 
 
 //! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.

@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMD (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMD  (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
     ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
 
     IceModel*      m;
