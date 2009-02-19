@@ -806,9 +806,13 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
     }
 
     if (set_default_value) {	// if it's not and we have a default value, set it
+      double slope, intercept, tmp;
+      utConvert(&units, &glaciological_units, &slope, &intercept);
+      tmp = intercept + slope*default_value;
+      
       ierr = verbPrintf(2, grid->com, 
 			"  absent %-10s/ %-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
-			short_name, long_name, "", default_value, units_string);
+			short_name, long_name, "", tmp, glaciological_units_string);
       CHKERRQ(ierr);
       ierr = set(default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
