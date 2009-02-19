@@ -246,7 +246,11 @@ public:
                initialize_vsnowaccum_FromFile; // default is true
 
 protected:
-  IceModelVec2 vsnowaccum;
+  IceModelVec2 vsnowaccum,       // vsurfmassflux is computed by PDD from this amount of snow (ice-equivalent units)
+               vsurftempPDD;     // vsurftemp is temperature below firn; this temperature is the time-dependent snow
+                                 //    temperature computed from getTemperatureFromYearlyCycle() or from stored
+                                 //    monthly temperatures; in any case this one is a diagnostic extra output of
+                                 //    the PDD; IceModel never gets a pointer to it; updated by updateSurfMassFluxAndProvide()
 
 protected:
   gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which

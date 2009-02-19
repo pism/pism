@@ -52,6 +52,7 @@ PISMPDDCoupler::PISMPDDCoupler() : PISMMonthlyTempsAtmosCoupler() {
 
 
 PISMPDDCoupler::~PISMPDDCoupler() {
+  vsurftempPDD.destroy();
   vsnowaccum.destroy();
   if (pddRandGen != NULL) {
     gsl_rng_free(pddRandGen);
@@ -142,6 +143,16 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
             NULL); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
 
+  // time-dependent snow temperature used within the PDD; either from getTemperatureFromYearlyCycle()
+  //   or interpolated monthly temperatures
+  ierr = vsurftempPDD.create(*g, "artmpdd", false); CHKERRQ(ierr);
+  ierr = vsurftempPDD.set_attrs(
+            "climate_diagnostic",
+            "instantaneous snow temperature",
+            "K",
+            NULL); CHKERRQ(ierr);  // no CF standard_name ??
+  ierr = vsurftempPDD.set(273.15); CHKERRQ(ierr);  // merely a default value
+
   // mean annual ice equivalent snow accumulation rate (before melt, and not including rain)
   ierr = vsnowaccum.create(*g, "snowaccum", false); CHKERRQ(ierr);
   ierr = vsnowaccum.set_attrs(
@@ -212,6 +223,7 @@ PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
   PetscErrorCode ierr;
   
   ierr = PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = vsurftempPDD.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsnowaccum.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   return 0;
@@ -380,12 +392,13 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
  
   IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
 
-  PetscScalar **smflux, **amstemp, **saccum, **h, **lat, **smonthtemp[12];
+  PetscScalar **smflux, **amstemp, **insttemp, **saccum, **h, **lat, **smonthtemp[12];
   ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
   ierr = info->lat->get_array(lat); CHKERRQ(ierr);
 
   ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
   ierr =     vsurftemp.get_array(amstemp); CHKERRQ(ierr);
+  ierr =  vsurftempPDD.get_array(insttemp); CHKERRQ(ierr);
   ierr =    vsnowaccum.get_array(saccum);  CHKERRQ(ierr);
 
   if (readMonthlyTempsFromFile) {
@@ -440,12 +453,8 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
           }
           const double randadd = gsl_ran_gaussian(pddRandGen, pddStdDev);
           const PetscScalar temp = mytemp + (PetscScalar) randadd;
+          insttemp[i][j] = temp;
           if (temp > 273.15)   pdd_sum += (temp - 273.15);
-          //if ((i == grid->Mx/2) && (j == grid->My/2)) {
-          //  ierr = PetscPrintf(grid->com,
-          //    "  day=%d: mytemp=%5.4f K, randadd=%5.4f, temp=%5.4f K, pdd_sum=%5.4f day^-1 K-1\n",
-          //    day, mytemp, randadd, temp, pdd_sum); CHKERRQ(ierr);
-          //}
         }
       } else { // default Calov-Greve method; apply Simpson's rule for integral
         pdd_sum = 0.0;
@@ -464,6 +473,7 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
           } else {
             temp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], day);
           }
+          insttemp[i][j] = temp;
           pdd_sum += coeff * CalovGreveIntegrand(temp);  // temp in K
         }
         pdd_sum = (CGsumstepdays / 3.0) * pdd_sum;
@@ -472,18 +482,6 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
       // now that we have the number of PDDs, compute mass balance from snow rate
       smflux[i][j] = getSurfaceBalanceFromSnowAndPDD(
                             saccum[i][j], dt_years * secpera, pdd_sum);
-
-      //if ((i == grid->Mx/2) && (j == grid->My/2)) {
-      //  ierr = PetscPrintf(grid->com,
-      //    "\nPDD at (i,j)=(%d,%d):\n"
-      //      "  mean_annual=%5.4f K, summer_warming=%5.4f K\n",
-      //      i, j, mean_annual, summer_warming); CHKERRQ(ierr);
-      //  ierr = PetscPrintf(grid->com,
-      //      "  CGsumcount = %d, CGsumstepdays = %5.2f, num_days = %d, intstartday = %d,\n"
-      //      "  h = %6.2f, pdd_sum = %5.2f day-1 K-1, saccum = %5.4f m a-1, smflux = %5.4f m a-1\n",
-      //      CGsumcount, CGsumstepdays, num_days, intstartday,
-      //      h[i][j], pdd_sum, saccum[i][j]*secpera, smflux[i][j]*secpera); CHKERRQ(ierr);
-      //}
 
     }
   }
@@ -503,6 +501,7 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
 
   ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
   ierr =     vsurftemp.end_access(); CHKERRQ(ierr);
+  ierr =  vsurftempPDD.end_access(); CHKERRQ(ierr);
   ierr =    vsnowaccum.end_access(); CHKERRQ(ierr);
   
   // now that it is up to date, return pointer to it

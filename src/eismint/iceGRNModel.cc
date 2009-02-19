@@ -117,7 +117,7 @@ PetscErrorCode IceGRNModel::attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p) {
 PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
   char inFile[PETSC_MAX_PATH_LEN];
-  PetscTruth inFileSet, bootFileSet;
+  PetscTruth inFileSet, bootFileSet, oldoptSet;
 
   pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
   
@@ -133,10 +133,16 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);  
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
+                               PETSC_MAX_PATH_LEN, &oldoptSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", inFile,
                                PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
+  if (oldoptSet == PETSC_TRUE) { bootFileSet = PETSC_TRUE; } // just act like it was "-boot_from"
+  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
+                               PETSC_MAX_PATH_LEN, &oldoptSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
+                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
+  if (oldoptSet == PETSC_TRUE) { inFileSet = PETSC_TRUE; } // just act like it was "-i"
 
   // PDD is already set by atmosPCC->initFromOptions() in IceModel::initFromOptions();
   //   here we just warn if nondefault values are used
@@ -221,7 +227,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       temp_increase = 3.514;
     }
     if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL"); }
-    ierr = pddPCC->vsurftemp.shift(temp_increase); CHKERRQ(ierr);
+    ierr = pddPCC->vsurftemp.shift(temp_increase); CHKERRQ(ierr);     // FIXME: check on whether this is right
   }
   return 0;
 }
@@ -240,11 +246,12 @@ PetscErrorCode IceGRNModel::updateTs() {
   PetscScalar **Ts, **lat, **h;
   
   ierr = verbPrintf(4, grid.com, 
-     "recomputing surface temperatures according to EISMINT-Greenland rule"
-     " and setting TsOffset=0.0\n");
+     "recomputing surface temperatures according to elevation-dependent\n"
+     "  EISMINT-Greenland rule\n");
      CHKERRQ(ierr);
 
   // PDD will use vsurftemp to determine yearly cycle from parameters
+  if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL"); }
   ierr = pddPCC->vsurftemp.get_array(Ts); CHKERRQ(ierr);
   ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);
@@ -256,23 +263,6 @@ PetscErrorCode IceGRNModel::updateTs() {
   ierr = pddPCC->vsurftemp.end_access(); CHKERRQ(ierr);
   ierr = vLatitude.end_access(); CHKERRQ(ierr);
   ierr =        vh.end_access(); CHKERRQ(ierr);
-
-//FIXME: additional kludge to deal with hosed initialization sequence
-  // also set pddPCC->vsurftemp because it is used at initialization
-
-  PetscScalar **foo;
-  ierr = pddPCC->vsurftemp.get_array(Ts); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(foo); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      foo[i][j] = Ts[i][j];
-    }
-  }
-  ierr = pddPCC->vsurftemp.end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vWork2d[0].endGhostComm(); CHKERRQ(ierr);
-//FIXME: end kludge  
 
   return 0;
 }

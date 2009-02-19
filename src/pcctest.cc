@@ -57,9 +57,6 @@ $ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
 
 PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, IceGrid &grid) {
   PetscErrorCode ierr;
-  bool file_exists = false;
-  grid_info gi;
-  double *zlevs, *zblevs;
 
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
@@ -70,25 +67,35 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
 
   NCTool nc(&grid);
 
-  // read grid params
+  // following deliberately duplicates content in IceModel::initFromFile()
+  bool file_exists = false;
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
   if (!file_exists) {
-    ierr = PetscPrintf(com, "PCCTEST ERROR: can't open file '%s'\n", filename); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", filename); CHKERRQ(ierr);
     PetscEnd();
   }
-  ierr = nc.get_grid_info(gi);
-  grid.year = gi.time / secpera;
-  grid.Mx = gi.x_len;
-  grid.My = gi.y_len;
-  grid.Mz = gi.z_len;
-  grid.Mbz = gi.zb_len;
+
+  // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
+  // this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
+  grid_info g;
+  ierr = nc.get_grid_info(g);
+  grid.year = g.time / secpera;
+  grid.Mx   = g.x_len;
+  grid.My   = g.y_len;
+  grid.Mz   = g.z_len;
+  grid.Mbz  = g.zb_len;
+  grid.x0   = g.x0;
+  grid.y0   = g.y0;
+  // grid.Lx, grid.Ly are set from g.Lx, g.Ly below in call to grid.rescale_using_zlevels()
+
+  double *zlevs, *zblevs;
   zlevs = new double[grid.Mz];
   zblevs = new double[grid.Mbz];
   ierr = nc.get_vertical_dims(grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // re-allocate and fill grid.zlevels & zblevels with read values
-  delete [] grid.zlevels;  delete [] grid.zblevels;
+  delete [] grid.zlevels;
+  delete [] grid.zblevels;
   grid.zlevels = new PetscScalar[grid.Mz];
   grid.zblevels = new PetscScalar[grid.Mbz];
   for (PetscInt k = 0; k < grid.Mz; k++) {
@@ -97,13 +104,13 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
   for (PetscInt k = 0; k < grid.Mbz; k++) {
     grid.zblevels[k] = (PetscScalar) zblevs[k];
   }
-  delete [] zlevs;  delete [] zblevs;
-  //ierr = grid.printVertLevels(1); CHKERRQ(ierr);
+  delete [] zlevs;  delete [] zblevs;  // done with these
   
-  // finally, set DA 
+  // set DA; a goal
   ierr = grid.createDA(); CHKERRQ(ierr);
-  // sets grid.Lx, grid.Ly:
-  ierr = grid.rescale_using_zlevels(-gi.x_min, -gi.y_min); CHKERRQ(ierr);
+
+  ierr = grid.rescale_using_zlevels(g.Lx, g.Ly); CHKERRQ(ierr);
+  
   return 0;
 }
 
