@@ -286,39 +286,38 @@ PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) {
 /*!
 Just calls get_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
-PetscErrorCode NCTool::get_local_var(const int varid, DA da, Vec v, Vec g,
-				     const int *s, const int *c,
-				     GridType dims, void *a_mpi, int a_size) {
+PetscErrorCode NCTool::get_local_var(const int varid, DA da, Vec v,
+				     GridType dims, int t, void *a_mpi, int a_size) {
 
   PetscErrorCode ierr;
-  ierr = get_global_var(varid, da, g, s, c, dims, a_mpi, a_size);
-            CHKERRQ(ierr);
+  Vec g;
+  ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
+
+  ierr = get_global_var(varid, g, dims, t, a_mpi, a_size); CHKERRQ(ierr);
   ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
+
+  ierr = VecDestroy(g); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
-PetscErrorCode NCTool::get_global_var(const int varid, DA da, Vec g,
-				      const int *s, const int *c,
-				      GridType dims, void *a_mpi, int a_size) {
-  const int N = 4;
+PetscErrorCode NCTool::get_global_var(const int varid, Vec g,
+				      GridType dims, int t, void *a_mpi, int a_size) {
+  const int N = 5;
   const int start_tag = 1;
   const int count_tag = 2;
-  const int data_tag = 3;
+  const int data_tag =  3;
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
-  int stat, start[N], count[N];
-  size_t nc_start[N], nc_count[N];
+  int stat;
   double *a_double = NULL;
 
   a_double = (double *)a_mpi;
 
-  for (int j = 0; j < N; j++) {
-    start[j] = s[j];
-    count[j] = c[j];
-  }
+  int start[N] = {t, grid->xs, grid->ys, 0,        0};
+  int count[N] = {1, grid->xm, grid->ym, grid->Mz, grid->Mbz};
 
   if (grid->rank == 0) {
     int start0[N], count0[N];
@@ -338,17 +337,18 @@ PetscErrorCode NCTool::get_global_var(const int varid, DA da, Vec g,
         MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
       }
 
-      for (int j = 0; j < N; j++) {
-	nc_start[j] = start[j];
-	nc_count[j] = count[j];
-      }
+      size_t *nc_start, *nc_count;
+      ierr = compute_start_and_count(varid, start, count, nc_start, nc_count); CHKERRQ(ierr);
 
       stat = nc_get_vara_double(ncid, varid, nc_start, nc_count, a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
+      delete[] nc_start;
+      delete[] nc_count;
+
       if (proc != 0) {
-        int block_len = 1;
-        for (int j = 0; j < N; j++) block_len *= count[j];
+        int block_len;
+	block_len = compute_block_size(dims, count);
 	MPI_Send(a_double, block_len, MPI_DOUBLE, proc, data_tag, grid->com);
       }
     }
@@ -358,8 +358,8 @@ PetscErrorCode NCTool::get_global_var(const int varid, DA da, Vec g,
     MPI_Recv(a_double, a_size, MPI_DOUBLE, 0, data_tag, grid->com, &mpi_stat);
   }
 
-  int block_len = 1;
-  for (int j = 0; j < N; j++) block_len *= count[j];
+  int block_len;
+  block_len = compute_block_size(dims, count);
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
   for (int i = 0; i < block_len; i++) {
@@ -393,40 +393,22 @@ PetscErrorCode NCTool::put_local_var(const int varid, DA da, Vec v, GridType dim
 PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
   const int start_tag = 1;
   const int count_tag = 2;
-  const int  data_tag = 3;
-  const int N = 5, T = 0, X = 1, Y = 2, Z = 3, ZB = 4;
+  const int data_tag =  3;
+  const int N = 5;
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
-  int stat, start[N], count[N];
+  int stat;
   double *a_double = NULL;
 
   // Fill start and count arrays:
   int t;
   ierr = get_dim_length("t", &t); CHKERRQ(ierr);
-  start[T] = t - 1;
-  start[X] = grid->xs;
-  start[Y] = grid->ys;
-  start[Z] = 0;
-  start[ZB] = 0;
-  count[T] = 1;
-  count[X] = grid->xm;
-  count[Y] = grid->ym;
-  count[Z] = grid->Mz;
-  count[ZB] = grid->Mbz;
+  int start[N] = {t - 1, grid->xs, grid->ys, 0,        0};
+  int count[N] = {1,     grid->xm, grid->ym, grid->Mz, grid->Mbz};
 
   // Find the local size:
   int block_size, buffer_size;
-  switch (dims) {
-  case GRID_2D:
-    block_size = count[X] * count[Y];
-    break;
-  case GRID_3D:
-    block_size = count[X] * count[Y] * count[Z];
-    break;
-  case GRID_3D_BEDROCK:
-    block_size = count[X] * count[Y] * count[ZB];
-    break;
-  }
+  block_size = compute_block_size(dims, count);
   // And the maximum size of the data block:
   buffer_size = block_size;
   ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
@@ -452,7 +434,6 @@ PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
       }
       
       size_t *nc_start, *nc_count;
-
       ierr = compute_start_and_count(varid, start, count, nc_start, nc_count); CHKERRQ(ierr);
 
       stat = nc_put_vara_double(ncid, varid, nc_start, nc_count, a_double);
@@ -1529,3 +1510,18 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
 
   return 0;
 }
+
+//! Computes the size of the local block.
+int NCTool::compute_block_size(GridType dims, int* count) {
+  const int X = 1, Y = 2, Z = 3, ZB = 4;
+  switch (dims) {
+  case GRID_2D:
+    return count[X] * count[Y];
+  case GRID_3D:
+    return count[X] * count[Y] * count[Z];
+  case GRID_3D_BEDROCK:
+    return count[X] * count[Y] * count[ZB];
+  }
+  return 0;
+}
+

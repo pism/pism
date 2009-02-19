@@ -76,12 +76,10 @@ public:
 					   double latitude_of_projection_origin,
 					   double standard_parallel);
 
-  PetscErrorCode get_local_var(const int varid, DA da, Vec v, Vec g,
-			       const int *s, const int *c,
-			       GridType dims, void *a_mpi, int a_size);
-  PetscErrorCode get_global_var(const int varid, DA da, Vec g,
-				const int *s, const int *c,
-				GridType dims, void *a_mpi, int a_size);
+  PetscErrorCode get_local_var(const int varid, DA da, Vec v,
+			       GridType dims, int t, void *a_mpi, int a_size);
+  PetscErrorCode get_global_var(const int varid, Vec g,
+				GridType dims, int t, void *a_mpi, int a_size);
 
   PetscErrorCode put_local_var(const int varid, DA da, Vec v, GridType dims);
   PetscErrorCode put_global_var(const int varid, Vec g, GridType dims);
@@ -95,6 +93,7 @@ public:
 				   bool useMaskInterp);
 
 private:
+  int compute_block_size(GridType dims, int* count);
   PetscErrorCode compute_start_and_count(const int varid, int *pism_start, int *pism_count,
 					 size_t* &nc_start, size_t* &nc_count);
   PetscErrorCode transpose(int varid, GridType dim_flag, int *count,

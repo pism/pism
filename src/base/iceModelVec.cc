@@ -615,8 +615,6 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
   void *a_mpi;
   int a_len, max_a_len, varid;
   NCTool nc(grid);
-  int s[] = {time, grid->xs, grid->ys, 0}; // Start local block: t dependent; 
-  int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
 
   ierr = checkAllocated(); CHKERRQ(ierr);
   if (grid->da2 == PETSC_NULL)
@@ -649,14 +647,9 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
   }
 
   if (localp) {
-    Vec g;
-    ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nc.get_local_var(varid, da, v, g,
-			     s, c, dims, a_mpi, max_a_len); CHKERRQ(ierr);  
-    ierr = VecDestroy(g); CHKERRQ(ierr);
+    ierr = nc.get_local_var(varid, da, v, dims, time, a_mpi, max_a_len); CHKERRQ(ierr);  
   } else {
-    ierr = nc.get_global_var(varid, da, v,
-			      s, c, dims, a_mpi, max_a_len); CHKERRQ(ierr);  
+    ierr = nc.get_global_var(varid, v, dims, time, a_mpi, max_a_len); CHKERRQ(ierr);  
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
