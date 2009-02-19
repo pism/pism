@@ -1441,7 +1441,7 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
   // Create arrays of IDs of spatial dimensions, in PISM and input orders (they
   // are used to create the map):
   int pism_dimids[N] = {x_id, y_id, z_id};
-  int input_dimids[N];
+  int input_dimids[N] = {-1, -1, -1};
   int m = 0;
   for (int j = 0; j < ndims; j++) {
     if (dimids[j] == x_id || dimids[j] == y_id || dimids[j] == z_id) {
