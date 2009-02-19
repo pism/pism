@@ -609,7 +609,7 @@ PetscErrorCode IceModelVec::regrid(const char filename[],
   </ol>
  */
 PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsigned int time,
-					     int dims, const int Mz) {           
+					     GridType dims, const int Mz) {           
   PetscErrorCode ierr;
   bool file_exists, variable_exists;
   void *a_mpi;
@@ -676,24 +676,16 @@ PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   2) Find the variable in the file. Call define_variable if not found.
   3) Call put_global_var or put_local_var.
  */
-PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_type nctype,
-					    const int Mz) {
+PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], GridType dims, nc_type nctype) {
   PetscErrorCode ierr;
   bool exists;
   NCTool nc(grid);
-  int t, varid, max_a_len, a_len;
-  void *a_mpi;
+  int varid;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
   
   ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace = false, because
 				// we want to *append* at this point
-
-  // get the last time (index, not the value):
-  ierr = nc.get_dim_length("t", &t); CHKERRQ(ierr);
-
-  int s[] = {t - 1, grid->xs, grid->ys, 0}; // Start local block: t dependent; 
-  int c[] = {1, grid->xm, grid->ym, Mz}; // Count local block: t dependent
 
   // find or define the variable
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
@@ -708,30 +700,18 @@ PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], int dims, nc_
   // write the attributes
   write_attrs(nc.ncid, nctype);
 
-  // Memory allocation:
-  max_a_len = a_len = grid->xm * grid->ym * Mz;
-  ierr = MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
-  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
-
   // Actually write data:
   if (localp) {
-    Vec g;
-    ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-    ierr = nc.put_local_var(varid, da, v, g,
-                         s, c, dims, a_mpi, max_a_len); CHKERRQ(ierr);  
-    ierr = VecDestroy(g); CHKERRQ(ierr);
+    ierr = nc.put_local_var(varid, da, v, dims); CHKERRQ(ierr);  
   } else {
-    ierr = nc.put_global_var(varid, da, v,
-                          s, c, dims, a_mpi, max_a_len); CHKERRQ(ierr);  
+    ierr = nc.put_global_var(varid, v, dims); CHKERRQ(ierr);  
   }
-
   
   if (write_in_glaciological_units) {
     ierr = change_units(&glaciological_units, &units); CHKERRQ(ierr); // restore the units
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
-  ierr = PetscFree(a_mpi); CHKERRQ(ierr);
   return 0;
 }
 
@@ -833,8 +813,8 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
 				  use_interpolation_mask); CHKERRQ(ierr);
       ierr = VecDestroy(g); CHKERRQ(ierr);
     } else {
-      ierr = nc.regrid_global_var(varid, dim_flag, lic, da, v,
-				   use_interpolation_mask); CHKERRQ(ierr);
+      ierr = nc.regrid_global_var(varid, dim_flag, lic, v,
+				  use_interpolation_mask); CHKERRQ(ierr);
     }
     // We are done reading, and the data is in the units specified in the
     // bootstrapping file now. We need to check the range before changing the

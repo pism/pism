@@ -119,15 +119,14 @@ protected:
   virtual PetscErrorCode  checkHaveArray();
   virtual PetscErrorCode  check_range(const int ncid, const int varid);
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
-  virtual PetscErrorCode  read_from_netcdf(const char filename[], const unsigned int time, const int dims,
+  virtual PetscErrorCode  read_from_netcdf(const char filename[], const unsigned int time, GridType dims,
 					   const int Mz);
-  virtual PetscErrorCode  regrid_from_netcdf(const char filename[], const GridType dim_flag,
+  virtual PetscErrorCode  regrid_from_netcdf(const char filename[], GridType dim_flag,
 					     LocalInterpCtx &lic, bool critical,
 					     bool set_default_value,
 					     PetscScalar default_value);
   virtual PetscErrorCode read_valid_range(const int ncid, const int varid);
-  virtual PetscErrorCode write_to_netcdf(const char filename[], const int dims, nc_type nctype,
-					 const int Mz);
+  virtual PetscErrorCode write_to_netcdf(const char filename[], GridType dims, nc_type nctype);
   virtual PetscErrorCode  change_units(utUnit *from, utUnit *to);
   virtual PetscErrorCode  reset_attrs();
   // FIXME: consider adding 

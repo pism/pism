@@ -78,24 +78,20 @@ public:
 
   PetscErrorCode get_local_var(const int varid, DA da, Vec v, Vec g,
 			       const int *s, const int *c,
-			       int dims, void *a_mpi, int a_size);
+			       GridType dims, void *a_mpi, int a_size);
   PetscErrorCode get_global_var(const int varid, DA da, Vec g,
 				const int *s, const int *c,
-				int dims, void *a_mpi, int a_size);
+				GridType dims, void *a_mpi, int a_size);
 
-  PetscErrorCode put_local_var(const int varid, DA da, Vec v, Vec g,
-			       const int *s, const int *c,
-			       int dims, void *a_mpi, int a_size);
-  PetscErrorCode put_global_var(const int varid, DA da, Vec g,
-				const int *s, const int *c,
-				int dims, void *a_mpi, int a_size);
+  PetscErrorCode put_local_var(const int varid, DA da, Vec v, GridType dims);
+  PetscErrorCode put_global_var(const int varid, Vec g, GridType dims);
 
   PetscErrorCode set_MaskInterp(MaskInterp *mi_in);
   PetscErrorCode regrid_local_var(const int varid, GridType dim_flag,
 				  LocalInterpCtx &lic, DA da, Vec vec, Vec g,
 				  bool useMaskInterp);
   PetscErrorCode regrid_global_var(const int varid, GridType dim_flag,
-				   LocalInterpCtx &lic, DA da, Vec g,
+				   LocalInterpCtx &lic, Vec g,
 				   bool useMaskInterp);
 
 private:

@@ -99,7 +99,7 @@ PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
 
 PetscErrorCode IceModelVec3::read(const char filename[], const unsigned int time) {
   PetscErrorCode ierr;
-  ierr = read_from_netcdf(filename, time, 4, grid->Mz); CHKERRQ(ierr);
+  ierr = read_from_netcdf(filename, time, GRID_3D, grid->Mz); CHKERRQ(ierr);
   return 0;
 }
 
@@ -117,7 +117,7 @@ PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, 
 
 PetscErrorCode IceModelVec3::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
-  ierr = write_to_netcdf(filename, 4, nctype, grid->Mz); CHKERRQ(ierr);
+  ierr = write_to_netcdf(filename, GRID_3D, nctype); CHKERRQ(ierr);
   return 0;
 }
 
@@ -579,7 +579,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 
 PetscErrorCode IceModelVec3Bedrock::read(const char filename[], const unsigned int time) {
   PetscErrorCode ierr;
-  ierr = read_from_netcdf(filename, time, 4, grid->Mbz); CHKERRQ(ierr);
+  ierr = read_from_netcdf(filename, time, GRID_3D_BEDROCK, grid->Mbz); CHKERRQ(ierr);
   return 0;
 }
 
@@ -597,7 +597,7 @@ PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx
 
 PetscErrorCode IceModelVec3Bedrock::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
-  ierr = write_to_netcdf(filename, 4, nctype, grid->Mbz); CHKERRQ(ierr);
+  ierr = write_to_netcdf(filename, GRID_3D_BEDROCK, nctype); CHKERRQ(ierr);
   return 0;
 }
 
