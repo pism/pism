@@ -303,62 +303,66 @@ PetscErrorCode NCTool::get_local_var(const int varid, DA da, Vec v, Vec g,
 PetscErrorCode NCTool::get_global_var(const int varid, DA da, Vec g,
 				      const int *s, const int *c,
 				      int dims, void *a_mpi, int a_size) {
-
-  const int req_tag = 1; // MPI tag for request block
-  const int var_tag = 2; // MPI tag for data block
-  const int sc_size = 8;
+  const int N = 4;
+  const int start_tag = 1;
+  const int count_tag = 2;
+  const int data_tag = 3;
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
-  int stat;
-  int sc[sc_size]; // buffer to hold both `s' and `c'
-  size_t sc_nc[sc_size];
+  int stat, start[N], count[N];
+  size_t nc_start[N], nc_count[N];
   double *a_double = NULL;
 
   a_double = (double *)a_mpi;
 
-  for (int i = 0; i < 2 * dims; i++) {
-    sc[i] = (i < dims) ? s[i] : c[i - dims];
+  for (int j = 0; j < N; j++) {
+    start[j] = s[j];
+    count[j] = c[j];
   }
 
   if (grid->rank == 0) {
-    int sc0[sc_size];
-    for (int i = 0; i < sc_size; i++) sc0[i] = sc[i]; // root needs to save its range
+    int start0[N], count0[N];
+    for (int j = 0; j < N; j++) {
+      // root needs to save its range
+      start0[j] = start[j];
+      count0[j] = count[j];
+    }
     for (int proc = grid->size - 1; proc >= 0; proc--) { // root will read itself last
       if (proc == 0) {
-        for (int i = 0; i < sc_size; i++) sc[i] = sc0[i];
+        for (int j = 0; j < N; j++) {
+	  start[j] = start0[j];
+	  count[j] = count0[j];
+	}
       } else {
-        MPI_Recv(sc, sc_size, MPI_INT, proc, req_tag, grid->com, &mpi_stat);
+        MPI_Recv(start, N, MPI_INT, proc, start_tag, grid->com, &mpi_stat);
+        MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
       }
-      for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
 
-      /* {
-        printf("[%1d] reading %10s [", proc, name);
-        for (int i = 0; i < 2 * dims; i++) {
-          if (i == dims) printf("] [");
-          printf("%5d", (int)sc_nc[i]);
-        }
-        printf("]\n");
-      } */
+      for (int j = 0; j < N; j++) {
+	nc_start[j] = start[j];
+	nc_count[j] = count[j];
+      }
 
-      stat = nc_get_vara_double(ncid, varid, &sc_nc[0], &sc_nc[dims], a_double);
+      stat = nc_get_vara_double(ncid, varid, nc_start, nc_count, a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       if (proc != 0) {
-        int b_len = 1;
-        for (int i = dims; i < 2 * dims; i++) b_len *= sc[i];
-	MPI_Send(a_double, b_len, MPI_DOUBLE, proc, var_tag, grid->com);
+        int block_len = 1;
+        for (int j = 0; j < N; j++) block_len *= count[j];
+	MPI_Send(a_double, block_len, MPI_DOUBLE, proc, data_tag, grid->com);
       }
     }
   } else {
-    MPI_Send(sc, 2 * dims, MPI_INT, 0, req_tag, grid->com);
-    MPI_Recv(a_double, a_size, MPI_DOUBLE, 0, var_tag, grid->com, &mpi_stat);
+    MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);
+    MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);
+    MPI_Recv(a_double, a_size, MPI_DOUBLE, 0, data_tag, grid->com, &mpi_stat);
   }
 
-  int b_len = 1;
-  for (int i = dims; i < 2 * dims; i++) b_len *= sc[i];
+  int block_len = 1;
+  for (int j = 0; j < N; j++) block_len *= count[j];
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
-  for (int i = 0; i < b_len; i++) {
+  for (int i = 0; i < block_len; i++) {
     a_petsc[i] = (PetscScalar)a_double[i];
   }
 
@@ -386,29 +390,30 @@ PetscErrorCode NCTool::put_local_var(const int varid, DA da, Vec v, Vec g,
 PetscErrorCode NCTool::put_global_var(const int varid, DA da, Vec g,
 				      const int *s, const int *c,
                                       int dims, void *a_mpi, int a_size) {
-  const int lim_tag = 1; // MPI tag for limits block
-  const int var_tag = 2; // MPI tag for data block
-  const int sc_size = 8;
+  const int start_tag = 1;
+  const int count_tag = 2;
+  const int  data_tag = 3;
+  const int N = 4;
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
-  int stat;
-  int sc[sc_size];		// buffer to hold both `s' (start) and `c' (count)
-  size_t sc_nc[sc_size];
+  int stat, start[N], count[N];
+  size_t nc_start[N], nc_count[N];
   double *a_double = NULL;
 
   a_double = (double *)a_mpi;
 
-  for (int i = 0; i < 2 * dims; i++) {
-    sc[i] = (i < dims) ? s[i] : c[i - dims];
+  for (int j = 0; j < N; j++) {
+    start[j] = s[j];
+    count[j] = c[j];
   }
 
-  int b_len = 1;
-  for (int i = 0; i < dims; i++) b_len *= c[i];
+  int block_len = 1;
+  for (int j = 0; j < N; j++) block_len *= count[j];
 
   // convert IceModel Vec containing PetscScalar to array of double for NetCDF
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
-  for (int i = 0; i < b_len; i++) {
+  for (int i = 0; i < block_len; i++) {
     a_double[i] = (double)a_petsc[i];
   }
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
@@ -417,27 +422,23 @@ PetscErrorCode NCTool::put_global_var(const int varid, DA da, Vec g,
                          //    processor, then write it out to the NC file
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
-        MPI_Recv(sc, sc_size, MPI_INT, proc, lim_tag, grid->com, &mpi_stat);
-	MPI_Recv(a_double, a_size, MPI_DOUBLE, proc, var_tag, grid->com, &mpi_stat);
+        MPI_Recv(start, N, MPI_INT, proc, start_tag, grid->com, &mpi_stat);
+        MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
+	MPI_Recv(a_double, a_size, MPI_DOUBLE, proc, data_tag, grid->com, &mpi_stat);
       }
 
-//       {
-//         printf("[%1d] writing %4d [", proc, varid);
-//         for (int i = 0; i < 2 * dims; i++) {
-//           if (i == dims) printf("] [");
-//           printf("%5d", sc[i]);
-//         }
-//         printf("]\n");
-//       }
+      for (int j = 0; j < N; j++) {
+	nc_start[j] = start[j];
+	nc_count[j] = count[j];
+      }
 
-      for (int i = 0; i < 2 * dims; i++) sc_nc[i] = (size_t)sc[i]; // we need size_t
-
-      stat = nc_put_vara_double(ncid, varid, &sc_nc[0], &sc_nc[dims], a_double);
+      stat = nc_put_vara_double(ncid, varid, nc_start, nc_count, a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
     }
   } else {  // all other processors send to rank 0 processor
-    MPI_Send(sc, 2 * dims, MPI_INT, 0, lim_tag, grid->com);
-    MPI_Send(a_double, a_size, MPI_DOUBLE, 0, var_tag, grid->com);
+    MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);
+    MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);
+    MPI_Send(a_double, a_size, MPI_DOUBLE, 0, data_tag, grid->com);
   }
   return 0;
 }
