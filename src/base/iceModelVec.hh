@@ -110,25 +110,23 @@ protected:
 			      //< to a NetCDF file and for standard out reports
 
   IceGrid      *grid;
+  GridType     dims;
   DA           da;
   bool         localp, IOwnDA;
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
-  virtual PetscErrorCode  checkAllocated();
-  virtual PetscErrorCode  checkHaveArray();
-  virtual PetscErrorCode  check_range(const int ncid, const int varid);
-  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
-  virtual PetscErrorCode  read_from_netcdf(const char filename[], const unsigned int time, GridType dims,
-					   const int Mz);
-  virtual PetscErrorCode  regrid_from_netcdf(const char filename[], GridType dim_flag,
-					     LocalInterpCtx &lic, bool critical,
-					     bool set_default_value,
-					     PetscScalar default_value);
+  virtual PetscErrorCode checkAllocated();
+  virtual PetscErrorCode checkHaveArray();
+  virtual PetscErrorCode check_range(const int ncid, const int varid);
+  virtual PetscErrorCode define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
+  virtual PetscErrorCode regrid_from_netcdf(const char filename[],
+					    LocalInterpCtx &lic, bool critical,
+					    bool set_default_value,
+					    PetscScalar default_value);
   virtual PetscErrorCode read_valid_range(const int ncid, const int varid);
-  virtual PetscErrorCode write_to_netcdf(const char filename[], GridType dims, nc_type nctype);
-  virtual PetscErrorCode  change_units(utUnit *from, utUnit *to);
-  virtual PetscErrorCode  reset_attrs();
+  virtual PetscErrorCode change_units(utUnit *from, utUnit *to);
+  virtual PetscErrorCode reset_attrs();
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
   //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);
@@ -151,11 +149,6 @@ public:
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
   virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
 				       IceGrid &my_grid, const char my_short_name[], bool local);
-  virtual PetscErrorCode  read(const char filename[], const unsigned int time);
-  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
-  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
-  virtual PetscErrorCode  write(const char filename[], nc_type nctype);
-
   PetscErrorCode  get_array(PetscScalar** &a);
 
 protected:
@@ -169,10 +162,6 @@ class IceModelVec3Bedrock : public IceModelVec {
 public:
   IceModelVec3Bedrock();
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
-  virtual PetscErrorCode read(const char filename[], const unsigned int time);
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical);
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
-  virtual PetscErrorCode write(const char filename[], nc_type nctype);
 
   PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  setColumn(const PetscInt i, const PetscInt j,
@@ -197,11 +186,6 @@ public:
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   PetscErrorCode          createSameDA(IceModelVec3 imv3_dasource, 
                                        IceGrid &mygrid, const char my_short_name[], bool local);
-
-  virtual PetscErrorCode read(const char filename[], const unsigned int time);
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical);
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
-  virtual PetscErrorCode write(const char filename[], nc_type nctype);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 imv3_source);

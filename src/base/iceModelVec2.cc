@@ -54,6 +54,7 @@ PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
   }
 
   grid = &my_grid;
+  dims = GRID_2D;
 
   da = imv2_source.da;
   IOwnDA = false;
@@ -81,6 +82,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
   }
 
   grid = &my_grid;
+  dims = GRID_2D;
   
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
@@ -101,36 +103,6 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
 #ifdef PISM_DEBUG
   creation_counter += 1;
 #endif // PISM_DEBUG
-  return 0;
-}
-
-PetscErrorCode IceModelVec2::read(const char filename[], const unsigned int time) {
-  PetscErrorCode ierr;
-  // Signature: read_from_netcdf(filename, time, dims, Mz)
-  ierr = read_from_netcdf(filename, time, GRID_2D, 1); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec2::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
-  PetscErrorCode ierr;
-  // Signature:
-  // regrid_from_netcdf(filename, dim_flag, lic, critical, set_default_value, default_value)
-  ierr = regrid_from_netcdf(filename, GRID_2D, lic, critical, false, 0.0); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec2::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
-  PetscErrorCode ierr;
-  // Signature:
-  // regrid_from_netcdf(filename, dim_flag, lic, critical, set_default_value, default_value)
-  ierr = regrid_from_netcdf(filename, GRID_2D, lic, false, true, default_value); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec2::write(const char filename[], nc_type nctype) {
-  PetscErrorCode ierr;
-  // Signature: write_to_netcdf(filename, dims, nctype, Mz)
-  ierr = write_to_netcdf(filename, GRID_2D, nctype); CHKERRQ(ierr);
   return 0;
 }
 

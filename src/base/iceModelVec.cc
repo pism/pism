@@ -584,20 +584,23 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid, nc_type nctype) {
 }
 
 //! Virtual only. Reimplemented in derived classes.
-PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {
-  SETERRQ(1, "IceModelVec::read(...) is virtual only.");
-}
-
-//! Virtual only. Reimplemented in derived classes.
 PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, 
                                    bool critical) {
-  SETERRQ(1, "IceModelVec::regrid(...) is virtual only");
+  PetscErrorCode ierr;
+  // Signature:
+  // regrid_from_netcdf(filename, lic, critical, set_default_value, default_value)
+  ierr = regrid_from_netcdf(filename, lic, critical, false, 0.0); CHKERRQ(ierr);
+  return 0;
 }
 
 //! Virtual only. Reimplemented in derived classes.
 PetscErrorCode IceModelVec::regrid(const char filename[], 
                                    LocalInterpCtx &lic, PetscScalar default_value) {
-  SETERRQ(1, "IceModelVec::regrid(...) is virtual only");
+  PetscErrorCode ierr;
+  // Signature:
+  // regrid_from_netcdf(filename, lic, critical, set_default_value, default_value)
+  ierr = regrid_from_netcdf(filename, lic, false, true, default_value); CHKERRQ(ierr);
+  return 0;
 }
 
 //! Calls the appropriate NCTool method to read a NetCDF variable into the IceModelVec.
@@ -608,27 +611,19 @@ PetscErrorCode IceModelVec::regrid(const char filename[],
   <li> Reads data by calling NCTool::get_global_var(...) or NCTool::get_local_var(...)
   </ol>
  */
-PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsigned int time,
-					     GridType dims, const int Mz) {           
+PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {           
   PetscErrorCode ierr;
   bool file_exists, variable_exists;
-  void *a_mpi;
-  int a_len, max_a_len, varid;
+  int varid;
   NCTool nc(grid);
 
   ierr = checkAllocated(); CHKERRQ(ierr);
   if (grid->da2 == PETSC_NULL)
     SETERRQ(1, "IceModelVec::read_from_netcdf: grid.da2 is NULL.");
 
-  // Memory allocation:
-  max_a_len = a_len = grid->xm * grid->ym * Mz;
-  ierr = MPI_Reduce(&a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
-  ierr = PetscMalloc(max_a_len * sizeof(double), &a_mpi); CHKERRQ(ierr);
-
   // Open the file:
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
   if (!file_exists) {
-    // SETERRQ2(1, "Could not open file '%s' while trying to read '%s'.", filename, short_name);
     ierr = PetscPrintf(grid->com,
 		      "PISM ERROR: Could not open file '%s' while trying to read '%s'.\n", filename, short_name);
     CHKERRQ(ierr);
@@ -638,29 +633,21 @@ PetscErrorCode IceModelVec::read_from_netcdf(const char filename[], const unsign
   // Find the variable:
   ierr = nc.find_variable(short_name, standard_name, &varid, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
-    // SETERRQ2(1, "Can't find variable '%s' in '%s'.", short_name, filename);
     ierr = PetscPrintf(grid->com,
-		      "PISM ERROR: Can't find variable '%s' in '%s' (tried both short_name and standard_name '%s'.\n",
-		      short_name, filename, standard_name);
+		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
+		       short_name, standard_name, filename);
     CHKERRQ(ierr);
     PetscEnd();
   }
 
   if (localp) {
-    ierr = nc.get_local_var(varid, da, v, dims, time, a_mpi, max_a_len); CHKERRQ(ierr);  
+    ierr = nc.get_local_var(varid, da, v, dims, time); CHKERRQ(ierr);  
   } else {
-    ierr = nc.get_global_var(varid, v, dims, time, a_mpi, max_a_len); CHKERRQ(ierr);  
+    ierr = nc.get_global_var(varid, v, dims, time); CHKERRQ(ierr);  
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
-
-  ierr = PetscFree(a_mpi);
   return 0;
-}
-
-//! Virtual only. Reimplemented in derived classes.
-PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
-  SETERRQ(1, "IceModelVec::write(const char filename[], nc_type nctype) is virtual only.")
 }
 
 //! Writes an IceModelVec to a NetCDF file.
@@ -669,7 +656,7 @@ PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   2) Find the variable in the file. Call define_variable if not found.
   3) Call put_global_var or put_local_var.
  */
-PetscErrorCode IceModelVec::write_to_netcdf(const char filename[], GridType dims, nc_type nctype) {
+PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
   bool exists;
   NCTool nc(grid);
@@ -742,7 +729,7 @@ PetscErrorCode IceModelVec::report_range() {
   <li> If \c critical == false, regrid the variable or set the default value if asked to.
   </ol>
  */
-PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const GridType dim_flag,
+PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[],
 					       LocalInterpCtx &lic, bool critical,
 					       bool set_default_value,
 					       PetscScalar default_value) {
@@ -800,13 +787,10 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[], const Grid
       nc.set_MaskInterp(&interpolation_mask);
 
     if (localp) {
-      Vec g;
-      ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
-      ierr = nc.regrid_local_var(varid, dim_flag, lic, da, v, g,
-				  use_interpolation_mask); CHKERRQ(ierr);
-      ierr = VecDestroy(g); CHKERRQ(ierr);
+      ierr = nc.regrid_local_var(varid, dims, lic, da, v,
+				 use_interpolation_mask); CHKERRQ(ierr);
     } else {
-      ierr = nc.regrid_global_var(varid, dim_flag, lic, v,
+      ierr = nc.regrid_global_var(varid, dims, lic, v,
 				  use_interpolation_mask); CHKERRQ(ierr);
     }
     // We are done reading, and the data is in the units specified in the

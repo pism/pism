@@ -43,7 +43,8 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[]
   }
   
   grid = &mygrid;
-  
+  dims = GRID_3D;
+
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
   ierr = DAGetInfo(mygrid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
@@ -78,7 +79,8 @@ PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
   }
   
   grid = &mygrid;
-  
+  dims = GRID_3D;
+
   da = imv3_source.da;
   IOwnDA = false;
 
@@ -96,31 +98,6 @@ PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
 #endif // PISM_DEBUG
   return 0;
 }
-
-PetscErrorCode IceModelVec3::read(const char filename[], const unsigned int time) {
-  PetscErrorCode ierr;
-  ierr = read_from_netcdf(filename, time, GRID_3D, grid->Mz); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
-  PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, GRID_3D, lic, critical, false, 0.0); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
-  PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, GRID_3D, lic, false, true, default_value); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3::write(const char filename[], nc_type nctype) {
-  PetscErrorCode ierr;
-  ierr = write_to_netcdf(filename, GRID_3D, nctype); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! Defines a netcdf variable corresponding to an IceModelVec3 object. The ncid
 // argument must refer to a dataset with dimensions t, x, y, z.
@@ -558,6 +535,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   strcpy(short_name,my_short_name);
 
   grid = &my_grid;
+  dims = GRID_3D_BEDROCK;
   
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
@@ -576,31 +554,6 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 #endif // PISM_DEBUG
   return 0;
 }
-
-PetscErrorCode IceModelVec3Bedrock::read(const char filename[], const unsigned int time) {
-  PetscErrorCode ierr;
-  ierr = read_from_netcdf(filename, time, GRID_3D_BEDROCK, grid->Mbz); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
-  PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, GRID_3D_BEDROCK, lic, critical, false, 0.0); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3Bedrock::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
-  PetscErrorCode ierr;
-  ierr = regrid_from_netcdf(filename, GRID_3D_BEDROCK, lic, false, true, default_value); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3Bedrock::write(const char filename[], nc_type nctype) {
-  PetscErrorCode ierr;
-  ierr = write_to_netcdf(filename, GRID_3D_BEDROCK, nctype); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! Defines a netcdf variable corresponding to an IceModelVec3Bedrock object. The ncid
 // argument must refer to a dataset with dimensions t, x, y, zb.
