@@ -23,13 +23,6 @@
 #include "iceModel.hh"
 #include "pism_signal.h"
 
-// following numerical values have some significance; see updateSurfaceElevationAndMask() below
-const int IceModel::MASK_SHEET = 1;
-const int IceModel::MASK_DRAGGING = 2;
-const int IceModel::MASK_FLOATING = 3;
-// (modMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill 
-const int IceModel::MASK_FLOATING_OCEAN0 = 7;
-
 
 IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
@@ -709,20 +702,3 @@ PetscErrorCode IceModel::diagnosticRun() {
   }
   return 0;
 }
-
-
-// note no range checking in these two:
-int IceModel::intMask(PetscScalar maskvalue) {
-  return static_cast<int>(floor(maskvalue + 0.5));
-}
-
-
-int IceModel::modMask(PetscScalar maskvalue) {
-  int intmask = static_cast<int>(floor(maskvalue + 0.5));
-  if (intmask > MASK_FLOATING) {
-    return intmask - 4;
-  } else {
-    return intmask;
-  }
-}
-

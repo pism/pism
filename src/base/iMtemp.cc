@@ -267,7 +267,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         D[k0] = 1.0;
         U[k0] = 0.0;
         // if floating and no ice then worry only about bedrock temps
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
+        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           // essentially no ice but floating ... ask PISMOceanCoupler
           rhs[k0] = Tshelfbase[i][j];
           // FIXME: split k0 into two grid points?
@@ -282,7 +282,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
                                               v[0] * (ss.ij  - ss.jm1) / dy;
         // for w, always difference *up* from base, but make it implicit
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
+        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           // just apply Dirichlet condition to base of column of ice in an
           //    ice shelf
           if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
@@ -418,7 +418,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * H[i][j];
           PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
-          if (modMask(mask[i][j]) == MASK_FLOATING) {
+          if (PismModMask(mask[i][j]) == MASK_FLOATING) {
              // when floating, only half a segment has had its temperature raised
              // above Tpmp
              excessToFromBasalMeltLayer(rho_c_I/2, 0.0, dzEQ, &Texcess, &Hmeltnew);
@@ -445,7 +445,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
       if (ks > 0) {
         Tbnew[k0] = Tnew[0];
       } else {
-        if (modMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
+        if (PismModMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
           Tbnew[k0] = Tshelfbase[i][j]; // set by PISMOceanCoupler
         } else { // top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j]; // set by PISMAtmosphereCoupler
@@ -475,7 +475,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
 
       // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
       //   note massContExplicitStep() calls PISMOceanCoupler separately
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
+      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
         // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
         basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
       } else {
@@ -483,7 +483,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
       }
 
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
+      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
         // eliminate basal lubrication water if floating; 
         Hmelt[i][j] = 0.0;
       } else {

@@ -264,7 +264,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-     if ((modMask(mask[i][j]) == MASK_FLOATING) && (H[i][j] > 1.0)) {
+     if ((PismModMask(mask[i][j]) == MASK_FLOATING) && (H[i][j] > 1.0)) {
         const PetscScalar ccomputed = sqrt(PetscSqr(vbar[i][j]) + PetscSqr(ubar[i][j]));
         maxcComputed = PetscMax(maxcComputed,ccomputed);
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
@@ -391,7 +391,7 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
           ierr = verbPrintf(4,PETSC_COMM_SELF,
                  " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                  grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr); 
-          if (intMask(mask[ci][cj]) == MASK_FLOATING) {
+          if (PismIntMask(mask[ci][cj]) == MASK_FLOATING) {
             goodptcount += 1.0;
             ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
           }

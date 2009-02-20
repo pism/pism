@@ -251,7 +251,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 
       PetscScalar dbdx = 0.0, dbdy = 0.0;
 
-      if (modMask(mask[i][j]) != MASK_FLOATING) {
+      if (PismModMask(mask[i][j]) != MASK_FLOATING) {
         // if grounded then basal kinematical equation gives w[0]
         // bed gradient needed if grounded; there is no reason to assume that the
         //   bed elevation has been periodized by the user

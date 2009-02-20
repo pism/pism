@@ -48,13 +48,13 @@ PetscErrorCode IceModel::computeFlowUbarStats
         const PetscScalar Ubarmag 
                            = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
         Ubarmax = PetscMax(Ubarmax, Ubarmag);
-        if (intMask(mask[i][j]) == MASK_SHEET) {
+        if (PismIntMask(mask[i][j]) == MASK_SHEET) {
           SIAcount += 1.0;
           UbarSIAsum += Ubarmag;
-        } else if (modMask(mask[i][j]) == MASK_FLOATING) {
+        } else if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           shelfcount += 1.0;
           Ubarshelfsum += Ubarmag;
-        } else if (intMask(mask[i][j]) == MASK_DRAGGING) {
+        } else if (PismIntMask(mask[i][j]) == MASK_DRAGGING) {
           // streamcount = icecount - SIAcount - shelfcount
           Ubarstreamsum += Ubarmag;
         } else {
@@ -127,9 +127,9 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
         area += a;
         const PetscScalar dv = a * H[i][j] * 1e-3;
         volume += dv;
-        if (intMask(mask[i][j]) == MASK_SHEET)   volSIA += dv;
-        else if (intMask(mask[i][j]) == MASK_DRAGGING)   volstream += dv;
-        else if (modMask(mask[i][j]) == MASK_FLOATING)   volshelf += dv;
+        if (PismIntMask(mask[i][j]) == MASK_SHEET)   volSIA += dv;
+        else if (PismIntMask(mask[i][j]) == MASK_DRAGGING)   volstream += dv;
+        else if (PismModMask(mask[i][j]) == MASK_FLOATING)   volshelf += dv;
       }
     }
   }  

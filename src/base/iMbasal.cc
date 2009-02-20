@@ -188,7 +188,7 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   ierr = vtillphi.get_array(phi); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (modMask(mask[i][j]) != MASK_FLOATING) {
+      if (PismModMask(mask[i][j]) != MASK_FLOATING) {
         if (bed[i][j] <= topg_min) {
           phi[i][j] = phi_min;
         } else if (bed[i][j] >= topg_max) {
@@ -278,7 +278,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
     ierr = vMask.get_array(mask); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (modMask(mask[i][j]) != MASK_FLOATING) {
+        if (PismModMask(mask[i][j]) != MASK_FLOATING) {
           mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything grounded is dragging,
                                        // so force this
         }
@@ -297,7 +297,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
 
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
+        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           tauc[i][j] = 0.0;  
         } else if (H[i][j] == 0.0) {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
