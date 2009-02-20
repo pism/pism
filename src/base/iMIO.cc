@@ -323,7 +323,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
 // Writes extra fields to the output file \c filename. Does nothing in the base
 // class.
-PetscErrorCode IceModel::write_extra_fields(const char filename[]) {
+PetscErrorCode IceModel::write_extra_fields(const char /*filename*/[]) {
   // Do nothing.
   return 0;
 }

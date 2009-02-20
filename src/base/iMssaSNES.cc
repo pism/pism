@@ -317,7 +317,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
 
 #define sqr PetscSqr
-PetscScalar nu_eff(PetscTruth useConstantNu, PetscScalar schoofReg, PetscScalar barB, 
+static PetscScalar nu_eff(PetscTruth useConstantNu, PetscScalar schoofReg, PetscScalar barB, 
                    PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) {
   //PetscPrintf(PETSC_COMM_WORLD, "nu_eff() turned off\n"); PetscEnd();
   if (useConstantNu == PETSC_TRUE) {
