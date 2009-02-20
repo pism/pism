@@ -71,6 +71,12 @@ public:
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
+  virtual PetscInt integratedStoreSize() const;
+  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
+                               const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const;
+  virtual void integratedViscosity(PetscReal regularization, const PetscScalar store[],
+                                   PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+                                   PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(const PetscScalar T) const;
   virtual PetscScalar hardnessParameter(const PetscScalar T) const;
@@ -94,6 +100,11 @@ public:
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
+  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
+                               const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const;
+  virtual void integratedViscosity(PetscReal regularization, const PetscScalar store[],
+                                   PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+                                   PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar softnessParameter(const PetscScalar T) const;
   virtual PetscScalar hardnessParameter(const PetscScalar T) const;
 protected:
@@ -239,8 +250,10 @@ public:
   PlasticBasalType(const PetscScalar regularizationConstant, const PetscTruth pseudoPlastic,
                    const PetscScalar pseudoExponent, const PetscScalar pseudoUThreshold);
   virtual PetscErrorCode printInfo(const int verbthresh, MPI_Comm com);
-  virtual PetscScalar drag(const PetscScalar tauc, 
+  virtual PetscScalar drag(const PetscScalar tauc,
                            const PetscScalar vx, const PetscScalar vy);
+  // Like drag() but also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
+  virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *drag, PetscScalar *ddrag) const;
   virtual ~PlasticBasalType() {} // class w virtual methods needs virtual destructor?
 
   PetscScalar plastic_regularize, pseudo_q, pseudo_u_threshold;
