@@ -74,10 +74,9 @@ public:
                            const PetscScalar *T1, const PetscScalar *T2) const;
   virtual PetscInt integratedStoreSize() const;
   virtual void integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
-                               const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const;
+                               const PetscScalar T[], PetscScalar store[]) const;
   virtual void integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                   PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-                                   PetscScalar *eta, PetscScalar *deta) const;
+                                   const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(const PetscScalar T) const;
   virtual PetscScalar hardnessParameter(const PetscScalar T) const;
@@ -102,10 +101,9 @@ public:
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
   virtual void integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
-                               const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const;
+                               const PetscScalar T[], PetscScalar store[]) const;
   virtual void integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                   PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-                                   PetscScalar *eta, PetscScalar *deta) const;
+                                   const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar softnessParameter(const PetscScalar T) const;
   virtual PetscScalar hardnessParameter(const PetscScalar T) const;
 protected:
