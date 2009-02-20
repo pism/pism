@@ -2,11 +2,12 @@ add_library (pismnum
   num/cubature.c
   num/extrasGSL.cc)
 
-set_source_files_properties (base/iMutil.cc
+set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION}\"')
-include_directories (udunits)
+include_directories (base udunits)
 
 add_library (pismbase
+  base/pism_revision.cc
   base/beddefLC.cc
   base/grid.cc
   base/iMIO.cc
