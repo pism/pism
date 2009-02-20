@@ -38,6 +38,7 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   
   history_size = TEMPORARY_STRING_LENGTH;
   history = new char[history_size];
+  history[0] = 0;               // Initialize with empty string so that prepending works correctly
 
   have_ssa_velocities = false;
 
@@ -48,6 +49,7 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   createBasal_done = PETSC_FALSE;
   top0ctx_created = PETSC_FALSE;
   createVecs_done = PETSC_FALSE;
+  CFLviolcount = 0;
 
   for (PetscInt nn = 0; nn < tnN; nn++) {
     runtimeViewers[nn] = PETSC_NULL;

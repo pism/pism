@@ -375,7 +375,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
   cmdstr[sizeof(cmdstr) - 1] = '\0';
   for (PetscInt i=1; i < argc; i++) {
-    PetscInt remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
+    size_t remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
     // strncat promises to null terminate, so we must only make sure that the
     // end of the buffer is not overwritten.
     strncat(cmdstr, " ", remaining_bytes--);
