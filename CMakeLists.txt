@@ -13,6 +13,12 @@ find_package (FFTW)
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
 #find_package (MPI REQUIRED)
 
+if (PETSC_VERSION VERSION_LESS "3.0.0")
+  add_definitions (-DPISM_HAVE_PETSC3=0)
+else ()
+  add_definitions (-DPISM_HAVE_PETSC3=1)
+endif ()
+
 # The default options cache
 option (Pism_BUILD_TESTS       "Build tests"                                           ON)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)

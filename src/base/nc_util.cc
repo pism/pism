@@ -800,18 +800,18 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
               || (val <= (double)(myMaskInterp->allowed_levels[0])) ) {
             val = (double)(myMaskInterp->allowed_levels[0]);
           } else {
-            int k=1;
-            while (k < myMaskInterp->number_allowed) {
-             const double mid = (  (double)(myMaskInterp->allowed_levels[k-1])
-                                 + (double)(myMaskInterp->allowed_levels[k])   ) / 2.0;
+            int kk;
+            for (kk=1; kk < myMaskInterp->number_allowed; kk++) {
+             const double mid = (  (double)(myMaskInterp->allowed_levels[kk-1])
+                                 + (double)(myMaskInterp->allowed_levels[kk])   ) / 2.0;
               if (val < mid) {
                 val = (double)(myMaskInterp->allowed_levels[k-1]);
                 break;
               }
-              k++;
+              kk++;
             }
-            if (k >= myMaskInterp->number_allowed) {
-              val = (double)(myMaskInterp->allowed_levels[k-1]);
+            if (kk >= myMaskInterp->number_allowed) {
+              val = (double)(myMaskInterp->allowed_levels[kk-1]);
             }
           }
         }
@@ -1190,7 +1190,7 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
     } else
       dim_len = 0;
 
-    *len = dim_len;
+    *len = static_cast<int>(dim_len);
   }
 
   stat = MPI_Bcast(len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
@@ -1270,7 +1270,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], int *len
     size_t attlen;
     stat = nc_inq_attlen(ncid, varid, name, &attlen);
     if (stat == NC_NOERR)
-      len = attlen;
+      len = static_cast<int>(attlen);
     else
       len = 0;
   }
@@ -1323,7 +1323,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
     size_t attlen;
     stat = nc_inq_attlen(ncid, varid, name, &attlen);
     if (stat == NC_NOERR)
-      len = attlen;
+      len = static_cast<int>(attlen);
     else
       len = 0;
   }

@@ -20,7 +20,7 @@
 #include <cstdlib>
 #include <petscda.h>
 #include <netcdf.h>
-#include <udunits.h>
+#include "../udunits/udunits.h"
 #include "nc_util.hh"
 
 #ifndef __IceModelVec_hh

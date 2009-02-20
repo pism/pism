@@ -51,8 +51,10 @@ find_package_multipass (PETSc petsc_config_current
 # new-style (not yet released, petsc-dev)
 if (EXISTS ${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h)   # > 2.3.3
   set (petsc_conf_base ${PETSC_DIR}/conf/base)
+  set (PETSC_VERSION "3.0.0")
 elseif (EXISTS ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h) # <= 2.3.3
   set (petsc_conf_base ${PETSC_DIR}/bmake/common/base)
+  set (PETSC_VERSION "2.3.3")
 else (EXISTS ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h)
   set (petsc_conf_base "NOTFOUND")
 endif (EXISTS ${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h)

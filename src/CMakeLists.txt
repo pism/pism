@@ -4,10 +4,10 @@ add_library (pismnum
 
 set_source_files_properties (base/iMutil.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION}\"')
+include_directories (udunits)
 
 add_library (pismbase
   base/beddefLC.cc
-  base/forcing.cc
   base/grid.cc
   base/iMIO.cc
   base/iMadaptive.cc
@@ -15,17 +15,17 @@ add_library (pismbase
   base/iMbeddef.cc
   base/iMbootstrap.cc
   base/iMdefaults.cc
-  base/iMforcing.cc
   base/iMgeometry.cc
   base/iMgrainsize.cc
   base/iMinverse.cc
+  base/iMinverseMat.cc
   base/iMmatlab.cc
   base/iMnames.cc
   base/iMoptions.cc
-  base/iMpdd.cc
   base/iMreport.cc
   base/iMsia.cc
   base/iMssa.cc
+  base/iMssaSNES.cc
   base/iMtemp.cc
   base/iMtests.cc
   base/iMutil.cc
@@ -35,21 +35,35 @@ add_library (pismbase
   base/iceModelVec.cc
   base/iceModelVec2.cc
   base/iceModelVec3.cc
+  base/LocalInterpCtx.cc
   base/materials.cc
   base/nc_util.cc
   base/pism_const.cc
-  base/pism_signal.c)
+  base/pism_signal.c
+  coupler/forcing.cc
+  coupler/pccoupler.cc
+  coupler/pPDDcoupler.cc
+  )
 
 add_library (pismverif
   verif/exactTestH.c
   verif/exactTestK.c
   verif/exactTestL.c
+  verif/exactTestM.c
   verif/exactTestsABCDE.c
   verif/exactTestsFG.c
   verif/exactTestsIJ.c)
 
+add_library (pismudunits
+  udunits/udalloc.c
+  udunits/utlib.c
+  udunits/utparse.c
+  udunits/utscan.c)
+set_target_properties (pismudunits
+  PROPERTIES COMPILE_DEFINITIONS UT_DEFAULT_PATH="${CMAKE_INSTALL_PREFIX}/lib/udunits.dat")
+
 # All Pism executables must link against this
-set (Pism_LIBS pismbase pismnum ${Pism_EXTERNAL_LIBS})
+set (Pism_LIBS pismbase pismnum pismudunits ${Pism_EXTERNAL_LIBS})
 
 add_executable (pismr pismr.cc)
 target_link_libraries (pismr ${Pism_LIBS})
@@ -67,6 +81,7 @@ target_link_libraries (pisms ${Pism_LIBS})
 add_executable (pismv pismv.cc
   verif/iceCompModel.cc
   verif/iCMthermo.cc
+  verif/iceCalvBCModel.cc
   verif/iceExactSSAModel.cc)
 target_link_libraries (pismv pismverif ${Pism_LIBS})
 
@@ -74,13 +89,19 @@ add_executable (pgrn eismint/pgrn.cc
   eismint/iceGRNModel.cc)
 target_link_libraries (pgrn ${Pism_LIBS})
 
+add_executable (pcctest pcctest.cc)
+target_link_libraries (pcctest ${Pism_LIBS})
+
 install (TARGETS
-  pismr pismd pisms pismv pgrn # executables
-  pismverif pismbase pismnum # libraries
+  pismr pisms pismv pismd pgrn ## executables
+  pismverif pismbase pismnum pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
 
+install (FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/udunits/udunits.dat"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
 
 if (Pism_BUILD_EXTRA_EXECS)

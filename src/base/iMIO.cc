@@ -22,8 +22,8 @@
 #include "iceModel.hh"
 
 bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
-  int flen = strlen(fname);
-  int slen = strlen(suffix);
+  size_t flen = strlen(fname);
+  size_t slen = strlen(suffix);
   if (strcmp(fname + flen - slen, suffix) == 0) {
     return true;
   } else {
