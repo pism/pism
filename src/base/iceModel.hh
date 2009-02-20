@@ -33,6 +33,10 @@
 #include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"
 
+// With this forward declaration, we don't have to recompile all of
+// Pism if the SSA header "pismssa.hh" changes.
+typedef struct _p_SSA *SSA;
+
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -537,6 +541,11 @@ private:
   VecScatter SSAScatterGlobalToLocal;
 
 protected:
+  // External SSA solver.  If non-NULL, we are using the velocity solver in src/base/ssa and all the SSA* objects above
+  // are not used.  Eventually we should move SSA legacy stuff out of IceModel (either by putting into an implementation
+  // of SSA or by just deleting it).
+  SSA ssa;
+
   // This is related to the snapshot saving feature
   char snapshots_filename[PETSC_MAX_PATH_LEN];
   bool save_snapshots, file_is_ready, split_snapshots;
