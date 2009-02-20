@@ -202,7 +202,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
       const PetscInt jfrom0 = j - (grid.My - 1)/2;
       const PetscScalar y = grid.dy * jfrom0;
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice->rho * grav * H0_schoof * tan(theta);
+      const PetscScalar f = ice->rho * earth_grav * H0_schoof * tan(theta);
       tauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }

@@ -42,12 +42,9 @@ at the base to BasalTypeSIA::velocity().
 
 The returned coefficient is used in basalSlidingHeatingSIA().
  */
-PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
-      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar mu) {
-
+PetscScalar IceModel::basalVelocity(PetscScalar, PetscScalar, PetscScalar H, PetscScalar T, PetscScalar, PetscScalar mu) const {
   if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
-    return basalSIA->velocity(mu, ice->rho * grav * H);
+    return basalSIA->velocity(mu, ice->rho * earth_grav * H);
   } else {
     return 0;
   }
@@ -226,7 +223,7 @@ so \f$0 \le\f$ \c lambda \f$\le 1\f$ inside this routine.
 PetscScalar IceModel::getEffectivePressureOnTill(
                const PetscScalar thk, const PetscScalar melt_thk) {
   const PetscScalar
-     overburdenP = ice->rho * grav * thk,
+     overburdenP = ice->rho * earth_grav * thk,
      pwP = plastic_till_pw_fraction * overburdenP,
      lambda = melt_thk / Hmelt_max;
   return overburdenP - lambda * pwP;  

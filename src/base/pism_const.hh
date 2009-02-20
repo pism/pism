@@ -25,7 +25,7 @@
 extern const char *PISM_Revision;
 
 const PetscScalar gasConst_R = 8.31441;      // J/(mol K)    Gas Constant
-const PetscScalar grav       = 9.81;         // m/s^2        acceleration of gravity
+const PetscScalar earth_grav = 9.81;         // m/s^2        acceleration of gravity
 const PetscScalar secpera    = 3.1556926e7;
 const PetscScalar pi         = 3.14159265358979;
 
