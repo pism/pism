@@ -180,12 +180,12 @@ PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) {
   PetscErrorCode ierr;
 
   ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
-  ierr = get_dim_length("x",  &g.x_len); CHKERRQ(ierr);
-  ierr = get_dim_length("y",  &g.y_len); CHKERRQ(ierr);
+  ierr = get_dim_length("y",  &g.x_len); CHKERRQ(ierr); // transpose
+  ierr = get_dim_length("x",  &g.y_len); CHKERRQ(ierr); // transpose
 
   ierr = get_dim_limits("t", NULL, &g.time); CHKERRQ(ierr);
-  ierr = get_dim_limits("x", &g.x_min, &g.x_max); CHKERRQ(ierr);
-  ierr = get_dim_limits("y", &g.y_min, &g.y_max); CHKERRQ(ierr);
+  ierr = get_dim_limits("y", &g.x_min, &g.x_max); CHKERRQ(ierr); // transpose
+  ierr = get_dim_limits("x", &g.y_min, &g.y_max); CHKERRQ(ierr); // transpose
 
   g.x0 = (g.x_max + g.x_min) / 2.0;
   g.y0 = (g.y_max + g.y_min) / 2.0;
@@ -310,7 +310,7 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
   int stat;
-  double *a_double = NULL;
+  double *a_double = NULL, *a_raw = NULL;
   
   int start[N] = {t, grid->xs, grid->ys, 0,        0};
   int count[N] = {1, grid->xm, grid->ym, grid->Mz, grid->Mbz};
@@ -326,6 +326,9 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
   ierr = PetscMalloc(buffer_size * sizeof(double), &a_double); CHKERRQ(ierr);
 
   if (grid->rank == 0) {
+    // Allocate an array to store input in (before the transpose)
+    ierr = PetscMalloc(buffer_size * sizeof(double), &a_raw); CHKERRQ(ierr);
+
     int start0[N], count0[N];
     for (int j = 0; j < N; j++) {
       // root needs to save its range
@@ -346,11 +349,13 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
       size_t *nc_start, *nc_count;
       ierr = compute_start_and_count(varid, start, count, nc_start, nc_count); CHKERRQ(ierr);
 
-      stat = nc_get_vara_double(ncid, varid, nc_start, nc_count, a_double);
+      stat = nc_get_vara_double(ncid, varid, nc_start, nc_count, a_raw);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       delete[] nc_start;
       delete[] nc_count;
+
+      ierr = transpose(varid, dims, count, a_raw, a_double); CHKERRQ(ierr);
 
       if (proc != 0) {
         int block_size;
@@ -358,6 +363,8 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
 	MPI_Send(a_double, block_size, MPI_DOUBLE, proc, data_tag, grid->com);
       }
     }
+    // Clean up:
+    ierr = PetscFree(a_raw); CHKERRQ(ierr);
   } else {
     MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);
     MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);
@@ -968,8 +975,8 @@ bool NCTool::check_dimensions() {
   bool t, x, y, z, zb;
 
   t  = check_dimension("t", -1); // length does not matter
-  x  = check_dimension("x", grid->Mx); // NB!
-  y  = check_dimension("y", grid->My); // NB!
+  x  = check_dimension("x", grid->My); // transpose
+  y  = check_dimension("y", grid->Mx); // transpose
   z  = check_dimension("z", grid->Mz);
   zb = check_dimension("zb", grid->Mbz);
   
@@ -991,19 +998,19 @@ PetscErrorCode NCTool::create_dimensions() {
     stat = nc_put_att_text(ncid, t, "units", 33, "seconds since 2007-01-01 00:00:00"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "calendar", 4, "none"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
-    // x
-    stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // x; note the transpose
+    stat = nc_def_dim(ncid, "x", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, x, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, x, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, x, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, x, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-    // y
-    stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // y; note the transpose
+    stat = nc_def_dim(ncid, "y", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, y, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, y, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, y, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, y, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
     // z
     stat = nc_def_dim(ncid, "z", grid->Mz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -1025,12 +1032,13 @@ PetscErrorCode NCTool::create_dimensions() {
 
     // set values:
     // Note that the 't' dimension is not modified: it is handled by the append_time method.
-    stat = put_dimension_regular(x, grid->Mx,
-				 grid->x0 - grid->Lx,
-				 grid->x0 + grid->Lx); CHKERRQ(stat);
-    stat = put_dimension_regular(y, grid->My,
+    // Also note the transpose.
+    stat = put_dimension_regular(x, grid->My,
 				 grid->y0 - grid->Ly,
 				 grid->y0 + grid->Ly); CHKERRQ(stat);
+    stat = put_dimension_regular(y, grid->Mx,
+				 grid->x0 - grid->Lx,
+				 grid->x0 + grid->Lx); CHKERRQ(stat);
     stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
     stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
   }
@@ -1351,9 +1359,8 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
   Arrays nc_start and nc_count will be allocated *by* this function and have to
   be freed by the user.
 
-  Also note that here x and y have PISM (internal) meaning.
-  This is one of the places where the "fundamental transpose" is hidden.
- */
+  Also note that here X and Y have PISM (internal) meaning.
+*/
 PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int *count,
 					       size_t* &nc_start, size_t* &nc_count) {
   int stat, ndims;
@@ -1366,6 +1373,9 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
 
   // Quit if this is not processor zero:
   if (grid->rank != 0) return 0;
+
+//   for (int j = 0; j < 5; j++)
+//     fprintf(stderr, "start[%d] = %d, count[%d] = %d\n", j, start[j], j, count[j]);
 
   // Get the number of dimensions a variable depends on:
   stat = nc_inq_varndims(ncid, varid, &ndims);
@@ -1403,11 +1413,11 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
       nc_start[j] = start[T];
       nc_count[j] = count[T];
     } else if (dimids[j] == x_id) {
-      nc_start[j] = start[X];	// NB!
-      nc_count[j] = count[X];	// NB!
+      nc_start[j] = start[Y];	// transpose
+      nc_count[j] = count[Y];	// transpose
     } else if (dimids[j] == y_id) {
-      nc_start[j] = start[Y];	// NB!
-      nc_count[j] = count[Y];	// NB!
+      nc_start[j] = start[X];	// transpose
+      nc_count[j] = count[X];	// transpose
     } else if (dimids[j] == z_id) {
       nc_start[j] = start[Z];
       nc_count[j] = count[Z];
@@ -1418,8 +1428,7 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
       nc_start[j] = 0;
       nc_count[j] = 1;
     }
-//     fprintf(stderr, "start[%d] = %ld, count[%d] = %ld\n",
-// 	    j, nc_start[j], j, nc_count[j]); 
+//     fprintf(stderr, "nc_start[%d] = %ld, nc_count[%d] = %ld\n", j, nc_start[j], j, nc_count[j]); 
   }
 
   delete[] dimids;
@@ -1463,7 +1472,7 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
 
   // Create arrays of IDs of spatial dimensions, in PISM and input orders (they
   // are used to create the map):
-  int pism_dimids[N] = {x_id, y_id, z_id};
+  int pism_dimids[N] = {y_id, x_id, z_id};
   int input_dimids[N] = {-2, -2, -2}; // invalid and never equal to any of dimids
   int m = 0;
   for (int j = 0; j < ndims; j++) {

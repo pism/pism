@@ -183,9 +183,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetReal(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &grid.Mx, PETSC_NULL); CHKERRQ(ierr);
-
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &grid.My, PETSC_NULL); CHKERRQ(ierr);
+  // Note the transpose in the following two lines:
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &grid.My, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &grid.Mx, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &grid.Mz, PETSC_NULL); CHKERRQ(ierr);
 

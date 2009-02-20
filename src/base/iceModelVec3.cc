@@ -107,8 +107,8 @@ PetscErrorCode IceModelVec3::define_netcdf_variable(int ncid, nc_type nctype, in
   if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "y", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "z", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_def_var(ncid, short_name, nctype, 4, dimids, &var_id);
@@ -563,8 +563,8 @@ PetscErrorCode IceModelVec3Bedrock::define_netcdf_variable(int ncid, nc_type nct
   if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "y", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "zb", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_def_var(ncid, short_name, nctype, 4, dimids, &var_id);

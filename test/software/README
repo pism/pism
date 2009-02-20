@@ -1,5 +1,11 @@
+These software tests depend on the following:
 
-1) To run all PISM tests, do
+1) util/nccmp.py, which depends on the netCDF3 module from the netcdf4-python
+package (see http://code.google.com/p/netcdf4-python/) and numpy.
+2) NetCDF Operators (NCO), see http://nco.sourceforge.net/
+
+
+*** To run all PISM tests, do
 
 $ ./run_tests.sh pism
 
@@ -9,7 +15,7 @@ $ make
 
 The summary will be in the file "pism.txt".
 
-2) To run an individual PISM test, (test 1, for example) do
+*** To run an individual PISM test, (test 1, for example) do
 
 $ cd pism; ./test_01.sh
 
