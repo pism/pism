@@ -59,6 +59,7 @@ public:
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure, const PetscScalar gs) const;
+  virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
   // this one returns nu; applies to ice shelf/stream approximation
   virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
                            const PetscScalar u_x, const PetscScalar u_y,
@@ -162,6 +163,7 @@ public:
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure, const PetscScalar gs) const;
+  virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(const PetscScalar stress, const PetscScalar temp,
                     const PetscScalar pressure) const;
 
@@ -190,7 +192,7 @@ public:
                            const PetscScalar pressure) const;
   virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
                            const PetscScalar pressure, const PetscScalar gs) const;
-
+  virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:
   static PetscScalar d_grain_size_stripped;
 };

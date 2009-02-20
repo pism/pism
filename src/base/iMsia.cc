@@ -190,7 +190,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
-  const bool usetau3 = ((flowLawUsesGrainSize == PETSC_TRUE) && (realAgeForGrainSize == PETSC_TRUE));
+  const bool usetau3 = (ice->usesGrainSize() && (realAgeForGrainSize == PETSC_TRUE));
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
@@ -237,7 +237,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   pressure = ice->rho * grav * (thickness - grid.zlevels[k]);
             PetscScalar flow;
-            if (flowLawUsesGrainSize == PETSC_TRUE) {
+            if (ice->usesGrainSize()) {
               //if (realAgeForGrainSize == PETSC_TRUE)
               //  PetscPrintf(PETSC_COMM_WORLD,
               //        "flowLawUsesGrainSize and realAgeForGrainSize both TRUE\n");
