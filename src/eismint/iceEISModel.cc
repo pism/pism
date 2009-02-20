@@ -23,11 +23,11 @@
 #include "iceEISModel.hh"
 
 
-IceEISModel::IceEISModel(IceGrid &g, IceType *i)
-  : IceModel(g,i) {  // do nothing; note derived classes must have constructors
+IceEISModel::IceEISModel(IceGrid &g)
+  : IceModel(g) {  // do nothing; note derived classes must have constructors
   expername = 'A';
   infileused = false;
-  flowLawNumber = 0;
+  iceFactory.setType(ICE_PB);
 }
 
 
@@ -189,22 +189,11 @@ PetscErrorCode IceEISModel::initFromOptions(PetscTruth doHook) {
 	ierr = grid.rescale_and_set_zlevels(L, L, 4000); CHKERRQ(ierr);
 	break;
       case 'F':
-	switch (flowLawNumber)
-	  {
-	  case 0:
-	  case 3:
-	    ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
-	    break;
-	  case 1:
-	  case 4:
-	  case 5:
-	    ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
-	    break;
-	  case 2:
-	    ierr = grid.rescale_and_set_zlevels(L, L, 7000); CHKERRQ(ierr);
-	    break;
-	  default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
-	  }
+        // I (Jed 2009-02-20) just stripped out a small bit of logic that would scale differently based on the flow law
+        // number.  Such a decision is fundamentally limiting and doesn't allow for customizable ice types.  If needed,
+        // it should be replaced by a heuristic based on the action of the flow law (i.e. if the flow is less than a
+        // threshold at a reference stress and pressure, then rescale differently).
+        ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
 	break;
       case 'G':
 	ierr = grid.rescale_and_set_zlevels(L, L, 3000); CHKERRQ(ierr);

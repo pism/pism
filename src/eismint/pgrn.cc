@@ -40,14 +40,12 @@ int main(int argc, char *argv[]){
   
   { // explicit scoping does deconstructors before PetscFinalize() 
     IceGrid g(com, rank, size);
-    IceType *ice = PETSC_NULL;
     PISMEISGREENPDDCoupler ppdd;
     PISMConstOceanCoupler  pcoc;
  
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
 
-    IceGRNModel    m(g, ice);
+    IceGRNModel    m(g);
 
     ierr = verbPrintf(1, com, "PGRN  (PISM EISMINT-Greenland mode)\n"); CHKERRQ(ierr);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
@@ -64,7 +62,6 @@ int main(int argc, char *argv[]){
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);
 
     ierr = m.writeFiles("grn_exper.nc"); CHKERRQ(ierr);
-    delete ice;
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

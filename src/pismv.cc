@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid      g(com, rank, size);
-    IceType*     ice = PETSC_NULL;
     PISMAtmosphereCoupler pac;
     PISMConstOceanCoupler pcoc;
 
@@ -56,11 +55,10 @@ int main(int argc, char *argv[]) {
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1, com, "PISMV  (verification mode)\n"); CHKERRQ(ierr);
-    ierr = userChoosesIceType(com, ice, 1); CHKERRQ(ierr); // allocates ice
-    
+
     // determine test (and whether to report error)
     ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, &testchosen); CHKERRQ(ierr);
-    char test = testname[0];  // only use the first letter
+    int test = testname[0];  // only use the first letter
     if (testchosen == PETSC_FALSE)     test = 'A';           // default to test A
     if ((test >= 'a') && (test <= 'z'))    test += 'A'-'a';  // capitalize if lower    
     ierr = PetscOptionsHasName(PETSC_NULL, "-no_report", &dontReport); CHKERRQ(ierr);
@@ -70,7 +68,8 @@ int main(int argc, char *argv[]) {
       // run derived class for test M which includes new calving front stress
       //   boundary condition implementation
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
-      IceCalvBCModel mCBC(g, ice, 'M');  
+      IceCalvBCModel mCBC(g, 'M');
+      ierr = mCBC.getIceFactory().setType(ICE_ARR);CHKERRQ(ierr);
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mCBC.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
@@ -86,7 +85,10 @@ int main(int argc, char *argv[]) {
     } else if ((test == 'I') || (test == 'J') || (test == 'M')) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
       //   or annular ice shelf with calving front
-      IceExactSSAModel mSSA(g, ice, test);  
+      IceExactSSAModel mSSA(g, test);
+      if (test != 'I') {        // Correct errors in test I require CustomGlenIce
+        ierr = mSSA.getIceFactory().setType(ICE_ARR);CHKERRQ(ierr);
+      }
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mSSA.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mSSA.attachOceanPCC(pcoc); CHKERRQ(ierr);
@@ -100,21 +102,21 @@ int main(int argc, char *argv[]) {
       ierr = mSSA.writeFiles("verify.nc",PETSC_TRUE); CHKERRQ(ierr);
     } else { // run derived class for compensatory source SIA solutions
              // (i.e. compensatory accumulation or compensatory heating)
-      ThermoGlenArrIce*   tgaice = (ThermoGlenArrIce*) ice;
-      IceCompModel       mComp(g, tgaice, test);
+      IceCompModel       mComp(g, test);
+      ierr = mComp.getIceFactory().setType(ICE_ARR);CHKERRQ(ierr);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mComp.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
       ierr = mComp.setFromOptions(); CHKERRQ(ierr);
+      ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIce());
+      if (!tgaice) SETERRQ(1,"Ice is actually not ThermoGlenArrIce");
       ierr = mComp.initFromOptions(); CHKERRQ(ierr);
       ierr = mComp.run(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
-        PetscInt myFLN;
-        ierr = getFlowLawNumber(myFLN,1); CHKERRQ(ierr);
-        if ((myFLN != 1) && ((test == 'F') || (test == 'G'))) {
+        if (!IceTypeIsPatersonBuddCold(tgaice) && ((test == 'F') || (test == 'G'))) {
             ierr = verbPrintf(1,com, 
-                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-law 1')\n"
+                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type pb' or '-law 1')\n"
                 "   for reported errors in test %c to be meaningful!\n", test); CHKERRQ(ierr);
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
@@ -122,7 +124,6 @@ int main(int argc, char *argv[]) {
       ierr = mComp.writeFiles("verify.nc",PETSC_FALSE); CHKERRQ(ierr);
     }
     
-    delete ice;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

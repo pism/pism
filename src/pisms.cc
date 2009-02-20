@@ -45,20 +45,16 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid    g(com, rank, size);
-    IceType*   ice = PETSC_NULL;
-    MISMIPIce* mismipice = new MISMIPIce;
     PISMConstAtmosCoupler pcac;
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "PISMS  (simplified geometry mode)\n"); CHKERRQ(ierr);
 
-    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
-    
     // call constructors on all three, but m will point to the one we use
-    IceEISModel    mEISII(g, ice);
-    IcePSTexModel  mPSTex(g, ice);
-    IceMISMIPModel mMISMIP(g, mismipice);
+    IceEISModel    mEISII(g);
+    IcePSTexModel  mPSTex(g);
+    IceMISMIPModel mMISMIP(g);
     IceModel*      m;
 
     PetscTruth  pddSet, EISIIchosen, PSTexchosen, MISMIPchosen;
@@ -120,9 +116,6 @@ int main(int argc, char *argv[]) {
     if (MISMIPchosen == PETSC_TRUE) {
       ierr = mMISMIP.writeMISMIPFinalFiles(); CHKERRQ(ierr);
     }
-
-    delete mismipice;
-    delete ice;
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

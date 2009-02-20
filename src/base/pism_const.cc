@@ -37,53 +37,6 @@ PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN)
 }
 
 
-PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice) {
-    PetscErrorCode ierr;
-    ierr = userChoosesIceType(com, ice, 0); CHKERRQ(ierr); // use Paterson-Budd by default
-    return 0;
-}
-
-
-PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt defaultFLN) {
-    PetscErrorCode ierr;
-    PetscInt       myflowLawNum;
-    
-    ierr = getFlowLawNumber(myflowLawNum, defaultFLN); CHKERRQ(ierr);
-
-    ierr = verbPrintf(3,com, 
-        "  [using flow law %d (where 0=Paterson-Budd,1=cold P-B,2=warm P-B,"
-        "3=Hooke,4=Goldsby-Kohlstedt)]\n",
-        myflowLawNum); CHKERRQ(ierr);
-    
-    switch (myflowLawNum) {
-      case 0: // Paterson-Budd
-        ice = new ThermoGlenIce;  
-        break;
-      case 1: // cold part of P-B
-        ice = new ThermoGlenArrIce;  
-        break;
-      case 2: // warm part of P-B
-        ice = new ThermoGlenArrIceWarm;  
-        break;
-      case 3: // Hooke
-        ice = new ThermoGlenIceHooke;
-        break;
-      case 4: // Goldsby Kohlstedt
-        ice = new HybridIce;  
-        break;
-      case 5: // Goldsby Kohlstedt stripped down
-        ice = new HybridIceStripped;  
-        break;
-      default:
-	{
-	  PetscPrintf(com, "\n PISM ERROR: flow law number must be 0,1,2,3,4\n");
-	  PetscEnd();
-	}
-    }
-    return 0;
-}
-
-
 
 // Verbosity level version of PetscPrintf.  We print according to whether 
 // (thresh <= verbosityLevel), in which case print, or 

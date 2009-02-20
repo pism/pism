@@ -45,7 +45,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 
 
   PetscScalar **h, **H, **mask, **b, **taudx, **taudy;
 
-  const PetscScalar n       = ice->n, // frequently n = 3
+  const PetscScalar n       = ice->exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                     invpow  = 1.0 / etapow,  // = 3/8
                     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8

@@ -28,8 +28,9 @@
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, IceType *i, const char mytest);
+  IceCompModel(IceGrid &g, int mytest);
   virtual ~IceCompModel();
+  virtual PetscErrorCode setFromOptions();
   using IceModel::initFromOptions;
   virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
   PetscErrorCode reportErrors();
@@ -38,7 +39,7 @@ protected:
   // related to all (or most) tests
   ThermoGlenArrIce *tgaIce;
   PetscTruth   exactOnly;
-  char         testname;
+  int          testname;
   void         mapcoords(const PetscInt i, const PetscInt j,
                   PetscScalar &x, PetscScalar &y, PetscScalar &r);
   virtual PetscErrorCode 
@@ -69,7 +70,7 @@ protected:
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
   virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y,
                                     const PetscScalar H, const PetscScalar T,
-                                    const PetscScalar alpha, const PetscScalar mu);
+                                    const PetscScalar alpha, const PetscScalar mu) const;
 
   // related to test L
   IceModelVec2   vHexactL;

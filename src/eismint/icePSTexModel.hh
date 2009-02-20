@@ -37,7 +37,7 @@ which were present in the old version.
 class IcePSTexModel : public IceEISModel {
 
 public:
-  IcePSTexModel(IceGrid &g, IceType *i);
+  IcePSTexModel(IceGrid &g);
   virtual PetscErrorCode setFromOptions();
   using IceEISModel::initFromOptions;
   virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);

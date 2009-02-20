@@ -40,7 +40,7 @@ protected:
 class IceGRNModel : public IceModel {
 
 public:
-  IceGRNModel(IceGrid &g, IceType *i);
+  IceGRNModel(IceGrid &g);
   virtual PetscErrorCode setFromOptions();
   using IceModel::initFromOptions;
   PetscErrorCode attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p);

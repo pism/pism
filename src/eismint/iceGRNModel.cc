@@ -49,7 +49,7 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
 }
 
 
-IceGRNModel::IceGRNModel(IceGrid &g, IceType *i) : IceModel(g, i) {
+IceGRNModel::IceGRNModel(IceGrid &g) : IceModel(g) {
   // only call parent's constructor; do all classes need constructors?
   pddPCC = PETSC_NULL;
 }

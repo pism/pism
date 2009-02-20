@@ -24,7 +24,7 @@
 #include "pism_signal.h"
 
 
-IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
+IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -73,11 +73,6 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
     PetscEnd();
   }
 
-  // \bug There is currently no way to ensure that this->flowLawNumber has anything to do with this->ice.  While they
-  // are both gotten from getFlowLawNumber(), the defaults are generally not the same.  I (Jed) think that
-  // IceModel::flowLawNumber should be removed and the required functionality should be placed in IceType.
-  ierr = getFlowLawNumber(flowLawNumber, 0); //CHKERRQ(ierr);
-
   save_snapshots = false;
 }
 
@@ -100,6 +95,7 @@ IceModel::~IceModel() {
     bootstrapLIC = PETSC_NULL;
   }
   delete[] history;
+  delete ice;
   utTerm(); // Clean up after UDUNITS
 }
 

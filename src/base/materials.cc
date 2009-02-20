@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -25,86 +25,97 @@ PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal co
 PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capacity
 PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
-PetscScalar IceType::n = 3.0;
 
-// This uses the definition of second invariant from Hutter and several others, namely
-// \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
-static inline PetscScalar secondInvariant(PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y)
-{ return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y)) + 0.5 * PetscSqr(u_y + v_x); }
+// Rather than make this part of the base class, we just check at some reference values.
+PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
+  static const struct {PetscReal s,T,p,gs;} v[] = {
+    {1e3,223,1e6,1e-3},{2e4,254,3e6,2e-3},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};
+  ThermoGlenArrIce cpb(PETSC_COMM_SELF,NULL); // This is unmodified cold Paterson-Budd
+  for (int i=0; i<4; i++) {
+    if (ice->flow(v[i].s, v[i].T, v[i].p, v[i].gs) != cpb.flow(v[i].s, v[i].T, v[i].p, v[i].gs))
+      return PETSC_FALSE;
+  }
+  return PETSC_TRUE;
+}
 
-// The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
-static inline PetscScalar secondInvariantDu(const PetscScalar Du[])
-{ return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
+PetscTruth IceTypeUsesGrainSize(IceType *ice) {
+  static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,T=260,p=1e6;
+  PetscReal ref = ice->flow(s,T,p,gs[0]);
+  for (int i=1; i<4; i++) {
+    if (ice->flow(s,T,p,gs[i]) != ref) return PETSC_FALSE;
+  }
+  return PETSC_TRUE;
+}
 
 
-PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
-                          const PetscScalar pressure) const {
-  PetscPrintf(PETSC_COMM_SELF,
-     "ERROR:  IceType::flow() is unimplemented virtual; ENDING ...\n");
-  PetscEnd();
+
+
+CustomGlenIce::CustomGlenIce(MPI_Comm c,const char *pre) : IceType(c,pre)
+{
+  exponent_n = 3.0;
+  softness_A = 4e-25;
+  hardness_B = pow(softness_A, -1/exponent_n); // ~= 135720960;
+  setSchoofRegularization(1,1000);             // Units of km
+}
+
+PetscScalar CustomGlenIce::flow(PetscScalar stress,PetscScalar,PetscScalar,PetscScalar) const
+{
+  return softness_A * pow(stress,exponent_n-1);
+}
+
+PetscScalar CustomGlenIce::effectiveViscosityColumn(PetscScalar H, PetscInt, const PetscScalar *,
+                           PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+                           const PetscScalar *, const PetscScalar *) const  {
+  return H * hardness_B / 2 * pow(schoofReg + secondInvariant(u_x,u_y,v_x,v_y), (1-exponent_n)/(2*exponent_n));
+}
+
+PetscInt CustomGlenIce::integratedStoreSize() const { return 1; }
+
+void CustomGlenIce::integratedStore(PetscScalar H,PetscInt,const PetscScalar*,const PetscScalar[],PetscScalar store[]) const
+{
+  store[0] = H * hardness_B / 2;
+}
+
+void CustomGlenIce::integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
+{
+  const PetscScalar alpha = secondInvariantDu(Du),power = (1-exponent_n) / (2*exponent_n);
+  *eta = store[0] * pow(schoofReg + alpha, power);
+  if (deta) *deta = power * *eta / (schoofReg + alpha);
+}
+
+PetscErrorCode CustomGlenIce::setExponent(PetscReal n) {exponent_n = n; return 0;}
+PetscErrorCode CustomGlenIce::setSchoofRegularization(PetscReal vel,PetscReal len) // Units: m/a and km
+{schoofVel = vel/secpera; schoofLen = len*1e3; schoofReg = PetscSqr(schoofVel/schoofLen); return 0;}
+PetscErrorCode CustomGlenIce::setSoftness(PetscReal A) {softness_A = A; hardness_B = pow(A,-1/exponent_n); return 0;}
+PetscErrorCode CustomGlenIce::setHardness(PetscReal B) {hardness_B = B; softness_A = pow(B,-exponent_n); return 0;}
+
+PetscErrorCode CustomGlenIce::setFromOptions()
+{
+  PetscReal      n = exponent_n,B=hardness_B,A=softness_A,slen=schoofLen/1e3,svel=schoofVel*secpera;
+  PetscTruth     flg;
+  PetscErrorCode ierr;
+
+  ierr = PetscOptionsBegin(comm,prefix,"CustomGlenIce options",NULL);CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsReal("-ice_custom_n","Power-law exponent","",n,&n,&flg);CHKERRQ(ierr);
+    if (flg) {ierr = setExponent(n);CHKERRQ(ierr);}
+    ierr = PetscOptionsReal("-ice_custom_schoof_vel","Regularizing velocity (Schoof definition, m/a)","",svel,&svel,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_schoof_len","Regularizing length (Schoof definition, km)","",slen,&slen,NULL);CHKERRQ(ierr);
+    ierr = setSchoofRegularization(svel,slen);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_A","Softness parameter",NULL,A,&A,&flg);CHKERRQ(ierr);
+    if (flg) {ierr = setSoftness(A);CHKERRQ(ierr);}
+    ierr = PetscOptionsReal("-ice_custom_B","Hardness parameter",NULL,B,&B,&flg);CHKERRQ(ierr);
+    if (flg) {ierr = setHardness(B);CHKERRQ(ierr);}
+  }
+  ierr = PetscOptionsEnd();CHKERRQ(ierr);
   return 0;
 }
 
-PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
-                          const PetscScalar pressure, const PetscScalar gs) const {
-  PetscPrintf(PETSC_COMM_SELF,
-     "ERROR:   IceType::flow() depending on grainsize is unimplemented virtual; ENDING ...\n");
-  PetscEnd();
+PetscErrorCode CustomGlenIce::printInfo(PetscInt verb) const {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(verb,comm,"CustomGlenIce n=%3g B=%8.1e v_schoof=%4f m/a L_schoof=%4f km\n",exponent_n,hardness_B,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
   return 0;
 }
-
-PetscScalar IceType::effectiveViscosity(const PetscScalar regularization,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar temp, const PetscScalar pressure) const {
-  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
-                             + 0.5 * PetscSqr(u_x + v_y)
-                             + 0.25 * PetscSqr(u_y + v_x);
-  const PetscScalar B = 135720960;
-  return B / 2 * pow(regularization + alpha, -1.0 / 3.0);
-}
-
-PetscScalar IceType::effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscInt kbelowH,
-                           const PetscInt nlevels, PetscScalar *zlevels,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar *T1, const PetscScalar *T2) const  {
-  const PetscScalar B = 135720960;
-  return H * B / 2 * pow(regularization + secondInvariant(u_x,u_y,v_x,v_y), -1.0 / 3.0);
-}
-
-PetscInt IceType::integratedStoreSize() const { return 1; }
-
-void IceType::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
-                              const PetscScalar T[], PetscScalar store[]) const
-{
-  const PetscScalar B = 135720960;
-  store[0] = H * B / 2;
-}
-
-void IceType::integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                  const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
-{
-  const PetscScalar alpha = secondInvariantDu(Du);
-  *eta = store[0] * pow(regularization + alpha, -1.0 / 3.0);
-  if (deta) *deta = -(1./3.) * *eta / (regularization + alpha);
-}
-
-PetscScalar IceType::exponent() const {
-  return n;
-}
-
-
-PetscScalar IceType::softnessParameter(PetscScalar T) const {
-  return 4.0e-25;
-}
-
-
-PetscScalar IceType::hardnessParameter(PetscScalar T) const {
-  return 135720960.0;
-}
-
 
 // ThermoGlenIce is Paterson-Budd
 PetscScalar ThermoGlenIce::A_cold = 3.61e-13;   // Pa^-3 / s
@@ -112,42 +123,44 @@ PetscScalar ThermoGlenIce::A_warm = 1.73e3; // Pa^-3 / s
 PetscScalar ThermoGlenIce::Q_cold = 6.0e4;      // J / mol
 PetscScalar ThermoGlenIce::Q_warm = 13.9e4; // J / mol
 PetscScalar ThermoGlenIce::crit_temp = 263.15;  // K
+PetscScalar ThermoGlenIce::n = 3;
 
-
-PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp,
-                                const PetscScalar pressure) const {
-  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
-  return softnessParameter(T) * pow(stress,n-1);
+ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[]) : IceType(c,pre) {
+  schoofLen = 1e6;
+  schoofVel = 1/secpera;
+  schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
+PetscErrorCode ThermoGlenIce::setFromOptions() {
+  PetscErrorCode ierr;
+  PetscReal slen=schoofLen/1e3,svel=schoofVel*secpera;
 
-PetscScalar ThermoGlenIce::flow(const PetscScalar stress, const PetscScalar temp,
-                                const PetscScalar pressure, const PetscScalar gs) const {
-//  return flow(stress, temp, pressure);
-  PetscPrintf(PETSC_COMM_SELF,
-     "ERROR:   ThermoGlenIce::flow() depending on grainsize is virtual ... ENDING");
-  PetscEnd();
+  ierr = PetscOptionsBegin(comm,prefix,"ThermoGlenIce options",NULL);CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsReal("-ice_schoof_vel","Regularizing velocity (Schoof definition, m/a)","",svel,&svel,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_schoof_len","Regularizing length (Schoof definition, km)","",slen,&slen,NULL);CHKERRQ(ierr);
+    schoofVel = svel / secpera;
+    schoofLen = slen * 1e3;
+    schoofReg = PetscSqr(schoofVel/schoofLen);
+  }
+  ierr = PetscOptionsEnd();CHKERRQ(ierr);
   return 0;
 }
 
-
-PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar regularization,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar temp, const PetscScalar pressure) const  {
-  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
-  const PetscScalar B = hardnessParameter(T);
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
-  return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n)); 
+PetscErrorCode ThermoGlenIce::printInfo(PetscInt verb) const {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(verb,comm,"ThermoGlenIce v_schoof=%4f m/a L_schoof=%4f km\n",schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+  return 0;
 }
 
+PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
+  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure; // homologous temp
+  return softnessParameter(T) * pow(stress,n-1);
+}
 
-PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscInt kbelowH,
-                           const PetscInt nlevels, PetscScalar *zlevels,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar *T1, const PetscScalar *T2) const  {
+PetscScalar ThermoGlenIce::effectiveViscosityColumn(PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
+                                                    PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
+                                                    const PetscScalar *T1, const PetscScalar *T2) const {
   // DESPITE NAME, does *not* return effective viscosity.
   // The result is \nu_e H, i.e. viscosity times thickness.
   // B is really hardness times thickness.
@@ -168,10 +181,11 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regulariza
                                       + beta_CC_grad * (H - zlevels[kbelowH]));
   }
   const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
-  return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n));
+  return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
-void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
+PetscInt ThermoGlenIce::integratedStoreSize() const {return 1;}
+void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                               const PetscScalar T[], PetscScalar store[]) const
 {
   PetscScalar B = 0;
@@ -190,15 +204,15 @@ void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nl
   store[0] = B / 2;
 }
 
-void ThermoGlenIce::integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                        const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
+void ThermoGlenIce::integratedViscosity(const PetscScalar store[],const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
 {
   const PetscScalar alpha = secondInvariantDu(Du);
-  *eta = store[0] * pow(regularization + alpha, (1-n)/(2*n));
-  if (deta) *deta = (1-n)/(2*n) * *eta / (regularization + alpha);
+  *eta = store[0] * pow(schoofReg + alpha, (1-n)/(2*n));
+  if (deta) *deta = (1-n)/(2*n) * *eta / (schoofReg + alpha);
 }
 
 
+PetscScalar ThermoGlenIce::exponent() const { return n; }
 PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
   if (T < crit_temp) {
     return A_cold * exp(-Q_cold/(gasConst_R * T));
@@ -210,6 +224,8 @@ PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
 PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
   return pow(softnessParameter(T), -1.0/n);
 }
+
+
 
 
 // ThermoGlenIceHooke: only change A(T) factor from ThermoGlenIce, which is
@@ -235,9 +251,8 @@ PetscScalar ThermoGlenArrIce::softnessParameter(PetscScalar T) const {
   return A() * exp(-Q()/(gasConst_R * T));
 }
 
-PetscScalar ThermoGlenArrIce::flow(const PetscScalar stress, const PetscScalar temp,
-                                   const PetscScalar pressure) const {
-  // ignors pressure
+PetscScalar ThermoGlenArrIce::flow(PetscScalar stress, PetscScalar temp, PetscScalar,PetscScalar) const {
+  // ignores pressure
   return softnessParameter(temp) * pow(stress,n-1);  // uses NON-homologous temp
 }
 
@@ -299,11 +314,6 @@ HybridIce::diff_crit_temp=258.0,    // when to use enhancement factor
   HybridIce::diff_delta=9.04e-10;     // grain boundary width (m)
 
 PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
-                            const PetscScalar pressure) const {
-  return flow(stress, temp, pressure, d_grain_size);
-}
-
-PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure, const PetscScalar gs) const {
   /*
   This is the (forward) Goldsby-Kohlstedt flow law.  See:
@@ -313,7 +323,7 @@ PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
   PetscScalar eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
   if (PetscAbs(stress) < 1e-10) return 0;
-  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure;
   const PetscScalar pV = pressure * V_act_vol;
   const PetscScalar RT = gasConst_R * T;
   // Diffusional Flow
@@ -343,8 +353,7 @@ PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
 /*****************
 THE NEXT PROCEDURE REPEATS CODE; INTENDED ONLY FOR DEBUGGING
 *****************/
-GKparts HybridIce::flowParts(const PetscScalar stress, const PetscScalar temp,
-                             const PetscScalar pressure) const {
+GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pressure) const {
   PetscScalar gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
   GKparts p;
 
@@ -353,7 +362,7 @@ GKparts HybridIce::flowParts(const PetscScalar stress, const PetscScalar temp,
     p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
     return p;
   }
-  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure;
   const PetscScalar pV = pressure * V_act_vol;
   const PetscScalar RT = gasConst_R * T;
   // Diffusional Flow
@@ -393,20 +402,15 @@ GKparts HybridIce::flowParts(const PetscScalar stress, const PetscScalar temp,
 PetscScalar HybridIceStripped::d_grain_size_stripped = 3.0e-3;
                                     // m; = 3mm  (see Peltier et al 2000 paper)
 
-PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar temp,
-                            const PetscScalar pressure) const {
-  return flow(stress, temp, pressure, d_grain_size_stripped);
-}
 
-PetscScalar HybridIceStripped::flow(const PetscScalar stress, const PetscScalar temp,
-                            const PetscScalar pressure, const PetscScalar gs) const {
+PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
   // note value of gs is ignored
   // note pressure only effects the temperature; the "P V" term is dropped
   // note no diffusional flow
   PetscScalar eps_disl, eps_basal, eps_gbs;
 
   if (PetscAbs(stress) < 1e-10) return 0;
-  const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure;
   const PetscScalar RT = gasConst_R * T;
   // NO Diffusional Flow
   // Dislocation Creep
@@ -539,3 +543,128 @@ void PlasticBasalType::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscS
   }
 }
 
+
+#undef ALEN
+#define ALEN(a) (sizeof(a)/sizeof(a)[0])
+
+IceFactory::IceFactory(MPI_Comm c,const char pre[])
+{
+  comm = c;
+  prefix[0] = 0;
+  if (pre) {
+    strncpy(prefix,pre,sizeof(prefix));
+  }
+  if (registerAll()) {
+    PetscPrintf(comm,"IceFactory::registerAll returned an error but we're in a constructor");
+    PetscEnd();
+  }
+}
+
+IceFactory::~IceFactory()
+{
+  PetscFListDestroy(&type_list);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "IceFactory::registerType"
+PetscErrorCode IceFactory::registerType(const char tname[],PetscErrorCode(*icreate)(MPI_Comm,const char[],IceType**))
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscFListAdd(&type_list,tname,NULL,(void(*)(void))icreate);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+#undef _C
+#define _C(tname,Type) \
+  static PetscErrorCode create_ ## tname(MPI_Comm comm,const char pre[],IceType **i) { *i = new (Type)(comm,pre); return 0; }
+_C(custom,CustomGlenIce)
+_C(pb,ThermoGlenIce)
+_C(hooke,ThermoGlenIceHooke)
+_C(arr,ThermoGlenArrIce)
+_C(arrwarm,ThermoGlenArrIceWarm)
+_C(hybrid,HybridIce)
+#undef _C
+
+#undef __FUNCT__
+#define __FUNCT__ "IceFactory::registerAll"
+PetscErrorCode IceFactory::registerAll()
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscMemzero(&type_list,sizeof(type_list));CHKERRQ(ierr);
+  ierr = registerType(ICE_CUSTOM, &create_custom); CHKERRQ(ierr);
+  ierr = registerType(ICE_PB,     &create_pb);     CHKERRQ(ierr);
+  ierr = registerType(ICE_HOOKE,  &create_hooke);  CHKERRQ(ierr);
+  ierr = registerType(ICE_ARR,    &create_arr);    CHKERRQ(ierr);
+  ierr = registerType(ICE_ARRWARM,&create_arrwarm);CHKERRQ(ierr);
+  ierr = registerType(ICE_HYBRID, &create_hybrid); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "IceFactory::setType"
+PetscErrorCode IceFactory::setType(const char type[])
+{
+  void (*r)(void);
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscFListFind(type_list,comm,type,(void(**)(void))&r);CHKERRQ(ierr);
+  if (!r) SETERRQ1(PETSC_ERR_ARG_UNKNOWN_TYPE,"Selected Ice type %s not available",type);
+  ierr = PetscStrncpy(type_name,type,sizeof(type_name));CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+#undef __FUNCT__
+#define __FUNCT__ "IceFactory::setTypeByNumber"
+// This method exists only for backwards compatibility.
+PetscErrorCode IceFactory::setTypeByNumber(int n)
+{
+
+  PetscFunctionBegin;
+  switch (n) {
+    case 0: setType(ICE_PB); break;
+    case 1: setType(ICE_ARR); break;
+    case 2: setType(ICE_ARRWARM); break;
+    case 3: setType(ICE_HOOKE); break;
+    case 4: setType(ICE_HYBRID); break;
+    default: SETERRQ1(1,"Ice number %d not available",n);
+  }
+  PetscFunctionReturn(0);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "IceFactory::setFromOptions"
+PetscErrorCode IceFactory::setFromOptions()
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscOptionsBegin(comm,prefix,"IceFactory options","IceType");CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsList("-ice_type","Ice type","IceFactory::setType",type_list,type_name,type_name,sizeof(type_name),NULL);CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd();CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "IceFactory::create"
+PetscErrorCode IceFactory::create(IceType **inice)
+{
+  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],IceType**);
+  IceType *ice;
+
+  PetscFunctionBegin;
+  PetscValidPointer(inice,3);
+  *inice = 0;
+  ierr = PetscFListFind(type_list,comm,type_name,(void(**)(void))&r);CHKERRQ(ierr);
+  if (!r) SETERRQ1(1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
+  ierr = (*r)(comm,prefix,&ice);CHKERRQ(ierr);
+  *inice = ice;
+  PetscFunctionReturn(0);
+}
