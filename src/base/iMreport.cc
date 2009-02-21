@@ -300,7 +300,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 
 PetscErrorCode IceModel::summaryPrintLine(
     const PetscTruth printPrototype, const PetscTruth tempAndAge,
-    const PetscScalar year, const PetscScalar delta_t,
+    const PetscScalar year, const PetscScalar /* delta_t */,
     const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
 

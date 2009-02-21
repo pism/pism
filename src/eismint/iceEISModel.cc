@@ -54,7 +54,8 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */
-  char                temp, eisIIexpername[20];
+  char                eisIIexpername[20];
+  int                 temp;
   PetscTruth          EISIIchosen;
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
             CHKERRQ(ierr);

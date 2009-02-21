@@ -240,8 +240,6 @@ PetscErrorCode LocalInterpCtx::printGrid() {
   PetscErrorCode ierr;
   const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
 
-  PetscMPIInt rank;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printGrid():  rank = %d\n",
                     rank); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"  delta[1,2] = %5.4f, %5.4f\n",
@@ -273,8 +271,6 @@ Every processor in the communicator \c com must call this for it to work, I thin
 PetscErrorCode LocalInterpCtx::printArray() {
   PetscErrorCode ierr;
 
-  PetscMPIInt rank;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printArray():  rank = %d, a_len = %d\n",
              rank, a_len); CHKERRQ(ierr);
   for (int k = 0; k < a_len; k++) {

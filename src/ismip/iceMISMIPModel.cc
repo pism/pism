@@ -58,7 +58,7 @@ PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
   PetscErrorCode ierr;
   ierr = verbPrintf(thresh, com, 
     "Using MISMIP ice w  rho=%6.2f, grav=%6.4f, n=%6.4f, and A=%6.4e.\n",
-    rho, grav, n, A_MISMIP); CHKERRQ(ierr);
+    rho, earth_grav, n, A_MISMIP); CHKERRQ(ierr);
   return 0;
 }
 

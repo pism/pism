@@ -254,7 +254,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
                accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
   PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
   
-  const PetscScalar pi = 3.14159265358979, area = grid.dx * grid.dy;
+  const PetscScalar area = grid.dx * grid.dy;
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = obsAzimuth.get_array(azi); CHKERRQ(ierr);    

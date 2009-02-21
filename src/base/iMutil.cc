@@ -463,8 +463,8 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
 
 //! Add the given string to the history data member in IceModel.
 PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
-  unsigned int historyLength = strlen(history);
-  unsigned int stringLength = strlen(string);
+  size_t historyLength = strlen(history);
+  size_t stringLength = strlen(string);
   char *tempstr;
 
   if (stringLength + historyLength > history_size - 1)

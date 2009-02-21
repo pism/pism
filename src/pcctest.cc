@@ -55,7 +55,7 @@ $ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
 
 */
 
-PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, IceGrid &grid) {
+static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -115,7 +115,7 @@ PetscErrorCode setupIceGridFromFile(const char *filename, const MPI_Comm com, Ic
 }
 
 
-PetscErrorCode readAtmosInfoFromFile(char *filename, const MPI_Comm com, IceGrid *grid,
+static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
                                      LocalInterpCtx* &lic, 
                                      IceInfoNeededByAtmosphereCoupler &info) {
   PetscErrorCode ierr;
@@ -148,7 +148,7 @@ PetscErrorCode readAtmosInfoFromFile(char *filename, const MPI_Comm com, IceGrid
 }
 
 
-PetscErrorCode readOceanInfoFromFile(char *filename, const MPI_Comm com, IceGrid *grid,
+static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *grid,
                                      LocalInterpCtx* &lic, 
                                      IceInfoNeededByOceanCoupler &info) {
   PetscErrorCode ierr;
@@ -182,7 +182,7 @@ PetscErrorCode readOceanInfoFromFile(char *filename, const MPI_Comm com, IceGrid
 
 
 
-PetscErrorCode doneWithAtmosInfo(IceInfoNeededByAtmosphereCoupler &info) {
+static PetscErrorCode doneWithAtmosInfo(IceInfoNeededByAtmosphereCoupler &info) {
   PetscErrorCode ierr;
   ierr = info.lat->destroy(); CHKERRQ(ierr);
   ierr = info.lon->destroy(); CHKERRQ(ierr);
@@ -196,7 +196,7 @@ PetscErrorCode doneWithAtmosInfo(IceInfoNeededByAtmosphereCoupler &info) {
 }
 
 
-PetscErrorCode doneWithOceanInfo(IceInfoNeededByOceanCoupler &info) {
+static PetscErrorCode doneWithOceanInfo(IceInfoNeededByOceanCoupler &info) {
   PetscErrorCode ierr;
   ierr = info.lat->destroy(); CHKERRQ(ierr);
   ierr = info.lon->destroy(); CHKERRQ(ierr);
@@ -210,7 +210,7 @@ PetscErrorCode doneWithOceanInfo(IceInfoNeededByOceanCoupler &info) {
 }
 
 
-PetscErrorCode writePCCStateAtTimes(
+static PetscErrorCode writePCCStateAtTimes(
                  PISMClimateCoupler *pcc,
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
@@ -226,7 +226,7 @@ PetscErrorCode writePCCStateAtTimes(
   strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
   cmdstr[sizeof(cmdstr) - 1] = '\0';
   for (PetscInt i=1; i < argc; i++) {
-    PetscInt remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
+    size_t remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
     // strncat promises to null terminate, so we must only make sure that the
     // end of the buffer is not overwritten.
     strncat(cmdstr, " ", remaining_bytes--);
@@ -309,7 +309,6 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PetscErrorCode ierr;
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
     IceGrid grid(com, rank, size);
     
@@ -324,7 +323,7 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscPrintf(com, 
              "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
-    ierr = setupIceGridFromFile(inname,com,grid); CHKERRQ(ierr);
+    ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
     // set PCC from options
     PetscTruth caSet, pddSet, coSet;
@@ -369,7 +368,7 @@ int main(int argc, char *argv[]) {
              "  reading fields 'usurf', 'mask', 'lat', 'lon' from NetCDF file '%s' to fill fields\n"
              "    in IceInfoNeededByAtmosphereCoupler ...\n",
              inname); CHKERRQ(ierr);
-      ierr = readAtmosInfoFromFile(inname,com,&grid,lic,info_atmos); CHKERRQ(ierr);
+      ierr = readAtmosInfoFromFile(inname,&grid,lic,info_atmos); CHKERRQ(ierr);
       info = (void*) &info_atmos;
     } else if (coSet == PETSC_TRUE) {
       ierr = PetscPrintf(com, 
