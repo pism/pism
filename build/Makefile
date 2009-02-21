@@ -33,7 +33,7 @@ endif
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} -I../src/udunits
+          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} -I../src/udunits -I../src/base
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
@@ -76,7 +76,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/base/ssa/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 executables := pismr pismd pismv pisms pcctest
@@ -93,7 +93,7 @@ ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
 	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc \
-	extrasGSL.cc forcing.cc pPDDcoupler.cc pccoupler.cc
+	extrasGSL.cc forcing.cc pPDDcoupler.cc pccoupler.cc ssa.cc ssafe.cc pism_revision.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]
