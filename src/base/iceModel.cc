@@ -534,7 +534,7 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
 #if (PISM_LOG_EVENTS)
-#if defined(PISM_HAVE_PETSC3) && PISM_HAVE_PETSC3
+#if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
 #else
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))

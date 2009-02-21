@@ -582,7 +582,11 @@ static PetscErrorCode SSAFEJacobian(DALocalInfo *info,const SSANode **xg,Mat J,S
 
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+#if (PETSC_VERSION_MAJOR >= 3)
   ierr = MatSetOption(J,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+#else
+  ierr = MatSetOption(J,MAT_NEW_NONZERO_LOCATION_ERR);CHKERRQ(ierr);
+#endif
   PetscFunctionReturn(0);
 }
 
@@ -695,7 +699,12 @@ PetscErrorCode SSACreate_FE(SSA ssa)
   SSA_FE *fe;
 
   PetscFunctionBegin;
+#if (PETSC_VERSION_MAJOR >= 3)
   ierr = PetscNewLog(ssa,SSA_FE,&fe);CHKERRQ(ierr);
+#else
+  ierr = PetscNew(SSA_FE,&fe);CHKERRQ(ierr);
+  ierr = PetscLogObjectMemory(ssa,sizeof(SSA_FE));CHKERRQ(ierr);
+#endif
 
   fe->dirichletScale = 1;
 

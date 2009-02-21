@@ -22,7 +22,12 @@
 PetscCookie SSA_COOKIE;
 
 static PetscFList SSAList = 0;
+
+#if PETSC_VERSION_MAJOR >= 3
 static PetscLogEvent LOG_SSA_Solve;
+#else
+static PetscEvent LOG_SSA_Solve;
+#endif
 
 static const char *PismSetupStateName[3] = {"SETUP_GREEN","SETUP_STALE","SETUP_CURRENT"};
 
@@ -120,8 +125,13 @@ PetscErrorCode SSAInitializePackage(const char path[])
   if (initialized) PetscFunctionReturn(0);
   initialized = PETSC_TRUE;
   ierr = SSARegisterDynamic(SSAFE,path,"SSACreate_FE",SSACreate_FE);CHKERRQ(ierr);
+#if PETSC_VERSION_MAJOR >= 3
   ierr = PetscCookieRegister("SSA Solver",&SSA_COOKIE);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("SSASolve",SSA_COOKIE,&LOG_SSA_Solve);CHKERRQ(ierr);
+#else
+  ierr = PetscCookieRegister(&SSA_COOKIE);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister(&LOG_SSA_Solve,"SSASolve",SSA_COOKIE);CHKERRQ(ierr);
+#endif
   PetscFunctionReturn(0);
 }
 

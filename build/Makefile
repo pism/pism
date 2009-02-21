@@ -33,7 +33,7 @@ endif
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_LOG_EVENTS=${PISM_LOG_EVENTS} \
           -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -DPISM_HAVE_PETSC3=${PISM_HAVE_PETSC3} -I../src/udunits -I../src/base
+          -I../src/udunits -I../src/base
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
