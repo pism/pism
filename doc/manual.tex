@@ -76,19 +76,13 @@
 \phantom{bob}
 \vspace{2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2008 Ed Bueler and Jed Brown and Constantine Khroulev and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2009 Ed Bueler and Jed Brown and Constantine Khroulev and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
 \medskip
 
-\noindent \textsl{PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.}
-\medskip
-
-\noindent \textsl{PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.}
-\medskip
-
-\noindent \textsl{You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\noindent \textsl{PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \vspace{1in}
 \normalspacing
@@ -96,9 +90,9 @@
 \centerline{\textsc{Acknowledgements}}
 \bigskip
 
-The NASA Cryospheric Sciences Program\index{NASA Cryospheric Sciences Program} supported this research with grant NAG5-11371.
+The NASA Modeling, Analysis, and Prediction program\index{NASA!Modeling, Analysis, and Prediction Program} currently supports the development of PISM.  Development was started with the support of the NASA Cryospheric Sciences Program\index{NASA!Cryospheric Sciences Program}, grant NAG5-11371.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey\index{Covey, Dave} and Don Bahls\index{Bahls, Don} have been the best possible system administrators for the machines on which we have developed PISM.  Thanks to Tolly Adalgeirsdottir\index{Adalgeirsdottir, Gudfinna (Tolly)}, Jesse Johnson\index{Johnson, Jesse}, Art Mahoney\index{Mahoney, Art}, Kent Overstreet\index{Overstreet, Kent}, Martin Truffer\index{Truffer, Martin}, Ryan Woodard\index{Woodard, Ryan}, Ben Sperisen\index{Sperisen, Ben}, Maria Martin\index{Martin, Maria} and other PISM users for helpful comments and questions on PISM.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey and Don Bahls have supported our computers, tools, and and computations.  Thanks to Tolly Adalgeirsdottir, Torsten Albrecht, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Art Mahoney, Anders Levermann, Maria Martin, Kent Overstreet, Martin Truffer, Ben Sperisen, Ricarda Winkelmann, Ryan Woodard and several other PISM users for helpful comments and questions on PISM and this \emph{Manual}.
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -108,29 +102,31 @@ Our research into ice sheet modeling was strongly influenced and constantly moti
 \newpage
 \section{Introduction}\label{sect:intro}
 
-Welcome to PISM!
-
-Information about PISM is online at
+Welcome to PISM!  Information about PISM is online at
 \begin{center}
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
 \end{center}
 
-Please see the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.
+Please see the PDF \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install} and the libraries it needs.  This \emph{User's Manual} and the \emph{Installation Manual} can be generated from any copy of the PISM source code by doing \verb|make userman installation| in the PISM root directory and then viewing \verb|doc/manual.pdf| and \verb|doc/manual.pdf| with a PDF viewer.
 
-This \emph{User's Manual} describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on basic publicly-available data.
+This \emph{User's Manual} describes how to run PISM for certain simplified geometry situations and it illustrates how PISM's numerical approximations are verified.  It documents all the PISM options.  It describes how to use PISM as a Greenland ice sheet model or a Ross ice shelf model, based on certain publicly-available data.
 
 Users who want to advance the science of ice sheets will need to go beyond what is described here.  For such users there are two additional documents to know about:
 \begin{enumerate}
- \item  The \emph{Reference Manual}\index{PISM!\emph{Reference Manual}}
-describes the most important pieces of the source code.  It contains, or is intended to contain, the minimum documentation of the PISM source code parts in order to include all the continuum models and numerical methods of PISM.  A recent development version of the \emph{Reference Manual} is online (\href{http://www.pism-docs.org/refman-dev.pdf}{\t{www.pism-docs.org/refman-dev.pdf}}).  A current \emph{Reference Manual} can be generated from the source by doing \verb|make refman| in the PISM root directory and then viewing \verb|doc/refman.pdf|.
- \item  The \emph{C++ Class Browser}\index{PISM!\emph{C++ Class Browser (HTML)}} gives a complete view of the class/object structure of the source code.  It can be generated from the source by by doing \verb|make browser| in the PISM root directory and then viewing \verb|doxy/html/index.html| with a web browser like Firefox.
+ \item  The HTML \emph{C++ Class Browser}\index{PISM!\emph{C++ Class Browser (HTML)}} gives a complete view of the class/object structure of the source code.  It is the best tool for understanding the internals of PISM, and for the job of modifying how PISM works by writing derived classes.  It is online at
+   \begin{center}
+     \href{http://www.pism-docs.org/doxy/html/index.html}{\t{www.pism-docs.org/doxy/html/index.html}}
+   \end{center}
+The \emph{Browser} can be generated from the source by by doing \verb|make browser| in the PISM root directory and then viewing \verb|doc/doxy/html/index.html| with a web browser like Firefox.
+ \item  The PDF \emph{Reference Manual}\index{PISM!\emph{Reference Manual}}
+documents only the continuum models and numerical methods of PISM.  A current \emph{Reference Manual} can be generated from the source by doing \verb|make refman| in the PISM root directory and then viewing \verb|doc/refman.pdf|.
 \end{enumerate}
-The \emph{Reference Manual} and the \emph{C++ Class Browser} were automatically generated by \verb|doxygen| (\href{http://www.doxygen.org/}{\t{www.doxygen.org}}) from comments in the PISM source code.  Thus they are not as user-friendly as this \emph{User's Manual}.
+The \emph{C++ Class Browser} and the \emph{Reference Manual} were automatically generated by \verb|doxygen| (\href{http://www.doxygen.org/}{\t{www.doxygen.org}}) from comments in the PISM source code.
 
 \vspace{1.5in}
 \large
 \begin{center}
- \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: 
+ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2009, at least).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: 
 
 \bigskip
 
@@ -143,58 +139,85 @@ The \emph{Reference Manual} and the \emph{C++ Class Browser} were automatically 
 \clearpage\newpage
 \section{Getting started}\label{sect:start}\index{PISM!getting started}
 
-\subsection{Running an EISMINT simplified geometry experiment}\index{EISMINT}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.\footnote{Actual ice sheet and ice shelf data \emph{are} freely available as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet evolution model and section \ref{sect:ross} is a tutorial on PISM as an Ross ice shelf diagnosity model using the EISMINT data sets.}  For now, to avoid issues of data formats and data flaws in a first use of PISM, this section describes how to use PISM for experiment A in the ``EISMINT II'' simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  In this experiment one models an angularly-symmetric shallow, grounded ice sheet on a flat bed with relatively cold surface temperatures.
+See the \emph{Installation Manual} to install PISM.  Once installed, the executables \verb|pismr|, \verb|pismd|, and \verb|pisms|, among others, will be in the \verb|bin| subdirectory of the PISM root directory.
+ 
+\subsection{Running an EISMINT simplified geometry experiment}\index{EISMINT}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data.  Ice sheet and ice shelf data \emph{are} freely available as part of the EISMINT intercomparison efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet evolution model and section \ref{sect:ross} is a tutorial on using PISM as a Ross ice shelf diagnostic model.  Both use the EISMINT data sets.
 
-In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction; note that the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.  For a demonstration we choose this standard 25km grid in the horizontal and use 61 grid points in the vertical with unequal spacing.  The spacing is finest at the bottom of the ice column (22 m) and coarsest at the top (145 m).  Note that the computational box is 5000 m high by default for EISMINT II experiment A in PISM.  Experiment A starts with zero ice, but the center thickness of the ice sheet grows to a peak near 5000 m before decaying to its equilibrium center thickness of about 3750 m.  All EISMINT II runs are for 200,000 model years.  Here we start with a short 2000 year run for a quicker illustration.  The executable is ``\t{pisms}''\index{pisms}, for the ``simplifed geometry mode'' of PISM:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{Mx}\pismoptionindex{My}\pismoptionindex{Mz}\pismoptionindex{y}
+For now, to avoid issues of data formats and flaws in a first use of PISM, this section describes how to use PISM for experiment A in the ``EISMINT II'' simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  This experiment models an angularly-symmetric shallow, grounded ice sheet on a flat bed with moderately cold surface temperatures.
+
+In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction, and the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.  For a demonstration we choose a 25km grid in the horizontal and we use 41 grid points in the vertical with unequal spacing.  The spacing is finest at the bottom of the ice column (34 m) and coarsest at the top (216 m).  The computational box is 5000 m high by default for EISMINT II experiment A in PISM, so no runtime option is needed to set that.
+
+Experiment A starts with zero ice, all EISMINT II runs are for 200,000 model years.  The center thickness of the ice sheet grows to a peak near 4100 m, at about 9,000 model years, before decaying to its equilibrium center thickness of about 3750 m.  Here we start with a short 6000 year run for a quick illustration.  The executable is ``\t{pisms}''\index{pisms}, for the ``simplifed geometry mode'' of PISM:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{Mx}\pismoptionindex{My}\pismoptionindex{Mz}\pismoptionindex{quadZ}\pismoptionindex{y}
 
 \small
 \begin{quote}
 \begin{verbatim}
-$ pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -y 2000
-PISMS (simplified geometry mode)
+$ pisms -eisII A -Mx 61 -My 61 -Mz 41 -quadZ -y 6000
+PISMS  (simplified geometry mode)
 setting parameters for EISMINT II experiment A ... 
 initializing EISMINT II experiment A ... 
-  [computational box for ice: ( 1500.00 km) x ( 1500.00 km) x ( 5000.00 m)]
-  [hor. grid cell dimensions: (   25.00 km) x (   25.00 km)]
-  [vertical grid spacing in ice not equal: 21.875 m < dz < 144.792 m]
-  [fine equal spacing used in temperatureStep(): Mz = 230, dzEQ = 21.834 m]
+[computational box for ice:  1500.00 km x  1500.00 km x  5000.00 m]
+[hor. grid cell dimensions:    25.00 km x    25.00 km
+ vertical grid spacing in ice not equal; range 33.594 m < dz < 216.406 m]
 running EISMINT II experiment A ...
-%ybp SIA SSA  # vgatdh Nr  +STEP
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
 U        years 10^6_km^3 10^6_km^2 (none)          m         K
- $$$            $$$$$ $$
 S      0.00000:  0.00000  0.0000   0.0000      0.000  238.1500
- $$ SIA        vat$h 0m  +60.00000
+ $$ SIA        vath 0m  +60.00000
 S     60.00000:  0.01704  0.6281   0.0000     30.000  238.1500
 . . .
- $$ SIA        vat$h 0e  +20.00000
-S   2000.00000:  0.56790  0.6306   0.0000   1000.000  243.8026
+ $$ SIA        vath 0e  +0.27275
+S   6000.00000:  1.68097  0.7506   0.0100   3000.000  248.6794
 done with run ... 
 Writing model state to file `simp_exper.nc'
 \end{verbatim}
 \end{quote}
 \normalsize
-\noindent This should have taken much less than one minute.
+\noindent This should take less than one minute.
 
-In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to restart and complete the 200,000 year run.  We see that the model state was stored in a NetCDF file with the \verb|pisms| default name ``\verb|simp_exper.nc|''.  The next run will use a ``\intextoption{o}'' option to name the output file.  Also, the above was a single processor run, but let's suppose we have a two processor machine.  (The following should also work fine on a single processor machine but there is no speed-up, naturally.)  Let's also run things in the background so we can continue to experiment:\pismoptionindex{skip}\pismoptionindex{if}\index{mpiexec}
+In a moment we will address the standard output information provided by PISM, as shown above, but for now we simply illustrate how to continue and complete the 200,000 year run.  The model state was stored in a NetCDF file with the (default) name \verb|simp_exper.nc|.  The next run will use a ``\intextoption{o}'' option to name the output file.  The above was a single processor run, but let's suppose we have a four processor (e.g.~four cores on a single processor, or other arrangement) machine.  It should also work fine on a single processor machine but there is no speed-up, naturally.  Let's also run things in the background so we can continue to experiment:\pismoptionindex{skip}\pismoptionindex{i}\index{mpiexec}\pismoptionindex{o}
 
 \small
 \begin{quote}
 \begin{verbatim}
-$ mpiexec -n 2 pisms -eisII A -i simp_exper.nc -skip 5 -y 198000 \
-          -o eisIIA200k.nc >> eisIIA.out &
+$ mpiexec -n 4 pisms -eisII A -i simp_exper.nc -skip 5 -y 194000 \
+          -o eisIIA200k.nc >> out.eisIIA &
 \end{verbatim}
 \end{quote}\normalsize
 
-This run will usually take less than one wall clock hour (two processor-hours) on a two core machine.  It generates a NetCDF file \verb|eisIIA200k.nc| at the end.  The final results for ice volume, area, melt fraction, center thickness, and center basal temperature (2.29174 $10^6 \text{km}^3$, 1.0356 $10^6 \text{km}^2$, 0.6276, 3751.386 m, 256.5694 K, respectively) are typical of EISMINT II intercomparison results shown in Table 4 of \cite{EISMINT00}.  The standard output in \verb|eisIIA.out| can be tracked as the job is running in the background using \verb|less|\index{less}, for instance; \verb|top|\index{top} is a Linux tool to watch CPU and memory usage during the run.
+This run will take less than one wall clock hour, and perhaps much less.  PISM being parallel, it can be speeded up by using more processes.  The standard output in \verb|out.eisIIA| can be tracked as the job is running in the background using \verb|less|\index{less}, for instance.  Also, \verb|top|\index{top} is a Linux tool to watch CPU and memory usage during the run.
 
-To get the model state in the midst of a PISM run, send all running \verb|pisms| processes (that's the executable in this case) a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.\index{PISM!catches signals -TERM and -USR1}\index{pkill}  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc|, using the year at that time step.  On the other hand, terminatating the run with \verb|pkill -TERM pisms| will will cause PISM to stop, but only after saving the model state using the \intextoption{o} specified name (though it will not hold the result of the completed run).  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
+The run generates a NetCDF file \verb|eisIIA200k.nc| at the end.  The final results for ice volume, area, melt fraction, center thickness, and center basal temperature (2.29575 $10^6 \text{km}^3$, 1.0356 $10^6 \text{km}^2$, 0.6156, 3743.075 m, 257.2799 K, respectively) are typical of EISMINT II intercomparison results shown in Table 4 of \cite{EISMINT00}.  The correctness of PISM's approximations of the equations for ice flow is mostly addressed by measuring its errors relative to exact solutions to those equations, and not through comparison to average behavior of other ice flow models.  See section \ref{sect:verif} on verification.
 
-While the two processor \verb|pisms| run continues in the background, let's view the model state during a few time steps by restarting from the saved 2000 year state.  We use PISM's ``diagnostic viewers'', which requires X Windows:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{d}
+To get the model state in the midst of a PISM run, send all running \verb|pisms| processes (the PISM executable used here) a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.\index{PISM!catches signals -TERM and -USR1}\index{USR1}\index{pkill}  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc|, using the year at that time step.  On the other hand, terminating the run with \verb|pkill -TERM pisms| will cause PISM to stop, but only after saving the model state using the specified output name.  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
+
+While the complete run continues in the background, let's view the intermediate result stored in \verb|simp_exper.nc|.  An important fact to know is that a PISM output NetCDF file contains a ``history'' with the command that produced it.  For instance, 
+
+\verb|$ ncdump -h simp_exper.nc|
+
+\noindent shows the structure (``header'') of the output NetCDF file, with lines like these near the bottom:
+\small
+\begin{verbatim}
+:history = "user@host 2009-02-19 20:28:18 AKST:  PISM done.  PETSc MFlops = 1.23.\n",
+        " pisms -eisII A -Mx 61 -My 61 -Mz 41 -quadZ -y 6000\n",
+        "user@host 2009-02-19 20:27:42 AKST:  PISM (...) started on 1 procs.\n",
+\end{verbatim}
+\normalsize
+\noindent This kind of ``history'' is convenient for understanding what you have done, once it all works!
+
+\begin{figure}[ht]
+\includegraphics[height=3.5in,keepaspectratio=true]{figs/eisIIA_ncviewshot}
+\caption{\texttt{ncview} shows an intermediate stage of an EISMINT II experiment A run.}
+\label{fig:ncviewshot}
+\end{figure}
+
+Another way to view the output file is graphically.  One of the most convenient tools is \verb|ncview|; see Table \ref{tab:NetCDFview}.  Running ncview on the output file (\verb|ncview simp_exper.nc|) and viewing the ``\t{thk}'' variable gives a figure like \ref{fig:ncviewshot}.
+
+Alternatively, one can use PISM's ``diagnostic viewers'' for a time-dependent view of the evolving modeled ice sheet.  Note this requires X Windows:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{d}
 
 \verb|$ pisms -eisII A -i simp_exper.nc -y 1000 -d HTt|
 
-Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and third there is a graph of height above the bed versus temperature.  When the full 200,000 year run finishes, one may watch its evolving state, including the ice flow speed, by
+\noindent Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and the third is a graph of temperature versus height above the bedrock.  When the full 200,000 year run finishes, one may watch its evolving, though essentially steady, state.  A view that includies the ice flow speed is:
 
 \verb|$ pisms -eisII A -i eisIIA200k.nc -d HTc|
 
@@ -206,25 +229,57 @@ Three figures should appear and be refreshed at each time step.  One figure is a
 \label{fig:screenshot}
 \end{figure}
 
-\subsection{PISM's standard output}   As illustrated already, at each time step PISM shows a summary\index{PISM!standard output summary of each time step} of the model state using a flags and a few numbers.  The format of the summary is suggested by the three mysterious lines near the beginning of the run:
+\subsection{PISM's standard output}   As seen already, at each time step PISM shows a summary\index{PISM!standard output summary of each time step} of the model state using a few numbers and some single character flags.  The format of the summary is partly explained by two lines near the beginning of the run:
 
 \small\begin{quote}
 \begin{verbatim}
-%ybp SIA SSA  # vatdh Nr  +STEP
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
 U        years 10^6_km^3 10^6_km^2 (none)          m         K
 \end{verbatim}
 \end{quote}\normalsize
 
-\noindent The first line gives flags which indicate which physical models ran at the given time step, so it shows which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first three positions are: \t{y} for basal yield stress model, \t{b} for bed deformation model, and \t{p} for plastic till yield stress.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and if the ``\verb|SSA|'' flag is present it is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then there are six more positions: \t{v} for velocity updates (by SIA or SSA), \t{a} for age equation, \t{t} for temperature equation, \t{d} for positive degree day model, and \t{h} for mass continuity (which updates surface elevation and thickness).  
+The ``\t{P}'' line is the prototype for the summary which appears at each time step.  The ``\t{U}'' line gives units for this summary.  From then on, the ``\t{S}'' lines give values for the quantities specified by the  ``\t{P}'' and ``\t{U}'' lines.
 
-Finally an integer \t{N} appears (it is most frequently zero), and another single character flag \t{r}.  Then the time step itself is given (\t{STEP}).  These all related to the decisions of the adaptive time-stepping scheme; described in subsection \ref{subsect:adapt}.
+The EISMINT II runs above illustrate how the time-stepping in PISM adapts in order to maintain stability for its (mostly) explicit methods.  At the beginning of the EISMINT II run, for instance, the ice has small thickness so the time step is 60 years, simply because that is the default maximum time step.  Later in that run, after about 5000 years, the time step is made smaller because the flow is faster.
 
-The next line starting with ``\t{P}'' is the prototype for the summary which appears at each time step.  The third line starting with ``\t{U}'' is the units for this summary; it appears just once at the beginning of the run.
+After the year, the next three entries in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal temperature is at the pressure-melting temperature.  This melted-base-fraction is a pure number without units.  The next two columns ``\texttt{thick0}'' and ``\texttt{temp0}'' are values at the center of the computational domain of the map plane, namely the ice thickness in meters and the absolute temperature of the ice at its base, in Kelvin.  These five numbers are the ones reported in the tables in \cite{EISMINT00}, which explains why they are the default quantities for reporting to standard output.  For more on the EISMINT II experiments see section \ref{sect:simp}.
 
-The time step \t{STEP} and the model year \t{YEAR}, which is the first entry in the summary line, are in units of years.  The 200k year run above illustrates how the time-stepping in PISM adapts in order to maintain stability for its (mostly) explicit methods.  At the beginning of the EISMINT II run, for instance, the ice has small thickness so the time step is 60 years, simply because that is the default maximum time step.  Later in that run, after about 5000 years, the time step is made smaller because the flow is faster.
+The summary of the model state can be made more verbose by using the option \verb|-verbose|.  
 
-The next three entries in the summary report the volume of the ice in $10^6 \,\text{km}^3$, the area covered by the ice in $10^6\,\text{km}^2$, and the basal melt fraction, that is, the fraction of the ice area where the basal temperature is at the pressure-melting temperature.  The next two columns ``\texttt{thick0}'' and ``\texttt{temp0}'' are values at the center of the computational domain of the map plane, namely the ice thickness in meters and the absolute temperature of the ice at its base, in Kelvin.  These five numbers are the ones reported in the tables in \cite{EISMINT00}.  The summary of the model state can be made more verbose by using the option \verb|-verbose|.  For more on the EISMINT II experiments see section \ref{sect:simp}.
+In addition to the ``\t{S}'' lines, there are lines, starting with a space character, which give flags, both cryptic and compact, describing the PISM model choices made at each time step.  Most of these relate to decisions of the adaptive time-stepping scheme.  That scheme is described in subsection \ref{subsect:adapt}
+
+If the standard output from PISM is saved in a text file then it can always be converted to a NetCDF file with corresponding time series.  For the 200,000 year run above,
+
+\verb|$ series.py -f out.eisIIA -o ser.eisIIA.nc|
+
+\verb|$ ncview ser.eisIIA.nc|
+
+A look at these time series shows the convergence to equilibrium of this non-sliding thermomechanically coupled modeled ice sheet.  We see, characteristically, that there is a longer relaxation time for temperature at the base of the ice than for any geometric quantity (volume, area, thickness).
+
+\subsection{Handling NetCDF files}  At a trivial level, PISM is just a program which takes a NetCDF file as input, does some computation, and produces a NetCDF file as output.  (An exception is that \verb|pisms| knows formulas to initialize EISMINT II experiments, for example.)  The user is in charge of extracting some meaning from the output files and creating NetCDF input files containing data on ice sheets worth modeling.
+
+The most basic tools for converting NetCDF files to and from a standard text representation are called \verb|ncdump| and \verb|ncgen|.  A glance at Unix \verb|man| pages might be good.
+
+As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  The NetCDF tools most frequently used by the PISM developers are shown in Table \ref{tab:NetCDFview}.  
+
+See \href{http://www.unidata.ucar.edu/software/netcdf/docs/software.html}{\t{www.unidata.ucar.edu/software/netcdf/docs/software.html}} for additional tools.
+
+\begin{table}[ht]
+\caption{Some tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
+\small
+\begin{tabular}{@{}llll}\hline
+\textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
+\verb|ncdump| & \emph{included with any NetCDF distribution} & dump as text file \\
+\verb|ncview|\index{ncview} & \scriptsize\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}\small & quick graphical view \\
+\verb|IDV| & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
+\verb|NCO|\index{NCO (NetCDF Operators)} = NetCDF & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & sophisticated manipulations \\
+\quad Operators & & \quad at command line
+\end{tabular}
+\normalsize
+\end{table}
+
+
+\begin{comment}
 
 \subsection{Visualizing the results}  There are three basic methods for visualizing\index{PISM!visualizing results} the various quantities in PISM, namely \renewcommand{\labelenumi}{\arabic{enumi})~}  \begin{enumerate}
 \item runtime viewers under Xwindows,
@@ -238,20 +293,15 @@ The format is limited by the style of PETSc viewers, but these viewers often suf
 
 Regarding method 2), when a PISM run is finished the state of the model is output in NetCDF format.  The name can be specified by the option \intextoption{o}, so \verb|-o foo.nc| writes the NetCDF file \verb|foo.nc|.  NetCDF files can be viewed or modified with a variety of tools, some of which are mentioned in table \ref{tab:NetCDFview}.  The PISM developers find \t{ncview} to be the fastest way to look at PISM output files, but \verb|ncview| is not as sophisticated as many other scientific visualization programs which handle NetCDF files, such as IDV.
 
-\begin{comment}
-Regarding method 3), the user can add options of the form \verb|-mato foo|\pismoptionindex{mato}\index{PISM!output in \Matlab format} and \verb|-matv |\emph{letters}\pismoptionindex{matv} to save certain variables in \Matlab-readable ASCII form at the end of the run.  In particular, the saved file \verb|foo.m| is a standard \Matlab script.  The single letter arguments to \intextoption{d} and \intextoption{matv} are generally the same.  See Appendix \ref{sect:viewers}.
-\end{comment}
-
 Regarding method 3), Appendix \ref{sect:scripts} describes a Python script \verb|series.py|\index{series.py} which can post-process the standard output from a PISM run into a NetCDF file with the time series for the quantities listed in PISM standard output.
 
 \begin{table}[ht]
-\caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
+\caption{Some tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
 \verb|ncdump| & \emph{included with any NetCDF distribution} & dump as text file \\
 \verb|ncview|\index{ncview} & \scriptsize\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}\small & quick graphical view \\
-\verb|ncBrowse| & \href{http://www.epic.noaa.gov/java/ncBrowse/}{\t{www.epic.noaa.gov/java/ncBrowse/}} & quick graphical view \\
 \verb|IDV| & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
 \verb|NCO|\index{NCO (NetCDF Operators)} = NetCDF & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & sophisticated manipulations \\
 \quad Operators & & \quad at command line\\
@@ -282,6 +332,7 @@ The velocity field saved by \verb|pismd| is the one which would be computed at t
 This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes the use of \verb|pismd| in modeling the Ross ice shelf \cite{MacAyealetal}.
 
 Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \intextoption{f3d}.  The diagnostic executable \verb|pismd| saves the full three-dimensional velocity field by default.  Either way, saving the full velocity field roughly doubles the size of the saved NetCDF file.
+\end{comment}
 
 
 \clearpage
@@ -513,6 +564,14 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \end{tabular}
 \end{table}
 
+\begin{comment}
+
+THESE WERE IN THE GETTING STARTED SECTION; NEEDED?
+
+\noindent The first line gives flags which indicate which physical models ran at the given time step, so it shows which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first three positions are: \t{y} for basal yield stress model, \t{b} for bed deformation model, and \t{p} for plastic till yield stress.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and if the ``\verb|SSA|'' flag is present it is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then there are six more positions: \t{v} for velocity updates (by SIA or SSA), \t{a} for age equation, \t{t} for temperature equation, \t{d} for positive degree day model, and \t{h} for mass continuity (which updates surface elevation and thickness).  
+
+Finally an integer \t{N} appears (it is most frequently zero), and another single character flag \t{r}.  Then the time step itself is given (\t{STEP}).  These all related to the decisions of the adaptive time-stepping scheme; described in subsection \ref{subsect:adapt}.
+\end{comment}
 
 \subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard.  Such signals are included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
 
@@ -2080,19 +2139,9 @@ Second, the file \verb|.petscrc| is always read, if present, from the directory 
 These two PETSc mechanisms can be used together.  (The effect of duplicate or conflicting options is not clear, however, and should be avoided.)
 \bigskip
 
-\begin{comment}
-FIXME: THESE OPTIONS *DO NOT* SEEM TO WORK FOR PISM EXECUTABLE (r479,
-mpiexec -n 4 pismv -test C -y 100 -da_processors_x 2 -da_processors_y 2)
-WHY???
-
-\opt{da\und processors\und x}  Number of processors in x direction.  Normally the number of processors $N$ chosen when invoking MPI (e.g.~\verb|mpiexec -n |$N$) is factored automatically by PETSc to give roughly square, roughly equal blocks of the computational grid per processor.  This option allows control.  For example,
-
-\verb|$  mpiexec -n 12 pismv -test C -Mx 101 -My 101|
-
-divides the whole grid into 3 blocks in one direction by 4 in the other.  
-
-\opt{da\und processors\und y}  Number of processors in y direction.  See above comments on \verb|-da_processors_x|.
-\end{comment}
+% "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
+% because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
+% the Mx, My dimensions in different arguments to the DACreate commands
 
 \opt{display}  The option \verb|-display :0| seems to frequently be needed to let PETSc use Xwindows when running multiple processes.  \emph{It must be given as a \emph{final} option, after all the others.}
 
