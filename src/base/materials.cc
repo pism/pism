@@ -27,8 +27,15 @@ PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
 PetscScalar IceType::n = 3.0;
 
+// This uses the definition of second invariant from Hutter and several others, namely
+// \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
 static inline PetscScalar secondInvariant(PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y)
-{ return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y)) + 0.25 * PetscSqr(u_y + v_x); }
+{ return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y)) + 0.5 * PetscSqr(u_y + v_x); }
+
+// The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
+static inline PetscScalar secondInvariantDu(const PetscScalar Du[])
+{ return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
+
 
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
                           const PetscScalar pressure) const {
@@ -70,17 +77,16 @@ PetscScalar IceType::effectiveViscosityColumn(const PetscScalar regularization,
 PetscInt IceType::integratedStoreSize() const { return 1; }
 
 void IceType::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
-                              const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const
+                              const PetscScalar T[], PetscScalar store[]) const
 {
   const PetscScalar B = 135720960;
   store[0] = H * B / 2;
 }
 
 void IceType::integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                  PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-                                  PetscScalar *eta, PetscScalar *deta) const
+                                  const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
 {
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  const PetscScalar alpha = secondInvariantDu(Du);
   *eta = store[0] * pow(regularization + alpha, -1.0 / 3.0);
   if (deta) *deta = -(1./3.) * *eta / (regularization + alpha);
 }
@@ -166,30 +172,28 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regulariza
 }
 
 void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
-                              const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const
+                              const PetscScalar T[], PetscScalar store[]) const
 {
   PetscScalar B = 0;
   if (kbelowH > 0) {
     PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
+    B += 0.5 * dz * hardnessParameter(T[0] + beta_CC_grad * H);
     for (PetscInt m=1; m < kbelowH; m++) {
       const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
-      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m])
+      B += 0.5 * (dz + dzNEXT) * hardnessParameter(T[m]
            + beta_CC_grad * (H - zlevels[m]));
       dz = dzNEXT;
     }
     // use last dz
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[kbelowH] + T2[kbelowH])
-                                      + beta_CC_grad * (H - zlevels[kbelowH]));
+    B += 0.5 * dz * hardnessParameter(T[kbelowH] + beta_CC_grad * (H - zlevels[kbelowH]));
   }
   store[0] = B / 2;
 }
 
 void ThermoGlenIce::integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                        PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-                                        PetscScalar *eta, PetscScalar *deta) const
+                                        const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
 {
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  const PetscScalar alpha = secondInvariantDu(Du);
   *eta = store[0] * pow(regularization + alpha, (1-n)/(2*n));
   if (deta) *deta = (1-n)/(2*n) * *eta / (regularization + alpha);
 }
@@ -528,10 +532,10 @@ void PlasticBasalType::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscS
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
   if (pseudo_plastic == PETSC_TRUE) {
     *d = tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
-    *dd = (pseudo_q - 1) * *d / magreg2;
+    if (dd) *dd = (pseudo_q - 1) * *d / magreg2;
   } else { // pure plastic, but regularized
     *d = tauc / sqrt(magreg2);
-    *dd = -1 * *d / magreg2;
+    if (dd) *dd = -1 * *d / magreg2;
   }
 }
 
