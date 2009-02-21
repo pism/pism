@@ -261,7 +261,7 @@ public:
   virtual PetscErrorCode printInfo(const int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(const PetscScalar tauc,
                            const PetscScalar vx, const PetscScalar vy);
-  // Like drag() but also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
+  // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
   virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *drag, PetscScalar *ddrag) const;
   virtual ~PlasticBasalType() {} // class w virtual methods needs virtual destructor?
 

@@ -41,6 +41,8 @@ add_library (pismbase
   base/nc_util.cc
   base/pism_const.cc
   base/pism_signal.c
+  base/ssa/ssa.cc
+  base/ssa/ssafe.cc
   coupler/forcing.cc
   coupler/pccoupler.cc
   coupler/pPDDcoupler.cc
