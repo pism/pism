@@ -144,10 +144,6 @@ public:
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
 protected:
-   static const int MASK_SHEET;
-   static const int MASK_DRAGGING;
-   static const int MASK_FLOATING;
-   static const int MASK_FLOATING_OCEAN0;
 
   IceGrid               &grid;
 
@@ -272,8 +268,6 @@ protected:
   virtual void setAllGMaxVelocities(PetscScalar);
   virtual void setConstantNuHForSSA(PetscScalar);
   virtual PetscTruth isInitialized() const;
-  virtual int intMask(PetscScalar);
-  virtual int modMask(PetscScalar);
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);

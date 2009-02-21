@@ -286,7 +286,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
-      if (intMask(mask[i][j]) == MASK_SHEET) {
+      if (PismIntMask(mask[i][j]) == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
@@ -348,14 +348,14 @@ PetscErrorCode IceModel::assembleSSAMatrix(
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), which gets called
          *    by basalDragx(),basalDragy().  */
-        if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
+        if ((includeBasalShear) && (PismIntMask(mask[i][j]) == MASK_DRAGGING)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(tauc, u, v, i, j);
           valV[7] += basalDragy(tauc, u, v, i, j);
         }
 
         // make shelf drag a little bit if desired
-        if ((shelvesDragToo == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING)) {
+        if ((shelvesDragToo == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING)) {
           //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
           valU[5] += betaShelvesDragToo;
           valV[7] += betaShelvesDragToo;
@@ -427,7 +427,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
-      if (intMask(mask[i][j]) == MASK_SHEET) {
+      if (PismIntMask(mask[i][j]) == MASK_SHEET) {
         ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
@@ -747,10 +747,10 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (intMask(mask[i][j]) != MASK_SHEET) {
+      if (PismIntMask(mask[i][j]) != MASK_SHEET) {
         // combine velocities if desired (and not floating)
         const bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                               && (modMask(mask[i][j]) == MASK_DRAGGING) );
+                               && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
@@ -817,10 +817,10 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (modMask(mask[i][j]) == MASK_FLOATING) {
+      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
         Rb[i][j] = 0.0;
       }
-      if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
+      if ((PismModMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
         // note basalDrag[x|y]() produces a coefficient, not a stress;
         //   uses *updated* ub,vb if doSuperpose == TRUE
         const PetscScalar 
@@ -866,12 +866,12 @@ PetscErrorCode IceModel::correctSigma() {
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (modMask(mask[i][j]) != MASK_SHEET) {
+      if (PismModMask(mask[i][j]) != MASK_SHEET) {
         // note vubarSSA, vvbarSSA *are* communicated for differencing by last
         //   call to moveVelocityToDAVectors()
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                         && (modMask(mask[i][j]) == MASK_DRAGGING) );
+                         && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity

@@ -163,7 +163,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
-      if (intMask(mask[i][j]) == MASK_SHEET) {
+      if (PismIntMask(mask[i][j]) == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where Dirichlet boundary value to SSA is set
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
@@ -205,7 +205,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
           im*M+Jm,        i*M+Jm,     ip*M+Jm,
           /*           */ i*M+Jm+1 };
  
-        if ( (intMask(mask[i][j]) == MASK_FLOATING) 
+        if ( (PismIntMask(mask[i][j]) == MASK_FLOATING)
              && (cfmask[i][j] > 0.01) && (cfmask[i][j] < 0.99) ) {
           // FIXME: put in the correct vals
           PetscScalar valU[] = {
@@ -251,14 +251,14 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
            *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
            *    or linear friction law according to basal->drag(), which gets called
            *    by basalDragx(),basalDragy().  */
-          if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
+          if ((includeBasalShear) && (PismIntMask(mask[i][j]) == MASK_DRAGGING)) {
             // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
             valU[5] += basalDragx(tauc, u, v, i, j);
             valV[7] += basalDragy(tauc, u, v, i, j);
           }
 
           // make shelf drag a little bit if desired
-          if ((shelvesDragToo == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING)) {
+          if ((shelvesDragToo == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING)) {
             valU[5] += betaShelvesDragToo;
             valV[7] += betaShelvesDragToo;
           }
@@ -323,14 +323,14 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
       const PetscInt J = 2*j,
                      rowU = i*M + J,
                      rowV = i*M + J+1;
-      if (intMask(mask[i][j]) == MASK_SHEET) {
+      if (PismIntMask(mask[i][j]) == MASK_SHEET) {
         // non-SSA case: set the velocity; in some cases this is Dirichlet cond
         //   for SSA region
         ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
-      } else if ( (intMask(mask[i][j]) == MASK_FLOATING) 
+      } else if ( (PismIntMask(mask[i][j]) == MASK_FLOATING)
                   && (cfmask[i][j] > 0.01) && (cfmask[i][j] < 0.99) ) {
         // calving front case: use info in vnCF[2]
         const PetscScalar GammaHsqr = Gamma * H[i][j] * H[i][j];

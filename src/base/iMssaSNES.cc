@@ -380,9 +380,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
 
-      int maskval = static_cast<int>(floor(mask[i][j] + 0.5)); // c.f. IceModel::intMask()
-      const int MASK_SHEET    = 1;
-      const int MASK_DRAGGING = 2;
+      int maskval = PismIntMask(mask[i][j]);
 
       if (maskval == MASK_SHEET) {
         // here we assign boundary values
@@ -390,7 +388,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
         f[i][j].v = x[i][j].v - xBV[i][j].v;
       } else {
         // main case: f.d. approx of PDE gives sys of nonlinear eqns
-        const PetscScalar 
+        const PetscScalar
           u_x_im = (x[i][j].u - x[i-1][j].u) / dx,
           u_x_ip = (x[i+1][j].u - x[i][j].u) / dx,
           u_x_jm = (+ (x[i+1][j-1].u + x[i+1][j].u)

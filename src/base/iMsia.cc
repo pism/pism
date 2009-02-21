@@ -354,7 +354,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (modMask(mask[i][j]) == MASK_FLOATING) {
+        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           ub[i][j] = 0.0;
           vb[i][j] = 0.0;
           Rb[i][j] = 0.0;
