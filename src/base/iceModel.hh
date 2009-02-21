@@ -230,7 +230,7 @@ protected:
               useConstantHardnessForSSA, computeSurfGradInwardSSA,
               leaveNuHAloneSSA, shelvesDragToo,
               yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled,
-              flowLawUsesGrainSize, realAgeForGrainSize,
+              realAgeForGrainSize,
               showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
               allowAboveMelting,
               createVecs_done, createViewers_done, createBasal_done,

@@ -213,7 +213,6 @@ PetscErrorCode IceModel::setDefaults() {
   
   updateHmelt = PETSC_TRUE;
 
-  flowLawUsesGrainSize = PETSC_FALSE;
   realAgeForGrainSize = PETSC_FALSE;
   constantGrainSize = DEFAULT_CONSTANT_GRAIN_SIZE;
 

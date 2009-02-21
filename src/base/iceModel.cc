@@ -71,9 +71,10 @@ IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
     PetscEnd();
   }
 
-  ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
-  if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
-  else                      flowLawUsesGrainSize = PETSC_FALSE;
+  // \bug There is currently no way to ensure that this->flowLawNumber has anything to do with this->ice.  While they
+  // are both gotten from getFlowLawNumber(), the defaults are generally not the same.  I (Jed) think that
+  // IceModel::flowLawNumber should be removed and the required functionality should be placed in IceType.
+  ierr = getFlowLawNumber(flowLawNumber, 0); //CHKERRQ(ierr);
 
   save_snapshots = false;
 }
