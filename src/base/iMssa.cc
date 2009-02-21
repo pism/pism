@@ -641,13 +641,10 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
       if (reason < 0) {
-        char kspdivergedreasons[9][20] = { // see man page for KSPConvergedReason
-                 "NULL", "ITS", "DTOL", "BREAKDOWN",  // -2,...,-5
-                 "BREAKDOWN_BICG", "NONSYMMETRIC", "INDEFINITE_PC", "NAN", "MAT"}; // -6,...,-10
         ierr = verbPrintf(1,grid.com, 
-            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = 'KSP_DIVERGED_%s';\n"
+            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
                   "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
-            reason,kspdivergedreasons[(-reason)-2]); CHKERRQ(ierr);
+            reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
         PetscEnd();
       }
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
