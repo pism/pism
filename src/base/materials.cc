@@ -27,6 +27,9 @@ PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
 PetscScalar IceType::n = 3.0;
 
+static inline PetscScalar secondInvariant(PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y)
+{ return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y)) + 0.25 * PetscSqr(u_y + v_x); }
+
 PetscScalar IceType::flow(const PetscScalar stress, const PetscScalar temp,
                           const PetscScalar pressure) const {
   PetscPrintf(PETSC_COMM_SELF,
@@ -60,13 +63,27 @@ PetscScalar IceType::effectiveViscosityColumn(const PetscScalar regularization,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
-  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
-                             + 0.5 * PetscSqr(u_x + v_y)
-                             + 0.25 * PetscSqr(u_y + v_x);
   const PetscScalar B = 135720960;
-  return H * B / 2 * pow(regularization + alpha, -1.0 / 3.0);
+  return H * B / 2 * pow(regularization + secondInvariant(u_x,u_y,v_x,v_y), -1.0 / 3.0);
 }
 
+PetscInt IceType::integratedStoreSize() const { return 1; }
+
+void IceType::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
+                              const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const
+{
+  const PetscScalar B = 135720960;
+  store[0] = H * B / 2;
+}
+
+void IceType::integratedViscosity(PetscReal regularization, const PetscScalar store[],
+                                  PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+                                  PetscScalar *eta, PetscScalar *deta) const
+{
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  *eta = store[0] * pow(regularization + alpha, -1.0 / 3.0);
+  if (deta) *deta = -(1./3.) * *eta / (regularization + alpha);
+}
 
 PetscScalar IceType::exponent() const {
   return n;
@@ -114,8 +131,7 @@ PetscScalar ThermoGlenIce::effectiveViscosity(const PetscScalar regularization,
                            const PetscScalar temp, const PetscScalar pressure) const  {
   const PetscScalar T = temp + (beta_CC_grad / (rho * grav)) * pressure; // homologous temp
   const PetscScalar B = hardnessParameter(T);
-  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
-                             + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n)); 
 }
 
@@ -145,9 +161,37 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(const PetscScalar regulariza
     B += 0.5 * dz * hardnessParameter(0.5 * (T1[kbelowH] + T2[kbelowH])
                                       + beta_CC_grad * (H - zlevels[kbelowH]));
   }
-  const PetscScalar alpha = 0.5 * PetscSqr(u_x) + 0.5 * PetscSqr(v_y)
-                             + 0.5 * PetscSqr(u_x + v_y) + 0.25 * PetscSqr(u_y + v_x);
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * B * pow(regularization + alpha, -(n-1.0)/(2.0*n));
+}
+
+void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
+                              const PetscScalar T1[], const PetscScalar T2[], PetscScalar store[]) const
+{
+  PetscScalar B = 0;
+  if (kbelowH > 0) {
+    PetscScalar dz = zlevels[1] - zlevels[0];
+    B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
+    for (PetscInt m=1; m < kbelowH; m++) {
+      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
+      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m])
+           + beta_CC_grad * (H - zlevels[m]));
+      dz = dzNEXT;
+    }
+    // use last dz
+    B += 0.5 * dz * hardnessParameter(0.5 * (T1[kbelowH] + T2[kbelowH])
+                                      + beta_CC_grad * (H - zlevels[kbelowH]));
+  }
+  store[0] = B / 2;
+}
+
+void ThermoGlenIce::integratedViscosity(PetscReal regularization, const PetscScalar store[],
+                                        PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+                                        PetscScalar *eta, PetscScalar *deta) const
+{
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  *eta = store[0] * pow(regularization + alpha, (1-n)/(2*n));
+  if (deta) *deta = (1-n)/(2*n) * *eta / (regularization + alpha);
 }
 
 
@@ -468,13 +512,26 @@ is minus the return value here times (vx,vy).
 Purely plastic is the pseudo_q = 0.0 case; linear is pseudo_q = 1.0; set 
 pseudo_q using PlasticBasalType constructor.
  */
-PetscScalar PlasticBasalType::drag(const PetscScalar tauc, 
+PetscScalar PlasticBasalType::drag(const PetscScalar tauc,
                                    const PetscScalar vx, const PetscScalar vy) {
-  const PetscScalar magreg = sqrt(PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy));
+  const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
   if (pseudo_plastic == PETSC_TRUE) {
-    return tauc / ( pow(magreg, 1.0 - pseudo_q) * pow(pseudo_u_threshold, pseudo_q) );
+    return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
   } else { // pure plastic, but regularized
-    return tauc / magreg;
+    return tauc / sqrt(magreg2);
+  }
+}
+
+// Derivative of drag with respect to \f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) \f$
+void PlasticBasalType::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *d, PetscScalar *dd) const
+{
+  const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  if (pseudo_plastic == PETSC_TRUE) {
+    *d = tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+    *dd = (pseudo_q - 1) * *d / magreg2;
+  } else { // pure plastic, but regularized
+    *d = tauc / sqrt(magreg2);
+    *dd = -1 * *d / magreg2;
   }
 }
 
