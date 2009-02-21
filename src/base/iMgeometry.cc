@@ -63,7 +63,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice->rho * grav * H[i][j];
+      const PetscScalar pressure = ice->rho * earth_grav * H[i][j];
       if (pressure <= 0.0) {
         taudx[i][j] = 0.0;
         taudy[i][j] = 0.0;

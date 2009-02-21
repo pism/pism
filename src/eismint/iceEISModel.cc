@@ -402,16 +402,16 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
 // for SIA regions (MASK_SHEET), and it is called within IceModel::velocitySIAStaggered)
 PetscScalar IceEISModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar mu) {
+      const PetscScalar mu) const {
 
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;
   
   if (expername == 'G') {
-      return Bfactor * ice->rho * grav * H; 
+      return Bfactor * ice->rho * earth_grav * H; 
   } else if (expername == 'H') {
       if (T + ice->beta_CC_grad * H > eismintII_temp_sliding) {
-        return Bfactor * ice->rho * grav * H; // ditto case G
+        return Bfactor * ice->rho * earth_grav * H; // ditto case G
       } else {
         return 0.0;
       }

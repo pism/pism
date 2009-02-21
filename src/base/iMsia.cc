@@ -375,7 +375,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
           // in ice streams this result will be *overwritten* by
           //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-          const PetscScalar P = ice->rho * grav * H[i][j];
+          const PetscScalar P = ice->rho * earth_grav * H[i][j];
           Rb[i][j] = - (P * myhx) * ub[i][j] - (P * myhy) * vb[i][j];
         }
       }
