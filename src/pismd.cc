@@ -53,17 +53,15 @@ int main(int argc, char *argv[]) {
 
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     IceGrid    g(com, rank, size);
-    IceType*   ice = PETSC_NULL;
     PISMConstAtmosCoupler pcac;
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMD  (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
-    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
 
     IceModel*      m;
-    IceModel       mPlain(g, ice);
-    IceROSSModel   mRoss(g, ice);
+    IceModel       mPlain(g);
+    IceROSSModel   mRoss(g);
 
     // re this option, see  src/eismint/iceROSSModel.hh|cc and:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
@@ -93,8 +91,6 @@ int main(int argc, char *argv[]) {
 
     // provide a default base name if no -o option.
     ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);
-
-    delete ice;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

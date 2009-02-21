@@ -63,7 +63,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
 
   if (transformForSurfaceGradient == PETSC_TRUE) {
     PetscScalar **eta, **b, **H;
-    const PetscScalar n = ice->n, // presumably 3.0
+    const PetscScalar n = ice->exponent(), // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                       invpow  = 1.0 / etapow,
                       dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
@@ -190,7 +190,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
-  const bool usetau3 = (ice->usesGrainSize() && (realAgeForGrainSize == PETSC_TRUE));
+  const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
+
+  const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
@@ -235,26 +237,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
-            const PetscScalar   pressure = ice->rho * grav * (thickness - grid.zlevels[k]);
-            PetscScalar flow;
-            if (ice->usesGrainSize()) {
-              //if (realAgeForGrainSize == PETSC_TRUE)
-              //  PetscPrintf(PETSC_COMM_WORLD,
-              //        "flowLawUsesGrainSize and realAgeForGrainSize both TRUE\n");
-              //else
-              //  PetscPrintf(PETSC_COMM_WORLD,
-              //        "flowLawUsesGrainSize TRUE and realAgeForGrainSize FALSE;\n"
-              //        "   constantGrainSize=%f\n",constantGrainSize);              
-              const PetscScalar grainsize = 
-                        (realAgeForGrainSize == PETSC_TRUE) ?
-                        grainSizeVostok(0.5 * (ageij[k] + ageoffset[k])) :
-                        constantGrainSize;
-              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
-                               pressure, grainsize);
-            } else {
-              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]),
-                               pressure);
+            const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
+            PetscScalar flow,grainsize = constantGrainSize;
+            if (usesGrainSize && realAgeForGrainSize) {
+              grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
+            // If the flow law does not use grain size, it will just ignore it, no harm there
+            flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
 
             delta[k] = 2.0 * pressure * enhancementFactor * flow;
 

@@ -19,8 +19,8 @@
 #include "iceCalvBCModel.hh"
 
 
-IceCalvBCModel::IceCalvBCModel(IceGrid &g, IceType *i, const char mytest)
-  : IceExactSSAModel(g, i, mytest) {
+IceCalvBCModel::IceCalvBCModel(IceGrid &g, int mytest)
+  : IceExactSSAModel(g, mytest) {
 }
 
 

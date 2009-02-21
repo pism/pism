@@ -26,7 +26,7 @@
 
 class IceROSSModel : public IceModel {
 public:
-    IceROSSModel(IceGrid &g, IceType *i);
+    IceROSSModel(IceGrid &g);
     using IceModel::initFromOptions;
     virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
     PetscErrorCode         finishROSS();

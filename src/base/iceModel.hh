@@ -109,13 +109,15 @@ struct RegPoissonCtx {
 class IceModel {
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, IceType *i);
+  IceModel(IceGrid &g);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iceModel.cc
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
+  virtual IceFactory &getIceFactory() { return iceFactory; }
+  virtual IceType *getIce() {return ice;}
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -151,6 +153,7 @@ protected:
   
   LocalInterpCtx        *bootstrapLIC;
 
+  IceFactory            iceFactory;
   IceType               *ice;
   PlasticBasalType      *basal;
   BasalTypeSIA          *basalSIA;
@@ -201,7 +204,6 @@ protected:
               dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
               dt_force,
               constantNuHForSSA, constantHardnessForSSA, min_thickness_SSA,
-              regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo,
               plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold,
@@ -218,7 +220,6 @@ protected:
               skipMax,
               noSpokesLevel,
               maxLowTempCount,
-              flowLawNumber,
               ssaMaxIterations;
 
   // flags
@@ -227,7 +228,7 @@ protected:
               isDrySimulation, holdTillYieldStress, useConstantTillPhi,
               useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuHForSSA, 
-              useConstantHardnessForSSA, computeSurfGradInwardSSA,
+              computeSurfGradInwardSSA,
               leaveNuHAloneSSA, shelvesDragToo,
               yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled,
               realAgeForGrainSize,
@@ -282,9 +283,8 @@ protected:
   virtual PetscScalar    getEffectivePressureOnTill(
             const PetscScalar thk, const PetscScalar melt_thk);
   virtual PetscErrorCode updateYieldStressFromHmelt();
-  virtual PetscScalar    basalVelocity(const PetscScalar x, const PetscScalar y, 
-            const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-            const PetscScalar mu);
+  virtual PetscScalar    basalVelocity(PetscScalar x, PetscScalar y,
+                                       PetscScalar H, PetscScalar T, PetscScalar alpha, PetscScalar mu) const;
   virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
   virtual PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,

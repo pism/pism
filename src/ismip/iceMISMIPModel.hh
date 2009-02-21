@@ -26,26 +26,20 @@
 
 class MISMIPIce : public ThermoGlenIce {
 public:
-  MISMIPIce();
+  MISMIPIce(MPI_Comm c,const char pre[]);
   using ThermoGlenIce::flow;
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
-  // this one returns nu; ignors temp & pressure
-  virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar temp, const PetscScalar pressure) const;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+                           PetscScalar pressure,PetscScalar gs /*ignored*/) const;
   // this one returns nu * H; calls effectiveViscosity() for nu
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscInt kbelowH,
-                           const PetscInt nlevels, PetscScalar *zlevels,
+  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H, const PetscInt kbelowH,
+                           const PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const;
   PetscErrorCode setA(const PetscScalar myA);
   PetscScalar    softnessParameter(const PetscScalar T) const;
   PetscScalar    hardnessParameter(const PetscScalar T) const;
-  PetscErrorCode printInfo(const int thresh, MPI_Comm com);
+  PetscErrorCode printInfo(const int thresh) const;
   
 protected:
   PetscScalar  A_MISMIP, // softness
@@ -91,7 +85,7 @@ The results in the former case, of smoother C_MISMIP, are no better, I think.
 class IceMISMIPModel : public IceModel {
 
 public:
-  IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i);
+  IceMISMIPModel(IceGrid &g);
   virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
 
   virtual PetscErrorCode setFromOptions();

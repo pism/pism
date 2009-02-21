@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,8 @@ invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
 derived class.
 *******************/
 
-//! Class containing physical constants and the constitutive relation describing ice.  (Mostly virtual base class.)
+//! Abstract class containing physical constants and the constitutive relation describing ice.  This is the interface
+//! which most of Pism uses for rheology.
 class IceType {
 public:
   static PetscScalar rho;
@@ -52,72 +53,84 @@ public:
   static PetscScalar c_p;
   static PetscScalar latentHeat;
   static PetscScalar meltingTemp;
-  static PetscScalar n;
 
+  IceType(MPI_Comm c,const char pre[]) : comm(c) { strncpy(prefix,pre,sizeof(prefix)); }
   virtual ~IceType() {}
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure, const PetscScalar gs) const;
-  virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
-  // this one returns nu; applies to ice shelf/stream approximation
-  virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar temp, const PetscScalar pressure) const;
-  // this one returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscInt kbelowH,
-                           const PetscInt nlevels, PetscScalar *zlevels,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar *T1, const PetscScalar *T2) const;
-  virtual PetscInt integratedStoreSize() const;
-  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
-                               const PetscScalar T[], PetscScalar store[]) const;
-  virtual void integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                   const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
-  virtual PetscScalar exponent() const;
-  virtual PetscScalar softnessParameter(const PetscScalar T) const;
-  virtual PetscScalar hardnessParameter(const PetscScalar T) const;
+  virtual PetscErrorCode setFromOptions() {return 0;}
+  virtual PetscErrorCode printInfo(PetscInt) const {return 0;}
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const = 0;
+  // returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
+  virtual PetscScalar effectiveViscosityColumn(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
+                                               PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+                                               const PetscScalar *T1, const PetscScalar *T2) const = 0;
+  virtual PetscInt integratedStoreSize() const = 0;
+  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+                               const PetscScalar T[], PetscScalar store[]) const = 0;
+  virtual void integratedViscosity(const PetscScalar store[],const PetscScalar Du[],PetscScalar *nuH, PetscScalar *dnuH) const = 0;
+  // I really don't want this to be part of IceType since it doesn't make any sense for plenty of rheologies, but we
+  // need some exponent to compute the coordinate transformation in IceModel::computeDrivingStress (see iMgeometry.cc).
+  virtual PetscScalar exponent() const { return 3; }
+protected:
+  MPI_Comm comm;
+  char prefix[256];
 };
 
+PetscTruth IceTypeIsPatersonBuddCold(IceType *);
+PetscTruth IceTypeUsesGrainSize(IceType *);
+
+class CustomGlenIce : public IceType {
+public:
+  CustomGlenIce(MPI_Comm c,const char pre[]);
+  PetscErrorCode setExponent(PetscReal);
+  PetscErrorCode setHardness(PetscReal);
+  PetscErrorCode setSoftness(PetscReal);
+  PetscErrorCode setSchoofRegularization(PetscReal vel,PetscReal len);
+  virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode printInfo(PetscInt) const;
+  virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
+  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar[],
+                                               PetscScalar,PetscScalar,PetscScalar,PetscScalar,
+                                               const PetscScalar[],const PetscScalar[]) const;
+  virtual PetscInt integratedStoreSize() const;
+  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
+                               const PetscScalar T[], PetscScalar store[]) const;
+  virtual void integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
+private:
+  PetscReal exponent_n,softness_A,hardness_B,schoofVel,schoofLen,schoofReg;
+};
 
 //! Derived class of IceType for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceType {
 public:
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure, const PetscScalar gs) const;
-  virtual PetscScalar effectiveViscosity(const PetscScalar regularization,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar temp, const PetscScalar pressure) const;
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar regularization,
-                           const PetscScalar H, const PetscInt kbelowH,
-                           const PetscInt nlevels, PetscScalar *zlevels,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar *T1, const PetscScalar *T2) const;
-  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, PetscInt nlevels, const PetscScalar *zlevels,
+  ThermoGlenIce(MPI_Comm c,const char pre[]);
+  virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode printInfo(PetscInt) const;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
+  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar[],
+                                               PetscScalar,PetscScalar,PetscScalar,PetscScalar,
+                                               const PetscScalar[],const PetscScalar[]) const;
+  virtual PetscInt integratedStoreSize() const;
+  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                                const PetscScalar T[], PetscScalar store[]) const;
-  virtual void integratedViscosity(PetscReal regularization, const PetscScalar store[],
-                                   const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
+  virtual void integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
+  virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(const PetscScalar T) const;
   virtual PetscScalar hardnessParameter(const PetscScalar T) const;
 protected:
+  PetscReal schoofLen,schoofVel,schoofReg;
   static PetscScalar A_cold;  // these four constants from Paterson & Budd (1982)
   static PetscScalar A_warm;
   static PetscScalar Q_cold;
   static PetscScalar Q_warm;
   static PetscScalar crit_temp;
+  static PetscScalar n;
 };
 
 
 //! Derived class of IceType for Hooke (1981)-Glen ice.
 class ThermoGlenIceHooke : public ThermoGlenIce {
 public:
+  ThermoGlenIceHooke(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
   virtual PetscScalar softnessParameter(PetscScalar T) const;
 protected:
   static PetscScalar A_Hooke;  // these six constants from Hooke (1981)
@@ -132,10 +145,10 @@ protected:
 //! Derived class of IceType for Arrhenius-Glen ice; \e cold case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
+  ThermoGlenArrIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   using ThermoGlenIce::flow;
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
+  virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
   virtual PetscScalar A() const;  // returns A_cold for Paterson-Budd
   virtual PetscScalar Q() const;  // returns Q_cold for Paterson-Budd
 };
@@ -144,6 +157,7 @@ public:
 //! Derived class of IceType for Arrhenius-Glen ice; \e warm case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
+  ThermoGlenArrIceWarm(MPI_Comm c,const char pre[]) : ThermoGlenArrIce(c,pre) {}
   virtual PetscScalar A() const;  // returns A_warm for Paterson-Budd
   virtual PetscScalar Q() const;  // returns Q_warm for Paterson-Budd
 };
@@ -157,13 +171,10 @@ struct GKparts {
 //! Derived class of IceType for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form.
 class HybridIce : public ThermoGlenIce {
 public:
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure, const PetscScalar gs) const;
+  HybridIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
-  GKparts flowParts(const PetscScalar stress, const PetscScalar temp,
-                    const PetscScalar pressure) const;
+  GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
 
 protected:
   static PetscScalar  V_act_vol;
@@ -186,10 +197,8 @@ protected:
 // Derived class of HybridIce; for testing only.
 class HybridIceStripped : public HybridIce {
 public:
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure) const;
-  virtual PetscScalar flow(const PetscScalar stress, const PetscScalar temp,
-                           const PetscScalar pressure, const PetscScalar gs) const;
+  HybridIceStripped(MPI_Comm c,const char pre[]) : HybridIce(c,pre) {}
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:
   static PetscScalar d_grain_size_stripped;
@@ -260,6 +269,39 @@ public:
   PetscTruth  pseudo_plastic;
 };
 
+
+#define ICE_CUSTOM  "custom"        /* Plain isothermal Glen with customizable parameters */
+#define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
+#define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */
+#define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
+#define ICE_HYBRID  "hybrid"        /* Goldsby-Kohlstedt for SIA, PB for SSA */
+#define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
+
+class IceFactory {
+public:
+  IceFactory(MPI_Comm,const char prefix[]);
+  ~IceFactory();
+  PetscErrorCode setType(const char[]);
+  PetscErrorCode setTypeByNumber(int);
+  PetscErrorCode setFromOptions();
+  PetscErrorCode registerType(const char[],PetscErrorCode(*)(MPI_Comm,const char[],IceType **));
+  PetscErrorCode create(IceType **);
+private:
+  PetscErrorCode registerAll();
+private:
+  MPI_Comm comm;
+  char prefix[256],type_name[256];
+  PetscFList type_list;
+};
+
+// This uses the definition of second invariant from Hutter and several others, namely
+// \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
+static inline PetscScalar secondInvariant(PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y)
+{ return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
+
+// The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
+static inline PetscScalar secondInvariantDu(const PetscScalar Du[])
+{ return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
 
 #endif /* __materials_hh */
 

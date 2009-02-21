@@ -41,15 +41,15 @@ and -d?forcing options.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
-  PetscTruth  my_useConstantNuH, my_useConstantHardness, mybedDeflc, mydoBedIso, 
+  PetscTruth  my_useConstantNuH, mybedDeflc, mydoBedIso, 
               myincludeBMRinContinuity, mydoOceanKill, floatkillSet,
               mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
               pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
-              mydoSuperpose, mydoSkip, plasticRegSet, regVelSet,
+              mydoSuperpose, mydoSkip, plasticRegSet,
               plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
               maxdtSet, noMassConserve, noTemp, etaSet, doShelvesDragToo,
               mygsConstantSet;
-  PetscScalar my_maxdt, my_nuH, myRegVelSchoof, my_barB,
+  PetscScalar my_maxdt, my_nuH,
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
 
@@ -105,14 +105,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   if (my_useConstantNuH == PETSC_TRUE) {
     useConstantNuHForSSA = PETSC_TRUE;
     setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s m
-  }
-
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_hardness", &my_barB, &my_useConstantHardness);
-           CHKERRQ(ierr);
-  // user gives \bar B in Pa s^{1/3}; typical value is 1.9e8 Pa s^{1/3} (MacAyeal et al 1996)
-  if (my_useConstantHardness == PETSC_TRUE) {
-    useConstantHardnessForSSA = PETSC_TRUE;
-    constantHardnessForSSA = my_barB;
   }
 
 // "-csurf_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
@@ -279,19 +271,6 @@ PetscErrorCode  IceModel::setFromOptions() {
     PetscEnd();
   }
 
-  // a parameter in regularizing the computation of effective viscosity from strain rates;
-  // see computeEffectiveViscosity() in iMssa.cc
-  // option given in m/a so convert to m/s
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-reg_vel_schoof", &myRegVelSchoof, &regVelSet);
-           CHKERRQ(ierr);
-  if (regVelSet == PETSC_TRUE)   regularizingVelocitySchoof = myRegVelSchoof / secpera;
-    
-  // a parameter in regularizing the computation of effective viscosity from strain rates;
-  // see computeEffectiveViscosity() in iMssa.cc
-  // option given in m; no conversion
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-reg_length_schoof", &regularizingLengthSchoof,
-           PETSC_NULL); CHKERRQ(ierr);
-  
 // note "-regrid_from" is in use for regrid file name; see iMregrid.cc
 
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
@@ -347,7 +326,13 @@ PetscErrorCode  IceModel::setFromOptions() {
 // note -ys, -ye, -y options are read in setStartRunEndYearsFromOptions()
  
   ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // reads "-quadZ" and "-chebZ"
-  
+
+  if (!ice) {                   // If we already have ice, then a derived class must have created it, otherwise create it.
+    ierr = iceFactory.setFromOptions();CHKERRQ(ierr); // The user can set the type using -ice_type, run with -help to see choices
+    ierr = iceFactory.create(&ice);CHKERRQ(ierr);
+    ierr = ice->setFromOptions();CHKERRQ(ierr); // Set options specific to this particular ice type
+  }
+
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
