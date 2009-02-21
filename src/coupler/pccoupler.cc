@@ -753,4 +753,5 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
 
   pvsbmf = &vshelfbasemassflux;
   return 0;
-};
+}
+

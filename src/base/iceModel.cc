@@ -542,12 +542,17 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
 #if (PISM_LOG_EVENTS)
-PetscLogEventRegister(&siaEVENT,    "sia velocity",0);
-PetscLogEventRegister(&ssaEVENT,    "ssa velocity",0);
-PetscLogEventRegister(&velmiscEVENT,"misc vel calc",0);
-PetscLogEventRegister(&beddefEVENT, "bed deform",0);
-PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
-PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
+#if defined(PISM_HAVE_PETSC3) && PISM_HAVE_PETSC3
+# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
+#else
+# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))
+#endif
+  PismLogEventRegister("sia velocity", 0,&siaEVENT);
+  PismLogEventRegister("ssa velocity", 0,&ssaEVENT);
+  PismLogEventRegister("misc vel calc",0,&velmiscEVENT);
+  PismLogEventRegister("bed deform",   0,&beddefEVENT);
+  PismLogEventRegister("mass bal calc",0,&massbalEVENT);
+  PismLogEventRegister("temp age calc",0,&tempEVENT);
 #endif
 
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
