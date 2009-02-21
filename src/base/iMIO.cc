@@ -651,7 +651,7 @@ PetscErrorCode IceModel::regrid(const char *filename) {
 PetscErrorCode IceModel::init_snapshots_from_options() {
   PetscErrorCode ierr;
   PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
-  char tmp[TEMPORARY_STRING_LENGTH];
+  char tmp[TEMPORARY_STRING_LENGTH] = "\0";
   first_snapshot = next_snapshot = last_snapshot = snapshot_dt = 0;
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-save_to", snapshots_filename,
@@ -676,7 +676,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   char *endptr1, *endptr2;
   bool parsing_failed = false;
   if (strchr(tmp, ':')) {	// if a string contains a colon...
-      
+
     // try to read the first number
     first_snapshot = strtod(tmp, &endptr1);
     if (tmp == endptr1)
