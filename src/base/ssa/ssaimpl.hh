@@ -50,9 +50,10 @@ public:
     time = 1;
     pressure = 1;
 #else
-    length = 1e6;
-    height = 1e3;
-    time = 1e0 * secpera;
+    // The values here have no effect on results, they are chosen so that initial residuals are O(1)
+    length = 1e4;
+    height = 1e2;
+    time = 10 * secpera;        // This cancels out and has no effect on residual norms
     //stress = 910 * 9.81 * height * (height/length); // You can think of this as choosing units of force
     pressure = 910 * 9.81 * height;
 #endif
@@ -75,7 +76,6 @@ public:
   PetscReal Pressure() const { return pressure; }
   PetscReal DrivingStress() const { return Pressure() * Slope(); }
   PetscReal IntegratedViscosity() const { return DrivingStress() * Length() / StrainRate(); }
-  //PetscReal Drag() const { return DrivingStress() / Velocity(); }
   PetscReal Drag() const { return DrivingStress() / Velocity(); }
   PetscErrorCode View(PetscViewer viewer) const; // implemented in ssa/ssa.cc
 private:
