@@ -109,7 +109,6 @@ IceCompModel::~IceCompModel() {
     vHexactL.destroy();
     vHexactLCreated = PETSC_FALSE;
   }
-  delete tgaIce;
 }
 
 PetscErrorCode IceCompModel::setFromOptions() {

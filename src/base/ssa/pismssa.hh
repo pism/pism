@@ -19,8 +19,7 @@
 #ifndef _PISM_SSA_HH
 #define _PISM_SSA_HH
 
-#include "petscviewer.h"
-
+typedef struct _p_PetscViewer *PetscViewer;
 class IceGrid;
 class IceModelVec2;
 class IceModelVec3;

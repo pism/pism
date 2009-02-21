@@ -54,7 +54,7 @@ public:
   static PetscScalar latentHeat;
   static PetscScalar meltingTemp;
 
-  IceType(MPI_Comm c,const char pre[]) : comm(c) { strncpy(prefix,pre,sizeof(prefix)); }
+  IceType(MPI_Comm c,const char pre[]);
   virtual ~IceType() {}
   virtual PetscErrorCode setFromOptions() {return 0;}
   virtual PetscErrorCode printInfo(PetscInt) const {return 0;}

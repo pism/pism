@@ -26,6 +26,11 @@ PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capaci
 PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
 
+IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
+  memset(prefix,0,sizeof(prefix));
+  if (pre) strncpy(prefix,pre,sizeof(prefix));
+}
+
 // Rather than make this part of the base class, we just check at some reference values.
 PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
   static const struct {PetscReal s,T,p,gs;} v[] = {
