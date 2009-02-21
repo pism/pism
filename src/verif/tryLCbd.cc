@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    IceType     ice;
     DeformableEarthType bedrock;
     BedDeformLC bdlc;
     DA          da2;
@@ -166,7 +165,7 @@ int main(int argc, char *argv[]) {
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n"); CHKERRQ(ierr);
       ierr = bdlc.settings(include_elastic,Mx,My,dx,dy,Z, 
-                           ice.rho, bedrock.rho, bedrock.eta, bedrock.D,
+                           IceType::rho, bedrock.rho, bedrock.eta, bedrock.D,
                            &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);
