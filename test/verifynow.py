@@ -22,7 +22,7 @@ def verify(test):
       if test[3] == 0:
      	   gridopts = ' -Mx ' + str(myMx) + ' -My ' + str(myMx)
       elif test[3] == 1:
-         gridopts = ' -My ' + str(myMx)
+         gridopts = ' -Mx ' + str(myMx)
       elif test[3] == 2:
          gridopts = ' -Mx ' + str(myMx) + ' -My ' + str(myMx)
          if (uneq == 0):
@@ -112,8 +112,8 @@ alltests = [
         0,' -Mz 31 -bed_def_iso -y 60000.0',
         '(refine dx=80,60,40,30,20,km, dx=dy and Mx=My=31,41,61,81,121)'],
    ['I',[49,193,769,3073,12289],'plastic till ice stream',1,
-        ' -Mx 5 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
-        '(refine dy=5000,1250,312.5,78.13,19.53,m, My=49,193,769,3073,12289)'],
+        ' -My 5 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
+        '(refine dy=5000,1250,312.5,78.13,19.53,m, Mx=49,193,769,3073,12289)'],
    ['J',[30,60,120,180,240],'linearized, periodic ice shelf',0,
         ' -Mz 11 -ksp_rtol ' + str(KSPRTOL),
         '(refine dx=20,10,5,3.333,2.5, km; dx=dy and My=30,60,120,180,240)'],
