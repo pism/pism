@@ -40,7 +40,7 @@ with 8 processors, then some processors "own" entirely floating ice
 so they never call the print statement and then no output at all occurs.
  */
  
-MISMIPIce::MISMIPIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+MISMIPIce::MISMIPIce() {
   rho = 900.0;
   n = 3;
   setA(4.6416e-24);
@@ -54,24 +54,38 @@ PetscErrorCode MISMIPIce::setA(const PetscScalar myA) {
 }
 
 
-PetscErrorCode MISMIPIce::printInfo(const int thresh) const {
+PetscErrorCode MISMIPIce::printInfo(const int thresh, MPI_Comm com) {
   PetscErrorCode ierr;
-  ierr = verbPrintf(thresh, comm,
+  ierr = verbPrintf(thresh, com, 
     "Using MISMIP ice w  rho=%6.2f, grav=%6.4f, n=%6.4f, and A=%6.4e.\n",
-    rho, earth_grav, n, A_MISMIP); CHKERRQ(ierr);
+    rho, grav, n, A_MISMIP); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscScalar MISMIPIce::flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
+PetscScalar MISMIPIce::flow(const PetscScalar stress, const PetscScalar temp,
+                            const PetscScalar pressure) const {
   // this one is called by SIA force balance code
   // MAKE SURE THIS IS REALLY BEING USED!!:
   //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::flow()\n");
   return A_MISMIP * pow(stress,n-1);
 }
 
-PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar H, const PetscInt kbelowH,
-                           const PetscScalar *zlevels,
+
+PetscScalar MISMIPIce::effectiveViscosity(const PetscScalar regularization,
+                           const PetscScalar u_x, const PetscScalar u_y,
+                           const PetscScalar v_x, const PetscScalar v_y,
+                           const PetscScalar temp, const PetscScalar pressure) const  {
+  PetscPrintf(PETSC_COMM_SELF,
+        "\n\n\n\nMISMIPIce::effectiveViscosity() should never be called because\n"
+        "  ice has constant hardness (useConstantHardnessForSSA = PETSC_TRUE)\n\n\n\n");
+  PetscEnd();
+  return 0;
+}
+
+PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar regularization,
+                           const PetscScalar H, const PetscInt kbelowH,
+                           const PetscInt nlevels, PetscScalar *zlevels,
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
@@ -97,17 +111,9 @@ PetscScalar MISMIPIce::hardnessParameter(const PetscScalar T) const {
 }
 
 
-// Just creates MISMIP ice, but could also set options
-static PetscErrorCode create_mismip(MPI_Comm comm,const char pre[],IceType **i)
-{ *i = new MISMIPIce(comm,pre); return 0; }
 
-
-IceMISMIPModel::IceMISMIPModel(IceGrid &g) : 
-  IceModel(g), mismip_ice(NULL) {
-
-
-  iceFactory.registerType("mismip",create_mismip);
-  iceFactory.setType("mismip"); // The factory will create MISMIP ice by default
+IceMISMIPModel::IceMISMIPModel(IceGrid &g, MISMIPIce *mismip_i) : 
+      IceModel(g, (IceType*)mismip_i), mismip_ice(mismip_i) {
 
   // some are the defaults, while some are merely in a valid range;
   //   see IceMISMIPModel::setFromOptions() for decent values
@@ -149,7 +155,7 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
       "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
       m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
   }
-  ierr = mismip_ice->printInfo(2); CHKERRQ(ierr);
+  ierr = mismip_ice->printInfo(2, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -188,10 +194,6 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(
 
 PetscErrorCode IceMISMIPModel::setFromOptions() {
   PetscErrorCode ierr;
-
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-  mismip_ice = dynamic_cast<MISMIPIce*>(ice);
-  if (!mismip_ice) SETERRQ(1,"Ice type must be MISMIPIce or derived from MISMIPIce for iceMISMIPModel");
 
   // from Table 4
   const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
@@ -351,6 +353,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   useSSAVelocity            = PETSC_TRUE;
   computeSurfGradInwardSSA  = PETSC_FALSE;
   transformForSurfaceGradient = PETSC_TRUE;
+  useConstantHardnessForSSA = PETSC_TRUE;
   constantHardnessForSSA    = mismip_ice->hardnessParameter(273.15); // temp. irrelevant
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
@@ -625,7 +628,7 @@ PetscErrorCode IceMISMIPModel::calving() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
         if (H[i][j] < calving_thk_min) {
           H[i][j] = 0.0;
         } else if ( (H[i][j] == 0.0) && 
@@ -866,8 +869,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       // grounding line xg is largest  y  so that  mask[i][j] != FLOATING
       //       and mask[i][j+1] == FLOATING
       if ( (jfrom0 > 0.0) && (H[i][j] > 0.0) 
-           && (PismModMask(mask[i][j]) != MASK_FLOATING)
-           && (PismModMask(mask[i][j+1]) == MASK_FLOATING) ) {
+           && (modMask(mask[i][j]) != MASK_FLOATING) 
+           && (modMask(mask[i][j+1]) == MASK_FLOATING) ) {
         // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
         jg = PetscMax(jg,static_cast<PetscScalar>(j));
       }
@@ -875,7 +878,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       if ((jfrom0 > 0) && (H[i][j] > 0.0)) {
         // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
         if (vbar[i][j] > maxubar)  maxubar = vbar[i][j];
-        if (PismModMask(mask[i][j]) != MASK_FLOATING) {
+        if (modMask(mask[i][j]) != MASK_FLOATING) {
           Ngrounded += 1.0;
           avubargrounded += vbar[i][j];
         } else {

@@ -27,8 +27,8 @@
 #include "iceROSSModel.hh"
 
 
-IceROSSModel::IceROSSModel(IceGrid &g)
-  : IceModel(g) {  // do nothing; note derived classes must have constructors
+IceROSSModel::IceROSSModel(IceGrid &g, IceType *i)
+  : IceModel(g,i) {  // do nothing; note derived classes must have constructors
 
   useSSAVelocity= PETSC_TRUE;
   computeSIAVelocities = PETSC_FALSE;
@@ -38,9 +38,12 @@ IceROSSModel::IceROSSModel(IceGrid &g)
   useConstantNuHForSSA = PETSC_FALSE; // compute the effective viscosity in usual
            // shear-thinning way (except will extend shelf using constantNuHForSSA below,
            // also as usual)
+  useConstantHardnessForSSA = PETSC_TRUE;  // but don't include thermocoupling
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
   constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
+  regularizingVelocitySchoof = 1.0 / secpera;  // 1 m/a is small velocity for shelf!
+  regularizingLengthSchoof = 1000.0e3;         // (VELOCITY/LENGTH)^2  is very close to 10^-27
   
   // this calculation of shelf extension strength is same as default for IceModel,
   // but we might want to make it depend on options
@@ -107,9 +110,11 @@ PetscErrorCode IceROSSModel::initFromOptions(PetscTruth doHook) {
   // temp in column equals temp at surface
   ierr = fillinTemps();  CHKERRQ(ierr);
 
-  if (doHook) {
-    ierr = afterInitHook(); CHKERRQ(ierr);
-  }
+  ierr = verbPrintf(5,grid.com,
+            "  [using Schoof regularization constant = %10.5e]\n",
+            PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof)); CHKERRQ(ierr);
+
+  ierr = afterInitHook(); CHKERRQ(ierr);
 
   // update surface elev
   ierr = verbPrintf(2,grid.com, 
@@ -249,7 +254,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
                accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
   PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
   
-  const PetscScalar area = grid.dx * grid.dy;
+  const PetscScalar pi = 3.14159265358979, area = grid.dx * grid.dy;
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = obsAzimuth.get_array(azi); CHKERRQ(ierr);    
@@ -259,7 +264,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-     if ((PismModMask(mask[i][j]) == MASK_FLOATING) && (H[i][j] > 1.0)) {
+     if ((modMask(mask[i][j]) == MASK_FLOATING) && (H[i][j] > 1.0)) {
         const PetscScalar ccomputed = sqrt(PetscSqr(vbar[i][j]) + PetscSqr(ubar[i][j]));
         maxcComputed = PetscMax(maxcComputed,ccomputed);
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
@@ -386,7 +391,7 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
           ierr = verbPrintf(4,PETSC_COMM_SELF,
                  " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                  grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr); 
-          if (PismIntMask(mask[ci][cj]) == MASK_FLOATING) {
+          if (intMask(mask[ci][cj]) == MASK_FLOATING) {
             goodptcount += 1.0;
             ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
           }

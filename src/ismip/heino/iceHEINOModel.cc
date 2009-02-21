@@ -22,8 +22,8 @@
 #include "../base/iceModel.hh"
 #include "iceHEINOModel.hh"
 
-IceHEINOModel::IceHEINOModel(IceGrid &g)
-  : IceModel(g) {
+IceHEINOModel::IceHEINOModel(IceGrid &g, IceType &i)
+  : IceModel(g,i) {
 }
 
 

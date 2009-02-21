@@ -26,7 +26,7 @@
 
 class IceHEINOModel : public IceModel {
 public:
-    IceHEINOModel(IceGrid &g);
+    IceHEINOModel(IceGrid &g, IceType &i);
     virtual PetscErrorCode initFromOptions();
     void           setExperName(char);
     char           getExperName();

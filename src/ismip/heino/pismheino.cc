@@ -45,12 +45,15 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid    g(com, rank, size);
+    IceType*   ice = PETSC_NULL;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "PISMHEINO (ISMIP-HEINO mode)\n"); CHKERRQ(ierr);
 
+    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr);  // allocates ice
+    
     // call constructors on all three, but m will point to the one we use
-    IceHEINOModel  mHEINO(g);
+    IceHEINOModel  mHEINO(g, ice);
 
     mHEINO.setflowlawNumber(flowlawNumber);
     ierr = mHEINO.setFromOptions(); CHKERRQ(ierr);
@@ -63,6 +66,7 @@ int main(int argc, char *argv[]) {
     
     ierr = mHEINO.simpFinalize(); CHKERRQ(ierr);
 
+    delete ice;
     ierr = verbPrintf(2,com, "\n"); CHKERRQ(ierr);
   }
 

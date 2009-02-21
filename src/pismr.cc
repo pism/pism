@@ -40,14 +40,16 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid g(com, rank, size);
+    IceType*   ice = PETSC_NULL;
     PISMConstAtmosCoupler pcac;
     PISMPDDCoupler        ppdd;
     PISMConstOceanCoupler pcoc;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMR  (basic evolution run mode)\n"); CHKERRQ(ierr);
-
-    IceModel m(g);
+    
+    ierr = userChoosesIceType(com, ice); CHKERRQ(ierr); // allocates ice
+    IceModel m(g, ice);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
 
     PetscTruth  pddSet;
@@ -71,6 +73,8 @@ int main(int argc, char *argv[]) {
 
     // provide a default base name if no -o option.
     ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+
+    delete ice;
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

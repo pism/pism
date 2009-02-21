@@ -33,10 +33,6 @@
 #include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"
 
-// With this forward declaration, we don't have to recompile all of
-// Pism if the SSA header "pismssa.hh" changes.
-typedef struct _p_SSA *SSA;
-
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -113,15 +109,13 @@ struct RegPoissonCtx {
 class IceModel {
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g);
+  IceModel(IceGrid &g, IceType *i);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iceModel.cc
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
-  virtual IceFactory &getIceFactory() { return iceFactory; }
-  virtual IceType *getIce() {return ice;}
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -150,6 +144,10 @@ public:
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
 protected:
+   static const int MASK_SHEET;
+   static const int MASK_DRAGGING;
+   static const int MASK_FLOATING;
+   static const int MASK_FLOATING_OCEAN0;
 
   IceGrid               &grid;
 
@@ -157,7 +155,6 @@ protected:
   
   LocalInterpCtx        *bootstrapLIC;
 
-  IceFactory            iceFactory;
   IceType               *ice;
   PlasticBasalType      *basal;
   BasalTypeSIA          *basalSIA;
@@ -208,6 +205,7 @@ protected:
               dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
               dt_force,
               constantNuHForSSA, constantHardnessForSSA, min_thickness_SSA,
+              regularizingVelocitySchoof, regularizingLengthSchoof,
               ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo,
               plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold,
@@ -224,6 +222,7 @@ protected:
               skipMax,
               noSpokesLevel,
               maxLowTempCount,
+              flowLawNumber,
               ssaMaxIterations;
 
   // flags
@@ -232,10 +231,10 @@ protected:
               isDrySimulation, holdTillYieldStress, useConstantTillPhi,
               useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuHForSSA, 
-              computeSurfGradInwardSSA,
+              useConstantHardnessForSSA, computeSurfGradInwardSSA,
               leaveNuHAloneSSA, shelvesDragToo,
               yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled,
-              realAgeForGrainSize,
+              flowLawUsesGrainSize, realAgeForGrainSize,
               showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
               allowAboveMelting,
               createVecs_done, createViewers_done, createBasal_done,
@@ -273,6 +272,8 @@ protected:
   virtual void setAllGMaxVelocities(PetscScalar);
   virtual void setConstantNuHForSSA(PetscScalar);
   virtual PetscTruth isInitialized() const;
+  virtual int intMask(PetscScalar);
+  virtual int modMask(PetscScalar);
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
@@ -287,8 +288,9 @@ protected:
   virtual PetscScalar    getEffectivePressureOnTill(
             const PetscScalar thk, const PetscScalar melt_thk);
   virtual PetscErrorCode updateYieldStressFromHmelt();
-  virtual PetscScalar    basalVelocity(PetscScalar x, PetscScalar y,
-                                       PetscScalar H, PetscScalar T, PetscScalar alpha, PetscScalar mu) const;
+  virtual PetscScalar    basalVelocity(const PetscScalar x, const PetscScalar y, 
+            const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+            const PetscScalar mu);
   virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
   virtual PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
@@ -541,11 +543,6 @@ private:
   VecScatter SSAScatterGlobalToLocal;
 
 protected:
-  // External SSA solver.  If non-NULL, we are using the velocity solver in src/base/ssa and all the SSA* objects above
-  // are not used.  Eventually we should move SSA legacy stuff out of IceModel (either by putting into an implementation
-  // of SSA or by just deleting it).
-  SSA ssa;
-
   // This is related to the snapshot saving feature
   char snapshots_filename[PETSC_MAX_PATH_LEN];
   bool save_snapshots, file_is_ready, split_snapshots;

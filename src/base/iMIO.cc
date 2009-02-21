@@ -22,8 +22,8 @@
 #include "iceModel.hh"
 
 bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
-  size_t flen = strlen(fname);
-  size_t slen = strlen(suffix);
+  int flen = strlen(fname);
+  int slen = strlen(suffix);
   if (strcmp(fname + flen - slen, suffix) == 0) {
     return true;
   } else {
@@ -323,7 +323,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
 // Writes extra fields to the output file \c filename. Does nothing in the base
 // class.
-PetscErrorCode IceModel::write_extra_fields(const char /*filename*/[]) {
+PetscErrorCode IceModel::write_extra_fields(const char filename[]) {
   // Do nothing.
   return 0;
 }
@@ -651,7 +651,7 @@ PetscErrorCode IceModel::regrid(const char *filename) {
 PetscErrorCode IceModel::init_snapshots_from_options() {
   PetscErrorCode ierr;
   PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
-  char tmp[TEMPORARY_STRING_LENGTH] = "\0";
+  char tmp[TEMPORARY_STRING_LENGTH];
   first_snapshot = next_snapshot = last_snapshot = snapshot_dt = 0;
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-save_to", snapshots_filename,
@@ -676,7 +676,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   char *endptr1, *endptr2;
   bool parsing_failed = false;
   if (strchr(tmp, ':')) {	// if a string contains a colon...
-
+      
     // try to read the first number
     first_snapshot = strtod(tmp, &endptr1);
     if (tmp == endptr1)

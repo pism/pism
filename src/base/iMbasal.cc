@@ -42,9 +42,12 @@ at the base to BasalTypeSIA::velocity().
 
 The returned coefficient is used in basalSlidingHeatingSIA().
  */
-PetscScalar IceModel::basalVelocity(PetscScalar, PetscScalar, PetscScalar H, PetscScalar T, PetscScalar, PetscScalar mu) const {
+PetscScalar IceModel::basalVelocity(const PetscScalar x, const PetscScalar y,
+      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
+      const PetscScalar mu) {
+
   if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
-    return basalSIA->velocity(mu, ice->rho * earth_grav * H);
+    return basalSIA->velocity(mu, ice->rho * grav * H);
   } else {
     return 0;
   }
@@ -185,7 +188,7 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   ierr = vtillphi.get_array(phi); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismModMask(mask[i][j]) != MASK_FLOATING) {
+      if (modMask(mask[i][j]) != MASK_FLOATING) {
         if (bed[i][j] <= topg_min) {
           phi[i][j] = phi_min;
         } else if (bed[i][j] >= topg_max) {
@@ -223,7 +226,7 @@ so \f$0 \le\f$ \c lambda \f$\le 1\f$ inside this routine.
 PetscScalar IceModel::getEffectivePressureOnTill(
                const PetscScalar thk, const PetscScalar melt_thk) {
   const PetscScalar
-     overburdenP = ice->rho * earth_grav * thk,
+     overburdenP = ice->rho * grav * thk,
      pwP = plastic_till_pw_fraction * overburdenP,
      lambda = melt_thk / Hmelt_max;
   return overburdenP - lambda * pwP;  
@@ -275,7 +278,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
     ierr = vMask.get_array(mask); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (PismModMask(mask[i][j]) != MASK_FLOATING) {
+        if (modMask(mask[i][j]) != MASK_FLOATING) {
           mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything grounded is dragging,
                                        // so force this
         }
@@ -294,7 +297,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
 
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
           tauc[i][j] = 0.0;  
         } else if (H[i][j] == 0.0) {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice

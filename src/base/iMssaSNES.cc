@@ -198,9 +198,9 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
   ierr = setbdryvalSSA(user.ssada, user.ctxBV); CHKERRQ(ierr);
 
   //   fill in parameters and flags in app ctx
-  user.schoofReg = PetscSqr((1/secpera)/1e6); // Now incorporated in the rheology (i.e. IceType)
+  user.schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
   user.constantHardness = constantHardnessForSSA;
-  user.useConstantHardness = PETSC_FALSE; // This option no longer exists: useConstantHardnessForSSA;
+  user.useConstantHardness = useConstantHardnessForSSA;
   user.useConstantNu = useConstantNuHForSSA;  
   user.usePlasticBasalType = PETSC_TRUE;
   
@@ -317,7 +317,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
 
 #define sqr PetscSqr
-static PetscScalar nu_eff(PetscTruth useConstantNu, PetscScalar schoofReg, PetscScalar barB, 
+PetscScalar nu_eff(PetscTruth useConstantNu, PetscScalar schoofReg, PetscScalar barB, 
                    PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) {
   //PetscPrintf(PETSC_COMM_WORLD, "nu_eff() turned off\n"); PetscEnd();
   if (useConstantNu == PETSC_TRUE) {
@@ -380,7 +380,9 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
 
-      int maskval = PismIntMask(mask[i][j]);
+      int maskval = static_cast<int>(floor(mask[i][j] + 0.5)); // c.f. IceModel::intMask()
+      const int MASK_SHEET    = 1;
+      const int MASK_DRAGGING = 2;
 
       if (maskval == MASK_SHEET) {
         // here we assign boundary values
@@ -388,7 +390,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
         f[i][j].v = x[i][j].v - xBV[i][j].v;
       } else {
         // main case: f.d. approx of PDE gives sys of nonlinear eqns
-        const PetscScalar
+        const PetscScalar 
           u_x_im = (x[i][j].u - x[i-1][j].u) / dx,
           u_x_ip = (x[i+1][j].u - x[i][j].u) / dx,
           u_x_jm = (+ (x[i+1][j-1].u + x[i+1][j].u)

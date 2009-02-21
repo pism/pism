@@ -23,8 +23,15 @@
 #include "iceModel.hh"
 #include "pism_signal.h"
 
+// following numerical values have some significance; see updateSurfaceElevationAndMask() below
+const int IceModel::MASK_SHEET = 1;
+const int IceModel::MASK_DRAGGING = 2;
+const int IceModel::MASK_FLOATING = 3;
+// (modMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill 
+const int IceModel::MASK_FLOATING_OCEAN0 = 7;
 
-IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
+
+IceModel::IceModel(IceGrid &g, IceType *i): grid(g), ice(i) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -38,7 +45,6 @@ IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
   
   history_size = TEMPORARY_STRING_LENGTH;
   history = new char[history_size];
-  history[0] = 0;               // Initialize with empty string so that prepending works correctly
 
   have_ssa_velocities = false;
 
@@ -49,7 +55,6 @@ IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
   createBasal_done = PETSC_FALSE;
   top0ctx_created = PETSC_FALSE;
   createVecs_done = PETSC_FALSE;
-  CFLviolcount = 0;
 
   for (PetscInt nn = 0; nn < tnN; nn++) {
     runtimeViewers[nn] = PETSC_NULL;
@@ -73,6 +78,10 @@ IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
     PetscEnd();
   }
 
+  ierr = getFlowLawNumber(flowLawNumber, flowLawNumber); //CHKERRQ(ierr);
+  if (flowLawNumber == 4)   flowLawUsesGrainSize = PETSC_TRUE;
+  else                      flowLawUsesGrainSize = PETSC_FALSE;
+
   save_snapshots = false;
 }
 
@@ -95,7 +104,6 @@ IceModel::~IceModel() {
     bootstrapLIC = PETSC_NULL;
   }
   delete[] history;
-  delete ice;
   utTerm(); // Clean up after UDUNITS
 }
 
@@ -534,17 +542,12 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
 #if (PISM_LOG_EVENTS)
-#if defined(PISM_HAVE_PETSC3) && PISM_HAVE_PETSC3
-# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
-#else
-# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))
-#endif
-  PismLogEventRegister("sia velocity", 0,&siaEVENT);
-  PismLogEventRegister("ssa velocity", 0,&ssaEVENT);
-  PismLogEventRegister("misc vel calc",0,&velmiscEVENT);
-  PismLogEventRegister("bed deform",   0,&beddefEVENT);
-  PismLogEventRegister("mass bal calc",0,&massbalEVENT);
-  PismLogEventRegister("temp age calc",0,&tempEVENT);
+PetscLogEventRegister(&siaEVENT,    "sia velocity",0);
+PetscLogEventRegister(&ssaEVENT,    "ssa velocity",0);
+PetscLogEventRegister(&velmiscEVENT,"misc vel calc",0);
+PetscLogEventRegister(&beddefEVENT, "bed deform",0);
+PetscLogEventRegister(&massbalEVENT,"mass bal calc",0);
+PetscLogEventRegister(&tempEVENT,   "temp age calc",0);
 #endif
 
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
@@ -701,3 +704,20 @@ PetscErrorCode IceModel::diagnosticRun() {
   }
   return 0;
 }
+
+
+// note no range checking in these two:
+int IceModel::intMask(PetscScalar maskvalue) {
+  return static_cast<int>(floor(maskvalue + 0.5));
+}
+
+
+int IceModel::modMask(PetscScalar maskvalue) {
+  int intmask = static_cast<int>(floor(maskvalue + 0.5));
+  if (intmask > MASK_FLOATING) {
+    return intmask - 4;
+  } else {
+    return intmask;
+  }
+}
+

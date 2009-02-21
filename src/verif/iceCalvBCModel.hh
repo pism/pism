@@ -26,7 +26,7 @@
 
 class IceCalvBCModel : public IceExactSSAModel {
 public:
-    IceCalvBCModel(IceGrid &g, int mytest);
+    IceCalvBCModel(IceGrid &g, IceType *i, const char mytest);
     ~IceCalvBCModel();
     using IceExactSSAModel::initFromOptions;
     virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);

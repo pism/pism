@@ -63,7 +63,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
 
   if (transformForSurfaceGradient == PETSC_TRUE) {
     PetscScalar **eta, **b, **H;
-    const PetscScalar n = ice->exponent(), // presumably 3.0
+    const PetscScalar n = ice->n, // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                       invpow  = 1.0 / etapow,
                       dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
@@ -190,9 +190,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
-  const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
-
-  const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
+  const bool usetau3 = ((flowLawUsesGrainSize == PETSC_TRUE) && (realAgeForGrainSize == PETSC_TRUE));
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
@@ -237,13 +235,26 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
-            const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
-            PetscScalar flow,grainsize = constantGrainSize;
-            if (usesGrainSize && realAgeForGrainSize) {
-              grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
+            const PetscScalar   pressure = ice->rho * grav * (thickness - grid.zlevels[k]);
+            PetscScalar flow;
+            if (flowLawUsesGrainSize == PETSC_TRUE) {
+              //if (realAgeForGrainSize == PETSC_TRUE)
+              //  PetscPrintf(PETSC_COMM_WORLD,
+              //        "flowLawUsesGrainSize and realAgeForGrainSize both TRUE\n");
+              //else
+              //  PetscPrintf(PETSC_COMM_WORLD,
+              //        "flowLawUsesGrainSize TRUE and realAgeForGrainSize FALSE;\n"
+              //        "   constantGrainSize=%f\n",constantGrainSize);              
+              const PetscScalar grainsize = 
+                        (realAgeForGrainSize == PETSC_TRUE) ?
+                        grainSizeVostok(0.5 * (ageij[k] + ageoffset[k])) :
+                        constantGrainSize;
+              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), 
+                               pressure, grainsize);
+            } else {
+              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]),
+                               pressure);
             }
-            // If the flow law does not use grain size, it will just ignore it, no harm there
-            flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
 
             delta[k] = 2.0 * pressure * enhancementFactor * flow;
 
@@ -343,7 +354,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (modMask(mask[i][j]) == MASK_FLOATING) {
           ub[i][j] = 0.0;
           vb[i][j] = 0.0;
           Rb[i][j] = 0.0;
@@ -364,7 +375,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
           // in ice streams this result will be *overwritten* by
           //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-          const PetscScalar P = ice->rho * earth_grav * H[i][j];
+          const PetscScalar P = ice->rho * grav * H[i][j];
           Rb[i][j] = - (P * myhx) * ub[i][j] - (P * myhy) * vb[i][j];
         }
       }

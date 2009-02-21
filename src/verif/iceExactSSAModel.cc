@@ -37,30 +37,11 @@ const PetscScalar IceExactSSAModel::LforJ = 300.0e3; // 300 km half-width
 const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 
 
-IceExactSSAModel::IceExactSSAModel(IceGrid &g, int mytest)
-  : IceModel(g) {
+IceExactSSAModel::IceExactSSAModel(IceGrid &g, IceType *i, char mytest)
+  : IceModel(g,i) {
   test = mytest;
-  iceFactory.setType(ICE_CUSTOM);
 }
 
-PetscErrorCode IceExactSSAModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-  // If the user left things alone, we'll have a CustomGlenIce
-  CustomGlenIce *cust = dynamic_cast<CustomGlenIce*>(ice);
-  if (!cust) {
-    ierr = verbPrintf(2,grid.com,"Warning, custom ice not in use, reported errors will not be correct\n",test); CHKERRQ(ierr);
-  } else {
-    // Use Schoof's parameter
-    ierr = cust->setHardness(B_schoof);CHKERRQ(ierr);
-  }
-  // If the user changes settings with -ice_custom_XXX, they asked for it.  If you don't want to allow this, disable the
-  // line below.
-  ierr = ice->setFromOptions();CHKERRQ(ierr);
-  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
-  return 0;
-}
 
 PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode  ierr;
@@ -151,9 +132,13 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
       // set flags, parameters affecting solve of stream equations
       // so periodic grid works although h(-Lx,y) != h(Lx,y):
       computeSurfGradInwardSSA = PETSC_TRUE;
-
+      useConstantHardnessForSSA = PETSC_TRUE;
+      constantHardnessForSSA = B_schoof;
       ssaEpsilon = 0.0;  // don't use this lower bound
-
+      
+      ierr = verbPrintf(3,grid.com,
+      "IceExactSSAModel::initFromOptions:regularizingVelocitySchoof = %10.5e\n",
+      regularizingVelocitySchoof); CHKERRQ(ierr);
       }
       break;
     case 'J':
@@ -168,6 +153,7 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
       isDrySimulation = PETSC_FALSE;
       leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
       computeSurfGradInwardSSA = PETSC_FALSE;
+      useConstantHardnessForSSA = PETSC_FALSE;
       ssaEpsilon = 0.0;  // don't use this lower bound
       break;
     case 'M': {
@@ -179,15 +165,15 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
       ierr = setInitStateM(); CHKERRQ(ierr);
       isDrySimulation = PETSC_FALSE;
       computeSurfGradInwardSSA = PETSC_FALSE;
+      useConstantHardnessForSSA = PETSC_TRUE;  // use constant barB
       
       // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
       constantNuHForSSA = 6.5e+16;  // about optimal; compare 4.74340e+15 usual
 
       ierr = verbPrintf(3,grid.com,
         "IceExactSSAModel::initFromOptions, for test M:\n"
-        "  constantNuHForSSA = %10.5e, useConstantNuHForSSA=%d\n",
-        constantNuHForSSA, useConstantNuHForSSA); CHKERRQ(ierr);
-      ierr = ice->printInfo(3);CHKERRQ(ierr);
+        "  constantHardnessForSSA = %10.5e, constantNuHForSSA = %10.5e, useConstantNuHForSSA=%d\n",
+        constantHardnessForSSA, constantNuHForSSA, useConstantNuHForSSA); CHKERRQ(ierr);
       }
       break;
     default:
@@ -216,7 +202,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
       const PetscInt jfrom0 = j - (grid.My - 1)/2;
       const PetscScalar y = grid.dy * jfrom0;
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice->rho * earth_grav * H0_schoof * tan(theta);
+      const PetscScalar f = ice->rho * grav * H0_schoof * tan(theta);
       tauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }

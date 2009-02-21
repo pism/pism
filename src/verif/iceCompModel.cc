@@ -31,17 +31,28 @@
 
 PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
-IceCompModel::IceCompModel(IceGrid &g, const int mytest)
-  : IceModel(g), tgaIce(NULL) {
+IceCompModel::IceCompModel(IceGrid &g, IceType *i, const char mytest)
+  : IceModel(g, i) {
   
   // note lots of defaults are set by the IceModel constructor
   
   testname = mytest;
-
-  iceFactory.setType(ICE_ARR);
-
+  
+  tgaIce = (ThermoGlenArrIce *) ice;
+  
   // Override some defaults from parent class
   enhancementFactor = 1.0;
+  f = tgaIce->rho / bed_deformable.rho;  // for simple isostasy
+  
+  PetscInt       myFLN;
+  PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE;
+  PetscOptionsGetInt(PETSC_NULL, "-law", &myFLN, &flowlawSet);
+  PetscOptionsHasName(PETSC_NULL, "-gk", &useGK);  // takes priority
+  if (((flowlawSet == PETSC_TRUE) && (myFLN != 1)) || (useGK == PETSC_TRUE)) {
+    verbPrintf(1,grid.com,"WARNING: user set -law or -gk; default flow law should be -law 1 for IceCompModel\n");
+  } else {
+    flowLawNumber = 1;  // use cold part of Paterson-Budd by default
+  }
 
   // defaults for verification
   exactOnly = PETSC_FALSE;
@@ -109,22 +120,8 @@ IceCompModel::~IceCompModel() {
     vHexactL.destroy();
     vHexactLCreated = PETSC_FALSE;
   }
-  delete tgaIce;
 }
 
-PetscErrorCode IceCompModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-  tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
-  if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (!IceTypeIsPatersonBuddCold(ice)) {
-    ierr = verbPrintf(1,grid.com,"WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");CHKERRQ(ierr);
-  }
-  f = ice->rho / bed_deformable.rho;  // for simple isostasy
-  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
-  return 0;
-}
 
 PetscErrorCode IceCompModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
@@ -306,7 +303,7 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 // reimplement IceModel::basalVelocity()
 PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar yIN,
                                         const PetscScalar H, const PetscScalar T,
-                                        const PetscScalar alpha, const PetscScalar muIN) const {
+                                        const PetscScalar alpha, const PetscScalar muIN) {
   // note: ignors T and muIN
 
   if (testname == 'E') {
@@ -331,7 +328,7 @@ PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar
       const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
       PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot) 
                                * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
-      return muE * tgaIce->rho * earth_grav * H;
+      return muE * tgaIce->rho * grav * H;
     } else
       return 0.0;
   } else

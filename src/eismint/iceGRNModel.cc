@@ -49,7 +49,7 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
 }
 
 
-IceGRNModel::IceGRNModel(IceGrid &g) : IceModel(g) {
+IceGRNModel::IceGRNModel(IceGrid &g, IceType *i) : IceModel(g, i) {
   // only call parent's constructor; do all classes need constructors?
   pddPCC = PETSC_NULL;
 }
@@ -269,9 +269,9 @@ PetscErrorCode IceGRNModel::updateTs() {
 
 
 PetscErrorCode IceGRNModel::ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat) {
-  double l1_x1 = -68.18, l1_y1 = 80.1;
-  double l1_x2 = -62, l1_y2 = 82.24;
-  double m, b;  // piecewise boundaries
+  float l1_x1 = -68.18, l1_y1 = 80.1;
+  float l1_x2 = -62, l1_y2 = 82.24;
+  float m, b;  // piecewise boundaries
 
   m = (l1_y1 - l1_y2) / (l1_x1 - l1_x2);
   b = (l1_y2) - m * (l1_x2);
@@ -284,7 +284,7 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   PetscErrorCode ierr;
   PetscScalar lat_line;
   // make all mask points southeast of the following point into FLOATING_OCEAN0
-  double ice_lon = 30, ice_lat = 67;
+  float ice_lon = 30, ice_lat = 67;
   PetscScalar **lat, **lon, **mask;
 
   ierr = vLongitude.get_array(lon); CHKERRQ(ierr);

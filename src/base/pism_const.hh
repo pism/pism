@@ -22,37 +22,10 @@
 #include <petsc.h>
 #include "materials.hh"
 
-extern const char *PISM_Revision;
-
 const PetscScalar gasConst_R = 8.31441;      // J/(mol K)    Gas Constant
-const PetscScalar earth_grav = 9.81;         // m/s^2        acceleration of gravity
+const PetscScalar grav       = 9.81;         // m/s^2        acceleration of gravity
 const PetscScalar secpera    = 3.1556926e7;
 const PetscScalar pi         = 3.14159265358979;
-
-
-// following numerical values have some significance; see updateSurfaceElevationAndMask()
-enum PismMask {
-  MASK_SHEET = 1,
-  MASK_DRAGGING = 2,
-  MASK_FLOATING = 3,
-  // (PismModMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill
-  MASK_FLOATING_OCEAN0 = 7
-};
-
-// note no range checking in these two:
-static inline int PismIntMask(PetscScalar maskvalue) {
-  return static_cast<int>(floor(maskvalue + 0.5));
-}
-
-static inline int PismModMask(PetscScalar maskvalue) {
-  int intmask = static_cast<int>(floor(maskvalue + 0.5));
-  if (intmask > MASK_FLOATING) {
-    return intmask - 4;
-  } else {
-    return intmask;
-  }
-}
-
 
 // Standard C++ does not have a "NaN", or an "isnan()".  We need an alternative
 //   and this is an admittedly lame one.  If there is a realiable way to check if
@@ -64,6 +37,8 @@ const double PISM_DOUBLE_NAN = -1.234567890123456e308;
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN);
+PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice);
+PetscErrorCode userChoosesIceType(MPI_Comm com, IceType* &ice, const PetscInt defaultFLN);
 
 PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt getVerbosityLevel();

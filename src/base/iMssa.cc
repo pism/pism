@@ -20,33 +20,11 @@
 #include <cstring>
 #include <petscda.h>
 #include "iceModel.hh"
-#include "ssa/pismssa.hh"
 
-#if 0
-// Many functions in this file don't make sense if we are using the external SSA module.
-# define CHECK_NOT_SSA(ssa)                                              \
-  if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
-#else
-# define CHECK_NOT_SSA(ssa) do {} while (0)
-#endif
 
 //! Each step of SSA uses previously saved values to start iteration; zero them here to start.
 PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
-  PetscTruth ssa_external;
-
-  ssa_external = PETSC_FALSE;
-  ierr = PetscOptionsGetTruth(NULL,"-ssa_external",&ssa_external,NULL);CHKERRQ(ierr);
-  if (ssa_external) {
-    ierr = SSACreate(&grid,&ssa);CHKERRQ(ierr);
-    ierr = SSASetIceType(ssa,ice);CHKERRQ(ierr);
-    ierr = SSASetBasalType(ssa,basal);CHKERRQ(ierr);
-    ierr = SSASetFictitiousNuH(ssa,constantNuHForSSA);CHKERRQ(ierr);
-    ierr = SSASetCutoffThickness(ssa,min_thickness_SSA);CHKERRQ(ierr);
-    ierr = SSASetFromOptions(ssa);CHKERRQ(ierr);
-    return 0;
-  }
-  ssa = 0;                      // If SSA is non-NULL we will use the external module
   if (!have_ssa_velocities) {
     ierr = vubarSSA.set(0.0); CHKERRQ(ierr);
     ierr = vvbarSSA.set(0.0); CHKERRQ(ierr);
@@ -101,13 +79,15 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
     return 0;
   }
 
-  CHECK_NOT_SSA(ssa);
-
   if (useConstantNuHForSSA == PETSC_TRUE) {
     ierr = vNuH[0].set(constantNuHForSSA); CHKERRQ(ierr);
     ierr = vNuH[1].set(constantNuHForSSA); CHKERRQ(ierr);
     return 0;
   }
+    
+  // this constant is the form of regularization used by C. Schoof 2006 "A variational
+  // approach to ice streams" J Fluid Mech 556 pp 227--251
+  const PetscReal  schoofReg = PetscSqr(regularizingVelocitySchoof/regularizingLengthSchoof);
 
   // We need to compute integrated effective viscosity (\bar\nu * H).
   // It is locally determined by the strain rates and temperature field.
@@ -145,10 +125,20 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
             v_y = (v[i][j+1] - v[i][j]) / dy;
           }
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-          ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-          ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-          nuH[o][i][j] = ice->effectiveViscosityColumn(myH, grid.kBelowHeight(myH), grid.zlevels,
-                                                       u_x, u_y, v_x, v_y, Tij, Toffset);
+          if (useConstantHardnessForSSA == PETSC_TRUE) { 
+            // constant \bar B case; for EISMINT-Ross and MISMIP
+            // FIXME: assumes n=3; create new ice.effectiveViscosityConstant() method?
+            nuH[o][i][j] = myH * constantHardnessForSSA * 0.5 *
+              pow(schoofReg + PetscSqr(u_x) + PetscSqr(v_y) + 0.25*PetscSqr(u_y+v_x) + u_x*v_y,
+                  -(1.0/3.0));
+          } else { 
+            // usual temperature-dependent case
+            ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+            ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
+            nuH[o][i][j] = ice->effectiveViscosityColumn(schoofReg,
+                                  myH, grid.kBelowHeight(myH), grid.Mz, grid.zlevels, 
+                                  u_x, u_y, v_x, v_y, Tij, Toffset);
+          }
           if (! finite(nuH[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
               CHKERRQ(ierr); 
@@ -202,8 +192,6 @@ PetscErrorCode IceModel::testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 
   PetscReal nuNorm[2], nuChange[2];
   const PetscScalar area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
-
-  CHECK_NOT_SSA(ssa);
 
   // Test for change in nu
   ierr = vNuHOld[0].add(-1, vNuH[0]); CHKERRQ(ierr);
@@ -283,8 +271,6 @@ PetscErrorCode IceModel::assembleSSAMatrix(
   PetscErrorCode  ierr;
   PetscScalar     **mask, **nuH[2], **u, **v, **tauc;
 
-  CHECK_NOT_SSA(ssa);
-
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
   /* matrix assembly loop */
@@ -300,7 +286,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
-      if (PismIntMask(mask[i][j]) == MASK_SHEET) {
+      if (intMask(mask[i][j]) == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
@@ -362,14 +348,14 @@ PetscErrorCode IceModel::assembleSSAMatrix(
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), which gets called
          *    by basalDragx(),basalDragy().  */
-        if ((includeBasalShear) && (PismIntMask(mask[i][j]) == MASK_DRAGGING)) {
+        if ((includeBasalShear) && (intMask(mask[i][j]) == MASK_DRAGGING)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(tauc, u, v, i, j);
           valV[7] += basalDragy(tauc, u, v, i, j);
         }
 
         // make shelf drag a little bit if desired
-        if ((shelvesDragToo == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING)) {
+        if ((shelvesDragToo == PETSC_TRUE) && (intMask(mask[i][j]) == MASK_FLOATING)) {
           //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
           valU[5] += betaShelvesDragToo;
           valV[7] += betaShelvesDragToo;
@@ -423,8 +409,6 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   PetscErrorCode  ierr;
   PetscScalar     **mask, **h, **H, **uvbar[2], **taudx, **taudy;
 
-  CHECK_NOT_SSA(ssa);
-
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
@@ -443,7 +427,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
-      if (PismIntMask(mask[i][j]) == MASK_SHEET) {
+      if (intMask(mask[i][j]) == MASK_SHEET) {
         ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
         ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
@@ -467,7 +451,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           } else {
             SETERRQ(1,"should not reach here: surfGradInward=TRUE & edge=TRUE but not at edge");
           }          
-          const PetscScalar pressure = ice->rho * earth_grav * H[i][j];
+          const PetscScalar pressure = ice->rho * grav * H[i][j];
           ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
           ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
         } else { // usual case: use already computed driving stress
@@ -505,8 +489,6 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   PetscErrorCode  ierr;
   PetscScalar     **u, **v, *uv;
   Vec             xLoc = SSAXLocal;
-
-  CHECK_NOT_SSA(ssa);
 
   ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
@@ -589,21 +571,13 @@ iteration (the "outer" loop over \c k) has a chance to converge.
  */
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
-  PetscTruth dosnes;
+  
   IceModelVec2 vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
 
-  if (ssa) {
-    // Drive the external SSA solver
-    ierr = SSASetFields(ssa,&vMask,vuvbar,&vH,&vh,&vtauc,&T3);CHKERRQ(ierr);
-    ierr = SSASolve(ssa,vubarSSA,vvbarSSA);CHKERRQ(ierr);
-    ierr = vubarSSA.report_range();CHKERRQ(ierr);
-    //ierr = velocitySSA(vNuDefault,numiter);CHKERRQ(ierr);
-    //ierr = vubarSSA.report_range();CHKERRQ(ierr);
-    return 0;
-  }
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_bueler", &dosnes); CHKERRQ(ierr);
+  PetscTruth     dosnes;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_snes", &dosnes); CHKERRQ(ierr);  
   if (dosnes == PETSC_TRUE) {
-    ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr);
+    ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr); 
   } else {
     ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
   }
@@ -628,17 +602,17 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
-  CHECK_NOT_SSA(ssa);
-
   ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
   ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
   epsilon = ssaEpsilon;
 
-  ierr = verbPrintf(4,grid.com,
+  ierr = verbPrintf(4,grid.com, 
      "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d\n",
      ssaEpsilon, ssaMaxIterations); CHKERRQ(ierr);
-  ierr = ice->printInfo(4);CHKERRQ(ierr);
-  ierr = verbPrintf(4,grid.com,
+  ierr = verbPrintf(4,grid.com, 
+     "   regularizingVelocitySchoof = %10.5e, regularizingLengthSchoof = %10.5e,\n",
+     regularizingVelocitySchoof, regularizingLengthSchoof); CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com, 
      "   constantHardnessForSSA = %10.5e, ssaRelativeTolerance = %10.5e]\n",
     constantHardnessForSSA, ssaRelativeTolerance); CHKERRQ(ierr);
   
@@ -667,10 +641,13 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
       if (reason < 0) {
+        char kspdivergedreasons[9][20] = { // see man page for KSPConvergedReason
+                 "NULL", "ITS", "DTOL", "BREAKDOWN",  // -2,...,-5
+                 "BREAKDOWN_BICG", "NONSYMMETRIC", "INDEFINITE_PC", "NAN", "MAT"}; // -6,...,-10
         ierr = verbPrintf(1,grid.com, 
-            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
+            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = 'KSP_DIVERGED_%s';\n"
                   "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
-            reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
+            reason,kspdivergedreasons[(-reason)-2]); CHKERRQ(ierr);
         PetscEnd();
       }
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
@@ -770,10 +747,10 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismIntMask(mask[i][j]) != MASK_SHEET) {
+      if (intMask(mask[i][j]) != MASK_SHEET) {
         // combine velocities if desired (and not floating)
         const bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                               && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
+                               && (modMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
@@ -840,10 +817,10 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (modMask(mask[i][j]) == MASK_FLOATING) {
         Rb[i][j] = 0.0;
       }
-      if ((PismModMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
+      if ((modMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
         // note basalDrag[x|y]() produces a coefficient, not a stress;
         //   uses *updated* ub,vb if doSuperpose == TRUE
         const PetscScalar 
@@ -889,12 +866,12 @@ PetscErrorCode IceModel::correctSigma() {
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismModMask(mask[i][j]) != MASK_SHEET) {
+      if (modMask(mask[i][j]) != MASK_SHEET) {
         // note vubarSSA, vvbarSSA *are* communicated for differencing by last
         //   call to moveVelocityToDAVectors()
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                         && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
+                         && (modMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
@@ -916,17 +893,11 @@ PetscErrorCode IceModel::correctSigma() {
         ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         for (PetscInt k=0; k<ks; ++k) {
-          // Comment by Jed 2009-02-20: The following is really messy and wrong.  It seems to me that SIA velocities
-          // should be available here so we can actually use them to compute a full (3x3) strain rate tensor and feed
-          // that to the constitutive relation to get a stress.  Then multiply that stress by strain to get Sigma.  The
-          // following is a hack that preserves the old behavior while getting hardnessParameter out of IceType.
-          ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
-          if (!tgi) SETERRQ(1,"Ice type is not derived from ThermoGlenIce, don't know how to correct Sigma");
           // use hydrostatic pressure; presumably this is not quite right in context 
           //   of shelves and streams; here we hard-wire the Glen law
-          const PetscScalar n_glen  = tgi->exponent(),
+          const PetscScalar n_glen = ice->exponent(),
                             Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
-                            BofT    = tgi->hardnessParameter(T[k]); // homologous??
+                            BofT = ice->hardnessParameter(T[k]); // homologous??
           if (addVels) {
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
             Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);

@@ -23,11 +23,11 @@
 #include "iceEISModel.hh"
 
 
-IceEISModel::IceEISModel(IceGrid &g)
-  : IceModel(g) {  // do nothing; note derived classes must have constructors
+IceEISModel::IceEISModel(IceGrid &g, IceType *i)
+  : IceModel(g,i) {  // do nothing; note derived classes must have constructors
   expername = 'A';
   infileused = false;
-  iceFactory.setType(ICE_PB);
+  flowLawNumber = 0;
 }
 
 
@@ -54,8 +54,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */
-  char                eisIIexpername[20];
-  int                 temp;
+  char                temp, eisIIexpername[20];
   PetscTruth          EISIIchosen;
   ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
             CHKERRQ(ierr);
@@ -189,11 +188,22 @@ PetscErrorCode IceEISModel::initFromOptions(PetscTruth doHook) {
 	ierr = grid.rescale_and_set_zlevels(L, L, 4000); CHKERRQ(ierr);
 	break;
       case 'F':
-        // I (Jed 2009-02-20) just stripped out a small bit of logic that would scale differently based on the flow law
-        // number.  Such a decision is fundamentally limiting and doesn't allow for customizable ice types.  If needed,
-        // it should be replaced by a heuristic based on the action of the flow law (i.e. if the flow is less than a
-        // threshold at a reference stress and pressure, then rescale differently).
-        ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
+	switch (flowLawNumber)
+	  {
+	  case 0:
+	  case 3:
+	    ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
+	    break;
+	  case 1:
+	  case 4:
+	  case 5:
+	    ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
+	    break;
+	  case 2:
+	    ierr = grid.rescale_and_set_zlevels(L, L, 7000); CHKERRQ(ierr);
+	    break;
+	  default:  SETERRQ(1,"should not reach here (switch for rescale)\n");
+	  }
 	break;
       case 'G':
 	ierr = grid.rescale_and_set_zlevels(L, L, 3000); CHKERRQ(ierr);
@@ -392,16 +402,16 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
 // for SIA regions (MASK_SHEET), and it is called within IceModel::velocitySIAStaggered)
 PetscScalar IceEISModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar mu) const {
+      const PetscScalar mu) {
 
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;
   
   if (expername == 'G') {
-      return Bfactor * ice->rho * earth_grav * H; 
+      return Bfactor * ice->rho * grav * H; 
   } else if (expername == 'H') {
       if (T + ice->beta_CC_grad * H > eismintII_temp_sliding) {
-        return Bfactor * ice->rho * earth_grav * H; // ditto case G
+        return Bfactor * ice->rho * grav * H; // ditto case G
       } else {
         return 0.0;
       }

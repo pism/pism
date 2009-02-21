@@ -92,8 +92,8 @@ ExperDescription e[Nexpers] = {
 PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
 
-IcePSTexModel::IcePSTexModel(IceGrid &g)
-  : IceEISModel(g) {  // do almost nothing; derived need constructors
+IcePSTexModel::IcePSTexModel(IceGrid &g, IceType *i)
+  : IceEISModel(g,i) {  // do almost nothing; derived need constructors
   expername = 'A';      // mostly close to this, anyway
 }
 

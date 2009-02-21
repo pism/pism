@@ -367,7 +367,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   char cmdstr[TEMPORARY_STRING_LENGTH], startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
-           "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
+           "PISM (%s) started on %d procs.", PISM_REVISION, (int)grid.size);
   ierr = stampHistory(startstr); CHKERRQ(ierr);
   
 //  strncpy(cmdstr, argv[0], sizeof(str)); // Does not null terminate on overflow
@@ -375,7 +375,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
   cmdstr[sizeof(cmdstr) - 1] = '\0';
   for (PetscInt i=1; i < argc; i++) {
-    size_t remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
+    PetscInt remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
     // strncat promises to null terminate, so we must only make sure that the
     // end of the buffer is not overwritten.
     strncat(cmdstr, " ", remaining_bytes--);
@@ -463,8 +463,8 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
 
 //! Add the given string to the history data member in IceModel.
 PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
-  size_t historyLength = strlen(history);
-  size_t stringLength = strlen(string);
+  unsigned int historyLength = strlen(history);
+  unsigned int stringLength = strlen(string);
   char *tempstr;
 
   if (stringLength + historyLength > history_size - 1)

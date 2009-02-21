@@ -26,15 +26,14 @@
 
 class IceExactSSAModel : public IceModel {
 public:
-    IceExactSSAModel(IceGrid &g, int mytest);
-    virtual PetscErrorCode setFromOptions();
+    IceExactSSAModel(IceGrid &g, IceType *i, const char mytest);
     using IceModel::initFromOptions;
     virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
     virtual PetscErrorCode diagnosticRun();
     PetscErrorCode         reportErrors();
 
 protected:
-    int        test;       // only 'I', 'J', 'M' supported
+    char       test;       // only 'I', 'J', 'M' supported
     PetscTruth exactOnly;
     IceModelVec2 vNuForJ[2];
           
