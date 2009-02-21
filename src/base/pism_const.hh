@@ -63,8 +63,6 @@ const double PISM_DOUBLE_NAN = -1.234567890123456e308;
 
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
-PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN);
-
 PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt getVerbosityLevel();
 PetscErrorCode verbosityLevelFromOptions();

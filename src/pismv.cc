@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       if (dontReport == PETSC_FALSE) {
         if (!IceTypeIsPatersonBuddCold(tgaice) && ((test == 'F') || (test == 'G'))) {
             ierr = verbPrintf(1,com, 
-                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type pb' or '-law 1')\n"
+                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
                 "   for reported errors in test %c to be meaningful!\n", test); CHKERRQ(ierr);
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);

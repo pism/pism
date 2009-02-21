@@ -21,23 +21,6 @@
 #include "nc_util.hh"
 #include "pism_const.hh"
 
-PetscErrorCode getFlowLawNumber(PetscInt &flowLawNum, const PetscInt defaultFLN) {
-    PetscErrorCode ierr;
-    PetscTruth     flowlawSet = PETSC_FALSE, useGK = PETSC_FALSE, useGKAGE = PETSC_FALSE;
-
-    flowLawNum = defaultFLN;
-
-    ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &flowLawNum, &flowlawSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &useGKAGE); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &useGK); CHKERRQ(ierr);
-    if ((useGKAGE == PETSC_TRUE) || (useGK == PETSC_TRUE)) {
-      flowLawNum = 4;
-    }
-    return 0;
-}
-
-
-
 // Verbosity level version of PetscPrintf.  We print according to whether 
 // (thresh <= verbosityLevel), in which case print, or 
 // (thresh > verbosityLevel) in which case no print.

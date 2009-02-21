@@ -649,6 +649,27 @@ PetscErrorCode IceFactory::setFromOptions()
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
+  {
+    // This is for backwards compatibility only, -ice_type is the new way to choose ice
+    // Note that it is not maintainable to have multiple options for the same thing
+    PetscTruth flg;
+    PetscInt n;
+    ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &n, &flg); CHKERRQ(ierr);
+    if (flg) {
+      ierr = verbPrintf(1,comm,"Option `-law' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
+      ierr = setTypeByNumber(n);CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &flg); CHKERRQ(ierr);
+    if (flg) {
+      ierr = verbPrintf(1,comm,"Option `-gk_age' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
+      ierr = setType("hybrid");CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &flg); CHKERRQ(ierr);
+    if (flg) {
+      ierr = verbPrintf(1,comm,"Option `-gk' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
+      ierr = setType("hybrid");CHKERRQ(ierr);
+    }
+  }
   ierr = PetscOptionsBegin(comm,prefix,"IceFactory options","IceType");CHKERRQ(ierr);
   {
     ierr = PetscOptionsList("-ice_type","Ice type","IceFactory::setType",type_list,type_name,type_name,sizeof(type_name),NULL);CHKERRQ(ierr);
