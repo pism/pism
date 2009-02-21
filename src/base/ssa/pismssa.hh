@@ -19,7 +19,7 @@
 #ifndef _PISM_SSA_HH
 #define _PISM_SSA_HH
 
-#include "petscviewer.h"
+#include <petscviewer.h>
 
 class IceGrid;
 class IceModelVec2;

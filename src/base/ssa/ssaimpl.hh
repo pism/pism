@@ -19,9 +19,9 @@
 #ifndef _PISM_SSAIMPL_HH
 #define _PISM_SSAIMPL_HH
 
+#include <petscda.h>
+#include <petscsnes.h>
 #include "pismssa.hh"
-#include "petscda.h"
-#include "petscsnes.h"
 
 struct SSANode {
   PetscScalar x,y;

@@ -2080,19 +2080,9 @@ Second, the file \verb|.petscrc| is always read, if present, from the directory 
 These two PETSc mechanisms can be used together.  (The effect of duplicate or conflicting options is not clear, however, and should be avoided.)
 \bigskip
 
-\begin{comment}
-FIXME: THESE OPTIONS *DO NOT* SEEM TO WORK FOR PISM EXECUTABLE (r479,
-mpiexec -n 4 pismv -test C -y 100 -da_processors_x 2 -da_processors_y 2)
-WHY???
-
-\opt{da\und processors\und x}  Number of processors in x direction.  Normally the number of processors $N$ chosen when invoking MPI (e.g.~\verb|mpiexec -n |$N$) is factored automatically by PETSc to give roughly square, roughly equal blocks of the computational grid per processor.  This option allows control.  For example,
-
-\verb|$  mpiexec -n 12 pismv -test C -Mx 101 -My 101|
-
-divides the whole grid into 3 blocks in one direction by 4 in the other.  
-
-\opt{da\und processors\und y}  Number of processors in y direction.  See above comments on \verb|-da_processors_x|.
-\end{comment}
+% "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
+% because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
+% the Mx, My dimensions in different arguments to the DACreate commands
 
 \opt{display}  The option \verb|-display :0| seems to frequently be needed to let PETSc use Xwindows when running multiple processes.  \emph{It must be given as a \emph{final} option, after all the others.}
 
