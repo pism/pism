@@ -17,7 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for PISM ice sheet simulations, initialized from data as usual.\n";
+  "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
+  "The basic PISM executable.\n";
 
 #include <petsc.h>
 #include "base/grid.hh"
@@ -49,6 +50,7 @@ int main(int argc, char *argv[]) {
 
     IceModel m(g);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
+    ierr = m.setFromOptions(); CHKERRQ(ierr);
 
     PetscTruth  pddSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
@@ -61,7 +63,6 @@ int main(int argc, char *argv[]) {
     }
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
-    ierr = m.setFromOptions(); CHKERRQ(ierr);
     ierr = m.initFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);

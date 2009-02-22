@@ -74,6 +74,8 @@ IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
   }
 
   save_snapshots = false;
+
+  iceFactory.setType(ICE_PB);
 }
 
 
