@@ -112,6 +112,7 @@ PetscErrorCode SSARegister(const char sname[],const char path[],const char name[
   PetscFunctionReturn(0);
 }
 
+// Declarations of the \c create function for all implementations that should be registered by default.
 extern PetscErrorCode SSACreate_FE(SSA);
 
 #undef __FUNCT__
@@ -236,12 +237,16 @@ PetscErrorCode SSADestroy(SSA ssa)
   if (ssa->ops->Destroy) {ierr = ssa->ops->Destroy(ssa);CHKERRQ(ierr);}
   ierr = VecDestroy(ssa->x);CHKERRQ(ierr);
   ierr = VecDestroy(ssa->r);CHKERRQ(ierr);
+  ierr = VecDestroy(ssa->siaVelLocal);CHKERRQ(ierr);
   ierr = MatDestroy(ssa->J);CHKERRQ(ierr);
   ierr = DADestroy(ssa->da);CHKERRQ(ierr);
   {
+    // Only delete our ice if we created it.  Since our CustomIce is not public (the one in materials.hh is
+    // CustomGlenIce), it's not possible for IceType to give us a CustomIce.
     CustomIce *c = dynamic_cast<CustomIce*>(ssa->ice);
     if (c) delete c;
   }
+  ierr = PetscHeaderDestroy(ssa);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -305,11 +310,10 @@ PetscErrorCode SSASetFromOptions(SSA ssa)
 {
   PetscErrorCode ierr;
   char type[256];
-  PetscTruth optionsSetType,initialGuessNonzero,customIce,periodic;
+  PetscTruth optionsSetType,customIce,periodic;
 
   PetscFunctionBegin;
   PetscValidHeaderSpecific(ssa,SSA_COOKIE,1);
-  initialGuessNonzero = PETSC_TRUE;
   customIce           = PETSC_FALSE;
   periodic            = PETSC_FALSE;
   ierr = PetscOptionsBegin(((PetscObject)ssa)->comm,((PetscObject)ssa)->prefix,"Shallow Stream/Shelf Approximation solver options","SSA");CHKERRQ(ierr);
@@ -325,7 +329,22 @@ PetscErrorCode SSASetFromOptions(SSA ssa)
     ssa->wrap = periodic ? DA_XYPERIODIC : DA_NONPERIODIC;
     ierr = PetscOptionsReal("-ssa_fictitious_nuH","Extend nuH by this when less than cutoff_thickness","SSASetFictitiousNuH",ssa->fictitious_nuH,&ssa->fictitious_nuH,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-ssa_cutoff_thickness","Thickness below which fictitious_nuH is used","SSASetCutoffThickness",ssa->cutoff_thickness,&ssa->cutoff_thickness,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsTruth("-ssa_initial_guess_nonzero","use nonzero inital velocity","",initialGuessNonzero,&initialGuessNonzero,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsTruth("-ssa_initial_guess_nonzero","use nonzero inital velocity","",ssa->initialGuessNonzero,&ssa->initialGuessNonzero,NULL);CHKERRQ(ierr);
+    // The following boundary condition options are all off by default
+    ierr = PetscOptionsTruth("-ssa_boundary_floating_stress_free",
+                             "Treat floating margins as stress-free instead of as calving face","",
+                             ssa->boundary.floating_stress_free,&ssa->boundary.floating_stress_free,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsTruth("-ssa_boundary_grounded_as_floating",
+                             "Treat grounded margins as though they were floating instead of as usual calving face","",
+                             ssa->boundary.grounded_as_floating,&ssa->boundary.grounded_as_floating,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsTruth("-ssa_boundary_submarine_stress_free",
+                             "Treat submarine grounded margins as stress-free","",
+                             ssa->boundary.submarine_stress_free,&ssa->boundary.submarine_stress_free,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsTruth("-ssa_boundary_calving_above_sea_level",
+                             "Treat margins above sea level as calving faces","",
+                             ssa->boundary.calving_above_sea_level,&ssa->boundary.calving_above_sea_level,NULL);CHKERRQ(ierr);
+    // This option can be removed unless we want to enable using completely different ice types in the SSA solver from
+    // the rest of the model.
     ierr = PetscOptionsTruth("-ssa_rheology_custom","Use custom ice type","",customIce,&customIce,NULL);CHKERRQ(ierr);
     if (customIce) {
       ssa->ice = new CustomIce(((PetscObject)ssa)->comm,((PetscObject)ssa)->prefix,ssa->ref);
@@ -360,8 +379,10 @@ PetscErrorCode SSASetUp(SSA ssa)
   ierr = DACreate2d(grid->com,ssa->wrap,DA_STENCIL_BOX,grid->My,grid->Mx,PETSC_DECIDE,PETSC_DECIDE,2,1,NULL,NULL,&ssa->da);CHKERRQ(ierr);
   ierr = DACreateGlobalVector(ssa->da,&ssa->x);CHKERRQ(ierr);
   ierr = VecDuplicate(ssa->x,&ssa->r);CHKERRQ(ierr);
+  ierr = DACreateLocalVector(ssa->da,&ssa->siaVelLocal);CHKERRQ(ierr);
   ierr = PetscOptionsGetString(((PetscObject)ssa)->prefix,"-ssa_mat_type",mtype,sizeof(mtype),NULL);CHKERRQ(ierr);
   ierr = DAGetMatrix(ssa->da,mtype,&ssa->J);CHKERRQ(ierr);
+  ierr = MatSetOptionsPrefix(ssa->J,"ssa_");CHKERRQ(ierr);
 
   ssa->ref.SetUp();
 
@@ -374,7 +395,7 @@ PetscErrorCode SSASetUp(SSA ssa)
     ierr = VecGetBlockSize(ssa->x,&bs);CHKERRQ(ierr);
     ierr = VecGetLocalSize(ssa->x,&m);CHKERRQ(ierr);
     for (PetscInt i=0; i<m/bs; i++) { // Velocity is nondimensional
-      x[i].x = 1;
+      x[i].x = 1e-8;
       x[i].y = 0;
     }
     ierr = VecRestoreArray(ssa->x,(PetscScalar**)&x);CHKERRQ(ierr);
@@ -417,7 +438,7 @@ PetscErrorCode SSASetType(SSA ssa,const SSAType type)
 
 #undef __FUNCT__
 #define __FUNCT__ "SSASetFields"
-PetscErrorCode SSASetFields(SSA ssa,IceModelVec2 *mask,IceModelVec2 uvbar[],IceModelVec2 *H,IceModelVec2 *h,IceModelVec2 *tauc,IceModelVec3 *T)
+PetscErrorCode SSASetFields(SSA ssa,IceModelVec2 *mask,IceModelVec2 uvbar[],IceModelVec2 *H,IceModelVec2 *h,IceModelVec2 *bed,IceModelVec2 *tauc,IceModelVec3 *T)
 {
 
   PetscFunctionBegin;
@@ -426,9 +447,55 @@ PetscErrorCode SSASetFields(SSA ssa,IceModelVec2 *mask,IceModelVec2 uvbar[],IceM
   ssa->siaVel  = uvbar;
   ssa->H       = H;
   ssa->h       = h;
+  ssa->bed     = bed;
   ssa->tauc    = tauc;
   ssa->T       = T;
   ssa->setupcalled = SETUP_STALE;
+  PetscFunctionReturn(0);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "SSAUpdateNodalSIAVelocity"
+PetscErrorCode SSAUpdateNodalSIAVelocity(SSA ssa)
+{
+  PetscErrorCode   ierr;
+  PetscScalar    **siaVelX,**siaVelY;
+  SSANode        **siaVel;
+  PetscInt         i,j;
+  DALocalInfo      info;
+
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(ssa,SSA_COOKIE,1);
+  ierr = DAGetLocalInfo(ssa->da,&info);CHKERRQ(ierr);
+  ierr = DAVecGetArray(ssa->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
+  ierr = ssa->siaVel[0].get_array(siaVelX);CHKERRQ(ierr);
+  ierr = ssa->siaVel[1].get_array(siaVelY);CHKERRQ(ierr);
+  // The concept of \a x and \a y is really confusing here.  We want to take inward-looking values off the staggered
+  // grid when we are at a boundary.  Petsc-native indexing is [j][i] and we index that way because it is compatible
+  // with the grid object, however the \a x and \a y components retain their usual meaning within the Pism code (though
+  // not with the command-line and output-file definitions).  Cry, cry.
+  for (j=info.ys; j<info.ys+info.ym; j++) {
+    for (i=info.xs; i<info.xs+info.xm; i++) {
+      // Note that when the grid is periodic we will always use the average of the two staggered points
+      if (j == info.gys)        // Left margin, use the staggered point to the right
+        siaVel[j][i].x = siaVelX[j][i];
+      else if (j == info.gys+info.gym-1) // Right margin, use the staggered point to the left
+        siaVel[j][i].x = siaVelX[j-1][i];
+      else                      // Interior, take the average
+        siaVel[j][i].x = 0.5*(siaVelX[j-1][i] + siaVelX[j][i]);
+      if (i == info.gxs)        // Bottom margin, use the staggered point above
+        siaVel[j][i].y = siaVelY[j][i];
+      else if (i == info.gxs+info.gxm-1) // Top margin, use the staggered point below
+        siaVel[j][i].y = siaVelY[j][i-1];
+      else                      // Interior, take the average
+        siaVel[j][i].y = 0.5*(siaVelY[j-1][i] + siaVelY[j][i]);
+    }
+  }
+  ierr = DAVecRestoreArray(ssa->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
+  ierr = ssa->siaVel[0].end_access();CHKERRQ(ierr);
+  ierr = ssa->siaVel[1].end_access();CHKERRQ(ierr);
+  ierr = DALocalToLocalBegin(ssa->da,ssa->siaVelLocal,INSERT_VALUES,ssa->siaVelLocal);CHKERRQ(ierr);
+  ierr = DALocalToLocalEnd  (ssa->da,ssa->siaVelLocal,INSERT_VALUES,ssa->siaVelLocal);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -443,10 +510,21 @@ PetscErrorCode SSASolve(SSA ssa,IceModelVec2 &ubar,IceModelVec2 &vbar)
 
   PetscFunctionBegin;
   PetscValidHeaderSpecific(ssa,SSA_COOKIE,1);
+  if (ssa->setupcalled < SETUP_CURRENT) {
+    ierr = SSAUpdateNodalSIAVelocity(ssa);CHKERRQ(ierr);
+    // Debugging discovered that these were not up to date.  Since we (IceModelVec) control access to modification of
+    // these vectors, we should be able to cache whether they are current.  Then the operation below would be a no-op if
+    // it has already been done.
+    ierr = ssa->bed->beginGhostComm();CHKERRQ(ierr);
+    ierr = ssa->tauc->beginGhostComm();CHKERRQ(ierr);
+    ierr = ssa->bed->endGhostComm();CHKERRQ(ierr);
+    ierr = ssa->tauc->endGhostComm();CHKERRQ(ierr);
+  }
   ierr = PetscOptionsGetString(((PetscObject)ssa)->prefix,"-ssa_view",filename,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
   if (flg) {
     ierr = PetscViewerASCIIOpen(((PetscObject)ssa)->comm,filename,&viewer);CHKERRQ(ierr);
     ierr = SSAView(ssa,viewer);CHKERRQ(ierr);
+    ierr = VecView(ssa->x,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   }
   ierr = PetscLogEventBegin(LOG_SSA_Solve,ssa,0,0,0);CHKERRQ(ierr);

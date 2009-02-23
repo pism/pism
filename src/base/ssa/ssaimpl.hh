@@ -82,23 +82,31 @@ private:
   PetscReal length,height,time,pressure;
 };
 
+struct SSABoundaryOptions {
+  PetscTruth floating_stress_free,
+    grounded_as_floating,
+    submarine_stress_free,
+    calving_above_sea_level;
+};
+
 struct _p_SSA {
   PETSCHEADER(struct _SSAOps);
   IceGrid          *grid;
   PismRef           ref;
+  struct SSABoundaryOptions boundary;
   DA                da;
   IceType          *ice;
   PlasticBasalType *basal;
   SeaWaterType     *ocean;
   IceModelVec2     *siaVel;     // Points at start of array of two vectors with SIA values on staggered grid (uvbar)
-  IceModelVec2     *mask,*H,*h,*tauc;
+  IceModelVec2     *mask,*H,*h,*bed,*tauc;
   IceModelVec3     *T;
   PismSetupState    setupcalled; // 0 the first time around, 1 when field are updated, 2 when everything is current
   PetscReal         fictitious_nuH,cutoff_thickness;
   PetscReal         regularizingVelocitySchoof,regularizingLengthSchoof,regSchoof;
   PetscTruth        initialGuessNonzero;
   DAPeriodicType    wrap;
-  Vec               x,r;
+  Vec               x,r,siaVelLocal;
   Mat               J;
   void             *data;
 };

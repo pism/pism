@@ -22,7 +22,7 @@
 
 #include "iceModel.hh"
 #include "pism_signal.h"
-
+#include "ssa/pismssa.hh"
 
 IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
   PetscErrorCode ierr;
@@ -74,6 +74,7 @@ IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
   }
 
   save_snapshots = false;
+  dvoldt = gdHdtav = 0;
 
   iceFactory.setType(ICE_PB);
 }
@@ -96,6 +97,7 @@ IceModel::~IceModel() {
     delete bootstrapLIC;
     bootstrapLIC = PETSC_NULL;
   }
+  if (ssa) SSADestroy(ssa);
   delete[] history;
   delete ice;
   utTerm(); // Clean up after UDUNITS

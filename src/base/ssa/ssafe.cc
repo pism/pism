@@ -24,8 +24,13 @@ PetscErrorCode SSACreate_FE(SSA);
 
 // These values are fully dimensional
 struct FEStoreNode {
-  PetscScalar h,H,tauc,hx,hy;
+  PetscScalar h,H,tauc,hx,hy,b;
 };
+
+static PetscTruth Floating(const IceType *ice,const SeaWaterType *ocean,PetscScalar H,PetscScalar bed)
+{
+  return ice->rho*H + ocean->rho*bed < 0 ? PETSC_TRUE : PETSC_FALSE;
+}
 
 // I want SSA to be a bonified PETSc object which means that our PETSCHEADER comes first.  However, to use
 // SNESDAFormFunction/Jacobian we need to use a structure where the DA comes first (for technical reasons).  Therefore,
@@ -51,7 +56,8 @@ static const PetscReal quadPoints[4][2] = {{ -0.57735026918962573, -0.5773502691
                                            {  0.57735026918962573, -0.57735026918962573 },
                                            {  0.57735026918962573,  0.57735026918962573 },
                                            { -0.57735026918962573,  0.57735026918962573 }};
-static const PetscReal quadWeights[4]  = { 1.0, 1.0, 1.0, 1.0 };
+static const PetscReal quadWeights[4]  = {1,1,1,1};
+static const PetscReal quadWeights1[2] = {1,1};
 #undef H
 #undef L
 #undef M
@@ -63,6 +69,8 @@ static const PetscReal quadWeights[4]  = { 1.0, 1.0, 1.0, 1.0 };
 static const PetscReal interp[4*4] = {H*H,H*L,L*L,L*H,  L*H,H*H,H*L,L*L,  L*L,H*L,H*H,L*H,  H*L,L*L,L*H,H*H};
 static const PetscReal derivx[4*4] = {M*H,P*H,P*L,M*L,  M*H,P*H,P*L,M*L,  M*L,P*L,P*H,M*H,  M*L,P*L,P*H,M*H};
 static const PetscReal derivy[4*4] = {H*M,L*M,L*P,H*P,  L*M,H*M,H*P,L*P,  L*M,H*M,H*P,L*P,  H*M,L*M,L*P,H*P};
+static const PetscReal interp1[4]  = {H,L,L,H};
+static const PetscReal deriv1[4]   = {M,P,M,P};
 #undef H
 #undef L
 #undef M
@@ -198,12 +206,65 @@ static PetscErrorCode QuadGetStencils(DALocalInfo *info,PetscInt i,PetscInt j,Ma
   for (k=0; k<4; k++) {         // We do not sum into rows that are not owned by us
     if (   row[k].i < info->xs || info->xs+info->xm-1 < row[k].i
         || row[k].j < info->ys || info->ys+info->ym-1 < row[k].j) {
-      row[k].i = row[k].j = -1;
+      row[k].j = row[k].i = -1;
     }
   }
   PetscFunctionReturn(0);
 }
 
+//* Apply a stress along a particular edge.  The canonical element node numbering is
+//
+// 3 -- 2  with edge numbering   |- 2 -|
+// |    |                        3     1
+// 0 -- 1                        |_ 0 _|
+//
+// The applied force will always be directed inwards on the specified edge, with the force at quadrature points
+// determined by whether that node is floating and the state of some options (-ssa_boundary_*).  The default is to apply
+// a calving front to floating ice and ice that is grounded below sea level and to apply a stress-free condition at
+// margins that are grounded above sea level since this probably indicates that it's not intended to be a margin at all.
+static PetscErrorCode ApplyBoundaryStress(SSA ssa,PetscReal jacDiag[],const IceType *ice,const SeaWaterType *ocean,PetscScalar **H,PetscScalar **b,const MatStencil col[],PetscInt edge,SSANode y[]) {
+  static const PetscInt node_list[4][2] = {{0,1},{1,2},{2,3},{3,0}};
+  static const SSANode coeff_list[4] = {{0,-1},{-1,0},{0,1},{1,0}};
+  static const PetscInt direction[4] = {0,1,0,1};
+  const PetscInt *node = node_list[edge];
+  const SSANode *coeff = &coeff_list[edge];
+  PetscInt q,k;
+
+  for (q=0; q<2; q++) {
+    const PetscScalar jw = jacDiag[direction[edge]] * quadWeights1[q];
+    PetscScalar Hq = 0,bq = 0,f = 0;
+    for (k=0; k<2; k++) {
+      Hq += interp1[q*2+k] * H[col[node[k]].j][col[node[k]].i];
+      bq += interp1[q*2+k] * b[col[node[k]].j][col[node[k]].i];
+    }
+    if (Floating(ice,ocean,Hq,bq)) {
+      // Floating ice can either be stress-free or have a calving face condition
+      if (!ssa->boundary.floating_stress_free) {
+        f = 0.5 * earth_grav * ice->rho * (1 - ice->rho/ocean->rho) * Hq * Hq;
+      }
+    } else if (bq < 0) {        // Grounded below sea level at the margin
+      if (ssa->boundary.grounded_as_floating) {
+        f = 0.5 * earth_grav * ice->rho * (1 - ice->rho/ocean->rho) * Hq * Hq;
+      } else if (!ssa->boundary.submarine_stress_free) {
+        // A non-floating submarine calving face, this is the default condition
+        f = 0.5 * earth_grav * (ice->rho*Hq*Hq - ocean->rho*bq*bq);
+      }
+    } else {                    // Grounded above sea level at the margin
+      // Usually stress-free if the boundary is above sea level, this probably means that the edge of the domain is not
+      // really supposed to be a boundary.  If you want it to be a calving face, set
+      // -ssa_boundary_calving_face_above_sea_level
+      if (ssa->boundary.calving_above_sea_level) {
+        f = 0.5 * earth_grav * ice->rho * Hq * Hq;
+      }
+    }
+    f /= ssa->ref.Pressure() * ssa->ref.Height(); // Nondimensionalize
+    for (k=0; k<2; k++) {
+      y[node[k]].x += coeff->x * interp1[q*2+k] * jw * f;
+      y[node[k]].y += coeff->y * interp1[q*2+k] * jw * f;
+    }
+  }
+  return 0;
+}
 
 // This is called when surface and/or temperature have changed.
 //
@@ -214,7 +275,7 @@ static PetscErrorCode SSAFESetUp(SSA ssa)
 {
   SSA_FE          *fe   = (SSA_FE*)ssa->data;
   DALocalInfo      info_struct,*info = &info_struct; // DAGetLocalInfo writes into our memory
-  PetscScalar    **h,**H,**tauc,*Te[4],*Tq[4];
+  PetscScalar    **h,**H,**bed,**tauc,*Te[4],*Tq[4];
   PetscReal        jinvDiag[2];
   IceGrid         &grid = *ssa->grid;
   PetscInt         i,j,k,q,p;
@@ -229,21 +290,24 @@ static PetscErrorCode SSAFESetUp(SSA ssa)
   ierr = ssa->T->begin_access();CHKERRQ(ierr);
   ierr = ssa->h->get_array(h);CHKERRQ(ierr);
   ierr = ssa->H->get_array(H);CHKERRQ(ierr);
+  ierr = ssa->bed->get_array(bed);CHKERRQ(ierr);
   ierr = ssa->tauc->get_array(tauc);CHKERRQ(ierr);
   ierr = DAGetLocalInfo(ssa->da,info);CHKERRQ(ierr);
   // See SSAFEFunction for discussion of communication
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
     for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
       const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs);  // Index for stored arrays
-      PetscScalar he[4],He[4],hq[4],Hq[4],taue[4],tauq[4],hxq[4],hyq[4];
+      PetscScalar he[4],He[4],be[4],hq[4],Hq[4],bq[4],taue[4],tauq[4],hxq[4],hyq[4];
       FEStoreNode *feS;
       if ((i < 0 || info->my <= i || j < 0 || info->mx <= j) && (ssa->wrap == DA_NONPERIODIC))
         SETERRQ(1,"We are not using a periodic grid, this should not happen");
-      QuadExtractScalar(i,j,h,he);
-      QuadExtractScalar(i,j,H,He);
-      QuadExtractScalar(i,j,tauc,taue);
+      QuadExtractScalar(i,j,h,he); // surface height
+      QuadExtractScalar(i,j,H,He); // thickness
+      QuadExtractScalar(i,j,bed,be); // bed elevation
+      QuadExtractScalar(i,j,tauc,taue); // basal friction
       QuadMatMultScalar(interp,he,hq);
       QuadMatMultScalar(interp,He,Hq);
+      QuadMatMultScalar(interp,be,bq);
       QuadMatMultScalar(interp,taue,tauq);
       QuadMatMultScalar(derivx,he,hxq);
       QuadMatMultScalar(derivy,he,hyq);
@@ -251,6 +315,7 @@ static PetscErrorCode SSAFESetUp(SSA ssa)
       for (q=0; q<4; q++) {
         feS[q].h  = hq[q];
         feS[q].H  = Hq[q];
+        feS[q].b  = bq[q];
         feS[q].tauc = tauq[q];
         feS[q].hx = jinvDiag[0] * hxq[q];
         feS[q].hy = jinvDiag[0] * hyq[q];
@@ -279,6 +344,7 @@ static PetscErrorCode SSAFESetUp(SSA ssa)
   }
   ierr = ssa->h->end_access();CHKERRQ(ierr);
   ierr = ssa->H->end_access();CHKERRQ(ierr);
+  ierr = ssa->bed->end_access();CHKERRQ(ierr);
   ierr = ssa->tauc->end_access();CHKERRQ(ierr);
   ierr = ssa->T->end_access();CHKERRQ(ierr);
   ierr = PetscFree4(Tq[0],Tq[1],Tq[2],Tq[3]);CHKERRQ(ierr);
@@ -297,16 +363,16 @@ static inline PetscErrorCode PointwiseNuHAndBeta(SSA ssa,const FEStoreNode *feS,
   if (feS->H < ssa->cutoff_thickness) {
     *nuH = ssa->fictitious_nuH;
     if (dNuH) *dNuH = 0;
-    SETERRQ(1,"Shold not happen for test I");
+    //SETERRQ(1,"Shold not happen for test I");
   } else {
     PetscReal dimDu[3];
     for (int i=0; i<3; i++) dimDu[i] = ssa->ref.StrainRate() * Du[i];
     ssa->ice->integratedViscosity(iS,dimDu,nuH,dNuH);
   }
-  if (feS->h < feS->H * 1.001 * (1 - ssa->ice->rho / ssa->ocean->rho)) {
-    // The ice is floating here so there is no friction.  I really should get the bedrock elevation in the SSA
-    // context so I can check the flotation criterion correctly.  Note that the purpose of checking flotation this
-    // way is to get subgrid resolution of stress in the vicinity of the grounding line.
+  if (Floating(ssa->ice,ssa->ocean,feS->H,feS->b)) {
+    // The ice is floating here so there is no friction.  Note that the purpose of checking flotation this way is to get
+    // subgrid resolution of stress in the vicinity of the grounding line.  According to Goldberg et. al. 2009 (probably
+    // will be published in 2009...) this is important to loosen the resolution requirements near the grounding line.
     *beta = 0;
     if (dbeta) *dbeta = 0;
     SETERRQ(1,"Not tested yet");
@@ -329,7 +395,7 @@ static inline PetscErrorCode PointwiseNuHAndBeta(SSA ssa,const FEStoreNode *feS,
   PetscFunctionReturn(0);
 }
 
-static void FixDirichletValues(SSA ssa,PetscScalar lmask[],PetscScalar **siaVelX,PetscScalar **siaVelY,MatStencil row[],MatStencil col[],SSANode x[])
+static void FixDirichletValues(SSA ssa,PetscScalar lmask[],SSANode **siaVel,MatStencil row[],MatStencil col[],SSANode x[])
 {
   for (PetscInt k=0; k<4; k++) {
     if (PismIntMask(lmask[k]) == MASK_SHEET) {
@@ -338,9 +404,9 @@ static void FixDirichletValues(SSA ssa,PetscScalar lmask[],PetscScalar **siaVelX
       // near the end of this function) is equivalent to making the row look like the identity.
       //
       // Note that \a row might have some entries already eliminated so we must use \a col (which is more natural
-      // anyway)
-      x[k].x = 0.5 * (siaVelX[col[k].j-1][col[k].i] + siaVelX[col[k].j][col[k].i]) / ssa->ref.Velocity();
-      x[k].y = 0.5 * (siaVelY[col[k].j][col[k].i-1] + siaVelY[col[k].j][col[k].i]) / ssa->ref.Velocity();
+      // anyway).
+      x[k].x = siaVel[col[k].j][col[k].i].x / ssa->ref.Velocity();
+      x[k].y = siaVel[col[k].j][col[k].i].y / ssa->ref.Velocity();
       row[k].j = row[k].i = -1;
       col[k].j = col[k].i = -1;
     }
@@ -356,7 +422,8 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,const SSANode **xg,SSANode
   IceGrid         &grid = *ssa->grid;
   PetscInt         i,j,k,q;
   PetscReal        jacDiag[2],jinvDiag[2],jdet;
-  PetscScalar    **mask,**siaVelX,**siaVelY;
+  PetscScalar    **mask,**H,**bed;
+  SSANode        **siaVel;
   PetscTruth       flg;
   PetscErrorCode   ierr;
 
@@ -405,8 +472,9 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,const SSANode **xg,SSANode
   //
   // Note that PETSc uses the opposite meaning of x,y directions in the DA
   ierr = ssa->mask->get_array(mask);CHKERRQ(ierr);
-  ierr = ssa->siaVel[0].get_array(siaVelX);CHKERRQ(ierr);
-  ierr = ssa->siaVel[1].get_array(siaVelY);CHKERRQ(ierr);
+  ierr = ssa->H->get_array(H);CHKERRQ(ierr);
+  ierr = ssa->bed->get_array(bed);CHKERRQ(ierr);
+  ierr = DAVecGetArray(ssa->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
     for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
       const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs); // Index for stored arrays
@@ -418,8 +486,25 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,const SSANode **xg,SSANode
       QuadExtractVel(i,j,xg,x);
       QuadExtractScalar(i,j,mask,lmask);
       ierr = QuadGetStencils(info,i,j,row,col);CHKERRQ(ierr);
-      FixDirichletValues(ssa,lmask,siaVelX,siaVelY,row,col,x);
       QuadZeroVel(y);
+      // Apply inhomogeneous Neumann conditions.  We do this first because it does not depend on velocity and \a col
+      // still contains the indices for all the nodes.  Note that FixDirichletValues changes \a col so that it only has
+      // valid (non-negative) indices for the non-Dirichlet nodes.
+      //
+      // If the left margin of our ghosted patch is equal to the left margin of our owned domain, then we're at the left
+      // margin of the global domain.  See ApplyBoundaryStress for the edge numbering.
+      if (i==info->gys && i==info->ys) {
+        ierr = ApplyBoundaryStress(ssa,jacDiag,ssa->ice,ssa->ocean,H,bed,col,3,y);CHKERRQ(ierr);
+      } else if (i==info->gys+info->gym-2 && i==info->ys+info->ym-2) {
+        ierr = ApplyBoundaryStress(ssa,jacDiag,ssa->ice,ssa->ocean,H,bed,col,1,y);CHKERRQ(ierr);
+      }
+      if (j==info->gxs && j==info->xs) {
+        ierr = ApplyBoundaryStress(ssa,jacDiag,ssa->ice,ssa->ocean,H,bed,col,0,y);CHKERRQ(ierr);
+      } else if (j==info->gxs+info->gxm-2 && j==info->xs+info->xm-2) {
+        ierr = ApplyBoundaryStress(ssa,jacDiag,ssa->ice,ssa->ocean,H,bed,col,2,y);CHKERRQ(ierr);
+      }
+      FixDirichletValues(ssa,lmask,siaVel,row,col,x);
+      // \a x now contains correct velocities at Dirichlet nodes and \a col has indices for those nodes set to -1
       for (q=0; q<numQuadPoints; q++) {     // loop over quadrature points
         const FEStoreNode *feS = &fe->feStore[ij*4+q];
         const PetscScalar *iS  = &fe->integratedStore[(ij*4+q)*fe->sbs];
@@ -455,30 +540,32 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,const SSANode **xg,SSANode
       QuadInsertVel(row,y,yg);
     }
   }
+  ierr = ssa->H->end_access();CHKERRQ(ierr);
+  ierr = ssa->bed->end_access();CHKERRQ(ierr);
 
   // Enforce Dirichlet conditions strongly
   for (i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (j=grid.ys; j<grid.ys+grid.ym; j++) {
       //PismValidStress2(yg[i][j]);
       if (PismIntMask(mask[i][j]) == MASK_SHEET) {
-        // Enforce zero sliding strongly, note that SIA average velocities are on staggered grids
-        yg[i][j].x = fe->dirichletScale * (xg[i][j].x - 0.5*(siaVelX[i-1][j]+siaVelX[i][j])/ssa->ref.Velocity());
-        yg[i][j].y = fe->dirichletScale * (xg[i][j].y - 0.5*(siaVelY[i][j-1]+siaVelY[i][j])/ssa->ref.Velocity());
+        // Enforce zero sliding strongly
+        yg[i][j].x = fe->dirichletScale * (xg[i][j].x - siaVel[i][j].x)/ssa->ref.Velocity();
+        yg[i][j].y = fe->dirichletScale * (xg[i][j].y - siaVel[i][j].y)/ssa->ref.Velocity();
       }
     }
   }
   ierr = ssa->mask->end_access();CHKERRQ(ierr);
-  ierr = ssa->siaVel[0].end_access();CHKERRQ(ierr);
-  ierr = ssa->siaVel[1].end_access();CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(ssa->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_function",&flg);CHKERRQ(ierr);
   if (flg) {
     ierr = PetscPrintf(grid.com,"SSA Solution and Function values (pointwise residuals)\n");CHKERRQ(ierr);
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        ierr = PetscPrintf(grid.com,"[%2d,%2d] u=(%9.1e,%9.1e)  f=(%9.1e,%9.1e)\n",i,j,xg[i][j].x,xg[i][j].y,yg[i][j].x,yg[i][j].y);CHKERRQ(ierr);
+        ierr = PetscSynchronizedPrintf(grid.com,"[%2d,%2d] u=(%12.4e,%12.4e)  f=(%12.4e,%12.4e)\n",i,j,xg[i][j].x,xg[i][j].y,yg[i][j].x,yg[i][j].y);CHKERRQ(ierr);
       }
     }
+    ierr = PetscSynchronizedFlush(grid.com);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -492,7 +579,8 @@ static PetscErrorCode SSAFEJacobian(DALocalInfo *info,const SSANode **xg,Mat J,S
   SSA_FE          *fe   = (SSA_FE*)ssa->data;
   IceGrid         &grid = *ssa->grid;
   PetscReal        jacDiag[2],jinvDiag[2],jdet;
-  PetscScalar    **mask,**siaVelX,**siaVelY;
+  PetscScalar    **mask;
+  SSANode        **siaVel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
 
@@ -511,8 +599,7 @@ static PetscErrorCode SSAFEJacobian(DALocalInfo *info,const SSANode **xg,Mat J,S
   ierr = MatZeroEntries(J);CHKERRQ(ierr);
 
   ierr = ssa->mask->get_array(mask);CHKERRQ(ierr);
-  ierr = ssa->siaVel[0].get_array(siaVelX);CHKERRQ(ierr);
-  ierr = ssa->siaVel[1].get_array(siaVelY);CHKERRQ(ierr);
+  ierr = DAVecGetArray(ssa->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
     for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
       const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs); // Index for stored arrays
@@ -524,7 +611,7 @@ static PetscErrorCode SSAFEJacobian(DALocalInfo *info,const SSANode **xg,Mat J,S
       QuadExtractVel(i,j,xg,x);
       QuadExtractScalar(i,j,mask,lmask);
       ierr = QuadGetStencils(info,i,j,row,col);CHKERRQ(ierr);
-      FixDirichletValues(ssa,lmask,siaVelX,siaVelY,row,col,x);
+      FixDirichletValues(ssa,lmask,siaVel,row,col,x);
       ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
       for (PetscInt q=0; q<numQuadPoints; q++) {
         const FEStoreNode *feS = &fe->feStore[ij*4+q];
@@ -577,8 +664,7 @@ static PetscErrorCode SSAFEJacobian(DALocalInfo *info,const SSANode **xg,Mat J,S
     }
   }
   ierr = ssa->mask->end_access();CHKERRQ(ierr);
-  ierr = ssa->siaVel[0].end_access();CHKERRQ(ierr);
-  ierr = ssa->siaVel[1].end_access();CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(ssa->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);

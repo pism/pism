@@ -1284,7 +1284,9 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], int *len
     return 0;
   }
   str = new char[len + 1];
-  str[len] = '\0';		// zero-terminate the string
+  // Zealously clear the string, so that we don't risk moving unitialized bytes over MPI (because Valgrind can't tell
+  // the difference between these harmless bytes and potential memory errors)
+  ierr = PetscMemzero(str, len+1);CHKERRQ(ierr);
 
   // Now read the string and broadcast stat to see if we succeeded:
   if (grid->rank == 0) {

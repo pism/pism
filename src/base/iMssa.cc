@@ -24,10 +24,10 @@
 
 #if 0
 // Many functions in this file don't make sense if we are using the external SSA module.
-# define CHECK_NOT_SSA(ssa)                                              \
+# define CHECK_NOT_SSA_EXTERNAL(ssa)                                              \
   if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
 #else
-# define CHECK_NOT_SSA(ssa) do {} while (0)
+# define CHECK_NOT_SSA_EXTERNAL(ssa)
 #endif
 
 //! Each step of SSA uses previously saved values to start iteration; zero them here to start.
@@ -40,6 +40,7 @@ PetscErrorCode IceModel::initSSA() {
   if (ssa_external) {
     ierr = SSACreate(&grid,&ssa);CHKERRQ(ierr);
     ierr = SSASetIceType(ssa,ice);CHKERRQ(ierr);
+    ierr = SSASetOceanType(ssa,&ocean);CHKERRQ(ierr);
     ierr = SSASetBasalType(ssa,basal);CHKERRQ(ierr);
     ierr = SSASetFictitiousNuH(ssa,constantNuHForSSA);CHKERRQ(ierr);
     ierr = SSASetCutoffThickness(ssa,min_thickness_SSA);CHKERRQ(ierr);
@@ -101,7 +102,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
     return 0;
   }
 
-  CHECK_NOT_SSA(ssa);
+  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   if (useConstantNuHForSSA == PETSC_TRUE) {
     ierr = vNuH[0].set(constantNuHForSSA); CHKERRQ(ierr);
@@ -203,7 +204,7 @@ PetscErrorCode IceModel::testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 
   const PetscScalar area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
 
-  CHECK_NOT_SSA(ssa);
+  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   // Test for change in nu
   ierr = vNuHOld[0].add(-1, vNuH[0]); CHKERRQ(ierr);
@@ -283,7 +284,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(
   PetscErrorCode  ierr;
   PetscScalar     **mask, **nuH[2], **u, **v, **tauc;
 
-  CHECK_NOT_SSA(ssa);
+  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -423,7 +424,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   PetscErrorCode  ierr;
   PetscScalar     **mask, **h, **H, **uvbar[2], **taudx, **taudy;
 
-  CHECK_NOT_SSA(ssa);
+  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
@@ -506,7 +507,7 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   PetscScalar     **u, **v, *uv;
   Vec             xLoc = SSAXLocal;
 
-  CHECK_NOT_SSA(ssa);
+  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
@@ -594,9 +595,11 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
 
   if (ssa) {
     // Drive the external SSA solver
-    ierr = SSASetFields(ssa,&vMask,vuvbar,&vH,&vh,&vtauc,&T3);CHKERRQ(ierr);
+    ierr = SSASetFields(ssa,&vMask,vuvbar,&vH,&vh,&vbed,&vtauc,&T3);CHKERRQ(ierr);
     ierr = SSASolve(ssa,vubarSSA,vvbarSSA);CHKERRQ(ierr);
     ierr = vubarSSA.report_range();CHKERRQ(ierr);
+    // If you want to compare the external solver to the internal one, activate the line below and make sure that
+    // that CHECK_NOT_SSA_EXTERNAL is empty (top of this file).
     //ierr = velocitySSA(vNuDefault,numiter);CHKERRQ(ierr);
     //ierr = vubarSSA.report_range();CHKERRQ(ierr);
     return 0;
@@ -628,7 +631,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
-  CHECK_NOT_SSA(ssa);
+  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
   ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
