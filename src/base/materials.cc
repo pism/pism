@@ -581,16 +581,26 @@ PetscErrorCode IceFactory::registerType(const char tname[],PetscErrorCode(*icrea
   PetscFunctionReturn(0);
 }
 
-#undef _C
-#define _C(tname,Type) \
-  static PetscErrorCode create_ ## tname(MPI_Comm comm,const char pre[],IceType **i) { *i = new (Type)(comm,pre); return 0; }
-_C(custom,CustomGlenIce)
-_C(pb,ThermoGlenIce)
-_C(hooke,ThermoGlenIceHooke)
-_C(arr,ThermoGlenArrIce)
-_C(arrwarm,ThermoGlenArrIceWarm)
-_C(hybrid,HybridIce)
-#undef _C
+
+static PetscErrorCode create_custom(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (CustomGlenIce)(comm,pre);  return 0;
+}
+static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (ThermoGlenIce)(comm,pre);  return 0;
+}
+static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (ThermoGlenIceHooke)(comm,pre);  return 0;
+}
+static PetscErrorCode create_arr(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (ThermoGlenArrIce)(comm,pre);  return 0;
+}
+static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (ThermoGlenArrIceWarm)(comm,pre);  return 0;
+}
+static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (HybridIce)(comm,pre);  return 0;
+}
+
 
 #undef __FUNCT__
 #define __FUNCT__ "IceFactory::registerAll"
@@ -672,7 +682,8 @@ PetscErrorCode IceFactory::setFromOptions()
   }
   ierr = PetscOptionsBegin(comm,prefix,"IceFactory options","IceType");CHKERRQ(ierr);
   {
-    ierr = PetscOptionsList("-ice_type","Ice type","IceFactory::setType",type_list,type_name,type_name,sizeof(type_name),NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsList("-ice_type","Ice type","IceFactory::setType",
+                            type_list,type_name,type_name,sizeof(type_name),NULL);CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   PetscFunctionReturn(0);

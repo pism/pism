@@ -535,19 +535,17 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-#if (PISM_LOG_EVENTS)
 #if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
 #else
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))
 #endif
-  PismLogEventRegister("sia velocity", 0,&siaEVENT);
-  PismLogEventRegister("ssa velocity", 0,&ssaEVENT);
-  PismLogEventRegister("misc vel calc",0,&velmiscEVENT);
-  PismLogEventRegister("bed deform",   0,&beddefEVENT);
-  PismLogEventRegister("mass bal calc",0,&massbalEVENT);
-  PismLogEventRegister("temp age calc",0,&tempEVENT);
-#endif
+PismLogEventRegister("sia velocity", 0,&siaEVENT);
+PismLogEventRegister("ssa velocity", 0,&ssaEVENT);
+PismLogEventRegister("misc vel calc",0,&velmiscEVENT);
+PismLogEventRegister("bed deform",   0,&beddefEVENT);
+PismLogEventRegister("mass bal calc",0,&massbalEVENT);
+PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
@@ -564,9 +562,7 @@ PetscErrorCode IceModel::run() {
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
     
-#if (PISM_LOG_EVENTS)
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
-#endif
 
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (doBedDef == PETSC_TRUE) {
@@ -575,9 +571,7 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
     
-#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
-#endif
 
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (doPlasticTill == PETSC_TRUE) {
@@ -614,9 +608,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     //           grid.rank, grid.year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventBegin(tempEVENT,0,0,0,0);
-#endif
     
     bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
     if (tempAgeStep) { // do temperature and age
@@ -630,10 +622,8 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(tempEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);
-#endif
 
     if (doMassConserve == PETSC_TRUE) {
       ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
@@ -645,9 +635,7 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
     }
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
-#endif
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 

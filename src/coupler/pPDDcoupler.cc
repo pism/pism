@@ -233,7 +233,7 @@ PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
 //!  Return the amount of summer warming.
 /*!
 The amount of summer warming can also be a function of elevation, latitude, and mean 
-annual surface temperature.
+annual surface temperature.  See IceGRNModel for an example.
 
 The date of peak summer warming is controlled by option <tt>-pdd_summer_peak_day</tt> 
 with a given Julian day.  The magnitude of the yearly cycle is controlled by 

@@ -1,7 +1,6 @@
 # Configuration flags:
 PISM_PREFIX ?= $(PWD)
 PISM_HAVE_FFTW ?= 1
-PISM_LOG_EVENTS ?= 0
 PISM_STATIC ?= 0
 # if ==1 then adds -g
 PISM_USE_DEBUG ?= 0

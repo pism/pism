@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,9 +30,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventBegin(siaEVENT,0,0,0,0);
-#endif
 
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
@@ -117,10 +115,8 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, "     "); CHKERRQ(ierr);
   }
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(siaEVENT,0,0,0,0);
 PetscLogEventBegin(ssaEVENT,0,0,0,0);
-#endif
   
   // do SSA
   if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
@@ -159,10 +155,8 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, "       "); CHKERRQ(ierr);
   }
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
-#endif
 
   // in latter case u,v are modified by broadcastSSAVelocity():
   if (updateVelocityAtDepth) {  
@@ -186,9 +180,7 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   }
 
-#if (PISM_LOG_EVENTS)
 PetscLogEventEnd(velmiscEVENT,0,0,0,0);
-#endif
   
   firstTime = PETSC_FALSE;
   return 0;

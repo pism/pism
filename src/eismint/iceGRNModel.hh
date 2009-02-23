@@ -37,6 +37,21 @@ protected:
 };
 
 
+//! Implements EISMINT-Greenland experiments.
+/*!
+This derived class adds, essentially, only the minimum functionality needed
+to implement the choices state in \lo \cite{RitzEISMINT}\elo, the EISMINT-Greenland 
+specification.
+
+Some specific choices implemented here:
+- A PDD is always used, and it has an elevation- and latitude-dependent amount of summer warming.
+- An enhancement factor of 3.0 is used.
+- There is special code to ``clean out'' Ellsmere Island (and Iceland) so ice won't spread to
+  edge of computational grid; this should probably be moved to the scripts which set up the
+  bootstrap file.
+
+A separate driver is used, namely src/pgrn.cc.
+ */
 class IceGRNModel : public IceModel {
 
 public:

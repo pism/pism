@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Jed Brown and Ed Bueler
+// Copyright (C) 2009 Jed Brown
 //
 // This file is part of PISM.
 //
@@ -180,8 +180,8 @@ PetscErrorCode SSAMapToSplitVecs(SSA ssa,IceModelVec2 &ubar,IceModelVec2 &vbar)
   // evaluating fluxes for surface evolution.  This communication happens only once per nonlinear solve so it's not so
   // wasteful anyway ;-)
   ierr = ubar.beginGhostComm();CHKERRQ(ierr);
-  ierr = ubar.endGhostComm();CHKERRQ(ierr);
   ierr = vbar.beginGhostComm();CHKERRQ(ierr);
+  ierr = ubar.endGhostComm();CHKERRQ(ierr);
   ierr = vbar.endGhostComm();CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

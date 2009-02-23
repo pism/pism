@@ -525,10 +525,8 @@ protected:
   IceModelVec2 vubarSSA, vvbarSSA;
 
 private:
-#if (PISM_LOG_EVENTS)
-  // for event logging; see run() and velocity()
+  // for event logging (profiling); see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
-#endif
 
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
   // Note these do not initialize correctly for derived classes if made

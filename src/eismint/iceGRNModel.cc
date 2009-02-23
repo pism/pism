@@ -37,12 +37,7 @@ PISMEISGREENPDDCoupler::PISMEISGREENPDDCoupler() : PISMPDDCoupler() {
 
 PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
      const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) {
-  // this is virtual in IceModel
   // EISMINT-Greenland summer surface temperature model (expressed as
-
-  //OLD:  // warming above mean annual); Tma,Ts in deg C; Tma is mean annual, Ts is summer peak
-  //OLD:  const PetscScalar Ts = 30.38 - 0.006277 * elevation - 0.3262 * latitude;
-
   // warming above mean annual); Tma,Ts in K; Tma is mean annual, Ts is summer peak
   const PetscScalar Ts = 273.15 + 30.38 - 0.006277 * elevation - 0.3262 * latitude;
   return Ts - Tma;
@@ -50,7 +45,6 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
 
 
 IceGRNModel::IceGRNModel(IceGrid &g) : IceModel(g) {
-  // only call parent's constructor; do all classes need constructors?
   pddPCC = PETSC_NULL;
 }
 
@@ -116,33 +110,32 @@ PetscErrorCode IceGRNModel::attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p) {
 
 PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode ierr;
-  char inFile[PETSC_MAX_PATH_LEN];
-  PetscTruth inFileSet, bootFileSet, oldoptSet;
 
   pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
   
   pddPCC->initialize_vsnowaccum_FromFile = true;
 
-  if (haveSurfaceTemp == PETSC_FALSE) { // default case: EISMINT-Greenland provides formulas
-    pddPCC->initialize_vsurftemp_FromFile = false;
-  }
+  // only initialize surface temps from a file if the flag haveSurfaceTemp is set
+  pddPCC->initialize_vsurftemp_FromFile = (haveSurfaceTemp == PETSC_TRUE);
 
-  if (doOceanKill == PETSC_TRUE) {
-    oceanPCC->reportInitializationToStdOut = false;
-  }
-  
+  // only report initialization on PISMOceanClimateCoupler if allowing ice shelves
+  oceanPCC->reportInitializationToStdOut = (doOceanKill == PETSC_FALSE);
+
   ierr = IceModel::initFromOptions(); CHKERRQ(ierr);  
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
-                               PETSC_MAX_PATH_LEN, &oldoptSet); CHKERRQ(ierr);
+  char inFile[PETSC_MAX_PATH_LEN];
+  PetscTruth inFileSet, bootFileSet;
+
   ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", inFile,
                                PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
-  if (oldoptSet == PETSC_TRUE) { bootFileSet = PETSC_TRUE; } // just act like it was "-boot_from"
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
-                               PETSC_MAX_PATH_LEN, &oldoptSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
                                PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  if (oldoptSet == PETSC_TRUE) { inFileSet = PETSC_TRUE; } // just act like it was "-i"
+  if ((inFileSet == PETSC_TRUE) && (bootFileSet == PETSC_TRUE)) {
+      ierr = verbPrintf(1, grid.com, 
+         "WARNING: both -boot_from and -i given; using -i and ignoring -boot_from\n");
+         CHKERRQ(ierr);
+      bootFileSet = PETSC_FALSE;
+  }
 
   // PDD is already set by atmosPCC->initFromOptions() in IceModel::initFromOptions();
   //   here we just warn if nondefault values are used
@@ -161,12 +154,7 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   }
   
   // set up surface temperature, geothermal flux, and Ellesmere/Iceland delete
-  if (inFileSet == PETSC_TRUE) {
-    if (bootFileSet) {
-      ierr = verbPrintf(1, grid.com, "WARNING: both -boot_from and -i given; using -i\n");
-         CHKERRQ(ierr);
-    }
-  } else if (bootFileSet == PETSC_TRUE) {
+  if (bootFileSet == PETSC_TRUE) {
     // though default bootstrapping has set the new temperatures, we usually need to set 
     // the surface temp and geothermal flux at base and then set 3D temps again
     if (haveGeothermalFlux == PETSC_FALSE) {
@@ -227,7 +215,7 @@ PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
       temp_increase = 3.514;
     }
     if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL"); }
-    ierr = pddPCC->vsurftemp.shift(temp_increase); CHKERRQ(ierr);     // FIXME: check on whether this is right
+    ierr = pddPCC->vsurftemp.shift(temp_increase); CHKERRQ(ierr); // FIXME: check on whether this is right
   }
   return 0;
 }

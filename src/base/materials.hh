@@ -43,8 +43,10 @@ invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
 derived class.
 *******************/
 
-//! Abstract class containing physical constants and the constitutive relation describing ice.  This is the interface
-//! which most of Pism uses for rheology.
+//! Abstract class containing physical constants and the constitutive relation describing ice.
+/*!
+This is the interface which most of PISM uses for rheology.
+ */
 class IceType {
 public:
   static PetscScalar rho;
@@ -67,16 +69,19 @@ public:
   virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                const PetscScalar T[], PetscScalar store[]) const = 0;
   virtual void integratedViscosity(const PetscScalar store[],const PetscScalar Du[],PetscScalar *nuH, PetscScalar *dnuH) const = 0;
-  // I really don't want this to be part of IceType since it doesn't make any sense for plenty of rheologies, but we
-  // need some exponent to compute the coordinate transformation in IceModel::computeDrivingStress (see iMgeometry.cc).
+  // This is not a natural part of IceType since it doesn't make any sense for plenty
+  // of rheologies.  Nonetheless we need some exponent to compute the coordinate
+  // transformation in IceModel::computeDrivingStress (see iMgeometry.cc).
   virtual PetscScalar exponent() const { return 3; }
 protected:
   MPI_Comm comm;
   char prefix[256];
 };
 
+
 PetscTruth IceTypeIsPatersonBuddCold(IceType *);
 PetscTruth IceTypeUsesGrainSize(IceType *);
+
 
 class CustomGlenIce : public IceType {
 public:
@@ -98,6 +103,7 @@ public:
 private:
   PetscReal exponent_n,softness_A,hardness_B,schoofVel,schoofLen,schoofReg;
 };
+
 
 //! Derived class of IceType for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceType {
@@ -277,6 +283,38 @@ public:
 #define ICE_HYBRID  "hybrid"        /* Goldsby-Kohlstedt for SIA, PB for SSA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
+/*!
+Excerpt from Jed email to ELB, 2/21:
+
+IceModel creates an IceFactory in it's constructor.  Derived classes
+can set options, and driver programs can get a reference and set
+options.  If no IceModel::ice object is created before
+IceModel::setFromOptions() is called, then IceModel will use the factory
+to create ice (whatever options have been set by derived classes serve
+as defaults, the user can override these options using -ice_*, run with
+-help to see options specific to that particular type).  If the derived
+class does not want options to be able to influence ice type (for
+instance, to guarantee a particular type), then it can create the ice
+before calling IceModel::setFromOptions().  See for instance
+IceCompModel and IceExactSSAModel.  This amount of control might not be
+desirable in which case just strip it out.
+
+You can check whether an ice type implements a particular interface
+(ThermoGlenIce for instance) by using dynamic_cast and checking if the
+returned pointer is non-NULL.
+
+You can add ice types without modifying materials.{hh,cc}.  See the
+usage in MISMIP, you create a trivial creation function and register it
+with the factory.
+
+To test whether an IceType object is true to a particular constitutive
+relation, it's best to just create a reference object and test at a few
+values.  Since I envision IceType objects having some state (see
+CustomGlenIce) and it's hard to determine whether an object is actually
+a derived class, or whether it's a derived class which implements the
+same flow law but adds some additional methods, other ways of testing is
+error-prone.
+ */
 class IceFactory {
 public:
   IceFactory(MPI_Comm,const char prefix[]);
