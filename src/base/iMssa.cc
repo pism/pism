@@ -36,7 +36,11 @@ PetscErrorCode IceModel::initSSA() {
   PetscTruth ssa_external;
 
   ssa_external = PETSC_FALSE;
-  ierr = PetscOptionsGetTruth(NULL,"-ssa_external",&ssa_external,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com,NULL,"Shallow Stream/Shelf Approximation options",NULL);CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsTruth("-ssa_external","Use external module instead of the solver hard-wired into IceModel","",ssa_external,&ssa_external,NULL);CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd();CHKERRQ(ierr);
   if (ssa_external) {
     ierr = SSACreate(&grid,&ssa);CHKERRQ(ierr);
     ierr = SSASetIceType(ssa,ice);CHKERRQ(ierr);
