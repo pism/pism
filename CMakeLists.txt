@@ -16,7 +16,6 @@ set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to d
 # The default options cache
 option (Pism_BUILD_TESTS       "Build tests"                                           ON)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
-option (Pism_LOG_EVENTS        "Log Pism events for profiling"                         ON)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 
 # Deal with build types
@@ -27,13 +26,6 @@ mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
   option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" ON)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
-
-if (Pism_LOG_EVENTS)
-  add_definitions (-DPISM_LOG_EVENTS=1)
-else (Pism_LOG_EVENTS)
-  add_definitions (-DPISM_LOG_EVENTS=0)
-endif (Pism_LOG_EVENTS)
-
 
 # Set PISM_REVISION
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
