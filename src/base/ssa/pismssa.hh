@@ -33,7 +33,14 @@ typedef struct _p_SSA *SSA;
 
 extern PetscCookie SSA_COOKIE;
 
-#if defined(PETSC_USE_DYNAMIC_LIBRARIES)
+// We don't currently do anything with dynamic libraries.  Since no other part of PISM uses dynamic libs, this will
+// always use the version that includes the function pointer (i.e. PISM_USE_DYNAMIC_LIBRARIES will not be defined).  If
+// we want to use dynamic libs, we'll need a function to load things when dlopen is called, similar to
+// e.g. PetscDLLibraryRegister_petscsnes.  Note that there is no compromise in functionality when PETSc is built with
+// dynamic libraries, we just don't load PISM stuff dynamically.  Also, dynamically loaded libraries are different from
+// shared libraries which PISM will normally use on any architecture that supports it, but which don't require anything
+// special to load.
+#if defined(PISM_USE_DYNAMIC_LIBRARIES)
 # define SSARegisterDynamic(s,p,n,f) SSARegister(s,p,n,0)
 #else
 # define SSARegisterDynamic(s,p,n,f) SSARegister(s,p,n,f)
