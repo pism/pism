@@ -102,14 +102,14 @@ PetscErrorCode CustomGlenIce::setFromOptions()
 
   ierr = PetscOptionsBegin(comm,prefix,"CustomGlenIce options",NULL);CHKERRQ(ierr);
   {
-    ierr = PetscOptionsReal("-ice_custom_n","Power-law exponent","",n,&n,&flg);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_n","Power-law exponent","setExponent",n,&n,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setExponent(n);CHKERRQ(ierr);}
-    ierr = PetscOptionsReal("-ice_custom_schoof_vel","Regularizing velocity (Schoof definition, m/a)","",svel,&svel,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ice_custom_schoof_len","Regularizing length (Schoof definition, km)","",slen,&slen,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_schoof_vel","Regularizing velocity (Schoof definition, m/a)","setSchoofRegularization",svel,&svel,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_schoof_len","Regularizing length (Schoof definition, km)","setSchoofRegularization",slen,&slen,NULL);CHKERRQ(ierr);
     ierr = setSchoofRegularization(svel,slen);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ice_custom_A","Softness parameter",NULL,A,&A,&flg);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_softness","Softness parameter A (Pa^{-n} s^{-1})","setSoftness",A,&A,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setSoftness(A);CHKERRQ(ierr);}
-    ierr = PetscOptionsReal("-ice_custom_B","Hardness parameter",NULL,B,&B,&flg);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_custom_hardness","Hardness parameter B (Pa s^{1/n})","setHardness",B,&B,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setHardness(B);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
