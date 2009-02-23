@@ -16,6 +16,58 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+* \file ssa.cc
+*
+* \brief The SSA package provides an interface for SSA solvers to be used from IceModel without being part of IceModel.
+*
+The following is mainly from an email 2009-02-23 from Jed to Ed and Constantine.
+
+The SSA design follows the PETSc creation and usage pattern.  Using this package requires the addition of a single
+pointer to IceModel, see <tt>typedef struct _p_SSA *SSA</tt> in pismssa.hh.  All interaction with this object is done
+through the interface in pismssa.hh.  Note that the definition of this struct is never provided to IceModel, it's just
+an opaque pointer and can only be manipulated through the interface (pismssa.hh).  It starts out NULL which indicates
+that it's not being used.  When the -ssa_external option is given (checked in iMssa.hh), an object is created and this
+pointer now points to it.  That indicates that it should be used, see IceModel::velocitySSA(PetscInt*), instead of the
+solver hard-wired into IceModel.  Note that if -ssa_external is not given, no code in src/base/ssa will be executed.
+When this solver is active, running with -help will give all available options.
+
+The SSA object has a fairly small public interface defined in pismssa.hh.  There can be many implementations, but the
+user (IceModel) does not need to see them and which implementation is used can be set on the command line.  Like PETSc
+objects, the basic design is known as PIMPL (Pointer to IMPLementation) in that the generic functionality (SSA) is a
+completely separate object from implementation concerns (SSA_FE).
+
+It follows the usual PETSc creation pattern.  You call SSACreate with an IceGrid which contains the communicator and the
+reference DA.  This gives you an object whose type has not been set yet (think of it as a factory at this point, if you
+like).  You can set some options and register extra implementations (look at the public interface in pismssa.hh).  Also,
+you can call SSASetType() which looks up the type (a string) in the list of registered implementations and sets the
+type.  (Now you're working with the actual object, unless you call SSASetType again with different arguments.)
+
+Eventually you call SSASetFromOptions (I should add SSASetOptionsPrefix, but it's probably unlikely anyone will be using
+multiple SSA solvers at the same time) which consults the command line and sets the type if it hasn't been set yet or
+the user asked for a different type.  Now the object is ready to use, you set the fields (SSA keeps pointers to these so
+technically it only needs to be done once, but this operation tells SSA that they may have changed---either the data in
+the vector or the location of the vector itself) and call SSASolve.  The last state is saved in the SSA context and used
+as the initial iterate the next time SSASolve is called.  Note that you can use -ssa_view to get lots of details about
+the solver at the beginning of every solve.
+
+To provide a different implementation, you write something analogous to ssafe.cc and you're set.  No IceModel code needs
+to be recompiled.  If someone else is using PISM as a library, they can write another implementation of SSA and use it
+with IceModel without changing or recompiling any of PISM.  The implementation can implement some or all of the
+implementation's interface in \struct _SSAOps.
+
+I followed this pattern because it serves my purposes well and I'm very familiar with it.  Most of the code in base/ssa
+will compile with a standard C compiler.  You can do something similar with an abstract base class and factories, but we
+didn't have a convention for how to do this.  On the other hand, PETSc has a proven convention for C-style objects.
+Note that I wrote that part before writing IceFactory (in effect creating a convention).
+
+Also, the current design could all be converted to use C++ classes with only cosmetic changes.  SSA would be a class
+with no virtual methods and a pointer to a pure virtual class SSAImplBase (which would contain no state and implement no
+functions).  Then implementations (SSA_FE) would derive from SSAImplBase and would be required to implement the full
+interface (see _SSAOps).
+
+*/
+
 #include "iceModel.hh"
 #include "ssaimpl.hh"
 
