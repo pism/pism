@@ -41,6 +41,7 @@ if (EXISTS ${Pism_SOURCE_DIR}/.git)
     WORKING_DIRECTORY ${Pism_SOURCE_DIR}
     OUTPUT_VARIABLE Pism_GIT_LOG)
   string (REGEX REPLACE "\"(.*)\"" "\\1" Pism_GIT_LOG "${Pism_GIT_LOG}")
+  string (REGEX REPLACE "'" "" Pism_GIT_LOG "${Pism_GIT_LOG}")
   set (Pism_REVISION "${Pism_GIT_LOG} [${Pism_SVN_URL} ${Pism_SVN_REVISION}]")
   #set (Pism_REVISION "${Pism_SVN_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.git)
