@@ -49,21 +49,13 @@ This is the interface which most of PISM uses for rheology.
  */
 class IceType {
 public:
-#if 0
-  static const PetscScalar rho;
-  static const PetscScalar beta_CC_grad;
-  static const PetscScalar k;
-  static const PetscScalar c_p;
-  static const PetscScalar latentHeat;
-  static const PetscScalar meltingTemp;
-#else
-  PetscScalar rho,
-              beta_CC_grad,
-              k,
-              c_p,
-              latentHeat,
-              meltingTemp;
-#endif
+  // ideally these would be protected or private:
+  PetscScalar rho,          //!< density
+              beta_CC_grad, //!< Clausius-Clapeyron gradient
+              k,            //!< thermal conductivity
+              c_p,          //!< specific heat capacity
+              latentHeat,   //!< latent heat capacity
+              meltingTemp;  //!< melting temperature
 
   IceType(MPI_Comm c,const char pre[]);
   virtual ~IceType() {}
@@ -82,6 +74,7 @@ public:
   // of rheologies.  Nonetheless we need some exponent to compute the coordinate
   // transformation in IceModel::computeDrivingStress (see iMgeometry.cc).
   virtual PetscScalar exponent() const { return 3; }
+
 protected:
   MPI_Comm comm;
   char prefix[256];
@@ -132,28 +125,19 @@ public:
   virtual PetscScalar softnessParameter(const PetscScalar T) const;
   virtual PetscScalar hardnessParameter(const PetscScalar T) const;
 protected:
-  PetscReal schoofLen,schoofVel,schoofReg;
-  static PetscScalar A_cold;  // these four constants from Paterson & Budd (1982)
-  static PetscScalar A_warm;
-  static PetscScalar Q_cold;
-  static PetscScalar Q_warm;
-  static PetscScalar crit_temp;
-  static PetscScalar n;
+  PetscReal schoofLen,schoofVel,schoofReg,
+            A_cold, A_warm, Q_cold, Q_warm,  // these four constants from Paterson & Budd (1982)
+            crit_temp, n;
 };
 
 
-//! Derived class of IceType for Hooke (1981)-Glen ice.
+//! Derived class of IceType for Hooke (1981)-Glen ice.  Only changes A(T) factor from ThermoGlenIce.
 class ThermoGlenIceHooke : public ThermoGlenIce {
 public:
-  ThermoGlenIceHooke(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
+  ThermoGlenIceHooke(MPI_Comm c,const char pre[]);
   virtual PetscScalar softnessParameter(PetscScalar T) const;
 protected:
-  static PetscScalar A_Hooke;  // these six constants from Hooke (1981)
-  static PetscScalar Q_Hooke;
-  static PetscScalar C_Hooke;
-  static PetscScalar K_Hooke;
-  static PetscScalar Tr_Hooke;
-  static PetscScalar R_Hooke;
+  PetscReal A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke, R_Hooke; // constants from Hooke (1981)
 };
 
 
@@ -183,84 +167,89 @@ struct GKparts {
   PetscScalar eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
 };
 
-//! Derived class of IceType for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form.
+
+//! Derived class of IceType for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form (e.g. SSA).
 class HybridIce : public ThermoGlenIce {
 public:
-  HybridIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
+  HybridIce(MPI_Comm c,const char pre[]);
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
 
 protected:
-  static PetscScalar  V_act_vol;
-  static PetscScalar  d_grain_size;
-  //--- diffusional flow ---
-  static PetscScalar
-  diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta;
-  //--- dislocation creep ---
-  static PetscScalar
-  disl_crit_temp, disl_A_cold, disl_A_warm, disl_n, disl_Q_cold, disl_Q_warm;
-  //--- easy slip (basal) ---
-  static PetscScalar
-  basal_A, basal_n, basal_Q;
-  //--- grain boundary sliding ---
-  static PetscScalar
-  gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold, p_grain_sz_exp, gbs_Q_warm;
+  PetscReal  V_act_vol,  d_grain_size,
+             //--- diffusional flow ---
+             diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
+             //--- dislocation creep ---
+             disl_crit_temp, disl_A_cold, disl_A_warm, disl_n, disl_Q_cold, disl_Q_warm,
+             //--- easy slip (basal) ---
+             basal_A, basal_n, basal_Q,
+             //--- grain boundary sliding ---
+             gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold, p_grain_sz_exp, gbs_Q_warm;
 };
 
 
-// Derived class of HybridIce; for testing only.
+//! Derived class of HybridIce; for testing only.
+/*! 
+HybridIceStripped is a simplification of Goldsby-Kohlstedt.  Compare to that used in 
+Peltier et al 2000, which is even simpler.
+ */
 class HybridIceStripped : public HybridIce {
 public:
-  HybridIceStripped(MPI_Comm c,const char pre[]) : HybridIce(c,pre) {}
+  HybridIceStripped(MPI_Comm c,const char pre[]);
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:
-  static PetscScalar d_grain_size_stripped;
+  PetscReal d_grain_size_stripped;
 };
 
 
 //! Physical constants describing lithosphere thermal properties.
 class BedrockThermalType {
 public:
-  static PetscScalar rho;
-  static PetscScalar k;
-  static PetscScalar c_p;
+  BedrockThermalType();
+  // these should be protected or private
+  PetscReal rho,   //!< density
+            k,     //!< thermal conductivity
+            c_p;   //!< specific heat capacity
 };
 
 
 //! Physical constants describing lithosphere mechanical properties.
 class DeformableEarthType {
 public:
-  static PetscScalar rho;
-  static PetscScalar D;
-  static PetscScalar eta;
+  DeformableEarthType();
+  // these should be protected or private
+  PetscReal rho,   //!< density
+            D,     //!< lithosphere flexural rigidity
+            eta;   //!< half-space (mantle) viscosity
 };
 
 
 //! Physical constants describing ocean water properties.
 class SeaWaterType {
 public:
-  static PetscScalar rho;
-  static PetscScalar beta_CC_grad;
-  static PetscScalar defaultShelfBaseMassRate;
+  SeaWaterType();
+  PetscReal rho,          //!< density
+            beta_CC_grad; //!< Clausius-Clapeyron gradient (melting temperature point per meter)
 };
 
 
 //! Physical constants describing pure water properties.
 class FreshWaterType {
 public:
-  static PetscScalar rho;
-  static PetscScalar beta_CC_grad;
+  FreshWaterType();
+  PetscReal rho,          //!< density
+            beta_CC_grad; //!< Clausius-Clapeyron gradient (melting temperature point per meter)
 };
 
 
-// Class containing constitutive relation for till in SIA sliding law; NOT RECOMMENDED.
+//! Class containing constitutive relation for till in SIA sliding law; NOT RECOMMENDED.
 class BasalTypeSIA {
 public:
   virtual PetscScalar velocity(PetscScalar sliding_coefficient,
                                PetscScalar stress);
-  virtual ~BasalTypeSIA() {}
+  virtual ~BasalTypeSIA() {}  // need virtual destructor because has virtual methods
 };
 
 
@@ -271,16 +260,16 @@ viscous till to purely plastic till.
  */
 class PlasticBasalType {
 public:
-  PlasticBasalType(const PetscScalar regularizationConstant, const PetscTruth pseudoPlastic,
-                   const PetscScalar pseudoExponent, const PetscScalar pseudoUThreshold);
-  virtual PetscErrorCode printInfo(const int verbthresh, MPI_Comm com);
-  virtual PetscScalar drag(const PetscScalar tauc,
-                           const PetscScalar vx, const PetscScalar vy);
+  PlasticBasalType(PetscScalar regularizationConstant, PetscTruth pseudoPlastic,
+                   PetscScalar pseudoExponent, PetscScalar pseudoUThreshold);
+  virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
+  virtual PetscScalar drag(PetscScalar tauc,
+                           PetscScalar vx, PetscScalar vy);
   // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
   virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *drag, PetscScalar *ddrag) const;
   virtual ~PlasticBasalType() {} // class w virtual methods needs virtual destructor?
 
-  PetscScalar plastic_regularize, pseudo_q, pseudo_u_threshold;
+  PetscReal   plastic_regularize, pseudo_q, pseudo_u_threshold;
   PetscTruth  pseudo_plastic;
 };
 

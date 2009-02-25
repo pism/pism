@@ -19,27 +19,16 @@
 #include "materials.hh"
 #include "pism_const.hh"
 
-#if 0
-PetscScalar IceType::rho    = 910;          // kg/m^3       density
-PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
-PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
-PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capacity
-PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
-PetscScalar IceType::meltingTemp = 273.15;   // K
-#endif
-
 IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
   memset(prefix,0,sizeof(prefix));
   if (pre) strncpy(prefix,pre,sizeof(prefix));
 
-#if 1
   rho    = 910;          // kg/m^3       density
   beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
   k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
   c_p    = 2009;         // J/(kg K)     specific heat capacity
   latentHeat = 3.35e5;   // J/kg         latent heat capacity
-  meltingTemp = 273.15;  // K
-#endif
+  meltingTemp = 273.15;  // K            melting point
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
@@ -133,19 +122,19 @@ PetscErrorCode CustomGlenIce::printInfo(PetscInt verb) const {
   return 0;
 }
 
-// ThermoGlenIce is Paterson-Budd
-PetscScalar ThermoGlenIce::A_cold = 3.61e-13;   // Pa^-3 / s
-PetscScalar ThermoGlenIce::A_warm = 1.73e3; // Pa^-3 / s
-PetscScalar ThermoGlenIce::Q_cold = 6.0e4;      // J / mol
-PetscScalar ThermoGlenIce::Q_warm = 13.9e4; // J / mol
-PetscScalar ThermoGlenIce::crit_temp = 263.15;  // K
-PetscScalar ThermoGlenIce::n = 3;
 
 ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[]) : IceType(c,pre) {
+  A_cold = 3.61e-13;   // Pa^-3 / s
+  A_warm = 1.73e3;     // Pa^-3 / s
+  Q_cold = 6.0e4;      // J / mol
+  Q_warm = 13.9e4;     // J / mol
+  crit_temp = 263.15;  // K
+  n = 3;
   schoofLen = 1e6;
   schoofVel = 1/secpera;
   schoofReg = PetscSqr(schoofVel/schoofLen);
 }
+
 
 PetscErrorCode ThermoGlenIce::setFromOptions() {
   PetscErrorCode ierr;
@@ -174,9 +163,10 @@ PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar 
   return softnessParameter(T) * pow(stress,n-1);
 }
 
-PetscScalar ThermoGlenIce::effectiveViscosityColumn(PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
-                                                    PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                                                    const PetscScalar *T1, const PetscScalar *T2) const {
+PetscScalar ThermoGlenIce::effectiveViscosityColumn(
+                PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
+                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
+                const PetscScalar *T1, const PetscScalar *T2) const {
   // DESPITE NAME, does *not* return effective viscosity.
   // The result is \nu_e H, i.e. viscosity times thickness.
   // B is really hardness times thickness.
@@ -243,16 +233,16 @@ PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
 
 
 
+ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+  Q_Hooke = 7.88e4;       // J / mol
+  // A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa
+  A_Hooke = 4.42165e-9;    // s^-1 Pa^-3
+  C_Hooke = 0.16612;       // Kelvin^K_Hooke
+  K_Hooke = 1.17;          // [unitless]
+  Tr_Hooke = 273.39;       // Kelvin
+  R_Hooke = 8.321;         // J mol^-1 K^-1
+}
 
-// ThermoGlenIceHooke: only change A(T) factor from ThermoGlenIce, which is
-// Paterson-Budd
-PetscScalar ThermoGlenIceHooke::Q_Hooke = 7.88e4;       // J / mol
-// A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa
-PetscScalar ThermoGlenIceHooke::A_Hooke = 4.42165e-9;    // s^-1 Pa^-3
-PetscScalar ThermoGlenIceHooke::C_Hooke = 0.16612;       // Kelvin^K_Hooke
-PetscScalar ThermoGlenIceHooke::K_Hooke = 1.17;          // [unitless]
-PetscScalar ThermoGlenIceHooke::Tr_Hooke = 273.39;       // Kelvin
-PetscScalar ThermoGlenIceHooke::R_Hooke = 8.321;         // J mol^-1 K^-1
 
 PetscScalar ThermoGlenIceHooke::softnessParameter(PetscScalar T) const {
 
@@ -289,45 +279,43 @@ PetscScalar ThermoGlenArrIceWarm::Q() const {
 }
 
 
-// HybridIce is Goldsby-Kohlstedt in ice sheets, Glen-Paterson-Budd in MacAyeal regions
-PetscScalar HybridIce::V_act_vol    = -13.e-6;  // m^3/mol
-PetscScalar HybridIce::d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
-//--- dislocation creep ---
-PetscScalar
-HybridIce::disl_crit_temp=258.0,    // Kelvin
+HybridIce::HybridIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+  V_act_vol    = -13.e-6;  // m^3/mol
+  d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
+  //--- dislocation creep ---
+  disl_crit_temp=258.0,    // Kelvin
   //disl_A_cold=4.0e5,                  // MPa^{-4.0} s^{-1}
   //disl_A_warm=6.0e28,                 // MPa^{-4.0} s^{-1}
-  HybridIce::disl_A_cold=4.0e-19,     // Pa^{-4.0} s^{-1}
-  HybridIce::disl_A_warm=6.0e4,       // Pa^{-4.0} s^{-1} (GK)
-  HybridIce::disl_n=4.0,              // stress exponent
-  HybridIce::disl_Q_cold=60.e3,       // J/mol Activation energy
-  HybridIce::disl_Q_warm=180.e3;      // J/mol Activation energy (GK)
-//--- grain boundary sliding ---
-PetscScalar
-HybridIce::gbs_crit_temp=255.0,     // Kelvin
+  disl_A_cold=4.0e-19,     // Pa^{-4.0} s^{-1}
+  disl_A_warm=6.0e4,       // Pa^{-4.0} s^{-1} (GK)
+  disl_n=4.0,              // stress exponent
+  disl_Q_cold=60.e3,       // J/mol Activation energy
+  disl_Q_warm=180.e3;      // J/mol Activation energy (GK)
+  //--- grain boundary sliding ---
+  gbs_crit_temp=255.0,     // Kelvin
   //gbs_A_cold=3.9e-3,                  // MPa^{-1.8} m^{1.4} s^{-1}
   //gbs_A_warm=3.e26,                   // MPa^{-1.8} m^{1.4} s^{-1}
-  HybridIce::gbs_A_cold=6.1811e-14,   // Pa^{-1.8} m^{1.4} s^{-1}
-  HybridIce::gbs_A_warm=4.7547e15,    // Pa^{-1.8} m^{1.4} s^{-1}
-  HybridIce::gbs_n=1.8,               // stress exponent
-  HybridIce::gbs_Q_cold=49.e3,        // J/mol Activation energy
-  HybridIce::gbs_Q_warm=192.e3,       // J/mol Activation energy
-  HybridIce::p_grain_sz_exp=1.4;      // from Peltier
-//--- easy slip (basal) ---
-PetscScalar
-//basal_A=5.5e7,                      // MPa^{-2.4} s^{-1}
-HybridIce::basal_A=2.1896e-7,       // Pa^{-2.4} s^{-1}
-  HybridIce::basal_n=2.4,             // stress exponent
-  HybridIce::basal_Q=60.e3;           // J/mol Activation energy
-//--- diffusional flow ---
-PetscScalar
-HybridIce::diff_crit_temp=258.0,    // when to use enhancement factor
-  HybridIce::diff_V_m=1.97e-5,        // Molar volume (m^3/mol)
-  HybridIce::diff_D_0v=9.10e-4,       // Preexponential volume diffusion (m^2/s)
-  HybridIce::diff_Q_v=59.4e3,         // activation energy, vol. diff. (J/mol)
-  HybridIce::diff_D_0b=5.8e-4,        // preexponential grain boundary coeff.
-  HybridIce::diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
-  HybridIce::diff_delta=9.04e-10;     // grain boundary width (m)
+  gbs_A_cold=6.1811e-14,   // Pa^{-1.8} m^{1.4} s^{-1}
+  gbs_A_warm=4.7547e15,    // Pa^{-1.8} m^{1.4} s^{-1}
+  gbs_n=1.8,               // stress exponent
+  gbs_Q_cold=49.e3,        // J/mol Activation energy
+  gbs_Q_warm=192.e3,       // J/mol Activation energy
+  p_grain_sz_exp=1.4;      // from Peltier
+  //--- easy slip (basal) ---
+  //basal_A=5.5e7,                      // MPa^{-2.4} s^{-1}
+  basal_A=2.1896e-7,       // Pa^{-2.4} s^{-1}
+  basal_n=2.4,             // stress exponent
+  basal_Q=60.e3;           // J/mol Activation energy
+  //--- diffusional flow ---
+  diff_crit_temp=258.0,    // when to use enhancement factor
+  diff_V_m=1.97e-5,        // Molar volume (m^3/mol)
+  diff_D_0v=9.10e-4,       // Preexponential volume diffusion (m^2/s)
+  diff_Q_v=59.4e3,         // activation energy, vol. diff. (J/mol)
+  diff_D_0b=5.8e-4,        // preexponential grain boundary coeff.
+  diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
+  diff_delta=9.04e-10;     // grain boundary width (m)
+}
+
 
 PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
                             const PetscScalar pressure, const PetscScalar gs) const {
@@ -413,10 +401,9 @@ GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pre
 /*****************/
 
 
-// HybridIceStripped is a simplification of Goldsby-Kohlstedt; compare that
-// used in Peltier et al 2000, which is even simpler
-PetscScalar HybridIceStripped::d_grain_size_stripped = 3.0e-3;
-                                    // m; = 3mm  (see Peltier et al 2000 paper)
+HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[]) : HybridIce(c,pre) {
+  d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
+}
 
 
 PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
@@ -450,42 +437,41 @@ PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscS
 }
 
 
-PetscScalar BedrockThermalType::rho    = 3300;  // kg/(m^3)     density
-PetscScalar BedrockThermalType::k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
-PetscScalar BedrockThermalType::c_p    = 1000;  // J/(kg K)     specific heat capacity
-
-// for following, reference Lingle & Clark (1985),  Bueler, Lingle, Kallen-Brown (2006)
-// D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness T = 88 km,
-//    and Poisson's ratio nu = 0.5
-PetscScalar DeformableEarthType::rho   = 3300;    // kg/(m^3)     density
-PetscScalar DeformableEarthType::D     = 5.0e24;  // N m          lithosphere flexural rigidity
-PetscScalar DeformableEarthType::eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
+BedrockThermalType::BedrockThermalType() {
+  rho    = 3300;  // kg/(m^3)     density
+  k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
+  c_p    = 1000;  // J/(kg K)     specific heat capacity
+}
 
 
-PetscScalar SeaWaterType::rho      = 1028.0;     // kg/m^3         density
-PetscScalar FreshWaterType::rho    = 1000.0;     // kg/m^3         density
+DeformableEarthType::DeformableEarthType() {
+  // for following, reference Lingle & Clark (1985) and  Bueler, Lingle, & Kallen-Brown (2006)
+  //    D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness
+  //    T = 88 km, and Poisson's ratio nu = 0.5
+  rho   = 3300;    // kg/(m^3)     density
+  D     = 5.0e24;  // N m          lithosphere flexural rigidity
+  eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
+}
 
-// re Clausius-Clapeyron gradients:  Paterson (3rd ed, 1994, p. 212) says 
-//   T = T_0 - beta' P  where  beta' = 9.8e-5 K / kPa = 9.8e-8 K / Pa.
-//   And   dT/dz = beta' rho g  because  dP = - rho g dz.
-//   Thus:
-//     SeaWaterType:   beta = 9.8e-8 * 1028.0 * 9.81 = 9.882986e-4
-//     FreshWaterType: beta = 9.8e-8 * 1000.0 * 9.81 = 9.613800e-4
-//   For IceType this would be 8.748558e-4, but we use EISMINT II
-//   (Payne et al 2000) value of 8.66e-4 by default; see above.
 
-PetscScalar SeaWaterType::beta_CC_grad   = 9.883e-4;// K/m; C-C gradient
-PetscScalar FreshWaterType::beta_CC_grad = 9.614e-4;// K/m; C-C gradient
+SeaWaterType::SeaWaterType() {
+  rho            = 1028.0;  // kg/m^3         density
+  // re Clausius-Clapeyron gradients:  Paterson (3rd ed, 1994, p. 212) says 
+  //   T = T_0 - beta' P  where  beta' = 9.8e-5 K / kPa = 9.8e-8 K / Pa.
+  //   And   dT/dz = beta' rho g  because  dP = - rho g dz.
+  //   Thus:
+  //     SeaWaterType:   beta = 9.8e-8 * 1028.0 * 9.81 = 9.882986e-4
+  //     FreshWaterType: beta = 9.8e-8 * 1000.0 * 9.81 = 9.613800e-4
+  //   For IceType this would be 8.748558e-4, but we use EISMINT II
+  //   (Payne et al 2000) value of 8.66e-4 by default; see above.
+  beta_CC_grad   = 9.883e-4;// K/m; C-C gradient
+}
 
-// in absence of PISMClimateCoupler, remove mass at this rate;
-//   rate of zero is merely intended to do no harm;
-//   Lingle et al (1991; "A flow band model of the Ross Ice Shelf ..."
-//   JGR 96 (B4), pp 6849--6871) gives 0.02 m/a freeze-on at one point as only 
-//   measurement available at that time (one ice core) and also gives
-//   0.16 m/a melting as average rate necessary to maintain equilibrium,
-//   but points out variability in -0.5 m/a (i.e. melting) to 
-//   +1.0 m/a (freeze-on) range from a flow band model (figure 5)
-PetscScalar SeaWaterType::defaultShelfBaseMassRate = 0.0; 
+
+FreshWaterType::FreshWaterType() {
+  rho          = 1000.0;  // kg/m^3         density
+  beta_CC_grad = 9.614e-4;// K/m; C-C gradient; see comment above for SeaWaterType
+}
 
 
 PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
@@ -496,8 +482,8 @@ PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
 
 
 PlasticBasalType::PlasticBasalType(
-             const PetscScalar regularizationConstant, const PetscTruth pseudoPlastic,
-             const PetscScalar pseudoExponent, const PetscScalar pseudoUThreshold) {
+             PetscScalar regularizationConstant, PetscTruth pseudoPlastic,
+             PetscScalar pseudoExponent, PetscScalar pseudoUThreshold) {
   plastic_regularize = regularizationConstant;
   pseudo_plastic = pseudoPlastic;
   pseudo_q = pseudoExponent;
@@ -505,7 +491,7 @@ PlasticBasalType::PlasticBasalType(
 }
 
 
-PetscErrorCode PlasticBasalType::printInfo(const int verbthresh, MPI_Comm com) {
+PetscErrorCode PlasticBasalType::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   if (pseudo_plastic == PETSC_TRUE) {
     if (pseudo_q == 1.0) {
@@ -536,8 +522,8 @@ is minus the return value here times (vx,vy).
 Purely plastic is the pseudo_q = 0.0 case; linear is pseudo_q = 1.0; set 
 pseudo_q using PlasticBasalType constructor.
  */
-PetscScalar PlasticBasalType::drag(const PetscScalar tauc,
-                                   const PetscScalar vx, const PetscScalar vy) {
+PetscScalar PlasticBasalType::drag(PetscScalar tauc,
+                                   PetscScalar vx, PetscScalar vy) {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
   if (pseudo_plastic == PETSC_TRUE) {
     return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);

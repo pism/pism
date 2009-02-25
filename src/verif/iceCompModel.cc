@@ -63,7 +63,6 @@ PetscErrorCode IceCompModel::setFromOptions() {
   
   f = ice->rho / bed_deformable.rho;  // for simple isostasy
 
-
   // Override some defaults from parent class
   enhancementFactor = 1.0;
 

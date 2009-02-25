@@ -677,6 +677,14 @@ PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
   constOceanHeatFlux = 0.5;   // W m-2 = J m-2 s-1; naively chosen default value
         // presumably irrelevant:  about 4 times more heating than peak of 
         //   Shapiro & Ritzwoller (2004) geothermal fluxes for Antarctica of about 130 mW/m^2
+        // alternative: a rate of zero might do no harm; note heat flux immediately
+        //   becomes a basal net mass balance;
+        //   Lingle et al (1991; "A flow band model of the Ross Ice Shelf ..."
+        //   JGR 96 (B4), pp 6849--6871) gives 0.02 m/a freeze-on at one point as only 
+        //   measurement available at that time (one ice core) and also gives
+        //   0.16 m/a melting as average rate necessary to maintain equilibrium,
+        //   but points out variability in -0.5 m/a (i.e. melting) to 
+        //   +1.0 m/a (freeze-on) range from a flow band model (figure 5)
 }
 
 
