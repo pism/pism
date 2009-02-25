@@ -26,17 +26,19 @@
 
 class IceExactSSAModel : public IceModel {
 public:
-    IceExactSSAModel(IceGrid &g, int mytest);
+    IceExactSSAModel(IceGrid &g, char mytest);
     virtual PetscErrorCode setFromOptions();
+
     using IceModel::initFromOptions;
     virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+
     virtual PetscErrorCode diagnosticRun();
     PetscErrorCode         reportErrors();
 
 protected:
-    int        test;       // only 'I', 'J', 'M' supported
-    PetscTruth exactOnly;
-    IceModelVec2 vNuForJ[2];
+    char            test;       // only 'I', 'J', 'M' supported
+    PetscTruth      exactOnly;
+    IceModelVec2    vNuForJ[2];
           
     PetscErrorCode  fillFromExactSolution();
     PetscErrorCode  taucSetI();
@@ -44,16 +46,15 @@ protected:
     PetscErrorCode  setInitStateJ();
     PetscErrorCode  setInitStateM();
 
-    void mapcoords(const PetscInt i, const PetscInt j,
-                   PetscScalar &x, PetscScalar &y, PetscScalar &r);
+    void            mapcoords(PetscInt i, PetscInt j,
+                              PetscScalar &x, PetscScalar &y, PetscScalar &r);
 
 private:
-    // constants for I
-    static const PetscScalar   
-               m_schoof, L_schoof, aspect_schoof, H0_schoof,
-               B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
+    // constants for I; "static" o.k. because also const
+    static const PetscScalar   m_schoof, L_schoof, aspect_schoof, H0_schoof,
+                               B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
     // constants for J, M
-    static const PetscScalar LforJ, LforM;
+    static const PetscScalar   LforJ, LforM;
 };
 
 #endif /* __iceExactSSAModel_hh */

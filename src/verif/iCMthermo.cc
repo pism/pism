@@ -22,6 +22,14 @@
 #include "exactTestK.h" 
 #include "iceCompModel.hh"
 
+// boundary conditions for tests F, G (same as EISMINT II Experiment F)
+const PetscScalar IceCompModel::Ggeo = 0.042;
+const PetscScalar IceCompModel::ST = 1.67e-5;
+const PetscScalar IceCompModel::Tmin = 223.15;  // K
+const PetscScalar IceCompModel::LforFG = 750000; // m
+const PetscScalar IceCompModel::ApforG = 200; // m
+
+
 PetscErrorCode IceCompModel::temperatureStep(PetscScalar* vertSacrCount) {
   PetscErrorCode  ierr;
 
@@ -36,19 +44,10 @@ PetscErrorCode IceCompModel::temperatureStep(PetscScalar* vertSacrCount) {
 }
 
 
-// boundary conditions for tests F, G (same as EISMINT II Experiment F)
-PetscScalar IceCompModel::Ggeo = 0.042;
-PetscScalar IceCompModel::ST = 1.67e-5;
-PetscScalar IceCompModel::Tmin = 223.15;  // K
-PetscScalar IceCompModel::LforFG = 750000; // m
-PetscScalar IceCompModel::ApforG = 200; // m
-
-
 PetscErrorCode IceCompModel::createCompVecs() {
   PetscErrorCode ierr;
   ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
   ierr = SigmaComp3.set(0.0); CHKERRQ(ierr);
-  compVecsCreated = PETSC_TRUE;
   return 0;
 }
 
@@ -76,7 +75,6 @@ PetscErrorCode IceCompModel::createCompViewers() {
                    "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
   } else compSigmaMapView = PETSC_NULL;
    
-  compViewersCreated = PETSC_TRUE;
   return 0;
 }
 

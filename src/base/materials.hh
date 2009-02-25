@@ -49,12 +49,21 @@ This is the interface which most of PISM uses for rheology.
  */
 class IceType {
 public:
-  static PetscScalar rho;
-  static PetscScalar beta_CC_grad;
-  static PetscScalar k;
-  static PetscScalar c_p;
-  static PetscScalar latentHeat;
-  static PetscScalar meltingTemp;
+#if 0
+  static const PetscScalar rho;
+  static const PetscScalar beta_CC_grad;
+  static const PetscScalar k;
+  static const PetscScalar c_p;
+  static const PetscScalar latentHeat;
+  static const PetscScalar meltingTemp;
+#else
+  PetscScalar rho,
+              beta_CC_grad,
+              k,
+              c_p,
+              latentHeat,
+              meltingTemp;
+#endif
 
   IceType(MPI_Comm c,const char pre[]);
   virtual ~IceType() {}

@@ -81,6 +81,11 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
   }
 
   // main initialization of IceModel
+  if (ice == PETSC_NULL) {
+    ierr = iceFactory.create(&ice);CHKERRQ(ierr);
+    ierr = ice->setFromOptions();CHKERRQ(ierr); // Set options specific to this particular ice type
+  }
+
   if (i_set) {
     if (boot_from_set) {
       ierr = PetscPrintf(grid.com,

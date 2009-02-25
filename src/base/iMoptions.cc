@@ -327,12 +327,8 @@ PetscErrorCode  IceModel::setFromOptions() {
  
   ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // reads "-quadZ" and "-chebZ"
 
-  if (!ice) {                   // If we already have ice, then a derived class must have created it, otherwise create it.
-    ierr = iceFactory.setFromOptions();CHKERRQ(ierr); // The user can set the type using -ice_type, run with -help to see choices
-    ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-    ierr = ice->setFromOptions();CHKERRQ(ierr); // Set options specific to this particular ice type
-  }
-
+  ierr = iceFactory.setFromOptions();CHKERRQ(ierr); // The user can set the type using -ice_type, run with -help to see choices
+  
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }

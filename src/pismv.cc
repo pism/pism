@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
 
     // determine test (and whether to report error)
     ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, &testchosen); CHKERRQ(ierr);
-    int test = testname[0];  // only use the first letter
-    if (testchosen == PETSC_FALSE)     test = 'A';           // default to test A
+    char test = testname[0];  // only use the first letter
+    if (testchosen == PETSC_FALSE)         test = 'A';       // default to test A
     if ((test >= 'a') && (test <= 'z'))    test += 'A'-'a';  // capitalize if lower    
     ierr = PetscOptionsHasName(PETSC_NULL, "-no_report", &dontReport); CHKERRQ(ierr);
 

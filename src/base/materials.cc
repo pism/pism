@@ -19,16 +19,27 @@
 #include "materials.hh"
 #include "pism_const.hh"
 
+#if 0
 PetscScalar IceType::rho    = 910;          // kg/m^3       density
 PetscScalar IceType::beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
 PetscScalar IceType::k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
 PetscScalar IceType::c_p    = 2009;         // J/(kg K)     specific heat capacity
 PetscScalar IceType::latentHeat = 3.35e5;   // J/kg         latent heat capacity
 PetscScalar IceType::meltingTemp = 273.15;   // K
+#endif
 
 IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
   memset(prefix,0,sizeof(prefix));
   if (pre) strncpy(prefix,pre,sizeof(prefix));
+
+#if 1
+  rho    = 910;          // kg/m^3       density
+  beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
+  k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
+  c_p    = 2009;         // J/(kg K)     specific heat capacity
+  latentHeat = 3.35e5;   // J/kg         latent heat capacity
+  meltingTemp = 273.15;  // K
+#endif
 }
 
 // Rather than make this part of the base class, we just check at some reference values.

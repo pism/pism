@@ -29,25 +29,43 @@
 #include "../coupler/pccoupler.hh"
 #include "iceCompModel.hh"
 
-PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
+const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
 IceCompModel::IceCompModel(IceGrid &g, const int mytest)
   : IceModel(g), tgaIce(NULL) {
   
   // note lots of defaults are set by the IceModel constructor
-  
+  // defaults for IceCompModel:  
   testname = mytest;
+  exactOnly = PETSC_FALSE;
+  bedrock_is_ice_forK = PETSC_FALSE;
 
   iceFactory.setType(ICE_ARR);
+}
+
+
+IceCompModel::~IceCompModel() {
+  destroyCompViewers();
+  destroyCompVecs();
+  vHexactL.destroy();
+}
+
+
+PetscErrorCode IceCompModel::setFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
+  tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
+  if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
+  if (!IceTypeIsPatersonBuddCold(ice)) {
+    ierr = verbPrintf(1,grid.com,"WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");CHKERRQ(ierr);
+  }
+  
+  f = ice->rho / bed_deformable.rho;  // for simple isostasy
+
 
   // Override some defaults from parent class
   enhancementFactor = 1.0;
-
-  // defaults for verification
-  exactOnly = PETSC_FALSE;
-  compVecsCreated = PETSC_FALSE;
-  compViewersCreated = PETSC_FALSE;
-  vHexactLCreated = PETSC_FALSE;
 
   // set values of flags in run() 
   doMassConserve = PETSC_TRUE;
@@ -75,7 +93,6 @@ IceCompModel::IceCompModel(IceGrid &g, const int mytest)
   }
 
   // special considerations for K wrt thermal bedrock and pressure-melting
-  bedrock_is_ice_forK = PETSC_FALSE;
   if (testname == 'K') {
     thermalBedrock = PETSC_TRUE;
     allowAboveMelting = PETSC_FALSE;
@@ -93,34 +110,7 @@ IceCompModel::IceCompModel(IceGrid &g, const int mytest)
     bed_thermal.c_p = tgaIce->c_p;
     bed_thermal.k = tgaIce->k;
   }
-}
 
-
-IceCompModel::~IceCompModel() {
-  if (compViewersCreated == PETSC_TRUE) {
-    destroyCompViewers();
-    compViewersCreated = PETSC_FALSE;
-  }
-  if (compVecsCreated == PETSC_TRUE) {
-    destroyCompVecs();
-    compVecsCreated = PETSC_FALSE;
-  }
-  if (vHexactLCreated == PETSC_TRUE) {
-    vHexactL.destroy();
-    vHexactLCreated = PETSC_FALSE;
-  }
-}
-
-PetscErrorCode IceCompModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-  tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
-  if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (!IceTypeIsPatersonBuddCold(ice)) {
-    ierr = verbPrintf(1,grid.com,"WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");CHKERRQ(ierr);
-  }
-  f = ice->rho / bed_deformable.rho;  // for simple isostasy
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
   return 0;
 }
@@ -501,7 +491,6 @@ PetscErrorCode IceCompModel::initTestL() {
 
   // store copy of vH for "-eo" runs and for evaluating geometry errors
   ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
-  vHexactLCreated = PETSC_TRUE;
   ierr = vH.copy_to(vHexactL); CHKERRQ(ierr);
   return 0;
 }

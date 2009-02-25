@@ -45,9 +45,13 @@ PetscErrorCode IceEISModel::setFromOptions() {
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
 
+  ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
+
   // make bedrock thermal material properties into ice properties
   // (note Mbz=1 is default, but want ice/rock interface segment to 
   // have geothermal flux applied directly to ice)
+  
+  if (ice == PETSC_NULL) { SETERRQ(1,"ice == PETSC_NULL"); }
   bed_thermal.rho = ice->rho;
   bed_thermal.k = ice->k;
   bed_thermal.c_p = ice->c_p;  
@@ -134,7 +138,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
   if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
 
-  ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
   return 0;
 }
 

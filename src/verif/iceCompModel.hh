@@ -74,7 +74,6 @@ protected:
 
   // related to test L
   IceModelVec2   vHexactL;
-  PetscTruth     vHexactLCreated;
   PetscErrorCode initTestL();
   PetscErrorCode fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
 
@@ -96,7 +95,6 @@ protected:
   IceModelVec3   SigmaComp3;
 
   PetscViewer    SigmaCompView, compSigmaMapView;
-  PetscTruth     compVecsCreated, compViewersCreated;
   PetscErrorCode createCompVecs();
   PetscErrorCode destroyCompVecs();
   PetscErrorCode createCompViewers();
@@ -112,17 +110,18 @@ protected:
 
 
 private:
-  static PetscScalar ablationRateOutside;
   PetscScalar        f;       // ratio of ice density to bedrock density
   PetscTruth         bedrock_is_ice_forK;
 
+  static const PetscScalar ablationRateOutside;
+
   // see iCMthermo.cc
-  static PetscScalar Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
-  static PetscScalar ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static PetscScalar Tmin;    // K;       minimum temperature (at center)
-  static PetscScalar LforFG;  // m;  exact radius of tests F&G ice sheet
-  static PetscScalar ApforG;  // m;  magnitude A_p of annular perturbation for test G;
-                              //     note period t_p is set internally to 2000 years
+  static const PetscScalar Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
+  static const PetscScalar ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const PetscScalar Tmin;    // K;       minimum temperature (at center)
+  static const PetscScalar LforFG;  // m;  exact radius of tests F&G ice sheet
+  static const PetscScalar ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  // period t_p is set internally to 2000 years
 };
 
 #endif /* __iceCompModel_hh */

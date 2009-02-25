@@ -37,11 +37,11 @@ const PetscScalar IceExactSSAModel::LforJ = 300.0e3; // 300 km half-width
 const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 
 
-IceExactSSAModel::IceExactSSAModel(IceGrid &g, int mytest)
-  : IceModel(g) {
+IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
   test = mytest;
   iceFactory.setType(ICE_CUSTOM);
 }
+
 
 PetscErrorCode IceExactSSAModel::setFromOptions() {
   PetscErrorCode ierr;
@@ -61,6 +61,7 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
   return 0;
 }
+
 
 PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode  ierr;
@@ -645,7 +646,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
 }
 
 
-void IceExactSSAModel::mapcoords(const PetscInt i, const PetscInt j,
+void IceExactSSAModel::mapcoords(PetscInt i, PetscInt j,
                                  PetscScalar &x, PetscScalar &y, PetscScalar &r) {
   // compute x,y,r on grid from i,j
   PetscScalar ifrom0, jfrom0;
