@@ -54,7 +54,11 @@ PetscErrorCode Data1D::readData(MPI_Comm mycom, PetscMPIInt myrank,
   PetscErrorCode ierr;
   int stat, ncid = 0;
   if (myrank == 0) {
-    stat = nc_open(myncfilename, 0, &ncid); CHKERRQ(nc_check(stat));
+    stat = nc_open(myncfilename, 0, &ncid);
+    if (stat != NC_NOERR) {
+      ierr = PetscPrintf(mycom, "Data1D ERROR: Can't open file '%s'.\n", myncfilename); CHKERRQ(ierr);
+      PetscEnd();
+    }
   }
   MPI_Bcast(&ncid, 1, MPI_INT, 0, mycom);
   ierr = readData(mycom, myrank, ncid, myindepvarname, mydatavarname); CHKERRQ(ierr);
