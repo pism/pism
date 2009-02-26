@@ -555,7 +555,7 @@ protected:
   double first_snapshot, snapshot_dt, next_snapshot, last_snapshot;
 
   // unequally spaced snapshots
-  static const int max_n_snapshots = 20;
+  static const int max_n_snapshots = 200;
   double save_at[max_n_snapshots];
   int n_snapshots, current_snapshot;
 

@@ -89,6 +89,7 @@ PetscTruth IceTypeUsesGrainSize(IceType *);
 class CustomGlenIce : public IceType {
 public:
   CustomGlenIce(MPI_Comm c,const char pre[]);
+  PetscErrorCode setDensity(PetscReal);
   PetscErrorCode setExponent(PetscReal);
   PetscErrorCode setHardness(PetscReal);
   PetscErrorCode setSoftness(PetscReal);

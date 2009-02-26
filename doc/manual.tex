@@ -166,9 +166,9 @@ S      0.00000:  0.00000  0.0000   0.0000      0.000  238.1500
  $$ SIA        vath 0m  +60.00000
 S     60.00000:  0.01704  0.6281   0.0000     30.000  238.1500
 . . .
- $$ SIA        vath 0e  +0.27275
-S   6000.00000:  1.68097  0.7506   0.0100   3000.000  248.6794
-done with run ... 
+ $$ SIA        vath 0e  +2.05570
+S   6000.00000:  1.68054  0.7506   0.0100   3000.000  248.6280
+done with run ...
 Writing model state to file `simp_exper.nc'
 \end{verbatim}
 \end{quote}
@@ -272,6 +272,7 @@ See \href{http://www.unidata.ucar.edu/software/netcdf/docs/software.html}{\t{www
 \verb|ncdump| & \emph{included with any NetCDF distribution} & dump as text file \\
 \verb|ncview|\index{ncview} & \scriptsize\url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}\small & quick graphical view \\
 \verb|IDV| & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
+\verb|VisIt| & \href{http://visit.llnl.gov}{\t{visit.llvl.gov}} & advanced parallel visualization \\
 \verb|NCO|\index{NCO (NetCDF Operators)} = NetCDF & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & sophisticated manipulations \\
 \quad Operators & & \quad at command line
 \end{tabular}
@@ -396,7 +397,7 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 
 \subsubsection*{Test I is an exact solution}  Test I in the verification suite\index{verification tests} is an instance of the exact solution to the Schoof model.  It is a single diagnostic computation of the velocity of a highly-simplified ice stream.  Here is an example run with some viewers:\index{pismv}
 
-\verb|pismv -test I -Mx 5 -My 121 -d ncqu|
+\verb|pismv -test I -Mx 121 -My 5 -d ncqu|
 
 \noindent The boundary conditions are a uniform slab of ice on a bed with constant slope, but with a central minimum in a pre-specified distribution of till yield stress.  There is zero yield stress at the very center.  Thus the center of the slab slides.  The ice flows under the SSA equations, because of the plastic failure, while at the margins the base of the ice does not slide.  Thus we have an ice stream.  The velocity only varies in the cross-slope direction.  PISM's job is to compute the width and speed of the ice stream, ``knowing'' only the ice thickness, bed slope, and yield stress distribution.  In this case we have the exact solution with which to compare the numerically-computed velocities.  This test, and convergence of PISM's numerical solution of it under grid refinement, are addressed in section \ref{sect:verif}.
 
@@ -427,7 +428,7 @@ data present in these variables is valid. If you want to restart from a PISM
 output \emph{ignoring} these velocities, use the \verb|-dontreadSSAvels|
 option.
 
-\subsection{Bootstrapping}  ``Bootstrapping'' PISM\index{bootstrapping}\index{initialization!by bootstrapping} means giving it less than complete data, and letting it fill in the needed data according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option ``\intextoption{bif}''.
+\subsection{Bootstrapping}  ``Bootstrapping'' PISM\index{bootstrapping}\index{initialization!by bootstrapping} means giving it less than complete data, and letting it fill in the needed data according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \intextoption{boot\und from}.
 
 In some sense, bootstrapping is unprincipled inverse modeling.\index{inverse modeling}\index{bootstrapping!is inverse modeling}  It is possible, for instance, to estimate the sliding state of the base of the ice through inverse models (\cite{JoughinMacAyealTulaczyk} is an example\footnote{The PISM authors are eager to work with principled (or at least, serious) inverse modelers.  In particular, we would like to inverse-model-derived basal shear stresses to constrain a PISM forward model which would use both SIA and SSA models of ice flow.}).  It is also possible to use observed ``isochrones'' from ice-penetrating radar to estimate the velocity of ice \cite{Eisen06draft}.
 
@@ -440,11 +441,11 @@ Instead, however, most ice sheet modeling (using forward models like PISM) would
 
 Subsection \ref{sect:green} does EISMINT-Greenland \cite{RitzEISMINT,HuybrechtsEISMINT} as an example of bootstrapping.  That section shows examples of long runs of both types (3) and (4).
 
-When using \intextoption{bif} you will usually have to specify the height of the computational box for the ice with \intextoption{Lz} $Z$, and add option \intextoption{Lbz} $Z_b$ if you want a bedrock thermal layer.  This additional specification is natural: the data used in ``bootstrapping'' will usually be two-dimensional.
+When using \intextoption{boot\und from} you will usually have to specify the height of the computational box for the ice with \intextoption{Lz} $Z$, and add option \intextoption{Lbz} $Z_b$ if you want a bedrock thermal layer.  This additional specification is natural: the data used in ``bootstrapping'' will usually be two-dimensional.
 
 \subsection{Input file formats} The NetCDF format of a PISM\index{PISM!NetCDF file format}\index{NetCDF} output model state file is described by the CDL file
 \begin{center}\verb|pism/doc/pism_state.cdl|\end{center}
-\noindent The file used with ``\intextoption{if}'' must have this format.
+\noindent The file used with ``\intextoption{i}'' must have this format.
 
 The allowed formats for a bootstrapping file are relatively simple to describe.  The NetCDF dimensions \verb|t,x,y,z,zb| and corresponding variables must be present and match the choices in \verb|pism_state.cdl|, or in a PISM output file.  But any of the other two dimensional variables (depending on \verb|t,x,y|) may be missing, and for those missing values some heuristic will be applied.  All three dimensional variables (depending on \verb|t,x,y,z| or \verb|t,x,y,z|) will be ignored in bootstrapping.
 
@@ -538,7 +539,7 @@ P         YEAR:     ivol   iarea    meltf     thick0     temp0
 \end{verbatim}
 Here we explain what `\verb|Nr|' and `\verb|STEP|' in the flag line mean.
 
-\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of advection \cite{BBL}, requires and adaptive time-stepping scheme.
+\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection \cite{BBL}, requires an adaptive time-stepping scheme.
 
 Note that most of the time `\verb|N|' in the flag line will be zero.  The exception is when the option \verb|-skip| is used.  If \verb|-skip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do:\index{pismv}
 
@@ -550,7 +551,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-
 \caption{Meaning of the adaptive time-stepping flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{@{}llll}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
-\verb|c| & 3D CFL for temperature/age advection \cite{BBL} \\
+\verb|c| & CFL for temperature/age advection \cite{BBL} \\
 \verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
 \verb|e| & end of prescribed run time \\
 \verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme, \\
@@ -683,7 +684,7 @@ $ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
         -save_at 1000,1500,2000,5000
 \end{verbatim}
 will save snapshots on the first time-step after years 1000,1500,2000 and 5000.
-The list given to the \verb|-save_at| option can be at most 20 numbers long.
+The list given to the \verb|-save_at| option can be at most 200 numbers long.
 
 Another possible use of snapshots is for restarting runs on a batch system which kills jobs.
 Suppose that we know that we have a 8 wall-clock hours limit.   We may run PISM with
@@ -798,7 +799,7 @@ E & \verb|pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000|  \\
 F & \verb|pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000|  \\
 G & \verb|pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000|  \\
 H & \verb|pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso| \\
-I & \verb|pismv -test I -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11| \\
+I & \verb|pismv -test I -Mx 500 -My 5 -ssa_rtol 1e-6 -ksp_rtol 1e-11| \\
 J & \verb|pismv -test J -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12| \\
 K & \verb|pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000| \\
 L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
@@ -1502,13 +1503,13 @@ $ mpiexec -n 4 pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
 \end{verbatim}
 \noindent The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 
-Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use lower (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\und rtol}) and the linear iteration (\intextoption{ksp\und rtol}) to get more confidence in the numerical scheme:
+Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\und rtol}) and the linear iteration (\intextoption{ksp\und rtol}) to get more confidence in the numerical scheme:
 
 \begin{verbatim}
 $ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 -ssa \
         -ice_type custom -ice_custom_hardness 1.8e8 -ssa_rtol 1e-6 -ksp_rtol 1e-10 -o ross_out_1p8.nc
 \end{verbatim}
-\noindent Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnostic velocity computation.
+\noindent Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnostic velocity computation. %Jed
 
 \small
 \begin{table}[ht]

@@ -47,9 +47,9 @@ PetscTruth IceTypeUsesGrainSize(IceType *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,T=260,p=1e6;
   PetscReal ref = ice->flow(s,T,p,gs[0]);
   for (int i=1; i<4; i++) {
-    if (ice->flow(s,T,p,gs[i]) != ref) return PETSC_FALSE;
+    if (ice->flow(s,T,p,gs[i]) != ref) return PETSC_TRUE;
   }
-  return PETSC_TRUE;
+  return PETSC_FALSE;
 }
 
 
@@ -88,6 +88,7 @@ void CustomGlenIce::integratedViscosity(const PetscScalar store[], const PetscSc
   if (deta) *deta = power * *eta / (schoofReg + alpha);
 }
 
+PetscErrorCode CustomGlenIce::setDensity(PetscReal r) {rho = r; return 0;}
 PetscErrorCode CustomGlenIce::setExponent(PetscReal n) {exponent_n = n; return 0;}
 PetscErrorCode CustomGlenIce::setSchoofRegularization(PetscReal vel,PetscReal len) // Units: m/a and km
 {schoofVel = vel/secpera; schoofLen = len*1e3; schoofReg = PetscSqr(schoofVel/schoofLen); return 0;}
@@ -111,6 +112,7 @@ PetscErrorCode CustomGlenIce::setFromOptions()
     if (flg) {ierr = setSoftness(A);CHKERRQ(ierr);}
     ierr = PetscOptionsReal("-ice_custom_hardness","Hardness parameter B (Pa s^{1/n})","setHardness",B,&B,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setHardness(B);CHKERRQ(ierr);}
+    ierr = PetscOptionsReal("-ice_custom_density","Density rho (km m^{-1})","setDensity",rho,&rho,NULL);CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   return 0;
@@ -593,10 +595,14 @@ IceFactory::IceFactory(MPI_Comm c,const char pre[])
   comm = c;
   prefix[0] = 0;
   if (pre) {
-    strncpy(prefix,pre,sizeof(prefix));
+    PetscStrncpy(prefix,pre,sizeof(prefix));
   }
   if (registerAll()) {
-    PetscPrintf(comm,"IceFactory::registerAll returned an error but we're in a constructor");
+    PetscPrintf(comm,"IceFactory::registerAll returned an error but we're in a constructor\n");
+    PetscEnd();
+  }
+  if (setType(ICE_PB)) {       // Set's a default type
+    PetscPrintf(comm,"IceFactory::setType(\"%s\") returned an error, but we're in a constructor\n",ICE_PB);
     PetscEnd();
   }
 }
@@ -693,12 +699,13 @@ PetscErrorCode IceFactory::setTypeByNumber(int n)
 PetscErrorCode IceFactory::setFromOptions()
 {
   PetscErrorCode ierr;
+  PetscTruth flg;
+  char my_type_name[256];
 
   PetscFunctionBegin;
   {
     // This is for backwards compatibility only, -ice_type is the new way to choose ice
     // Note that it is not maintainable to have multiple options for the same thing
-    PetscTruth flg;
     PetscInt n;
     ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &n, &flg); CHKERRQ(ierr);
     if (flg) {
@@ -719,7 +726,8 @@ PetscErrorCode IceFactory::setFromOptions()
   ierr = PetscOptionsBegin(comm,prefix,"IceFactory options","IceType");CHKERRQ(ierr);
   {
     ierr = PetscOptionsList("-ice_type","Ice type","IceFactory::setType",
-                            type_list,type_name,type_name,sizeof(type_name),NULL);CHKERRQ(ierr);
+                            type_list,type_name,my_type_name,sizeof(my_type_name),&flg);CHKERRQ(ierr);
+    if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   PetscFunctionReturn(0);
