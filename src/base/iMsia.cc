@@ -247,7 +247,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
             delta[k] = 2.0 * pressure * enhancementFactor * flow;
 
-            // for Sigma, ignor mask value and assume SHEET; will be overwritten
+            // for Sigma, ignore mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
             Sigma[k] = delta[k] * PetscSqr(alpha) * pressure;
 

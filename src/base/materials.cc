@@ -20,8 +20,8 @@
 #include "pism_const.hh"
 
 IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
-  memset(prefix,0,sizeof(prefix));
-  if (pre) strncpy(prefix,pre,sizeof(prefix));
+  PetscMemzero(prefix,sizeof(prefix));
+  if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
   rho    = 910;          // kg/m^3       density
   beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
@@ -135,9 +135,8 @@ PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
   }
   ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
   if (iascii) {
-    ierr = PetscViewerASCIIPrintf(viewer,
-                                  "CustomGlenIce object (%s)\n"
-                                  "  n=%3g B=%8.1e v_schoof=%4f m/a L_schoof=%4f km\n",prefix,exponent_n,hardness_B,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"CustomGlenIce object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  n=%3g B=%8.1e v_schoof=%4f m/a L_schoof=%4f km\n",exponent_n,hardness_B,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
   } else {
     SETERRQ(1,"No binary viewer for this object\n");
   }
@@ -191,8 +190,8 @@ PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
   }
   ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
   if (iascii) {
-    ierr = PetscViewerASCIIPrintf(viewer,"ThermoGlenIce object (%s)\n",
-                                  "  v_schoof=%4f m/a L_schoof=%4f km\n",prefix,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"ThermoGlenIce object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  v_schoof=%4f m/a L_schoof=%4f km\n",schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
   } else {
     SETERRQ(1,"No binary viewer for this object\n");
   }
@@ -358,8 +357,8 @@ HybridIce::HybridIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
 }
 
 
-PetscScalar HybridIce::flow(const PetscScalar stress, const PetscScalar temp,
-                            const PetscScalar pressure, const PetscScalar gs) const {
+PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
+                            PetscScalar pressure, PetscScalar gs) const {
   /*
   This is the (forward) Goldsby-Kohlstedt flow law.  See:
   D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
@@ -440,6 +439,35 @@ GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pre
   return p;
 }
 /*****************/
+
+PetscErrorCode HybridIce::printInfo(PetscInt thresh) const {
+  PetscErrorCode ierr;
+  if (thresh <= getVerbosityLevel()) {
+    ierr = view(NULL);CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscErrorCode HybridIce::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,"HybridIce object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  No customizable options specific to HybridIce\n");CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  Derived from ThermoGlenIce with the following state\n");CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPushTab(viewer);CHKERRQ(ierr);
+    ierr = ThermoGlenIce::view(viewer);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPopTab(viewer);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
+  return 0;
+}
 
 
 HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[]) : HybridIce(c,pre) {
@@ -707,21 +735,23 @@ PetscErrorCode IceFactory::setFromOptions()
     // This is for backwards compatibility only, -ice_type is the new way to choose ice
     // Note that it is not maintainable to have multiple options for the same thing
     PetscInt n;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "-law", &n, &flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(prefix, "-law", &n, &flg); CHKERRQ(ierr);
     if (flg) {
       ierr = verbPrintf(1,comm,"Option `-law' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
       ierr = setTypeByNumber(n);CHKERRQ(ierr);
     }
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &flg); CHKERRQ(ierr);
-    if (flg) {
-      ierr = verbPrintf(1,comm,"Option `-gk_age' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
-      ierr = setType("hybrid");CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsHasName(PETSC_NULL, "-gk", &flg); CHKERRQ(ierr);
-    if (flg) {
-      ierr = verbPrintf(1,comm,"Option `-gk' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
-      ierr = setType("hybrid");CHKERRQ(ierr);
-    }
+  }
+  // These options will choose Goldsby-Kohlstedt ice by default (see IceModel::setFromOptions()) but if a derived class
+  // uses a different initialization procedure, we'll recognize them here as well.  A better long-term solution would be
+  // to separate tracking of grain size from a particular flow law (since in principle they are unrelated) but since
+  // HYBRID is the only one that currently uses grain size, this solution is acceptable.
+  ierr = PetscOptionsHasName(prefix, "-gk_age", &flg); CHKERRQ(ierr);
+  if (flg) {
+    ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsHasName(prefix, "-gk", &flg); CHKERRQ(ierr);
+  if (flg) {
+    ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
   }
   ierr = PetscOptionsBegin(comm,prefix,"IceFactory options","IceType");CHKERRQ(ierr);
   {

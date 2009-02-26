@@ -139,13 +139,19 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsHasName(PETSC_NULL, "-float_kill", &floatkillSet); CHKERRQ(ierr);
   if (floatkillSet == PETSC_TRUE)  floatingIceKilled = PETSC_TRUE;
 
-  // note "-gk" is used for specifying Goldsby-Kohlstedt ice; see also pism_const.cc
+  // note "-gk" is used for specifying Goldsby-Kohlstedt ice
   //   this form allows a constant value of grain size to be input in mm
   ierr = PetscOptionsGetReal(PETSC_NULL, "-gk", &constantGrainSize, &mygsConstantSet); CHKERRQ(ierr);
-  if (mygsConstantSet == PETSC_TRUE)  constantGrainSize *= 1.0e-3;
+  if (mygsConstantSet == PETSC_TRUE)  {
+    constantGrainSize *= 1.0e-3;
+    ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
+  }
 
-  // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice; see also pism_const.cc
+  // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
   ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &realAgeForGrainSize); CHKERRQ(ierr);
+  if (realAgeForGrainSize) {
+    ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
+  }
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-hold_tauc", &myholdTillYieldStress); CHKERRQ(ierr);
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;

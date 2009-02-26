@@ -46,6 +46,7 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
 PetscErrorCode IceExactSSAModel::setFromOptions() {
   PetscErrorCode ierr;
 
+  ierr = iceFactory.setFromOptions();CHKERRQ(ierr);
   ierr = iceFactory.create(&ice);CHKERRQ(ierr);
   // If the user left things alone, we'll have a CustomGlenIce
   CustomGlenIce *cust = dynamic_cast<CustomGlenIce*>(ice);

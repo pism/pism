@@ -176,6 +176,8 @@ struct GKparts {
 class HybridIce : public ThermoGlenIce {
 public:
   HybridIce(MPI_Comm c,const char pre[]);
+  virtual PetscErrorCode printInfo(PetscInt) const;
+  virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
