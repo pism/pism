@@ -94,6 +94,8 @@ PetscErrorCode CustomGlenIce::setSchoofRegularization(PetscReal vel,PetscReal le
 {schoofVel = vel/secpera; schoofLen = len*1e3; schoofReg = PetscSqr(schoofVel/schoofLen); return 0;}
 PetscErrorCode CustomGlenIce::setSoftness(PetscReal A) {softness_A = A; hardness_B = pow(A,-1/exponent_n); return 0;}
 PetscErrorCode CustomGlenIce::setHardness(PetscReal B) {hardness_B = B; softness_A = pow(B,-exponent_n); return 0;}
+PetscScalar CustomGlenIce::exponent() const { return exponent_n; }
+PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return hardness_B; }
 
 PetscErrorCode CustomGlenIce::setFromOptions()
 {

@@ -142,6 +142,8 @@ public:
     *nuH = nNuH * ref.IntegratedViscosity();
     if (dNuH) *dNuH = ndNuH * ref.IntegratedViscosity() / ref.StrainRate2();
   }
+  virtual PetscScalar exponent() const { return 1/(p-1); }
+  virtual PetscScalar hardnessParameter(PetscScalar T) const { return B0 * ref.IntegratedViscosity(); } // probably wrong scaling
 protected:
   // The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
   PetscScalar secondInvariantDu(const PetscScalar Du[]) const

@@ -923,17 +923,15 @@ PetscErrorCode IceModel::correctSigma() {
         ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         for (PetscInt k=0; k<ks; ++k) {
-          // Comment by Jed 2009-02-20: The following is really messy and wrong.  It seems to me that SIA velocities
-          // should be available here so we can actually use them to compute a full (3x3) strain rate tensor and feed
-          // that to the constitutive relation to get a stress.  Then multiply that stress by strain to get Sigma.  The
-          // following is a hack that preserves the old behavior while getting hardnessParameter out of IceType.
-          ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
-          if (!tgi) SETERRQ(1,"Ice type is not derived from ThermoGlenIce, don't know how to correct Sigma");
-          // use hydrostatic pressure; presumably this is not quite right in context 
+          // use hydrostatic pressure; presumably this is not quite right in context
           //   of shelves and streams; here we hard-wire the Glen law
-          const PetscScalar n_glen  = tgi->exponent(),
-                            Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
-                            BofT    = tgi->hardnessParameter(T[k]); // homologous??
+          const PetscScalar
+            n_glen  = ice->exponent(),
+            Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+            Tstar   = T[k] + ice->beta_CC_grad * (H[i][j] - grid.zlevels[k]),
+            // Use pressure-adjusted temperature and account for the enhancement factor Note, enhancement factor is not
+            // used in SSA anyway.  Should we get rid of it completely?  If not, what is most consistent here?
+            BofT    = ice->hardnessParameter(Tstar) * pow(enhancementFactor,-1/n_glen);
           if (addVels) {
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
             Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);
