@@ -58,7 +58,7 @@ PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName) {
 
 
 PetscErrorCode IceModel::createOneViewerIfDesired(const char singleCharName,
-                                                  const char* title) {
+                                                  const char* /*title*/) {
   return createOneViewerIfDesired(&(runtimeViewers[cIndex(singleCharName)]),
                                   singleCharName,tn[cIndex(singleCharName)].title);
 }
@@ -461,7 +461,7 @@ PetscErrorCode IceModel::updateViewers() {
 }
 
 
-PetscErrorCode IceModel::updateNuViewers(IceModelVec2 vNu[2], IceModelVec2 vNuOld[2], bool updateNu_tView) {
+PetscErrorCode IceModel::updateNuViewers(IceModelVec2 vNu[2], IceModelVec2 /*vNuOld*/[2], bool /*updateNu_tView*/) {
   // this one is called when solving an SSA system
   PetscErrorCode ierr;
   if (runtimeViewers[cIndex('n')] != PETSC_NULL) {

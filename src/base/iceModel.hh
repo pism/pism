@@ -25,6 +25,7 @@
 #include <petscsnes.h>
 
 #include "materials.hh"
+#include "iceShelfExtension.hh"
 #include "pism_const.hh"
 #include "grid.hh"
 #include "beddefLC.hh"
@@ -122,6 +123,7 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFactory &getIceFactory() { return iceFactory; }
   virtual IceType *getIce() {return ice;}
+  virtual IceShelfExtension &getShelfExtension() { return shelfExtension; }
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -165,6 +167,7 @@ protected:
   DeformableEarthType   bed_deformable;
   SeaWaterType          ocean;
   FreshWaterType        porewater;
+  IceShelfExtension     shelfExtension;
 
   PISMAtmosphereCoupler *atmosPCC;
   IceInfoNeededByAtmosphereCoupler info_atmoscoupler;
@@ -207,7 +210,6 @@ protected:
   PetscReal   maxdt, muSliding, enhancementFactor, initial_age_years_default,
               dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
               dt_force,
-              constantNuHForSSA, constantHardnessForSSA, min_thickness_SSA,
               ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo,
               plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold,
@@ -231,7 +233,7 @@ protected:
               initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi,
               useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
-              doSuperpose, useConstantNuHForSSA, 
+              doSuperpose, useConstantNuHForSSA,
               computeSurfGradInwardSSA,
               leaveNuHAloneSSA, shelvesDragToo,
               yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled,

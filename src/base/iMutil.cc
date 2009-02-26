@@ -85,6 +85,8 @@ PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
     ierr = iceFactory.create(&ice);CHKERRQ(ierr);
     ierr = ice->setFromOptions();CHKERRQ(ierr); // Set options specific to this particular ice type
   }
+  ierr = shelfExtension.setIce(ice);CHKERRQ(ierr);
+  ierr = shelfExtension.setFromOptions();CHKERRQ(ierr);
 
   if (i_set) {
     if (boot_from_set) {

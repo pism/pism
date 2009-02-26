@@ -112,7 +112,7 @@ public:
   }
   #undef __FUNCT__
   #define __FUNCT__ "CustomIce::view"
-  virtual PetscErrorCode view(PetscViewer viewer) {
+  virtual PetscErrorCode view(PetscViewer viewer) const {
     PetscErrorCode ierr;
     PetscTruth iascii;
 
@@ -255,25 +255,6 @@ PetscErrorCode SSACreate(IceGrid *grid,SSA *inssa)
   ierr = PetscHeaderCreate(ssa,_p_SSA,struct _SSAOps,SSA_COOKIE,0,"SSA",grid->com,SSADestroy,SSAView);CHKERRQ(ierr);
   ssa->grid = grid;
 
-  {
-    // \todo These defaults are copied(!) from iMdefaults.cc.  I want to move all the SSA stuff into the SSA module, but
-    // I need to test some things first.
-    const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-    const PetscScalar DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-    //const PetscScalar DEFAULT_MINH_SSA = 5.0;
-    const PetscScalar DEFAULT_MINH_SSA = 50.0;
-          // m; minimum thickness (for SSA velocity computation) at which
-          // NuH switches from vertical integral to constant value
-          // this value strongly related to calving front
-          // force balance, but the geometry itself is not affected by this value
-    const PetscScalar DEFAULT_CONSTANT_NUH_FOR_SSA
-      = DEFAULT_MINH_SSA * DEFAULT_CONSTANT_HARDNESS_FOR_SSA / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-    // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of 30 MPa yr for \bar\nu
-
-    ierr = SSASetFictitiousNuH(ssa,DEFAULT_CONSTANT_NUH_FOR_SSA);CHKERRQ(ierr);
-    ierr = SSASetCutoffThickness(ssa,DEFAULT_MINH_SSA);CHKERRQ(ierr);
-  }
-
   *inssa = ssa;
   PetscFunctionReturn(0);
 }
@@ -338,21 +319,11 @@ PetscErrorCode SSASetOceanType(SSA ssa,SeaWaterType *ocean)
 
 #undef __FUNCT__
 #define __FUNCT__ "SSASetFictitiousNuH"
-PetscErrorCode SSASetFictitiousNuH(SSA ssa,PetscReal nuH)
+PetscErrorCode SSASetShelfExtension(SSA ssa,IceShelfExtension *sext)
 {
   PetscFunctionBegin;
   PetscValidHeaderSpecific(ssa,SSA_COOKIE,1);
-  ssa->fictitious_nuH = nuH;
-  PetscFunctionReturn(0);
-}
-
-#undef __FUNCT__
-#define __FUNCT__ "SSASetCutoffThickness"
-PetscErrorCode SSASetCutoffThickness(SSA ssa,PetscReal ct)
-{
-  PetscFunctionBegin;
-  PetscValidHeaderSpecific(ssa,SSA_COOKIE,1);
-  ssa->cutoff_thickness = ct;
+  ssa->shelfExtension = sext;
   PetscFunctionReturn(0);
 }
 
@@ -379,8 +350,6 @@ PetscErrorCode SSASetFromOptions(SSA ssa)
     }
     ierr = PetscOptionsTruth("-ssa_da_periodic","Use DA_XYPERIODIC for SSA (instead of DA_NONPERIODIC with natural boundary conditions","",periodic,&periodic,NULL);CHKERRQ(ierr);
     ssa->wrap = periodic ? DA_XYPERIODIC : DA_NONPERIODIC;
-    ierr = PetscOptionsReal("-ssa_fictitious_nuH","Extend nuH by this when less than cutoff_thickness","SSASetFictitiousNuH",ssa->fictitious_nuH,&ssa->fictitious_nuH,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ssa_cutoff_thickness","Thickness below which fictitious_nuH is used","SSASetCutoffThickness",ssa->cutoff_thickness,&ssa->cutoff_thickness,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsTruth("-ssa_initial_guess_nonzero","use nonzero inital velocity","",ssa->initialGuessNonzero,&ssa->initialGuessNonzero,NULL);CHKERRQ(ierr);
     // The following boundary condition options are all off by default
     ierr = PetscOptionsTruth("-ssa_boundary_floating_stress_free",
@@ -409,6 +378,7 @@ PetscErrorCode SSASetFromOptions(SSA ssa)
 
   {
     CustomIce *c = dynamic_cast<CustomIce*>(ssa->ice);
+    // Only call setFromOptions if we created the ice---so it hasn't been called already
     if (c) {
       ierr = c->setFromOptions();CHKERRQ(ierr);
     }
@@ -562,6 +532,10 @@ PetscErrorCode SSASolve(SSA ssa,IceModelVec2 &ubar,IceModelVec2 &vbar)
 
   PetscFunctionBegin;
   PetscValidHeaderSpecific(ssa,SSA_COOKIE,1);
+  if (!ssa->ice)            SETERRQ(1,"The ice type for the SSA solver must be set with SSASetIceType\n");
+  if (!ssa->basal)          SETERRQ(1,"The basal type for the SSA solver must be set with SSASetBasalType\n");
+  if (!ssa->ocean)          SETERRQ(1,"The ocean type for the SSA solver must be set with SSASetOceanType\n");
+  if (!ssa->shelfExtension) SETERRQ(1,"The ice shelf extension for the SSA solver must be set with SSASetShelfExtension\n");
   if (ssa->setupcalled < SETUP_CURRENT) {
     ierr = SSAUpdateNodalSIAVelocity(ssa);CHKERRQ(ierr);
     // Debugging discovered that these were not up to date.  Since we (IceModelVec) control access to modification of
@@ -619,14 +593,8 @@ PetscErrorCode SSAView(SSA ssa,PetscViewer viewer)
       ierr = PetscViewerASCIIPopTab(viewer);CHKERRQ(ierr);
     }
     ierr = PetscViewerASCIIPrintf(viewer,"setup state: %s\n",PismSetupStateName[ssa->setupcalled]);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"Fictitious nuH (Pa s m): %g\n",ssa->fictitious_nuH);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"Cutoff thickness (m): %g\n",ssa->cutoff_thickness);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"Regularization length (Schoof's definition, meters): %g\n",ssa->regularizingLengthSchoof);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"Regularization velocity (m): %g\n",ssa->regularizingVelocitySchoof);CHKERRQ(ierr);
-    {
-      CustomIce *c = dynamic_cast<CustomIce*>(ssa->ice);
-      if (c) c->view(viewer);
-    }
+    ierr = ssa->ice->view(viewer);CHKERRQ(ierr);
+    ierr = ssa->shelfExtension->view(viewer);CHKERRQ(ierr);
     ierr = ssa->ref.View(viewer);CHKERRQ(ierr);
     ierr = DAView(ssa->da,viewer);CHKERRQ(ierr);
     ierr = PetscViewerASCIIPopTab(viewer);CHKERRQ(ierr);

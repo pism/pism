@@ -98,12 +98,11 @@ struct _p_SSA {
   IceType          *ice;
   PlasticBasalType *basal;
   SeaWaterType     *ocean;
+  IceShelfExtension *shelfExtension;
   IceModelVec2     *siaVel;     // Points at start of array of two vectors with SIA values on staggered grid (uvbar)
   IceModelVec2     *mask,*H,*h,*bed,*tauc;
   IceModelVec3     *T;
   PismSetupState    setupcalled; // 0 the first time around, 1 when field are updated, 2 when everything is current
-  PetscReal         fictitious_nuH,cutoff_thickness;
-  PetscReal         regularizingVelocitySchoof,regularizingLengthSchoof,regSchoof;
   PetscTruth        initialGuessNonzero;
   DAPeriodicType    wrap;
   Vec               x,r,siaVelLocal;

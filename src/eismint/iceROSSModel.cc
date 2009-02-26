@@ -39,19 +39,15 @@ IceROSSModel::IceROSSModel(IceGrid &g)
            // shear-thinning way (except will extend shelf using constantNuHForSSA below,
            // also as usual)
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
-  constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; (MacAyeal et al 1996) value
   ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
-  
-  // this calculation of shelf extension strength is same as default for IceModel,
-  // but we might want to make it depend on options
-  const PetscScalar typicalStrainRate = (100.0 / secpera) / (100.0 * 1.0e3);  
-     // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-//  constantNuHForSSA = min_thickness_SSA * constantHardnessForSSA
-//                      / (2.0 * pow(typicalStrainRate,2./3.));
-  constantNuHForSSA = 5.0 * constantHardnessForSSA
-                      / (2.0 * pow(typicalStrainRate,2./3.));
-     // Pa s m; critical quantity for adjusting force boundary
-     // condition at calving front 
+
+  // Ross validation uses isothermal ice by default
+  iceFactory.setType(ICE_CUSTOM);
+  // Most of these are defaults anyway, but this is how to go about setting defaults
+  shelfExtension.setThickness(5);
+  shelfExtension.setTemperature(263.15);
+  // Typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
+  shelfExtension.setStrainRate((100.0 / secpera) / (100.0 * 1.0e3));
 }
 
 
@@ -83,6 +79,28 @@ PetscErrorCode IceROSSModel::destroyROSSVecs() {
   return 0;
 }
 
+PetscErrorCode IceROSSModel::setFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = iceFactory.setFromOptions();CHKERRQ(ierr);
+  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
+  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
+  if (cgi) {
+    ierr = cgi->setHardness(1.9e8);CHKERRQ(ierr); // Pa s^{1/3}; (MacAyeal et al 1996) value
+    // This sets a default hardness parameter if CustomGlenIce is chosen (the default we set in the constructor).
+    // The user will still be able to override it without a warning
+  }
+  ierr = ice->setFromOptions();CHKERRQ(ierr);
+  if (!cgi) {
+    ierr = verbPrintf(2,grid.com,
+                      "WARNING: Not using CustomGlenIce so cannot set hardness defaults\n"
+                      "         (Perhaps you chose something else with -ice_type xxx)\n"
+                      "         Details on your chosen ice follows\n"); CHKERRQ(ierr);
+    ierr = ice->printInfo(2);CHKERRQ(ierr);
+  }
+  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
+  return 0;
+}
 
 PetscErrorCode IceROSSModel::initFromOptions(PetscTruth doHook) {
   PetscErrorCode  ierr;

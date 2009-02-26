@@ -92,7 +92,7 @@ ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinverse.cc    \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
-	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc \
+	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc iceShelfExtension.cc \
 	extrasGSL.cc forcing.cc pPDDcoupler.cc pccoupler.cc ssa.cc ssafe.cc pism_revision.cc
 ice_csources := cubature.c pism_signal.c
 

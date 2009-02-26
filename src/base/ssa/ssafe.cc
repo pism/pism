@@ -360,8 +360,8 @@ static inline PetscErrorCode PointwiseNuHAndBeta(SSA ssa,const FEStoreNode *feS,
 {
 
   PetscFunctionBegin;
-  if (feS->H < ssa->cutoff_thickness) {
-    *nuH = ssa->fictitious_nuH;
+  if (feS->H < ssa->shelfExtension->thickness()) {
+    *nuH = ssa->shelfExtension->viscosity();
     if (dNuH) *dNuH = 0;
     //SETERRQ(1,"Shold not happen for test I");
   } else {

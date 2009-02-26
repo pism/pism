@@ -103,7 +103,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
   // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
   if (my_useConstantNuH == PETSC_TRUE) {
-    useConstantNuHForSSA = PETSC_TRUE;
     setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s m
   }
 

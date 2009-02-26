@@ -199,8 +199,6 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
   //   fill in parameters and flags in app ctx
   user.schoofReg = PetscSqr((1/secpera)/1e6); // Now incorporated in the rheology (i.e. IceType)
-  user.constantHardness = constantHardnessForSSA;
-  user.useConstantHardness = PETSC_FALSE; // This option no longer exists: useConstantHardnessForSSA;
   user.useConstantNu = useConstantNuHForSSA;  
   user.usePlasticBasalType = PETSC_TRUE;
   

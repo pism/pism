@@ -19,11 +19,16 @@
 #ifndef _PISM_SSA_HH
 #define _PISM_SSA_HH
 
+// Forward declarations so that everything depending on this doesn't need to be recompiled if the headers change.  This
+// file never needs to know the definitions of these objects.
 typedef struct _p_PetscViewer *PetscViewer;
 class IceGrid;
 class IceModelVec2;
 class IceModelVec3;
+class PlasticBasalType;
+class SeaWaterType;
 class IceType;
+class IceShelfExtension;
 
 typedef struct _p_SSA *SSA;
 
@@ -58,8 +63,7 @@ extern PetscErrorCode SSASetBasalType(SSA,PlasticBasalType*);
 extern PetscErrorCode SSASetOceanType(SSA,SeaWaterType*);
 extern PetscErrorCode SSASetFields(SSA,IceModelVec2 *mask,IceModelVec2 *sia_uvbar,IceModelVec2 *H,IceModelVec2 *h,IceModelVec2 *b,IceModelVec2 *tauc,IceModelVec3 *T);
 extern PetscErrorCode SSAUpdateNodalSIAVelocity(SSA ssa);
-extern PetscErrorCode SSASetFictitiousNuH(SSA,PetscReal);
-extern PetscErrorCode SSASetCutoffThickness(SSA,PetscReal);
+extern PetscErrorCode SSASetShelfExtension(SSA,IceShelfExtension*);
 extern PetscErrorCode SSARegister(const char sname[],const char path[],const char name[],PetscErrorCode (*function)(SSA));
 extern PetscErrorCode SSAInitializePackage(const char path[]);
 extern PetscErrorCode SSAMapToSplitVecs(SSA ssa,IceModelVec2 &ubar,IceModelVec2 &vbar);

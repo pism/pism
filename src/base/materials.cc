@@ -116,9 +116,29 @@ PetscErrorCode CustomGlenIce::setFromOptions()
   return 0;
 }
 
-PetscErrorCode CustomGlenIce::printInfo(PetscInt verb) const {
+PetscErrorCode CustomGlenIce::printInfo(PetscInt thresh) const {
   PetscErrorCode ierr;
-  ierr = verbPrintf(verb,comm,"CustomGlenIce n=%3g B=%8.1e v_schoof=%4f m/a L_schoof=%4f km\n",exponent_n,hardness_B,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+  if (thresh <= getVerbosityLevel()) {
+    ierr = view(NULL);CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,
+                                  "CustomGlenIce object (%s)\n"
+                                  "  n=%3g B=%8.1e v_schoof=%4f m/a L_schoof=%4f km\n",prefix,exponent_n,hardness_B,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
   return 0;
 }
 
@@ -152,9 +172,28 @@ PetscErrorCode ThermoGlenIce::setFromOptions() {
   return 0;
 }
 
-PetscErrorCode ThermoGlenIce::printInfo(PetscInt verb) const {
+PetscErrorCode ThermoGlenIce::printInfo(PetscInt thresh) const {
   PetscErrorCode ierr;
-  ierr = verbPrintf(verb,comm,"ThermoGlenIce v_schoof=%4f m/a L_schoof=%4f km\n",schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+  if (thresh <= getVerbosityLevel()) {
+    ierr = view(NULL);CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,"ThermoGlenIce object (%s)\n",
+                                  "  v_schoof=%4f m/a L_schoof=%4f km\n",prefix,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
   return 0;
 }
 

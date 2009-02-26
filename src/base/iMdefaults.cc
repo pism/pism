@@ -71,18 +71,6 @@ const PetscTruth  DEFAULT_DO_SUPERPOSE = PETSC_FALSE;
 const PetscInt    DEFAULT_MAX_ITERATIONS_SSA = 300;
 const PetscTruth  DEFAULT_USE_CONSTANT_NUH_FOR_SSA = PETSC_FALSE;
 const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA = PETSC_FALSE;
-const PetscScalar DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-const PetscScalar DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-//const PetscScalar DEFAULT_MINH_SSA = 5.0;  
-const PetscScalar DEFAULT_MINH_SSA = 50.0;  
-          // m; minimum thickness (for SSA velocity computation) at which 
-          // NuH switches from vertical integral to constant value
-          // this value strongly related to calving front
-          // force balance, but the geometry itself is not affected by this value
-const PetscScalar DEFAULT_CONSTANT_NUH_FOR_SSA
-                    = DEFAULT_MINH_SSA * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
-                      / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-// COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of 30 MPa yr for \bar\nu
 
 // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
 // appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
@@ -158,9 +146,6 @@ PetscErrorCode IceModel::setDefaults() {
   doSuperpose = DEFAULT_DO_SUPERPOSE;
   ssaMaxIterations = DEFAULT_MAX_ITERATIONS_SSA;
   useConstantNuHForSSA = DEFAULT_USE_CONSTANT_NUH_FOR_SSA;
-  constantNuHForSSA = DEFAULT_CONSTANT_NUH_FOR_SSA;
-  constantHardnessForSSA = DEFAULT_CONSTANT_HARDNESS_FOR_SSA;
-  min_thickness_SSA = DEFAULT_MINH_SSA;
   ssaRelativeTolerance = DEFAULT_SSA_RELATIVE_CONVERGENCE;
   ssaEpsilon = DEFAULT_EPSILON_SSA;
   computeSurfGradInwardSSA = DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA;

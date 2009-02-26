@@ -61,6 +61,7 @@ public:
   virtual ~IceType() {}
   virtual PetscErrorCode setFromOptions() {return 0;}
   virtual PetscErrorCode printInfo(PetscInt) const {return 0;}
+  virtual PetscErrorCode view(PetscViewer) const {return 0;}
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const = 0;
   // returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
   virtual PetscScalar effectiveViscosityColumn(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
@@ -94,6 +95,7 @@ public:
   PetscErrorCode setSchoofRegularization(PetscReal vel,PetscReal len);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
+  virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
   virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar[],
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
@@ -113,6 +115,7 @@ public:
   ThermoGlenIce(MPI_Comm c,const char pre[]);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
+  virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar[],
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,

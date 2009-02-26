@@ -150,14 +150,6 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     useConstantTillPhi = PETSC_FALSE;
   }  
 
-  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
-  const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
-  constantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
-                      / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-  //ierr = verbPrintf(2,grid.com, "IcePSTexModel::setFromOptions() says constantNuHForSSA=%e\n",
-  //                  constantNuHForSSA); CHKERRQ(ierr);
-
   return 0;
 }
 

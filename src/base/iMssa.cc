@@ -46,8 +46,7 @@ PetscErrorCode IceModel::initSSA() {
     ierr = SSASetIceType(ssa,ice);CHKERRQ(ierr);
     ierr = SSASetOceanType(ssa,&ocean);CHKERRQ(ierr);
     ierr = SSASetBasalType(ssa,basal);CHKERRQ(ierr);
-    ierr = SSASetFictitiousNuH(ssa,constantNuHForSSA);CHKERRQ(ierr);
-    ierr = SSASetCutoffThickness(ssa,min_thickness_SSA);CHKERRQ(ierr);
+    ierr = SSASetShelfExtension(ssa,&shelfExtension);CHKERRQ(ierr);
     ierr = SSASetFromOptions(ssa);CHKERRQ(ierr);
     return 0;
   }
@@ -109,8 +108,11 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   CHECK_NOT_SSA_EXTERNAL(ssa);
 
   if (useConstantNuHForSSA == PETSC_TRUE) {
-    ierr = vNuH[0].set(constantNuHForSSA); CHKERRQ(ierr);
-    ierr = vNuH[1].set(constantNuHForSSA); CHKERRQ(ierr);
+    // Intended only for debugging, this treats the entire domain as though it was the ice-shelf extension
+    // (i.e. strength does not even depend on thickness)
+    PetscReal nuH = shelfExtension.viscosity();
+    ierr = vNuH[0].set(nuH); CHKERRQ(ierr);
+    ierr = vNuH[1].set(nuH); CHKERRQ(ierr);
     return 0;
   }
 
@@ -128,10 +130,10 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (H[i][j] < min_thickness_SSA) {
-          nuH[o][i][j] = constantNuHForSSA;  // this choice extends a shelf into the ice
-                       // free region, in terms of the resulting membrane stress (and
-                       // not by adding or subtracting ice)
+        if (H[i][j] < shelfExtension.thickness()) {
+          // Extends a shelf into the ice free region, in terms of the resulting membrane strength
+          // (and not by adding or subtracting ice)
+          nuH[o][i][j] = shelfExtension.viscosity();
         } else {
           const PetscInt      oi = 1-o, oj=o;
           const PetscScalar   dx = grid.dx, 
@@ -642,13 +644,11 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   epsilon = ssaEpsilon;
 
   ierr = verbPrintf(4,grid.com,
-     "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d\n",
-     ssaEpsilon, ssaMaxIterations); CHKERRQ(ierr);
+     "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d, ssaRelativeTolerance = %10.5e]\n",
+     ssaEpsilon, ssaMaxIterations,ssaRelativeTolerance); CHKERRQ(ierr);
   ierr = ice->printInfo(4);CHKERRQ(ierr);
-  ierr = verbPrintf(4,grid.com,
-     "   constantHardnessForSSA = %10.5e, ssaRelativeTolerance = %10.5e]\n",
-    constantHardnessForSSA, ssaRelativeTolerance); CHKERRQ(ierr);
-  
+  ierr = shelfExtension.printInfo(4);CHKERRQ(ierr);
+
   // this only needs to be done once; right hand side of system
   //   does not depend on solution; note solution changes under nonlinear iteration
   //   so matrix must be recomputed in loop over k below

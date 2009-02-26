@@ -98,9 +98,11 @@ public:
                 const PetscScalar year, const PetscScalar dt, 
                 const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
                 const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+  using IceModel::basalDragx;
   virtual PetscScalar    basalDragx(PetscScalar **tauc,
                                     PetscScalar **u, PetscScalar **v,
                                     PetscInt i, PetscInt j) const;
+  using IceModel::basalDragy;
   virtual PetscScalar    basalDragy(PetscScalar **tauc,
                                     PetscScalar **u, PetscScalar **v,
                                     PetscInt i, PetscInt j) const;

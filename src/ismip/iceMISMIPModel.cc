@@ -75,11 +75,8 @@ PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar H, const Petsc
                            const PetscScalar u_x, const PetscScalar u_y,
                            const PetscScalar v_x, const PetscScalar v_y,
                            const PetscScalar *T1, const PetscScalar *T2) const  {
-  PetscPrintf(PETSC_COMM_SELF,
-        "\n\n\n\nMISMIPIce::effectiveViscosityColumn() should never be called because\n"
-        "  ice has constant hardness (useConstantHardnessForSSA = PETSC_TRUE)\n\n\n\n");
-  PetscEnd();
-  return 0;
+  // This is standard isothermal flow with usual regularization (1 m/a per 1000 km)
+  return H * B_MISMIP / 2 * pow(1e-27 + secondInvariant(u_x,u_y,v_x,v_y), (1-n)/(2*n));
 }
 
 
@@ -351,7 +348,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   useSSAVelocity            = PETSC_TRUE;
   computeSurfGradInwardSSA  = PETSC_FALSE;
   transformForSurfaceGradient = PETSC_TRUE;
-  constantHardnessForSSA    = mismip_ice->hardnessParameter(273.15); // temp. irrelevant
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
 

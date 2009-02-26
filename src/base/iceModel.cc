@@ -24,7 +24,8 @@
 #include "pism_signal.h"
 #include "ssa/pismssa.hh"
 
-IceModel::IceModel(IceGrid &g): grid(g), iceFactory(grid.com,NULL), ice(NULL) {
+IceModel::IceModel(IceGrid &g)
+  : grid(g), iceFactory(grid.com,NULL), ice(NULL), shelfExtension(grid.com,NULL) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -499,7 +500,7 @@ void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
 
 void IceModel::setConstantNuHForSSA(PetscScalar nuH) {
   useConstantNuHForSSA = PETSC_TRUE;
-  constantNuHForSSA = nuH;
+  shelfExtension.forceNuH(nuH);
 }
 
 
