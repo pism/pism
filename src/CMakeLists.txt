@@ -4,6 +4,10 @@ add_library (pismnum
 
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION}\"')
+set_source_files_properties (udunits/utlib.c
+  PROPERTIES COMPILE_FLAGS
+  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/lib/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
+
 include_directories (base udunits)
 
 add_library (pismbase
@@ -62,8 +66,6 @@ add_library (pismudunits
   udunits/utlib.c
   udunits/utparse.c
   udunits/utscan.c)
-set_target_properties (pismudunits
-  PROPERTIES COMPILE_DEFINITIONS UT_DEFAULT_PATH="${CMAKE_INSTALL_PREFIX}/lib/udunits.dat")
 
 # All Pism executables must link against this
 set (Pism_LIBS pismbase pismnum pismudunits ${Pism_EXTERNAL_LIBS})
@@ -103,7 +105,7 @@ install (TARGETS
   ARCHIVE DESTINATION lib)
 
 install (FILES
-  "${CMAKE_CURRENT_SOURCE_DIR}/udunits/udunits.dat"
+  "${CMAKE_CURRENT_SOURCE_DIR}/udunits/pismudunits.dat"
   DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
 

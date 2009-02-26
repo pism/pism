@@ -42,7 +42,8 @@ endif
 
 # Flags needed by UDUNITS:
 UDUNITS_CFLAGS   = -c -O2 -fPIC
-UDUNITS_CPPFLAGS = -DUT_DEFAULT_PATH='"$(PISM_PREFIX)/lib/udunits.dat"' -DNDEBUG -Df2cFortran
+UDUNITS_CPPFLAGS = -DUT_INSTALL_PATH='"$(PISM_PREFIX)/lib/pismudunits.dat"' \
+	-DUT_SOURCE_PATH='"$(PISM_PREFIX)/lib/pismudunits.dat"' -DNDEBUG -Df2cFortran
 
 # Flags related to building libraries; defaults are for GNU/Linux
 SHARED = -shared
@@ -152,7 +153,7 @@ $(ud_objects): %.o: %.c
 
 $(LIBUDUNITS): $(ud_objects)
 	$(BUILD_LIB) $@ $^
-	cp ../src/udunits/udunits.dat ../lib/
+	cp ../src/udunits/pismudunits.dat ../lib/
 
 #build default executables
 
@@ -255,7 +256,7 @@ depclean:
 
 distclean: clean
 	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
-            ../lib/udunits.dat
+            ../lib/pismudunits.dat
 
 # This is to avoid recreating .d files if you all you need is 'make clean' or
 # 'make distclean':

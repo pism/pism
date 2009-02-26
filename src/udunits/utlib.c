@@ -1003,11 +1003,28 @@ utInit(path)
 {
     int		status;
     char	pathbuf[PATH_MAX+1];
+    FILE        *file = NULL;
 
     if (path == NULL || path[0] == 0) {
+      /* First try PISMUDUNITS_PATH, then UT_INSTALL_PATH (this macro is where we will put pismudunits.dat if PISM is
+      * installed, i.e. using CMake) and finally UT_SOURCE_PATH which is that copy that sits in the PISM source
+      * directory.  This is needed to work correctly without installing and also work correctly if the build directory
+      * is removed after installing. */
         path    = getenv("PISMUDUNITS_PATH");
-        if (path == NULL || path[0] == 0)
-	    path = strcpy(pathbuf, UT_DEFAULT_PATH);
+        if (path == NULL || path[0] == 0 || !(file = fopen(path,"r"))) {
+          path = strcpy(pathbuf, UT_INSTALL_PATH);
+          if (!(file = fopen(path, "r"))) {
+            path = strcpy(pathbuf, UT_SOURCE_PATH);
+            if (!(file = fopen(path, "r"))) {
+              fprintf(stderr,
+                      "PISM can't find pismudunits.dat, perhaps PISM has not been installed and you have moved\n"
+                      "or deleted the build directory.  Please set the environment variable PISMUDUNITS_PATH\n"
+                      "to $PISM_BUILD_DIR/src/udunits/pismudunits.dat\n");
+              return 1;
+            }
+          }
+        }
+        if (file) fclose(file);
     }
 
     if (initialized && strcmp(path, UnitsFilePath) == 0) {
