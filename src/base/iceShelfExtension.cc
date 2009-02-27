@@ -82,10 +82,10 @@ PetscErrorCode IceShelfExtension::setFromOptions() {
   pice = (PetscTruth)(ice == private_ice);
   ierr = PetscOptionsBegin(comm,prefix,"IceShelfExtension options",NULL);CHKERRQ(ierr);
   {
-    ierr = PetscOptionsReal("-shelfext_T","extension temperature","setTemperature",T,&T,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-shelfext_H","extension thickness","setThickness",H,&H,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-shelfext_Du","extension strain rate","setStrainRate",Du,&Du,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-shelfext_force_nuH","Just force a particular strength (not used if negative)","forceNuH",force_nuH,&force_nuH,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-shelfext_T","extension temperature (K)","setTemperature",T,&T,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-shelfext_H","extension thickness (m)","setThickness",H,&H,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-shelfext_Du","extension strain rate (s^{-1})","setStrainRate",Du,&Du,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-shelfext_force_nuH","Just force a particular strength (Pa s, not used if negative)","forceNuH",force_nuH,&force_nuH,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsTruth("-shelfext_use_private_ice","Don't use any ice we are given, instead use the private one","",pice,&pice,NULL);CHKERRQ(ierr);
   }
   if (pice) ice = private_ice;

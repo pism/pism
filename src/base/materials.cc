@@ -107,14 +107,15 @@ PetscErrorCode CustomGlenIce::setFromOptions()
   {
     ierr = PetscOptionsReal("-ice_custom_n","Power-law exponent","setExponent",n,&n,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setExponent(n);CHKERRQ(ierr);}
-    ierr = PetscOptionsReal("-ice_custom_schoof_vel","Regularizing velocity (Schoof definition, m/a)","setSchoofRegularization",svel,&svel,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ice_custom_schoof_len","Regularizing length (Schoof definition, km)","setSchoofRegularization",slen,&slen,NULL);CHKERRQ(ierr);
-    ierr = setSchoofRegularization(svel,slen);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-ice_custom_softness","Softness parameter A (Pa^{-n} s^{-1})","setSoftness",A,&A,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setSoftness(A);CHKERRQ(ierr);}
     ierr = PetscOptionsReal("-ice_custom_hardness","Hardness parameter B (Pa s^{1/n})","setHardness",B,&B,&flg);CHKERRQ(ierr);
     if (flg) {ierr = setHardness(B);CHKERRQ(ierr);}
     ierr = PetscOptionsReal("-ice_custom_density","Density rho (km m^{-1})","setDensity",rho,&rho,NULL);CHKERRQ(ierr);
+    // use -ice_ instead of -ice_custom_ to be compatible with ThermoGlenIce
+    ierr = PetscOptionsReal("-ice_reg_schoof_vel","Regularizing velocity (Schoof definition, m/a)","setSchoofRegularization",svel,&svel,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_reg_schoof_length","Regularizing length (Schoof definition, km)","setSchoofRegularization",slen,&slen,NULL);CHKERRQ(ierr);
+    ierr = setSchoofRegularization(svel,slen);CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   return 0;
@@ -165,8 +166,8 @@ PetscErrorCode ThermoGlenIce::setFromOptions() {
 
   ierr = PetscOptionsBegin(comm,prefix,"ThermoGlenIce options",NULL);CHKERRQ(ierr);
   {
-    ierr = PetscOptionsReal("-ice_schoof_vel","Regularizing velocity (Schoof definition, m/a)","",svel,&svel,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ice_schoof_len","Regularizing length (Schoof definition, km)","",slen,&slen,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_reg_schoof_vel","Regularizing velocity (Schoof definition, m/a)","",svel,&svel,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_reg_schoof_length","Regularizing length (Schoof definition, km)","",slen,&slen,NULL);CHKERRQ(ierr);
     schoofVel = svel / secpera;
     schoofLen = slen * 1e3;
     schoofReg = PetscSqr(schoofVel/schoofLen);
