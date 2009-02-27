@@ -67,8 +67,8 @@ try:
     H = squeeze(infile.variables["thk"][:])
     mask = squeeze(infile.variables["mask"][:])
     cbar = squeeze(infile.variables["cbar"][:])
-    ubar = squeeze(infile.variables["uvel"][:,:,:,0]) * seconds_per_year # convert from 
-    vbar = squeeze(infile.variables["vvel"][:,:,:,0]) * seconds_per_year # m s^-1 to m a^-1
+    ubar = squeeze(infile.variables["uvel"][:,:,:,0])
+    vbar = squeeze(infile.variables["vvel"][:,:,:,0])
     print "done."
 except Exception:
     print """ERROR!\nSpecify NetCDF file from PISM run with -p.
