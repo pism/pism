@@ -166,7 +166,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
   zlevels = new PetscScalar[Mz];
 
   switch (vertical_spacing) {
-  case EQUAL:
+  case EQUAL: {
     dzMIN = Lz / ((PetscScalar) Mz - 1);
     dzMAX = dzMIN;
     
@@ -176,7 +176,8 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     break;
-  case CHEBYSHEV:
+  }
+  case CHEBYSHEV: {
     // Spaced according to the Chebyshev extreme points in the interval [0,1],
     //   with 1 flipped to be the base of the ice, and stretched.
     for (PetscInt k=0; k < Mz - 1; k++) {
@@ -186,7 +187,8 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     dzMIN = zlevels[1] - zlevels[0];
     dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
     break;
-  case QUADRATIC:
+  }
+  case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     const PetscScalar  lam = DEFAULT_QUADZ_LAMBDA;  
     for (PetscInt k=0; k < Mz - 1; k++) {
@@ -197,6 +199,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     dzMIN = zlevels[1] - zlevels[0];
     dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
     break;
+  }
   default:
     SETERRQ(5, "Can't happen.");
   }
