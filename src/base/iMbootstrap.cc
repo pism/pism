@@ -27,7 +27,7 @@
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
-This procedure is called when option <tt>-boot_from</tt> is used.
+This procedure is called by the base class when option <tt>-boot_from</tt> is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
@@ -43,16 +43,9 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
                                                           //   (if -ssa -plastic, which is
                                                           //    not default anyway)
 
-  // start by checking that we have a NetCDF file
   bool file_exists=false;
   NCTool nc(&grid);
-  if (filename == NULL) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: No file name given for bootstrapping.\n");
-       CHKERRQ(ierr);
-    PetscEnd();
-  }
   ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-
   if (file_exists) {
     ierr = verbPrintf(2, grid.com, 
        "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
@@ -61,104 +54,28 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
        CHKERRQ(ierr);
     PetscEnd();
   }
-  
-  // now allocate our model; when bootstrapFromFile() is called 
-  //   the grid dimensions (i.e. Mx,My,Mz,Mbz) must already be set
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  ierr = createVecs(); CHKERRQ(ierr);
 
-  // determine if dimensions and variables exist in bootstrapping file
-  bool xdimExists = false, ydimExists = false, zdimExists = false, zbdimExists = false,
-       xExists=false, yExists=false, tExists=false,
-       hExists=false, maskExists=false;
+  ierr = set_grid_from_options(); CHKERRQ(ierr);
+  // report on resulting computational box, rescale grid, actually create local
+  // interpolation context
+  ierr = verbPrintf(2, grid.com, 
+         "  rescaling computational box for ice from -boot_from file and\n"
+         "    user options to dimensions:\n"
+         "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+         grid.Lx/1000.0,grid.Lx/1000.0,grid.Ly/1000.0,grid.Ly/1000.0,grid.Lz); 
+         CHKERRQ(ierr);
 
-  ierr = nc.find_dimension("x", NULL, xdimExists); CHKERRQ(ierr);
-  ierr = nc.find_dimension("y", NULL, ydimExists); CHKERRQ(ierr);
-  ierr = nc.find_dimension("z", NULL, zdimExists); CHKERRQ(ierr);
-  ierr = nc.find_dimension("zb", NULL, zbdimExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("t", NULL, NULL, tExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("x", NULL, NULL, xExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("y", NULL, NULL, yExists); CHKERRQ(ierr);
+  bool hExists=false, maskExists=false;
   ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
   ierr = nc.find_variable("mask", NULL, NULL, maskExists); CHKERRQ(ierr);
-
-  // if the horizontal dimensions are absent then we can not proceed
-  if (!xdimExists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (!ydimExists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (!xExists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no variable 'x' (=x(x))\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (!yExists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no variable 'y' (=y(y))\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
  
-  // our goal is to create "local interpolation context" from dimensions,
-  //   limits, and lengths extracted from bootstrap file and from information
-  //   about the part of the grid owned by this processor
+  // our goal is to create a "local interpolation context" from dimensions,
+  // limits, and lengths extracted from bootstrap file and from information
+  // about the part of the grid owned by this processor
   grid_info g;
   ierr = nc.get_grid_info(g); CHKERRQ(ierr); // g.z_max is set to 0 if z does
 					     // not exist
 
-  if (tExists) {
-    grid.year = g.time / secpera; // set year from read-in time variable
-    ierr = verbPrintf(2, grid.com, 
-		      "  time t = %5.4f years found; setting current year\n",
-		      grid.year); CHKERRQ(ierr);
-  } else {
-    grid.year = 0.0;
-    ierr = verbPrintf(2, grid.com, 
-		      "  time dimension was not found; setting current year to t = 0.0 years\n",
-		      grid.year); CHKERRQ(ierr);
-  }
-  ierr = setStartRunEndYearsFromOptions(PETSC_TRUE); CHKERRQ(ierr);
-
-  // Record the coordinates of the grid center:
-  grid.x0 = g.x0;
-  grid.y0 = g.y0;
-
-  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
-  // if initialization is from an input file
-  PetscScalar x_scale = (g.x_max - g.x_min) / 2.0,
-              y_scale = (g.y_max - g.y_min) / 2.0,
-              z_scale = g.z_max;
-  PetscTruth LxSet, LySet, LzSet;
-  PetscScalar  x_scale_in, y_scale_in, z_scale_in;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &x_scale_in, &LxSet); CHKERRQ(ierr);
-  if (LxSet == PETSC_TRUE)   x_scale = x_scale_in * 1000.0;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &y_scale_in, &LySet); CHKERRQ(ierr);
-  if (LySet == PETSC_TRUE)   y_scale = y_scale_in * 1000.0;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &z_scale_in, &LzSet); CHKERRQ(ierr);
-  if (LzSet == PETSC_TRUE) {
-    z_scale = z_scale_in;
-  } else {
-    ierr = verbPrintf(2, grid.com, 
-      "  WARNING: option -Lz should be used to set vertical if bootstrapping ...\n");
-      CHKERRQ(ierr);
-  }
-
-  // report on resulting computational box, rescale grid, actually create
-  //   local interpolation context    
-  ierr = verbPrintf(2, grid.com, 
-         "  rescaling computational box for ice from defaults, -boot_from file, and\n"
-         "    user options to dimensions:\n"
-         "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-         x_scale/1000.0,x_scale/1000.0,y_scale/1000.0,y_scale/1000.0,z_scale); 
-         CHKERRQ(ierr);
-  ierr = determineSpacingTypeFromOptions(PETSC_TRUE); CHKERRQ(ierr);
-  ierr = grid.rescale_and_set_zlevels(x_scale, y_scale, z_scale); CHKERRQ(ierr);
-  
   // now we have enough to actually create the lic
   // IceModel::bootstrapLIC is now a valid pointer which can be reused to
   // get more info out of the the -boot_from file
@@ -169,6 +86,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 				     psParams.sp,
 				     true); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
   // now work through all the 2d variables, regridding if present and otherwise setting
   // to default values appropriately
 
@@ -199,15 +117,10 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   setInitialAgeYears(initial_age_years_default);
   
-#if 0
-  // FIXME: will do putTempAtDepth() late because of confused initialization sequence
-  //   see afterInitHook()
-  // fill in temps at depth in reasonable way using surface temps (from atmosPCC) and Ghf
   ierr = verbPrintf(2, grid.com, 
      "  filling in temperatures at depth using quartic guess\n");
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
-#endif
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
   initialized_p = PETSC_TRUE;
@@ -239,17 +152,17 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
     PetscEnd();
   }
 
-  ierr = nc.find_variable("mask", NULL, &maskid, maskExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("ubar", NULL, &ubarid, ubarExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("vbar", NULL, &vbarid, vbarExists); CHKERRQ(ierr);
+  ierr = nc.find_variable("mask",   NULL, &maskid,   maskExists);   CHKERRQ(ierr);
+  ierr = nc.find_variable("ubar",   NULL, &ubarid,   ubarExists);   CHKERRQ(ierr);
+  ierr = nc.find_variable("vbar",   NULL, &vbarid,   vbarExists);   CHKERRQ(ierr);
   ierr = nc.find_variable("bcflag", NULL, &bcflagid, bcflagExists); CHKERRQ(ierr);
   
-  if ((ubarExists != 1) || (vbarExists != 1)) {
+  if ( (!ubarExists) || (!vbarExists)) {
     ierr = PetscPrintf(grid.com,"-ssaBC set but (ubar,vbar) not found in file %s\n",filename);
     CHKERRQ(ierr);
     PetscEnd();
   }
-  if (bcflagExists != 1) {
+  if (!bcflagExists) {
     ierr = PetscPrintf(grid.com,
 		       "-ssaBC set but bcflag (location of Dirichlet b.c.) not found in file %s\n",
 		       filename);
@@ -262,6 +175,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   //    file and from information about the part of the grid owned by this processor
   grid_info g;
   ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);  // see nc_util.cc
+  ierr = nc.close(); CHKERRQ(ierr);
   // destructor is called at exit from readShelfStreamBCFromFile():
   LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
 
@@ -284,8 +198,6 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   vbcflag.interpolation_mask.allowed_levels[1] = 1;
   vbcflag.use_interpolation_mask = true;
   ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // now use values in vubar,vvbar, not equal to missing_value, to set boundary conditions by
   // setting corresponding locations to MASK_SHEET and setting vuvbar[0|1] appropriately;

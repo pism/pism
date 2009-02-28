@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,7 @@ class IceCalvBCModel : public IceExactSSAModel {
 public:
     IceCalvBCModel(IceGrid &g, int mytest);
     ~IceCalvBCModel();
-    using IceExactSSAModel::initFromOptions;
-    virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode createVecs();
     PetscErrorCode writeCFfields(const char* default_filename);
 
 protected:

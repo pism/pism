@@ -50,8 +50,7 @@ IceROSSModel::IceROSSModel(IceGrid &g)
   shelfExtension.setStrainRate((100.0 / secpera) / (100.0 * 1.0e3));
 }
 
-
-PetscErrorCode IceROSSModel::createROSSVecs() {
+PetscErrorCode IceROSSModel::createVecs() {
   PetscErrorCode ierr;
 
   ierr = obsAzimuth.create(grid, "azi_obs", true); CHKERRQ(ierr);
@@ -66,24 +65,45 @@ PetscErrorCode IceROSSModel::createROSSVecs() {
   ierr = obsAccurate.create(grid, "accur", true); CHKERRQ(ierr);
   ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity",
                                NULL, NULL); CHKERRQ(ierr);
+
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
   return 0;
 }
 
-
-PetscErrorCode IceROSSModel::destroyROSSVecs() {
+PetscErrorCode IceROSSModel::destroyVecs() {
   PetscErrorCode ierr;
 
   ierr = obsAzimuth.destroy(); CHKERRQ(ierr);
   ierr = obsMagnitude.destroy(); CHKERRQ(ierr);
   ierr = obsAccurate.destroy(); CHKERRQ(ierr);
+
+  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode IceROSSModel::setFromOptions() {
+PetscErrorCode IceROSSModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
-  ierr = iceFactory.setFromOptions();CHKERRQ(ierr);
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com, 
+    "initializing EISMINT-Ross ice shelf velocity computation ... \n");
+  CHKERRQ(ierr);
+
+  // This reads the -boot_from option and does the bootstrapping:
+  ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
+
+  // fill in temperatures at depth according to special rule: temp in column
+  // equals temp at surface
+  ierr = fillinTemps();  CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceROSSModel::init_physics() {
+  PetscErrorCode ierr;
+
+  // This initializes the IceFactory and calls IceFactory.create()
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
     ierr = cgi->setHardness(1.9e8);CHKERRQ(ierr); // Pa s^{1/3}; (MacAyeal et al 1996) value
@@ -98,46 +118,25 @@ PetscErrorCode IceROSSModel::setFromOptions() {
                       "         Details on your chosen ice follows\n"); CHKERRQ(ierr);
     ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
-  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
+
   return 0;
 }
 
-PetscErrorCode IceROSSModel::initFromOptions(PetscTruth doHook) {
+PetscErrorCode IceROSSModel::misc_setup() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(2,grid.com, 
-    "initializing EISMINT-Ross ice shelf velocity computation ... \n");
-    CHKERRQ(ierr);
+  ierr = IceModel::misc_setup(); CHKERRQ(ierr);
 
-  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-
-  // set Lz to 1000.0 m by default; note max thickness in data is 800.0 m
-  PetscTruth LzSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-Lz", &LzSet); CHKERRQ(ierr);
-  if (LzSet == PETSC_FALSE) { // usual case
-    ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, 1000.0); CHKERRQ(ierr);
-  }
-
-  // allocate observed velocity space
-  ierr = createROSSVecs(); CHKERRQ(ierr);
-  
-  // fill in temperatures at depth according to special rule:
-  // temp in column equals temp at surface
-  ierr = fillinTemps();  CHKERRQ(ierr);
-
-  if (doHook) {
-    ierr = afterInitHook(); CHKERRQ(ierr);
-  }
-
-  // update surface elev
+  // update surface elev (this has to happen after
+  // updateSurfaceElevationAnsMask is called in IceModel::misc_setup() above):
   ierr = verbPrintf(2,grid.com, 
      "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
      CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
   ierr = vh.scale(1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
 
-  // in preparation for SSA b.c. read;  zero out vuvbar;
-  //    SIA velocities will not be computed so this will stay
+  // in preparation for SSA b.c. read; zero out vuvbar; SIA velocities will not
+  //    be computed so this will stay
   ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
   ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
 
@@ -157,7 +156,7 @@ PetscErrorCode IceROSSModel::initFromOptions(PetscTruth doHook) {
   return 0;
 }
 
-
+// This method is called by the pismd driver.
 PetscErrorCode IceROSSModel::finishROSS() {
   PetscErrorCode  ierr;
 
@@ -194,7 +193,6 @@ PetscErrorCode IceROSSModel::finishROSS() {
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
   
-  ierr = destroyROSSVecs(); CHKERRQ(ierr);
   return 0;
 }
 

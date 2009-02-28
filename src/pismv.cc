@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
       //   boundary condition implementation
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
       IceCalvBCModel mCBC(g, 'M');
-      ierr = mCBC.getIceFactory().setType(ICE_ARR);CHKERRQ(ierr);
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mCBC.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
-      ierr = mCBC.setFromOptions(); CHKERRQ(ierr);
-      ierr = mCBC.initFromOptions(); CHKERRQ(ierr);
+
+      ierr = mCBC.init(); CHKERRQ(ierr);
+      
       ierr = mCBC.diagnosticRun(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
@@ -86,14 +86,13 @@ int main(int argc, char *argv[]) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
       //   or annular ice shelf with calving front
       IceExactSSAModel mSSA(g, test);
-      if (test != 'I') {        // Correct errors in test I require CustomGlenIce
-        ierr = mSSA.getIceFactory().setType(ICE_ARR);CHKERRQ(ierr);
-      }
+
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mSSA.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mSSA.attachOceanPCC(pcoc); CHKERRQ(ierr);
-      ierr = mSSA.setFromOptions(); CHKERRQ(ierr);
-      ierr = mSSA.initFromOptions(); CHKERRQ(ierr);
+
+      ierr = mSSA.init(); CHKERRQ(ierr);
+
       ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
@@ -102,17 +101,17 @@ int main(int argc, char *argv[]) {
       ierr = mSSA.writeFiles("verify.nc",PETSC_TRUE); CHKERRQ(ierr);
     } else { // run derived class for compensatory source SIA solutions
              // (i.e. compensatory accumulation or compensatory heating)
-      IceCompModel       mComp(g, test);
-      ierr = mComp.getIceFactory().setType(ICE_ARR);CHKERRQ(ierr);
+      IceCompModel mComp(g, test);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mComp.attachAtmospherePCC(pac); CHKERRQ(ierr);
       ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
-      ierr = mComp.setFromOptions(); CHKERRQ(ierr);
-      ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIce());
-      if (!tgaice) SETERRQ(1,"Ice is actually not ThermoGlenArrIce");
-      ierr = mComp.initFromOptions(); CHKERRQ(ierr);
+
+      ierr = mComp.init(); CHKERRQ(ierr);
+
       ierr = mComp.run(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
+
+      ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIce());
       if (dontReport == PETSC_FALSE) {
         if (!IceTypeIsPatersonBuddCold(tgaice) && ((test == 'F') || (test == 'G'))) {
             ierr = verbPrintf(1,com, 

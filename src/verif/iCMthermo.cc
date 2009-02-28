@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,22 +44,38 @@ PetscErrorCode IceCompModel::temperatureStep(PetscScalar* vertSacrCount) {
 }
 
 
-PetscErrorCode IceCompModel::createCompVecs() {
+PetscErrorCode IceCompModel::createVecs() {
   PetscErrorCode ierr;
+
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
   ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
-  ierr = SigmaComp3.set(0.0); CHKERRQ(ierr);
+
+  if (testname == 'L') {
+    ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
-
-PetscErrorCode IceCompModel::destroyCompVecs() {
-  PetscErrorCode  ierr = SigmaComp3.destroy(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::createCompViewers() {
+PetscErrorCode IceCompModel::destroyVecs() {
   PetscErrorCode ierr;
+
+  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
+
+  ierr = SigmaComp3.destroy(); CHKERRQ(ierr);
+
+  if (testname == 'L') {
+    ierr = vHexactL.destroy(); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::createViewers() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::createViewers(); CHKERRQ(ierr);
 
   // must be called after IceModel::createViewers because diagnostic needs to be filled
   if ((testname=='F') || (testname=='G')) {
@@ -79,8 +95,11 @@ PetscErrorCode IceCompModel::createCompViewers() {
 }
 
 
-PetscErrorCode IceCompModel::destroyCompViewers() {
+PetscErrorCode IceCompModel::destroyViewers() {
   PetscErrorCode ierr;
+
+  ierr = IceModel::destroyViewers(); CHKERRQ(ierr);
+
   if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
   if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
   return 0;

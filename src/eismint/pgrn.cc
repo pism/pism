@@ -54,8 +54,7 @@ int main(int argc, char *argv[]){
     ierr = m.attachEISGREENPDDPCC(ppdd); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
-    ierr = m.setFromOptions(); CHKERRQ(ierr);
-    ierr = m.initFromOptions(); CHKERRQ(ierr);
+    ierr = m.init(); CHKERRQ(ierr);
  
     ierr = m.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2, com, "done with run ... \n"); CHKERRQ(ierr);

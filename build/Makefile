@@ -12,7 +12,7 @@ ifeq ($(findstring branches,$(url)),branches)
   PISM_REVISION = branch $(lastword $(subst /, ,$(url))): revision $(rev)
 endif
 ifndef PISM_REVISION
-  $(error Can't determine revision number.  Please define PISM_REVISION in the top-level Makefile)
+  $(error Can not determine revision number.  Please define PISM_REVISION in the top-level Makefile)
 endif
 
 DISPLAY = :0.0

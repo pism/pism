@@ -135,7 +135,7 @@ PetscErrorCode IceModel::setDefaults() {
   doOceanKill = DEFAULT_OCEAN_KILL;
   floatingIceKilled = DEFAULT_FLOATING_ICE_KILLED;
 
-  ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
+  grid.vertical_spacing = EQUAL;
   
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;

@@ -134,19 +134,19 @@ historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define the dimensions
-xdim = ncfile.createDimension('x', int(dim[0]))
-ydim = ncfile.createDimension('y', int(dim[1]))
+xdim = ncfile.createDimension('y', int(dim[0]))
+ydim = ncfile.createDimension('x', int(dim[1]))
 
 # define the variables
 polarVar = ncfile.createVariable('polar_stereographic', 'i4')
-xvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
-yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
-lonvar = ncfile.createVariable('lon', 'f4', dimensions=('x', 'y'))
-latvar = ncfile.createVariable('lat', 'f4', dimensions=('x', 'y'))
-hvar = ncfile.createVariable('usurf', 'f4', dimensions=('x', 'y'))
-thkvar = ncfile.createVariable('thk', 'f4', dimensions=('x', 'y'))
-bedvar = ncfile.createVariable('topg', 'f4', dimensions=('x', 'y')) 
-accvar = ncfile.createVariable('snowaccum', 'f4', dimensions=('x', 'y'))
+xvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
+yvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
+lonvar = ncfile.createVariable('lon', 'f4', dimensions=('y', 'x'))
+latvar = ncfile.createVariable('lat', 'f4', dimensions=('y', 'x'))
+hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
+thkvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
+bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x')) 
+accvar = ncfile.createVariable('snowaccum', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')

@@ -106,38 +106,19 @@ IceModel::~IceModel() {
 
 
 //! Allocate all Vecs defined in IceModel.
-/*! Initialization of an IceModel is confusing.  Here is a description of the intended order:
-	\li 1. The constructor for IceModel.  Note IceModel has a member "grid", of class IceGrid. 
-	   The IceGrid constructor sets 
-	   defaults for (grid.)Mx,My,Mz,Mbz,Lx,Ly,Lz,Lbz,dx,dy,dz,year.
-	\li [1.5] derivedClass::setFromOptions() to get options special to derived class
-	\li 2. setFromOptions() to get all options *including* Mx,My,Mz,Mbz
-	\li [2.5] initFromFile() which reads Mx,My,Mz,Mbz from file and overwrites previous; if 
-	   this represents a change the user is warned
-	\li 3. createDA(), which uses only Mx,My,Mz,Mbz
-	\li 4. createVecs() uses DA to create/allocate Vecs
-	\li [4.5] derivedClass:createVecs() to create/allocate Vecs special to derived class
-	\li 5. afterInitHook() which changes Lx,Ly,Lz if set by user
+/*!
 
-Note driver programs call only setFromOptions() and initFromOptions() (for IceModel 
-or derived class).
+  This procedure allocates the memory used to store model state, diagnostic and
+  work vectors and sets metadata.
 
-Note IceModel::setFromOptions() should be called at the end of derivedClass:setFromOptions().
-
-Note 2.5, 3, and 4 are called from initFromFile() in IceModel.
-
-Note 3 and 4 are called from initFromOptions() in some derived classes (e.g. IceCompModel) 
-in cases where initFromFile() is not called.
-
-Note step 2.5 is skipped when bootstrapping (-boot_from and bootstrapFromFile()) or in
-those derived classes which can start with no input files, e.g. IceCompModel and IceEISModel.
-That is, 2.5 is only done when starting from a saved model state.
+  Default values should not be set here; please use set_vars_from_options().
+  
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
 
   if (createVecs_done == PETSC_TRUE) {
-    ierr = destroyVecs(); CHKERRQ(ierr);
+    SETERRQ(1, "IceModel::createVecs(): IceModelVecs are created already.");
   }
 
   // The following code creates (and documents -- to some extent) the
@@ -692,5 +673,405 @@ PetscErrorCode IceModel::diagnosticRun() {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
+  return 0;
+}
+
+//! Set default values of grid parameters.
+/*!
+  Derived classes (IceCompModel, for example) reimplement this to change the
+  grid initialization when no -i option is set.
+ */
+PetscErrorCode IceModel::set_grid_defaults() {
+  PetscErrorCode ierr;
+  PetscTruth Mx_set, My_set, Mz_set, Lz_set, boot_from_set;
+  char filename[PETSC_MAX_PATH_LEN];
+  grid_info gi;
+
+  // Get the bootstrapping file name:
+  ierr = check_old_option_and_stop("-bif", "-boot_from"); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
+			       filename, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+
+  if (!boot_from_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: Please specify an input file using -i or -boot_from.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  // Use a bootstrapping file to set some grid parameters (they can be
+  // overridden later, in IceModel::set_grid_from_options()).
+
+  // Determine the grid extent from a bootstrapping file:
+  NCTool nc(&grid);
+  bool file_exists, x_dim_exists, y_dim_exists, t_exists;
+  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n",
+		       filename); CHKERRQ(ierr);
+    PetscEnd();
+  }
+  ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
+  ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
+  ierr = nc.find_variable("t", NULL, NULL, t_exists); CHKERRQ(ierr);
+  ierr = nc.get_grid_info(gi);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // if the horizontal dimensions are absent then we can not proceed
+  if (!x_dim_exists) {
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+  if (!y_dim_exists) {
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",filename);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  // Set the grid center and horizontal extent:
+  grid.x0 = gi.x0;
+  grid.y0 = gi.y0;
+  grid.Lx = gi.Lx;
+  grid.Ly = gi.Ly;
+
+  if (t_exists) {
+    grid.year = gi.time / secpera; // set year from read-in time variable
+    ierr = verbPrintf(2, grid.com, 
+		      "  time t = %5.4f years found; setting current year\n",
+		      grid.year); CHKERRQ(ierr);
+  } else {
+    grid.year = 0.0;
+    ierr = verbPrintf(2, grid.com, 
+		      "  time dimension was not found; setting current year to t = 0.0 years\n",
+		      grid.year); CHKERRQ(ierr);
+  }
+
+  // Grid dimensions and its vertical extent should not be deduced from a
+  // bootstrapping file, so we check if these options are set and stop if they
+  // are not.
+  ierr = PetscOptionsHasName(PETSC_NULL, "-Mx", &Mx_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-My", &My_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-Mz", &Mz_set); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-Lz", &Lz_set); CHKERRQ(ierr);
+  if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz, -Lz, are required for bootstrapping.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  return 0;
+}
+
+//! Initalizes the grid from options.
+/*! 
+  Reads all of -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -quadZ and -chebZ. Sets
+  corresponding grid parameters.
+ */
+PetscErrorCode IceModel::set_grid_from_options() {
+  PetscErrorCode ierr;
+  PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set,
+    quadZ_set, chebZ_set;
+  PetscScalar x_scale, y_scale, z_scale;
+  int Mx, My, Mz, Mbz;
+
+  // Process the options:
+  ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
+			   "Options setting the computational grid extent and dimensions",
+			   PETSC_NULL); CHKERRQ(ierr);
+
+  // Read -Lx and -Ly. Note the transpose!
+  ierr = PetscOptionsScalar("-Lx", "Half of the grid extent in the X direction, in km", "",
+			    y_scale, &y_scale, &Ly_set); CHKERRQ(ierr);
+  ierr = PetscOptionsScalar("-Ly", "Half of the grid extent in the Y direction, in km", "",
+			    x_scale, &x_scale, &Lx_set); CHKERRQ(ierr);
+  // Vertical extent (in the ice):
+  ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice", "",
+			    z_scale, &z_scale, &Lz_set); CHKERRQ(ierr);
+
+  // Read -Mx, -My, -Mz and -Mbz. Note the transpose!
+  ierr = PetscOptionsInt("-Mx", "Number of grid points in the X direction", "",
+			 grid.My, &My, &My_set); CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-My", "Number of grid points in the Y direction", "",
+			 grid.Mx, &Mx, &Mx_set); CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice", "",
+			 grid.Mz, &Mz, &Mz_set); CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-Mbz", "Number of grid points in the Z (vertical) direction in the bedrock", PETSC_NULL,
+			 grid.Mbz, &Mbz, &Mbz_set); CHKERRQ(ierr);
+
+  // Determine the vertical grid spacing in the ice:
+  ierr = PetscOptionsName("-quadZ", "Chooses the quadratic vertical grid spacing",
+			  PETSC_NULL, &quadZ_set); CHKERRQ(ierr);
+  ierr = PetscOptionsName("-chebZ", "Chooses the Chebyshev vertical grid spacing",
+			  PETSC_NULL, &chebZ_set); CHKERRQ(ierr);
+
+  // Only one of -quadZ and -chebZ is allowed.
+  if (quadZ_set && chebZ_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: at most one of -quadZ and -chebZ is allowed.\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  // Done with the options.
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  // Use the information obtained above:
+  if (Lx_set)    grid.Lx = x_scale * 1000.0; // convert to meters
+  if (Ly_set)    grid.Ly = y_scale * 1000.0; // convert to meters
+  if (Lz_set)    grid.Lz = z_scale;	     // in meters already
+  if (Mx_set)    grid.Mx = Mx;
+  if (My_set)    grid.My = My;
+  if (Mz_set)    grid.Mz = Mz;
+  if (Mbz_set)   grid.Mbz = Mbz;
+  if (quadZ_set) grid.vertical_spacing = QUADRATIC;
+  if (chebZ_set) grid.vertical_spacing = CHEBYSHEV;
+
+  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
+  ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
+
+  // At this point all the fields except for da2, xs, xm, ys, ym should be
+  // filled. We're ready to call grid.createDA().
+  return 0;
+}
+
+//! Initialize the an IceModel object.
+/*!
+  The describes the IceModel initialization process:
+  
+   1) Initialize the computational grid.
+
+   2) Process the options.
+
+   3) Memory allocation.
+
+   4) Initialize IceType and (possibly) other physics.
+
+   5) Initialize PDD and forcing.
+
+   6) Fill the model state variables (from a PISM output file, from a
+   bootstrapping file using some modeling choices or using formulas).
+
+   7) Regrid.
+
+   8) Report grid parameters.
+
+   9) Miscellaneous stuff: update surface elevation and mask, set up the bed
+   deformation model, initialize the basal till model, initialize snapshots.
+
+   Please see the documenting comments of the functions in this one to find
+   explanations of their intended uses.
+ */
+PetscErrorCode IceModel::init() {
+  PetscErrorCode ierr;
+
+  // 1) Initialize the computational grid:
+  ierr = grid_setup(); CHKERRQ(ierr);
+
+  // 2) Process the options:
+  ierr = setFromOptions(); CHKERRQ(ierr);
+
+  // 3) Memory allocation:
+  ierr = createVecs(); CHKERRQ(ierr);
+
+  // 4) Initialize the IceType and (possibly) other physics.
+  ierr = init_physics(); CHKERRQ(ierr);
+
+  // 5) Initialize atmosphere and ocean couplers:
+  ierr = init_couplers(); CHKERRQ(ierr);
+
+  // 6) Fill the model state variables (from a PISM output file, from a
+  // bootstrapping file using some modeling choices or using formulas).
+  ierr = model_state_setup(); CHKERRQ(ierr);
+
+  // 7) Regrid:
+  ierr = regrid(); CHKERRQ(ierr);
+
+  // 8) Report grid parameters:
+  ierr = report_grid_parameters(); CHKERRQ(ierr);
+
+  // 9) Miscellaneous stuff: update surface elevation and mask, set up the bed
+  // deformation model, initialize the basal till model, initialize snapshots.
+  // This has to happen *after* regridding.
+  ierr = misc_setup();
+
+  return 0; 
+}
+
+//! Sets up the computational grid.
+/*!
+  There are two cases here:
+
+  1) Initializing from a PISM ouput file, in which case all the options
+  influencing the grid (currently: -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -quadZ,
+  -chebZ) are ignored.
+
+  2) Initializing using defaults, command-line options and (possibly) a
+  bootstrapping file. Derived classes requiring special grid setup should
+  reimplement IceGrid::set_grid_from_options().
+
+  No memory allocation should happen here.
+ */
+PetscErrorCode IceModel::grid_setup() {
+  PetscErrorCode ierr;
+  PetscTruth i_set;
+  char filename[PETSC_MAX_PATH_LEN];
+
+  // Check if we are initializing from a PISM output file:
+  ierr = check_old_option_and_stop("-if", "-i"); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
+			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+
+  if (i_set) {
+    NCTool nc(&grid);
+    ierr = nc.get_grid(filename);   CHKERRQ(ierr);
+
+    // These options are ignored because we're getting *all* the grid
+    // parameters from a file.
+    ierr = ignore_option("-Mx");    CHKERRQ(ierr);
+    ierr = ignore_option("-My");    CHKERRQ(ierr);
+    ierr = ignore_option("-Mz");    CHKERRQ(ierr);
+    ierr = ignore_option("-Mbz");   CHKERRQ(ierr);
+    ierr = ignore_option("-Lx");    CHKERRQ(ierr);
+    ierr = ignore_option("-Ly");    CHKERRQ(ierr);
+    ierr = ignore_option("-Lz");    CHKERRQ(ierr);
+    ierr = ignore_option("-chebZ"); CHKERRQ(ierr);
+    ierr = ignore_option("-quadZ"); CHKERRQ(ierr);
+  } else {
+    ierr = set_grid_defaults(); CHKERRQ(ierr);
+    ierr = set_grid_from_options(); CHKERRQ(ierr);
+  }
+
+  ierr = grid.createDA(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+//! Sets the starting values of model state variables.
+/*!
+  There are two cases:
+  
+  1) Initializing from a PISM output file.
+
+  2) Setting the values using command-line options only (verification and
+  simplified geometry runs, for example) or from a bootstrapping file, using
+  heuristics to fill in missing and 3D fields.
+
+  This function is called after all the memory allocation is done and all the
+  physical parameters are set.
+ */
+PetscErrorCode IceModel::model_state_setup() {
+  PetscErrorCode ierr;
+  PetscTruth i_set;
+  char filename[PETSC_MAX_PATH_LEN];
+  
+  // Check if we are initializing from a PISM output file:
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
+			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+
+  if (i_set) {
+    ierr = initFromFile(filename); CHKERRQ(ierr);
+  } else {
+    ierr = set_vars_from_options(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! Sets starting values of model state variables using command-line options.
+/*!
+  Sets starting values of model state variables using command-line options and
+  (possibly) a bootstrapping file.
+
+  In the base class there is only one case: bootstrapping.
+ */
+PetscErrorCode IceModel::set_vars_from_options() {
+  PetscErrorCode ierr;
+  PetscTruth boot_from_set;
+  char filename[PETSC_MAX_PATH_LEN];
+  
+  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
+			       filename, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+  
+  if (boot_from_set) {
+    ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
+  } else {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+  
+  return 0;
+}
+
+//! Initialize some physical parameters.
+/*!
+  This is the place for all non-trivial initalization of physical parameters
+  (non-trivial meaning requiring more than just setting a value of a
+  parameter).
+
+  This method is called after memory allocation but before filling any of
+  IceModelVecs.
+
+  Rationale: all the physical parameters should be initialized before setting
+  up the coupling or filling model-state variables.
+
+  In the base class we just initialize the IceType and the shelf extension.
+
+  Also, this is the good place for setting parameters that a user should not be
+  able to override using a command-line option.
+ */
+PetscErrorCode IceModel::init_physics() {
+  PetscErrorCode ierr;
+
+  ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+  // Initialize the IceType object:
+  if (ice == PETSC_NULL) {
+    ierr = iceFactory.create(&ice); CHKERRQ(ierr);
+    ierr = ice->setFromOptions(); CHKERRQ(ierr); // Set options specific to this particular ice type
+  }
+
+  ierr = shelfExtension.setIce(ice);CHKERRQ(ierr);
+  ierr = shelfExtension.setFromOptions();CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
+PetscErrorCode IceModel::misc_setup() {
+  PetscErrorCode ierr;
+
+  ierr = init_snapshots_from_options(); CHKERRQ(ierr);
+  ierr = stampHistoryCommand(); CHKERRQ(ierr);
+  ierr = createViewers(); CHKERRQ(ierr);
+
+  // consistency of geometry after initialization;
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+
+  // allocate and setup bed deformation model
+  ierr = bedDefSetup(); CHKERRQ(ierr);
+
+  // init basal till model, possibly inverting for phi, if desired;
+  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
+  //   or "-surf_vel_to_phi foo.nc";
+  //   initializes PlasticBasalType* basal; sets fields vtauc, vtillphi
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+//! Initializes atmosphere and ocean couplers.
+PetscErrorCode IceModel::init_couplers() {
+  PetscErrorCode ierr;
+
+  if (atmosPCC != PETSC_NULL) {
+    ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);
+  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
+ 
+ if (oceanPCC != PETSC_NULL) {
+    if (isDrySimulation == PETSC_TRUE) {  oceanPCC->reportInitializationToStdOut = false;  }
+    ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
+  } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+
+
   return 0;
 }

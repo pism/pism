@@ -31,23 +31,29 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
   }
 }
 
-PetscErrorCode  IceModel::setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID) {
+
+//! Determine the run length, starting and ending years using command-line options.
+/*!
+  
+ */
+PetscErrorCode  IceModel::set_time_from_options() {
   PetscErrorCode ierr;
 
   // read options about year of start, year of end, number of run years;
-  // note grid.year has already been set from input file
+  // note grid.year has already been set from input file or otherwise
   PetscScalar usrStartYear, usrEndYear, usrRunYears;
   PetscTruth ysSet, yeSet, ySet;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear, &yeSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-y", &usrRunYears, &ySet); CHKERRQ(ierr);
+
+  // Set the start year:
   if (ysSet == PETSC_TRUE) {
-    // user option overwrites data
     ierr = setStartYear(usrStartYear); CHKERRQ(ierr);
     grid.year = usrStartYear;
-  } else if (grid_p_year_VALID == PETSC_TRUE) {
+  } else {
     ierr = setStartYear(grid.year); CHKERRQ(ierr);
-  } // else do nothing; defaults are set
+  }
 
   if (yeSet == PETSC_TRUE) {
     if (usrEndYear < startYear) {
@@ -365,42 +371,6 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   return 0;
 }
 
-
-//! When reading a saved PISM model state, warn the user if options <tt>-Mx,-My,-Mz,-Mbz</tt> have been ignored.
-PetscErrorCode IceModel::warnUserOptionsIgnored(const char *fname) {
-  PetscErrorCode ierr;
-  PetscInt       ignore;
-  PetscTruth     M_Set;
-
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &ignore, &M_Set); CHKERRQ(ierr);
-  if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,
-             "WARNING: user option -Mx ignored; value read from file %s\n", fname);
-             CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &ignore, &M_Set); CHKERRQ(ierr);
-  if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,
-             "WARNING: user option -My ignored; value read from file %s\n", fname);
-             CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &ignore, &M_Set); CHKERRQ(ierr);
-  if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,
-             "WARNING: user option -Mz ignored; value read from file %s\n", fname);
-             CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &ignore, &M_Set); CHKERRQ(ierr);
-  if (M_Set == PETSC_TRUE) {
-    ierr = verbPrintf(1,grid.com,
-              "WARNING: user option -Mbz ignored; value read from file %s\n", fname);
-              CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-
 //! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
 /*! 
 When initializing from a NetCDF input file, the input file determines 
@@ -409,11 +379,10 @@ The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" a
  */
 PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscErrorCode  ierr;
-  int         stat;
   NCTool nc(&grid);
 
-  ierr = verbPrintf(2,grid.com,"initializing from NetCDF file '%s'...\n",
-                     fname); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
+		    fname); CHKERRQ(ierr);
 
   bool file_exists = false;
   ierr = nc.open_for_reading(fname, file_exists); CHKERRQ(ierr);
@@ -422,68 +391,31 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
     PetscEnd();
   }
 
-  // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
-  // this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
-  grid_info g;
-  ierr = nc.get_grid_info(g);
-  grid.year = g.time / secpera;
-  grid.Mx   = g.x_len;
-  grid.My   = g.y_len;
-  grid.Mz   = g.z_len;
-  grid.Mbz  = g.zb_len;
-  grid.x0   = g.x0;
-  grid.y0   = g.y0;
-  // grid.Lx, grid.Ly are set from g.Lx, g.Ly below in call to grid.rescale_using_zlevels()
+  // Find the index of the last record in the file:
+  int last_record;
+  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  last_record -= 1;
 
-  double *zlevs, *zblevs;
-  zlevs = new double[grid.Mz];
-  zblevs = new double[grid.Mbz];
-  ierr = nc.get_vertical_dims(grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
-
-  // re-allocate and fill grid.zlevels & zblevels with read values
-  delete [] grid.zlevels;
-  delete [] grid.zblevels;
-  grid.zlevels = new PetscScalar[grid.Mz];
-  grid.zblevels = new PetscScalar[grid.Mbz];
-  for (PetscInt k = 0; k < grid.Mz; k++) {
-    grid.zlevels[k] = (PetscScalar) zlevs[k];
-  }
-  for (PetscInt k = 0; k < grid.Mbz; k++) {
-    grid.zblevels[k] = (PetscScalar) zblevs[k];
-  }
-  delete [] zlevs;  delete [] zblevs;  // done with these
-  
-  // set DA and create vecs; we have enough already to do so
-  ierr = warnUserOptionsIgnored(fname); CHKERRQ(ierr);  
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  // FIXME: note we *can* determine from the input file whether the hor. dims are truely periodic,
-  // but this has not been done; here we simply require it is not periodic
-  ierr = grid.rescale_using_zlevels(g.Lx, g.Ly); CHKERRQ(ierr);
-  ierr = createVecs(); CHKERRQ(ierr);
-
-  // set IceModel::startYear, IceModel::endYear, grid.year, but respecting grid.year
-  // which came from -i file, _unless_ -ys set by user
-  ierr = setStartRunEndYearsFromOptions(PETSC_TRUE);  CHKERRQ(ierr);
+  // Read the model state variables:
  
   // 2-D mapping
-  ierr = vLongitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =  vLatitude.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr = vLongitude.read(fname, last_record); CHKERRQ(ierr);
+  ierr =  vLatitude.read(fname, last_record); CHKERRQ(ierr);
 
   // 2-D model quantities: discrete
-  ierr = vMask.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr = vMask.read(fname, last_record); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr =   vHmelt.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =       vH.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =     vbed.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =  vuplift.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr = vtillphi.read(fname, g.t_len - 1); CHKERRQ(ierr);
-
+  ierr =   vHmelt.read(fname, last_record); CHKERRQ(ierr);
+  ierr =       vH.read(fname, last_record); CHKERRQ(ierr);
+  ierr =     vbed.read(fname, last_record); CHKERRQ(ierr);
+  ierr =  vuplift.read(fname, last_record); CHKERRQ(ierr);
+  ierr = vtillphi.read(fname, last_record); CHKERRQ(ierr);
 
   if (useSSAVelocity) {
     double flag;
-    stat = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", 1, &flag);
-    if (stat == 0)
+    ierr = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", 1, &flag);
+    if (ierr == 0)
       have_ssa_velocities = (int)flag;
   }
 
@@ -495,17 +427,17 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   if ((have_ssa_velocities == 1)  && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
-    ierr = vubarSSA.read(fname, g.t_len - 1);
-    ierr = vvbarSSA.read(fname, g.t_len - 1);
+    ierr = vubarSSA.read(fname, last_record);
+    ierr = vvbarSSA.read(fname, last_record);
   }
 
   // 2-D earth quantity; like climate but owned by IceModel
-  ierr =     vGhf.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =     vGhf.read(fname, last_record); CHKERRQ(ierr);
 
   // 3-D model quantities
-  ierr =   T3.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr =  Tb3.read(fname, g.t_len - 1); CHKERRQ(ierr);
-  ierr = tau3.read(fname, g.t_len - 1); CHKERRQ(ierr);
+  ierr =   T3.read(fname, last_record); CHKERRQ(ierr);
+  ierr =  Tb3.read(fname, last_record); CHKERRQ(ierr);
+  ierr = tau3.read(fname, last_record); CHKERRQ(ierr);
 
   // read the polar_stereographic if present
   ierr = nc.read_polar_stereographic(psParams.svlfp,
@@ -514,7 +446,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 
   int hist_len;
   char *hist;
-  stat = nc.get_att_text(NC_GLOBAL, "history", &hist_len, &hist);
+  ierr = nc.get_att_text(NC_GLOBAL, "history", &hist_len, &hist);
   if (hist != NULL) {
     delete[] history;
     history = hist;
@@ -538,12 +470,27 @@ quantities \c tau3, \c T3, \c Tb3.  This is consistent with one standard purpose
 regridding, which is to stick with current geometry through the downscaling procedure.  
 Most of the time the user should carefully specify which variables to regrid.
  */
-PetscErrorCode IceModel::regrid(const char *filename) {
+PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
-  PetscTruth regridVarsSet;
+  PetscTruth regridVarsSet, regrid_set, regrid_from_set;
   bool regrid_2d_only = false;
-  char regridVars[PETSC_MAX_PATH_LEN];
+  char filename[PETSC_MAX_PATH_LEN], regridVars[PETSC_MAX_PATH_LEN];
   NCTool nc(&grid);
+
+  // Get the regridding file name:
+  ierr = PetscOptionsHasName(PETSC_NULL, "-regrid", &regrid_set); CHKERRQ(ierr);
+  if (regrid_set == PETSC_TRUE) {
+    ierr = PetscPrintf(grid.com, 
+       "PISM ERROR: '-regrid' is outdated. Please use '-regrid_from' instead.\n");
+       CHKERRQ(ierr);
+       PetscEnd();
+  }
+  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", filename, PETSC_MAX_PATH_LEN,
+                               &regrid_from_set); CHKERRQ(ierr);
+
+  // Return if no regridding is requested:
+  if (!regrid_from_set) return 0;
+
 
   const int  npossible = 7;
   const char possible[20] = "bBehHLT";
@@ -556,8 +503,6 @@ PetscErrorCode IceModel::regrid(const char *filename) {
   ierr = verbPrintf(2,grid.com, 
            "regridding variables with single character flags `%s' from NetCDF file `%s':\n", 
            regridVars,filename); CHKERRQ(ierr);
-
-  // following are dimensions, limits and lengths, and id for *source* NetCDF file (regridFile)
 
   // create "local interpolation context" from dimensions, limits, and lengths extracted from regridFile,
   //   and from information about the part of the grid owned by this processor
@@ -576,9 +521,7 @@ PetscErrorCode IceModel::regrid(const char *filename) {
 
   double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
   if ((g.z_len != 0) && (g.zb_len != 0)) {
-    zlevs  = new double[g.z_len];
-    zblevs = new double[g.zb_len];
-    ierr = nc.get_vertical_dims(g.z_len, g.zb_len, zlevs, zblevs); CHKERRQ(ierr);
+    ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
 		      "PISM WARNING: at least one of 'z' and 'zb' is absent in '%s'.\n"
@@ -642,7 +585,7 @@ PetscErrorCode IceModel::regrid(const char *filename) {
 
   }
 
-  // Note that deleting a null pointer is safe.
+  // Note that deleting a NULL pointer is safe.
   delete [] zlevs;  delete [] zblevs;
   return 0;
 }
@@ -716,7 +659,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
 
     save_at_equal_intervals = PETSC_TRUE;
     next_snapshot = first_snapshot;
-    last_snapshot += snapshot_dt; // make it saves after the last time in the range, too
+    last_snapshot += snapshot_dt; // make it save after the last time in the range, too
   } else {			// no colon; it must be a list of numbers
     n_snapshots = max_n_snapshots;
     ierr = PetscOptionsGetRealArray(PETSC_NULL, "-save_at", save_at, &n_snapshots, PETSC_NULL);

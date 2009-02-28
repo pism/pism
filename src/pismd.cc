@@ -78,8 +78,7 @@ int main(int argc, char *argv[]) {
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
 
-    ierr = m->setFromOptions(); CHKERRQ(ierr);
-    ierr = m->initFromOptions(); CHKERRQ(ierr);
+    ierr = m->init(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "computing velocity field (diagnostically) ...\n"); CHKERRQ(ierr);
     ierr = m->diagnosticRun(); CHKERRQ(ierr);
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
       ierr = mRoss.finishROSS(); CHKERRQ(ierr);
     }
 
-    // provide a default base name if no -o option.
+    // provide a default file name if no -o option.
     ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);

@@ -795,29 +795,17 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[],
     // because report_range expects the data to be in PISM (SI) units.
     
     char *tmp;
+    bool input_has_units;
     utUnit input_units;
 
-    // Read the 'units' attribute:
-    ierr = nc.get_att_text(varid, "units", NULL, &tmp); CHKERRQ(ierr);
-    if (tmp == NULL) {		// units are absent
-      if (has_units) {
-	ierr = verbPrintf(2, grid->com,
-			  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-			  "              Assuming that it is in '%s'.\n",
-			  short_name, long_name, units_string); CHKERRQ(ierr);
-      }
+    ierr = nc.get_units(varid, input_has_units, input_units); CHKERRQ(ierr);
+
+    if ( has_units && (!input_has_units) ) {
+      ierr = verbPrintf(2, grid->com,
+			"PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+			"              Assuming that it is in '%s'.\n",
+			short_name, long_name, units_string); CHKERRQ(ierr);
       utCopy(&units, &input_units);
-    } else {			// units are present
-
-      if (utScan(tmp, &input_units) != 0) {
-	ierr = verbPrintf(2, grid->com,
-			  "PISM WARNING: Variable '%s' ('%s') has a units attribute with an unknown units specification (%s).\n"
-			  "              Assuming that it is in '%s'.\n",
-			  short_name, long_name, tmp, units_string); CHKERRQ(ierr);
-	utCopy(&units, &input_units);
-      }
-
-      delete[] tmp;
     }
 
     // Convert data:
@@ -1110,14 +1098,14 @@ PetscErrorCode IceModelVec::check_range(const int ncid, const int varid) {
 PetscErrorCode IceModelVec::change_units(utUnit *from, utUnit *to) {
   PetscErrorCode ierr;
   double slope, intercept;
-  char from_name[PETSC_MAX_PATH_LEN], to_name[PETSC_MAX_PATH_LEN], *tmp;
+  char from_name[TEMPORARY_STRING_LENGTH], to_name[TEMPORARY_STRING_LENGTH], *tmp;
   bool use_slope, use_intercept;
 
   // Get string representations of units:
   utPrint(from, &tmp);
-  strncpy(from_name, tmp, PETSC_MAX_PATH_LEN);
+  strncpy(from_name, tmp, TEMPORARY_STRING_LENGTH);
   utPrint(to, &tmp);
-  strncpy(to_name, tmp, PETSC_MAX_PATH_LEN);
+  strncpy(to_name, tmp, TEMPORARY_STRING_LENGTH);
 
   // Get the slope and the intercept of the linear transformation.
   ierr = utConvert(from, to, &slope, &intercept);
@@ -1125,9 +1113,8 @@ PetscErrorCode IceModelVec::change_units(utUnit *from, utUnit *to) {
   if (ierr != 0) { 		// can't convert
     if (ierr == UT_ECONVERT) {	// because units are incompatible
       ierr = verbPrintf(2, grid->com,
-			"PISM ERROR: IceModelVec '%s': attempted to change units from '%s' to '%s'.\n"
-			"            IceModelVec '%s' was not modified.\n",
-			short_name, from_name, to_name, short_name);
+			"PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
+			short_name, from_name, to_name);
       return 1;
     } else {			// some other error
       return 2;

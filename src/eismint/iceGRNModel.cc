@@ -107,8 +107,7 @@ PetscErrorCode IceGRNModel::attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p) {
   return 0;
 }
 
-
-PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
+PetscErrorCode IceGRNModel::init_couplers() {
   PetscErrorCode ierr;
 
   pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
@@ -121,23 +120,9 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   // only report initialization on PISMOceanClimateCoupler if allowing ice shelves
   oceanPCC->reportInitializationToStdOut = (doOceanKill == PETSC_FALSE);
 
-  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);  
+  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
-  char inFile[PETSC_MAX_PATH_LEN];
-  PetscTruth inFileSet, bootFileSet;
-
-  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", inFile,
-                               PETSC_MAX_PATH_LEN, &bootFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  if ((inFileSet == PETSC_TRUE) && (bootFileSet == PETSC_TRUE)) {
-      ierr = verbPrintf(1, grid.com, 
-         "WARNING: both -boot_from and -i given; using -i and ignoring -boot_from\n");
-         CHKERRQ(ierr);
-      bootFileSet = PETSC_FALSE;
-  }
-
-  // PDD is already set by atmosPCC->initFromOptions() in IceModel::initFromOptions();
+  // PDD is already set by atmosPCC->initFromOptions() in IceModel::init_couplers()
   //   here we just warn if nondefault values are used
   PetscTruth pddSummerWarmingSet, pddStdDevSet;
   ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
@@ -152,47 +137,45 @@ PetscErrorCode IceGRNModel::initFromOptions(PetscTruth doHook) {
   if (pddStdDevSet == PETSC_FALSE) {
     pddPCC->pddStdDev = 5.0;  // EISMINT-GREENLAND default; user may override
   }
-  
-  // set up surface temperature, geothermal flux, and Ellesmere/Iceland delete
-  if (bootFileSet == PETSC_TRUE) {
-    // though default bootstrapping has set the new temperatures, we usually need to set 
-    // the surface temp and geothermal flux at base and then set 3D temps again
-    if (haveGeothermalFlux == PETSC_FALSE) {
-      ierr = verbPrintf(2, grid.com,
-         "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
-         EISMINT_G_geothermal); CHKERRQ(ierr);
-      ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
-    }
-    if (haveSurfaceTemp == PETSC_FALSE) {
-      ierr = verbPrintf(2, grid.com, 
-         "computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
-         CHKERRQ(ierr);
-      ierr = updateTs(); CHKERRQ(ierr);
-    }
-    if ((haveGeothermalFlux == PETSC_FALSE) || (haveSurfaceTemp == PETSC_FALSE)) {
-      ierr = verbPrintf(2, grid.com, 
-         "filling in temperatures AGAIN at depth using quartic guess (for EISMINT-Greenland)\n");
-         CHKERRQ(ierr);
-      ierr = putTempAtDepth(); CHKERRQ(ierr);
-    }
-    if (noEllesmereIcelandDelete == PETSC_FALSE) {
-      ierr = verbPrintf(2, grid.com, 
-         "removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
-         CHKERRQ(ierr);
-      ierr = cleanExtraLand(); CHKERRQ(ierr);
-    }
-  } else {
-    ierr = PetscPrintf(grid.com,"ERROR: IceGRNModel needs an input file\n"); CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  if (!isInitialized()) {
-    SETERRQ(1, "IceGRNModel has not been initialized.\n");
-  }
 
   return 0;
 }
 
+PetscErrorCode IceGRNModel::set_vars_from_options() {
+  PetscErrorCode ierr;
+
+  // Let the base class handle bootstrapping:
+  ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
+
+  // though default bootstrapping has set the new temperatures, we usually need to set 
+  // the surface temp and geothermal flux at base and then set 3D temps again
+  if (haveGeothermalFlux == PETSC_FALSE) {
+    ierr = verbPrintf(2, grid.com,
+		      "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
+		      EISMINT_G_geothermal); CHKERRQ(ierr);
+    ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
+  }
+  if (haveSurfaceTemp == PETSC_FALSE) {
+    ierr = verbPrintf(2, grid.com, 
+		      "computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
+    CHKERRQ(ierr);
+    ierr = updateTs(); CHKERRQ(ierr);
+  }
+  if ((haveGeothermalFlux == PETSC_FALSE) || (haveSurfaceTemp == PETSC_FALSE)) {
+    ierr = verbPrintf(2, grid.com, 
+		      "filling in temperatures AGAIN at depth using quartic guess (for EISMINT-Greenland)\n");
+    CHKERRQ(ierr);
+    ierr = putTempAtDepth(); CHKERRQ(ierr);
+  }
+  if (noEllesmereIcelandDelete == PETSC_FALSE) {
+    ierr = verbPrintf(2, grid.com, 
+		      "removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
+    CHKERRQ(ierr);
+    ierr = cleanExtraLand(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
 
 PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
   PetscErrorCode ierr;

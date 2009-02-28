@@ -22,12 +22,14 @@
 
 //! Read runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 /*!
-This is called by a driver program, assuming it would like to use command line options.
 
 A critical principle of this procedure is that it will not alter IceModel parameters and flags
 \e unless the user sets an option to do so.  Thus this base class setFromOptions() can be
 called by a derived class after the derived class has set its own defaults for base class
 parameters and flags.
+
+Also, this procedure should not allocate memory or create new objects using the
+new operator.
 
 In fact this procedure only reads the majority of the options.  Some are read in 
 initFromOptions(), writeFiles(), and setStartRunEndYearsFromOptions(), among other places.
@@ -167,8 +169,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetReal(PETSC_NULL, "-low_temp", &globalMinAllowedTemp, 
            PETSC_NULL); CHKERRQ(ierr);
 
-// note -Lx, -Ly, -Lz are all checked in [iMutil.cc]IceModel::afterInitHook()
-
 // note "-mato" caught in writeFiles() in iMIO.cc
 
 // note "-matv" caught in writeFiles() in iMIO.cc
@@ -179,14 +179,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-max_low_temps", &maxLowTempCount, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsGetReal(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
-
-  // Note the transpose in the following two lines:
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mx", &grid.My, PETSC_NULL); CHKERRQ(ierr);
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-My", &grid.Mx, PETSC_NULL); CHKERRQ(ierr);
-
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mz", &grid.Mz, PETSC_NULL); CHKERRQ(ierr);
-
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-Mbz", &grid.Mbz, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
@@ -207,8 +199,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   //   at bootstrapping (-boot_from), if original condition was ice-free ocean
   ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &mydoOceanKill); CHKERRQ(ierr);
   if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
-
-// note "-of" is in use for output file format; see iMIO.cc
 
   // use a plastic basal till mechanical model
   ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &mydoPlasticTill); CHKERRQ(ierr);
@@ -262,8 +252,6 @@ PetscErrorCode  IceModel::setFromOptions() {
      doPseudoPlasticTill = PETSC_TRUE;
      pseudo_plastic_uthreshold = mypseudo_plastic_uthreshold;
   }
-
-// "-quadZ" read in determineSpacingTypeFromOptions()
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
@@ -328,37 +316,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   // includes -verbose, -vverbose, -vvverbose see iMreport.cc
   ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-// note -ys, -ye, -y options are read in setStartRunEndYearsFromOptions()
- 
-  ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  // reads "-quadZ" and "-chebZ"
+  // Process -y, -ys, -ye. We are reading these options here because couplers
+  // might need to know what year it is.
+  ierr = set_time_from_options();
 
   ierr = iceFactory.setFromOptions();CHKERRQ(ierr); // The user can set the type using -ice_type, run with -help to see choices
   
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
-
-
-//! Read options -quadZ or -chebZ or nothing; good to call this before rescaling.
-/*!
-Only use with \c forceEqualIfNoOption = \c TRUE if you want to ignor all previous
-settings and defaults.
- */
-PetscErrorCode IceModel::determineSpacingTypeFromOptions(const PetscTruth forceEqualIfNoOption) {
-  PetscErrorCode ierr;
-  PetscTruth quadSet, chebSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-quadZ", &quadSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-chebZ", &chebSet); CHKERRQ(ierr);
-  if (quadSet == PETSC_TRUE) {
-    ierr = grid.chooseQuadraticSpacedVertical(); CHKERRQ(ierr);
-  } else if (chebSet == PETSC_TRUE) {
-    ierr = grid.chooseChebyshevSpacedVertical(); CHKERRQ(ierr);
-  } else {
-    if (forceEqualIfNoOption == PETSC_TRUE) {
-      ierr = grid.chooseEquallySpacedVertical(); CHKERRQ(ierr);
-    }
-  }
-  return 0;
-}
-
-

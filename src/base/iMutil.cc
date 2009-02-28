@@ -54,276 +54,6 @@ PetscErrorCode IceModel::additionalAtEndTimestep() {
   return 0;
 }
 
-//! Manages the initialization of IceModel, especially from input file options.
-PetscErrorCode IceModel::initFromOptions(PetscTruth doHook) {
-  PetscErrorCode ierr;
-  PetscTruth ifSet, bifSet;	// OLD OPTIONS
-  PetscTruth i_set, boot_from_set;
-  char input_file[PETSC_MAX_PATH_LEN];
-
-  // OLD OPTIONS
-  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
-  // NEW OPTIONS
-  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
-
-  // Print warnings to let users get used to the change:
-  if (ifSet) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: '-if' command line option is deprecated. Please use '-i' instead.\n");
-    CHKERRQ(ierr);
-  }
-  if (bifSet) {
-    ierr = verbPrintf(2, grid.com, 
-		      "PISM WARNING: '-bif' command line option is deprecated. Please use '-boot_from' instead.\n");
-    CHKERRQ(ierr);
-  }
-
-  // main initialization of IceModel
-  if (ice == PETSC_NULL) {
-    ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-    ierr = ice->setFromOptions();CHKERRQ(ierr); // Set options specific to this particular ice type
-  }
-  ierr = shelfExtension.setIce(ice);CHKERRQ(ierr);
-  ierr = shelfExtension.setFromOptions();CHKERRQ(ierr);
-
-  if (i_set) {
-    if (boot_from_set) {
-      ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: both '-boot_from' and '-i' are used. Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    if (bifSet) {		// OLD OPTION
-      ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: both '-bif' and '-i' are used. Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    if (ifSet) {		// OLD OPTION
-      ierr = verbPrintf(2, grid.com,
-			"PISM WARNING: both '-i' and '-if' are used. Ignoring '-if'...\n"); CHKERRQ(ierr);
-    }
-    
-    ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-				 input_file, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-    ierr = initFromFile(input_file); CHKERRQ(ierr);
-  } // end of if(i_set)
-  else if (boot_from_set) {
-    if (ifSet) {		// OLD OPTION
-      ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: both '-boot_from' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    if (bifSet) {		// OLD OPTION
-      ierr = verbPrintf(2, grid.com,
-			"PISM WARNING: both '-boot_from' and '-bif' are used. Ignoring '-bif'...\n"); CHKERRQ(ierr);
-    }
-
-    ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
-				 input_file, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
-    ierr = bootstrapFromFile(input_file); CHKERRQ(ierr);
-  } // end of if(boof_from_set)
-  else if (ifSet) {		// OLD OPTION
-    if (bifSet) {
-      ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: both '-bif' and '-if' are used. Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    ierr = PetscOptionsGetString(PETSC_NULL, "-if", input_file, PETSC_MAX_PATH_LEN, &ifSet);
-    CHKERRQ(ierr);
-
-    ierr = initFromFile(input_file); CHKERRQ(ierr);
-  } else if (bifSet) {		// OLD OPTION
-    ierr =  PetscOptionsGetString(PETSC_NULL, "-bif", input_file, PETSC_MAX_PATH_LEN, &bifSet);
-    CHKERRQ(ierr);
-
-    ierr = bootstrapFromFile(input_file); CHKERRQ(ierr);
-  }
-
-  // Init snapshots:
-  ierr = init_snapshots_from_options(); CHKERRQ(ierr);
-
-  // FIXME:  shouldn't -ssaBC be allowed as an option to something more general
-  //   than just the EISMINT-Ross example?  see also IceModel::diagnosticRun()
-
-  // Status at this point:  Either a derived class has initialized from formulas
-  // (e.g. IceCompModel or IceEISModel) or there has been initialization 
-  // from an input NetCDF file, by bootstrapFromFile() or
-  // initFromFile().  Anything else is an error.
-  if (! isInitialized()) {
-    ierr = PetscPrintf(grid.com,
-        "PISM ERROR: IceModel::initFromOptions():\n"
-	"            Model has not been initialized from a file or by a derived class.\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  
-  if (yearsStartRunEndDetermined == PETSC_FALSE) {
-    ierr = setStartRunEndYearsFromOptions(PETSC_FALSE);  CHKERRQ(ierr);
-  }
-  
-  // runtime options take precedence in setting of -Lx,-Ly,-Lz *including*
-  // if initialization is from an input file
-  PetscTruth     LxSet, LySet, LzSet;
-  PetscScalar    my_Lx, my_Ly, my_Lz;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lx", &my_Lx, &LxSet); CHKERRQ(ierr);
-  if (LxSet == PETSC_TRUE) {
-    ierr = grid.rescale_using_zlevels(my_Lx*1000.0, grid.Ly); CHKERRQ(ierr);
-  }  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Ly", &my_Ly, &LySet); CHKERRQ(ierr);
-  if (LySet == PETSC_TRUE) {
-    ierr = grid.rescale_using_zlevels(grid.Lx, my_Ly*1000.0); CHKERRQ(ierr);
-  }  
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Lz", &my_Lz, &LzSet); CHKERRQ(ierr);
-  if (LzSet == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,
-      "resetting vertical levels based on options and user option -Lz ...\n");
-      CHKERRQ(ierr);
-    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-    ierr = grid.rescale_and_set_zlevels(grid.Lx, grid.Ly, my_Lz); CHKERRQ(ierr);
-  }
-
-  skipCountDown = 0;
-
-  // initializations of PISMClimateCouplers
-  // FIXME:  these should go earlier so climate data (if present) is read before bootstrapping
-  //   BUT at this point bootstrapFromFile() is calling createDA() so we can't init these 
-  //   before bootstrapping because the IceGrid is not ready
-  if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);
-  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
-  if (oceanPCC != PETSC_NULL) {
-    if (isDrySimulation == PETSC_TRUE) {  oceanPCC->reportInitializationToStdOut = false;  }
-    ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
-  } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-
-
-  // FIXME this is a KLUDGE that comes from confused initialization sequence; see
-  //   bootstrapFromFile() in iMbootstrap.cc
-  if ((boot_from_set == PETSC_TRUE) || (bifSet == PETSC_TRUE)) {
-    ierr = putTempAtDepth(); CHKERRQ(ierr);
-  }
-
-  if (doHook == PETSC_TRUE) {
-    ierr = afterInitHook(); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-
-//! Complete initialization: regrid if desired, report on computational domain and grid, create viewers.
-PetscErrorCode IceModel::afterInitHook() {
-  PetscErrorCode ierr;
-
-  PetscTruth     regridFileSet = PETSC_FALSE;
-  char           regridFile[PETSC_MAX_PATH_LEN];
-
-  // initialization should be done by here!
-  
-  // report on computational box
-  ierr = verbPrintf(2,grid.com, 
-           "[computational box for ice: %8.2f km x %8.2f km",
-           2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
-  if (grid.Mbz > 1) {
-    ierr = verbPrintf(2,grid.com,
-         "\n                               x (%8.2f m + %7.2f m bedrock)]\n"
-         ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com," x %8.2f m]\n",grid.Lz); CHKERRQ(ierr);
-  }
-  
-  // report on grid cell dims
-  if (grid.isEqualVertSpacing()) {
-    ierr = verbPrintf(2,grid.com, 
-           "[grid cell dims (equal dz): %8.2f km x %8.2f km x %8.2f m",
-           grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com, 
-           "[hor. grid cell dimensions: %8.2f km x %8.2f km\n",
-           grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, 
-           " vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
-           grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
-    PetscInt    myMz, dummyM;
-    ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
-    ierr = verbPrintf(3,grid.com, 
-         "\n fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m",
-           myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
-    if (myMz > 1000) {
-      ierr = verbPrintf(1,grid.com,
-        "\n\n WARNING: Using more than 1000 vertical levels internally\n"
-        "   in temperatureStep()!\n\n");  CHKERRQ(ierr);
-    }
-  }
-
-  if (grid.Mbz > 1) {
-    ierr = verbPrintf(2,grid.com, 
-       "\n vertical spacing in bedrock: dz = %.3f m]\n",
-         grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com,"]\n"); CHKERRQ(ierr);
-  }
-
-  // if -verbose (=-verbose 3) then actually list parameters of grid
-  ierr = verbPrintf(3,grid.com,
-         "  [grid parameters list (verbose output):\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            x0 = %6.2f km, y0 = %6.2f km,\n",
-		    grid.x0/1000.0, grid.y0/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
-         grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
-         grid.Lx/1000.0,grid.Ly/1000.0,grid.Lz,grid.Lbz); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f]\n",
-         grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
-
-  // if -verbose 5 then more stuff
-  ierr = verbPrintf(5,grid.com,
-       "\n  [vertical levels (REALLY verbose output):\n"); CHKERRQ(ierr);
-  ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
-  ierr = verbPrintf(5,grid.com,"]\n"); CHKERRQ(ierr);
-  
-  // miscellaneous
-  ierr = stampHistoryCommand(); CHKERRQ(ierr);
-  ierr = createViewers(); CHKERRQ(ierr);
-
-  // read new values from regrid file, and overwrite current, if desired
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid", regridFile, PETSC_MAX_PATH_LEN, // OLD OPTION
-                               &regridFileSet); CHKERRQ(ierr);
-  if (regridFileSet == PETSC_TRUE) {
-    ierr = verbPrintf(2, grid.com, 
-       "PISM WARNING: '-regrid' is outdated. Please use '-regrid_from' instead.\n");
-       CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", regridFile, PETSC_MAX_PATH_LEN,
-                               &regridFileSet); CHKERRQ(ierr);
-  if (regridFileSet == PETSC_TRUE) {
-    ierr = regrid(regridFile); CHKERRQ(ierr);
-  }
-
-  // last tasks in initialization; might be using info from -regrid_from:
-
-  // consistency of geometry after initialization:
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-
-  // allocate and setup bed deformation model
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-
-  // init basal till model, possibly inverting for phi, if desired;
-  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
-  //   or "-surf_vel_to_phi foo.nc";
-  //   initializes PlasticBasalType* basal; sets fields vtauc, vtillphi
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 //! Catch signals -USR1 and -TERM; in the former case save and continue; in the latter, save and stop.
 /*!
 Signal \c SIGTERM makes PISM end, saving state under original \c -o name 
@@ -512,3 +242,123 @@ PetscErrorCode IceModel::thicknessTooLargeCheck() {
   return 0;
 }
 
+
+PetscErrorCode IceModel::report_grid_parameters() {
+  PetscErrorCode ierr;
+
+  // report on computational box
+  ierr = verbPrintf(2,grid.com, 
+           "[computational box for ice: %8.2f km x %8.2f km",
+           2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
+  if (grid.Mbz > 1) {
+    ierr = verbPrintf(2,grid.com,
+         "\n                               x (%8.2f m + %7.2f m bedrock)]\n"
+         ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com," x %8.2f m]\n",grid.Lz); CHKERRQ(ierr);
+  }
+  
+  // report on grid cell dims
+  if (grid.vertical_spacing == EQUAL) {
+    ierr = verbPrintf(2,grid.com, 
+           "[grid cell dims (equal dz): %8.2f km x %8.2f km x %8.2f m",
+           grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com, 
+           "[hor. grid cell dimensions: %8.2f km x %8.2f km\n",
+           grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, 
+           " vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
+           grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
+    PetscInt    myMz, dummyM;
+    ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com, 
+         "\n fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m",
+           myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
+    if (myMz > 1000) {
+      ierr = verbPrintf(1,grid.com,
+        "\n\n WARNING: Using more than 1000 vertical levels internally\n"
+        "   in temperatureStep()!\n\n");  CHKERRQ(ierr);
+    }
+  }
+
+  if (grid.Mbz > 1) {
+    ierr = verbPrintf(2,grid.com, 
+       "\n vertical spacing in bedrock: dz = %.3f m]\n",
+         grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com,"]\n"); CHKERRQ(ierr);
+  }
+
+  // if -verbose (=-verbose 3) then actually list parameters of grid
+  ierr = verbPrintf(3,grid.com,
+         "  [grid parameters list (verbose output):\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+         "            x0 = %6.2f km, y0 = %6.2f km,\n",
+		    grid.x0/1000.0, grid.y0/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+         "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
+         grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+         "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
+         grid.Lx/1000.0,grid.Ly/1000.0,grid.Lz,grid.Lbz); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com,
+         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f]\n",
+         grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
+
+  // if -verbose 5 then more stuff
+  ierr = verbPrintf(5,grid.com,
+       "\n  [vertical levels (REALLY verbose output):\n"); CHKERRQ(ierr);
+  ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
+  ierr = verbPrintf(5,grid.com,"]\n"); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+//! Print a warning telling the user that an option was ignored.
+PetscErrorCode IceModel::ignore_option(const char name[]) {
+  PetscErrorCode ierr;
+  PetscTruth option_is_set;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, name, &option_is_set); CHKERRQ(ierr);
+
+  if (option_is_set) {
+    ierr = verbPrintf(1, grid.com,
+		      "PISM WARNING: ignoring command-line option '%s'.\n",
+		      name); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode IceModel::check_old_option_and_stop(const char old_name[], const char new_name[]) {
+  PetscErrorCode ierr;
+  PetscTruth option_is_set;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, old_name, &option_is_set); CHKERRQ(ierr);
+
+  if (option_is_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
+		       old_name, new_name); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  return 0;
+}
+
+PetscErrorCode IceModel::stop_if_set(const char name[]) {
+  PetscErrorCode ierr;
+  PetscTruth option_is_set;
+
+  ierr = PetscOptionsHasName(PETSC_NULL, name, &option_is_set); CHKERRQ(ierr);
+
+  if (option_is_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: command-line option '%s' is not allowed.\n",
+		       name); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  return 0;
+}

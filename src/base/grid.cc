@@ -20,9 +20,14 @@
 #include <petscda.h>
 #include "grid.hh"
 #include "pism_const.hh"
+#include "nc_util.hh"
+#include "../udunits/udunits.h"
 
 //! Use equally-spaced vertical by default.
-const PetscInt    IceGrid::DEFAULT_SPACING_TYPE  = 1;
+const SpacingType IceGrid::DEFAULT_SPACING_TYPE = EQUAL;
+
+//! Use non-periodic grid by default.
+const Periodicity IceGrid::DEFAULT_PERIODICITY = NONE;
 
 //! Quadratic spacing in the vertical is 4 times finer near the base than equal spacing.
 const PetscScalar IceGrid::DEFAULT_QUADZ_LAMBDA  = 4.0;
@@ -62,6 +67,8 @@ IceGrid::IceGrid(MPI_Comm c,
   x0 = 0.0;
   y0 = 0.0;
 
+  vertical_spacing = DEFAULT_SPACING_TYPE;
+  periodicity = DEFAULT_PERIODICITY;
   Lx = DEFAULT_ICEPARAM_Lx;
   Ly = DEFAULT_ICEPARAM_Ly;
   Lz = DEFAULT_ICEPARAM_Lz;
@@ -70,17 +77,13 @@ IceGrid::IceGrid(MPI_Comm c,
   My = DEFAULT_ICEPARAM_My;
   Mz = DEFAULT_ICEPARAM_Mz;
   Mbz = DEFAULT_ICEPARAM_Mbz;
-  dx = 2.0 * Lx / (Mx - 1);
-  dy = 2.0 * Ly / (My - 1);
-  Lbz = (Mbz - 1) * (Lz / (Mz - 1));
 
-  zlevels = new PetscScalar[Mz];
-  zblevels = new PetscScalar[Mbz];
-
-  spacing_type = DEFAULT_SPACING_TYPE;
-  setVertLevels();
-  
   da2 = PETSC_NULL;
+  zlevels = NULL;
+  zblevels = NULL;
+
+  compute_vertical_levels();
+  compute_horizontal_spacing();
 }
 
 
@@ -89,61 +92,25 @@ IceGrid::~IceGrid() {
     DADestroy(da2);
   }
   delete [] zlevels;
-  zlevels = PETSC_NULL;
   delete [] zblevels;
-  zblevels = PETSC_NULL;
 }
 
-
-//! Choose equal spacing in vertical; call it before rescale_and_set_zlevels().
-PetscErrorCode IceGrid::chooseEquallySpacedVertical() {
-  spacing_type = 1;
-  return 0;
-}
-
-
-//! Choose Chebyshev spacing in vertical; call it before rescale_and_set_zlevels().
-/*!
-This spacing scheme is very fine near base.
-
-For more information, see documentation on setVertLevels().
- */
-PetscErrorCode IceGrid::chooseChebyshevSpacedVertical() {
-  spacing_type = 2;
-  return 0;
-}
-
-
-//! Choose quadratic spacing in vertical; call it before rescale_and_set_zlevels().
-/*!
-This spacing scheme is only fairly fine near base.  
-
-The degree of fineness is controlled by DEFAULT_QUADZ_LAMBDA for now.
-
-For more information, see documentation on setVertLevels().
- */
-PetscErrorCode IceGrid::chooseQuadraticSpacedVertical() {
-  spacing_type = 3;
-  return 0;
-}
-
-
-//! Set the vertical levels according to values in Mz, Lz, Mbz, and the spacing_type flag.
+//! Set the vertical levels according to values in Mz, Lz, Mbz, and the vertical_spacing data member.
 /*!
 Sets \c dzMIN, \c dzMAX, and \c Lbz.  Sets and re-allocates \c zlevels[] 
 and \c zblevels[].
 
-Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c spacing_type 
-cannot be zero at entry to this routine; it must be 1, 2, or 3.
+Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c vertical_spacing
+cannot be UNKNOWN.
 
 This procedure is only called when a grid is determined from scratch, e.g. 
 by a derived class or when bootstrapping from 2D data only, but not when 
 reading a model state input file (which will have its own grid,
 which may not even be a grid created by this routine).
-  - When \c spacing_type == 1, the vertical grid in the ice is equally spaced:
+  - When \c vertical_spacing == EQUAL, the vertical grid in the ice is equally spaced:
     <tt>zlevels[k] = k dzMIN</tt> where <tt>dzMIN = Lz / (Mz - 1)</tt>.  
     In this case <tt>dzMIN = dzMAX</tt>.
-  - When \c spacing_type == 2, the vertical grid in the ice is Chebyshev spaced.  
+  - When \c vertical_spacing == CHEBYSHEV, the vertical grid in the ice is Chebyshev spaced.  
     Note that (generally speaking) the \f$N+1\f$ \e Chebyshev \e extreme 
     \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
     (See \lo\cite{Trefethen}\elo.)
@@ -160,7 +127,7 @@ which may not even be a grid created by this routine).
     \f$dzEQ = \mathtt{Lz}/(\mathtt{Mz}-1)\f$.   Near the top the spacing is, 
     to good approximation, equal to \f$\pi \mathtt{dzEQ}\f$; the actual top 
     space is recorded as \c dzMAX.
-  - When \c spacing_type == 3, the spacing is a quadratic function.  The intent 
+  - When \c vertical_spacing == QUADRATIC, the spacing is a quadratic function.  The intent 
     is that the spacing is smaller near the base than near the top, but that 
     the effect is less extreme than the Chebyshev case.  In particular, if 
     \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then <tt>zlevels[k] = Lz * 
@@ -176,42 +143,50 @@ both the \c zblevels[] and the depth into the bedrock to which the
 computational box extends (\c Lbz) are set according to the value
 of \c Mbz and according to the equal spacing which would apply to the ice.
  */
-PetscErrorCode  IceGrid::setVertLevels() {
+PetscErrorCode  IceGrid::compute_vertical_levels() {
   
-  if (spacing_type == 0) {
-    SETERRQ(1,"IceGrid::setVertLevels():  spacing_type cannot be zero when \n"
-              "  running setVertLevels(); was rescale_and_set_zlevels() called\n"
-              "   twice or was choose...VertSpacing() not called?\n");
-  } else if ((spacing_type < 0) || (spacing_type > 3)) {
-    SETERRQ1(2,"IceGrid::setVertLevels():  spacing_type = %d is invalid\n",spacing_type);
+  if (vertical_spacing == UNKNOWN) {
+    SETERRQ(1,"IceGrid::compute_vertical_levels(): vertical_spacing can not be UNKNOWN");
   }
   
   if (Mz < 2) {
-    SETERRQ(3,"IceGrid::setVertLevels():  Mz must be at least 2 for setVertLevels to work\n");
+    SETERRQ(2,"IceGrid::compute_vertical_levels(): Mz must be at least 2.");
   }
 
-  // note lengths of these arrays can change at a rescale
+  if (Mbz < 1) {
+    SETERRQ(3, "IceGrid::compute_vertical_levesl(): Mbz must be at least 1.");
+  }
+
+  if (Lz <= 0) {
+    SETERRQ(4, "IceGrid::compute_vertical_levels(): Lz must be positive.");
+  }
+
+  // Fill the levels in the ice:
   delete [] zlevels;
   zlevels = new PetscScalar[Mz];
 
-  if (spacing_type == 1) { 
+  switch (vertical_spacing) {
+  case EQUAL:
     dzMIN = Lz / ((PetscScalar) Mz - 1);
     dzMAX = dzMIN;
-    // equally-spaced in ice
+    
+    // Equal spacing
     for (PetscInt k=0; k < Mz - 1; k++) {
       zlevels[k] = dzMIN * ((PetscScalar) k);
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
-  } else if (spacing_type == 2) { 
-    // Spaced according to the Chebyshev extreme points in the interval [0,1], with 1 
-    //   flipped to be the base of the ice, and stretched.
+    break;
+  case CHEBYSHEV:
+    // Spaced according to the Chebyshev extreme points in the interval [0,1],
+    //   with 1 flipped to be the base of the ice, and stretched.
     for (PetscInt k=0; k < Mz - 1; k++) {
       zlevels[k] = Lz * ( 1.0 - cos((pi/2.0) * k / (Mz-1)) );
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
     dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
-  } else if (spacing_type == 3) { 
+    break;
+  case QUADRATIC:
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     const PetscScalar  lam = DEFAULT_QUADZ_LAMBDA;  
     for (PetscInt k=0; k < Mz - 1; k++) {
@@ -221,25 +196,25 @@ PetscErrorCode  IceGrid::setVertLevels() {
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
     dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
+    break;
+  default:
+    SETERRQ(5, "Can't happen.");
   }
 
+  // Fill the bedrock levels:
   delete [] zblevels;
   zblevels = new PetscScalar[Mbz];
 
-  // equally-spaced in bedrock with spacing determined by Lz and Mz;
-  //   also set
+  // equally-spaced in bedrock with spacing determined by Lz, Mz and vertical_spacing
   if (Mbz == 1) {
     zblevels[0] = 0.0;
     Lbz = 0.0;
-  } else if (Mbz > 1) {
-//    const PetscScalar dzEQ = Lz / ((PetscScalar) Mz - 1);
+  } else {
     const PetscScalar dzEQ = dzMIN;
     Lbz = dzEQ * ((PetscScalar) Mbz - 1);
     for (PetscInt kb=0; kb < Mbz; kb++) {
       zblevels[kb] = -Lbz + dzEQ * ((PetscScalar) kb);
     }
-  } else {
-    SETERRQ(4,"Mbz must be at least one");
   }
 
   return 0;
@@ -263,18 +238,11 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   return 0;
 }
 
-
-//! Determine whether the grid is equally spaced in vertical; we try to avoid having code with such a restriction.
-bool IceGrid::isEqualVertSpacing() {
-  return (spacing_type == 1);
-}
-
-
 //! Return the index \c k into \c zlevels[] so that <tt>zlevels[k] <= height < zlevels[k+1]</tt> and <tt>k < Mz</tt>.
 PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com, 
-       "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be nonnegative)\n",
+       "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
        height);
     PetscEnd();
   }
@@ -291,122 +259,6 @@ PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
   }
   return mcurr;
 }
-
-
-//! Rescale IceGrid based on new values for \c Lx, \c Ly, \c Lz (default version).
-/*! 
-This method computes \c dx, \c dy, \c dz, and \c Lbz based on the current values of \c Mx,
-\c My, \c Mz, \c Mbz and the input values of \c lx, \c ly, and \c lz.  It also sets \c Lx = \c lx, etc.
-
-Uses <tt>spacing_type</tt> to set the vertical levels.  In particular, one of the procedures 
-chooseEquallySpacedVertical(), chooseQuadraticSpacedVertical(), or chooseChebyshevSpacedVertical() 
-should be called before this one.
-
-If vertical levels are already determined, use method rescale_using_zlevels().
- */
-PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                                const PetscScalar lz) {
-  PetscErrorCode ierr;
-  
-  ierr = rescale_and_set_zlevels(lx,ly,lz,PETSC_FALSE,PETSC_FALSE); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Rescale IceGrid based on new values for \c Lx, \c Ly,\c Lz, but optionally allowing for periodicity.
-/*! 
-The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
-This means that the ghosted values <tt> foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]</tt>
-for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
-That is, they are available even if i,j is a point at the edge of the grid.  On the other
-hand, by default, \c dx  is the full width  <tt>2 * Lx</tt>  divided by  <tt>Mx - 1</tt>.
-This means that we conceive of the computational domain as starting at the <tt>i = 0</tt>
-grid location and ending at the  <tt>i = Mx - 1</tt>  grid location, in particular.  
-This idea is not quite compatible with the periodic nature of the grid.
-
-The upshot is that if one computes in a truely periodic way then the gap between the  
-<tt>i = 0</tt>  and  <tt>i = Mx - 1</tt>  grid points should \em also have width  \c dx.  
-Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
- */
-PetscErrorCode IceGrid::rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                                const PetscScalar lz, 
-                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic) {
-  PetscErrorCode ierr;
-
-  if (lz<=0) {
-    SETERRQ(1, "rescale: lz must be positive\n");
-  }
-  if (Mz <= 1) {
-    SETERRQ(2, "rescale: Mz must be at least 2 (ice part of computational domain must have thickness)\n");
-  }
-
-  Lz = lz;  
-  ierr = setVertLevels(); CHKERRQ(ierr);  // note Lbz is determined within setVertLevels()
-
-  ierr = rescale_using_zlevels(lx, ly, XisTruelyPeriodic, YisTruelyPeriodic); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
-/*! 
-Before calling this, always make sure \c Mz, \c Mbz, \c zlevels[], and \c zblevels[] are correctly set
-and consistent.  In particular, they need to be strictly increasing and <tt>zlevels[0] = zblevels[Mbz-1] = 0.0</tt>
-must be true.
-
-This version assumes the horizontal grid is not truely periodic.  Use this one by default.
- */
-PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly) {
-  PetscErrorCode ierr;
-  ierr = rescale_using_zlevels(lx,ly,PETSC_FALSE,PETSC_FALSE); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Rescale IceGrid based on new values for \c Lx, \c Ly but assuming zlevels and zblevels already have correct values.
-PetscErrorCode IceGrid::rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic) {
-  PetscErrorCode ierr;
-
-  if (lx<=0) {
-    SETERRQ(1, "rescale: lx must be positive\n");
-  }
-  if (ly<=0) {
-    SETERRQ(2, "rescale: ly must be positive\n");
-  }
-
-  Lx = lx; Ly = ly;
-  if (XisTruelyPeriodic == PETSC_TRUE) {
-    dx = 2.0 * Lx / (Mx);
-  } else {
-    dx = 2.0 * Lx / (Mx - 1);
-  }
-  if (YisTruelyPeriodic == PETSC_TRUE) {
-    dy = 2.0 * Ly / (My);
-  } else {
-    dy = 2.0 * Ly / (My - 1);
-  }
-
-  if ( (!isIncreasing(Mz, zlevels)) || (PetscAbs(zlevels[0]) > 1.0e-10) ) {
-    SETERRQ(3, "rescale: zlevels invalid; must be strictly increasing and start with z=0\n");
-  }
-  zlevels[0] = 0.0;
-  if ( (!isIncreasing(Mbz, zblevels)) || (PetscAbs(zblevels[Mbz-1]) > 1.0e-10) ) {
-    SETERRQ(3, "rescale: zlevels invalid; must be strictly increasing and start with z=0\n");
-  }
-  zblevels[Mbz-1] = 0.0;
-  
-  Lz = zlevels[Mz-1];
-  Lbz = - zblevels[0];
-
-  ierr = get_dzMIN_dzMAX_spacingtype(); CHKERRQ(ierr);
-  
-  // it is not known if the following has any effect:
-  ierr = DASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx,
-                                 PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  return 0;
-}
-
 
 bool IceGrid::isIncreasing(const PetscInt len, PetscScalar *vals) {
   for (PetscInt k = 0; k < len-1; k++) {
@@ -429,9 +281,9 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
     dzMAX = PetscMax(mydz,dzMAX);
   }
   if (PetscAbs(dzMAX - dzMIN) <= 1.0e-8) {
-    spacing_type = 1;
+    vertical_spacing = EQUAL;
   } else {
-    spacing_type = 0;
+    vertical_spacing = UNKNOWN;
   }
   return 0;
 }
@@ -439,17 +291,17 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 
 //! Create the PETSc DA \c da2 for the horizontal grid.  Determine how the horizontal grid is divided among processors.
 /*!
-This procedure should only be called 
-after the parameters describing the horizontal computational box (Lx,Ly) and the parameters for 
-the horizontal grid (Mx,My) are already determined.  In particular, the input file (either 
-\c -i or \c -boot_from) and user options (like \c -Mx) must have already been read to determine 
-the parameters, and any conflicts must have been resolved.
+  This procedure should only be called after the parameters describing the
+  horizontal computational box (Lx,Ly) and the parameters for the horizontal
+  grid (Mx,My) are already determined. In particular, the input file (either \c
+  -i or \c -boot_from) and user options (like \c -Mx) must have already been
+  read to determine the parameters, and any conflicts must have been resolved.
  */
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
 
   if (da2 != PETSC_NULL) {
-    ierr = DADestroy(da2); CHKERRQ(ierr);
+    SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
   }
 
   // this line contains the fundamental transpose: My,Mx instead of "Mx,My";
@@ -471,3 +323,90 @@ PetscErrorCode IceGrid::createDA() {
   return 0;
 }
 
+//! Sets grid vertical levels, Mz, Mbz, Lz and Lbz. Checks input for consistency.
+PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new_zlevels, double *new_zblevels) {
+  if (new_Mz < 2) {
+    SETERRQ(1, "IceGrid::set_vertical_levels(): Mz has to be at least 2.");
+  }
+  if (new_Mbz < 1) {
+    SETERRQ(2, "IceGrid::set_vertical_levels(): Mbz has to be at least 1.");
+  }
+
+  if ( (!isIncreasing(new_Mz, new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10) ) {
+    SETERRQ(3, "IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
+  }
+
+  if ( (!isIncreasing(new_Mbz, new_zblevels)) || (PetscAbs(new_zblevels[new_Mbz-1]) > 1.0e-10) ) {
+    SETERRQ(3, "rescale: zblevels invalid; must be strictly increasing and end with z=0\n");
+  }
+
+  Mz  =  new_Mz;
+  Mbz =  new_Mbz;
+  Lz  =  new_zlevels[Mz - 1];
+  Lbz = -new_zblevels[0];
+
+  // Fill the levels in the ice:
+  delete[] zlevels;
+  zlevels = new PetscScalar[Mz];
+  for (int j = 0; j < Mz; j++)
+    zlevels[j] = (PetscScalar) new_zlevels[j];
+  zlevels[0] = 0.0;		// make sure zlevels start with zero
+
+  // Fill the bedrock levels:
+  delete[] zblevels;
+  zblevels = new PetscScalar[Mbz];
+  for (int j = 0; j < Mbz; j++)
+    zblevels[j] = (PetscScalar) new_zblevels[j];
+  zblevels[Mbz-1] = 0.0;	// make sure zblevels end with zero
+
+  get_dzMIN_dzMAX_spacingtype();
+
+  return 0;
+}
+
+//! Compute horizontal spacing parameters \c dx and \c dy using \c Mx, \c My, \c Lx, \c Ly and periodicity.
+/*! 
+The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
+This means that the ghosted values <tt> foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]</tt>
+for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
+That is, they are available even if i,j is a point at the edge of the grid.  On the other
+hand, by default, \c dx  is the full width  <tt>2 * Lx</tt>  divided by  <tt>Mx - 1</tt>.
+This means that we conceive of the computational domain as starting at the <tt>i = 0</tt>
+grid location and ending at the  <tt>i = Mx - 1</tt>  grid location, in particular.  
+This idea is not quite compatible with the periodic nature of the grid.
+
+The upshot is that if one computes in a truly periodic way then the gap between the  
+<tt>i = 0</tt>  and  <tt>i = Mx - 1</tt>  grid points should \em also have width  \c dx.  
+Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
+ */
+PetscErrorCode IceGrid::compute_horizontal_spacing() {
+  if (Mx < 1) {
+    SETERRQ(1, "IceGrid::set_horizontal_dims(): Mx has to be at least 3.");
+  }
+
+  if (My < 3) {
+    SETERRQ(2, "IceGrid::set_horizontal_dims(): My has to be at least 3.");
+  }
+
+  if (Lx <= 0) {
+    SETERRQ(3, "IceGrid::set_horizontal_dims(): Lx has to be positive.");
+  }
+
+  if (Ly <= 0) {
+    SETERRQ(3, "IceGrid::set_horizontal_dims(): Ly has to be positive.");
+  }
+
+  if (periodicity & X_PERIODIC) {
+    dx = 2.0 * Lx / Mx;
+  } else {
+    dx = 2.0 * Lx / (Mx - 1);
+  }
+
+  if (periodicity & Y_PERIODIC) {
+    dy = 2.0 * Ly / My;
+  } else {
+    dy = 2.0 * Ly / (My - 1);
+  }
+
+  return 0;
+}

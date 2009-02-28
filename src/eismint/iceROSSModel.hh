@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2006-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,17 +26,17 @@
 
 class IceROSSModel : public IceModel {
 public:
-    IceROSSModel(IceGrid &g);
-    virtual PetscErrorCode setFromOptions();
-    using IceModel::initFromOptions;
-    virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
-    PetscErrorCode         finishROSS();
-    PetscErrorCode         readRIGGSandCompare();
+  IceROSSModel(IceGrid &g);
+  PetscErrorCode finishROSS();
+  PetscErrorCode readRIGGSandCompare();
+  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode misc_setup();
 
 private:
     IceModelVec2    obsAzimuth, obsMagnitude, obsAccurate;    
-    PetscErrorCode  createROSSVecs();
-    PetscErrorCode  destroyROSSVecs();
+    virtual PetscErrorCode  createVecs();
+    virtual PetscErrorCode  destroyVecs();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  readObservedVels(const char *fname);
     PetscErrorCode  computeErrorsInAccurateRegion();

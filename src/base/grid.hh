@@ -21,6 +21,9 @@
 
 #include <petscda.h>
 
+typedef enum {UNKNOWN = 0, EQUAL, CHEBYSHEV, QUADRATIC} SpacingType;
+typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
 This class holds parameters describing the grid, including the vertical spacing 
@@ -37,23 +40,10 @@ public:
   ~IceGrid();
 
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
-
-  PetscErrorCode chooseEquallySpacedVertical();
-  PetscErrorCode chooseChebyshevSpacedVertical();
-  PetscErrorCode chooseQuadraticSpacedVertical();
-
-  PetscErrorCode rescale_and_set_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                                         const PetscScalar lz);
-  PetscErrorCode rescale_and_set_zlevels(
-                        const PetscScalar lx, const PetscScalar ly, 
-                        const PetscScalar lz, 
-                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic);
-  PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly);
-  PetscErrorCode rescale_using_zlevels(const PetscScalar lx, const PetscScalar ly, 
-                        const PetscTruth XisTruelyPeriodic, const PetscTruth YisTruelyPeriodic);
-
+  PetscErrorCode set_vertical_levels(int Mz, int Mbz, double *z_levels, double *zb_levels);
+  PetscErrorCode compute_vertical_levels();
+  PetscErrorCode compute_horizontal_spacing();
   PetscErrorCode printVertLevels(const int verbosity); 
-  bool           isEqualVertSpacing();
   PetscInt       kBelowHeight(const PetscScalar height);
 
   
@@ -66,33 +56,30 @@ public:
 
   PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
                                    // which are represented in 3d Vecs
+  SpacingType vertical_spacing;
+  Periodicity periodicity;
   PetscScalar dzMIN, dzMAX;
 
-  PetscScalar x0, y0;		// grid center (from an input or bootstrapping file)
-  PetscScalar Lx, Ly;  // half width of the ice model grid in x-direction, y-direction (m)
+  PetscScalar x0, y0;	   // grid center (from an input or bootstrapping file)
+  PetscScalar Lx, Ly; // half width of the ice model grid in x-direction, y-direction (m)
   PetscInt    Mx, My; // number of grid points in x-direction, y-direction
-  PetscScalar dx, dy; // spacing of grid
+  PetscScalar dx, dy; // horizontal grid spacing
 
   PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
-  PetscInt    Mz, Mbz; // number of grid points in z-direction (ice), z-direction (bedrock).
+  PetscInt    Mz, Mbz; // number of grid points in z-direction, ice and bedrock.
 
-  PetscScalar year;       // current time; units of years
+  PetscScalar year;       // current time (years)
   
 protected:
-  static const PetscInt    DEFAULT_SPACING_TYPE;
+  static const SpacingType DEFAULT_SPACING_TYPE;
+  static const Periodicity DEFAULT_PERIODICITY;
   static const PetscScalar DEFAULT_QUADZ_LAMBDA;
   // FORMERLY IN IceParam:
   static const PetscScalar DEFAULT_ICEPARAM_Lx, DEFAULT_ICEPARAM_Ly, DEFAULT_ICEPARAM_Lz, 
                            DEFAULT_ICEPARAM_year;
   static const PetscInt    DEFAULT_ICEPARAM_Mx, DEFAULT_ICEPARAM_My, DEFAULT_ICEPARAM_Mz,
                            DEFAULT_ICEPARAM_Mbz;
-  
 private:
-  PetscInt        spacing_type;  // 0 = unknown spacing but not equally spaced
-                                 // 1 = equally spaced
-                                 // 2 = Chebyshev spaced (very fine near base of ice)
-                                 // 3 = quadratic spaced (fairly fine near base of ice)
-  PetscErrorCode  setVertLevels();
   PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
   bool            isIncreasing(const PetscInt len, PetscScalar *vals);
 };

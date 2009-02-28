@@ -58,58 +58,12 @@ $ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
 static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  if (utIsInit() == 0) {
-    if (utInit(NULL) != 0) {
-      PetscPrintf(grid.com, "PCCTEST ERROR: UDUNITS initialization failed.\n");
-      PetscEnd();
-    }
-  }
-
   NCTool nc(&grid);
 
-  // following deliberately duplicates content in IceModel::initFromFile()
-  bool file_exists = false;
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", filename); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.get_grid(filename); CHKERRQ(ierr);
 
-  // note user option setting of -Lx,-Ly,-Lz will overwrite the corresponding settings from 
-  // this file but that the file's settings of Mx,My,Mz,Mbz will overwrite the user options 
-  grid_info g;
-  ierr = nc.get_grid_info(g);
-  grid.year = g.time / secpera;
-  grid.Mx   = g.x_len;
-  grid.My   = g.y_len;
-  grid.Mz   = g.z_len;
-  grid.Mbz  = g.zb_len;
-  grid.x0   = g.x0;
-  grid.y0   = g.y0;
-  // grid.Lx, grid.Ly are set from g.Lx, g.Ly below in call to grid.rescale_using_zlevels()
-
-  double *zlevs, *zblevs;
-  zlevs = new double[grid.Mz];
-  zblevs = new double[grid.Mbz];
-  ierr = nc.get_vertical_dims(grid.Mz, grid.Mbz, zlevs, zblevs); CHKERRQ(ierr);
-
-  // re-allocate and fill grid.zlevels & zblevels with read values
-  delete [] grid.zlevels;
-  delete [] grid.zblevels;
-  grid.zlevels = new PetscScalar[grid.Mz];
-  grid.zblevels = new PetscScalar[grid.Mbz];
-  for (PetscInt k = 0; k < grid.Mz; k++) {
-    grid.zlevels[k] = (PetscScalar) zlevs[k];
-  }
-  for (PetscInt k = 0; k < grid.Mbz; k++) {
-    grid.zblevels[k] = (PetscScalar) zblevs[k];
-  }
-  delete [] zlevs;  delete [] zblevs;  // done with these
-  
   // set DA; a goal
   ierr = grid.createDA(); CHKERRQ(ierr);
-
-  ierr = grid.rescale_using_zlevels(g.Lx, g.Ly); CHKERRQ(ierr);
   
   return 0;
 }

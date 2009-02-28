@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -246,7 +246,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         }
       }
 
-      if (grid.isEqualVertSpacing()) {
+      if (grid.vertical_spacing == EQUAL) {
         ierr = u3.getValColumnPL(i,j,Mz,zlevEQ,u); CHKERRQ(ierr);
         ierr = v3.getValColumnPL(i,j,Mz,zlevEQ,v); CHKERRQ(ierr);
         ierr = w3.getValColumnPL(i,j,Mz,zlevEQ,w); CHKERRQ(ierr);
@@ -808,7 +808,7 @@ PetscErrorCode IceModel::getMzMbzForTempAge(PetscInt &ta_Mz, PetscInt &ta_Mbz) {
 
 #define min_to_equal_factor 1.0
 
-  if (grid.isEqualVertSpacing()) {
+  if (grid.vertical_spacing == EQUAL) {
     ta_Mbz = grid.Mbz;
     ta_Mz = grid.Mz;
   } else {
@@ -828,7 +828,7 @@ PetscErrorCode IceModel::getVertLevsForTempAge(const PetscInt ta_Mz, const Petsc
                             PetscScalar &ta_dzEQ, PetscScalar &ta_dzbEQ, 
                             PetscScalar *ta_zlevEQ, PetscScalar *ta_zblevEQ) {
 
-  if (grid.isEqualVertSpacing()) {
+  if (grid.vertical_spacing == EQUAL) {
     ta_dzEQ = grid.dzMIN;
     ta_dzbEQ = grid.dzMIN;
     for (PetscInt k = 0; k < ta_Mz; k++) {

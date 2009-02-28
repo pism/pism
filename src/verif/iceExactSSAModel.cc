@@ -39,15 +39,23 @@ const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 
 IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
   test = mytest;
-  iceFactory.setType(ICE_CUSTOM);
+  
+  useSSAVelocity = PETSC_TRUE;
+  ssaMaxIterations = 500;  
+  useConstantNuHForSSA = PETSC_FALSE;
+  doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J and M
+  doSuperpose = PETSC_FALSE;
 }
 
-
-PetscErrorCode IceExactSSAModel::setFromOptions() {
+PetscErrorCode IceExactSSAModel::init_physics() {
   PetscErrorCode ierr;
+  if (test == 'I')
+    iceFactory.setType(ICE_CUSTOM);
+  else
+    iceFactory.setType(ICE_ARR);
 
-  ierr = iceFactory.setFromOptions();CHKERRQ(ierr);
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
   // If the user left things alone, we'll have a CustomGlenIce
   CustomGlenIce *cust = dynamic_cast<CustomGlenIce*>(ice);
   if (!cust) {
@@ -56,52 +64,147 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
     // Use Schoof's parameter
     ierr = cust->setHardness(B_schoof);CHKERRQ(ierr);
   }
+
   // If the user changes settings with -ice_custom_XXX, they asked for it.  If you don't want to allow this, disable the
   // line below.
   ierr = ice->setFromOptions();CHKERRQ(ierr);
-  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
+
   return 0;
 }
 
 
-PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
-  PetscErrorCode  ierr;
-  PetscTruth      inFileSet, bifFileSet;
-  char            inFile[PETSC_MAX_PATH_LEN];
+PetscErrorCode IceExactSSAModel::setFromOptions() {
+  PetscErrorCode ierr;
 
   ierr = verbPrintf(2,grid.com,"initializing Test %c ... \n",test); CHKERRQ(ierr);
 
   // input file not allowed
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", inFile,
-                               PETSC_MAX_PATH_LEN, &bifFileSet); CHKERRQ(ierr);
-  if ((inFileSet == PETSC_TRUE) || (bifFileSet == PETSC_TRUE)) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM input file not allowed for initialization of IceExactSSAModel.\n");
+  ierr = stop_if_set("-i"); CHKERRQ(ierr);
+  ierr = stop_if_set("-boot_from"); CHKERRQ(ierr);
+
+  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceExactSSAModel::createVecs() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
+  if (test == 'J') {
+    ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true); CHKERRQ(ierr);
+    ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode IceExactSSAModel::destroyVecs() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
+
+  if (test == 'J') {
+    ierr = vNuForJ[0].destroy(); CHKERRQ(ierr);
+    ierr = vNuForJ[1].destroy(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode IceExactSSAModel::misc_setup() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::misc_setup();
+
+
+  switch (test) {
+  case 'I':
+      // fill vtauc with values for Schoof solution:
+      ierr = taucSetI(); CHKERRQ(ierr);
+      // set up remaining stuff:
+      ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
+      // set flags, parameters affecting solve of stream equations
+      // so periodic grid works although h(-Lx,y) != h(Lx,y):
+      computeSurfGradInwardSSA = PETSC_TRUE;
+
+      ssaEpsilon = 0.0;  // don't use this lower bound
+    break;
+  case 'J':
+    ierr = setInitStateJ(); CHKERRQ(ierr);
+    isDrySimulation = PETSC_FALSE;
+    leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
+    computeSurfGradInwardSSA = PETSC_FALSE;
+    ssaEpsilon = 0.0;  // don't use this lower bound
+    break;
+  case 'M':
+    ierr = setInitStateM(); CHKERRQ(ierr);
+    isDrySimulation = PETSC_FALSE;
+    computeSurfGradInwardSSA = PETSC_FALSE;
+
+    // The comments below are preserved, with the code modified to show the new way to do this, but it's not clear
+    // that this should be hard-coded into the test anyway.  If not, these defaults should be moved to before
+    // setFromOptions, or abandoned.
+    //
+    // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
+    ierr = shelfExtension.forceNuH(6.5e+16);CHKERRQ(ierr); // about optimal; compare 4.74340e+15 usual
+    ierr = verbPrintf(3,grid.com,
+		      "IceExactSSAModel::misc_setup, for test M:\n"
+		      "  useConstantNuHForSSA=%d\n", useConstantNuHForSSA); CHKERRQ(ierr);
+    ierr = ice->printInfo(3);CHKERRQ(ierr);
+    ierr = shelfExtension.printInfo(3);CHKERRQ(ierr);
+  }
+
+  // Communicate so that we can differentiate surface, and to set boundary conditions
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vuvbar[0].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vuvbar[1].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vuvbar[0].endGhostComm(); CHKERRQ(ierr);
+  ierr = vuvbar[1].endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceExactSSAModel::set_grid_defaults() {
+  PetscErrorCode ierr;
+  const PetscScalar testI_Ly = 120.0e3,
+    testI_Lx = PetscMax(60.0e3, ((grid.Mx - 1) / 2) * (2.0 * testI_Ly / (grid.My - 1)) );
+
+  switch (test) {
+  case 'I':
+    // set up X km by 240 km by 3000 m grid; note 240km = 6L where L = L_schoof
+    // find dimension X so that pixels are square but for some unknown reason 
+    //    there are convergence problems when x dimension Lx is significantly
+    //    smaller than y dimension Ly
+    // note Mx,My may have been set by options, but not others
+    grid.Lx = testI_Lx;
+    grid.Ly = testI_Ly;
+    grid.Lz = 3000.0;
+    break;
+  case 'J':
+    grid.Lx = grid.Ly = LforJ;
+    // grid is truly periodic both in x and in y directions
+    grid.periodicity = XY_PERIODIC;
+    break;
+  case 'M':
+    grid.Lx = grid.Ly = LforM;
+    grid.Lz = 1000.0;
+    break;
+  default:
+    ierr = PetscPrintf(grid.com, "Only tests I, J, M currently supported in IceExactSSAModel.");
     CHKERRQ(ierr);
     PetscEnd();
   }
-  // OLD OPTIONS:
-  ierr = PetscOptionsGetString(PETSC_NULL, "-if", inFile,
-                               PETSC_MAX_PATH_LEN, &inFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-bif", inFile,
-                               PETSC_MAX_PATH_LEN, &bifFileSet); CHKERRQ(ierr);
-  if ((inFileSet == PETSC_TRUE) || (bifFileSet == PETSC_TRUE)) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM input file not allowed for initialization of IceExactSSAModel.\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  ierr = createVecs(); CHKERRQ(ierr);
 
-  // do rest of base class initialization before test initialization for I, J, M (below)
-  initialized_p = PETSC_TRUE;
-  ierr = IceModel::initFromOptions(PETSC_FALSE); CHKERRQ(ierr);
+  return 0;
+}
 
-  // need pointer to surface temp from PISMAtmosphereCoupler atmosPCC*
+PetscErrorCode IceExactSSAModel::set_vars_from_options() {
+  PetscErrorCode ierr;
+
+  // We need a pointer to surface temp from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs;
   ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
                   (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
@@ -125,90 +228,9 @@ PetscErrorCode IceExactSSAModel::initFromOptions(PetscTruth doHook) {
   ierr = w3.set(0.0); CHKERRQ(ierr);
   ierr = vub.set(0.0); CHKERRQ(ierr);
   ierr = vvb.set(0.0); CHKERRQ(ierr);
-  
-  useSSAVelocity = PETSC_TRUE;
-  ssaMaxIterations = 500;  
-  useConstantNuHForSSA = PETSC_FALSE;
-  doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J and M
-  doSuperpose = PETSC_FALSE;
-  
-  // in preparation for rescale_and_set_zlevels() below:
-  ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);  
 
-  switch (test) {
-    case 'I': {
-      // set up X km by 240 km by 3000 m grid; note 240km = 6L where L = L_schoof
-      // find dimension X so that pixels are square but for some unknown reason 
-      //    there are convergence problems when x dimension Lx is significantly
-      //    smaller than y dimension Ly
-      // note Mx,My may have been set by options, but not others
-      const PetscScalar testI_Ly = 120.0e3,
-        testI_Lx = PetscMax(60.0e3, ((grid.Mx - 1) / 2) * (2.0 * testI_Ly / (grid.My - 1)) );
-      ierr = grid.rescale_and_set_zlevels(testI_Lx, testI_Ly, 3000.0); CHKERRQ(ierr);
-      ierr = afterInitHook(); CHKERRQ(ierr);
-      // fill vtauc with values for Schoof solution:
-      ierr = taucSetI(); CHKERRQ(ierr);
-      // set up remaining stuff:
-      ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
-      // set flags, parameters affecting solve of stream equations
-      // so periodic grid works although h(-Lx,y) != h(Lx,y):
-      computeSurfGradInwardSSA = PETSC_TRUE;
-
-      ssaEpsilon = 0.0;  // don't use this lower bound
-
-      }
-      break;
-    case 'J':
-      // first allocate space for nu (which will be calculated from formula)
-      ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true); CHKERRQ(ierr);
-      ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true); CHKERRQ(ierr);
-      // we set last two flags: grid is truely periodic both in x and in y
-      ierr = grid.rescale_and_set_zlevels(LforJ, LforJ, 1000.0, PETSC_TRUE, PETSC_TRUE);
-         CHKERRQ(ierr);
-      ierr = afterInitHook(); CHKERRQ(ierr);
-      ierr = setInitStateJ(); CHKERRQ(ierr);
-      isDrySimulation = PETSC_FALSE;
-      leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
-      computeSurfGradInwardSSA = PETSC_FALSE;
-      ssaEpsilon = 0.0;  // don't use this lower bound
-      break;
-    case 'M': {
-      // set up 1500 km by 1500 km grid
-      // note Mx,My may have been set by options, but not others
-      ierr = grid.rescale_and_set_zlevels(LforM, LforM, 1000.0); CHKERRQ(ierr);
-      //ierr = grid.rescale_and_set_zlevels(1500.0e3, 1500.0e3, 1000.0); CHKERRQ(ierr);
-      ierr = afterInitHook(); CHKERRQ(ierr);
-      ierr = setInitStateM(); CHKERRQ(ierr);
-      isDrySimulation = PETSC_FALSE;
-      computeSurfGradInwardSSA = PETSC_FALSE;
-
-      // The comments below are preserved, with the code modified to show the new way to do this, but it's not clear
-      // that this should be hard-coded into the test anyway.  If not, these defaults should be moved to before
-      // setFromOptions, or abandoned.
-      //
-      // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
-      ierr = shelfExtension.forceNuH(6.5e+16);CHKERRQ(ierr); // about optimal; compare 4.74340e+15 usual
-      ierr = verbPrintf(3,grid.com,
-        "IceExactSSAModel::initFromOptions, for test M:\n"
-        "  useConstantNuHForSSA=%d\n", useConstantNuHForSSA); CHKERRQ(ierr);
-      ierr = ice->printInfo(3);CHKERRQ(ierr);
-      ierr = shelfExtension.printInfo(3);CHKERRQ(ierr);
-      }
-      break;
-    default:
-      SETERRQ(1,"Only tests I, J, M currently supported in IceExactSSAModel.");
-  }
-
-  // Communicate so that we can differentiate surface, and to set boundary conditions
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[0].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[1].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[0].endGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[1].endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
-
 
 PetscErrorCode IceExactSSAModel::taucSetI() {
   PetscErrorCode ierr;

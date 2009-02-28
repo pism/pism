@@ -54,7 +54,6 @@ struct titleNname {
 
 // see iMIO.cc
 struct PolarStereoParams {
-  // these are "double" and not "float" ultimately because of how ncgen works
   double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
          lopo,  // latitude_of_projection_origin; defaults to 90
          sp;    // standard_parallel; defaults to -71
@@ -118,6 +117,19 @@ public:
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iceModel.cc
+  PetscErrorCode init();
+  virtual PetscErrorCode grid_setup();
+  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode set_grid_from_options();
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode model_state_setup();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode report_grid_parameters();
+  virtual PetscErrorCode misc_setup();
+  virtual PetscErrorCode ignore_option(const char name[]);
+  virtual PetscErrorCode check_old_option_and_stop(const char old_name[], const char new_name[]);
+  virtual PetscErrorCode stop_if_set(const char name[]);
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
@@ -131,13 +143,12 @@ public:
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-
+  
   // see iMtests.cc; FIXME: these should go in a derived class
   virtual PetscErrorCode testIceModelVec3();
   virtual PetscErrorCode testIceModelVec3Bedrock();
 
   // see iMutil.cc
-  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
   virtual PetscErrorCode attachAtmospherePCC(PISMAtmosphereCoupler &aPCC);
   virtual PetscErrorCode attachOceanPCC(PISMOceanCoupler &oPCC);
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -361,11 +372,10 @@ protected:
                 const PetscScalar invRegEps, const char *invfieldsfilename);
 
   // see iMIO.cc
-  virtual PetscErrorCode warnUserOptionsIgnored(const char *fname);
-  virtual PetscErrorCode setStartRunEndYearsFromOptions(const PetscTruth grid_p_year_VALID);
+  virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode dumpToFile(const char *filename);
   virtual PetscErrorCode write3DPlusToFile(const char filename[]);
-  virtual PetscErrorCode regrid(const char *fname);
+  virtual PetscErrorCode regrid();
 
   // see iMmatlab.cc
   virtual bool           matlabOutWanted(const char name);
@@ -396,10 +406,6 @@ protected:
 
   // see iMnames.cc; note tn is statically-initialized in iMnames.cc
   int cIndex(const char singleCharName);
-
-  // see iMoptions.cc
-  virtual PetscErrorCode determineSpacingTypeFromOptions(
-                      const PetscTruth forceEqualIfNoOption);
 
   // see iMreport.cc
   virtual PetscErrorCode computeFlowUbarStats
@@ -469,7 +475,6 @@ protected:
   virtual PetscErrorCode getMagnitudeOf2dVectorField(IceModelVec2 vfx, IceModelVec2 vfy,
 						     IceModelVec2 vmag);
   virtual int endOfTimeStepHook();
-  virtual PetscErrorCode afterInitHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(const char*);

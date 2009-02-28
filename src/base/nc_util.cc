@@ -22,13 +22,11 @@
 #include "nc_util.hh"
 #include "iceModel.hh"
 
-
 int nc_check(int stat) {
   if (stat)
     SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
   return 0;
 }
-
 
 int check_err(const int stat, const int line, const char *file) {
   if (stat != NC_NOERR) {
@@ -39,22 +37,19 @@ int check_err(const int stat, const int line, const char *file) {
   return 0;
 }
 
-
-
-NCTool::NCTool() {
-  //FIXME: does there need to be a default MaskInterp?
-  myMaskInterp = PETSC_NULL;
-  grid = PETSC_NULL;
-  ncid = -1;
-
-  // does not return a value
-}
-
 NCTool::NCTool(IceGrid *my_grid) {
   //FIXME: does there need to be a default MaskInterp?
   myMaskInterp = PETSC_NULL;
   grid = my_grid;
   ncid = -1;
+
+  // Initialize UDUNITS if needed
+  if (utIsInit() == 0) {
+    if (utInit(NULL) != 0) {
+      PetscPrintf(grid->com, "PISM ERROR: UDUNITS initialization failed.\n");
+      PetscEnd();
+    }
+  }
 }
 
 PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool &exists) {
@@ -155,12 +150,6 @@ PetscErrorCode  NCTool::find_variable(const char short_name[], const char standa
   return 0;
 }
 
-// FIXME: Consider removing this method.
-PetscErrorCode NCTool::set_grid(IceGrid *my_grid) {
-  grid = my_grid;
-  return 0;
-}
-
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
 PetscErrorCode NCTool::get_grid_info(grid_info &g) {
   PetscErrorCode ierr;
@@ -206,31 +195,35 @@ PetscErrorCode NCTool::get_last_time(double *time) {
 
 //! Read in the variables \c z and \c zb from the NetCDF file; <i>do not</i> assume they are equally-spaced.
 /*!
-Arrays z_read[] and zb_read[] must be pre-allocated arrays of length at least z_len, zb_len, respectively.
-
-Get values of z_len, zb_len by using get_grid_info() before this routine; z_len
-= grid_info.z_len and zb_len = grid_info.zb_len.
+  This function allocates arrays z_levels and zb_levels, and they have to be
+  freed by the caller (using delete[]).
  */
-PetscErrorCode NCTool::get_vertical_dims(const int z_len, const int zb_len,
-                                         double z_read[], double zb_read[]) {
+PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) {
   int stat;
-  int z_id, zb_id;
-  size_t zeroST  = 0,
-         zlenST  = (size_t) z_len,
-         zblenST = (size_t) zb_len;
+  int z_id, zb_id, z_len, zb_len;
+  size_t zero  = 0, nc_z_len, nc_zb_len;
+
+  stat = get_dim_length("z", &z_len); CHKERRQ(stat);
+  stat = get_dim_length("zb", &zb_len); CHKERRQ(stat);
+
+  z_levels = new double[z_len];
+  zb_levels = new double[zb_len];
+
+  nc_z_len  = (size_t) z_len;
+  nc_zb_len = (size_t) zb_len;
 
   if (grid->rank == 0) {
     stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    stat = nc_get_vara_double(ncid, z_id, &zeroST, &zlenST, z_read);
-             CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_vara_double(ncid, zb_id, &zeroST, &zblenST, zb_read);
-             CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_vara_double(ncid, z_id, &zero, &nc_z_len, z_levels);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_get_vara_double(ncid, zb_id, &zero, &nc_zb_len, zb_levels);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  MPI_Bcast(z_read, z_len, MPI_DOUBLE, 0, grid->com);
-  MPI_Bcast(zb_read, zb_len, MPI_DOUBLE, 0, grid->com);
+  MPI_Bcast(z_levels, z_len, MPI_DOUBLE, 0, grid->com);
+  MPI_Bcast(zb_levels, zb_len, MPI_DOUBLE, 0, grid->com);
   return 0;
 }
 
@@ -995,7 +988,7 @@ PetscErrorCode NCTool::create_dimensions() {
     stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, t, "units", 33, "seconds since 2007-01-01 00:00:00"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, t, "units", 28, "seconds since 1-1-1 00:00:00"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "calendar", 4, "none"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
     // x; note the transpose
@@ -1217,7 +1210,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   if (len != 0) {
     ierr = find_variable(name, NULL, &varid, variable_exists);
     if (!variable_exists) {
-      ierr = PetscPrintf(grid->com, "NCTool::get_dim_limits: coordinate variable '%s' does not exist.\n",
+      ierr = PetscPrintf(grid->com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
 			 name);
       CHKERRQ(ierr);
       PetscEnd();
@@ -1227,7 +1220,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       double *data;
       data = new double[len];
 
-      count = len;		// convert to size_t
+      count = static_cast<size_t>(len);
       ierr = nc_get_vara_double(ncid, varid, &start, &count, data); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
       range[0] = data[0];
@@ -1241,10 +1234,49 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
     ierr = MPI_Bcast(range, 2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
   } // if (len != 0)
 
+  char internal_units[TEMPORARY_STRING_LENGTH];
+  utUnit input, internal;
+  bool input_has_units;
+
+  if (strcmp(name, "t") == 0) {
+    // Note that this units specification does *not* have a reference date.
+    strcpy(internal_units, "seconds");
+  } else {
+    strcpy(internal_units, "meters");
+  }
+
+  if (utScan(internal_units, &internal) != 0) {
+    SETERRQ(1, "UDUNITS failed trying to scan internal units.");
+  }
+
+  // Get the units information:
+  ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
+  if (!input_has_units) {
+    ierr = verbPrintf(3, grid->com,
+		      "PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
+		      "     Assuming that it is in '%s'.\n",
+		      name, internal_units); CHKERRQ(ierr);
+    utCopy(&internal, &input);
+  }
+
+  // Find the conversion coefficients:
+  double slope, intercept;
+  ierr = utConvert(&input, &internal, &slope, &intercept);
+  if (ierr != 0) {
+    if (ierr == UT_ECONVERT) {
+      ierr = PetscPrintf(grid->com,
+			 "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
+			 name, internal_units); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
+  }
+
+  // Change units and return limits:
   if (min != NULL)
-    *min = range[0];
+    *min = intercept + range[0]*slope;
   if (max != NULL)
-    *max = range[1];
+    *max = intercept + range[1]*slope;
 
   return 0;
 }
@@ -1548,3 +1580,82 @@ int NCTool::compute_block_size(GridType dims, int* count) {
   return 0;
 }
 
+//! Initializes the IceGrid object from a NetCDF file.
+PetscErrorCode NCTool::get_grid(const char filename[]) {
+  PetscErrorCode ierr;
+  bool file_exists;
+  grid_info gi;
+  double *z_levels, *zb_levels;
+
+  ierr = open_for_reading(filename, file_exists); CHKERRQ(ierr);
+  if (!file_exists) {
+    ierr = PetscPrintf(grid->com, "PISM ERROR: Can't open file '%s'.\n",
+		       filename); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  ierr = get_grid_info(gi); CHKERRQ(ierr);
+  ierr = get_vertical_dims(z_levels, zb_levels); CHKERRQ(ierr);
+
+  grid->Mx = gi.x_len;
+  grid->My = gi.y_len;
+  grid->Lx = gi.Lx;
+  grid->Ly = gi.Ly;
+  grid->periodicity = NONE;
+  grid->x0   = gi.x0;
+  grid->y0   = gi.y0;
+  grid->year = gi.time / secpera;
+
+  ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
+  ierr = grid->set_vertical_levels(gi.z_len, gi.zb_len, z_levels, zb_levels); CHKERRQ(ierr);
+
+  // We're ready to call grid->createDA().
+
+  // Cleanup:
+  ierr = close(); CHKERRQ(ierr);
+  delete[] z_levels;
+  delete[] zb_levels;
+  return 0;
+}
+
+//! Get variable's units information from a NetCDF file.
+/*!
+  Note that this function intentionally ignores the reference date.
+ */
+PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) {
+  PetscErrorCode ierr;
+  char *units_string;
+  int length;
+
+  // Get the string:
+  ierr = get_att_text(varid, "units", &length, &units_string); CHKERRQ(ierr);
+
+  // If a variables does not have the units attribute, set the flag and return:
+  if (length == 0) {
+    has_units = false;
+    utClear(&units);
+    return 0;
+  }
+
+  // This finds the string "since" in the units_string and terminates
+  // it on the first 's' of "since", if this sub-string was found. This
+  // is done to ignore the reference date in the time units string (the
+  // reference date specification always starts with this word).
+  char *tmp;
+  tmp = strstr(units_string, "since");
+  if (tmp != NULL)
+    tmp[0] = '\0';
+
+  ierr = utScan(units_string, &units);
+  if (ierr != 0) {
+    ierr = PetscPrintf(grid->com, "PISM ERROR: units specification '%s' is unknown or invalid.\n",
+		       units_string);
+    PetscEnd();
+  }
+  
+  has_units = true;
+
+  // Cleanup:
+  delete[] units_string;
+  return 0;
+}

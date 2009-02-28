@@ -30,9 +30,16 @@ class IceCompModel : public IceModel {
 public:
   IceCompModel(IceGrid &g, int mytest);
   virtual ~IceCompModel();
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode set_grid_from_options();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode init_physics();
   virtual PetscErrorCode setFromOptions();
-  using IceModel::initFromOptions;
-  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode createVecs();
+  virtual PetscErrorCode createViewers();
+  virtual PetscErrorCode destroyVecs();
+  virtual PetscErrorCode destroyViewers();
+
   PetscErrorCode reportErrors();
 
 protected:
@@ -95,10 +102,6 @@ protected:
   IceModelVec3   SigmaComp3;
 
   PetscViewer    SigmaCompView, compSigmaMapView;
-  PetscErrorCode createCompVecs();
-  PetscErrorCode destroyCompVecs();
-  PetscErrorCode createCompViewers();
-  PetscErrorCode destroyCompViewers();
   PetscErrorCode updateCompViewers();
 
   // related to test K; see iCMthermo.cc

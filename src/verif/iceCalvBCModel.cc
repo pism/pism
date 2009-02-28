@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler
+// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,13 +30,11 @@ IceCalvBCModel::~IceCalvBCModel() {
   vnCF[1].destroy();
 }
 
+PetscErrorCode IceCalvBCModel::createVecs() {
+  PetscErrorCode ierr;
 
-PetscErrorCode IceCalvBCModel::initFromOptions(PetscTruth doHook) {
-  PetscErrorCode  ierr;
-
-  // create just like in parent
-  ierr = IceExactSSAModel::initFromOptions(doHook); CHKERRQ(ierr);
-
+  ierr = IceExactSSAModel::createVecs(); CHKERRQ(ierr);
+  
   // additionally create this stuff
   ierr = vsmoothCFmask.create(grid, "smoothCFmask", true); CHKERRQ(ierr); // stencil = BOX
   ierr = vsmoothCFmask.set_attrs(  // no pism_intent; no standard_name
@@ -52,7 +50,6 @@ PetscErrorCode IceCalvBCModel::initFromOptions(PetscTruth doHook) {
            "m-1", NULL); CHKERRQ(ierr);  
   return 0;
 }
-
 
 PetscErrorCode IceCalvBCModel::compute_nCF() {
   PetscErrorCode ierr;

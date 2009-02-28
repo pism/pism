@@ -56,10 +56,10 @@ class IceGRNModel : public IceModel {
 
 public:
   IceGRNModel(IceGrid &g);
-  virtual PetscErrorCode setFromOptions();
-  using IceModel::initFromOptions;
   PetscErrorCode attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p);
-  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode setFromOptions();
 
 protected:
   PISMEISGREENPDDCoupler *pddPCC; // points to same PISMAtmosCoupler as IceModel::atmosPCC,

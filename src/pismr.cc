@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
 
     IceModel m(g);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
-    ierr = m.setFromOptions(); CHKERRQ(ierr);
 
+    // Attach climate couplers:
     PetscTruth  pddSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) { // note climate will always come from input file in pismr
@@ -63,14 +63,14 @@ int main(int argc, char *argv[]) {
     }
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
-    ierr = m.initFromOptions(); CHKERRQ(ierr);
+    ierr = m.init(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);
     ierr = m.run(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
 
-    // provide a default base name if no -o option.
+    // provide a default output file name if no -o option is given.
     ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
   }
 
