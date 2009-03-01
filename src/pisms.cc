@@ -100,10 +100,6 @@ int main(int argc, char *argv[]) {
       SETERRQ(3,"PISMS: how did I get here?");
     }
 
-    // Put these in a new 'software testing' executable:
-//     ierr = m->testIceModelVec3(); CHKERRQ(ierr);
-//     ierr = m->testIceModelVec3Bedrock(); CHKERRQ(ierr);
-
     ierr = m->setFromOptions(); CHKERRQ(ierr);
     pcac.initializeFromFile = false;  // climate will always come from intercomparison formulas, for pisms
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);

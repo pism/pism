@@ -20,6 +20,11 @@
 #include "iceModel.hh"
 
 
+// Put these in a new 'software testing' executable; call by:
+//     ierr = m->testIceModelVec3(); CHKERRQ(ierr);
+//     ierr = m->testIceModelVec3Bedrock(); CHKERRQ(ierr);
+
+
 // test IceModelVec3: assuming this is called from pisms, try
 //   pisms -eisII A -y 1 -Mz 11    # no errors when grid coincides; significant otherwise
 //   pisms -eisII A -y 1 -Mz 101   # no errors when grid coincides; small otherwise
