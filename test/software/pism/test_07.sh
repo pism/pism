@@ -23,7 +23,7 @@ run_test ()
 
     # Compare:
     run nccmp.py -t 1e-16 -v topg bar.nc baz.nc
-    if [ ! $? ];
+    if [ $? != 0 ];
     then
 	fail "files bar.nc and baz.nc are different"
     fi

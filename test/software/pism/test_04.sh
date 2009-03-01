@@ -21,7 +21,7 @@ test_04 ()
 
     # Compare:
     run nccmp.py -t 1e-16 -v topg foo.nc baz.nc
-    if [ ! $? ];
+    if [ $? != 0 ];
     then
 	fail "foo.nc and baz.nc are different."
 	return 1

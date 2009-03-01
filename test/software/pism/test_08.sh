@@ -24,7 +24,7 @@ run_test ()
 
     # Compare:
     run nccmp.py -t 1e-16 -v temp coarse1.nc coarse2.nc
-    if [ ! $? ];
+    if [ $? != 0 ];
     then
 	fail "files coarse1.nc and coarse2.nc are different"
     fi

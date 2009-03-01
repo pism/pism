@@ -16,8 +16,8 @@ test_01 ()
     pismv -test G -Mx 61 -My 61 -Mz 61 -if verify.nc -y 5 -max_dt 1 -verbose 1 -o bar.nc > bar.txt
 
     # Compare output files:
-    nccmp.py -t 1e-6 foo.nc bar.nc > /dev/null
-    if [ ! $? ];
+    run nccmp.py -t 1e-6 foo.nc bar.nc
+    if [ $? != 0 ];
     then
 	fail "Output files are different."
 	return 1

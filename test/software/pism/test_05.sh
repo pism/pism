@@ -24,7 +24,7 @@ test_05 ()
 
     # Compare bar.nc and baz.nc:
     run nccmp.py bar.nc baz.nc
-    if [ ! $? ];
+    if [ $? != 0 ];
     then
 	fail "files bar.nc and baz.nc are different"
 	return 1

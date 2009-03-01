@@ -18,7 +18,7 @@ test_03 ()
 
     # Compare:
     run nccmp.py -t 1e-6 -x -v usurf,dHdt,cbar,cflx,cbase,csurf,wvelsurf,taud,tauc foo.nc bar.nc
-    if [ ! $? ];
+    if [ $? != 0 ];
     then
 	fail "foo.nc and bar.nc are different."
 	return 1
