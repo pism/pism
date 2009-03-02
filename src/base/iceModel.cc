@@ -162,6 +162,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = tau3.set_attrs("model_state", "age of ice",
 			"s", NULL); CHKERRQ(ierr);
   ierr = tau3.set_glaciological_units("year");
+  tau3.write_in_glaciological_units = true;
   ierr = tau3.set_valid_min(0.0); CHKERRQ(ierr);
 
   // bedrock temperature

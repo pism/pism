@@ -234,7 +234,7 @@ static PetscErrorCode writePCCStateAtTimes(
   for (PetscInt k=0; k < NN; k++) {
     const PetscReal pccyear = ys + k * dt_years;
     ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr);
-    ierr = nc.append_time(pccyear * secpera); CHKERRQ(ierr); // should write t axis in years?
+    ierr = nc.append_time(pccyear); CHKERRQ(ierr);
     snprintf(timestr, sizeof(timestr), "  pcc state at year %11.3f ...\n", pccyear);
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);

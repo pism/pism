@@ -153,7 +153,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   // Prepare the file
   ierr = nc.open_for_writing(filename, append == PETSC_FALSE); CHKERRQ(ierr);
-  ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
+  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
   ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
   ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.3"); CHKERRQ(ierr);
@@ -764,7 +764,7 @@ PetscErrorCode IceModel::write_snapshot() {
     }
     
     ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace == false
-    ierr = nc.append_time(grid.year * secpera); CHKERRQ(ierr);
+    ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 

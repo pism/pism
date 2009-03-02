@@ -988,7 +988,7 @@ PetscErrorCode NCTool::create_dimensions() {
     stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, t, "units", 28, "seconds since 1-1-1 00:00:00"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, t, "units", 17, "years since 1-1-1"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "calendar", 4, "none"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
     // x; note the transpose
@@ -1250,7 +1250,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   }
 
   // Get the units information:
-  ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
+  ierr = get_units(name, NULL, input_has_units, input); CHKERRQ(ierr);
   if (!input_has_units) {
     ierr = verbPrintf(3, grid->com,
 		      "PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
@@ -1622,10 +1622,21 @@ PetscErrorCode NCTool::get_grid(const char filename[]) {
 /*!
   Note that this function intentionally ignores the reference date.
  */
-PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) {
+PetscErrorCode NCTool::get_units(const char short_name[], const char standard_name[],
+				 bool &has_units, utUnit &units) {
   PetscErrorCode ierr;
   char *units_string;
-  int length;
+  int varid, length;
+  bool variable_exists;
+
+  // If a variable does not exits, set the flag and return:
+  ierr = find_variable(short_name, standard_name,
+		       &varid, variable_exists); CHKERRQ(ierr);
+  if (!variable_exists) {
+    has_units = false;
+    utClear(&units);
+    return 0;
+  }
 
   // Get the string:
   ierr = get_att_text(varid, "units", &length, &units_string); CHKERRQ(ierr);

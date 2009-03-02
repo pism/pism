@@ -798,7 +798,8 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[],
     bool input_has_units;
     utUnit input_units;
 
-    ierr = nc.get_units(varid, input_has_units, input_units); CHKERRQ(ierr);
+    ierr = nc.get_units(short_name, standard_name,
+			input_has_units, input_units); CHKERRQ(ierr);
 
     if ( has_units && (!input_has_units) ) {
       ierr = verbPrintf(2, grid->com,
