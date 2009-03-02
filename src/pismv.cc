@@ -47,8 +47,10 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid      g(com, rank, size);
-    PISMAtmosphereCoupler pac;
-    PISMConstOceanCoupler pcoc;
+    PISMConstAtmosCoupler  pcac;
+    pcac.initializeFromFile = false;  // even if user says -i, the surface climate still
+                                      //   comes from formulas and is not read from file
+    PISMConstOceanCoupler  pcoc;
 
     char         testname[20];
     PetscTruth   testchosen, dontReport;
@@ -70,7 +72,7 @@ int main(int argc, char *argv[]) {
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
       IceCalvBCModel mCBC(g, 'M');
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mCBC.attachAtmospherePCC(pac); CHKERRQ(ierr);
+      ierr = mCBC.attachAtmospherePCC(pcac); CHKERRQ(ierr);
       ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
       ierr = mCBC.init(); CHKERRQ(ierr);
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]) {
       IceExactSSAModel mSSA(g, test);
 
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mSSA.attachAtmospherePCC(pac); CHKERRQ(ierr);
+      ierr = mSSA.attachAtmospherePCC(pcac); CHKERRQ(ierr);
       ierr = mSSA.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
       ierr = mSSA.init(); CHKERRQ(ierr);
@@ -103,7 +105,7 @@ int main(int argc, char *argv[]) {
              // (i.e. compensatory accumulation or compensatory heating)
       IceCompModel mComp(g, test);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mComp.attachAtmospherePCC(pac); CHKERRQ(ierr);
+      ierr = mComp.attachAtmospherePCC(pcac); CHKERRQ(ierr);
       ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
       ierr = mComp.init(); CHKERRQ(ierr);

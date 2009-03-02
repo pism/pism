@@ -2,33 +2,31 @@
 
 source ../functions.sh
 
-test="Test #1: pismv exact restartability."
-files="verify.nc foo.nc bar.nc foo.txt bar.txt"
+test="Test #1: pismr exact restartability."
+files="verify.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
 test_01 ()
 {
     cleanup
 
-    pismv -test G -Mx 61 -My 61 -Mz 61 -y 10 -max_dt 1 -verbose 1 -o foo.nc > foo.txt
-    run pismv -test G -Mx 61 -My 61 -Mz 61 -y 5 -max_dt 1 -verbose 1
-    # Fix the following line and uncomment the block below:
-    pismv -test G -Mx 61 -My 61 -Mz 61 -if verify.nc -y 5 -max_dt 1 -verbose 1 -o bar.nc > bar.txt
+    # generate an interesting file
+    run pismv -test G -y 10 -o verify.nc
 
-    # Compare output files:
+    # run for ten years, fixed time step
+    run pismr -i verify.nc -max_dt 1 -y 10 -o foo.nc
+
+    # chain two five year runs, fixed time step
+    run pismr -i verify.nc -max_dt 1 -y 5 -o joe.nc
+    run pismr -i joe.nc -max_dt 1 -y 5 -o bar.nc
+
+    # Compare output files at year 10:
     run nccmp.py -t 1e-6 foo.nc bar.nc
     if [ $? != 0 ];
     then
 	fail "Output files are different."
 	return 1
     fi
-
-    # Compare numerical error reports:
-#     if [ -n "$(diff foo.txt bar.txt)" ];
-#     then
-# 	fail "Numerical error reports are different."
-# 	return 1
-#     fi
 
     pass
     return 0

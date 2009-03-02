@@ -151,26 +151,26 @@ PetscErrorCode IceGRNModel::set_vars_from_options() {
   // the surface temp and geothermal flux at base and then set 3D temps again
   if (haveGeothermalFlux == PETSC_FALSE) {
     ierr = verbPrintf(2, grid.com,
-		      "geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
-		      EISMINT_G_geothermal); CHKERRQ(ierr);
+	"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
+	EISMINT_G_geothermal); CHKERRQ(ierr);
     ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
   }
   if (haveSurfaceTemp == PETSC_FALSE) {
     ierr = verbPrintf(2, grid.com, 
-		      "computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
-    CHKERRQ(ierr);
+	"computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
+        CHKERRQ(ierr);
     ierr = updateTs(); CHKERRQ(ierr);
   }
   if ((haveGeothermalFlux == PETSC_FALSE) || (haveSurfaceTemp == PETSC_FALSE)) {
     ierr = verbPrintf(2, grid.com, 
-		      "filling in temperatures AGAIN at depth using quartic guess (for EISMINT-Greenland)\n");
-    CHKERRQ(ierr);
+	"filling in temperatures AGAIN at depth using quartic guess (for EISMINT-Greenland)\n");
+        CHKERRQ(ierr);
     ierr = putTempAtDepth(); CHKERRQ(ierr);
   }
   if (noEllesmereIcelandDelete == PETSC_FALSE) {
     ierr = verbPrintf(2, grid.com, 
-		      "removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
-    CHKERRQ(ierr);
+	"removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
+        CHKERRQ(ierr);
     ierr = cleanExtraLand(); CHKERRQ(ierr);
   }
 

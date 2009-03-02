@@ -16,7 +16,7 @@ test_03 ()
     # Run for 0 years:
     run pismv -test G -i foo.nc -y 0 -o bar.nc
 
-    # Compare:
+    # Compare, excluding irrelevant diagnostic variables:
     run nccmp.py -t 1e-6 -x -v usurf,dHdt,cbar,cflx,cbase,csurf,wvelsurf,taud,tauc foo.nc bar.nc
     if [ $? != 0 ];
     then

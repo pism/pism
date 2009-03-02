@@ -33,9 +33,6 @@ bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
 
 
 //! Determine the run length, starting and ending years using command-line options.
-/*!
-  
- */
 PetscErrorCode  IceModel::set_time_from_options() {
   PetscErrorCode ierr;
 
@@ -76,7 +73,8 @@ PetscErrorCode  IceModel::set_time_from_options() {
   yearsStartRunEndDetermined = PETSC_TRUE;
   return 0;
 }
-  
+
+
 //! Save model state in NetCDF format (and save variables in Matlab format if desired).
 /*! 
 Optionally allows saving of full velocity field.
