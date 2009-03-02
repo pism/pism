@@ -372,10 +372,9 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
 }
 
 //! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
-/*! 
-When initializing from a NetCDF input file, the input file determines 
-the number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.   
-The user is warned when their command line options "-Mx", "-My", "-Mz", "-Mbz" are overridden.  
+/*! When initializing from a NetCDF input file, the input file determines the
+  number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the
+  computational box.
  */
 PetscErrorCode IceModel::initFromFile(const char *fname) {
   PetscErrorCode  ierr;

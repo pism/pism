@@ -639,6 +639,23 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
     ierr = nc.get_global_var(varid, v, dims, time); CHKERRQ(ierr);  
   }
 
+  bool input_has_units;
+  utUnit input_units;
+
+  ierr = nc.get_units(short_name, standard_name,
+		      input_has_units, input_units); CHKERRQ(ierr);
+
+  if ( has_units && (!input_has_units) ) {
+    ierr = verbPrintf(2, grid->com,
+		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+		      "              Assuming that it is in '%s'.\n",
+		      short_name, long_name, units_string); CHKERRQ(ierr);
+    utCopy(&units, &input_units);
+  }
+
+  // Convert data:
+  ierr = change_units(&input_units, &units); CHKERRQ(ierr);
+
   ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
@@ -794,7 +811,6 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[],
     // Now we need to get the units string from the file and convert the units,
     // because report_range expects the data to be in PISM (SI) units.
     
-    char *tmp;
     bool input_has_units;
     utUnit input_units;
 
