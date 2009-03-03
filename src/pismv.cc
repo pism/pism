@@ -56,7 +56,8 @@ int main(int argc, char *argv[]) {
     PetscTruth   testchosen, dontReport;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1, com, "PISMV  (verification mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1, com, "PISMV %s (verification mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
 
     // determine test (and whether to report error)
     ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, &testchosen); CHKERRQ(ierr);

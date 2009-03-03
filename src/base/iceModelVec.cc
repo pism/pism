@@ -606,7 +606,7 @@ PetscErrorCode IceModelVec::regrid(const char filename[],
  */
 PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {           
   PetscErrorCode ierr;
-  bool file_exists, variable_exists;
+  bool variable_exists;
   int varid;
   NCTool nc(grid);
 
@@ -615,13 +615,7 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
     SETERRQ(1, "IceModelVec::read_from_netcdf: grid.da2 is NULL.");
 
   // Open the file:
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid->com,
-		      "PISM ERROR: Could not open file '%s' while trying to read '%s'.\n", filename, short_name);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   
   // Find the variable:
   ierr = nc.find_variable(short_name, standard_name, &varid, variable_exists); CHKERRQ(ierr);
@@ -753,14 +747,7 @@ PetscErrorCode IceModelVec::regrid_from_netcdf(const char filename[],
     SETERRQ(1, "IceModelVec::regrid_from_netcdf: grid.da2 is NULL.");
 
   // Open the file
-  ierr = nc.open_for_reading(filename, exists); CHKERRQ(ierr);
-  if (!exists) {
-    // SETERRQ1(1, "Regridding file '%s' does not exist.", filename);
-    ierr = PetscPrintf(grid->com,
-		      "PISM ERROR: Can't open the regridding file '%s'.\n", filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
   // Find the variable
   ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);

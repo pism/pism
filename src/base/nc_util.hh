@@ -42,7 +42,7 @@ public:
 
 public:
   NCTool(IceGrid *my_grid);
-  PetscErrorCode open_for_reading(const char filename[], bool &exists);
+  PetscErrorCode open_for_reading(const char filename[]);
   PetscErrorCode open_for_writing(const char filename[], bool replace = true);
   PetscErrorCode close();
   PetscErrorCode find_variable(const char short_name[], const char standard_name[],

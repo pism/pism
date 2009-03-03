@@ -230,19 +230,11 @@ PetscErrorCode IceROSSModel::readObservedVels(const char *filename) {
   PetscErrorCode  ierr;
   NCTool nc(&grid);
 
-  // determine if variables exist in file and get missing values; broadcast
-  bool file_exists = false;
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: Can't open file '%s'.\n", filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  // will create "local interpolation context" from dimensions, limits, and lengths extracted from
-  //   bootstrap file and from information about the part of the grid owned by this processor;
+  // will create "local interpolation context" from dimensions, limits, and
+  //   lengths extracted from bootstrap file and from information about the
+  //   part of the grid owned by this processor;
   grid_info g;
   ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);

@@ -134,13 +134,13 @@ historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define the dimensions
-xdim = ncfile.createDimension('y', int(dim[0]))
-ydim = ncfile.createDimension('x', int(dim[1]))
+xdim = ncfile.createDimension('x', int(dim[1]))
+ydim = ncfile.createDimension('y', int(dim[0]))
 
 # define the variables
 polarVar = ncfile.createVariable('polar_stereographic', 'i4')
-xvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
-yvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
+xvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
+yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
 lonvar = ncfile.createVariable('lon', 'f4', dimensions=('y', 'x'))
 latvar = ncfile.createVariable('lat', 'f4', dimensions=('y', 'x'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
@@ -192,9 +192,9 @@ setattr(accvar, 'units', 'm s-1')
 # write the data to the NetCDF file
 spacing = float(dim[2])*1000
 for i in range(int(dim[0])):
-	xvar[i]=((1-float(dim[0]))/2+i)*spacing
+	yvar[i]=((1-float(dim[0]))/2+i)*spacing
 for i in range(int(dim[1])):
-	yvar[i]=((1-float(dim[1]))/2+i)*spacing
+	xvar[i]=((1-float(dim[1]))/2+i)*spacing
 latvar[:] = lat
 lonvar[:] = lon
 hvar[:] = S

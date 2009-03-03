@@ -241,7 +241,7 @@ protected:
 
   // flags
   PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso,
-              initialized_p, thermalBedrock, includeBMRinContinuity, updateHmelt,
+              thermalBedrock, includeBMRinContinuity, updateHmelt,
               isDrySimulation, holdTillYieldStress, useConstantTillPhi,
               useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
               doSuperpose, useConstantNuHForSSA,
@@ -285,7 +285,6 @@ protected:
   virtual void setInitialAgeYears(PetscScalar d);
   virtual void setAllGMaxVelocities(PetscScalar);
   virtual void setConstantNuHForSSA(PetscScalar);
-  virtual PetscTruth isInitialized() const;
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);

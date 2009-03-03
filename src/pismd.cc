@@ -57,7 +57,8 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMD  (diagnostic velocity computation mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMD %s (diagnostic velocity computation mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
 
     IceModel*      m;
     IceModel       mPlain(g);

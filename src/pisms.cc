@@ -49,7 +49,8 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler pcoc;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "PISMS  (simplified geometry mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
 
     // call constructors on all three, but m will point to the one we use
     IceEISModel    mEISII(g);

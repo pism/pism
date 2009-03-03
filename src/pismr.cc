@@ -46,7 +46,8 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler pcoc;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMR  (basic evolution run mode)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,com, "PISMR %s (basic evolution run mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
 
     IceModel m(g);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);

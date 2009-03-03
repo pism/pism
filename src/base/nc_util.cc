@@ -1058,18 +1058,22 @@ PetscErrorCode NCTool::append_time(PetscReal time) {
 }
 
 //! Opens a NetCDF file for reading.
-PetscErrorCode NCTool::open_for_reading(const char filename[], bool &exists) {
+/*!
+  Stops if a file does not exist or could not be opened.
+ */
+PetscErrorCode NCTool::open_for_reading(const char filename[]) {
   PetscErrorCode ierr;
   int stat = 0;
   if (grid->rank == 0) {
-    ierr = nc_open(filename, NC_NOWRITE, &ncid);
-    if (ierr == NC_NOERR)
-      stat = 1;
+    stat = nc_open(filename, NC_NOWRITE, &ncid);
   }
   ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  
-  exists = (bool) stat;
+
+  if (stat != NC_NOERR) {
+    ierr = PetscPrintf(grid->com, "ERROR: Can't open file '%s'!\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
   
   return 0;
 }
@@ -1155,6 +1159,9 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
 //! Writes global attributes to a NetCDF file.
 PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char conventions[]) {
   int stat, flag = 0;
+  char tmp[TEMPORARY_STRING_LENGTH];
+
+  snprintf(tmp, TEMPORARY_STRING_LENGTH, "PISM %s", PISM_Revision);
 
   if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -1166,6 +1173,10 @@ PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char c
 
     stat = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", strlen(conventions), conventions); 
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = nc_put_att_text(ncid, NC_GLOBAL, "source", strlen(tmp), tmp); 
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
   return 0;
@@ -1583,16 +1594,10 @@ int NCTool::compute_block_size(GridType dims, int* count) {
 //! Initializes the IceGrid object from a NetCDF file.
 PetscErrorCode NCTool::get_grid(const char filename[]) {
   PetscErrorCode ierr;
-  bool file_exists;
   grid_info gi;
   double *z_levels, *zb_levels;
 
-  ierr = open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid->com, "PISM ERROR: Can't open file '%s'.\n",
-		       filename); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = open_for_reading(filename); CHKERRQ(ierr);
 
   ierr = get_grid_info(gi); CHKERRQ(ierr);
   ierr = get_vertical_dims(z_levels, zb_levels); CHKERRQ(ierr);

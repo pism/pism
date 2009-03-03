@@ -268,7 +268,8 @@ int main(int argc, char *argv[]) {
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = PetscPrintf(com, 
-             "PCCTEST (test of PISMClimateCoupler offline from IceModel)\n"); CHKERRQ(ierr);
+		       "PCCTEST %s (test of PISMClimateCoupler offline from IceModel)\n",
+		       PISM_Revision); CHKERRQ(ierr);
     
     PetscTruth i_set;
     ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 

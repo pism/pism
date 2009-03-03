@@ -74,9 +74,11 @@ IceModel::IceModel(IceGrid &g)
     PetscEnd();
   }
 
+  // Do not save snapshots by default:
   save_snapshots = false;
   dvoldt = gdHdtav = 0;
 
+  // Default ice type:
   iceFactory.setType(ICE_PB);
 }
 
@@ -362,7 +364,7 @@ PetscErrorCode IceModel::createVecs() {
 
 //! De-allocate all Vecs defined in IceModel.
 /*! 
-Undoes the actions of createVecs().
+  Undoes the actions of createVecs().
  */
 PetscErrorCode IceModel::destroyVecs() {
   PetscErrorCode ierr;
@@ -493,12 +495,6 @@ PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
   strcpy(executable_short_name, my_executable_short_name);
   return 0;
 }
-
-
-PetscTruth IceModel::isInitialized() const {
-  return initialized_p;
-}
-
 
 //! Do the time-stepping for an evolution run.
 /*! 
@@ -708,13 +704,9 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   // Determine the grid extent from a bootstrapping file:
   NCTool nc(&grid);
-  bool file_exists, x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n",
-		       filename); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  bool x_dim_exists, y_dim_exists, t_exists;
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
   ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_variable("t", NULL, NULL, t_exists); CHKERRQ(ierr);
@@ -931,6 +923,34 @@ PetscErrorCode IceModel::grid_setup() {
 
   if (i_set) {
     NCTool nc(&grid);
+    char *tmp;
+    int length;
+
+    // Get the 'source' global attribute to check if we are given a PISM output
+    // file:
+    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+    ierr = nc.get_att_text(NC_GLOBAL, "source", &length, &tmp);
+    ierr = nc.close();
+
+    // If it's missing, print a warning
+    if (length == 0) {
+      ierr = verbPrintf(1, grid.com,
+			"PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
+			"     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
+			"     ncatted -a source,global,c,c,PISM %s\n",
+			filename, filename, filename); CHKERRQ(ierr);
+    }
+
+    // If the 'source' attribute does not contain the string "PISM", then print
+    // a message and stop:
+    if (tmp != NULL && strstr("PISM", tmp) == NULL) {
+      ierr = verbPrintf(1, grid.com,
+			"PISM ERROR: '%s' does not seem to be a PISM output file.\n"
+			"     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
+			filename); CHKERRQ(ierr);
+    }
+    delete[] tmp;
+
     ierr = nc.get_grid(filename);   CHKERRQ(ierr);
 
     // These options are ignored because we're getting *all* the grid

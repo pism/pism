@@ -143,7 +143,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.write_history("option -inv_write_fields read"); CHKERRQ(ierr);
     ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
-    ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.3"); CHKERRQ(ierr);
+    ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.4"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
   } else {
     strcpy(invfieldsname,""); // make sure empty
@@ -363,17 +363,14 @@ all that is required is that the fill value is outside the valid range.
  */
 PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
   PetscErrorCode ierr;
-  bool file_exists = false; // check whether file exists
   NCTool nc(&grid);
   grid_info gi;
 
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com,"PISM ERROR: Can't open file '%s'.\n",
-    filename); CHKERRQ(ierr);    PetscEnd();
-  }
+  // Get the grid parameters:
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
   LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
   // read in by regridding; checks for existence of file and variable in file,
   //   and reads valid_ attributes

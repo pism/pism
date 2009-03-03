@@ -119,8 +119,6 @@ PetscErrorCode IceModel::setDefaults() {
   
   ierr = verbPrintf(3,grid.com, "setting IceModel defaults...\n"); CHKERRQ(ierr);
 
-  initialized_p = PETSC_FALSE;
-
   // No X11 diagnostics by default, but allow them
   strcpy(diagnostic, "");
   strcpy(diagnosticBIG, "");

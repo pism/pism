@@ -43,17 +43,11 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
                                                           //   (if -ssa -plastic, which is
                                                           //    not default anyway)
 
-  bool file_exists=false;
   NCTool nc(&grid);
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (file_exists) {
-    ierr = verbPrintf(2, grid.com, 
-       "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
-  } else {
-    ierr = PetscPrintf(grid.com,"PISM ERROR: Can't open bootstrapping file '%s'.\n",filename);
-       CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, 
+		    "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
 
   ierr = set_grid_from_options(); CHKERRQ(ierr);
   // report on resulting computational box, rescale grid, actually create local
@@ -76,9 +70,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = nc.get_grid_info(g); CHKERRQ(ierr); // g.z_max is set to 0 if z does
 					     // not exist
 
-  // now we have enough to actually create the lic
-  // IceModel::bootstrapLIC is now a valid pointer which can be reused to
-  // get more info out of the the -boot_from file
+  // IceModel::bootstrapLIC is now a valid pointer which can be reused to get
+  // more info out of the the -boot_from file
   bootstrapLIC = new LocalInterpCtx(g, NULL, NULL, grid);
 
   ierr = nc.read_polar_stereographic(psParams.svlfp,
@@ -87,8 +80,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 				     true); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  // now work through all the 2d variables, regridding if present and otherwise setting
-  // to default values appropriately
+  // now work through all the 2d variables, regridding if present and otherwise
+  // setting to default values appropriately
 
   if (maskExists) {
     ierr = verbPrintf(2, grid.com, 
@@ -123,7 +116,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
-  initialized_p = PETSC_TRUE;
+
   return 0;
 }
 
@@ -138,19 +131,13 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscErrorCode  ierr;
   IceModelVec2 vbcflag;
   NCTool nc(&grid);
-  bool file_exists;
 
   // determine if variables exist in file
   int maskid, ubarid, vbarid, bcflagid;
 
   bool maskExists=false, ubarExists=false, vbarExists=false, bcflagExists=false; 
 
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
   ierr = nc.find_variable("mask",   NULL, &maskid,   maskExists);   CHKERRQ(ierr);
   ierr = nc.find_variable("ubar",   NULL, &ubarid,   ubarExists);   CHKERRQ(ierr);

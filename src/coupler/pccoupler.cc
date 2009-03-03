@@ -140,15 +140,9 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
   // filename now contains name of PISM input file;  now check it is really there;
   // if so, read the dimensions of computational grid so that we can set up a
   // LocalInterpCtx for actual reading of climate data
-  bool file_exists = false;
   NCTool nc(grid);
   grid_info gi;
-  ierr = nc.open_for_reading(filename, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid->com, "PISMClimateCoupler ERROR: Can't open file '%s'.\n",
-             filename); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -442,18 +436,12 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
   }
   
   // find file and set up info so regrid works
-  bool file_exists = false;
   NCTool nc(grid);
   grid_info gi;
-  ierr = nc.open_for_reading(monthlyTempsFile, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid->com,
-       "PISMMonthlyTempsAtmosCoupler ERROR: Can't open file '%s' for reading monthly temps.\n",
-       monthlyTempsFile); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(monthlyTempsFile); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
   LocalInterpCtx lic(gi, NULL, NULL, *grid); // 2D only; destructed by end of scope
 
   // for each month, create an IceModelVec2 and assign attributes

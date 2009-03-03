@@ -165,7 +165,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
   ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
-  ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.3"); CHKERRQ(ierr);
+  ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
@@ -392,12 +392,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
 		    fname); CHKERRQ(ierr);
 
-  bool file_exists = false;
-  ierr = nc.open_for_reading(fname, file_exists); CHKERRQ(ierr);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", fname); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(fname); CHKERRQ(ierr);
 
   // Find the index of the last record in the file:
   int last_record;
@@ -463,7 +458,6 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  initialized_p = PETSC_TRUE;
   return 0;
 }
 
@@ -509,15 +503,11 @@ PetscErrorCode IceModel::regrid() {
            "regridding variables with single character flags `%s' from NetCDF file `%s':\n", 
            regridVars,filename); CHKERRQ(ierr);
 
-  // create "local interpolation context" from dimensions, limits, and lengths extracted from regridFile,
-  //   and from information about the part of the grid owned by this processor
+  // create "local interpolation context" from dimensions, limits, and lengths
+  //   extracted from regridFile, and from information about the part of the
+  //   grid owned by this processor
 
-  bool file_exists = false;
-  ierr = nc.open_for_reading(filename, file_exists);
-  if (!file_exists) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: Can't open file '%s'.\n", filename); CHKERRQ(ierr);
-    PetscEnd();
-  }
+  ierr = nc.open_for_reading(filename);
   
   grid_info g;
   // Note that after this call g.z_len and g.zb_len are zero if the
@@ -763,7 +753,7 @@ PetscErrorCode IceModel::write_snapshot() {
       ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
       ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
       ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
-      ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.3"); CHKERRQ(ierr);
+      ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
       file_is_ready = true;
     }
