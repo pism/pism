@@ -4,7 +4,7 @@ Ed's cookbook for maintaining PISM:
 
 1)  How do I make a .tar.gz from the current svn?
 
-  I assume that pism-stable0.1/ contains the source to tar up.  Then:
+  Assume that pism-stable0.1/ contains the source.  Then:
    
    $ svn export pism-stable0.1/ pism-stable0.1.0           # TELL SVN TO MAKE A CLEAN COPY
    $ tar -cvzf pism-stable0.1.0.tar.gz pism-stable0.1.0/   # TAR IT UP

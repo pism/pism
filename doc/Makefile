@@ -36,7 +36,7 @@ browser : doxyfile_browser
 #   fullbib        build a PDF which merely lists every reference in ice_bib.bib
 #   vfigs          create PDF figures from a test/verifynow.py output
 
-browsenow : update browser
+browsenow : browser
 	firefox doxy/html/index.html &
 
 summary : pism_summary.tex
@@ -52,23 +52,26 @@ fullbib : fullbib.tex
 	pdflatex fullbib
 
 
-PISMREV ?= 327 # revision stamp for verification results in User's Manual figures;
+PISMREVFIGS ?= 327 # revision stamp for verification results in User's Manual figures;
                # generally not the current trunk revision
-VFNOW_OUT=vfnow_r327_L5_23june08.txt  # keep old ones for comparison
+VFNOW_OUT=vfnow_r327_L5_23jun08.txt
+# put old ones here for comparison:
+#VFNOW_OUT=vfnow_r193_L5_10oct07.txt
 vfigs : $(VFNOW_OUT)
 	# producing figures thickerrs_B.pdf, thickerrs_G.df, etc. 
 	# in subdirectory figs/ for use in manual
 	../test/vnreport.py -f $(VFNOW_OUT) -t B -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
-	   -r ${PISMREV} -g pdf -o figs/thickerrs
+	   -r ${PISMREVFIGS} -g pdf -o figs/thickerrs
 	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
-	   -r ${PISMREV} -g pdf -o figs/thickerrs
+	   -r ${PISMREVFIGS} -g pdf -o figs/thickerrs
 	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'temp' -x 'basecenterT' \
-	   -r ${PISMREV} -g pdf -o figs/temperrs
+	   -r ${PISMREVFIGS} -g pdf -o figs/temperrs
 	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'surf vels' -x 'maxUvecmaxW' \
-	   -r ${PISMREV} -g pdf -o figs/surfvelerrs
+	   -r ${PISMREVFIGS} -g pdf -o figs/surfvelerrs
 	../test/vnreport.py -f $(VFNOW_OUT) -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' \
-	   -r ${PISMREV} -g pdf -o figs/velerrs
-	../test/vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' -r ${PISMREV} -g pdf -o figs/temperrs
+	   -r ${PISMREVFIGS} -g pdf -o figs/velerrs
+	../test/vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' \
+	   -r ${PISMREVFIGS} -g pdf -o figs/temperrs
 
 clean :
 	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc

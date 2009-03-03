@@ -1,20 +1,13 @@
-O.k.  So a gzipped tarball is kind of comforting to you.
-
-Here is one last effort to suggest Subversion (svn):
-
-If you checkout the stable release with svn, a la
+O.k.  So a gzipped tarball is kind of comforting to you.  Here is one
+last effort to suggest Subversion (svn).   If you checkout the stable
+release with svn, a la
   
-  svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism
+  svn co http://svn.gna.org/svn/pism/tags/stable0.2 pism
 
 then you can get bug fixes by just doing
 
-  svn update
-
-(then "make install").
+  make update
 
 If you use the .tar.gz then you have to create a new directory 
 and think about all the clutter you have already created, and
 whether you want to save it.
-
-Now, back to our previously scheduled mindless programming ...
-
