@@ -55,6 +55,9 @@ PetscErrorCode  IceModel::setFromOptions() {
               myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
               mypseudo_plastic_q, mypseudo_plastic_uthreshold;
 
+  ierr = verbPrintf(3, grid.com,
+		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
+
   // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
   // allows users to set options using this.
   ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (PISM)",PETSC_NULL); 
@@ -311,10 +314,6 @@ PetscErrorCode  IceModel::setFromOptions() {
      SSA computation */
   ierr = PetscOptionsGetInt(PETSC_NULL, "-skip", &skipMax, &mydoSkip); CHKERRQ(ierr);
   if (mydoSkip == PETSC_TRUE)   doSkip = PETSC_TRUE;
-
-  // verbosity options: more info to standard out; 
-  // includes -verbose, -vverbose, -vvverbose see iMreport.cc
-  ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
   // Process -y, -ys, -ye. We are reading these options here because couplers
   // might need to know what year it is.

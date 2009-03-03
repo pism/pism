@@ -44,6 +44,16 @@ PetscErrorCode  IceModel::set_time_from_options() {
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear, &yeSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-y", &usrRunYears, &ySet); CHKERRQ(ierr);
 
+  if (ysSet && yeSet && ySet) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+  if (ySet && yeSet) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
   // Set the start year:
   if (ysSet == PETSC_TRUE) {
     ierr = setStartYear(usrStartYear); CHKERRQ(ierr);
@@ -62,6 +72,7 @@ PetscErrorCode  IceModel::set_time_from_options() {
     }
     if (ySet == PETSC_TRUE) {
       ierr = verbPrintf(1,grid.com,"WARNING: -y option ignored.  -ye used instead.\n"); CHKERRQ(ierr);
+      // this is an error
     }
     ierr = setEndYear(usrEndYear); CHKERRQ(ierr);
   } else if (ySet == PETSC_TRUE) {
@@ -469,24 +480,21 @@ Most of the time the user should carefully specify which variables to regrid.
  */
 PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
-  PetscTruth regridVarsSet, regrid_set, regrid_from_set;
+  PetscTruth regridVarsSet, regrid_from_set;
   bool regrid_2d_only = false;
   char filename[PETSC_MAX_PATH_LEN], regridVars[PETSC_MAX_PATH_LEN];
   NCTool nc(&grid);
 
+  ierr = check_old_option_and_stop("-regrid", "-regrid_from"); CHKERRQ(ierr);
+
   // Get the regridding file name:
-  ierr = PetscOptionsHasName(PETSC_NULL, "-regrid", &regrid_set); CHKERRQ(ierr);
-  if (regrid_set == PETSC_TRUE) {
-    ierr = PetscPrintf(grid.com, 
-       "PISM ERROR: '-regrid' is outdated. Please use '-regrid_from' instead.\n");
-       CHKERRQ(ierr);
-       PetscEnd();
-  }
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", filename, PETSC_MAX_PATH_LEN,
                                &regrid_from_set); CHKERRQ(ierr);
 
   // Return if no regridding is requested:
   if (!regrid_from_set) return 0;
+
+  ierr = verbPrintf(3, grid.com, "Regridding...\n"); CHKERRQ(ierr);
 
 
   const int  npossible = 7;

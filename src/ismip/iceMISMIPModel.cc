@@ -182,13 +182,21 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(
   }
 }
 
+PetscErrorCode IceMISMIPModel::init_physics() {
+  PetscErrorCode ierr;
+
+  // let the base class create the ice and process its options:
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  mismip_ice = dynamic_cast<MISMIPIce*>(ice);
+  if (!mismip_ice) SETERRQ(1,"Ice type must be MISMIPIce or derived from MISMIPIce for iceMISMIPModel");
+
+  return 0;
+}
+
 
 PetscErrorCode IceMISMIPModel::setFromOptions() {
   PetscErrorCode ierr;
-
-  ierr = iceFactory.create(&ice);CHKERRQ(ierr);
-  mismip_ice = dynamic_cast<MISMIPIce*>(ice);
-  if (!mismip_ice) SETERRQ(1,"Ice type must be MISMIPIce or derived from MISMIPIce for iceMISMIPModel");
 
   // from Table 4
   const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
@@ -377,76 +385,72 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   return 0;
 }
 
+PetscErrorCode IceMISMIPModel::set_grid_defaults() {
+  grid.Mx = 3;
+  return 0;
+}
 
-PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
+PetscErrorCode IceMISMIPModel::set_grid_from_options() {
   PetscErrorCode ierr;
-  bool infileused;
-  PetscTruth inFileSet, bootFileSet;
 
-  // check if input file was used
-  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &inFileSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &bootFileSet); CHKERRQ(ierr);
-  infileused = ((inFileSet == PETSC_TRUE) || (bootFileSet == PETSC_TRUE));
+  // let the base class read -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and
+  // -quadZ:
+  ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
+  ierr = ignore_option("-Lx"); CHKERRQ(ierr);
+  ierr = ignore_option("-Ly"); CHKERRQ(ierr);
+  ierr = ignore_option("-Lz"); CHKERRQ(ierr);
+
+  const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
+
+  if ((modelnum == 2) && (sliding == 'b')) {
+    grid.Lz = 7000.0;
+  } else {
+    grid.Lz = 6000.0;
+  }
+
+  // effect of double rescale here is to compute grid.dy so we can get square cells
+  //    (in horizontal).  NOTE: y takes place of x!!!
+  grid.Lx = 1000.0;
+  grid.Ly = L;
+  grid.periodicity = X_PERIODIC;
+  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr); 
+  const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
+  grid.Lx = Lx_desired;
+  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
+
+  // determine gridmode from My
+  if (grid.My == 151) 
+    gridmode = 1;
+  else if (grid.My == 1501) 
+    gridmode = 2;
+  else
+    gridmode = 3;
+
+  return 0;
+}
+
+PetscErrorCode IceMISMIPModel::set_vars_from_options() {
+  PetscErrorCode ierr;
 
   ierr = verbPrintf(2,grid.com, 
       "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d (A=%5.4e)\n", 
       modelnum,exper,sliding,gridmode,stepindex,
       mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
-  if (infileused) {
-    ierr = verbPrintf(1,grid.com, 
-       "IceMISMIPModel: -i or -boot_from option used; not using"
-       "  certain MISMIP formulas to initialize\n");
-       CHKERRQ(ierr);
-  } else { // usual case: initialize grid and variables from MISMIP formulas
-    ierr = grid.createDA(); CHKERRQ(ierr);
-    ierr = createVecs(); CHKERRQ(ierr);
 
-    const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
-    PetscScalar MISMIPmaxThick = 6000.0;
-    if ((modelnum == 2) && (sliding == 'b'))
-       MISMIPmaxThick = 7000.0;
-
-    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-    // effect of double rescale here is to compute grid.dy so we can get square cells
-    //    (in horizontal).  NOTE: y takes place of x!!!
-    ierr = grid.rescale_and_set_zlevels(1000.0e3, L, MISMIPmaxThick,PETSC_TRUE,PETSC_FALSE);
-             CHKERRQ(ierr); 
-    const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
-    ierr = grid.rescale_and_set_zlevels(Lx_desired, L, MISMIPmaxThick,PETSC_TRUE,PETSC_FALSE);
-    CHKERRQ(ierr); 
-
-    // all of these relate to models which should be turned off ...
-    ierr = vHmelt.set(0.0); CHKERRQ(ierr);
-    // none use Goldsby-Kohlstedt or do age calc
-    setInitialAgeYears(initial_age_years_default);
-    ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
-    ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
-    ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
-
-    ierr = vH.set(initialthickness); CHKERRQ(ierr);
-
-    ierr = setBed(); CHKERRQ(ierr);
-    ierr = setMask(); CHKERRQ(ierr);
-
-    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-
-    initialized_p = PETSC_TRUE;
-  }
+  // all of these relate to models which should be turned off ...
+  ierr = vHmelt.set(0.0); CHKERRQ(ierr);
+  // none use Goldsby-Kohlstedt or do age calc
+  setInitialAgeYears(initial_age_years_default);
+  ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
+  ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
+  ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
   
-  ierr = IceModel::initFromOptions(PETSC_TRUE); CHKERRQ(ierr);  // regridding can happen here
+  ierr = vH.set(initialthickness); CHKERRQ(ierr);
+  
+  ierr = setBed(); CHKERRQ(ierr);
+  ierr = setMask(); CHKERRQ(ierr);
 
-  if (!isInitialized()) {
-    SETERRQ(1, "ERROR: IceMISMIPModel has not been initialized!\n");
-  }
-
-  // set climate
-  if (oceanPCC != PETSC_NULL) {
-    // FIXME: dangerous cast to PISMConstOceanCoupler; should be done differently
-    PISMConstOceanCoupler *coPCC = (PISMConstOceanCoupler*) oceanPCC;
-    coPCC->constOceanHeatFlux = 0.0;  // NO sub ice shelf melting
-  } else {
-    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
-  }
+  // updateSurfaceElevationAndMask is called in misc_setup()
 
   IceModelVec2 *pccsmf, *pccTs;
   if (atmosPCC != PETSC_NULL) {
@@ -464,13 +468,32 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
 //in PCC:    ierr = vTs.set(ice->meltingTemp); CHKERRQ(ierr);
 //in PCC:    ierr = vAccum.set(0.3/secpera); CHKERRQ(ierr);
 
-  // determine gridmode from My
-  if (grid.My == 151) 
-    gridmode = 1;
-  else if (grid.My == 1501) 
-    gridmode = 2;
-  else
-    gridmode = 3;
+  return 0;
+}
+
+PetscErrorCode IceMISMIPModel::init_couplers() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
+
+  // set climate
+  if (oceanPCC != PETSC_NULL) {
+
+    PISMConstOceanCoupler *coPCC = dynamic_cast<PISMConstOceanCoupler*>(oceanPCC);
+    if (coPCC == NULL) SETERRQ(1, "coPCC == NULL");
+
+    coPCC->constOceanHeatFlux = 0.0;  // NO sub ice shelf melting
+  } else {
+    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
+  }
+  
+  return 0;
+}
+
+PetscErrorCode IceMISMIPModel::misc_setup() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::misc_setup(); CHKERRQ(ierr);
 
   // create prefix (e.g.) "EBU1_2b_M1_A3" for output files with names (e.g.)
   //   EBU1_2b_M1_A3.nc, EBU1_2b_M1_A3_t, EBU1_2b_M1_A3_ss, and EBU1_2b_M1_A3_f
@@ -496,6 +519,29 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
        "  steady state achieved.\n",
        mprefix,oname,mprefix,mprefix); CHKERRQ(ierr);
 
+
+  ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
+  
+  // view parallel layout:  DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD);
+
+  // create ABC1_..._t file for every 50 year results
+  strcpy(tfilename,mprefix);
+  strcat(tfilename,"_t");
+  ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
+#if PETSC_VERSION_MAJOR >= 3
+  ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_DEFAULT); CHKERRQ(ierr);
+#else
+  ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
+#endif
+
+  return 0;
+}
+
+PetscErrorCode IceMISMIPModel::set_time_from_options() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::set_time_from_options(); CHKERRQ(ierr);
+
   // use MISMIP runtimeyears UNLESS USER SPECIFIES A RUN LENGTH
   // use -y option, if given, to overwrite runtimeyears
   PetscTruth ySet, ysSet, yeSet;
@@ -518,23 +564,8 @@ PetscErrorCode IceMISMIPModel::initFromOptions(PetscTruth doHook) {
     yearsStartRunEndDetermined = PETSC_TRUE;
   }
 
-  ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
-  
-  // view parallel layout:  DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD);
-
-  // create ABC1_..._t file for every 50 year results
-  strcpy(tfilename,mprefix);
-  strcat(tfilename,"_t");
-  ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR >= 3
-  ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_DEFAULT); CHKERRQ(ierr);
-#else
-  ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-#endif
-
   return 0;
 }
-
 
 PetscErrorCode IceMISMIPModel::setBed() {
   PetscErrorCode ierr;

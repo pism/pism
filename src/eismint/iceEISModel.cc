@@ -27,9 +27,120 @@ IceEISModel::IceEISModel(IceGrid &g)
   : IceModel(g) {  // do nothing; note derived classes must have constructors
   expername = 'A';
   infileused = false;
+
+  // Set the default ice type:
   iceFactory.setType(ICE_PB);
 }
 
+PetscErrorCode IceEISModel::set_grid_defaults() {
+  PetscErrorCode ierr;
+
+  // note height of grid must be great enough to handle max thickness
+  const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
+
+  switch (expername)
+    {
+    case 'A':
+    case 'E':
+    case 'I':
+      grid.Lx = grid.Ly = L;
+      grid.Lz = 5e3;
+      break;
+    case 'B':
+    case 'C':
+    case 'D':
+      grid.Lx = grid.Ly = L;
+      grid.Lz = 4e3;
+      break;
+    case 'F':
+      // Jed broke this for his own reasons which might be good but which he
+      // didn't have time to bother talking about in advance. So we will have
+      // to find out how broken it is by testing. In this case I (ELB) think
+      // there was a pretty small benefit from rescaling based on looking at
+      // the flow law. The real solution is to implement task #4218 (expand
+      // vertically automatically).
+
+      // I (Jed 2009-02-20) just stripped out a small bit of logic that would
+      // scale differently based on the flow law number. Such a decision is
+      // fundamentally limiting and doesn't allow for customizable ice types.
+      // If needed, it should be replaced by a heuristic based on the action of
+      // the flow law (i.e. if the flow is less than a threshold at a reference
+      // stress and pressure, then rescale differently).
+
+      grid.Lx = grid.Ly = L;
+      grid.Lz = 6e3;
+      break;
+    case 'G':
+      grid.Lx = grid.Ly = L;
+      grid.Lz = 3e3;
+      break;
+    case 'H':
+    case 'J':
+    case 'K':
+    case 'L':
+      grid.Lx = grid.Ly = L;
+      grid.Lz = 5e3;
+      break;
+    default:  
+      {
+	ierr = PetscPrintf(grid.com,
+			   "EISMINT II experiment name %c not valid\n",expername);
+	CHKERRQ(ierr);
+	PetscEnd();
+      }
+    }	// end of switch(expername)
+
+  return 0;
+}
+
+PetscErrorCode IceEISModel::set_vars_from_options() {
+  PetscErrorCode ierr;
+
+  // initialize from EISMINT II formulas
+  ierr = verbPrintf(1,grid.com, 
+		    "initializing EISMINT II experiment %c ... \n", 
+		    expername); CHKERRQ(ierr);
+
+  // following will be part of saved state; not reset if read from file
+  // if no inFile then starts with zero ice
+  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
+  ierr = vh.set(0.0);
+  ierr = vH.set(0.0);
+  ierr = vbed.set(0.0);
+  ierr = vHmelt.set(0.0);
+  ierr = vGhf.set(G_geothermal);
+  setInitialAgeYears(initial_age_years_default);
+  ierr = vMask.set(MASK_SHEET);
+  ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
+
+  ierr = fillintemps(); CHKERRQ(ierr);
+
+  if ((expername == 'I') || (expername == 'J')) {
+    ierr = generateTroughTopography(); CHKERRQ(ierr);
+  } 
+  if ((expername == 'K') || (expername == 'L')) {
+    ierr = generateMoundTopography(); CHKERRQ(ierr);
+  } 
+
+  return 0;
+}
+
+PetscErrorCode IceEISModel::init_physics() {
+  PetscErrorCode ierr;
+
+  // This initializes the IceType:
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  // make bedrock thermal material properties into ice properties (note Mbz=1
+  // is default, but want ice/rock interface segment to have geothermal flux
+  // applied directly to ice)
+  if (ice == PETSC_NULL) { SETERRQ(1,"ice == PETSC_NULL"); }
+  bed_thermal.rho = ice->rho;
+  bed_thermal.k = ice->k;
+  bed_thermal.c_p = ice->c_p;  
+
+  return 0;
+}
 
 PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
@@ -131,116 +242,14 @@ PetscErrorCode IceEISModel::setFromOptions() {
   return 0;
 }
 
-
-PetscErrorCode IceEISModel::initFromOptions(PetscTruth doHook) {
+PetscErrorCode IceEISModel::misc_setup() {
   PetscErrorCode      ierr;
-  PetscTruth          inFileSet, bootFileSet, i_set, boot_from_set;
 
-  // check if input file was used
-  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &inFileSet); CHKERRQ(ierr); // OLD OPTION
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bootFileSet); CHKERRQ(ierr); // OLD OPTION
-  infileused = ((inFileSet == PETSC_TRUE) ||
-		(bootFileSet == PETSC_TRUE) ||
-		(i_set == PETSC_TRUE) ||
-		(boot_from_set == PETSC_TRUE));
-  
-  if (!infileused) { 
-    // initialize from EISMINT II formulas
-    ierr = verbPrintf(1,grid.com, 
-		      "initializing EISMINT II experiment %c ... \n", 
-		      expername); CHKERRQ(ierr);
-    ierr = grid.createDA(); CHKERRQ(ierr);
-    ierr = createVecs(); CHKERRQ(ierr);
+  ierr = IceModel::misc_setup(); CHKERRQ(ierr);
 
-    // following will be part of saved state; not reset if read from file
-    // if no inFile then starts with zero ice
-    const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
-    ierr = vh.set(0.0);
-    ierr = vH.set(0.0);
-    ierr = vbed.set(0.0);
-    ierr = vHmelt.set(0.0);
-    ierr = vGhf.set(G_geothermal);
-    setInitialAgeYears(initial_age_years_default);
-    ierr = vMask.set(MASK_SHEET);
-    ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
-
-    // note height of grid must be great enough to handle max thickness
-    const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
-    ierr = determineSpacingTypeFromOptions(PETSC_FALSE); CHKERRQ(ierr);
-    switch (expername)
-      {
-      case 'A':
-      case 'E':
-      case 'I':
-	ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
-	break;
-      case 'B':
-      case 'C':
-      case 'D':
-	ierr = grid.rescale_and_set_zlevels(L, L, 4000); CHKERRQ(ierr);
-	break;
-      case 'F':
-        // Jed broke this for his own reasons which might be good
-        // but which he didn't have time to bother talking about in advance.  So
-        // we will have to find out how broken it is by testing.  In this case
-        // I (ELB) think there was a pretty small benefit from rescaling based
-        // on looking at the flow law.
-        // The real solution is to implement task #4218 (expand vertically automatically).
-
-        // I (Jed 2009-02-20) just stripped out a small bit of logic that would scale differently based on the flow law
-        // number.  Such a decision is fundamentally limiting and doesn't allow for customizable ice types.  If needed,
-        // it should be replaced by a heuristic based on the action of the flow law (i.e. if the flow is less than a
-        // threshold at a reference stress and pressure, then rescale differently).
-
-        ierr = grid.rescale_and_set_zlevels(L, L, 6000); CHKERRQ(ierr);
-	break;
-      case 'G':
-	ierr = grid.rescale_and_set_zlevels(L, L, 3000); CHKERRQ(ierr);
-	break;
-      case 'H':
-      case 'J':
-      case 'K':
-      case 'L':
-	ierr = grid.rescale_and_set_zlevels(L, L, 5000); CHKERRQ(ierr);
-	break;
-      default:  
-	{
-	  ierr = PetscPrintf(grid.com,
-			     "EISMINT II experiment name %c not valid\n",expername);
-	  CHKERRQ(ierr);
-	  PetscEnd();
-	}
-      }	// end of switch(expername)
-    
-    initialized_p = PETSC_TRUE;
-  } // end of if(!infileused)
-  
-  ierr = IceModel::initFromOptions(); CHKERRQ(ierr);
-
-  // make bedrock thermal material properties into ice properties
-  // (note Mbz=1 is default, but want ice/rock interface segment to 
-  // have geothermal flux applied directly to ice)  
-  if (ice == PETSC_NULL) { SETERRQ(1,"ice == PETSC_NULL"); }
-  bed_thermal.rho = ice->rho;
-  bed_thermal.k = ice->k;
-  bed_thermal.c_p = ice->c_p;  
-
+  // This overrides the climate fields, even if we're initializing from a
+  // file:
   ierr = initAccumTs(); CHKERRQ(ierr); // climate is always set to EISMINT II
-
-  if (!infileused) { // only clear out and replace temps only if initialized from scratch
-    ierr = fillintemps(); CHKERRQ(ierr);
-  }
-
-  if (!infileused) { // only generate topology if not in input file
-    if ((expername == 'I') || (expername == 'J')) {
-      ierr = generateTroughTopography(); CHKERRQ(ierr);
-    } 
-    if ((expername == 'K') || (expername == 'L')) {
-      ierr = generateMoundTopography(); CHKERRQ(ierr);
-    } 
-  }
   
   ierr = verbPrintf(1,grid.com, "running EISMINT II experiment %c ...\n",expername);
   CHKERRQ(ierr);

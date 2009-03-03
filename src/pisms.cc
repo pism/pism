@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -100,11 +100,12 @@ int main(int argc, char *argv[]) {
       SETERRQ(3,"PISMS: how did I get here?");
     }
 
-    ierr = m->setFromOptions(); CHKERRQ(ierr);
     pcac.initializeFromFile = false;  // climate will always come from intercomparison formulas, for pisms
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
-    ierr = m->initFromOptions(); CHKERRQ(ierr);
+
+    ierr = m->init(); CHKERRQ(ierr);
+
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);

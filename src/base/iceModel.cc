@@ -117,6 +117,9 @@ IceModel::~IceModel() {
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
 
+  ierr = verbPrintf(3, grid.com,
+		    "Allocating memory...\n"); CHKERRQ(ierr);
+
   if (createVecs_done == PETSC_TRUE) {
     SETERRQ(1, "IceModel::createVecs(): IceModelVecs are created already.");
   }
@@ -918,6 +921,9 @@ PetscErrorCode IceModel::grid_setup() {
   PetscTruth i_set;
   char filename[PETSC_MAX_PATH_LEN];
 
+  ierr = verbPrintf(3, grid.com,
+		    "Setting up the computational grid...\n"); CHKERRQ(ierr);
+
   // Check if we are initializing from a PISM output file:
   ierr = check_old_option_and_stop("-if", "-i"); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-i",
@@ -990,7 +996,10 @@ PetscErrorCode IceModel::set_vars_from_options() {
   PetscErrorCode ierr;
   PetscTruth boot_from_set;
   char filename[PETSC_MAX_PATH_LEN];
-  
+
+  ierr = verbPrintf(3, grid.com,
+		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
+
   ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
 			       filename, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
   
@@ -1024,6 +1033,9 @@ PetscErrorCode IceModel::set_vars_from_options() {
 PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
 
+  ierr = verbPrintf(3, grid.com,
+		    "Initializing IceType and shelfExtension...\n"); CHKERRQ(ierr);
+
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
   // Initialize the IceType object:
   if (ice == PETSC_NULL) {
@@ -1040,6 +1052,8 @@ PetscErrorCode IceModel::init_physics() {
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
 PetscErrorCode IceModel::misc_setup() {
   PetscErrorCode ierr;
+
+  ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
   ierr = init_snapshots_from_options(); CHKERRQ(ierr);
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
@@ -1063,6 +1077,9 @@ PetscErrorCode IceModel::misc_setup() {
 //! Initializes atmosphere and ocean couplers.
 PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
+
+  ierr = verbPrintf(3, grid.com,
+		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);
 
   if (atmosPCC != PETSC_NULL) {
     ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);

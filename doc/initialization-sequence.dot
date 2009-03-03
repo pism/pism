@@ -1,0 +1,61 @@
+digraph pism_init {
+  // Global graph parameters
+  node [fontname=Arial fontsize=10 shape=box width=3];
+  edge [fontname=Arial fontsize=10];
+  graph [fontname=Arial fontsize=10 ranksep=0.1 nodesep=0.1];
+
+  subgraph cluster_grid {
+    label = "Set computational grid parameters\rIceModel::grid_setup()";
+    labeljust = r;
+
+    is_i_set1 [label = "Is -i set?"];
+    {rank=same
+      grid_from_file [label = "Get grid settings from\n a file using NCTool::get_grid()"];
+      set_grid_defaults [label = "Set default grid parameters\nIceModel::set_grid_defaults()" color=darkgreen];
+    }
+    grid_from_options [label = "Set the grid parameters using\nIceModel::set_grid_from_options()" color=darkgreen];
+    is_i_set1 -> set_grid_defaults [label = "no"];
+    set_grid_defaults -> grid_from_options;
+    is_i_set1 -> grid_from_file [label = "yes"];
+
+    createDA [label = "Distribute the model across processors\nIceGrid::createDA()"];
+    {grid_from_file grid_from_options} -> createDA;
+  }
+
+  setFromOptions [label = "Process the bulk of physics-related options\nIceModel::setFromOptions()" color=darkgreen];
+  createDA -> setFromOptions;
+  
+  createVecs [label = "Memory allocation\nIceModel::createVecs()" color=darkgreen];
+  setFromOptions -> createVecs;
+
+  init_physics [label = "Some physics initialization\nIceModel::init_physics()" color=darkgreen];
+  createVecs -> init_physics;
+
+  init_couplers [label = "Init atmosphere and ocean couplers\nIceModel::init_couplers()" color=darkgreen];
+  init_physics -> init_couplers;
+
+  init_couplers -> is_i_set2;
+
+  subgraph cluster_model_state {
+    label = "Set starting values of model state variables\rIceModel::model_state_setup()";
+    labeljust = r;
+
+    is_i_set2 [label = "Is -i set?"];
+
+    initFromFile [label = "IceModel::initFromFile()" color=darkgreen];
+    set_values_from_options [label = "IceModel::set_vars_from_options()" color=darkgreen];
+    is_i_set2 -> initFromFile [label = "yes"];
+    is_i_set2 -> set_values_from_options [label = "no"];
+  }  
+
+  regrid [label = "IceModel::regrid()" color=darkgreen];
+  {initFromFile set_values_from_options} -> regrid;
+
+  report [label = "IceModel::report_grid_parameters()"];
+  regrid -> report;
+
+  misc [label = "Miscellaneous initialization tasks\nIceModel::misc_setup()" color=darkgreen];
+  report -> misc;
+
+  misc -> done;
+}

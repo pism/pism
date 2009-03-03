@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ed Bueler
+// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -89,8 +89,15 @@ public:
   virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
 
   virtual PetscErrorCode setFromOptions();
-  using IceModel::initFromOptions;
-  virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode set_grid_from_options();
+  virtual PetscErrorCode set_time_from_options();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode misc_setup();
+  
+
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
   virtual PetscErrorCode summaryPrintLine(

@@ -126,7 +126,6 @@ PetscErrorCode IceModel::setDefaults() {
   strcpy(diagnosticBIG, "");
   showViewers = PETSC_TRUE;
 
-  setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);
   ierr = setExecName("pism"); CHKERRQ(ierr);  // drivers typically override this
 
   enhancementFactor = DEFAULT_ENHANCEMENT_FACTOR;

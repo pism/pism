@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -154,14 +154,14 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
 }
 
 
-PetscErrorCode IcePSTexModel::initFromOptions(PetscTruth doHook) {
+PetscErrorCode IcePSTexModel::set_vars_from_options() {
   PetscErrorCode      ierr;
 
   ierr = verbPrintf(2,grid.com, 
     "setting up PST (Plastic till Stream w Thermocoupling) experiment '%s' ...\n",
     exper_chosen_name); CHKERRQ(ierr);
 
-  ierr = IceEISModel::initFromOptions(); CHKERRQ(ierr);  
+  ierr = IceEISModel::set_vars_from_options(); CHKERRQ(ierr);  
 
   ierr = setBedElev(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, "bed topography stored ... "); CHKERRQ(ierr);
@@ -173,9 +173,9 @@ PetscErrorCode IcePSTexModel::initFromOptions(PetscTruth doHook) {
   ierr = verbPrintf(2,grid.com, 
      "running PST experiment '%s' ...\n",
      exper_chosen_name); CHKERRQ(ierr);
+
   return 0;
 }
-
 
 int IcePSTexModel::sectorNumberP2(const PetscScalar x, const PetscScalar y) {
   if (x > 0.0) {

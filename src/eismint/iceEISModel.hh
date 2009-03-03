@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,9 +33,11 @@ the effects of thermomechanical coupling</em>.  J. Glaciol. 46(153), 227--238.
 class IceEISModel : public IceModel {
 public:
     IceEISModel(IceGrid &g);
-    virtual PetscErrorCode setFromOptions();
-    using IceModel::initFromOptions;
-    virtual PetscErrorCode initFromOptions(PetscTruth doHook = PETSC_TRUE);
+  virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode misc_setup();
     
 protected:
     int         expername;
