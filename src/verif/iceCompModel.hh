@@ -30,12 +30,16 @@ class IceCompModel : public IceModel {
 public:
   IceCompModel(IceGrid &g, int mytest);
   virtual ~IceCompModel();
-  virtual PetscErrorCode set_grid_defaults();
-  virtual PetscErrorCode set_grid_from_options();
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode init_physics();
+  
+  // re-defined steps of init() sequence:
+  virtual PetscErrorCode set_grid_defaults();     // called by IceModel::grid_setup()
+  virtual PetscErrorCode set_grid_from_options(); // called by IceModel::grid_setup()
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode createVecs();
+  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode set_vars_from_options(); // called by IceModel::model_state_setup()
+
   virtual PetscErrorCode createViewers();
   virtual PetscErrorCode destroyVecs();
   virtual PetscErrorCode destroyViewers();

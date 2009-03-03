@@ -56,34 +56,79 @@ IceCompModel::IceCompModel(IceGrid &g, int mytest)
 IceCompModel::~IceCompModel() {
 }
 
-PetscErrorCode IceCompModel::init_physics() {
+
+PetscErrorCode IceCompModel::set_grid_defaults() {
   PetscErrorCode ierr;
 
-  // Set the default for IceCompModel:
-  ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
+  // This sets the defaults for each test; command-line options can override this.
 
-  // Let the base class version read the options (possibly overriding the
-  // default set above) and create the IceType object.
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-  
-  tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
-  if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (!IceTypeIsPatersonBuddCold(ice)) {
-    ierr = verbPrintf(1, grid.com, 
-		      "WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");
+  switch (testname) {
+  case 'A':
+  case 'E':
+    // use 1600km by 1600km by 4000m rectangular domain
+    grid.Lx = grid.Ly = 800e3;
+    grid.Lz = 4000;
+    break;
+  case 'B':
+  case 'H':
+    // use 2400km by 2400km by 4000m rectangular domain
+    grid.Lx = grid.Ly = 1200e3;
+    grid.Lz = 4000;
+    break;
+  case 'C':
+  case 'D':
+    // use 2000km by 2000km by 4000m rectangular domain
+    grid.Lx = grid.Ly = 1000e3;
+    grid.Lz = 4000;
+    break;
+  case 'F':
+  case 'G':
+  case 'L':
+    // use 1800km by 1800km by 4000m rectangular domain
+    grid.Lx = grid.Ly = 900e3;
+    grid.Lz = 4000;
+    break;
+  case 'K':
+    // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
+    grid.Lx = grid.Ly = 1000e3;
+    grid.Lz = 4000;
+    grid.periodicity = XY_PERIODIC;
+    break;
+  default:
+    ierr = PetscPrintf(grid.com, "IceCompModel ERROR : desired test not implemented\n");
     CHKERRQ(ierr);
+    PetscEnd();
   }
 
-  f = ice->rho / bed_deformable.rho;  // for simple isostasy
+  return 0;
+}
 
-  if (testname != 'K') {
-    // now make bedrock have same material properties as ice
-    // (note Mbz=1 also, by default, but want ice/rock interface to see
-    // pure ice from the point of view of applying geothermal boundary
-    // condition, especially in tests F and G)
-    bed_thermal.rho = tgaIce->rho;
-    bed_thermal.c_p = tgaIce->c_p;
-    bed_thermal.k = tgaIce->k;
+
+PetscErrorCode IceCompModel::set_grid_from_options() {
+  PetscErrorCode ierr;
+
+  // Allows user to set -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and -quadZ.
+  ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
+
+  if (testname == 'K') {
+    if (grid.Mbz == 1) {
+      ierr = PetscPrintf(grid.com, "PISM ERROR: grid.Mbz must be at least two in Test K\n");
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    // now, if unequal spaced vertical then run special code to set bedrock vertical 
+    //   levels so geothermal boundary condition is imposed at exact depth 1000m
+    if (grid.vertical_spacing != EQUAL) {
+      ierr = verbPrintf(2,grid.com,"setting vertical levels so bottom at -1000 m ...\n"); 
+      CHKERRQ(ierr);
+      grid.Lbz = 1000.0;
+      const PetscScalar dzbEQ = grid.Lbz / ((PetscScalar) grid.Mbz - 1);
+      for (PetscInt kb=0; kb < grid.Mbz; kb++) {
+	grid.zblevels[kb] = -grid.Lbz + dzbEQ * ((PetscScalar) kb);
+      }
+      grid.zblevels[grid.Mbz - 1] = 0.0;
+    }
   }
 
   return 0;
@@ -93,6 +138,7 @@ PetscErrorCode IceCompModel::init_physics() {
 PetscErrorCode IceCompModel::setFromOptions() {
   PetscErrorCode ierr;
 
+#if 0
   PetscTruth i_set;		// only for reporting
   char filename[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-i",
@@ -101,6 +147,9 @@ PetscErrorCode IceCompModel::setFromOptions() {
     ierr = verbPrintf(2, grid.com, "starting Test %c using -i file %s ...\n",
 		      testname, filename);  CHKERRQ(ierr);
   }
+#endif
+
+  ierr = verbPrintf(2, grid.com, "starting Test %c ...\n", testname);  CHKERRQ(ierr);
 
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
@@ -152,82 +201,83 @@ PetscErrorCode IceCompModel::setFromOptions() {
   return 0;
 }
 
-PetscErrorCode IceCompModel::set_grid_defaults() {
+
+PetscErrorCode IceCompModel::init_physics() {
   PetscErrorCode ierr;
 
-  // This sets the defaults for each test; command-line options can override this.
+  // Set the default for IceCompModel:
+  ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
 
-  switch (testname) {
-  case 'A':
-  case 'E':
-    // use 1600km by 1600km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 800e3;
-    grid.Lz = 4000;
-    break;
-  case 'B':
-  case 'H':
-    // use 2400km by 2400km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 1200e3;
-    grid.Lz = 4000;
-    break;
-  case 'C':
-  case 'D':
-    // use 2000km by 2000km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 1000e3;
-    grid.Lz = 4000;
-    break;
-  case 'F':
-  case 'G':
-  case 'L':
-    // use 1800km by 1800km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 900e3;
-    grid.Lz = 4000;
-    break;
-  case 'K':
-    // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    grid.Lx = grid.Ly = 1000e3;
-    grid.Lz = 4000;
-    grid.periodicity = XY_PERIODIC;
-    break;
-  default:
-    ierr = PetscPrintf(grid.com, "IceCompModel ERROR : desired test not implemented\n");
+  // Let the base class version read the options (possibly overriding the
+  // default set above) and create the IceType object.
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+  
+  tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
+  if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
+  if (!IceTypeIsPatersonBuddCold(ice)) {
+    ierr = verbPrintf(1, grid.com, 
+		      "WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");
     CHKERRQ(ierr);
-    PetscEnd();
+  }
+
+  f = ice->rho / bed_deformable.rho;  // for simple isostasy
+
+  if (testname != 'K') {
+    // now make bedrock have same material properties as ice
+    // (note Mbz=1 also, by default, but want ice/rock interface to see
+    // pure ice from the point of view of applying geothermal boundary
+    // condition, especially in tests F and G)
+    bed_thermal.rho = tgaIce->rho;
+    bed_thermal.c_p = tgaIce->c_p;
+    bed_thermal.k = tgaIce->k;
+  }
+
+  if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
+    ierr = verbPrintf(1,grid.com, 
+           "IceCompModel WARNING: Test H should be run with option\n"
+           "  -bed_def_iso  for the reported errors to be correct.\n"); CHKERRQ(ierr);
+  }
+
+  // switch changes Test K to make material properties for bedrock the same as for ice
+  PetscTruth biiSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-bedrock_is_ice", &biiSet); CHKERRQ(ierr);
+  if (biiSet == PETSC_TRUE) {
+    if (testname == 'K') {
+      ierr = verbPrintf(1,grid.com,
+         "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
+      bed_thermal.rho = tgaIce->rho;
+      bed_thermal.c_p = tgaIce->c_p;
+      bed_thermal.k = tgaIce->k;
+      bedrock_is_ice_forK = PETSC_TRUE;
+    } else {
+      ierr = verbPrintf(1,grid.com,
+         "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+         CHKERRQ(ierr);
+    }
   }
 
   return 0;
 }
 
-PetscErrorCode IceCompModel::set_grid_from_options() {
+
+PetscErrorCode IceCompModel::init_couplers() {
   PetscErrorCode ierr;
 
-  // This allows the user to set -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and
-  // -quadZ.
-  ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
-
-  if (testname == 'K') {
-    if (grid.Mbz == 1) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: grid.Mbz must be at least two in Test K\n");
-      CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    // now, if unequal spaced vertical then run special code to set bedrock vertical 
-    //   levels so geothermal boundary condition is imposed at exact depth 1000m
-    if (grid.vertical_spacing != EQUAL) {
-      ierr = verbPrintf(2,grid.com,"setting vertical levels so bottom at -1000 m ...\n"); 
-      CHKERRQ(ierr);
-      grid.Lbz = 1000.0;
-      const PetscScalar dzbEQ = grid.Lbz / ((PetscScalar) grid.Mbz - 1);
-      for (PetscInt kb=0; kb < grid.Mbz; kb++) {
-	grid.zblevels[kb] = -grid.Lbz + dzbEQ * ((PetscScalar) kb);
-      }
-      grid.zblevels[grid.Mbz - 1] = 0.0;
-    }
+  PetscTruth i_set;
+  char filename[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
+			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+  if (i_set) {
+    ierr = verbPrintf(2, grid.com, "starting Test %c climate using -i file %s ...\n",
+	      testname, filename);  CHKERRQ(ierr);
+    PISMConstAtmosCoupler *pcac = dynamic_cast<PISMConstAtmosCoupler*>(atmosPCC);   
+    pcac->initializeFromFile = true;
   }
 
+  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
   return 0;
 }
+
 
 PetscErrorCode IceCompModel::set_vars_from_options() {
   PetscErrorCode ierr;
@@ -237,7 +287,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
 
   ierr = SigmaComp3.set(0.0); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, "initializing Test %c ...\n",testname);  CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
   // none use Goldsby-Kohlstedt or do age calc
   setInitialAgeYears(initial_age_years_default);
@@ -270,32 +320,9 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
   }
 
-  if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
-    ierr = verbPrintf(1,grid.com, 
-           "IceCompModel WARNING: Test H should be run with option\n"
-           "  -bed_def_iso  for the reported errors to be correct.\n"); CHKERRQ(ierr);
-  }
-
-  // switch changes Test K to make material properties for bedrock the same as for ice
-  PetscTruth biiSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bedrock_is_ice", &biiSet); CHKERRQ(ierr);
-  if (biiSet == PETSC_TRUE) {
-    if (testname == 'K') {
-      ierr = verbPrintf(1,grid.com,
-         "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
-      bed_thermal.rho = tgaIce->rho;
-      bed_thermal.c_p = tgaIce->c_p;
-      bed_thermal.k = tgaIce->k;
-      bedrock_is_ice_forK = PETSC_TRUE;
-    } else {
-      ierr = verbPrintf(1,grid.com,
-         "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
-         CHKERRQ(ierr);
-    }
-  }
-
   return 0;
 }
+
 
 void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
                              PetscScalar &x, PetscScalar &y, PetscScalar &r) {
@@ -310,7 +337,7 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 }
 
 
-// reimplement IceModel::basalVelocity()
+// reimplement IceModel::basalVelocity(), for E
 PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar yIN,
                                         const PetscScalar H, const PetscScalar T,
                                         const PetscScalar alpha, const PetscScalar muIN) const {
