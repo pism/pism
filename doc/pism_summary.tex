@@ -103,5 +103,50 @@ Most of the internal numerical methods are of finite difference type.  The regul
 \scriptsize
 \noindent \emph{Summary author:} Ed Bueler, \href{mailto:ffelb@uaf.edu}{\texttt{ffelb@uaf.edu}}.  \hfill \emph{Date:} \today.
 
+
+\begin{comment}
+
+THIS BLOCK OF TEXT WAS FORMERLY A PART OF THE USER'S MANUAL.  PROBABLY NOT NEEDED BUT KEPT HERE FOR FUTURE REFERENCE.
+
+
+\clearpage\newpage
+\section{Inside PISM: overviews of continuum models and numerical schemes}\label{sect:over}
+
+This section is an executive summary.  Technical documentation of the continuum models, numerical methods, and the source code structure is in the PISM \emph{Reference Manual}.\index{PISM!\emph{Reference Manual}}
+
+\subsection{The continuum models in PISM}  Significant features of the continuum model approximated by the PISM include:\index{PISM!continuum models inside}\begin{itemize}
+\item The thermocoupled shallow ice approximation equations \cite{Fowler} is verifiably \cite{BLKCB,BBL} solved.
+\item Ice shelves and ice streams are modeled by shallow equations which describe flow by longitudinal strain rates and basal sliding.  These equations are different from the shallow ice approximation.  In shelves and streams the velocities are independent of depth within the ice.  The equations were originally established for ice shelves \cite{Morland,MorlandZainuddin,MacAyealetal,WeisGreveHutter}.  They were adapted for ice streams, as ``dragging ice shelves,'' by MacAyeal \cite{MacAyeal}; see also \cite{HulbeMacAyeal,SchoofStream}.  The solution is verifiable using ice stream and ice shelf exact solutions.
+\item The regions of grounded ice in which the ice stream model is applied can be determined from a plastic till assumption and the associated free boundary problem \cite{SchoofStream}.
+\item A three dimensional age field is computed.
+\item A temperature model for the bedrock under an ice sheet is included and geothermal flux which varies in the map-plane can be used.
+\item Within the shallow ice sheet regions the model can use the constitutive relation of Goldsby and Kohlstedt \cite{GoldsbyKohlstedt,Peltieretal}.  For inclusion in this flow law, grain size can be computed using a age-grain size relation from the Vostok core data \cite{VostokCore}, for example.
+\item The Lingle-Clark \cite{BLKfastearth,LingleClark} bed deformation model can be used.  It generalizes the better known elastic lithosphere, relaxing asthenosphere (``ELRA'') model \cite{Greve2001}.  This model can be initialized by an observed bed uplift map \cite{BLKfastearth}, or even an uplift map computed by an external model like that in \cite{IvinsJames2005}.\end{itemize}
+
+Many of the parts of the model described above are optional.  For instance, options can choose between five different flow laws; see Appendix \ref{sect:options} for options.
+
+The following features are \emph{not} included in the continuum model, and would (or will) require major additions:
+\begin{itemize}
+\item Inclusion of all components of the stress tensor through either an intermediate order scheme (e.g.~\cite{Blatter,Hindmarsh06,Pattyn03}) or the full Stokes equations \cite{Fowler}.
+\item A model for water--content within the ice.  In the current model the ice is \emph{cold} and not \emph{polythermal}; compare \cite{Greve}.  (On the other hand, in the current model the energy used to melt the ice within a given column, if any, is conserved.  In particular, a layer of basal melt water evolves by conservation of energy in the column.  This layer can activate basal sliding and its latent heat energy is available for refreezing.)
+\item A model for basal water mass conservation in the map-plane; compare \cite{JohnsonFastook}.
+\item A fully spherical Earth deformation model, for example one descended from the Earth model of \cite{Peltier}.
+\end{itemize}
+
+
+\subsection{The numerical schemes in PISM}  Significant features of the numerical methods in PISM include:\index{PISM!numerical methods inside}\begin{itemize}
+\item Verification \cite{Roache} is a primary concern and is built into the code.  Nontrivial verifications are available for isothermal ice sheet flow \cite{BLKCB}, thermocoupled sheet flow \cite{BB,BBL}, conservation in ice and bedrock \cite{BuelerTestK}, the earth deformation model \cite{BLKfastearth}, the coupled (ice flow)/(earth deformation) system in an isothermal and pointwise isostasy  case \cite{BLKfastearth}, ice shelf flow (preprint), and ice stream flow based on a plastic bed \cite{SchoofStream}.
+\item The code is \emph{structurally} parallel because the PETSc toolkit is used at all levels \cite{petsc-user-ref}.  PETSc manages the MPI-based communication between processors.  It provides an interface to parallel numerical linear algebra.
+\item The grid can be chosen at the command line.  Regridding can be done at any time, for example taking the result of a rough grid computation and interpolating it onto a finer grid or vice versa.
+\item A moving boundary technique is used for the temperature equation which does not stretch the vertical in a singular manner; the Jenssen \cite{Jenssen} change of variables is not used.
+\item The shallow shelf approximation (SSA) \cite{WeisGreveHutter} is used to determine velocity in the ice shelf and ice stream regions.  Like the full non-Newtonian Stokes equations, they are nonlinear and nonlocal equations for the velocity given the geometry of the streams and shelves and given the ice temperature.  They are solved by straightforward iteration of linearized equations with numerically-determined (vertically-averaged) viscosity.  Either plastic till or linear drag is allowed.  As with all of PISM, the numerical approximation is finite difference.  The linearized finite difference equations are solved by any of the Krylov subspace methods in PETSc \cite{petsc-user-ref}, choosable at the command line.
+\item The model uses an explicit time stepping method for flow and a partly implicit method for temperature.  Advection of temperature is upwinded \cite{MortonMayers}.  As described  in  \cite{BBL}, reasonably rigorous stability criteria are applied to the time-stepping scheme, including a diffusivity-based criteria for the explicit mass continuity scheme and a CFL criteria \cite{MortonMayers} for temperature/age advection.  The contributions to mass continuity from sliding of the base, including essentially all of the flow in the ice shelves, is approximated by an upwinding scheme.
+\item The local truncation error is generically first order (i.e.~$O(\Delta x,\Delta y,\Delta z,\Delta t)$).
+\item The bed deformation model is implemented by a new Fourier collocation (spectral) method \cite{BLKfastearth}.
+\item Implementation is in C++ and is object-oriented.  For example, verification occurs in a derived class of the base class.  Also EISMINT II, EISMINT-Greenland, and EISMINT-Ross are each derived classes.
+\end{itemize}
+
+\end{comment}
+
 \end{document}
 

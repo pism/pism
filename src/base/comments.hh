@@ -44,12 +44,15 @@ contains all the material in the <i>Reference Manual</i> and much more.
 There is also a source code <i>repository</i> browsing tool at the PISM download site
 (https://gna.org/projects/pism/) which shows changes between source code revisions.
 
-Major entry points into the class structure of PISM:
+Some major entry points into the class structure and functions of PISM:
   - IceModel
+  - IceModel::init()
+  - PISMClimateCoupler
   - IceType
   - IceGrid
   - IceModelVec
-  - PISMClimateCoupler
+  - NCTool
+
 
 For a complete list of classes, click on the "Classes" tab at the top of the page.
 
