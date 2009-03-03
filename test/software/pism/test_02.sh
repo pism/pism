@@ -23,7 +23,7 @@ test_02 ()
 	do
 	    if [ $i == $j ]; then continue; fi
 	    
-	    run nccmp.py -t 1e-6 foo$i.nc foo$j.nc
+	    run nccmp.py foo$i.nc foo$j.nc
 	    if [ $? != 0 ];
 	    then
 		fail "Output files foo$i.nc and foo$j.nc are different."

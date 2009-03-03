@@ -16,7 +16,7 @@ run_test ()
     # Bootstrap:
     for NN in 1 2 3 8 10;
     do 
-	run mpiexec -n $NN pismr -boot_from foo0.nc -Mx 101 -My 201 -y 0 -o foo$NN.nc
+	run mpiexec -n $NN pismr -boot_from foo0.nc -Mx 101 -My 201 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc
     done
 
     # Compare:
@@ -26,7 +26,7 @@ run_test ()
 	do
 	    if [ $i == $j ]; then continue; fi
 	    
-	    run nccmp.py -t 1e-16 foo$i.nc foo$j.nc
+	    run nccmp.py foo$i.nc foo$j.nc
 	    if [ $? != 0 ];
 	    then
 		fail "Output files foo$i.nc and foo$j.nc are different."

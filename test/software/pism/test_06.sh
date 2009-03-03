@@ -14,11 +14,11 @@ test_06 ()
     run pismv -test G -Lx 4000 -Ly 4000 -Mx 21 -My 21 -Mz 11 -Mbz 1 -y 0 -o foo.nc
 
     # Bootstrap with a symmetric range:
-    run pismr -boot_from foo.nc -Mx 11 -My 11 -Mz 11 -Mbz 1 -y 0 -o bar.nc
+    run pismr -boot_from foo.nc -Mx 11 -My 11 -Mz 11 -Mbz 1 -Lz 4000 -y 0 -o bar.nc
     # Change the range:
     run ncap2 -O -s"\"x=x+1e4;y=y+1e4\"" foo.nc foo.nc
     # Bootstrap with a non-symmetric range:
-    run pismr -boot_from foo.nc -Mx 11 -My 11 -Mz 11 -Mbz 1 -y 0 -o baz.nc
+    run pismr -boot_from foo.nc -Mx 11 -My 11 -Mz 11 -Mbz 1 -Lz 4000 -y 0 -o baz.nc
 
     # Check:
 
@@ -26,6 +26,7 @@ test_06 ()
     if [ $? != 0 ];
     then
 	fail "files bar.nc and baz.nc are different"
+	return 1
     fi
 
     pass

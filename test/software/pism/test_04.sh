@@ -14,13 +14,13 @@ test_04 ()
     run pismv -test G -Mx 11 -My 11 -Mz 11 -y 0 -o foo.nc
 
     # Coarse -> fine:
-    run pismr -boot_from foo.nc -Mx 21 -My 21 -Mz 21 -y 0 -o bar.nc
+    run pismr -boot_from foo.nc -Mx 21 -My 21 -Mz 21 -Lz 4000 -y 0 -o bar.nc
 
     # Fine -> coarse:
-    run pismr -boot_from bar.nc -Mx 11 -My 11 -Mz 11 -y 0 -o baz.nc
+    run pismr -boot_from bar.nc -Mx 11 -My 11 -Mz 11 -Lz 4000 -y 0 -o baz.nc
 
     # Compare:
-    run nccmp.py -t 1e-16 -v topg foo.nc baz.nc
+    run nccmp.py -v topg foo.nc baz.nc
     if [ $? != 0 ];
     then
 	fail "foo.nc and baz.nc are different."
