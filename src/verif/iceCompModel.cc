@@ -48,8 +48,6 @@ IceCompModel::IceCompModel(IceGrid &g, int mytest)
   useSSAVelocity = PETSC_FALSE;
   includeBMRinContinuity = PETSC_FALSE;
   doPlasticTill = PETSC_FALSE;
-
-  iceFactory.setType(ICE_ARR);
 }
 
 
@@ -138,17 +136,6 @@ PetscErrorCode IceCompModel::set_grid_from_options() {
 PetscErrorCode IceCompModel::setFromOptions() {
   PetscErrorCode ierr;
 
-#if 0
-  PetscTruth i_set;		// only for reporting
-  char filename[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  if (i_set) {
-    ierr = verbPrintf(2, grid.com, "starting Test %c using -i file %s ...\n",
-		      testname, filename);  CHKERRQ(ierr);
-  }
-#endif
-
   ierr = verbPrintf(2, grid.com, "starting Test %c ...\n", testname);  CHKERRQ(ierr);
 
   /* This switch turns off actual numerical evolution and simply reports the
@@ -212,11 +199,14 @@ PetscErrorCode IceCompModel::init_physics() {
   // default set above) and create the IceType object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
   
+  // check on whether the options (already checked) chose the right IceType for verification;
+  //   need to have a tempFromSoftness() procedure as well as the need for the right
+  //   flow law to have the errors make sense
   tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
   if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (!IceTypeIsPatersonBuddCold(ice)) {
+  if (IceTypeIsPatersonBuddCold(ice) == PETSC_FALSE) {
     ierr = verbPrintf(1, grid.com, 
-		      "WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");
+       "WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");
     CHKERRQ(ierr);
   }
 
@@ -388,7 +378,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
+  T0 = tgaIce->tempFromSoftness(A0);
   ierr = pccTs->set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
@@ -476,7 +466,7 @@ PetscErrorCode IceCompModel::initTestL() {
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = -tgaIce->Q() / (gasConst_R * log(A0 / tgaIce->A()));
+  T0 = tgaIce->tempFromSoftness(A0);
   ierr = pccTs->set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);

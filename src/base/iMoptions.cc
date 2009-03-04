@@ -319,8 +319,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   // might need to know what year it is.
   ierr = set_time_from_options();
 
-  ierr = iceFactory.setFromOptions();CHKERRQ(ierr); // The user can set the type using -ice_type, run with -help to see choices
-  
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }

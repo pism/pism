@@ -150,11 +150,13 @@ protected:
 };
 
 
-//! Derived class of IceType for Arrhenius-Glen ice; \e cold case of Paterson-Budd (1982) ice.
+//! Derived class of IceType for Arrhenius-Glen ice.  \e Cold case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
   ThermoGlenArrIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
+  virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
+  virtual PetscScalar tempFromSoftness(PetscScalar A) const; 
   using ThermoGlenIce::flow;
   virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
   virtual PetscScalar A() const;  // returns A_cold for Paterson-Budd
@@ -162,10 +164,11 @@ public:
 };
 
 
-//! Derived class of IceType for Arrhenius-Glen ice; \e warm case of Paterson-Budd (1982) ice.
+//! Derived class of IceType for Arrhenius-Glen ice.  \e Warm case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
   ThermoGlenArrIceWarm(MPI_Comm c,const char pre[]) : ThermoGlenArrIce(c,pre) {}
+  virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar A() const;  // returns A_warm for Paterson-Budd
   virtual PetscScalar Q() const;  // returns Q_warm for Paterson-Budd
 };

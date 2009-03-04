@@ -31,17 +31,35 @@ IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
   meltingTemp = 273.15;  // K            melting point
 }
 
+
 // Rather than make this part of the base class, we just check at some reference values.
 PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
   static const struct {PetscReal s,T,p,gs;} v[] = {
     {1e3,223,1e6,1e-3},{2e4,254,3e6,2e-3},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};
   ThermoGlenArrIce cpb(PETSC_COMM_SELF,NULL); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
-    if (ice->flow(v[i].s, v[i].T, v[i].p, v[i].gs) != cpb.flow(v[i].s, v[i].T, v[i].p, v[i].gs))
+    const PetscReal left  = ice->flow(v[i].s, v[i].T, v[i].p, v[i].gs),
+                    right =  cpb.flow(v[i].s, v[i].T, v[i].p, v[i].gs);
+/* very strange result on bueler-laptop, r588:
+      PetscPrintf(PETSC_COMM_WORLD,
+            "IceTypeIsPatersonBuddCold case %d fails: (left - right)/left = %12.10e\n",
+            i,(left - right)/left);
+IceTypeIsPatersonBuddCold case 0 fails: (left - right)/left = 1.7629198155e-17
+IceTypeIsPatersonBuddCold case 1 fails: (left - right)/left = -7.0007174077e-18
+IceTypeIsPatersonBuddCold case 2 fails: (left - right)/left = 9.5606965946e-17
+IceTypeIsPatersonBuddCold case 3 fails: (left - right)/left = -4.5626346464e-17
+80 bit register effect?
+so equality test
+    "if (left != right) {"
+is changed to 15 digit test below
+*/
+    if (PetscAbs((left - right)/left)>1.0e-15) {
       return PETSC_FALSE;
+    }
   }
   return PETSC_TRUE;
 }
+
 
 PetscTruth IceTypeUsesGrainSize(IceType *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,T=260,p=1e6;
@@ -176,6 +194,7 @@ PetscErrorCode ThermoGlenIce::setFromOptions() {
   return 0;
 }
 
+
 PetscErrorCode ThermoGlenIce::printInfo(PetscInt thresh) const {
   PetscErrorCode ierr;
   if (thresh <= getVerbosityLevel()) {
@@ -183,6 +202,7 @@ PetscErrorCode ThermoGlenIce::printInfo(PetscInt thresh) const {
   }
   return 0;
 }
+
 
 PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
   PetscErrorCode ierr;
@@ -201,10 +221,12 @@ PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
   return 0;
 }
 
+
 PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
   const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure; // homologous temp
   return softnessParameter(T) * pow(stress,n-1);
 }
+
 
 PetscScalar ThermoGlenIce::effectiveViscosityColumn(
                 PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
@@ -233,7 +255,10 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(
   return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
+
 PetscInt ThermoGlenIce::integratedStoreSize() const {return 1;}
+
+
 void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                               const PetscScalar T[], PetscScalar store[]) const
 {
@@ -253,6 +278,7 @@ void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, const Petsc
   store[0] = B / 2;
 }
 
+
 void ThermoGlenIce::integratedViscosity(const PetscScalar store[],const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
 {
   const PetscScalar alpha = secondInvariantDu(Du);
@@ -262,6 +288,9 @@ void ThermoGlenIce::integratedViscosity(const PetscScalar store[],const PetscSca
 
 
 PetscScalar ThermoGlenIce::exponent() const { return n; }
+
+
+//! Return the softness parameter A(T) for a given temperature T.
 PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
   if (T < crit_temp) {
     return A_cold * exp(-Q_cold/(gasConst_R * T));
@@ -270,10 +299,10 @@ PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
 }
 
 
+//! Return the hardness parameter A(T) for a given temperature T.
 PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
   return pow(softnessParameter(T), -1.0/n);
 }
-
 
 
 ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
@@ -294,11 +323,39 @@ PetscScalar ThermoGlenIceHooke::softnessParameter(PetscScalar T) const {
 }
 
 
-// ThermoGlenArrIce and ThermoGlenArrIceWarm: cold and warm parts, respectively,
-// (i.e. simple Arrhenius) of Paterson-Budd
+PetscErrorCode ThermoGlenArrIce::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,"ThermoGlenArrIce object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  No customizable options specific to ThermoGlenArrIce\n");CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  Derived from ThermoGlenIce with the following state\n");CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPushTab(viewer);CHKERRQ(ierr);
+    ierr = ThermoGlenIce::view(viewer);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPopTab(viewer);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
+  return 0;
+}
+
+
+//! Return the softness parameter A(T) for a given temperature T.
 PetscScalar ThermoGlenArrIce::softnessParameter(PetscScalar T) const {
   return A() * exp(-Q()/(gasConst_R * T));
 }
+
+
+//! Return the temperature T corresponding to a given value A=A(T).
+PetscScalar ThermoGlenArrIce::tempFromSoftness(PetscScalar myA) const {
+  return - Q() / (gasConst_R * (log(myA) - log(A())));
+}
+
 
 PetscScalar ThermoGlenArrIce::flow(PetscScalar stress, PetscScalar temp, PetscScalar,PetscScalar) const {
   // ignores pressure
@@ -311,6 +368,28 @@ PetscScalar ThermoGlenArrIce::A() const {
 
 PetscScalar ThermoGlenArrIce::Q() const {
   return Q_cold;
+}
+
+
+PetscErrorCode ThermoGlenArrIceWarm::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,"ThermoGlenArrIceWarm object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  No customizable options specific to ThermoGlenArrIceWarm\n");CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  Derived from ThermoGlenArrIce with the following state\n");CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPushTab(viewer);CHKERRQ(ierr);
+    ierr = ThermoGlenArrIce::view(viewer);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPopTab(viewer);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
+  return 0;
 }
 
 PetscScalar ThermoGlenArrIceWarm::A() const {
@@ -692,6 +771,7 @@ PetscErrorCode IceFactory::registerAll()
   PetscFunctionReturn(0);
 }
 
+
 #undef __FUNCT__
 #define __FUNCT__ "IceFactory::setType"
 PetscErrorCode IceFactory::setType(const char type[])
@@ -724,6 +804,7 @@ PetscErrorCode IceFactory::setTypeByNumber(int n)
   }
   PetscFunctionReturn(0);
 }
+
 
 #undef __FUNCT__
 #define __FUNCT__ "IceFactory::setFromOptions"
@@ -763,8 +844,12 @@ PetscErrorCode IceFactory::setFromOptions()
     if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
+  
+//  ierr = PetscPrintf(comm,"IceFactory::type_name=%s at end of IceFactory::setFromOptions()\n",
+//                     type_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
 
 #undef __FUNCT__
 #define __FUNCT__ "IceFactory::create"
@@ -782,3 +867,4 @@ PetscErrorCode IceFactory::create(IceType **inice)
   *inice = ice;
   PetscFunctionReturn(0);
 }
+

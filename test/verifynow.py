@@ -166,7 +166,7 @@ try:
     elif opt in ("-l", "--levels"):
       levs = string.atoi(arg)
     elif opt in ("-t", "--tests"):
-      letters = arg
+      letters = arg.upper()
     elif opt in ("-u", "--uneq"):
       uneq = string.atoi(arg)
     elif opt in ("-e", "--eta"):
