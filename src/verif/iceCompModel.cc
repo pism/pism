@@ -88,6 +88,7 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     break;
   case 'K':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
+    grid.Mbz = 2;
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
     grid.periodicity = XY_PERIODIC;

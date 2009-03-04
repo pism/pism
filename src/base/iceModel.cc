@@ -933,19 +933,17 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = nc.close();
 
     // If it's missing, print a warning
-    if (length == 0) {
+    if (tmp == NULL) {
       ierr = verbPrintf(1, grid.com,
 			"PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
 			"     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
 			"     ncatted -a source,global,c,c,PISM %s\n",
 			filename, filename, filename); CHKERRQ(ierr);
-    }
-
-    // If the 'source' attribute does not contain the string "PISM", then print
-    // a message and stop:
-    if (tmp != NULL && strstr("PISM", tmp) == NULL) {
+    } else if (strstr(tmp, "PISM") == NULL) {
+      // If the 'source' attribute does not contain the string "PISM", then print
+      // a message and stop:
       ierr = verbPrintf(1, grid.com,
-			"PISM ERROR: '%s' does not seem to be a PISM output file.\n"
+			"PISM WARNING: '%s' does not seem to be a PISM output file.\n"
 			"     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
 			filename); CHKERRQ(ierr);
     }
