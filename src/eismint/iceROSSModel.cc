@@ -43,12 +43,25 @@ IceROSSModel::IceROSSModel(IceGrid &g)
 
   // Ross validation uses isothermal ice by default
   iceFactory.setType(ICE_CUSTOM);
+  
+  ssaStrengthExtend.set_min_thickness(5.0); // m
+  const PetscReal
+    DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
+    DEFAULT_nuH = ssaStrengthExtend.min_thickness_for_extension() * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
+                       / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+          // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
+          //          30 MPa yr for \bar\nu
+  ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
+
+  // THIS IS UNUSED EXCEPT WITH -ssa_external:
   // Most of these are defaults anyway, but this is how to go about setting defaults
-  shelfExtension.setThickness(5);
-  shelfExtension.setTemperature(263.15);
+  shelfExtensionJed.setThickness(5);
+  shelfExtensionJed.setTemperature(263.15);
   // Typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  shelfExtension.setStrainRate((100.0 / secpera) / (100.0 * 1.0e3));
+  shelfExtensionJed.setStrainRate((100.0 / secpera) / (100.0 * 1.0e3));
 }
+
 
 PetscErrorCode IceROSSModel::createVecs() {
   PetscErrorCode ierr;

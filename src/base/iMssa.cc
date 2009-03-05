@@ -22,7 +22,7 @@
 #include "iceModel.hh"
 #include "ssa/pismssa.hh"
 
-#if 0
+#if 1
 // Many functions in this file don't make sense if we are using the external SSA module.
 # define CHECK_NOT_SSA_EXTERNAL(ssa)                                              \
   if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
@@ -46,7 +46,7 @@ PetscErrorCode IceModel::initSSA() {
     ierr = SSASetIceType(ssa,ice);CHKERRQ(ierr);
     ierr = SSASetOceanType(ssa,&ocean);CHKERRQ(ierr);
     ierr = SSASetBasalType(ssa,basal);CHKERRQ(ierr);
-    ierr = SSASetShelfExtension(ssa,&shelfExtension);CHKERRQ(ierr);
+    ierr = SSASetShelfExtension(ssa,&shelfExtensionJed);CHKERRQ(ierr);
     ierr = SSASetFromOptions(ssa);CHKERRQ(ierr);
     return 0;
   }
@@ -108,9 +108,9 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   CHECK_NOT_SSA_EXTERNAL(ssa);
 
   if (useConstantNuHForSSA == PETSC_TRUE) {
-    // Intended only for debugging, this treats the entire domain as though it was the ice-shelf extension
+    // Intended only for debugging, this treats the entire domain as though it was the strength extension
     // (i.e. strength does not even depend on thickness)
-    PetscReal nuH = shelfExtension.viscosity();
+    PetscReal nuH = ssaStrengthExtend.notional_strength();
     ierr = vNuH[0].set(nuH); CHKERRQ(ierr);
     ierr = vNuH[1].set(nuH); CHKERRQ(ierr);
     return 0;
@@ -130,10 +130,9 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (H[i][j] < shelfExtension.thickness()) {
-          // Extends a shelf into the ice free region, in terms of the resulting membrane strength
-          // (and not by adding or subtracting ice)
-          nuH[o][i][j] = shelfExtension.viscosity();
+        if (H[i][j] < ssaStrengthExtend.min_thickness_for_extension()) {
+          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.  Does not add or subtract ice mass.
+          nuH[o][i][j] = ssaStrengthExtend.notional_strength();
         } else {
           const PetscInt      oi = 1-o, oj=o;
           const PetscScalar   dx = grid.dx, 
@@ -647,7 +646,6 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
      "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d, ssaRelativeTolerance = %10.5e]\n",
      ssaEpsilon, ssaMaxIterations,ssaRelativeTolerance); CHKERRQ(ierr);
   ierr = ice->printInfo(4);CHKERRQ(ierr);
-  ierr = shelfExtension.printInfo(4);CHKERRQ(ierr);
 
   // this only needs to be done once; right hand side of system
   //   does not depend on solution; note solution changes under nonlinear iteration

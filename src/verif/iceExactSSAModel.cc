@@ -143,17 +143,12 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     isDrySimulation = PETSC_FALSE;
     computeSurfGradInwardSSA = PETSC_FALSE;
 
-    // The comments below are preserved, with the code modified to show the new way to do this, but it's not clear
-    // that this should be hard-coded into the test anyway.  If not, these defaults should be moved to before
-    // setFromOptions, or abandoned.
-    //
+    ierr = ice->printInfo(3);CHKERRQ(ierr);
     // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
-    ierr = shelfExtension.forceNuH(6.5e+16);CHKERRQ(ierr); // about optimal; compare 4.74340e+15 usual
+    ierr = ssaStrengthExtend.set_notional_strength(6.5e+16);CHKERRQ(ierr); // about optimal; compare 4.74340e+15 usual
     ierr = verbPrintf(3,grid.com,
 		      "IceExactSSAModel::misc_setup, for test M:\n"
 		      "  useConstantNuHForSSA=%d\n", useConstantNuHForSSA); CHKERRQ(ierr);
-    ierr = ice->printInfo(3);CHKERRQ(ierr);
-    ierr = shelfExtension.printInfo(3);CHKERRQ(ierr);
   }
 
   // Communicate so that we can differentiate surface, and to set boundary conditions

@@ -150,6 +150,40 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     useConstantTillPhi = PETSC_FALSE;
   }  
 
+  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
+  const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
+  const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
+  const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+  const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
+                      / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+  ssaStrengthExtend.set_notional_strength(PSTconstantNuHForSSA);
+  
+  shelfExtensionJed.forceNuH(PSTconstantNuHForSSA);  // UNUSED EXCEPT FOR -ssa_external
+
+  return 0;
+}
+
+
+PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
+  PetscErrorCode      ierr;
+
+  ierr = IceEISModel::initFromFile(fname); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, 
+    "starting PST (Plastic till Stream w Thermocoupling) experiment %s from file  %s ...\n",
+    exper_chosen_name, fname); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, 
+    "  using existing bed topography ...\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com,
+    "  setting phi = (till friction angle) by PST formulas ... values from file %s ignored ...\n", fname); CHKERRQ(ierr);
+  ierr = setTillPhi(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, 
+    "running PST experiment '%s' ...\n",
+    exper_chosen_name); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -158,21 +192,23 @@ PetscErrorCode IcePSTexModel::set_vars_from_options() {
   PetscErrorCode      ierr;
 
   ierr = verbPrintf(2,grid.com, 
-    "setting up PST (Plastic till Stream w Thermocoupling) experiment '%s' ...\n",
+    "setting up PST (Plastic till Stream w Thermocoupling) experiment %s from simplified geometry\n"
+    "   formulas, including those inherited from IceEISModel ...\n",
     exper_chosen_name); CHKERRQ(ierr);
 
   ierr = IceEISModel::set_vars_from_options(); CHKERRQ(ierr);  
 
   ierr = setBedElev(); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, "bed topography stored ... "); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+    "  bed topography stored ... "); CHKERRQ(ierr);
 
   ierr = setTillPhi(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-         "map of phi = (till friction angle) stored\n"); CHKERRQ(ierr);
+    "  map of phi = (till friction angle) stored\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, 
-     "running PST experiment '%s' ...\n",
-     exper_chosen_name); CHKERRQ(ierr);
+    "running PST experiment '%s' ...\n",
+    exper_chosen_name); CHKERRQ(ierr);
 
   return 0;
 }

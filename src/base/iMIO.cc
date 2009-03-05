@@ -538,7 +538,7 @@ PetscErrorCode IceModel::regrid() {
            break;
          case 'B':
 	   if (lic.regrid_2d_only || lic.no_regrid_bedrock) {
-	     ierr = verbPrintf(2, grid.com, "  B: skipping 'litho_temp'...\n"); CHKERRQ(ierr);
+	     ierr = verbPrintf(2, grid.com, "  WARNING: skipping regridding of B: 'litho_temp'...\n"); CHKERRQ(ierr);
 	   } else {
 	     ierr = verbPrintf(2, grid.com, "  B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
 	     ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
@@ -546,7 +546,7 @@ PetscErrorCode IceModel::regrid() {
            break;
          case 'e':
 	   if (lic.regrid_2d_only) {
-	     ierr = verbPrintf(2, grid.com, "  e: skipping 'age'...\n"); CHKERRQ(ierr);
+	     ierr = verbPrintf(2, grid.com, "  WARNING: skipping regridding of e: 'age'...\n"); CHKERRQ(ierr);
 	   } else {
 	     ierr = verbPrintf(2, grid.com, "  e: regridding 'age' ... \n"); CHKERRQ(ierr);
 	     ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
@@ -566,7 +566,7 @@ PetscErrorCode IceModel::regrid() {
            break;
          case 'T':
 	   if (lic.regrid_2d_only) {
-	     ierr = verbPrintf(2, grid.com, "  T: skipping 'temp'...\n"); CHKERRQ(ierr);
+	     ierr = verbPrintf(2, grid.com, "  WARNING: skipping regridding of T: 'temp'...\n"); CHKERRQ(ierr);
 	   } else {
 	     ierr = verbPrintf(2, grid.com, "  T: regridding 'temp' ... \n"); CHKERRQ(ierr);
 	     ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);

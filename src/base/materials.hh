@@ -288,6 +288,42 @@ public:
 };
 
 
+//! Where ice thickness is zero the SSA is no longer "elliptic".  This class provides an extension coefficient to maintain well-posedness/"ellipticity".
+/*!
+More specifically, the SSA equations are
+\latexonly
+\def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
+\def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
+\def\ddy#1{\ensuremath{\frac{\partial #1}{\partial y}}}
+\begin{equation*}
+  - 2 \ddx{}\left[\nu H \left(2 \ddx{u} + \ddy{v}\right)\right]
+        - \ddy{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
+        + \tau_{(b)x}  =  - \rho g H \ddx{h},
+\end{equation*}
+\endlatexonly
+and another similar equation.  Schoof \latexonly\cite{SchoofStream}\endlatexonly shows that these PDEs
+are the variational equations for a functional.
+
+The quantity "\f$\nu H\f$" is the nonlinear coefficient in this roughly-speaking 
+elliptic pair of PDEs.  Conceptually it is a membrane strength.  Well-posedness of the SSA problem 
+requires either a precisely-defined boundary and an appropriate boundary condition
+\e or a nonzero value of \f$\nu H\f$ at all points.  This class provides that nonzero value.
+ */
+class SSAStrengthExtension {
+public:
+  SSAStrengthExtension();
+  //! Set strength with units (viscosity times thickness).
+  virtual PetscErrorCode set_notional_strength(PetscReal my_nuH);
+  //! Set minimum thickness to trigger use of extension.
+  virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness);
+  virtual PetscReal      notional_strength() const;           //!< Returns strength with units (viscosity times thickness).
+  virtual PetscReal      min_thickness_for_extension() const; //!< Returns minimum thickness to trigger use of extension.
+private:
+  PetscReal  min_thickness, nuH;
+};
+
+
+
 #define ICE_CUSTOM  "custom"        /* Plain isothermal Glen with customizable parameters */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
 #define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */

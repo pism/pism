@@ -4,7 +4,7 @@
 \newcommand{\PETSCREL}{2.3.3 or 3.0.0}
 
 %\addtolength\topmargin{-.1in}
-\addtolength\textheight{0.1in}
+\addtolength\textheight{0.4in}
 \addtolength{\oddsidemargin}{-.4in}
 \addtolength{\evensidemargin}{-.4in}
 \addtolength{\textwidth}{0.9in}
@@ -362,27 +362,28 @@ Sections \ref{sect:green} and \ref{sect:ross} illustrate the evolutionary versus
 
 
 \subsection{Separation of climate inputs from ice dynamics}\label{subsect:separateclimate}  
-PISM's job is to approximate ice flow.  In addition (subsection \ref{subsect:beddef}) PISM includes an optional bed deformation component approximating the movement of the Earth's crust and upper mantle in response to changing ice load.  Also the temperature of a thin layer of bedrock is included in the conservation of energy model for the ice and the till layer.
+PISM's job is to approximate ice flow.  In addition, as described in subsection \ref{subsect:beddef}, PISM includes an optional bed deformation component approximating the movement of the Earth's crust and upper mantle in response to changing ice load.  Also, the temperature of a thin layer of bedrock is included in the conservation of energy model for the ice and the till layer.
 
-Thus PISM ``handles'' the ice and bedrock, when used with models for the atmosphere and ocean, as cartooned in figure \ref{fig:climatecartoon}.  A structural principle for PISM is that, within the ice dynamics/bed deformation core code, there is no\footnote{This principle is a change from \t{stable0.1}.} parameterization or other model for boundary mass or energy balance.  Instead these parameterizations are handled by non-core components called \t{PISMAtmosphereCoupler} and \t{PISMOceanCoupler}.  The latter type is special to the undersides of ice shelves.  The advantage of this arrangement is that ``attaching'' PISM to other components of a global or regional climate (circulation) model is intended to be a matter only of changing a small amount of the source code, without any change to the ice dynamics core.
+Thus PISM ``handles'' the ice and bedrock, when used with other models for the atmosphere and ocean, as cartooned in Figure \ref{fig:climatecartoon}.  ``Other models'' may be anything from trivially-parameterized surface mass balance to full GCMs of astonishing complexity.
 
 \begin{figure}[ht]
-\hspace{2.0in}
-\includegraphics[height=2.0in,keepaspectratio=true]{figs/climate_cartoon}
-\caption{PISM approximates ice flow and bed deformation, so it ``handles'' the region inside the dashed curve.  Components called \t{PISMAtmosphereCoupler} and \t{PISMOceanCoupler} provide climate inputs, which may be outputs of atmosphere and ocean models.}
+\vspace{0.2in}
+\includegraphics[height=1.75in,keepaspectratio=true]{figs/climate_cartoon}
+
+\vspace{0.1in}
+\caption{PISM approximates ice flow and bed deformation, so it ``handles'' the region below the dashed curve.  Components called \t{PISMAtmosphereCoupler} and \t{PISMOceanCoupler} provide climate inputs at the ice upper surface and under ice shelves, respectively.}
 \label{fig:climatecartoon}
 \end{figure}
 
-A PISM source code release \emph{does} contain instances of these components, as source code outside the core.  For example, \t{PISMAtmosphereCoupler}s exist for the simplified geometry experiments in section \ref{sect:simp}, and for the Greenland model in section \ref{sect:green}.
+In fact, within the ice dynamics/bed deformation PISM core code, there is no parameterization or other model for boundary mass or energy balance.\footnote{This principle is a change from \t{stable0.1}.}  This is a structural principle for PISM.  Instead, boundary mass or energy balance computations are handled by non-core interface components called \t{PISMAtmosphereCoupler} and \t{PISMOceanCoupler}.   The former type is for the ice upper surface while the latter type is special to the undersides of ice shelves.  The advantage of this arrangement is that ``attaching'' PISM to other components of a global or regional climate (circulation) model is intended to be a matter only of changing a small amount of the PISM interface source code---primarily addition of \t{PISM...Coupler} derived classes along with a new driver---without any change to the ice dynamics core.
 
-Most of this is actually invisible to the PISM user.  Options given to the PISM executables (e.g.~\t{pismr} or \t{pisms}) are passed internally to the \t{PISM...Coupler} components, so it looks to the user as if control of climate inputs is the same as ice dynamics.  Indeed, an important kind of \t{PISMAtmosphereCoupler}, namely a positive degree day scheme for surface mass balance, is described in subsection \ref{subsect:pdd} as a part of PISM.
+The dashed line in Figure \ref{fig:climatecartoon} suggests that there is a thin layer on the ice surface not modeled by PISM.  This is true.  ``Ice dynamics'' must include the mass of the snow/firn layer, but it cannot include the processes which transform this layer into ice with a certain temperature, below that layer.  Similarly, the undersides of ice shelves include (relatively poorly-understood, but very important!) processes \emph{not} modeled by core PISM, though potentially modeled in a \t{PISMOceanCoupler}.  In any case, the job of the \t{PISM...Coupler} components is, as already stated, provide definitive boundary mass or energy balance to the ice dynamics core.
 
-Nonetheless this structure is important to describe here because, on the one hand, some users may be interested in coupling PISM to other models.  On the other hand, the PISM authors do not claim expertise in modeling atmosphere, ocean, or even snow processes, and so separation has a code-reliability purpose as well.
+The PISM source code already contains instances of \t{PISM...Coupler} components.  For example, instances of \t{PISMAtmosphereCoupler} exist for the simplified geometry experiments in section \ref{sect:simp}, and for the Greenland model in section \ref{sect:green}.
 
+Actually, most of this is invisible to the PISM user.  Options given to the PISM executables (e.g.~\t{pismr} or \t{pisms}) are passed internally to the \t{PISM...Coupler} components, so it looks to the user as if command line control of climate inputs is the same as command line control of ice dynamics.  For example, an important kind of \t{PISMAtmosphereCoupler}, namely a positive degree day scheme for surface mass balance, is described in subsection \ref{subsect:pdd} as a part of PISM.  It \emph{is} part of PISM, but it is outside a well-defined ice dynamics core.
 
-
-
-
+This structure is important to describe here because, on the one hand, some users may be interested in coupling PISM to other models.  On the other hand, the PISM authors do not claim expertise in modeling atmosphere, ocean, or even snow processes, and so separation has a code-reliability purpose as well.  ``Users'' need to know that they are ultimately responsible for providing the climate inputs they intend.
 
 
 \clearpage
@@ -781,25 +782,19 @@ This diagnostic mode is most frequently associated to the modeling of ice shelve
 Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \intextoption{f3d}.  The diagnostic executable \verb|pismd| saves the full three-dimensional velocity field by default.  Either way, saving the full velocity field roughly doubles the size of the saved NetCDF file.
 
 
-\subsection{Schoof's plastic till free boundary problem for ice streams} 
-\label{subsect:plastic}
-The remainder of this section gives an incomplete view, at best, of the dynamics in PISM because the best model for whole ice sheets, using the SSA as a sliding law for the SIA is undocumented except for the preprint \cite{BBssasliding}.
+\subsection{Schoof's plastic till free boundary problem for ice streams}   SSA\index{SSA (shallow shelf approximation)} equations with additional basal resistance are used in PISM to describe sliding, grounded ice.  The SSA version of the balance of momentum equations with linearly-viscous till are solved as a fixed-boundary problem (at a particular time step), and thus the locations and extent of ice streams must be determined by some other criterion.  By contrast, for the SSA with plastic till the locations of ice streams is determined as part of the free boundary problem.  We believe that the plastic till SSA of Schoof \cite{SchoofStream} should be regarded as the best currently implementable ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding law}
 
-FIXME!!!
+Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  PISM implements Schoof's SSA-based model among others.  The user gives the options \verb|-ssa -plastic| to turn it on.  All grounded points are immediately marked as SSA (i.e.~as \verb|DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See \cite{BBssasliding} and the description of option \intextoption{plastic} in Appendix \ref{sect:options} for a more detailed description of the yield stress computation.
+
+Test I in the verification suite\index{verification tests} is an instance of the exact solution to the Schoof model.
+
+In examples/pst
 
 \intextoption{topg\und to\und till}
 
-SSA\index{SSA (shallow shelf approximation)} equations with additional basal resistance are used in PISM to describe faster-flowing grounded ice.  The SSA version of the balance of momentum equations with linearly-viscous till are solved as a fixed-boundary problem (at a particular time step), and thus the locations and extent of ice streams must be determined by some other criterion.  By contrast, for the SSA with plastic till the locations of ice streams is determined as part of the free boundary problem.  We believe that the plastic till SSA of Schoof \cite{SchoofStream} should be regarded as the best currently implementable ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding law}
-
- Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  PISM implements Schoof's SSA-based model among others.  The user gives the options \verb|-ssa -plastic| to turn it on.  All grounded points are immediately marked as SSA (i.e.~as \verb|MASK_DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See the description of option \intextoption{plastic} in Appendix \ref{sect:options} for a detailed description of the yield stress computation; see also the PISM \emph{Reference Manual} and \cite{BBssasliding}.
-
-\subsubsection*{Test I is an exact solution}  Test I in the verification suite\index{verification tests} is an instance of the exact solution to the Schoof model.  It is a single diagnostic computation of the velocity of a highly-simplified ice stream.  Here is an example run with some viewers:\index{pismv}
-
-\verb|pismv -test I -Mx 121 -My 5 -d ncqu|
-
-\noindent The boundary conditions are a uniform slab of ice on a bed with constant slope, but with a central minimum in a pre-specified distribution of till yield stress.  There is zero yield stress at the very center.  Thus the center of the slab slides.  The ice flows under the SSA equations, because of the plastic failure, while at the margins the base of the ice does not slide.  Thus we have an ice stream.  The velocity only varies in the cross-slope direction.  PISM's job is to compute the width and speed of the ice stream, ``knowing'' only the ice thickness, bed slope, and yield stress distribution.  In this case we have the exact solution with which to compare the numerically-computed velocities.  This test, and convergence of PISM's numerical solution of it under grid refinement, are addressed in section \ref{sect:verif}.
 
 
+\subsection{Visualizing the climate inputs, without ice dynamics} FIXME: pcctest
 
 
 \clearpage\newpage
@@ -811,11 +806,11 @@ SSA\index{SSA (shallow shelf approximation)} equations with additional basal res
 \hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
 \bigskip
 
-\subsubsection*{Ideas}  Verification is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  There is no comparison between model output and nature in verification.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
+\subsubsection*{Ideas}  Verification is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the exclusively mathematical and numerical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  In verification there is no comparison between model output and observations of nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
 
-See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification (and validation) in computational fluid dynamics.
+See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models.  See \cite{SchoofStream} and \cite{BBssasliding} for an exact solution to the SSA equations for ice streams using a plastic till assumption.  Reference \cite{Roache} gives a broad discussion of verification (and validation) in computational fluid dynamics.
 
-In PISM there is a separate executable \verb|pismv| which is used for verification.  The numerical codes which are verified by \verb|pismv| are, however, exactly the same lines of source code in exactly the same source files as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class and its derived classes}.  All PISM executables run \verb|IceModel|, but derived classes add bits of code, in this case the exact solutions.)
+In PISM there is a separate executable \verb|pismv| which is used for verification.  The source codes which are verified by \verb|pismv| are, however, exactly the same, in exactly the same source files, as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  (In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class!derived class for verification}.  All PISM executables run \verb|IceModel|, but derived classes add bits of code, in this case the exact solutions.)
 
 \begin{table}[ht]
 \caption{Exact solutions for verification.}\label{tab:tests}
@@ -834,10 +829,12 @@ F & thermomechanically coupled SIA (mass &  compensatory accum & \cite{BB,BBL} \
 G & thermomechanically coupled SIA; as F  & ditto & \cite{BB,BBL} \\
  & but with oscillating accumulation &  &  \\
 H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
-I & stream velocity computation using SSA (plastic till) &  & \cite{SchoofStream} \\
-J & shelf velocity computation using SSA  &  & [IN PREPARATION] \\
+I & stream velocity computation using SSA (plastic till) &  & \cite{SchoofStream,BBssasliding} \\
+J & shelf velocity computation using SSA  &  & [IN PREP] \\
 K & pure conduction in ice and bedrock & & \cite{BuelerTestK} \\
-L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREPARATION] \\
+L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
+M & velocity solution for circular, constant-thickness  & numerical ODE soln & [NOT READY] \\
+ & ice shelf with grounding line and calving front &  &  \\
 \hline
 \normalsize
 \end{tabular}
@@ -860,22 +857,23 @@ I & \verb|pismv -test I -Mx 500 -My 5 -ssa_rtol 1e-6 -ksp_rtol 1e-11| \\
 J & \verb|pismv -test J -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12| \\
 K & \verb|pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000| \\
 L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
+M & \emph{not ready} \\
 \hline
 \normalsize
 \end{tabular}
 \end{table}
 
-Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations.  (Only Tests A, E, J, and K are fixed boundary value problems.)  Table \ref{tab:tests_exec} shows how to run each of them on modestly-refined grids for relatively quick execution time.
+Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests_exec} shows how to run each of them on minimally-refined grids (for relatively quick execution time).
 
 
-\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero cell size.  For example, in the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable) limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.   Concretely, we usually compute both the maximum and average numerical error anywhere on the grid.
+\subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero size.  For example, in the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable!) limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.   Concretely, we usually compute both the maximum and average numerical error of the measured quantity over the whole grid.
 
 The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense (generally).  Rather the goals are \begin{itemize}
 \item to see that the error is decreasing,
 \item to measure the rate at which it is decreasing,
-\item and to get a realistic sense of the magnitude of numerical error, compared to other errors, in a realistic ice sheet model run.
+\item and to develop a realistic sense of the magnitude of numerical error, compared to other errors, in a realistic ice sheet model run.
 \end{itemize}
-Knowing the error decay rate may even give a prediction as to how fine a grid is necessary to achieve a desired smallness for the numerical error.  ``Other errors'' includes critically the error from using the wrong (or over-simplified) continuum model, and also observational (or pre-processing) errors present in the data used in the realistic run.
+Knowing the error decay rate may even give a prediction of how fine a grid is necessary to achieve a desired smallness for the numerical error.  ``Other errors'' include the error from using the wrong (e.g.~over-simplified or incorrectly-parameterized) continuum model, and also observational or pre-processing errors present in the data used in the realistic run.
 
 For an example of a refinement path, consider the runs\index{refinement path!example}\index{pismv}
 \begin{quote}\small
@@ -886,9 +884,7 @@ pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
 pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
 \end{verbatim}
 \normalsize\end{quote}
-Here we seek to measure the basic function of the isothermal shallow ice approximation components of PISM.  The exact solution is the Halfar similarity solution \cite{Halfar83}, with zero accumulation.  One specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and no dependence of the error is expected from changing $\Delta z$.
-
-The data produced by the above four runs appears in figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
+Here we seek to evaluate the isothermal shallow ice approximation components of PISM.  The exact solution is the Halfar similarity solution \cite{Halfar83}, with zero accumulation.  One specifies the number of grid points when running PISM, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal.  The error should not depende on changing $\Delta z$.  The above four runs produce (parts of) figures 7, 8, 9, and 10 of \cite{BLKCB}.  We see there that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
 
 For thermocoupled tests one refines in three dimensions.  For example, the runs\index{refinement path!example}
 \begin{quote}\small
@@ -901,43 +897,48 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  (The last couple of these runs required a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip 10| and \verb|-quadZ| would make a lot of sense for speeding up; see subsection \ref{sect:usage}.)
+produced figures 13, 14, and 15 of \cite{BBL}.  (The last two runs, especially, require a supercomputer!  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip 10| and \verb|-quadZ| accelerates such runs.  See subsection \ref{sect:usage}.)
 
-\subsubsection*{Results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
+\subsubsection*{Sample verification results}  Figures \ref{fig:thickerrsG} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
 
+It must be pointed out that, to the experienced eye, these figures \emph{do not} show outstanding rates of convergence.  For the errors in test G, a partial explanation comes in the discussion of margin shape in \cite{BLKCB}, and also from presumably imperfect numerical analysis choices.  For the errors in test I, a partial explanation is low degree of smoothness present for solutions in the Sobolev space used in \cite{SchoofStream}, but again perhaps from imperfect numerical choices.  We believe, however, that the free boundary nature of the continuum problems addressed by tests G and I (and most other tests, not shown) is the underlying difficulty.  Test K, as a fixed boundary problem, does a little better \cite{BuelerTestK}.
+
+\begin{comment}
+SHOWING THIS CLEARLY WITHOUT LOG-LOG PLOT (A PYLAB PROBLEM) OR WITHOUT INVOKING $\eta=H^{8/3}$ BECAME A PROBLEM:
 \begin{figure}[ht]
 \includegraphics[width=4.8in,keepaspectratio=true]{figs/thickerrs_B}
 \caption{Numerical thickness errors in test B.  Vertical axis is in meters. ``maxH error'' is the maximum thickness error anywhere on the grid, ``avH error'' is the average thickness error anywhere on the grid, and ``centerH error'' is the error at the center of the ice sheet.  See \cite{BLKCB} for discussion.}
 \label{fig:thickerrsB}
 \end{figure}
+\end{comment}
 
 \begin{figure}[ht]
-\includegraphics[width=4.8in,keepaspectratio=true]{figs/thickerrs_G}
-\caption{Numerical thickness errors in test G.  Meaning exactly as in test C.  See \cite{BBL} and \cite{BLKCB} for discussion.}
+\includegraphics[width=4.0in,keepaspectratio=true]{figs/thickerrs_G}
+\caption{Numerical thickness errors in test G.  Vertical axis is in meters. ``maxH error'' is the maximum thickness error anywhere on the grid, ``avH error'' is the average thickness error anywhere on the grid.  See \cite{BBL} and \cite{BLKCB}n.}
 \label{fig:thickerrsG}
 \end{figure}
 
 \begin{figure}[ht]
-\includegraphics[width=4.8in,keepaspectratio=true]{figs/temperrs_G}
-\caption{Numerical temperature errors in test G.  Vertical axis is in Kelvin.  ``maxT'' and ``basemaxT'' errors are maximum over all points within the ice and over all the basal points, respectively.  Similarly for ``avT'' and ``baseavT''; these are average errors.  See \cite{BBL} for discussion.}
+\includegraphics[width=4.0in,keepaspectratio=true]{figs/temperrs_G}
+\caption{Numerical temperature errors in test G.  Vertical axis in Kelvin.  ``maxT'' and ``basemaxT'' errors are maximum over all points within the ice and over all the basal points, respectively.  Similarly for ``avT'' and ``baseavT'', but average errors.  See \cite{BBL}.}
 \label{fig:temperrsG}
 \end{figure}
 
 \begin{figure}[ht]
-\includegraphics[width=4.8in,keepaspectratio=true]{figs/surfvelerrs_G}
-\caption{Numerical errors in computed surface velocities in test G.  Vertical axis is in meters per year.}
+\includegraphics[width=4.0in,keepaspectratio=true]{figs/surfvelerrs_G}
+\caption{Numerical errors in computed surface velocities in test G.  Vertical axis is in meters per year.  ``avUvec'' is the average error in the surface value of the horizontal velocity, a two-vector, while ``avW'' is the error in the surface value of the vertical velocity.}
 \label{fig:surfvelerrsG}
 \end{figure}
 
 \begin{figure}[ht]
-\includegraphics[width=4.8in,keepaspectratio=true]{figs/velerrs_I}
-\caption{Numerical errors in horizontal velocities in test I, an ice stream.  Vertical axis is in meters per year.  See \cite{SchoofStream} for a description of the exact solution.}
+\includegraphics[width=4.0in,keepaspectratio=true]{figs/velerrs_I}
+\caption{Numerical errors in horizontal velocities in test I, an ice stream.  Vertical axis is in meters per year.  ``maxu'' and ``avu'' are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
 \label{fig:velerrsI}
 \end{figure}
 
 \begin{figure}[ht]
-\includegraphics[width=4.8in,keepaspectratio=true]{figs/temperrs_K}
-\caption{Numerical temperature errors in test K, which tests the thermal bedrock model.  Vertical axis is in Kelvin.  ``maxT'' and ``avT'' are errors computed over all points within the ice while ``maxTb'' and ``avTb'' are computed over all grid points within the bedrock.  See \cite{BuelerTestK} for a discussion.}
+\includegraphics[width=4.0in,keepaspectratio=true]{figs/temperrs_K}
+\caption{Numerical temperature errors in test K, which tests the thermal bedrock model.  Vertical axis in Kelvin.  ``maxT'' and ``avT'' are errors within the ice, while ``maxTb'' and ``avTb'' are in the bedrock.  See \cite{BuelerTestK} for a discussion.}
 \label{fig:temperrsK}
 \end{figure}
 

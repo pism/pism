@@ -25,7 +25,7 @@
 #include <petscsnes.h>
 
 #include "materials.hh"
-#include "iceShelfExtension.hh"
+#include "ssa/iceShelfExtension.hh"  // only used for Jed's ssa_external in base/ssa/
 #include "pism_const.hh"
 #include "grid.hh"
 #include "beddefLC.hh"
@@ -135,7 +135,7 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFactory &getIceFactory() { return iceFactory; }
   virtual IceType *getIce() {return ice;}
-  virtual IceShelfExtension &getShelfExtension() { return shelfExtension; }
+//  virtual IceShelfExtension &getShelfExtension() { return shelfExtension; }
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -178,7 +178,7 @@ protected:
   DeformableEarthType   bed_deformable;
   SeaWaterType          ocean;
   FreshWaterType        porewater;
-  IceShelfExtension     shelfExtension;
+  SSAStrengthExtension  ssaStrengthExtend;
 
   PISMAtmosphereCoupler *atmosPCC;
   IceInfoNeededByAtmosphereCoupler info_atmoscoupler;
@@ -545,10 +545,22 @@ private:
   VecScatter SSAScatterGlobalToLocal;
 
 protected:
-  // External SSA solver.  If non-NULL, we are using the velocity solver in src/base/ssa and all the SSA* objects above
-  // are not used.  Eventually we should move SSA legacy stuff out of IceModel (either by putting into an implementation
-  // of SSA or by just deleting it).
+  // Jed's External SSA solver:  "If non-NULL, we are using the velocity solver in
+  // src/base/ssa and all the SSA* objects above are not used.  Eventually we should
+  // move SSA legacy stuff out of IceModel (either by putting into an implementation
+  // of SSA or by just deleting it)."
+  // Bueler's comments:  The type "SSA" is not documented and is defined as opaquely
+  // as possible by going through src/ssa/pismssa.h and src/ssa/ssaimpl.h.  This seems
+  // to be Jed's decision to start using PIMPL instead of C++ like the rest of PISM.
+  // The actual implementation of this SSA is a finite element method is in 
+  // src/ssa/ssafe.c.  It is very promising.  It is essentially impossible for me to
+  // understand without an analysis of the design principles of dohp.  Go to dohp.org
+  // and read Karniadakis and Sherwin.
   SSA ssa;
+
+  IceShelfExtension  shelfExtensionJed;  // Jed's shelfExtension object: a strength extension
+                                      // that factors the nu*H coefficient of the SSA
+                                      // equations so that it can use your IceType
 
   // This is related to the snapshot saving feature
   char snapshots_filename[PETSC_MAX_PATH_LEN];

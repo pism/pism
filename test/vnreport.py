@@ -5,7 +5,6 @@
 import getopt
 import sys
 import numpy
-import Gnuplot
 from pylab import *
 
 # defaults
@@ -141,23 +140,36 @@ markersize = 2.0
 base = 10
 loc = 'lower right'
 
-figure(1,figsize=(8, 4));hold(True);grid(True)
-xlabel(dxname + '  (' + units + ')')
+figure(1,figsize=(8, 4)); hold(True);
 for nn in range(len(tags)):
+  xdata = array(path[0:len(err[nn])])
+  ydata = array(err[nn])
   if exclude.find(tags[nn]) < 0: # if the tag is not in the exclude string, then plot
-    loglog(path[0:len(err[nn])], err[nn], style, label=(tags[nn] + ' error'),
-           markersize=markersize,
-           basex=base,
-           basey=base)
+    plot(xdata[::-1], ydata[::-1], style, label=(tags[nn] + ' error'))
+    ## loglog does not work well:
+    #loglog(xdata[::-1], ydata[::-1], style, label=(tags[nn] + ' error'),
+    #       markersize=markersize,
+    #       basex=base,
+    #       basey=base)
   else:
     print 'excluding "' + tags[nn] + '" errors from plot'
+hold(False)
+
 imagetitle = titles[0] + ' numerical errors in test ' + testname
 if pismrev > 0:
   imagetitle += ' (PISM revision ' + str(pismrev) + ')'
 else:
   imagetitle += ' (PISM)'
-legend(loc=loc);title(imagetitle)
-axis('tight')
+title(imagetitle);
+
+axis('tight');
+grid(True)
+usexlabel = dxname + '  (' + units + ')'
+xlabel(usexlabel)
+legend(loc=loc);
+xticks(xdata[::-1]);
+
+#show()
 
 outfilename = outfilestart + '_' + testname
 if graphformat.find('pdf') >= 0:
@@ -171,4 +183,5 @@ else:
   savefig(outfilename)
   print 'PNG file ' + outfilename + ' written'
 # done
+
 

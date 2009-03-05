@@ -1,7 +1,4 @@
-#ifndef _iceShelfExtension_hh
-#define _iceShelfExtension_hh
-
-// Copyright (C) 2009 Jed Brown and Ed Bueler
+// Copyright (C) 2009 Jed Brown
 //
 // This file is part of PISM.
 //
@@ -19,9 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef _iceShelfExtension_hh
+#define _iceShelfExtension_hh
+
 #include <petsc.h>
 class IceType;
 
+//! Jed's shelfExtension object: a strength extension that factors the nu*H coefficient of the SSA equations so that it can use your IceType.
 class IceShelfExtension {
 public:
   IceShelfExtension(MPI_Comm,const char *pre);

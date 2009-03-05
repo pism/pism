@@ -182,8 +182,8 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/tryLCbd : tryLCbd.o beddefLC.o materials.o ${LIBPISMNAME}
-	${CXXLINKER} tryLCbd.o beddefLC.o materials.o ${ICE_LIB_FLAGS} -o $@
+../bin/tryLCbd : tryLCbd.o beddefLC.o materials.o pism_const.o ${LIBPISMNAME}
+	${CXXLINKER} tryLCbd.o beddefLC.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/gridL : gridL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@

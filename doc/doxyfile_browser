@@ -148,7 +148,8 @@ EXCLUDE                = ../src/.svn/ \
                          ../src/eismint/.svn/ \
                          ../src/netcdf/.svn/ \
                          ../src/ismip/heino/ \
-                         ../src/verif/exactM.py
+                         ../src/verif/exactM.py \
+                         ../src/base/ssa/
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
 EXCLUDE_SYMBOLS        = 

@@ -1,19 +1,19 @@
 // Copyright (C) 2004-2009 Jed Brown and Ed Bueler
 //
-// This file is part of Pism.
+// This file is part of PISM.
 //
-// Pism is free software; you can redistribute it and/or modify it under the
+// PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation; either version 2 of the License, or (at your option) any later
 // version.
 //
-// Pism is distributed in the hope that it will be useful, but WITHOUT ANY
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Pism; if not, write to the Free Software
+// along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "materials.hh"
@@ -694,6 +694,40 @@ void PlasticBasalType::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscS
     *d = tauc / sqrt(magreg2);
     if (dd) *dd = -1 * *d / magreg2;
   }
+}
+
+
+SSAStrengthExtension::SSAStrengthExtension() {
+  min_thickness = 50.0;   // m
+          // minimum thickness (for SSA velocity computation) at which 
+          // NuH switches from vertical integral to constant value
+          // this value strongly related to calving front
+          // force balance, but the geometry itself is not affected by this value
+  const PetscReal
+    DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 
+  nuH = min_thickness * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
+                       / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+          // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
+          //          30 MPa yr for \bar\nu
+}
+
+PetscErrorCode SSAStrengthExtension::set_notional_strength(PetscReal my_nuH) {
+  nuH = my_nuH;
+  return 0;
+}
+
+PetscErrorCode SSAStrengthExtension::set_min_thickness(PetscReal my_min_thickness) {
+  min_thickness = my_min_thickness;
+  return 0;
+}
+
+PetscReal SSAStrengthExtension::notional_strength() const {
+  return nuH;
+}
+
+PetscReal SSAStrengthExtension::min_thickness_for_extension() const {
+  return min_thickness;
 }
 
 

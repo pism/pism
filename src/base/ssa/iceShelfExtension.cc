@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Jed Brown and Ed Bueler
+// Copyright (C) 2009 Jed Brown
 //
 // This file is part of PISM.
 //
@@ -154,3 +154,4 @@ PetscScalar IceShelfExtension::viscosity() {
 }
 
 PetscScalar IceShelfExtension::thickness() const { return H; }
+

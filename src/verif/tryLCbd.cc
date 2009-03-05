@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     DeformableEarthType bedrock;
+    //ThermoGlenIce       ice(com,ICE_PB);  // linker error???
     BedDeformLC bdlc;
     DA          da2;
     Vec         H, bed, Hstart, bedstart, uplift;
@@ -165,7 +166,8 @@ int main(int argc, char *argv[]) {
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n"); CHKERRQ(ierr);
       ierr = bdlc.settings(include_elastic,Mx,My,dx,dy,Z, 
-                           IceType::rho, bedrock.rho, bedrock.eta, bedrock.D,
+//                           ice.rho, bedrock.rho, bedrock.eta, bedrock.D,
+                           910.0, bedrock.rho, bedrock.eta, bedrock.D,
                            &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);

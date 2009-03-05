@@ -25,7 +25,7 @@
 #include "ssa/pismssa.hh"
 
 IceModel::IceModel(IceGrid &g)
-  : grid(g), iceFactory(grid.com,NULL), ice(NULL), shelfExtension(grid.com,NULL) {
+  : grid(g), iceFactory(grid.com,NULL), ice(NULL), shelfExtensionJed(grid.com,NULL) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -487,7 +487,7 @@ void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
 
 void IceModel::setConstantNuHForSSA(PetscScalar nuH) {
   useConstantNuHForSSA = PETSC_TRUE;
-  shelfExtension.forceNuH(nuH);
+  ssaStrengthExtend.set_notional_strength(nuH);
 }
 
 
@@ -1061,9 +1061,6 @@ PetscErrorCode IceModel::init_physics() {
     ierr = iceFactory.create(&ice); CHKERRQ(ierr);
     ierr = ice->setFromOptions(); CHKERRQ(ierr); // Set options specific to this particular ice type
   }
-
-  ierr = shelfExtension.setIce(ice);CHKERRQ(ierr);
-  ierr = shelfExtension.setFromOptions();CHKERRQ(ierr);
 
   return 0;
 }
