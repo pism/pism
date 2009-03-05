@@ -32,7 +32,7 @@ const PetscScalar DEFAULT_TAUC = 1e4;  // 10^4 Pa = 0.1 bar
          // used in iMvelocity.C and iMutil.C
 const PetscScalar DEFAULT_MIN_TEMP_FOR_SLIDING = 273.0;  // note less than 
          // ice.meltingTemp; if above this value then decide to slide
-const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 1000.0;  // age to start age computation
+const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 0.0;  // age to start age computation
 
 const PetscScalar DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
 

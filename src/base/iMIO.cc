@@ -475,7 +475,6 @@ Most of the time the user should carefully specify which variables to regrid.
 PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
   PetscTruth regridVarsSet, regrid_from_set;
-  bool regrid_2d_only = false;
   char filename[PETSC_MAX_PATH_LEN], regridVars[PETSC_MAX_PATH_LEN];
   NCTool nc(&grid);
 
@@ -522,7 +521,6 @@ PetscErrorCode IceModel::regrid() {
 		      "PISM WARNING: at least one of 'z' and 'zb' is absent in '%s'.\n"
 		      "              3D regridding is disabled.\n",
 		      filename);
-    regrid_2d_only = true;
     CHKERRQ(ierr);
   }
   ierr = nc.close(); CHKERRQ(ierr);
@@ -539,7 +537,7 @@ PetscErrorCode IceModel::regrid() {
 	   ierr = vbed.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'B':
-	   if (regrid_2d_only) {
+	   if (lic.regrid_2d_only || lic.no_regrid_bedrock) {
 	     ierr = verbPrintf(2, grid.com, "  B: skipping 'litho_temp'...\n"); CHKERRQ(ierr);
 	   } else {
 	     ierr = verbPrintf(2, grid.com, "  B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
@@ -547,7 +545,7 @@ PetscErrorCode IceModel::regrid() {
 	   }
            break;
          case 'e':
-	   if (regrid_2d_only) {
+	   if (lic.regrid_2d_only) {
 	     ierr = verbPrintf(2, grid.com, "  e: skipping 'age'...\n"); CHKERRQ(ierr);
 	   } else {
 	     ierr = verbPrintf(2, grid.com, "  e: regridding 'age' ... \n"); CHKERRQ(ierr);
@@ -567,7 +565,7 @@ PetscErrorCode IceModel::regrid() {
 	   ierr = vHmelt.regrid(filename, lic, true); CHKERRQ(ierr);
            break;
          case 'T':
-	   if (regrid_2d_only) {
+	   if (lic.regrid_2d_only) {
 	     ierr = verbPrintf(2, grid.com, "  T: skipping 'temp'...\n"); CHKERRQ(ierr);
 	   } else {
 	     ierr = verbPrintf(2, grid.com, "  T: regridding 'temp' ... \n"); CHKERRQ(ierr);

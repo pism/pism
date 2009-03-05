@@ -114,6 +114,10 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
     } else {
       no_regrid_bedrock = false;
     }
+
+    // This disables regridding bedrock temperature if an input file has only
+    // one bedrock layer.
+    if (g.zb_len < 2) no_regrid_bedrock = true;
   }
 
   verbPrintf(5, com, "LIC INFO: regrid_2d_only = %d, no_regrid_bedrock = %d\n",
