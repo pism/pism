@@ -149,7 +149,7 @@ EXCLUDE                = ../src/.svn/ \
                          ../src/netcdf/.svn/ \
                          ../src/ismip/heino/ \
                          ../src/verif/exactM.py \
-                         ../src/base/ssa/
+                         ../src/base/ssaJed/
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
 EXCLUDE_SYMBOLS        = 

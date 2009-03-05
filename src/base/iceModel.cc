@@ -22,7 +22,7 @@
 
 #include "iceModel.hh"
 #include "pism_signal.h"
-#include "ssa/pismssa.hh"
+#include "ssaJed/pismssa.hh"
 
 IceModel::IceModel(IceGrid &g)
   : grid(g), iceFactory(grid.com,NULL), ice(NULL), shelfExtensionJed(grid.com,NULL) {

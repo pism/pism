@@ -76,7 +76,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/base/ssa/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 executables := pismr pismd pismv pisms pcctest

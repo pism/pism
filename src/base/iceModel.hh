@@ -25,7 +25,7 @@
 #include <petscsnes.h>
 
 #include "materials.hh"
-#include "ssa/iceShelfExtension.hh"  // only used for Jed's ssa_external in base/ssa/
+#include "ssaJed/iceShelfExtension.hh"  // only used for Jed's ssa_external in base/ssa/
 #include "pism_const.hh"
 #include "grid.hh"
 #include "beddefLC.hh"
@@ -550,17 +550,19 @@ protected:
   // move SSA legacy stuff out of IceModel (either by putting into an implementation
   // of SSA or by just deleting it)."
   // Bueler's comments:  The type "SSA" is not documented and is defined as opaquely
-  // as possible by going through src/ssa/pismssa.h and src/ssa/ssaimpl.h.  This seems
+  // as possible by going through src/ssaJed/pismssa.h and src/ssaJed/ssaimpl.h.  This seems
   // to be Jed's decision to start using PIMPL instead of C++ like the rest of PISM.
   // The actual implementation of this SSA is a finite element method is in 
-  // src/ssa/ssafe.c.  It is very promising.  It is essentially impossible for me to
+  // src/ssaJed/ssafe.c.  It is very promising.  It is essentially impossible for me to
   // understand without an analysis of the design principles of dohp.  Go to dohp.org
   // and read Karniadakis and Sherwin.
   SSA ssa;
 
-  IceShelfExtension  shelfExtensionJed;  // Jed's shelfExtension object: a strength extension
-                                      // that factors the nu*H coefficient of the SSA
-                                      // equations so that it can use your IceType
+  // Jed's shelfExtension object: a strength extension that factors the nu*H coefficient
+  // of the SSA equations so that it can use your IceType.  Essentially unnecessary because
+  // the extension is the replacement for an unimplemented stress boundary condition.
+  IceShelfExtension  shelfExtensionJed;  
+                                      
 
   // This is related to the snapshot saving feature
   char snapshots_filename[PETSC_MAX_PATH_LEN];

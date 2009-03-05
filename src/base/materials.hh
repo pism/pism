@@ -304,7 +304,7 @@ More specifically, the SSA equations are
 and another similar equation.  Schoof \latexonly\cite{SchoofStream}\endlatexonly shows that these PDEs
 are the variational equations for a functional.
 
-The quantity "\f$\nu H\f$" is the nonlinear coefficient in this roughly-speaking 
+The quantity \f$\nu H\f$ is the nonlinear coefficient in this (roughly-speaking)
 elliptic pair of PDEs.  Conceptually it is a membrane strength.  Well-posedness of the SSA problem 
 requires either a precisely-defined boundary and an appropriate boundary condition
 \e or a nonzero value of \f$\nu H\f$ at all points.  This class provides that nonzero value.

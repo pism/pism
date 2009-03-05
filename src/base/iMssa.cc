@@ -20,7 +20,7 @@
 #include <cstring>
 #include <petscda.h>
 #include "iceModel.hh"
-#include "ssa/pismssa.hh"
+#include "ssaJed/pismssa.hh"
 
 #if 1
 // Many functions in this file don't make sense if we are using the external SSA module.

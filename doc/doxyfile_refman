@@ -137,7 +137,7 @@ EXCLUDE                = ../src/base/.svn/ \
                          ../src/verif/.svn/ \
                          ../src/eismint/.svn/ \
                          ../src/netcdf/.svn/ \
-                         ../src/base/ssa/
+                         ../src/base/ssaJed/
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
 EXCLUDE_SYMBOLS        = 
