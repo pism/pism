@@ -166,7 +166,7 @@ PetscErrorCode IceModel::createVecs() {
   // PROPOSED standard_name = land_ice_age
   ierr = tau3.set_attrs("model_state", "age of ice",
 			"s", NULL); CHKERRQ(ierr);
-  ierr = tau3.set_glaciological_units("year");
+  ierr = tau3.set_glaciological_units("years");
   tau3.write_in_glaciological_units = true;
   ierr = tau3.set_valid_min(0.0); CHKERRQ(ierr);
 
@@ -856,7 +856,8 @@ PetscErrorCode IceModel::set_grid_from_options() {
    deformation model, initialize the basal till model, initialize snapshots.
 
    Please see the documenting comments of the functions in this one to find
-   explanations of their intended uses.
+   explanations of their intended uses and the flow-chart
+   doc/initialization_sequence.png for a graphical illustration of the process.
  */
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;

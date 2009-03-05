@@ -49,7 +49,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
 		    "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
 
-  ierr = set_grid_from_options(); CHKERRQ(ierr);
   // report on resulting computational box, rescale grid, actually create local
   // interpolation context
   ierr = verbPrintf(2, grid.com, 

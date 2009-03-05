@@ -1071,7 +1071,8 @@ PetscErrorCode NCTool::open_for_reading(const char filename[]) {
   ierr = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
   if (stat != NC_NOERR) {
-    ierr = PetscPrintf(grid->com, "ERROR: Can't open file '%s'!\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "ERROR: Can't open file '%s'!\n",
+		       filename); CHKERRQ(ierr);
     PetscEnd();
   }
   
