@@ -164,7 +164,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = nc.open_for_writing(filename, append == PETSC_FALSE); CHKERRQ(ierr);
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
-  ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
+  ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
   ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -443,9 +443,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   ierr = tau3.read(fname, last_record); CHKERRQ(ierr);
 
   // read the polar_stereographic if present
-  ierr = nc.read_polar_stereographic(psParams.svlfp,
-				     psParams.lopo,
-				     psParams.sp); CHKERRQ(ierr);
+  ierr = nc.read_polar_stereographic(psParams); CHKERRQ(ierr);
 
   int hist_len;
   char *hist;
@@ -750,7 +748,7 @@ PetscErrorCode IceModel::write_snapshot() {
       // Prepare the snapshots file:
       ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
       ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
-      ierr = nc.write_polar_stereographic(psParams.svlfp, psParams.lopo, psParams.sp); CHKERRQ(ierr);
+      ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
       ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
       file_is_ready = true;

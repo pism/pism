@@ -697,7 +697,7 @@ for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc
 Note that tools like NCO and \verb|ncview| usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
 
 
-\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  FIXME  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
+\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  FIXME  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
 
 Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
 
@@ -1449,7 +1449,7 @@ We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISM
 In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this run for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
 
 
-\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka.}
+\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka. Another way of getting intermediate files is by using the \intextoption{save\und at} option. See Appendix \ref{sect:options} for more.}
 
 \begin{verbatim}
 $ mpiexec -n 8 pgrn -ccl3 -i green_SSL2_110k.nc -dTforcing grip_dT.nc \
@@ -1490,19 +1490,18 @@ The scripts in this section are found in the directory \verb|examples/eisross/|.
 \centerline{\url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}}
 \small
 
-\verb|$ cd examples/eisross/|
+\begin{verbatim}
+$ cd examples/eisross/
+$ wget http://homepages.vub.ac.be/~phuybrec/eismint/111by147Grid.dat
+$ wget http://homepages.vub.ac.be/~phuybrec/eismint/kbc.dat
+$ wget http://homepages.vub.ac.be/~phuybrec/eismint/inlets.dat
+\end{verbatim}
+\normalsize The reader might want to look at these files in a text editor.  Their idiosyncratic format must be handled by a python script, namely \verb|eisross.py| below.  In fact, a significant part of setting up EISMINT-Ross in PISM was the step of converting these text files into a machine-readable and metadata-containing NetCDF file.  That is typical of geophysical modeling generally.  The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.} reads the above three \verb|.dat| files and it creates a NetCDF file:
 
-\verb|$ wget http://homepages.vub.ac.be/~phuybrec/eismint/111by147Grid.dat|
-
-\verb|$ wget http://homepages.vub.ac.be/~phuybrec/eismint/kbc.dat|
-
-\verb|$ wget http://homepages.vub.ac.be/~phuybrec/eismint/inlets.dat|
-
-\normalsize\noindent The reader might want to look at these files in a text editor.  Their idiosyncratic format must be handled by a python script, namely \verb|eisross.py| below.  In fact, a significant part of setting up EISMINT-Ross in PISM was the step of converting these text files into a machine-readable and metadata-containing NetCDF file.  That is typical of geophysical modeling generally.  The script\footnote{Requires \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}.} reads the above three \verb|.dat| files and it creates a NetCDF file:
-
-\verb|$ ./eisross.py -o ross.nc|
-
-\noindent Note that the NetCDF file \verb|ross.nc| can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.  For example, \verb|ncdump -h ross.nc| shows the ``header'' (the metadata) for \verb|ross.nc|.  The script \verb|eisross.py| has added this metadata, much of which can only be found by carefully reading references \cite{RIGGS2,RIGGS1,MacAyealetal}.
+\begin{verbatim}
+$ ./eisross.py -o ross.nc
+\end{verbatim}
+Note that the NetCDF file \verb|ross.nc| can be reconverted to text (CDL) using \verb|ncdump| or it can be viewed graphically with \verb|ncview|.  For example, \verb|ncdump -h ross.nc| shows the ``header'' (the metadata) for \verb|ross.nc|.  The script \verb|eisross.py| has added this metadata, much of which can only be found by carefully reading references \cite{RIGGS2,RIGGS1,MacAyealetal}.
 
 \begin{figure}[ht]
 \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossmask} \qquad \includegraphics[height=2.3in,keepaspectratio=true]{figs/rossubar}
@@ -1520,9 +1519,7 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eisross.py| ex
 $ pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
         -Mx 147 -My 147 -Mz 3 -Lz 1e3
 \end{verbatim}
-
-
-\noindent Here we bootstrap (\verb|-boot_from|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
+Here we bootstrap (\verb|-boot_from|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
 
 At the end of this run the computed velocity field is compared to the interpolated observed velocities stored in \verb|ross.nc|.  The value called ``average relative error in vector vel'' is most relevant.  A value of 0.07 here means that the averaged absolute difference between the computed and the observed velocity, in the ``accurate'' region, is 7\%.
 
@@ -1540,13 +1537,13 @@ There are many variations on this basic ``\verb|pismd -ross|''\pismoptionindex{r
 $ pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
         -Mx 147 -My 147 -Mz 3 -Lz 1e3 -d cnmu -verbose -pause 10
 \end{verbatim}
-\noindent Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
+Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
 \begin{verbatim}
 $ mpiexec -n 4 pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
           -Mx 201 -My 201 -Mz 3 -Lz 1e3
 \end{verbatim}
-\noindent The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
+The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 
 Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\und rtol}) and the linear iteration (\intextoption{ksp\und rtol}) to get more confidence in the numerical scheme:
 
@@ -1555,7 +1552,7 @@ $ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
         -Mz 11 -ssa -ice_type custom -ice_custom_hardness 1.8e8 \
         -o ross_out_1p8.nc -ssa_rtol 1e-6 -ksp_rtol 1e-10
 \end{verbatim}
-\noindent Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnostic velocity computation. %Jed
+Table \ref{tab:rossoptions} lists some of the options which are useful for this kind of diagnostic velocity computation. %Jed
 
 \small
 \begin{table}[ht]
@@ -1577,9 +1574,10 @@ $ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
 
 \subsubsection*{Comparison to RIGGS data}  The file \verb|riggs_clean.dat| is a cleaned-up version of the original RIGGS\index{RIGGS} data \cite{RIGGS1, RIGGS2}.  (See \texttt{README} for more explanation on this RIGGS data.)  To convert this data to a NetCDF file, as needed next, do
 
-\verb|$ ./eis_riggs.py -o riggs.nc|
-
-\noindent A file \verb|riggs.nc| will be created.  This data is one-dimensional; it is just a lists of values which have an index dimension \verb|count| in the NetCDF file \verb|riggs.nc|.
+\begin{verbatim}
+./eisriggs.py -o riggs.nc
+\end{verbatim}
+A file \verb|riggs.nc| will be created.  This data is one-dimensional; it is just a lists of values which have an index dimension \verb|count| in the NetCDF file \verb|riggs.nc|.
 
 Now, \verb|pismd -ross| can read this data and compute a $\chi^2$ statistic comparing computed PISM output to the data:
 
@@ -1587,18 +1585,19 @@ Now, \verb|pismd -ross| can read this data and compute a $\chi^2$ statistic comp
 \begin{verbatim}
 $ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 3 \
        -ssa -riggs riggs.nc
-PISMD (diagnostic velocity computation mode)
-initializing EISMINT Ross ice shelf velocity computation ...
+PISMD stable0.2 (diagnostic velocity computation mode)
 . . .
-maximum computed speed in ice shelf is   1249.107 (m/a)
+initializing EISMINT-Ross ice shelf velocity computation ...
+. . . 
+maximum computed speed in ice shelf is   1364.654 (m/a)
 . . .
 comparing to RIGGS data in riggs.nc ...
-Chi^2 statistic for computed results compared to RIGGS is   3625.099
- ... done.
+Chi^2 statistic for computed results compared to RIGGS is   3637.016
+Writing model state, with full 3D velocities, to file `unnamed_diag.nc'
 \end{verbatim}
 \normalsize
 
-Naturally, the question is ``does this $\chi^2$ value of $3625.099$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}.  The maximum computed horizontal ice speed above of $1249.107$ m/a is lower than the maximum velocities reported by the other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (near the calving front, of course).  The $\chi^2$ result is essentially as good as the best in the Table, noting smaller $\chi^2$ is better.
+Naturally, the question is ``does this $\chi^2$ value of $3637.016$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}. The maximum computed horizontal ice speed above of $1364.654$ m/a is slightly lower than the maximum velocities reported by the other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (near the calving front, of course).  The $\chi^2$ result is essentially as good as the best in the Table, noting smaller $\chi^2$ is better.
 
 \small
 \begin{table}[ht]
@@ -1653,10 +1652,10 @@ We see that hardnesses $\bar B = 1.8,1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/
 Assuming that \verb|rossComputed.nc| was produced by the following PISM run
 
 \begin{verbatim}
-$ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 11 \
-        -ssa -o rossComputed
+$ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
+        -Mz 11 -ssa -o rossComputed.nc
 \end{verbatim}
-\noindent and the RIGGS data is in \verb|riggs_clean.dat| described above,
+and the RIGGS data is in \verb|riggs_clean.dat| described above,
 
 \verb|$ ./ross_plot.py --pism-output=rossComputed.nc --riggs=riggs_clean.dat|
 
@@ -2201,8 +2200,6 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 
 \verb|5|:\quad Map-plane view of $y$-component of horizontal ice velocity at the \emph{base} of the ice in meters per year.
 
-\verb|A|:\quad Map-plane view of snow accumulation in ice-equivalent meters per year.  Viewer \verb|-d A| is different from \verb|-d a| only if positive degree day model is turned on; see viewer \verb|A| below.
-
 \verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of kPa.
 
 \verb|D|:\quad \notMat Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
@@ -2236,8 +2233,6 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 \verb|Y|:\quad Map plane view of $y$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
 
 \verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|a|:\quad Map-plane view of ice surface mass balance in ice-equivalent meters per year.  Note \verb|-d A| gives snow accumulation rate but \verb|-d a| shows melting included in the surface balance if the positive degree day model is turned on; see options \verb|-pdd| and \verb|-pdd_rand| in Appendix \ref{sect:options}.  If positive degree day model is off then \verb|-d a| and \verb|-d A| give the same view.
 
 \verb|b|:\quad Map-plane view of bed elevation in meters above sea level.
 
@@ -2300,10 +2295,10 @@ to smoothly replace missing values in two-dimensional NetCDF variables with the 
 
 Section \ref{sect:green} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|usurf|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
 
-\verb|fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \|
-
-\verb|                -i 100.0 -o data_smoothed.nc|
-
+\begin{verbatim}
+fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
+                -i 100.0 -o data_smoothed.nc
+\end{verbatim}
 Note that \verb|-i| and \verb|-e| specify the initial guess and the convergence tolerance for \emph{all} the specified variables, so using these options only makes sense if all the variables have the same units. Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes, so we recommend processing variables one at a time.
 
 \opthead  \verb|fill_missing.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
@@ -2323,28 +2318,26 @@ Note that \verb|-i| and \verb|-e| specify the initial guess and the convergence 
 
 An example usage is
 
-\verb|$  pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out|
+\begin{verbatim}
+$  pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out
+$  series.py -f eisIIA.out -o eisIIA_series.nc
+$  ncview eisIIA_series.nc|
+\end{verbatim}
+Note that multiple runs can have their standard out concatenated, and \verb|series.py| will (generally) give reasonable behavior.  For example,
 
-\verb|$  series.py -f eisIIA.out -o eisIIA_series.nc|
-
-\verb|$  ncview eisIIA_series.nc|
-
-\noindent Note that multiple runs can have their standard out concatenated, and \verb|series.py| will (generally) give reasonable behavior.  For example,
-
-\verb|$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out|
-
-\verb|$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out|
-
-\verb|$  series.py -f eisIIA.out -o eisIIA_ser_more.nc|
-
-\noindent gives a reasonable time series even though the file \verb|eisIIA.out| twice has the evidence of the run stopping, being saved, and restarting.  Note that the \verb|delta_t| variable in \verb|eisIIA_ser_more.nc| goes to zero when there is a restart; this is a feature not a bug.
+\begin{verbatim}
+$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out
+$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out
+$  series.py -f eisIIA.out -o eisIIA_ser_more.nc
+\end{verbatim}
+gives a reasonable time series even though the file \verb|eisIIA.out| twice has the evidence of the run stopping, being saved, and restarting.  Note that the \verb|delta_t| variable in \verb|eisIIA_ser_more.nc| goes to zero when there is a restart; this is a feature not a bug.
 
 An even more sophisticated usage is when a script runs PISM in several different ways and generates a long text file from standard out, say \verb|foo.txt|.  One can use \verb|less -N| to view the file with line numbers, and search backward and forwards  for ``PISM'' at each restart, with \verb|/PISM| or  \verb|?PISM| to find a range of line numbers for each run (for which a time series is desired).  Suppose we determine that we want line numbers 100 through 1234.  Then extract that range and run \verb|series.py|:
 
-\verb#$ cat foo.txt | sed -n '100,1234p' >> extract.txt# 
-
-\verb|$ series.py -f extract.txt -o desired_series.nc|
-
+\begin{verbatim}
+$ cat foo.txt | sed -n '100,1234p' >> extract.txt
+$ series.py -f extract.txt -o desired_series.nc
+\end{verbatim}
 \opthead  \verb|series.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
 
 \scriptoptdef{f}{file}{foo.txt} The full name of the text file.
@@ -2389,11 +2382,11 @@ In a standard PISM installation, to run this script you will want to \verb|cd te
 
 The basic use is this:
 
-\verb|$  verifynow.py -n 2 -l 3 -t BGIK >> foo.txt|
-
-\verb|$  vnreport.py -f foo.txt -t B -e 'geometry' -o thickerrs|
-
-\noindent (Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif} were actually generated by a level five (``\verb|-l 5|'') \verb|verifynow.py| run, but that takes a lot of computer time.)
+\begin{verbatim}
+$  verifynow.py -n 2 -l 3 -t BGIK >> foo.txt
+$  vnreport.py -f foo.txt -t B -e 'geometry' -o thickerrs
+\end{verbatim}
+(Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif} were actually generated by a level five (``\verb|-l 5|'') \verb|verifynow.py| run, but that takes a lot of computer time.)
 
 The \verb|verifynow.py| run will take a while.  The \verb|vnreport.py| run will (quickly) look at \verb|foo.txt| and extract the geometry (thickness) numerical errors and refinement path and build a \verb|.png| image like that in Figure \ref{fig:thickerrsB}.\footnote{A useful post-processing step on such \texttt{.png} images is to use one of the ImageMagick (\href{http://www.imagemagick.org/}{www.imagemagick.org}) tools to autocrop the white space: \texttt{mogrify -trim +repage thickerrs\und G.png}.  This degrades the quality of \texttt{.pdf} images, so it is not recommended for those.}  To generate a \verb|.pdf| image, add option \verb|-g pdf|.
 
@@ -2453,49 +2446,6 @@ Assuming that \verb|ross.nc| contains data produced by a PISM run like ones in s
 >> pcolor(cbar);colorbar();
 \end{verbatim}
 in the MATLAB shell will produce a picture similar to Figure \ref{fig:rossspeed}.
-
-
-\begin{comment}
-  \scripthead{util/nc\und template.py}\index{nc\und template.py} This Python
-  script reads \verb|pism_state.cdl| and runs \verb|ncgen| to create an empty
-  NetCDF file in PISM-readable format with given grid dimensions and variables
-  defined.
-
-  The intended use is this: suppose we have latitude, longitude, bed elevation,
-  ice thickness and accumulation/ablation rate data and we need to convert it
-  to PISM-readable format. One way to do this is to hand-edit
-  \verb|src/netcdf/pism_state.cdl| to remove all the unneeded variables, run
-  \verb|ncgen| on the resulting file, and then fill it with data. Another way
-  is to manually define all the variables in the script converting data to
-  PISM's format. Alternatively, one can run
-
-  \verb|nc_template.py -x 101 -y 101 -v lat,lon,topg,thk,acab \|
-
-  \verb| -p pism_state.cdl -o input.nc|
-
-  \noindent to create \verb|input.nc| and then fill this file with data. This
-  defines all the variables \emph{and} metadata.
-
-  \opthead \verb|nc_template.py| takes the following options:
-
-  \scriptoptdef{p}{pism-state}{pism\und state.cdl} the location of
-  \verb|pism_state.cdl|
-
-  \scriptoptdef{o}{output}{no default} output file name
-
-  \scriptoptdef{x}{x}{no default} grid width (points)
-
-  \scriptoptdef{y}{y}{no default} grid height (points)
-
-  \scriptoptdef{v}{variables}{all mapping, climate and all 2D model\und state
-    variables} comma-separated list of variables
-
-  Variables \verb|x|, \verb|y|, \verb|z|, \verb|zb|, \verb|t| are always
-  included; if \verb|-v| if omitted, then the output file will have these
-  variables, plus all the variables with \verb|pism_intent| equal to
-  \verb|mapping|, \verb|climate_steady|, \verb|climate_snapshot| and all the 2D
-  \verb|model_state| variables.
-\end{comment}
 
 \label{sect:index}
 \printindex

@@ -849,10 +849,7 @@ PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
   return 0;
 }
 
-PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longitude_from_pole,
-						double &latitude_of_projection_origin,
-						double &standard_parallel,
-						bool report) {
+PetscErrorCode NCTool::read_polar_stereographic(PolarStereoParams &ps, bool report) {
   PetscErrorCode ierr;
   double lon, lat, par;
   int varid;
@@ -862,9 +859,7 @@ PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longit
   if (!ps_exists && report) {
     ierr = verbPrintf(2,grid->com,
 		      "  polar stereographic variable not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
-		      straight_vertical_longitude_from_pole,
-		      latitude_of_projection_origin,
-		      standard_parallel); CHKERRQ(ierr);
+		      ps.svlfp, ps.lopo, ps.sp); CHKERRQ(ierr);
     return 0;
   }
 
@@ -888,18 +883,14 @@ PetscErrorCode NCTool::read_polar_stereographic(double &straight_vertical_longit
 		      lon, lat, par); CHKERRQ(ierr);
   }
 
-  if (lon_exists)
-    straight_vertical_longitude_from_pole = lon;
-  if (lat_exists)
-    latitude_of_projection_origin = lat;
-  if (par_exists)
-    standard_parallel = par;
+  if (lon_exists) ps.svlfp = lon;
+  if (lat_exists) ps.lopo = lat;
+  if (par_exists) ps.sp = par;
+
   return 0;
 }
 
-PetscErrorCode NCTool::write_polar_stereographic(double straight_vertical_longitude_from_pole,
-						 double latitude_of_projection_origin,
-						 double standard_parallel) {
+PetscErrorCode NCTool::write_polar_stereographic(PolarStereoParams &ps) {
   int stat, varid;
 
   if (grid->rank == 0) {
@@ -917,15 +908,15 @@ PetscErrorCode NCTool::write_polar_stereographic(double straight_vertical_longit
     check_err(stat,__LINE__,__FILE__);
 
     stat = nc_put_att_double(ncid, varid, "straight_vertical_longitude_from_pole", NC_DOUBLE, 1,
-			     &straight_vertical_longitude_from_pole);
+			     &ps.svlfp);
     check_err(stat,__LINE__,__FILE__);
 
     stat = nc_put_att_double(ncid, varid, "latitude_of_projection_origin", NC_DOUBLE, 1,
-			     &latitude_of_projection_origin);
+			     &ps.lopo);
     check_err(stat,__LINE__,__FILE__);
 
     stat = nc_put_att_double(ncid, varid, "standard_parallel", NC_DOUBLE, 1,
-			     &standard_parallel);
+			     &ps.sp);
     check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, varid, "pism_intent", 7, "mapping");
     check_err(stat,__LINE__,__FILE__);

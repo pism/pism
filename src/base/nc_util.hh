@@ -25,6 +25,12 @@
 #include "grid.hh"
 #include "../udunits/udunits.h"
 
+struct PolarStereoParams {
+  double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
+         lopo,  // latitude_of_projection_origin; defaults to 90
+         sp;    // standard_parallel; defaults to -71
+};
+
 struct MaskInterp {
   int number_allowed;
   int allowed_levels[50]; // must be strictly increasing
@@ -63,18 +69,13 @@ public:
   PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals);
   PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta);
 
-  PetscErrorCode read_polar_stereographic(double &straight_vertical_longitude_from_pole,
-					  double &latitude_of_projection_origin,
-					  double &standard_parallel,
-					  bool report = false);
   PetscErrorCode get_att_text(int varid, const char name[], int *length, char **result);
   PetscErrorCode get_att_double(int varid, const char name[],
 				int length, double *result);
   PetscErrorCode get_units(const char short_name[], const char standard_name[],
 			   bool &has_units, utUnit &units);
-  PetscErrorCode write_polar_stereographic(double straight_vertical_longitude_from_pole,
-					   double latitude_of_projection_origin,
-					   double standard_parallel);
+  PetscErrorCode read_polar_stereographic(PolarStereoParams &ps, bool report = false);
+  PetscErrorCode write_polar_stereographic(PolarStereoParams &ps);
 
   PetscErrorCode get_local_var(int varid, DA da, Vec v, GridType dims, int t);
   PetscErrorCode get_global_var(int varid, Vec g, GridType dims, int t);

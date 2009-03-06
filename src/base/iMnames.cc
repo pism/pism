@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007, 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,6 @@ const titleNname IceModel::tn[tnN] = {
 {"",""}, // '>'
 {"",""}, // '?'
 {"",""}, // '@'
-{"snow accumulation rate (ice equivalent m/a)", "snow_accum_pera"}, // 'A'
 {"",""}, // 'B'
 {"tau_c (till yield stress; kPa)", "tau_c"}, // 'C'
 {"D (diffusivity; m^2/s)", "D"}, // 'D'
@@ -90,7 +89,6 @@ const titleNname IceModel::tn[tnN] = {
 {"",""}, // '^'
 {"",""}, // '_'
 {"",""}, // '`'
-{"ice surface mass balance (m/a)", "accum_pera"}, // 'a'
 {"b (bed elev; m above sea level)", "b"}, // 'b'
 {"log(speed) (log_10(m/a))", "cbar"}, // 'c'
 {"",""}, // 'd'

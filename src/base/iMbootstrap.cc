@@ -73,10 +73,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // more info out of the the -boot_from file
   bootstrapLIC = new LocalInterpCtx(g, NULL, NULL, grid);
 
-  ierr = nc.read_polar_stereographic(psParams.svlfp,
-				     psParams.lopo,
-				     psParams.sp,
-				     true); CHKERRQ(ierr);
+  ierr = nc.read_polar_stereographic(psParams, true); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // now work through all the 2d variables, regridding if present and otherwise

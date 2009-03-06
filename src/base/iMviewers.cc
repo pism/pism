@@ -104,11 +104,11 @@ PetscErrorCode IceModel::createViewers() {
     return 0;
 
   PetscErrorCode ierr;
-  const int nv = 44; // number of viewers in use
+  const int nv = 42; // number of viewers in use
   char viewsInUse[nv] = {'0','1','2','3','4','5',
-                         'A','C','D','E','F','H','L','P','Q','R','S',
+                         'C','D','E','F','H','L','P','Q','R','S',
                                  'T','U','V','X','Y','Z',
-                         'a','b','c','e','f','h','i','j','l',
+                         'b','c','e','f','h','i','j','l',
                                  'm','n','p','q','r','s','t','u','v','x',
                                  'y','z'};
 

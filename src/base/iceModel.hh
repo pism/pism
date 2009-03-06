@@ -51,15 +51,6 @@ struct titleNname {
   char name[30];   // these names are for Matlab output vars
 };
 
-
-// see iMIO.cc
-struct PolarStereoParams {
-  double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
-         lopo,  // latitude_of_projection_origin; defaults to 90
-         sp;    // standard_parallel; defaults to -71
-};
-
-
 struct SSASNESNode {
   PetscScalar u, v;
 };
