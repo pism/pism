@@ -52,10 +52,11 @@ fullbib : fullbib.tex
 	pdflatex fullbib
 
 
-PISMREV_VFIGS ?= 327 # revision stamp for verification results in User's Manual figures;
+PISMREV_VFIGS ?= 589 # revision stamp for verification results in User's Manual figures;
                      # generally not the current trunk revision
-VFNOW_OUT=vfnow_r327_L5_23jun08.txt
+VFNOW_OUT=vfnow_r589_L5_5mar09.txt
 # list old ones here; keep them, for comparison:
+#VFNOW_OUT=vfnow_r327_L5_23jun08.txt
 #VFNOW_OUT=vfnow_r193_L5_10oct07.txt
 vfigs : $(VFNOW_OUT)
 	# producing figures thickerrs_G.pdf, temperrs_G.df, etc. 

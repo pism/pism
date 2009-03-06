@@ -52,13 +52,13 @@
 
 \title[PISM User's Manual]{\protect{\Large \emph{PISM}, a Parallel Ice Sheet Model:\normalsize} \\ \protect{\Large \bigskip \bigskip User's Manual\normalsize}}
 
-\author[]{Ed Bueler \\ Jed Brown \\ Constantine Khroulev \\ Nathan Shemonski}
+\author[]{Ed Bueler \\ Constantine Khroulev \\ Jed Brown \\ Nathan Shemonski}
 
 \date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREL.  Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}} 
 
 \pdfinfo{
 /Title (PISM User's Manual)
-/Author (Ed Bueler and Jed Brown and Constantine Khroulev and Nathan Shemonski)
+/Author (Ed Bueler and Constantine Khroulev and Jed Brown and Nathan Shemonski)
 /Subject (Using PISM, a Parallel Ice-Sheet Model)
 /Keywords (PISM ice sheet modeling)
 }
@@ -76,7 +76,7 @@
 \phantom{bob}
 \vspace{1.5in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2009 Ed Bueler and Jed Brown and Constantine Khroulev and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2009 Ed Bueler and Constantine Khroulev and Jed Brown and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -388,9 +388,9 @@ This structure is important to describe here because, on the one hand, some user
 
 \clearpage
 \newpage
-\section{Initialization versus bootstrapping}\label{sect:boot}  
+\section{Initialization and bootstrapping}\label{sect:boot}  
 
-\subsection{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\verb|-o|'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\intextoption{i}'', as in this example:\index{pisms}
+\subsubsection*{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\verb|-o|'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\intextoption{i}'':\index{pisms}
 
 \begin{verbatim}
 $ pisms -eisII A -y 100 -o foo.nc
@@ -398,63 +398,65 @@ $ pisms -eisII A -i foo.nc -y 100 -o bar.nc
 \end{verbatim}
 \smallskip
 
-Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \verb|-i|, however.  As in the above example, however, specifying which simplified geometry experiment (or verification test) is in use \emph{is} necessary, so that the run can continue with the climate inputs specified for the simplified-geometry experiment.  For instance, if the second line above is replaced by
+Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \verb|-i|.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For instance, it is an error to replace the second line above with ``\verb|$ pisms -i foo.nc -y 100 -o bar.nc|''.  It is valid to do ``\verb|$ pismr -i foo.nc -y 100 -o bar.nc|'' but the climate and other parameters default to the core PISM default values, and thus not (necessarily) the values specified in EISMINT II.
 
-\verb|$ pisms -i foo.nc -y 100 -o bar.nc|
+As a technical but important note about saved states, a PISM run with \intextoption{ssa}
+also saves the last SSA velocities to the output file, in variables 
+\verb|vubarSSA| and \verb|vvbarSSA|.  A \verb|ssa_velocities_are_valid| global
+attribute shows if the data present in these variables is valid.  The presence
+of these velocities adds efficiency in restarting.  If you want a PISM restart to
+ignor these velocities use \intextoption{dontreadSSAvels}.
 
-\noindent then an error is generated.
 
-Also note that a PISM run with \verb|-ssa| saves the initial guess of the SSA
-velocities to the output file, \verb|vubarSSA| and \verb|vvbarSSA| for
-restarting. The \verb|ssa_velocities_are_valid| global attribute shows if the
-data present in these variables is valid. If you want to restart from a PISM
-output \emph{ignoring} these velocities, use the \verb|-dontreadSSAvels|
-option.
+\subsubsection*{``Bootstrapping''}  This phrase\index{bootstrapping}\index{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \intextoption{boot\und from}.
 
-\subsection{``Bootstrapping''}  This phrase\index{bootstrapping}\index{initialization!by bootstrapping} means giving it less than complete data, and letting it fill in the needed data according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \intextoption{boot\und from}.
+The need for an identified stage like ``bootstrapping'' comes from the fact that initial conditions, for the evolution equations describing an ice sheet, are not typically observable.  As a principal example of this problem, these equations require the temperature within the ice at the time the run is started.  Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice.
 
-In some sense, bootstrapping is unprincipled inverse modeling.\index{inverse modeling}\index{bootstrapping!is inverse modeling}  It is possible, for instance, to estimate the sliding state of the base of the ice through inverse models (\cite{JoughinMacAyealTulaczyk} is an example\footnote{The PISM authors are eager to work with principled (or at least, serious) inverse modelers.  In particular, we would like to use inverse-model-derived basal shear stresses to constrain a PISM forward model which would use both SIA and SSA models of ice flow.}).  It is also possible to use observed ``isochrones'' from ice-penetrating radar to estimate the velocity of ice \cite{Eisen06draft}.
-
-Instead, however, most ice sheet modeling (using forward models like PISM) would do something like this to get ``reasonable'' temperature and velocity fields within the ice: \begin{enumerate}
+Instead, evolutionary ice sheet modeling necessarily does something like this to get ``reasonable'' initial fields within the ice: \begin{enumerate}
 \item start only with observable quantities like surface elevation, ice thickness, and ice surface temperature,
-\item ``bootstrap'' as described in this section, to fill in temperatures at depth and give a preliminary estimate of the basal sliding condition and the three-dimensional velocity field, and
+\item ``bootstrap'' as defined here, using heuristics to fill in temperatures at depth and to give a preliminary estimate of the basal sliding condition, and thus of the three-dimensional velocity field, and
 \item \emph{either} do a long run holding the current geometry and surface temperature steady,  to evolve toward a ``more physical'' steady state which will have compatible temperature field, velocities, and age field,
 \item \emph{or} do a long run using an additional spatially-imprecise historical record from an ice core or a sea bed core (or both), to apply forcing to the surface temperature or sea level (for instance), but with the same functional result of filling in a temperature, velocity, and age.
 \end{enumerate}
 
-Subsection \ref{sect:green} does EISMINT-Greenland \cite{RitzEISMINT,HuybrechtsEISMINT} as an example of bootstrapping.  That section shows examples of long runs of both types (3) and (4).
+The heuristics used by PISM are, for now, only documented in the source code file \verb|src/base/iMbootstrap.cc|.
 
-When using \intextoption{boot\und from} you will need to specify both grid dimensions (using \intextoption{Mx}, \intextoption{My} and \intextoption{Mz}) and the height of the computational box for the ice with \intextoption{Lz}. This additional specification is natural: the data used in ``bootstrapping'' is two-dimensional (i.e. 3D fields are ignored).
+When using \intextoption{boot\und from} you will need to specify both grid dimensions (using \intextoption{Mx}, \intextoption{My} and \intextoption{Mz}) and the height of the computational box for the ice with \intextoption{Lz}.  The data read from the file can determine the horizontal extent of the model, if options \intextoption{Lx}, \intextoption{Ly} are not set.  The additional specification of vertical extent by \verb|-Lz| is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \verb|-Mx|, \verb|-My|, \verb|-Mz|, \verb|-Lz| \emph{when bootstrapping with} \verb|-boot_from| is an error.
 
-\subsection{Input file formats}
-\subsubsection{Input files}
-PISM produces CF-1.4 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files; the easiest way of learning about the format is by running
+Subsection shows bootstrapping for the \ref{sect:green} does EISMINT-Greenland intercomparison \cite{RitzEISMINT,HuybrechtsEISMINT}.
+
+
+\subsubsection*{\texttt{-i} file format}
+PISM produces CF-1.4 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \verb|-i| format is to do a simple run and then look at the metadata in the resulting file, like this:
 \begin{verbatim}
-$ pismv -test G -y 1 -o foo.nc
+$ pisms -eisII A -y 10 -o foo.nc
 $ ncdump -h foo.nc | less
 \end{verbatim}
-and looking at the output. It is worth mentioning, though, that CF metadata conventions require using the reference date in the units string of a time (\verb|t|) variable, but \emph{PISM completely ignores this reference date.}
 
-\noindent The file used with ``\intextoption{i}'' must have this format.
+Note that variables have a \verb|pism_intent|\index{PISM!\texttt{pism\und intent} attribute} attribute.  When that attribute is \verb|diagnostic|, the variable can be deleted from the file without affecting whether PISM can use it as a \verb|-i| input file.  Variables with \verb|pism_intent| = \verb|model_state|, by contrast, must be present for use with \verb|-i|.
 
-\subsubsection{Bootstrapping file format}
-\label{sec:bootstrapping-format}
+Regarding the automatically produced time variable, which has a \verb|units| attribute like \verb|"years since 1-1-1"|, note that CF metadata conventions require using a reference date in the units string of a time (\verb|t|) variable.  PISM completely ignores this reference date.
 
-Allowed formats for a bootstrapping file are relatively simple to describe. 
+
+\subsubsection*{\texttt{-boot\und from} file format}
+\label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item The NetCDF dimensions \verb|x| and \verb|y| and corresponding variables must be present and have the meanings of projection X coordinate and projection Y coordinate.
 \item All three-dimensional variables (depending on \verb|x,y,z| or \verb|x,y,zb|) will be ignored in bootstrapping.
-\item The names of variables do not need to match the corresponding variables in a PISM output file; if they do not, the \verb|standard_name| attribute is used to identify a variable.
-\item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} have the units specified using the \verb|units| attribute.\footnote{PISM uses UDUNITS to convert data present in an input file to MKS. This means that having ice thickness in kilometers or temperature in Celsius (for example) \emph{is} allowed.} 
-\item Any of the other two dimensional variables (depending on \verb|x,y|) may be missing, and for those missing values some heuristic will be applied. Please see table \ref{tab:modelhierarchy} for lists of data necessary for bootstrapping.
+\item The \verb|standard_name| attribute is used to identify a variable, so the names of variables do not need to match the corresponding variables in a PISM output file.
+\item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} to have the units specified using the \verb|units| attribute.  PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.
+\item Any two-dimensional variable (depending on \verb|x,y|) may be missing.  For those missing variables some heuristic will be applied.  See table \ref{tab:modelhierarchy} for a sketch of the data necessary for bootstrapping, and \verb|src/base/iMbootstrap.cc| for all further details.
+\item Surface elevation is ignored if present.  Users with surface elevation and bed elevation data should produce an ice thickness variable, with \verb|standard_name| = \verb|land_ice_thickness| for bootstrapping.  The bed elevation (topography) is read by \verb|standard_name| = \verb|bedrock_altitude|.
 \end{enumerate}
-The heuristics themselves are, for now, only documented in the source code:
-\begin{center}\verb|pism/src/base/iMbootstrap.cc|\end{center}
-\noindent Also see the \emph{PISM Reference Manual}.  Serious modeling is likely to start with the default bootstrapping method in \verb|iMbootstrap.cc|, called by the option ``\verb|-boot_from|'', but then add additional source code to add information.  This additional source code is likely to be a derived class of \verb|IceModel|.  The code in 
-\begin{center}\verb|pism/src/eismint/iceGRNModel.hh|\end{center}
-\noindent and
-\begin{center}\verb|pism/src/eismint/iceGRNModel.cc|\end{center}
-\noindent is an example of such a derived class; it does EISMINT-Greenland, as noted. Its function is fully documented in section \ref{sect:green}.
+
+\subsubsection*{Initialization sequence}  As described already, there are three ways to start PISM,\begin{itemize}
+\item executables \verb|pisms| and \verb|pismv| initialize experiments and verification tests, respectively, from formulas in the source code,
+\item \verb|-i| reads a previously-saved PISM model state in NetCDF form, and
+\item \verb|-boot_from| reads a NetCDF file and uses heuristics to fill in needed fields.
+\end{itemize}
+As a consequence of these options, and generally from the complexity of getting a computation started on a parallel computer, we observe that initializing PISM is one of the most error-prone parts of maintaining it.
+
+Thus initialization sequence is also an error-prone part of writing a derived class of \verb|IceModel| to modify PISM's function.  The reader interested in doing so should see method \verb|IceModel::init()| and also view the flow chart in \verb|doc/initialization-sequence.png|.  Note that \verb|init()| is \emph{not} \verb|virtual|.  Derived classes can redefine the several methods which are called by \verb|init()|, which are \verb|virtual|.  The EISMINT-Greenland derived class \verb|IceGRNModel| is an example.
 
 
 \clearpage
@@ -465,13 +467,13 @@ The heuristics themselves are, for now, only documented in the source code:
 
 The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice and it is exactly opposite to the vector of gravity.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.
 
-Bed topography is, of course, allowed.  In fact, when the ice is grounded, the true physical vertical coordinate $z'$, namely the coordinate measure relative to a reference geoid, is given by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.  Thus in the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ applies if $H(x,y)$ is the thickness of the ice.
+Bed topography is, of course, allowed.  In fact, when the ice is grounded, the true physical vertical coordinate $z'$, namely the coordinate measure relative to a reference geoid, is given by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.
 
-In the floating case, the physical vertical coordinate is $z'=z-(\rho_i/\rho_s) H(x,y)$ where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water.  Again $z=0$ is the base of the ice, which is the surface $z' = -(\rho_i/\rho_s) H(x,y)$.  The surface of the ice is $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$.  All we know about the bed elevations is that they are below the base of the ice when the ice is floating.  That is, the \emph{floatation criterion} $-(\rho_i/\rho_s) H(x,y) > b(x,y)$ applies.
+In the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ always applies if $H(x,y)$ is the thickness of the ice.  In the floating case, the physical vertical coordinate is $z'=z-(\rho_i/\rho_s) H(x,y)$ where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water.  Again $z=0$ is the base of the ice, which is the surface $z' = -(\rho_i/\rho_s) H(x,y)$.  The surface of the ice is $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$.  All we know about the bed elevations is that they are below the base of the ice when the ice is floating.  That is, the \emph{floatation criterion} $-(\rho_i/\rho_s) H(x,y) > b(x,y)$ applies.
 
 The computational box can extend downward into the bedrock.  As $z=0$ is the base of the ice, the bedrock corresponds to negative $z$ values regardless of the sign of its true (i.e.~$z'$) elevation.
 
-The extent of the computational box, along with its bedrock extension downward, is determined by four numbers \t{Lx}, \t{Ly}, \t{Lz}, and \t{Lbz}.  The first two of these are half-widths and have units of kilometers when set by options or displayed.  The last two are vertical distances in the ice and in the bedrock, respectively, and have units of meters.  See the sketch in figure \ref{fig:rectilinearbox}.
+The extent of the computational box, along with its bedrock extension downward, is determined by four numbers \t{Lx}, \t{Ly}, \t{Lz}, and \t{Lbz}.  The first two of these are half-widths and have units of kilometers when set by options or displayed.  The extent of the computational box for the ice is directly controlled by the options \intextoption{Lx}, \intextoption{Ly}, and \intextoption{Lz} as described in Appendix \ref{sect:options}.  In particular, \t{-Lx} and \t{-Ly} options should include values in kilometers while \t{-Lz} should be in meters.  (Option ``\verb|-Lbz|'' is not used, as explained next.)  See Figure \ref{fig:rectilinearbox}.
 
 \begin{figure}[ht]
 \includegraphics[width=4.0in,keepaspectratio=true]{figs/rectilinearbox}
@@ -479,7 +481,6 @@ The extent of the computational box, along with its bedrock extension downward, 
 \label{fig:rectilinearbox}
 \end{figure}
 
-The extent of the computational box for the ice is directly controlled by the options \intextoption{Lx}, \intextoption{Ly}, and \intextoption{Lz} as described in Appendix \ref{sect:options}.  As noted \t{-Lx} and \t{-Ly} options should include values in kilometers while \t{-Lz} should be in meters.
 
 \subsection{Grid} \label{subsect:grid} The PISM grid\index{PISM!grid} covering the computational box is equally spaced in each of the three dimensions.
 
@@ -489,18 +490,23 @@ Because of the bedrock extension, the grid of points is described by four number
 
 The distance \t{Lbz} is controlled by specifying the number \verb|Mbz| of grid points in the bedrock, noting that the vertical spacing \t{dz} is the same within the ice and within the bedrock.  To avoid conflicts, the distance \t{Lbz} cannot be set directly by the user.  In particular, $\text{\t{Lbz}}=\text{\t{dz}}\,(\text{\t{Mbz}}-1)$ while $\text{\t{dz}} = \text{\t{Lz}} / (\text{\t{Mz}}-1)$, and so the distance \t{Lbz} into the bedrock is determined by setting \t{Lz}, \t{Mz}, and \t{Mbz}.
 
-One is allowed to specify the grid when PISM is started \emph{without} a pre-existing model state (i.e.~as stored in a NetCDF input file output by PISM).  For instance, a shortened EISMINT II experiment A \cite{EISMINT00} run, which will produce a convenient NetCDF file for our purposes here, is\index{pisms}
+If one initializes PISM from a saved model state using \intextoption{i} then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
 
-\verb|$  pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 5000 -o foo.nc|
+\verb|$  pisms -eisII A -i foo.nc -y 100|
 
-\noindent If one initializes PISM from a saved model state then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
+\noindent should work fine if \verb|foo.nc| was a valid PISM model file, while the command
 
 \verb|$  pisms -eisII A -i foo.nc -Mz 201 -y 100|
 
-\noindent will give a warning that ``\verb|PISM WARNING: ignoring command-line option '-Mz'.|.''
+\noindent will give a warning that ``\verb|PISM WARNING: ignoring command-line option '-Mz'|.''
+
+Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \intextoption{boot\und from} or when initializing a simplified geometry experiment or a verification test.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
 
 
-\subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment as above, producing \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  Speaking conceptually, the idea in PISM is that one starts over from the beginning of EISMINT II experiment A on the finer grid, but one extracts the thickness and ice temperature stored in the coarse grid file and interpolates onto the finer grid before proceeding with the actual computation.  The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
+
+\subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
+
+The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
 Such ``regridding'' is done using the \intextoption{regrid\und from} and \intextoption{regrid\und vars} commands as in this example:\index{pisms}
 
@@ -508,11 +514,11 @@ Such ``regridding'' is done using the \intextoption{regrid\und from} and \intext
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
          -regrid_from foo.nc -regrid_vars HT -o bar.nc
 \end{verbatim}
-\noindent By specifying regridded variables ``\verb|HT|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Note that one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
+\noindent By specifying regridded variables ``\verb|HT|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when ``bootstrapping'' as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
+A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
 
-See table \ref{tab:regridvar} for the regriddable variables.  Only modeled variables are regriddable, while climate and boundary data is not.
+See table \ref{tab:regridvar} for the regriddable variables using \intextoption{regrid\und from}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
 \caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid$\underline{\phantom{b}}$vars} with given flag.}\label{tab:regridvar}
@@ -520,75 +526,85 @@ See table \ref{tab:regridvar} for the regriddable variables.  Only modeled varia
 \textbf{Flag} & \textbf{Name in NetCDF file} & \textbf{Description}\\ \hline
 \verb|b| & \texttt{topg}       & bed elevation \\
 \verb|B| & \texttt{litho\und temp} & temperature in bedrock \\
-\verb|e| & \texttt{age}        & age of the ice \\
-\verb|h| & \texttt{usurf}      & surface elevation \\
+\verb|e| & \texttt{age}        & age of ice \\
 \verb|H| & \texttt{thk}        & thickness \\
-\verb|L| & \texttt{bwat}       & thickness of basal melt water \\
-\verb|T| & \texttt{temp}       & ice temperature \\
+\verb|L| & \texttt{bwat}       & effective (notional) thickness of basal melt water \\
+\verb|T| & \texttt{temp}       & temperature in ice \\
 \hline
 \normalsize
 \end{tabular}
 \end{table}
 
-Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und from} with \intextoption{boot\und from}:
+Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und from} along with \intextoption{boot\und from}:
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 -quadZ \
         -regrid_from foo.nc -regrid_vars BeT -y 100 -o bar.nc
 \end{verbatim}
-In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during \emph{bootstrapping}, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}. Then temperature in bedrock (\verb|B|)\footnote{Assuming that foo.nc has more than one bedrock layer.}, age of the ice (\verb|e|) and ice temperature (\verb|T|) will be interpolated from \verb|foo.nc| onto the new grid during \emph{regridding}, overriding values set at the bootstrapping stage.
+In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\verb|B|)\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\verb|e|) and ice temperature (\verb|T|) will be interpolated from \verb|foo.nc| onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
 
-\subsection{Adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers.:
+
+\subsection{Adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers:
 \begin{verbatim}
 %ybp SIA SSA  # vgatdh Nr  +STEP
-P         YEAR:     ivol   iarea    meltf     thick0     temp0
+S         YEAR:     ivol   iarea    meltf     thick0     temp0
 \end{verbatim}
 Here we explain what `\verb|Nr|' and `\verb|STEP|' in the flag line mean.
 
-\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note that PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection \cite{BBL}, requires an adaptive time-stepping scheme.
+\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution \cite{BBL}, requires an adaptive time-stepping scheme.
 
-Note that most of the time `\verb|N|' in the flag line will be zero.  The exception is when the option \verb|-skip| is used.  If \verb|-skip| $M$ is used, then \verb|N| will be at most $M$, and will countdown the mass conservation steps when the adaptive scheme determines that a long temperature/age evolution time step, relative to the diffusity controlled time step for mass conservation, would be allowed.  To see an example, do:\index{pismv}
+If the option \verb|-skip| is used then `\verb|N|' in the flag line will be non-zero.  If \verb|-skip| $M$ then \verb|N| will be at most $M-1$.  The flag \verb|N| will countdown the mass conservation steps, in the case that the adaptive scheme determines that a long temperature/age evolution time step can be taken.  To see an example, do:\index{pismv}
 
 \verb|$  pismv -test G -Mx 141 -My 141 -Mz 51 -skip 4|
 
-Table \ref{tab:adaptiveflag} explains the meaning of the one character adaptive-timestepping flag `\verb|r|'.
+Table \ref{tab:adaptiveflag} explains the meaning of the additional one character adaptive-timestepping ``reason'' flag `\verb|r|'.
 
 \begin{table}[ht]
-\caption{Meaning of the adaptive time-stepping flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
+\caption{Meaning of the adaptive time-stepping ``reason'' flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{@{}llll}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
-\verb|c| & CFL for temperature/age advection \cite{BBL} \\
+\verb|c| & three-dimensional CFL for temperature/age advection \cite{BBL} \\
 \verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
 \verb|e| & end of prescribed run time \\
-\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme, \\
- & should not be used  \\
+\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides \\
+ & the adaptive scheme, should not be used  \\
 \verb|m| & maximum allowed $\Delta t$ applies; set with \verb|-max_dt| \\
-\verb|t| & maximum $\Delta t$ was \emph{t}emporarily set by a derived class; e.g.~see effect of deliverables \\
- & \verb|-time|$n$ in \verb|pisms -ismip H \time|$n$ \\
-\verb|u| & 2D CFL for mass conservation in SSA regions (where mass conservation is \emph{u}pwinded)\\
+\verb|t| & maximum $\Delta t$ was temporarily set by a derived class \\
+\verb|u| & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
 \hline
 \normalsize
 \end{tabular}
 \end{table}
 
-\begin{comment}
-
-THESE WERE IN THE GETTING STARTED SECTION; NEEDED?
-
-\noindent The first line gives flags which indicate which physical models ran at the given time step, so it shows which quantities were updated.  A dollar sign ``\t{\$}'' appears if a given model did not run.  From the left the first three positions are: \t{y} for basal yield stress model, \t{b} for bed deformation model, and \t{p} for plastic till yield stress.  Then either ``\verb|SIA|'' or ``\verb|SSA|'' appear, or both, and if the ``\verb|SSA|'' flag is present it is followed by the number of iterations of the SSA model.  (See section \ref{sect:dynamics} for an explanation of the SIA/SSA language.)  Then there are six more positions: \t{v} for velocity updates (by SIA or SSA), \t{a} for age equation, \t{t} for temperature equation, \t{d} for positive degree day model, and \t{h} for mass continuity (which updates surface elevation and thickness).  
-
-Finally an integer \t{N} appears (it is most frequently zero), and another single character flag \t{r}.  Then the time step itself is given (\t{STEP}).  These all related to the decisions of the adaptive time-stepping scheme; described in subsection \ref{subsect:adapt}.
-\end{comment}
 
 
-\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time and the state of the run needs checking.  Sometimes they need to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard.  Such signals are included in Linux and most flavors of Unix.  Table \ref{tab:signals} below summarizes how PISM responds to signals.
+\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.
+
+\newcommand\pid{\textsl{pid}}
+\newcommand\same{(\textsl{same})}
+\begin{table}[ht]
+\caption{Signalling PISM.  \pid~stands for list of all identifiers of the running PISM processes.  The signals are POSIX but \t{pkill} is a Linux extension.}\label{tab:signals}
+\begin{tabular}{@{}llll}\hline
+\textbf{Command}\phantom{bobbob} & \textbf{Signal}\phantom{bobbob} & \textbf{PISM behavior} \\ \hline
+\texttt{kill -KILL} \pid & \texttt{SIGKILL} & terminate with extreme prejudice; PISM  \\
+ & & cannot catch it and no state is saved \\
+Ctrl-C &  & typically the same for foreground process(es)  \\ \hline
+\texttt{kill -TERM} \pid & \texttt{SIGTERM} & end process(es) but PISM will save the last  \\
+ &  & model state using \verb|-o| name or default name \\
+\texttt{kill} \pid &  & typically the same \\
+\texttt{pkill -TERM pismv} &  & convenient form for MPI runs with multiple \\ 
+ &  & processes needing signal \\ \hline
+\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & allow process(es) to continue but PISM will save  \\
+ &  & its model state at current time as ``\texttt{pism-}\textsl{year}\texttt{.nc}'' \\
+\texttt{pkill -USR1 pismv} &  & convenient form for MPI runs \\
+\hline\normalsize
+\end{tabular}
+\end{table}
 
 Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{pismv}
 
 \verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &|
 
-\noindent This run gets a Unix process id (``\verb|pid|''); we will need that number.  (One can get the \verb|pid| by using the \verb|ps| or \verb|pgrep| utilities.)
-
-If we want to observe the run without stopping it we send the \verb|USR1| signal:\index{kill}
+\noindent This run gets a Unix process id (``\verb|pid|''),\index{signals!the pid} and we will need that number, which we assume is ``8920''.  (Get it using \verb|ps| or \verb|pgrep|.)  If we want to observe the run without stopping we send the \verb|USR1| signal:\index{signals!usr1}
 
 \verb|kill -USR1 8920|
 
@@ -601,7 +617,7 @@ Caught signal SIGUSR1: Writing intermediate file `pism-31871.495239.nc'.
 \end{verbatim}
 \noindent appears around time step (i.e.~\verb|YEAR|) 31900.
 
-Suppose, on the other hand, that the run needs to be stopped.  One may use the interrupt ``\verb|kill -KILL 8920|'' for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method, which a process cannot catch or block, stops the process but does not allow it  time to save the model state.  Therefore one will not be able to restart at the same place, nor inspect the model state more thoroughly.  If one wants the possibility of restarting then one should used the \verb|TERM| signal,
+Suppose, on the other hand, that the run needs to be stopped.  One may use the interrupt ``\verb|kill -KILL 8920|''\index{signals!kill}\index{killing runs} for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method, which a process cannot catch or block, stops the process but does not allow it to save the model state.  Therefore one cannot restart at the same place, nor inspect the model state.  For that ability, use the \verb|TERM|\index{signals!term} signal,
 
 \verb|kill -TERM 8920|
 
@@ -613,7 +629,7 @@ Suppose, on the other hand, that the run needs to be stopped.  One may use the i
 
 \verb|Writing model state to file `testGmillion.nc' ... done|
 
-\noindent appear in the log file \verb|log.txt|.  In this case the NetCDF model state file \verb|testGmillion.nc| appears; note this file has the original output name specified by the option \verb|-o|.  One can restart and finish the run by the command (for example)
+\noindent appear in the log file \verb|log.txt|.  The \verb|history| global attribute \verb|testGmillion.nc| records the point at which the run was stopped.  One can restart and finish the run by the command (for example)
 
 \begin{verbatim}
 $ pismv -test G -i testGmillion.nc -ye 1e6 \
@@ -625,8 +641,8 @@ $ pismv -test G -i testGmillion.nc -ye 1e6 \
 Finally we consider a multiple process (MPI) run of PISM.  Here each of the processes must be sent the same signal at the same time.  For example, consider the dialog
 \begin{quote}
 \begin{verbatim}
-	~/pism$ mpiexec -n 4 pismv -test C -y 100000 >> log.txt &
-	~/pism$ ps
+	$ mpiexec -n 4 pismv -test C -y 100000 -o foo.nc >> log.txt &
+	$ ps
 	PID TTY          TIME CMD
 	6761 pts/0    00:00:00 mpiexec
 	6762 pts/0    00:00:00 pismv
@@ -634,47 +650,19 @@ Finally we consider a multiple process (MPI) run of PISM.  Here each of the proc
 	6764 pts/0    00:00:00 pismv
 	6765 pts/0    00:00:00 pismv
 	6770 pts/2    00:00:00 ps
-	~/pism$ kill -USR1 6762 6763 6764 6765
-	~/pism$ kill -TERM 6762 6763 6764 6765
+	$ kill -TERM 6762 6763 6764 6765
 \end{verbatim}
 \end{quote}
-Here the \verb|kill| command sent the signal to all four of the running PISM processes simultaneously.  The \verb|kill -USR1| command caused the NetCDF file \verb|pism-10852.037393.nc| to be written, while \verb|kill -TERM| caused all four processes to end after (collectively, of course) writing \verb|verify.nc|.
-
-If, as in the above situation, one wants to send all \verb|pismv| processes the \verb|-TERM| signal then\index{pkill} 
+Here the \verb|kill| command sent the signal to all four of the running PISM processes simultaneously.  It causes all four processes to end, and PISM writes \verb|foo.nc| for possible restart.  Efficiency motivates using the Linux tool \verb|pkill|\index{pkill}, which avoids the need to list process ids:
 
   \verb|pkill -TERM pismv|
 
-\noindent will have the same effect as \verb|kill -TERM| followed by a list of all the \verb|pid|s of \verb|pismv| processes.
+\noindent See \verb|man pkill| and \verb|man pgrep|.
 
-\newcommand\pid{\textsl{pid}}
-\newcommand\same{(\textsl{same})}
-\begin{table}[ht]
-\caption{Signalling PISM.  \pid~stands for list of all identifiers of the running PISM processes.}\label{tab:signals}
-\begin{tabular}{@{}llll}\hline
-\textbf{Command}\phantom{bobbob} & \textbf{Signal}\phantom{bobbob} & \textbf{PISM behavior} \\ \hline
-\texttt{kill -KILL} \pid & \texttt{SIGKILL} & terminate with extreme prejudice; PISM cannot catch it \\
- & & and no state is saved \\
-\texttt{kill} -9 \pid & \same & \same \\
-Ctrl-C & \same & same, but only for foreground process(es)  \\ \hline
-\texttt{kill -TERM} \pid & \texttt{SIGTERM} & end process(es) but save the last model state \\
- &  & using the user-given \verb|-o| name or the default name \\
-\texttt{kill} -15 \pid & \same & \same \\
-\texttt{kill} \pid & \same & \same \\
-\texttt{pkill -TERM pismv} & \same & \same; most convenient for MPI runs \\ 
- &  & to terminate and save) \\ \hline
-\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & allow process(es) to continue but save model state \\
- &  & at current time using name \texttt{pism-}\textsl{year}\texttt{.nc} \\
-\texttt{pkill -USR1 pismv} & \same & \same; most convenient for MPI runs \\
-\hline\normalsize
-\end{tabular}
-\end{table}
+
 
 \subsection{Saving snapshots of the model state}
-\label{sec:snapshots}
-
-As described in the previous section, one can monitor the state of a model run by sending the \verb|USR1| signal to a running PISM process, but this can be inconvenient if you need to check the model state every 1000 years, for example.
-
-One possible solution is to run PISM for a thousand years, which will make it save all the fields at the end of the run, then restart, run for another thousand, etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be a drawback if identical results are needed compared to a single long run.
+\label{sec:snapshots}  Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart, run for another thousand, etc.  Note this forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desireable in some cases.
 
 If saving exactly at specified times is not critical, then use of \verb|-save_to| and \verb|-save_at| options is recommended.  For example
 \begin{verbatim}
@@ -685,7 +673,7 @@ starts a PISM evolution run, initializing from \verb|foo.nc|, running for
 10000 years and saving snapshots to \verb|snapshots.nc| at the first time-step
 after years 1000,2000,...,10000.
 
-We use a MATLAB-style range specification, $a:\Delta t:b$, where $a,\Delta t,b$ are in years.  The time-stepping scheme is not affected, and we don't guarantee producing the exact number of snapshots requested.  One may use \verb|-max_dt| to limit time-steps, however.
+We use a MATLAB-style range specification, $a:\Delta t:b$, where $a,\Delta t,b$ are in years.  The time-stepping scheme is not affected.  (As a consequence we cannot guarantee producing the exact number of snapshots requested, but this is not a problem if snapshot spacing is much greater than the length of a typical timestep.  One may use \verb|-max_dt| to limit time-steps if needed.)
 
 It is also possible to save snapshots at intervals that are not equally-spaced
 by giving the \verb|-save_at| option a comma-separated list. For example,
@@ -696,7 +684,7 @@ $ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
 will save snapshots on the first time-step after years 1000,1500,2000 and 5000.
 The list given to the \verb|-save_at| option can be at most 200 numbers long.
 
-Another possible use of snapshots is for restarting runs on a batch system which kills jobs.  Suppose that we know that we have a 8 wall-clock hours limit and a 1000 year long run will complete in this time.  We may run PISM with option \verb|-y 1500 -save_at 1000:100:1400|, in which case if the job is killed before completing the 1500 year run, we can restart from near the last multiple of 100 years.
+Another possible use of snapshots is for restarting runs on a batch system which kills jobs.  Suppose that we know that we have a 8 wall-clock hours limit and a 1000 year long run will complete in this time.  We may run PISM with option \verb|-y 1500 -save_at 1000:100:1400|, in which case if the job is killed before completing the 1500 year run, we can restart from near the last multiple of 100 years.  Restarting with option \intextoption{ye} will hit target years.
 
 It is possible to save snapshots to separate files using the
 \verb|-split_snapshots| option.  For example, the run above can be changed to
@@ -704,10 +692,12 @@ It is possible to save snapshots to separate files using the
 $ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots \
         -save_at 1000,1500,2000,5000 -split_snapshots
 \end{verbatim}
-for this purpose. This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot when \verb|-split_snapshots| is not used.  Note that tools like NCO and \verb|ncview| usually behave as desired with wildcards like \verb|snapshots-*.nc|.
+for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot in the \emph{sans} \verb|-split_snapshots| case.
+
+Note that tools like NCO and \verb|ncview| usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
 
 
-\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
+\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  FIXME  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states, and to the view \verb|-d a|.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
 
 Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
 
@@ -794,7 +784,7 @@ Test I in the verification suite\index{verification tests} is an instance of the
 
 In examples/pst
 
-\intextoption{topg\und to\und till}
+FIXME:  \intextoption{topg\und to\und till}
 
 
 
@@ -952,17 +942,11 @@ SHOWING THIS CLEARLY WITHOUT LOG-LOG PLOT (A PYLAB PROBLEM) OR WITHOUT INVOKING 
 
 \subsection{Historical note}  There have been three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s \cite{BuelerSpray}.\index{EISMINT!defined}
 
-EISMINT\footnote{``EISMINT'' stands for European Ice Sheet Modeling INiTiative.  
+EISMINT I \cite[ European Ice Sheet Modeling INiTiative]{EISMINT96}\footnote{See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is superceded, however, by verification using the full variety of known exact solutions to the isothermal SIA, as shown in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why good performance on the moving margin experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM, although it would be easy derived class to write.
 
-See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} I \cite{EISMINT96} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is superceded, however, by \emph{verification} using the full variety of known exact solutions to the isothermal SIA, as shown in \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the Halfar similarity solution with zero accumulation \cite{Halfar83} is a particular reason why good performance on the ``moving margin'' experiment in EISMINT I is, roughly speaking, irrelevant.  For this reason there has been no attempt to support the EISMINT I experiments in PISM, although it would be easy code to write.
+EISMINT II \cite{EISMINT00} pointed out interesting and surprising properties of the thermocoupled SIA.  References \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the (perceived and real) shortfalls of ice sheet model behavior on EISMINT II experiments.  PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
-EISMINT II \cite{EISMINT00} was both a more significant and more controversial intercomparison.  It pointed out interesting and surprising properties of the thermocoupled SIA.  References \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the (perceived and real) shortfalls of ice sheet models as evidenced by their behavior on EISMINT II experiments.  PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
-
-The ISMIP\footnote{``ISMIP'' stands for Ice Sheet Model Intercomparison Project.  \index{ISMIP!defined}
-
-See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.} round of intercomparisons are ongoing at this time.  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.
-
-Of these ISMIP experiments, PISM participated in HEINO, but this ability is unmaintained.  The results from PISM for HEINO are not regarded by the PISM authors as any more or less meaningful than those from other participating models.\index{ISMIP!interpretation of HEINO results}   We believe the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite[Appendix B]{BBssasliding}  The same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.  In essence, PISM offers the physical continuum model described in \cite{BBssasliding} as an alternative to the continuum model used in ISMIP-HEINO.
+The ISMIP (Ice Sheet Model Intercomparison Project)\footnote{See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.}\index{ISMIP!defined} round of intercomparisons is still ongoing at this time (2009).  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.  Of these, PISM participated in HEINO, but this ability is unmaintained.   We believe\index{ISMIP!interpretation of HEINO results} the continuum problem described by HEINO is not easily approximate-able because of a (large) discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity \cite[Appendix B]{BBssasliding}  The same phenomenon occurs in the EISMINT II experiment H continuum problem.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.  In essence, PISM offers the physical continuum model described in \cite{BBssasliding}, an SIA/SSA hybrid, as an alternative to the continuum model used in ISMIP-HEINO.
 
 There is no current plan to support ISMIP-HOM, but comparison of shallow PISM results to exact Stokes solutions is a goal for PISM evaluation.
 
@@ -979,34 +963,36 @@ A third ISMIP part is the Marine Ice Sheet Model Intercomparison Project (MISMIP
 \item the change in the temperature of ice is described by the shallow approximation of the conservation of energy \cite{Fowler};
 \item thermomechanical coupling is included, both because of the temperature dependence of the softness of the ice, \emph{and} through the strain-heating (dissipation-heating) term in the conservation of energy equation;
 \item the ice is \emph{cold} and not \emph{polythermal} \cite{Greve}; and finally
-\item though basal melt rates may be computed diagnostically, they do not contribute to the dynamics of the ice sheet.
+\item though basal melt rates may be computed diagnostically, they do not affect the evolution of the ice sheet.
 \end{itemize}
-The experiments differ from each other in their various combinations of surface temperature and accumulation parameterizations.  Also, experiments H and G involve basal sliding, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
+The experiments differ from each other in their various combinations of surface temperature and mass balance parameterizations.  Also, experiments H and G involve basal sliding, under the dangerous SIA sliding rubric \cite[Appendix B]{BBssasliding}, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
 
 In addition to the seven experiments published in \cite{EISMINT00}, there were an additional five experiments described in the EISMINT II intercomparison description 
 \cite{EISIIdescribe}, labeled E, I, J, K, and L.\index{EISMINT!unpublished additional EISMINT II experiments}  These experiments share most features, itemized above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat topography.  Experiments K and L are similar to experiment C but with non-flat topography.  See table \ref{tab:eisII} for how to run these experiments.
 
-The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  Because PISM (currently) has an equally-spaced grid, we recommend the use of about 200 vertical levels.  Thus a reasonable experiment A run on one processor is
+The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  One option in PISM is an equally-spaced grid, in which case we recommend the use of about 200 vertical levels.  With a quadratically spaced unequal grid one can use far fewer levels.  Reasonable experiment A runs, with basal layers of thickness 25 m or less, are:
 
-\verb|pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIA.nc|
+\verb|pisms -eisII A -Mx 61 -My 61 -Mz 201 -skip 5 -y 2e5 -o eisIIA_equal.nc|
 
-\noindent The SIA-only simulations parallelize well, and we see speedups up to 30 or more processors (for the standard $61\times 61$ horizontal grid).
+\verb|pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -skip 5 -y 2e5 -o eisIIA_quadZ.nc|
 
-Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done in PISM.
+\noindent The latter run is faster for memory reasons.  These SIA-only simulations parallelize well, and we see speedups up to at least 30 processors for the standard $61\times 61$ horizontal grid.
+
+Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Experiments below the horizontal line in Table \ref{tab:eisII} are only documented in \cite{EISIIdescribe}.
 
 \begin{table}[ht]
-\caption{Running the EISMINT II experiments in PISM;\index{PISM!running the EISMINT II experiments in} the command is ``\t{pisms}'' plus the given options.  Experiments below the horizontal line are only documented in \cite{EISIIdescribe}.}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Replace \t{-Mz 201} with \t{-Mz 61 -quadZ} for unequal vertical spacing.  Use \t{-skip 5} for significant speedup.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms}'' $+$} & \textbf{Relation to experiment A} \\ \hline
-\verb|-eisII A -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIA.nc| & \\
+\verb|-eisII A -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIA.nc| & \\
 \verb|-eisII B -i eisIIA.nc -y 2e5 -o eisIIB.nc| & warmer \\
 \verb|-eisII C -i eisIIA.nc -y 2e5 -o eisIIC.nc| & less snow (lower accumulation)\\
-\verb|-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc| & only smaller area of accumulation \\
-\verb|-eisII F -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIF.nc| & colder; famous spokes \cite{BBL} \\
-\verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIG.nc| & sliding (regardless of temperature) \\
-\verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH.nc| & melt-temperature activated sliding \\ \hline
-\verb|-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc| & shifted accumulation/temperature maps \\
+\verb|-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc| & smaller area of accumulation \\
+\verb|-eisII F -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIF.nc| & colder; famous spokes \cite{BBL} \\
+\verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIG.nc| & sliding (regardless of temperature) \\
+\verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIH.nc| & melt-temperature activated sliding \\ \hline
+\verb|-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc| & shifted climate maps \\
 \verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIII.nc| & trough topography \\
 \verb|-eisII J -i eisIII.nc -y 2e5 -o eisIIJ.nc| & trough topography and less snow \\
 \verb|-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK.nc| & mound topography \\
@@ -1014,10 +1000,10 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 \hline\normalsize
 \end{tabular}\end{table}
 
-The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.  With the exception of ``\verb|-Lz|'', these options will only work if option ``\t{-eisII ?}'' is also set.
+The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.
 
 \begin{table}[ht]
-\caption{Changing the default settings for the EISMINT II experiments in PISM.\index{PISM!special options for EISMINT II experiments}}\label{tab:eisIIoptions}
+\caption{Changing the default settings for EISMINT II.\index{PISM!special options for EISMINT II experiments}}\label{tab:eisIIoptions}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Option} & \textbf{Default values [expers]} & \textbf{Units} & \textbf{Meaning} \\ \hline
@@ -1029,12 +1015,10 @@ The EISMINT II experiments can be run with various modifications of the default 
  & 243.15[B], 223.15[F] & & \\
 \verb|-track_Hmelt| &  &  & compute effective thickness of basal melt \\
  &  &  & water (override default for EISMINT II) \\
-\verb|-Lz| & 4500 [AE], 4000 [BCD], & m & height of the computational box \\
- & 5000 [F], 3000 [G] &  &  \\
 \hline\normalsize
 \end{tabular}\end{table}
 
-Note that in PISM the height \verb|Lz| of the computational box is fixed at the beginning of the run.  On the other hand, changing the boundary conditions of the flow, as for instance by setting option \verb|-Mmax| to a larger than default value (see table \ref{tab:eisIIoptions}), may cause the ice sheet to thicken above the \verb|Lz| height.  If the ice grows above the height of the computational box then a ``\verb|Vertical grid exceeded!|'' or ``\verb|thickness overflow in SIA velocity: ks>Mz!|'' error occurs.  This can be fixed by restarting with a larger value for option \verb|-Lz|.\footnote{Automatic rescaling of, or expansion of, the vertical grid is appropriate, but not yet implemented.}
+Note that in PISM the height \verb|Lz| of the computational box is fixed at the beginning of the run.  On the other hand, changing the boundary conditions of the flow, as for instance by setting option \verb|-Mmax| to a larger than default value (see table \ref{tab:eisIIoptions}), may cause the ice sheet to thicken above the \verb|Lz| height.  If the ice grows above the height of the computational box then a ``\verb|Vertical grid exceeded!|'' or ``\verb|thickness overflow in SIA velocity: ks>Mz!|'' error occurs.  This can be fixed by restarting with a larger value for option \verb|-Lz|.  (Automatic rescaling of, or expansion of, the vertical grid is appropriate, but not yet implemented.)
 
 
 \begin{comment}
@@ -1088,11 +1072,11 @@ $ mpiexec -n 8 pisms -ismip H -run ST -i XYZ_ST_150k.nc \
 
 \noindent and there is a full text description available there.  It is essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
 
-PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  In fact, the analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf in the flow line case is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  This analysis does not apply to general ice shelves with two horizontal dimensions, however.  Real ice shelves, which are the modelling goal in PISM, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  See the Ross ice shelf example in section \ref{sect:ross}, for example.
+PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  In fact, the analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf in the flow line case is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  This analysis does not apply to general ice shelves with two horizontal dimensions, however.  Real ice shelves, which certainly are a modelling goal in PISM, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  See the Ross ice shelf example in section \ref{sect:ross}, for example.
 
-Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP.  We consider the grounding line dynamics properties the usual PISM code, though in a highly symmetric case without side drag.
+Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP.  We consider the grounding line dynamics properties of the usual PISM code, though in a highly symmetric case without side drag.
 
-Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-My 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes.
+Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-My 3|''; fewer points than this in the cross-flow direction confuses the finite difference scheme.
 
 PISM has two applicable ice dynamics models corresponding to the \verb|-model 1| and \verb|-model 2| options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 

@@ -59,7 +59,7 @@ while True:
   if not myline: # stop if nothing left to read
     foundmytest = False
     break
-  if myline.find('**TEST ' + testname) >= 0:
+  if myline.find('TEST ' + testname) >= 0:
     foundmytest = True
     break
 if foundmytest == False:
@@ -88,7 +88,7 @@ count = 0
 while True:
   myline = infile.readline()
   # stop if nothing left to read or we run into another test report
-  if (not myline) or (myline.find('**TEST') >= 0): 
+  if (not myline) or (myline.find('TEST') >= 0): 
     break
   while myline[0] == ' ': # strip off leading spaces
     myline = myline[1:]
