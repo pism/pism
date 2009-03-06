@@ -712,6 +712,10 @@ SSAStrengthExtension::SSAStrengthExtension() {
           //          30 MPa yr for \bar\nu
 }
 
+SSAStrengthExtension::~SSAStrengthExtension() {
+  // do nothing
+}
+
 PetscErrorCode SSAStrengthExtension::set_notional_strength(PetscReal my_nuH) {
   nuH = my_nuH;
   return 0;

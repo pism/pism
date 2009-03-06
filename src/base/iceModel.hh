@@ -309,7 +309,6 @@ protected:
   // see iMbeddef.cc
   Vec            g2natural;
   VecScatter     top0ctx; // possibly useful general tool for putting Vecs on processor zero
-  PetscTruth     top0ctx_created;
   PetscErrorCode createScatterToProcZero(Vec& samplep0);
   PetscErrorCode destroyScatterToProcZero();
   PetscErrorCode putLocalOnProcZero(Vec& vlocal, Vec& onp0);

@@ -532,7 +532,7 @@ See table \ref{tab:regridvar} for the regriddable variables.  Only modeled varia
 
 Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und from} with \intextoption{boot\und from}:
 \begin{verbatim}
-$ pismr -boot_from foo.nc -Mx 501 -My 501 -Mz 51 -Mbz 51 -quadZ \
+$ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 -quadZ \
         -regrid_from foo.nc -regrid_vars BeT -y 100 -o bar.nc
 \end{verbatim}
 In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during \emph{bootstrapping}, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}. Then temperature in bedrock (\verb|B|)\footnote{Assuming that foo.nc has more than one bedrock layer.}, age of the ice (\verb|e|) and ice temperature (\verb|T|) will be interpolated from \verb|foo.nc| onto the new grid during \emph{regridding}, overriding values set at the bootstrapping stage.
@@ -615,7 +615,11 @@ Suppose, on the other hand, that the run needs to be stopped.  One may use the i
 
 \noindent appear in the log file \verb|log.txt|.  In this case the NetCDF model state file \verb|testGmillion.nc| appears; note this file has the original output name specified by the option \verb|-o|.  One can restart and finish the run by the command (for example)
 
-\verb|pismv -test G -i testGmillion.nc -ye 1e6 -o testGmillion_finish.nc >> log_cont.txt &|
+\begin{verbatim}
+$ pismv -test G -i testGmillion.nc -ye 1e6 \
+        -o testGmillion_finish.nc >> log_cont.txt &
+\end{verbatim}
+
 \smallskip
 
 Finally we consider a multiple process (MPI) run of PISM.  Here each of the processes must be sent the same signal at the same time.  For example, consider the dialog
@@ -722,13 +726,13 @@ The PDD model is applied in section \ref{sect:green} to modeling the Greenland i
 To directly compare the two methods, try\index{pgrn}
 
 \begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
-       -ocean_kill -y 50 -o green_50yr_pdd.nc -d Aa
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -Lz 4000 \
+       -ocean_kill -y 50 -o green_50yr_pdd.nc
 \end{verbatim}
 \noindent versus
 \begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 \
-       -ocean_kill -y 50 -o green_50yr_pdd_rand.nc -pdd_rand -d Aa
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -Lz 4000 \
+       -ocean_kill -y 50 -o green_50yr_pdd_rand.nc -pdd_rand
 \end{verbatim}
 \noindent (See section \ref{sect:green} on how to create the file \verb|eis_green_smoothed.nc| from publically available data.  See the same section for the meaning of ``\verb|-boot_from|''.)
 
@@ -1004,9 +1008,9 @@ Table \ref{tab:eisII} shows how each of the EISMINT II experiments can be done i
 \verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIH.nc| & melt-temperature activated sliding \\ \hline
 \verb|-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc| & shifted accumulation/temperature maps \\
 \verb|-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIII.nc| & trough topography \\
-\verb|-eisII J -i eisIII -y 2e5 -o eisIIJ.nc| & trough topography and less snow \\
+\verb|-eisII J -i eisIII.nc -y 2e5 -o eisIIJ.nc| & trough topography and less snow \\
 \verb|-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK.nc| & mound topography \\
-\verb|-eisII L -i eisIIK -y 2e5 -o eisIIL.nc| & mound topography and less snow \\
+\verb|-eisII L -i eisIIK.nc -y 2e5 -o eisIIL.nc| & mound topography and less snow \\
 \hline\normalsize
 \end{tabular}\end{table}
 
@@ -1088,7 +1092,7 @@ PISM's version of MISMIP includes an attached ice shelf even though modeling the
 
 Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP.  We consider the grounding line dynamics properties the usual PISM code, though in a highly symmetric case without side drag.
 
-Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$y$''.  We periodize the cross-flow direction ``$x$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-Mx 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes.
+Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-My 3|''; fewer points than this in the cross-flow direction confuses the finite difference schemes.
 
 PISM has two applicable ice dynamics models corresponding to the \verb|-model 1| and \verb|-model 2| options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 
@@ -1117,8 +1121,8 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 \verb|-try_calving| &  & flag to turn on experimental calving law which keeps  \\
                     &  & calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
 \hline
-\verb|-My| &  & this option gets additional interpretation: \verb|-My 151| makes grid \\
-           &  & mode 1 so output files have ``\verb|_M1_|''; \verb|-My 1501| is grid mode 2 \\
+\verb|-Mx| &  & this option gets additional interpretation: \verb|-Mx 151| makes grid \\
+           &  & mode 1 so output files have ``\verb|_M1_|''; \verb|-Mx 1501| is grid mode 2 \\
            &  & (``\verb|_M2_|''); any other value is grid mode 3 (``\verb|_M3_|'') \\
 \verb|-shelves_drag_too| &  & using this option has no effect because shelf drag is on \\
                          &  & by default in MISMIP; see \verb|-no_shelf_drag| to turn off  \\
@@ -1129,11 +1133,11 @@ To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional option
 
 \verb|$ cd examples/mismip/|  \hfill \scriptsize(directory where some MISMIP-related scripts are)\normalsize
 
-\verb|$ pisms -mismip 1a -model 1 -step 1 -Mx 3 -Mz 15 -My 151|
+\verb|$ pisms -mismip 1a -model 1 -step 1 -My 3 -Mz 15 -Mx 151|
 
 \noindent This will produce ASCII files \verb|ABC1_1a_M1_A1_t|, \verb|ABC1_1a_M1_A1_ss|, and \verb|ABC1_1a_M1_A1_f|, as well as a standard NetCDF output file \verb|ABC1_1a_M1_A1.nc|, in about 3 minutes.  Using a few processors speeds things up a little, and a little extra output is nice, so re-doing it:
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -Mx 3 -Mz 15 -My 151 -extras|
+\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -My 3 -Mz 15 -Mx 151 -extras|
 
 \noindent This run takes about 2 minutes on an 8 core machine.  In addition to the same files as before, now we get an additional ASCII file \verb|ABC1_1a_M1_A1_extras|.  The \verb|_ss| file with thickness and the \verb|_extras| file with bed and surface elevation allow us to produce a figure showing the profile for the final steady state, Figure \ref{fig:MISMIPmodel1exper1aM1A1}:
 

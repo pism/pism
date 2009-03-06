@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,14 +45,14 @@ VecScatterBegin/End() to scatter the natural vector onto process 0.
 PetscErrorCode IceModel::createScatterToProcZero(Vec& samplep0) {
   PetscErrorCode ierr;
 
-  if (top0ctx_created == PETSC_FALSE) {
+  if (top0ctx == PETSC_NULL) {
     // note we want a global Vec but reordered in the natural ordering so when it is
     // scattered to proc zero it is not all messed up; see above
     ierr = DACreateNaturalVector(grid.da2, &g2natural); CHKERRQ(ierr);
     // next get context *and* allocate samplep0 (on proc zero only, naturally)
     ierr = VecScatterCreateToZero(g2natural, &top0ctx, &samplep0); CHKERRQ(ierr);
-    top0ctx_created = PETSC_TRUE;
   }
+
   return 0;
 }
 
@@ -60,10 +60,11 @@ PetscErrorCode IceModel::createScatterToProcZero(Vec& samplep0) {
 PetscErrorCode IceModel::destroyScatterToProcZero() {
   PetscErrorCode ierr;
 
-  if (top0ctx_created == PETSC_TRUE) {
+  if (top0ctx != PETSC_NULL) {
     ierr = VecDestroy(g2natural); CHKERRQ(ierr);
     ierr = VecScatterDestroy(top0ctx); CHKERRQ(ierr);
-    top0ctx_created = PETSC_FALSE;
+    top0ctx = PETSC_NULL;
+    g2natural = PETSC_NULL;
   }
   return 0;
 }

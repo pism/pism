@@ -312,6 +312,7 @@ requires either a precisely-defined boundary and an appropriate boundary conditi
 class SSAStrengthExtension {
 public:
   SSAStrengthExtension();
+  virtual ~SSAStrengthExtension();
   //! Set strength with units (viscosity times thickness).
   virtual PetscErrorCode set_notional_strength(PetscReal my_nuH);
   //! Set minimum thickness to trigger use of extension.

@@ -48,7 +48,8 @@ IceModel::IceModel(IceGrid &g)
   signal(SIGUSR1, pism_signal_handler);
 
   createBasal_done = PETSC_FALSE;
-  top0ctx_created = PETSC_FALSE;
+  top0ctx = PETSC_NULL;
+  g2natural = PETSC_NULL;
   createVecs_done = PETSC_FALSE;
   CFLviolcount = 0;
 

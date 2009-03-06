@@ -342,8 +342,8 @@ PetscErrorCode IceModelVec::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g
     SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", short_name);
 
   ierr =        DALocalToGlobal(da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
-  ierr = DAGlobalToNaturalBegin(da, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-  ierr =   DAGlobalToNaturalEnd(da, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  ierr = DAGlobalToNaturalBegin(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  ierr =   DAGlobalToNaturalEnd(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
 
   ierr = VecScatterBegin(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr =   VecScatterEnd(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
@@ -369,10 +369,10 @@ PetscErrorCode IceModelVec::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec
   ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = DANaturalToGlobalBegin(da, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DANaturalToGlobalEnd(da, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DAGlobalToLocalBegin(da, g2,        INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr =     DAGlobalToLocalEnd(da, g2,        INSERT_VALUES, v);  CHKERRQ(ierr);
+  ierr = DANaturalToGlobalBegin(grid->da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr =   DANaturalToGlobalEnd(grid->da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr =   DAGlobalToLocalBegin(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
+  ierr =     DAGlobalToLocalEnd(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
 
   return 0;
 }

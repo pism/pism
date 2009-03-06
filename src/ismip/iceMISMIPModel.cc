@@ -185,11 +185,46 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(
 PetscErrorCode IceMISMIPModel::init_physics() {
   PetscErrorCode ierr;
 
+  // from Table 4
+  const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
+                        4.6416e-24,  2.1544e-24,  1.0e-24,
+                        4.6416e-25,  2.1544e-25,  1.0e-25,
+                        4.6416e-26,  2.1544e-26,  1.0e-26};
+
+  // from Table 5
+  const PetscScalar Aexper3a[14] = {0.0, // zero position not used
+                        3.0e-25, 2.5e-25, 2.0e-25,
+                        1.5e-25, 1.0e-25, 5.0e-26,
+                        2.5e-26, 5.0e-26, 1.0e-25,
+                        1.5e-25, 2.0e-25, 2.5e-25,
+                        3.0e-25};
+
+  // from Table 6
+  const PetscScalar Aexper3b[16] = {0.0, // zero position not used
+                        1.6e-24, 1.4e-24, 1.2e-24,
+                        1.0e-24, 8.0e-25, 6.0e-25,
+                        4.0e-25, 2.0e-25, 4.0e-25,
+                        6.0e-25, 8.0e-25, 1.0e-24,
+                        1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
+
   // let the base class create the ice and process its options:
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   mismip_ice = dynamic_cast<MISMIPIce*>(ice);
   if (!mismip_ice) SETERRQ(1,"Ice type must be MISMIPIce or derived from MISMIPIce for iceMISMIPModel");
+
+  // stepindex range chacking was done in setFromOptions
+  if ((exper == 1) || (exper == 2)) {
+    ierr = mismip_ice->setA(Aexper1or2[stepindex]); CHKERRQ(ierr);  
+  } else if (exper == 3) {
+    if (sliding == 'a') {
+      ierr = mismip_ice->setA(Aexper3a[stepindex]); CHKERRQ(ierr);  
+    } else if (sliding == 'b') {
+      ierr = mismip_ice->setA(Aexper3b[stepindex]); CHKERRQ(ierr);  
+    } else {
+      SETERRQ(99, "how did I get here?");
+    }
+  }
 
   return 0;
 }
@@ -198,11 +233,6 @@ PetscErrorCode IceMISMIPModel::init_physics() {
 PetscErrorCode IceMISMIPModel::setFromOptions() {
   PetscErrorCode ierr;
 
-  // from Table 4
-  const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
-                        4.6416e-24,  2.1544e-24,  1.0e-24,
-                        4.6416e-25,  2.1544e-25,  1.0e-25,
-                        4.6416e-26,  2.1544e-26,  1.0e-26};
   // from Table 5
   const PetscScalar timeexper3a[14] = {0.0, // zero position not used
                         3.0e4, 1.5e4, 1.5e4, 
@@ -210,12 +240,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
                         3.0e4, 1.5e4, 1.5e4,
                         3.0e4, 3.0e4, 3.0e4,
                         1.5e4};
-  const PetscScalar Aexper3a[14] = {0.0, // zero position not used
-                        3.0e-25, 2.5e-25, 2.0e-25,
-                        1.5e-25, 1.0e-25, 5.0e-26,
-                        2.5e-26, 5.0e-26, 1.0e-25,
-                        1.5e-25, 2.0e-25, 2.5e-25,
-                        3.0e-25};
   // from Table 6
   const PetscScalar timeexper3b[16] = {0.0, // zero position not used
                         3.0e4, 1.5e4, 1.5e4,
@@ -223,12 +247,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
                         1.5e4, 3.0e4, 1.5e4,
                         1.5e4, 1.5e4, 1.5e4,
                         1.5e4, 3.0e4, 1.5e4};   //  15th VALUE LABELED AS 16 IN Table 6 !?
-  const PetscScalar Aexper3b[16] = {0.0, // zero position not used
-                        1.6e-24, 1.4e-24, 1.2e-24,
-                        1.0e-24, 8.0e-25, 6.0e-25,
-                        4.0e-25, 2.0e-25, 4.0e-25,
-                        6.0e-25, 8.0e-25, 1.0e-24,
-                        1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
 
   // read major option    -mismip [1a|1b|2a|2b|3a|3b]
   char Ee[PETSC_MAX_PATH_LEN];
@@ -305,6 +323,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     CHKERRQ(ierr);
     PetscEnd();
   }
+
   if ((exper == 1) || (exper == 2)) {
     if (stepindex > 9) {
       ierr = PetscPrintf(grid.com,
@@ -314,7 +333,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
       PetscEnd();
     }
     runtimeyears = 3.0e4;
-    ierr = mismip_ice->setA(Aexper1or2[stepindex]); CHKERRQ(ierr);  
   } else if (exper == 3) {
     if (sliding == 'a') {
       if (stepindex > 13) {
@@ -325,7 +343,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 	PetscEnd();
       }
       runtimeyears = timeexper3a[stepindex];
-      ierr = mismip_ice->setA(Aexper3a[stepindex]); CHKERRQ(ierr);  
     } else if (sliding == 'b') {
       if (stepindex > 15) {
         ierr = PetscPrintf(grid.com,
@@ -335,7 +352,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 	PetscEnd();
       }
       runtimeyears = timeexper3b[stepindex];
-      ierr = mismip_ice->setA(Aexper3b[stepindex]); CHKERRQ(ierr);  
     } else {
       SETERRQ(99, "how did I get here?");
     }
