@@ -178,6 +178,81 @@ These Python packages are needed to do all the examples in the \emph{User's Manu
 \newpage
 \section{Installation Cookbook}\label{sec:cookbook}
 
+\subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
+Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
+
+\begin{enumerate}
+\item Find and install (using |apt-get| or |synaptic|, for example) the following packages:
+  \begin{center}
+    \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
+      \hline
+      \emph{Package name} & \emph{Comments}\\
+      |petsc-dev| & depends on |libpetsc2.3.3-dev|; this package 
+      depends on |libpetsc2.3.3|, |libopenmpi-dev|, |libx11-dev|,
+      |libblas-dev|, |liblapack-dev|, |gfortran|, and others; 
+      note |libopenmpi-dev| depends on |libopenmpi1| and
+      replaces openmpi-bin\\
+      |libgsl0-dev| & \\
+      |libfftw3-dev| & \\
+      |netcdf-bin| & (and perhaps grab |nco| at the same time)\\
+      |libnetcdf-dev| & \\
+      |g++| & without this you may see a compiler error: ``|gcc: error| |trying to| |exec 'cc1plus'|''\\
+      |subversion| & \\
+      \hline
+    \end{tabular*}
+  \end{center}
+\item Get the PISM development version:
+\begin{verbatim}
+$  svn co http://svn.gna.org/svn/pism/trunk pism-dev
+\end{verbatim}
+\noindent For |stable0.1|, do \quad\small |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1|
+\item Based on the locations of installed files, add the lines similar to
+\begin{verbatim}
+export PETSC_DIR=/usr/lib/petscdir/2.3.3/
+export PETSC_ARCH=linux-gnu-c-opt
+export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
+\end{verbatim}
+to your |.bashrc| equivalent.  (See ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, for example.)
+\item Next, enter |pism-dev| and build PISM by running
+\begin{verbatim}
+$  make all
+\end{verbatim}
+\end{enumerate}
+
+Running PISM might produce a warning message like the following:
+\begin{verbatim}
+$ mpiexec -n 2 pismv -y 1
+libibverbs: Fatal: couldn't read uverbs ABI version.
+--------------------------------------------------------------------------
+[0,1,0]: OpenIB on host user-laptop was unable to find any HCAs.
+Another transport will be used instead, although this may result in 
+lower performance.
+--------------------------------------------------------------------------
+. . .
+PISMV (verification mode)
+initializing Test A ...
+. . .
+\end{verbatim}
+According to this comment found online at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
+\begin{quote}
+   To get rid of the warning, you can either disable the use of the ``|openib|'' btl
+   in |/etc/openmpi/openmpi-mca-params.conf| or pass ``|--mca btl ^openib|'' to |mpirun|
+   or |mpiexec|.  The configuration file contains a line to disable InfiniBand, you
+   just have to comment it out.
+\end{quote}
+\bigskip
+
+\subsubsection*{NCVIEW}  There seems to be no |ncview| Debian package
+yet.  But this sequence worked with minimal pain.  Grab latest source from
+\begin{center}
+  \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}
+\end{center}
+Basically just get the |.tar.gz| and follow install instructions in top-level ``|README|''.  But error about missing |X| headers etc is resolved by two things, first to get Debian |xorg-dev| package, and second to tell the |ncview| |configure| script where to find |X|:
+\begin{verbatim}
+$  ./configure --x-libraries=/usr/lib
+\end{verbatim}
+
+\clearpage
 \subsection{Generic PISM installation, using PETSc source code}\label{subsec:generic}
 
 \subsubsection{Installing prerequisities}
@@ -311,82 +386,6 @@ export PATH=/home/user/pism-dev/bin:/home/user/pism-dev/util:$PATH
 \end{enumerate}
 
 
-\clearpage
-\subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
-Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
-
-\begin{enumerate}
-\item Find and install (using |apt-get| or |synaptic|, for example) the following packages:
-  \begin{center}
-    \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
-      \hline
-      \emph{Package name} & \emph{Comments}\\
-      |petsc-dev| & depends on |libpetsc2.3.3-dev|; this package 
-      depends on |libpetsc2.3.3|, |libopenmpi-dev|, |libx11-dev|,
-      |libblas-dev|, |liblapack-dev|, |gfortran|, and others; 
-      note |libopenmpi-dev| depends on |libopenmpi1| and
-      replaces openmpi-bin\\
-      |libgsl0-dev| & \\
-      |libfftw3-dev| & \\
-      |netcdf-bin| & (and perhaps grab |nco| at the same time)\\
-      |libnetcdf-dev| & \\
-      |g++| & without this you may see a compiler error: ``|gcc: error| |trying to| |exec 'cc1plus'|''\\
-      |subversion| & \\
-      \hline
-    \end{tabular*}
-  \end{center}
-\item Get the PISM development version:
-\begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/trunk pism-dev
-\end{verbatim}
-\noindent For |stable0.1|, do \quad\small |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1|
-\item Based on the locations of installed files, add the lines similar to
-\begin{verbatim}
-export PETSC_DIR=/usr/lib/petscdir/2.3.3/
-export PETSC_ARCH=linux-gnu-c-opt
-export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
-\end{verbatim}
-to your |.bashrc| equivalent.  (See ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, for example.)
-\item Next, enter |pism-dev| and build PISM by running
-\begin{verbatim}
-$  make all
-\end{verbatim}
-\end{enumerate}
-
-Running PISM might produce a warning message like the following:
-\begin{verbatim}
-$ mpiexec -n 2 pismv -y 1
-libibverbs: Fatal: couldn't read uverbs ABI version.
---------------------------------------------------------------------------
-[0,1,0]: OpenIB on host user-laptop was unable to find any HCAs.
-Another transport will be used instead, although this may result in 
-lower performance.
---------------------------------------------------------------------------
-. . .
-PISMV (verification mode)
-initializing Test A ...
-. . .
-\end{verbatim}
-According to this comment found online at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
-\begin{quote}
-   To get rid of the warning, you can either disable the use of the ``|openib|'' btl
-   in |/etc/openmpi/openmpi-mca-params.conf| or pass ``|--mca btl ^openib|'' to |mpirun|
-   or |mpiexec|.  The configuration file contains a line to disable InfiniBand, you
-   just have to comment it out.
-\end{quote}
-\bigskip
-
-\subsubsection*{NCVIEW}  There seems to be no |ncview| Debian package
-yet.  But this sequence worked with minimal pain.  Grab latest source from
-\begin{center}
-  \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}
-\end{center}
-Basically just get the |.tar.gz| and follow install instructions in top-level ``|README|''.  But error about missing |X| headers etc is resolved by two things, first to get Debian |xorg-dev| package, and second to tell the |ncview| |configure| script where to find |X|:
-\begin{verbatim}
-$  ./configure --x-libraries=/usr/lib
-\end{verbatim}
-
-
 
 \clearpage
 \subsection{Installing PISM on Mac OS X}  \label{subsec:macosx}
@@ -405,46 +404,21 @@ instructions. This section describes an adaptation of the same process to the Ma
 export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 \end{verbatim}
 \item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI and
-  Subversion). The easiest way to get SciPy et al to work on Mac OS X is to use SciPy Superpack from
+  Subversion). The easiest way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
   \url{http://macinscience.org/}. This package includes |numpy|, |SciPy| and |matplotlib|, as well as |ipython|, a very useful
-  interactive Python shell.
+  interactive Python shell. Unfortunately, Scipy Superpack does not support PowerPC-based Macs; we recommend using  \href{http://www.enthought.com/}{Enthought Python Distributions} on older Macs.
 \item After installing MacPorts, do
 \begin{verbatim}
 $  sudo port install netcdf ncview gsl fftw-3
 \end{verbatim}
 to install NetCDF, ncview, GSL and FFTW.
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
-  \href{ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/}{PETSc website}. Untar, then change to the directory just created.
-  Unfortunately, the current\footnote{As of October 2008.} version (2.3.3-p15) has some issues and it is necessary to add the following lines to
-  |bmake/common/rules.shared.basic| {\tiny
-\begin{verbatim}
-shared_darwin9:
-	-@cd ${SHARED_LIBRARY_TMPDIR}; \
-       if [ "${LIBNAME}" = "libpetsc" ]; then OTHERLIBS="${PACKAGES_LIBS} ${EXTERNAL_LIB}  ${SYS_LIB} -lm -lc "; fi;\
-       if [ "${LIBNAME}" = "libpetscvec" ]; then OTHERLIBS="${PETSC_SYS_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetscmat" ]; then OTHERLIBS="${PLAPACK_LIB} ${PETSC_VEC_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetscdm" ]; then OTHERLIBS="${PETSC_MAT_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetscksp" ]; then OTHERLIBS="${PETSC_DM_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetscsnes" ]; then OTHERLIBS="${PETSC_KSP_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetscts" ]; then OTHERLIBS="${PETSC_SNES_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetscfortran" ]; then OTHERLIBS="${PETSC_TS_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libpetsccontrib" ]; then OTHERLIBS="${PETSC_TS_LIB_BASIC}"  ; fi;\
-       if [ "${LIBNAME}" = "libslepc" ]; then OTHERLIBS="${PETSC_KSP_LIB_BASIC}"  ; fi;\
-       if [ "${MACOSX_DEPLOYMENT_TARGET}" = "" ]; then MACOSX_DEPLOYMENT_TARGET=10.5; export MACOSX_DEPLOYMENT_TARGET; fi;\
-       ${CC}  -dynamiclib -single_module -multiply_defined suppress -undefined dynamic_lookup\
-              -o ${INSTALL_LIB_DIR}/$$LIBNAME.dylib *.o -L${PETSC_LIB_DIR}  ${OTHERSHAREDLIBS} ${SL_LINKER_LIBS} $$OTHERLIBS
-\end{verbatim}
-}
-\noindent to make PETSc link shared libraries on Mac OS X 10.5 and add |'.dylib'| to lists of file extensions in
-|python/PETSc/packages/X11.py| to make PETSc configure script find the X Window System.\footnote{Note that according to Matthew
-  Knepley these bugs were actually fixed in the development version. (Which breaks for some other reason. -- CK)}
-
+  \href{ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/}{PETSc website}\footnote{Version 3 is recommended; 2.3.3 will work, but building it on Mac OS X is tricky.}. Untar, then change to the directory just created.
 The next three commands completed the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;
-$  ./config/configure.py --with-shared --with-c-support --with-clanguage=cxx\
-                         --with-debugging=no --with-fortran=0\
-                         --with-blas-lapack-dir=/usr/ --with-mpi-dir=/usr/ 
+$  ./config/configure.py --with-shared --with-dynamic --with-debugging=no \
+        --with-fortran=0 --with-blas-lapack-dir=/usr/ --with-mpi-dir=/usr/
 $  make all test
 \end{verbatim}
 \item Finally, to build PISM, you should follow the steps described in \ref{sec:pism-itself}, with one modification: after getting
