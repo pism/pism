@@ -5,15 +5,16 @@ endif
 # Get the current PISM revision:
 url = $(shell svn info | grep URL)
 rev = $(shell svnversion ../)
-ifeq ($(findstring trunk,$(url)),trunk)
-  PISM_REVISION = trunk: revision $(rev)
-endif
-ifeq ($(findstring branches,$(url)),branches)
-  PISM_REVISION = branch $(lastword $(subst /, ,$(url))): revision $(rev)
-endif
-ifndef PISM_REVISION
-  $(error Can not determine revision number.  Please define PISM_REVISION in the top-level Makefile)
-endif
+#ifeq ($(findstring trunk,$(url)),trunk)
+#  PISM_REVISION = trunk: revision $(rev)
+#endif
+#ifeq ($(findstring tags,$(url)),tags)
+#  PISM_REVISION = tags $(lastword $(subst /, ,$(url))): revision $(rev)
+#endif
+#ifndef PISM_REVISION
+#  $(error Can not determine revision number.  Please define PISM_REVISION in the top-level Makefile)
+#endif
+PISM_REVISION = stable0.2: revision $(rev)
 
 DISPLAY = :0.0
 
