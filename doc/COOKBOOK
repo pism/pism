@@ -2,6 +2,12 @@
 Ed's cookbook for maintaining PISM:
 
 
+0)  How do I put a completely new subdirectory in tags, with a copy of the trunk?
+
+  svn copy svn+ssh://svn.gna.org/svn/pism/trunk/ svn+ssh://svn.gna.org/svn/pism/tags/stable0.999 \
+    -m "Pithy message."
+    
+    
 1)  How do I make a .tar.gz from the current svn?
 
   Assume that pism-stable0.1/ contains the source.  Then:
