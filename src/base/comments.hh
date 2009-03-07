@@ -7,7 +7,7 @@
 /*! @cond BROWSER \mainpage 
 <CENTER>
 <i>
-Based on PISM \c trunk revision \verbinclude revision.tex
+Based on PISM \c stable0.2 revision \verbinclude revision.tex
 </i></CENTER>
 
 This source \e Browser shows the C++ class (object) structure of PISM.  It 
