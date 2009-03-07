@@ -298,11 +298,6 @@ PetscErrorCode IceModel::createVecs() {
             "vertically averaged ice velocity, on staggered grid offset in Y direction, from SIA, in the Y direction",
 	    "m s-1", NULL); CHKERRQ(ierr);
 
-  // work vectors
-  for (int j = 0; j < nWork2d; j++) {
-    ierr = vWork2d[j].create(grid, "a_work_vector", true); CHKERRQ(ierr);
-  }
-
   // initial guesses of SSA velocities
   ierr = vubarSSA.create(grid, "vubarSSA", true);
   ierr = vubarSSA.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
@@ -313,7 +308,39 @@ PetscErrorCode IceModel::createVecs() {
                             "m s-1", NULL); CHKERRQ(ierr);
   ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
+  // a global Vec is needed for things like viewers and comm to proc zero
+  ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
+
+  // setup (classical) SSA tools; FIXME: should be in separate method?
+  const PetscInt M = 2 * grid.Mx * grid.My;
+  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
+                         13, PETSC_NULL, 13, PETSC_NULL,
+                         &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
+  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
+  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
+                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
+
+  // so that we can let atmosPCC, oceanPCC know about these fields in IceModel state
+  // FIXME: should be in separate method?
+  info_atmoscoupler.lat = &vLatitude;
+  info_atmoscoupler.lon = &vLongitude;  
+  info_atmoscoupler.mask = &vMask;
+  info_atmoscoupler.surfelev = &vh;
+  info_oceancoupler.lat = &vLatitude;
+  info_oceancoupler.lon = &vLongitude;  
+  info_oceancoupler.mask = &vMask;
+  info_oceancoupler.thk = &vH;
+
   // various internal quantities
+  // 2d work vectors: FIXME initialization can be moved to misc_setup()?
+  for (int j = 0; j < nWork2d; j++) {
+    ierr = vWork2d[j].create(grid, "a_work_vector", true); CHKERRQ(ierr);
+  }
+
+  // 3d dedicated work vectors: FIXME initialization can be moved to misc_setup()?
   ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
                          "K", NULL); CHKERRQ(ierr);
@@ -332,31 +359,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Istag3[0].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
   ierr = Istag3[1].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
-
-  ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
-
-  const PetscInt M = 2 * grid.Mx * grid.My;
-  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
-                         13, PETSC_NULL, 13, PETSC_NULL,
-                         &SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
-  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
-  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
-                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
-  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
-
-  // so that we can let atmosPCC know about these fields in IceModel state
-  info_atmoscoupler.lat = &vLatitude;
-  info_atmoscoupler.lon = &vLongitude;  
-  info_atmoscoupler.mask = &vMask;
-  info_atmoscoupler.surfelev = &vh;
-
-  // so that we can let oceanPCC know about these fields in IceModel state
-  info_oceancoupler.lat = &vLatitude;
-  info_oceancoupler.lon = &vLongitude;  
-  info_oceancoupler.mask = &vMask;
-  info_oceancoupler.thk = &vH;
 
   createVecs_done = PETSC_TRUE;
   return 0;
@@ -832,9 +834,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
   return 0;
 }
 
-//! Initialize the an IceModel object.
+//! Manage the initialization of the IceModel object.
 /*!
-  The describes the IceModel initialization process:
+The IceModel initialization sequence is this:
   
    1) Initialize the computational grid.
 
@@ -856,9 +858,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
    9) Miscellaneous stuff: update surface elevation and mask, set up the bed
    deformation model, initialize the basal till model, initialize snapshots.
 
-   Please see the documenting comments of the functions in this one to find
-   explanations of their intended uses and the flow-chart
-   doc/initialization_sequence.png for a graphical illustration of the process.
+Please see the documenting comments of the functions called below to find 
+explanations of their intended uses.  See the flow-chart
+doc/initialization_sequence.png for a graphical illustration of the process.
  */
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;

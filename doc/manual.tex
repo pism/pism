@@ -1021,60 +1021,16 @@ The EISMINT II experiments can be run with various modifications of the default 
 Note that in PISM the height \verb|Lz| of the computational box is fixed at the beginning of the run.  On the other hand, changing the boundary conditions of the flow, as for instance by setting option \verb|-Mmax| to a larger than default value (see table \ref{tab:eisIIoptions}), may cause the ice sheet to thicken above the \verb|Lz| height.  If the ice grows above the height of the computational box then a ``\verb|Vertical grid exceeded!|'' or ``\verb|thickness overflow in SIA velocity: ks>Mz!|'' error occurs.  This can be fixed by restarting with a larger value for option \verb|-Lz|.  (Automatic rescaling of, or expansion of, the vertical grid is appropriate, but not yet implemented.)
 
 
-\begin{comment}
-\subsection{ISMIP-HEINO in PISM}  The goal of the ISMIP-HEINO intercomparison is to evaluate the degree to which the thermomechanically coupled shallow ice approximation with basal sliding is a model for the surge behavior of the Laurentide ice sheet which is believed to have caused the ``Heinrich events'' described in [CITE HEINRICH].  Further information about HEINO, including the intercomparison description [URL FOR HEINO PDF] can be found at \url{http://www.pik-potsdam.de/~calov/heino.html}.
-
-HEINO involves eight different runs of 200,000 years on a prescribed $81\times 81$ grid in the horizontal.  As in EISMINT II there is no prescription of vertical grid.  During the entirety of each run certain integrated quantities (area, melted base area, etc.) and other quantities measured at prescribed basal points must be reported at each year into ASCII files with \verb|.dat| extensions.  During the last 50,000 years of each of the eight runs, a map-plane (``planform'') dump of other quantities must be made to additional \verb|.dat| ASCII files.  These latter dumps must be made at the time of maximum and minimum extents of various quantities and the only way to determine the time of maximum/minimum extents is to complete the 200,000 year runs, determine the times of maximum and minimums, and then rerun the last 50,000 years from the saved state at 150,000 years.  See the intercomparison description [CITE URL for PDF].
-
-PISM handles all the difficult details of the procedures described in the previous paragraph, but it is important for the user to have a sense for what is supposed to be reported.
-
-HEINO is a relatively expensive intercomparison in terms of computer time.  For this reason use of a multiprocessor machine is recommended though not essential.  If the intercomparison participant's initials were X.~Y.~Z.~then a HEINO run ST is the recipe
-
-\begin{verbatim}
-$ mpiexec -n 8 pisms -ismip H -run ST -Mx 81 -My 81 -Mz 281 \
-          -y 150000 -dat_prefix XYZ_START -o XYZ_ST_150k.nc
-$ mpiexec -n 8 pisms -ismip H -run ST -i XYZ_ST_150k.nc \
-          -y 50000 -dat_prefix XYZ_END -o XYZ_ST_200k.nc
-\end{verbatim}
-[use Matlab to determine max/min]
-
-\verb|mpiexec -n 8 pisms -ismip H -run ST -i XYZ_ST_150k.nc \|
-
-\verb|    -y 50000 -time1 -time2 -time3 -time4 -dat_prefix XYZ_RERUN|
-
-\verb|~/pism/test/heinocatdat.sh XYZ_ST_??? ...|
-
-\verb|~/pism/test/renames.sh | [rename planform files?]
-
-\noindent At the end of the above recipe the files [list] should appear.
-
-\begin{table}[ht]
-\caption{Options used in running ISMIP-HEINO in PISM.}\label{tab:heinooptions}
-\small
-\begin{tabular}{@{}llll}\hline
-\textbf{Option} & \textbf{Default value(s)} & \textbf{Comments} \\ \hline
-\verb|-| & & \\
-\verb|-| & & \\
-\verb|-dat_prefix| & \verb|PISM| & put initials here \\
-\verb|-| & & \\
-\verb|-ismip| & \verb|H| & only HEINO implemented for now \\
-\verb|-| & & \\
-\verb|-| & & \\
-\verb|-| & & \\
-\hline\normalsize
-\end{tabular}\end{table}
-\end{comment}
-
 
 \subsection{MISMIP in PISM}\label{subsect:MISMIP}  This intercomparison addresses grounding line dynamics by considering an idealized one-dimensional stream-shelf system.  The intercomparison process is described at the website
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
 
-\noindent and there is a full text description available there.  It is essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
+\noindent Find a full text description there.  These references are essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
 
-PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  In fact, the analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf in the flow line case is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  This analysis does not apply to general ice shelves with two horizontal dimensions, however.  Real ice shelves, which certainly are a modelling goal in PISM, have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  See the Ross ice shelf example in section \ref{sect:ross}, for example.
+PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  The analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf, in the flow line case, is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  But this analysis does not apply to ice shelves with two horizontal dimensions, of course.  Real ice shelves have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances.  See the Ross ice shelf example in section \ref{sect:ross}, for example.
 
-Instead of changing the ice dynamics in PISM to remove the ice shelf for an idealized flow line job, we keep the usual PISM ice shelf model to do MISMIP.  We consider the grounding line dynamics properties of the usual PISM code, though in a highly symmetric case without side drag.
+We use the usual PISM ice shelf model, with two horizontal dimensions, to do MISMIP.  This intercomparison therefore looks at the grounding line dynamics results from the usual PISM code, though in a highly symmetric case without side drag.
 
 Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\verb|-My 3|''; fewer points than this in the cross-flow direction confuses the finite difference scheme.
 
@@ -1184,7 +1140,7 @@ The effect when we do this at higher resolution (grid mode 3 with 6km spacing, i
 
 \verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \|
 
-\verb|  -regrid_vars H -ksp_rtol 1.0e-7 -Mx 3 -Mz 15 -My 601|
+\verb|  -regrid_vars H -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601|
 
 \noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
 
@@ -1615,51 +1571,22 @@ Grenoble & 5237 & 1508 \\
 \end{table}
 \normalsize
 
-\subsubsection*{Tuning the ice hardness for a better fit to RIGGS}  Because there is a relatively rich data set from RIGGS on ice velocity, it is reasonable to ask whether the PISM computed velocities can fit the data better if the hardness parameter $\bar B$ is adjusted.  There is a Python script \verb|tune.py| which (by default) runs \verb|pismd -ross| with six values of $\bar B$ ranging from $\bar B = 1.5  \times 10^8$ to $\bar B = 2.0 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$.  It uses smaller values for the convergence tolerances (by default), and it can be run with multiple processors:
+\subsubsection*{Tuning the ice hardness for a better fit to RIGGS}  Because there is a relatively rich data set from RIGGS on ice velocity, it is reasonable to ask whether the PISM computed velocities can fit the data better if the hardness parameter $\bar B$ is adjusted.  In directory \verb|examples/eisross/| there is a Python script \verb|tune.py| which (by default) runs \verb|pismd -ross| with seven values of $\bar B$ ranging from $\bar B = 1.6  \times 10^8$ to $\bar B = 2.2 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$.  It uses smaller values for the convergence tolerances (by default), yielding slightly different $\chi^2$ values.  It can be run in parallel: ``\verb|$ ./tune.py -n 4|.''
 
-\small
-\begin{verbatim}
-$ ./tune.py -n 2
-TUNE.PY (for EISMINT Ross; compare to table 1 in MacAyeal et al 1996)
-trying "mpiexec -n 2 pismd -ross -boot_from ross.nc -ssaBC ross.nc -riggs riggs.nc
--ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa
--ice_type custom -ice_custom_hardness 1.5e8"
-  finished in 116.7409 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   2355.752 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is  28157.4
-. . .
-trying "mpiexec -n 2 pismd -ross -boot_from ross.nc -ssaBC ross.nc -riggs riggs.nc
--ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa
--ice_type custom -ice_custom_hardness 1.8e8"
-  finished in 114.4815 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   1437.704 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   3967.9
-trying "mpiexec -n 2 pismd -ross -boot_from ross.nc -ssaBC ross.nc -riggs riggs.nc
--ksp_rtol 1e-08 -ssa_rtol 1e-05 -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa
--ice_type custom -ice_custom_hardness 1.9e8"
-  finished in 104.6139 seconds; max computed speed and Chi^2 as follows:
-  |maximum computed speed in ice shelf is   1249.716 (m/a)
-  |Chi^2 statistic for computed results compared to RIGGS is   3624.1
-. . .
-\end{verbatim}
-\normalsize
-
-We see that hardnesses $\bar B = 1.8,1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ give the best fits.  This fitting exercise is a first small step towards inverse modelling of the spatially-distributed effective viscosity.  More steps in such directions are found in \cite{HumbertGreveHutter,RommelaereMacAyeal}
+One sees that hardnesses $\bar B = 1.9,2.0 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ give the best fits, by the standard of $\chi^2$ relative to RIGGS data.  This fitting exercise is a first small step towards inverse modelling of the spatially-distributed effective viscosity.  Another major tunable parameter, not demonstrated with \verb|tune.py|, is the calving front force boundary condition.  More steps in the inverse modeling direction, for modeled velocity in Antarctic ice shelves, are found in \cite{HumbertGreveHutter,RommelaereMacAyeal}.
 
 
-\subsubsection*{Additional visualization}  The visualization abilities of PISM's runtime viewers, and of \verb|ncview| for NetCDF files, are limited.  On the other hand, we can produce pretty pictures using Python with \verb|netcdf4-python| and \verb|matplotlib|; the script \verb|ross_plot.py|\footnote{Requires \t{matplotlib}, \t{scikits.delaunay} and \t{netcdf4-python}.} provides an example.
-
-Assuming that \verb|rossComputed.nc| was produced by the following PISM run
+\subsubsection*{Additional visualization}  The visualization abilities of PISM's runtime viewers, and of \verb|ncview| for NetCDF files, are limited.  On the other hand, we can produce pretty pictures using Python.  The script \verb|ross_plot.py| uses Python packages \verb|netcdf4-python|, \verb|matplotlib|, and \t{scikits.delaunay} to do this.  Assuming that \verb|rossComputed.nc| was produced by the following PISM run,
 
 \begin{verbatim}
 $ pismd -ross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
         -Mz 11 -ssa -o rossComputed.nc
 \end{verbatim}
-and the RIGGS data is in \verb|riggs_clean.dat| described above,
+and the RIGGS data is in \verb|riggs_clean.dat| described above, then do
 
 \verb|$ ./ross_plot.py --pism-output=rossComputed.nc --riggs=riggs_clean.dat|
 
-\noindent produces Figure \ref{fig:rosspython}.  We have succeeded in modeling a real ice shelf.
+\noindent Get Figure \ref{fig:rosspython}.  We have succeeded in modeling a real ice shelf.
 
 \begin{figure}[ht]
 \mbox{\includegraphics[width=3in,keepaspectratio=true]{figs/rossquiver}\, \includegraphics[width=3in,keepaspectratio=true]{figs/rossscatter}}

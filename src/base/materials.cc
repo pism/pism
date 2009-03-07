@@ -32,6 +32,12 @@ IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
 }
 
 
+PetscErrorCode IceType::printInfo(PetscInt) const {
+  PetscPrintf(comm,"WARNING:  IceType::printInfo() called but base class IceType is virtual!!\n");
+  return 0;
+}
+
+
 // Rather than make this part of the base class, we just check at some reference values.
 PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
   static const struct {PetscReal s,T,p,gs;} v[] = {
@@ -81,23 +87,28 @@ CustomGlenIce::CustomGlenIce(MPI_Comm c,const char *pre) : IceType(c,pre)
   setSchoofRegularization(1,1000);             // Units of km
 }
 
+
 PetscScalar CustomGlenIce::flow(PetscScalar stress,PetscScalar,PetscScalar,PetscScalar) const
 {
   return softness_A * pow(stress,exponent_n-1);
 }
 
+
 PetscScalar CustomGlenIce::effectiveViscosityColumn(PetscScalar H, PetscInt, const PetscScalar *,
                            PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
                            const PetscScalar *, const PetscScalar *) const  {
-  return H * hardness_B / 2 * pow(schoofReg + secondInvariant(u_x,u_y,v_x,v_y), (1-exponent_n)/(2*exponent_n));
+  return H * (hardness_B / 2) * pow(schoofReg + secondInvariant(u_x,u_y,v_x,v_y), (1-exponent_n)/(2*exponent_n));
 }
 
+
 PetscInt CustomGlenIce::integratedStoreSize() const { return 1; }
+
 
 void CustomGlenIce::integratedStore(PetscScalar H,PetscInt,const PetscScalar*,const PetscScalar[],PetscScalar store[]) const
 {
   store[0] = H * hardness_B / 2;
 }
+
 
 void CustomGlenIce::integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
 {
@@ -106,14 +117,43 @@ void CustomGlenIce::integratedViscosity(const PetscScalar store[], const PetscSc
   if (deta) *deta = power * *eta / (schoofReg + alpha);
 }
 
+
 PetscErrorCode CustomGlenIce::setDensity(PetscReal r) {rho = r; return 0;}
+
+
 PetscErrorCode CustomGlenIce::setExponent(PetscReal n) {exponent_n = n; return 0;}
-PetscErrorCode CustomGlenIce::setSchoofRegularization(PetscReal vel,PetscReal len) // Units: m/a and km
-{schoofVel = vel/secpera; schoofLen = len*1e3; schoofReg = PetscSqr(schoofVel/schoofLen); return 0;}
-PetscErrorCode CustomGlenIce::setSoftness(PetscReal A) {softness_A = A; hardness_B = pow(A,-1/exponent_n); return 0;}
-PetscErrorCode CustomGlenIce::setHardness(PetscReal B) {hardness_B = B; softness_A = pow(B,-exponent_n); return 0;}
+
+
+PetscErrorCode CustomGlenIce::setSchoofRegularization(PetscReal vel,PetscReal len) {
+  schoofVel = vel/secpera;  // vel has units m/a
+  schoofLen = len*1e3;      // len has units km
+  schoofReg = PetscSqr(schoofVel/schoofLen); 
+  return 0;
+}
+
+
+PetscErrorCode CustomGlenIce::setSoftness(PetscReal A) {
+  softness_A = A;
+  hardness_B = pow(A,-1/exponent_n); 
+  return 0;
+}
+
+
+PetscErrorCode CustomGlenIce::setHardness(PetscReal B) {
+  hardness_B = B;
+  softness_A = pow(B,-exponent_n);
+  return 0;
+}
+
+
 PetscScalar CustomGlenIce::exponent() const { return exponent_n; }
-PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return hardness_B; }
+
+
+PetscScalar CustomGlenIce::softnessParameter(PetscScalar T) const { return softness_A; }
+
+
+PetscScalar CustomGlenIce::hardnessParameter(PetscScalar T) const { return hardness_B; }
+
 
 PetscErrorCode CustomGlenIce::setFromOptions()
 {
@@ -157,7 +197,10 @@ PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
   ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
   if (iascii) {
     ierr = PetscViewerASCIIPrintf(viewer,"CustomGlenIce object (%s)\n",prefix);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"  n=%3g B=%8.1e v_schoof=%4f m/a L_schoof=%4f km\n",exponent_n,hardness_B,schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,
+        "  n=%3g,   A=%8.3e,   B=%8.3e,  rho=%.1f,\n"
+        "  v_schoof=%.2f m/a,   L_schoof=%.2f km,  schoofReg = %.2e\n",
+        exponent_n,softness_A,hardness_B,rho,schoofVel*secpera,schoofLen/1e3,schoofReg);CHKERRQ(ierr);
   } else {
     SETERRQ(1,"No binary viewer for this object\n");
   }

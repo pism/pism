@@ -30,8 +30,9 @@ else
 	@$(MAKE) all
 endif
 
-pismr pismv pismd pgrn pcctest flowTable tryLCbd gridL simple%:
-	$(MAKE) -C build ../bin/$@
+#FIXME: this has undesirable effect that "make clean && make"  does not rebuild executables
+#pismr pismv pismd pgrn pcctest flowTable tryLCbd gridL simple%:
+#	$(MAKE) -C build ../bin/$@
 
 depclean:
 	@rm -f $(BUILD_DIR)/*.d

@@ -9,6 +9,7 @@
 from scipy import *
 from pylab import *
 import sys
+import time
 from getopt import getopt, GetoptError
 
 # specify which MISMIP using options, e.g.
@@ -275,10 +276,17 @@ dy = (2. * LL) / (float(My-1))
 Lx = (dy * float(Mx)) / 2.  # truely periodic in x direction
 
 ncfile = NC(ncfilename, 'w')
+
+# set global attributes
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
+setattr(ncfile, 'source', "PISM: examples/mismip/solverMS.py")
+
 # define the dimensions & variables
 tdim = ncfile.createDimension('t', None)
-xdim = ncfile.createDimension('x', Mx)
-ydim = ncfile.createDimension('y', My)
+xdim = ncfile.createDimension('x', My)
+ydim = ncfile.createDimension('y', Mx)
 zdim = ncfile.createDimension('z', 1)  # dummy
 zbdim = ncfile.createDimension('zb', 1) # dummy
 tvar = ncfile.createVariable('t', 'f8', dimensions=('t',))
@@ -319,9 +327,9 @@ setattr(Hvar, 'units', 'm')
 # write the dimension var data to the NetCDF file
 tvar[0]=0 
 for i in range(My):
-  yvar[i]=-1800.0e3 + float(i) * dy
+  xvar[i]=-1800.0e3 + float(i) * dy
 for i in range(Mx):
-  xvar[i]=100.0* (-Lx + float(i) * dy)
+  yvar[i]=100.0* (-Lx + (float(i)+0.5) * dy)
   #xvar[i]=-Lx + float(i) * dy
 zvar[0]=0 
 zbvar[0]=0 
@@ -332,5 +340,5 @@ thk = array([thkrow,thkrow,thkrow])  # uses Mx=3
 Hvar[:] = thk
 
 ncfile.close()
-print "NetCDF file ",ncfilename," created with 'thk'"
+print "NetCDF file ",ncfilename," created with a single variable called 'thk'"
 

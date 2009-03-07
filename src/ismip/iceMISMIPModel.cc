@@ -26,85 +26,15 @@
 
 
 /* 
-This derived class illustrates the bug-creation problem that
-if the signature of a virtual method of the base class IceModel is modified,
-then there is a good chance the behavior of MISMIP runs will change but
-there will be no compile time error to indicate it.
-
-The temporary solution is indicated by the print commands with
-"MAKE SURE THIS IS REALLY BEING USED!!" below.  Both for 
-IceType --> MISMIPIce and for IceModel --> IceMISMIPModel.
-The use of COMM_SELF in these print commands is reasonably important
-because, for instance, if COMM_WORLD is used, and we run 
-with 8 processors, then some processors "own" entirely floating ice 
-so they never call the print statement and then no output at all occurs.
+This derived class illustrates the bug-creation problem.  See task #6216.
+A temporary solution is indicated by the print commands with "MAKE SURE
+THIS IS REALLY BEING USED!!" below.
  */
- 
-MISMIPIce::MISMIPIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
-  rho = 900.0;
-  n = 3;
-  setA(4.6416e-24);
-}
-
-
-PetscErrorCode MISMIPIce::setA(const PetscScalar myA) {
-  A_MISMIP = myA;
-  B_MISMIP = pow(A_MISMIP, - 1.0 / ((PetscScalar) n));
-  return 0;
-}
-
-
-PetscErrorCode MISMIPIce::printInfo(const int thresh) const {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(thresh, comm,
-    "Using MISMIP ice w  rho=%6.2f, grav=%6.4f, n=%6.4f, and A=%6.4e.\n",
-    rho, earth_grav, n, A_MISMIP); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscScalar MISMIPIce::flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
-  // this one is called by SIA force balance code
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::flow()\n");
-  return A_MISMIP * pow(stress,n-1);
-}
-
-PetscScalar MISMIPIce::effectiveViscosityColumn(const PetscScalar H, const PetscInt kbelowH,
-                           const PetscScalar *zlevels,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar *T1, const PetscScalar *T2) const  {
-  // This is standard isothermal flow with usual regularization (1 m/a per 1000 km)
-  return H * B_MISMIP / 2 * pow(1e-27 + secondInvariant(u_x,u_y,v_x,v_y), (1-n)/(2*n));
-}
-
-
-PetscScalar MISMIPIce::softnessParameter(const PetscScalar T) const {
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::softnessParameter()\n");
-  return A_MISMIP;
-}
-
-
-PetscScalar MISMIPIce::hardnessParameter(const PetscScalar T) const {
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"MISMIPIce::hardnessParameter()\n");
-  return B_MISMIP;
-}
-
-
-// Just creates MISMIP ice, but could also set options
-static PetscErrorCode create_mismip(MPI_Comm comm,const char pre[],IceType **i)
-{ *i = new MISMIPIce(comm,pre); return 0; }
-
 
 IceMISMIPModel::IceMISMIPModel(IceGrid &g) : 
-  IceModel(g), mismip_ice(NULL) {
+  IceModel(g) {
 
-
-  iceFactory.registerType("mismip",create_mismip);
-  iceFactory.setType("mismip"); // The factory will create MISMIP ice by default
+  iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
 
   // some are the defaults, while some are merely in a valid range;
   //   see IceMISMIPModel::setFromOptions() for decent values
@@ -146,7 +76,7 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
       "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
       m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
   }
-  ierr = mismip_ice->printInfo(2); CHKERRQ(ierr);
+  ierr = ice->printInfo(2); CHKERRQ(ierr);
   return 0;
 }
 
@@ -182,49 +112,47 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(
   }
 }
 
-PetscErrorCode IceMISMIPModel::init_physics() {
+
+PetscErrorCode IceMISMIPModel::set_grid_defaults() {
+  grid.Mx = 3;
+  return 0;
+}
+
+
+PetscErrorCode IceMISMIPModel::set_grid_from_options() {
   PetscErrorCode ierr;
 
-  // from Table 4
-  const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
-                        4.6416e-24,  2.1544e-24,  1.0e-24,
-                        4.6416e-25,  2.1544e-25,  1.0e-25,
-                        4.6416e-26,  2.1544e-26,  1.0e-26};
+  // let the base class read -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and -quadZ:
+  ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
+  ierr = ignore_option("-Lx"); CHKERRQ(ierr);
+  ierr = ignore_option("-Ly"); CHKERRQ(ierr);
+  ierr = ignore_option("-Lz"); CHKERRQ(ierr);
 
-  // from Table 5
-  const PetscScalar Aexper3a[14] = {0.0, // zero position not used
-                        3.0e-25, 2.5e-25, 2.0e-25,
-                        1.5e-25, 1.0e-25, 5.0e-26,
-                        2.5e-26, 5.0e-26, 1.0e-25,
-                        1.5e-25, 2.0e-25, 2.5e-25,
-                        3.0e-25};
+  const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
 
-  // from Table 6
-  const PetscScalar Aexper3b[16] = {0.0, // zero position not used
-                        1.6e-24, 1.4e-24, 1.2e-24,
-                        1.0e-24, 8.0e-25, 6.0e-25,
-                        4.0e-25, 2.0e-25, 4.0e-25,
-                        6.0e-25, 8.0e-25, 1.0e-24,
-                        1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
-
-  // let the base class create the ice and process its options:
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-
-  mismip_ice = dynamic_cast<MISMIPIce*>(ice);
-  if (!mismip_ice) SETERRQ(1,"Ice type must be MISMIPIce or derived from MISMIPIce for iceMISMIPModel");
-
-  // stepindex range chacking was done in setFromOptions
-  if ((exper == 1) || (exper == 2)) {
-    ierr = mismip_ice->setA(Aexper1or2[stepindex]); CHKERRQ(ierr);  
-  } else if (exper == 3) {
-    if (sliding == 'a') {
-      ierr = mismip_ice->setA(Aexper3a[stepindex]); CHKERRQ(ierr);  
-    } else if (sliding == 'b') {
-      ierr = mismip_ice->setA(Aexper3b[stepindex]); CHKERRQ(ierr);  
-    } else {
-      SETERRQ(99, "how did I get here?");
-    }
+  if ((modelnum == 2) && (sliding == 'b')) {
+    grid.Lz = 7000.0;
+  } else {
+    grid.Lz = 6000.0;
   }
+
+  // effect of double rescale here is to compute grid.dy so we can get square cells
+  //    (in horizontal).  NOTE: y takes place of x!!!
+  grid.Lx = 1000.0;
+  grid.Ly = L;
+  grid.periodicity = X_PERIODIC;
+  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr); 
+  const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
+  grid.Lx = Lx_desired;
+  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
+
+  // determine gridmode from My
+  if (grid.My == 151) 
+    gridmode = 1;
+  else if (grid.My == 1501) 
+    gridmode = 2;
+  else
+    gridmode = 3;
 
   return 0;
 }
@@ -355,6 +283,8 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     } else {
       SETERRQ(99, "how did I get here?");
     }
+  } else {
+      SETERRQ(99, "how did I get here?");
   }
 
   // read option    -try_calving      [OFF]
@@ -373,7 +303,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   computeSurfGradInwardSSA  = PETSC_FALSE;
   transformForSurfaceGradient = PETSC_TRUE;
 
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // call to set_time_from_options() occurs here
 
   // models 1 vs 2
   if (modelnum == 1) {
@@ -401,59 +331,148 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   return 0;
 }
 
-PetscErrorCode IceMISMIPModel::set_grid_defaults() {
-  grid.Mx = 3;
-  return 0;
-}
 
-PetscErrorCode IceMISMIPModel::set_grid_from_options() {
+PetscErrorCode IceMISMIPModel::set_time_from_options() {
   PetscErrorCode ierr;
 
-  // let the base class read -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and
-  // -quadZ:
-  ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
-  ierr = ignore_option("-Lx"); CHKERRQ(ierr);
-  ierr = ignore_option("-Ly"); CHKERRQ(ierr);
-  ierr = ignore_option("-Lz"); CHKERRQ(ierr);
+  ierr = IceModel::set_time_from_options(); CHKERRQ(ierr);
 
-  const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
-
-  if ((modelnum == 2) && (sliding == 'b')) {
-    grid.Lz = 7000.0;
+  // use MISMIP runtimeyears UNLESS USER SPECIFIES A RUN LENGTH
+  // use -y option, if given, to overwrite runtimeyears
+  PetscTruth ySet, ysSet, yeSet;
+  ierr = PetscOptionsHasName(PETSC_NULL, "-y", &ySet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ys", &ysSet); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(PETSC_NULL, "-ye", &yeSet); CHKERRQ(ierr);
+  if ( (ySet == PETSC_TRUE) || ( (ysSet == PETSC_TRUE) && (yeSet == PETSC_TRUE) ) ) {
+    ierr = verbPrintf(2,grid.com,
+      "IceMISMIPModel: ignoring MISMIP-specified run length and using value\n"
+      "  from user option -y (or -ys and -ye)\n"); CHKERRQ(ierr);
   } else {
-    grid.Lz = 6000.0;
+    ierr = verbPrintf(2,grid.com,
+      "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specs)\n",
+      runtimeyears); CHKERRQ(ierr);
+    if (ysSet == PETSC_FALSE) {
+      grid.year = 0.0;
+      ierr = setStartYear(grid.year); CHKERRQ(ierr);
+    }
+    ierr = setEndYear(startYear + runtimeyears); CHKERRQ(ierr);
+    yearsStartRunEndDetermined = PETSC_TRUE;
   }
-
-  // effect of double rescale here is to compute grid.dy so we can get square cells
-  //    (in horizontal).  NOTE: y takes place of x!!!
-  grid.Lx = 1000.0;
-  grid.Ly = L;
-  grid.periodicity = X_PERIODIC;
-  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr); 
-  const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
-  grid.Lx = Lx_desired;
-  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-
-  // determine gridmode from My
-  if (grid.My == 151) 
-    gridmode = 1;
-  else if (grid.My == 1501) 
-    gridmode = 2;
-  else
-    gridmode = 3;
 
   return 0;
 }
+
+
+PetscErrorCode IceMISMIPModel::init_physics() {
+  PetscErrorCode ierr;
+
+  // from Table 4
+  const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
+                        4.6416e-24,  2.1544e-24,  1.0e-24,
+                        4.6416e-25,  2.1544e-25,  1.0e-25,
+                        4.6416e-26,  2.1544e-26,  1.0e-26};
+
+  // from Table 5
+  const PetscScalar Aexper3a[14] = {0.0, // zero position not used
+                        3.0e-25, 2.5e-25, 2.0e-25,
+                        1.5e-25, 1.0e-25, 5.0e-26,
+                        2.5e-26, 5.0e-26, 1.0e-25,
+                        1.5e-25, 2.0e-25, 2.5e-25,
+                        3.0e-25};
+
+  // from Table 6
+  const PetscScalar Aexper3b[16] = {0.0, // zero position not used
+                        1.6e-24, 1.4e-24, 1.2e-24,
+                        1.0e-24, 8.0e-25, 6.0e-25,
+                        4.0e-25, 2.0e-25, 4.0e-25,
+                        6.0e-25, 8.0e-25, 1.0e-24,
+                        1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
+
+  // let the base class create the ice and process its options:
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
+  if (cgi) {
+    // following values are from MISMIP spec:
+    ierr = cgi->setDensity(900.0); CHKERRQ(ierr);
+    ierr = cgi->setExponent(3); CHKERRQ(ierr);
+
+    // exper and stepindex range checking was done in setFromOptions
+    if ((exper == 1) || (exper == 2)) {
+      ierr = cgi->setSoftness(Aexper1or2[stepindex]); CHKERRQ(ierr);
+    } else if (exper == 3) {
+      if (sliding == 'a') {
+        ierr = cgi->setSoftness(Aexper3a[stepindex]); CHKERRQ(ierr);
+      } else if (sliding == 'b') {
+        ierr = cgi->setSoftness(Aexper3b[stepindex]); CHKERRQ(ierr);
+      } else {
+        SETERRQ(99, "how did I get here?");
+      }
+    } else {
+      SETERRQ(99, "how did I get here?");
+    }
+
+    // if needed, get B_MISMIP  by  cgi->hardnessParameter(273.15)
+  }
+
+  ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
+
+  ierr = ice->setFromOptions();CHKERRQ(ierr);
+  if (!cgi) {
+    ierr = verbPrintf(2,grid.com,
+                      "WARNING: Not using CustomGlenIce so cannot set hardness defaults\n"
+                      "         (Perhaps you chose something else with -ice_type xxx)\n"
+                      "         Details on your chosen ice follow\n"); CHKERRQ(ierr);
+    ierr = ice->printInfo(2);CHKERRQ(ierr);
+  }
+
+  ssaStrengthExtend.set_min_thickness(5.0); // m
+  const PetscReal
+    DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
+    DEFAULT_nuH = ssaStrengthExtend.min_thickness_for_extension() * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
+                       / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+          // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
+          //          30 MPa yr for \bar\nu
+  ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
+
+  return 0;
+}
+
+
+PetscErrorCode IceMISMIPModel::initFromFile(const char *fname) {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, 
+    "starting MISMIP experiment from file  %s:\n"
+    "  model %d, experiment %d%c, grid mode %d, step %d", 
+    fname,modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
+  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
+  if (cgi) {
+    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter(273.15)); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com," (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
 
 PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2,grid.com, 
-      "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d (A=%5.4e)\n", 
-      modelnum,exper,sliding,gridmode,stepindex,
-      mismip_ice->softnessParameter(273.15)); CHKERRQ(ierr);
+      "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d", 
+      modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
+  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
+  if (cgi) {
+    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter(273.15)); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com," (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
+  }
 
-  // all of these relate to models which should be turned off ...
+  // all of these relate to models which need to be turned off ...
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);
   // none use Goldsby-Kohlstedt or do age calc
   setInitialAgeYears(initial_age_years_default);
@@ -481,11 +500,10 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   }
   ierr = pccTs->set(ice->meltingTemp); CHKERRQ(ierr);
   ierr = pccsmf->set(0.3/secpera); CHKERRQ(ierr);
-//in PCC:    ierr = vTs.set(ice->meltingTemp); CHKERRQ(ierr);
-//in PCC:    ierr = vAccum.set(0.3/secpera); CHKERRQ(ierr);
 
   return 0;
 }
+
 
 PetscErrorCode IceMISMIPModel::init_couplers() {
   PetscErrorCode ierr;
@@ -505,6 +523,7 @@ PetscErrorCode IceMISMIPModel::init_couplers() {
   
   return 0;
 }
+
 
 PetscErrorCode IceMISMIPModel::misc_setup() {
   PetscErrorCode ierr;
@@ -553,35 +572,6 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
   return 0;
 }
 
-PetscErrorCode IceMISMIPModel::set_time_from_options() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::set_time_from_options(); CHKERRQ(ierr);
-
-  // use MISMIP runtimeyears UNLESS USER SPECIFIES A RUN LENGTH
-  // use -y option, if given, to overwrite runtimeyears
-  PetscTruth ySet, ysSet, yeSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-y", &ySet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ys", &ysSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ye", &yeSet); CHKERRQ(ierr);
-  if ( (ySet == PETSC_TRUE) || ( (ysSet == PETSC_TRUE) && (yeSet == PETSC_TRUE) ) ) {
-    ierr = verbPrintf(2,grid.com,
-      "IceMISMIPModel: ignoring MISMIP-specified run length and using value\n"
-      "  from user option -y (or -ys and -ye)\n"); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com,
-      "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specs)\n",
-      runtimeyears); CHKERRQ(ierr);
-    if (ysSet == PETSC_FALSE) {
-      grid.year = 0.0;
-      ierr = setStartYear(grid.year); CHKERRQ(ierr);
-    }
-    ierr = setEndYear(startYear + runtimeyears); CHKERRQ(ierr);
-    yearsStartRunEndDetermined = PETSC_TRUE;
-  }
-
-  return 0;
-}
 
 PetscErrorCode IceMISMIPModel::setBed() {
   PetscErrorCode ierr;
@@ -881,7 +871,7 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   const PetscScalar dqdx = (mstats.q1 - mstats.q2) / (mstats.x1 - mstats.x2),
                     dhdx = (mstats.h1 - mstats.h2) / (mstats.x1 - mstats.x2),
                     dbdx = (mstats.b1 - mstats.b2) / (mstats.x1 - mstats.x2);
-  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean.rho/mismip_ice->rho) * dbdx);  
+  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean.rho/ice->rho) * dbdx);  
   return 0;
 }
 
@@ -1021,12 +1011,10 @@ is computed as in MISMIP description, and finite differences.
   } else {
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-//      "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %f %f\n",
       "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %5d %5d\n",
       year, volume_kmcube/1.0e6, 
       H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera, 
       rstats.avubarG * secpera, rstats.avubarF * secpera,
-//      rstats.dHdtnorm * secpera, rstats.Ngrounded, rstats.Nfloating); CHKERRQ(ierr);
       rstats.dHdtnorm * secpera, int(rstats.Ngrounded), int(rstats.Nfloating)); CHKERRQ(ierr);
     if (fabs(fmod(year, 50.0)) < 1.0e-6) {
       // write another line to ASCII file ABC1_1b_M1_A1_t; also write to stdout

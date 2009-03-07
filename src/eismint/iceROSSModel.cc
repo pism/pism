@@ -32,7 +32,6 @@ IceROSSModel::IceROSSModel(IceGrid &g)
 
   useSSAVelocity= PETSC_TRUE;
   computeSIAVelocities = PETSC_FALSE;
-  doMassConserve = PETSC_FALSE;  // diagnostic calculation
 
   // further settings for velocity computation 
   useConstantNuHForSSA = PETSC_FALSE; // compute the effective viscosity in usual
@@ -41,8 +40,7 @@ IceROSSModel::IceROSSModel(IceGrid &g)
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
   ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
 
-  // Ross validation uses isothermal ice by default
-  iceFactory.setType(ICE_CUSTOM);
+  iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice hardness
   
   ssaStrengthExtend.set_min_thickness(5.0); // m
   const PetscReal
@@ -83,6 +81,7 @@ PetscErrorCode IceROSSModel::createVecs() {
   return 0;
 }
 
+
 PetscErrorCode IceROSSModel::destroyVecs() {
   PetscErrorCode ierr;
 
@@ -93,6 +92,7 @@ PetscErrorCode IceROSSModel::destroyVecs() {
   ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
   return 0;
 }
+
 
 PetscErrorCode IceROSSModel::set_vars_from_options() {
   PetscErrorCode ierr;
@@ -110,6 +110,7 @@ PetscErrorCode IceROSSModel::set_vars_from_options() {
 
   return 0;
 }
+
 
 PetscErrorCode IceROSSModel::init_physics() {
   PetscErrorCode ierr;
@@ -134,6 +135,7 @@ PetscErrorCode IceROSSModel::init_physics() {
 
   return 0;
 }
+
 
 PetscErrorCode IceROSSModel::misc_setup() {
   PetscErrorCode  ierr;

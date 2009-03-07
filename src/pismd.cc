@@ -24,22 +24,9 @@
 #include "eismint/iceROSSModel.hh"
 
 static char help[] =
-  "Driver for ice sheet, shelf, and stream simulations, for 'diagnostic' computation\n"
-  "of velocity field from geometry and temperature field.\n"
+  "Driver for ice sheet, shelf, and stream simulations, for 'diagnostic'\n"
+  "computation of velocity field from geometry and temperature field.\n"
   "(Also a driver for EISMINT-Ross diagnostic velocity computation in ice shelf.)\n";
-
-/* 
-1.  example of diagnostic computation of velocities from saved model state
-file, using only SIA:
-
-  $ pisms -eisII A -Mx 61 -My 61 -Mz 101 -y 6000 -o foo.nc
-  $ pisms -eisII A -i foo.nc -y 0.00001 -f3d -o bar.nc
-  $ pismd -i foo.nc -o full_foo.nc
-  $ ncdiff -O full_foo.nc bar.nc pismddiff.nc  # velocities nearly equal, not quite at margin; why?
-
-2. see example of diagnostic computation of Ross ice shelf velocities in manual
-
-*/
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -89,8 +76,7 @@ int main(int argc, char *argv[]) {
       ierr = mRoss.finishROSS(); CHKERRQ(ierr);
     }
 
-    // provide a default file name if no -o option.
-    ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);
+    ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);  // default filename if no -o
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

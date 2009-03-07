@@ -24,28 +24,6 @@
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 
-class MISMIPIce : public ThermoGlenIce {
-public:
-  MISMIPIce(MPI_Comm c,const char pre[]);
-  using ThermoGlenIce::flow;
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
-                           PetscScalar pressure,PetscScalar gs /*ignored*/) const;
-  // this one returns nu * H; calls effectiveViscosity() for nu
-  virtual PetscScalar effectiveViscosityColumn(const PetscScalar H, const PetscInt kbelowH,
-                           const PetscScalar *zlevels,
-                           const PetscScalar u_x, const PetscScalar u_y,
-                           const PetscScalar v_x, const PetscScalar v_y,
-                           const PetscScalar *T1, const PetscScalar *T2) const;
-  PetscErrorCode setA(const PetscScalar myA);
-  PetscScalar    softnessParameter(const PetscScalar T) const;
-  PetscScalar    hardnessParameter(const PetscScalar T) const;
-  PetscErrorCode printInfo(const int thresh) const;
-  
-protected:
-  PetscScalar  A_MISMIP, // softness
-               B_MISMIP; // hardness; B = A^{-1/n}
-};
-
 
 struct routineStatsType {
   PetscScalar jg, xg, hxg, maxubar, avubarG, avubarF, 
@@ -88,12 +66,13 @@ public:
   IceMISMIPModel(IceGrid &g);
   virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
 
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_physics();
   virtual PetscErrorCode init_couplers();
-  virtual PetscErrorCode set_grid_defaults();
-  virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_time_from_options();
+  virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode misc_setup();
   
@@ -117,7 +96,6 @@ public:
   PetscErrorCode         writeMISMIPFinalFiles();
 
 private:
-  MISMIPIce   *mismip_ice;
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
   PetscScalar initialthickness, runtimeyears, dHdtnorm_atol;

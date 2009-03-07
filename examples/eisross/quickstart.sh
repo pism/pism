@@ -20,8 +20,8 @@ echo "-----  Run eis_ross.py to turn ascii data into NetCDF file ross.nc:"
 echo "-----  Also create NetCDF version of RIGGS data; riggs.nc; used later:"
 ./eisriggs.py -o riggs.nc
 
-echo "-----  Running PISM to compute velocity in Ross ice shelf:"
+echo "-----  Running pismd to compute velocity in Ross ice shelf:"
 mpiexec -n $NN pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed.nc
- 
+  
 echo "-----  Done.  Model output in rossComputed.nc."
 

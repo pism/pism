@@ -60,7 +60,7 @@ public:
   IceType(MPI_Comm c,const char pre[]);
   virtual ~IceType() {}
   virtual PetscErrorCode setFromOptions() {return 0;}
-  virtual PetscErrorCode printInfo(PetscInt) const {return 0;}
+  virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const {return 0;}
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const = 0;
   // returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
@@ -89,6 +89,7 @@ PetscTruth IceTypeIsPatersonBuddCold(IceType *);
 PetscTruth IceTypeUsesGrainSize(IceType *);
 
 
+//! Derived class of IceType for which is still isothermal and power law, but has easily setable parameters.
 class CustomGlenIce : public IceType {
 public:
   CustomGlenIce(MPI_Comm c,const char pre[]);
@@ -96,7 +97,7 @@ public:
   PetscErrorCode setExponent(PetscReal);
   PetscErrorCode setHardness(PetscReal);
   PetscErrorCode setSoftness(PetscReal);
-  PetscErrorCode setSchoofRegularization(PetscReal vel,PetscReal len);
+  PetscErrorCode setSchoofRegularization(PetscReal vel,PetscReal len); // vel has units m/a, len has units km
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
@@ -109,6 +110,7 @@ public:
                                const PetscScalar T[], PetscScalar store[]) const;
   virtual void integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar exponent() const;
+  virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
 private:
   PetscReal exponent_n,softness_A,hardness_B,schoofVel,schoofLen,schoofReg;
