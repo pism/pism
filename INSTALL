@@ -2,19 +2,17 @@
 Welcome!
 
 PETSc must be installed and functioning before PISM can be built.
-See http://www-unix.mcs.anl.gov/petsc/petsc-as/.
+See http://www-unix.mcs.anl.gov/petsc/.
 
-Assuming PETSC_DIR and PETSC_ARCH are set properly:
+Assuming PETSC_DIR and PETSC_ARCH are set properly, do this:
 
-  $ cd pism0.1                [or "cd pism-dev" etc.]
   $ make
-  $ make install
-
-Note "make install" does not require root permission, as it only installs 
-to ./{lib,bin}
 
 If FFTW is not available do "export WITH_FFTW=0" before make.
 
 More complete installation information, including on installing
-PETSc and other libraries used by PISM, is in the first section of the PISM 
-User's Manual: http://www.pism-docs.org/manual.pdf
+PETSc and other libraries used by PISM, is in the PISM 
+Installation Manual, at
+  
+  http://www.pism-docs.org/installation0.2.pdf
+  
