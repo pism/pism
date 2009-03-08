@@ -42,12 +42,12 @@ add_library (pismbase
   base/iceModelVec3.cc
   base/LocalInterpCtx.cc
   base/materials.cc
-  base/iceShelfExtension.cc
   base/nc_util.cc
   base/pism_const.cc
   base/pism_signal.c
-  base/ssa/ssa.cc
-  base/ssa/ssafe.cc
+  base/ssaJed/iceShelfExtension.cc
+  base/ssaJed/ssa.cc
+  base/ssaJed/ssafe.cc
   coupler/forcing.cc
   coupler/pccoupler.cc
   coupler/pPDDcoupler.cc
