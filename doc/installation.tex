@@ -60,9 +60,10 @@
 
 \author[]{Constantine Khroulev \\ Ed Bueler}
 
-\date{\today. \href{mailto:help@pism-docs.org}{help@pism-docs.org}. Based on
-  PISM rev \PISMREV\,and PETSC rel \PETSCREL. \\ Get PISM development version
-  by \quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}\quad}
+\date{\today.  Get PISM development version by \\
+\phantom{foobar} \qquad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \\
+Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
+
 
 \pdfinfo{
 /Title (PISM Installation Manual)
@@ -87,13 +88,13 @@
 \section*{Introduction}
 
 \large
-This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM including a \emph{User's Manual} and a \emph{Reference Manual} is online at
+This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM, including a \emph{User's Manual}, is online at
 \bigskip
 \begin{center}
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
 \end{center}
 \bigskip
-\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu), subsection \ref{subsec:debian}, and then install a Python package following section \ref{sec:python}.
+\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu), subsection \ref{subsec:debian}, and then install Python packages following section \ref{sec:python}.
 \vfill
 
 \noindent\emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and not mature (in 2008, anyway).  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions: \bigskip
@@ -160,7 +161,7 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
 \noindent In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.
 
 \vspace{0.5in}
-These Python packages are needed to do all the examples in the \emph{User's Manual} by running python scripts.  Some are used more often in Python scripts than others.
+These Python packages are needed to do all the examples in the \emph{User's Manual} by running python scripts.
 \bigskip\fattablespacing
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\hline
@@ -198,6 +199,7 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
       |libnetcdf-dev| & \\
       |g++| & without this you may see a compiler error: ``|gcc: error| |trying to| |exec 'cc1plus'|''\\
       |subversion| & \\
+      |python-dev| & (helps with scripts \dots perhaps not essential) \\
       \hline
     \end{tabular*}
   \end{center}
@@ -205,7 +207,6 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
 \begin{verbatim}
 $  svn co http://svn.gna.org/svn/pism/trunk pism-dev
 \end{verbatim}
-\noindent For |stable0.1|, do \quad\small |svn co http://svn.gna.org/svn/pism/branches/stable0.1 pism0.1|
 \item Based on the locations of installed files, add the lines similar to
 \begin{verbatim}
 export PETSC_DIR=/usr/lib/petscdir/2.3.3/
@@ -213,10 +214,17 @@ export PETSC_ARCH=linux-gnu-c-opt
 export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
 \end{verbatim}
 to your |.bashrc| equivalent.  (See ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, for example.)
-\item Next, enter |pism-dev| and build PISM by running
+\item Next, build PISM:
 \begin{verbatim}
+$  cd pism-dev
 $  make all
 \end{verbatim}
+\item Try it:
+\begin{verbatim}
+$  mpiexec -n 2 pismv -y 1
+\end{verbatim}
+If you see ``|Writing model state to file|\dots'' at the end then the run completed.
+\item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
 Running PISM might produce a warning message like the following:
@@ -374,8 +382,7 @@ $  cd pism-dev
 $  make all
 \end{verbatim}
 
-If your operating system does not support shared libraries, then do \verb|export PISM_STATIC=1| before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.  You might also add \verb|export PISM_STATIC=1| to your |.bashrc| file if you're working with the development version of PISM (i.e.~if you are likely to rebuild it
-later).
+If your operating system does not support shared libraries, then do \verb|export PISM_STATIC=1| before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.
 
 Note that the ``\verb|make all|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted, so do ``\verb|make clean|'' to delete these if space is an issue.
 
@@ -532,7 +539,7 @@ $  sudo python setup.py install
 \section{Rebuilding PISM documentation}
 \label{sec:docs}
 
-If you're using the development version of PISM, you might want to rebuild the documentation from source, as PISM and its documentation evolve together.  These tools are required:
+You might want to rebuild the documentation from source, as PISM and its documentation evolve together.  These tools are required:
 \bigskip
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{llp{0.55\linewidth}}
