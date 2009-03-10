@@ -40,10 +40,10 @@ mpgrn()
 
 # the EISMINT-Greenland CCL3 experiment:
 
-mpgrn "-if green_SSL2_110k.nc -ys -249900 -y 9900 -o green_CCL3_y-240k.nc"
+mpgrn "-i green_SSL2_110k.nc -ys -249900 -y 9900 -o green_CCL3_y-240k.nc"
 
 for ((kyear=230; kyear >= 0 ; kyear-=10)); do
   (( oldkyear = kyear + 10 ))
-  mpgrn "-if green_CCL3_y-${oldkyear}k.nc -y 10000 -o green_CCL3_y-${kyear}k.nc"
+  mpgrn "-i green_CCL3_y-${oldkyear}k.nc -y 10000 -o green_CCL3_y-${kyear}k.nc"
 done
 

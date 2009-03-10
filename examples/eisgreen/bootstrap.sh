@@ -25,5 +25,5 @@ mpiexec -n $NN pgrn -i green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady.nc
 
 ## uncomment these lines if full 100k model year temperature relaxation is desired:
 #mv green20km_Tsteady.nc green20km_10k.nc
-#mpiexec -n $NN pgrn -if green20km_10k.nc -no_mass -y 90000 -o green20km_Tsteady
+#mpiexec -n $NN pgrn -i green20km_10k.nc -no_mass -y 90000 -o green20km_Tsteady.nc
 

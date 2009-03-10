@@ -14,7 +14,7 @@ fi
 set -e  # exit on error
 
 SHOWONLY=0
-if [ $# -gt 1 ] ; then  # if user says "ssl2.sh 8 D" then NN = 8 and *only* shows
+if [ $# -gt 1 ] ; then  # if user says "./ssl2.sh 8 D" then NN = 8 and *only* shows
                         #   what will happen; NO RUN (debug mode)
   SHOWONLY=1
 fi
@@ -35,10 +35,10 @@ mpgrn()
 
 # the EISMINT-Greenland SSL2 experiment:
 
-mpgrn "-if green20km_Tsteady.nc -ys 0 -y 10000 -o green_SSL2_10k.nc"
+mpgrn "-i green20km_Tsteady.nc -ys 0 -y 10000 -o green_SSL2_10k.nc"
 
 for ((kyear=20; kyear <= 110 ; kyear+=10)); do
   (( oldkyear = kyear - 10 ))
-  mpgrn "-if green_SSL2_${oldkyear}k.nc -y 10000 -o green_SSL2_${kyear}k.nc"
+  mpgrn "-i green_SSL2_${oldkyear}k.nc -y 10000 -o green_SSL2_${kyear}k.nc"
 done
 
