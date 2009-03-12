@@ -442,6 +442,7 @@ Regarding the automatically produced time variable, which has a \verb|units| att
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item The NetCDF dimensions \verb|x| and \verb|y| and corresponding variables must be present and have the meanings of projection X coordinate and projection Y coordinate.
+\item Coordinate variables \verb|x| and \verb|y| have to be strictly increasing.
 \item All three-dimensional variables (depending on \verb|x,y,z| or \verb|x,y,zb|) will be ignored in bootstrapping.
 \item The \verb|standard_name| attribute is used to identify a variable, so the names of variables do not need to match the corresponding variables in a PISM output file.
 \item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} to have the units specified using the \verb|units| attribute.  PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.
@@ -788,8 +789,58 @@ FIXME:  \intextoption{topg\und to\und till}
 
 
 
-\subsection{Visualizing the climate inputs, without ice dynamics} FIXME: pcctest
+\subsection{Visualizing the climate inputs, without ice dynamics} 
 
+\newcommand{\pcctestopt}[1]{\par\noindent\texttt{-#1}\quad\quad}
+
+Executable \verb|pcctest|\index{PISM!pcctest} allows one to visualize climate
+inputs without using the ice dynamics core of PISM. It takes the following
+options:
+
+\medskip
+\begin{itemize}
+\item[\texttt{-i}] specifies an input file, which has to be produced by
+  PISM;
+\item[\texttt{-o}] sets the output file name;
+\item[\texttt{-ca}] chooses the constant atmosphere coupler;
+\item[\texttt{-pdd}] chooses the PDD atmosphere coupler;
+\item[\texttt{-co}] chooses the constant ocean coupler;
+\item[\texttt{-ys}] sets the start time, in years;
+\item[\texttt{-ye}] sets the final time, in years;
+\item[\texttt{-dt}] sets the interval between saved climate snapshots.
+\end{itemize}
+
+\bigskip\noindent
+Example usage:
+
+First, set up an ice sheet state file:
+\begin{verbatim}
+$ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
+\end{verbatim}
+next line extracts \verb|acab| and \verb|artm| from \verb|state.nc|, because
+they are stored there by EISMINT II choices, and initializes
+PISMConstAtmosCoupler; ``computes'', though no actual computation, surface mass
+balance and surface temp at \verb|ys:dt:ye| and saves these in
+\verb|camovie.nc|:
+\begin{verbatim}
+$ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
+\end{verbatim}
+
+\bigskip
+Similar for PISMPDDCoupler, but expects \verb|accum|, so we change
+the name before running:
+\begin{verbatim}
+$ ncrename -v acab,accum state.nc restate.nc
+$ pcctest -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+\end{verbatim}
+
+\bigskip
+For PISMConstOceanCoupler; boring:
+\begin{verbatim}
+$ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
+\end{verbatim}
+
+See section \ref{sect:green} for another example of using \verb|pcctest|.
 
 \clearpage\newpage
 \section{Verification}\label{sect:verif}
@@ -1222,7 +1273,9 @@ Next we use the script which converts the time series data files \verb|specmap.0
 \end{figure}
 
 
-\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
+\subsubsection*{Bootstrapping from EISMINT-Greenland data} 
+\label{sect:green-bootstrapping}
+Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
 Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|\index{pgrn}
 \begin{verbatim}
@@ -1429,7 +1482,52 @@ A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-G
 
 \verb|mpiexec -n 8 pgrn -gwl3 -i green_CCL3_y-0.nc -y 500 -o green_GWL3_y500.nc|
 
+\subsubsection{Visualizing the climate inputs in the Greenland case}
+\label{sec:pdd-series-with-pcctest}
 
+Assuming that \verb|green20km_y1.nc| was produces by the run above (see section
+\ref{sect:green-bootstrapping}), one can run the following to check if the PDD
+model in PISM (see section \ref{subsect:pdd}) is ``reasonable'':
+\begin{verbatim}
+$ ncrename -v acab,accum green20km_y1.nc foo.nc
+$ pcctest -i foo.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+\end{verbatim}
+
+This produces the file \verb|pddmovie.nc| with four variables: \verb|acab|
+(instantaneous net ice equivalent accumulation (ablation) rate), \verb|artm|
+(mean annual temperature at ice surface but below firn), \verb|artmpdd|
+(instantaneous snow temperature) and \verb|snowaccum| (mean annual
+ice-equivalent snow accumulation rate).
+
+The time-evolution of \verb|artm| and \verb|snowaccum| is quite boring, the
+other two were used to create figure \ref{fig:pddseries}.
+
+It shows the time-series of the accumulation rate (top graph) and the snow
+temperature (bottom graph) with the map view of the snow temperature at time 0
+over it. The cross on the latter shows (approximately) the location of the
+point used for the time-series.
+
+Here are two things to notice:
+\begin{enumerate}
+\item the summer peak day is in the right place: recall that it should be
+  on August 1 (day $243$)\footnote{the default; can be changed using the
+    \texttt{-pdd\und summer\und peak\und day} option}, i.e. at approximately
+  $243/365 \simeq 0.66$ years;
+
+\item lows of the accumulation rate correspond to positive degree-days (highs
+  of the temperature graph). Note that the show temperature graph does
+  not show daily variations, so even though it has the maximum of about $266$
+  Kelvin, the \emph{actual} snow temperature can be above freezing. (Recall
+  that it is modeled as a standard normal process \emph{around} the yearly cycle.)
+
+\end{enumerate}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{figs/pdd_timeseries}
+  \caption{Time series of the accumulation (ablation) rate and snow temperature. Map view on the right shows the location probed.}
+  \label{fig:pddseries}
+\end{figure}
 
 
 \clearpage\newpage
@@ -1856,10 +1954,10 @@ Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Gle
 
 \optdef{topg\und to\und phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
 
-\verb|pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -quadZ \|
-
-\verb|   -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000|
-
+\begin{verbatim}
+pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -quadZ \
+      -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
+\end{verbatim}
 \noindent See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding}.
 
 
