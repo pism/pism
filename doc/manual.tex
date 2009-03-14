@@ -54,7 +54,7 @@
 
 \author[]{Ed Bueler \\ Constantine Khroulev \\ Jed Brown \\ Nathan Shemonski}
 
-\date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREL.  Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}} 
+\date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREL.  Get stable version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/tags/stable0.2 pism0.2} \quad}} 
 
 \pdfinfo{
 /Title (PISM User's Manual)
@@ -328,7 +328,7 @@ As noted, both the SIA and SSA models are \emph{shallow} approximations.  That i
 By default, PISM does not numerically solve the SSA.  The user must add the option \intextoption{ssa}.  (An exception is the use of the executable \verb|pismv| for verifying the SSA balance of momentum equations, as addressed in section \ref{sect:verif}.)
 
 
-\subsection{A hierarchy of simplifying assumptions for ice flow}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models, applicable to grounded ice, which are implemented in PISM or are planned.  Essentially, this hierarchy is listed in order of increasing effectiveness in modeling whole ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
+\subsection{A hierarchy of simplifying assumptions for ice flow}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models, applicable to grounded ice, which are implemented in PISM or are planned.  Essentially, this hierarchy is listed in order of increasing effectiveness in modeling whole ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.  As an additional row one might list in Table \ref{tab:modelhierarchy} is ``full Stokes'' \cite{Fowler}, but that stress balance is \emph{not} planned for PISM at any time in the future.
 
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions.  (\emph{Italicized} are planned for future versions of PISM but are not implemented in \texttt{stable0.2}.)}\label{tab:modelhierarchy} 
@@ -343,8 +343,7 @@ thermomechanically & non-sliding lubrication flow, & same, plus surf.~temperatur
 \quad -coupled SIA & \quad temperature-dependent softness & \quad geothermal flux &  \\ \hline
 SIA + SSA hybrid & SSA as a sliding law for thermo-  & same, plus basal layer (till) & \cite{BBssasliding} \\
   & \quad mechanically-coupled SIA & \quad strength &  \\ \hline
-\emph{Blatter-Pattyn} & \emph{``higher-order'', bridging stresses} & same & \cite{Blatter,Pattyn03} \\ \hline \hline
-full Stokes & not planned; ice is a fluid & same & \cite{Hutter,Fowler} \\ \hline
+\emph{Blatter-Pattyn} & \emph{``higher-order'', bridging stresses} & same & \cite{Blatter,Pattyn03,SchoofCoulombBlatter} \\ \hline
 \end{tabular}
 \normalsize
 \end{table}

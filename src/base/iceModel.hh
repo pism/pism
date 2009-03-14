@@ -126,7 +126,6 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFactory &getIceFactory() { return iceFactory; }
   virtual IceType *getIce() {return ice;}
-//  virtual IceShelfExtension &getShelfExtension() { return shelfExtension; }
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
