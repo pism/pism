@@ -263,7 +263,7 @@ If the standard output from PISM is saved in a text file then it can always be c
 
 A look at these time series shows the convergence to equilibrium of this non-sliding thermomechanically coupled modeled ice sheet.  We see, characteristically, that there is a longer relaxation time for temperature at the base of the ice than for any geometric quantity (volume, area, thickness).
 
-\subsection{Handling NetCDF files}  At a trivial level, PISM is just a program which takes a NetCDF file as input, does some computation, and produces a NetCDF file as output.  (An exception is that \verb|pisms| knows formulas to initialize EISMINT II experiments, for example.)  The user is in charge of creating NetCDF input files containing data on ice sheets worth modeling\footnote{See the section \ref{sec:bootstrapping-format} and table \ref{tab:modelhierarchy} for a hint about data necessary for modeling.}, and extracting some meaning from the NetCDF output files.
+\subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  At a trivial level, PISM is just a program which takes a NetCDF file as input, does some computation, and produces a NetCDF file as output.  (An exception is that \verb|pisms| knows formulas to initialize EISMINT II experiments, for example.)  The user is in charge of creating NetCDF input files containing data on ice sheets worth modeling\footnote{See the section \ref{sec:bootstrapping-format} and table \ref{tab:modelhierarchy} for a hint about data necessary for modeling.}, and extracting some meaning from the NetCDF output files.
 
 The most basic tools for converting NetCDF files to and from a standard text representation are called \verb|ncdump| and \verb|ncgen|.  A glance at Unix \verb|man| pages for these tools might be wise at this time.
 
@@ -442,6 +442,7 @@ Regarding the automatically produced time variable, which has a \verb|units| att
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item The NetCDF dimensions \verb|x| and \verb|y| and corresponding variables must be present and have the meanings of projection X coordinate and projection Y coordinate.
+\item Coordinate variables \verb|x| and \verb|y| have to be strictly increasing.
 \item All three-dimensional variables (depending on \verb|x,y,z| or \verb|x,y,zb|) will be ignored in bootstrapping.
 \item The \verb|standard_name| attribute is used to identify a variable, so the names of variables do not need to match the corresponding variables in a PISM output file.
 \item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} to have the units specified using the \verb|units| attribute.  PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.
@@ -697,34 +698,21 @@ for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc
 Note that tools like NCO and \verb|ncview| usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
 
 
-\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  FIXME  By default the accumulation/ablation map in PISM is treated as net surface mass balance.  (We are referring to the variable \verb|acab| in saved model states.)  The mass conservation equation for the ice sheet requires this surface balance, which is in units of meters ice-equivalent per time.
+\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  The default atmospheric climate assumption made by the \verb|pismr| and \verb|pgrn| executables is that the input file will supply surface mass balance and ice surface temperature in variables \verb|acab| and \verb|artm|, respectively.  The supplied surface mass balance \verb|acab| is assumed to be the net surface balance, which is not the snow accumulation rate when melting can occur, and it must be in units of ice-equivalent thickness per time.  The supplied surface temperature \verb|artm| is regarded as the mean annual surface temperature, at a point in the ice below the completion of firn processes \cite{Hock05}.  The mass conservation equation for the ice sheet requires the surface mass balance, while the conservation of energy model requires the ice surface temperature as a boundary condition.
 
-Also, the surface temperature variable in PISM is assumed to be the mean annual surface temperature, and without an additional model or input there is no yearly temperature cycle.
+These assumptions about supplied climate are not very realistic for practical glaciological observations.  If the input data actually includes the annual snow-fall accumulation then one might want to compute the surface mass balance according to some model of how much of the snow is transformed to ice, and how much ablates or is transported away, using a modeled time- and space-dependent temperature.  An example of such a model is a \emph{positive degree day} model \cite{Hock05}, a ``PDD''.  The default PDD used by PISM, turned on by option \intextoption{pdd}, comes from the EISMINT-Greenland intercomparison (section \ref{sect:green} and \cite{RitzEISMINT}), but it has controllable parameters.
 
-If the input data actually includes the annual snow-fall accumulation then one must \emph{compute} the surface mass balance according to some model of how much of the snow is melted in each model year and according to a yearly temperature cycle.  We call such a model a \emph{positive degree day} model \cite{CalovGreve05}.
+The snow accumulation rate data should be supplied to this PDD in the input variable \verb|snowaccum|, and should already be measured in ice-equivalent thickness per time (e.g.~\verb|m s-1|).  The annual mean snow temperature is again the variable \verb|artm| and should have units K.
 
-The model used by PISM in computing the amount of melting first assumes a sinusoidal temperature cycle over the course of the year, where the difference between the peak of this temperature cycle and its mean (average) is called the ``summer warming.''  The default temperature cycle has a constant amount of summer warming.  This constant is specified by \intextoption{pdd\und summer\und warming}.  Note that the mean temperature is grid-point dependent, as specified by the input surface temperature map (data), so the cycle is different at each map-plane grid location, though the amplitude is the same at each grid point (in this default case).  The peak of the cycle occurs on August 1, which is Julian day 243, but the option \intextoption{pdd\und summer\und peak\und day} can override this.
+There are parameters controlling the seasonal temperature cycle.  The positive difference between the peak of seasonal temperatures and the mean (average) is called the ``summer warming.''  The default temperature cycle has a constant amount of summer warming, controlled by option \intextoption{pdd\und summer\und warming}.  By default the peak of the seasonal cycle occurs on August 1, Julian day 243 (option \intextoption{pdd\und summer\und peak\und day} can override this).  The annual mean temperature is grid-point dependent, specified by the input surface temperature map in variable \verb|artm|, but the timing of the peak and the amount of summer warming are applied equally everywhere.
 
-It is common to add ``white noise'' to the temperature cycle to simulate both the daily temperature cycle and additional variability associated to the vagaries of weather.  More precisely, a normally-distributed, mean zero random temperature increment is added (or subtracted) from the temperature for each day.  These increments are independent over the days of the year, though of course we only have pseudo-randomness \dots, but they are the same over the whole sheet.  Their standard deviation is controlled by \intextoption{pdd\und std\und dev}.
+A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by \intextoption{pdd\und std\und dev}, and defaults to 5 degrees.  There is no particular assumed spatial correlation of daily variability.
 
-The number of positive degree days, denoted PDD, is computed as the sum of the product of the amount by which this temperature cycle, including the white noise variability, exceeds $0\!\phantom{|}^\circ \text{C}$ times the time (in days) during which it is above zero.  In PISM there are two methods for computing PDD.  The first is the expected value computed by the method described in \cite{CalovGreve05}; this option is chosen by \intextoption{pdd}.  The second is a monte carlo simulation of the white noise itself, chosen by \intextoption{pdd\und rand}.  (If one wants runs with repeatable randomness, use \intextoption{pdd\und repeatable} instead of \verb|-pdd_rand|.)
+The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \intextoption{pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by \intextoption{pdd\und rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd\und repeatable} instead of \verb|-pdd_rand|.
 
-The PDD is multiplied by a coefficient (set by \intextoption{pdd\und factor\und snow}) to compute the amount of snow melted.  Of this melted snow, a fraction (\intextoption{pdd\und refreeze}) is kept as ice.  This ice, plus all unmelted snow (measured as ice-equivalent) is added to the mass balance unless the PDD exceeds that required to melt all of the snow-fall in the year.  In this latter case, in which there are excess PDD available for melting, the excess PDD is multiplied by a coefficient (\intextoption{pdd\und factor\und ice}) to compute how much ice is melted.  In this latter case, ablation occurs at that location.
+The number of positive degree days is multiplied by a coefficient (\intextoption{pdd\und factor\und snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\intextoption{pdd\und refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\intextoption{pdd\und factor\und ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
 
-The PDD model is applied in section \ref{sect:green} to modeling the Greenland ice sheet.
-
-To directly compare the two methods, try\index{pgrn}
-
-\begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -Lz 4000 \
-       -ocean_kill -y 50 -o green_50yr_pdd.nc
-\end{verbatim}
-\noindent versus
-\begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Mz 201 -Lz 4000 \
-       -ocean_kill -y 50 -o green_50yr_pdd_rand.nc -pdd_rand
-\end{verbatim}
-\noindent (See section \ref{sect:green} on how to create the file \verb|eis_green_smoothed.nc| from publically available data.  See the same section for the meaning of ``\verb|-boot_from|''.)
+There is an executable for testing the PDD model without invoking ice dynamics, namely \verb|pcctest|.  See subsection \ref{subsect:pcctest}.  Section \ref{sect:green} demonstrates the PDD model and \verb|pcctest|.
 
 
 \subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
@@ -776,19 +764,105 @@ This diagnostic mode is most frequently associated to the modeling of ice shelve
 Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \intextoption{f3d}.  The diagnostic executable \verb|pismd| saves the full three-dimensional velocity field by default.  Either way, saving the full velocity field roughly doubles the size of the saved NetCDF file.
 
 
-\subsection{Schoof's plastic till free boundary problem for ice streams}   SSA\index{SSA (shallow shelf approximation)} equations with additional basal resistance are used in PISM to describe sliding, grounded ice.  The SSA version of the balance of momentum equations with linearly-viscous till are solved as a fixed-boundary problem (at a particular time step), and thus the locations and extent of ice streams must be determined by some other criterion.  By contrast, for the SSA with plastic till the locations of ice streams is determined as part of the free boundary problem.  We believe that the plastic till SSA of Schoof \cite{SchoofStream} should be regarded as the best currently implementable ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding law}
+\subsection{Plastic till free boundary problem for ice streams; SSA as a sliding law}  \label{subsect:plastic}
+WARNING: The models described in this subsection are still under active development, and thus we give only a sketch.
 
-Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  PISM implements Schoof's SSA-based model among others.  The user gives the options \verb|-ssa -plastic| to turn it on.  All grounded points are immediately marked as SSA (i.e.~as \verb|DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water, a thermodynamic quantity, and from a (generally) spatially-varying till strength.  See \cite{BBssasliding} and the description of option \intextoption{plastic} in Appendix \ref{sect:options} for a more detailed description of the yield stress computation.
+The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being used as the only stress balance for floating ice.  For the SSA with ``plastic'' or ``Coulomb'' till the locations of ice streams is determined as part of a free boundary problem \cite{SchoofStream}.  We believe that this mathematical description of ice streams, by Schoof, should be regarded as the best known ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding law}
 
-Test I in the verification suite\index{verification tests} is an instance of the exact solution to the Schoof model.
+Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  
 
-In examples/pst
+In PISM the user gives the options \verb|-ssa -plastic -super| to turn on the use of the plastic till SSA as a sliding law.  All grounded points are immediately marked as SSA (i.e.~as \verb|DRAGGING|).  At these points a yield stress is computed from the amount of stored basal water and from a (generally) spatially-varying till strength, \verb|tillphi| in an input or output file.  The amount of stored basal water is thermodynamically determined.
 
-FIXME:  \intextoption{topg\und to\und till}
+\begin{table}[ht]
+\caption{Using the SSA stress balance in PISM.}\label{tab:ssausage} 
+\small
+\begin{tabular}{@{}llll}\hline
+\textbf{Option combination} & \textbf{Meaning}\\ \hline
+\intextoption{ssa} & Floating ice uses SSA, and at all points marked \t{DRAGGING}. \\
+ & Basal resistance for grounded ice is plastic (see \\
+ & \intextoption{pseudo\und plastic} to control parameters) but uses \\
+ & fixed field \t{tauc} with no update. \\
+\t{-ssa} \intextoption{plastic} & As above, but all grounded points are forced to be \t{DRAGGING} \\
+ & and \t{tauc} is updated at each time step using stored map \\
+ & \t{tillphi} and evolving basal melt water effective thickness \t{bwat}. \\
+\t{-ssa -plastic} \intextoption{super} & The recommended default sliding law.  Combines SSA-computed \\
+ & velocity, using plastic till, with SIA-computed velocity as in \cite{BBssasliding}. \\
+\hline\end{tabular}
+\normalsize
+\end{table}
+
+The basal resistance is actually determined by a controllable ``pseudo-plastic'' model.  Specifically, stress is a generally a power law function of basal sliding velocity $\mathbf{u}$:
+   $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
+Here $\tau_c$ corresponds to the variable \verb|tauc| in PISM input and output files, $q$ is the power controlled by \intextoption{pseudo\und plastic\und q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \intextoption{pseudo\und plastic\und uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
+
+In our model the till yield stress $\tau_c$ necessarily represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, and granular till.  The value of $\tau_c$ is determined by a basal water model:
+\begin{equation*}
+   \tau_c = (\tan\phi)\,(\rho g H - p_w).
+\end{equation*}
+\cite[Chapter 8]{Paterson}.  Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, $p_w$ is the modeled pore water pressure, and $\phi$ is the till friction angle \verb|tillphi|.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Option \intextoption{plastic\und pwfrac} controls how $p_w$ is determined from the effective thickness of basal water, the quantity in \verb|bwat|.
+
+The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
+
+Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model, that is, the model described by \t{-ssa -plastic}.
+
+In the \t{-ssa -plastic -super} case especially, the determination of basal resistance comes from a stored basal till material property \verb|tillphi|, the till friction angle.  We find that an effective way to determine \verb|tillphi| is to make it a function of bed elevation.  Option \intextoption{topg\und to\und till} does this.
 
 
 
-\subsection{Visualizing the climate inputs, without ice dynamics} FIXME: pcctest
+\subsection{Visualizing the climate inputs, without ice dynamics}\label{subsect:pcctest}  Recall that
+internally in PISM there is a separation of climate inputs from ice dynamics
+(subsection \ref{subsect:separateclimate}).  Executable \verb|pcctest|\index{PISM!pcctest}
+allows one to visualize climate inputs without invoking the ice dynamics core of PISM.
+This is helpful during the process of creating PISM-readable data files, and modeling 
+with such.
+
+\verb|pcctest| takes the following options:
+
+\newcommand{\pccopt}[1]{\texttt{-#1}\qquad}
+\medskip
+\begin{itemize}
+\item[\pccopt{i}]   specifies an input file, which has been produced by PISM;
+\item[\pccopt{o}]   sets the output file name;
+\item[\pccopt{ca}]  chooses the constant atmosphere coupler (\verb|PISMConstAtmosCoupler|);
+\item[\pccopt{pdd}] chooses the PDD atmosphere coupler (\verb|PISMPDDCoupler|);
+\item[\pccopt{co}]  chooses the constant ocean coupler (\verb|PISMConstOceanCoupler|);
+\item[\pccopt{ys}]  sets the start time, in years;
+\item[\pccopt{ye}]  sets the final time, in years;
+\item[\pccopt{dt}]  sets the interval between saved climate snapshots.
+\end{itemize}
+
+\bigskip
+As an example, set up an ice sheet state file and run \verb|pcctest| on it:
+\begin{verbatim}
+$ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
+$ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
+\end{verbatim}
+Using \verb|pisms| merely generates demonstration climate data, using
+EISMINT II choices \cite{EISMINT00}.  \verb|pcctest| extracts the 
+surface mass balance \verb|acab| and surface temperature \verb|artm| from \verb|state.nc|.
+It then does nothing interesting, exactly because a constant climate
+is used.  Viewing \verb|camovie.nc| we see these same values as from \verb|state.nc|,
+in variables \verb|acab|, \verb|artm|, reported back to us as the time- and space-dependent
+climate at times \verb|ys:dt:ye|.  It is a boring ``movie.''
+
+The excuse for the executable \verb|pcctest| becomes clearer if we use a positive degree-day
+model (subsection \ref{subsect:pdd}).  The positive degree-day
+model uses a variable called \verb|snowaccum|, and a calculation of melting, to get the
+surface mass balance \verb|acab|.  As a demonstration here we use an NCO (subsection 
+\ref{subsect:nctoolsintro}) to change a variable name in \verb|state.nc|.  Then we run \verb|pcctest|
+with option \verb|-pdd| to invoke the \verb|PISMPDDCoupler|
+object, which includes the parameterized PDD:
+\begin{verbatim}
+$ ncrename -v acab,snowaccum state.nc restate.nc
+$ pcctest -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+\end{verbatim}
+In particular, a time-dependent view of the variable \verb|artmpdd| shows the time- and space-
+dependent annual cycle.  Onto this is added a random perturbation (normally distributed with standard 
+deviation of 5 degrees), but this random perturbation is not shown.  In fact the PDD uses the
+\cite{CalovGreve05} method to compute the expected number of positive degree days.  From this
+computation the net surface mass balance is computed, namely \verb|acab| in \verb|pddmovie.nc|.
+
+See section \ref{sect:green} for another \verb|pcctest| example.
 
 
 \clearpage\newpage
@@ -1222,7 +1296,9 @@ Next we use the script which converts the time series data files \verb|specmap.0
 \end{figure}
 
 
-\subsubsection*{Bootstrapping from EISMINT-Greenland data}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
+\subsubsection*{Bootstrapping from EISMINT-Greenland data} 
+\label{sect:green-bootstrapping}
+Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model (differential equations describing ice dynamics) inside PISM.\footnote{Section \ref{sect:boot} will explain, once written, that ``bootstrapping'' is a form of inverse modeling, and that we must inevitably do inverse modeling to do prognostic ice sheet modeling.}
 
 Table \ref{bootstrapEISgreen} shows the entire PISM output for a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|\index{pgrn}
 \begin{verbatim}
@@ -1429,7 +1505,56 @@ A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-G
 
 \verb|mpiexec -n 8 pgrn -gwl3 -i green_CCL3_y-0.nc -y 500 -o green_GWL3_y500.nc|
 
+\subsubsection{Visualizing the climate inputs in the Greenland case}
+\label{sec:pdd-series-with-pcctest}
 
+Assuming that \verb|green20km_y1.nc| was produced by the run above (see section
+\ref{sect:green-bootstrapping}), one can run the following to check if the PDD
+model in PISM (see section \ref{subsect:pdd}) is ``reasonable'':
+\begin{verbatim}
+$ ncrename -v acab,snowaccum green20km_y1.nc foo.nc
+$ pcctest -i foo.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+\end{verbatim}
+This produces the file \verb|pddmovie.nc| with four variables: \verb|acab|
+(instantaneous net ice equivalent accumulation (ablation) rate), \verb|artm|
+(mean annual temperature at ice surface but below firn), \verb|artmpdd|
+(instantaneous snow temperature) and \verb|snowaccum| (mean annual
+ice-equivalent snow accumulation rate).
+
+Variables \verb|artm| and \verb|snowaccum| do not evolve over time because the 
+former is generated from ice sheet geometry and latitude by the EISMINT-Greenland
+formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland data
+itself.
+
+The other two variables were used to create figure \ref{fig:pddseries}, which
+shows the time-series of the accumulation rate (top graph) and the snow
+temperature (bottom graph) with the map view of the snow temperature at time 0
+over it. The cross on the latter shows (approximately) the location of the
+point used for the time-series.
+
+Here are two things to notice:
+\begin{enumerate}
+\item The summer peak day is in the right place.  The default for this value is
+  August 1 (day $243$, at approximately $243/365 \simeq 0.66$ year).  (If it is
+  important, the peak day can be changed using the \texttt{-pdd\und summer\und peak\und day}
+  option; subsection \ref{subsect:pdd}).
+
+\item Lows of the surface mass balance rate \verb|acab| correspond to 
+  positive degree-days in the given period, because of highs of the snow 
+  temperature.  Recall the snow temperature graph does
+  not show random daily variations.  Even though it has the maximum of about $266$
+  Kelvin, the parameterized instantaneous snow temperature can be above freezing.
+  A positive value for positive degree-days is expected \cite{CalovGreve05}.
+
+\end{enumerate}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{figs/pdd_timeseries}
+  \caption{Time series of the surface mass balance rate and snow temperature. Map view 
+           on the right shows the location chosen.}
+  \label{fig:pddseries}
+\end{figure}
 
 
 \clearpage\newpage
@@ -1661,7 +1786,7 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|. See also \verb|-dontreadSSAvels|.
 
-\opt{super}  Superpose the velocity fields from the SIA and SSA models.  That is, add the velocity fields which result from the SIA and SSA versions of the balance of momentum equations.  Also has the effect of the option \verb|-mu_sliding 0.0|, that is, the SIA-type sliding law is set to zero so that all basal sliding is controlled by the SSA model.  Only effective if used with \verb|-ssa|.
+\opt{super}  Combine the velocity fields from the SIA and SSA models as in \cite{BBssasliding}.  Only effective if used with \verb|-ssa|.
 
 
 \subsectstar{Options controlling model run length/start/end}
@@ -1848,7 +1973,9 @@ Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Gle
 \end{tabular}
 \end{table}
 
+\begin{comment}
 \opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \verb|-shelfext_H| (5 meters by default), \verb|-shelfext_T| (263.15 K), \verb|-shelfext_Du| (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \verb|-shelfext_force_nuH| with units in Pa s.  Finally, you can compute strength using a \verb|custom| ice type the ice used in the rest of PISM by giving \verb|-shelfext_use_private_ice|.  This option will gives you a \verb|custom| ice type which you can control via \verb|-shelfext_ice_custom_| (see \verb|-ice_type|).  All \verb|-shelfext| options are displayed in \verb|-help|.
+\end{comment}
 
 \optdef{mu\und sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \verb|-ssa| \emph{and} \verb|-plastic| \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \verb|pisms -eisII| ignors this parameter and uses the right amount of sliding for the given experiment.
 
@@ -1856,10 +1983,10 @@ Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Gle
 
 \optdef{topg\und to\und phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
 
-\verb|pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -quadZ \|
-
-\verb|   -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000|
-
+\begin{verbatim}
+pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -quadZ \
+      -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
+\end{verbatim}
 \noindent See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding}.
 
 
@@ -1947,7 +2074,9 @@ Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformat
 
 \optdef{ssa\und eps}{1e-15} The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$.  By default, the regularization in equation (4.1) of \cite{SchoofStream} is also active, use \verb|-ice_reg_schoof_vel 0| to deactivate Schoof's regularization. Turn off this lower bound mechanise by \verb|-ssa_eps 0.0| to exclusively use the Schoof regularization mechanism; see \verb|-ice_reg_schoof_vel| and \verb|-ice_reg_schoof_length| below.  Note \verb|-ssa_eps| is set to zero automatically when running \verb|pismv -test I|.
 
+\begin{comment}
 \opt{ssa\und external} We are experimenting with other solvers for the stream and shelf equations.  If given, this option exposes these experimental solvers.  Run with \verb:-ssa_external -help | grep ssa_: to see what options are available.
+\end{comment}
 
 \optdef{ssa\und maxi}{300}  This option sets the maximum allowed number of nonlinear iterations in solving the shallow shelf approximation.  One should usually use option \verb|-ssa_rtol| to control convergence of the nonlinear iteration.
 
