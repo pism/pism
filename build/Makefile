@@ -14,7 +14,8 @@ rev = $(shell svnversion ../)
 #ifndef PISM_REVISION
 #  $(error Can not determine revision number.  Please define PISM_REVISION in the top-level Makefile)
 #endif
-PISM_REVISION = stable0.2: revision $(rev)
+PISM_REVISION = revision $(rev) stable0.2
+#PISM_REVISION = stable0.2: revision $(rev)
 
 DISPLAY = :0.0
 

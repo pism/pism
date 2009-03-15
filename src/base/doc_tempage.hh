@@ -39,14 +39,17 @@ below the ice sheet.  The implementation must include this possibility,
 although it is not addressed here.
 
 Equally essential is the fact that the velocity field has a
-complicated and subtle provenance.  It comes from a variety of stress
-balance equations, the nature of which is highly variable and poorly understood.
+complicated provenance.  It comes from a variety of stress
+balance equations.  These stress balances, especially where there is a transition 
+in stress balance type, like at grounding lines, are incompletely understood.
 The stress balance could be the SIA, the SSA, a mix of these in different parts of the
 ice sheet/shelf system, or a less shallow model.
-In particular, we want to make no assumptions about the regularity of the velocity 
-field in space or time.  Nor do we want the numerical
-scheme for advection to need any information about the velocity except its value at the
-beginning of the time step.  Thus we would not accept a scheme which required the Jacobian
+
+In particular, we will not make, and we need to not make, assumptions
+about the regularity of the velocity field in space or time.  Nor do we want 
+the numerical scheme for advection to need any information about the velocity
+except its value at the beginning of the time step.  Thus we would not 
+accept a scheme which required the Jacobian
 of the velocity field with respect to changes in temperature, for example.
 At very least we cannot implement a fully implicit scheme without some 
 blind iteration (e.g.~with no guarantee of convergence of the iteration), while 
@@ -58,12 +61,12 @@ As described elsewhere in this manual, the temperature equation is
 \end{equation}
 where $T(t,x,y,z)$ is the temperature of the ice.  This equation is the shallow approximation
 of the full three-dimensional conservation of energy, so it does not include horizontal
-conduction \cite{Fowler}.  The units of this equation are energy per time, thus J/s in MKS.
+conduction \cite{Fowler}.  The units of this equation are energy per time per volume, 
+thus J\,$\text{s}^{-1}\,\text{m}^{-3}$ in SI.
 We will assume, without exception, that $\rho,c_p(T),k$ are positive.
 Note $dT/dt$ stands for the material derivative, so advection 
 is present.  The function $\Sigma(T)$ is the strain-heating term, 
-the details of which will not affect the derivation here.  The SI units of 
-$\Sigma(T)$ are J$/(\text{s} \text{m}^3)$.  Note that $\Sigma(T)$ is naturally
+the details of which will not affect the derivation here.  Note that $\Sigma(T)$ is naturally
 described as a (self-)reaction term \cite{Fowler}.
 
 We will be focusing on the dimension in which the temperature is changing fastest, 
@@ -97,7 +100,7 @@ We put the horizontal advection terms in the source term $\Phi$ because
 (semi-)implicit treatment of horizontal advection would require a 
 coupled system distributed across processors.  That kind of numerical difficulty
 can be avoided, even given the other constraints on accuracy and implementation.
-The following scheme for horizontal advection is explicit first-order upwinding.  
+The scheme we use for horizontal advection is explicit first-order upwinding.  
 There is a CFL condition for the scheme to be stable, 
 based on the magnitude of the horizontal velocity components.
 
@@ -110,31 +113,32 @@ The horizontal advection terms, thus $\Phi$, are approximated
 	$$\Phi_{ijk}^n = \Sigma(T_{ijk}^n) - \rho c_p(T_{ijk}^n) 
 	                   \left( u_{ijk}^n\,\frac{\Up{T_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
 	                          + v_{ijk}^n\,\frac{\Up{T_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).$$
-Thus $\Phi$ is approximated in a completely explicit way, at time $t_n$ at the beginning 
-of the time step.  The CFL stability condition implied by this part of the scheme is
+This is a completely explicit approximation of $\Phi$ at time $t_n$, the beginning 
+of the time step.  The CFL stability condition for this part of the scheme is
 \begin{equation}\label{CFL}
     \Delta t \,\left( \left|\frac{u_{ijk}^n}{\Delta x}\right|
                            + \left|\frac{v_{ijk}^n}{\Delta y}\right| \right) \le 1.
 \end{equation}
 The routine \endlatexonly IceModel::computeMax3DVelocities() \latexonly computes the 
 maximum of velocity magnitudes.  This produces a time step restriction based on 
-the above CFL condition.  Note \endlatexonly IceModel::determineTimeStep() \latexonly 
+the above CFL condition.  Then \endlatexonly IceModel::determineTimeStep() \latexonly 
 implements adaptive time-stepping based on this and other stability criteria.
 
-We will assume an equally-spaced grid $z_0,\dots,z_{M_z}$ with $\Delta z = z_{k+1} - z_k$.
-See procedures \endlatexonly IceModel::temperatureStep() \latexonly and
-\endlatexonly IceModel::ageStep(). \latexonly
-In fact PISM has an optional remapping scheme (options \texttt{-quadZ} and 
-\texttt{-chebZ}), where the temperatures/ages
-in a column of ice are stored on an unequally-spaced vertical grid, but mapped to a fine,
-equally-spaced grid for the temperature/age computation.  See the 
+We will assume an equally-spaced grid $z_0,\dots,z_{M_z}$ with $\Delta z = z_{k+1} - z_k$ in the following analysis.
+
+In fact PISM has a remapping scheme (options \texttt{-quadZ} and 
+\texttt{-chebZ}), where the temperatures/ages in a column of ice are stored
+on an unequally-spaced vertical grid, but are mapped to a fine, 
+equally-spaced grid for the temperature/age computation.  See procedures 
+\endlatexonly IceModel::temperatureStep() \latexonly and
+\endlatexonly IceModel::ageStep(), \latexonly and see the 
 \endlatexonly IceModelVec3 \latexonly class and \endlatexonly 
 IceModel::getVertLevsForTempAge(). \latexonly
 
 \index{BOMBPROOF!statement of the numerical scheme}
-Finally we get to the heart of the matter.  The $z$ derivative terms in \eqref{vertProblem}
-will be approximated implicitly.  Let $\lambda$ be in the interval $0 \le \lambda \le 1$.  
-The scheme BOMBPROOF is
+The $z$ derivative terms in \eqref{vertProblem}
+will be approximated implicitly.  Let $\lambda$ be in the interval 
+$0 \le \lambda \le 1$.  The scheme BOMBPROOF is
 \begin{align}\label{bombone}
 \rho c_p(T_k^n) &\left( 
        \frac{T_k^{n+1} - T_k^n}{\Delta t}
@@ -142,8 +146,8 @@ The scheme BOMBPROOF is
        + (1-\lambda) w_k^{n} \frac{\Up{T_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
      &= k\, \frac{T_{k+1}^{n+1} - 2 T_{k}^{n+1} + T_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n \notag
 \end{align}
-with the value for $\lambda$ determined by \eqref{lambdachoice} below.  As promised, 
-from now on we suppress indices $i,j$.
+with the value for $\lambda$ determined by \eqref{lambdachoice} below.
+We have suppressed indices $i,j$.
 
 Equation \eqref{bombone} has two approximations of vertical advection which are 
 combined using nonnegative coefficients which sum to one.  Both approximations
@@ -153,16 +157,17 @@ are (semi-)implicit, but the centered formula has higher accuracy,
 while the first order upwind formula has lower accuracy,
 	$$w_k^{n} \frac{\Up{T_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z}
 	   = w \frac{\partial T}{\partial z} + O(\Delta t,\Delta z).$$
-We prefer for accuracy reasons to use the centered formula.  We will only include 
-implicit upwinding when it is needed for its added stability benefits (below).
+We prefer for accuracy reasons to use the centered formula, because it has 
+higher order truncation error.  We will only include implicit upwinding when
+it is needed for its added stability benefits.
 
 Let
 	$$C_k^n = \rho c_p(T_k^n), \qquad\quad \nu = \frac{\Delta t}{\Delta z},
 	 \qquad \text{and} \qquad R_k^n = \frac{k \Delta t}{C_k^n \Delta z^2}.$$
 We now rewrite \eqref{bombone} for computational purposes as one of a system of equations 
-for the unknowns $\{T_k^{n+1}\}$.  (In this system the coefficients are
+for the unknowns $\{T_k^{n+1}\}$.  In this system the coefficients are
 scaled so that the diagonal entries of the matrix have limit one as
-$\Delta t\to 0$.)  That is, we multiply equation \eqref{bombone} by
+$\Delta t\to 0$.  That is, we multiply equation \eqref{bombone} by
 $\Delta t$, divide it by $C_k^n$, and rearrange:
 \begin{align}
 &\left(-R_k^n - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) T_{k-1}^{n+1}  
@@ -173,9 +178,8 @@ Here $\uppair{a}{b} = a$ when $w_k^n\ge 0$ and $\uppair{a}{b} = b$ when $w_k^n <
 
 Equations \eqref{bombone} and \eqref{bombtwo} combine two unconditionally 
 stable ways of approximating advection, namely implicit centered difference 
-($\lambda = 1$) and implicit first-order upwinding ($\lambda=0$),
-as note above.  The combination is ``convex'' because the coefficients are
-nonnegative and sum to one.
+($\lambda = 1$) and implicit first-order upwinding ($\lambda=0$).  The combination 
+is ``convex'' because the coefficients are nonnegative and sum to one.
 
 The pure implicit centered difference scheme, namely
 \begin{align}
@@ -185,13 +189,11 @@ The pure implicit centered difference scheme, namely
 \end{align}
 is \emph{less stable} than implicit first-order upwinding.  It is less stable 
 in the same sense that Crank-Nicolson is a less stable scheme than 
-backwards Euler for the simplest
-heat equation $u_t = u_{xx}$ because, although oscillatory modes 
-cannot grow exponentially they \emph{can} appear when
-none are present already \cite{MortonMayers}, even in the homogeneous case $\Phi_k^n=0$.
-One way of stating the greater stability of first-order upwinding is to say it
-satisfies a ``maximum principle.''  On the other hand, as noted above, the centered difference
-formula is desirable because it has higher order truncation error.
+backwards Euler for the simplest heat equation $u_t = u_{xx}$ \cite{MortonMayers}.  
+In fact, although oscillatory modes cannot grow exponentially under equation \eqref{centered},
+those modes \emph{can} appear when none are present already, even in the homogeneous case
+$\Phi_k^n=0$.  One way of stating the greater stability of first-order upwinding is to say it
+satisfies a ``maximum principle.''
 
 An example of a maximum principle for this kind of finite difference 
 scheme is that if $U_{k-1}^n,U_k^n,U_{k+1}^n$ are adjacent gridded values at time step
@@ -201,25 +203,23 @@ for \emph{nonnegative} coefficients $C_i$ summing to one ($C_{-1} + C_0 + C_{+1}
 then it follows by the real triangle inequality that
 	$$\min\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\} 
 	       \le |U_k^{n+1}| \le \max\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\}.$$
-Thus a ``wiggle'' cannot appear.  The proof below illustrates how this is handled 
-for scheme \eqref{bombtwo}.
+Thus a ``wiggle'' cannot appear.  The proof below shows the corresponding ``wiggle-free''
+property for scheme \eqref{bombtwo}.
 
-Thus we want to be precise about the phrase ``unconditionally stable'' for BOMBPROOF.
+We want to be precise about the phrase ``unconditionally stable'' for BOMBPROOF.
 To do so we consider somewhat simplified cases which are amenable to analysis, and
-we prove both particular stability properties we are claiming as the advantages of 
-BOMBPROOF.
+we prove two particular stability properties, the precise advantages of BOMBPROOF.
 
 \index{BOMBPROOF!proof of stability properties}
 \begin{theorem}  Assume (for the precise but limited assertion of this theorem) 
 that the surface temperature $T_s$ and the geothermal flux $G$ are constant 
 in time and space.  Assume also that the entire source function $\Phi$ is identically zero 
-(but see comments below).
+(but see comments below).  Fix an equally-spaced vertical grid $z_0=0 < z_1 < \dots < z_N=H$,
+so that the upper grid point coincides with the surface of the ice.  Suppose $c_p(T)$ is
+bounded below by a positive constant so that equation \eqref{bombtwo}
+is a valid rewriting of equation \eqref{bombone}.
 
-Fix an equally-spaced vertical grid $z_0=0 < z_1 < \dots < z_N=H$, so that 
-the upper grid point coincides with the surface of the ice.
-
-Suppose $c_p(T)$ is bounded below by a positive constant so that equation \eqref{bombtwo}
-is a valid rewriting of equation \eqref{bombone}.  If
+If
 \begin{equation}\label{lambdachoice}
 \lambda = \lambda^n = \min\left\{1, \quad 
 	               \min_{k=0,\dots,N}\left\{\frac{2 k}{|w_k^n| C_k^n \Delta z}\right\}
@@ -247,8 +247,8 @@ $\lambda=0$, and the method reduces to implicit first-order upwinding.
 \end{theorem}
 
 \emph{Remark}.  The phrases \emph{maximum principle} and \emph{von Neumann analysis} 
-will be precisely illustrated in the following proof.  Both approaches are explained 
-from the beginning in \cite{MortonMayers}.  There is additional information on the 
+will be precisely illustrated in the following proof.  Both approaches are in 
+\cite{MortonMayers}.  There is additional information on the 
 von Neumann analysis of implicit methods for advection in \cite{Strikwerda}.
 
 \begin{proof} \emph{Case (I)}.  In the case considered for the maximum principle, with $\Phi_k^n=0$, 

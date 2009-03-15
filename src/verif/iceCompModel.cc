@@ -596,9 +596,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
         case 'H':
           exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);
           break;
-        default:  
-          SETERRQ(1,"test must be A, B, C, D, or H");
-          break;
+        default:  SETERRQ(1,"test must be A, B, C, D, or H");
       }
     }
   }
@@ -883,9 +881,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
     case 'G':
       ierr = getCompSourcesTestFG();  // see iCMthermo.cc
       break;
-    default:
-      SETERRQ(1,"only tests CDHFG have comp source update at start time step\n");
-      break;
+    default:  SETERRQ(1,"only tests CDHFG have comp source update at start time step\n");
   }
 
   return 0;
@@ -934,9 +930,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
     case 'L':
       ierr = fillSolnTestL();
       break;
-    default:
-      SETERRQ(1,"unknown testname in IceCompModel");
-      break;
+    default:  SETERRQ(1,"unknown testname in IceCompModel");
   }
 
   return 0;

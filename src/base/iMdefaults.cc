@@ -36,8 +36,6 @@ const PetscScalar DEFAULT_INITIAL_AGE_YEARS = 0.0;  // age to start age computat
 
 const PetscScalar DEFAULT_MAX_HMELT = 2.0;  // max of 2 m thick basal melt water layer
 
-const PetscInt    DEFAULT_VERBOSITY_LEVEL = 2;
-
 const PetscScalar DEFAULT_MAX_TIME_STEP_YEARS = 60.0;  // years
 
 const PetscScalar DEFAULT_ENHANCEMENT_FACTOR = 1.0;
