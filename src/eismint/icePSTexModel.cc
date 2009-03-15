@@ -32,7 +32,6 @@ const PetscScalar
                               //     setTillPhi() and inStreamNbhd()
 
 const int Nexpers = 6,
-          Nstreams = 4,     // 4 streams for most experiments, 3 for P2
           NAME_LENGTH = 10;
 
 struct ExperDescription {

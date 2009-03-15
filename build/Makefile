@@ -6,10 +6,12 @@ endif
 url = $(shell svn info | grep URL)
 rev = $(shell svnversion ../)
 ifeq ($(findstring trunk,$(url)),trunk)
-  PISM_REVISION = trunk: revision $(rev)
+  PISM_REVISION = revision $(rev) trunk
+  # PISM_REVISION = trunk: revision $(rev)
 endif
 ifeq ($(findstring tags,$(url)),tags)
-  PISM_REVISION = tags $(lastword $(subst /, ,$(url))): revision $(rev)
+  PISM_REVISION = revision $(rev) tags $(lastword $(subst /, ,$(url)))
+  # PISM_REVISION = tags $(lastword $(subst /, ,$(url))): revision $(rev)
 endif
 ifndef PISM_REVISION
   $(error Can not determine revision number.  Please define PISM_REVISION in the top-level Makefile)

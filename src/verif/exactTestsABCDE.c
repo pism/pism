@@ -55,10 +55,11 @@ int exactA(const double r, double *H, double *M) {
 
 int exactB(const double t, const double r, double *H, double *M) {
   /* NOTE: t and t0 are in seconds */
-  double lambda, alpha, beta, t0, Rmargin;
+  double alpha, beta, t0, Rmargin;
   const double n = 3.0, H0 = 3600.0, R0=750000.0;
   
-  lambda=0.0;
+  /* lambda=0.0 case of Bueler et al (2005) family of similarity solns;
+     is Halfar (1983) soln */
   alpha=1.0/9.0;  /* alpha=(2-(n+1)*lambda)/(5*n+3)=1/9 */
   beta=1.0/18.0;  /* beta=(1+(2*n+1)*lambda)/(5*n+3)=1/18 */
   t0=422.45*SperA;  /* t0 = (beta/Gamma)

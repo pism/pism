@@ -303,7 +303,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = Istag3[1].end_access(); CHKERRQ(ierr);
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
-  //delete [] gsij;  delete [] work_age_space;
   
   return 0;
 }
