@@ -10,11 +10,15 @@ test_03 ()
 {
     cleanup
 
+    set -e
+
     # Create a file to start from:
-    run pismv -test G -Mx 61 -My 61 -Mz 61 -y 100 -verbose 1 -o foo.nc
+    run -n 1 pismv -test G -Mx 61 -My 61 -Mz 61 -y 100 -verbose 1 -o foo.nc
 
     # Run for 0 years:
-    run pismr -i foo.nc -y 0 -o bar.nc
+    run -n 1 pismr -i foo.nc -y 0 -o bar.nc
+
+    set +e
 
     # Compare, excluding irrelevant diagnostic variables:
     run nccmp.py -x -v usurf,dHdt,cbar,cflx,cbase,csurf,wvelsurf,taud,tauc foo.nc bar.nc
