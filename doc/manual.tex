@@ -482,25 +482,29 @@ The extent of the computational box, along with its bedrock extension downward, 
 \end{figure}
 
 
-\subsection{Grid} \label{subsect:grid} The PISM grid\index{PISM!grid} covering the computational box is equally spaced in each of the three dimensions.
+\subsection{Grid}
+\label{subsect:grid}
+The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is equal by default but optionally a spacing scheme which puts finer resolution near the ice base can be chosen.  (Choose with options \intextoption{quadZ} and \intextoption{chebZ}, respectively, below.)
 
-FIXME: non-equal spacing in vertical allowed with \verb|-quadZ|; need to document
+The grid is described by four numbers, namely the number of grid points \verb|Mx| in the $x$ direction, the number \verb|My| in the $y$ direction, the number \verb|Mz| in the $z$ direction within the ice, and the number \verb|Mbz| in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively, as in Appendix A.  The defaults are 61, 61, 31, and 1, respectively.
 
-Because of the bedrock extension, the grid of points is described by four numbers, namely the number of grid points in the $x$ direction, the number in the $y$ direction, the number in the $z$ direction within the ice, and the number in the $z$ direction within the bedrock.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively, as described in the Runtime options section.  The defaults for these four values are 61, 61, 31, and 1, respectively.  Note that \verb|Mx|, \verb|My|, \verb|Mz|, and \verb|Mbz| all indicate the number of grid \emph{points}.  Therefore the number of grid \emph{spaces} are, respectively, 60, 60, 30, and 0 (zero) in the default case.  Note that the lowest grid point in a column of ice, that is the one at $z=0$, coincides with the highest grid point in the bedrock.  Also \verb|Mbz| must always be at least one.
+Note that \verb|Mx|, \verb|My|, \verb|Mz|, and \verb|Mbz| all indicate the number of grid \emph{points}.  The number of grid \emph{spaces} are one less, thus 60, 60, 30, and 0 in the default case.  The lowest grid point in a column of ice, at $z=0$, coincides with the highest grid point in the bedrock, so \verb|Mbz| must always be at least one.
 
-The distance \t{Lbz} is controlled by specifying the number \verb|Mbz| of grid points in the bedrock, noting that the vertical spacing \t{dz} is the same within the ice and within the bedrock.  To avoid conflicts, the distance \t{Lbz} cannot be set directly by the user.  In particular, $\text{\t{Lbz}}=\text{\t{dz}}\,(\text{\t{Mbz}}-1)$ while $\text{\t{dz}} = \text{\t{Lz}} / (\text{\t{Mz}}-1)$, and so the distance \t{Lbz} into the bedrock is determined by setting \t{Lz}, \t{Mz}, and \t{Mbz}.
+If \intextoption{chebZ} option is used, the vertical grid in the ice is spaced similar to the extreme values of Chebyshev polynomials \cite{Trefethen}.  It is very fine near the base of ice and coarser near the top of the computational box.  Using \intextoption{quadZ}, the spacing is a quadratic function.  Here the spacing is smaller near the base than near the top, but the effect is less extreme than in the Chebyshev case.  (See the documentation of \verb|IceGrid::compute_vertical_levels()| in PISM's class browser for more info and formulas defining the spacing.)
+
+When a thermal bedrock layer is used, the distance \t{Lbz} is controlled indirectly by specifying the number \verb|Mbz| of grid points in the bedrock, \emph{and} by the vertical spacing scheme within the ice.  In particular, the spacing within the ice is determined first, giving a certain (minimum) spacing at the lowest ($z=0$) level, \verb|dzMIN|.  The bedrock thermal layer then has \verb|Mbz|$-1$ vertical grid spaces of thickness \verb|dzMIN|.  To avoid conflicts, the distance \t{Lbz} cannot be set directly by the user.
 
 If one initializes PISM from a saved model state using \intextoption{i} then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
 
-\verb|$  pisms -eisII A -i foo.nc -y 100|
+\verb|$  pismr -i foo.nc -y 100|
 
-\noindent should work fine if \verb|foo.nc| was a valid PISM model file, while the command
+\noindent should work fine if \verb|foo.nc| was a valid PISM model file.  The command
 
-\verb|$  pisms -eisII A -i foo.nc -Mz 201 -y 100|
+\verb|$  pismr -i foo.nc -Mz 201 -y 100|
 
-\noindent will give a warning that ``\verb|PISM WARNING: ignoring command-line option '-Mz'|.''
+\noindent will give a warning that ``\verb|PISM WARNING: ignoring command-line option '-Mz'|'' because \verb|-i| input files take precedence.
 
-Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \intextoption{boot\und from} or when initializing a simplified geometry experiment or a verification test.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
+Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \intextoption{boot\und from} or when initializing a simplified geometry experiment or a verification test, though defaults are generally present in these cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
 
 
 
@@ -736,14 +740,20 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no\und mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \verb|FLOATING| while ice which becomes grounded is either marked as \verb|SHEET| or \verb|DRAGGING|.  The decision between \verb|SHEET| or \verb|DRAGGING| is made by a vote-by-neighbors scheme in the most general case.  When both \intextoption{ssa} and \intextoption{super} are given all grounded ice is \verb|DRAGGING|, however.
 
 
-\subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}   FIXME: add this section, which explains use of options
-\intextoption{bed\und def\und iso} and \intextoption{bed\und def\und lc}  Based on papers by Lingle and Clark \cite{LingleClark}\index{Lingle, Craig} \index{Clark, J.} and \cite{BLKfastearth}.  Example runs to compare are is
+\subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}   Options
+\intextoption{bed\und def\und iso} and \intextoption{bed\und def\und lc} turn on bed deformation models.  The former uses the very minimal assumption of instantaneous pointwise (i.e.~independently at each point in the map plan) isostatic adjustment.  
+
+The latter is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{Lingle, Craig} \index{Clark, J.} and \cite{BLKfastearth}.  It is essentially instantaneous computationally because of use of the Fast Fourier Transform to solve the relevant differential equation.  Among other practical features, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  If observed uplift data is available, it can be used along with \intextoption{boot\und from} to initialize the model so that it starts with the given uplift rate.
+
+Example runs to compare these models are
 \begin{verbatim}
-$ pisms -eisII A -quadZ -y 6000 -o eisIIA_nobd.nc
-$ pisms -eisII A -quadZ -bed_def_iso -y 6000 -o eisIIA_bdiso.nc
-$ pisms -eisII A -quadZ -bed_def_lc -y 6000 -o eisIIA_bdlc.nc
+$ mpiexec -n 4 pisms -eisII A -quadZ -y 8000 -o eisIIA_nobd.nc
+$ mpiexec -n 4 pisms -eisII A -quadZ -bed_def_iso -y 8000 -o eisIIA_bdiso.nc
+$ mpiexec -n 4 pisms -eisII A -quadZ -bed_def_lc -y 8000 -o eisIIA_bdlc.nc
 \end{verbatim}
-Also refer to test H.
+Compare the \verb|topg|, \verb|usurf|, and \verb|dbdt| variables in the resulting output files.
+
+Test H in section \ref{sect:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
 
 
 \subsection{Diagnostic computations}  As a diagnostic example, using the EISMINT II final state computed in section \ref{sect:start}, try\index{pismd}
@@ -1209,12 +1219,11 @@ But \verb|solverSM.py| has an option which allows the asymptotic-matching thickn
 
 The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
 
-\verb|$ ./solverSM.py  --My=601 -e 1 --sliding=a -s 1 -n SM.nc|
-
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \|
-
-\verb|  -regrid_vars H -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601|
-
+\begin{verbatim}
+$ ./solverSM.py  --Mx=601 -e 1 --sliding=a -s 1 -n SM.nc
+$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \
+          -regrid_vars H -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601
+\end{verbatim}
 \noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
 
 \begin{figure}[ht]
@@ -1228,9 +1237,7 @@ The effect when we do this at higher resolution (grid mode 3 with 6km spacing, i
 
 \section{Example: Modeling the Greenland ice sheet}\label{sect:green} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
 
-[FIXME: I think EISMINT-Greenland is supposed to have bedrock thermal!  There is no mention in the text \cite{RitzEISMINT}, but there are bedrock thermal parameter values mentioned.  Easy to fix \dots]
-
-In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
+In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}\footnote{EISMINT-Greenland is probably supposed to have a bedrock thermal layer and possibly a bed deformation model.  There is no clear requirement in \cite{RitzEISMINT}, but bedrock thermal parameter values are given.  A bedrock thermal layer is easily added using \t{-Mbz 51}, for example, and a bed deformation model with \intextoption{bed\und def\und lc}.}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
 
 The data for performing this experiment are freely available at
 \medskip
@@ -1417,7 +1424,10 @@ Before seeking a good steady state for the entire thermo-mechanically-coupled ic
 
 We create this temperature field by running for 10000 years\footnote{In fact a much longer run might be called for because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
-\verb|$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady.nc|
+\begin{verbatim}
+$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 10000 \
+          -o green20km_Tsteady.nc
+\end{verbatim}
 
 This last run takes on the order of one processor hour.  Parallel processing is effective here, up to perhaps peak real time speed with 40 processors for this coarse 83 by 141 grid.  (Finer grid computations are easier to parallelize in the sense that greater a maximum speedup over one processor is attainable.)
 
@@ -1431,7 +1441,6 @@ $ mpiexec -n 8 pgrn -ssl2 -i green20km_Tsteady.nc -y 10000 -ys 0 \
           -o green_SSL2_10k.nc
 \end{verbatim}
 \noindent We can continue for another ten thousand years by
-
 \begin{verbatim}
 $ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
           -o green_SSL2_20k.nc
@@ -1544,7 +1553,6 @@ Here are two things to notice:
   not show random daily variations.  Even though it has the maximum of about $266$
   Kelvin, the parameterized instantaneous snow temperature can be above freezing.
   A positive value for positive degree-days is expected \cite{CalovGreve05}.
-
 \end{enumerate}
 
 \begin{figure}[ht]
@@ -1751,7 +1759,38 @@ As PISM is a PETSc program \cite{petsc-user-ref}, all PETSc options are availabl
 
 The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
-\subsect{List of PISM-specific options}
+
+\subsect{List of PISM options}
+
+
+\subsectstar{Options controlling model run length/start/end}
+
+\optdef{y}{1000} Number of model years to run.
+
+\opt{ye} Model year at which to end the run.  The default value is the start year  (\verb|-ys| or initialized model time from file) plus the default or given (\verb|-y|) run length.  If both \verb|-ys| and \verb|-ye| are used then the run length is set to the difference.  Using all three of \verb|-ys|, \verb|-y| and \verb|-ys| is not allowed.
+
+\opt{ys} Model year at which to start the run.  Also resets the model time, ignoring any time in the input file.
+
+
+\subsectstar{Options controlling the (spatial) computational grid and box}
+
+\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-boot_from| or with executables like \verb|pisms| and \verb|pismv| that initialize the grid from formulas.  (It will not work with \verb|-i|.)  See subsection \ref{subsect:grid}.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the \emph{PISM Reference Manual}.
+
+\opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
+
+\opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
+
+\opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sect:usage}.
+
+\optdef{Mbz}{1}  Number of grid points in the bedrock for the bedrock thermal model.  The highest grid point corresponds to the base of the ice $z=0$, and so \t{Mbz}$>1$ is required to actually have bedrock thermal model.  Note this option is unrelated to the bed deformation model (glacial isostasy model); see option \verb|-bed_def| for that.
+
+\optdef{Mx}{61}  Number of grid points in x horizontal direction.
+
+\optdef{My}{61}  Number of grid points in y horizontal direction.
+
+\optdef{Mz}{31}  Number of grid points in z (vertical) direction.
+
+\opt{quadZ}  Specify quadratically-spaced grid in the vertical.  The spacing near the base is about four times finer than it would be with equal spacing for the same value of \verb|Mz|, while the spacing near the top is correspondingly coarser.  Use only in combination with the option \verb|-boot_from| or with executables like \verb|pisms| and \verb|pismv| that initialize the grid from formulas.  (It will not work with \verb|-i|.)  See subsection \ref{subsect:grid}.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the \emph{PISM Reference Manual}.
 
 \subsectstar{Options turning on and off major physical models}
 
@@ -1786,15 +1825,6 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 \opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|. See also \verb|-dontreadSSAvels|.
 
 \opt{super}  Combine the velocity fields from the SIA and SSA models as in \cite{BBssasliding}.  Only effective if used with \verb|-ssa|.
-
-
-\subsectstar{Options controlling model run length/start/end}
-
-\optdef{y}{1000} Number of model years to run.
-
-\opt{ye} Model year at which to end the run.  The default value is (\verb|-ys|) start year plus the default or given (\verb|-y|) run length.  If both \verb|-ys| and \verb|-ye| are used then the run length is set to the difference, and any time read from the input file is ignored.  (Using all three of \verb|-ys|, \verb|-y| and \verb|-ys| is not allowed.)
-
-\optdef{ys}{0} Model year at which to start the run.  If both \verb|-y| and \verb|-ys| are used then the start year is set to the \verb|-ys| value, ignoring any time in the input file.
 
 
 \subsectstar{Options controlling input and output behavior of PISM}
@@ -2021,27 +2051,6 @@ Note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
 \optdef{plastic\und phi}{30.0}  Set the till friction angle.  The value is an angle $\phi$, given in degrees, and the coefficient $\mu$ in formula (2.4) in \cite{SchoofStream} is computed from $\theta$ by this formula:
 	$$\mu = \tan\left(\frac{\pi}{180} \theta\right).$$
 Only effective if used with \verb|-plastic| and \verb|-ssa|.
-
-
-\subsectstar{Options controlling the computational grid and box}
-
-\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-boot_from| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the \emph{PISM Reference Manual}.
-
-\opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
-
-\opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
-
-\opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sect:usage}.
-
-\optdef{Mbz}{1}  Number of grid points in the bedrock for the bedrock thermal model.  The highest grid point corresponds to the base of the ice $z=0$, and so \t{Mbz}$>1$ is required to actually have bedrock thermal model.  Note this option is unrelated to the bed deformation model (glacial isostasy model); see option \verb|-bed_def| for that.
-
-\optdef{Mx}{61}  Number of grid points in x horizontal direction.
-
-\optdef{My}{61}  Number of grid points in y horizontal direction.
-
-\optdef{Mz}{31}  Number of grid points in z (vertical) direction.
-
-\opt{quadZ}  Specify quadratically-spaced grid in the vertical.  Use only in combination with the option \verb|-boot_from| or with executables \verb|pisms| and \verb|pismv|.  That is, use only when creating a vertical grid from scratch.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the \emph{PISM Reference Manual}.
 
 
 \subsectstar{Options controlling numerical methods}

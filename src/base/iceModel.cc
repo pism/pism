@@ -749,6 +749,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Grid dimensions and its vertical extent should not be deduced from a
   // bootstrapping file, so we check if these options are set and stop if they
   // are not.
+  // Note that here interpreting "-Mx 0" as "-Mx was not set" is OK.
   ierr = PetscOptionsHasName(PETSC_NULL, "-Mx", &Mx_set); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-My", &My_set); CHKERRQ(ierr);
   ierr = PetscOptionsHasName(PETSC_NULL, "-Mz", &Mz_set); CHKERRQ(ierr);

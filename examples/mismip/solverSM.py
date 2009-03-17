@@ -21,10 +21,10 @@ SLIDING = 'b'
 STEP = 1
 figfilename = ""
 ncfilename = ""
-My = 601
+Mx = 601
 try:
   opts, args = getopt(sys.argv[1:], "e:l:s:o:n:m:", \
-                      ['exper=','sliding=','step=','out=','netcdf=','My='])
+                      ['exper=','sliding=','step=','out=','netcdf=','Mx='])
   for opt, arg in opts:
     if opt in ("-e", "--exper"):
       EXPER = float(arg)
@@ -36,8 +36,8 @@ try:
       figfilename = arg
     if opt in ("-n", "--netcdf"):
       ncfilename = arg
-    if opt in ("-m", "--My"):
-      My = int(arg)
+    if opt in ("-m", "--Mx"):
+      Mx = int(arg)
 except GetoptError:
   print "bad command line arguments ... exiting ..."
   sys.exit(-1)
@@ -49,7 +49,7 @@ USE_SM_ERRORS = False
 LL = 1800.0e3
 
 #SM Specify your computational grid
-user_grid = linspace(0.,LL,(My+1)/2);
+user_grid = linspace(0.,LL,(Mx+1)/2);
 
 #SM Parameters as defined in Schoof 2007, see also the MISMIP specifications
 # for ALL MISMIP
@@ -271,9 +271,9 @@ if len(ncfilename) == 0:
 
 from netCDF3 import Dataset as NC
 
-Mx = 3
-dy = (2. * LL) / (float(My-1))
-Lx = (dy * float(Mx)) / 2.  # truely periodic in x direction
+My = 3
+dy = (2. * LL) / (float(Mx-1))
+Lx = (dy * float(My)) / 2.  # truely periodic in x direction
 
 ncfile = NC(ncfilename, 'w')
 
@@ -284,21 +284,13 @@ setattr(ncfile, 'history', historystr)
 setattr(ncfile, 'source', "PISM: examples/mismip/solverMS.py")
 
 # define the dimensions & variables
-tdim = ncfile.createDimension('t', None)
-xdim = ncfile.createDimension('x', My)
-ydim = ncfile.createDimension('y', Mx)
-zdim = ncfile.createDimension('z', 1)  # dummy
-zbdim = ncfile.createDimension('zb', 1) # dummy
-tvar = ncfile.createVariable('t', 'f8', dimensions=('t',))
+xdim = ncfile.createDimension('x', Mx)
+ydim = ncfile.createDimension('y', My)
 xvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
 yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
-zvar = ncfile.createVariable('z', 'f8', dimensions=('z',))
-zbvar = ncfile.createVariable('zb', 'f8', dimensions=('zb',))
-Hvar = ncfile.createVariable('thk', 'f4', dimensions=('t', 'x', 'y'))
+Hvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
 
 # attributes of the variables
-setattr(tvar, 'units', 'seconds since 2007-01-01 00:00:00')
-
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
 setattr(xvar, 'standard_name', 'projection_x_coordinate')
@@ -309,34 +301,20 @@ setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
 setattr(yvar, 'standard_name', 'projection_y_coordinate')
 setattr(yvar, 'units', 'm')
 
-setattr(zvar, 'axis', 'Z')
-setattr(zvar, 'long_name', 'z-coordinate in Cartesian system')
-setattr(zvar, 'standard_name', 'projection_z_coordinate')
-setattr(zvar, 'positive', 'up')
-setattr(zvar, 'units', 'm')
-
-setattr(zbvar, 'long_name', 'z-coordinate in bedrock')
-setattr(zbvar, 'standard_name', 'projection_z_coordinate_in_bedrock')
-setattr(zbvar, 'positive', 'up')
-setattr(zbvar, 'units', 'm')
-
 setattr(Hvar, 'long_name', 'land ice thickness')
 setattr(Hvar, 'standard_name', 'land_ice_thickness')
 setattr(Hvar, 'units', 'm')
 
 # write the dimension var data to the NetCDF file
-tvar[0]=0 
-for i in range(My):
-  xvar[i]=-1800.0e3 + float(i) * dy
 for i in range(Mx):
+  xvar[i]=-1800.0e3 + float(i) * dy
+for i in range(My):
   yvar[i]=100.0* (-Lx + (float(i)+0.5) * dy)
   #xvar[i]=-Lx + float(i) * dy
-zvar[0]=0 
-zbvar[0]=0 
 
 # write the thickness data
 thkrow = append(user_thickness[:0:-1],user_thickness)
-thk = array([thkrow,thkrow,thkrow])  # uses Mx=3
+thk = array([thkrow,thkrow,thkrow])  # uses My=3
 Hvar[:] = thk
 
 ncfile.close()

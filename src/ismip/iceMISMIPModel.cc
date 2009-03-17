@@ -340,9 +340,10 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
   // use MISMIP runtimeyears UNLESS USER SPECIFIES A RUN LENGTH
   // use -y option, if given, to overwrite runtimeyears
   PetscTruth ySet, ysSet, yeSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-y", &ySet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ys", &ysSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ye", &yeSet); CHKERRQ(ierr);
+  PetscReal tmp;
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-y",  &tmp, &ySet);  CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &tmp, &ysSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &tmp, &yeSet); CHKERRQ(ierr);
   if ( (ySet == PETSC_TRUE) || ( (ysSet == PETSC_TRUE) && (yeSet == PETSC_TRUE) ) ) {
     ierr = verbPrintf(2,grid.com,
       "IceMISMIPModel: ignoring MISMIP-specified run length and using value\n"

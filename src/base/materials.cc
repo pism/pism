@@ -232,6 +232,10 @@ PetscErrorCode ThermoGlenIce::setFromOptions() {
     schoofVel = svel / secpera;
     schoofLen = slen * 1e3;
     schoofReg = PetscSqr(schoofVel/schoofLen);
+    ierr = PetscOptionsReal("-ice_pb_A_cold","Paterson-Budd cold softness parameter (Pa^-3 s^-1)","",A_cold,&A_cold,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_pb_A_warm","Paterson-Budd warm softness parameter (Pa^-3 s^-1)","",A_warm,&A_warm,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_pb_Q_cold","Paterson-Budd activation energy (J/mol)","",Q_cold,&Q_cold,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_pb_Q_warm","Paterson-Budd activation energy (J/mol)","",Q_warm,&Q_warm,NULL);CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   return 0;
@@ -914,6 +918,7 @@ PetscErrorCode IceFactory::setFromOptions()
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
   }
+  // -gk 0 does not make sense, so using PetscOptionsHasName is OK.
   ierr = PetscOptionsHasName(prefix, "-gk", &flg); CHKERRQ(ierr);
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);

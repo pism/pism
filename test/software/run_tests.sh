@@ -1,23 +1,33 @@
 #!/bin/bash
 
-TOOL=$1
+SUBDIR=$1
 SILENT=1
 # Write the summary to this file:
-SUMMARY=`pwd`/"$TOOL.txt"
+SUMMARY=$PWD/"$SUBDIR.txt"
 # Remove the old summary file, it is exists.
 rm -f $SUMMARY
 
 # Load some functions
 source functions.sh
 
+PREFIX=`echo $PWD | sed -e "s/\/test\/software//"`
+
+# Modify the PATH variable so that we always use the right version of PISM:
+PATH=$PREFIX/bin:$PREFIX/util:$PATH
+
+# Get PISM version:
+# Note that 'cat' is here so that the whole output of pismr is read and no
+# "pipe is broken" error is generated:
+VERSION=`pismr | cat | head -1 | sed -E "s/PISMR //; s/ \(.+//"`
+
 # Print the summary title.
-print "Testing $TOOL."
+print "Testing $SUBDIR $VERSION in $PREFIX."
 
 PASSCOUNT=0
 FAILCOUNT=0
 for each in *;
 do
-    if [ -d $each ] && [ $each == $TOOL ];
+    if [ -d $each ] && [ $each == $SUBDIR ];
     then
 	cd $each
 	for i in *.sh;

@@ -12,14 +12,18 @@ run_test ()
 {
     cleanup
 
+    set -e
+
     # Create the file to regrid and bootstrap from:
-    run pismv -test G -Lx 4000 -Ly 4000 -Lz 4000 -Mx 41 -My 41 -Mz 41 -y 0 -o foo.nc
+    run -n 1 pismv -test G -Lx 4000 -Ly 4000 -Lz 4000 -Mx 41 -My 41 -Mz 41 -y 0 -o foo.nc
 
     # Bootstrap from this file:
-    run pismr -boot_from foo.nc -Lx 2000 -Ly 2000 -Lz 4000 -Mx 41 -My 41 -Mz 41 -y 0 -o bar.nc
+    run -n 1 pismr -boot_from foo.nc -Lx 2000 -Ly 2000 -Lz 4000 -Mx 41 -My 41 -Mz 41 -y 0 -o bar.nc
 
     # Overwrite topg using -regrig_from and save the result to baz.nc:
-    run pismr -i bar.nc -regrid_from foo.nc -regrid_vars b -y 0 -o baz.nc
+    run -n 1 pismr -i bar.nc -regrid_from foo.nc -regrid_vars b -y 0 -o baz.nc
+
+    set +e
 
     # Compare:
     run nccmp.py -v topg bar.nc baz.nc

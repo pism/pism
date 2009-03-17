@@ -10,11 +10,15 @@ test_02 ()
 {
     cleanup
 
+    set -e
+
     # Create the files:
     for NN in 1 2 3 8 10;
     do 
-	run mpiexec -n $NN pismv -test G -Mx 61 -My 61 -Mz 61 -y 1 -verbose 1 -o foo$NN.nc
+	run -n $NN pismv -test G -Mx 61 -My 61 -Mz 61 -y 1 -verbose 1 -o foo$NN.nc
     done
+
+    set +e
 
     # Compare:
     for i in 1 2 3 8 10;

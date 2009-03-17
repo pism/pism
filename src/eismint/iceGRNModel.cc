@@ -132,6 +132,7 @@ PetscErrorCode IceGRNModel::init_couplers() {
        "WARNING: -pdd_summer_warming option ignored.\n"
        "  Using EISMINT-GREENLAND summer temperature formula\n"); CHKERRQ(ierr);
   }
+  // -pdd_std_dev 0 does not make sense, so using PetscOptionsHasName is OK
   ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); 
      CHKERRQ(ierr);
   if (pddStdDevSet == PETSC_FALSE) {

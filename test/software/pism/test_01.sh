@@ -10,15 +10,19 @@ test_01 ()
 {
     cleanup
 
+    set -e
+
     # generate an interesting file
-    run pismv -test G -y 10 -o verify.nc
+    run -n 1 pismv -test G -y 10 -o verify.nc
 
     # run for ten years, fixed time step
-    run pismr -i verify.nc -max_dt 1 -y 10 -o foo.nc
+    run -n 1 pismr -i verify.nc -max_dt 1 -y 10 -o foo.nc
 
     # chain two five year runs, fixed time step
-    run pismr -i verify.nc -max_dt 1 -y 5 -o joe.nc
-    run pismr -i joe.nc -max_dt 1 -y 5 -o bar.nc
+    run -n 1 pismr -i verify.nc -max_dt 1 -y 5 -o joe.nc
+    run -n 1 pismr -i joe.nc -max_dt 1 -y 5 -o bar.nc
+
+    set +e
 
     # Compare output files at year 10:
     run nccmp.py -t 1e-6 foo.nc bar.nc

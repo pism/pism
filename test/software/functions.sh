@@ -1,3 +1,9 @@
+# Use mpiexec if the MPIDO environment variable if empty:
+if [ -z $MPIDO ];
+then
+    MPIDO=mpiexec
+fi
+
 if [ -z $SUMMARY ];
 then
     SUMMARY=summary.txt
@@ -23,13 +29,34 @@ print () {
 
 # This function is used to be able to suppress the output from a command when
 # the test is run in the batch mode, but not when it is run manually.
+
+# Note that it uses the $MPIDO variable; use "run -n NN command" with NN =
+# number of processors if a command has to run under MPI and "run command" if
+# you need to run it without MPI ("command" can not be "-n" in the latter
+# case).
 run () {
+
+    # Figure out if we need to dump the output:
     if [ -z $SILENT ]; then
-	echo Running $@
-	"$@"
+	redirect=""
+
+	# Print a message explaining what will happen:
+	if [ $1 == "-n" ]; then
+	    echo Running $MPIDO $@
+	    $MPIDO $@
+	else
+	    echo Running $@
+	    $@
+	fi
     else
-	"$@" &> /dev/null
+	if [ $1 == "-n" ];
+	then
+	    $MPIDO $@ &> /dev/null
+	else
+	    $@ &> /dev/null
+	fi
     fi
+
 }
 
 # print a message and count a success
