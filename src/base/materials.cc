@@ -914,6 +914,7 @@ PetscErrorCode IceFactory::setFromOptions()
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
   }
+  // -gk 0 does not make sense, so using PetscOptionsHasName is OK.
   ierr = PetscOptionsHasName(prefix, "-gk", &flg); CHKERRQ(ierr);
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);

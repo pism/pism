@@ -320,7 +320,9 @@ PetscErrorCode IceModel::ignore_option(const char name[]) {
   PetscErrorCode ierr;
   PetscTruth option_is_set;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, name, &option_is_set); CHKERRQ(ierr);
+  char tmp[TEMPORARY_STRING_LENGTH]; // dummy string
+  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, TEMPORARY_STRING_LENGTH,
+			       &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = verbPrintf(1, grid.com,
@@ -335,7 +337,9 @@ PetscErrorCode IceModel::check_old_option_and_stop(const char old_name[], const 
   PetscErrorCode ierr;
   PetscTruth option_is_set;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, old_name, &option_is_set); CHKERRQ(ierr);
+  char tmp[TEMPORARY_STRING_LENGTH]; // dummy string
+  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, TEMPORARY_STRING_LENGTH,
+			       &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(grid.com,
@@ -351,7 +355,9 @@ PetscErrorCode IceModel::stop_if_set(const char name[]) {
   PetscErrorCode ierr;
   PetscTruth option_is_set;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, name, &option_is_set); CHKERRQ(ierr);
+  char tmp[TEMPORARY_STRING_LENGTH]; // dummy string
+  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, TEMPORARY_STRING_LENGTH,
+			       &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(grid.com,

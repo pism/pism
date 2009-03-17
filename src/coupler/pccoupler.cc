@@ -72,69 +72,25 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 
   if (grid == NULL) {  SETERRQ(1,"findPISMInputFile(): grid not initialized");  }
 
-  // just see what options set:  OLD OPTIONS
-  ierr = PetscOptionsHasName(PETSC_NULL, "-if", &ifSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bif", &bifSet); CHKERRQ(ierr);
-  // NEW OPTIONS
-  ierr = PetscOptionsHasName(PETSC_NULL, "-i", &i_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-boot_from", &boot_from_set); CHKERRQ(ierr);
-  // warnings to let users get used to the change:
-  if (ifSet) {
-    ierr = verbPrintf(2, grid->com,
-       "PISMClimateCoupler WARNING: '-if' command line option is deprecated.  Please use '-i' instead.\n");
-       CHKERRQ(ierr);
-  }
-  if (bifSet) {
-    ierr = verbPrintf(2, grid->com, 
-       "PISMClimateCoupler WARNING: '-bif' command line option is deprecated.  Please use '-boot_from' instead.\n");
-       CHKERRQ(ierr);
-  }
+  ierr = check_old_option_and_stop("-if", "-i"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-bif", "-boot_from"); CHKERRQ(ierr);
 
-  // actually read file names
+  // read file names:
   char i_file[PETSC_MAX_PATH_LEN], boot_from_file[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
+			       PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", boot_from_file, 
+			       PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
   if (i_set) {
     if (boot_from_set) {
       ierr = PetscPrintf(grid->com,
 	"PISMClimateCoupler ERROR: both '-i' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
     }
-    if (ifSet) {		// OLD OPTION
-      ierr = PetscPrintf(grid->com,
-	"PISMClimateCoupler WARNING: both '-i' and '-if' are used.  Ignoring '-if'...\n"); CHKERRQ(ierr);
-    }
-
-    ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
-				 PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
     strcpy(filename, i_file);
   }
   else if (boot_from_set) {
-    if (ifSet) {		// OLD OPTION
-      ierr = PetscPrintf(grid->com,
-	"PISMClimateCoupler ERROR: both '-if' and '-boot_from' are used.  Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }  
-    ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", boot_from_file, 
-				 PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
     strcpy(filename, boot_from_file);
-  }
-  else if (ifSet) {		// OLD OPTION
-    if (bifSet) {
-      ierr = PetscPrintf(grid->com,
-	"PISMClimateCoupler ERROR: both '-bif' and '-if' are used.  Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    ierr = PetscOptionsGetString(PETSC_NULL, "-if", i_file, 
-				 PETSC_MAX_PATH_LEN, &ifSet); CHKERRQ(ierr);
-    strcpy(filename, i_file);
-  }
-  else if (bifSet) {		// OLD OPTION
-    ierr = PetscOptionsGetString(PETSC_NULL, "-bif", boot_from_file, 
-				 PETSC_MAX_PATH_LEN, &bifSet); CHKERRQ(ierr);
-    strcpy(filename, boot_from_file);
-  } else {
-    PetscPrintf(grid->com, 
-       "PISMClimateCoupler ERROR: no -i and no -boot_from specified.  Exiting...\n");
-    PetscEnd();
   }
 
   // filename now contains name of PISM input file;  now check it is really there;
