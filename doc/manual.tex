@@ -1211,12 +1211,11 @@ But \verb|solverSM.py| has an option which allows the asymptotic-matching thickn
 
 The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
 
-\verb|$ ./solverSM.py  --My=601 -e 1 --sliding=a -s 1 -n SM.nc|
-
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \|
-
-\verb|  -regrid_vars H -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601|
-
+\begin{verbatim}
+$ ./solverSM.py  --Mx=601 -e 1 --sliding=a -s 1 -n SM.nc
+$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \
+          -regrid_vars H -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601
+\end{verbatim}
 \noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
 
 \begin{figure}[ht]
@@ -1230,9 +1229,7 @@ The effect when we do this at higher resolution (grid mode 3 with 6km spacing, i
 
 \section{Example: Modeling the Greenland ice sheet}\label{sect:green} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
 
-[FIXME: I think EISMINT-Greenland is supposed to have bedrock thermal!  There is no mention in the text \cite{RitzEISMINT}, but there are bedrock thermal parameter values mentioned.  Easy to fix \dots]
-
-In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
+In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison known as EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}\footnote{EISMINT-Greenland is probably supposed to have bedrock thermal!  There is no mention in the text \cite{RitzEISMINT}, but there are bedrock thermal parameter values mentioned.  Easy to fix \dots}.  Though based on old data, EISMINT-Greenland serves as an excellent tutorial example.
 
 The data for performing this experiment are freely available at
 \medskip
