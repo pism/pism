@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] = 
-  "Driver which allows testing PISMClimateCoupler without IceModel.\n";
+  "Driver for testing PISMClimateCoupler without IceModel.\n";
 
 #include <ctime>
 #include <petscda.h>
@@ -27,51 +27,19 @@ static char help[] =
 #include "coupler/pccoupler.hh"
 
 
-/* example usage: 
-
-set up a ice sheet state file:
-
-$ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
-
-next line extracts 'acab' and 'artm' from state.nc, because they are stored there 
-by EISMINT II choices, and initializes PISMConstAtmosCoupler; "computes", though 
-no actual computation, surface mass balance and surface temp at ys:dt:ye and saves 
-these in camovie.nc:
-
-$ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
-
-FIXME: add test of PISMMonthlyTempsAtmosCoupler
-
-Similar for PISMPDDCoupler, but expects 'accum' and 'annavartm', so we change
-names before running:
-
-$ ncrename -v acab,accum state.nc restate.nc
-$ ncrename -O -v artm,annavartm restate.nc
-$ pcctest -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
-
-For PISMConstOceanCoupler; boring:
-
-$ pcctest -i state.nc -co -ys 0.0 -ye 2.5 -dt 0.1 -o comovie.nc
-
-*/
-
 static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
   NCTool nc(&grid);
-
   ierr = nc.get_grid(filename); CHKERRQ(ierr);
-
-  // set DA; a goal
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  
+  ierr = grid.createDA(); CHKERRQ(ierr);  
   return 0;
 }
 
 
 static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
-                                     LocalInterpCtx* &lic, 
-                                     IceInfoNeededByAtmosphereCoupler &info) {
+					    LocalInterpCtx* &lic, 
+					    IceInfoNeededByAtmosphereCoupler &info) {
   PetscErrorCode ierr;
 
   info.lat = new IceModelVec2;
@@ -97,7 +65,6 @@ static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
   ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -130,7 +97,6 @@ static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *g
   ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.thk->regrid(filename, *lic, true); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -169,7 +135,8 @@ static PetscErrorCode writePCCStateAtTimes(
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
                  const PetscReal ys, const PetscReal ye, const PetscReal dt_years,
-                 void* iceInfoNeeded) {
+                 void* iceInfoNeeded,
+		 PolarStereoParams &psparams) {
 
   PetscErrorCode ierr;
   NCTool nc(grid);
@@ -212,10 +179,11 @@ static PetscErrorCode writePCCStateAtTimes(
 
   ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
   ierr = nc.write_history(wwstr); CHKERRQ(ierr);
+  ierr = nc.write_global_attrs(false, "CF-1.4"); CHKERRQ(ierr);
+  ierr = nc.write_polar_stereographic(psparams); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  // get NN = number of times at which PCC state is written
-  PetscInt NN;
+  PetscInt NN;  // get number of times at which PCC state is written
   if (dt_years < 0.0001) {
     ierr = PetscPrintf(com,
       "PCCTEST WARNING: dt_years less than 10^-4 year so just writing state for year %f\n",
@@ -265,6 +233,7 @@ int main(int argc, char *argv[]) {
   {
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
     IceGrid grid(com, rank, size);
+    PolarStereoParams psparams = {0, 90, -71};
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = PetscPrintf(com, 
@@ -315,6 +284,12 @@ int main(int argc, char *argv[]) {
     LocalInterpCtx* lic;
     ierr = PCC->findPISMInputFile(inname, lic); CHKERRQ(ierr); // allocates lic
 
+    // Get the polar stereographic projection parameters.
+    NCTool nc(&grid);
+    ierr = nc.open_for_reading(inname); CHKERRQ(ierr);
+    ierr = nc.read_polar_stereographic(psparams); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
     IceInfoNeededByAtmosphereCoupler info_atmos;
     IceInfoNeededByOceanCoupler      info_ocean;
     void*                            info;
@@ -351,7 +326,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
                        outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid, argc,argv, ys,ye,dt_years,
-                                info); CHKERRQ(ierr);
+                                info, psparams); CHKERRQ(ierr);
 
     if ((caSet == PETSC_TRUE) || (pddSet == PETSC_TRUE)) { 
       ierr = doneWithAtmosInfo(info_atmos); CHKERRQ(ierr);
