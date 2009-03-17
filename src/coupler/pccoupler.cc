@@ -67,7 +67,6 @@ are in returned \c LocalInterpCtx.
  */
 PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
-  PetscTruth ifSet, bifSet;
   PetscTruth i_set, boot_from_set;
 
   if (grid == NULL) {  SETERRQ(1,"findPISMInputFile(): grid not initialized");  }
