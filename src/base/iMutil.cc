@@ -338,7 +338,7 @@ PetscErrorCode IceModel::check_old_option_and_stop(const char old_name[], const 
   PetscTruth option_is_set;
 
   char tmp[TEMPORARY_STRING_LENGTH]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, TEMPORARY_STRING_LENGTH,
+  ierr = PetscOptionsGetString(PETSC_NULL, old_name, tmp, TEMPORARY_STRING_LENGTH,
 			       &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {

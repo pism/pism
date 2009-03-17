@@ -72,9 +72,6 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 
   if (grid == NULL) {  SETERRQ(1,"findPISMInputFile(): grid not initialized");  }
 
-  ierr = check_old_option_and_stop("-if", "-i"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-bif", "-boot_from"); CHKERRQ(ierr);
-
   // read file names:
   char i_file[PETSC_MAX_PATH_LEN], boot_from_file[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
