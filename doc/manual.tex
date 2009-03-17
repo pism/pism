@@ -482,9 +482,11 @@ The extent of the computational box, along with its bedrock extension downward, 
 \end{figure}
 
 
-\subsection{Grid} \label{subsect:grid} The PISM grid\index{PISM!grid} covering the computational box is equally spaced in each of the three dimensions.
+\subsection{Grid}
+\label{subsect:grid}
+The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions. Vertical spacing is equal by default but can be changed to quadratic or Chebyshev using \intextoption{quadZ} and \intextoption{chebZ} options, respectively.
 
-FIXME: non-equal spacing in vertical allowed with \verb|-quadZ|; need to document
+If \intextoption{chebZ} option is used, the vertical grid in the ice is Chebyshev spaced; it is very fine near the base of ice and coarser near the top of the computational box. If \intextoption{quadZ} is used, the spacing is a quadratic function; the intent is that the spacing is smaller near the base than near the top, but that the effect is less extreme than in the Chebyshev case. Please see the documentation of \verb|IceGrid::compute_vertical_levels()| in PISM's class browser for more info and formulas defining the spacing.
 
 Because of the bedrock extension, the grid of points is described by four numbers, namely the number of grid points in the $x$ direction, the number in the $y$ direction, the number in the $z$ direction within the ice, and the number in the $z$ direction within the bedrock.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively, as described in the Runtime options section.  The defaults for these four values are 61, 61, 31, and 1, respectively.  Note that \verb|Mx|, \verb|My|, \verb|Mz|, and \verb|Mbz| all indicate the number of grid \emph{points}.  Therefore the number of grid \emph{spaces} are, respectively, 60, 60, 30, and 0 (zero) in the default case.  Note that the lowest grid point in a column of ice, that is the one at $z=0$, coincides with the highest grid point in the bedrock.  Also \verb|Mbz| must always be at least one.
 
@@ -1417,7 +1419,10 @@ Before seeking a good steady state for the entire thermo-mechanically-coupled ic
 
 We create this temperature field by running for 10000 years\footnote{In fact a much longer run might be called for because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.} with non-evolving surface, using the option \verb|-no_mass| to turn off the map-plane mass continuity scheme:
 
-\verb|$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 10000 -o green20km_Tsteady.nc|
+\begin{verbatim}
+$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 10000 \
+          -o green20km_Tsteady.nc
+\end{verbatim}
 
 This last run takes on the order of one processor hour.  Parallel processing is effective here, up to perhaps peak real time speed with 40 processors for this coarse 83 by 141 grid.  (Finer grid computations are easier to parallelize in the sense that greater a maximum speedup over one processor is attainable.)
 
@@ -1431,7 +1436,6 @@ $ mpiexec -n 8 pgrn -ssl2 -i green20km_Tsteady.nc -y 10000 -ys 0 \
           -o green_SSL2_10k.nc
 \end{verbatim}
 \noindent We can continue for another ten thousand years by
-
 \begin{verbatim}
 $ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
           -o green_SSL2_20k.nc
@@ -1544,7 +1548,6 @@ Here are two things to notice:
   not show random daily variations.  Even though it has the maximum of about $266$
   Kelvin, the parameterized instantaneous snow temperature can be above freezing.
   A positive value for positive degree-days is expected \cite{CalovGreve05}.
-
 \end{enumerate}
 
 \begin{figure}[ht]
