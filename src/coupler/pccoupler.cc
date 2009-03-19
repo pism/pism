@@ -109,14 +109,12 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 PetscErrorCode PISMClimateCoupler::updateClimateFields(
              const PetscScalar t_years, const PetscScalar dt_years, void *iceInfoNeeded) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
-  return 0;
 }
 
 
 //! A virtual method which writes fields associated to the derived class.
 PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filename) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
-  return 0;
 }
 
 

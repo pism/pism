@@ -73,20 +73,8 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
       grid.Lz = 4e3;
       break;
     case 'F':
-      // Jed broke this for his own reasons which might be good but which he
-      // didn't have time to bother talking about in advance. So we will have
-      // to find out how broken it is by testing. In this case I (ELB) think
-      // there was a pretty small benefit from rescaling based on looking at
-      // the flow law. The real solution is to implement task #4218 (expand
-      // vertically automatically).
-
-      // I (Jed 2009-02-20) just stripped out a small bit of logic that would
-      // scale differently based on the flow law number. Such a decision is
-      // fundamentally limiting and doesn't allow for customizable ice types.
-      // If needed, it should be replaced by a heuristic based on the action of
-      // the flow law (i.e. if the flow is less than a threshold at a reference
-      // stress and pressure, then rescale differently).
-
+      // in r426 and earlier (possibly a bit after that) there was dependence of Lz on the flow law
+      // the intended solution is to implement task #4218 (expand vertically automatically).
       grid.Lx = grid.Ly = L;
       grid.Lz = 6e3;
       break;
