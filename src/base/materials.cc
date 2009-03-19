@@ -236,6 +236,7 @@ PetscErrorCode ThermoGlenIce::setFromOptions() {
     ierr = PetscOptionsReal("-ice_pb_A_warm","Paterson-Budd warm softness parameter (Pa^-3 s^-1)","",A_warm,&A_warm,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-ice_pb_Q_cold","Paterson-Budd activation energy (J/mol)","",Q_cold,&Q_cold,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-ice_pb_Q_warm","Paterson-Budd activation energy (J/mol)","",Q_warm,&Q_warm,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_pb_crit_temp","Paterson-Budd critical temperature (K)","",crit_temp,&crit_temp,NULL);CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   return 0;
