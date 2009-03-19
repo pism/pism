@@ -35,6 +35,26 @@ IceEISModel::IceEISModel(IceGrid &g)
 PetscErrorCode IceEISModel::set_grid_defaults() {
   PetscErrorCode ierr;
 
+  /* This option determines the single character name of EISMINT II experiments:
+  "-eisII F", for example.   If not given then do exper A.  */
+  char                eisIIexpername[20];
+  int                 temp;
+  PetscTruth          EISIIchosen;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
+            CHKERRQ(ierr);
+  if (EISIIchosen == PETSC_TRUE) {
+    temp = eisIIexpername[0];
+    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
+    if ((temp >= 'A') && (temp <= 'L')) {
+      expername = temp;
+    } else {
+      ierr = PetscPrintf(grid.com,
+			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+  }
+
   // note height of grid must be great enough to handle max thickness
   const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
 
@@ -156,25 +176,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
 
-  /* This option determines the single character name of EISMINT II experiments:
-  "-eisII F", for example.   If not given then do exper A.  */
-  char                eisIIexpername[20];
-  int                 temp;
-  PetscTruth          EISIIchosen;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
-            CHKERRQ(ierr);
-  if (EISIIchosen == PETSC_TRUE) {
-    temp = eisIIexpername[0];
-    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    if ((temp >= 'A') && (temp <= 'L')) {
-      expername = temp;
-    } else {
-      ierr = PetscPrintf(grid.com,
-			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
-      CHKERRQ(ierr);
-      PetscEnd();
-    }
-  }
 
   ierr = verbPrintf(2,grid.com, 
               "setting parameters for EISMINT II experiment %c ... \n", 
