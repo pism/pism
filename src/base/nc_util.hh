@@ -77,6 +77,10 @@ public:
   PetscErrorCode read_polar_stereographic(PolarStereoParams &ps, bool report = false);
   PetscErrorCode write_polar_stereographic(PolarStereoParams &ps);
 
+  PetscErrorCode create_timeseries(const char name[], const char long_name[],
+				   const char units[], nc_type nctype, int *varid);
+  PetscErrorCode append_timeseries(const char name[], double value);
+
   PetscErrorCode get_local_var(int varid, DA da, Vec v, GridType dims, int t);
   PetscErrorCode get_global_var(int varid, Vec g, GridType dims, int t);
 

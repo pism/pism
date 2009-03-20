@@ -213,8 +213,21 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  // FIXME:  it would be good to also write the -dTforcing value to a t-dependent variable:
-  //   surftempoffset(t)
+
+  NCTool nc(grid);
+  bool variable_exists;
+
+  ierr = nc.open_for_writing(filename, false);
+  ierr = nc.find_variable("surftempoffset", NULL, NULL, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = nc.create_timeseries("surftempoffset", "surface temperature offset",
+				"degree_Celsius", NC_FLOAT, NULL);
+    CHKERRQ(ierr);
+  }
+
+  ierr = nc.append_timeseries("surftempoffset", TsOffset); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -535,8 +548,19 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
   //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
   ierr = vshelfbasetemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vshelfbasemassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  // FIXME:  it would be good to also write the forcing value to a t-dependent variable:
-  //   sealevel(t)
+
+  NCTool nc(grid);
+  bool variable_exists;
+  ierr = nc.open_for_writing(filename, false);
+  ierr = nc.find_variable("sealevel", NULL, NULL, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = nc.create_timeseries("sealevel", "sea level", "meters", NC_FLOAT, NULL);
+    CHKERRQ(ierr);
+  }
+
+  ierr = nc.append_timeseries("sealevel", seaLevel); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
