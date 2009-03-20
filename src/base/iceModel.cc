@@ -308,57 +308,6 @@ PetscErrorCode IceModel::createVecs() {
                             "m s-1", NULL); CHKERRQ(ierr);
   ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  // a global Vec is needed for things like viewers and comm to proc zero
-  ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
-
-  // setup (classical) SSA tools; FIXME: should be in separate method?
-  const PetscInt M = 2 * grid.Mx * grid.My;
-  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
-                         13, PETSC_NULL, 13, PETSC_NULL,
-                         &SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
-  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
-  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
-                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
-  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
-
-  // so that we can let atmosPCC, oceanPCC know about these fields in IceModel state
-  // FIXME: should be in separate method?
-  info_atmoscoupler.lat = &vLatitude;
-  info_atmoscoupler.lon = &vLongitude;  
-  info_atmoscoupler.mask = &vMask;
-  info_atmoscoupler.surfelev = &vh;
-  info_oceancoupler.lat = &vLatitude;
-  info_oceancoupler.lon = &vLongitude;  
-  info_oceancoupler.mask = &vMask;
-  info_oceancoupler.thk = &vH;
-
-  // various internal quantities
-  // 2d work vectors: FIXME initialization can be moved to misc_setup()?
-  for (int j = 0; j < nWork2d; j++) {
-    ierr = vWork2d[j].create(grid, "a_work_vector", true); CHKERRQ(ierr);
-  }
-
-  // 3d dedicated work vectors: FIXME initialization can be moved to misc_setup()?
-  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
-  ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
-                         "K", NULL); CHKERRQ(ierr);
-  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
-  ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
-                           "s", NULL); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].set_attrs("internal",
-             "rate of strain heating; on staggered grid offset in X direction",
-	     "J s-1 m-3", NULL); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].set_attrs("internal",
-             "rate of strain heating; on staggered grid offset in Y direction",
-	     "J s-1 m-3", NULL); CHKERRQ(ierr);
-  ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
-  ierr = Istag3[0].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
-  ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
-  ierr = Istag3[1].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
 
   createVecs_done = PETSC_TRUE;
   return 0;
@@ -856,7 +805,10 @@ The IceModel initialization sequence is this:
 
    8) Report grid parameters.
 
-   9) Miscellaneous stuff: update surface elevation and mask, set up the bed
+   9) Allocate internal objects: SSA tools and work vectors. Some tasks in the
+   next (tenth) item (bed deformation setup, for example) might need this.
+
+   10) Miscellaneous stuff: update surface elevation and mask, set up the bed
    deformation model, initialize the basal till model, initialize snapshots.
 
 Please see the documenting comments of the functions called below to find 
@@ -891,7 +843,10 @@ PetscErrorCode IceModel::init() {
   // 8) Report grid parameters:
   ierr = report_grid_parameters(); CHKERRQ(ierr);
 
-  // 9) Miscellaneous stuff: update surface elevation and mask, set up the bed
+  // 9) Allocate SSA tools and work vectors:
+  ierr = allocate_internal_objects(); CHKERRQ(ierr);
+
+  // 10) Miscellaneous stuff: update surface elevation and mask, set up the bed
   // deformation model, initialize the basal till model, initialize snapshots.
   // This has to happen *after* regridding.
   ierr = misc_setup();
@@ -1098,6 +1053,17 @@ PetscErrorCode IceModel::misc_setup() {
 PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
+  // so that we can let atmosPCC, oceanPCC know about these fields in IceModel state
+  info_atmoscoupler.lat = &vLatitude;
+  info_atmoscoupler.lon = &vLongitude;  
+  info_atmoscoupler.mask = &vMask;
+  info_atmoscoupler.surfelev = &vh;
+
+  info_oceancoupler.lat = &vLatitude;
+  info_oceancoupler.lon = &vLongitude;  
+  info_oceancoupler.mask = &vMask;
+  info_oceancoupler.thk = &vH;
+
   ierr = verbPrintf(3, grid.com,
 		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);
 
@@ -1110,6 +1076,55 @@ PetscErrorCode IceModel::init_couplers() {
     ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
   } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
 
+
+  return 0;
+}
+
+//! Allocates SSA tools and work vectors.
+PetscErrorCode IceModel::allocate_internal_objects() {
+  PetscErrorCode ierr;
+
+  // a global Vec is needed for things like viewers and comm to proc zero
+  ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
+
+  // setup (classical) SSA tools
+  const PetscInt M = 2 * grid.Mx * grid.My;
+  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
+                         13, PETSC_NULL, 13, PETSC_NULL,
+                         &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
+  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
+  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
+                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
+
+
+  // various internal quantities
+  // 2d work vectors
+  for (int j = 0; j < nWork2d; j++) {
+    ierr = vWork2d[j].create(grid, "a_work_vector", true); CHKERRQ(ierr);
+  }
+
+  // 3d dedicated work vectors
+  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
+  ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
+                         "K", NULL); CHKERRQ(ierr);
+  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
+  ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
+                           "s", NULL); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].set_attrs("internal",
+             "rate of strain heating; on staggered grid offset in X direction",
+	     "J s-1 m-3", NULL); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].set_attrs("internal",
+             "rate of strain heating; on staggered grid offset in Y direction",
+	     "J s-1 m-3", NULL); CHKERRQ(ierr);
+  ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
+  ierr = Istag3[0].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
+  ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
+  ierr = Istag3[1].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
 
   return 0;
 }
