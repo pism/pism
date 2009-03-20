@@ -1,7 +1,7 @@
 # Use mpiexec if the MPIDO environment variable if empty:
 if [ -z $MPIDO ];
 then
-    MPIDO=mpiexec
+    export MPIDO=mpiexec
 fi
 
 if [ -z $SUMMARY ];
@@ -21,8 +21,8 @@ fi
 
 # Print both to the standard out and in the summary file
 print () {
-    echo "$1"
-    echo "$1" >> $SUMMARY
+    echo "$@"
+    echo "$@" >> $SUMMARY
 }
 
 # run a command and throw away the output if $SILENT is set
@@ -38,7 +38,6 @@ run () {
 
     # Figure out if we need to dump the output:
     if [ -z $SILENT ]; then
-	redirect=""
 
 	# Print a message explaining what will happen:
 	if [ $1 == "-n" ]; then
@@ -49,11 +48,22 @@ run () {
 	    $@
 	fi
     else
-	if [ $1 == "-n" ];
-	then
-	    $MPIDO $@ &> /dev/null
+	if [ -z $VERBOSE ]; then
+	    if [ $1 == "-n" ];
+	    then
+		$MPIDO $@ &> /dev/null
+	    else
+		$@ &> /dev/null
+	    fi
 	else
-	    $@ &> /dev/null
+	    if [ $1 == "-n" ];
+	    then
+		print "Running $MPIDO $@ &> /dev/null"
+		$MPIDO $@ &> /dev/null
+	    else
+		print "Running $@ &> /dev/null"
+		$@ &> /dev/null
+	    fi
 	fi
     fi
 

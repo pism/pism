@@ -1489,7 +1489,9 @@ We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISM
 In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this run for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
 
 
-\subsubsection*{Climate forcing from GRIP and SPECMAP}  The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka. Another way of getting intermediate files is by using the \intextoption{save\und at} option. See Appendix \ref{sect:options} for more.}
+\subsubsection*{Climate forcing from GRIP and SPECMAP} 
+\label{sec:climate-forcing}
+The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka. Another way of getting intermediate files is by using the \intextoption{save\und at} option. See Appendix \ref{sect:options} for more.}
 
 \begin{verbatim}
 $ mpiexec -n 8 pgrn -ccl3 -i green_SSL2_110k.nc -dTforcing grip_dT.nc \
@@ -1513,14 +1515,13 @@ A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-G
 
 \verb|mpiexec -n 8 pgrn -gwl3 -i green_CCL3_y-0.nc -y 500 -o green_GWL3_y500.nc|
 
-\subsubsection{Visualizing the climate inputs in the Greenland case}
+\subsubsection*{Visualizing the climate inputs in the Greenland case}
 \label{sec:pdd-series-with-pcctest}
 
 Assuming that \verb|green20km_y1.nc| was produced by the run above (see section
 \ref{sect:green-bootstrapping}), one can run the following to check if the PDD
 model in PISM (see section \ref{subsect:pdd}) is ``reasonable'':
 \begin{verbatim}
-$ ncrename -v acab,snowaccum green20km_y1.nc foo.nc
 $ pcctest -i foo.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
 \end{verbatim}
 This produces the file \verb|pddmovie.nc| with four variables: \verb|acab|
@@ -1563,6 +1564,22 @@ Here are two things to notice:
   \label{fig:pddseries}
 \end{figure}
 
+\bigskip
+We can also test the surface temperature forcing code with the following command.
+\begin{verbatim}
+$ pcctest -ca -i green20km_y1.nc -o dT_movie.nc \
+          -ys -2.5e5 -ye 0 -dt 2000 -dTforcing grip_dT.nc
+\end{verbatim}
+The output \verb|dT_movie.nc| and \verb|grip_dT.nc| mentioned in section above were used to create figure \ref{fig:artm-timeseries}.
+
+This figure shows the GRIP temperature offsets (top graph; compare to figure \ref{fig:gripDeltaT}) and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{figs/artm_timeseries}
+  \caption{Time series of the surface temperature compared to GRIP temperature offsets}
+  \label{fig:artm-timeseries}
+\end{figure}
 
 \clearpage\newpage
 \section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross} \index{PISM!running the EISMINT Ross ice shelf intercomparison in}\index{Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf} The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.

@@ -35,6 +35,26 @@ IceEISModel::IceEISModel(IceGrid &g)
 PetscErrorCode IceEISModel::set_grid_defaults() {
   PetscErrorCode ierr;
 
+  /* This option determines the single character name of EISMINT II experiments:
+  "-eisII F", for example.   If not given then do exper A.  */
+  char                eisIIexpername[20];
+  int                 temp;
+  PetscTruth          EISIIchosen;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
+            CHKERRQ(ierr);
+  if (EISIIchosen == PETSC_TRUE) {
+    temp = eisIIexpername[0];
+    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
+    if ((temp >= 'A') && (temp <= 'L')) {
+      expername = temp;
+    } else {
+      ierr = PetscPrintf(grid.com,
+			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+  }
+
   // note height of grid must be great enough to handle max thickness
   const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
 
@@ -53,20 +73,8 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
       grid.Lz = 4e3;
       break;
     case 'F':
-      // Jed broke this for his own reasons which might be good but which he
-      // didn't have time to bother talking about in advance. So we will have
-      // to find out how broken it is by testing. In this case I (ELB) think
-      // there was a pretty small benefit from rescaling based on looking at
-      // the flow law. The real solution is to implement task #4218 (expand
-      // vertically automatically).
-
-      // I (Jed 2009-02-20) just stripped out a small bit of logic that would
-      // scale differently based on the flow law number. Such a decision is
-      // fundamentally limiting and doesn't allow for customizable ice types.
-      // If needed, it should be replaced by a heuristic based on the action of
-      // the flow law (i.e. if the flow is less than a threshold at a reference
-      // stress and pressure, then rescale differently).
-
+      // in r426 and earlier (possibly a bit after that) there was dependence of Lz on the flow law
+      // the intended solution is to implement task #4218 (expand vertically automatically).
       grid.Lx = grid.Ly = L;
       grid.Lz = 6e3;
       break;
@@ -156,25 +164,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
 
-  /* This option determines the single character name of EISMINT II experiments:
-  "-eisII F", for example.   If not given then do exper A.  */
-  char                eisIIexpername[20];
-  int                 temp;
-  PetscTruth          EISIIchosen;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
-            CHKERRQ(ierr);
-  if (EISIIchosen == PETSC_TRUE) {
-    temp = eisIIexpername[0];
-    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    if ((temp >= 'A') && (temp <= 'L')) {
-      expername = temp;
-    } else {
-      ierr = PetscPrintf(grid.com,
-			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
-      CHKERRQ(ierr);
-      PetscEnd();
-    }
-  }
 
   ierr = verbPrintf(2,grid.com, 
               "setting parameters for EISMINT II experiment %c ... \n", 

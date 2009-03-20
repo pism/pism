@@ -249,6 +249,21 @@ int main(int argc, char *argv[]) {
              "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
+    // Process -ys, -ye, -dt. This should happen *before*
+    // PCC->initFromOptions() is called.
+    PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
+    PetscTruth ysSet, yeSet, dtSet;
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, &ysSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, &yeSet); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, &dtSet); CHKERRQ(ierr);
+
+    if (!ysSet || !yeSet || !dtSet) {
+      ierr = PetscPrintf(com, "PCCTEST ERROR: All three of -ys, -ye, -dt are required.\n");
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+    grid.year = ys;		// this value is used in PCC->initFromOptions()
+
     // set PCC from options
     PetscTruth caSet, pddSet, coSet;
     ierr = PetscOptionsHasName(PETSC_NULL, "-ca", &caSet); CHKERRQ(ierr);
@@ -317,11 +332,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
                                PETSC_MAX_PATH_LEN, &oSet); CHKERRQ(ierr);
     if (oSet != PETSC_TRUE) { SETERRQ(2,"PCCTEST ERROR: no -o file to write to\n"); }
-
-    PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, PETSC_NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, PETSC_NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, PETSC_NULL); CHKERRQ(ierr);
 
     ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
                        outname); CHKERRQ(ierr);

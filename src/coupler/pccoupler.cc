@@ -240,7 +240,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
 
   if (dTforcing != PETSC_NULL) {
     ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
-    ierr = dTforcing->updateFromClimateForcingData(grid->year,&TsOffset); CHKERRQ(ierr); // read a new offset
+    ierr = dTforcing->updateFromClimateForcingData(t_years,&TsOffset); CHKERRQ(ierr); // read a new offset
     ierr = verbPrintf(5,grid->com,
        "PISMAtmosphereCoupler says: read TsOffset=%.6f from -dTforcing data\n",
        TsOffset); CHKERRQ(ierr);
@@ -551,7 +551,7 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 
   if (dSLforcing != PETSC_NULL) {
     // read new sea level (delta from modern)
-    ierr = dSLforcing->updateFromClimateForcingData(grid->year,&seaLevel); CHKERRQ(ierr);
+    ierr = dSLforcing->updateFromClimateForcingData(t_years,&seaLevel); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
        seaLevel); CHKERRQ(ierr);
     // comment: IceModel::updateSurfaceElevationAndMask() needs to be called before effect of changed
@@ -577,7 +577,7 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
   
   if (dSLforcing != PETSC_NULL) {
     // read new sea level (delta from modern)
-    ierr = dSLforcing->updateFromClimateForcingData(grid->year,&seaLevel); CHKERRQ(ierr);
+    ierr = dSLforcing->updateFromClimateForcingData(t_years,&seaLevel); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
        seaLevel); CHKERRQ(ierr);
     // comment: IceModel::updateSurfaceElevationAndMask() needs to be called before effect of changed

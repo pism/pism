@@ -25,7 +25,7 @@ test_02 ()
     do
 	for j in 1 2 3 8 10;
 	do
-	    if [ $i == $j ]; then continue; fi
+	    if [ $i -le $j ]; then continue; fi
 	    
 	    run nccmp.py foo$i.nc foo$j.nc
 	    if [ $? != 0 ];
