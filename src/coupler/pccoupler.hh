@@ -107,13 +107,14 @@ public:
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
-             IceModelVec2* &pvsmf);  // vsmf = pointer to vsurfmassflux
+             IceModelVec2* &pvsmf);  // pvsmf = pointer to vsurfmassflux
   virtual PetscErrorCode updateSurfTempAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years,
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
-             IceModelVec2* &pvst);  // vst = pointer to vsurftemp
+             IceModelVec2* &pvst);  // pvst = pointer to vsurftemp
 
 //FIXME: should be protected:
+protected:
   IceModelVec2 vsurfmassflux, vsurftemp; // access these through update...() above
 
 protected:
@@ -246,15 +247,16 @@ public:
                initialize_vsnowaccum_FromFile; // default is true
 
 protected:
-  IceModelVec2 vsnowaccum,       // vsurfmassflux is computed by PDD from this amount of snow (ice-equivalent units)
-               vsurftempPDD;     // vsurftemp is temperature below firn; this temperature is the time-dependent snow
-                                 //    temperature computed from getTemperatureFromYearlyCycle() or from stored
-                                 //    monthly temperatures; in any case this one is a diagnostic extra output of
-                                 //    the PDD; IceModel never gets a pointer to it; updated by updateSurfMassFluxAndProvide()
+  IceModelVec2 vsnowaccum,   // vsurfmassflux is computed by PDD from this amount of snow (ice-equivalent units)
+               vsurftempPDD; // vsurftemp is temperature below firn; this temperature is the time-dependent snow
+                             //    temperature computed from getTemperatureFromYearlyCycle() or from stored
+                             //    monthly temperatures; in any case this one is a diagnostic extra output of
+                             //    the PDD; IceModel never gets a pointer to it; updated by
+                             //    updateSurfMassFluxAndProvide()
 
 protected:
-  gsl_rng      *pddRandGen;      // usually NULL; default is expectation integral which
-                                 //   does not use actual random numbers
+  gsl_rng      *pddRandGen;  // usually NULL; default is expectation integral which
+                             //   does not use actual random numbers
 
   virtual PetscScalar getSummerWarming(
              const PetscScalar elevation, const PetscScalar latitude,

@@ -58,18 +58,18 @@ VFNOW_OUT=vfnow_r589_L5_5mar09.txt
 # list old ones here; keep them, for comparison:
 #VFNOW_OUT=vfnow_r327_L5_23jun08.txt
 #VFNOW_OUT=vfnow_r193_L5_10oct07.txt
-vfigs : $(VFNOW_OUT)
+vfigs : verif/$(VFNOW_OUT)
 	# producing figures thickerrs_G.pdf, temperrs_G.df, etc. 
 	# in subdirectory figs/ for use in manual
-	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
+	../test/vnreport.py -f verif/$(VFNOW_OUT) -t G -e 'geometry' -x 'prcntVOLrelmaxETAcenterH' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/thickerrs
-	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'temp' -x 'basecenterT' \
+	../test/vnreport.py -f verif/$(VFNOW_OUT) -t G -e 'temp' -x 'basecenterT' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/temperrs
-	../test/vnreport.py -f $(VFNOW_OUT) -t G -e 'surf vels' -x 'maxUvecmaxW' \
+	../test/vnreport.py -f verif/$(VFNOW_OUT) -t G -e 'surf vels' -x 'maxUvecmaxW' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/surfvelerrs
-	../test/vnreport.py -f $(VFNOW_OUT) -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' \
+	../test/vnreport.py -f verif/$(VFNOW_OUT) -t I -e 'velocity' -x 'maxvectorprcntavvecavvector' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/velerrs
-	../test/vnreport.py -f $(VFNOW_OUT) -t K -e 'temp' \
+	../test/vnreport.py -f verif/$(VFNOW_OUT) -t K -e 'temp' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/temperrs
 
 clean :

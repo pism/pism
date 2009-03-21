@@ -249,6 +249,10 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
                   void *iceInfoNeeded, IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
+  if (vsurftemp.was_created())
+    pvst = &vsurftemp;
+  else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
+
   if (dTforcing != PETSC_NULL) {
     ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
     ierr = dTforcing->updateFromClimateForcingData(t_years,&TsOffset); CHKERRQ(ierr); // read a new offset
@@ -257,10 +261,6 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
        TsOffset); CHKERRQ(ierr);
     ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
   }
-
-  if (vsurftemp.was_created())
-    pvst = &vsurftemp;
-  else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
 
   return 0;
 }
@@ -595,7 +595,7 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
-  //  printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
+  // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
   
   if (dSLforcing != PETSC_NULL) {
     // read new sea level (delta from modern)

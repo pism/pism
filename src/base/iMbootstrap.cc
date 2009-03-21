@@ -342,7 +342,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
 
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);

@@ -265,6 +265,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vuplift.set_attrs("model_state", "bedrock uplift rate",
 			   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
   ierr = vuplift.set_glaciological_units("m year-1");
+  vuplift.write_in_glaciological_units = true;
 
   // basal melt rate
   ierr = vbasalMeltRate.create(grid, "basal_melt_rate", true); CHKERRQ(ierr);
