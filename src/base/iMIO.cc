@@ -113,7 +113,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   }
 
   PetscTruth userWantsFull;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-f3d", &userWantsFull); CHKERRQ(ierr);
+  ierr = check_option("-f3d", userWantsFull); CHKERRQ(ierr);
 
   if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
     ierr = verbPrintf(2, grid.com, 
@@ -155,7 +155,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscTruth append = PETSC_FALSE;
   NCTool nc(&grid);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-a", &append); CHKERRQ(ierr);
+  ierr = check_option("-a", append); CHKERRQ(ierr);
   if (append) {
     ierr = verbPrintf(2, grid.com, "\nWill append to '%s' if possible.\n", filename); CHKERRQ(ierr);
   }
@@ -425,7 +425,7 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
   PetscTruth dontreadSSAvels = PETSC_FALSE;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-dontreadSSAvels", &dontreadSSAvels); CHKERRQ(ierr);
+  ierr = check_option("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
   
   if ((have_ssa_velocities == 1)  && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
@@ -665,7 +665,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
     split_snapshots = false;
 
     PetscTruth split;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-split_snapshots", &split); CHKERRQ(ierr);
+    ierr = check_option("-split_snapshots", split); CHKERRQ(ierr);
     if (split) {
       split_snapshots = true;
     } else if (!hasSuffix(snapshots_filename, ".nc")) {

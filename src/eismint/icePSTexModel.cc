@@ -105,7 +105,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     PetscTruth  optionset;
     char optionname[20] = "-";
     strcat(optionname,e[j].name);
-    ierr = PetscOptionsHasName(PETSC_NULL, optionname, &optionset);
+    ierr = check_option(optionname, optionset);
       CHKERRQ(ierr);
     if (optionset == PETSC_TRUE) {
       if (exper_chosen >= 0) {

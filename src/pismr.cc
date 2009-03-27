@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
     // Attach climate couplers:
     PetscTruth  pddSet;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
+    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) { // note climate will always come from input file in pismr
       ierr = verbPrintf(2,com, "pismr attaching PISMPDDCoupler to IceModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);

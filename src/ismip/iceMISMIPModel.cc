@@ -206,7 +206,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   // OTHER OPTIONS:
   // read option    -extras       [OFF]
-  ierr = PetscOptionsHasName(PETSC_NULL, "-extras", &writeExtras); CHKERRQ(ierr);
+  ierr = check_option("-extras", writeExtras); CHKERRQ(ierr);
 
   // read option    -initials     [ABC]
   ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, 
@@ -231,7 +231,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   // read option    -no_shelf_drag
   PetscTruth noShelfDrag;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_shelf_drag", &noShelfDrag); CHKERRQ(ierr);
+  ierr = check_option("-no_shelf_drag", noShelfDrag); CHKERRQ(ierr);
   if (noShelfDrag == PETSC_TRUE) {
     shelvesDragToo = PETSC_FALSE;
   } else {
@@ -288,7 +288,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   }
 
   // read option    -try_calving      [OFF]
-  ierr = PetscOptionsHasName(PETSC_NULL, "-try_calving", &tryCalving); CHKERRQ(ierr);
+  ierr = check_option("-try_calving", tryCalving); CHKERRQ(ierr);
 
   doTemp                    = PETSC_FALSE;
   doPlasticTill             = PETSC_FALSE;

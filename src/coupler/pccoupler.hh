@@ -314,7 +314,7 @@ public:
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded); // will be interpreted as type IceInfoNeededByOceanCoupler*
 
-  virtual PetscReal reportSeaLevelElevation();
+  virtual PetscReal updateSeaLevelElevation(PetscReal t_years, PetscReal dt_years, PetscReal *new_sea_level);
 
   bool      reportInitializationToStdOut;  // can turn off report on initialization if
                                            // there can be no floating ice (for example)

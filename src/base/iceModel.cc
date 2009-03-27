@@ -703,10 +703,10 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // bootstrapping file, so we check if these options are set and stop if they
   // are not.
   // Note that here interpreting "-Mx 0" as "-Mx was not set" is OK.
-  ierr = PetscOptionsHasName(PETSC_NULL, "-Mx", &Mx_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-My", &My_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-Mz", &Mz_set); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-Lz", &Lz_set); CHKERRQ(ierr);
+  ierr = check_option("-Mx", Mx_set); CHKERRQ(ierr);
+  ierr = check_option("-My", My_set); CHKERRQ(ierr);
+  ierr = check_option("-Mz", Mz_set); CHKERRQ(ierr);
+  ierr = check_option("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz, -Lz, are required for bootstrapping.\n");

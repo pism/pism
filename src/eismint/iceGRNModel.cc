@@ -129,14 +129,14 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
 
   expernum = 1;  // SSL2 is the default
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl2", &ssl2Set); CHKERRQ(ierr);
+  ierr = check_option("-ssl2", ssl2Set); CHKERRQ(ierr);
   if (ssl2Set == PETSC_TRUE)   expernum = 1;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ccl3", &ccl3Set); CHKERRQ(ierr);
+  ierr = check_option("-ccl3", ccl3Set); CHKERRQ(ierr);
   if (ccl3Set == PETSC_TRUE)   expernum = 3;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-gwl3", &gwl3Set); CHKERRQ(ierr);
+  ierr = check_option("-gwl3", gwl3Set); CHKERRQ(ierr);
   if (gwl3Set == PETSC_TRUE)   expernum = 4;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
+  ierr = check_option("-ssl3", ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
     ierr = PetscPrintf(grid.com,
        "EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
@@ -163,11 +163,11 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
-  ierr = PetscOptionsHasName(PETSC_NULL, "-have_artm", &haveSurfaceTemp);
+  ierr = check_option("-have_artm", haveSurfaceTemp);
      CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-have_bheatflx", &haveGeothermalFlux);
+  ierr = check_option("-have_bheatflx", haveGeothermalFlux);
      CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_EI_delete", &noEllesmereIcelandDelete);
+  ierr = check_option("-no_EI_delete", noEllesmereIcelandDelete);
      CHKERRQ(ierr);
   
   // note: user value for -e, and -gk, and so on, will override settings above
@@ -206,18 +206,14 @@ PetscErrorCode IceGRNModel::init_couplers() {
   // PDD is already set by atmosPCC->initFromOptions() in IceModel::init_couplers()
   //   here we just warn if nondefault values are used
   PetscTruth pddSummerWarmingSet, pddStdDevSet;
-  // FIXME: exposed to -pdd_summer_warming 0 bug?
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
-              &pddSummerWarmingSet); CHKERRQ(ierr);
+  ierr = check_option("-pdd_summer_warming", pddSummerWarmingSet); CHKERRQ(ierr);
   if (pddSummerWarmingSet == PETSC_TRUE) { 
     ierr = verbPrintf(1, grid.com, 
        "WARNING: -pdd_summer_warming option ignored.\n"
        "  Using EISMINT-GREENLAND summer temperature formula\n"); CHKERRQ(ierr);
   }
 
-  // FIXME:  NOT TRUE:  -pdd_std_dev 0 does not make sense, so using PetscOptionsHasName is OK
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); 
-     CHKERRQ(ierr);
+  ierr = check_option("-pdd_std_dev", pddStdDevSet); CHKERRQ(ierr);
   if (pddStdDevSet == PETSC_FALSE) {
     pddPCC->pddStdDev = 5.0;  // EISMINT-GREENLAND default; user may override
   }

@@ -97,8 +97,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
   // initialize till friction angle (vtillphi) from options
   PetscTruth  topgphiSet,svphiSet;
   char filename[PETSC_MAX_PATH_LEN];
-  // "-topg_to_phi 0" does not make sense, so using PetscOptionsHasName is OK here.
-  ierr = PetscOptionsHasName(PETSC_NULL, "-topg_to_phi", &topgphiSet); CHKERRQ(ierr);
+  ierr = check_option("-topg_to_phi", topgphiSet); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_phi", filename, 
                                PETSC_MAX_PATH_LEN, &svphiSet); CHKERRQ(ierr);
   if ((svphiSet == PETSC_TRUE) && (topgphiSet == PETSC_TRUE)) {

@@ -162,7 +162,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
                                         // computation of vertical velocity
 
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
-  ierr = PetscOptionsHasName(PETSC_NULL, "-track_Hmelt", &updateHmelt); CHKERRQ(ierr);
+  ierr = check_option("-track_Hmelt", updateHmelt); CHKERRQ(ierr);
 
 
   ierr = verbPrintf(2,grid.com, 

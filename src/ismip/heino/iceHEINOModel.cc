@@ -57,10 +57,10 @@ PetscErrorCode IceHEINOModel::setExperNameFromOptions() {
   setExperName('0'); // assume it is HEINO; other experiment names in future for ISMIP-HOM, ISMIP-POLICE
   
   /* if this option is set then no .dat files are produced for ISMIP-HEINO runs */  
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_deliver", &ismipNoDeliver); CHKERRQ(ierr);
+  ierr = check_option("-no_deliver", ismipNoDeliver); CHKERRQ(ierr);
 
   /* if this option is set then 0.25 year time steps are *forced*; this is not wise! */  
-  ierr = PetscOptionsHasName(PETSC_NULL, "-force_quarter_year", &ismipForceDT); CHKERRQ(ierr);
+  ierr = check_option("-force_quarter_year", ismipForceDT); CHKERRQ(ierr);
 
   /* see ISMIP-HEINO documentation; options are [with corresponding val of ismipHeinoRun]:
        -run ST  [0; default]

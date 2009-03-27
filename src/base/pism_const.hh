@@ -67,6 +67,7 @@ const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt getVerbosityLevel();
 PetscErrorCode verbosityLevelFromOptions();
+PetscErrorCode check_option(const char name[], PetscTruth &flag);
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 int compare_doubles (const void *a, const void *b);	// for sorting
 

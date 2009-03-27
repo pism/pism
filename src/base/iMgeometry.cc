@@ -145,7 +145,9 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscScalar **h, **bed, **H, **mask, **Tbase;
 
   if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-  PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+  PetscReal currentSeaLevel;
+  ierr = oceanPCC->updateSeaLevelElevation(grid.year, dt / secpera,
+					   &currentSeaLevel); CHKERRQ(ierr);
 
   const int MASK_GROUNDED_TO_DETERMINE = 999;
 
@@ -459,7 +461,8 @@ Only call this when hard floatation criterion already shows it is floating.
 const PetscTruth  DEFAULT_DO_SOFT_FLOAT_CRIT = PETSC_FALSE;
 const PetscScalar DEFAULT_SOFT_FLOAT_CRIT_FLOATINESS_MAX = 0.2;
 if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+PetscReal currentSeaLevel;
+ierr = oceanPCC->updateSeaLevelElevation(grid.year, grid.dt, &currentSeaLevel); CHKERRQ(ierr);
 PetscScalar IceModel::softFloatationSurface(const PetscScalar thk, const PetscScalar bedelev) const {
   const PetscScalar  h_hard = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * thk;
   if ((doSoftFloatCrit == PETSC_TRUE) && (thk > 1.0)) {

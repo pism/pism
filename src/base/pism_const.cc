@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -143,4 +143,26 @@ int compare_doubles (const void *a, const void *b)
   const double *db = (const double *) b;
   
   return (*da > *db) - (*da < *db);
+}
+
+//! Checks if an option is present in the PETSc option database.
+/*!
+
+  This is (essentially) a reimplementation of PetscOptionsHasName, except that
+  this *always* sets \c flag to PETSC_TRUE if an option is present.
+
+  PetscOptionsHasName, on the other hand, sets \c flag to PETSC_FALSE if an
+  option was set as "-foo FALSE", "-foo NO" or "-foo 0". Note that if one uses
+  "-foo 0.0", PetscOptionsHasName will set \c flag to PETSC_TRUE.
+
+  This unpredictability is bad. We want a function that does not depend on the
+  argument given with an option.
+ */
+PetscErrorCode check_option(const char name[], PetscTruth &flag) {
+  PetscErrorCode ierr;
+  char tmp[1];
+
+  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &flag); CHKERRQ(ierr);
+
+  return 0;
 }
