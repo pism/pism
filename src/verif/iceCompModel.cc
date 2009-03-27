@@ -141,7 +141,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
-  ierr = PetscOptionsHasName(PETSC_NULL, "-eo", &exactOnly); CHKERRQ(ierr);
+  ierr = check_option("-eo", exactOnly); CHKERRQ(ierr);
   if (exactOnly == PETSC_TRUE) {
     ierr = verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
              CHKERRQ(ierr);
@@ -231,7 +231,7 @@ PetscErrorCode IceCompModel::init_physics() {
 
   // switch changes Test K to make material properties for bedrock the same as for ice
   PetscTruth biiSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bedrock_is_ice", &biiSet); CHKERRQ(ierr);
+  ierr = check_option("-bedrock_is_ice", biiSet); CHKERRQ(ierr);
   if (biiSet == PETSC_TRUE) {
     if (testname == 'K') {
       ierr = verbPrintf(1,grid.com,

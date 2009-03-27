@@ -266,9 +266,9 @@ int main(int argc, char *argv[]) {
 
     // set PCC from options
     PetscTruth caSet, pddSet, coSet;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-ca", &caSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-co", &coSet); CHKERRQ(ierr);
+    ierr = check_option("-ca",  caSet); CHKERRQ(ierr);
+    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
+    ierr = check_option("-co",  coSet); CHKERRQ(ierr);
     int  choiceSum = (int) caSet + (int) pddSet + (int) coSet;
     if (choiceSum == 0) {
       ierr = PetscPrintf(com,"PCCTEST ERROR: called with no derived class\n");

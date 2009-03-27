@@ -83,7 +83,7 @@ PetscErrorCode PISMPDDCoupler::userOptionsChoosePDD(PetscTruth &userWantsPDD) {
 
   for (int k=0; k<nNames; k++) {
     PetscTruth check;
-    ierr = PetscOptionsHasName(PETSC_NULL, pddOptNames[k], &check); CHKERRQ(ierr);
+    ierr = check_option(pddOptNames[k], check); CHKERRQ(ierr);
     if (check == PETSC_TRUE) {
       userWantsPDD = PETSC_TRUE;
       return 0;
@@ -103,9 +103,8 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   // check options; we assume the PDD is desired; only overriding defaults here
   // check if truly random PDD is desired, and, if so, initialize it
   PetscTruth  pddRandSet, pddRepeatableSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_rand", &pddRandSet); CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_rand_repeatable", &pddRepeatableSet);
-           CHKERRQ(ierr);
+  ierr = check_option("-pdd_rand", pddRandSet); CHKERRQ(ierr);
+  ierr = check_option("-pdd_rand_repeatable", pddRepeatableSet); CHKERRQ(ierr);
   if ( (pddRandSet == PETSC_TRUE) || (pddRepeatableSet == PETSC_TRUE) ) {
     // initialize the random number generator: use GSL's recommended default random
     // number generator, which seems to be "mt19937" and is DIEHARD
@@ -246,7 +245,7 @@ This procedure is \e virtual and replacable.
  */
 PetscScalar PISMPDDCoupler::getSummerWarming(
        const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) {
-  // version here ignors elevation, latitude, and mean annual temperature (Tma)
+  // version here ignores elevation, latitude, and mean annual temperature (Tma)
   // and instead uses -pdd_summer_warming setable constant
   // see IceGRNModel for alternate implementation
   return pddSummerWarming;

@@ -28,10 +28,16 @@
 #include "iceGRNModel.hh"
 
 
-const PetscScalar EISMINT_G_geothermal = 0.050;      // J/m^2 s; geothermal flux
-
-
 PISMEISGREENPDDCoupler::PISMEISGREENPDDCoupler() : PISMPDDCoupler() {
+  doGWL3 = PETSC_FALSE;
+  startGWL3Year = 0.0;
+}
+
+
+PetscErrorCode PISMEISGREENPDDCoupler::startGWL3AtYear(PetscScalar year) {
+  doGWL3 = PETSC_TRUE;
+  startGWL3Year = year;
+  return 0;
 }
 
 
@@ -44,8 +50,77 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
 }
 
 
+//! Used by updateSurfTempAndProvide().  Returns value Tma in K.
+PetscScalar PISMEISGREENPDDCoupler::calculateMeanAnnual(PetscScalar h, PetscScalar lat) {
+  // following EISMINT-Greenland formulas
+  PetscScalar Z = PetscMax(h, 20 * (lat - 65));
+  return  49.13 - 0.007992 * Z - 0.7576 * (lat) + 273.15;
+}
+
+
+//! Updates forcing and provides access to vsurftemp.  Updates vsurftemp, the mean annual surface temperature, according EISMINT-Greenland choices.
+PetscErrorCode PISMEISGREENPDDCoupler::updateSurfTempAndProvide(
+                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  void *iceInfoNeeded, IceModelVec2* &pvst) {
+  PetscErrorCode ierr;
+
+  ierr = PISMPDDCoupler::updateSurfTempAndProvide(
+              t_years, dt_years, iceInfoNeeded, pvst); CHKERRQ(ierr);
+
+  if (initialize_vsurftemp_FromFile == PETSC_FALSE) {
+    // update mean annual temp; note getSummerWarming() is only used in
+    //    PISMPDDCoupler::updateSurfMassFluxAndProvide()
+    ierr = verbPrintf(4, grid->com, 
+      "computing surface temperatures by elevation,latitude-dependent EISMINT-Greenland formulas ...\n");
+      CHKERRQ(ierr);
+    IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
+    if (info == PETSC_NULL) { SETERRQ(1,"info == PETSC_NULL"); }
+    PetscScalar **Ts, **lat, **h;
+    ierr = vsurftemp.get_array(Ts); CHKERRQ(ierr);
+    ierr = info->lat->get_array(lat); CHKERRQ(ierr);
+    ierr = info->surfelev->get_array(h); CHKERRQ(ierr);
+    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+        Ts[i][j] = calculateMeanAnnual(h[i][j], lat[i][j]);
+      }
+    }
+    ierr = vsurftemp.end_access(); CHKERRQ(ierr);
+    ierr = info->lat->end_access(); CHKERRQ(ierr);
+    ierr = info->surfelev->end_access(); CHKERRQ(ierr);
+
+    if (doGWL3 == PETSC_TRUE) {
+      // for GWL3 apply global warming temperature forcing
+      // compute age back to start of GWL3 by midpoint rule
+      PetscScalar age = 0.5 * (2.0 * t_years + dt_years) - startGWL3Year;
+      if (age > 0.0) {
+        PetscScalar temp_increase;
+        if (age <= 80.0) {
+          temp_increase = age * 0.035;
+        } else if (age <= 500.0) {
+          temp_increase = 2.8 + (age - 80.0) * 0.0017;
+        } else { // after 500 years
+          temp_increase = 3.514;
+        }
+        ierr = verbPrintf(4, grid->com, 
+          "   adding global warming GWL3 temperature increase of %8.4f deg; age = %8.4f; startGWL3Year = %8.4f; ...\n",
+          temp_increase, age, startGWL3Year); CHKERRQ(ierr);
+        ierr = vsurftemp.shift(temp_increase); CHKERRQ(ierr);
+      }
+    }
+  }
+
+  return 0;
+}
+
+
 IceGRNModel::IceGRNModel(IceGrid &g) : IceModel(g) {
   pddPCC = PETSC_NULL;
+}
+
+
+PetscErrorCode IceGRNModel::attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p) {
+  pddPCC = &p;
+  return 0;
 }
 
 
@@ -54,14 +129,14 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
 
   expernum = 1;  // SSL2 is the default
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl2", &ssl2Set); CHKERRQ(ierr);
+  ierr = check_option("-ssl2", ssl2Set); CHKERRQ(ierr);
   if (ssl2Set == PETSC_TRUE)   expernum = 1;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ccl3", &ccl3Set); CHKERRQ(ierr);
+  ierr = check_option("-ccl3", ccl3Set); CHKERRQ(ierr);
   if (ccl3Set == PETSC_TRUE)   expernum = 3;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-gwl3", &gwl3Set); CHKERRQ(ierr);
+  ierr = check_option("-gwl3", gwl3Set); CHKERRQ(ierr);
   if (gwl3Set == PETSC_TRUE)   expernum = 4;
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssl3", &ssl3Set); CHKERRQ(ierr);
+  ierr = check_option("-ssl3", ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
     ierr = PetscPrintf(grid.com,
        "EISMINT-Greenland experiment SSL3 (-ssl3) is not implemented.\n"
@@ -88,11 +163,11 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
-  ierr = PetscOptionsHasName(PETSC_NULL, "-have_artm", &haveSurfaceTemp);
+  ierr = check_option("-have_artm", haveSurfaceTemp);
      CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-have_bheatflx", &haveGeothermalFlux);
+  ierr = check_option("-have_bheatflx", haveGeothermalFlux);
      CHKERRQ(ierr);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_EI_delete", &noEllesmereIcelandDelete);
+  ierr = check_option("-no_EI_delete", noEllesmereIcelandDelete);
      CHKERRQ(ierr);
   
   // note: user value for -e, and -gk, and so on, will override settings above
@@ -102,20 +177,26 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceGRNModel::attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p) {
-  pddPCC = &p;
-  return 0;
-}
 
 PetscErrorCode IceGRNModel::init_couplers() {
   PetscErrorCode ierr;
 
   pddPCC = (PISMEISGREENPDDCoupler*) atmosPCC;
+  if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL\n"); }
   
   pddPCC->initialize_vsnowaccum_FromFile = true;
 
-  // only initialize surface temps from a file if the flag haveSurfaceTemp is set
   pddPCC->initialize_vsurftemp_FromFile = (haveSurfaceTemp == PETSC_TRUE);
+
+  PetscTruth gwl3StartSet;
+  PetscReal  gwl3StartYear = grid.year;
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-gwl3_start_year", &gwl3StartYear, &gwl3StartSet); CHKERRQ(ierr);
+  if (expernum == 4) {  // do GWL3, and set start year
+    ierr = pddPCC->startGWL3AtYear(gwl3StartYear); CHKERRQ(ierr);
+  } else if (gwl3StartSet == PETSC_TRUE) {
+    ierr = verbPrintf(1, grid.com, 
+       "WARNING: -gwl3_start_year option ignored because expernum != 4 (-gwl3 not set?).\n"); CHKERRQ(ierr);
+  }
 
   // only report initialization on PISMOceanClimateCoupler if allowing ice shelves
   oceanPCC->reportInitializationToStdOut = (doOceanKill == PETSC_FALSE);
@@ -125,16 +206,14 @@ PetscErrorCode IceGRNModel::init_couplers() {
   // PDD is already set by atmosPCC->initFromOptions() in IceModel::init_couplers()
   //   here we just warn if nondefault values are used
   PetscTruth pddSummerWarmingSet, pddStdDevSet;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_summer_warming",
-              &pddSummerWarmingSet); CHKERRQ(ierr);
+  ierr = check_option("-pdd_summer_warming", pddSummerWarmingSet); CHKERRQ(ierr);
   if (pddSummerWarmingSet == PETSC_TRUE) { 
     ierr = verbPrintf(1, grid.com, 
        "WARNING: -pdd_summer_warming option ignored.\n"
        "  Using EISMINT-GREENLAND summer temperature formula\n"); CHKERRQ(ierr);
   }
-  // -pdd_std_dev 0 does not make sense, so using PetscOptionsHasName is OK
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pdd_std_dev", &pddStdDevSet); 
-     CHKERRQ(ierr);
+
+  ierr = check_option("-pdd_std_dev", pddStdDevSet); CHKERRQ(ierr);
   if (pddStdDevSet == PETSC_FALSE) {
     pddPCC->pddStdDev = 5.0;  // EISMINT-GREENLAND default; user may override
   }
@@ -142,8 +221,11 @@ PetscErrorCode IceGRNModel::init_couplers() {
   return 0;
 }
 
+
 PetscErrorCode IceGRNModel::set_vars_from_options() {
   PetscErrorCode ierr;
+
+  const PetscScalar EISMINT_G_geothermal = 0.050;      // J/m^2 s; geothermal flux
 
   // Let the base class handle bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
@@ -160,7 +242,10 @@ PetscErrorCode IceGRNModel::set_vars_from_options() {
     ierr = verbPrintf(2, grid.com, 
 	"computing surface temps by EISMINT-Greenland elevation-latitude rule\n");
         CHKERRQ(ierr);
-    ierr = updateTs(); CHKERRQ(ierr);
+    // init couplers needs to have already occurred, but it has (see IceModel::init()):
+    if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL\n"); }
+    IceModelVec2* dummy;
+    ierr = pddPCC->updateSurfTempAndProvide(0.0, 0.0, &info_atmoscoupler, dummy); CHKERRQ(ierr);
   }
   if ((haveGeothermalFlux == PETSC_FALSE) || (haveSurfaceTemp == PETSC_FALSE)) {
     ierr = verbPrintf(2, grid.com, 
@@ -168,73 +253,13 @@ PetscErrorCode IceGRNModel::set_vars_from_options() {
         CHKERRQ(ierr);
     ierr = putTempAtDepth(); CHKERRQ(ierr);
   }
+
   if (noEllesmereIcelandDelete == PETSC_FALSE) {
     ierr = verbPrintf(2, grid.com, 
 	"removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
         CHKERRQ(ierr);
     ierr = cleanExtraLand(); CHKERRQ(ierr);
   }
-
-  return 0;
-}
-
-PetscErrorCode IceGRNModel::additionalAtStartTimestep() {
-  PetscErrorCode ierr;
-
-  // for all experiments, at each time step we need to recompute
-  // surface temperatures from surface elevation and latitude, unless the 
-  // user supplies an additional map of mean annual surface temps
-  if (haveSurfaceTemp == PETSC_FALSE) {
-    ierr = updateTs(); CHKERRQ(ierr);
-  }
-
-  if (expernum == 4) {  // for GWL3 apply global warming temperature forcing
-    PetscScalar temp_increase;
-    PetscScalar age = grid.year - startYear;
-    if (age <= 80.0) {
-      temp_increase = age * 0.035;
-    } else if (age <= 500.0) {
-      temp_increase = 2.8 + (age - 80.0) * 0.0017;
-    } else {
-      temp_increase = 3.514;
-    }
-    if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL"); }
-    ierr = pddPCC->vsurftemp.shift(temp_increase); CHKERRQ(ierr); // FIXME: check on whether this is right
-  }
-  return 0;
-}
-
-
-// Used below in IceGRNModel::updateTs().  Returns value in K.
-PetscScalar IceGRNModel::calculateMeanAnnual(PetscScalar h, PetscScalar lat) {
-  // EISMINT-Greenland surface temperature model
-  PetscScalar Z = PetscMax(h, 20 * (lat - 65));
-  return 49.13 - 0.007992 * Z - 0.7576 * (lat) + ice->meltingTemp;
-}
-
-
-PetscErrorCode IceGRNModel::updateTs() {
-  PetscErrorCode ierr;
-  PetscScalar **Ts, **lat, **h;
-  
-  ierr = verbPrintf(4, grid.com, 
-     "recomputing surface temperatures according to elevation-dependent\n"
-     "  EISMINT-Greenland rule\n");
-     CHKERRQ(ierr);
-
-  // PDD will use vsurftemp to determine yearly cycle from parameters
-  if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL"); }
-  ierr = pddPCC->vsurftemp.get_array(Ts); CHKERRQ(ierr);
-  ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
-  ierr = vh.get_array(h); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      Ts[i][j] = calculateMeanAnnual(h[i][j], lat[i][j]);
-    }
-  }
-  ierr = pddPCC->vsurftemp.end_access(); CHKERRQ(ierr);
-  ierr = vLatitude.end_access(); CHKERRQ(ierr);
-  ierr =        vh.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -277,7 +302,6 @@ PetscErrorCode IceGRNModel::cleanExtraLand(){
   ierr = vMask.end_access(); CHKERRQ(ierr);
   
   // when mask is changed we must communicate the ghosted values
-  //   because neighbor's mask matters
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;

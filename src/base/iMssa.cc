@@ -609,7 +609,7 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
     //ierr = vubarSSA.report_range();CHKERRQ(ierr);
     return 0;
   }
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_bueler", &dosnes); CHKERRQ(ierr);
+  ierr = check_option("-ssa_bueler", dosnes); CHKERRQ(ierr);
   if (dosnes == PETSC_TRUE) {
     ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr);
   } else {

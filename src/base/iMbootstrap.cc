@@ -229,6 +229,9 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
 
 
 //! Determine surface and mask according to information in bootstrap file and options.
+/*!
+  grid.year has to be valid at the time of this call.
+ */
 PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
     PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask;
@@ -248,7 +251,8 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
   }
 
   if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-  PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+  PetscReal currentSeaLevel;
+  ierr = oceanPCC->updateSeaLevelElevation(grid.year, 0, &currentSeaLevel); CHKERRQ(ierr);
            
   ierr = vh.get_array(h); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -342,7 +346,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
 
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);

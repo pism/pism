@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
     //     Ross ice shelf," Ann. Glaciol. 23, 46--51
     PetscTruth  doRoss;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-ross", &doRoss); CHKERRQ(ierr);
+    ierr = check_option("-ross", doRoss); CHKERRQ(ierr);
 
     if (doRoss == PETSC_TRUE) {
       m = (IceModel*) &mRoss;

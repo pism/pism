@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     PetscTruth  pddSet, EISIIchosen, PSTexchosen, MISMIPchosen;
 
-    ierr = PetscOptionsHasName(PETSC_NULL, "-pdd", &pddSet); CHKERRQ(ierr);
+    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) {
       ierr = PetscPrintf(com, "PISM ERROR: -pdd is not currently allowed as option to pisms\n");
                 CHKERRQ(ierr);
@@ -69,14 +69,11 @@ int main(int argc, char *argv[]) {
 
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-eisII", &EISIIchosen);
-              CHKERRQ(ierr);
+    ierr = check_option("-eisII", EISIIchosen); CHKERRQ(ierr);
     /* This option chooses Plastic till ice Stream with Thermocoupling experiment. */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-pst", &PSTexchosen);
-              CHKERRQ(ierr);
+    ierr = check_option("-pst", PSTexchosen); CHKERRQ(ierr);
     /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
-    ierr = PetscOptionsHasName(PETSC_NULL, "-mismip", &MISMIPchosen);
-              CHKERRQ(ierr);
+    ierr = check_option("-mismip", MISMIPchosen); CHKERRQ(ierr);
     
     int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
     if (choiceSum == 0) {

@@ -79,13 +79,13 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetReal(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
                                PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_iso", &mydoBedIso); CHKERRQ(ierr);
+  ierr = check_option("-bed_def_iso", mydoBedIso); CHKERRQ(ierr);
   if (mydoBedIso == PETSC_TRUE) {
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_TRUE;
   }
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bed_def_lc", &mybedDeflc); CHKERRQ(ierr);  
+  ierr = check_option("-bed_def_lc", mybedDeflc); CHKERRQ(ierr);  
   if (mybedDeflc == PETSC_TRUE) {
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_FALSE;
@@ -97,7 +97,7 @@ PetscErrorCode  IceModel::setFromOptions() {
        CHKERRQ(ierr);
   }
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-bmr_in_cont", &myincludeBMRinContinuity);
+  ierr = check_option("-bmr_in_cont", myincludeBMRinContinuity);
       CHKERRQ(ierr);
   if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
 
@@ -135,13 +135,13 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetReal(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-eta", &etaSet); CHKERRQ(ierr);
+  ierr = check_option("-eta", etaSet); CHKERRQ(ierr);
   if (etaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
 
 // note "-f3d" is read in writefiles() in iMIO.cc
 
   // whether or not to kill ice (zero thickness) if it is (or becomes) floating
-  ierr = PetscOptionsHasName(PETSC_NULL, "-float_kill", &floatkillSet); CHKERRQ(ierr);
+  ierr = check_option("-float_kill", floatkillSet); CHKERRQ(ierr);
   if (floatkillSet == PETSC_TRUE)  floatingIceKilled = PETSC_TRUE;
 
   // note "-gk" is used for specifying Goldsby-Kohlstedt ice
@@ -153,12 +153,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
   // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
-  ierr = PetscOptionsHasName(PETSC_NULL, "-gk_age", &realAgeForGrainSize); CHKERRQ(ierr);
+  ierr = check_option("-gk_age", realAgeForGrainSize); CHKERRQ(ierr);
   if (realAgeForGrainSize) {
     ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
   }
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-hold_tauc", &myholdTillYieldStress); CHKERRQ(ierr);
+  ierr = check_option("-hold_tauc", myholdTillYieldStress); CHKERRQ(ierr);
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-id", &id, PETSC_NULL); CHKERRQ(ierr);
@@ -183,7 +183,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetReal(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_mass", &noMassConserve); CHKERRQ(ierr);
+  ierr = check_option("-no_mass", noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
 
 /* REMOVED TO AVOID STENCIL_BOX COMMUNICATION FOR 3D Vecs: 
@@ -192,7 +192,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsGetInt(PETSC_NULL, "-no_spokes", &noSpokesLevel, PETSC_NULL); CHKERRQ(ierr);
 */
 
-  ierr = PetscOptionsHasName(PETSC_NULL, "-no_temp", &noTemp); CHKERRQ(ierr);
+  ierr = check_option("-no_temp", noTemp); CHKERRQ(ierr);
   if (noTemp == PETSC_TRUE)   doTemp = PETSC_FALSE;
 
 // note "-o" is in use for output file name; see iMIO.cc
@@ -200,11 +200,11 @@ PetscErrorCode  IceModel::setFromOptions() {
   // whether or not to kill ice at locations where mask=FLOATING_OCEAN0;
   //   also determines if mask=FLOATING_OCEAN0 or mask=FLOATING
   //   at bootstrapping (-boot_from), if original condition was ice-free ocean
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ocean_kill", &mydoOceanKill); CHKERRQ(ierr);
+  ierr = check_option("-ocean_kill", mydoOceanKill); CHKERRQ(ierr);
   if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
 
   // use a plastic basal till mechanical model
-  ierr = PetscOptionsHasName(PETSC_NULL, "-plastic", &mydoPlasticTill); CHKERRQ(ierr);
+  ierr = check_option("-plastic", mydoPlasticTill); CHKERRQ(ierr);
   if (mydoPlasticTill == PETSC_TRUE)   doPlasticTill = PETSC_TRUE;
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
@@ -235,7 +235,7 @@ PetscErrorCode  IceModel::setFromOptions() {
      plastic_till_mu = tan((pi/180.0) * myplastic_phi);
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
-  ierr = PetscOptionsHasName(PETSC_NULL, "-pseudo_plastic", &pseudoplasticSet);  CHKERRQ(ierr);
+  ierr = check_option("-pseudo_plastic", pseudoplasticSet);  CHKERRQ(ierr);
   if (pseudoplasticSet == PETSC_TRUE) {
      doPseudoPlasticTill = PETSC_TRUE;
   }
@@ -258,7 +258,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
-  ierr = PetscOptionsHasName(PETSC_NULL, "-real_age_grainsize", &realageSet); CHKERRQ(ierr);
+  ierr = check_option("-real_age_grainsize", realageSet); CHKERRQ(ierr);
   //if (realageSet == PETSC_TRUE)   realAgeForGrainSize = PETSC_TRUE;
   if (realageSet == PETSC_TRUE) {
     ierr = PetscPrintf(grid.com,
@@ -272,10 +272,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 // note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
 
   // see assembleSSAMatrix(); used in MISMIP
-  ierr = PetscOptionsHasName(PETSC_NULL, "-shelves_drag_too", &doShelvesDragToo); CHKERRQ(ierr);
+  ierr = check_option("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
   if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;
   
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa", &myuseSSAVelocity); CHKERRQ(ierr);
+  ierr = check_option("-ssa", myuseSSAVelocity); CHKERRQ(ierr);
   if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
   
   ierr = PetscOptionsGetReal(PETSC_NULL, "-ssa_eps", &ssaEpsilon, PETSC_NULL); CHKERRQ(ierr);
@@ -284,7 +284,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get 
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  ierr = PetscOptionsHasName(PETSC_NULL, "-ssa_matlab", &myssaSystemToASCIIMatlab); CHKERRQ(ierr);
+  ierr = check_option("-ssa_matlab", myssaSystemToASCIIMatlab); CHKERRQ(ierr);
   if (myssaSystemToASCIIMatlab == PETSC_TRUE)   ssaSystemToASCIIMatlab = PETSC_TRUE;
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {  // now get the prefix if it was given by user
     char tempPrefix[PETSC_MAX_PATH_LEN];
@@ -305,7 +305,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
   // SSA equations where DRAGGING; this version is  U = f(|v|) u + v   where u is SIA and v is SSA
-  ierr = PetscOptionsHasName(PETSC_NULL, "-super", &mydoSuperpose); CHKERRQ(ierr);
+  ierr = check_option("-super", mydoSuperpose); CHKERRQ(ierr);
   if (mydoSuperpose == PETSC_TRUE) {
     doSuperpose = PETSC_TRUE;
   }

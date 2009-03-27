@@ -117,6 +117,7 @@ public:
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode report_grid_parameters();
+  virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode ignore_option(const char name[]);
   virtual PetscErrorCode check_old_option_and_stop(const char old_name[], const char new_name[]);

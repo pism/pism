@@ -183,7 +183,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
+              grid.year, dtTempAge / secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
@@ -191,9 +191,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
 
   if (oceanPCC != PETSC_NULL) {
     ierr = oceanPCC->updateShelfBaseTempAndProvide(
-              grid.year, dt * secpera, (void*)(&info_oceancoupler), pccsbt); CHKERRQ(ierr);
+              grid.year, dt / secpera, (void*)(&info_oceancoupler), pccsbt); CHKERRQ(ierr);
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt * secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }

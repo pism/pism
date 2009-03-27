@@ -26,14 +26,30 @@
 #include "../coupler/pccoupler.hh"
 
 
+//! Implements upper ice surface climate inputs, as parameterized in EISMINT-Greenland experiments.
+/*!
+Gives an elevation- and latitude-dependent mean annual surface temperature and 
+amount of summer warming.
+
+Also implements GWL3 climate warming scenario.
+ */
 class PISMEISGREENPDDCoupler : public PISMPDDCoupler {
 
 public:
   PISMEISGREENPDDCoupler();
+  PetscErrorCode startGWL3AtYear(PetscScalar year); // call with start year to do GML3
+  virtual PetscErrorCode updateSurfTempAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years,
+             void *iceInfoNeeded, IceModelVec2* &pvst);
 
 protected:
   virtual PetscScalar getSummerWarming(
-       const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma);
+             const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma);
+  virtual PetscScalar calculateMeanAnnual(PetscScalar h, PetscScalar lat);
+
+private:
+  PetscTruth  doGWL3;
+  PetscScalar startGWL3Year;
 };
 
 
@@ -42,9 +58,10 @@ protected:
 This derived class adds, essentially, only the minimum functionality needed
 to implement the choices stated in \lo \cite{RitzEISMINT}\elo, the EISMINT-Greenland 
 specification:
-- A PDD is always used.
-- There is an elevation- and latitude-dependent amount of summer warming.
+- A PDD model is always used, through PISMEISGREENPDDCoupler.
 - An enhancement factor of 3.0 is used.
+- -ocean_kill is used by default.
+- Constant geothermal flux.
 - There is special code to ``clean out'' Ellsmere Island (and Iceland) so ice won't spread to
   edge of computational grid; this should probably be moved to the scripts which set up the
   bootstrap file.
@@ -56,24 +73,20 @@ class IceGRNModel : public IceModel {
 public:
   IceGRNModel(IceGrid &g);
   PetscErrorCode attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p);
+  virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode setFromOptions();
 
 protected:
   PISMEISGREENPDDCoupler *pddPCC; // points to same PISMAtmosCoupler as IceModel::atmosPCC,
                                   //   but we access PDD parameters through this pointer
 
   int expernum;  // SSL2 is 1, CCL3 is 3, GWL3 is 4
-  virtual PetscErrorCode additionalAtStartTimestep();
 
 private:
-  PetscTruth     inFileSet, 
-                 noEllesmereIcelandDelete,
-                 haveSurfaceTemp,
-                 haveGeothermalFlux;
-  PetscScalar    calculateMeanAnnual(PetscScalar h, PetscScalar lat);
-  PetscErrorCode updateTs();
+  PetscTruth  noEllesmereIcelandDelete,
+              haveSurfaceTemp,
+              haveGeothermalFlux;
   PetscErrorCode ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat);
   PetscErrorCode cleanExtraLand();
 };

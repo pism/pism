@@ -232,11 +232,15 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
 }
 
 
-//! Updates forcing and provides access to vsurftemp.  No update of vsurftemp.  Real atmosphere models, derived classes, will update.
+//! Updates vsurftemp using -dTforcing (if it is on) and provides access to vsurftemp.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvst) {
   PetscErrorCode ierr;
+
+  if (vsurftemp.was_created())
+    pvst = &vsurftemp;
+  else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
 
   if (dTforcing != PETSC_NULL) {
     ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
@@ -247,15 +251,11 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
     ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
   }
 
-  if (vsurftemp.was_created())
-    pvst = &vsurftemp;
-  else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
-
   return 0;
 }
 
 
-//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(), but ignors returned pointers.
+//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(), but ignores returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded) {
@@ -489,8 +489,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasetemp.set_attrs(
            "climate_state", "absolute temperature at ice shelf base",
 	   "K", NULL); CHKERRQ(ierr);
-	   // check whether a standard_name is on CF table
-	   //   http://cf-pcmdi.llnl.gov/documents/cf-standard-names/current/cf-standard-name-table.html
+  // PROPOSED standard name = ice_shelf_basal_temperature
   ierr = vshelfbasetemp.set(273.15); CHKERRQ(ierr);  // merely a default value to clear nonsense
 
   // ice mass balance rate at the base of the ice shelf
@@ -498,7 +497,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasemassflux.set_attrs(
            "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
 	   "m s-1", NULL); CHKERRQ(ierr); 
-	   // check whether standard_name is on CF table
+  // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
   ierr = vshelfbasemassflux.set(0.0); CHKERRQ(ierr);  // merely a default value to clear nonsense
   // rescales from m/s to m/a when writing to NetCDF and std out:
   vshelfbasemassflux.write_in_glaciological_units = true;
@@ -543,20 +542,11 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
 }
 
 
-//! Updates seaLevel from forcing and provides access to vshelfbasemassflux.  No update of vshelfbasemassflux.  Real ocean models in derived classes will update.
+//! Provides access to vshelfbasemassflux.  No update of vshelfbasemassflux.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
-
-  if (dSLforcing != PETSC_NULL) {
-    // read new sea level (delta from modern)
-    ierr = dSLforcing->updateFromClimateForcingData(t_years,&seaLevel); CHKERRQ(ierr);
-    ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
-       seaLevel); CHKERRQ(ierr);
-    // comment: IceModel::updateSurfaceElevationAndMask() needs to be called before effect of changed
-    //   sea level is seen in ice dynamics (e.g. on grounding line)
-  }
 
   if (vshelfbasemassflux.was_created())
     pvsbmf = &vshelfbasemassflux;
@@ -568,21 +558,12 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 }
 
 
-//! Updates seaLevel from forcing and provides access to vshelfbasetemp.  No update of vshelfbasetemp.  Real ocean models in derived classes will update.
+//! Provides access to vshelfbasetemp.  No update of vshelfbasetemp.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
-  //  printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
-  
-  if (dSLforcing != PETSC_NULL) {
-    // read new sea level (delta from modern)
-    ierr = dSLforcing->updateFromClimateForcingData(t_years,&seaLevel); CHKERRQ(ierr);
-    ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
-       seaLevel); CHKERRQ(ierr);
-    // comment: IceModel::updateSurfaceElevationAndMask() needs to be called before effect of changed
-    //   sea level is seen in ice dynamics (e.g. on grounding line)
-  }
+  // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
 
   if (vshelfbasetemp.was_created())
     pvsbt = &vshelfbasetemp;
@@ -595,6 +576,7 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
 }
 
 
+//! Updates all the ocean climate fields.
 PetscErrorCode PISMOceanCoupler::updateClimateFields(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded) {
@@ -602,12 +584,29 @@ PetscErrorCode PISMOceanCoupler::updateClimateFields(
   IceModelVec2* ignored;
   ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
   ierr = updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
+  ierr = updateSeaLevelElevation(t_years, dt_years, NULL); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscReal PISMOceanCoupler::reportSeaLevelElevation() {
-  return seaLevel;
+//! Updates the sea level (using -dSLforcing, if it is on) and sets \c new_sea_level (if not NULL).
+PetscErrorCode PISMOceanCoupler::updateSeaLevelElevation(PetscReal t_years, PetscReal dt_years,
+							 PetscReal *new_sea_level) {
+  PetscErrorCode ierr;
+
+  if (dSLforcing != PETSC_NULL) {
+    // read the new sea level (delta from modern)
+    ierr = dSLforcing->updateFromClimateForcingData(t_years, &seaLevel); CHKERRQ(ierr);
+    ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
+       seaLevel); CHKERRQ(ierr);
+    // comment: IceModel::updateSurfaceElevationAndMask() needs to be called
+    // before effect of changed sea level is seen in ice dynamics (e.g. on
+    // grounding line)
+  }
+  
+  if (new_sea_level != NULL) *new_sea_level = seaLevel;
+
+  return 0;
 }
 
 
@@ -652,11 +651,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
 
-  // call base class to update seaLevel (if -dSLforcing); pvsbt ignored
-  ierr = PISMOceanCoupler::updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, pvsbt);
-            CHKERRQ(ierr);
-
-  // ignors everything from IceModel except ice thickness; also ignors t_years and dt_years
+  // ignores everything from IceModel except ice thickness; also ignores t_years and dt_years
   const PetscScalar icerho       = 910.0,   // kg/m^3   ice shelf mean density
                     oceanrho     = 1028.0,  // kg/m^3   sea water mean density
                     beta_CC_grad = 8.66e-4, // K/m      Clausius-Clapeyron gradient
@@ -687,9 +682,6 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
-
-  // call base class to update seaLevel (if -dSLforcing); pvsbmf ignored
-  ierr = PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, pvsbmf); CHKERRQ(ierr);
 
   const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity
                     icerho        = 910.0,    // kg m-3   ice shelf mean density

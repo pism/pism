@@ -145,7 +145,9 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscScalar **h, **bed, **H, **mask, **Tbase;
 
   if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-  PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+  PetscReal currentSeaLevel;
+  ierr = oceanPCC->updateSeaLevelElevation(grid.year, dt / secpera,
+					   &currentSeaLevel); CHKERRQ(ierr);
 
   const int MASK_GROUNDED_TO_DETERMINE = 999;
 
@@ -306,7 +308,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface mass flux
     ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, dt * secpera, (void*)(&info_atmoscoupler), pccsmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, (void*)(&info_atmoscoupler), pccsmf); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
@@ -315,7 +317,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (oceanPCC != PETSC_NULL) {
     // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt * secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
   }
@@ -459,7 +461,8 @@ Only call this when hard floatation criterion already shows it is floating.
 const PetscTruth  DEFAULT_DO_SOFT_FLOAT_CRIT = PETSC_FALSE;
 const PetscScalar DEFAULT_SOFT_FLOAT_CRIT_FLOATINESS_MAX = 0.2;
 if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-PetscReal currentSeaLevel = oceanPCC->reportSeaLevelElevation();
+PetscReal currentSeaLevel;
+ierr = oceanPCC->updateSeaLevelElevation(grid.year, grid.dt, &currentSeaLevel); CHKERRQ(ierr);
 PetscScalar IceModel::softFloatationSurface(const PetscScalar thk, const PetscScalar bedelev) const {
   const PetscScalar  h_hard = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * thk;
   if ((doSoftFloatCrit == PETSC_TRUE) && (thk > 1.0)) {
