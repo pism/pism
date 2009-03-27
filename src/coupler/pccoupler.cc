@@ -500,8 +500,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasetemp.set_attrs(
            "climate_state", "absolute temperature at ice shelf base",
 	   "K", NULL); CHKERRQ(ierr);
-	   // check whether a standard_name is on CF table
-	   //   http://cf-pcmdi.llnl.gov/documents/cf-standard-names/current/cf-standard-name-table.html
+  // PROPOSED standard name = ice_shelf_basal_temperature
   ierr = vshelfbasetemp.set(273.15); CHKERRQ(ierr);  // merely a default value to clear nonsense
 
   // ice mass balance rate at the base of the ice shelf
@@ -509,7 +508,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasemassflux.set_attrs(
            "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
 	   "m s-1", NULL); CHKERRQ(ierr); 
-	   // check whether standard_name is on CF table
+  // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
   ierr = vshelfbasemassflux.set(0.0); CHKERRQ(ierr);  // merely a default value to clear nonsense
   // rescales from m/s to m/a when writing to NetCDF and std out:
   vshelfbasemassflux.write_in_glaciological_units = true;

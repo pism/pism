@@ -154,7 +154,7 @@ PetscErrorCode IceModel::createVecs() {
 
   ierr = Sigma3.create(grid, "Sigma", false); CHKERRQ(ierr); // never diff'ed in hor dirs
   ierr = Sigma3.set_attrs("internal","rate of strain heating",
-	        	  "J s-1 m-3", NULL); CHKERRQ(ierr);
+	        	  "W m-3", NULL); CHKERRQ(ierr);
 
   // ice temperature
   ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
@@ -202,7 +202,7 @@ PetscErrorCode IceModel::createVecs() {
   // upward geothermal flux at bedrock surface
   ierr = vGhf.create(grid, "bheatflx", true); CHKERRQ(ierr);
   ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
-			"W m-2", NULL); CHKERRQ(ierr);
+			"W m-2", "upward_heat_flux_at_ground_level_in_soil"); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2");
 
   // u bar and v bar
@@ -235,6 +235,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // basal frictional heating on regular grid
   ierr = vRb.create(grid, "Rb", true); CHKERRQ(ierr);
+  // PROPOSED standard_name = land_ice_basal_frictional_heating
   ierr = vRb.set_attrs("diagnostic", "basal frictional heating",
 		       "W m-2", NULL); CHKERRQ(ierr);
   ierr = vRb.set_glaciological_units("mW m-2");
@@ -256,6 +257,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   ierr = vtauc.create(grid, "tauc", true); CHKERRQ(ierr);
+  // PROPOSED standard_name = land_ice_basal_material_yield_stress
   ierr = vtauc.set_attrs("diagnostic", 
              "yield stress for basal till (plastic or pseudo-plastic model)",
 	     "Pa", NULL); CHKERRQ(ierr);
@@ -278,16 +280,17 @@ PetscErrorCode IceModel::createVecs() {
 
   // friction angle for till under grounded ice sheet
   ierr = vtillphi.create(grid, "tillphi", true);
+  // PROPOSED standard_name = land_ice_basal_material_friction_angle
   ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
 			    "degrees", NULL); CHKERRQ(ierr);
 
   // longitude
   ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
-  ierr = vLongitude.set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
+  ierr = vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude"); CHKERRQ(ierr);
 
   // latitude
   ierr = vLatitude.create(grid, "lat", true); CHKERRQ(ierr);
-  ierr = vLatitude.set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
+  ierr = vLatitude.set_attrs("mapping", "latitude", "degree_north", "latitude"); CHKERRQ(ierr);
 
   // u bar and v bar on staggered grid
   ierr = vuvbar[0].create(grid, "vuvbar[0]", true); CHKERRQ(ierr);
