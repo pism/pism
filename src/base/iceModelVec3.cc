@@ -51,40 +51,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[]
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   ierr = DACreate3d(mygrid.com, DA_YZPERIODIC, DA_STENCIL_STAR, mygrid.Mz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
-  IOwnDA = true;
 
-  if (local) {
-    ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
-  } else {
-    ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
-  }
-
-  localp = local;
-  strcpy(short_name,my_short_name);
-#ifdef PISM_DEBUG
-  creation_counter += 1;
-#endif // PISM_DEBUG
-  return 0;
-}
-
-//! Allocate a DA and a Vec from information in IceGrid; use an existing DA from an existing IceModelVec3.
-PetscErrorCode  IceModelVec3::createSameDA(IceModelVec3 imv3_source,
-                                           IceGrid &mygrid, const char my_short_name[], bool local) {
-  if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-
-  if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec3 with short_name='%s' already allocated\n",short_name);
-  }
-  
-  grid = &mygrid;
-  dims = GRID_3D;
-
-  da = imv3_source.da;
-  IOwnDA = false;
-
-  PetscErrorCode ierr;
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
   } else {

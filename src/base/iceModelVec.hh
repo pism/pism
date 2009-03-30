@@ -112,7 +112,7 @@ protected:
   IceGrid      *grid;
   GridType     dims;
   DA           da;
-  bool         localp, IOwnDA;
+  bool         localp;
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
@@ -147,8 +147,6 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
-  virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
-				       IceGrid &my_grid, const char my_short_name[], bool local);
   PetscErrorCode  get_array(PetscScalar** &a);
 
 protected:
@@ -184,8 +182,6 @@ class IceModelVec3 : public IceModelVec {
 public:
   IceModelVec3();
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
-  PetscErrorCode          createSameDA(IceModelVec3 imv3_dasource, 
-                                       IceGrid &mygrid, const char my_short_name[], bool local);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 imv3_source);

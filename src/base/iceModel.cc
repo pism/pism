@@ -1111,10 +1111,12 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   }
 
   // 3d dedicated work vectors
-  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
+  //  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
+  ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
                          "K", NULL); CHKERRQ(ierr);
-  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
+  //  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
+  ierr = taunew3.create(grid,"age_new",false); CHKERRQ(ierr);
   ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
                            "s", NULL); CHKERRQ(ierr);
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
