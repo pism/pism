@@ -568,7 +568,6 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
 PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
-  PetscErrorCode ierr;
 
   if (vshelfbasemassflux.was_created())
     pvsbmf = &vshelfbasemassflux;
@@ -584,7 +583,6 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
-  PetscErrorCode ierr;
   // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
 
   if (vshelfbasetemp.was_created())

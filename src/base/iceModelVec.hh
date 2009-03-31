@@ -103,6 +103,8 @@ protected:
   bool has_long_name, has_units, has_pism_intent, has_standard_name,
     has_valid_min, has_valid_max, has_coordinates;
 
+  bool IOwnDA;  // FIXME:  Constantine please check this is in the right place
+  
   PetscReal valid_min, valid_max;
 
   utUnit units,		      //< internal (PISM) units

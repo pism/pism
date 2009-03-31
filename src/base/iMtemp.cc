@@ -70,7 +70,7 @@ where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shal
 of the full three-dimensional conservation of energy.  Note \f$dT/dt\f$ stands for the material
 derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
-strain heating (with SI units of J$/(\text{s} \text{m}^3)$).
+strain heating (with SI units of J$/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}$).
 
 \latexonly\index{BOMBPROOF!implementation for temperature equation}\endlatexonly
 Note that both the temperature equation and the age equation involve advection.
@@ -123,6 +123,16 @@ Here \f$T_k = T_{ijk}^{l+1}\f$.  We also apply the discretized conduction equati
 at \f$z_0\f$.  These two combined equations yield a simplified form
 	\f[(1 + 2 KR) T_0 - 2 K T_1 = T_0 + \frac{2\Delta t}{\rho c_p \Delta z} G \f]
 where \f$K = k \Delta t (\rho c \Delta z^2)^{-1}\f$.
+
+The scheme BOMBPROOF is very reliable, but there is still an extreme and rare fjord
+situation.  For example, it occurs in one column of ice in one fjord perhaps only once in a 200ka
+simulation of the whole sheet, in my (ELB) experience modeling the Greenland ice sheet.
+It causes the discretized advection bulge to give temperatures
+below the coldest upstream ice, a continuum impossibility.  So as a final protection
+there is a "bulge limiter" which sets the temperature to the surface temperature of
+the column minus the bulge maximum (15 K) if it is below that level.  The number of times this
+occurs is reported as a "BPbulge" percentage on its own newline.  (FIXME:  This report format
+should be streamlined in the trunk.)
  */
 PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   PetscErrorCode  ierr;
@@ -217,9 +227,16 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   PetscInt        myLowTempCount = 0;  // counts unreasonably low temperature values
+  PetscScalar     mybulgeCount = 0.0;  // counts 3D points at which the bulge was limited;
+                                       // is PetscScalar not PetscInt so PetscGlobalSum works
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    
+      const PetscScalar bulgeMax   = 15.0; // K; max amount by which ice or bedrock can be lower than 
+                                           //   surface temperature
+      const PetscScalar myTs       = Ts[i][j];  // set by PISMAtmosphereCoupler
+
       // this should *not* be replaced by call to grid.kBelowHeightEQ():
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
 
@@ -271,8 +288,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           // essentially no ice but floating ... ask PISMOceanCoupler
           rhs[k0] = Tshelfbase[i][j];
           // FIXME: split k0 into two grid points?
-        } else { // top of bedrock sees atmosphere; set by PISMAtmosphereCoupler
-          rhs[k0] = Ts[i][j]; 
+        } else { // top of bedrock sees atmosphere
+          rhs[k0] = myTs; 
         }
       } else { // ks > 0; there is ice
         planeStar ss;
@@ -366,7 +383,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         L[k0+ks] = 0.0;
         D[k0+ks] = 1.0;
         // ignore U[k0+ks]
-        rhs[k0+ks] = Ts[i][j]; // set by PISMAtmosphereCoupler
+        rhs[k0+ks] = myTs;
       }
 
       // solve system; melting not addressed yet
@@ -409,6 +426,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
               Tnew[k],i,j,k,grid.rank,mask[i][j],w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
+        if (Tnew[k] < myTs - bulgeMax) {   Tnew[k] = myTs - bulgeMax;  mybulgeCount++;   }
       }
       
       // insert solution for ice/rock interface (or base of ice shelf) segment
@@ -437,6 +455,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
               Tnew[0],i,j,grid.rank,mask[i][j],w[0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
+        if (Tnew[0] < myTs - bulgeMax) {   Tnew[0] = myTs - bulgeMax;   mybulgeCount++;   }
       } else {
         Hmeltnew = 0.0;
       }
@@ -448,7 +467,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
         if (PismModMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
           Tbnew[k0] = Tshelfbase[i][j]; // set by PISMOceanCoupler
         } else { // top of bedrock sees atmosphere
-          Tbnew[k0] = Ts[i][j]; // set by PISMAtmosphereCoupler
+          Tbnew[k0] = myTs;
         }
       }
       // check bedrock solution        
@@ -460,6 +479,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
               Tbnew[k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
            myLowTempCount++;
         }
+        if (Tbnew[k] < myTs - bulgeMax) {   Tbnew[k] = myTs - bulgeMax;   mybulgeCount++;   }
       }
 
       // transfer column into Tb3; neighboring columns will not reference!
@@ -467,7 +487,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
 
       // set to air temp above ice
       for (PetscInt k=ks; k<Mz; k++) {
-        Tnew[k] = Ts[i][j];
+        Tnew[k] = myTs;
       }
 
       // transfer column into Tnew3; communication later
@@ -521,7 +541,17 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   delete [] T;  delete [] Tb;  delete [] Tbnew;  delete [] Tnew;
 
   delete [] zlevEQ;   delete [] zblevEQ;
- 
+
+  // FIXME:  This bulge limiter report format should be streamlined in the trunk.
+  //         It should go in temperatureAgeStep() like the "BPsacr" report.   It is here
+  //         for merging with stable0.2.
+  PetscScalar gbulgeCount;
+  ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
+  if (gbulgeCount > 0.0) {
+    const PetscScalar bulgePRCNT = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
+    ierr = verbPrintf(2,grid.com," [BPbulge=%.8f%%] ", bulgePRCNT); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
