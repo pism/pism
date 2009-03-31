@@ -547,9 +547,12 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   //         for merging with stable0.2.
   PetscScalar gbulgeCount;
   ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
-  if (gbulgeCount > 0.0) {
+  if (gbulgeCount > 0.0) {  // frequently it is identically zero
     const PetscScalar bulgePRCNT = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
-    ierr = verbPrintf(2,grid.com," [BPbulge=%.8f%%] ", bulgePRCNT); CHKERRQ(ierr);
+    const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 0.0001% = 1 / 10^6
+    if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
+      ierr = verbPrintf(2,grid.com," [BPbulge=%.5f%%] ", bulgePRCNT); CHKERRQ(ierr);
+    }
   }
 
   return 0;

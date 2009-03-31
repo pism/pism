@@ -156,20 +156,29 @@ sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
-  PetscScalar **ub, **vb;
+  PetscScalar **ub, **vb, **mask;
   PetscScalar locCFLmaxdt2D = maxdt;
   
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar denom = PetscAbs(ub[i][j])/grid.dx + PetscAbs(vb[i][j])/grid.dy;
-      denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
-      locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
+      // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
+      //   IceModel::massContExplicitStep() when zeroing thickness
+      const bool ignorableOcean =
+          (   ( (doOceanKill == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
+           || ( (floatingIceKilled == PETSC_TRUE) && (PismModMask(mask[i][j]) == MASK_FLOATING)  )  );
+      if (!ignorableOcean) {
+        PetscScalar denom = PetscAbs(ub[i][j])/grid.dx + PetscAbs(vb[i][j])/grid.dy;
+        denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
+        locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
+      }
     }
   }
   ierr = vub.end_access(); CHKERRQ(ierr);
   ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
   return 0;
