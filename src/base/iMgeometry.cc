@@ -173,7 +173,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
       if (isDrySimulation == PETSC_TRUE) {
         // Don't update mask; potentially one would want to do SSA
-        //   dragging ice shelf in dry case and/or ignor mean sea level elevation.
+        //   dragging ice shelf in dry case and/or ignore mean sea level elevation.
         h[i][j] = hgrounded;
       } else if (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) {
         // Mask takes priority over bed in this case (note sea level may change).
@@ -182,7 +182,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // If mask says OCEAN0 then don't change the mask and also don't change
         // the thickness; massContExplicitStep() is in charge of that.
         // Almost always the next line is equivalent to h[i][j] = 0.
-        h[i][j] = hfloating;  // ignor bed and treat it like deep ocean
+        h[i][j] = hfloating;  // ignore bed and treat it like deep ocean
       } else {
         if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           // check whether you are actually floating or grounded
@@ -447,6 +447,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+
+  // Check if the ice thickness is about to exceed the height of the
+  // computational box and extend the grid if necessary:
+  ierr = check_maximum_thickness(); CHKERRQ(ierr);
+
   return 0;
 }
 

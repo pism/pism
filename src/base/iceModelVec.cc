@@ -27,7 +27,6 @@ IceModelVec::IceModelVec() {
   grid = PETSC_NULL;
   array = PETSC_NULL;
   localp = true;
-  IOwnDA = true;
   use_interpolation_mask = false;
 
   strcpy(short_name,"*****UNKNOWN***** variable name");
@@ -62,7 +61,7 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = VecDestroy(v); CHKERRQ(ierr);
     v = PETSC_NULL;
   }
-  if ((IOwnDA) && (da != PETSC_NULL)) {
+  if (da != PETSC_NULL) {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
@@ -102,8 +101,8 @@ PetscErrorCode  IceModelVec::printInfo(const PetscInt verbosity) {
   }
   
   ierr = verbPrintf(verbosity,grid->com,
-           "  boolean flags:  localp = %d,  IOwnDA = %d,  has_standard_name = %d\n",
-           (int)localp, (int)IOwnDA, has_standard_name);  CHKERRQ(ierr);
+           "  boolean flags:  localp = %d, has_standard_name = %d\n",
+		    (int)localp, (int)has_standard_name);  CHKERRQ(ierr);
 
   ierr = verbPrintf(verbosity,grid->com,
            "                  long_name = '%s'\n", long_name);  CHKERRQ(ierr);

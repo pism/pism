@@ -103,8 +103,6 @@ protected:
   bool has_long_name, has_units, has_pism_intent, has_standard_name,
     has_valid_min, has_valid_max, has_coordinates;
 
-  bool IOwnDA;  // FIXME:  Constantine please check this is in the right place
-  
   PetscReal valid_min, valid_max;
 
   utUnit units,		      //< internal (PISM) units
@@ -217,10 +215,13 @@ public:
   PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2 myH); // used in iMviewers.cc
   PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 myH);
   PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H);
+  PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
+  PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
+  virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };
 
 #endif /* __IceModelVec_hh */

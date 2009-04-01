@@ -221,27 +221,100 @@ PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
 }
 
 
-//! Check if the thickness of the ice is so large that ice is above the top of the computational grid.  FIXME: This is the place to automatically expand 3D computational grid (task #4218).
-PetscErrorCode IceModel::thicknessTooLargeCheck() {
+//! Check if the thickness of the ice is too large and extend the grid if necessary.
+/*!
+  Extends the grid such that the new one has 2 (two) level above the ice.
+ */
+PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
+  PetscReal H_min, H_max, dz_top;
+  double *new_zlevels, *new_zblevels;
+  const int old_Mz = grid.Mz;
+  int N = 0; 			// the number of new levels
 
-  PetscScalar **H;
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > grid.Lz) {
-        PetscPrintf(grid.com,
-           "PISM ERROR thicknessTooLargeCheck(): ice thickness exceeds computational box;\n"
-           "  H[i][j] = %5.4f exceeds Lz = %5.4f  ... ENDING!!\n",
-           H[i][j], grid.Lz);
-        PetscEnd();
-      }
-    }
+  ierr = vH.range(H_min, H_max); CHKERRQ(ierr);
+  if (grid.Lz >= H_max) return 0;
+
+  if (initial_Mz == 0)
+    initial_Mz = grid.Mz;
+  else if (grid.Mz > initial_Mz * 2) {
+    ierr = PetscPrintf(grid.com,
+		       "\n"
+		       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
+		       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
+		       H_max, grid.Lz, initial_Mz); CHKERRQ(ierr);
+    PetscEnd();
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  // So, we need to extend the grid. We find dz at the top of the grid,
+  // create new zlevels and zblevels, then extend all the IceModelVec3s.
+
+  // Find the vertical grid spacing at the top of the grid:
+  dz_top = grid.Lz - grid.zlevels[old_Mz - 2];
+
+  // Find the number of new levels:
+  while (grid.Lz + N * dz_top <= H_max) N++;
+  // This makes sure that we always have *exactly* two levels strictly above the ice:
+  if (grid.Lz + N * dz_top > H_max) N += 1;
+  else N += 2;
+
+  ierr = verbPrintf(5, grid.com,
+		    "\n"
+		    "PISM WARNING: max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)...\n"
+		    "              Adding %d new grid layers %7.4f m apart...\n",
+		    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
+
+  // Create new zlevels and zblevels:
+  new_zblevels = new double[grid.Mbz];
+  new_zlevels = new double[old_Mz + N];
+
+  for (int j = 0; j < grid.Mbz; j++)
+    new_zblevels[j] = grid.zblevels[j];
+  for (int j = 0; j < old_Mz; j++)
+    new_zlevels[j] = grid.zlevels[j];
+
+  // Fill the new levels:
+  for (int j = 0; j < N; j++)
+    new_zlevels[old_Mz + j] = grid.Lz + dz_top * (j + 1);
+
+  ierr = grid.set_vertical_levels(old_Mz + N, grid.Mbz,
+				  new_zlevels, new_zblevels); CHKERRQ(ierr);
+  delete[] new_zlevels;
+  delete[] new_zblevels;
+
+  // Done with the grid. Now we need to extend IceModelVec3s.
+
+  // We use surface temperatures to extend T3 and Tnew3. We get them from the
+  // PISMAtmosphereCoupler.
+
+  IceModelVec2 *pccTs;
+
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccTs to point to IceModelVec2 with current surface temps
+    ierr = atmosPCC->updateSurfTempAndProvide(
+              grid.year, dtTempAge / secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+
+  // Model state 3D vectors:
+  ierr =     u3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr =     v3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr =     w3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr = Sigma3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr =     T3.extend_vertically(old_Mz, *pccTs); CHKERRQ(ierr);
+  ierr =   tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+
+  // Work 3D vectors:
+  ierr =         Tnew3.extend_vertically(old_Mz, *pccTs); CHKERRQ(ierr);
+  ierr =       taunew3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr =     Istag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+
   return 0;
 }
-
 
 PetscErrorCode IceModel::report_grid_parameters() {
   PetscErrorCode ierr;

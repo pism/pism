@@ -109,6 +109,8 @@ public:
 
   // see iceModel.cc
   PetscErrorCode init();
+
+  // see iMinit.cc
   virtual PetscErrorCode grid_setup();
   virtual PetscErrorCode init_physics();
   virtual PetscErrorCode init_couplers();
@@ -119,9 +121,11 @@ public:
   virtual PetscErrorCode report_grid_parameters();
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
+
   virtual PetscErrorCode ignore_option(const char name[]);
   virtual PetscErrorCode check_old_option_and_stop(const char old_name[], const char new_name[]);
   virtual PetscErrorCode stop_if_set(const char name[]);
+
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
@@ -156,6 +160,7 @@ public:
 protected:
 
   IceGrid               &grid;
+  int initial_Mz;		//!< the number of vertical grid levels at the start of the run; used by the grid extension code
 
   PolarStereoParams     psParams;
   
@@ -183,14 +188,14 @@ protected:
   IceModelVec2
         vh,		//!< ice surface elevation
         vH,		//!< ice thickness
-        vdHdt,		//!< \frac{dH}{dt}
+        vdHdt,		//!< dH/dt
         vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model)
         vHmelt,		//!< thickness of the basal meltwater
         vbasalMeltRate,	//!< rate of production of basal meltwater (ice-equivalent)
         vLongitude,	//!< Longitude
         vLatitude,	//!< Latitude 
         vbed,		//!< bed topography
-        vuplift,		//!< bed uplift rate
+        vuplift,	//!< bed uplift rate
         vMask,		//!< mask for flow type with values SHEET, DRAGGING, FLOATING
         vGhf,		//!< geothermal flux
         vRb,		//!< basal frictional heating on regular grid
@@ -468,7 +473,7 @@ protected:
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(const char*);
   virtual PetscErrorCode stampHistoryAdd(const char*);
-  virtual PetscErrorCode thicknessTooLargeCheck();
+  virtual PetscErrorCode check_maximum_thickness();
 
   // see iMvelocity.cc
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    

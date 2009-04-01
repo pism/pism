@@ -322,11 +322,11 @@ bool IceHEINOModel::inSoftSediment(const PetscScalar x, const PetscScalar y) {
 // reimplement IceModel::basalVelocity(): location-dependent pressure-melting-temperature-activated
   // linear *or nonlinear* sliding law.  Returns positive coefficient C in the law
   //                U_b = <u_b,v_b> = - C grad h 
-  // note: ignors mu
+  // note: ignores mu
 PetscScalar IceHEINOModel::basalVelocity(const PetscScalar x, const PetscScalar y,
       const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
       const PetscScalar mu) {
-  // ignors mu
+  // ignores mu
   
   const PetscScalar  heino_beta_cc = 8.7e-4;  // K/m
   const PetscScalar  heino_temp_for_sliding = 273.15;  // K

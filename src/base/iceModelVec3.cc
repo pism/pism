@@ -280,7 +280,7 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(
 
   PetscScalar ***arr = (PetscScalar***) array;
 
-  star->ij = arr[i][j][kbz] + incr * (arr[i][j][kbz + 1] - arr[i][j][kbz]);
+  star->ij  = arr[i][j][kbz]   + incr * (arr[i][j][kbz + 1]   - arr[i][j][kbz]);
   star->ip1 = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
   star->im1 = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
   star->jp1 = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
@@ -398,6 +398,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(const PetscInt i, const PetscInt 
 }
 
 
+//! Copies a horizontal slice at level z of an IceModelVec3 into a Vec gslice.
 PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, const PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
@@ -411,6 +412,7 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, const PetscScalar z) {
   return 0;
 }
 
+//! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2 gslice.
 PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 gslice, const PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
@@ -425,6 +427,7 @@ PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 gslice, const PetscScalar
 }
 
 
+//! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2 gsurf.
 PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 myH) {
   PetscErrorCode ierr;
   PetscScalar    **H;
@@ -434,6 +437,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2
   return 0;
 }
 
+//! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to a Vec gsurf.
 PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
@@ -511,7 +515,6 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mbz, 
                     N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
-  IOwnDA = true;
 
   ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
 
@@ -700,6 +703,113 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumn(const PetscInt i, const PetscI
     const PetscScalar valm = arr[i][j][mcurr];
     valsOUT[k] = valm + incr * (arr[i][j][mcurr+1] - valm);
   }
+
+  return 0;
+}
+
+//! Extends an IceModelVec3 and fills all the new grid points with \c fill_value.
+PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscReal fill_value) {
+  PetscErrorCode ierr;
+
+  // Allocate more memory:
+  ierr = extend_vertically_private(old_Mz); CHKERRQ(ierr);
+
+  // Fill the new layer:
+  PetscScalar ***a;
+  ierr = DAVecGetArray(da, v, &a); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
+      for (PetscInt k = old_Mz; k < grid->Mz; k++)
+	a[i][j][k] = fill_value;
+    }
+  }
+  ierr = DAVecRestoreArray(da, v, &a); CHKERRQ(ierr);
+
+  // This communicates the ghosts just to update the new levels. Since this
+  // only happens when the grid is extended it should not matter.
+  if (localp) {
+    ierr = beginGhostComm(); CHKERRQ(ierr);
+    ierr = endGhostComm(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
+//! Extends an IceModelVec3 and fills the new grid points with corresponding \c fill_values values.
+/*! Assumes that only one level was added to the grid (see the NB! comment).
+ */
+PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2 &fill_values) {
+  PetscErrorCode ierr;
+
+  // Allocate more memory:
+  ierr = extend_vertically_private(old_Mz); CHKERRQ(ierr);
+
+  // Fill the new layer:
+  PetscScalar ***a, **filler;
+  ierr = DAVecGetArray(da, v, &a); CHKERRQ(ierr);
+  ierr = fill_values.get_array(filler); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
+      for (PetscInt k = old_Mz; k < grid->Mz; k++)
+	a[i][j][k] = filler[i][j];
+    }
+  }
+  ierr = DAVecRestoreArray(da, v, &a); CHKERRQ(ierr);
+  ierr = fill_values.end_access(); CHKERRQ(ierr);
+
+  // This communicates the ghosts just to update the new levels. Since this
+  // only happens when the grid is extended it should not matter.
+  if (localp) {
+    ierr = beginGhostComm(); CHKERRQ(ierr);
+    ierr = endGhostComm(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! Handles the memory allocatio/deallocation and copying. Does not fill the values of the new layer.
+/*! Assumes that the grid was extended by *one* level only (see the NB! comment).
+ */
+PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
+  PetscErrorCode ierr;
+  Vec v_new;
+  DA da_new;
+
+  // This code should match what is being done in IceModelVec3::create():
+
+  PetscInt       M, N, m, n;
+  ierr = DAGetInfo(grid->da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
+                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR, grid->Mz, N, M, 1, n, m, 1, 1,
+                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da_new); CHKERRQ(ierr);
+  
+  if (localp) {
+    ierr = DACreateLocalVector(da_new, &v_new); CHKERRQ(ierr);
+  } else {
+    ierr = DACreateGlobalVector(da_new, &v_new); CHKERRQ(ierr);
+  }
+
+  // Copy all the values from the old Vec to the new one:
+  PetscScalar ***a_new;
+  PetscScalar ***a_old;
+  ierr = DAVecGetArray(da, v, &a_old); CHKERRQ(ierr);
+  ierr = DAVecGetArray(da_new, v_new, &a_new); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
+      for (PetscInt k=0; k < old_Mz; k++)
+	a_new[i][j][k] = a_old[i][j][k];
+    }
+  }
+  ierr = DAVecRestoreArray(da, v, &a_old); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(da_new, v_new, &a_new); CHKERRQ(ierr);
+
+  // Deallocate old DA and Vec:
+  ierr = VecDestroy(v); CHKERRQ(ierr);
+  v = v_new;
+
+  ierr = DADestroy(da); CHKERRQ(ierr);
+  da = da_new;
 
   return 0;
 }

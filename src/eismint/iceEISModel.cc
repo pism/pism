@@ -73,8 +73,6 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
       grid.Lz = 4e3;
       break;
     case 'F':
-      // in r426 and earlier (possibly a bit after that) there was dependence of Lz on the flow law
-      // the intended solution is to implement task #4218 (expand vertically automatically).
       grid.Lx = grid.Ly = L;
       grid.Lz = 6e3;
       break;

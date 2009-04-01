@@ -683,10 +683,11 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // re task #4218:  keep this check despite creation of
-      //   thicknessTooLargeCheck(); check here is slightly different;
-      //   later this one can be removed if never active
-      // this should *not* be replaced by call to grid.kBelowHeightEQ()
+      // re task #4218: keep this check despite creation of the grid extension
+      // mechanism; check here is slightly different; later this one can be
+      // removed if never active.
+
+      // this should *not* be replaced by a call to grid.kBelowHeightEQ()
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/dzEQ));
       if (ks > Mz-1) {
         SETERRQ3(1,
@@ -696,7 +697,7 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
       }
 
       if (ks == 0) { // if no ice, set the entire column to zero age
-                     // and ignor the velocities in that column
+                     // and ignore the velocities in that column
         ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case
         ierr = tau3.getValColumnQUAD(i,j,Mz,zlevEQ,tau); CHKERRQ(ierr);
@@ -755,7 +756,7 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
         // surface b.c. at ks
         if (ks>0) {
           L[ks] = 0;
-          D[ks] = 1.0;   // ignor U[ks]
+          D[ks] = 1.0;   // ignore U[ks]
           rhs[ks] = 0.0;  // age zero at surface
         }
         // done setting up system
