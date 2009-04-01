@@ -401,6 +401,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if (Hnew[i][j] < 0)
         Hnew[i][j] = 0.0;
 
+      // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
+      //   IceModel::computeMax2DSlidingSpeed() when determining CFL
+      
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
       if ( (doOceanKill == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
