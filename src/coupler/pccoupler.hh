@@ -30,9 +30,17 @@
 
 //! A virtual base class for coupling PISM to other climate components.
 /*!
-Methods and members here are common to all possible implementations and 
-derived classes.
- */
+  Methods and members here are common to all possible implementations and 
+  derived classes.
+
+  <p> All the update... methods should interpret the \c t_years and -c dt_years
+  arguments as specifying the time interval (t_years, t_years + dt_years). A
+  coupler should provide an estimate of a climate field for this interval, which
+  may (but does not have to) be an average over this interval.</p>
+
+  <p> The \c dt_years argument <b> is not </b> "the time since the last call",
+  and <b> should not </b> be used to incrementally update climate fields. </p>
+*/
 class PISMClimateCoupler {
 
 public:
@@ -113,11 +121,8 @@ public:
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
              IceModelVec2* &pvst);  // pvst = pointer to vsurftemp
 
-//FIXME: should be protected:
 protected:
   IceModelVec2 vsurfmassflux, vsurftemp; // access these through update...() above
-
-protected:
   PetscReal           TsOffset;
   PISMClimateForcing* dTforcing; 
 };

@@ -258,10 +258,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   if (grid.Lz + N * dz_top > H_max) N += 1;
   else N += 2;
 
-  ierr = verbPrintf(5, grid.com,
+  ierr = verbPrintf(2, grid.com,
 		    "\n"
 		    "PISM WARNING: max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)...\n"
-		    "              Adding %d new grid layers %7.4f m apart...\n",
+		    "              Adding %d new grid levels %7.4f m apart...\n",
 		    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
 
   // Create new zlevels and zblevels:
@@ -292,7 +292,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dtTempAge / secpera, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }

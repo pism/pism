@@ -54,6 +54,10 @@ bool IceModelVec::was_created() {
   return (v != PETSC_NULL);
 }
 
+//! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
+GridType IceModelVec::grid_type() {
+  return dims;
+}
 
 PetscErrorCode  IceModelVec::destroy() {
   PetscErrorCode ierr;
@@ -203,9 +207,12 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
 
+  if (dims != x.dims) {
+    SETERRQ(1, "IceModelVec::add(...): operands have different numbers of dimensions");
+  }
+
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
-
   if (X_size != Y_size)
     SETERRQ1(1, "IceModelVec::add(...): incompatible Vec sizes (called as %s.add(...))\n", short_name);
 
@@ -219,6 +226,10 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x, IceModelVec &
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
   ierr = result.checkAllocated(); CHKERRQ(ierr);
+
+  if ((dims != x.dims) || (dims != result.dims)) {
+    SETERRQ(1, "IceModelVec::add(...): operands have different numbers of dimensions");
+  }
 
   ierr = VecWAXPY(result.v, alpha, x.v, v); CHKERRQ(ierr);
   return 0;
@@ -249,6 +260,11 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
 
+  if ((dims != x.dims) ||
+      (dims != result.dims)) {
+    SETERRQ(1, "IceModelVec::multiply_by(...): operands have different numbers of dimensions");
+  }
+
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
 
@@ -265,6 +281,10 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
   PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
+
+  if ((dims != x.dims)) {
+    SETERRQ(1, "IceModelVec::multiply_by(...): operands have different numbers of dimensions");
+  }
 
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
@@ -299,6 +319,10 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = destination.checkAllocated(); CHKERRQ(ierr);
 
+  if ((dims != destination.dims)) {
+    SETERRQ(1, "IceModelVec::copy_to(...): operands have different numbers of dimensions");
+  }
+
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(destination.v, &Y_size); CHKERRQ(ierr);
 
@@ -314,6 +338,10 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   PetscErrorCode ierr;
   PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if ((dims != source.dims)) {
+    SETERRQ(1, "IceModelVec::copy_from(...): operands have different numbers of dimensions");
+  }
   
   ierr = VecGetSize(source.v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(v, &Y_size); CHKERRQ(ierr);
@@ -325,65 +353,12 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   return 0;
 }
 
-//! Puts a local IceModelVec on processor 0.
-/*!
- <ul>
- <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
- <li> g2 is a preallocated temporary global vector,
- <li> g2natural is a preallocated temporary global vector with natural ordering.
- </ul>
-*/
-PetscErrorCode IceModelVec::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
-  PetscErrorCode ierr;
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (!localp)
-    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", short_name);
-
-  ierr =        DALocalToGlobal(da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
-  ierr = DAGlobalToNaturalBegin(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-  ierr =   DAGlobalToNaturalEnd(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-
-  ierr = VecScatterBegin(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-
-  return 0;
-}
-
-//! Gets a local IceModelVec from processor 0.
-/*!
- <ul>
- <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
- <li> g2 is a preallocated temporary global vector,
- <li> g2natural is a preallocated temporary global vector with natural ordering.
- </ul>
-*/
-PetscErrorCode IceModelVec::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
-  PetscErrorCode ierr;
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (!localp)
-    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", short_name);
-
-  ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-
-  ierr = DANaturalToGlobalBegin(grid->da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DANaturalToGlobalEnd(grid->da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DAGlobalToLocalBegin(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr =     DAGlobalToLocalEnd(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 //! Sets the variable name to \c name.
 PetscErrorCode  IceModelVec::set_name(const char name[]) {
   reset_attrs();
   strcpy(short_name, name);
   return 0;
 }
-
 
 //! Sets the glaciological units of an IceModelVec.
 /*!
@@ -424,7 +399,7 @@ PetscErrorCode IceModelVec::reset_attrs() {
   strcpy(pism_intent,                "unknown pism_intent");
   has_pism_intent = false;
 
-  strcpy(standard_name,"unknown NetCDF CF 1.0 standard_name");
+  strcpy(standard_name,"unknown CF standard_name");
   has_standard_name = false;
 
   strcpy(coordinates, "lat lon");
@@ -575,7 +550,9 @@ PetscErrorCode IceModelVec::write_attrs(const int ncid, nc_type nctype) {
   return 0;
 }
 
-//! Virtual only. Reimplemented in derived classes.
+//! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
+/*! Stops if the variable was not found and \c critical == true.
+ */
 PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, 
                                    bool critical) {
   PetscErrorCode ierr;
@@ -585,7 +562,9 @@ PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic,
   return 0;
 }
 
-//! Virtual only. Reimplemented in derived classes.
+//! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
+/*! Sets all the values to \c default_value if the variable was not found..
+ */
 PetscErrorCode IceModelVec::regrid(const char filename[], 
                                    LocalInterpCtx &lic, PetscScalar default_value) {
   PetscErrorCode ierr;
@@ -909,9 +888,18 @@ PetscErrorCode  IceModelVec::endGhostComm() {
 PetscErrorCode  IceModelVec::beginGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
   if (!localp) {
-    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has short_name='%s')\n",
+    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has short_name='%s')",
                short_name);
   }
+
+  if (!destination.localp) {
+    SETERRQ(1, "IceModelVec::beginGhostComm(): destination has to be local.");
+  }
+
+  if (dims != destination.dims) {
+    SETERRQ(1, "IceModelVec::beginGhostComm(): operands have different numbers of dimensions.");
+  }
+
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
   return 0;
@@ -924,6 +912,15 @@ PetscErrorCode  IceModelVec::endGhostComm(IceModelVec &destination) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has short_name='%s')\n",
                short_name);
   }
+
+  if (!destination.localp) {
+    SETERRQ(1, "IceModelVec::beginGhostComm(): destination has to be local.");
+  }
+
+  if (dims != destination.dims) {
+    SETERRQ(1, "IceModelVec::beginGhostComm(): operands have different numbers of dimensions.");
+  }
+
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(da, v, INSERT_VALUES, destination.v); CHKERRQ(ierr);
   return 0;
@@ -1232,9 +1229,9 @@ PetscErrorCode IceModelVec::set_coordinates(const char name[]) {
   return 0;
 }
 
-//! Reads the valid_range, valid_min valid_max sttributes from an input file.
+//! Reads the valid_range, valid_min valid_max attributes from an input file.
 /*! Reads these attributes and and sets IceModelVec::valid_min and
-  IceModelVec::valid_max they were not set already.
+  IceModelVec::valid_max if they were not set already.
 
   Note that if valid_range is present, then valid_min and valid_max are
   ignored.

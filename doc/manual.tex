@@ -1069,10 +1069,11 @@ In addition to the seven experiments published in \cite{EISMINT00}, there were a
 
 The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  One option in PISM is an equally-spaced grid, in which case we recommend the use of about 200 vertical levels.  With a quadratically spaced unequal grid one can use far fewer levels.  Reasonable experiment A runs, with basal layers of thickness 25 m or less, are:
 
-\verb|pisms -eisII A -Mx 61 -My 61 -Mz 201 -skip 5 -y 2e5 -o eisIIA_equal.nc|
+\begin{verbatim}
+pisms -eisII A -Mx 61 -My 61 -Mz 201 -skip 5 -y 2e5 -o eisIIA_equal.nc
 
-\verb|pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -skip 5 -y 2e5 -o eisIIA_quadZ.nc|
-
+pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -skip 5 -y 2e5 -o eisIIA_quadZ.nc
+\end{verbatim}
 \noindent The latter run is faster for memory reasons.  These SIA-only simulations parallelize well, and we see speedups up to at least 30 processors for the standard $61\times 61$ horizontal grid.
 
 Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Experiments below the horizontal line in Table \ref{tab:eisII} are only documented in \cite{EISIIdescribe}.
@@ -1115,9 +1116,23 @@ The EISMINT II experiments can be run with various modifications of the default 
 \hline\normalsize
 \end{tabular}\end{table}
 
-Note that in PISM the height \verb|Lz| of the computational box is fixed at the beginning of the run.  On the other hand, changing the boundary conditions of the flow, as for instance by setting option \verb|-Mmax| to a larger than default value (see table \ref{tab:eisIIoptions}), may cause the ice sheet to thicken above the \verb|Lz| height.  If the ice grows above the height of the computational box then a ``\verb|Vertical grid exceeded!|'' or ``\verb|thickness overflow in SIA velocity: ks>Mz!|'' error occurs.  This can be fixed by restarting with a larger value for option \verb|-Lz|.  (Automatic rescaling of, or expansion of, the vertical grid is appropriate, but not yet implemented.)
+Note that in PISM the height \verb|Lz| of the computational box is fixed at the beginning of the run.  On the other hand, changing the boundary conditions of the flow, as for instance by setting option \verb|-Mmax| to a larger than default value (see table \ref{tab:eisIIoptions}), may cause the ice sheet to thicken above the \verb|Lz| height.
 
+If the ice grows above the height of the computational box then a message like the following is produced:
+\begin{verbatim}
+PISM WARNING: max ice thickness (925.0000 m) is greater than the height
+ of the computational box (900.0000 m)...
+              Adding 2 new grid levels 30.0000 m apart...
+\end{verbatim}
+The automatic grid extension mechanism uses the vertical grid spacing at the top of the grid to add as many levels as necessary to have exactly two grid levels above the ice.
 
+This is an emergency mechanism, however. If the ice grown beyond the height of the grid even after it has twice the initial number of vertical levels, PISM produces an error message like the following and then stops:
+\begin{verbatim}
+PISM ERROR: Max ice thickness (1080.0000 m) is greater than the height
+ of the computational box (1050.0000 m) AND the grid has twice the initial
+ number of vertical levels (31) already. Exiting...
+\end{verbatim}
+This can be avoided by picking the right value for \verb|Lz|, though.
 
 \subsection{MISMIP in PISM}\label{subsect:MISMIP}  This intercomparison addresses grounding line dynamics by considering an idealized one-dimensional stream-shelf system.  The intercomparison process is described at the website
 

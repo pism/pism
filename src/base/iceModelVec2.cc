@@ -104,3 +104,53 @@ PetscErrorCode IceModelVec2::get_array(PetscScalar** &a) {
   return 0;
 }
 
+//! Puts a local IceModelVec2 on processor 0.
+/*!
+ <ul>
+ <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
+ <li> g2 is a preallocated temporary global vector,
+ <li> g2natural is a preallocated temporary global vector with natural ordering.
+ </ul>
+*/
+PetscErrorCode IceModelVec2::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if (!localp)
+    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", short_name);
+
+  ierr =        DALocalToGlobal(da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
+  ierr = DAGlobalToNaturalBegin(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  ierr =   DAGlobalToNaturalEnd(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+
+  ierr = VecScatterBegin(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Gets a local IceModelVec2 from processor 0.
+/*!
+ <ul>
+ <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
+ <li> g2 is a preallocated temporary global vector,
+ <li> g2natural is a preallocated temporary global vector with natural ordering.
+ </ul>
+*/
+PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if (!localp)
+    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", short_name);
+
+  ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+
+  ierr = DANaturalToGlobalBegin(grid->da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr =   DANaturalToGlobalEnd(grid->da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr =   DAGlobalToLocalBegin(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
+  ierr =     DAGlobalToLocalEnd(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
+
+  return 0;
+}

@@ -34,6 +34,7 @@ public:
 
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual bool            was_created();
+  virtual GridType        grid_type();
   virtual PetscErrorCode  destroy();
 
   virtual PetscErrorCode  printInfo(const PetscInt verbosity);
@@ -65,8 +66,6 @@ public:
                                             nc_type nctype, size_t len, const double *dp);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
-  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
-  virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
   virtual PetscErrorCode  report_range();
@@ -147,6 +146,8 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
+  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
 
 protected:
