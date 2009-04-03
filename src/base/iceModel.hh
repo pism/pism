@@ -107,9 +107,6 @@ public:
   IceModel(IceGrid &g);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
-  // see iceModel.cc
-  PetscErrorCode init();
-
   // see iMinit.cc
   virtual PetscErrorCode grid_setup();
   virtual PetscErrorCode init_physics();
@@ -122,10 +119,9 @@ public:
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
 
-  virtual PetscErrorCode ignore_option(const char name[]);
-  virtual PetscErrorCode check_old_option_and_stop(const char old_name[], const char new_name[]);
-  virtual PetscErrorCode stop_if_set(const char name[]);
 
+  // see iceModel.cc
+  PetscErrorCode init();
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
@@ -529,17 +525,14 @@ private:
   // for event logging (profiling); see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
 
+protected:
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
-  // Note these do not initialize correctly for derived classes if made
-  // "private" however, derived classes should not need access to the details
-  // of the linear system which uses these
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
   Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
   VecScatter SSAScatterGlobalToLocal;
 
-protected:
   // Jed's External SSA solver:  "If non-NULL, we are using the velocity solver in
   // src/base/ssa and all the SSA* objects above are not used.  Eventually we should
   // move SSA legacy stuff out of IceModel (either by putting into an implementation

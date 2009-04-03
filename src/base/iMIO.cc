@@ -476,7 +476,7 @@ PetscErrorCode IceModel::regrid() {
   char filename[PETSC_MAX_PATH_LEN], regridVars[PETSC_MAX_PATH_LEN];
   NCTool nc(&grid);
 
-  ierr = check_old_option_and_stop("-regrid", "-regrid_from"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-regrid", "-regrid_from"); CHKERRQ(ierr);
 
   // Get the regridding file name:
   ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", filename, PETSC_MAX_PATH_LEN,

@@ -166,3 +166,53 @@ PetscErrorCode check_option(const char name[], PetscTruth &flag) {
 
   return 0;
 }
+
+//! Print a warning telling the user that an option was ignored.
+PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
+  PetscErrorCode ierr;
+  PetscTruth option_is_set;
+
+  char tmp[1]; // dummy string
+  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &option_is_set); CHKERRQ(ierr);
+
+  if (option_is_set) {
+    ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
+		      name); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! Stop if an option \c old_name is set, printing a message that \c new_name should be used instead.
+PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]) {
+  PetscErrorCode ierr;
+  PetscTruth option_is_set;
+
+  char tmp[1]; // dummy string
+  ierr = PetscOptionsGetString(PETSC_NULL, old_name, tmp, 1, &option_is_set); CHKERRQ(ierr);
+
+  if (option_is_set) {
+    ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
+		       old_name, new_name); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  return 0;
+}
+
+//!Stop if an option \c name is set.
+PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
+  PetscErrorCode ierr;
+  PetscTruth option_is_set;
+
+  char tmp[1]; // dummy string
+  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &option_is_set); CHKERRQ(ierr);
+
+  if (option_is_set) {
+    ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
+		       name); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  return 0;
+}

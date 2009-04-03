@@ -34,7 +34,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   grid_info gi;
 
   // Get the bootstrapping file name:
-  ierr = check_old_option_and_stop("-bif", "-boot_from"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-bif", "-boot_from"); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
 			       filename, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
 
@@ -201,7 +201,7 @@ PetscErrorCode IceModel::grid_setup() {
 		    "Setting up the computational grid...\n"); CHKERRQ(ierr);
 
   // Check if we are initializing from a PISM output file:
-  ierr = check_old_option_and_stop("-if", "-i"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-if", "-i"); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-i",
 			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
 
@@ -237,15 +237,15 @@ PetscErrorCode IceModel::grid_setup() {
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
-    ierr = ignore_option("-Mx");    CHKERRQ(ierr);
-    ierr = ignore_option("-My");    CHKERRQ(ierr);
-    ierr = ignore_option("-Mz");    CHKERRQ(ierr);
-    ierr = ignore_option("-Mbz");   CHKERRQ(ierr);
-    ierr = ignore_option("-Lx");    CHKERRQ(ierr);
-    ierr = ignore_option("-Ly");    CHKERRQ(ierr);
-    ierr = ignore_option("-Lz");    CHKERRQ(ierr);
-    ierr = ignore_option("-chebZ"); CHKERRQ(ierr);
-    ierr = ignore_option("-quadZ"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Mx");    CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-My");    CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Mz");    CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Mbz");   CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Lx");    CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Ly");    CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Lz");    CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-chebZ"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-quadZ"); CHKERRQ(ierr);
   } else {
     ierr = set_grid_defaults(); CHKERRQ(ierr);
     ierr = set_grid_from_options(); CHKERRQ(ierr);

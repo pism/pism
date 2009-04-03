@@ -79,8 +79,8 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
   ierr = verbPrintf(2,grid.com,"initializing Test %c ... \n",test); CHKERRQ(ierr);
 
   // input file not allowed
-  ierr = stop_if_set("-i"); CHKERRQ(ierr);
-  ierr = stop_if_set("-boot_from"); CHKERRQ(ierr);
+  ierr = stop_if_set(grid.com, "-i"); CHKERRQ(ierr);
+  ierr = stop_if_set(grid.com, "-boot_from"); CHKERRQ(ierr);
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
 

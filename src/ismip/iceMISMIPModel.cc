@@ -124,9 +124,9 @@ PetscErrorCode IceMISMIPModel::set_grid_from_options() {
 
   // let the base class read -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and -quadZ:
   ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
-  ierr = ignore_option("-Lx"); CHKERRQ(ierr);
-  ierr = ignore_option("-Ly"); CHKERRQ(ierr);
-  ierr = ignore_option("-Lz"); CHKERRQ(ierr);
+  ierr = ignore_option(grid.com, "-Lx"); CHKERRQ(ierr);
+  ierr = ignore_option(grid.com, "-Ly"); CHKERRQ(ierr);
+  ierr = ignore_option(grid.com, "-Lz"); CHKERRQ(ierr);
 
   const PetscScalar   L = 1800.0e3;      // Horizontal half-width of grid
 
