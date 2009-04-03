@@ -524,17 +524,14 @@ private:
   // for event logging (profiling); see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
 
+protected:
   // Pieces of the SSA Velocity routine defined in iMssa.cc.
-  // Note these do not initialize correctly for derived classes if made
-  // "private" however, derived classes should not need access to the details
-  // of the linear system which uses these
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
   Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
   VecScatter SSAScatterGlobalToLocal;
 
-protected:
   // Jed's External SSA solver:  "If non-NULL, we are using the velocity solver in
   // src/base/ssa and all the SSA* objects above are not used.  Eventually we should
   // move SSA legacy stuff out of IceModel (either by putting into an implementation
