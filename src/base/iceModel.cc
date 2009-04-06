@@ -117,7 +117,8 @@ IceModel::~IceModel() {
   work vectors and sets metadata.
 
   Default values should not be set here; please use set_vars_from_options().
-  
+
+  All the memory allocated here is freed by IceModelVecs' destructors.
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
@@ -320,63 +321,11 @@ PetscErrorCode IceModel::createVecs() {
 }
 
 
-//! De-allocate all Vecs defined in IceModel.
-/*! 
-  Undoes the actions of createVecs().
- */
+//! De-allocate all Vecs (but not IceModelVecs) defined in IceModel.
 PetscErrorCode IceModel::destroyVecs() {
   PetscErrorCode ierr;
 
   ierr = bedDefCleanup(); CHKERRQ(ierr);
-
-  ierr = u3.destroy(); CHKERRQ(ierr);
-  ierr = v3.destroy(); CHKERRQ(ierr);
-  ierr = w3.destroy(); CHKERRQ(ierr);
-  ierr = Sigma3.destroy(); CHKERRQ(ierr);
-  ierr = T3.destroy(); CHKERRQ(ierr);
-  ierr = tau3.destroy(); CHKERRQ(ierr);
-
-  ierr = Tb3.destroy(); CHKERRQ(ierr);
-
-  ierr = vh.destroy(); CHKERRQ(ierr);
-  ierr = vH.destroy(); CHKERRQ(ierr);
-  ierr = vbed.destroy(); CHKERRQ(ierr);
-  ierr = vMask.destroy(); CHKERRQ(ierr);
-  ierr = vGhf.destroy(); CHKERRQ(ierr);
-  ierr = vubar.destroy(); CHKERRQ(ierr);
-  ierr = vvbar.destroy(); CHKERRQ(ierr);
-  ierr = vub.destroy(); CHKERRQ(ierr);
-  ierr = vvb.destroy(); CHKERRQ(ierr);
-
-  ierr = vRb.destroy(); CHKERRQ(ierr);
-
-  ierr = vHmelt.destroy(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.destroy(); CHKERRQ(ierr);
-  ierr = vuplift.destroy(); CHKERRQ(ierr);
-  ierr = vdHdt.destroy(); CHKERRQ(ierr);
-
-  ierr = vtauc.destroy(); CHKERRQ(ierr);
-  ierr = vtillphi.destroy(); CHKERRQ(ierr);
-
-  ierr = vLongitude.destroy(); CHKERRQ(ierr);
-  ierr = vLatitude.destroy(); CHKERRQ(ierr);
-
-  ierr = vuvbar[0].destroy(); CHKERRQ(ierr);
-  ierr = vuvbar[1].destroy(); CHKERRQ(ierr);
-
-  for (int j = 0; j < nWork2d; j++) {
-    ierr = vWork2d[j].destroy(); CHKERRQ(ierr);
-  }
-
-  ierr = vubarSSA.destroy(); CHKERRQ(ierr);
-  ierr = vvbarSSA.destroy(); CHKERRQ(ierr);
-
-  ierr = Tnew3.destroy(); CHKERRQ(ierr);
-  ierr = taunew3.destroy(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].destroy(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].destroy(); CHKERRQ(ierr);
-  ierr = Istag3[0].destroy(); CHKERRQ(ierr);
-  ierr = Istag3[1].destroy(); CHKERRQ(ierr);
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
 

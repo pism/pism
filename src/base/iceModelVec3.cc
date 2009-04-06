@@ -92,7 +92,7 @@ PetscErrorCode IceModelVec3::define_netcdf_variable(int ncid, nc_type nctype, in
 }
 
 
-PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 imv3_source) {
+PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
@@ -109,7 +109,7 @@ PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 imv3_source) {
 }
 
 
-PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 imv3_source) {
+PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
@@ -413,7 +413,7 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, const PetscScalar z) {
 }
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2 gslice.
-PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 gslice, const PetscScalar z) {
+PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 &gslice, const PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
   ierr = gslice.get_array(slice_val); CHKERRQ(ierr);
@@ -428,7 +428,7 @@ PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 gslice, const PetscScalar
 
 
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2 gsurf.
-PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 myH) {
+PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H;
   ierr = myH.get_array(H); CHKERRQ(ierr);
@@ -438,7 +438,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2
 }
 
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to a Vec gsurf.
-PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 myH) {
+PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
   ierr = DAVecGetArray(da, gsurf, &surf_val); CHKERRQ(ierr);

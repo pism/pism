@@ -30,6 +30,7 @@
 class IceModelVec {
 public:
   IceModelVec();
+  IceModelVec(const IceModelVec &original);
   virtual ~IceModelVec();
 
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
@@ -83,10 +84,8 @@ public:
   MaskInterp interpolation_mask;
   bool   use_interpolation_mask, write_in_glaciological_units;
 protected:
-#ifdef PISM_DEBUG
-  int creation_counter, access_counter;
-#endif // PISM_DEBUG
 
+  bool shallow_copy;
   Vec  v;
   char short_name[PETSC_MAX_PATH_LEN],    // usually the name of the NetCDF
 					  // variable (unless there is no
@@ -115,6 +114,7 @@ protected:
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
+  virtual void operator=(const IceModelVec &) {}; // disable the assignment operator my making it protected
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode check_range(const int ncid, const int varid);
@@ -185,8 +185,8 @@ public:
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
-  virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 imv3_source);
-  virtual PetscErrorCode  endGhostCommTransfer(IceModelVec3 imv3_source);
+  virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 &imv3_source);
+  virtual PetscErrorCode  endGhostCommTransfer(IceModelVec3 &imv3_source);
 
   // need call begin_access() before set...() or get...() *and* need call end_access() afterward
   PetscErrorCode  setValColumnPL(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
@@ -212,9 +212,9 @@ public:
   PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsPTR);
 
   PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z); // used in iMmatlab.cc
-  PetscErrorCode  getHorSlice(IceModelVec2 gslice, const PetscScalar z);
-  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2 myH); // used in iMviewers.cc
-  PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 myH);
+  PetscErrorCode  getHorSlice(IceModelVec2 &gslice, const PetscScalar z);
+  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2 &myH); // used in iMviewers.cc
+  PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 &myH);
   PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H);
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);

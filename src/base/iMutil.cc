@@ -24,8 +24,8 @@
 
 
 //! Compute the scalar magnitude of a two-dimensional vector field.
-PetscErrorCode IceModel::getMagnitudeOf2dVectorField(IceModelVec2 vfx, IceModelVec2 vfy,
-						     IceModelVec2 vmag) {
+PetscErrorCode IceModel::getMagnitudeOf2dVectorField(IceModelVec2 &vfx, IceModelVec2 &vfy,
+						     IceModelVec2 &vmag) {
   PetscErrorCode ierr;
   PetscScalar **fx, **fy, **mag;
   ierr = vfx.get_array(fx); CHKERRQ(ierr);
@@ -223,7 +223,7 @@ PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
 
 //! Check if the thickness of the ice is too large and extend the grid if necessary.
 /*!
-  Extends the grid such that the new one has 2 (two) level above the ice.
+  Extends the grid such that the new one has 2 (two) levels above the ice.
  */
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;

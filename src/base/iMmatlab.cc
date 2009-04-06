@@ -46,7 +46,7 @@ PetscErrorCode IceModel::VecView_g2ToMatlab(PetscViewer v,
 
 
 PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName, 
-                               IceModelVec2 l2,
+                               IceModelVec2 &l2,
                                const PetscScalar scale) {
   PetscErrorCode ierr;
   
@@ -73,7 +73,7 @@ PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName,
 
 
 PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName, 
-                                  IceModelVec3 imv3, const PetscScalar scale) {
+                                  IceModelVec3 &imv3, const PetscScalar scale) {
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
@@ -88,7 +88,7 @@ PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName,
 
 
 PetscErrorCode IceModel::writeSurfaceValuesToMatlab(PetscViewer v, const char scName, 
-                                  IceModelVec3 imv3, const PetscScalar scale) {
+                                  IceModelVec3 &imv3, const PetscScalar scale) {
   PetscErrorCode ierr;
   
   if (matlabOutWanted(scName)) {
@@ -103,7 +103,7 @@ PetscErrorCode IceModel::writeSurfaceValuesToMatlab(PetscViewer v, const char sc
 }
 
 PetscErrorCode IceModel::writeSpeed2DToMatlab(
-                     PetscViewer v, const char scName, IceModelVec2 lu, IceModelVec2 lv,
+                     PetscViewer v, const char scName, IceModelVec2 &lu, IceModelVec2 &lv,
                      const PetscScalar scale, const PetscTruth doLog, 
                      const PetscScalar log_missing) {
   PetscErrorCode ierr;
@@ -144,7 +144,7 @@ PetscErrorCode IceModel::writeSpeed2DToMatlab(
 
 
 PetscErrorCode IceModel::writeSpeedSurfaceValuesToMatlab(
-                   PetscViewer v, const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v, 
+                   PetscViewer v, const char scName, IceModelVec3 &imv3_u, IceModelVec3 &imv3_v, 
                    const PetscScalar scale, const PetscTruth doLog,
                    const PetscScalar log_missing) {
   PetscErrorCode ierr;
@@ -164,7 +164,7 @@ PetscErrorCode IceModel::writeSpeedSurfaceValuesToMatlab(
 
 
 PetscErrorCode IceModel::writeLog2DToMatlab(
-                     PetscViewer v, const char scName, IceModelVec2 l,
+                     PetscViewer v, const char scName, IceModelVec2 &l,
                      const PetscScalar scale, const PetscScalar thresh,
                      const PetscScalar log_missing) {
   PetscErrorCode ierr;
@@ -193,7 +193,7 @@ PetscErrorCode IceModel::writeLog2DToMatlab(
 
 
 PetscErrorCode IceModel::writeSoundingToMatlab(
-                     PetscViewer v, const char scName, IceModelVec3 imv3,
+                     PetscViewer v, const char scName, IceModelVec3 &imv3,
                      const PetscScalar scale, const PetscTruth doTandTb) {
   if (matlabOutWanted(scName)) {
     PetscErrorCode   ierr;

@@ -22,6 +22,7 @@
 
 IceModelVec::IceModelVec() {
 
+  shallow_copy = false;
   v = PETSC_NULL;
   da = PETSC_NULL;
   grid = PETSC_NULL;
@@ -32,16 +33,62 @@ IceModelVec::IceModelVec() {
   strcpy(short_name,"*****UNKNOWN***** variable name");
 
   reset_attrs();
-#ifdef PISM_DEBUG
-  creation_counter = 0;
-  access_counter = 0;
-#endif // PISM_DEBUG
+}
+
+
+//! Creates a shallow copy of an \c IceModelVec.
+/*!
+  No data is copied to the new IceModelVec.
+
+  The difference is that such a copy will not free the memory when deleted (or
+  goes out of scope).
+ */
+IceModelVec::IceModelVec(const IceModelVec &o) {
+  // This IceModelVec is a shallow copy!
+  shallow_copy = true;
+
+  v = o.v;
+  da = o.da;
+  dims = o.dims;
+  grid = o.grid;
+  array = o.array;
+  localp = o.localp;
+
+  use_interpolation_mask = o.use_interpolation_mask;
+  interpolation_mask = o.interpolation_mask;
+
+  strcpy(short_name, o.short_name);
+
+  has_long_name = o.has_long_name;
+  strcpy(long_name, o.long_name);
+
+  has_units = o.has_units;
+  strcpy(units_string, o.units_string);
+  strcpy(glaciological_units_string, o.glaciological_units_string);
+
+  has_standard_name = o.has_standard_name;
+  strcpy(standard_name, o.standard_name);
+
+  has_pism_intent = o.has_pism_intent;
+  strcpy(pism_intent, o.pism_intent);
+
+  has_coordinates = o.has_coordinates;
+  strcpy(coordinates, o.coordinates);
+
+  has_valid_min = o.has_valid_min;
+  has_valid_max = o.has_valid_max;
+  valid_min = o.valid_min;
+  valid_max = o.valid_max;
+
+  units = o.units;
+  glaciological_units = o.glaciological_units;
 }
 
 
 IceModelVec::~IceModelVec() {
+  // Only destroy the IceModelVec if it is not a shallow copy:
+  if (!shallow_copy) destroy();
 }
-
 
 PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[], 
                                     bool local) {
@@ -69,10 +116,6 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
-#ifdef PISM_DEBUG
-  creation_counter -= 1;
-  PetscPrintf(grid->com, "%20s:\tcreate: %d\taccess: %d\n", short_name, creation_counter, access_counter);
-#endif // PISM_DEBUG
   return 0;
 }
 
@@ -841,10 +884,9 @@ PetscErrorCode  IceModelVec::checkSelfOwnsIt(const PetscInt i, const PetscInt j)
 PetscErrorCode  IceModelVec::begin_access() {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(da, v, &array); CHKERRQ(ierr);
-#ifdef PISM_DEBUG
-  access_counter += 1;
-#endif // PISM_DEBUG
+  if (array == NULL) {
+    ierr = DAVecGetArray(da, v, &array); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -852,11 +894,10 @@ PetscErrorCode  IceModelVec::begin_access() {
 PetscErrorCode  IceModelVec::end_access() {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
-  array = PETSC_NULL;
-#ifdef PISM_DEBUG
-  access_counter -= 1;
-#endif // PISM_DEBUG
+  if (array != NULL) {
+    ierr = DAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
+    array = PETSC_NULL;
+  }
   return 0;
 }
 

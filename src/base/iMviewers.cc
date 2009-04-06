@@ -243,7 +243,7 @@ PetscErrorCode IceModel::updateSoundings() {
   return 0;
 }
 
-PetscErrorCode IceModel::update2DViewer(const char scName, IceModelVec2 l2,
+PetscErrorCode IceModel::update2DViewer(const char scName, IceModelVec2 &l2,
 					const PetscScalar scale) {
   PetscErrorCode ierr;
   
@@ -268,7 +268,7 @@ PetscErrorCode IceModel::update2DViewer(const char scName, Vec l2, // a da2 Vec
 }
 
 
-PetscErrorCode IceModel::updateSliceViewer(const char scName, IceModelVec3 imv3,
+PetscErrorCode IceModel::updateSliceViewer(const char scName, IceModelVec3 &imv3,
                                            const PetscScalar scale) {
   PetscErrorCode ierr;
   
@@ -284,7 +284,7 @@ PetscErrorCode IceModel::updateSliceViewer(const char scName, IceModelVec3 imv3,
 }
 
 
-PetscErrorCode IceModel::updateSurfaceValuesViewer(const char scName, IceModelVec3 imv3,
+PetscErrorCode IceModel::updateSurfaceValuesViewer(const char scName, IceModelVec3 &imv3,
                                                    const PetscScalar scale) {
   PetscErrorCode ierr;
   
@@ -300,7 +300,7 @@ PetscErrorCode IceModel::updateSurfaceValuesViewer(const char scName, IceModelVe
 
 
 PetscErrorCode IceModel::updateSpeed2DViewer(
-                     const char scName, IceModelVec2 lu, IceModelVec2 lv,
+                     const char scName, IceModelVec2 &lu, IceModelVec2 &lv,
                      const PetscScalar scale, const PetscTruth doLog, 
                      const PetscScalar log_missing) {
   PetscErrorCode ierr;
@@ -341,7 +341,7 @@ PetscErrorCode IceModel::updateSpeed2DViewer(
 }
 
 PetscErrorCode IceModel::updateSpeedSurfaceValuesViewer(
-                   const char scName, IceModelVec3 imv3_u, IceModelVec3 imv3_v,
+                   const char scName, IceModelVec3 &imv3_u, IceModelVec3 &imv3_v,
                    const PetscScalar scale, const PetscTruth doLog,
                    const PetscScalar log_missing) {
   PetscErrorCode ierr;

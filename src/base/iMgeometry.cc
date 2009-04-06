@@ -40,7 +40,7 @@ In floating parts the surface gradient is always computed by the regular formula
 Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
 as global.  (I.e. we do not communicate ghosts.)
  */
-PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 vtaudx, IceModelVec2 vtaudy) {
+PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy) {
   PetscErrorCode ierr;
 
   PetscScalar **h, **H, **mask, **b, **taudx, **taudy;
@@ -448,8 +448,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
-  // Check if the ice thickness is about to exceed the height of the
-  // computational box and extend the grid if necessary:
+  // Check if the ice thickness is exceeded the height of the computational box
+  // and extend the grid if necessary:
   ierr = check_maximum_thickness(); CHKERRQ(ierr);
 
   return 0;
