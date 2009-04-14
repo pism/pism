@@ -607,8 +607,11 @@ The IceModel initialization sequence is this:
    deformation model, initialize the basal till model, initialize snapshots.
 
 Please see the documenting comments of the functions called below to find 
-explanations of their intended uses.  See the flow-chart
-doc/initialization_sequence.png for a graphical illustration of the process.
+explanations of their intended uses.
+
+The following flow-chart illustrates the process.
+
+\dotfile initialization-sequence.dot IceModel initialization sequence
  */
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;

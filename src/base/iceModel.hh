@@ -184,7 +184,7 @@ protected:
   IceModelVec2
         vh,		//!< ice surface elevation
         vH,		//!< ice thickness
-        vdHdt,		//!< dH/dt
+        vdHdt,		//!< \f$ \frac{dH}{dt} \f$
         vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model)
         vHmelt,		//!< thickness of the basal meltwater
         vbasalMeltRate,	//!< rate of production of basal meltwater (ice-equivalent)
@@ -218,11 +218,11 @@ protected:
               tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold,
               startYear, endYear, run_year_default, maxdt_temporary,
               ssaIntervalYears, bedDefIntervalYears, adaptTimeStepRatio,
-              CFLviolcount,    // really is just a count, but PetscGlobalSum requires this type
+              CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
-              gdHdtav,  // average value in map-plane (2D) of dH/dt, where there is ice; m s-1
-              dvoldt,  // d(total ice volume)/dt; m3 s-1
+              gdHdtav,  //!< average value in map-plane (2D) of dH/dt, where there is ice; m s-1
+              dvoldt,  //!< d(total ice volume)/dt; m3 s-1
               min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp,
               constantGrainSize;
   PetscInt    skipCountDown,
@@ -270,7 +270,7 @@ protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode destroyVecs();
-  virtual void setMaxTimeStepYears(PetscScalar); // use this value for adaptive stepping
+  virtual void setMaxTimeStepYears(PetscScalar); //!< use this value for adaptive stepping
   virtual void setAdaptTimeStepRatio(PetscScalar);
   virtual PetscErrorCode setStartYear(PetscScalar);
   virtual PetscErrorCode setEndYear(PetscScalar);
@@ -303,12 +303,10 @@ protected:
   VecScatter     top0ctx; // possibly useful general tool for putting Vecs on processor zero
   PetscErrorCode createScatterToProcZero(Vec& samplep0);
   PetscErrorCode destroyScatterToProcZero();
-  PetscErrorCode putLocalOnProcZero(Vec& vlocal, Vec& onp0);
-  PetscErrorCode getLocalFromProcZero(Vec& onp0, Vec& vlocal);
   BedDeformLC    bdLC;
   PetscScalar    lastBedDefUpdateYear;
   IceModelVec2   vbedlast;
-  IceModelVec2   vHlast;	// used for simple pointwise isostasy and to compute uplift
+  IceModelVec2   vHlast;	//!< used for simple pointwise isostasy and to compute uplift
   Vec            Hp0, bedp0,                       // vecs on proc zero for
                  Hstartp0, bedstartp0, upliftp0;   // passing to bdLC
   virtual PetscErrorCode bedDefSetup();
@@ -509,16 +507,16 @@ protected:
 protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
-  Vec g2;    // Global work vector
+  Vec g2;			//!< Global work vector
   IceModelVec2 vWork2d[nWork2d];
   // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, taunew3;
   IceModelVec3 Sigmastag3[2], Istag3[2];
 
 protected:
-  int have_ssa_velocities;	// use vubarSSA and vvbarSSA from a previous
-				// run if 1, otherwise set them to zero in
-				// IceModel::initSSA
+  int have_ssa_velocities;	//!< use vubarSSA and vvbarSSA from a previous
+				//! run if 1, otherwise set them to zero in
+				//! IceModel::initSSA()
   IceModelVec2 vubarSSA, vvbarSSA;
 
 private:

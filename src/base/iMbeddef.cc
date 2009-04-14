@@ -70,36 +70,6 @@ PetscErrorCode IceModel::destroyScatterToProcZero() {
 }
 
 
-PetscErrorCode IceModel::putLocalOnProcZero(Vec& vlocal, Vec& onp0) {
-  PetscErrorCode ierr;
-
-  // scatter local Vec to proc zero: from a global Vec in the global ordering to 
-  //    a global Vec in the natural ordering and then to a Vec on proc zero
-  //    (i.e. empty on other procs)
-  // requires g2, g2natural, and top0ctx to all be set up properly
-  ierr = DALocalToGlobal(grid.da2,vlocal,INSERT_VALUES,g2); CHKERRQ(ierr);
-  ierr = DAGlobalToNaturalBegin(grid.da2,g2,INSERT_VALUES,g2natural); CHKERRQ(ierr);
-  ierr = DAGlobalToNaturalEnd(grid.da2,g2,INSERT_VALUES,g2natural); CHKERRQ(ierr);
-  ierr = VecScatterBegin(top0ctx, g2natural,onp0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(top0ctx, g2natural,onp0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceModel::getLocalFromProcZero(Vec& onp0, Vec& vlocal) {
-  PetscErrorCode ierr;
-
-  // undo scatter to proc zero: put onp0 back into vlocal
-  ierr = VecScatterBegin(top0ctx, onp0,g2natural,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(top0ctx, onp0,g2natural,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = DANaturalToGlobalBegin(grid.da2,g2natural,INSERT_VALUES,g2); CHKERRQ(ierr);
-  ierr = DANaturalToGlobalEnd(grid.da2,g2natural,INSERT_VALUES,g2); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalBegin(grid.da2,g2,INSERT_VALUES,vlocal); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(grid.da2,g2,INSERT_VALUES,vlocal); CHKERRQ(ierr);
-  return 0;
-}
-
-
 PetscErrorCode IceModel::bedDefSetup() {
   PetscErrorCode  ierr;
   
