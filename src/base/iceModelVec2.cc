@@ -73,30 +73,6 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
   return 0;
 }
 
-//! Defines a netcdf variable corresponding to an IceModelVec2 object. The ncid
-//! argument must refer to a dataset with dimensions t, x, y.
-PetscErrorCode IceModelVec2::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
-  int stat, dimids[3], var_id;
-
-  if (grid->rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_def_var(ncid, short_name, nctype, 3, dimids, &var_id);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
-
-  *varidp = var_id;
-
-  return 0;
-}
-
 PetscErrorCode IceModelVec2::get_array(PetscScalar** &a) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);

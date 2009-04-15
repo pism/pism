@@ -36,12 +36,9 @@ IceModel::IceModel(IceGrid &g)
   }
 
   bootstrapLIC = PETSC_NULL;
-  
-  history_size = TEMPORARY_STRING_LENGTH;
-  history = new char[history_size];
-  history[0] = 0;               // Initialize with empty string so that prepending works correctly
 
   have_ssa_velocities = false;
+  ssa = NULL;
 
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
@@ -104,7 +101,7 @@ IceModel::~IceModel() {
     bootstrapLIC = PETSC_NULL;
   }
   if (ssa) SSADestroy(ssa);
-  delete[] history;
+
   delete ice;
   utTerm(); // Clean up after UDUNITS
 }
@@ -399,7 +396,7 @@ void IceModel::setConstantNuHForSSA(PetscScalar nuH) {
 
 
 PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
-  strcpy(executable_short_name, my_executable_short_name);
+  executable_short_name = my_executable_short_name;
   return 0;
 }
 

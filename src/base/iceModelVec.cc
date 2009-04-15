@@ -90,8 +90,8 @@ IceModelVec::~IceModelVec() {
   if (!shallow_copy) destroy();
 }
 
-PetscErrorCode  IceModelVec::create(IceGrid &mygrid, const char my_short_name[], 
-                                    bool local) {
+PetscErrorCode  IceModelVec::create(IceGrid &/*mygrid*/, const char /*my_short_name*/[], 
+                                    bool /*local*/) {
   SETERRQ(1,"IceModelVec::create(...) is VIRTUAL ONLY: not implemented");
 }
 
@@ -511,9 +511,39 @@ PetscErrorCode  IceModelVec::set_attrs(const char my_pism_intent[],
 }
 
 
-//! Defines a netcdf variable corresponding to an IceModelVec object. Virtual only.
+//! Defines a netcdf variable corresponding to an IceModelVec object.
 PetscErrorCode IceModelVec::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
-  SETERRQ(1, "IceModelVec::define_netcdf_variable: virtual only");
+  int stat, dimids[4], var_id;
+
+  if (grid->rank == 0) {
+    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    switch (dims) {
+    case GRID_2D:
+      stat = nc_def_var(ncid, short_name, nctype, 3, dimids, &var_id);
+      break;
+    case GRID_3D:
+      stat = nc_inq_dimid(ncid, "z", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      stat = nc_def_var(ncid, short_name, nctype, 4, dimids, &var_id);
+      break;
+    case GRID_3D_BEDROCK:
+      stat = nc_inq_dimid(ncid, "zb", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      stat = nc_def_var(ncid, short_name, nctype, 4, dimids, &var_id);
+    }
+    
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  *varidp = var_id;
+
+  return 0;
 }
 
 //! Writes NetCDF attributes to a dataset.

@@ -114,11 +114,10 @@ protected:
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
-  virtual void operator=(const IceModelVec &) {}; // disable the assignment operator my making it protected
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode check_range(const int ncid, const int varid);
-  virtual PetscErrorCode define_netcdf_variable(int ncid, nc_type nctype, int *varidp); // virtual only
+  virtual PetscErrorCode define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
   virtual PetscErrorCode regrid_from_netcdf(const char filename[],
 					    LocalInterpCtx &lic, bool critical,
 					    bool set_default_value,
@@ -152,7 +151,6 @@ public:
 
 protected:
   PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local, DAStencilType my_sten);
-  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
 
@@ -174,7 +172,6 @@ public:
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);
-  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
 
@@ -221,7 +218,6 @@ public:
 
 protected:  
   PetscErrorCode  isLegalLevel(const PetscScalar z);
-  virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };
 

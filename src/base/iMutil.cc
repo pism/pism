@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <sstream>
 #include <cstring>
 #include <ctime>
 #include "iceModel.hh"
@@ -81,7 +82,7 @@ int IceModel::endOfTimeStepHook() {
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "%s-%5.3f.nc",
-             executable_short_name, grid.year);
+             executable_short_name.c_str(), grid.year);
     verbPrintf(1, grid.com, 
        "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
        file_name);
@@ -101,29 +102,16 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   
   ierr = PetscGetArgs(&argc, &argv); CHKERRQ(ierr);
   
-  char cmdstr[TEMPORARY_STRING_LENGTH], startstr[TEMPORARY_STRING_LENGTH];
+  char startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
            "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
-  ierr = stampHistory(startstr); CHKERRQ(ierr);
-  
-//  strncpy(cmdstr, argv[0], sizeof(str)); // Does not null terminate on overflow
-  strcpy(cmdstr, " ");
-  strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
-  cmdstr[sizeof(cmdstr) - 1] = '\0';
-  for (PetscInt i=1; i < argc; i++) {
-    size_t remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
-    // strncat promises to null terminate, so we must only make sure that the
-    // end of the buffer is not overwritten.
-    strncat(cmdstr, " ", remaining_bytes--);
-    strncat(cmdstr, argv[i], remaining_bytes);
-  }
-  strcat(cmdstr,"\n");
-  cmdstr[sizeof(cmdstr) - 1] = '\0';
+  ierr = stampHistory(string(startstr)); CHKERRQ(ierr);
 
-  // All this hooplah is the C equivalent of the Ruby expression
-  // ARGV.unshift($0).join(' ') and just ARGV.join(' ')
-  // if the executable name was not needed.
+  string cmdstr;
+  for (int j = 0; j < argc; j++)
+    cmdstr += string(" ") + argv[j];
+  cmdstr += "\n";
 
   ierr = stampHistoryAdd(cmdstr); CHKERRQ(ierr);
 
@@ -153,7 +141,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
 
 //! Get time and user/host name and add it to the given string.  Then call stampHistoryAdd(). 
-PetscErrorCode  IceModel::stampHistory(const char* string) {
+PetscErrorCode  IceModel::stampHistory(string str) {
   PetscErrorCode ierr;
 
   time_t now;
@@ -174,48 +162,20 @@ PetscErrorCode  IceModel::stampHistory(const char* string) {
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
   
-  char str[TEMPORARY_STRING_LENGTH];
-  int length = snprintf(str, sizeof(str), "%s@%s %s:  %s\n",
-                        username, hostname, date_str, string);
-  
-  if (length < 0) {
-    SETERRQ(1, "Output error or snprintf() is not C99 compliant.");
-    // Old implementations of snprintf() will return `-1' when the string is
-    // truncated.  If this is the case on some platform, we need to change this
-    // check to allow for that possibility.
-  }
-  if (length > (int)sizeof(str)) {
-    ierr = PetscPrintf(grid.com,
-       "Warning: command line truncated by %d chars in history.\n",
-       length + 1 - sizeof(str)); CHKERRQ(ierr);
-    str[sizeof(str) - 2] = '\n';
-    str[sizeof(str) - 1] = '\0';
-  }
+  ostringstream message;
+  message << username << "@" << hostname << " " << date_str << ": " << str << endl;
 
-  ierr = stampHistoryAdd(str); CHKERRQ(ierr);
+  ierr = stampHistoryAdd(message.str()); CHKERRQ(ierr);
   
   return 0;
 }
 
 
 //! Add the given string to the history data member in IceModel.
-PetscErrorCode  IceModel::stampHistoryAdd(const char* string) {
-  size_t historyLength = strlen(history);
-  size_t stringLength = strlen(string);
-  char *tempstr;
-
-  if (stringLength + historyLength > history_size - 1)
-    history_size += stringLength + 1;
-
-  tempstr = new char[history_size];
+PetscErrorCode  IceModel::stampHistoryAdd(string str) {
 
   //prepend it; this matches NCO behavior so commands are in order
-  strcpy(tempstr, string);
-  strcat(tempstr, history);
-
-  delete[] history;
-  
-  history = tempstr;
+  history = str + history;
   
   return 0;
 }

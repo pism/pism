@@ -261,10 +261,8 @@ protected:
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, taud; // hold soundings
 
-  char *history; // history of commands used to generate this instance of IceModel
-  size_t history_size;	// the number of bytes allocated for the
-			// history string
-  char executable_short_name[PETSC_MAX_PATH_LEN];
+  string history; // history of commands used to generate this instance of IceModel
+  string executable_short_name;
   
 protected:
   // see iceModel.cc
@@ -465,8 +463,8 @@ protected:
   virtual int endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
-  virtual PetscErrorCode stampHistory(const char*);
-  virtual PetscErrorCode stampHistoryAdd(const char*);
+  virtual PetscErrorCode stampHistory(string);
+  virtual PetscErrorCode stampHistoryAdd(string);
   virtual PetscErrorCode check_maximum_thickness();
 
   // see iMvelocity.cc

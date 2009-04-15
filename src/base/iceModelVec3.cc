@@ -66,32 +66,6 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[]
   return 0;
 }
 
-//! Defines a netcdf variable corresponding to an IceModelVec3 object. The ncid
-// argument must refer to a dataset with dimensions t, x, y, z.
-PetscErrorCode IceModelVec3::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
-  int stat, dimids[4], var_id;
-
-  if (grid->rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "z", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_def_var(ncid, short_name, nctype, 4, dimids, &var_id);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
-
-  *varidp = var_id;
-
-  return 0;
-}
-
-
 PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
@@ -522,31 +496,6 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 #ifdef PISM_DEBUG
   creation_counter += 1;
 #endif // PISM_DEBUG
-  return 0;
-}
-
-//! Defines a netcdf variable corresponding to an IceModelVec3Bedrock object. The ncid
-// argument must refer to a dataset with dimensions t, x, y, zb.
-PetscErrorCode IceModelVec3Bedrock::define_netcdf_variable(int ncid, nc_type nctype, int *varidp) {
-  int stat, dimids[4], var_id;
-
-  if (grid->rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "zb", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_def_var(ncid, short_name, nctype, 4, dimids, &var_id);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
-
-  *varidp = var_id;
-
   return 0;
 }
 

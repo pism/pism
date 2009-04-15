@@ -163,7 +163,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   // Prepare the file
   ierr = nc.open_for_writing(filename, append == PETSC_FALSE); CHKERRQ(ierr);
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
-  ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
+  ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
   ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
   ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
@@ -449,9 +449,8 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   char *hist;
   ierr = nc.get_att_text(NC_GLOBAL, "history", &hist_len, &hist);
   if (hist != NULL) {
-    delete[] history;
     history = hist;
-    history_size = hist_len;
+    delete[] hist;
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -742,12 +741,12 @@ PetscErrorCode IceModel::write_snapshot() {
     char tmp[TEMPORARY_STRING_LENGTH];
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
        " %s: saving model state snapshot at %10.5f (years), the time-step after goal %10.5f.\n",
-       executable_short_name, grid.year, saving_after);
+	     executable_short_name.c_str(), grid.year, saving_after);
 
     if (!file_is_ready) {
       // Prepare the snapshots file:
       ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
-      ierr = nc.write_history(history); CHKERRQ(ierr); // append the history
+      ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
       ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
       ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
