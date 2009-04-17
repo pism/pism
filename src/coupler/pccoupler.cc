@@ -214,7 +214,13 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   PetscErrorCode ierr;
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  if (dTforcing != PETSC_NULL) {
+    ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
+    ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // re-apply the offset
+  } else {
+    ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  }
   // FIXME:  it would be good to also write the -dTforcing value to a t-dependent variable:
   //   surftempoffset(t)
   return 0;
@@ -428,8 +434,8 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::getMonthIndicesFromDay(
   PetscErrorCode ierr;
   if ((day < 0) || (day > 365.24)) {
     ierr = PetscPrintf(grid->com, 
-       "PISMMonthlyTempsAtmosCoupler ERROR:  invalid day in getMonthIndicesFromDay();\n"
-       "      should be in range 0 <= day <= 365.24\n"); CHKERRQ(ierr);
+       "PISMMonthlyTempsAtmosCoupler ERROR:  invalid day = %.5f in getMonthIndicesFromDay();\n"
+       "      should be in range 0 <= day <= 365.24\n",day); CHKERRQ(ierr);
     PetscEnd();
   }
   PetscScalar month = 12.0 * day / 365.24;  // 0 <= month < 12
@@ -448,7 +454,8 @@ first to get temporal index into monthly data and for linear interpolation facto
 PetscScalar PISMMonthlyTempsAtmosCoupler::getTemperatureFromMonthlyData(
        PetscScalar **currMonthTemps, PetscScalar **nextMonthTemps, PetscScalar lambda,
        PetscInt i, PetscInt j) {
-  return (1.0 - lambda) * currMonthTemps[i][j] + lambda * nextMonthTemps[i][j];
+  return (1.0 - lambda) * currMonthTemps[i][j] + lambda * nextMonthTemps[i][j]
+       + TsOffset;
 }
 
 
