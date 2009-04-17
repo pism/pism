@@ -89,7 +89,7 @@ exec_extras := $(addprefix ../bin/, $(extras))
 
 # ice_sources and ice_csources go in libpism.[so|a]
 ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
-	pism_const.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc \
+	pism_const.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc \
 	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		        \
 	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinverse.cc    \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \

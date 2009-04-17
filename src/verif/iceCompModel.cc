@@ -330,8 +330,8 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 
 // reimplement IceModel::basalVelocity(), for E
 PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar yIN,
-                                        const PetscScalar H, const PetscScalar T,
-                                        const PetscScalar alpha, const PetscScalar muIN) const {
+                                        const PetscScalar H, const PetscScalar /*T*/,
+                                        const PetscScalar /*alpha*/, const PetscScalar /*muIN*/) const {
   // note: ignores T and muIN
 
   if (testname == 'E') {
@@ -939,7 +939,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
 
 PetscErrorCode IceCompModel::summaryPrintLine(
     const PetscTruth printPrototype, const PetscTruth tempAndAge,
-    const PetscScalar year, const PetscScalar dt, 
+    const PetscScalar year, const PetscScalar /*dt*/, 
     const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
     const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
 

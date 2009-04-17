@@ -31,19 +31,19 @@
 IceModelVec2::IceModelVec2() : IceModelVec() {}
 
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local) {
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
+    SETERRQ1(1,"IceModelVec2 with name='%s' already allocated\n",my_name);
   }
-  PetscErrorCode ierr = create(my_grid, my_short_name, local, DA_STENCIL_BOX); CHKERRQ(ierr);
+  PetscErrorCode ierr = create(my_grid, my_name, local, DA_STENCIL_BOX); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local,
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
                                      DAStencilType my_sten) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
@@ -66,10 +66,10 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
   }
 
   localp = local;
-  strcpy(short_name,my_short_name);
-#ifdef PISM_DEBUG
-  creation_counter += 1;
-#endif // PISM_DEBUG
+  strcpy(name,my_name);
+
+  var1.init(my_name, my_grid, dims);
+
   return 0;
 }
 
@@ -93,7 +93,7 @@ PetscErrorCode IceModelVec2::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec 
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
-    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", short_name);
+    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", name);
 
   ierr =        DALocalToGlobal(da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
   ierr = DAGlobalToNaturalBegin(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
@@ -118,7 +118,7 @@ PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Ve
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
-    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", short_name);
+    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", name);
 
   ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);

@@ -244,7 +244,7 @@ north and \c Tma is in K.
 This procedure is \e virtual and replacable.
  */
 PetscScalar PISMPDDCoupler::getSummerWarming(
-       const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma) {
+  const PetscScalar /*elevation*/, const PetscScalar /*latitude*/, const PetscScalar /*Tma*/) {
   // version here ignores elevation, latitude, and mean annual temperature (Tma)
   // and instead uses -pdd_summer_warming setable constant
   // see IceGRNModel for alternate implementation

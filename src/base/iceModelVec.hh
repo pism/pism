@@ -22,6 +22,7 @@
 #include <netcdf.h>
 #include "../udunits/udunits.h"
 #include "nc_util.hh"
+#include "NCVariable.hh"
 
 #ifndef __IceModelVec_hh
 #define __IceModelVec_hh
@@ -38,7 +39,6 @@ public:
   virtual GridType        grid_type();
   virtual PetscErrorCode  destroy();
 
-  virtual PetscErrorCode  printInfo(const PetscInt verbosity);
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
   virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x);
@@ -53,23 +53,16 @@ public:
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual PetscErrorCode  set_name(const char name[]);
   virtual PetscErrorCode  set_glaciological_units(const char units[]);
+  virtual PetscErrorCode  set_attr(const char name[], const char value[]);
+  virtual PetscErrorCode  set_attr(const char name[], double value);
+  virtual PetscErrorCode  set_attr(const char name[], vector<double> value);
   virtual PetscErrorCode  set_attrs(const char my_pism_intent[], const char my_long_name[],
 				    const char my_units[], const char my_standard_name[]);
-  virtual PetscErrorCode  set_valid_range(PetscReal min, PetscReal max);
-  virtual PetscErrorCode  set_valid_min(PetscReal min);
-  virtual PetscErrorCode  set_valid_max(PetscReal min);
   virtual bool            is_valid(PetscScalar a);
-  virtual PetscErrorCode  set_coordinates(const char name[]);
-  virtual PetscErrorCode  write_attrs(const int ncid, nc_type nctype);
-  virtual PetscErrorCode  write_text_attr(const char filename[], const char name[], 
-                                          const char *tp);
-  virtual PetscErrorCode  write_scalar_attr(const char filename[], const char name[],
-                                            nc_type nctype, size_t len, const double *dp);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
-  virtual PetscErrorCode  report_range();
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
@@ -87,28 +80,15 @@ protected:
 
   bool shallow_copy;
   Vec  v;
-  char short_name[PETSC_MAX_PATH_LEN],    // usually the name of the NetCDF
-					  // variable (unless there is no
-					  // corresponding NetCDF var)
-    long_name[PETSC_MAX_PATH_LEN],     // NetCDF attribute
-    standard_name[PETSC_MAX_PATH_LEN], // NetCDF attribute; sometimes specified in CF convention
-    units_string[PETSC_MAX_PATH_LEN],  // NetCDF attribute
-    glaciological_units_string[PETSC_MAX_PATH_LEN], // a human-friendly units string
-    coordinates[PETSC_MAX_PATH_LEN],		    // a list of coordinates, usually "lat lon"
-    pism_intent[PETSC_MAX_PATH_LEN];	  // NetCDF attribute
+  char name[PETSC_MAX_PATH_LEN];
 
-  // An IceModelVec always has a short_name, but it may not have the following attributes:
-  bool has_long_name, has_units, has_pism_intent, has_standard_name,
-    has_valid_min, has_valid_max, has_coordinates;
-
-  PetscReal valid_min, valid_max;
-
-  utUnit units,		      //< internal (PISM) units
-         glaciological_units; //< for diagnostic variables: units to use when writing
-			      //< to a NetCDF file and for standard out reports
+  NCVariable var1;		//!< a NetCDF variable corresponding to this
+				//!IceModelVec; called var1 because some
+				//!IceModelVecs will have more: var2, etc.
 
   IceGrid      *grid;
   GridType     dims;
+  int dof;
   DA           da;
   bool         localp;
 
@@ -116,14 +96,6 @@ protected:
 
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
-  virtual PetscErrorCode check_range(const int ncid, const int varid);
-  virtual PetscErrorCode define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
-  virtual PetscErrorCode regrid_from_netcdf(const char filename[],
-					    LocalInterpCtx &lic, bool critical,
-					    bool set_default_value,
-					    PetscScalar default_value);
-  virtual PetscErrorCode read_valid_range(const int ncid, const int varid);
-  virtual PetscErrorCode change_units(utUnit *from, utUnit *to);
   virtual PetscErrorCode reset_attrs();
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);

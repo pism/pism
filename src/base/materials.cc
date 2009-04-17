@@ -149,10 +149,10 @@ PetscErrorCode CustomGlenIce::setHardness(PetscReal B) {
 PetscScalar CustomGlenIce::exponent() const { return exponent_n; }
 
 
-PetscScalar CustomGlenIce::softnessParameter(PetscScalar T) const { return softness_A; }
+PetscScalar CustomGlenIce::softnessParameter(PetscScalar /*T*/) const { return softness_A; }
 
 
-PetscScalar CustomGlenIce::hardnessParameter(PetscScalar T) const { return hardness_B; }
+PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return hardness_B; }
 
 
 PetscErrorCode CustomGlenIce::setFromOptions()

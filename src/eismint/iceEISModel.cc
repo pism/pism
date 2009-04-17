@@ -405,9 +405,9 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
 
 // reimplement IceModel::basalVelocity() which is virtual; basalVelocity() is 
 // for SIA regions (MASK_SHEET), and it is called within IceModel::velocitySIAStaggered)
-PetscScalar IceEISModel::basalVelocity(const PetscScalar x, const PetscScalar y,
-      const PetscScalar H, const PetscScalar T, const PetscScalar alpha,
-      const PetscScalar mu) const {
+PetscScalar IceEISModel::basalVelocity(const PetscScalar /*x*/, const PetscScalar /*y*/,
+      const PetscScalar H, const PetscScalar T, const PetscScalar /*alpha*/,
+      const PetscScalar /*mu*/) const {
 
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;

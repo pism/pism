@@ -55,7 +55,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable("t", NULL, NULL, t_exists); CHKERRQ(ierr);
+  ierr = nc.find_variable("t", NULL, t_exists); CHKERRQ(ierr);
   ierr = nc.get_grid_info(gi);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -207,23 +207,22 @@ PetscErrorCode IceModel::grid_setup() {
 
   if (i_set) {
     NCTool nc(&grid);
-    char *tmp;
-    int length;
+    string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-    ierr = nc.get_att_text(NC_GLOBAL, "source", &length, &tmp);
+    ierr = nc.get_att_text(NC_GLOBAL, "source", source);
     ierr = nc.close();
 
     // If it's missing, print a warning
-    if (tmp == NULL) {
+    if (source.empty()) {
       ierr = verbPrintf(1, grid.com,
 			"PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
 			"     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
 			"     ncatted -a source,global,c,c,PISM %s\n",
 			filename, filename, filename); CHKERRQ(ierr);
-    } else if (strstr(tmp, "PISM") == NULL) {
+    } else if (source.find("PISM") == string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
       ierr = verbPrintf(1, grid.com,
@@ -231,7 +230,6 @@ PetscErrorCode IceModel::grid_setup() {
 			"     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
 			filename); CHKERRQ(ierr);
     }
-    delete[] tmp;
 
     ierr = nc.get_grid(filename);   CHKERRQ(ierr);
 

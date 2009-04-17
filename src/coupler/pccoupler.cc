@@ -107,13 +107,13 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 
 //! A virtual method which just calls specific updates.
 PetscErrorCode PISMClimateCoupler::updateClimateFields(
-             const PetscScalar t_years, const PetscScalar dt_years, void *iceInfoNeeded) {
+  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, void */*iceInfoNeeded*/) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
 }
 
 
 //! A virtual method which writes fields associated to the derived class.
-PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char */*filename*/) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
 }
 
@@ -224,7 +224,7 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   bool variable_exists;
 
   ierr = nc.open_for_writing(filename, false);
-  ierr = nc.find_variable("surftempoffset", NULL, NULL, variable_exists); CHKERRQ(ierr);
+  ierr = nc.find_variable("surftempoffset", NULL, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
     ierr = nc.create_timeseries("surftempoffset", "surface temperature offset",
@@ -240,8 +240,8 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
 
 //! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Real atmosphere models in derived classes will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvsmf) {
+  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
+  void */*iceInfoNeeded*/, IceModelVec2* &pvsmf) {
   if (vsurfmassflux.was_created())
     pvsmf = &vsurfmassflux;
   else {  SETERRQ(1,"vsurfmassflux not created in PISMAtmosphereCoupler::updateSurfMassFluxAndProvide()");  }
@@ -251,8 +251,8 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
 
 //! Updates vsurftemp using -dTforcing (if it is on) and provides access to vsurftemp.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvst) {
+  const PetscScalar t_years, const PetscScalar /*dt_years*/, 
+  void */*iceInfoNeeded*/, IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
   if (vsurftemp.was_created())
@@ -562,7 +562,7 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
   NCTool nc(grid);
   bool variable_exists;
   ierr = nc.open_for_writing(filename, false);
-  ierr = nc.find_variable("sealevel", NULL, NULL, variable_exists); CHKERRQ(ierr);
+  ierr = nc.find_variable("sealevel", NULL, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
     ierr = nc.create_timeseries("sealevel", "sea level", "meters", NC_FLOAT, NULL);
@@ -577,8 +577,8 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
 
 //! Provides access to vshelfbasemassflux.  No update of vshelfbasemassflux.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
+  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
+  void */*iceInfoNeeded*/, IceModelVec2* &pvsbmf) {
 
   if (vshelfbasemassflux.was_created())
     pvsbmf = &vshelfbasemassflux;
@@ -592,8 +592,8 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 
 //! Provides access to vshelfbasetemp.  No update of vshelfbasetemp.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvsbt) {
+                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
+                  void */*iceInfoNeeded*/, IceModelVec2* &pvsbt) {
   // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
 
   if (vshelfbasetemp.was_created())
@@ -621,7 +621,7 @@ PetscErrorCode PISMOceanCoupler::updateClimateFields(
 
 
 //! Updates the sea level (using -dSLforcing, if it is on) and sets \c new_sea_level (if not NULL).
-PetscErrorCode PISMOceanCoupler::updateSeaLevelElevation(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PISMOceanCoupler::updateSeaLevelElevation(PetscReal t_years, PetscReal /*dt_years*/,
 							 PetscReal *new_sea_level) {
   PetscErrorCode ierr;
 
@@ -686,13 +686,13 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
 Redefine this in a derived class to write out constant-in-time but non-constant in space fields.
 Essentially just use PISMOceanCoupler version.
  */
-PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char */*filename*/) {
   return 0;
 }
 
 
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
+                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
                   void *iceInfoNeeded, IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
 
@@ -724,8 +724,8 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
 
 
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
-                  const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvsbmf) {
+                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
+                  void */*iceInfoNeeded*/, IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
 
   const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity

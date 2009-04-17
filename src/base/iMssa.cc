@@ -602,7 +602,6 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
     // Drive the external SSA solver
     ierr = SSASetFields(ssa,&vMask,vuvbar,&vH,&vh,&vbed,&vtauc,&T3);CHKERRQ(ierr);
     ierr = SSASolve(ssa,vubarSSA,vvbarSSA);CHKERRQ(ierr);
-    ierr = vubarSSA.report_range();CHKERRQ(ierr);
     // If you want to compare the external solver to the internal one, activate the line below and make sure that
     // that CHECK_NOT_SSA_EXTERNAL is empty (top of this file).
     //ierr = velocitySSA(vNuDefault,numiter);CHKERRQ(ierr);

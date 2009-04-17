@@ -431,13 +431,13 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
 
   ierr = inv.usIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.usIn->write_in_glaciological_units = true;
+  inv.usIn->set_attr("_FillValue", fill_ma);
   ierr = inv.usIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.usIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
 
   ierr = inv.vsIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.vsIn->write_in_glaciological_units = true;
+  inv.vsIn->set_attr("_FillValue", fill_ma);
   ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.vsIn->write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
 
   ierr = getMagnitudeOf2dVectorField(*(inv.usIn), *(inv.usIn), vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("magvelsurf"); CHKERRQ(ierr);
@@ -461,15 +461,15 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   bool oldwritegu = vubarSSA.write_in_glaciological_units;
   ierr = vubarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vubarSSA.write_in_glaciological_units = true;
+  vubarSSA.set_attr("_FillValue", fill_ma);
   ierr = vubarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vubarSSA.write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
   if (!oldwritegu)   vubarSSA.write_in_glaciological_units = false;
 
   oldwritegu = vvbarSSA.write_in_glaciological_units;
   ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vvbarSSA.write_in_glaciological_units = true;
+  vvbarSSA.set_attr("_FillValue", fill_ma);
   ierr = vvbarSSA.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vvbarSSA.write_scalar_attr(filename, "_FillValue", NC_FLOAT, 1, &fill_ma); CHKERRQ(ierr);
   if (!oldwritegu)   vvbarSSA.write_in_glaciological_units = false;
 
   ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -487,10 +487,8 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   vWork2d[0].write_in_glaciological_units = false;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+  inv.fofv->set_attr("more_info", "value of 1 means velocity is all SIA, value of 0 means velocity is all SSA");
   ierr = inv.fofv->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = inv.fofv->write_text_attr(filename, "more_info", 
-          "value of 1 means velocity is all SIA, value of 0 means velocity is all SSA");
-          CHKERRQ(ierr);
 
   // input till phi
   ierr = inv.oldtillphi->write(filename, NC_FLOAT); CHKERRQ(ierr);

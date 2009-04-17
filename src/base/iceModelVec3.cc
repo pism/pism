@@ -33,23 +33,23 @@ IceModelVec3::IceModelVec3() : IceModelVec() {}
 
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[], bool local) {
+PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], bool local) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec3 with short_name='%s' already allocated\n",short_name);
+    SETERRQ1(1,"IceModelVec3 with name='%s' already allocated\n",name);
   }
   
-  grid = &mygrid;
+  grid = &my_grid;
   dims = GRID_3D;
 
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
-  ierr = DAGetInfo(mygrid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
+  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(mygrid.com, DA_YZPERIODIC, DA_STENCIL_STAR, mygrid.Mz, N, M, 1, n, m, 1, 1,
+  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
 
   if (local) {
@@ -59,10 +59,10 @@ PetscErrorCode  IceModelVec3::create(IceGrid &mygrid, const char my_short_name[]
   }
 
   localp = local;
-  strcpy(short_name,my_short_name);
-#ifdef PISM_DEBUG
-  creation_counter += 1;
-#endif // PISM_DEBUG
+  strcpy(name,my_name);
+
+  var1.init(my_name, my_grid, dims);
+
   return 0;
 }
 
@@ -70,11 +70,11 @@ PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 &imv3_source) 
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
-               "  (has short_name='%s')\n", short_name);
+               "  (has name='%s')\n", name);
   }
   if (imv3_source.localp) {
-    SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has short_name='%s')\n",
-               imv3_source.short_name);
+    SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
+               imv3_source.name);
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
@@ -87,12 +87,12 @@ PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
-               "  (has short_name='%s')\n",
-               short_name);
+               "  (has name='%s')\n",
+               name);
   }
   if (imv3_source.localp) {
-    SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has short_name='%s')\n",
-               imv3_source.short_name);
+    SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
+               imv3_source.name);
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
@@ -104,13 +104,13 @@ PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 &imv3_source) {
 PetscErrorCode  IceModelVec3::isLegalLevel(const PetscScalar z) {
   if (z < 0.0 - 1.0e-6) {
     SETERRQ2(1,"level z = %5.4f is below base of ice (z must be nonnegative);\n"
-               "  IceModelVec3 has short_name='%s'; ENDING!\n",
-              z,short_name);
+               "  IceModelVec3 has name='%s'; ENDING!\n",
+              z,name);
   }
   if (z > grid->Lz + 1.0e-6) {
     SETERRQ3(2,"level z = %10.8f is above top of computational grid Lz = %10.8f;\n"
-               "  IceModelVec3 has short_name='%s'; ENDING!\n",
-              z, grid->Lz,short_name);
+               "  IceModelVec3 has name='%s'; ENDING!\n",
+              z, grid->Lz,name);
   }
   return 0;
 }
@@ -140,20 +140,20 @@ PetscErrorCode  IceModelVec3::setValColumnPL(
 
   if (levelsIN[0] > 0.0 + 1.0e-3) {
     SETERRQ2(1,"levelsIN[0]=%10.9f is above base of ice at z=0 so *interpolation*\n"
-              "   is impossible; IceModelVec3 has short_name='%s';  ENDING!\n",
-              levelsIN[0],short_name);
+              "   is impossible; IceModelVec3 has name='%s';  ENDING!\n",
+              levelsIN[0],name);
   }
   if (levelsIN[nlevels - 1] < grid->Lz - 1.0e-3) {
     SETERRQ3(2,"levelsIN[nlevels-1] = %10.9f is below top of computational domain\n"
                "   at z=Lz=%10.9f, so *interpolation* is impossible;\n"
-               "   IceModelVec3 has short_name='%s';  ENDING!\n",
-               levelsIN[nlevels-1],grid->Lz,short_name);
+               "   IceModelVec3 has name='%s';  ENDING!\n",
+               levelsIN[nlevels-1],grid->Lz,name);
   }
   for (PetscInt k=0; k < nlevels - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(3,"levelsIN not *strictly increasing* at index %d;\n"
-                 "    IceModelVec3 has short_name='%s';  ENDING!\n",
-                 k,short_name);
+                 "    IceModelVec3 has name='%s';  ENDING!\n",
+                 k,name);
     }
   }
 
@@ -196,13 +196,13 @@ PetscScalar IceModelVec3::getValZ(const PetscInt i, const PetscInt j,
   if (checkHaveArray() != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
        "IceModelVec3 getValZ(): array was not allocated (so says\n"
-       "  IceModelVec::checkHaveArray()); short_name = %s\n", short_name);
+       "  IceModelVec::checkHaveArray()); name = %s\n", name);
     PetscEnd();
   }
   if (isLegalLevel(z) != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
        "IceModelVec3 getValZ(): isLegalLevel() says level %f was\n"
-       "  not legal; short_name = %s\n", z, short_name);
+       "  not legal; name = %s\n", z, name);
     PetscEnd();
   }
   PetscScalar ***arr = (PetscScalar***) array;
@@ -231,8 +231,8 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(
   ierr = isLegalLevel(z);  CHKERRQ(ierr);
   // check ownership here?
   if (!localp) {
-    SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 with short_name='%s' is GLOBAL\n"
-               "  and cannot do getPlaneStarZ()\n", short_name);
+    SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 with name='%s' is GLOBAL\n"
+               "  and cannot do getPlaneStarZ()\n", name);
   }
 
   PetscInt     kbz;
@@ -290,7 +290,7 @@ PetscErrorCode  IceModelVec3::getValColumnPL(const PetscInt i, const PetscInt j,
   for (PetscInt k=0; k < nlevelsIN - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
-                 "  (IceModelVec3 with short_name='%s')  ENDING!\n",k,short_name);
+                 "  (IceModelVec3 with name='%s')  ENDING!\n",k,name);
     }
   }
 
@@ -338,7 +338,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(const PetscInt i, const PetscInt 
   for (PetscInt k=0; k < nlevelsIN - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
-                 "    (IceModelVec3 with short_name='%s')  ENDING!\n",k,short_name);
+                 "    (IceModelVec3 with name='%s')  ENDING!\n",k,name);
     }
   }
 
@@ -466,18 +466,18 @@ IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {}
 
 //! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, 
-                               const char my_short_name[], bool local) {
+                               const char my_name[], bool local) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec3Bedrock with short_name='%s' already allocated\n",short_name);
+    SETERRQ1(1,"IceModelVec3Bedrock with name='%s' already allocated\n",name);
   }
   if (local) {
-    SETERRQ1(2,"IceModelVec3Bedrock must be GLOBAL (short_name='%s')\n",short_name);
+    SETERRQ1(2,"IceModelVec3Bedrock must be GLOBAL (name='%s')\n",name);
   }
 
-  strcpy(short_name,my_short_name);
+  strcpy(name,my_name);
 
   grid = &my_grid;
   dims = GRID_3D_BEDROCK;
@@ -493,9 +493,8 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
 
   localp = false;
-#ifdef PISM_DEBUG
-  creation_counter += 1;
-#endif // PISM_DEBUG
+
+  var1.init(name, my_grid, dims);
   return 0;
 }
 
@@ -568,19 +567,19 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscI
 
   if (levelsIN[0] > -grid->Lbz + 1.0e-3) {
     SETERRQ3(1,"levelsIN[0]=%10.9f is above base of bedrock at z=-%10.9f so *interpolation*\n"
-              "   is impossible; IceModelVec3Bedrock has short_name='%s';  ENDING!\n",
-              levelsIN[0],grid->Lbz,short_name);
+              "   is impossible; IceModelVec3Bedrock has name='%s';  ENDING!\n",
+              levelsIN[0],grid->Lbz,name);
   }
   if (levelsIN[nlevels - 1] < 0.0 - 1.0e-3) {
     SETERRQ2(2,"levelsIN[nlevels-1] = %10.9f is below z=0, so *interpolation* is impossible;\n"
-               "   IceModelVec3Bedrock has short_name='%s';  ENDING!\n",
-               levelsIN[nlevels-1],short_name);
+               "   IceModelVec3Bedrock has name='%s';  ENDING!\n",
+               levelsIN[nlevels-1],name);
   }
   for (PetscInt k=0; k < nlevels - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(3,"levelsIN not *strictly increasing* at index %d;\n"
-                 "    IceModelVec3Bedrock has short_name='%s';  ENDING!\n",
-                 k,short_name);
+                 "    IceModelVec3Bedrock has name='%s';  ENDING!\n",
+                 k,name);
     }
   }
 
@@ -603,12 +602,12 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumn(const PetscInt i, const PetscI
 PetscErrorCode  IceModelVec3Bedrock::isLegalLevel(const PetscScalar z) {
   if (z < -grid->Lbz - 1.0e-6) {
     SETERRQ3(1,
-       "level z = %10.8f is below bottom of bedrock at -Lbz = %10.8f; IceModelVec3Bedrock has short_name='%s'; ENDING!\n",
-       z,-grid->Lbz,short_name);
+       "level z = %10.8f is below bottom of bedrock at -Lbz = %10.8f; IceModelVec3Bedrock has name='%s'; ENDING!\n",
+       z,-grid->Lbz,name);
   }
   if (z > 0.0 + 1.0e-6) {
-    SETERRQ2(2,"level z = %10.8f is above top of bedrock at z=0; IceModelVec3Bedrock has short_name='%s'; ENDING!\n",
-              z,short_name);
+    SETERRQ2(2,"level z = %10.8f is above top of bedrock at z=0; IceModelVec3Bedrock has name='%s'; ENDING!\n",
+              z,name);
   }
   return 0;
 }
@@ -635,7 +634,7 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumn(const PetscInt i, const PetscI
   for (PetscInt k=0; k < nlevelsIN - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
-                 "    (IceModelVec3Bedrock with short_name='%s')  ENDING!\n",k,short_name);
+                 "    (IceModelVec3Bedrock with name='%s')  ENDING!\n",k,name);
     }
   }
 

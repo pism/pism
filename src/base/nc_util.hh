@@ -19,11 +19,18 @@
 #ifndef __nc_util_hh
 #define __nc_util_hh
 
+#include <string>
+#include <vector>
 #include <netcdf.h>
 #include <petscmat.h>
 #include "LocalInterpCtx.hh"
 #include "grid.hh"
 #include "../udunits/udunits.h"
+
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
 
 struct PolarStereoParams {
   double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
@@ -51,8 +58,9 @@ public:
   PetscErrorCode open_for_reading(const char filename[]);
   PetscErrorCode open_for_writing(const char filename[], bool replace = true);
   PetscErrorCode close();
-  PetscErrorCode find_variable(const char short_name[], const char standard_name[],
+  PetscErrorCode find_variable(string short_name, string standard_name,
 			       int *varid, bool &exists);
+  PetscErrorCode find_variable(string short_name, int *varid, bool &exists);
   PetscErrorCode find_dimension(const char short_name[], int *dimid, bool &exists);
   PetscErrorCode create_dimensions();
   PetscErrorCode append_time(PetscReal time);
@@ -69,11 +77,9 @@ public:
   PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals);
   PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta);
 
-  PetscErrorCode get_att_text(int varid, const char name[], int *length, char **result);
-  PetscErrorCode get_att_double(int varid, const char name[],
-				int length, double *result);
-  PetscErrorCode get_units(const char short_name[], const char standard_name[],
-			   bool &has_units, utUnit &units);
+  PetscErrorCode get_att_text(int varid, const char name[], string &result);
+  PetscErrorCode get_att_double(int varid, const char name[], vector<double> &result);
+  PetscErrorCode get_units(int varid, bool &has_units, utUnit &units);
   PetscErrorCode read_polar_stereographic(PolarStereoParams &ps, bool report = false);
   PetscErrorCode write_polar_stereographic(PolarStereoParams &ps);
 

@@ -160,7 +160,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
   ierr = T3.set_attrs("model_state","ice temperature",
 		      "K", "land_ice_temperature"); CHKERRQ(ierr);
-  ierr = T3.set_valid_min(0.0); CHKERRQ(ierr);
+  ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // age of ice
   ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
@@ -169,14 +169,14 @@ PetscErrorCode IceModel::createVecs() {
 			"s", NULL); CHKERRQ(ierr);
   ierr = tau3.set_glaciological_units("years");
   tau3.write_in_glaciological_units = true;
-  ierr = tau3.set_valid_min(0.0); CHKERRQ(ierr);
+  ierr = tau3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // bedrock temperature
   ierr = Tb3.create(grid,"litho_temp", false); CHKERRQ(ierr);
   // PROPOSED standard_name = lithosphere_temperature
   ierr = Tb3.set_attrs("model_state", "lithosphere (bedrock) temperature",
 		       "K", NULL); CHKERRQ(ierr);
-  ierr = Tb3.set_valid_min(0.0); CHKERRQ(ierr);
+  ierr = Tb3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // ice upper surface elevation
   ierr = vh.create(grid, "usurf", true); CHKERRQ(ierr);
@@ -187,7 +187,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vH.create(grid, "thk", true); CHKERRQ(ierr);
   ierr = vH.set_attrs("model_state", "land ice thickness",
 		      "m", "land_ice_thickness"); CHKERRQ(ierr);
-  ierr = vH.set_valid_min(0.0); CHKERRQ(ierr);
+  ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // bedrock surface elevation
   ierr = vbed.create(grid, "topg", true); CHKERRQ(ierr);
@@ -246,7 +246,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vHmelt.set_attrs("model_state", "effective thickness of subglacial melt water",
 			  "m", NULL); CHKERRQ(ierr);
   // NB! Effective thickness of subglacial melt water *does* vary from 0 to 2 meters only.
-  ierr = vHmelt.set_valid_range(0.0, 2.0); CHKERRQ(ierr);
+  ierr = vHmelt.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = vHmelt.set_attr("valid_max", 2.0); CHKERRQ(ierr);
 
   // rate of change of ice thickness
   ierr = vdHdt.create(grid, "dHdt", true); CHKERRQ(ierr);

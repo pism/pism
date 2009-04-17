@@ -81,7 +81,7 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
 }
 
 
-PetscScalar IceMISMIPModel::basalDragx(PetscScalar **tauc,
+PetscScalar IceMISMIPModel::basalDragx(PetscScalar **/*tauc*/,
                                        PetscScalar **u, PetscScalar **v,
                                        PetscInt i, PetscInt j) const {
   // MAKE SURE THIS IS REALLY BEING USED!!:
@@ -90,7 +90,7 @@ PetscScalar IceMISMIPModel::basalDragx(PetscScalar **tauc,
 }
 
 
-PetscScalar IceMISMIPModel::basalDragy(PetscScalar **tauc,
+PetscScalar IceMISMIPModel::basalDragy(PetscScalar **/*tauc*/,
                                        PetscScalar **u, PetscScalar **v,
                                        PetscInt i, PetscInt j) const {
   // MAKE SURE THIS IS REALLY BEING USED!!:
@@ -961,10 +961,10 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
 
 PetscErrorCode IceMISMIPModel::summaryPrintLine(
-    const PetscTruth printPrototype, const PetscTruth tempAndAge,
-    const PetscScalar year, const PetscScalar dt, 
-    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
+    const PetscTruth printPrototype, const PetscTruth /*tempAndAge*/,
+    const PetscScalar year, const PetscScalar /*dt*/, 
+    const PetscScalar volume_kmcube, const PetscScalar /*area_kmsquare*/,
+    const PetscScalar /*meltfrac*/, const PetscScalar H0, const PetscScalar /*T0*/) {
 
 /*
 Because this model resolves the shelf and only uses the floatation criterion

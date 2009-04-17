@@ -60,7 +60,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   bool hExists=false, maskExists=false;
   ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("mask", NULL, NULL, maskExists); CHKERRQ(ierr);
+  ierr = nc.find_variable("mask", NULL, maskExists); CHKERRQ(ierr);
  
   // our goal is to create a "local interpolation context" from dimensions,
   // limits, and lengths extracted from bootstrap file and from information

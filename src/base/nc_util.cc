@@ -93,24 +93,24 @@ PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool
   <li> Broadcast the existence flag and the variable ID.
   </ol>
  */
-PetscErrorCode  NCTool::find_variable(const char short_name[], const char standard_name[],
+PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 				      int *varidp, bool &exists) {
   int ierr;
   int stat, found = 0, my_varid = -1, nvars;
-  char *attribute;
 
-  if (standard_name != NULL) {
+  if (standard_name != "") {
     if (grid->rank == 0) {
       ierr = nc_inq_nvars(ncid, &nvars); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     }
     ierr = MPI_Bcast(&nvars, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
+    string attribute;
     for (int j = 0; j < nvars; j++) {
-      ierr = get_att_text(j, "standard_name", NULL, &attribute); CHKERRQ(ierr);
-      if (attribute == NULL)
+      ierr = get_att_text(j, "standard_name", attribute); CHKERRQ(ierr);
+      if (attribute == "")
 	continue;
 
-      if (strcmp(attribute, standard_name) == 0) {
+      if (attribute == standard_name) {
 	if (!found) {
 	  found = true;
 	  my_varid = j;
@@ -118,19 +118,18 @@ PetscErrorCode  NCTool::find_variable(const char short_name[], const char standa
 	  ierr = PetscPrintf(grid->com,
 			     "PISM ERROR: Inconsistency in the input file: "
 			     "Variables #%d and #%d have the same standard_name ('%s').\n",
-			     my_varid, j, attribute);
+			     my_varid, j, attribute.c_str());
 	  CHKERRQ(ierr);
 	  PetscEnd();
 	}
       }
-      delete[] attribute;
     } // end of for (int j = 0; j < nvars; j++)
   } // end of if (standard_name != NULL)
 
   // Check the short name:
   if (!found) {
     if (grid->rank == 0) {
-      stat = nc_inq_varid(ncid, short_name, &my_varid);
+      stat = nc_inq_varid(ncid, short_name.c_str(), &my_varid);
       if (stat == NC_NOERR)
 	found = true;
     }
@@ -148,6 +147,10 @@ PetscErrorCode  NCTool::find_variable(const char short_name[], const char standa
   }
 
   return 0;
+}
+
+PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists) {
+  return find_variable(short_name, "", varid, exists);
 }
 
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
@@ -823,39 +826,39 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
   Appends if overwrite == false (default).
  */
 PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
-  int stat, old_history_len = 0;
-  char *old_history, *new_history;
+  int stat;
+  string old_history, new_history;
 
   // Produce the new history string:
-  stat = get_att_text(NC_GLOBAL, "history", &old_history_len, &old_history);
-  new_history = new char[strlen(history) + old_history_len + 1];
-  strcpy(new_history, history);
-  if (!overwrite && (old_history != NULL))
-      strcat(new_history, old_history);
+  stat = get_att_text(NC_GLOBAL, "history", old_history); CHKERRQ(stat);
+  
+  if (overwrite) {
+    new_history = history;
+  } else {
+    new_history = history + old_history;
+  }
 
   // Write it:
   if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     
     stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
-			   strlen(new_history), new_history);
+			   new_history.size(), new_history.c_str());
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
       
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  delete[] new_history;
-  delete[] old_history;
   return 0;
 }
 
 PetscErrorCode NCTool::read_polar_stereographic(PolarStereoParams &ps, bool report) {
   PetscErrorCode ierr;
-  double lon, lat, par;
+  vector<double> tmp;
   int varid;
   bool ps_exists, lon_exists = false, lat_exists = false, par_exists = false;
 
-  ierr = find_variable("polar_stereographic", NULL, &varid, ps_exists); CHKERRQ(ierr);
+  ierr = find_variable("polar_stereographic", &varid, ps_exists); CHKERRQ(ierr);
   if (!ps_exists && report) {
     ierr = verbPrintf(2,grid->com,
 		      "  polar stereographic variable not found, using defaults: svlfp=%6.2f, lopo=%6.2f, sp=%6.2f\n",
@@ -863,29 +866,31 @@ PetscErrorCode NCTool::read_polar_stereographic(PolarStereoParams &ps, bool repo
     return 0;
   }
 
-  ierr = get_att_double(varid, "straight_vertical_longitude_from_pole", 1, &lon);
-  if (ierr == 0)
+  ierr = get_att_double(varid, "straight_vertical_longitude_from_pole", tmp); CHKERRQ(ierr);
+  if (tmp.size() == 1) {
+    ps.svlfp = tmp[0];
     lon_exists = true;
+  }
 
-  ierr = get_att_double(varid, "latitude_of_projection_origin", 1, &lat);
-  if (ierr == 0)
+  ierr = get_att_double(varid, "latitude_of_projection_origin", tmp); CHKERRQ(ierr);
+  if (tmp.size() == 1) {
+    ps.lopo = tmp[0];
     lat_exists = true;
+  }
 
-  ierr = get_att_double(varid, "standard_parallel", 1, &par);
-  if (ierr == 0)
+  ierr = get_att_double(varid, "standard_parallel", tmp); CHKERRQ(ierr);
+  if (tmp.size() == 1) {
+    ps.sp = tmp[0];
     par_exists = true;
+  }
 
   if (report) {
     ierr = verbPrintf(2, grid->com,
 		      "  polar stereographic variable found; attributes present: svlfp=%d, lopo=%d, sp=%d\n"
 		      "     values: svlfp = %6.2f, lopo = %6.2f, sp = %6.2f\n",
 		      lon_exists, lat_exists, par_exists,
-		      lon, lat, par); CHKERRQ(ierr);
+		      ps.svlfp, ps.lopo, ps.sp); CHKERRQ(ierr);
   }
-
-  if (lon_exists) ps.svlfp = lon;
-  if (lat_exists) ps.lopo = lat;
-  if (par_exists) ps.sp = par;
 
   return 0;
 }
@@ -1142,6 +1147,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
       stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
       stat = create_dimensions(); CHKERRQ(stat);
     }
+    stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   } // end of if(grid->rank == 0)
 
   stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
@@ -1211,7 +1217,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   ierr = get_dim_length(name, &len); CHKERRQ(ierr);
 
   if (len != 0) {
-    ierr = find_variable(name, NULL, &varid, variable_exists);
+    ierr = find_variable(name, &varid, variable_exists);
     if (!variable_exists) {
       ierr = PetscPrintf(grid->com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
 			 name);
@@ -1253,7 +1259,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   }
 
   // Get the units information:
-  ierr = get_units(name, NULL, input_has_units, input); CHKERRQ(ierr);
+  ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
   if (!input_has_units) {
     ierr = verbPrintf(3, grid->com,
 		      "PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
@@ -1285,18 +1291,10 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 }
 
 //! Reads a text attribute from a NetCDF file.
-/*! \c result is set to a pointer to a newly-allocated string, which has to be
-    freed using delete[].
-
-    Sets \c result to NULL on error.
-
-    Note that it allocates one byte more than needed to store the string -- to
-    make sure that the returned string is zero-terminated.
-
-    On success, \c length contains the number of bytes allocated for the
-    string. (This is to allow reading strings with zeros in them.)
+/*!
+  Missimg and empty attributes are treated the same.
  */
-PetscErrorCode NCTool::get_att_text(const int varid, const char name[], int *length, char** result) {
+PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &result) {
   char *str = NULL;
   int ierr, stat, len;
 
@@ -1313,9 +1311,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], int *len
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
-    if (length != NULL)
-      *length = 0;
-    *result = NULL;
+    result = "";
     return 0;
   }
   str = new char[len + 1];
@@ -1329,30 +1325,22 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], int *len
   }
   ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
   
-  // On success, broadcast the string. On error, delete the string and set str
-  // to NULL.
+  // On success, broadcast the string. On error, set str to "".
   if (stat == NC_NOERR) {
     stat = MPI_Bcast(str, len, MPI_CHAR, 0, grid->com); CHKERRQ(stat);
   } else {
-    delete[] str;
-    str = NULL;
+    strcpy(str, "");
   }
 
-  if (length != NULL)
-    *length = len + 1;
-  *result = str;
+  result = str;
+
+  delete[] str;
   return 0;
 }
 
 //! Reads a scalar attribute from a NetCDF file.
-/*! Returns zero on success.
-
-  If an error occurs or if \c length does not match the attribute length, returns 1.
-
-  In either of these two cases \c result is left unmodified.
- */
 PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
-				      const int length, double *result) {
+				      vector<double> &result) {
   int ierr, stat, len;
 
   // Read and broadcast the attribute length:
@@ -1366,21 +1354,23 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
   }
   ierr = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
 
-  if ((len == 0) || (len != length)) {
-    return 1;
+  if (len == 0) {
+    result.clear();
+    return 0;
   }
 
+  result.reserve(len);
   // Now read the data and broadcast stat to see if we succeeded:
   if (grid->rank == 0) {
-    stat = nc_get_att_double(ncid, varid, name, result);
+    stat = nc_get_att_double(ncid, varid, name, &result[0]);
   }
   ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
   
-  // On success, broadcast the data. On error, return 1.
+  // On success, broadcast the data. On error, stop.
   if (stat == NC_NOERR) {
-    ierr = MPI_Bcast(result, len, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
   } else {
-    return 1;
+    SETERRQ(1, "Error reading an attribute.");
   }
 
   return 0;
@@ -1619,27 +1609,15 @@ PetscErrorCode NCTool::get_grid(const char filename[]) {
 /*!
   Note that this function intentionally ignores the reference date.
  */
-PetscErrorCode NCTool::get_units(const char short_name[], const char standard_name[],
-				 bool &has_units, utUnit &units) {
+PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) {
   PetscErrorCode ierr;
-  char *units_string;
-  int varid, length;
-  bool variable_exists;
-
-  // If a variable does not exits, set the flag and return:
-  ierr = find_variable(short_name, standard_name,
-		       &varid, variable_exists); CHKERRQ(ierr);
-  if (!variable_exists) {
-    has_units = false;
-    utClear(&units);
-    return 0;
-  }
+  string units_string;
 
   // Get the string:
-  ierr = get_att_text(varid, "units", &length, &units_string); CHKERRQ(ierr);
+  ierr = get_att_text(varid, "units", units_string); CHKERRQ(ierr);
 
   // If a variables does not have the units attribute, set the flag and return:
-  if (length == 0) {
+  if (units_string.empty()) {
     has_units = false;
     utClear(&units);
     return 0;
@@ -1649,22 +1627,20 @@ PetscErrorCode NCTool::get_units(const char short_name[], const char standard_na
   // it on the first 's' of "since", if this sub-string was found. This
   // is done to ignore the reference date in the time units string (the
   // reference date specification always starts with this word).
-  char *tmp;
-  tmp = strstr(units_string, "since");
-  if (tmp != NULL)
-    tmp[0] = '\0';
 
-  ierr = utScan(units_string, &units);
+  int n = units_string.find("since");
+  if (n != -1) units_string.resize(n);
+
+  ierr = utScan(units_string.c_str(), &units);
   if (ierr != 0) {
     ierr = PetscPrintf(grid->com, "PISM ERROR: units specification '%s' is unknown or invalid.\n",
-		       units_string);
+		       units_string.c_str());
     PetscEnd();
   }
   
   has_units = true;
 
   // Cleanup:
-  delete[] units_string;
   return 0;
 }
 
@@ -1708,7 +1684,7 @@ PetscErrorCode NCTool::append_timeseries(const char name[], double value) {
 
   stat = get_dim_length("t", &t_len); CHKERRQ(stat);
 
-  stat = find_variable(name, NULL, &varid, variable_exists); CHKERRQ(stat);
+  stat = find_variable(name, &varid, variable_exists); CHKERRQ(stat);
   if (!variable_exists) {
     stat = create_timeseries(name, NULL, NULL, NC_FLOAT, &varid); CHKERRQ(stat);
   }
