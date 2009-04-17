@@ -442,11 +442,12 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
           PetscScalar mytemp;
           if (readMonthlyTempsFromFile) {
             PetscInt currMonthInd, nextMonthInd;
-            ierr = getMonthIndicesFromDay((PetscScalar) day, currMonthInd, nextMonthInd);
-                       CHKERRQ(ierr);
+            PetscScalar indexday, dummy, lambda;
+            indexday = 364.24 * modf(((PetscScalar) day)/365.24, &dummy); 
+            ierr = getMonthIndicesFromDay(indexday, 
+                       currMonthInd, nextMonthInd, lambda); CHKERRQ(ierr);
             mytemp = getTemperatureFromMonthlyData(
-                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], 
-                       i, j, (PetscScalar) day);
+                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], lambda, i, j);
           } else {
             mytemp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], (PetscScalar) day);
           }
@@ -465,10 +466,11 @@ PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
           PetscScalar temp;
           if (readMonthlyTempsFromFile) {
             PetscInt currMonthInd, nextMonthInd;
-            ierr = getMonthIndicesFromDay(day, currMonthInd, nextMonthInd); CHKERRQ(ierr);
+            PetscScalar indexday, dummy, lambda;
+            indexday = 364.24 * modf(((PetscScalar) day)/365.24, &dummy); 
+            ierr = getMonthIndicesFromDay(indexday, currMonthInd, nextMonthInd, lambda); CHKERRQ(ierr);
             temp = getTemperatureFromMonthlyData(
-                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], 
-                       i, j, day);
+                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], lambda, i, j);
           } else {
             temp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], day);
           }

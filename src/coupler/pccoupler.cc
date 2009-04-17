@@ -212,7 +212,13 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   PetscErrorCode ierr;
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  if (dTforcing != PETSC_NULL) {
+    ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
+    ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // re-apply the offset
+  } else {
+    ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  }
 
   NCTool nc(grid);
   bool variable_exists;
@@ -422,7 +428,7 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
                NULL); // CF standard name?  may exist when derived class has additional semantics
                CHKERRQ(ierr);
     ierr = verbPrintf(2, grid->com, 
-       "  reading month %d surface temperature '%s' ...\n", j, monthlyTempName); CHKERRQ(ierr); 
+       "  reading month %d surface temperature '%s' ...\n", j+1, monthlyTempName); CHKERRQ(ierr); 
     ierr = vmonthlytemp[j].regrid(monthlyTempsFile, lic, true); CHKERRQ(ierr); // it *is* critical
   }
   return 0;
@@ -430,33 +436,37 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
 
 
 /*!
-Returns indices in {0,..,11} for the current and next months.  Used for indexing
-the monthly surface temperature data.
+Used for indexing the monthly surface temperature data.
+Returns indices in {0,..,11} for the current and next months.  Returns linear interpolation
+coefficient lambda (with 0 <= lambda < 1) used by getTemperatureFromMonthlyData().
  */
 PetscErrorCode PISMMonthlyTempsAtmosCoupler::getMonthIndicesFromDay(
-       const PetscScalar day, PetscInt &curr, PetscInt &next) {
-  PetscScalar month = 12.0 * day / 365.24;
-  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
-  curr = (int) floor(month);
-  curr = curr % 12;
+       PetscScalar day, PetscInt &curr, PetscInt &next, PetscScalar &lambda) {
+  PetscErrorCode ierr;
+  if ((day < 0) || (day > 365.24)) {
+    ierr = PetscPrintf(grid->com, 
+       "PISMMonthlyTempsAtmosCoupler ERROR:  invalid day = %.5f in getMonthIndicesFromDay();\n"
+       "      should be in range 0 <= day <= 365.24\n",day); CHKERRQ(ierr);
+    PetscEnd();
+  }
+  PetscScalar month = 12.0 * day / 365.24;  // 0 <= month < 12
+  lambda = month - floor(month);            // 0 <= lambda < 1
+  curr = (int) floor(month);                // curr in {0,1,2,...,10,11}
   next = curr + 1;
-  if (next == 12)   next = 0;
+  if (next == 12)   next = 0;               // next in {0,1,2,...,10,11}
   return 0;
 }
 
 
 /*!
-Linearly interpolates between stored monthly temps.
+Linearly interpolates between stored monthly temps.  Call getMonthIndicesFromDay()
+first to get temporal index into monthly data and for linear interpolation factor lambda.
  */
 PetscScalar PISMMonthlyTempsAtmosCoupler::getTemperatureFromMonthlyData(
-       PetscScalar **currMonthTemps, PetscScalar **nextMonthTemps,
-       const PetscInt i, const PetscInt j, const PetscScalar day) {
-  PetscScalar month = 12.0 * day / 365.24;
-  month = month - static_cast<PetscScalar> (((int) floor(month)) % 12);
-  PetscInt  curr = (int) floor(month);
-  curr = curr % 12;
-  return currMonthTemps[i][j] 
-       + (month - (PetscScalar)curr) * nextMonthTemps[i][j];
+       PetscScalar **currMonthTemps, PetscScalar **nextMonthTemps, PetscScalar lambda,
+       PetscInt i, PetscInt j) {
+  return (1.0 - lambda) * currMonthTemps[i][j] + lambda * nextMonthTemps[i][j]
+       + TsOffset;
 }
 
 

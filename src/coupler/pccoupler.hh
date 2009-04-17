@@ -180,10 +180,11 @@ public:
 
 protected:
   PetscErrorCode readMonthlyTemps();
-  PetscErrorCode getMonthIndicesFromDay(const PetscScalar day, PetscInt &curr, PetscInt &next);
+  PetscErrorCode getMonthIndicesFromDay(PetscScalar day, 
+                                        PetscInt &curr, PetscInt &next, PetscScalar &lambda);
   PetscScalar getTemperatureFromMonthlyData(
-       PetscScalar **currMonthTemps, PetscScalar **nextMonthTemps,
-       const PetscInt i, const PetscInt j, const PetscScalar day);
+       PetscScalar **currMonthTemps, PetscScalar **nextMonthTemps, PetscScalar lambda,
+       PetscInt i, PetscInt j);
 
   IceModelVec2 vmonthlytemp[12]; // if readMonthlyTempsFromFile then allocated by initFromOptions()
 
