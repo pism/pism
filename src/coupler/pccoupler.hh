@@ -343,6 +343,8 @@ public:
 
   virtual PetscErrorCode initFromOptions(IceGrid* g);
 
+  virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
+
   virtual PetscErrorCode updateShelfBaseMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByOceanCoupler*
