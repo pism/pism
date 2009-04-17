@@ -502,7 +502,8 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   // PROPOSED standard name = ice_shelf_basal_temperature
   ierr = vshelfbasetemp.set(273.15); CHKERRQ(ierr);  // merely a default value to clear nonsense
 
-  // ice mass balance rate at the base of the ice shelf
+  // ice mass balance rate at the base of the ice shelf; sign convention for vshelfbasemass
+  //   matches standard sign convention for basal melt rate of grounded ice
   ierr = vshelfbasemassflux.create(*g, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = vshelfbasemassflux.set_attrs(
            "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
@@ -622,8 +623,12 @@ PetscErrorCode PISMOceanCoupler::updateSeaLevelElevation(PetscReal t_years, Pets
 
 PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
   constOceanHeatFlux = 0.5;   // W m-2 = J m-2 s-1; naively chosen default value
-        // presumably irrelevant:  about 4 times more heating than peak of 
-        //   Shapiro & Ritzwoller (2004) geothermal fluxes for Antarctica of about 130 mW/m^2
+        // default value possibly irrelevant as long as it is pretty small;
+        //   0.5 W m-2 is about 4 times more heating than peak of 
+        //   Shapiro & Ritzwoller (2004) geothermal fluxes for Antarctica of about 130 mW/m^2;
+        //   0.5 W m-2 yields  0.051758 m a-1 = 5.2 cm a-1  basal melt rate, ice thickness per time,
+        //   in updateShelfBaseMassFluxAndProvide() below
+        
         // alternative: a rate of zero might do no harm; note heat flux immediately
         //   becomes a basal net mass balance;
         //   Lingle et al (1991; "A flow band model of the Ross Ice Shelf ..."
@@ -644,12 +649,22 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
   if (reportInitializationToStdOut) {
     ierr = verbPrintf(2, g->com, 
        "initializing constant sub-ice shelf ocean climate: heat flux from ocean\n"
-       "  set to %.3f W m-2 determines mass balance; ice shelf base temperature set to\n"
+       "  set to %.3f W m-2; this determines mass balance; ice shelf base temperature set to\n"
        "  pressure-melting temperature ...\n",
        constOceanHeatFlux); CHKERRQ(ierr); 
   }
 
   printIfDebug("ending PISMConstOceanCoupler::initFromOptions()\n");
+  return 0;
+}
+
+
+//! By default, does not write fields.
+/*!
+Redefine this in a derived class to write out constant-in-time but non-constant in space fields.
+Essentially just use PISMOceanCoupler version.
+ */
+PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
   return 0;
 }
 
@@ -696,8 +711,9 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
                     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
                     meltrate      = constOceanHeatFlux / (icelatentheat * icerho); // m s-1
 
-  // vshelfbasemassflux is positive if ice is freezing on; here it is always negative
-  ierr = vshelfbasemassflux.set(- meltrate); CHKERRQ(ierr);
+  // vshelfbasemassflux is positive if ice is melting (flux into ocean);
+  //    see metadata set in PISMOceanCoupler::initFromOptions()
+  ierr = vshelfbasemassflux.set(meltrate); CHKERRQ(ierr);
 
   pvsbmf = &vshelfbasemassflux;
   return 0;
