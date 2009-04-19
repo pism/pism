@@ -11,7 +11,8 @@
 </center>
 <br><br>
 
-<h2>Existing names in CF 1.4 Standard Name Table</h2>
+<h2><a name="existing">Existing names in CF 1.4 Standard Name 
+Table</a></h2>
 
 These names are a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.4 standard name table</a>.  The list here is just (i) those with "land_ice" in the name and (ii) those relevant to the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.  It is in alphabetical order.
 <br><br>
@@ -22,7 +23,13 @@ Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk
 Like the legendary Eskimo, the CF standard name table already has a bazillion names for snow.  No attempt at using those names is made in PISM.
 <br><br>
 
-Readers other than PISM programmers should ignor the final column.  PAC=PISMAtmosphereCoupler and POC=PISMOceanCoupler.  Note PISM also uses "grid_mapping_name" (in only one case; the name is "polar_stereographic"), but that is not technically a standard_name.  Because PISM uses UDUNITS, PISM will write some of these in "glaciological units".  (Perhaps it would be nice to have a script or program that takes a PISM out file and makes units canonical.)
+Readers other than PISM programmers should ignor the final column.  
+PAC=PISMAtmosphereCoupler and POC=PISMOceanCoupler.  Note PISM also 
+uses "grid_mapping_name" (in only one case; the name is 
+"polar_stereographic"), but that is not technically a standard_name.
+Because PISM uses UDUNITS, PISM will write some of these in 
+"glaciological units", for instance m a-1 instead of m s-1, but this is
+allowed under CF and is handled by UDUNITS.
 <br><br>
 
 <table style="width: 100%;" border="1">
@@ -178,17 +185,11 @@ Readers other than PISM programmers should ignor the final column.  PAC=PISMAtmo
   <td style="vertical-align: top;">dHdt</td>
   <td style="vertical-align: top;">vdHdt</td>
 </tr>
-<tr>
-  <td style="vertical-align: top;">upward_heat_flux_at_ground_level_in_soil</td>
-  <td style="vertical-align: top;">W m-2</td>
-  <td style="vertical-align: top;">bheatflx</td>
-  <td style="vertical-align: top;">vGhf</td>
-</tr>
 </tbody>
 </table>
 
 
-<h2>PROPOSED standard names</h2>
+<h2><a name="proposed">PROPOSED standard names</a></h2>
 
 These are merely proposed by Bueler, for now.
 <br><br>
@@ -272,11 +273,20 @@ These are merely proposed by Bueler, for now.
   <td style="vertical-align: top;">Tb3</td>
   <td style="vertical-align: top;">here top of lithosphere is at "bedrock_altitude"; is that standard?</td>
 </tr>
+<tr>
+  <td style="vertical-align: top;">
+lithosphere_upward_heat_flux</td>
+  <td style="vertical-align: top;">W m-2</td>
+  <td style="vertical-align: top;">bheatflx</td>
+  <td style="vertical-align: top;">vGhf</td>
+  <td style="vertical-align: top;">applied at depth in lithosphere, in 
+most ice sheet models </td>
+</tr>
 </tbody>
 </table>
 
 
-<h2>Orphans</h2>
+<h2><a name="orphan">Orphans</a></h2>
 
 Used in PISM but no proposed standard name for now.  This is an incomplete list.
 <br><br>
@@ -322,5 +332,4 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
 </html>
 
 <br><br>
-
 

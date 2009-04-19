@@ -201,8 +201,11 @@ PetscErrorCode IceModel::createVecs() {
 
   // upward geothermal flux at bedrock surface
   ierr = vGhf.create(grid, "bheatflx", true); CHKERRQ(ierr);
-  ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
-			"W m-2", "upward_heat_flux_at_ground_level_in_soil"); CHKERRQ(ierr);
+  // PROPOSED standard_name = lithosphere_upward_heat_flux
+  ierr = vGhf.set_attrs("climate_steady",
+                        "upward geothermal flux at bedrock surface",
+			"W m-2",
+			NULL); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2");
 
   // u bar and v bar
