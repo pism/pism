@@ -205,7 +205,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
               grid.year, dt / secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
   }
   ierr = pccsbt->get_array(Tshelfbase);  CHKERRQ(ierr);
   ierr = pccsbmf->get_array(bmr_float);  CHKERRQ(ierr);
@@ -318,7 +318,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
           }
           const PetscScalar iceReff = ice->k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
           const PetscScalar brReff = bed_thermal.k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
-          const PetscScalar AA = dtTempAge * rho_c_ratio * w[0] / (2.0 * dzEQ);  //NEW
+          const PetscScalar AA = dtTempAge * rho_c_ratio * w[0] / (2.0 * dzEQ);
           if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0,
                          // otherwise ignore advection; note 
                          // jump in diffusivity coefficient
