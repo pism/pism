@@ -547,8 +547,9 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
   //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
   ierr = vshelfbasetemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vshelfbasemassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
   // FIXME:  it would be good to also write the forcing value to a t-dependent variable:
-  //   sealevel(t)
+  //   sealevel(t); this is in pism-dev
   return 0;
 }
 
@@ -659,12 +660,10 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-//! By default, does not write fields.
-/*!
-Redefine this in a derived class to write out constant-in-time but non-constant in space fields.
-Essentially just use PISMOceanCoupler version.
- */
+//! By default, does not write vshelfbasetemp and vshelfbasemassflux fields.
 PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
+  // FIXME:  it would be good to also write the forcing value to a t-dependent variable:
+  //   sealevel(t); this is in pism-dev
   return 0;
 }
 
