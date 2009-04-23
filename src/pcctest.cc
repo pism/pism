@@ -134,7 +134,7 @@ static PetscErrorCode writePCCStateAtTimes(
                  PISMClimateCoupler *pcc,
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
-                 const PetscReal ys, const PetscReal ye, const PetscReal dt_years,
+                 PetscReal ys, PetscReal ye, PetscReal dt_years,
                  void* iceInfoNeeded,
 		 PolarStereoParams &psparams) {
 
@@ -198,19 +198,30 @@ static PetscErrorCode writePCCStateAtTimes(
                        filename); CHKERRQ(ierr);
   }
 
+  PISMPDDCoupler* pdd_pcc = dynamic_cast<PISMPDDCoupler*>(pcc);
+  PetscScalar use_dt_years = dt_years;
+  if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
+    ierr = PetscPrintf(com,
+      "PCCTEST ATTENTION: PISMPDDCoupler will be asked for results from one year periods at\n"
+      "  the start of each desired time subinterval; full subinterval evaluation is too slow ...\n");
+      CHKERRQ(ierr);
+    use_dt_years = 1.0;
+  }
+  
   // write the states
   for (PetscInt k=0; k < NN; k++) {
-    const PetscReal pccyear = ys + k * dt_years;
+    const PetscReal pccyear = ys + k * dt_years; // use original dt_years to get correct subinterval starts
     ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr);
     ierr = nc.append_time(pccyear); CHKERRQ(ierr);
-    snprintf(timestr, sizeof(timestr), "  pcc state at year %11.3f ...\n", pccyear);
+    snprintf(timestr, sizeof(timestr), 
+             "  coupler updated for [%11.3f a,%11.3f a] ...\n", pccyear, pccyear + use_dt_years);
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "  updating pcc state at year %.3f and writing to %s ...\n",
-             pccyear,filename); CHKERRQ(ierr);
-    ierr = pcc->updateClimateFields(pccyear, dt_years, iceInfoNeeded); CHKERRQ(ierr);
+    ierr = pcc->updateClimateFields(pccyear, use_dt_years, iceInfoNeeded); CHKERRQ(ierr);
     ierr = pcc->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
+             pccyear, pccyear + use_dt_years, filename); CHKERRQ(ierr);
   }
 
   return 0;
