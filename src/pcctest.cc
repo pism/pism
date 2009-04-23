@@ -190,7 +190,7 @@ static PetscErrorCode writePCCStateAtTimes(
       ys); CHKERRQ(ierr);
     NN = 1;
   } else {
-    NN = 1 + (int) ceil((ye - ys) / dt_years);
+    NN = (int) ceil((ye - ys) / dt_years);
   }
   if (NN > 1000)  SETERRQ(2,"PCCTEST ERROR: refuse to write more than 1000 times!");
   if (NN > 50) {
@@ -213,15 +213,17 @@ static PetscErrorCode writePCCStateAtTimes(
     const PetscReal pccyear = ys + k * dt_years; // use original dt_years to get correct subinterval starts
     ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr);
     ierr = nc.append_time(pccyear); CHKERRQ(ierr);
+    
+    PetscScalar dt_update_years = PetscMin(use_dt_years, ye - pccyear);
     snprintf(timestr, sizeof(timestr), 
-             "  coupler updated for [%11.3f a,%11.3f a] ...\n", pccyear, pccyear + use_dt_years);
+             "  coupler updated for [%11.3f a,%11.3f a] ...\n", pccyear, pccyear + dt_update_years);
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = pcc->updateClimateFields(pccyear, use_dt_years, iceInfoNeeded); CHKERRQ(ierr);
+    ierr = pcc->updateClimateFields(pccyear, dt_update_years, iceInfoNeeded); CHKERRQ(ierr);
     ierr = pcc->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
     ierr = PetscPrintf(com, "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
-             pccyear, pccyear + use_dt_years, filename); CHKERRQ(ierr);
+             pccyear, pccyear + dt_update_years, filename); CHKERRQ(ierr);
   }
 
   return 0;

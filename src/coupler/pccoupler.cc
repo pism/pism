@@ -681,12 +681,21 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-//! By default, does not write fields.
-/*!
-Redefine this in a derived class to write out constant-in-time but non-constant in space fields.
-Essentially just use PISMOceanCoupler version.
- */
-PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char */*filename*/) {
+//! By default, does not write vshelfbasetemp and vshelfbasemassflux fields.
+PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
+  PetscErrorCode ierr;
+  NCTool nc(grid);
+  bool variable_exists;
+  ierr = nc.open_for_writing(filename, false);
+  ierr = nc.find_variable("sealevel", NULL, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = nc.create_timeseries("sealevel", "sea level", "meters", NC_FLOAT, NULL);
+    CHKERRQ(ierr);
+  }
+
+  ierr = nc.append_timeseries("sealevel", seaLevel); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
