@@ -79,7 +79,7 @@ PetscTruth IceTypeUsesGrainSize(IceType *ice) {
 
 
 
-CustomGlenIce::CustomGlenIce(MPI_Comm c,const char *pre) : IceType(c,pre)
+CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[]) : IceType(c,pre)
 {
   exponent_n = 3.0;
   softness_A = 4e-25;

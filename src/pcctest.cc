@@ -54,11 +54,11 @@ static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
   ierr = info.lon->set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
 
   ierr = info.mask->create(*grid, "mask", true); CHKERRQ(ierr);
-  ierr = info.mask->set_attrs(NULL, "grounded_dragging_floating integer mask",
-			      NULL, NULL); CHKERRQ(ierr);
+  ierr = info.mask->set_attrs("", "grounded_dragging_floating integer mask",
+			      "", ""); CHKERRQ(ierr);
 
   ierr = info.surfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
-  ierr = info.surfelev->set_attrs(NULL, "ice upper surface elevation",
+  ierr = info.surfelev->set_attrs("", "ice upper surface elevation",
 		                  "m", "surface_altitude"); CHKERRQ(ierr);
 
   ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
@@ -86,11 +86,11 @@ static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *g
   ierr = info.lon->set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
 
   ierr = info.mask->create(*grid, "mask", true); CHKERRQ(ierr);
-  ierr = info.mask->set_attrs(NULL, "grounded_dragging_floating integer mask",
-			      NULL, NULL); CHKERRQ(ierr);
+  ierr = info.mask->set_attrs("", "grounded_dragging_floating integer mask",
+			      "", ""); CHKERRQ(ierr);
 
   ierr = info.thk->create(*grid, "thk", true); CHKERRQ(ierr);
-  ierr = info.thk->set_attrs(NULL, "land ice thickness",
+  ierr = info.thk->set_attrs("", "land ice thickness",
 		             "m", "land_ice_thickness"); CHKERRQ(ierr);
 
   ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);

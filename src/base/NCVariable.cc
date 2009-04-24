@@ -25,18 +25,23 @@ NCVariable::NCVariable() {
   reset();
 }
 
-void NCVariable::init(const char name[], IceGrid &g, GridType d) {
+//! Initialize a NCVariable instance.
+void NCVariable::init(string name, IceGrid &g, GridType d) {
   short_name = name;
   grid = &g;
   dims = d;
 }
 
-PetscErrorCode NCVariable::set_units(const char new_units[]) {
+//! Set the internal units.
+/*! Units should not be set by accessing the \c strings member directly. This
+  method also checks if \c new_units are valid and initializes the \c units structure.
+ */
+PetscErrorCode NCVariable::set_units(string new_units) {
   strings["units"] = new_units;
 
-  if (utScan(new_units, &units) != 0) {
+  if (utScan(new_units.c_str(), &units) != 0) {
     SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
-	     short_name.c_str(), new_units);
+	     short_name.c_str(), new_units.c_str());
   }
 
   // Set the glaciological units too:
@@ -46,18 +51,26 @@ PetscErrorCode NCVariable::set_units(const char new_units[]) {
   return 0;
 }
 
-PetscErrorCode NCVariable::set_glaciological_units(const char new_units[]) {
+//! Set the glaciological (output) units.
+/*! These units are used for output (if write_in_glaciological_units is set)
+  and for standard out reports.
+
+  \c glaciological_units should not be set by accessing the \c strings member
+  directly. This method also checks if \c new_units are valid and compatible
+  with the internal units.
+ */
+PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
   double a, b;			// dummy variables
   string &units_string = strings["units"];
 
-  if (utScan(new_units, &glaciological_units) != 0) {
+  if (utScan(new_units.c_str(), &glaciological_units) != 0) {
     SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
-	     short_name.c_str(), new_units);
+	     short_name.c_str(), new_units.c_str());
   }
   
   if (utConvert(&units, &glaciological_units, &a, &b) == UT_ECONVERT) {
     SETERRQ3(1, "PISM ERROR: NCVariable '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
-	     short_name.c_str(), new_units, units_string.c_str());
+	     short_name.c_str(), new_units.c_str(), units_string.c_str());
   }
 
   // Save the human-friendly version of the string; this is to avoid getting
@@ -67,6 +80,9 @@ PetscErrorCode NCVariable::set_glaciological_units(const char new_units[]) {
   return 0;
 }
 
+//! Read a variable from a file into a \b global Vec v.
+/*! This also converts the data from input units to internal units if needed.
+ */
 PetscErrorCode NCVariable::read(const char filename[], unsigned int time, Vec v) {
   PetscErrorCode ierr;
   bool variable_exists;
@@ -121,6 +137,10 @@ PetscErrorCode NCVariable::read(const char filename[], unsigned int time, Vec v)
   return 0;
 }
 
+//! Write a \b global Vec \c v to a variable.
+/*!
+  Defines a variable and converts the units if needed.
+ */
 PetscErrorCode NCVariable::write(const char filename[], nc_type nctype,
 				 bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
@@ -160,9 +180,11 @@ PetscErrorCode NCVariable::write(const char filename[], nc_type nctype,
   return 0;
 }
 
-//! Regrid from a NetCDF file.
+//! Regrid from a NetCDF file into a \b global Vec \c v.
 /*!
-  interpolation mask can be NULL if it is not used.
+  \li stops if critical == true and the variable was not found
+  \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
+  \li interpolation mask can be NULL if it is not used.
  */
 PetscErrorCode NCVariable::regrid(const char filename[], LocalInterpCtx &lic,
 				  bool critical, bool set_default_value,
@@ -204,7 +226,7 @@ PetscErrorCode NCVariable::regrid(const char filename[], LocalInterpCtx &lic,
       
       ierr = verbPrintf(2, grid->com, 
 			"  absent %-10s/ %-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
-			strings["short_name"].c_str(),
+			short_name.c_str(),
 			strings["long_name"].c_str(),
 			"", tmp,
 			strings["glaciological_units"].c_str());
@@ -263,6 +285,10 @@ PetscErrorCode NCVariable::regrid(const char filename[], LocalInterpCtx &lic,
   return 0;
 }
 
+//! Read the valid range information from a file.
+/*! Reads \c valid_min, \c valid_max and \c valid_range attributes; if \c
+    valid_range is found, sets the pair \c valid_min and \c valid_max instead.
+ */
 PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
   NCTool nc(grid);
   string input_units_string;
@@ -314,6 +340,10 @@ PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
   return 0;
 }
 
+//! Converts \c v from the units corresponding to \c from to the ones corresponding to \c to.
+/*!
+  Does nothing if this transformation is trivial.
+ */
 PetscErrorCode NCVariable::change_units(Vec v, utUnit *from, utUnit *to) {
   PetscErrorCode ierr;
   double slope, intercept;
@@ -355,6 +385,16 @@ PetscErrorCode NCVariable::change_units(Vec v, utUnit *from, utUnit *to) {
   return 0;
 }
 
+//! Write variable attributes to a NetCDF file.
+/*!
+
+  \li if write_in_glaciological_units == true, "glaciological_units" are
+  written under the name "units" plus the valid range is written in
+  glaciological units.
+
+  \li if both valid_min and valid_max are set, then valid_range is written
+  instead of the valid_min, valid_max pair.
+ */
 PetscErrorCode NCVariable::write_attributes(int ncid, int varid, nc_type nctype,
 					    bool write_in_glaciological_units) {
   int ierr;
@@ -439,6 +479,8 @@ PetscErrorCode NCVariable::write_attributes(int ncid, int varid, nc_type nctype,
   return 0;
 }
 
+
+//! Report the range of a \b global Vec \c v.
 PetscErrorCode NCVariable::report_range(Vec v) {
   double slope, intercept;
   PetscErrorCode ierr;
@@ -456,13 +498,14 @@ PetscErrorCode NCVariable::report_range(Vec v) {
 
   ierr = verbPrintf(2, grid->com, 
 		    " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
-		    strings["short_name"].c_str(),
+		    short_name.c_str(),
 		    strings["long_name"].c_str(), "", min, max,
 		    strings["glaciological_units"].c_str()); CHKERRQ(ierr);
 
   return 0;
 }
 
+//! Check if the range of a \b global Vec \c v is in the range specified by valid_min and valid_max attributes.
 PetscErrorCode NCVariable::check_range(Vec v) {
   PetscScalar min, max;
   PetscErrorCode ierr;
@@ -502,6 +545,7 @@ PetscErrorCode NCVariable::check_range(Vec v) {
   return 0;
 }
 
+//! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCVariable::define(int ncid, nc_type nctype, int &varid) {
   int stat, dimids[4], var_id;
 
@@ -539,6 +583,7 @@ PetscErrorCode NCVariable::define(int ncid, nc_type nctype, int &varid) {
   return 0;
 }
 
+//! Reset all the attributes.
 PetscErrorCode NCVariable::reset() {
 
   strings.clear();
@@ -558,7 +603,7 @@ PetscErrorCode NCVariable::reset() {
 }
 
 //! Checks if an attribute is present. Ignores empty strings.
-bool NCVariable::has(const char name[]) {
+bool NCVariable::has(string name) {
 
   if (strings.find(name) != strings.end()) {
     if (strings[name].empty())
@@ -573,12 +618,15 @@ bool NCVariable::has(const char name[]) {
   return false;
 }
 
-void NCVariable::set(const char name[], double value) {
+//! Set a scalar attribute to a single value.
+void NCVariable::set(string name, double value) {
   doubles[name] = vector<double>(1, value);
 }
 
-//! Returns 0 if an attribute is not present, so that has() works correctly.
-double NCVariable::get(const char name[]) {
+//! Get a single-valued scalar attribute.
+/*! Returns 0 if an attribute is not present, so that has() works correctly.
+ */
+double NCVariable::get(string name) {
   if (doubles.find(name) != doubles.end())
     return doubles[name][0];
   else

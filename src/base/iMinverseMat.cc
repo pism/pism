@@ -332,11 +332,11 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   if (strlen(invfieldsfilename) > 0) {
     ierr = user.f->set_attrs(
        "inverse_output", "f(x,y), coeff in Poisson-like eqn for regularizing mu",
-       NULL, NULL); CHKERRQ(ierr);
+       "", ""); CHKERRQ(ierr);
     ierr = user.f->write(invfieldsfilename, NC_FLOAT); CHKERRQ(ierr);
     ierr = user.g->set_attrs(
        "inverse_output", "g(x,y), coeff in Poisson-like eqn for regularizing mu",
-       NULL, NULL); CHKERRQ(ierr);
+       "", ""); CHKERRQ(ierr);
     ierr = user.g->write(invfieldsfilename, NC_FLOAT); CHKERRQ(ierr);
   }
 

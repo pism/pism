@@ -1209,8 +1209,8 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
  */
 PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *max) {
   PetscErrorCode ierr;
-  int len, varid;
-  bool variable_exists;
+  int len = 0, varid = -1;
+  bool variable_exists = false;
   size_t start = 0, count;
   double range[2] = {0, 0};
 
@@ -1241,51 +1241,57 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       delete[] data;
     } // end of if(grid->rank == 0)
     ierr = MPI_Bcast(range, 2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+
+    char internal_units[TEMPORARY_STRING_LENGTH];
+    utUnit input, internal;
+    bool input_has_units;
+
+    if (strcmp(name, "t") == 0) {
+      // Note that this units specification does *not* have a reference date.
+      strcpy(internal_units, "seconds");
+    } else {
+      strcpy(internal_units, "meters");
+    }
+
+    if (utScan(internal_units, &internal) != 0) {
+      SETERRQ(1, "UDUNITS failed trying to scan internal units.");
+    }
+
+    // Get the units information:
+    ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
+    if (!input_has_units) {
+      ierr = verbPrintf(3, grid->com,
+			"PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
+			"     Assuming that it is in '%s'.\n",
+			name, internal_units); CHKERRQ(ierr);
+      utCopy(&internal, &input);
+    }
+
+    // Find the conversion coefficients:
+    double slope, intercept;
+    ierr = utConvert(&input, &internal, &slope, &intercept);
+    if (ierr != 0) {
+      if (ierr == UT_ECONVERT) {
+	ierr = PetscPrintf(grid->com,
+			   "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
+			   name, internal_units); CHKERRQ(ierr);
+	PetscEnd();
+      }
+      SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
+    }
+
+
+    // Change units and return limits:
+    if (min != NULL)
+      *min = intercept + range[0]*slope;
+    if (max != NULL)
+      *max = intercept + range[1]*slope;
+    
+    return 0;
   } // if (len != 0)
 
-  char internal_units[TEMPORARY_STRING_LENGTH];
-  utUnit input, internal;
-  bool input_has_units;
-
-  if (strcmp(name, "t") == 0) {
-    // Note that this units specification does *not* have a reference date.
-    strcpy(internal_units, "seconds");
-  } else {
-    strcpy(internal_units, "meters");
-  }
-
-  if (utScan(internal_units, &internal) != 0) {
-    SETERRQ(1, "UDUNITS failed trying to scan internal units.");
-  }
-
-  // Get the units information:
-  ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
-  if (!input_has_units) {
-    ierr = verbPrintf(3, grid->com,
-		      "PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
-		      "     Assuming that it is in '%s'.\n",
-		      name, internal_units); CHKERRQ(ierr);
-    utCopy(&internal, &input);
-  }
-
-  // Find the conversion coefficients:
-  double slope, intercept;
-  ierr = utConvert(&input, &internal, &slope, &intercept);
-  if (ierr != 0) {
-    if (ierr == UT_ECONVERT) {
-      ierr = PetscPrintf(grid->com,
-			 "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
-			 name, internal_units); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
-  }
-
-  // Change units and return limits:
-  if (min != NULL)
-    *min = intercept + range[0]*slope;
-  if (max != NULL)
-    *max = intercept + range[1]*slope;
+  if (min != NULL) *min = 0.0;
+  if (max != NULL) *max = 0.0;
 
   return 0;
 }

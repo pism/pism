@@ -53,6 +53,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   v = other.v;
   da = other.da;
   dims = other.dims;
+  dof = other.dof;
   grid = other.grid;
   array = other.array;
   localp = other.localp;
@@ -184,18 +185,9 @@ PetscErrorCode IceModelVec::squareroot() {
 //! Result: v <- v + alpha * x. Calls VecAXPY.
 PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
   PetscErrorCode ierr;
-  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
-
-  if (dims != x.dims) {
-    SETERRQ(1, "IceModelVec::add(...): operands have different numbers of dimensions");
-  }
-
-  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
-  ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
-  if (X_size != Y_size)
-    SETERRQ1(1, "IceModelVec::add(...): incompatible Vec sizes (called as %s.add(...))\n", name);
+  ierr = checkCompatibility("add", x); CHKERRQ(ierr);
 
   ierr = VecAXPY(v, alpha, x.v); CHKERRQ(ierr);
   return 0;
@@ -207,11 +199,9 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x, IceModelVec &
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
   ierr = result.checkAllocated(); CHKERRQ(ierr);
-
-  if ((dims != x.dims) || (dims != result.dims)) {
-    SETERRQ(1, "IceModelVec::add(...): operands have different numbers of dimensions");
-  }
-
+  ierr = checkCompatibility("add", x); CHKERRQ(ierr);
+  ierr = checkCompatibility("add", result); CHKERRQ(ierr);
+  
   ierr = VecWAXPY(result.v, alpha, x.v, v); CHKERRQ(ierr);
   return 0;
 }
@@ -237,20 +227,10 @@ PetscErrorCode IceModelVec::scale(PetscScalar alpha) {
 //! Result: result <- v .* x.  Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
   PetscErrorCode ierr;
-  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
-
-  if ((dims != x.dims) ||
-      (dims != result.dims)) {
-    SETERRQ(1, "IceModelVec::multiply_by(...): operands have different numbers of dimensions");
-  }
-
-  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
-  ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
-
-  if (X_size != Y_size)
-    SETERRQ1(1, "IceModelVec::multiply_by(...): incompatible Vec sizes (called as %s.multiply_by(...))\n", name);
+  ierr = checkCompatibility("multiply_by", x); CHKERRQ(ierr);
+  ierr = checkCompatibility("multiply_by", result); CHKERRQ(ierr);
 
   ierr = VecPointwiseMult(result.v, v, x.v); CHKERRQ(ierr);
   return 0;
@@ -259,19 +239,9 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x, IceModelVec &result) {
 //! Result: v <- v .* x.  Calls VecPointwiseMult.
 PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
   PetscErrorCode ierr;
-  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = x.checkAllocated(); CHKERRQ(ierr);
-
-  if ((dims != x.dims)) {
-    SETERRQ(1, "IceModelVec::multiply_by(...): operands have different numbers of dimensions");
-  }
-
-  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
-  ierr = VecGetSize(x.v, &Y_size); CHKERRQ(ierr);
-
-  if (X_size != Y_size)
-    SETERRQ1(1, "IceModelVec::multiply_by(...): incompatible Vec sizes (called as %s.multiply_by(...))\n", name);
+  ierr = checkCompatibility("multiply_by", x); CHKERRQ(ierr);
 
   ierr = VecPointwiseMult(v, v, x.v); CHKERRQ(ierr);
   return 0;
@@ -296,19 +266,9 @@ PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
 //! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
   PetscErrorCode ierr;
-  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = destination.checkAllocated(); CHKERRQ(ierr);
-
-  if ((dims != destination.dims)) {
-    SETERRQ(1, "IceModelVec::copy_to(...): operands have different numbers of dimensions");
-  }
-
-  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
-  ierr = VecGetSize(destination.v, &Y_size); CHKERRQ(ierr);
-
-  if (X_size != Y_size)
-    SETERRQ1(1, "IceModelVec::copy_to(...): incompatible Vec sizes (called as %s.copy_to(...))\n", name);
+  ierr = checkCompatibility("copy_to", destination); CHKERRQ(ierr);
 
   ierr = VecCopy(v, destination.v); CHKERRQ(ierr);
   return 0;
@@ -317,18 +277,9 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
 //! Result: v <- source.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   PetscErrorCode ierr;
-  PetscInt X_size, Y_size;
   ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if ((dims != source.dims)) {
-    SETERRQ(1, "IceModelVec::copy_from(...): operands have different numbers of dimensions");
-  }
-  
-  ierr = VecGetSize(source.v, &X_size); CHKERRQ(ierr);
-  ierr = VecGetSize(v, &Y_size); CHKERRQ(ierr);
-
-  if (X_size != Y_size)
-    SETERRQ1(1, "IceModelVec::copy_from(...): incompatible Vec sizes (called as %s.copy_from(...))\n", name);
+  ierr = source.checkAllocated(); CHKERRQ(ierr);
+  ierr = checkCompatibility("copy_from", source); CHKERRQ(ierr);
 
   ierr = VecCopy(source.v, v); CHKERRQ(ierr);
   return 0;
@@ -348,7 +299,7 @@ This affects IceModelVec::report_range() and IceModelVec::write().  In write(),
 if IceModelVec::write_in_glaciological_units == true, then that variable is written
 with a conversion to the glaciological units set here.
  */
-PetscErrorCode  IceModelVec::set_glaciological_units(const char my_units[]) {
+PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 
   PetscErrorCode ierr = var1.set_glaciological_units(my_units); CHKERRQ(ierr);
   
@@ -366,32 +317,32 @@ PetscErrorCode IceModelVec::reset_attrs() {
 }
 
 //! Sets NetCDF attributes of an IceModelVec object.
-/*! Call set_attrs("new long name", "new units", "new pism_intent", NULL) if a
-  variable does not have a standard name. Similarly, by putting NULL in an
+/*! Call set_attrs("new long name", "new units", "new pism_intent", "") if a
+  variable does not have a standard name. Similarly, by putting "" in an
   appropriate spot, it is possible tp leave long_name, units or pism_intent
   unmodified.
 
-  If my_units != NULL, this also resets glaciological_units, so that they match
+  If my_units != "", this also resets glaciological_units, so that they match
   internal units.
  */
-PetscErrorCode IceModelVec::set_attrs(const char my_pism_intent[],
-				      const char my_long_name[],
-				      const char my_units[],
-				      const char my_standard_name[]) {
+PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
+				      string my_long_name,
+				      string my_units,
+				      string my_standard_name) {
 
-  if (my_long_name != NULL) {
+  if (!my_long_name.empty()) {
     var1.strings["long_name"] = my_long_name;
   }
 
-  if (my_units != NULL) {
+  if (!my_units.empty()) {
     PetscErrorCode ierr = var1.set_units(my_units); CHKERRQ(ierr);
   }
 
-  if (my_pism_intent != NULL) {
+  if (!my_pism_intent.empty()) {
     var1.strings["pism_intent"] = my_pism_intent;
   }
 
-  if (my_standard_name != NULL) {
+  if (!my_standard_name.empty()) {
     var1.strings["standard_name"] = my_standard_name;
   }
 
@@ -513,6 +464,31 @@ PetscErrorCode  IceModelVec::checkHaveArray() {
   return 0;
 }
 
+//! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
+PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &other) {
+  PetscErrorCode ierr;
+  PetscInt X_size, Y_size;
+
+  if (dof != other.dof) {
+    SETERRQ1(1, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
+	     func);
+  }
+
+  if (dims != other.dims) {
+    SETERRQ1(1, "IceModelVec::%s(...): operands have different numbers of dimensions",
+	     func);
+  }
+
+  ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
+  ierr = VecGetSize(other.v, &Y_size); CHKERRQ(ierr);
+  if (X_size != Y_size)
+    SETERRQ3(1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(...))\n",
+	     func, name, func);
+
+
+  return 0;
+}
+
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
 PetscErrorCode  IceModelVec::begin_access() {
   PetscErrorCode ierr;
@@ -629,26 +605,52 @@ bool IceModelVec::is_valid(PetscScalar a) {
   return true;
 }
 
-PetscErrorCode IceModelVec::set_attr(const char name[], const char value[]) {
+//! Set a string attribute of an IceModelVec.
+/*! Attributes "units" and "glaciological_units" are also parsed to be used for unit conversion.
+ */
+PetscErrorCode IceModelVec::set_attr(string attr, string value) {
+  PetscErrorCode ierr;
 
-  if (strcmp(name, "units") == 0 ||
-      strcmp(name, "glaciological_units") == 0)
-    SETERRQ(1, "Please use set_units or set_glaciological_units");
+  if (attr == "units") {
+    ierr = var1.set_units(value); CHKERRQ(ierr);
+    return 0;
+  }
 
-  var1.strings[name] = value;
+  if (attr == "glaciological_units") {
+    ierr = var1.set_glaciological_units(value); CHKERRQ(ierr);
+    return 0;
+  }
+
+  var1.strings[attr] = value;
   return 0;
 }
 
-PetscErrorCode IceModelVec::set_attr(const char name[], double value) {
+PetscErrorCode IceModelVec::set_attr(string name, double value) {
   var1.set(name, value);
   
   return 0;
 }
 
-PetscErrorCode IceModelVec::set_attr(const char name[], vector<double> values) {
+PetscErrorCode IceModelVec::set_attr(string name, vector<double> values) {
   var1.doubles[name] = values;
 
   return 0;
+}
+
+bool IceModelVec::has_attr(string name) {
+  return var1.has(name);
+}
+
+double IceModelVec::double_attr(string name) {
+  return var1.get(name);
+}
+
+string IceModelVec::string_attr(string name) {
+  return var1.strings[name];
+}
+
+vector<double> IceModelVec::array_attr(string name) {
+  return var1.doubles[name];
 }
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/

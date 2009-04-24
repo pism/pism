@@ -65,17 +65,17 @@ PetscErrorCode IceROSSModel::createVecs() {
   PetscErrorCode ierr;
 
   ierr = obsAzimuth.create(grid, "azi_obs", true); CHKERRQ(ierr);
-  ierr = obsAzimuth.set_attrs(NULL, "observed ice velocity azimuth",
-                              "degrees_east", NULL); CHKERRQ(ierr);
+  ierr = obsAzimuth.set_attrs("", "observed ice velocity azimuth",
+                              "degrees_east", ""); CHKERRQ(ierr);
 
   ierr = obsMagnitude.create(grid, "mag_obs", true); CHKERRQ(ierr);
-  ierr = obsMagnitude.set_attrs(NULL, "observed ice velocity magnitude",
-                                "m s-1", NULL); CHKERRQ(ierr);
+  ierr = obsMagnitude.set_attrs("", "observed ice velocity magnitude",
+                                "m s-1", ""); CHKERRQ(ierr);
   ierr = obsMagnitude.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ierr = obsAccurate.create(grid, "accur", true); CHKERRQ(ierr);
-  ierr = obsAccurate.set_attrs(NULL, "flag for accurate observed velocity",
-                               NULL, NULL); CHKERRQ(ierr);
+  ierr = obsAccurate.set_attrs("", "flag for accurate observed velocity",
+                               "", ""); CHKERRQ(ierr);
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
   return 0;

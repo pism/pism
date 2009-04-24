@@ -52,12 +52,16 @@ public:
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual PetscErrorCode  set_name(const char name[]);
-  virtual PetscErrorCode  set_glaciological_units(const char units[]);
-  virtual PetscErrorCode  set_attr(const char name[], const char value[]);
-  virtual PetscErrorCode  set_attr(const char name[], double value);
-  virtual PetscErrorCode  set_attr(const char name[], vector<double> value);
-  virtual PetscErrorCode  set_attrs(const char my_pism_intent[], const char my_long_name[],
-				    const char my_units[], const char my_standard_name[]);
+  virtual PetscErrorCode  set_glaciological_units(string units);
+  virtual PetscErrorCode  set_attr(string name, string value);
+  virtual PetscErrorCode  set_attr(string name, double value);
+  virtual PetscErrorCode  set_attr(string name, vector<double> values);
+  virtual bool            has_attr(string name);
+  virtual string          string_attr(string name);
+  virtual double          double_attr(string name);
+  virtual vector<double>  array_attr(string name);
+  virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
+				    string my_units, string my_standard_name);
   virtual bool            is_valid(PetscScalar a);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
@@ -96,6 +100,7 @@ protected:
 
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
+  virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual PetscErrorCode reset_attrs();
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);

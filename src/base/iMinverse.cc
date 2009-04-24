@@ -241,7 +241,7 @@ PetscErrorCode IceModel::createInvFields() {
   ierr = inv.usIn->create(grid, "uvelsurf", true); CHKERRQ(ierr);
   ierr = inv.usIn->set_attrs(
      "inverse_input", 
-     "x component of observed velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+     "x component of observed velocity of ice at ice surface","m s-1", ""); CHKERRQ(ierr);
   // only needed for std out range message at read:
   ierr = inv.usIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
@@ -249,7 +249,7 @@ PetscErrorCode IceModel::createInvFields() {
   ierr = inv.vsIn->create(grid, "vvelsurf", true); CHKERRQ(ierr);
   ierr = inv.vsIn->set_attrs(
      "inverse_input", 
-     "y component of observed velocity of ice at ice surface","m s-1", NULL); CHKERRQ(ierr);
+     "y component of observed velocity of ice at ice surface","m s-1", ""); CHKERRQ(ierr);
   // only needed for display message at read:
   ierr = inv.vsIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
@@ -257,56 +257,56 @@ PetscErrorCode IceModel::createInvFields() {
   ierr = inv.invMask->create(grid, "invMask", true); CHKERRQ(ierr);
   ierr = inv.invMask->set_attrs(
      "inverse_output", 
-     "mask for presence of observed velocity at ice surface", NULL, NULL); CHKERRQ(ierr);
+     "mask for presence of observed velocity at ice surface", "", ""); CHKERRQ(ierr);
 
   inv.usSIA = new IceModelVec2;
   ierr = inv.usSIA->create(grid, "uvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = inv.usSIA->set_attrs(
      "inverse_output", 
      "x component of ice surface velocity predicted by non-sliding SIA",
-     "m s-1", NULL); CHKERRQ(ierr);
+     "m s-1", ""); CHKERRQ(ierr);
 
   inv.vsSIA = new IceModelVec2;
   ierr = inv.vsSIA->create(grid, "vvelsurfSIA", false); CHKERRQ(ierr);  // global
   ierr = inv.vsSIA->set_attrs(
      "inverse_output",
      "y component of ice surface velocity predicted by non-sliding SIA",
-     "m s-1", NULL); CHKERRQ(ierr);
+     "m s-1", ""); CHKERRQ(ierr);
 
   inv.taubxComputed = new IceModelVec2;
   ierr = inv.taubxComputed->create(grid, "taubxOUT", false);  // global
   ierr = inv.taubxComputed->set_attrs(
      "inverse_output", 
      "inverse-model-computed x component of basal shear stress", 
-     "Pa", NULL); CHKERRQ(ierr);
+     "Pa", ""); CHKERRQ(ierr);
 
   inv.taubyComputed = new IceModelVec2;
   ierr = inv.taubyComputed->create(grid, "taubyOUT", false);  // global
   ierr = inv.taubyComputed->set_attrs(
      "inverse_output",
      "inverse-model-computed y component of basal shear stress", 
-     "Pa", NULL); CHKERRQ(ierr);
+     "Pa", ""); CHKERRQ(ierr);
 
   inv.fofv = new IceModelVec2;
   ierr = inv.fofv->create(grid, "fofv", false);  // global
   ierr = inv.fofv->set_attrs(
      "inverse_output",
      "inverse-model-computed fraction of velocity from SIA in hybrid model", 
-     NULL, NULL); CHKERRQ(ierr);
+     "", ""); CHKERRQ(ierr);
 
   inv.oldtillphi = new IceModelVec2;
   ierr = inv.oldtillphi->create(grid, "tillphiOLD", true);  // local like vtillphi
   ierr = inv.oldtillphi->set_attrs(
      "inverse_output",
      "till friction angle at start of inverse model", 
-     NULL, NULL); CHKERRQ(ierr);
+     "", ""); CHKERRQ(ierr);
 
   inv.effPressureN = new IceModelVec2;
   ierr = inv.effPressureN->create(grid, "effpress", false);
   ierr = inv.effPressureN->set_attrs(
      "inverse_output",
      "effective pressure on till material", 
-     "Pa", NULL); CHKERRQ(ierr);
+     "Pa", ""); CHKERRQ(ierr);
 
   return 0;
 }
@@ -443,7 +443,7 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   ierr = vWork2d[0].set_name("magvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of observed velocity of ice at ice surface",
-	     "m s-1", NULL); CHKERRQ(ierr);
+	     "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -483,7 +483,7 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of basal shear stress applied at base of ice",
-	     "Pa", NULL); CHKERRQ(ierr);
+	     "Pa", ""); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = false;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 

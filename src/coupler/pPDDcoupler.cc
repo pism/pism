@@ -139,7 +139,7 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
             "climate_state",
             "mean annual temperature at ice surface but below firn", // slight change of long_name, for emphasis
             "K",
-            NULL); CHKERRQ(ierr);  // no CF standard_name ??
+            ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
 
   // time-dependent snow temperature used within the PDD; either from getTemperatureFromYearlyCycle()
@@ -149,7 +149,7 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
             "climate_diagnostic",
             "instantaneous snow temperature",
             "K",
-            NULL); CHKERRQ(ierr);  // no CF standard_name ??
+            ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = vsurftempPDD.set(273.15); CHKERRQ(ierr);  // merely a default value
 
   // mean annual ice equivalent snow accumulation rate (before melt, and not including rain)
@@ -158,7 +158,7 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
             "climate_state", 
             "mean annual ice-equivalent snow accumulation rate",
 	    "m s-1", 
-	    NULL);  // no CF standard_name ??
+	    "");  // no CF standard_name ??
 	    CHKERRQ(ierr);
   ierr = vsnowaccum.set_glaciological_units("m year-1");
   vsnowaccum.write_in_glaciological_units = true;

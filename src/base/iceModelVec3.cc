@@ -656,7 +656,7 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumn(const PetscInt i, const PetscI
 }
 
 //! Extends an IceModelVec3 and fills all the new grid points with \c fill_value.
-PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscReal fill_value) {
+PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_value) {
   PetscErrorCode ierr;
 
   // Allocate more memory:

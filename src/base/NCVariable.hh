@@ -32,12 +32,35 @@
 using namespace std;
 /// @endcond
 
+
+//! \brief A class for handling variable metadata, reading, writing and converting
+//! from input units and to output units.
+/*! A NetCDF variable can have any number of attributes, but some of them are
+  treated differently:
+
+  \li units: specifies internal units. When read, a variable is converted to
+  these units. When written, it is converted from these to glaciological_units
+  if write_in_glaciological_units is true.
+
+  \li glaciological_units: is never written to a file; replaces 'units' in the
+  output if write_in_glaciological_units is true.
+
+  \li valid_min, valid_max: specify the valid range of a variable. Are read
+  from an input file \b only if not specified previously. If both are set, then
+  valid_range is used in the output instead.
+
+  Also:
+
+  \li empty string attributes are ignored (they are not written to the output
+  file and has("foo") returns false if "foo" is absent or equal to an empty
+  string.
+ */
 struct NCVariable {
 public:
   NCVariable();
-  void init(const char name[], IceGrid &g, GridType d);
-  PetscErrorCode set_units(const char*);
-  PetscErrorCode set_glaciological_units(const char*);
+  void init(string name, IceGrid &g, GridType d);
+  PetscErrorCode set_units(string);
+  PetscErrorCode set_glaciological_units(string);
   PetscErrorCode write(const char filename[], nc_type nctype,
 		       bool write_in_glaciological_units, Vec v);
   PetscErrorCode read(const char filename[], unsigned int time, Vec v);
@@ -46,14 +69,15 @@ public:
 			PetscScalar default_value, MaskInterp *, Vec v);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode reset();
-  void set(const char*, double);
-  double get(const char*);
-  bool has(const char name[]);
+  void set(string, double);
+  double get(string);
+  bool has(string);
 			
   string short_name;
 
   // Attributes:
-  /*!
+  /*! Typical attributes stored here:
+
     \li long_name
     \li standard_name
     \li pism_intent
@@ -73,8 +97,9 @@ protected:
   IceGrid *grid;
   GridType dims;
   utUnit units,		      //!< internal (PISM) units
-         glaciological_units; //!< for diagnostic variables: units to use when writing
-			      //!< to a NetCDF file and for standard out reports
+         glaciological_units; //!< \brief for diagnostic variables: units to
+			      //!use when writing to a NetCDF file and for
+			      //!standard out reports
 };
 
 #endif

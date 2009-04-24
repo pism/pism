@@ -432,23 +432,23 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   //  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
-                         "K", NULL); CHKERRQ(ierr);
+                         "K", ""); CHKERRQ(ierr);
   //  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
   ierr = taunew3.create(grid,"age_new",false); CHKERRQ(ierr);
   ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
-                           "s", NULL); CHKERRQ(ierr);
+                           "s", ""); CHKERRQ(ierr);
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
   ierr = Sigmastag3[0].set_attrs("internal",
              "rate of strain heating; on staggered grid offset in X direction",
-	     "J s-1 m-3", NULL); CHKERRQ(ierr);
+	     "J s-1 m-3", ""); CHKERRQ(ierr);
   ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
   ierr = Sigmastag3[1].set_attrs("internal",
              "rate of strain heating; on staggered grid offset in Y direction",
-	     "J s-1 m-3", NULL); CHKERRQ(ierr);
+	     "J s-1 m-3", ""); CHKERRQ(ierr);
   ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
-  ierr = Istag3[0].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
+  ierr = Istag3[0].set_attrs("internal","","",""); CHKERRQ(ierr);
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
-  ierr = Istag3[1].set_attrs("internal",NULL,NULL,NULL); CHKERRQ(ierr);
+  ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
 
   return 0;
 }

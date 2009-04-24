@@ -258,7 +258,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("diagnostic", 
             "magnitude of vertically-integrated horizontal velocity of ice",
-	    "m s-1", NULL); CHKERRQ(ierr);
+	    "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
   vWork2d[0].set_attr("valid_min", 0.0);
@@ -269,7 +269,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[1].set_name("cflx"); CHKERRQ(ierr);
   ierr = vWork2d[1].set_attrs("diagnostic", 
              "magnitude of vertically-integrated horizontal flux of ice",
-	     "m2 s-1", NULL); CHKERRQ(ierr);
+	     "m2 s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[1].set_glaciological_units("m2 year-1"); CHKERRQ(ierr);
   vWork2d[1].write_in_glaciological_units = true;
   vWork2d[1].set_attr("valid_min", 0.0);
@@ -289,7 +289,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].set_name("cbase"); CHKERRQ(ierr);
   ierr = vWork2d[2].set_attrs("diagnostic", 
              "magnitude of horizontal velocity of ice at base of ice",
-	     "m s-1", NULL); CHKERRQ(ierr);
+	     "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[2].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[2].write_in_glaciological_units = true;
   vWork2d[2].set_attr("valid_min", 0.0);
@@ -309,7 +309,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[0].set_name("csurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("diagnostic", 
              "magnitude of horizontal velocity of ice at ice surface",
-	     "m s-1", NULL); CHKERRQ(ierr);
+	     "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
   vWork2d[0].set_attr("valid_min", 0.0);
@@ -322,7 +322,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
   ierr = vWork2d[0].set_name("wvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface",
-			      "m s-1", NULL); CHKERRQ(ierr);
+			      "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -334,7 +334,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vWork2d[2].set_name("taud"); CHKERRQ(ierr);
   ierr = vWork2d[2].set_attrs("diagnostic",
              "magnitude of driving shear stress at base of ice",
-	     "Pa", NULL); CHKERRQ(ierr);
+	     "Pa", ""); CHKERRQ(ierr);
   vWork2d[2].set_attr("valid_min", 0.0);
   ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -369,7 +369,7 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   ierr = vWork2d[0].set_name("uvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs(
               "diagnostic", "x component of velocity of ice at ice surface",
-	      "m s-1", NULL); CHKERRQ(ierr);
+	      "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -381,7 +381,7 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   ierr = vWork2d[0].set_name("vvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs(
               "diagnostic", "y component of velocity of ice at ice surface",
-	      "m s-1", NULL); CHKERRQ(ierr);
+	      "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -767,6 +767,12 @@ PetscErrorCode IceModel::write_snapshot() {
       ierr = atmosPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    }
+
+    if (oceanPCC != PETSC_NULL) {
+      ierr = oceanPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+    } else {
+      SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
     }
     
     ierr = write_extra_fields(filename); CHKERRQ(ierr);

@@ -170,7 +170,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
             "climate_state",
             "temperature at ice surface but below firn processes",
             "K", 
-            NULL);  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
+            "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);
   ierr = vsurftemp.set(273.15); CHKERRQ(ierr);  // merely a default value
 
@@ -425,7 +425,7 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps() {
                "climate_state",
                mTstring, // note simplified, not-very-specific long name
                "K",
-               NULL); // CF standard name?  may exist when derived class has additional semantics
+               ""); // CF standard name?  may exist when derived class has additional semantics
                CHKERRQ(ierr);
     ierr = verbPrintf(2, grid->com, 
        "  reading month %d surface temperature '%s' ...\n", j+1, monthlyTempName); CHKERRQ(ierr); 
@@ -509,7 +509,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasetemp.create(*g, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = vshelfbasetemp.set_attrs(
            "climate_state", "absolute temperature at ice shelf base",
-	   "K", NULL); CHKERRQ(ierr);
+	   "K", ""); CHKERRQ(ierr);
   // PROPOSED standard name = ice_shelf_basal_temperature
   ierr = vshelfbasetemp.set(273.15); CHKERRQ(ierr);  // merely a default value to clear nonsense
 
@@ -518,7 +518,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   ierr = vshelfbasemassflux.create(*g, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = vshelfbasemassflux.set_attrs(
            "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-	   "m s-1", NULL); CHKERRQ(ierr); 
+	   "m s-1", ""); CHKERRQ(ierr); 
   // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
   ierr = vshelfbasemassflux.set(0.0); CHKERRQ(ierr);  // merely a default value to clear nonsense
   // rescales from m/s to m/a when writing to NetCDF and std out:

@@ -39,15 +39,15 @@ PetscErrorCode IceCalvBCModel::createVecs() {
   ierr = vsmoothCFmask.create(grid, "smoothCFmask", true); CHKERRQ(ierr); // stencil = BOX
   ierr = vsmoothCFmask.set_attrs(  // no pism_intent; no standard_name
            "NONE", "smoothed version of (thk>0) mask, for calving front normal direction", 
-           "1", NULL); CHKERRQ(ierr);  
+           "", ""); CHKERRQ(ierr);  
   ierr = vnCF[0].create(grid, "nCF_x", true); CHKERRQ(ierr);
   ierr = vnCF[0].set_attrs(  // no pism_intent; no standard_name
            "NONE", "x component of calving front normal direction", 
-           "m-1", NULL); CHKERRQ(ierr);  
+           "m-1", ""); CHKERRQ(ierr);  
   ierr = vnCF[1].create(grid, "nCF_y", true); CHKERRQ(ierr);
   ierr = vnCF[1].set_attrs(  // no pism_intent; no standard_name
            "NONE", "y component of calving front normal direction", 
-           "m-1", NULL); CHKERRQ(ierr);  
+           "m-1", ""); CHKERRQ(ierr);  
   return 0;
 }
 
