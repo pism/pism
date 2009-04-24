@@ -20,8 +20,8 @@
 #define _PISM_SSAIMPL_HH
 
 #include "pismssa.hh"
-#include "petscda.h"
-#include "petscsnes.h"
+#include <petscda.h>
+#include <petscsnes.h>
 
 struct SSANode {
   PetscScalar x,y;
