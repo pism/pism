@@ -772,6 +772,12 @@ PetscErrorCode IceModel::write_snapshot() {
     } else {
       SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
     }
+
+    if (oceanPCC != PETSC_NULL) {
+      ierr = oceanPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+    } else {
+      SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+    }
     
     ierr = write_extra_fields(filename); CHKERRQ(ierr);
   }

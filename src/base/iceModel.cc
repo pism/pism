@@ -41,6 +41,7 @@ IceModel::IceModel(IceGrid &g)
   history = new char[history_size];
   history[0] = 0;               // Initialize with empty string so that prepending works correctly
 
+  ssa = NULL;
   have_ssa_velocities = false;
 
   pism_signal = 0;
