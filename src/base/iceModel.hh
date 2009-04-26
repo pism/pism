@@ -441,7 +441,7 @@ protected:
 
   // see iMtemp.cc
   virtual PetscErrorCode temperatureAgeStep();
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount);
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode ageStep(PetscScalar* CFLviol);
   virtual PetscErrorCode diffuseHmelt();
   virtual PetscErrorCode solveTridiagonalSystem(

@@ -27,13 +27,15 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   PetscErrorCode  ierr;
 
   PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
-               myVertSacrCount = 0.0;  // because that type works with PetscGlobalSum()
+               myVertSacrCount = 0.0,  // because that type works with PetscGlobalSum()
+               mybulgeCount = 0.0;  // because that type works with PetscGlobalSum()
+  PetscScalar gVertSacrCount, gbulgeCount;
 
   // note: 3D CFL check happens here in ageStep()
   ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);  // puts vtaunew in vWork3d[1]
     
   // put vTnew in vWork3d[0]; update Hmelt
-  ierr = temperatureStep(&myVertSacrCount); CHKERRQ(ierr);  
+  ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
 
   // no communication done in ageStep(), temperatureStep()
   // start temperature & age communication
@@ -41,16 +43,25 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
 
-  PetscScalar VertSacrCount;
-  ierr = PetscGlobalSum(&myVertSacrCount, &VertSacrCount, grid.com); CHKERRQ(ierr);
-  if (VertSacrCount > 0.0) {
-    const PetscScalar bfsacrPRCNT = 100.0 * (VertSacrCount / (grid.Mx * grid.My));
-    const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report (verbosity=2) if above 5%
+  if (gVertSacrCount > 0.0) {
+    const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
+    const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) {
       ierr = verbPrintf(2,grid.com," [BPsacr=%.4f%%] ", bfsacrPRCNT); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(3,grid.com," [BPsacr=%.4f%%] ", bfsacrPRCNT); CHKERRQ(ierr);
+    }
+  }
+
+  if (gbulgeCount > 0.0) {  // frequently it is identically zero
+    const PetscScalar bulgePRCNT
+             = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
+    const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 1 / 10^6
+    if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
+      ierr = verbPrintf(2,grid.com," [BPbulge=%.5f%%] ", bulgePRCNT); CHKERRQ(ierr);
     }
   }
 
@@ -134,7 +145,8 @@ the column minus the bulge maximum (15 K) if it is below that level.  The number
 occurs is reported as a "BPbulge" percentage on its own newline.  (FIXME:  This report format
 should be streamlined in the trunk.)
  */
-PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
+PetscErrorCode IceModel::temperatureStep(
+     PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
   PetscErrorCode  ierr;
 
   const PetscScalar   dx = grid.dx, 
@@ -227,8 +239,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   PetscInt        myLowTempCount = 0;  // counts unreasonably low temperature values
-  PetscScalar     mybulgeCount = 0.0;  // counts 3D points at which the bulge was limited;
-                                       // is PetscScalar not PetscInt so PetscGlobalSum works
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -426,7 +436,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
               Tnew[k],i,j,k,grid.rank,mask[i][j],w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
-        if (Tnew[k] < myTs - bulgeMax) {   Tnew[k] = myTs - bulgeMax;  mybulgeCount++;   }
+        if (Tnew[k] < myTs - bulgeMax) {   Tnew[k] = myTs - bulgeMax;  bulgeCount++;   }
       }
       
       // insert solution for ice/rock interface (or base of ice shelf) segment
@@ -455,7 +465,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
               Tnew[0],i,j,grid.rank,mask[i][j],w[0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
-        if (Tnew[0] < myTs - bulgeMax) {   Tnew[0] = myTs - bulgeMax;   mybulgeCount++;   }
+        if (Tnew[0] < myTs - bulgeMax) {   Tnew[0] = myTs - bulgeMax;   bulgeCount++;   }
       } else {
         Hmeltnew = 0.0;
       }
@@ -479,7 +489,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
               Tbnew[k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
            myLowTempCount++;
         }
-        if (Tbnew[k] < myTs - bulgeMax) {   Tbnew[k] = myTs - bulgeMax;   mybulgeCount++;   }
+        if (Tbnew[k] < myTs - bulgeMax) {   Tbnew[k] = myTs - bulgeMax;   bulgeCount++;   }
       }
 
       // transfer column into Tb3; neighboring columns will not reference!
@@ -541,19 +551,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount) {
   delete [] T;  delete [] Tb;  delete [] Tbnew;  delete [] Tnew;
 
   delete [] zlevEQ;   delete [] zblevEQ;
-
-  // FIXME:  This bulge limiter report format should be streamlined in the trunk.
-  //         It should go in temperatureAgeStep() like the "BPsacr" report.   It is here
-  //         for merging with stable0.2.
-  PetscScalar gbulgeCount;
-  ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
-  if (gbulgeCount > 0.0) {  // frequently it is identically zero
-    const PetscScalar bulgePRCNT = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
-    const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 0.0001% = 1 / 10^6
-    if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
-      ierr = verbPrintf(2,grid.com," [BPbulge=%.5f%%] ", bulgePRCNT); CHKERRQ(ierr);
-    }
-  }
 
   return 0;
 }
@@ -639,6 +636,7 @@ methods getValColumn() and setValColumn() interpolate back and forth between the
 on which calculation is done and the storage grid.  Thus the storage grid can be either 
 equally spaced or not.
  */
+#if 0
 PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   PetscErrorCode  ierr;
 
@@ -791,6 +789,7 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
 
   return 0;
 }
+#endif
 
 
 bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 

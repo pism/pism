@@ -30,15 +30,16 @@ const PetscScalar IceCompModel::LforFG = 750000; // m
 const PetscScalar IceCompModel::ApforG = 200; // m
 
 
-PetscErrorCode IceCompModel::temperatureStep(PetscScalar* vertSacrCount) {
+PetscErrorCode IceCompModel::temperatureStep(
+       PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
   PetscErrorCode  ierr;
 
   if ((testname == 'F') || (testname == 'G')) {
     ierr = Sigma3.add(1.0, SigmaComp3); CHKERRQ(ierr);	// Sigma = Sigma + Sigma_c
-    ierr = IceModel::temperatureStep(vertSacrCount); CHKERRQ(ierr);
+    ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
     ierr = Sigma3.add(-1.0, SigmaComp3); CHKERRQ(ierr); // Sigma = Sigma - Sigma_c
   } else {
-    ierr = IceModel::temperatureStep(vertSacrCount); CHKERRQ(ierr);
+    ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
   }
   return 0;
 }
