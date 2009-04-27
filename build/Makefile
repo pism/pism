@@ -95,8 +95,8 @@ ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
 	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc iMinit.cc iceShelfExtension.cc \
-	extrasGSL.cc forcing.cc pPDDcoupler.cc pccoupler.cc ssa.cc ssafe.cc pism_revision.cc \
-	iMtemp_ctxdev.cc columnSystem.cc
+	extrasGSL.cc forcing.cc pPDDcoupler.cc pccoupler.cc \
+	ssa.cc ssafe.cc pism_revision.cc columnSystem.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]

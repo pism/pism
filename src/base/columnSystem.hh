@@ -39,43 +39,65 @@ public:
 
 protected:
   PetscInt    nmax;
-  PetscScalar *L,
-              *Lp,
-              *D,
-              *U,
-              *rhs,
-              *work;
+  PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(
-    PetscInt n,    // size of instance; n <= nmax
-    PetscScalar **x);
+  PetscErrorCode solveTridiagonalSystem(PetscInt n, PetscScalar **x);
 };
 
 
+//! Tridiagonal linear system for vertical column in solving age advection problem.
 class ageSystemCtx : public columnSystemCtx {
 
 public:
   ageSystemCtx(int my_Mz);
+  // arguments do not depend on which column
   PetscErrorCode ageSetConstants(
-    PetscScalar dx, PetscScalar dy, PetscScalar dtTempAge, PetscScalar nuEQ, 
-    PetscScalar *zlevEQ);
-  PetscErrorCode ageColumnWiseSetUpAndSolve(
+    PetscScalar dx, PetscScalar dy, PetscScalar dtTempAge, PetscScalar dzEQ);
+  // arguments depend on which column
+  PetscErrorCode ageColumnSetUpAndSolve(
     PetscInt i, PetscInt j, PetscInt ks,
-    PetscScalar *u, PetscScalar *v, PetscScalar *w,
-    IceModelVec3 &tau3,
+    PetscScalar *u, PetscScalar *v, PetscScalar *w, IceModelVec3 &tau3,
     PetscScalar **x);  
 
 protected:
-  PetscInt Mz;
-  PetscScalar nuEQ, dx, dy, dtTempAge;
-  PetscScalar *zlevEQ;
-  IceModelVec3 *tau3; 
-  
-private:
   PetscInt callcount;
+  PetscScalar dx, dy, dtTempAge, dzEQ, nuEQ;
+};
+
+
+//! Tridiagonal linear system for vertical column in solving temperature-based conservation of energy problem.
+class tempSystemCtx : public columnSystemCtx {
+
+public:
+  tempSystemCtx(int my_Mz, int my_Mbz);
+  // arguments do not depend on which column
+  PetscErrorCode tempSetConstants(
+    PetscScalar dx, PetscScalar dy, PetscScalar dtTempAge,
+    PetscScalar dzEQ, PetscScalar dzbEQ,
+    PetscScalar ice_rho, PetscScalar ice_c_p, PetscScalar ice_k,
+    PetscScalar bed_thermal_rho, PetscScalar bed_thermal_c_p, PetscScalar bed_thermal_k);
+  // arguments depend on which column
+  PetscErrorCode tempColumnSetUpAndSolve(
+    PetscInt i, PetscInt j,
+    PetscInt ks, bool isMarginal, PetscScalar lambda,
+    PetscScalar *T, PetscScalar *Tb,
+    PetscScalar *u, PetscScalar *v, PetscScalar *w, PetscScalar *Sigma,
+    PetscScalar Ghf_ij, PetscScalar Ts_ij, PetscScalar mask_ij,
+    PetscScalar Tshelfbase_ij, PetscScalar Rb_ij,
+    IceModelVec3 &T3,
+    PetscScalar **x);  
+
+protected:
+  PetscInt    callcount, Mz, Mbz, k0;
+  PetscScalar dx, dy, dtTempAge,
+              dzEQ, dzbEQ,
+              ice_rho, ice_c_p, ice_k,
+              bed_thermal_rho, bed_thermal_c_p, bed_thermal_k,
+              nuEQ, rho_c_I, rho_c_br, rho_c_av,
+              iceK, iceR, brK, brR,
+              rho_c_ratio, dzav, iceReff, brReff;
 };
 
 #endif	/* __columnSystem_hh */
-
 

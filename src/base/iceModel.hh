@@ -439,14 +439,11 @@ protected:
   virtual PetscErrorCode getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user);
   virtual PetscErrorCode velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its);
 
-  // see iMtemp.cc
+  // see iMtemp.cc; uses columnSystem.{hh|cc}
   virtual PetscErrorCode temperatureAgeStep();
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode ageStep(PetscScalar* CFLviol);
   virtual PetscErrorCode diffuseHmelt();
-  virtual PetscErrorCode solveTridiagonalSystem(
-           const PetscScalar* L, const PetscScalar* D, const PetscScalar* U,
-           PetscScalar* x, const PetscScalar* rhs, PetscScalar* work, const int n) const;
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
   virtual PetscErrorCode excessToFromBasalMeltLayer(
