@@ -90,7 +90,7 @@ public:
 protected:
   PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
 				  bool write_in_glaciological_units);
-  PetscErrorCode report_range(Vec v);
+  PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode check_range(Vec v);
   PetscErrorCode read_valid_range(int ncid, int varid);
   PetscErrorCode define(int ncid, nc_type nctype, int &varid);

@@ -94,9 +94,11 @@ PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool
   </ol>
  */
 PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
-				      int *varidp, bool &exists) {
+				      int *varidp, bool &exists,
+				      bool &found_by_standard_name) {
   int ierr;
   int stat, found = 0, my_varid = -1, nvars;
+  bool standard_name_match = false;
 
   if (standard_name != "") {
     if (grid->rank == 0) {
@@ -113,6 +115,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
       if (attribute == standard_name) {
 	if (!found) {
 	  found = true;
+	  standard_name_match = true;
 	  my_varid = j;
 	} else {
 	  ierr = PetscPrintf(grid->com,
@@ -124,7 +127,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 	}
       }
     } // end of for (int j = 0; j < nvars; j++)
-  } // end of if (standard_name != NULL)
+  } // end of if (standard_name != "")
 
   // Check the short name:
   if (!found) {
@@ -139,6 +142,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 
   if (found) {
     exists = true;
+    found_by_standard_name = standard_name_match;
     if (varidp != NULL)
       *varidp = my_varid;
   } else {
@@ -148,6 +152,15 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 
   return 0;
 }
+
+PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
+				     int *varidp, bool &exists) {
+  bool dummy;
+  PetscErrorCode ierr = find_variable(short_name, standard_name, varidp, exists, dummy);
+  CHKERRQ(ierr);
+  return 0;
+}
+				     
 
 PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists) {
   return find_variable(short_name, "", varid, exists);

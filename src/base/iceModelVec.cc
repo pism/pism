@@ -295,7 +295,7 @@ PetscErrorCode  IceModelVec::set_name(const char new_name[]) {
 
 //! Sets the glaciological units of an IceModelVec.
 /*!
-This affects IceModelVec::report_range() and IceModelVec::write().  In write(),
+This affects NCVariable::report_range() and IceModelVec::write().  In write(),
 if IceModelVec::write_in_glaciological_units == true, then that variable is written
 with a conversion to the glaciological units set here.
  */

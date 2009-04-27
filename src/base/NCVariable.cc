@@ -206,8 +206,10 @@ PetscErrorCode NCVariable::regrid(const char filename[], LocalInterpCtx &lic,
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
   // Find the variable
+  bool found_by_standard_name;
   ierr = nc.find_variable(short_name, strings["standard_name"],
-			  &varid, exists); CHKERRQ(ierr);
+			  &varid, exists,
+			  found_by_standard_name); CHKERRQ(ierr);
 
   if (!exists) {		// couldn't find the variable
     if (critical) {		// if it's critical, print an error message and stop
@@ -278,7 +280,7 @@ PetscErrorCode NCVariable::regrid(const char filename[], LocalInterpCtx &lic,
 
     // We can report the success, and the range now:
     ierr = verbPrintf(2, grid->com, "  FOUND ");
-    ierr = report_range(v); CHKERRQ(ierr);
+    ierr = report_range(v, found_by_standard_name); CHKERRQ(ierr);
   } // end of if(exists)
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -481,7 +483,7 @@ PetscErrorCode NCVariable::write_attributes(int ncid, int varid, nc_type nctype,
 
 
 //! Report the range of a \b global Vec \c v.
-PetscErrorCode NCVariable::report_range(Vec v) {
+PetscErrorCode NCVariable::report_range(Vec v, bool found_by_standard_name) {
   double slope, intercept;
   PetscErrorCode ierr;
   PetscReal min, max;
@@ -496,11 +498,30 @@ PetscErrorCode NCVariable::report_range(Vec v) {
   min = min * slope + intercept;
   max = max * slope + intercept;
 
-  ierr = verbPrintf(2, grid->com, 
-		    " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
-		    short_name.c_str(),
-		    strings["long_name"].c_str(), "", min, max,
-		    strings["glaciological_units"].c_str()); CHKERRQ(ierr);
+  if (has("standard_name")) {
+
+    if (found_by_standard_name) {
+      ierr = verbPrintf(2, grid->com, 
+			" %-10s/ standard_name=%-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			short_name.c_str(),
+			strings["standard_name"].c_str(), "", min, max,
+			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid->com, 
+			" %-10s/ WARNING! standard_name=%s is missing, found by short_name\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			short_name.c_str(),
+			strings["standard_name"].c_str(), "", min, max,
+			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
+    }
+
+  } else {
+
+    ierr = verbPrintf(2, grid->com, 
+		      " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		      short_name.c_str(),
+		      strings["long_name"].c_str(), "", min, max,
+		      strings["glaciological_units"].c_str()); CHKERRQ(ierr);
+  }
 
   return 0;
 }

@@ -59,6 +59,8 @@ public:
   PetscErrorCode open_for_writing(const char filename[], bool replace = true);
   PetscErrorCode close();
   PetscErrorCode find_variable(string short_name, string standard_name,
+			       int *varid, bool &exists, bool &found_by_standard_name);
+  PetscErrorCode find_variable(string short_name, string standard_name,
 			       int *varid, bool &exists);
   PetscErrorCode find_variable(string short_name, int *varid, bool &exists);
   PetscErrorCode find_dimension(const char short_name[], int *dimid, bool &exists);
