@@ -63,12 +63,16 @@ IceModel::IceModel(IceGrid &g)
   info_atmoscoupler.lat = PETSC_NULL;
   info_atmoscoupler.lon = PETSC_NULL;  
   info_atmoscoupler.mask = PETSC_NULL;
+  info_atmoscoupler.thk = PETSC_NULL;
   info_atmoscoupler.surfelev = PETSC_NULL;
+  info_atmoscoupler.topg = PETSC_NULL;
   oceanPCC = PETSC_NULL;
   info_oceancoupler.lat = PETSC_NULL;
   info_oceancoupler.lon = PETSC_NULL;  
   info_oceancoupler.mask = PETSC_NULL;
   info_oceancoupler.thk = PETSC_NULL;
+  info_oceancoupler.surfelev = PETSC_NULL;
+  info_oceancoupler.topg = PETSC_NULL;
 
   ierr = setDefaults();  // lots of parameters and flags set here
   if (ierr != 0) {
@@ -1065,12 +1069,16 @@ PetscErrorCode IceModel::init_couplers() {
   info_atmoscoupler.lat = &vLatitude;
   info_atmoscoupler.lon = &vLongitude;  
   info_atmoscoupler.mask = &vMask;
+  info_atmoscoupler.thk = &vH;
   info_atmoscoupler.surfelev = &vh;
+  info_atmoscoupler.topg = &vbed;
 
   info_oceancoupler.lat = &vLatitude;
   info_oceancoupler.lon = &vLongitude;  
   info_oceancoupler.mask = &vMask;
   info_oceancoupler.thk = &vH;
+  info_oceancoupler.surfelev = &vh;
+  info_oceancoupler.topg = &vbed;
 
   ierr = verbPrintf(3, grid.com,
 		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);
