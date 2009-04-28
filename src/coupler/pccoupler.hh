@@ -74,13 +74,15 @@ private:
 
 /*******************  ATMOSPHERE:  PISMAtmosphereCoupler ********************/
 
-//! An atmosphere model might need to know these things about IceModel to update through PISMAtmosphereCoupler.
+//! An atmosphere model might need to know these things about IceModel to update through PISMAtmosphereCoupler.  DEPRECATED MECHANISM.
 struct IceInfoNeededByAtmosphereCoupler {
   // "might need to know" for these reasons:
   IceModelVec2 *lat,      // location dependence
                *lon,      // location dependence
                *mask,     // ice surface type dependence (potentially; e.g. ice shelf vs interior)
-               *surfelev; // surface elevation dependence
+               *thk,      // thickness dependence (relatively unlikely)
+               *surfelev, // surface elevation dependence (surface of ice and of exposed bedrock)
+               *topg;     // bed elevation dependence (relatively unlikely)
 };
 
 
@@ -278,15 +280,17 @@ protected:
 
 /*******************  OCEAN:  PISMOceanCoupler and derived ********************/
 
-//! An ocean model might need to know these things about IceModel to update through PISMOceanCoupler.
+//! An ocean model might need to know these things about IceModel to update through PISMOceanCoupler.  DEPRECATED MECHANISM.
 struct IceInfoNeededByOceanCoupler {
   // "might need to know" for these reasons:
   IceModelVec2 *lat,      // location dependence
                *lon,      // location dependence
                *mask,     // ice model type dependence (floating ice shelf vs grounded)
-               *thk;      // shelf base elevation dependence; ice thickness gives base elevation
+               *thk,      // shelf base elevation dependence; ice thickness gives base elevation
                           //   through floatation criterion; potentially need separate
                           //   base elevation field
+               *surfelev, // surface elevation dependence (relatively unlikely)
+               *topg;     // bed elevation dependence
 };
 
 

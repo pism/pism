@@ -379,12 +379,16 @@ PetscErrorCode IceModel::init_couplers() {
   info_atmoscoupler.lat = &vLatitude;
   info_atmoscoupler.lon = &vLongitude;  
   info_atmoscoupler.mask = &vMask;
+  info_atmoscoupler.thk = &vH;
   info_atmoscoupler.surfelev = &vh;
+  info_atmoscoupler.topg = &vbed;
 
   info_oceancoupler.lat = &vLatitude;
   info_oceancoupler.lon = &vLongitude;  
   info_oceancoupler.mask = &vMask;
   info_oceancoupler.thk = &vH;
+  info_oceancoupler.surfelev = &vh;
+  info_oceancoupler.topg = &vbed;
 
   ierr = verbPrintf(3, grid.com,
 		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);
