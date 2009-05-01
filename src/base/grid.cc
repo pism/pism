@@ -263,6 +263,7 @@ PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
   return mcurr;
 }
 
+
 bool IceGrid::isIncreasing(const PetscInt len, PetscScalar *vals) {
   for (PetscInt k = 0; k < len-1; k++) {
     if (vals[k] >= vals[k+1])  return false;
@@ -326,6 +327,7 @@ PetscErrorCode IceGrid::createDA() {
   return 0;
 }
 
+
 //! Sets grid vertical levels, Mz, Mbz, Lz and Lbz. Checks input for consistency.
 PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new_zlevels, double *new_zblevels) {
   if (new_Mz < 2) {
@@ -366,6 +368,7 @@ PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new
 
   return 0;
 }
+
 
 //! Compute horizontal spacing parameters \c dx and \c dy using \c Mx, \c My, \c Lx, \c Ly and periodicity.
 /*! 
@@ -413,3 +416,90 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
 
   return 0;
 }
+
+
+//! Return the number of vertical grid points in ice and bedrock for the fine, equally-spaced grid used in the temperature and age calculations.
+/*!
+If the main, storage grid has equally-spaced vertical, then
+the computation in temperatureStep() and ageStep() is done on that grid.  
+
+If IceGrid defines a not-equally-spaced grid, however, then, internally in temperatureStep()
+and ageStep(), we do computation on a fine and equally-spaced grid.  
+
+This method determines the number of levels in the equally-spaced grid used within 
+temperatureStep() and ageStep() in either case.  The method getFineEqualVertLevs() sets 
+the spacing and the actual levels.
+
+The storage grid may have quite different levels.  The mapping to and from
+the storage grid occurs in getValColumn(), setValColumn() for IceModelVec3
+or IceModelVec3Bedrock.
+ */
+PetscErrorCode IceGrid::getFineEqualVertCounts(PetscInt &fMz, PetscInt &fMbz) {
+  if (vertical_spacing == EQUAL) {
+    fMbz = Mbz;
+    fMz = Mz;
+  } else {
+    fMz = 1 + static_cast<PetscInt>(ceil(Lz / dzMIN));
+    fMbz = 1 + static_cast<PetscInt>(ceil(Lbz / dzMIN));
+  }
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::getFineEqualVertCountIce(PetscInt &fMz) {
+  PetscInt dummy;
+  return getFineEqualVertCounts(fMz,dummy);
+}
+
+
+/*!
+See comments for getFineEqualVertCounts().  The arrays fzlevEQ and fzblev must 
+already be allocated arrays of length fMz, fMbz, respectively.
+ */
+PetscErrorCode IceGrid::getFineEqualVertLevs(const PetscInt fMz, const PetscInt fMbz,
+                                      PetscScalar &fdz, PetscScalar &fdzb, 
+                                      PetscScalar *fzlev, PetscScalar *fzblev) {
+  if (vertical_spacing == EQUAL) {
+    fdz = dzMIN;
+    fdzb = dzMIN;
+    for (PetscInt k = 0; k < fMz; k++) {
+      fzlev[k] = zlevels[k];
+    }
+    for (PetscInt k = 0; k < fMbz; k++) {
+      fzblev[k] = zblevels[k];
+    }
+  } else {
+    // exactly Mz-1 steps for [0,Lz]:
+    fdz = Lz / ((PetscScalar) (fMz - 1));  
+    for (PetscInt k = 0; k < fMz-1; k++) {
+      fzlev[k] = ((PetscScalar) k) * fdz;
+    }
+    fzlev[fMz-1] = Lz;  // make sure it is right on
+    if (fMbz > 1) {
+      // exactly Mbz-1 steps for [-Lbz,0]:
+      fdzb = Lbz / ((PetscScalar) (fMbz - 1));  
+      for (PetscInt kb = 0; kb < fMbz-1; kb++) {
+        fzblev[kb] = - Lbz + fdzb * ((PetscScalar) kb);
+      }
+    } else {
+      fdzb = fdz;
+    }
+    fzblev[fMbz-1] = 0.0;  // make sure it is right on
+  }  
+  return 0;
+}
+
+
+PetscErrorCode IceGrid::getFineEqualVertLevsIce(
+        const PetscInt fMz, PetscScalar &fdz, PetscScalar *fzlev) {
+  PetscErrorCode ierr;
+  PetscInt       newfMz,fMbz;
+  ierr = getFineEqualVertCounts(newfMz,fMbz); CHKERRQ(ierr);
+  if (newfMz != fMz) { SETERRQ(2,"inconsistency in fMz"); }
+  PetscScalar    fdzb,*fzblev;
+  fzblev = new PetscScalar[fMbz];
+  ierr = getFineEqualVertLevs(fMz,fMbz,fdz,fdzb,fzlev,fzblev); CHKERRQ(ierr);
+  delete [] fzblev;
+  return 0;
+}
+

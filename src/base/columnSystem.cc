@@ -87,55 +87,61 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
 
 ageSystemCtx::ageSystemCtx(int my_Mz)
       : columnSystemCtx(my_Mz) { // size of system is Mz
-  callcount = 0;
+  initAllDone = false;
+  indicesValid = false;
+  // set values so we can check if init was called on all
   dx = -1.0;
   dy = -1.0;
-  dtTempAge = -1.0;
+  dtAge = -1.0;
   dzEQ = -1.0;
-  nuEQ = -1.0;
+  u = NULL;
+  v = NULL;
+  w = NULL;
+  tau3 = NULL;
 }
 
 
-PetscErrorCode ageSystemCtx::ageSetConstants(
-    PetscScalar my_dx, PetscScalar my_dy, PetscScalar my_dtTempAge,
-    PetscScalar my_dzEQ) {
-
-  if (callcount > 1) {
-    SETERRQ(1,"ageSetConstants() should only be called once");
-  }
-  callcount++;
-
-  // is all this checking necessary?
-  if (my_dx <= 0.0) { SETERRQ(2,"invalid dx in ageSetConstants()"); }
-  dx = my_dx;
-  if (my_dy <= 0.0) { SETERRQ(3,"invalid dy in ageSetConstants()"); }
-  dy = my_dy;
-  if (my_dtTempAge <= 0.0) { SETERRQ(4,"invalid dtTempAge in ageSetConstants()"); }
-  dtTempAge = my_dtTempAge;
-  if (my_dzEQ <= 0.0) { SETERRQ(6,"invalid dzEQ in ageSetConstants()"); }
-  dzEQ = my_dzEQ;
-  
-  nuEQ = dtTempAge / dzEQ;
-  
+PetscErrorCode ageSystemCtx::initAllColumns() {
+  // check whether each parameter & pointer got set
+  if (dx <= 0.0) { SETERRQ(2,"un-initialized dx in ageSystemCtx"); }
+  if (dy <= 0.0) { SETERRQ(3,"un-initialized dy in ageSystemCtx"); }
+  if (dtAge <= 0.0) { SETERRQ(4,"un-initialized dtAge in ageSystemCtx"); }
+  if (dzEQ <= 0.0) { SETERRQ(5,"un-initialized dzEQ in ageSystemCtx"); }
+  if (u == NULL) { SETERRQ(6,"un-initialized pointer u in ageSystemCtx"); }
+  if (v == NULL) { SETERRQ(7,"un-initialized pointer v in ageSystemCtx"); }
+  if (w == NULL) { SETERRQ(8,"un-initialized pointer w in ageSystemCtx"); }
+  if (tau3 == NULL) { SETERRQ(9,"un-initialized pointer tau3 in ageSystemCtx"); }
+  nuEQ = dtAge / dzEQ; // derived constant
+  initAllDone = true;
   return 0;
 }
 
 
-PetscErrorCode ageSystemCtx::ageColumnSetUpAndSolve(
-    PetscInt i, PetscInt j, PetscInt ks,
-    PetscScalar *u, PetscScalar *v, PetscScalar *w,
-    IceModelVec3 &tau3,
-    PetscScalar **x) {
+PetscErrorCode ageSystemCtx::setIndicesThisColumn(
+                  PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setIndicesThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
+  if (indicesValid) {  SETERRQ(3,
+     "setIndicesThisColumn() called twice in same column (?) in ageSystemCtx"); }
+  i = my_i;
+  j = my_j;
+  ks = my_ks;
+  indicesValid = true;
+  return 0;
+}
 
+
+PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
   PetscErrorCode ierr;
-  if (callcount == 0) {
-    SETERRQ(1,"ageColumnSetUpAndSolve() says ageSetConstants() has not been called");
-  }
+  if (!initAllDone) {  SETERRQ(2,
+     "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
+  if (!indicesValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setIndicesThisColumn() in ageSystemCtx"); }
 
   // set up system: 0 <= k < ks
-  for (PetscInt k=0; k<ks; k++) {
+  for (PetscInt k = 0; k < ks; k++) {
     planeStar ss;  // note ss.ij = tau[k]
-    ierr = tau3.getPlaneStarZ(i,j,k * dzEQ,&ss); CHKERRQ(ierr);
+    ierr = tau3->getPlaneStarZ(i,j,k * dzEQ,&ss); CHKERRQ(ierr);
     // do lowest-order upwinding, explicitly for horizontal
     rhs[k] =  (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx
                          : u[k] * (ss.ij  - ss.im1) / dx;
@@ -143,7 +149,7 @@ PetscErrorCode ageSystemCtx::ageColumnSetUpAndSolve(
                          : v[k] * (ss.ij  - ss.jm1) / dy;
     // note it is the age eqn: dage/dt = 1.0 and we have moved the hor.
     //   advection terms over to right:
-    rhs[k] = ss.ij + dtTempAge * (1.0 - rhs[k]);
+    rhs[k] = ss.ij + dtAge * (1.0 - rhs[k]);
 
     // do lowest-order upwinding, *implicitly* for vertical
     PetscScalar AA = nuEQ * w[k];
@@ -179,6 +185,9 @@ PetscErrorCode ageSystemCtx::ageColumnSetUpAndSolve(
     rhs[ks] = 0.0;  // age zero at surface
   }
 
+  // mark column as done
+  indicesValid = false;
+
   // solve it
   return solveTridiagonalSystem(ks+1,x);
 }
@@ -186,16 +195,19 @@ PetscErrorCode ageSystemCtx::ageColumnSetUpAndSolve(
 
 tempSystemCtx::tempSystemCtx(int my_Mz, int my_Mbz)
       : columnSystemCtx(my_Mz + my_Mbz - 1) {
-
   Mz = my_Mz;
   Mbz = my_Mbz;
   k0 = Mbz - 1; // max size nmax of system is Mz + k0 = Mz + Mbz - 1
-
-  callcount = 0;
-
+  // set flags to indicate nothing yet set
+  initAllDone = false;
+  indicesValid = false;
+  schemeParamsValid = false;
+  surfBCsValid = false;
+  basalBCsValid = false;
+  // set values so we can check if init was called on all
   dx = -1;
   dy = -1;
-  dtTempAge = -1;
+  dtTemp = -1;
   dzEQ = -1;
   dzbEQ = -1;
   ice_rho = -1;
@@ -204,71 +216,127 @@ tempSystemCtx::tempSystemCtx(int my_Mz, int my_Mbz)
   bed_thermal_rho = -1;
   bed_thermal_c_p = -1;
   bed_thermal_k = -1;
+  T = NULL;
+  Tb = NULL;
+  u = NULL;
+  v = NULL;
+  w = NULL;
+  Sigma = NULL;
+  T3 = NULL;
 }
 
 
-PetscErrorCode tempSystemCtx::tempSetConstants(
-    PetscScalar my_dx, PetscScalar my_dy, PetscScalar my_dtTempAge,
-    PetscScalar my_dzEQ, PetscScalar my_dzbEQ,
-    PetscScalar my_ice_rho, PetscScalar my_ice_c_p, PetscScalar my_ice_k,
-    PetscScalar my_bed_thermal_rho, PetscScalar my_bed_thermal_c_p,
-       PetscScalar my_bed_thermal_k) {
-
-  if (callcount > 1) {
-    SETERRQ(1,"ageSetConstants() should only be called once");
-  }
-  callcount++;
-
-  dx = my_dx;
-  dy = my_dy;
-  dtTempAge = my_dtTempAge;
-  dzEQ = my_dzEQ;
-  dzbEQ = my_dzbEQ;
-  ice_rho = my_ice_rho;
-  ice_c_p = my_ice_c_p;
-  ice_k = my_ice_k;
-  bed_thermal_rho = my_bed_thermal_rho;
-  bed_thermal_c_p = my_bed_thermal_c_p;
-  bed_thermal_k = my_bed_thermal_k;
-  
-  nuEQ = dtTempAge / dzEQ;
+PetscErrorCode tempSystemCtx::initAllColumns() {
+  // check whether each parameter & pointer got set
+  if (dx <= 0.0) { SETERRQ(2,"un-initialized dx in tempSystemCtx"); }
+  if (dy <= 0.0) { SETERRQ(3,"un-initialized dy in tempSystemCtx"); }
+  if (dtTemp <= 0.0) { SETERRQ(4,"un-initialized dtTemp in tempSystemCtx"); }
+  if (dzEQ <= 0.0) { SETERRQ(5,"un-initialized dzEQ in tempSystemCtx"); }
+  if (dzbEQ <= 0.0) { SETERRQ(6,"un-initialized dzbEQ in tempSystemCtx"); }
+  if (ice_rho <= 0.0) { SETERRQ(7,"un-initialized ice_rho in tempSystemCtx"); }
+  if (ice_c_p <= 0.0) { SETERRQ(8,"un-initialized ice_c_p in tempSystemCtx"); }
+  if (ice_k <= 0.0) { SETERRQ(9,"un-initialized ice_k in tempSystemCtx"); }
+  if (bed_thermal_rho <= 0.0) { SETERRQ(10,"un-initialized bed_thermal_rho in tempSystemCtx"); }
+  if (bed_thermal_c_p <= 0.0) { SETERRQ(11,"un-initialized bed_thermal_c_p in tempSystemCtx"); }
+  if (bed_thermal_k <= 0.0) { SETERRQ(12,"un-initialized bed_thermal_k in tempSystemCtx"); }
+  if (T == NULL) { SETERRQ(13,"un-initialized pointer T in tempSystemCtx"); }
+  if (Tb == NULL) { SETERRQ(14,"un-initialized pointer Tb in tempSystemCtx"); }
+  if (u == NULL) { SETERRQ(15,"un-initialized pointer u in tempSystemCtx"); }
+  if (v == NULL) { SETERRQ(16,"un-initialized pointer v in tempSystemCtx"); }
+  if (w == NULL) { SETERRQ(17,"un-initialized pointer w in tempSystemCtx"); }
+  if (Sigma == NULL) { SETERRQ(18,"un-initialized pointer Sigma in tempSystemCtx"); }
+  if (T3 == NULL) { SETERRQ(19,"un-initialized pointer T3 in tempSystemCtx"); }
+  // set derived constants
+  nuEQ = dtTemp / dzEQ;
   rho_c_I = ice_rho * ice_c_p;
   rho_c_br = bed_thermal_rho * bed_thermal_c_p;
   rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
   iceK = ice_k / rho_c_I;
-  iceR = iceK * dtTempAge / PetscSqr(dzEQ);
+  iceR = iceK * dtTemp / PetscSqr(dzEQ);
   brK = bed_thermal_k / rho_c_br;
-  brR = brK * dtTempAge / PetscSqr(dzbEQ);
+  brR = brK * dtTemp / PetscSqr(dzbEQ);
   rho_c_ratio = rho_c_I / rho_c_av;
   dzav = 0.5 * (dzEQ + dzbEQ);
-  iceReff = ice_k * dtTempAge / (rho_c_av * dzEQ * dzEQ);
-  brReff = bed_thermal_k * dtTempAge / (rho_c_av * dzbEQ * dzbEQ);
-
+  iceReff = ice_k * dtTemp / (rho_c_av * dzEQ * dzEQ);
+  brReff = bed_thermal_k * dtTemp / (rho_c_av * dzbEQ * dzbEQ);
+  // done
+  initAllDone = true;
   return 0;
 }
 
 
-PetscErrorCode tempSystemCtx::tempColumnSetUpAndSolve(
-    PetscInt i, PetscInt j,
-    PetscInt ks, bool isMarginal, PetscScalar lambda,
-    PetscScalar *T, PetscScalar *Tb,
-    PetscScalar *u, PetscScalar *v, PetscScalar *w, PetscScalar *Sigma,
-    PetscScalar Ghf_ij, PetscScalar Ts_ij, PetscScalar mask_ij,
-    PetscScalar Tshelfbase_ij, PetscScalar Rb_ij,
-    IceModelVec3 &T3,
-    PetscScalar **x) {
+PetscErrorCode tempSystemCtx::setIndicesThisColumn(
+                  PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setIndicesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
+  if (indicesValid) {  SETERRQ(3,
+     "setIndicesThisColumn() called twice in same column (?) in tempSystemCtx"); }
+  i = my_i;
+  j = my_j;
+  ks = my_ks;
+  indicesValid = true;
+  return 0;
+}
 
+
+PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(
+                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setSchemeParamsThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
+  if (schemeParamsValid) {  SETERRQ(3,
+     "setSchemeParamsThisColumn() called twice (?) in tempSystemCtx"); }
+  mask = my_mask;
+  isMarginal = my_isMarginal;
+  lambda = my_lambda;
+  schemeParamsValid = true;
+  return 0;
+}
+
+
+PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setSurfaceBoundaryValuesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
+  if (surfBCsValid) {  SETERRQ(3,
+     "setSurfaceBoundaryValuesThisColumn() called twice (?) in tempSystemCtx"); }
+  Ts = my_Ts;
+  surfBCsValid = true;
+  return 0;
+}
+
+
+PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(
+                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setIndicesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
+  if (basalBCsValid) {  SETERRQ(3,
+     "setBasalBoundaryValuesThisColumn() called twice (?) in tempSystemCtx"); }
+  Ghf = my_Ghf;
+  Tshelfbase = my_Tshelfbase;
+  Rb = my_Rb;
+  basalBCsValid = true;
+  return 0;
+}
+
+
+PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
   PetscErrorCode ierr;
-  if (callcount == 0) {
-    SETERRQ(1,"tempColumnSetUpAndSolve() says tempSetConstants() has not been called");
-  }
+  if (!initAllDone) {  SETERRQ(2,
+     "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
+  if (!indicesValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setIndicesThisColumn() in tempSystemCtx"); }
+  if (!schemeParamsValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setSchemeParamsThisColumn() in tempSystemCtx"); }
+  if (!surfBCsValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setSurfaceBoundaryValuesThisColumn() in tempSystemCtx"); }
+  if (!basalBCsValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in tempSystemCtx"); }
 
   if (Mbz > 1) { // bedrock present: build k=0:Mbz-2 eqns
     // gives O(\Delta t,\Delta z^2) convergence in Test K for equal spaced grid;
     // note L[0] not an allocated location:
     D[0] = (1.0 + 2.0 * brR);
     U[0] = - 2.0 * brR;  
-    rhs[0] = Tb[0] + 2.0 * dtTempAge * Ghf_ij / (rho_c_br * dzbEQ);
+    rhs[0] = Tb[0] + 2.0 * dtTemp * Ghf / (rho_c_br * dzbEQ);
 
     // bedrock only; pure vertical conduction problem
     for (PetscInt k=1; k < k0; k++) {
@@ -285,36 +353,36 @@ PetscErrorCode tempSystemCtx::tempColumnSetUpAndSolve(
     D[k0] = 1.0;
     U[k0] = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (PismModMask(mask_ij) == MASK_FLOATING) {
+    if (PismModMask(mask) == MASK_FLOATING) {
       // essentially no ice but floating ... ask PISMOceanCoupler
-      rhs[k0] = Tshelfbase_ij;
+      rhs[k0] = Tshelfbase;
       // FIXME: split k0 into two grid points?
     } else { // top of bedrock sees atmosphere
-      rhs[k0] = Ts_ij; 
+      rhs[k0] = Ts; 
     }
   } else { // ks > 0; there is ice
     planeStar ss;
-    ierr = T3.getPlaneStarZ(i,j,0.0,&ss);
+    ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
     const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
                                           u[0] * (ss.ij  - ss.im1) / dx;
     const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
                                           v[0] * (ss.ij  - ss.jm1) / dy;
     // for w, always difference *up* from base, but make it implicit
-    if (PismModMask(mask_ij) == MASK_FLOATING) {
+    if (PismModMask(mask) == MASK_FLOATING) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
       D[k0] = 1.0;
       U[k0] = 0.0;
-      rhs[k0] = Tshelfbase_ij; // set by PISMOceanCoupler
+      rhs[k0] = Tshelfbase; // set by PISMOceanCoupler
     } else { 
       // there is *grounded* ice; ice/bedrock interface; from FV across interface
-      rhs[k0] = T[0] + dtTempAge * (Rb_ij / (rho_c_av * dzav));
+      rhs[k0] = T[0] + dtTemp * (Rb / (rho_c_av * dzav));
       if (!isMarginal) {
-        rhs[k0] += dtTempAge * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
+        rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
         // WARNING: subtle consequences of finite volume argument across interface
-        rhs[k0] -= dtTempAge * rho_c_ratio * (0.5 * (UpTu + UpTv));
+        rhs[k0] -= dtTemp * rho_c_ratio * (0.5 * (UpTu + UpTv));
       }
-      const PetscScalar AA = dtTempAge * rho_c_ratio * w[0] / (2.0 * dzEQ);
+      const PetscScalar AA = dtTemp * rho_c_ratio * w[0] / (2.0 * dzEQ);
       if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0,
                      // otherwise ignore advection; note 
                      // jump in diffusivity coefficient
@@ -335,7 +403,7 @@ PetscErrorCode tempSystemCtx::tempColumnSetUpAndSolve(
           D[k0] = 1.0 + 2.0 * iceR - AA;
           U[k0] = - 2.0 * iceR + AA;
         }
-        rhs[k0] += 2.0 * dtTempAge * Ghf_ij / (rho_c_I * dzEQ);
+        rhs[k0] += 2.0 * dtTemp * Ghf / (rho_c_I * dzEQ);
       }
     }
   }
@@ -343,7 +411,7 @@ PetscErrorCode tempSystemCtx::tempColumnSetUpAndSolve(
   // generic ice segment: build k0+1:k0+ks-1 eqns
   for (PetscInt k = 1; k < ks; k++) {
     planeStar ss;
-    ierr = T3.getPlaneStarZ(i,j,k * dzEQ,&ss);
+    ierr = T3->getPlaneStarZ(i,j,k * dzEQ,&ss);
     const PetscScalar UpTu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
                                           u[k] * (ss.ij  - ss.im1) / dx;
     const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
@@ -360,7 +428,7 @@ PetscErrorCode tempSystemCtx::tempColumnSetUpAndSolve(
     }
     rhs[k0+k] = T[k];
     if (!isMarginal) {
-      rhs[k0+k] += dtTempAge * (Sigma[k] / rho_c_I - UpTu - UpTv);
+      rhs[k0+k] += dtTemp * (Sigma[k] / rho_c_I - UpTu - UpTv);
     }
   }
       
@@ -369,8 +437,14 @@ PetscErrorCode tempSystemCtx::tempColumnSetUpAndSolve(
     L[k0+ks] = 0.0;
     D[k0+ks] = 1.0;
     // ignore U[k0+ks]
-    rhs[k0+ks] = Ts_ij;
+    rhs[k0+ks] = Ts;
   }
+
+  // mark column as done
+  indicesValid = false;
+  schemeParamsValid = false;
+  surfBCsValid = false;
+  basalBCsValid = false;
 
   // solve it; note melting not addressed yet
   return solveTridiagonalSystem(k0+ks+1,x);

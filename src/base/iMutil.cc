@@ -303,10 +303,10 @@ PetscErrorCode IceModel::report_grid_parameters() {
     ierr = verbPrintf(2,grid.com, 
            " vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
            grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
-    PetscInt    myMz, dummyM;
-    ierr = getMzMbzForTempAge(myMz,dummyM); CHKERRQ(ierr);
+    PetscInt    myMz;
+    ierr = grid.getFineEqualVertCountIce(myMz); CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com, 
-         "\n fine equal spacing used in temperatureStep(): Mz = %d, dzEQ = %.3f m",
+         "\n fine equal spacing used in temperatureStep(): Mz = %d, fdz = %.3f m",
            myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
     if (myMz > 1000) {
       ierr = verbPrintf(1,grid.com,

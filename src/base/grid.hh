@@ -28,11 +28,15 @@ typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodi
 /*!
 This class holds parameters describing the grid, including the vertical spacing 
 and which part of the horizontal grid is owned by the processor.  It contains 
-the dimensions of the PISM computational box.
+the dimensions of the PISM computational box.  The vertical spacing can be quite
+arbitrary.
 
 It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
 The creation of this \c DA is the point at which PISM gets distributed across 
 multiple processors.
+
+It computes grid parameters for the fine and equally-spaced vertical grid used
+in the conservation of energy and age equations.
  */
 class IceGrid {
 public:
@@ -45,6 +49,14 @@ public:
   PetscErrorCode compute_horizontal_spacing();
   PetscErrorCode printVertLevels(const int verbosity); 
   PetscInt       kBelowHeight(const PetscScalar height);
+
+  PetscErrorCode getFineEqualVertCountIce(PetscInt &fMz);
+  PetscErrorCode getFineEqualVertCounts(PetscInt &fMz, PetscInt &fMbz);
+  PetscErrorCode getFineEqualVertLevsIce(const PetscInt fMz,
+                                         PetscScalar &fdz, PetscScalar *fzlev);
+  PetscErrorCode getFineEqualVertLevs(const PetscInt fMz, const PetscInt fMbz,
+                                      PetscScalar &fdz, PetscScalar &fdzb, 
+                                      PetscScalar *fzlev, PetscScalar *fzblev);
 
   
   MPI_Comm    com;

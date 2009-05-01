@@ -289,6 +289,7 @@ protected:
   virtual PetscScalar    getEffectivePressureOnTill(
             const PetscScalar thk, const PetscScalar melt_thk);
   virtual PetscErrorCode updateYieldStressFromHmelt();
+  virtual PetscErrorCode diffuseHmelt();
   virtual PetscScalar    basalVelocity(PetscScalar x, PetscScalar y,
                                        PetscScalar H, PetscScalar T, PetscScalar alpha, PetscScalar mu) const;
   virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
@@ -443,16 +444,11 @@ protected:
   virtual PetscErrorCode temperatureAgeStep();
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode ageStep(PetscScalar* CFLviol);
-  virtual PetscErrorCode diffuseHmelt();
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
   virtual PetscErrorCode excessToFromBasalMeltLayer(
                       const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
                       PetscScalar *Texcess, PetscScalar *Hmelt);
-  virtual PetscErrorCode getMzMbzForTempAge(PetscInt &ta_Mz, PetscInt &ta_Mbz);
-  virtual PetscErrorCode getVertLevsForTempAge(const PetscInt ta_Mz, const PetscInt ta_Mbz,
-                                       PetscScalar &ta_dzEQ, PetscScalar &ta_dzbEQ, 
-                                       PetscScalar *ta_zlevEQ, PetscScalar *ta_zblevEQ);
 
   // see iMutil.cc
   virtual PetscErrorCode getMagnitudeOf2dVectorField(IceModelVec2 &vfx, IceModelVec2 &vfy,

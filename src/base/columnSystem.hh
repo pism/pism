@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -22,13 +22,20 @@
 #include <petsc.h>
 #include "iceModelVec.hh"
 
-//! Virtual class for a tridiagonal system to solve in a column of ice.
+//! Virtual base class.  Describes a tridiagonal system to solve in a column of ice.
 /*!
 Because both IceModel::ageStep() and IceModel::temperatureStep() set up
-and solve a tridiagonal system of equations, this is worth abstracting.
+and solve a tridiagonal system of equations, this is structure is worth abstracting.
+A modified form will be used in solving an enthalpy formulation of the 
+conservation of energy equation.
 
 This base class just holds the tridiagonal system and the ability to
-solve it.  Derived classes will actually set up instances of the system.
+solve it, but does not insert entries into the relevant matrix locations.
+Derived classes will actually set up instances of the system.
+
+The sequence requires setting the column-independent (public) data members,
+calling the initAllColumns() routine, and then setting up and solving
+the system in each column.
  */
 class columnSystemCtx {
 
@@ -46,57 +53,128 @@ protected:
 };
 
 
-//! Tridiagonal linear system for vertical column in solving age advection problem.
+//! Tridiagonal linear system for vertical column of age (pure advection) problem.
+/*!
+Call sequence like this:
+\code
+  ageSystemCtx foo;
+  foo.dx = ...  // set public constants
+  foo.u = ...   // set public pointers
+  foo.initAllColumns();
+  for (i in ownership) {
+    for (j in ownership) {
+      ks = ...
+      foo.setIndicesThisColumn(i,j,ks);
+      foo.solveThisColumn(x);
+    }  
+  }
+\endcode
+ */
 class ageSystemCtx : public columnSystemCtx {
 
 public:
   ageSystemCtx(int my_Mz);
-  // arguments do not depend on which column
-  PetscErrorCode ageSetConstants(
-    PetscScalar dx, PetscScalar dy, PetscScalar dtTempAge, PetscScalar dzEQ);
-  // arguments depend on which column
-  PetscErrorCode ageColumnSetUpAndSolve(
-    PetscInt i, PetscInt j, PetscInt ks,
-    PetscScalar *u, PetscScalar *v, PetscScalar *w, IceModelVec3 &tau3,
-    PetscScalar **x);  
+  PetscErrorCode initAllColumns();
+  PetscErrorCode setIndicesThisColumn(PetscInt my_i, PetscInt my_j, PetscInt my_ks);  
+  PetscErrorCode solveThisColumn(PetscScalar **x);  
 
-protected:
-  PetscInt callcount;
-  PetscScalar dx, dy, dtTempAge, dzEQ, nuEQ;
+public:
+  // constants which should be set before calling initForAllColumns()
+  PetscScalar  dx,
+               dy,
+               dtAge,
+               dzEQ;
+  // pointers which should be set before calling initForAllColumns()
+  PetscScalar  *u,
+               *v,
+               *w;
+  IceModelVec3 *tau3;
+
+protected: // used internally
+  PetscInt    i, j, ks;
+  PetscScalar nuEQ;
+  bool        initAllDone,
+              indicesValid;
 };
 
 
-//! Tridiagonal linear system for vertical column in solving temperature-based conservation of energy problem.
-class tempSystemCtx : public columnSystemCtx {
+//! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
+/*!
+Call sequence like this:
+\code
+  tempSystemCtx foo;
+  foo.dx = ...  // set public constants
+  foo.u = ...   // set public pointers
+  foo.initAllColumns();
+  for (i in ownership) {
+    for (j in ownership) {
+      ks = ...
+      foo.setIndicesThisColumn(i,j,ks);
+      [COMPUTE OTHER PARAMS]
+      foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
+      foo.setSurfaceBoundaryValuesThisColumn(Ts);
+      foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
+      foo.solveThisColumn(x);
+    }  
+  }
+\endcode
+ */class tempSystemCtx : public columnSystemCtx {
 
 public:
   tempSystemCtx(int my_Mz, int my_Mbz);
-  // arguments do not depend on which column
-  PetscErrorCode tempSetConstants(
-    PetscScalar dx, PetscScalar dy, PetscScalar dtTempAge,
-    PetscScalar dzEQ, PetscScalar dzbEQ,
-    PetscScalar ice_rho, PetscScalar ice_c_p, PetscScalar ice_k,
-    PetscScalar bed_thermal_rho, PetscScalar bed_thermal_c_p, PetscScalar bed_thermal_k);
-  // arguments depend on which column
-  PetscErrorCode tempColumnSetUpAndSolve(
-    PetscInt i, PetscInt j,
-    PetscInt ks, bool isMarginal, PetscScalar lambda,
-    PetscScalar *T, PetscScalar *Tb,
-    PetscScalar *u, PetscScalar *v, PetscScalar *w, PetscScalar *Sigma,
-    PetscScalar Ghf_ij, PetscScalar Ts_ij, PetscScalar mask_ij,
-    PetscScalar Tshelfbase_ij, PetscScalar Rb_ij,
-    IceModelVec3 &T3,
-    PetscScalar **x);  
+  PetscErrorCode initAllColumns();
+  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
+  PetscErrorCode setSchemeParamsThisColumn(
+                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda);  
+  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
+  PetscErrorCode setBasalBoundaryValuesThisColumn(
+                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
+  PetscErrorCode solveThisColumn(PetscScalar **x);  
 
-protected:
-  PetscInt    callcount, Mz, Mbz, k0;
-  PetscScalar dx, dy, dtTempAge,
-              dzEQ, dzbEQ,
-              ice_rho, ice_c_p, ice_k,
-              bed_thermal_rho, bed_thermal_c_p, bed_thermal_k,
-              nuEQ, rho_c_I, rho_c_br, rho_c_av,
-              iceK, iceR, brK, brR,
-              rho_c_ratio, dzav, iceReff, brReff;
+public:
+  // constants which should be set before calling initForAllColumns()
+  PetscScalar  dx,
+               dy,
+               dtTemp,
+               dzEQ,
+               dzbEQ,
+               ice_rho,
+               ice_c_p,
+               ice_k,
+               bed_thermal_rho,
+               bed_thermal_c_p,
+               bed_thermal_k;
+  // pointers which should be set before calling initForAllColumns()
+  PetscScalar  *T,
+               *Tb,
+               *u,
+               *v,
+               *w,
+               *Sigma;
+  IceModelVec3 *T3;
+
+protected: // used internally
+  PetscInt    Mz, Mbz, k0;
+  PetscInt    i, j, ks;
+  PetscScalar mask, lambda, Ts, Ghf, Tshelfbase, Rb;
+  bool        isMarginal;
+  PetscScalar nuEQ,
+              rho_c_I,
+              rho_c_br,
+              rho_c_av,
+              iceK,
+              iceR,
+              brK,
+              brR,
+              rho_c_ratio,
+              dzav,
+              iceReff,
+              brReff;
+  bool        initAllDone,
+              indicesValid,
+              schemeParamsValid,
+              surfBCsValid,
+              basalBCsValid;
 };
 
 #endif	/* __columnSystem_hh */
