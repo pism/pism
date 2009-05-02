@@ -1,0 +1,43 @@
+netcdf pism_config {
+    variables:
+    byte pism_config;
+    // boolean flags:
+    pism_config:do_mass_conserve = "yes";
+    pism_config:do_temp = "yes";
+    pism_config:do_skip = "no";
+    pism_config:do_pseudo_plastic_till = "no";
+    pism_config:do_plastic_till = "no";
+    pism_config:do_superpose = "no";
+    pism_config:thermal_bedrock = "true";
+    pism_config:do_bed_deformation = "no";
+    pism_config:do_bed_iso = "no";
+    pism_config:ocean_kill = "false";
+    pism_config:floating_ice_killed = "false";
+    pism_config:is_dry_simulation = "no";
+    pism_config:use_ssa_velocity = "no";
+
+    // parameters:
+    pism_config:enhancement_factor = 1.0;
+    pism_config:constant_grain_size = 1.0e-3;
+    pism_config:start_year = 0;
+    pism_config:run_length_years = 1000;
+    pism_config:adaptive_timestepping_ratio = 0.12;
+    pism_config:initial_age_of_ice_years = 0.0;
+    pism_config:maximum_time_step_years = 60.0;
+    pism_config:epsilon_ssa = 1.0e15;
+    pism_config:epsilon_ssa_doc = "initial amount of (denominator) regularization in computation of effective viscosity";
+    pism_config:tauc = 1e4;
+    pism_config:tauc_doc = "10^4 Pa = 0.1 bar";
+    pism_config:max_hmelt = 2.0;
+    pism_config:max_hmelt_doc = "maximum thickness of the basal melt water layer";
+    pism_config:minimum_temperature_for_sliding = 273.0;
+    pism_config:minimum_temperature_for_sliding_doc = "Kelvin. Note less than ice.meltingTemp; if above this value then decide to slide";
+    pism_config:skip_max = 10;
+    pism_config:till_phi = 30.0;
+    pism_config:till_phi_doc = "till friction angle, degrees";
+    pism_config:mu_sliding = 0.0;
+    pism_config:bed_def_interval_years = 10.0;
+    pism_config:global_min_allowed_temp = 200.0;
+    pism_config:max_iterations_ssa = 300;
+    pism_config:max_low_temp_count = 10;
+}

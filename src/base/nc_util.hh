@@ -56,7 +56,9 @@ public:
 public:
   NCTool(IceGrid *my_grid);
   PetscErrorCode open_for_reading(const char filename[]);
-  PetscErrorCode open_for_writing(const char filename[], bool replace = true);
+  PetscErrorCode open_for_writing(const char filename[], bool append,
+				  bool check_dims = false);
+
   PetscErrorCode close();
   PetscErrorCode find_variable(string short_name, string standard_name,
 			       int *varid, bool &exists, bool &found_by_standard_name);
@@ -79,6 +81,9 @@ public:
   PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals);
   PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta);
 
+  PetscErrorCode inq_nattrs(int varid, int &N);
+  PetscErrorCode inq_att_name(int varid, int n, string &name);
+  PetscErrorCode inq_att_type(int varid, const char name[], nc_type &typep);
   PetscErrorCode get_att_text(int varid, const char name[], string &result);
   PetscErrorCode get_att_double(int varid, const char name[], vector<double> &result);
   PetscErrorCode get_units(int varid, bool &has_units, utUnit &units);
@@ -104,6 +109,7 @@ public:
 				   bool useMaskInterp);
 
 private:
+  PetscErrorCode open_for_writing(const char filename[]);
   int compute_block_size(GridType dims, int* count);
   PetscErrorCode compute_start_and_count(int varid, int *pism_start, int *pism_count,
 					 size_t* &nc_start, size_t* &nc_count);

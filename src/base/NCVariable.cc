@@ -21,15 +21,13 @@
 
 NCVariable::NCVariable() {
   grid = NULL;
-  dims = GRID_2D;
   reset();
 }
 
 //! Initialize a NCVariable instance.
-void NCVariable::init(string name, IceGrid &g, GridType d) {
+void NCVariable::init(string name, IceGrid &g) {
   short_name = name;
   grid = &g;
-  dims = d;
 }
 
 //! Set the internal units.
@@ -83,7 +81,7 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
 //! Read a variable from a file into a \b global Vec v.
 /*! This also converts the data from input units to internal units if needed.
  */
-PetscErrorCode NCVariable::read(const char filename[], unsigned int time, Vec v) {
+PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time, Vec v) {
   PetscErrorCode ierr;
   bool variable_exists;
   int varid;
@@ -141,8 +139,8 @@ PetscErrorCode NCVariable::read(const char filename[], unsigned int time, Vec v)
 /*!
   Defines a variable and converts the units if needed.
  */
-PetscErrorCode NCVariable::write(const char filename[], nc_type nctype,
-				 bool write_in_glaciological_units, Vec v) {
+PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
+					bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
   bool exists;
   NCTool nc(grid);
@@ -151,8 +149,8 @@ PetscErrorCode NCVariable::write(const char filename[], nc_type nctype,
   if (grid == NULL)
     SETERRQ(1, "NCVariable::write: grid is NULL.");
 
-  ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace = false, because
-				// we want to *append* at this point
+  ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
+  // append == true and check_dims == true
 
   // find or define the variable
   ierr = nc.find_variable(short_name, strings["standard_name"],
@@ -186,11 +184,11 @@ PetscErrorCode NCVariable::write(const char filename[], nc_type nctype,
   \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
   \li interpolation mask can be NULL if it is not used.
  */
-PetscErrorCode NCVariable::regrid(const char filename[], LocalInterpCtx &lic,
-				  bool critical, bool set_default_value,
-				  PetscScalar default_value,
-				  MaskInterp * interpolation_mask,
-				  Vec v) {
+PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &lic,
+					 bool critical, bool set_default_value,
+					 PetscScalar default_value,
+					 MaskInterp * interpolation_mask,
+					 Vec v) {
   int varid;
   bool exists;
   PetscErrorCode ierr;
@@ -346,7 +344,7 @@ PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
 /*!
   Does nothing if this transformation is trivial.
  */
-PetscErrorCode NCVariable::change_units(Vec v, utUnit *from, utUnit *to) {
+PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) {
   PetscErrorCode ierr;
   double slope, intercept;
   char from_name[TEMPORARY_STRING_LENGTH], to_name[TEMPORARY_STRING_LENGTH], *tmp;
@@ -483,7 +481,7 @@ PetscErrorCode NCVariable::write_attributes(int ncid, int varid, nc_type nctype,
 
 
 //! Report the range of a \b global Vec \c v.
-PetscErrorCode NCVariable::report_range(Vec v, bool found_by_standard_name) {
+PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_name) {
   double slope, intercept;
   PetscErrorCode ierr;
   PetscReal min, max;
@@ -527,7 +525,7 @@ PetscErrorCode NCVariable::report_range(Vec v, bool found_by_standard_name) {
 }
 
 //! Check if the range of a \b global Vec \c v is in the range specified by valid_min and valid_max attributes.
-PetscErrorCode NCVariable::check_range(Vec v) {
+PetscErrorCode NCSpatialVariable::check_range(Vec v) {
   PetscScalar min, max;
   PetscErrorCode ierr;
 
@@ -567,11 +565,11 @@ PetscErrorCode NCVariable::check_range(Vec v) {
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCVariable::define(int ncid, nc_type nctype, int &varid) {
+PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
   int stat, dimids[4], var_id;
 
   if (grid == NULL)
-    SETERRQ(1, "NCVariable::define: grid is NULL.");
+    SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
 
   if (grid->rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -652,4 +650,240 @@ double NCVariable::get(string name) {
     return doubles[name][0];
   else
     return 0;
+}
+
+//! Check if a value \c a is in the valid range defined by \c valid_min and \c valid_min attributes.
+bool NCVariable::is_valid(PetscScalar a) {
+  
+  if (has("valid_min") && has("valid_max"))
+    return (a >= get("valid_min")) && (a <= get("valid_max"));
+
+  if (has("valid_min"))
+    return a >= get("valid_min");
+
+  if (has("valid_max"))       
+    return a <= get("valid_max");
+
+  return true;
+}
+
+//! Read boolean flags and double parameters from a NetCDF file.
+/*!
+  Erases all the present parameters before reading.
+ */
+PetscErrorCode NCConfigVariable::read(const char filename[]) {
+
+  PetscErrorCode ierr;
+  bool variable_exists;
+  int varid, nattrs;
+  NCTool nc(grid);
+
+  strings.clear();
+  doubles.clear();
+  config_filename = filename;
+
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  ierr = nc.find_variable(short_name, &varid, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = PetscPrintf(grid->com,
+		       "PISM ERROR: configuration variable %s was not found in %s.\n"
+		       "            Exiting...",
+		       short_name.c_str(), filename); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  ierr = nc.inq_nattrs(varid, nattrs); CHKERRQ(ierr);
+
+  for (int j = 0; j < nattrs; ++j) {
+    string attname;
+    nc_type nctype;
+    ierr = nc.inq_att_name(varid, j, attname); CHKERRQ(ierr);
+    ierr = nc.inq_att_type(varid, attname.c_str(), nctype); CHKERRQ(ierr);
+
+    if (nctype == NC_CHAR) {
+      string value;
+      ierr = nc.get_att_text(varid, attname.c_str(), value); CHKERRQ(ierr);
+
+      strings[attname] = value;
+    } else {
+      vector<double> values;
+
+      ierr = nc.get_att_double(varid, attname.c_str(), values); CHKERRQ(ierr);
+      doubles[attname] = values;
+    }
+  } // end of for (int j = 0; j < nattrs; ++j)
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Write a config variable to a file (with all its attributes).
+PetscErrorCode NCConfigVariable::write(const char filename[]) {
+  PetscErrorCode ierr;
+  int varid;
+  bool variable_exists;
+  NCTool nc(grid);
+
+  ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr); // append == true
+
+  ierr = nc.find_variable(short_name, &varid, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = define(nc.ncid, varid); CHKERRQ(ierr);
+  }
+
+  ierr = write_attributes(nc.ncid, varid, NC_DOUBLE, false);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Define a configuration NetCDF variable.
+PetscErrorCode NCConfigVariable::define(int ncid, int &varid) {
+  int stat, var_id;
+
+  if (grid == NULL)
+    SETERRQ(1, "NCConfigVariable::define: grid is NULL.");
+
+  if (grid->rank == 0) {
+    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = nc_def_var(ncid, short_name.c_str(), NC_BYTE, 0, NULL, &var_id);
+    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  varid = var_id;
+
+  return 0;
+}
+
+
+//! Returns a \c double parameter. Stops if it was not found.
+double NCConfigVariable::get(string name) {
+
+  if (doubles.find(name) != doubles.end()) {
+    return NCVariable::get(name);
+  } else {
+    PetscPrintf(grid->com, "PISM ERROR: parameter '%s' is unset. (Parameters read from '%s'.)\n",
+		name.c_str(), config_filename.c_str());
+    PetscEnd();
+  }
+
+  return 0;			// can't happen
+}
+
+//! Returns a boolean flag by name. Unset flags are treated as if they are set to 'false'.
+/*!
+  Strings "false", "no", "off" are interpreted as 'false'; "true", "on", "yes" -- as 'true'.
+
+  Any other string produces an error.
+ */
+bool NCConfigVariable::get_flag(string name) {
+  string value = strings[name];
+
+  if ((value == "false") ||
+      (value == "no") ||
+      (value == "off"))
+    return false;
+
+  if ((value == "true") ||
+      (value == "yes") ||
+      (value == "on"))
+    return true;
+
+  PetscPrintf(grid->com,
+	      "PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+	      "            Please make sure that it is equal to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
+	      name.c_str(), value.c_str());
+  PetscEnd();
+
+  return true;
+}
+
+//! Set a value of a boolean flag.
+void NCConfigVariable::set_flag(string name, bool value) {
+  if (value) strings[name] = "true";
+  else       strings[name] = "false";
+}
+
+//! Write attributes to a NetCDF variable. All attributes are equal here.
+PetscErrorCode NCConfigVariable::write_attributes(int ncid, int varid, nc_type nctype,
+						  bool /*write_in_glaciological_units*/) {
+  int ierr;
+
+  if (grid == NULL)
+    SETERRQ(1, "NCVariable::write_attributes: grid is NULL.");
+
+  if (grid->rank != 0) return 0;
+
+  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  // Write text attributes:
+  map<string, string>::iterator i;
+  for (i = strings.begin(); i != strings.end(); ++i) {
+    string name  = i->first;
+    string value = i->second;
+
+    if (value.empty()) continue;
+
+    ierr = nc_put_att_text(ncid, varid, name.c_str(), value.size(), value.c_str()); 
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  // Write double attributes:
+  map<string, vector<double> >::iterator j;
+  for (j = doubles.begin(); j != doubles.end(); ++j) {
+    string name  = j->first;
+    vector<double> values = j->second;
+
+    if (values.empty()) continue;
+
+    ierr = nc_put_att_double(ncid, varid, name.c_str(), nctype, values.size(), &values[0]);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  return 0;
+}
+
+PetscErrorCode NCConfigVariable::print() {
+  PetscErrorCode ierr;
+
+  ierr = verbPrintf(3, grid->com, "PISM parameters read from %s:\n",
+		    config_filename.c_str());
+
+  // Print text attributes:
+  map<string, string>::iterator i;
+  for (i = strings.begin(); i != strings.end(); ++i) {
+    string name  = i->first;
+    string value = i->second;
+
+    if (value.empty()) continue;
+
+    ierr = verbPrintf(3, grid->com, "  %s = \"%s\"\n",
+		      name.c_str(), value.c_str()); CHKERRQ(ierr);
+  }
+
+  // Print double attributes:
+  map<string, vector<double> >::iterator j;
+  for (j = doubles.begin(); j != doubles.end(); ++j) {
+    string name  = j->first;
+    vector<double> values = j->second;
+
+    if (values.empty()) continue;
+    
+    ierr = verbPrintf(3, grid->com, "  %s = %12.3f\n",
+		      name.c_str(), values[0]); CHKERRQ(ierr);
+  }
+
+  return 0;
 }

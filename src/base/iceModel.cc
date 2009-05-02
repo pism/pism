@@ -35,6 +35,8 @@ IceModel::IceModel(IceGrid &g)
     }
   }
 
+  config.init("pism_config", grid);
+
   bootstrapLIC = PETSC_NULL;
 
   have_ssa_velocities = false;

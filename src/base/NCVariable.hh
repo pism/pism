@@ -55,23 +55,18 @@ using namespace std;
   file and has("foo") returns false if "foo" is absent or equal to an empty
   string.
  */
-struct NCVariable {
+class NCVariable {
 public:
   NCVariable();
-  void init(string name, IceGrid &g, GridType d);
-  PetscErrorCode set_units(string);
-  PetscErrorCode set_glaciological_units(string);
-  PetscErrorCode write(const char filename[], nc_type nctype,
-		       bool write_in_glaciological_units, Vec v);
-  PetscErrorCode read(const char filename[], unsigned int time, Vec v);
-  PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,
-			bool critical, bool set_default_value,
-			PetscScalar default_value, MaskInterp *, Vec v);
-  PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
-  PetscErrorCode reset();
-  void set(string, double);
-  double get(string);
-  bool has(string);
+  virtual ~NCVariable() {};
+  void init(string name, IceGrid &g);
+  virtual PetscErrorCode set_units(string);
+  virtual PetscErrorCode set_glaciological_units(string);
+  virtual PetscErrorCode reset();
+  virtual void set(string, double);
+  virtual double get(string);
+  virtual bool has(string);
+  virtual bool is_valid(PetscScalar a);
 			
   string short_name;
 
@@ -88,18 +83,48 @@ public:
   map<string, vector<double> > doubles;
 
 protected:
-  PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
+  virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
 				  bool write_in_glaciological_units);
-  PetscErrorCode report_range(Vec v, bool found_by_standard_name);
-  PetscErrorCode check_range(Vec v);
-  PetscErrorCode read_valid_range(int ncid, int varid);
-  PetscErrorCode define(int ncid, nc_type nctype, int &varid);
+  virtual PetscErrorCode read_valid_range(int ncid, int varid);
   IceGrid *grid;
-  GridType dims;
   utUnit units,		      //!< internal (PISM) units
          glaciological_units; //!< \brief for diagnostic variables: units to
 			      //!use when writing to a NetCDF file and for
 			      //!standard out reports
+};
+
+//! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
+class NCSpatialVariable : public NCVariable {
+public:
+  GridType dims;
+  virtual PetscErrorCode read(const char filename[], unsigned int time, Vec v);
+  virtual PetscErrorCode write(const char filename[], nc_type nctype,
+			       bool write_in_glaciological_units, Vec v);
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,
+				bool critical, bool set_default_value,
+				PetscScalar default_value, MaskInterp *, Vec v);
+  virtual PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
+
+protected:
+  PetscErrorCode define(int ncid, nc_type nctype, int &varid);
+  PetscErrorCode report_range(Vec v, bool found_by_standard_name);
+  PetscErrorCode check_range(Vec v);
+};
+
+//! A class for reading, writing and accessing PISM configuration flags and parameters.
+class NCConfigVariable : public NCVariable {
+public:
+  virtual PetscErrorCode print();
+  virtual PetscErrorCode read(const char filename[]);
+  virtual PetscErrorCode write(const char filename[]);
+  virtual double get(string);
+  virtual bool get_flag(string);
+  virtual void set_flag(string, bool);
+protected:
+  string config_filename;
+  virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
+				  bool write_in_glaciological_units);
+  virtual PetscErrorCode define(int ncid, int &varid);
 };
 
 #endif

@@ -146,22 +146,24 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
     ierr = writeMatlabVars(matf); CHKERRQ(ierr); // see iMmatlab.cc
   }
 
+  char config_out[PETSC_MAX_PATH_LEN];
+  PetscTruth dump_config;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-dump_config", config_out, PETSC_MAX_PATH_LEN, &dump_config);
+  if (dump_config) {
+    ierr = config.write(config_out); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
 
 PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
-  PetscTruth append = PETSC_FALSE;
   NCTool nc(&grid);
 
-  ierr = check_option("-a", append); CHKERRQ(ierr);
-  if (append) {
-    ierr = verbPrintf(2, grid.com, "\nWill append to '%s' if possible.\n", filename); CHKERRQ(ierr);
-  }
-
   // Prepare the file
-  ierr = nc.open_for_writing(filename, append == PETSC_FALSE); CHKERRQ(ierr);
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
   ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
@@ -704,7 +706,11 @@ PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
   NCTool nc(&grid);
   bool save_now = false;
-  double saving_after = -1.0e30; // initialize to avoid compiler warning
+  double saving_after = -1.0e30; // initialize to avoid compiler warning; this
+				 // value is never used, because saving_after
+				 // is only used if save_now == true, and in
+				 // this case saving_after is guaranteed to be
+				 // initialized. See the code below.
   char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_at and -save_to options
@@ -748,7 +754,8 @@ PetscErrorCode IceModel::write_snapshot() {
 
     if (!file_is_ready) {
       // Prepare the snapshots file:
-      ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
+      ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+      // append == false, check_dims == true
       ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
       ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
       ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
@@ -756,7 +763,8 @@ PetscErrorCode IceModel::write_snapshot() {
       file_is_ready = true;
     }
     
-    ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr); // replace == false
+    ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
+    // append == true, check_dims == true
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
@@ -776,7 +784,7 @@ PetscErrorCode IceModel::write_snapshot() {
     }
     
     ierr = write_extra_fields(filename); CHKERRQ(ierr);
-  }
+  } // end of if (save_now)
 
   return 0;
 }

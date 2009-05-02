@@ -1098,26 +1098,12 @@ PetscErrorCode NCTool::close() {
   return 0;
 }
 
-//! Opens or creates a NetCDF file for writing the PISM model state.
-/*!
-  1) Open the file. If the file could not be opened, go to step 3. Otherwise go
-  to step 2.
-
-  2) Call check_dimensions(). If dimensions are OK, go to step 5. Otherwise go
-  to step 4.
-
-  3) Create the file with NC_CLOBBER (overwrite). Go to step 4.
-
-  4) Define dimensions and create dimension variables. Go to step 5.
-
-  5) Set the NetCDF ID.
- */
-PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
+//! Opens a file for writing if it exists, creates if it does not.
+PetscErrorCode NCTool::open_for_writing(const char filename[]) {
   int stat;
 
   if (grid->rank == 0) {
-    bool file_exists = false, dimensions_are_ok = false;
-    char tmp[PETSC_MAX_PATH_LEN];
+    bool file_exists = false;
 
     // Check if the file exists:
     if (FILE *f = fopen(filename, "r")) {
@@ -1128,10 +1114,55 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
     }
 
     if (file_exists) {
-      if (replace) {
+      stat = nc_open(filename, NC_WRITE, &ncid);
+      if (stat != NC_NOERR) {
+	stat = PetscPrintf(grid->com, "PISM ERROR: Can't open file '%s'. NetCDF error: %s\n",
+			   filename, nc_strerror(stat)); CHKERRQ(stat);
+	PetscEnd();
+	}
+    } else {
+      stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
+      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    }
+
+    stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  } // end of if (grid->rank == 0)
+
+  stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  return 0;
+}
+
+//! Open a NetCDF file for writing.
+/*!
+  If append == false moves an existing file aside if necessary.
+
+  if check_dims == true, makes sure dimensions are OK.
+ */
+PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
+					bool check_dims) {
+  int stat;
+
+  if (append == false) {
+    // if append == false, we need to check if the file exists and move it
+    // before proceeding if it does:
+    if (grid->rank == 0) {
+      bool file_exists = false;
+      char tmp[PETSC_MAX_PATH_LEN];
+
+      // Check if the file exists:
+      if (FILE *f = fopen(filename, "r")) {
+	file_exists = true;
+	fclose(f);
+      } else {
+	file_exists = false;
+      }
+    
+      if (file_exists && !append) {
 	strcpy(tmp, filename);
 	strcat(tmp, "~");	// tmp <- "foo.nc~"
-
+      
 	stat = rename(filename, tmp);
 	if (stat != 0) {
 	  stat = verbPrintf(1, grid->com, "PISM ERROR: can't move '%s' to '%s'.\n",
@@ -1139,31 +1170,32 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool replace) {
 	  PetscEnd();
 	}
 	stat = verbPrintf(2, grid->com, 
-	   "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
-	   filename, tmp);
-	file_exists = false;
-      } else {
-	// Check dimensions
-	stat = nc_open(filename, NC_WRITE, &ncid);
-	if (stat != NC_NOERR) {
-	  stat = verbPrintf(1, grid->com, "PISM ERROR: NetCDF error: %s\n",
-			    nc_strerror(stat));
-	  PetscEnd();
-	}
-	dimensions_are_ok = check_dimensions();
-      }
-    }
+			  "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
+			  filename, tmp);
+      }    
+    } // end of if (grid->rank == 0)
+  }
 
-    if (!file_exists || !dimensions_are_ok) {
-      stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      stat = create_dimensions(); CHKERRQ(stat);
-    }
-    stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  } // end of if(grid->rank == 0)
+  stat = open_for_writing(filename); CHKERRQ(stat);
 
-  stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  // If we don't need to check dimensions, we're done.
+  if (!check_dims)
+    return 0;
+
+  if (append == true) {
+    bool dimensions_are_ok = check_dimensions();
+
+    if (!dimensions_are_ok) {
+      stat = PetscPrintf(grid->com,
+			 "PISM ERROR: file '%s' has dimensions incompatible with the current grid. Exiting...\n",
+			 filename); CHKERRQ(stat);
+      PetscEnd();
+    }
+  } else {
+    // the file we just opened is empty, so we need to create dimensions
+    stat = create_dimensions(); CHKERRQ(stat);
+  }
+
   return 0;
 }
 
@@ -1378,7 +1410,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
     return 0;
   }
 
-  result.reserve(len);
+  result.resize(len);
   // Now read the data and broadcast stat to see if we succeeded:
   if (grid->rank == 0) {
     stat = nc_get_att_double(ncid, varid, name, &result[0]);
@@ -1713,5 +1745,46 @@ PetscErrorCode NCTool::append_timeseries(const char name[], double value) {
     stat = nc_put_var1_double(ncid, varid, &index, &value); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
+  return 0;
+}
+
+//! Get the number of attributes of a variable.
+PetscErrorCode NCTool::inq_nattrs(int varid, int &N) {
+  int stat;
+
+  if (grid->rank == 0) {
+    stat = nc_inq_varnatts(ncid, varid, &N); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  stat = MPI_Bcast(&N, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  return 0;
+}
+
+//! Get the attribute type.
+PetscErrorCode NCTool::inq_att_type(int varid, const char name[], nc_type &result) {
+  int stat, type;
+  nc_type tmp;
+
+  if (grid->rank == 0) {
+    stat = nc_inq_atttype(ncid, varid, name, &tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    type = static_cast<int>(tmp);
+  } // end of if(grid->rank == 0)
+  stat = MPI_Bcast(&type, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+
+  result = static_cast<nc_type>(type);
+
+  return 0;
+}
+
+PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) {
+  int stat;
+  char tmp[NC_MAX_NAME];
+
+  if (grid->rank == 0) {
+    stat = nc_inq_attname(ncid, varid, n, tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  stat = MPI_Bcast(tmp, NC_MAX_NAME, MPI_CHAR, 0, grid->com); CHKERRQ(stat);
+
+  name = tmp;
   return 0;
 }

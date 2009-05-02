@@ -156,9 +156,11 @@ public:
 protected:
 
   IceGrid               &grid;
-  int initial_Mz;		//!< the number of vertical grid levels at the start of the run; used by the grid extension code
+  int initial_Mz; //!< the number of vertical grid levels at the start of the
+		  //! run; used by the grid extension code
 
   PolarStereoParams     psParams;
+  NCConfigVariable      config;
   
   LocalInterpCtx        *bootstrapLIC;
 

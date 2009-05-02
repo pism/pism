@@ -135,10 +135,10 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
 
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
-  ierr = nc.find_variable("mask",   NULL, &maskid,   maskExists);   CHKERRQ(ierr);
-  ierr = nc.find_variable("ubar",   NULL, &ubarid,   ubarExists);   CHKERRQ(ierr);
-  ierr = nc.find_variable("vbar",   NULL, &vbarid,   vbarExists);   CHKERRQ(ierr);
-  ierr = nc.find_variable("bcflag", NULL, &bcflagid, bcflagExists); CHKERRQ(ierr);
+  ierr = nc.find_variable("mask",   &maskid,   maskExists);   CHKERRQ(ierr);
+  ierr = nc.find_variable("ubar",   &ubarid,   ubarExists);   CHKERRQ(ierr);
+  ierr = nc.find_variable("vbar",   &vbarid,   vbarExists);   CHKERRQ(ierr);
+  ierr = nc.find_variable("bcflag", &bcflagid, bcflagExists); CHKERRQ(ierr);
   
   if ( (!ubarExists) || (!vbarExists)) {
     ierr = PetscPrintf(grid.com,"-ssaBC set but (ubar,vbar) not found in file %s\n",filename);

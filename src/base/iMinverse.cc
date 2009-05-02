@@ -139,7 +139,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
              "  preparing file %s to write inverse computation fields ...\n",
              invfieldsname); CHKERRQ(ierr);
     NCTool nc(&grid);
-    ierr = nc.open_for_writing(invfieldsname,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = nc.open_for_writing(invfieldsname, false, true); CHKERRQ(ierr);
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.write_history("option -inv_write_fields read"); CHKERRQ(ierr);
     ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);

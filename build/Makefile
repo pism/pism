@@ -34,7 +34,7 @@ endif
 
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -I../src/udunits -I../src/base
+          -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_PREFIX)/lib/pism_config.nc"'
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
@@ -86,6 +86,7 @@ extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
+config_file := ../lib/pism_config.nc
 
 # ice_sources and ice_csources go in libpism.[so|a]
 ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
@@ -130,7 +131,7 @@ ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
-all: ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default)
+all: ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(config_file)
 	@svnversion ../src/ > ../src/revision
 
 extras : ${exec_extras}
@@ -159,6 +160,9 @@ $(LIBUDUNITS): $(ud_objects)
 	cp ../src/udunits/pismudunits.dat ../lib/
 
 #build default executables
+
+$(config_file): pism_config.cdl
+	ncgen -o $@ $^
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 

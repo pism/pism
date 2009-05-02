@@ -177,7 +177,8 @@ static PetscErrorCode writePCCStateAtTimes(
     wwstr[sizeof(wwstr) - 1] = '\0';
   }
 
-  ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr);
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
   ierr = nc.write_history(wwstr); CHKERRQ(ierr);
   ierr = nc.write_global_attrs(false, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.write_polar_stereographic(psparams); CHKERRQ(ierr);
@@ -211,7 +212,8 @@ static PetscErrorCode writePCCStateAtTimes(
   // write the states
   for (PetscInt k=0; k < NN; k++) {
     const PetscReal pccyear = ys + k * dt_years; // use original dt_years to get correct subinterval starts
-    ierr = nc.open_for_writing(filename, false); CHKERRQ(ierr);
+    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    // append == true, check_dims == false
     ierr = nc.append_time(pccyear); CHKERRQ(ierr);
     
     PetscScalar dt_update_years = PetscMin(use_dt_years, ye - pccyear);

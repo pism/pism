@@ -223,7 +223,8 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
   NCTool nc(grid);
   bool variable_exists;
 
-  ierr = nc.open_for_writing(filename, false);
+  ierr = nc.open_for_writing(filename, true, true);
+  // append == true, check_dims == true
   ierr = nc.find_variable("surftempoffset", NULL, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
@@ -561,7 +562,8 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
 
   NCTool nc(grid);
   bool variable_exists;
-  ierr = nc.open_for_writing(filename, false);
+  ierr = nc.open_for_writing(filename, true, true);
+  // append == true, check_dims == true
   ierr = nc.find_variable("sealevel", NULL, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
@@ -686,7 +688,8 @@ PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *file
   PetscErrorCode ierr;
   NCTool nc(grid);
   bool variable_exists;
-  ierr = nc.open_for_writing(filename, false);
+  ierr = nc.open_for_writing(filename, true, true);
+  // append == true, check_dims == true
   ierr = nc.find_variable("sealevel", NULL, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {

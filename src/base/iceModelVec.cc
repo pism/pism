@@ -593,16 +593,7 @@ bool IceModelVec::is_valid(PetscScalar a) {
   if (dof != 1)
     SETERRQ(1, "IceModelVec::is_valid(PetscScalar) only supports dof == 1.");
 
-  if (var1.has("valid_min") && var1.has("valid_max"))
-    return (a >= var1.get("valid_min")) && (a <= var1.get("valid_max"));
-
-  if (var1.has("valid_min"))
-    return a >= var1.get("valid_min");
-
-  if (var1.has("valid_max"))       
-    return a <= var1.get("valid_max");
-
-  return true;
+  return var1.is_valid(a);
 }
 
 //! Set a string attribute of an IceModelVec.

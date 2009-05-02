@@ -86,7 +86,7 @@ protected:
   Vec  v;
   char name[PETSC_MAX_PATH_LEN];
 
-  NCVariable var1;		//!< a NetCDF variable corresponding to this
+  NCSpatialVariable var1;	//!< a NetCDF variable corresponding to this
 				//!IceModelVec; called var1 because some
 				//!IceModelVecs will have more: var2, etc.
 
