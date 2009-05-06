@@ -81,7 +81,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := pismr pismd pismv pisms pcctest
+executables := penth pismr pismd pismv pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
@@ -104,7 +104,7 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := pismr.cc pismd.cc pismv.cc pisms.cc \
+other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
 	pcctest.cc flowTable.cc tryLCbd.cc
@@ -165,6 +165,9 @@ $(config_file): pism_config.cdl
 	ncgen -o $@ $^
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
+
+../bin/penth : penth.o iceEnthalpyModel.o ${LIBPISMNAME}
+	${CXXLINKER} penth.o iceEnthalpyModel.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o ${ICE_LIB_FLAGS} -o $@
