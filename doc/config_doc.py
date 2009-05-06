@@ -34,7 +34,10 @@ for attr in var.ncattrs():
         continue
 
     value = getattr(var, attr)
-    docstring = getattr(var, attr + "_doc", "missing")
+    try:
+      docstring = getattr(var, attr + "_doc", "missing")
+    except:
+      docstring = "missing"
 
     if type(value) != str:
         continue
@@ -59,7 +62,10 @@ for attr in var.ncattrs():
         continue
 
     value = getattr(var, attr)
-    docstring = getattr(var, attr + "_doc", "missing")
+    try:
+      docstring = getattr(var, attr + "_doc", "missing")
+    except:
+      docstring = "missing"
 
     if type(value) == str:
         continue
