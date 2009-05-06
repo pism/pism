@@ -217,7 +217,7 @@ vsurfmassflux.  Monthly snow temperatures are used in this process, if present. 
 are read from a file as described for PISMMonthlyTempsAtmosCoupler.
 
 It has various constants parameterizing the melt and refreeze processes.  See
-\latexonly \cite{RitzEISMINT}\endlatexonly.
+\ref RitzEISMINT .
 
 This derived class is implemented in src/coupler/pPDDcoupler.cc.
  */

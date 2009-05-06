@@ -90,7 +90,7 @@ where in the temperature-dependent case
    \f[ \bar B = \frac{1}{H}\,\int_b^h B(T^*)\,dz\f]
 This integral is approximately computed by the trapezoid rule.
 
-In fact the integral is regularized as described in \lo\cite{SchoofStream}\elo.
+In fact the integral is regularized as described in \ref SchoofStream .
 The regularization constant \f$\epsilon\f$ is an argument to this procedure.
 
 Also we put \f$\bar\nu H = \f$\c constantNuHForSSA anywhere the ice is thinner
@@ -240,7 +240,7 @@ COMMENT FIXME:  Finish plastic till paper first.  Then fix these comments to mat
 The SSA equations are in their clearest form
     \f[ - \frac{\partial T_{ij}}{\partial x_j} + \tau_{(b)i} = f_i \f]
 where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
-(i.e. equation (2.6) in \lo\cite{SchoofStream}\elo, and following \lo\cite{Morland}\elo, 
+(i.e. equation (2.6) in \ref SchoofStream , and following \ref Morland , 
 and \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
 Also \f$f_i\f$ is the driving shear stress \f$f_i = - \rho g H \frac{\partial h}{\partial x_i}\f$.  
 These equations determine velocity in a more-or-less elliptic equation manner.  Here \f$H\f$ 
@@ -263,20 +263,20 @@ More specifically, the SSA equations are
  where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
 of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity of the ice.  
 
-For ice shelves \f$\tau_{(b)i} = 0\f$ \lo\cite{MacAyealetal}\elo.  For ice streams with a basal 
+For ice shelves \f$\tau_{(b)i} = 0\f$ \ref MacAyealetal .  For ice streams with a basal 
 till modelled as a plastic material, \f$\tau_{(b)i} = \tau_c u_i/|\mathbf{u}|\f$ where 
 \f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, and \f$\tau_c\f$ 
-is the yield stress of the till \lo\cite{SchoofStream}\elo.  More generally,
+is the yield stress of the till \ref SchoofStream .  More generally,
 ice streams can be modeled with a pseudo-plastic basal till.  This includes assuming the
 basal till is a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ 
-is the basal drag (friction) parameter \lo\cite{HulbeMacAyeal}\elo.
+is the basal drag (friction) parameter \ref HulbeMacAyeal .
 See PlasticBasalType::drag().
 
 Note that the basal shear stress appears on the \em left side of the above system.  
 We believe this is crucial, because of its effect on the spectrum of the linear 
 approximations of each stage.  The effect on spectrum is clearest in the linearly-viscous
-till case (i.e. \lo\cite{HulbeMacAyeal}\elo) but there seems to be an analogous effect in the 
-plastic till case \lo\cite{SchoofStream}\elo.
+till case (i.e. \ref HulbeMacAyeal ) but there seems to be an analogous effect in the 
+plastic till case \ref SchoofStream .
 
 This method assembles the matrix for the left side of the SSA equations.  The numerical method 
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]

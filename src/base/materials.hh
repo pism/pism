@@ -303,7 +303,7 @@ More specifically, the SSA equations are
         + \tau_{(b)x}  =  - \rho g H \ddx{h},
 \end{equation*}
 \endlatexonly
-and another similar equation.  Schoof \latexonly\cite{SchoofStream}\endlatexonly shows that these PDEs
+and another similar equation.  Schoof \ref SchoofStream shows that these PDEs
 are the variational equations for a functional.
 
 The quantity \f$\nu H\f$ is the nonlinear coefficient in this (roughly-speaking)

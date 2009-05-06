@@ -261,7 +261,7 @@ mean temperature in K, \f$S\f$ is the amplitude of the sinusoid
 (the ``summer warming'') in K (= degrees C because it is a change in temperature), and \f$P\f$
 is the day of peak summer warming, pddSummerPeakDay, which is taken to be 1 August by default.
 
-This follows EISMINT-Greenland \lo\cite{RitzEISMINT}\elo.  See also IceGRNModel.
+This follows EISMINT-Greenland \ref RitzEISMINT .  See also IceGRNModel.
  */
 PetscScalar PISMPDDCoupler::getTemperatureFromYearlyCycle(
        const PetscScalar summer_warming, const PetscScalar Tma, 
@@ -294,7 +294,7 @@ If the rate of snowfall is negative then the rate is interpreted as an ice-equiv
 ablation), by melting ice.  Snowfall rates are generally positive nearly everywhere
 on ice sheets, however.
 
-The default values for the factors come from EISMINT-Greenland, \lo\cite{RitzEISMINT}\elo.
+The default values for the factors come from EISMINT-Greenland, \ref RitzEISMINT .
 
 Arguments are snow fall rate snowrate in m * s^-1, dt in s, pddsum in K * day.
  */
@@ -319,7 +319,7 @@ PetscScalar PISMPDDCoupler::getSurfaceBalanceFromSnowAndPDD(
 }
 
 
-//! Compute the integrand in integral (6) in \lo\cite{CalovGreve05}\elo.
+//! Compute the integrand in integral (6) in \ref CalovGreve05 .
 /*!
 The integral is
    \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,
@@ -332,7 +332,7 @@ This integral is used for the expected number of positive degree days, unless th
 user selects a random PDD implementation with <tt>-pdd_rand</tt> or 
 <tt>-pdd_rand_repeatable</tt>.  The user can choose \f$\sigma\f$ by option
 <tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
-\c dt instead of a whole year as stated in \lo\cite{CalovGreve05}\elo.
+\c dt instead of a whole year as stated in \ref CalovGreve05 .
 
 The single argument \c Tac is the temperature in K.  The value \f$T_{ac}(t)\f$
 in the above integral must be in degrees C, so the shift is done within this 
@@ -360,7 +360,7 @@ monte carlo method uses pseudo-random numbers to simulate the melting.
 
 The default model only computes the \e expected number of positive degree days, 
 so it is deterministic.  It is chosen by option <tt>-pdd</tt>.  It implements the 
-scheme in \lo\cite{CalovGreve05}\elo.  In particular, integral (6) in that paper
+scheme in \ref CalovGreve05 .  In particular, integral (6) in that paper
 is approximated here by Simpson's rule.
 
 The alternative method, chosen by either <tt>-pdd_rand</tt> or 

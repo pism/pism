@@ -332,7 +332,7 @@ static PetscScalar nu_eff(bool useConstantNu, PetscScalar schoofReg, PetscScalar
 }
 
 
-PetscErrorCode basalstress(PetscTruth usePlasticBasalType, PlasticBasalType *basal,
+PetscErrorCode basalstress(bool usePlasticBasalType, PlasticBasalType *basal,
                            PetscScalar u, PetscScalar v, PetscScalar tauc,
                            PetscScalar &taubx, PetscScalar &tauby) {
 //  PetscPrintf(PETSC_COMM_WORLD, "basalstress() turned off\n"); PetscEnd();

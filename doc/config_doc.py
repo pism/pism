@@ -11,8 +11,12 @@ var = nc.variables['pism_config']
 print """
 /*!
 \page config Configuration flags and parameters
-"""
 
+\par Notes
+Valid configuration flag values are "yes", "true", "on" and "no",
+"false", "off" (lowercase only). Note that they have to be inclosed in quotes
+in pism_config.cdl.
+"""
 
 print """
 \section flags Boolean flags

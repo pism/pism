@@ -67,7 +67,7 @@ geometry and temperature.
 
 If <tt>-super</tt> is also set, we call the method computeFofVforInverse()
 which computes the factor \f$f(|\mathbf{v}|)\f$ used in combining the SIA 
-and SSA velocities \lo\cite[equation (21)]{BBssasliding}\elo.  If
+and SSA velocities (equation (21) in \ref BBssasliding ).  If
 <tt>-super</tt> is not set, we do not call computeFofVforInverse(), and
 instead just set \f$f(|\mathbf{v}|)=0\f$, so the observed surface velocity
 is treated as all described by the SSA model.
@@ -648,7 +648,7 @@ This is one of several routines called by invertSurfaceVelocities() for
 inverse model-based initialization.  See comments for that method.
 
 The scalar field which gets computed is called \f$f(|\mathbf{v}|)\f$ in 
-\lo\cite[equations (21) and (22)]{BBssasliding}\elo.  Let 
+(equations (21) and (22) \ref BBssasliding ).  Let 
 \f$\mathbf{U}_s\f$ be the observed surface velocity.  At each point
 in the map plane we seek \f$f(|\mathbf{v}|)\f$ in the equation
   \f[ \mathbf{U}_s = f(|\mathbf{v}|) \mathbf{u}_s

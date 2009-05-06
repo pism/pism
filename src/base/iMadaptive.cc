@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ The time-stepping scheme for mass continuity is explicit.
 
 For the non-sliding, deformational part of the vertically-integrated 
 horizontal mass flux \f$\mathbf{q}\f$, the partial differential equation 
-is diffusive.  Thus there is a stability criterion \lo\cite{MortonMayers}\elo 
+is diffusive.  Thus there is a stability criterion \ref MortonMayers 
 which depends on the diffusivity coefficient.  Of course,
 because the PDE is nonlinear, this diffusivity changes at every time step.  This 
 procedure computes the maximum of the diffusivity on the grid.
@@ -191,7 +191,7 @@ Note computeMaxDiffusivity() must be called before this to set \c gDmax.  Note
 adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio * dx^2/maxD
 (if dx=dy)
 
-Reference: \lo\cite{MortonMayers}\elo pp 62--63.
+Reference: \ref MortonMayers pp 62--63.
  */
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;

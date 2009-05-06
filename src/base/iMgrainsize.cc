@@ -27,8 +27,8 @@ nontrivial dependence on its age, through its grainsize, because of variable dus
 of the global climate.  The grainsize is partly determined by at which point in 
 the glacial cycle the given ice fell as snow.
 
-The data is from \lo\cite{DeLaChapelleEtAl98} and 
-\cite{LipenkovEtAl89}\elo.  In particular, Figure A2 in the former reference was
+The data is from \ref DeLaChapelleEtAl98 and 
+\ref LipenkovEtAl89 .  In particular, Figure A2 in the former reference was
 hand-sampled with an attempt to include the ``wiggles'' in that figure.  Ages of
 the oldest ice (>= 300 ka) were estimated in a necessarily ad hoc way.  The 
 age value of 10000 ka was added simply to give interpolation for very old ice;

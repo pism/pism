@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,13 +26,13 @@
 There are two methods for computing the surface gradient.  
 
 The default method is to directly differentiate 
-the surface elevation \f$h\f$ by the Mahaffy method \lo\cite{Mahaffy}\elo.
+the surface elevation \f$h\f$ by the Mahaffy method \ref Mahaffy .
 
 The alternative method, using option <c>-eta</c> which sets 
 <c>transformForSurfaceGradient = PETSC_TRUE</c>, is to transform the thickness 
 to something more regular and differentiate that.  We get back to the gradient 
 of the surface by applying the chain rule.  In particular, as shown 
-in \lo\cite{CDDSV}\elo for the flat bed and \f$n=3\f$ case, if we define
+in \ref CDDSV for the flat bed and \f$n=3\f$ case, if we define
 	\f[\eta = H^{(2n+2)/n}\f]
 then \f$\eta\f$ is more regular near the margin than \f$H\f$.  So we compute
 the surface gradient by

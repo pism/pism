@@ -87,7 +87,7 @@ Both the temperature equation and the age equation involve advection.
 We handle horizontal advection explicitly by first-order upwinding.  We handle
 vertical advection implicitly by centered differencing when possible, and retreat to
 implicit first-order upwinding when necessary.  There is a CFL condition
-for the horizontal explicit upwinding \lo\cite{MortonMayers}\elo.  We report 
+for the horizontal explicit upwinding \ref MortonMayers .  We report 
 any CFL violations, but they are designed to not occur.
 
 The vertical conduction term is always handled implicitly (i.e. by backward Euler).
@@ -122,7 +122,7 @@ assume when needed that it is rectangular in cross-section with cross-sectional 
 
 The application of the geothermal flux at the base of a column is a special case for which 
 we give a finite difference argument.  This scheme follows the equation (2.114) in 
-\lo\cite{MortonMayers}\elo.  We have the boundary condition
+\ref MortonMayers .  We have the boundary condition
 	\f[  -k \frac{\partial T}{\partial z} = G(t,x,y) \f]
 where \f$G(t,x,y)\f$ is the applied geothermal flux, and it is applied at level \f$z=-B_0\f$ 
 in the bedrock (which is the only case considered here).  We <em> add a virtual lower grid 

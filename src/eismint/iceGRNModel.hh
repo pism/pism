@@ -56,7 +56,7 @@ private:
 //! Implements EISMINT-Greenland experiments.
 /*!
 This derived class adds, essentially, only the minimum functionality needed
-to implement the choices stated in \lo \cite{RitzEISMINT}\elo, the EISMINT-Greenland 
+to implement the choices stated in \ref RitzEISMINT , the EISMINT-Greenland 
 specification:
 - A PDD model is always used, through PISMEISGREENPDDCoupler.
 - An enhancement factor of 3.0 is used.
