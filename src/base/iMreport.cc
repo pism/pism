@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -299,10 +299,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 
 
 PetscErrorCode IceModel::summaryPrintLine(
-    const PetscTruth printPrototype, const PetscTruth tempAndAge,
-    const PetscScalar year, const PetscScalar /* delta_t */,
-    const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-    const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0) {
+     PetscTruth printPrototype,  bool tempAndAge,
+     PetscScalar year,  PetscScalar /* delta_t */,
+     PetscScalar volume_kmcube,  PetscScalar area_kmsquare,
+     PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0) {
 
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {

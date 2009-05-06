@@ -72,8 +72,8 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   PetscErrorCode ierr;
 
   // effective viscosity for ub_in, vb_in: save flags before changing them
-  const PetscTruth leaveNuHAloneSSA_save = leaveNuHAloneSSA, 
-                   useConstantNuHForSSA_save = useConstantNuHForSSA;
+  const bool leaveNuHAloneSSA_save = leaveNuHAloneSSA, 
+    useConstantNuHForSSA_save = useConstantNuHForSSA;
   leaveNuHAloneSSA = PETSC_FALSE;
   useConstantNuHForSSA = PETSC_FALSE;
   IceModelVec2 myvNuH[2] = {vWork2d[0], vWork2d[1]}; // already allocated space

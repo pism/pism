@@ -27,8 +27,14 @@ refman : doxyfile_refman
 	(cd doxy/latex/; ${MAKE} all)
 	cp doxy/latex/refman.pdf .
 
-browser : doxyfile_browser
+browser : doxyfile_browser doxybib.bbl config_doc.txt
 	doxygen doxyfile_browser
+
+doxybib.bbl: ice_bib.bib
+	./doxybib.py
+
+config_doc.txt: ../lib/pism_config.nc
+	./config_doc.py > config_doc.txt
 
 # non-default targets; sometimes useful:
 #   browsenow      rebuild browser and then open it with firefox
@@ -44,12 +50,6 @@ summary : pism_summary.tex
 	bibtex pism_summary
 	pdflatex pism_summary
 	pdflatex pism_summary
-
-fullbib : fullbib.tex
-	pdflatex fullbib
-	bibtex fullbib
-	pdflatex fullbib
-	pdflatex fullbib
 
 
 PISMREV_VFIGS ?= 589 # revision stamp for verification results in User's Manual figures;
@@ -73,8 +73,8 @@ vfigs : verif/$(VFNOW_OUT)
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/temperrs
 
 clean :
-	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc
-	@rm -f manual.bbl refman.bbl pism_summary.bbl  # keep fullbib.bbl around for cut and paste
+	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
+	@rm -f config_doc.txt
 
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."

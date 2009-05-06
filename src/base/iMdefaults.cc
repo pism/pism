@@ -20,32 +20,6 @@
 #include <cmath>
 #include "iceModel.hh"
 
-const PetscTruth  DEFAULT_INCLUDE_BMR_IN_CONTINUITY = PETSC_TRUE;
-const PetscInt    DEFAULT_NOSPOKESLEVEL = 0;  // iterations of smoothing of Sigma
-//const PetscScalar DEFAULT_MU_SLIDING = 3.17e-11;  // 100 m/a at 100kPa
-
-const PetscTruth  DEFAULT_USE_CONSTANT_NUH_FOR_SSA = PETSC_FALSE;
-const PetscTruth  DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA = PETSC_FALSE;
-
-// for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
-// appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
-const PetscScalar DEFAULT_PLASTIC_REGULARIZATION = 0.01 / secpera;
-const PetscScalar DEFAULT_PSEUDO_PLASTIC_Q = 0.25;  // see PlasticBasalType
-const PetscScalar DEFAULT_PSEUDO_PLASTIC_UTHRESHOLD = 100 / secpera; // 100 m/a
-const PetscScalar DEFAULT_SSA_RELATIVE_CONVERGENCE = 1.0e-4;
-
-const PetscScalar DEFAULT_BETA_SHELVES_DRAG_TOO = 1.8e9 * 0.0001;  // Pa s m^{-1}
-                             //  (1/10000) of value stated in Hulbe&MacAyeal1999 for ice stream E
-
-// pure number; pore water pressure is this fraction of overburden:
-const PetscScalar DEFAULT_TILL_PW_FRACTION = 0.95;  
-const PetscScalar DEFAULT_TILL_C_0 = 0.0;  // Pa; cohesion of till; 
-            // note Schoof uses zero but Paterson pp 168--169 gives range 0 -- 40 kPa; but Paterson
-            // notes that "... all the pairs c_0 and phi in the table would give a yield stress
-            // for Ice Stream B that exceeds the basal shear stress there ..."
-const PetscScalar DEFAULT_TILL_PHI = 30.0;  // pure number; tan(30^o) = ; till friction angle
-
-
 //! Assigns default values to the many parameters and flags in IceModel.
 /*!
 The order of precedence for setting parameters in PISM is:
@@ -92,40 +66,41 @@ PetscErrorCode IceModel::setDefaults() {
 
   enhancementFactor = config.get("enhancement_factor");
   muSliding = config.get("mu_sliding");
-  thermalBedrock = (PetscTruth)config.get_flag("thermal_bedrock");
-  doOceanKill = (PetscTruth)config.get_flag("ocean_kill");
-  floatingIceKilled = (PetscTruth)config.get_flag("floating_ice_killed");
+  thermalBedrock = config.get_flag("thermal_bedrock");
+  doOceanKill = config.get_flag("ocean_kill");
+  floatingIceKilled = config.get_flag("floating_ice_killed");
 
   grid.vertical_spacing = EQUAL;
   
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;
 
-  useSSAVelocity = (PetscTruth)config.get_flag("use_ssa_velocity");
-  doPlasticTill = (PetscTruth)config.get_flag("do_plastic_till");
-  doPseudoPlasticTill = (PetscTruth)config.get_flag("do_pseudo_plastic_till");
-  doSuperpose = (PetscTruth)config.get_flag("do_superpose");
-  ssaMaxIterations = config.get("max_iterations_ssa");
-  useConstantNuHForSSA = DEFAULT_USE_CONSTANT_NUH_FOR_SSA;
-  ssaRelativeTolerance = DEFAULT_SSA_RELATIVE_CONVERGENCE;
-  ssaEpsilon = config.get("epsilon_ssa");
-  computeSurfGradInwardSSA = DEFAULT_COMPUTE_SURF_GRAD_INWARD_SSA;
-  ssaSystemToASCIIMatlab = PETSC_FALSE;
-  leaveNuHAloneSSA = PETSC_FALSE;
+  useSSAVelocity           = config.get_flag("use_ssa_velocity");
+  doPlasticTill            = config.get_flag("do_plastic_till");
+  doPseudoPlasticTill      = config.get_flag("do_pseudo_plastic_till");
+  doSuperpose              = config.get_flag("do_superpose");
+  ssaMaxIterations         = config.get("max_iterations_ssa");
+  useConstantNuHForSSA     = config.get_flag("use_constant_nuh_for_ssa");
+  ssaRelativeTolerance     = config.get("ssa_relative_convergence");
+  ssaEpsilon               = config.get("epsilon_ssa");
+  computeSurfGradInwardSSA = config.get_flag("compute_surf_grad_inward_ssa");
+  ssaSystemToASCIIMatlab   = PETSC_FALSE;
+  leaveNuHAloneSSA         = false;
+
   strcpy(ssaMatlabFilePrefix, "pism_SSA");
 
-  plastic_till_pw_fraction = DEFAULT_TILL_PW_FRACTION;
-  plastic_till_c_0 = DEFAULT_TILL_C_0;
-  plastic_till_mu = tan((pi/180.0)*config.get("till_phi"));
-  plasticRegularization = DEFAULT_PLASTIC_REGULARIZATION;
-  tauc_default_value = config.get("tauc");
-  pseudo_plastic_q = DEFAULT_PSEUDO_PLASTIC_Q;
-  pseudo_plastic_uthreshold = DEFAULT_PSEUDO_PLASTIC_UTHRESHOLD;
+  plastic_till_pw_fraction  = config.get("till_pw_fraction");
+  plastic_till_c_0          = config.get("till_c_0");
+  plastic_till_mu           = tan((pi/180.0)*config.get("till_phi"));
+  plasticRegularization     = config.get("plastic_regularization") / secpera;
+  tauc_default_value        = config.get("tauc");
+  pseudo_plastic_q          = config.get("pseudo_plastic_q");
+  pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera;
   holdTillYieldStress = PETSC_FALSE;
   useConstantTillPhi = PETSC_FALSE;
   
   shelvesDragToo = PETSC_FALSE;
-  betaShelvesDragToo = DEFAULT_BETA_SHELVES_DRAG_TOO;
+  betaShelvesDragToo = config.get("beta_shelves_drag_too");
   
   Hmelt_max = config.get("max_hmelt");
 
@@ -137,29 +112,29 @@ PetscErrorCode IceModel::setDefaults() {
   setStartYear(config.get("start_year"));
   setEndYear(run_year_default + config.get("start_year"));
   yearsStartRunEndDetermined = PETSC_FALSE;
-  initial_age_years_default = config.get("initial_age_of_ice_years");
+  initial_age_years_default       = config.get("initial_age_of_ice_years");
 
-  doMassConserve = (PetscTruth)config.get_flag("do_mass_conserve");
-  doTemp = (PetscTruth)config.get_flag("do_temp");
-  doSkip = (PetscTruth)config.get_flag("do_skip");
-  skipMax = config.get("skip_max");
+  doMassConserve                  = config.get_flag("do_mass_conserve");
+  doTemp                          = config.get_flag("do_temp");
+  doSkip                          = config.get_flag("do_skip");
+  skipMax                         = config.get("skip_max");
   reportHomolTemps = PETSC_TRUE;
-  globalMinAllowedTemp = config.get("global_min_allowed_temp");
-  maxLowTempCount = config.get("max_low_temp_count");
+  globalMinAllowedTemp            = config.get("global_min_allowed_temp");
+  maxLowTempCount                 = config.get("max_low_temp_count");
   min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
-  includeBMRinContinuity = DEFAULT_INCLUDE_BMR_IN_CONTINUITY;
+  includeBMRinContinuity          = config.get_flag("include_bmr_in_continuity");
 
-  isDrySimulation = (PetscTruth)config.get_flag("is_dry_simulation");
+  isDrySimulation = config.get_flag("is_dry_simulation");
   
   updateHmelt = PETSC_TRUE;
 
   realAgeForGrainSize = PETSC_FALSE;
-  constantGrainSize = config.get("constant_grain_size");
+  constantGrainSize   = config.get("constant_grain_size");
 
-  doBedDef = (PetscTruth)config.get_flag("do_bed_deformation");
-  doBedIso = (PetscTruth)config.get_flag("do_bed_iso");
+  doBedDef            = config.get_flag("do_bed_deformation");
+  doBedIso            = config.get_flag("do_bed_iso");
   bedDefIntervalYears = config.get("bed_def_interval_years");
-  noSpokesLevel = DEFAULT_NOSPOKESLEVEL;
+  noSpokesLevel       = config.get("no_spokes_level");
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;

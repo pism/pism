@@ -276,7 +276,7 @@ viscous till to purely plastic till.
  */
 class PlasticBasalType {
 public:
-  PlasticBasalType(PetscScalar regularizationConstant, PetscTruth pseudoPlastic,
+  PlasticBasalType(PetscScalar regularizationConstant, bool pseudoPlastic,
                    PetscScalar pseudoExponent, PetscScalar pseudoUThreshold);
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,
@@ -286,7 +286,7 @@ public:
   virtual ~PlasticBasalType() {} // class w virtual methods needs virtual destructor?
 
   PetscReal   plastic_regularize, pseudo_q, pseudo_u_threshold;
-  PetscTruth  pseudo_plastic;
+  bool pseudo_plastic;
 };
 
 

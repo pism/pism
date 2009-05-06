@@ -95,7 +95,9 @@ INPUT                  = ../src/ \
                          ../src/udunits/ \
                          ../src/verif/ \
                          ../src/eismint/ \
-                         ../src/ismip/
+                         ../src/ismip/ \
+			 doxybib.bbl \
+			 config_doc.txt
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \

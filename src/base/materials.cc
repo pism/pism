@@ -681,7 +681,7 @@ PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
 
 
 PlasticBasalType::PlasticBasalType(
-             PetscScalar regularizationConstant, PetscTruth pseudoPlastic,
+             PetscScalar regularizationConstant, bool pseudoPlastic,
              PetscScalar pseudoExponent, PetscScalar pseudoUThreshold) {
   plastic_regularize = regularizationConstant;
   pseudo_plastic = pseudoPlastic;

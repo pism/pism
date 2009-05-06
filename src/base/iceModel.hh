@@ -67,7 +67,7 @@ struct SSASNESCtx {
   Vec              ctxBV;
   PetscScalar      schoofReg,
                    constantHardness;
-  PetscTruth       useConstantHardness,
+  bool             useConstantHardness,
                    useConstantNu,
                    useStoredNu,
                    usePlasticBasalType;
@@ -234,16 +234,15 @@ protected:
               ssaMaxIterations;
 
   // flags
-  PetscTruth  doMassConserve, doTemp, doBedDef, doBedIso,
-              thermalBedrock, includeBMRinContinuity, updateHmelt,
-              isDrySimulation, holdTillYieldStress, useConstantTillPhi,
-              useSSAVelocity, doPlasticTill, doPseudoPlasticTill,
-              doSuperpose, useConstantNuHForSSA,
-              computeSurfGradInwardSSA,
-              leaveNuHAloneSSA, shelvesDragToo,
-              yearsStartRunEndDetermined, doAdaptTimeStep, doOceanKill, floatingIceKilled,
+  bool doOceanKill, doPlasticTill, includeBMRinContinuity, doMassConserve, doTemp, doSkip, doBedDef, doBedIso,
+    doSuperpose, doPseudoPlasticTill, useSSAVelocity, floatingIceKilled, isDrySimulation, useConstantNuHForSSA,
+    leaveNuHAloneSSA, computeSurfGradInwardSSA, thermalBedrock;
+  PetscTruth  updateHmelt,
+              holdTillYieldStress, useConstantTillPhi,
+              shelvesDragToo,
+              yearsStartRunEndDetermined, doAdaptTimeStep, 
               realAgeForGrainSize,
-              showViewers, ssaSystemToASCIIMatlab, doSkip, reportHomolTemps,
+              showViewers, ssaSystemToASCIIMatlab, reportHomolTemps,
               allowAboveMelting,
               createVecs_done, createViewers_done, createBasal_done,
               computeSIAVelocities, transformForSurfaceGradient;
@@ -407,10 +406,10 @@ protected:
                             PetscScalar& gvolshelf);
   virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
   virtual PetscErrorCode summaryPrintLine(
-              const PetscTruth printPrototype, const PetscTruth tempAndAge,
-              const PetscScalar year, const PetscScalar dt, 
-              const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-              const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+              PetscTruth printPrototype, bool tempAndAge,
+              PetscScalar year, PetscScalar dt, 
+              PetscScalar volume_kmcube, PetscScalar area_kmsquare,
+              PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
 
   // see iMsia.cc
   virtual PetscErrorCode surfaceGradientSIA();

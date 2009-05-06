@@ -48,10 +48,10 @@ protected:
   PetscErrorCode setBedElev();
   PetscErrorCode setTillPhi();
   virtual PetscErrorCode summaryPrintLine(
-              const PetscTruth printPrototype, const PetscTruth tempAndAge,
-              const PetscScalar year, const PetscScalar dt, 
-              const PetscScalar volume_kmcube, const PetscScalar area_kmsquare,
-              const PetscScalar meltfrac, const PetscScalar H0, const PetscScalar T0);
+               PetscTruth printPrototype,  bool tempAndAge,
+               PetscScalar year,  PetscScalar dt, 
+               PetscScalar volume_kmcube,  PetscScalar area_kmsquare,
+               PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
 private:
   int exper_chosen;
   int sectorNumberP2(const PetscScalar x, const PetscScalar y);

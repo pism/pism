@@ -229,8 +229,17 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
   nc_zb_len = (size_t) zb_len;
 
   if (grid->rank == 0) {
-    stat = nc_inq_varid(ncid, "z", &z_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_varid(ncid, "zb", &zb_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_varid(ncid, "z", &z_id);
+    if (stat != NC_NOERR) {
+      stat = PetscPrintf(grid->com, "PISM ERROR: Can't find the 'z' coordinate variable.\n"); CHKERRQ(stat);
+      PetscEnd();
+    }
+    
+    stat = nc_inq_varid(ncid, "zb", &zb_id);
+    if (stat != NC_NOERR) {
+      stat = PetscPrintf(grid->com, "PISM ERROR: Can't find the 'zb' coordinate variable.\n"); CHKERRQ(stat);
+      PetscEnd();
+    }
 
     stat = nc_get_vara_double(ncid, z_id, &zero, &nc_z_len, z_levels);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
