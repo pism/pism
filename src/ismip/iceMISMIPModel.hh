@@ -55,9 +55,9 @@ by the floatation criterion.
 Damping out C_MISMIP in the 50km on the grounded side of the grounding line (a linear
 decrease linearly from C_MISMIP at xg - 50km to zero at xg) does not make a difference,
 really.  In other words, I thought we needed
-   \tau_b \in W^{1,\infty} 
+\f[   \tau_b \in W^{1,\infty} \f]
 or something; without the damping all we have is
-   \tau_b \in L^\infty.
+\f[   \tau_b \in L^\infty. \f]
 The results in the former case, of smoother C_MISMIP, are no better, I think.
  */
 class IceMISMIPModel : public IceModel {

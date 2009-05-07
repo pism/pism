@@ -80,14 +80,14 @@ where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shal
 of the full 3D conservation of energy.  Note \f$dT/dt\f$ stands for the material
 derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
-strain heating (with SI units of J$/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}$).
+strain heating (with SI units of \f$J/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}\f$).
 
 \latexonly\index{BOMBPROOF!implementation for temperature equation}\endlatexonly
 Both the temperature equation and the age equation involve advection.
 We handle horizontal advection explicitly by first-order upwinding.  We handle
 vertical advection implicitly by centered differencing when possible, and retreat to
 implicit first-order upwinding when necessary.  There is a CFL condition
-for the horizontal explicit upwinding \ref MortonMayers .  We report 
+for the horizontal explicit upwinding [\ref MortonMayers].  We report 
 any CFL violations, but they are designed to not occur.
 
 The vertical conduction term is always handled implicitly (i.e. by backward Euler).
