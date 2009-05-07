@@ -88,7 +88,11 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../src/ \
+INPUT                  = doxybib.txt \
+		         browser_pages.txt \
+			 browser_bombproof.txt \
+			 std_names.html \
+		         ../src/ \
                          ../src/base/ \
                          ../src/coupler/ \
                          ../src/num/ \
@@ -96,7 +100,6 @@ INPUT                  = ../src/ \
                          ../src/verif/ \
                          ../src/eismint/ \
                          ../src/ismip/ \
-			 doxybib.bbl \
 			 config_doc.txt
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
@@ -209,7 +212,7 @@ LATEX_CMD_NAME         = latex
 MAKEINDEX_CMD_NAME     = makeindex
 COMPACT_LATEX          = NO
 PAPER_TYPE             = letter
-EXTRA_PACKAGES         = amsmath
+EXTRA_PACKAGES         = amsmath ../../pismbrowser
 LATEX_HEADER           = 
 PDF_HYPERLINKS         = YES
 USE_PDFLATEX           = YES

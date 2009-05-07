@@ -3,7 +3,7 @@ import re
 from os import popen, system
 
 input = "ice_bib"
-output = "doxybib.bbl"
+output = "doxybib.txt"
 
 # dummy LaTeX document that \cites everything and uses a special BibTeX style file:
 latexdummy = """\\documentclass{article}
@@ -31,6 +31,7 @@ lines = f.readlines()
 f.close()
 lines = "".join(lines)
 
+# NB! The order of substitutions is important.
 subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r"\\href{([^}]*)}{([^}]*)}", r'<a href="\1">\2</a>'), # hyperref href command
         (r"\\url{([^}]*)}",           r'<a href="\1">\1</a>'), # hyperref url command
@@ -39,7 +40,7 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r"\$\\sim\$",                r"~"),                   # LaTeX \sim used to represent ~
         (r"---",                      r"&mdash;"),             # em-dash
         (r"--",                       r"&ndash;"),             # en-dash
-        (r"([^/])~",                  r"\1 "),                 # tildes that are not in URLs
+        (r"([^/])~",                  r"\1&nbsp;"),            # tildes that are not in URLs
         (r'\\"([a-zA-Z])',            r"&\1uml;"),             # umlaut
         (r"\\'([a-zA-Z])",            r"&\1grave;"),           # grave
         (r'\\`([a-zA-Z])',            r"&\1acute;"),           # acute

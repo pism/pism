@@ -1,335 +1,79 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<head>
-  <title>Standard names of NetCDF variables, related to ice sheet modeling, including PISM current and proposed</title>
-  <meta http-equiv="Content-Type"
- content="text/html; charset=iso-8859-1">
-  <meta name="Author" content="Ed Bueler">
-</head>
-<center>
-<h1>Standard names of NetCDF variables, related to ice sheet modeling, including PISM current and proposed</h1>
-</center>
-<br><br>
+/*! \page std_names Standard names of NetCDF variables, related to ice sheet modeling, including PISM current and proposed
 
-<h2><a name="existing">Existing names in CF 1.4 Standard Name 
-Table</a></h2>
+\section existing Existing names in CF 1.4 Standard Name Table
 
-These names are a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.4 standard name table</a>.  The list here is just (i) those with "land_ice" in the name and (ii) those relevant to the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.  It is in alphabetical order.
-<br><br>
+These names are a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.4 standard name table</a>.  The list here is just
+\li those with "land_ice" in the name and
+\li those relevant to the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.  It is in alphabetical order.
 
 Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk/">GLIMMER</a> and <a href="http://oceans11.lanl.gov/trac/CISM/wiki">CISM</a>.  The names below starting with "land_ice" are believed to have all been submitted by Magnus Hagdorn to the CF committee circa 2003 (date?).
-<br><br>
 
 Like the legendary Eskimo, the CF standard name table already has a bazillion names for snow.  No attempt at using those names is made in PISM.
-<br><br>
 
-Readers other than PISM programmers should ignor the final column.  
+Readers other than PISM programmers should ignore the final column.  
 PAC=PISMAtmosphereCoupler and POC=PISMOceanCoupler.  Note PISM also 
 uses "grid_mapping_name" (in only one case; the name is 
 "polar_stereographic"), but that is not technically a standard_name.
 Because PISM uses UDUNITS, PISM will write some of these in 
 "glaciological units", for instance m a-1 instead of m s-1, but this is
 allowed under CF and is handled by UDUNITS.
-<br><br>
 
-<table style="width: 100%;" border="1">
-        <tbody>
-          <tr>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> standard name </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> canonical units </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM0.2 short name in NetCDF </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM0.2 internal IceModelVec name </td>
-          </tr>
-
-<tr>
-  <td style="vertical-align: top;">bedrock_altitude</td>
-  <td style="vertical-align: top;">m</td>
-  <td style="vertical-align: top;">topg</td>
-  <td style="vertical-align: top;">vbed</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_area_fraction</td>
-  <td style="vertical-align: top;">1</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_basal_melt_rate</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">basal_melt_rate</td>
-  <td style="vertical-align: top;">vbasalMeltRate</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_basal_x_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">ub</td>
-  <td style="vertical-align: top;">vub</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_basal_y_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">vb</td>
-  <td style="vertical-align: top;">vvb</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_calving_rate</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_lwe_basal_melt_rate</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_lwe_calving_rate</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_lwe_surface_specific_mass_balance</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_sigma_coordinate</td>
-  <td style="vertical-align: top;">1</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;"></td>
-<tr>
-  <td style="vertical-align: top;">land_ice_surface_specific_mass_balance</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">acab</td>
-  <td style="vertical-align: top;">PAC.vsurfmassflux</td>
-<tr>
-  <td style="vertical-align: top;">land_ice_temperature</td>
-  <td style="vertical-align: top;">K</td>
-  <td style="vertical-align: top;">temp</td>
-  <td style="vertical-align: top;">T3</td>
-<tr>
-  <td style="vertical-align: top;">land_ice_thickness</td>
-  <td style="vertical-align: top;">m</td>
-  <td style="vertical-align: top;">thk</td>
-  <td style="vertical-align: top;">vH</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_vertical_mean_x_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">ubar</td>
-  <td style="vertical-align: top;">vubar</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_vertical_mean_y_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">vbar</td>
-  <td style="vertical-align: top;">vvbar</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_x_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">uvel</td>
-  <td style="vertical-align: top;">u3</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_y_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">vvel</td>
-  <td style="vertical-align: top;">v3</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">latitude</td>
-  <td style="vertical-align: top;">degree_north</td>
-  <td style="vertical-align: top;">lat</td>
-  <td style="vertical-align: top;">vLatitude</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">longitude</td>
-  <td style="vertical-align: top;">degree_east</td>
-  <td style="vertical-align: top;">lon</td>
-  <td style="vertical-align: top;">vLongitude</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">projection_x_coordinate</td>
-  <td style="vertical-align: top;">m</td>
-  <td style="vertical-align: top;">x</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">projection_y_coordinate</td>
-  <td style="vertical-align: top;">m</td>
-  <td style="vertical-align: top;">y</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">surface_altitude</td>
-  <td style="vertical-align: top;">m</td>
-  <td style="vertical-align: top;">usurf</td>
-  <td style="vertical-align: top;">vh</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">tendency_of_bedrock_altitude</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">dbdt</td>
-  <td style="vertical-align: top;">vuplift</td>
-</tr><tr>
-  <td style="vertical-align: top;">tendency_of_land_ice_thickness</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">dHdt</td>
-  <td style="vertical-align: top;">vdHdt</td>
-</tr>
-</tbody>
+<table style="width: 100%;">
+  <tr><td> standard name </td> <td> canonical units </td> <td> PISM0.2 short name in NetCDF </td> <td> PISM0.2 internal IceModelVec name </td></tr>
+  <tr><td>bedrock_altitude</td> <td>m</td> <td>topg</td> <td>vbed</td></tr>
+  <tr><td>land_ice_area_fraction</td><td>1</td><td></td><td></td></tr>
+  <tr><td>land_ice_basal_melt_rate</td><td>m s-1</td><td>basal_melt_rate</td><td>vbasalMeltRate</td></tr>
+  <tr><td>land_ice_basal_x_velocity</td><td>m s-1</td><td>ub</td><td>vub</td></tr>
+  <tr><td>land_ice_basal_y_velocity</td><td>m s-1</td><td>vb</td><td>vvb</td></tr>
+  <tr><td>land_ice_calving_rate</td><td>m s-1</td><td></td><td></td></tr>
+  <tr><td>land_ice_lwe_basal_melt_rate</td><td>m s-1</td><td></td><td></td></tr>
+  <tr><td>land_ice_lwe_calving_rate</td><td>m s-1</td><td></td><td></td></tr>
+  <tr><td>land_ice_lwe_surface_specific_mass_balance</td><td>m s-1</td><td></td><td></td></tr>
+  <tr><td>land_ice_sigma_coordinate</td><td>1</td><td></td><td></td>
+  <tr><td>land_ice_surface_specific_mass_balance</td><td>m s-1</td><td>acab</td><td>PAC.vsurfmassflux</td>
+  <tr><td>land_ice_temperature</td><td>K</td><td>temp</td><td>T3</td>
+  <tr><td>land_ice_thickness</td><td>m</td><td>thk</td><td>vH</td></tr>
+  <tr><td>land_ice_vertical_mean_x_velocity</td><td>m s-1</td><td>ubar</td><td>vubar</td></tr>
+  <tr><td>land_ice_vertical_mean_y_velocity</td><td>m s-1</td><td>vbar</td><td>vvbar</td></tr>
+  <tr><td>land_ice_x_velocity</td><td>m s-1</td><td>uvel</td><td>u3</td></tr>
+  <tr><td>land_ice_y_velocity</td><td>m s-1</td><td>vvel</td><td>v3</td></tr>
+  <tr><td>latitude</td><td>degree_north</td><td>lat</td><td>vLatitude</td></tr>
+  <tr><td>longitude</td><td>degree_east</td><td>lon</td><td>vLongitude</td></tr>
+  <tr><td>projection_x_coordinate</td><td>m</td><td>x</td><td></td></tr>
+  <tr><td>projection_y_coordinate</td><td>m</td><td>y</td><td></td></tr>
+  <tr><td>surface_altitude</td><td>m</td><td>usurf</td><td>vh</td></tr>
+  <tr><td>tendency_of_bedrock_altitude</td><td>m s-1</td><td>dbdt</td><td>vuplift</td></tr><tr><td>tendency_of_land_ice_thickness</td><td>m s-1</td><td>dHdt</td><td>vdHdt</td></tr>
 </table>
 
 
-<h2><a name="proposed">PROPOSED standard names</a></h2>
+\section proposed PROPOSED standard names
 
 These are merely proposed by Bueler, for now.
-<br><br>
 
-<table style="width: 100%;" border="1">
-        <tbody>
-          <tr>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PROPOSED standard name </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> canonical units </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM0.2 short name in NetCDF </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM0.2 internal IceModelVec name </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> comments </td>
-          </tr>  
+<table style="width: 100%;">
+  <tr><td> PROPOSED standard name </td><td> canonical units </td><td> PISM0.2 short name in NetCDF </td><td> PISM0.2 internal IceModelVec name </td><td> comments </td></tr>  
+  <tr><td>ice_shelf_basal_specific_mass_balance</td><td>m s-1</td><td>shelfbmassflux</td><td>POC.vshelfbmassflux</td><td>positive is loss of ice shelf mass (i.e. use outward normal from ice shelf)</td></tr>
+  <tr><td>ice_shelf_basal_temperature</td><td>K</td><td>shelfbtemp</td><td>POC.vshelfbasetemp</td><td>absolute (not pressure-adjusted) temperature</td></tr>
+  <tr><td>land_ice_age</td><td>s</td><td>age</td><td>tau3</td><td>thought about units required!</td></tr>
+  <tr><td>land_ice_basal_frictional_heating</td><td>W m-2</td><td>Rb</td><td>vRb</td><td></td></tr>
+  <tr><td>land_ice_basal_material_yield_stress</td><td>Pa</td><td>tauc</td><td>vtauc</td><td></td></tr>
+  <tr><td>land_ice_basal_material_friction_angle</td><td>degree</td><td>tillphi</td><td>vtillphi</td><td>majority of standard names with "angle" use canonical units "degree"</td></tr>
+  <tr><td>land_ice_surface_temperature_below_firn</td><td>K</td><td>artm</td><td>PAC.vsurftemp</td><td></td></tr>
+  <tr><td>land_ice_upward_velocity</td><td>m s-1</td><td>wvel</td><td>w3</td><td>compare CF 1.4 names "upward_air_velocity" and "upward_sea_water_velocity"</td></tr>
+  <tr><td>lithosphere_temperature</td><td>K</td><td>litho_temp</td><td>Tb3</td><td>here top of lithosphere is at "bedrock_altitude"; is that standard?</td></tr>
+  <tr><td>lithosphere_upward_heat_flux</td><td>W m-2</td><td>bheatflx</td><td>vGhf</td><td>applied at depth in lithosphere, in 
+    most ice sheet models </td></tr>
+  </table>
 
-
-<tr>
-  <td style="vertical-align: top;">ice_shelf_basal_specific_mass_balance</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">shelfbmassflux</td>
-  <td style="vertical-align: top;">POC.vshelfbmassflux</td>
-  <td style="vertical-align: top;">positive is loss of ice shelf mass (i.e. use outward normal from ice shelf)</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">ice_shelf_basal_temperature</td>
-  <td style="vertical-align: top;">K</td>
-  <td style="vertical-align: top;">shelfbtemp</td>
-  <td style="vertical-align: top;">POC.vshelfbasetemp</td>
-  <td style="vertical-align: top;">absolute (not pressure-adjusted) temperature</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_age</td>
-  <td style="vertical-align: top;">s</td>
-  <td style="vertical-align: top;">age</td>
-  <td style="vertical-align: top;">tau3</td>
-  <td style="vertical-align: top;">thought about units required!</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_basal_frictional_heating</td>
-  <td style="vertical-align: top;">W m-2</td>
-  <td style="vertical-align: top;">Rb</td>
-  <td style="vertical-align: top;">vRb</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_basal_material_yield_stress</td>
-  <td style="vertical-align: top;">Pa</td>
-  <td style="vertical-align: top;">tauc</td>
-  <td style="vertical-align: top;">vtauc</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_basal_material_friction_angle</td>
-  <td style="vertical-align: top;">degree</td>
-  <td style="vertical-align: top;">tillphi</td>
-  <td style="vertical-align: top;">vtillphi</td>
-  <td style="vertical-align: top;">majority of standard names with "angle" use canonical units "degree"</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_surface_temperature_below_firn</td>
-  <td style="vertical-align: top;">K</td>
-  <td style="vertical-align: top;">artm</td>
-  <td style="vertical-align: top;">PAC.vsurftemp</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">land_ice_upward_velocity</td>
-  <td style="vertical-align: top;">m s-1</td>
-  <td style="vertical-align: top;">wvel</td>
-  <td style="vertical-align: top;">w3</td>
-  <td style="vertical-align: top;">compare CF 1.4 names "upward_air_velocity" and "upward_sea_water_velocity"</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">lithosphere_temperature</td>
-  <td style="vertical-align: top;">K</td>
-  <td style="vertical-align: top;">litho_temp</td>
-  <td style="vertical-align: top;">Tb3</td>
-  <td style="vertical-align: top;">here top of lithosphere is at "bedrock_altitude"; is that standard?</td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">
-lithosphere_upward_heat_flux</td>
-  <td style="vertical-align: top;">W m-2</td>
-  <td style="vertical-align: top;">bheatflx</td>
-  <td style="vertical-align: top;">vGhf</td>
-  <td style="vertical-align: top;">applied at depth in lithosphere, in 
-most ice sheet models </td>
-</tr>
-</tbody>
-</table>
-
-
-<h2><a name="orphan">Orphans</a></h2>
+\section orphans Orphans
 
 Used in PISM but no proposed standard name for now.  This is an incomplete list.
-<br><br>
 
 <table style="width: 100%;" border="1">
-        <tbody>
-          <tr>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM long name </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> canonical units </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM0.2 short name in NetCDF </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> PISM0.2 internal IceModelVec name </td>
-            <td style="font-weight: bold; text-align: center;"
- valign="top" width="15%"> comments </td>
-          </tr>  
-<tr>
-  <td style="vertical-align: top;">rate of strain heating</td>
-  <td style="vertical-align: top;">W m-3</td>
-  <td style="vertical-align: top;">Sigma</td>
-  <td style="vertical-align: top;">Sigma3</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">grounded_dragging_floating integer mask</td>
-  <td style="vertical-align: top;"></td>
-  <td style="vertical-align: top;">mask</td>
-  <td style="vertical-align: top;">vMask</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-<tr>
-  <td style="vertical-align: top;">effective thickness of subglacial melt water</td>
-  <td style="vertical-align: top;">m</td>
-  <td style="vertical-align: top;">bwat</td>
-  <td style="vertical-align: top;">vHmelt</td>
-  <td style="vertical-align: top;"></td>
-</tr>
-</tbody>
+  <tr><td> PISM long name </td><td> canonical units </td><td> PISM0.2 short name in NetCDF </td><td> PISM0.2 internal IceModelVec name </td><td> comments</td></tr>  
+  <tr><td>rate of strain heating</td><td>W m-3</td><td>Sigma</td><td>Sigma3</td><td></td></tr>
+  <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask</td><td></td></tr>
+  <tr><td>effective thickness of subglacial melt water</td><td>m</td><td>bwat</td><td>vHmelt</td><td></td></tr>
 </table>
-</body>
-</html>
 
-<br><br>
-
+*/

@@ -1,0 +1,377 @@
+/*! \page bombproof BOMBPROOF, a numerical scheme for temperature and age
+
+One of the essential goals for any thermomechanically coupled numerical ice sheet model 
+is a completely bombproof numerical 
+scheme for the advection-conduction-reaction problem for the temperature within the ice.  
+"Bombproof" means, roughly, as stable as possible in as many realistic modeling
+contexts as possible.  PISM illustrates this idea by including a scheme which is 
+observed to be highly robust in practice.  In this section we prove stability 
+properties of the scheme. 
+
+Accuracy is also a goal, but it is necessarily a second goal.  It is partly achieved 
+here because our scheme has truncation error \f$O(\Delta z^2)\f$
+in many circumstances, though it reverts to lower order when it "detects trouble"
+in the form of large vertical velocities.  More completely stated, the scheme has 
+order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical
+ice flow velocity is small enough.
+
+The finite difference scheme in this section supercedes the PISM scheme for the 
+temperature equation described in the appendices of [\ref BBL].  That scheme 
+is robust but it has a CFL condition on vertical advection, an avoidable time step 
+restriction as a practical matter (because the scheme described here has been 
+implemented successfully!).  Note the CFL condition on horizontal
+remains in the new scheme, however.  The scheme here is conditionally stable 
+as an adaptive time-stepping technique for the 3D temperature equation.
+The length of the time step is limited only by the maximum magnitude of the 
+horizontal velocities within the ice.
+
+The region in which the temperature equation needs to be solved, namely within 
+the ice sheet and attached ice shelves, is changing in time.  This is an 
+essential complicating factor in ice sheet modeling.  According to user options, 
+there may also be a model for the temperature within a layer of bedrock 
+below the ice sheet.  The implementation must include this possibility, 
+although it is not addressed here.
+
+Equally essential is the fact that the velocity field has a
+complicated provenance.  It comes from a variety of stress
+balance equations.  These stress balances, especially where there is a transition 
+in stress balance type, like at grounding lines, are incompletely understood.
+The stress balance could be the SIA, the SSA, a mix of these in different parts of the
+ice sheet/shelf system, or a less shallow model.
+
+In particular, we will not make, and we need to not make, assumptions
+about the regularity of the velocity field in space or time.  Nor do we want 
+the numerical scheme for advection to need any information about the velocity
+except its value at the beginning of the time step.  Thus we would not 
+accept a scheme which required the Jacobian
+of the velocity field with respect to changes in temperature, for example.
+At very least we cannot implement a fully implicit scheme without some 
+blind iteration (e.g. with no guarantee of convergence of the iteration), while 
+the scheme we propose involves no iteration.
+
+As described elsewhere in this manual, the temperature equation is
+
+\anchor basicConserve
+\f[
+\rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma(T),\tag{basicConserve}
+\f]
+where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
+of the full three-dimensional conservation of energy, so it does not include horizontal
+conduction [\ref Fowler].  The units of this equation are energy per time per volume, 
+thus \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
+
+We will assume, without exception, that \f$\rho,c_p(T),k\f$ are positive.
+Note \f$dT/dt\f$ stands for the material derivative, so advection 
+is present.  The function \f$\Sigma(T)\f$ is the strain-heating term, 
+the details of which will not affect the derivation here.  Note that \f$\Sigma(T)\f$ is naturally
+described as a (self-)reaction term [\ref Fowler].
+
+We will be focusing on the dimension in which the temperature is changing fastest, 
+namely the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicConserve)
+to emphasize the vertical terms we have
+
+\anchor vertProblem
+\f{align*}
+\rho c_p(T)\left(\frac{\partial T}{\partial t} + w \frac{\partial T}{\partial z}\right) 
+     &= k \frac{\partial^2 T}{\partial z^2} + \Phi \tag{vertProblem}
+ \f}
+where
+\f[
+\Phi = \Sigma(T) - \rho c_p(T) \left(u \frac{\partial T}{\partial x}
+                         + v \frac{\partial T}{\partial y}\right)
+\f]
+The boundary conditions to problem (\ref vertProblem) are a surface temperature
+condition at the top of the ice and a geothermal flux condition at the bottom of the ice:
+
+\anchor vPbcs
+\f[
+T(t,z=H) = T_s(t,x,y), \qquad -k \frac{\partial T}{\partial z}\Big|_{z=0} = G(t,x,y).\tag{vPbcs}
+\f]
+The case where there is a thermally-modeled layer of bedrock below the ice is not
+considered here, though that case is implemented in IceModel::temperatureStep().
+
+For the discussion of the numerical scheme below, let \f$T_{ijk}^n\f$ be our approximation to 
+the exact temperature \f$T\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f$ at 
+time \f$t_n\f$.  When \f$i,j\f$ are uninteresting we will suppress them and write \f$T_k^n\f$.  
+We will use similar notation for numerical approximations to the other quantities, like
+velocity components \f$u,v,w\f$ and \f$\Phi\f$.
+
+We put the horizontal advection terms in the source term \f$\Phi\f$ because
+(semi-)implicit treatment of horizontal advection would require a 
+coupled system distributed across processors.  That kind of numerical difficulty
+can be avoided, even given the other constraints on accuracy and implementation.
+The scheme we use for horizontal advection is explicit first-order upwinding.  
+There is a CFL condition for the scheme to be stable, 
+based on the magnitude of the horizontal velocity components.
+
+Let
+\f[\Up{f_{\bullet}}{\alpha_i} = \begin{cases} f_i-f_{i-1}, & \alpha_i\ge 0, \\
+                                                f_{i+1}-f_i, & \alpha_i<0.\end{cases}\f]
+
+@note This is a slightly different definition of 
+\f$\Up{f_{\bullet}}{\alpha_i}\f$
+from that used in the appendices of [\ref BBL], though with exactly the same intent.
+
+The horizontal advection terms, thus \f$\Phi\f$, are approximated
+	\f[\Phi_{ijk}^n = \Sigma(T_{ijk}^n) - \rho c_p(T_{ijk}^n) 
+	                   \left( u_{ijk}^n\,\frac{\Up{T_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
+	                          + v_{ijk}^n\,\frac{\Up{T_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).\f]
+This is a completely explicit approximation of \f$\Phi\f$ at time \f$t_n\f$, the beginning 
+of the time step.  The CFL stability condition for this part of the scheme is
+\anchor CFL
+\f[
+    \Delta t \,\left( \left|\frac{u_{ijk}^n}{\Delta x}\right|
+                           + \left|\frac{v_{ijk}^n}{\Delta y}\right| \right) \le 1.\tag{CFL}
+\f]
+The routine IceModel::computeMax3DVelocities() computes the 
+maximum of velocity magnitudes.  This produces a time step restriction based on 
+the above CFL condition.  Then IceModel::determineTimeStep() 
+implements adaptive time-stepping based on this and other stability criteria.
+
+We will assume an equally-spaced grid \f$z_0,\dots,z_{M_z}\f$ with \f$\Delta z = z_{k+1} - z_k\f$ in the following analysis.
+
+In fact PISM has a remapping scheme (options -quadZ and 
+-chebZ), where the temperatures/ages in a column of ice are stored
+on an unequally-spaced vertical grid, but are mapped to a fine, 
+equally-spaced grid for the temperature/age computation.  See procedures 
+IceModel::temperatureStep() and
+IceModel::ageStep(), and see the 
+IceModelVec3 class and 
+IceModel::getVertLevsForTempAge().
+
+The \f$z\f$ derivative terms in (\ref vertProblem)
+will be approximated implicitly.  Let \f$\lambda\f$ be in the interval 
+\f$0 \le \lambda \le 1\f$.  The scheme BOMBPROOF is
+\anchor bombone
+\f{align*}
+\rho c_p(T_k^n) &\left( 
+       \frac{T_k^{n+1} - T_k^n}{\Delta t}
+       + \lambda w_k^n \frac{T_{k+1}^{n+1} - T_{k-1}^{n+1}}{2 \Delta z}
+       + (1-\lambda) w_k^{n} \frac{\Up{T_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
+     &= k\, \frac{T_{k+1}^{n+1} - 2 T_{k}^{n+1} + T_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n \tag{bombone}
+\f}
+with the value for \f$\lambda\f$ determined by (\ref lambdachoice) below.
+We have suppressed indices \f$i,j\f$.
+
+Equation (\ref bombone) has two approximations of vertical advection which are 
+combined using nonnegative coefficients which sum to one.  Both approximations
+are (semi-)implicit, but the centered formula has higher accuracy,
+	\f[w_k^n \frac{T_{k+1}^{n+1} - T_{k-1}^{n+1}}{2 \Delta z}
+	   = w \frac{\partial T}{\partial z} + O(\Delta t,\Delta z^2),\f]
+while the first order upwind formula has lower accuracy,
+	\f[w_k^{n} \frac{\Up{T_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z}
+	   = w \frac{\partial T}{\partial z} + O(\Delta t,\Delta z).\f]
+We prefer for accuracy reasons to use the centered formula, because it has 
+higher order truncation error.  We will only include implicit upwinding when
+it is needed for its added stability benefits.
+
+Let
+	\f[C_k^n = \rho c_p(T_k^n), \qquad\quad \nu = \frac{\Delta t}{\Delta z},
+	 \qquad \text{and} \qquad R_k^n = \frac{k \Delta t}{C_k^n \Delta z^2}.\f]
+We now rewrite (\ref bombone) for computational purposes as one of a system of equations 
+for the unknowns \f$\{T_k^{n+1}\}\f$.  In this system the coefficients are
+scaled so that the diagonal entries of the matrix have limit one as
+\f$\Delta t\to 0\f$.  That is, we multiply equation (\ref bombone) by
+\f$\Delta t\f$, divide it by \f$C_k^n\f$, and rearrange:
+\anchor bombtwo
+\f{align*}
+&\left(-R_k^n - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) T_{k-1}^{n+1}  
+   + \left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) T_k^{n+1} \tag{bombtwo} \\
+&\qquad\qquad + \left(-R_k^n + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) T_{k+1}^{n+1}  = T_k^n + (C_k^n)^{-1}\Phi_k^n 
+\f}
+Here \f$\uppair{a}{b} = a\f$ when \f$w_k^n\ge 0\f$ and \f$\uppair{a}{b} = b\f$ when \f$w_k^n < 0\f$.
+
+Equations (\ref bombone) and (\ref bombtwo) combine two unconditionally 
+stable ways of approximating advection, namely implicit centered difference 
+(\f$\lambda = 1\f$) and implicit first-order upwinding (\f$\lambda=0\f$).  The combination 
+is "convex" because the coefficients are nonnegative and sum to one.
+
+The pure implicit centered difference scheme, namely
+\anchor centered
+\f{align*}
+&\left(-R_k^n - \nu w_k^n/2\right) T_{k-1}^{n+1} + \left(1 + 2 R_k^n\right) T_k^{n+1} \tag{centered} \\
+&\qquad\qquad + \left(-R_k^n + \nu w_k^n/2\right) T_{k+1}^{n+1} 
+              = T_k^n + (C_k^n)^{-1}\Phi_k^n 
+\f}
+is <i>less stable</i> than implicit first-order upwinding.  It is less stable 
+in the same sense that Crank-Nicolson is a less stable scheme than 
+backwards Euler for the simplest heat equation \f$u_t = u_{xx}\f$ [\ref MortonMayers].
+In fact, although oscillatory modes cannot grow exponentially under equation (\ref centered),
+those modes <i>can</i> appear when none are present already, even in the homogeneous case
+\f$\Phi_k^n=0\f$.  One way of stating the greater stability of first-order upwinding is to say it
+satisfies a "maximum principle."
+
+An example of a maximum principle for this kind of finite difference 
+scheme is that if \f$U_{k-1}^n,U_k^n,U_{k+1}^n\f$ are adjacent gridded values at time step
+\f$t_n\f$, and if the next value satisfies the scheme
+	\f[U_k^{n+1} = C_{-1} U_{k-1}^n + C_0 U_k^n + C_{+1} U_{k+1}^n\f]
+for <i>nonnegative</i> coefficients \f$C_i\f$ summing to one (\f$C_{-1} + C_0 + C_{+1} = 1\f$), 
+then it follows by the real triangle inequality that
+	\f[\min\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\} 
+	       \le |U_k^{n+1}| \le \max\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\}.\f]
+Thus a "wiggle" cannot appear.  The proof below shows the corresponding "wiggle-free"
+property for scheme (\ref bombtwo).
+
+We want to be precise about the phrase "unconditionally stable" for BOMBPROOF.
+To do so we consider somewhat simplified cases which are amenable to analysis, and
+we prove two particular stability properties, the precise advantages of BOMBPROOF.
+
+\section stability Proof of stability properties
+Assume (for the precise but limited assertion of this theorem) 
+that the surface temperature \f$T_s\f$ and the geothermal flux \f$G\f$ are constant 
+in time and space.  Assume also that the entire source function \f$\Phi\f$ is identically zero 
+(but see comments below).  Fix an equally-spaced vertical grid \f$z_0=0 < z_1 < \dots < z_N=H\f$,
+so that the upper grid point coincides with the surface of the ice.  Suppose \f$c_p(T)\f$ is
+bounded below by a positive constant so that equation (\ref bombtwo)
+is a valid rewriting of equation (\ref bombone).
+
+If
+\anchor lambdachoice
+\f[
+\lambda = \lambda^n = \min\left\{1, \quad 
+	               \min_{k=0,\dots,N}\left\{\frac{2 k}{|w_k^n| C_k^n \Delta z}\right\}
+	               \quad \right\}\tag{lambdachoice}
+\f]
+then scheme (\ref bombone, \ref bombtwo) is unconditionally stable 
+in the following two senses:
+
+<ol>
+
+<li>A maximum principle applies without further assumptions.</li>
+ 
+<li>Suppose we freeze the coefficients of the problem to have constant values.
+(Concretely, we assume that the specific heat is temperature independent, so
+\f$C_k^n = C_0\f$ and \f$R_k^n=R_0\f$ are positive constants, that 
+\f$\lambda^n=\lambda_0\f$ is chosen independent of time step \f$n\f$, and that \f$\Delta t\f$ is 
+the same for each time step.  We assume constant vertical velocity \f$w_k^n=w_0\f$.
+We also consider a spatially periodic or unbounded version of our problem, 
+with no boundary conditions.)
+Then a von Neumann  analysis of the constant coefficient problem yields 
+a growth factor less than one for all modes on the grid.
+</li>
+</ol>
+
+These statements also apply in case \f$k=0\f$, in which case (\ref lambdachoice) implies
+\f$\lambda=0\f$, and the method reduces to implicit first-order upwinding.
+
+\par Remark
+The phrases <i>maximum principle</i> and <i>von Neumann analysis</i>
+will be precisely illustrated in the following proof.  Both approaches are in 
+[\ref MortonMayers].  There is additional information on the 
+von Neumann analysis of implicit methods for advection in [\ref Strikwerda].
+
+\subsection proof Proof
+
+\par Case I
+In the case considered for the maximum principle, with \f$\Phi_k^n=0\f$, 
+we can rewrite (\ref bombtwo) as
+\anchor formformax
+\f{align*}
+&\left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) T_k^{n+1} \\
+&\qquad = T_k^n + \left(R_k^n + \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) T_{k-1}^{n+1}
+                + \left(R_k^n - \nu w_k^n \uppair{\lambda/2}{1-\lambda/2}\right) T_{k+1}^{n+1}.
+                \tag{formformax}
+\f}
+
+We claim that with choice (\ref lambdachoice) for \f$0 \le \lambda \le 1\f$, all 
+coefficients in (\ref formformax) are nonnegative.  At one extreme, in 
+the upwinding case (\f$\lambda=0\f$), all the coefficients are nonnegative.  Otherwise, note that
+\f$\nu w_k^n (1-\lambda) \uppair{+1}{-1}\f$ is nonnegative for any valid value 
+of \f$\lambda\f$ and for any value of \f$w_k^n\f$, noting the meaning of the \f$\uppair{+1}{-1}\f$
+symbol.  Thus the coefficient on the left is always nonnegative.  The coefficient of 
+\f$T_{k-1}^{n+1}\f$ is clearly nonnegative for any valid value of \f$\lambda\f$ if \f$w_k^n \ge 0\f$.
+The coefficient of \f$T_{k+1}^{n+1}\f$ is clearly nonnegative for any valid value of \f$\lambda\f$ if 
+\f$w_k^n \le 0\f$.
+
+Therefore the only concerns are for the coefficient of \f$T_{k-1}^{n+1}\f$ when \f$w_k^n\le 0\f$ and the 
+coefficient of \f$T_{k+1}^{n+1}\f$ when \f$w_k^n\ge 0\f$.  But if \f$\lambda\f$ is smaller than 
+\f$2k/(|w_k^n|C_k^n \Delta z)\f$ then 
+\f{align*}
+R_k^n - \nu |w_k^n| (\lambda/2) &= \frac{k \Delta t}{C_k^n \Delta z^2}
+	                                       - \frac{\Delta t |w_k^n|}{\Delta z} \frac{\lambda}{2}
+	        &\ge \frac{k \Delta t}{C_k^n \Delta z^2}
+	            - \frac{\Delta t |w_k^n|}{\Delta z} \frac{k}{|w_k^n|C_k^n \Delta z} = 0.
+\f}
+
+Thus all the coefficients in (\ref formformax) are positive, and a maximum principle applies.  
+In particular, if we define the pointwise numerical error 
+[\ref MortonMayers] \f$e_k^n = T_k^n - T(t_n,x_i,y_j,z_k)\f$, where \f$T(\dots)\f$ is the 
+exact solution, then (\ref formformax) implies an equality of the form
+	\f[A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \Delta t\, \tau_k^n\f]
+where \f$\tau_k^n\f$ is the truncation error of the scheme and \f$A,B_\pm\f$ are nonnegative 
+coefficients.  Note that
+	\f[B_- + B_+ = 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}.\f]
+
+Letting \f$E^n = \max_k |e_k^n|\f$ we have, because of the positivity of coefficients,
+\anchor prebound
+\f{align*}
+&\left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right)|e_k^{n+1}|  \\
+& \qquad\qquad \le E^n + \left(2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right)E^{n+1}
+     + \Delta t\,\bar\tau^n \tag{prebound}
+\f}
+for all \f$k\f$, where \f$\bar\tau^n = \max_k |\tau_k^n|\f$.  Now let \f$k\f$ be the index for 
+which \f$|e_k^{n+1}| =E^{n+1}\f$.  For that \f$k\f$ we can replace \f$|e_k^{n+1}|\f$ in 
+equation (\ref prebound) with \f$E^{n+1}\f$.  Subtracting the same quantity from 
+each side of the resulting inequality gives
+\f[
+E^{n+1} \le E^n + \Delta t\,\bar\tau^n,
+\f]
+Thus have a maximum principle for BOMBPROOF, and have used it to prove convergence 
+in the standard way [\ref MortonMayers].
+
+\par Case II
+As a von Neumann analysis is much more restrictive 
+than the analysis above, we will be brief here.  
+Let's assume the velocity is downward, \f$w_0<0\f$; the other case 
+is very similar.  Equation (\ref bombtwo) becomes 
+\anchor prevonN
+\f{align*}
+&\left(-R_0 - \nu w_0 (\lambda/2)\right) T_{k-1}^{n+1}  
+   + \left(1 + 2 R_0 - \nu w_0 (1-\lambda)\right) T_k^{n+1} \\
+&\qquad\qquad + \left(-R_0 + \nu w_0 (1-\lambda/2) \right) T_{k+1}^{n+1}  = T_k^n.\tag{prevonN}
+\f}
+
+The heart of the von Neumann analysis is the substitution of a growing or decaying
+(with \f$n\f$) oscillatory mode on the grid of spatial wave number \f$\mu\f$:
+	\f[T_k^n = \sigma^n e^{i\mu\,(k\Delta z)}.\f]
+Note \f$k\Delta z = z_k\f$ is a grid point.  Such a mode is a solution to (\ref prevonN) 
+if and only if
+\f{align*}
+\sigma\Big[  &(-R_0-\nu w_0(\lambda/2)) e^{-i\mu\Delta z}
+	              + (1+2R_0 - \nu w_0 (1-\lambda)) \\
+	           &\quad   + (-R_0  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
+	                    + \nu w_0 (1-\lambda) e^{+i\mu\Delta z} \Big] = 1.
+\f}
+This equation reduces by standard manipulations to
+	\f[\sigma = \frac{1}{1 + \left(4 R_0 - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
+	                      + i\,\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)}.\f]
+Note \f$4 R_0 - 2 \nu w_0 (1-\lambda) \ge 0\f$ without restrictions on 
+numerical parameters \f$\Delta t\f$, \f$\Delta z\f$, because \f$w_0<0\f$ in the 
+case under consideration.  Therefore
+	\f[|\sigma|^2 = \frac{1}{\left[1 + \left(4 R_0 - 2 \nu w_0 (1-\lambda)\right)
+	                              \cos^2(\mu \Delta z/2)\right]^2
+	                      + \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2} < 1,\f]
+and it follows that all modes decay exponentially.
+
+Note that \f$\lambda\f$ is carefully chosen in (\ref lambdachoice) so that the 
+maximum principle <i>(I)</i> applies.  On the other hand, both the 
+implicit first-order upwind and
+the implicit centered difference formulas have unconditional stability in the von Neumann
+sense.  The proof of case <i>(II)</i> above is thus a formality, just showing that a
+convex combination of unconditionally stable (von Neumann sense) schemes is still
+unconditionally stable in the same sense.
+
+Recall we assumed in Theorem 1 that the entire "source" \f$\Phi_k^n\f$ was identically zero.
+Of course this is not realistic.  What we understand is provable, however, is that if a
+numerical scheme for a linear advection/conduction equation
+	\f[u_t + A u_x = B u_{xx}\f]
+is stable in the general sense of numerical schemes for partial differential equations
+(e.g. as defined in subsection 5.5 of [\ref MortonMayers]) then the same scheme is stable 
+in the same general sense when applied to the equation with (linear) lower order terms:
+	\f[u_t + A u_x = B u_{xx} + C u + D.\f]
+A precise statement of this general fact is hard to find in the literature, 
+to put it mildly, but theorem 2.2.3 of [\ref Strikwerda] is one interesting case
+(\f$B=0\f$ and \f$D=0\f$).
+
+*/ 
+
