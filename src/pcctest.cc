@@ -25,6 +25,7 @@ static char help[] =
 #include "base/LocalInterpCtx.hh"
 #include "base/nc_util.hh"
 #include "coupler/pccoupler.hh"
+#include "base/NCVariable.hh"
 
 
 static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
@@ -136,7 +137,7 @@ static PetscErrorCode writePCCStateAtTimes(
                  int argc, char *argv[],
                  PetscReal ys, PetscReal ye, PetscReal dt_years,
                  void* iceInfoNeeded,
-		 PolarStereoParams &psparams) {
+		 NCConfigVariable &psparams) {
 
   PetscErrorCode ierr;
   NCTool nc(grid);
@@ -181,8 +182,8 @@ static PetscErrorCode writePCCStateAtTimes(
   // append == false, check_dims == true
   ierr = nc.write_history(wwstr); CHKERRQ(ierr);
   ierr = nc.write_global_attrs(false, "CF-1.4"); CHKERRQ(ierr);
-  ierr = nc.write_polar_stereographic(psparams); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+  ierr = psparams.write(filename); CHKERRQ(ierr);
 
   PetscInt NN;  // get number of times at which PCC state is written
   if (dt_years < 0.0001) {
@@ -248,7 +249,7 @@ int main(int argc, char *argv[]) {
   {
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
     IceGrid grid(com, rank, size);
-    PolarStereoParams psparams = {0, 90, -71};
+    NCConfigVariable psparams;
     
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = PetscPrintf(com, 
@@ -263,6 +264,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, 
              "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
+
+    psparams.init("polar_stereographic", grid);
 
     // Process -ys, -ye, -dt. This should happen *before*
     // PCC->initFromOptions() is called.
@@ -317,8 +320,13 @@ int main(int argc, char *argv[]) {
     // Get the polar stereographic projection parameters.
     NCTool nc(&grid);
     ierr = nc.open_for_reading(inname); CHKERRQ(ierr);
-    ierr = nc.read_polar_stereographic(psparams); CHKERRQ(ierr);
+    bool ps_exists;
+    ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
+    if (ps_exists) {
+      ierr = psparams.read(inname); CHKERRQ(ierr);
+      ierr = psparams.print(); CHKERRQ(ierr);
+    }
 
     IceInfoNeededByAtmosphereCoupler info_atmos;
     IceInfoNeededByOceanCoupler      info_ocean;

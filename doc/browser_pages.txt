@@ -33,7 +33,7 @@ There is also a <i>repository</i> browsing tool at the PISM download site
 (http://svn.gna.org/viewcvs/pism/) which shows changes between source code revisions.
 
 The <a href="pages.html">Related Pages tab</a> at the top gives some overviews of some
-aspects of PISM.  It also provides tables of CF (NetCDF) standard names used by PISM, 
+aspects of PISM.  It also provides \ref std_names "tables" of <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF (NetCDF) standard names</a> used by PISM, 
 and configuration parameters for PISM.
 
 For a complete list of classes, click on the <a href="annotated.html">Classes tab</a> 
@@ -50,8 +50,10 @@ The website  http://www.pism-docs.org/  is the root for all PISM information.
 
 You can get help, send comments, or ask for new features by email to help@pism-docs.org.
 
+
 <i>
 Copyright (C) 2008-2009 Ed Bueler and Constantine Khroulev.  
+
 This document is part of PISM.  PISM is free software; you can
 redistribute it and/or modify it under the terms of the GNU General Public License as published
 by the Free Software Foundation; either version 2 of the License, or (at your option) any later

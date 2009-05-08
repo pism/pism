@@ -73,8 +73,14 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // more info out of the the -boot_from file
   bootstrapLIC = new LocalInterpCtx(g, NULL, NULL, grid);
 
-  ierr = nc.read_polar_stereographic(psParams, true); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
+  bool ps_exists;
+  ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
+  if (ps_exists) {
+    ierr = polar_stereographic.read(filename); CHKERRQ(ierr);
+    ierr = polar_stereographic.print(); CHKERRQ(ierr);
+  }
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately

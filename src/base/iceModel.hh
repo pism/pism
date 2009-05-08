@@ -159,7 +159,7 @@ protected:
   int initial_Mz; //!< the number of vertical grid levels at the start of the
 		  //! run; used by the grid extension code
 
-  PolarStereoParams     psParams;
+  NCConfigVariable      polar_stereographic;
   NCConfigVariable      config;
   
   LocalInterpCtx        *bootstrapLIC;

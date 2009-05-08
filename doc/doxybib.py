@@ -5,15 +5,12 @@ from os import popen, system
 input = "ice_bib"
 output = "doxybib.txt"
 
-### I was thinking this might be useful at the top of the References html page:
-
-# \par Notes
-# - This large list collects all references which the PISM authors have found
-# convenient.  There is no claim that all of these references get direct use,
-# or even mention, in the PISM project files. 
-
-### But it would seem that such text would need to go in the .bst file?
-
+notes = """
+\par Notes
+This large list collects all references which the PISM authors have found
+convenient.  There is no claim that all of these references get direct use,
+or even mention, in the PISM project files.<br><br><hr>
+"""
 
 # dummy LaTeX document that \cites everything and uses a special BibTeX style file:
 latexdummy = """\\documentclass{article}
@@ -39,7 +36,8 @@ system("bibtex texput")
 f = open(bbl)
 lines = f.readlines()
 f.close()
-lines = "".join(lines)
+header = lines[0]
+body = "".join(lines[1:])
 
 # NB! The order of substitutions is important.
 subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
@@ -59,8 +57,10 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
 
 for (regex, substitution) in subs:
     r = re.compile(regex)
-    lines = r.sub(substitution, lines)
+    body = r.sub(substitution, body)
 
 f = open(output, 'w')
-f.write(lines)
+f.write(header)
+f.write(notes)
+f.write(body)
 f.close()

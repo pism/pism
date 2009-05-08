@@ -78,6 +78,17 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
   return 0;
 }
 
+PetscErrorCode NCSpatialVariable::reset() {
+  NCVariable::reset();
+
+  strings["coordinates"] = "lat lon";
+  return 0;
+}
+
+NCSpatialVariable::NCSpatialVariable() {
+  reset();
+}
+
 //! Read a variable from a file into a \b global Vec v.
 /*! This also converts the data from input units to internal units if needed.
  */
@@ -609,8 +620,8 @@ PetscErrorCode NCVariable::reset() {
   short_name = "unnamed_variable";
   // long_name is unset
   // standard_name is unset
-  // pism_intent is unset;
-  strings["coordinates"] = "lat lon";
+  // pism_intent is unset
+  // coordinates is unset
 
   doubles.clear();
   // valid_min and valid_max are unset
@@ -677,6 +688,9 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
   bool variable_exists;
   int varid, nattrs;
   NCTool nc(grid);
+
+  if (grid == NULL)
+    SETERRQ(1, "NCVariable::read: grid is NULL.");
 
   strings.clear();
   doubles.clear();

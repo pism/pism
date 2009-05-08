@@ -65,9 +65,9 @@ PetscErrorCode IceModel::setDefaults() {
   ierr = setExecName("pism"); CHKERRQ(ierr);  // drivers typically override this
 
   enhancementFactor = config.get("enhancement_factor");
-  muSliding = config.get("mu_sliding");
-  thermalBedrock = config.get_flag("thermal_bedrock");
-  doOceanKill = config.get_flag("ocean_kill");
+  muSliding         = config.get("mu_sliding");
+  thermalBedrock    = config.get_flag("thermal_bedrock");
+  doOceanKill       = config.get_flag("ocean_kill");
   floatingIceKilled = config.get_flag("floating_ice_killed");
 
   grid.vertical_spacing = EQUAL;
@@ -96,13 +96,13 @@ PetscErrorCode IceModel::setDefaults() {
   tauc_default_value        = config.get("tauc");
   pseudo_plastic_q          = config.get("pseudo_plastic_q");
   pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera;
-  holdTillYieldStress = PETSC_FALSE;
-  useConstantTillPhi = PETSC_FALSE;
+  holdTillYieldStress       = PETSC_FALSE;
+  useConstantTillPhi        = PETSC_FALSE;
   
   shelvesDragToo = PETSC_FALSE;
   betaShelvesDragToo = config.get("beta_shelves_drag_too");
   
-  Hmelt_max = config.get("max_hmelt");
+  Hmelt_max          = config.get("max_hmelt");
 
   setMaxTimeStepYears(config.get("maximum_time_step_years"));
   setAdaptTimeStepRatio(config.get("adaptive_timestepping_ratio"));
@@ -123,8 +123,7 @@ PetscErrorCode IceModel::setDefaults() {
   maxLowTempCount                 = config.get("max_low_temp_count");
   min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
   includeBMRinContinuity          = config.get_flag("include_bmr_in_continuity");
-
-  isDrySimulation = config.get_flag("is_dry_simulation");
+  isDrySimulation                 = config.get_flag("is_dry_simulation");
   
   updateHmelt = PETSC_TRUE;
 
@@ -142,9 +141,11 @@ PetscErrorCode IceModel::setDefaults() {
   kd = 0;
 
   // default polar stereographic projection settings: South Pole
-  psParams.svlfp = 0.0;
-  psParams.lopo = -90.0;
-  psParams.sp = -71.0;
+  polar_stereographic.strings["pism_intent"] = "mapping";
+  polar_stereographic.strings["grid_mapping_name"] = "polar_stereographic";
+  polar_stereographic.set("straight_vertical_longitude_from_pole", 0.0);
+  polar_stereographic.set("latitude_of_projection_origin", -90.0);
+  polar_stereographic.set("standard_parallel", -71.0);
 
   return 0;
 }

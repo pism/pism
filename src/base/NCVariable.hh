@@ -97,7 +97,9 @@ protected:
 class NCSpatialVariable : public NCVariable {
 public:
   GridType dims;
+  NCSpatialVariable();
   virtual PetscErrorCode read(const char filename[], unsigned int time, Vec v);
+  virtual PetscErrorCode reset();
   virtual PetscErrorCode write(const char filename[], nc_type nctype,
 			       bool write_in_glaciological_units, Vec v);
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,

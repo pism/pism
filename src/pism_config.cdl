@@ -3,35 +3,49 @@ netcdf pism_config {
     byte pism_config;
     // boolean flags:
     pism_config:do_mass_conserve = "yes";
+    pism_config:do_mass_conserve_doc = "Solve the mass conservation equation";
 
     pism_config:do_temp = "yes";
+    pism_config:do_temp_doc = "Solve energy conservation and age equations";
 
     pism_config:do_skip = "no";
+    pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism";
 
     pism_config:do_plastic_till = "no";
+    pism_config:do_plastic_till_doc = "Use Schoof’s plastic till model for ice streams at all grounded points on the ice sheet";
 
     pism_config:do_pseudo_plastic_till = "no";
+    pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
     pism_config:do_superpose = "no";
+    pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BB]. Only eﬀective if used with -ssa.";
 
-    pism_config:thermal_bedrock = "true";
+    pism_config:thermal_bedrock = "yes";
+    pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
 
     pism_config:do_bed_deformation = "no";
+    pism_config:do_bed_deformation_doc = "Use a bed defirmation model";
 
     pism_config:do_bed_iso = "no";
+    pism_config:do_bed_iso_doc = "Compute bed deformations by simple pointwise isostasy.";
 
     pism_config:ocean_kill = "false";
+    pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization ﬁle which has ice-free ocean mask (value MASK_FLOATING_OCEAN0=7), will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
 
     pism_config:floating_ice_killed = "false";
+    pism_config:floating_ice_killed_doc = "If ice is (or becomes) ﬂoating then it is set to thickness zero. This is calving at the grounding line.";
 
     pism_config:is_dry_simulation = "no";
+    pism_config:is_dry_simulation_doc = "Dry (oceanless) simulation";
 
     pism_config:use_ssa_velocity = "no";
+    pism_config:use_ssa_velocity_doc = "Use the equations of the shallow shelf approximation [\\ref MacAyeal, \\ref Morland, \\ref SchoofStream, \\ref WeisGreveHutter] for ice shelves and dragging ice shelves (%i.e. ice streams) where so-indicated by the mask";
 
     pism_config:include_bmr_in_continuity = "yes";
-    pism_config:include_bmr_in_continuity_doc = "Include basal melt rate in continuity";
+    pism_config:include_bmr_in_continuity_doc = "Include basal melt rate in the continuity equation";
 
     pism_config:use_constant_nuh_for_ssa = "no";
+    pism_config:use_constant_nuh_for_ssa_doc = "Compute velocities in ice shelves and streams with a constant value for the product of viscosity \\f$\\nu\\f$ and thickness \\f$H\\f$, obtained from the shelf extension";
 
     pism_config:compute_surf_grad_inward_ssa = "no";
 
@@ -40,18 +54,22 @@ netcdf pism_config {
     pism_config:enhancement_factor_doc = "Flow enhancement factor";
 
     pism_config:constant_grain_size = 1.0e-3;
+    pism_config:constant_grain_size_doc = "Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law, meters";
 
     pism_config:no_spokes_level = 0.0;
     pism_config:no_spokes_level_doc = "iterations of smoothing of Sigma";
 
     pism_config:start_year = 0;
+    pism_config:start_year_doc = "Model year at which to start the run.";
 
     pism_config:run_length_years = 1000;
     pism_config:run_length_years_doc = "Default run length, years";
 
     pism_config:adaptive_timestepping_ratio = 0.12;
+    pism_config:adaptive_timestepping_ratio_doc = "Adaptive time stepping ratio for the explicit scheme for the mass balance equation";
 
     pism_config:initial_age_of_ice_years = 0.0;
+    pism_config:initial_age_of_ice_years_doc = "Initial age of ice, years";
 
     pism_config:maximum_time_step_years = 60.0;
     pism_config:maximum_time_step_years_doc = "Maximum allowed time step length, years";
@@ -63,12 +81,13 @@ netcdf pism_config {
     pism_config:tauc_doc = "yield stress for basal till (plastic or pseudo-plastic model); 10^4 Pa = 0.1 bar";
 
     pism_config:max_hmelt = 2.0;
-    pism_config:max_hmelt_doc = "maximum thickness of the basal melt water layer";
+    pism_config:max_hmelt_doc = "maximum thickness of the basal melt water layer, meters";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "Kelvin. Note less than ice.meltingTemp; if above this value then decide to slide";
 
     pism_config:skip_max = 10;
+    pism_config:skip_max_doc = "Number of mass-balance steps, including SIA diﬀusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
 
     pism_config:till_phi = 30.0;
     pism_config:till_phi_doc = "till friction angle, degrees";
@@ -77,9 +96,10 @@ netcdf pism_config {
     pism_config:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
 
     pism_config:till_c_0 = 0.0;
-    pism_config:till_c_0_doc = "Pa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0 -- 40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
+    pism_config:till_c_0_doc = "Pa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
 
     pism_config:mu_sliding = 0.0;
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "Interval between bed deformation updates, years";
@@ -96,15 +116,19 @@ netcdf pism_config {
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
     // appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251
     pism_config:plastic_regularization = 0.01;
+    pism_config:plastic_regularization_doc = "Set the value of \\f$\\epsilon\\f$ regularization of plastic till; this is the second \\f$\\epsilon\\f$ in formula (4.1) in [\\ref SchoofStream]";
+
     pism_config:pseudo_plastic_q = 0.25;
+    pism_config:pseudo_plastic_q_doc = "The exponent of the pseudo-plastic basal resistance model";
 
     pism_config:pseudo_plastic_uthreshold = 100.0;
     pism_config:pseudo_plastic_uthreshold_doc = "Units: m/a";
 
     pism_config:ssa_relative_convergence = 1.0e-4;
+    pism_config:ssa_relative_convergence_doc = "Relative change tolerance for the eﬀective viscosity";
 
     pism_config:beta_shelves_drag_too = 180000.0;
-    pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}, (1/10000) of value stated in Hulbe&MacAyeal1999 for ice stream E";
+    pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}, (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
 
     // These constants are not used (so far):
     pism_config:seconds_per_year = 3.15569259747e7;
@@ -114,6 +138,7 @@ netcdf pism_config {
     pism_config:earth_gravity_doc = "acceleration due to gravity, m/s^2";
 
     pism_config:pi = 3.14159265358979;
+    pism_config:pi_doc = "ratio of a circle's circumference to its diameter";
 
     pism_config:gas_constant_R = 8.31441;
     pism_config:gas_constant_R_doc = "ideal gas constant, J/(mol K)";

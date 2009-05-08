@@ -239,10 +239,10 @@ This procedure also modifies the mask.  In particular, it has the side effect
 of marking all grounded points as MASK_DRAGGING.  (FIXME:  This aspect should be
 refactored.  Unnecessary communication can probably be avoided.)
 
-We implement formula (2.4) in \ref SchoofStream .  That formula is
+We implement formula (2.4) in [\ref SchoofStream] .  That formula is
     \f[   \tau_c = \mu (\rho g H - p_w)\f]
 We modify it by:
-    - adding a small till cohesion \f$c_0\f$ (see \ref Paterson table 8.1);
+    - adding a small till cohesion \f$c_0\f$ (see [\ref Paterson] table 8.1);
     - replacing \f$p_w \to \lambda p_w\f$ where \f$\lambda =\f$ 
       Hmelt/DEFAULT_MAX_HMELT; thus \f$0 \le \lambda \le 1\f$ always while 
       \f$\lambda = 0\f$ when the bed is frozen; and

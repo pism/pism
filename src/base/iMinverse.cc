@@ -142,9 +142,10 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = nc.open_for_writing(invfieldsname, false, true); CHKERRQ(ierr);
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.write_history("option -inv_write_fields read"); CHKERRQ(ierr);
-    ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
     ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.4"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = polar_stereographic.write(invfieldsname); CHKERRQ(ierr);
   } else {
     strcpy(invfieldsname,""); // make sure empty
   }

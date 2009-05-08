@@ -32,12 +32,6 @@
 using namespace std;
 /// @endcond
 
-struct PolarStereoParams {
-  double svlfp, // straight_vertical_longitude_from_pole; defaults to 0
-         lopo,  // latitude_of_projection_origin; defaults to 90
-         sp;    // standard_parallel; defaults to -71
-};
-
 struct MaskInterp {
   int number_allowed;
   int allowed_levels[50]; // must be strictly increasing
@@ -87,8 +81,6 @@ public:
   PetscErrorCode get_att_text(int varid, const char name[], string &result);
   PetscErrorCode get_att_double(int varid, const char name[], vector<double> &result);
   PetscErrorCode get_units(int varid, bool &has_units, utUnit &units);
-  PetscErrorCode read_polar_stereographic(PolarStereoParams &ps, bool report = false);
-  PetscErrorCode write_polar_stereographic(PolarStereoParams &ps);
 
   PetscErrorCode create_timeseries(const char name[], const char long_name[],
 				   const char units[], nc_type nctype, int *varid);

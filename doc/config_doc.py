@@ -74,7 +74,4 @@ for attr in var.ncattrs():
     
     print "<td>%s</td></tr>" % docstring
 
-print """
-</table>
-*/
-"""
+print "</table> */"

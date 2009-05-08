@@ -166,9 +166,10 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   // append == false, check_dims == true
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-  ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
   ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
@@ -396,14 +397,14 @@ PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the
   computational box.
  */
-PetscErrorCode IceModel::initFromFile(const char *fname) {
+PetscErrorCode IceModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
   NCTool nc(&grid);
 
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
-		    fname); CHKERRQ(ierr);
+		    filename); CHKERRQ(ierr);
 
-  ierr = nc.open_for_reading(fname); CHKERRQ(ierr);
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
   // Find the index of the last record in the file:
   int last_record;
@@ -413,18 +414,18 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   // Read the model state variables:
  
   // 2-D mapping
-  ierr = vLongitude.read(fname, last_record); CHKERRQ(ierr);
-  ierr =  vLatitude.read(fname, last_record); CHKERRQ(ierr);
+  ierr = vLongitude.read(filename, last_record); CHKERRQ(ierr);
+  ierr =  vLatitude.read(filename, last_record); CHKERRQ(ierr);
 
   // 2-D model quantities: discrete
-  ierr = vMask.read(fname, last_record); CHKERRQ(ierr);
+  ierr = vMask.read(filename, last_record); CHKERRQ(ierr);
 
   // 2-D model quantities: double
-  ierr =   vHmelt.read(fname, last_record); CHKERRQ(ierr);
-  ierr =       vH.read(fname, last_record); CHKERRQ(ierr);
-  ierr =     vbed.read(fname, last_record); CHKERRQ(ierr);
-  ierr =  vuplift.read(fname, last_record); CHKERRQ(ierr);
-  ierr = vtillphi.read(fname, last_record); CHKERRQ(ierr);
+  ierr =   vHmelt.read(filename, last_record); CHKERRQ(ierr);
+  ierr =       vH.read(filename, last_record); CHKERRQ(ierr);
+  ierr =     vbed.read(filename, last_record); CHKERRQ(ierr);
+  ierr =  vuplift.read(filename, last_record); CHKERRQ(ierr);
+  ierr = vtillphi.read(filename, last_record); CHKERRQ(ierr);
 
   if (useSSAVelocity) {
     vector<double> flag;
@@ -441,20 +442,26 @@ PetscErrorCode IceModel::initFromFile(const char *fname) {
   if ((have_ssa_velocities == 1)  && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
-    ierr = vubarSSA.read(fname, last_record);
-    ierr = vvbarSSA.read(fname, last_record);
+    ierr = vubarSSA.read(filename, last_record);
+    ierr = vvbarSSA.read(filename, last_record);
   }
 
   // 2-D earth quantity; like climate but owned by IceModel
-  ierr =     vGhf.read(fname, last_record); CHKERRQ(ierr);
+  ierr =     vGhf.read(filename, last_record); CHKERRQ(ierr);
 
   // 3-D model quantities
-  ierr =   T3.read(fname, last_record); CHKERRQ(ierr);
-  ierr =  Tb3.read(fname, last_record); CHKERRQ(ierr);
-  ierr = tau3.read(fname, last_record); CHKERRQ(ierr);
+  ierr =   T3.read(filename, last_record); CHKERRQ(ierr);
+  ierr =  Tb3.read(filename, last_record); CHKERRQ(ierr);
+  ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
 
   // read the polar_stereographic if present
-  ierr = nc.read_polar_stereographic(psParams); CHKERRQ(ierr);
+
+  bool ps_exists;
+  ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
+  if (ps_exists) {
+    ierr = polar_stereographic.read(filename); CHKERRQ(ierr);
+    ierr = polar_stereographic.print(); CHKERRQ(ierr);
+  }
 
   ierr = nc.get_att_text(NC_GLOBAL, "history", history);
 
@@ -757,9 +764,10 @@ PetscErrorCode IceModel::write_snapshot() {
       ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
       // append == false, check_dims == true
       ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-      ierr = nc.write_polar_stereographic(psParams); CHKERRQ(ierr);
       ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
+
+      ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
       file_is_ready = true;
     }
     
