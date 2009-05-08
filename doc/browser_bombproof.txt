@@ -25,7 +25,7 @@ as an adaptive time-stepping technique for the 3D temperature equation.
 The length of the time step is limited only by the maximum magnitude of the 
 horizontal velocities within the ice.
 
-The region in which the temperature equation needs to be solved, namely within 
+The %region in which the temperature equation needs to be solved, namely within 
 the ice sheet and attached ice shelves, is changing in time.  This is an 
 essential complicating factor in ice sheet modeling.  According to user options, 
 there may also be a model for the temperature within a layer of bedrock 
@@ -366,7 +366,7 @@ Of course this is not realistic.  What we understand is provable, however, is th
 numerical scheme for a linear advection/conduction equation
 	\f[u_t + A u_x = B u_{xx}\f]
 is stable in the general sense of numerical schemes for partial differential equations
-(e.g. as defined in subsection 5.5 of [\ref MortonMayers]) then the same scheme is stable 
+(%e.g. as defined in subsection 5.5 of [\ref MortonMayers]) then the same scheme is stable 
 in the same general sense when applied to the equation with (linear) lower order terms:
 	\f[u_t + A u_x = B u_{xx} + C u + D.\f]
 A precise statement of this general fact is hard to find in the literature, 

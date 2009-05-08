@@ -22,29 +22,21 @@ userman : manual.tex ice_bib.bib
 	pdflatex manual.tex
 	pdflatex manual.tex
 
-browser : doxyfile_browser doxybib.txt config_doc.txt
+browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html browser_pages.txt browser_bombproof.txt
 	doxygen doxyfile_browser
 
-doxybib.txt: ice_bib.bib
+doxybib.txt: doxybib.py ice_bib.bib
 	./doxybib.py
 
-config_doc.txt: ../lib/pism_config.nc
+config_doc.txt: config_doc.py ../lib/pism_config.nc
 	./config_doc.py > config_doc.txt
 
 # non-default targets; sometimes useful:
 #   browsenow      rebuild browser and then open it with firefox
-#   summary        build a PDF summarizing PISM features; not always up to date
-#   fullbib        build a PDF which merely lists every reference in ice_bib.bib
 #   vfigs          create PDF figures from a test/verifynow.py output
 
 browsenow : browser
 	firefox doxy/html/index.html &
-
-summary : pism_summary.tex
-	pdflatex pism_summary
-	bibtex pism_summary
-	pdflatex pism_summary
-	pdflatex pism_summary
 
 
 PISMREV_VFIGS ?= 589 # revision stamp for verification results in User's Manual figures;

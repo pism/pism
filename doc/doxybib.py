@@ -5,6 +5,16 @@ from os import popen, system
 input = "ice_bib"
 output = "doxybib.txt"
 
+### I was thinking this might be useful at the top of the References html page:
+
+# \par Notes
+# - This large list collects all references which the PISM authors have found
+# convenient.  There is no claim that all of these references get direct use,
+# or even mention, in the PISM project files. 
+
+### But it would seem that such text would need to go in the .bst file?
+
+
 # dummy LaTeX document that \cites everything and uses a special BibTeX style file:
 latexdummy = """\\documentclass{article}
 \\begin{document}

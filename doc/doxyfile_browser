@@ -142,7 +142,8 @@ FILE_PATTERNS          = *.c \
                          *.PHP3 \
                          *.M \
                          *.MM \
-                         *.PY
+                         *.PY \
+                         *.cdl
 RECURSIVE              = YES
 EXCLUDE                = ../src/.svn/ \
                          ../src/base/.svn/ \

@@ -10,13 +10,7 @@ Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk
 
 Like the legendary Eskimo, the CF standard name table already has a bazillion names for snow.  No attempt at using those names is made in PISM.
 
-Readers other than PISM programmers should ignore the final column.  
-PAC=PISMAtmosphereCoupler and POC=PISMOceanCoupler.  Note PISM also 
-uses "grid_mapping_name" (in only one case; the name is 
-"polar_stereographic"), but that is not technically a standard_name.
-Because PISM uses UDUNITS, PISM will write some of these in 
-"glaciological units", for instance m a-1 instead of m s-1, but this is
-allowed under CF and is handled by UDUNITS.
+Readers other than PISM programmers should ignore the final column, which gives the name of the IceModel member which holds the named field in an IceModelVec.  The names starting with "PAC." and "POC." are exceptions because they are not IceModel members but instead they are members of PISMClimateCoupler classes.  Note PAC= PISMAtmosphereCoupler and POC= PISMOceanCoupler.
 
 <table style="width: 100%;">
   <tr><td> standard name </td> <td> canonical units </td> <td> PISM0.2 short name in NetCDF </td> <td> PISM0.2 internal IceModelVec name </td></tr>
@@ -52,7 +46,7 @@ These are merely proposed by Bueler, for now.
 
 <table style="width: 100%;">
   <tr><td> PROPOSED standard name </td><td> canonical units </td><td> PISM0.2 short name in NetCDF </td><td> PISM0.2 internal IceModelVec name </td><td> comments </td></tr>  
-  <tr><td>ice_shelf_basal_specific_mass_balance</td><td>m s-1</td><td>shelfbmassflux</td><td>POC.vshelfbmassflux</td><td>positive is loss of ice shelf mass (i.e. use outward normal from ice shelf)</td></tr>
+  <tr><td>ice_shelf_basal_specific_mass_balance</td><td>m s-1</td><td>shelfbmassflux</td><td>POC.vshelfbmassflux</td><td>positive is loss of ice shelf mass (%i.e. use outward normal from ice shelf)</td></tr>
   <tr><td>ice_shelf_basal_temperature</td><td>K</td><td>shelfbtemp</td><td>POC.vshelfbasetemp</td><td>absolute (not pressure-adjusted) temperature</td></tr>
   <tr><td>land_ice_age</td><td>s</td><td>age</td><td>tau3</td><td>thought about units required!</td></tr>
   <tr><td>land_ice_basal_frictional_heating</td><td>W m-2</td><td>Rb</td><td>vRb</td><td></td></tr>
@@ -75,5 +69,10 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
   <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask</td><td></td></tr>
   <tr><td>effective thickness of subglacial melt water</td><td>m</td><td>bwat</td><td>vHmelt</td><td></td></tr>
 </table>
+
+\section finaltech Final technical notes
+
+\li PISM also uses "grid_mapping_name".  It is used in only one case, for "polar_stereographic".  It is not technically a standard_name though it is covered by the CF convention
+\li Because PISM uses UDUNITS, PISM will write some variables in "glaciological units", for instance m a-1 instead of m s-1, but this is allowed under CF and is handled by UDUNITS.
 
 */

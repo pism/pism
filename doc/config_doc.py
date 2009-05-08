@@ -13,8 +13,14 @@ print """
 \page config Configuration flags and parameters
 
 \par Notes
-Valid configuration flag values are "yes", "true", "on" and "no",
-"false", "off" (lowercase only).
+- These flags and parameters are from pism_config.cdl, which is
+converted to .nc in the build process.  It is put in lib/pism_config.nc.
+- An alternate config .nc file can be specified by option "-config foo.nc".
+The alternate file must generally contain values for flags and parameters,
+but they are asked-for when needed.
+- Valid boolean flag values are "yes", "true", "on" and "no",
+"false", "off" (lowercase only).  They have to be enclosed in quotes
+in pism_config.cdl.
 """
 
 print """
@@ -28,9 +34,9 @@ for attr in var.ncattrs():
 
     value = getattr(var, attr)
     try:
-      docstring = getattr(var, attr + "_doc", "missing")
+      docstring = getattr(var, attr + "_doc", "[missing]")
     except:
-      docstring = "missing"
+      docstring = "[missing]"
 
     if type(value) != str:
         continue
@@ -50,9 +56,9 @@ for attr in var.ncattrs():
 
     value = getattr(var, attr)
     try:
-      docstring = getattr(var, attr + "_doc", "missing")
+      docstring = getattr(var, attr + "_doc", "[missing]")
     except:
-      docstring = "missing"
+      docstring = "[missing]"
 
     if type(value) == str:
         continue

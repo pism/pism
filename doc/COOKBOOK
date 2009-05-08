@@ -44,10 +44,6 @@ Ed's cookbook for maintaining PISM:
    
   Now try "firefox www.pism-docs.org/doxy/html/index.html" on remote machine.  If
   success, log off of dogbert.
-  
-  Also consider doing
-
-   $ scp refman.pdf bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/refman-dev.pdf
 
  
 4)  How big is the PISM source code?
