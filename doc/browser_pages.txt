@@ -32,9 +32,10 @@ to extend PISM functionality.
 There is also a <i>repository</i> browsing tool at the PISM download site
 (http://svn.gna.org/viewcvs/pism/) which shows changes between source code revisions.
 
-The <a href="pages.html">Related Pages tab</a> at the top gives some overviews of some
-aspects of PISM.  It also provides \ref std_names "tables" of <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF (NetCDF) standard names</a> used by PISM, 
-and configuration parameters for PISM.
+The <a href="pages.html">Related Pages tab</a> at the top gives overviews of 
+aspects of PISM design.  It also provides a \ref std_names "table" of 
+<a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF (NetCDF) 
+standard names</a> used by PISM, and a \ref config "table" of configuration parameters for PISM.
 
 For a complete list of classes, click on the <a href="annotated.html">Classes tab</a> 
 at the top of the page.
