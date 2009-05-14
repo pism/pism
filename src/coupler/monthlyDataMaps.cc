@@ -18,9 +18,9 @@
 
 
 #include <petscda.h>
-#include "pism_const.hh"
-#include "grid.hh"
-#include "iceModelVec.hh"
+#include "../base/pism_const.hh"
+#include "../base/grid.hh"
+#include "../base/iceModelVec.hh"
 #include "monthlyDataMaps.hh"
 
 
