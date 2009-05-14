@@ -87,6 +87,13 @@ PetscErrorCode MonthlyDataMaps::initFromFile(
 }
 
 
+/*!
+Assumes file is prepared in the sense that it exists and that global attributes are
+already written.  See IceModel::dumpToFile() for how main PISM output file is
+prepared.  Calls here do handle opening and closing the file.  We write in FLOAT 
+not DOUBLE because these are expected to be imprecise at that level and not be
+essential for restart accuracy.
+ */
 PetscErrorCode MonthlyDataMaps::write(const char *filename) {
   PetscErrorCode ierr;
   

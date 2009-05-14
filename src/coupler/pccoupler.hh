@@ -33,10 +33,10 @@
   Methods and members here are common to all possible implementations and 
   derived classes.
 
-  <p> All the update... methods should interpret the \c t_years and -c dt_years
+  <p> All the update... methods should interpret the \c t_years and \c dt_years
   arguments as specifying the time interval (t_years, t_years + dt_years). A
   coupler should provide an estimate of a climate field for this interval, which
-  may (but does not have to) be an average over this interval.</p>
+  may be, but does not have to be, an average over this interval.</p>
 
   <p> The \c dt_years argument <b> is not </b> "the time since the last call",
   and <b> should not </b> be used to incrementally update climate fields. </p>
@@ -88,17 +88,30 @@ struct IceInfoNeededByAtmosphereCoupler {
 
 //! A basic derived class of PISMClimateCoupler for coupling PISM to an atmosphere model.
 /*!
-No files are read to initialize this PISMClimateCoupler, so it is essentially virtual.  Space
-for time-dependent surface mass flux (vsurfmassflux) and time-dependent surface temperature 
-(vsurftemp) is allocated, however.  A pointer to these is provided by appropriate methods.
-It is expected that a derived class of this will actually be used.
+No files are read to initialize this class, so it is essentially a virtual base class 
+for atmosphere model coupling.  No process modeling occurs.  It is expected that only
+a derived class of this will actually be used.
+
+Space for time-dependent surface mass flux (vsurfmassflux) and time-dependent surface
+temperature (vsurftemp) is allocated.  A pointer to these is provided by appropriate
+methods, and that is what IceModel needs.  IceModel has a pointer to an instance of this 
+class in IceModel::atmosPCC;
 
 The IceModelVec2 members vsurfmassflux and vsurftemp are exactly the surface fields needed 
 as boundary conditions for IceModel.  In particular, vsurfmassflux is the instantaneous net
 surface mass balance in ice-thickness-equivalent m s-1.  That is, vsurfmassflux is a term 
-in the mass continuity equation.  And vsurftemp is the temperature (K) at the ice surface
-but below firn processes.  It is the upper surface boundary condition for the conservation 
-of energy partial differential equation within the ice.
+in the mass continuity equation.
+
+The IceModelVec2 vsurftemp is the temperature (K) at the ice surface but below firn
+processes.  E.g. the "10 m" temperature.  It is the upper surface boundary condition 
+for the conservation of energy partial differential equation within the ice.
+
+There is no temperature field present in this basic class which should be interpreted
+as the snow temperature.  Derived classes may have that, and may model snow/firn processes.
+
+A serious atmosphere model (CAM in CCSM, POTSDAM-2 in CLIMBER3alpha, etc) could run
+non-trivially during these calls.  There might be a snow model in a PISMAtmosphereCoupler
+component, or (for example) an existing land model might be used for snow processes.
  */
 class PISMAtmosphereCoupler : public PISMClimateCoupler {
 
@@ -113,7 +126,6 @@ public:
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded);
 
-  // an atmosphere model could run non-trivially during these calls
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded, // will be interpreted as type IceInfoNeededByAtmosphereCoupler*
@@ -135,6 +147,13 @@ protected:
 There are no redefinitions of updateSurfMassFluxAndProvide() and updateSurfTempAndProvide().
 Those procedures function the same way as in PISMAtmosphereCoupler, but here the effect is to provide
 access to IceModelVec2 s which are read once, at the beginning of the run, and are not modified.
+
+Some users of this class will read the fields vsurfmassflux and vsurftemp from files at the
+beginning of the run and then not change them.  The default is to do this.
+
+Other users of this class will set the vsurfmassflux and/or vsurftemp fields from formulas. 
+Examples of this are verification cases and certain simplified geometry experiments (e.g.
+EISMINT II).  In this case, set initializeFromFile=false before calling initFromOptions().
  */
 class PISMConstAtmosCoupler : public PISMAtmosphereCoupler {
 
@@ -147,7 +166,28 @@ public:
 };
 
 
-//! A derived class of PISMAtmosphereCoupler which reads monthly surface temperatures from a NetCDF file.
+//! A derived class of PISMAtmosphereCoupler which has a snow temperature parameterization and a choice of PDD models for surface mass balance.
+/*!
+Lots of reading of user options, including choice of monthly temperatures or a parameterization
+(the default), choice of \ref CalovGreve05 (default) or random PDD computation, and choice of
+parameters in PDD.
+
+The default temperature parameterization will be from \ref Faustoetal2009.
+ */
+class PISMSnowModelAtmosCoupler : public PISMAtmosphereCoupler {
+
+public:
+  PISMSnowModelAtmosCoupler();
+
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
+
+  virtual PetscErrorCode updateSurfMassFluxAndProvide(
+             const PetscScalar t_years, const PetscScalar dt_years, 
+             void *iceInfoNeeded, IceModelVec2* &pvsmf);
+};
+
+
+//! DEPRECATED: A derived class of PISMAtmosphereCoupler which reads monthly surface temperatures from a NetCDF file.
 /*!
 Stored temperatures must have names \c monsnowtemp1, ...,\c monsnowtemp12 and be in units of K.
 These monthly surface temperatures are typically used in a PDD; see PISMPDDCoupler.  These
@@ -195,11 +235,8 @@ private:
 };
 
 
-//! A derived class, a descendant of PISMAtmosphereCoupler and PISMMonthlyTempsAtmosCoupler,  which provides a positive degree day model to PISM.
+//! DEPRECATED: A derived class, a descendant of PISMAtmosphereCoupler and PISMMonthlyTempsAtmosCoupler,  which provides a positive degree day model to PISM.
 /*!
-FIXME: * also consider adding an instantaneous surface temp which interpolates monthly
-           temps and reveals yearly cycle; mostly for diagnostic debugging
-
 The PDD here defaults to the one used for EISMINT-Greenland.
 
 If <tt>-pdd_monthly_temps</tt> is used then it reads 12 monthly temperature

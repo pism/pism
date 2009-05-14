@@ -24,7 +24,7 @@
 #include "../base/LocalInterpCtx.hh"
 #include "../base/nc_util.hh"
 #include "pccoupler.hh"
-// note we do NOT depend on IceModel.hh; this is deliberate!
+// we do NOT depend on IceModel.hh; this is deliberate!
 
 
 /******************* VIRTUAL BASE CLASS:  PISMClimateCoupler ********************/
@@ -40,9 +40,7 @@ PISMClimateCoupler::~PISMClimateCoupler() {
 }
 
 
-/*!
-Just set grid to provided IceGrid*.
- */
+//! Set grid to provided IceGrid*.
 PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
   printIfDebug("entering PISMClimateCoupler::initFromOptions()\n");
   grid = g;
@@ -139,8 +137,12 @@ PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
 
 //! Initialize a PISMAtmosphereCoupler by allocating space for surface mass flux and surface temperature variables.
 /*!
-Allocates space and sets attributes, including CF standard_name, for the two essential fields.
-Derived class implementations will check user options to configure.
+Allocates space and sets attributes, including CF standard_name, for the two essential fields,
+namely the two fields to which IceModel needs access.
+
+The short names "acab" and "artm" for these two fields match GLIMMER (& CISM, presumably).
+
+Derived class implementations will check user options to configure further stuff.
 
 g->year must be valid before this can be called.
  */
@@ -150,13 +152,12 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
 
   ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
   
-  // short names "acab" and "artm" match GLIMMER (& CISM, presumably)
   // mean annual net ice equivalent surface mass balance rate
   ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);
   ierr = vsurfmassflux.set_attrs(
             "climate_state", 
             "instantaneous net ice equivalent accumulation (ablation) rate",
-	    "m s-1", 
+	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);
   ierr = vsurfmassflux.set_glaciological_units("m year-1");
@@ -164,7 +165,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);  // merely a default value
 
   // annual mean air temperature at "ice surface", at level below all firn processes
-  // possibly should be reported in deg C; would require shift version of glaciological_units
+  //   (e.g. "10 m" ice temperatures)
   ierr = vsurftemp.create(*g, "artm", false); CHKERRQ(ierr);
   ierr = vsurftemp.set_attrs(
             "climate_state",
@@ -178,7 +179,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   char dTfile[PETSC_MAX_PATH_LEN];
   PetscTruth dTforceSet;
   if (dTforcing != PETSC_NULL) {
-    SETERRQ(1, "dTforcing should be PETSC_NULL at start of PISMAtmosphereCoupler::initFromOptions()\n");
+    SETERRQ(1, "dTforcing!=PETSC_NULL in PISMAtmosphereCoupler::initFromOptions()\n");
   }
   ierr = PetscOptionsGetString(PETSC_NULL, "-dTforcing", dTfile,
                                PETSC_MAX_PATH_LEN, &dTforceSet); CHKERRQ(ierr);
@@ -220,37 +221,36 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
     ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
 
+  // also append to surface temperature offset time series
   NCTool nc(grid);
   bool variable_exists;
-
   ierr = nc.open_for_writing(filename, true, true);
   // append == true, check_dims == true
   ierr = nc.find_variable("surftempoffset", NULL, variable_exists); CHKERRQ(ierr);
-
   if (!variable_exists) {
     ierr = nc.create_timeseries("surftempoffset", "surface temperature offset",
 				"degree_Celsius", NC_FLOAT, NULL);
     CHKERRQ(ierr);
   }
-
   ierr = nc.append_timeseries("surftempoffset", TsOffset); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
   return 0;
 }
 
 
-//! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Real atmosphere models in derived classes will update.
+//! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Derived class versions generally will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
   const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
   void */*iceInfoNeeded*/, IceModelVec2* &pvsmf) {
   if (vsurfmassflux.was_created())
     pvsmf = &vsurfmassflux;
-  else {  SETERRQ(1,"vsurfmassflux not created in PISMAtmosphereCoupler::updateSurfMassFluxAndProvide()");  }
+  else {  SETERRQ(1,"vsurfmassflux not created in updateSurfMassFluxAndProvide()");  }
   return 0;
 }
 
 
-//! Updates vsurftemp using -dTforcing (if it is on) and provides access to vsurftemp.
+//! Updates vsurftemp using -dTforcing (if it is on) and provides access to vsurftemp.  Derived class versions may do more updating.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
   const PetscScalar t_years, const PetscScalar /*dt_years*/, 
   void */*iceInfoNeeded*/, IceModelVec2* &pvst) {
@@ -258,7 +258,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
 
   if (vsurftemp.was_created())
     pvst = &vsurftemp;
-  else {  SETERRQ(1,"vsurftemp not created in PISMAtmosphereCoupler::updateSurfTempAndProvide()");  }
+  else {  SETERRQ(1,"vsurftemp not created in updateSurfTempAndProvide()");  }
 
   if (dTforcing != PETSC_NULL) {
     ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
@@ -296,6 +296,10 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 /*!
 Because the PISMAtmosphereCoupler update procedures are not redefined, the climate
 is read from file when PISM is started, but then does not change.
+
+Non-default case: if initializeFromFile==false then nothing happens, other than
+what happens in PISMAtmosphereCoupler::initFromOptions().  If you want this,
+set initializeFromFile=false before calling.
  */
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;

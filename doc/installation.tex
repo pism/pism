@@ -489,11 +489,9 @@ the exact solution.\footnote{Bueler and others, 2007.  \emph{Exact solutions to 
 \noindent If you would like us to confirm that PISM is working as expected please save the one page or so of output from this script and send it to us (\href{mailto:help@pism-docs.org}{help@pism-docs.org}).  See section \emph{Verification} of the \emph{User's Manual} for more on PISM verification.
 \end{enumerate}
 
-\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a \emph{Reference Manual} and additional technical documentation.
+\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documenation can be built from \LaTeX~source in the |doc\| subdirectory, as described in the last section.
 
-Completely up-to-date \emph{Manual}s can be built from \LaTeX~source in the |doc\| subdirectory, as described in the next section.
-
-A final reminder with respect to installation: Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory.  This will run |svn update| and then |make all install| if there were updates from the source code repository.
+A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory.
 
 
 \newpage
@@ -544,8 +542,9 @@ You might want to rebuild the documentation from source, as PISM and its documen
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{llp{0.55\linewidth}}
     \hline
-    \LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} &  for rebuilding this \emph{Installation Manual}, the \emph{User's Manual} and the \emph{Reference Manual} from source\\
-    |doxygen|\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} &  for rebuilding the \emph{Reference Manual} and the \emph{C++ class Browser} from source  \\
+    \LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} &  needed for rebuilding any of the documentation \\
+    |doxygen|\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} &  for rebuilding the \emph{Browser} from source  \\
+    |graphviz|\index{graphviz} & \href{http://www.graphviz.org/}{\t{www.graphviz.org}} &  used in diagrams in the \emph{Browser}  \\
     \hline
   \end{tabular*}
 \end{center}
@@ -554,14 +553,11 @@ You might want to rebuild the documentation from source, as PISM and its documen
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{lp{0.8\linewidth}}
     |make userman| & to build the \emph{User's Manual}, |doc/manual.pdf|\\
-    |make refman| & to build the \emph{Reference Manual}, |doc/refman.pdf|\\
     |make installation| & to build this document, the \emph{Installation Manual}, |doc/installation.pdf|\\
-    |make browser| & to build the \emph{C++ class browser}, |doc/doxy/index.html|\\
-    |make summary| & to build a PISM executive summary, |doc/pism_summary.pdf|\\
-    |make fullbib| & to build  a complete bibliography from |doc/ice_bib.bib|, |doc/fullbib.pdf|
+    |make browser| & to build the \emph{Browser}, |doc/doxy/index.html|\\
   \end{tabular*}
 \end{center}
-The default |make| targets are |installation userman browser refman|.
+The default |make| targets in the |doc/| subdirectory include all of these.
 
 
 \end{document}

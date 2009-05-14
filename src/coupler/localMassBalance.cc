@@ -25,7 +25,6 @@
 #include "localMassBalance.hh"
 
 
-
 PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
@@ -36,6 +35,9 @@ PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
 
 
 PDDMassBalance::PDDMassBalance() {
+  // FIXME: switch over defaults to Fausto choice; make EISMINT-Greenland a special case,
+  //   but not needing a derived class (I think)
+  // The default values for the factors come from EISMINT-Greenland, \ref RitzEISMINT .
   pddStdDev       = 5.0;  // K; std dev of daily temp variation; EISMINT-Greenland value
   pddFactorSnow = 0.003;  // m K^-1 day^-1; EISMINT-Greenland value; = 3 mm / (pos degree day)
   pddFactorIce  = 0.008;  // m K^-1 day^-1; EISMINT-Greenland value; = 8 mm / (pos degree day)
@@ -43,13 +45,77 @@ PDDMassBalance::PDDMassBalance() {
 }
 
 
+//! Compute the surface balance at a location given number of positive degree days and snowfall.
+/*!  
+The net surface mass balance, as ice equivalent thickness per time, is computed 
+from the number of positive degree days and the yearly snowfall.
+
+The number, or expected number, of positive degree days must be determined before 
+calling this procedure.
+
+We assume a constant rate of melting per positive degree day for snow.  The rate is set
+by the option <tt>-pdd_factor_snow</tt>.  A fraction of the melted snow refreezes; 
+this fraction is controlled by <tt>-pdd_refreeze</tt>.  If the number of positive 
+degree days exceeds those needed to melt all of the snow then the excess number are 
+used to melt both the ice that came from refreeze and perhaps ice which is already
+present.
+
+In either case, ice also melts at a constant rate per positive degree day, 
+and this rate can be controlled by option <tt>-pdd_factor_ice</tt>.
+
+If the rate of snowfall is negative then the rate is interpreted as an ice-equivalent
+(direct) ablation rate and the PDD contribution is added (i.e. there is additional 
+ablation), by melting ice.  Snowfall rates are generally positive nearly everywhere
+on ice sheets, however.
+
+The scheme here came from EISMINT-Greenland \ref RitzEISMINT .
+
+Arguments are snow fall rate precip in (ice-equivalent) m s-1, t and dt in s, T[] in
+K.  There are N temperature values T[0],...,T[N-1].
+ */
 PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
-  return 0.0;
+  PetscScalar pddsum = getPDDSumFromTemperatureTimeSeries(t,dt,T,N);
+  if (precip < 0.0) {
+    // neg precip interpreted as ablation, so positive degree-days are ignored
+    return precip;
+  } else {
+    // positive precip: it snowed (precip = snow; never rain)
+    const PetscScalar snow        = precip * dt,   // units of m of ice-equivalent
+                      snow_melted = pddsum * pddFactorSnow;  // m of ice-equivalent
+    if (snow_melted <= snow) {
+      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt;
+    } else { // it is snowing, but all the snow melts and refreezes; this ice is
+             // then removed, plus possibly more of the underlying ice
+      const PetscScalar ice_deposited = snow * pddRefreezeFrac,
+                        excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!
+                        ice_melted    = excess_pddsum * pddFactorIce;
+      return (ice_deposited - ice_melted) / dt;
+    }
+  }
 }
 
 
+//! Compute the integrand in integral (6) in \ref CalovGreve05 .
+/*!
+The integral is
+   \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,
+         \bigg[\frac{\sigma}{\sqrt{2\pi}}\,\exp\left(-\frac{T_{ac}(t)^2}{2\sigma^2}\right)
+               + \frac{T_{ac}(t)}{2}\,\mathrm{erfc}
+               \left(-\frac{T_{ac}(t)}{\sqrt{2}\,\sigma}\right)\bigg] \f]
+This procedure computes the quantity in square brackets.
+
+This integral is used for the expected number of positive degree days, unless the
+user selects a random PDD implementation with <tt>-pdd_rand</tt> or 
+<tt>-pdd_rand_repeatable</tt>.  The user can choose \f$\sigma\f$ by option
+<tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
+\c dt instead of a whole year as stated in \ref CalovGreve05 .
+
+The argument \c Tac is the temperature in K.  The value \f$T_{ac}(t)\f$
+in the above integral must be in degrees C, so the shift is done within this 
+procedure.
+ */
 PetscScalar PDDMassBalance::CalovGreveIntegrand(
              PetscScalar sigma, PetscScalar Tac) {
   const PetscScalar TacC = Tac - 273.15;
@@ -60,23 +126,54 @@ PetscScalar PDDMassBalance::CalovGreveIntegrand(
 
 PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N) {
-  // N needs to be ODD for this to work
-  if ((N % 2) == 0) {
-    PetscPrintf(PETSC_COMM_WORLD,
-        "PDDMassBalance::getPDDSum..() needs ODD N for Simpson's rule\n");
-    PetscEnd();
-  }
-  PetscScalar  pdd_sum = 0.0;  // return value has units:  K day
-  // FIXME: this is just the default mechanism
-  const PetscScalar sperd = 8.64e4, // exact; from UDUNITS
+  PetscScalar  pdd_sum = 0.0;  // return value has units  K day
+  const PetscScalar sperd = 8.64e4, // exact seconds per day
                     h_days = dt / sperd;
-  // Simpson's is: (h/3) * sum([1 4 2 4 2 4 ... 4 1] .* [f(x0) f(x1) ... f(xN)])
-  for (PetscInt m = 0; m < N; ++m) {
+  const PetscInt Nsimp = ((N % 2) == 1) ? N : N-1; // odd N case is pure simpson's
+  // Simpson's rule is:
+  //   integral \approx (h/3) * sum( [1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)] )
+  for (PetscInt m = 0; m < Nsimp; ++m) {
     PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
-    if ( (m == 0) || (m == (N-1)) )  coeff = 1.0;
+    if ( (m == 0) || (m == (Nsimp-1)) )  coeff = 1.0;
     pdd_sum += coeff * CalovGreveIntegrand(T[m],pddStdDev);  // pass in temp in K
   }
   pdd_sum = (h_days / 3.0) * pdd_sum;
+  if (Nsimp < N) { // add one more subinterval by trapezoid
+    pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(T[N-2],pddStdDev)
+                                  + CalovGreveIntegrand(T[N-1],pddStdDev) );
+  }
+  return pdd_sum;
+}
+
+
+PDDrandMassBalance::PDDrandMassBalance(bool repeatable) : PDDMassBalance() {
+  // initialize the random number generator: use GSL's recommended default random
+  // number generator, which seems to be "mt19937" and is DIEHARD (whatever that means ...)
+  pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
+  // seed with number of seconds in non-repeatable case
+  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));  
+}
+
+
+PDDrandMassBalance::~PDDrandMassBalance() {
+  if (pddRandGen != NULL) {
+    gsl_rng_free(pddRandGen);
+    pddRandGen = NULL;
+  }
+}
+
+
+PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
+             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N) {
+  PetscScalar       pdd_sum = 0.0;  // return value has units  K day
+  const PetscScalar sperd = 8.64e4, // exact seconds per day
+                    h_days = dt / sperd;
+  // there are N-1 intervals [t,t+dt],...,[t+(N-2)dt,t+(N-1)dt]
+  for (PetscInt m = 0; m < N-1; ++m) {
+    PetscScalar temp = 0.5 * (T[m] + T[m+1]); // av temp in [t+m*dt,t+(m+1)*dt]
+    temp += gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
+    if (temp > 273.15)   pdd_sum += h_days * (temp - 273.15);
+  }
   return pdd_sum;
 }
 
