@@ -92,15 +92,14 @@ INPUT                  = doxybib.txt \
 		         browser_pages.txt \
 			 browser_bombproof.txt \
 			 std_names.html \
+			 config_doc.txt \
 		         ../src/ \
                          ../src/base/ \
                          ../src/coupler/ \
-                         ../src/num/ \
                          ../src/udunits/ \
                          ../src/verif/ \
                          ../src/eismint/ \
-                         ../src/ismip/ \
-			 config_doc.txt
+                         ../src/ismip/
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \
@@ -154,6 +153,8 @@ EXCLUDE                = ../src/.svn/ \
                          ../src/eismint/.svn/ \
                          ../src/netcdf/.svn/ \
                          ../src/ismip/heino/ \
+                         ../src/num/ \
+                         ../src/udunits/ \
                          ../src/verif/exactM.py \
                          ../src/base/ssaJed/
 EXCLUDE_SYMLINKS       = NO
