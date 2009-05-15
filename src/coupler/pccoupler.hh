@@ -26,6 +26,8 @@
 #include "../base/LocalInterpCtx.hh"
 #include "../base/iceModelVec.hh"
 #include "forcing.hh"
+#include "localMassBalance.hh"
+#include "monthlyDataMaps.hh"
 
 
 //! A virtual base class for coupling PISM to other climate components.
@@ -66,6 +68,7 @@ public:
 protected:
   IceGrid* grid;
   PetscErrorCode printIfDebug(const char *message);
+  NCConfigVariable config;
 
 private:
   bool PCCDEBUG;  // set in constructor; controls printIfDebug() above
@@ -178,12 +181,54 @@ class PISMSnowModelAtmosCoupler : public PISMAtmosphereCoupler {
 
 public:
   PISMSnowModelAtmosCoupler();
+  virtual ~PISMSnowModelAtmosCoupler();
+
+  //! Check if user wants a snow temperature and mass balance model.
+  /*! Determines if any of a list of related options are set.
+      If so, returns true, otherwise false. */
+  virtual bool optionsChooseSnowModel();
 
   virtual PetscErrorCode initFromOptions(IceGrid* g);
+
+  virtual PetscErrorCode writeCouplingFieldsToFile(const char *filename);
 
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
              const PetscScalar t_years, const PetscScalar dt_years, 
              void *iceInfoNeeded, IceModelVec2* &pvsmf);
+
+protected:
+  //! Defaults to the \ref Faustoetal2009 scheme.  Called when no monthly temperature maps are available.
+  /*!
+    Computes the mean annual temperature as function of latitude, longitude, surface elevation, and so on.
+    Depends on the current state of IceModel fields, through pointer info.
+   */
+  virtual PetscErrorCode parameterizationToUpdateSnowTemp(IceInfoNeededByAtmosphereCoupler* info);
+
+  //! Instead of temperature parameterization we can used monthly temperature maps read from a file.
+  MonthlyDataMaps  *monthlysnowtemps;
+
+  LocalMassBalance *mbscheme;
+
+  //! The snow precipitation rate in ice-equivalent meters per second.
+  /*! vsurfmassflux is computed by LocalMassBalance scheme from this rate.  */
+  IceModelVec2 vsnowprecip;
+
+  //! The mean annual snow temperature used in the mass balance scheme.
+  /*! 
+    Note vsurftemp is ice temperature below completion of firn processes, and is used as
+    upper boundary condition for the conservation of energy scheme.  This temperature 
+    is related is the snow processes model (LocalMassBalance) which converts the snow precipitation rate
+    vsnowprecip into surface mass flux vsurfmassflux.  It is frequently the +2 m temperature, above
+    the snow surface, from an atmospheric flow/energy model.  This temperature may come from a
+    temperature parameterization (\ref Faustoetal2009, for example) or from stored monthly temperature
+    (MonthlyDataMaps).
+
+    It is a diagnostic extra output of PISMSnowModelAtmosCoupler.  IceModel never gets a pointer to it.
+   */
+  IceModelVec2 vsnowtemp_ma,
+               vsnowtemp_mj;  //!< The mean July (julian day = 196; July 15) snow temperature used in the mass balance scheme.
+  
+  PetscScalar snowtempSummerWarming, snowtempSummerPeakDay; // could be members of temperatureParameterization class?
 };
 
 

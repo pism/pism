@@ -22,8 +22,38 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf.h>       // for erfc() in CalovGreveIntegrand()
 #include "../base/pism_const.hh"
+#include "../base/NCVariable.hh"
 #include "localMassBalance.hh"
 
+
+LocalMassBalance::LocalMassBalance() {
+  verbPrintf(5,PETSC_COMM_WORLD, "setting up config member of LocalMassBalance ...\n");
+  
+  // FIXME: why does init() method for NCConfigVariable need IceGrid?
+  MPI_Comm    com = PETSC_COMM_WORLD;
+  PetscMPIInt rank, size;
+  MPI_Comm_rank(com, &rank);
+  MPI_Comm_size(com, &size);
+  IceGrid dummyIceGrid(com, rank, size);
+
+  config.init("pism_config", dummyIceGrid);
+  char alt_config[PETSC_MAX_PATH_LEN];
+  PetscTruth use_alt_config;
+  PetscOptionsGetString(PETSC_NULL, "-config", alt_config, PETSC_MAX_PATH_LEN, &use_alt_config);
+  if (use_alt_config) {
+    config.read(alt_config);
+  } else {
+    config.read(PISM_DEFAULT_CONFIG_FILE);
+  }
+  config.print(); // FIXME: desired?
+}
+
+
+PetscErrorCode LocalMassBalance::init() {
+  PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
+  PetscEnd();
+  return 0;
+}
 
 PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
@@ -35,13 +65,28 @@ PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
 
 
 PDDMassBalance::PDDMassBalance() {
-  // FIXME: switch over defaults to Fausto choice; make EISMINT-Greenland a special case,
+  // FIXME: switch over scheme and defaults to Fausto choice; make EISMINT-Greenland a special case,
   //   but not needing a derived class (I think)
-  // The default values for the factors come from EISMINT-Greenland, \ref RitzEISMINT .
-  pddStdDev       = 5.0;  // K; std dev of daily temp variation; EISMINT-Greenland value
-  pddFactorSnow = 0.003;  // m K^-1 day^-1; EISMINT-Greenland value; = 3 mm / (pos degree day)
-  pddFactorIce  = 0.008;  // m K^-1 day^-1; EISMINT-Greenland value; = 8 mm / (pos degree day)
-  pddRefreezeFrac = 0.6;  // [pure fraction]; EISMINT-Greenland value
+  pddFactorSnow   = config.get("pdd_factor_snow");
+  pddFactorIce    = config.get("pdd_factor_ice");
+  pddRefreezeFrac = config.get("pdd_refreeze");
+  pddStdDev       = config.get("pdd_std_dev");
+}
+
+
+PetscErrorCode PDDMassBalance::init() {
+  // check options for parameter values
+  PetscErrorCode ierr;
+  PetscTruth     pSet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_snow", &pddFactorSnow, &pSet);
+             CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_ice", &pddFactorIce, &pSet);
+             CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_refreeze", &pddRefreezeFrac, &pSet);
+             CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_std_dev", &pddStdDev, &pSet);
+             CHKERRQ(ierr);
+  return 0;
 }
 
 
@@ -146,11 +191,13 @@ PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
 }
 
 
+/*!
+Initializes the random number generator (RNG).  The RNG is GSL's recommended default,
+which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
+wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
+ */
 PDDrandMassBalance::PDDrandMassBalance(bool repeatable) : PDDMassBalance() {
-  // initialize the random number generator: use GSL's recommended default random
-  // number generator, which seems to be "mt19937" and is DIEHARD (whatever that means ...)
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  // seed with number of seconds in non-repeatable case
   gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));  
 }
 

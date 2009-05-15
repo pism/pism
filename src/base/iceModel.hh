@@ -30,6 +30,7 @@
 #include "grid.hh"
 #include "beddefLC.hh"
 #include "iceModelVec.hh"
+#include "NCVariable.hh"
 
 #include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"

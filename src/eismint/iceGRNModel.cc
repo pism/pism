@@ -53,6 +53,9 @@ PetscScalar PISMEISGREENPDDCoupler::getSummerWarming(
 //! Used by updateSurfTempAndProvide().  Returns value Tma in K.
 PetscScalar PISMEISGREENPDDCoupler::calculateMeanAnnual(PetscScalar h, PetscScalar lat) {
   // following EISMINT-Greenland formulas
+  // FIXME: will be in overriding PISMSnowModelAtmosCoupler::parameterizationToUpdateSnowTemp()
+  //   under new Fausto et al 2009 default scheme.  (Will have hard-wired constants, not ones set
+  //   from config file??  Or new eisgreen_ names in config file??)
   PetscScalar Z = PetscMax(h, 20 * (lat - 65));
   return  49.13 - 0.007992 * Z - 0.7576 * (lat) + 273.15;
 }

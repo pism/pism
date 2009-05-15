@@ -20,6 +20,7 @@
 #define __localMassBalance_hh
 
 #include <petsc.h>
+#include "../base/NCVariable.hh"
 
 //! Base class for a model which computes surface mass flux rate (ice thickness per time) from a precipitation (scalar) and a time series for temperature.
 /*!
@@ -27,7 +28,7 @@ This is a process model.  It uses a 1D array, with a time dimension, for snow
 temperatures.  This process model does not know its location on the ice sheet, but
 simply computes the surface mass balance from three quantities
   - the time interval \f$[t,t+(N-1)\Delta t]\f$,
-  - time series of $N$ values of temperature in the snow at equally-spaced times
+  - time series of \f$N\f$ values of temperature in the snow at equally-spaced times
     \f$t,t+\Delta t,\dots,t+(N-1)\Delta t]\f$, and
   - a scalar precipation rate which is taken to apply in the whole time interval.
 
@@ -37,7 +38,9 @@ input a time series for precipation rate.
 class LocalMassBalance {
 
 public:
-  LocalMassBalance() {}
+  LocalMassBalance();
+
+  virtual PetscErrorCode init();
 
   /*! T[0],...,T[N-1] are temperatures (K) at times t, t+dt, ..., t+(N-1)dt 
       Input t,dt in seconds.  Input precip and return value are in 
@@ -47,6 +50,9 @@ public:
   virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
              PetscScalar precip);
+
+protected:
+  NCConfigVariable config;
 };
 
 
@@ -58,6 +64,8 @@ class PDDMassBalance : public LocalMassBalance {
 
 public:
   PDDMassBalance();
+
+  virtual PetscErrorCode init();
 
   virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,

@@ -130,6 +130,46 @@ netcdf pism_config {
     pism_config:beta_shelves_drag_too = 180000.0;
     pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}, (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
 
+    // The default values for the factors come from EISMINT-Greenland, [\\ref RitzEISMINT] .
+    pism_config:pdd_factor_snow = 0.003;
+    pism_config:pdd_factor_snow_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (3 mm ice-equivalent) / (pos degree day)";
+
+    pism_config:pdd_factor_ice = 0.008;
+    pism_config:pdd_factor_ice_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (8 mm ice-equivalent) / (pos degree day)";
+
+    pism_config:pdd_refreeze = 0.6;
+    pism_config:pdd_refreeze_doc = "[pure fraction]; EISMINT-Greenland value [\\ref RitzEISMINT] ";
+
+    pism_config:pdd_std_dev = 5.0;
+    pism_config:pdd_std_dev_doc = "K; std dev of daily temp variation; EISMINT-Greenland value [\\ref RitzEISMINT] ";
+
+    pism_config:snow_temp_d_ma = 314.98;
+    pism_config:snow_temp_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_gamma_ma = -0.006309;
+    pism_config:snow_temp_gamma_ma_doc = "K m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_c_ma = -0.7189;
+    pism_config:snow_temp_c_ma_doc = "K (degN)-1; latitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_kappa_ma = 0.0672;
+    pism_config:snow_temp_kappa_ma_doc = "K (degW)-1; longitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_d_mj = 287.85;
+    pism_config:snow_temp_d_mj_doc = "K; = 14.70+273.15; base temperature for formula (2) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_gamma_mj = -0.005426;
+    pism_config:snow_temp_gamma_mj_doc = "K m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_c_mj = -0.1585;
+    pism_config:snow_temp_c_mj_doc = "K (degN)-1; latitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_kappa_mj = 0.0518;
+    pism_config:snow_temp_kappa_mj_doc = "K (degW)-1; longitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
+
+    pism_config:snow_temp_july_day = 196;
+    pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in \\ref Faustoetal2009 ";
+
     // These constants are not used (so far):
     pism_config:seconds_per_year = 3.15569259747e7;
     pism_config:seconds_per_year_doc = "This value should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
