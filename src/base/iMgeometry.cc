@@ -308,7 +308,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface mass flux
     ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, dt / secpera, (void*)(&info_atmoscoupler), pccsmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, &info_coupler, pccsmf); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
@@ -317,7 +317,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (oceanPCC != PETSC_NULL) {
     // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, (void*)(&info_oceancoupler), pccsbmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, &info_coupler, pccsbmf); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
   }

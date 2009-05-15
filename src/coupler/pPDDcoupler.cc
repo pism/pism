@@ -218,10 +218,10 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMPDDCoupler::writeCouplingFieldsToFile(const PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
   
-  ierr = PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(t_years, filename); CHKERRQ(ierr);
   ierr = vsurftempPDD.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsnowaccum.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -381,15 +381,12 @@ with the 12 monthly temperature maps, the temperature on a given day at a given
 location is found by linear interpolation (in time) of the monthly temps.
  */
 PetscErrorCode PISMPDDCoupler::updateSurfMassFluxAndProvide(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
+             const PetscScalar t_years, const PetscScalar dt_years, IceInfoNeededByCoupler* info,
              IceModelVec2* &pvsmf) {
   PetscErrorCode ierr;
   
   ierr = PISMMonthlyTempsAtmosCoupler::updateSurfMassFluxAndProvide(
-     t_years, dt_years, iceInfoNeeded, pvsmf); CHKERRQ(ierr);
- 
-  IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
+     t_years, dt_years, info, pvsmf); CHKERRQ(ierr);
 
   PetscScalar **smflux, **amstemp, **insttemp, **saccum, **h, **lat, **smonthtemp[12];
   ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);

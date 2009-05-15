@@ -81,7 +81,8 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := penth pismr pismd pismv pisms pcctest
+executables := penth pismr pismd pismv pisms pcctestsm
+########executables := penth pismr pismd pismv pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
@@ -186,6 +187,9 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
 ../bin/pcctest : pcctest.o ${LIBPISMNAME}
 	${CXXLINKER} pcctest.o ${ICE_LIB_FLAGS} -o $@
+
+../bin/pcctestsm : pcctestsm.o ${LIBPISMNAME}
+	${CXXLINKER} pcctestsm.o ${ICE_LIB_FLAGS} -o $@
 
 #build extra executables
 

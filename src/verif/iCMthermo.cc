@@ -127,9 +127,9 @@ PetscErrorCode IceCompModel::initTestFG() {
   // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs, *pccaccum;
   ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+                  &info_coupler, pccTs); CHKERRQ(ierr);  
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
@@ -199,7 +199,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   // need pointer to surface accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccaccum;
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
   dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
@@ -252,7 +252,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   // need pointer to surface accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccaccum;
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   Uradial = new PetscScalar[Mz];
 
@@ -754,9 +754,9 @@ PetscErrorCode IceCompModel::initTestK() {
   // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs, *pccaccum;
   ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+                  &info_coupler, pccTs); CHKERRQ(ierr);  
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
   
   ierr = pccaccum->set(0.0); CHKERRQ(ierr);
   ierr = pccTs->set(223.15); CHKERRQ(ierr);

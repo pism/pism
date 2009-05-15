@@ -372,9 +372,9 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs, *pccaccum;
   ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+                  &info_coupler, pccTs); CHKERRQ(ierr);  
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -460,9 +460,9 @@ PetscErrorCode IceCompModel::initTestL() {
   // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs, *pccaccum;
   ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+                  &info_coupler, pccTs); CHKERRQ(ierr);  
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -538,7 +538,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccaccum;
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   // before flow step, set accumulation from exact values;
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
@@ -572,7 +572,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccaccum;
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -630,7 +630,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccaccum;
   ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccaccum); CHKERRQ(ierr);  
+                  &info_coupler, pccaccum); CHKERRQ(ierr);  
 
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);

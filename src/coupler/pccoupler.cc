@@ -117,13 +117,13 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 
 //! A virtual method which just calls specific updates.
 PetscErrorCode PISMClimateCoupler::updateClimateFields(
-  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, void */*iceInfoNeeded*/) {
+  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
 }
 
 
 //! A virtual method which writes fields associated to the derived class.
-PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const char */*filename*/) {
+PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(const PetscScalar t_years, const char */*filename*/) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
 }
 
@@ -221,7 +221,7 @@ prepared.  Calls here do handle opening and closing the file.  We write in FLOAT
 not DOUBLE because these are expected to be imprecise at that level and not be
 essential for restart accuracy.
  */
-PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -253,8 +253,8 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(const char *file
 
 //! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Derived class versions generally will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-    const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
-    void */*iceInfoNeeded*/, IceModelVec2* &pvsmf) {
+    const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+    IceModelVec2* &pvsmf) {
   if (vsurfmassflux.was_created())
     pvsmf = &vsurfmassflux;
   else {  SETERRQ(1,"vsurfmassflux not created in updateSurfMassFluxAndProvide()");  }
@@ -264,8 +264,8 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
 
 //! Updates vsurftemp using -dTforcing (if it is on) and provides access to vsurftemp.  Derived class versions may do more updating.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
-  const PetscScalar t_years, const PetscScalar /*dt_years*/, 
-  void */*iceInfoNeeded*/, IceModelVec2* &pvst) {
+    const PetscScalar t_years, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+    IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
   if (vsurftemp.was_created())
@@ -287,12 +287,11 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
 
 //! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(), but ignores returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded) {
+             const PetscScalar t_years, const PetscScalar dt_years, IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
   IceModelVec2* ignored;
-  ierr = updateSurfMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
-  ierr = updateSurfTempAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
+  ierr = updateSurfMassFluxAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
+  ierr = updateSurfTempAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
   return 0;
 }
 
@@ -346,8 +345,6 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
 PISMSnowModelAtmosCoupler::PISMSnowModelAtmosCoupler() : PISMAtmosphereCoupler() {
   monthlysnowtemps = NULL;
   mbscheme = NULL;
-  snowtempSummerWarming = config.get("-pdd_summer_warming"); // FIXME: change name to -snow_temp_summer_warming
-  snowtempSummerPeakDay = config.get("-pdd_summer_peak_day"); // FIXME: change name to -snow_temp_summer_peak_day
 }
 
 
@@ -367,7 +364,7 @@ PISMSnowModelAtmosCoupler::~PISMSnowModelAtmosCoupler() {
 
 
 bool PISMSnowModelAtmosCoupler::optionsChooseSnowModel() {
-  const int N = 10;
+  const int N = 8;
   const char optNames[N][30] = {
            "-pdd",
            "-pdd_factor_snow",
@@ -376,8 +373,6 @@ bool PISMSnowModelAtmosCoupler::optionsChooseSnowModel() {
            "-pdd_rand",
            "-pdd_rand_repeatable",
            "-pdd_std_dev",
-           "-pdd_summer_warming",
-           "-pdd_summer_peak_day",
            "-pdd_monthly_temps"        };
   PetscTruth check;
   for (int k = 0; k < N; k++) {
@@ -401,23 +396,53 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
        CHKERRQ(ierr);
   }
 
+  char  filename[PETSC_MAX_PATH_LEN];
+  LocalInterpCtx* lic;
+  ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates and initializes lic
+
+  // read surface boundary condition for energy model from file
+  ierr = verbPrintf(2, g->com, 
+      "  reading ice surface temperature (not snow temp) 'artm' from %s ...\n",
+      filename); CHKERRQ(ierr); 
+  ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
+
+  // clear out; will be overwritten by mass balance model
+  ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);
+
+  // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
+  ierr = vsnowprecip.create(*g, "snowprecip", false); CHKERRQ(ierr);
+  ierr = vsnowprecip.set_attrs(
+            "climate_state", 
+            "mean annual ice-equivalent snow precipitation rate",
+	    "m s-1", 
+	    "");  // no CF standard_name ??
+	    CHKERRQ(ierr);
+  ierr = vsnowprecip.set_glaciological_units("m year-1");
+  vsnowprecip.write_in_glaciological_units = true;
+
+  // read snow precipitation rate from file
+  ierr = verbPrintf(2, g->com, 
+      "  reading mean annual ice-equivalent snow precipitation rate 'snowprecip' from %s ... \n",
+      filename); CHKERRQ(ierr); 
+  ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
+
   // check on whether we should read monthly snow temperatures from file  
   char monthlyTempsFile[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_monthly_temps", 
              monthlyTempsFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
   if (optSet == PETSC_TRUE) {
     ierr = verbPrintf(2,grid->com,
-       "  snow temperature cycle: reading monthly temperatures from file %s ...\n",
+       "  snow temperature cycle chosen: reading monthly temperatures from file %s ...\n",
        monthlyTempsFile); CHKERRQ(ierr);
     monthlysnowtemps = new MonthlyDataMaps;
     // puts month-by-month "reading ..." message to stdout:
     ierr = monthlysnowtemps->initFromFile(
              "monsnowtemp", // expects short names monsnowtemp1,...,monsnowtemp12
-             "",            // no standard_name?; FIXME: check on this
+             "snow_temperature",            // CF standard_name
              monthlyTempsFile, grid); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid->com,
-       "  snow temperature cycle: using temperature parameterization ...\n"); CHKERRQ(ierr);
+       "  snow temperature cycle chosen: using temperature parameterization ...\n"); CHKERRQ(ierr);
     // monthlysnowtemps == NULL from now on
   }
 
@@ -431,17 +456,6 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
     mbscheme = new PDDMassBalance;
   }
   ierr = mbscheme->init(); CHKERRQ(ierr);
-
-  // check options for parameter values related to temp parameterization
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_summer_warming", // FIXME: change name to -snow_temp_summer_warming
-             &snowtempSummerWarming, &optSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_summer_peak_day",// FIXME: change name to -snow_temp_summer_peak_day
-             &snowtempSummerPeakDay, &optSet); CHKERRQ(ierr);
-
-  // read snow precipitation rate and snow temperature
-  char  filename[PETSC_MAX_PATH_LEN];
-  LocalInterpCtx* lic;
-  ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates and initializes lic
 
   // snow temperatures used within mass balance model and from the temperature parameterization;
   //   these are ignored if monthly temps are used
@@ -460,25 +474,6 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
             ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
 
-  // mean annual ice equivalent snow accumulation rate (before melt, and not including rain)
-  ierr = vsnowprecip.create(*g, "snowaccum", false); CHKERRQ(ierr); // FIXME: change name to snowprecip
-  ierr = vsnowprecip.set_attrs(
-            "climate_state", 
-            "mean annual ice-equivalent snow accumulation rate",
-	    "m s-1", 
-	    "");  // no CF standard_name ??
-	    CHKERRQ(ierr);
-  ierr = vsnowprecip.set_glaciological_units("m year-1");
-  vsnowprecip.write_in_glaciological_units = true;
-  ierr = vsnowprecip.set(0.0); CHKERRQ(ierr);  // merely a default value
-
-  // read snow precipitation rate from file
-  ierr = verbPrintf(2, g->com, 
-      "  reading mean annual ice-equivalent snow accumulation rate 'snowaccum' from %s ... \n",
-      filename); CHKERRQ(ierr); 
-  // this will continue with "not found" message if not found:
-  ierr = vsnowprecip.regrid(filename, *lic, false); CHKERRQ(ierr);
-
   delete lic;
 
   printIfDebug("ending PISMSnowModelAtmosCoupler::initFromOptions()\n");
@@ -486,41 +481,95 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
+                       const PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
   
-  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(t_years,filename); CHKERRQ(ierr);
 
-  // FIXME: compute save from yearly cycle or by interpolating monthlies?
-  // here we just save the mean annual and mean july only valid if a temperature parameterization was used
-  ierr = vsnowtemp_ma.write(filename, NC_FLOAT); CHKERRQ(ierr);  
-  ierr = vsnowtemp_mj.write(filename, NC_FLOAT); CHKERRQ(ierr);  
-
+  // duplicate precipitation into file
   ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // save snapshot from yearly cycle or by interpolating monthlies
+  IceModelVec2 vsnowtemp;  // no work vectors, so we create a new one
+  ierr = vsnowtemp.create(*grid, "snowtemp", false); CHKERRQ(ierr);
+  ierr = vsnowtemp.set_attrs(
+            "climate_diagnostic",
+            "time-dependent snow temperature used in mass balance scheme",
+            "K",
+            "snow_temperature"); CHKERRQ(ierr);  // use CF standard_name
+  PetscScalar **T;
+  ierr = vsnowtemp.get_array(T);  CHKERRQ(ierr);
+  if (monthlysnowtemps != NULL) {
+    PetscInt curr, next;
+    PetscScalar lam, **currmap, **nextmap;
+    const PetscScalar t = (t_years - floor(t_years)) * secpera;
+    ierr = monthlysnowtemps->getIndicesFromTime(t,curr,next,lam); CHKERRQ(ierr);
+    ierr = monthlysnowtemps->vdata[curr].get_array(currmap); CHKERRQ(ierr);
+    ierr = monthlysnowtemps->vdata[next].get_array(nextmap); CHKERRQ(ierr);
+    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+        T[i][j] = monthlysnowtemps->interpolateMonthlyData(i,j,currmap,nextmap,lam);
+      }
+    }
+    ierr = monthlysnowtemps->vdata[curr].end_access(); CHKERRQ(ierr);
+    ierr = monthlysnowtemps->vdata[next].end_access(); CHKERRQ(ierr);
+  } else {
+    PetscScalar **T_ma, **T_mj;
+    const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
+                      sperd = 8.64e4, // exact number of seconds per day
+                      julydaysec = sperd * config.get("snow_temp_july_day"),
+                      t = (t_years - floor(t_years)) * secpera,
+                      cosfactor = cos(radpersec * (t - julydaysec));
+    ierr = vsnowtemp_ma.get_array(T_ma); CHKERRQ(ierr);
+    ierr = vsnowtemp_mj.get_array(T_mj); CHKERRQ(ierr);
+    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+        T[i][j] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cosfactor;
+      }
+    }
+    ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
+    ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
+  }
+  ierr = vsnowtemp.end_access();  CHKERRQ(ierr);
+  ierr = vsnowtemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vsnowtemp.destroy(); CHKERRQ(ierr);
+
+  // no duplication of input monthly maps into output; would be done by call
+  //   monthlysnowtemps->write(filename);
+
   return 0;
 }
 
 
 /*!
+  The default method here is the Fausto et al parameterization scheme
+  appropriate to the Greenland ice sheet.  The parameterization depends linearly
+  on surface elevation, latitude, and longitude.
+  
   See formulas (1) and (2) and Table 3 in \ref Faustoetal2009.
   
   Default values, stored in src/pism_config.cdl, use lines 
   "Best annual fit: This study with \f$\kappa_{\text{ma}}\f$" 
   and "Best July fit: This study with \f$\kappa_{\text{ma}}\f$"
   from Table 3.
+  
+  Any scheme that has the same kind of dependence on the same quantities
+  can be used just by changing the "snow_temp_fausto_..." configuration parameters 
+  (in src/pism_config.cdl).  Other temperature parameterization schemes should be
+  re-implement this procedure.
  */
-PetscErrorCode PISMSnowModelAtmosCoupler::parameterizationToUpdateSnowTemp(
-                                IceInfoNeededByAtmosphereCoupler* info) {
+PetscErrorCode PISMSnowModelAtmosCoupler::parameterizedUpdateSnowTemp(IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
   const PetscScalar 
-    d_ma     = config.get("snow_temp_d_ma"),      // K
-    gamma_ma = config.get("snow_temp_gamma_ma"),  // K m-1
-    c_ma     = config.get("snow_temp_c_ma"),      // K (degN)-1
-    kappa_ma = config.get("snow_temp_kappa_ma"),  // K (degW)-1
-    d_mj     = config.get("snow_temp_d_mj"),      // SAME UNITS as for _ma ...
-    gamma_mj = config.get("snow_temp_gamma_mj"),
-    c_mj     = config.get("snow_temp_c_mj"),
-    kappa_mj = config.get("snow_temp_kappa_mj");
+    d_ma     = config.get("snow_temp_fausto_d_ma"),      // K
+    gamma_ma = config.get("snow_temp_fausto_gamma_ma"),  // K m-1
+    c_ma     = config.get("snow_temp_fausto_c_ma"),      // K (degN)-1
+    kappa_ma = config.get("snow_temp_fausto_kappa_ma"),  // K (degW)-1
+    d_mj     = config.get("snow_temp_fausto_d_mj"),      // SAME UNITS as for _ma ...
+    gamma_mj = config.get("snow_temp_fausto_gamma_mj"),
+    c_mj     = config.get("snow_temp_fausto_c_mj"),
+    kappa_mj = config.get("snow_temp_fausto_kappa_mj");
   
   PetscScalar **lat_degN, **lon_degE, **h, **T_ma, **T_mj;
   ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
@@ -545,7 +594,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::parameterizationToUpdateSnowTemp(
 }
 
 
-//! Compute the ice surface mass flux from the snow temperature parameterization, a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
+//! Compute the ice surface mass flux from the snow temperature (parameterized or stored as monthly maps), a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
 /*!
 First this method recomputes the snow temperature, either from a parameterization or from interpolating
 stored monthly snow temperature maps.  More precisely, if there are no monthly temperature maps then
@@ -555,7 +604,8 @@ When there are no monthly temperatures, there is a parameterized yearly cycle
 of temperature and additional weather-related variability according to a normally distributed 
 random temperature change for each week and grid point.
 
-At each point on the ice surface a temperature time series is used by a LocalMassBalance object
+At each point on the ice surface a temperature time series, for the duration of the 
+time step specified in calling this routine, is used by a LocalMassBalance object
 to compute the number of positive degree days.  There are two such schemes, derived 
 classes of LocalMassBalance.  There is a deterministic
 (expectation) default method and random (monte carlo) method.  The standard deviation of
@@ -566,9 +616,6 @@ The random method uses pseudo-random numbers to simulate the variability and the
 sums the number of positive degree days.  It is chosen by either <tt>-pdd_rand</tt> or 
 <tt>-pdd_rand_repeatable</tt>.
 
-A more realistic pattern for the variability of surface melting would have correlation 
-with appropriate spatial and temporal ranges.
-
 Alternatively, if option <tt>-pdd_monthly_temps</tt> provides a NetCDF file 
 with the 12 monthly temperature maps, the temperature on a given day at a given
 location is found by linear interpolation (in time) of the monthly temps.
@@ -577,130 +624,72 @@ The surface mass balance is computed from the stored map of snow precipitation r
 by a call to the getMassFluxFromTemperatureTimeSeries() method of the LocalMassBalance object.
  */
 PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded, // will be interpreted as type iceInfoNeededByAtmosphereCoupler*
+             const PetscScalar t_years, const PetscScalar dt_years, IceInfoNeededByCoupler* info,
              IceModelVec2* &pvsmf) {
   PetscErrorCode ierr;
   
   ierr = PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-     t_years, dt_years, iceInfoNeeded, pvsmf); CHKERRQ(ierr);
+     t_years, dt_years, info, pvsmf); CHKERRQ(ierr);
  
-  IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
-
-  // Set up temperature time series.  Because Calov-Greve method uses Simpson's rule to do integral,
+  // Set up snow temperature time series.  Because Calov-Greve method uses Simpson's rule to do integral,
   // we choose the number of times to be odd.  Accuracy for that method, with a smooth yearly cycle,
   // suggests that at least 53 evals per year (i.e. approximately
   // weekly) should be sufficiently accurate.  We use the same number of times for the random PDD
   // method, too.
-  PetscInt          Ntemps = (int) ceil(52 * (dt_years) + 1);
-  if (Ntemps < 3) Ntemps = 3;
-  if ((Ntemps % 2) == 0)  Ntemps++;  // guarantee it is odd
-  // times at which we compute snow temps are t, t+dttemps, ..., t+(Ntemps-1)dttemps;
-  const PetscScalar dttemps = (dt_years * secpera) / ((PetscScalar) Ntemps);
-  PetscScalar       *Tseries = new PetscScalar[Ntemps];
+  PetscInt          Nseries = (int) ceil(52 * (dt_years) + 1);
+  if (Nseries < 3) Nseries = 3;
+  if ((Nseries % 2) == 0)  Nseries++;  // guarantee it is odd
+  // times at which we compute snow temps are
+  //    tseries, tseries + dtseries, ..., tseries + (Nseries-1) * dtseries;
+  const PetscScalar tseries = (t_years - floor(t_years)) * secpera,
+                    dtseries = (dt_years * secpera) / ((PetscScalar) Nseries);
+  PetscScalar       *Tseries = new PetscScalar[Nseries];
   
+  // constants related to standard yearly cycle
   const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
                     sperd = 8.64e4, // exact number of seconds per day
                     julydaysec = sperd * config.get("snow_temp_july_day");
   
   // get access to snow temperatures (and update parameterization if appropriate)
-  PetscScalar **T_ma, **T_mj, **monthlytemp[12], **snowrate, **smflux;
-  if (monthlysnowtemps != NULL) {
-    for (PetscInt m = 0; m < 12; ++m) {
-      ierr = monthlysnowtemps->vdata[m].get_array(monthlytemp[m]); CHKERRQ(ierr);
-    }
-  } else {
-    ierr = parameterizationToUpdateSnowTemp(info); CHKERRQ(ierr);
+  PetscScalar **T_ma, **T_mj, **snowrate, **smflux;
+  if (monthlysnowtemps == NULL) {
+    ierr = parameterizedUpdateSnowTemp(info); CHKERRQ(ierr);
   }
   ierr = vsnowtemp_ma.get_array(T_ma);  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
   ierr = vsnowprecip.get_array(snowrate);  CHKERRQ(ierr);
   ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
 
-  // run through grid and build temperature time series and then get surface balance at each point
+  // run through grid
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
 
-      if (monthlysnowtemps != NULL) {
-        // FIXME: fill in method for extracting temperature time series from monthly data
-      } else {
-        // default case: use corrected formula (4) in \ref Faustoetal2009
-        for (PetscInt k = 0; k < Ntemps; ++k) {
-          const PetscScalar
-            tk = (t_years - floor(t_years)) * secpera + ((PetscScalar) k) * dttemps;
+      // build temperature time series at point i,j
+      for (PetscInt k = 0; k < Nseries; ++k) {
+        const PetscScalar  tk = tseries + ((PetscScalar) k) * dtseries;
+        if (monthlysnowtemps != NULL) {
+          // interpolate monthly temps; not a great memory access pattern ...
+          PetscInt curr, next;
+          PetscScalar lam;
+          ierr = monthlysnowtemps->getIndicesFromTime(tk,curr,next,lam); CHKERRQ(ierr);
+          PetscScalar **currmap, **nextmap;
+          ierr = monthlysnowtemps->vdata[curr].get_array(currmap); CHKERRQ(ierr);
+          ierr = monthlysnowtemps->vdata[next].get_array(nextmap); CHKERRQ(ierr);
+          Tseries[k] = monthlysnowtemps->interpolateMonthlyData(i,j,currmap,nextmap,lam);
+          ierr = monthlysnowtemps->vdata[curr].end_access(); CHKERRQ(ierr);
+          ierr = monthlysnowtemps->vdata[next].end_access(); CHKERRQ(ierr);
+        } else { // default case
+          // use corrected formula (4) in \ref Faustoetal2009, the standard yearly cycle
           Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (tk - julydaysec));
         }
       }
 
-
-// FIXME: NEEDS WORK FROM HERE
-#if 0
-
-      PetscScalar pdd_sum = 0.0;  // units of day^-1 K-1
-
-      const PetscScalar summer_warming = getSummerWarming(h[i][j],lat[i][j],amstemp[i][j]);
-
-      // use one of the two methods for computing the number of positive degree days
-      // at the given i,j grid point for the duration of time step (=dt)
-      if (pddRandGen != NULL) { // since random stuff set up, do monte carlo
-        pdd_sum = 0.0;
-        // compute # of pos deg day:
-        for (PetscInt day = intstartday; day < intstartday + num_days; day++){ 
-          PetscScalar mytemp;
-          if (readMonthlyTempsFromFile) {
-            PetscInt currMonthInd, nextMonthInd;
-            PetscScalar indexday, dummy, lambda;
-            indexday = 364.24 * modf(((PetscScalar) day)/365.24, &dummy); 
-            ierr = getMonthIndicesFromDay(indexday, 
-                       currMonthInd, nextMonthInd, lambda); CHKERRQ(ierr);
-            mytemp = getTemperatureFromMonthlyData(
-                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], lambda, i, j);
-          } else {
-            mytemp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], (PetscScalar) day);
-          }
-          const double randadd = gsl_ran_gaussian(pddRandGen, pddStdDev);
-          const PetscScalar temp = mytemp + (PetscScalar) randadd;
-          insttemp[i][j] = temp;
-          if (temp > 273.15)   pdd_sum += (temp - 273.15);
-        }
-      } else { // default Calov-Greve method; apply Simpson's rule for integral
-        pdd_sum = 0.0;
-        for (PetscInt m = 0; m < CGsumcount; ++m) {
-          // Simpson's is: (h/3) * sum([1 4 2 4 2 4 ... 4 1] .* [f(x0) f(x1) ... f(xN)])
-          PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
-          if ( (m == 0) || (m == (CGsumcount - 1)) )  coeff = 1.0;
-          const PetscScalar day = startday + m * CGsumstepdays;
-          PetscScalar temp;
-          if (readMonthlyTempsFromFile) {
-            PetscInt currMonthInd, nextMonthInd;
-            PetscScalar indexday, dummy, lambda;
-            indexday = 364.24 * modf(((PetscScalar) day)/365.24, &dummy); 
-            ierr = getMonthIndicesFromDay(indexday, currMonthInd, nextMonthInd, lambda); CHKERRQ(ierr);
-            temp = getTemperatureFromMonthlyData(
-                       smonthtemp[currMonthInd], smonthtemp[nextMonthInd], lambda, i, j);
-          } else {
-            temp = getTemperatureFromYearlyCycle(summer_warming, amstemp[i][j], day);
-          }
-          insttemp[i][j] = temp;
-          pdd_sum += coeff * CalovGreveIntegrand(temp);  // temp in K
-        }
-        pdd_sum = (CGsumstepdays / 3.0) * pdd_sum;
-      }
-
-      // now that we have the number of PDDs, compute mass balance from snow rate
-      smflux[i][j] = getSurfaceBalanceFromSnowAndPDD(
-                            saccum[i][j], dt_years * secpera, pdd_sum);
-
-#endif
-
+      // get surface mass balance at point i,j
+      smflux[i][j] = mbscheme->getMassFluxFromTemperatureTimeSeries(
+                        tseries, dtseries, Tseries, Nseries,snowrate[i][j]);  // units of day^-1 K-1
     }
   }
   
-  if (monthlysnowtemps != NULL) {
-    for (PetscInt m = 0; m < 12; ++m) {
-      ierr = monthlysnowtemps->vdata[m].end_access(); CHKERRQ(ierr);
-    }
-  }
   ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
   ierr = vsnowprecip.end_access();  CHKERRQ(ierr);
@@ -751,10 +740,11 @@ PetscErrorCode PISMMonthlyTempsAtmosCoupler::initFromOptions(IceGrid* g) {
 /*!
 Adds \c monsnowtemp1, ...,\c monsnowtemp12 after other PISMAtmosphereCoupler fields.
  */
-PetscErrorCode PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::writeCouplingFieldsToFile(
+               const PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
   
-  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+  ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(t_years, filename); CHKERRQ(ierr);
 
   for (PetscInt j = 0; j < 12; ++j) {
     if (vmonthlytemp[j].was_created()) {
@@ -936,7 +926,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
   
   // We assume file is prepared in the sense that it exists and that global attributes 
@@ -965,8 +955,8 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(const char *filename)
 
 //! Provides access to vshelfbasemassflux.  No update of vshelfbasemassflux.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
-  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
-  void */*iceInfoNeeded*/, IceModelVec2* &pvsbmf) {
+  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+  IceModelVec2* &pvsbmf) {
 
   if (vshelfbasemassflux.was_created())
     pvsbmf = &vshelfbasemassflux;
@@ -980,8 +970,8 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 
 //! Provides access to vshelfbasetemp.  No update of vshelfbasetemp.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
-                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
-                  void */*iceInfoNeeded*/, IceModelVec2* &pvsbt) {
+                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+                  IceModelVec2* &pvsbt) {
   // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
 
   if (vshelfbasetemp.was_created())
@@ -997,12 +987,11 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
 
 //! Updates all the ocean climate fields.
 PetscErrorCode PISMOceanCoupler::updateClimateFields(
-             const PetscScalar t_years, const PetscScalar dt_years, 
-             void *iceInfoNeeded) {
+             const PetscScalar t_years, const PetscScalar dt_years, IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
   IceModelVec2* ignored;
-  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
-  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, iceInfoNeeded, ignored); CHKERRQ(ierr);
+  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
+  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
   ierr = updateSeaLevelElevation(t_years, dt_years, NULL); CHKERRQ(ierr);
   return 0;
 }
@@ -1077,7 +1066,7 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
 
 
 //! By default, does not write vshelfbasetemp and vshelfbasemassflux fields.
-PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *filename) {
+PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
   NCTool nc(grid);
   bool variable_exists;
@@ -1097,8 +1086,8 @@ PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(const char *file
 
 
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
-                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
-                  void *iceInfoNeeded, IceModelVec2* &pvsbt) {
+                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* info,
+                  IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
 
   // ignores everything from IceModel except ice thickness; also ignores t_years and dt_years
@@ -1107,10 +1096,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                     beta_CC_grad = 8.66e-4, // K/m      Clausius-Clapeyron gradient
                     T0           = 273.15;  // K        triple point = naively assumed
                                             //          sea water temperature at sea level
-
-  IceInfoNeededByOceanCoupler* info = (IceInfoNeededByOceanCoupler*) iceInfoNeeded;
   PetscScalar **H, **temp;
-
   ierr = info->thk->get_array(H);   CHKERRQ(ierr);
   ierr = vshelfbasetemp.get_array (temp); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
@@ -1129,8 +1115,8 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
 
 
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
-                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, 
-                  void */*iceInfoNeeded*/, IceModelVec2* &pvsbmf) {
+                  const PetscScalar /*t_years*/, const PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+                  IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
 
   const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity

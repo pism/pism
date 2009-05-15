@@ -143,29 +143,29 @@ netcdf pism_config {
     pism_config:pdd_std_dev = 5.0;
     pism_config:pdd_std_dev_doc = "K; std dev of daily temp variation; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
-    pism_config:snow_temp_d_ma = 314.98;
-    pism_config:snow_temp_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_d_ma = 314.98;
+    pism_config:snow_temp_fausto_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_gamma_ma = -0.006309;
-    pism_config:snow_temp_gamma_ma_doc = "K m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_gamma_ma = -0.006309;
+    pism_config:snow_temp_fausto_gamma_ma_doc = "K m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_c_ma = -0.7189;
-    pism_config:snow_temp_c_ma_doc = "K (degN)-1; latitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_c_ma = -0.7189;
+    pism_config:snow_temp_fausto_c_ma_doc = "K (degN)-1; latitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_kappa_ma = 0.0672;
-    pism_config:snow_temp_kappa_ma_doc = "K (degW)-1; longitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_kappa_ma = 0.0672;
+    pism_config:snow_temp_fausto_kappa_ma_doc = "K (degW)-1; longitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_d_mj = 287.85;
-    pism_config:snow_temp_d_mj_doc = "K; = 14.70+273.15; base temperature for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_d_mj = 287.85;
+    pism_config:snow_temp_fausto_d_mj_doc = "K; = 14.70+273.15; base temperature for formula (2) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_gamma_mj = -0.005426;
-    pism_config:snow_temp_gamma_mj_doc = "K m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_gamma_mj = -0.005426;
+    pism_config:snow_temp_fausto_gamma_mj_doc = "K m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_c_mj = -0.1585;
-    pism_config:snow_temp_c_mj_doc = "K (degN)-1; latitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_c_mj = -0.1585;
+    pism_config:snow_temp_fausto_c_mj_doc = "K (degN)-1; latitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
 
-    pism_config:snow_temp_kappa_mj = 0.0518;
-    pism_config:snow_temp_kappa_mj_doc = "K (degW)-1; longitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_kappa_mj = 0.0518;
+    pism_config:snow_temp_fausto_kappa_mj_doc = "K (degW)-1; longitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
 
     pism_config:snow_temp_july_day = 196;
     pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in \\ref Faustoetal2009 ";

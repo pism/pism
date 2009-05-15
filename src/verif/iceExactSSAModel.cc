@@ -202,7 +202,7 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   // We need a pointer to surface temp from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs;
   ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  (void*)(&info_atmoscoupler), pccTs); CHKERRQ(ierr);  
+                  &info_coupler, pccTs); CHKERRQ(ierr);  
 
   // fill in temperature and age; not critical
   const PetscScalar T0 = 263.15;  // completely arbitrary

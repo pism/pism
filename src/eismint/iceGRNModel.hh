@@ -38,9 +38,8 @@ class PISMEISGREENPDDCoupler : public PISMPDDCoupler {
 public:
   PISMEISGREENPDDCoupler();
   PetscErrorCode startGWL3AtYear(PetscScalar year); // call with start year to do GML3
-  virtual PetscErrorCode updateSurfTempAndProvide(
-             const PetscScalar t_years, const PetscScalar dt_years,
-             void *iceInfoNeeded, IceModelVec2* &pvst);
+  virtual PetscErrorCode updateSurfTempAndProvide(const PetscScalar t_years, const PetscScalar dt_years, 
+                                   IceInfoNeededByCoupler* info, IceModelVec2* &pvst);
 
 protected:
   virtual PetscScalar getSummerWarming(

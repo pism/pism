@@ -8,9 +8,9 @@ These names are a small subset of the <a href="http://cf-pcmdi.llnl.gov/document
 
 Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk/">GLIMMER</a> and <a href="http://oceans11.lanl.gov/trac/CISM/wiki">CISM</a>.  The names below starting with "land_ice" are believed to have all been submitted by Magnus Hagdorn to the CF committee circa 2003 (date?).
 
-Like the legendary Eskimo, the CF standard name table already has a bazillion names for snow.  No attempt at using those names is made in PISM.
+Like the legendary Eskimo, the CF standard name table has a bazillion names for snow "amounts" and "fluxes".  No attempt at using those names is made in PISM.
 
-Readers other than PISM programmers should ignore the final column, which gives the name of the IceModel member which holds the named field in an IceModelVec.  The names starting with "PAC." and "POC." are exceptions because they are not IceModel members but instead they are members of PISMClimateCoupler classes.  Note PAC= PISMAtmosphereCoupler and POC= PISMOceanCoupler.
+Readers other than PISM programmers should ignore the final column, which gives the name of the IceModel member which holds the named field in an IceModelVec.  The names starting with "PAC." and "POC." are exceptions because they are not IceModel members but instead they are members of PISMClimateCoupler classes.  Note PAC= PISMAtmosphereCoupler, PSMAC= PISMSnowModelAtmosCoupler and POC= PISMOceanCoupler.
 
 <table style="width: 100%;">
   <tr><td> standard name </td> <td> canonical units </td> <td> PISM0.2 short name in NetCDF </td> <td> PISM0.2 internal IceModelVec name </td></tr>
@@ -36,6 +36,7 @@ Readers other than PISM programmers should ignore the final column, which gives 
   <tr><td>projection_x_coordinate</td><td>m</td><td>x</td><td></td></tr>
   <tr><td>projection_y_coordinate</td><td>m</td><td>y</td><td></td></tr>
   <tr><td>surface_altitude</td><td>m</td><td>usurf</td><td>vh</td></tr>
+  <tr><td>snow_temperature</td><td>K</td><td>snowtemp</td><td>PSMAC diagnostic output</td></tr>
   <tr><td>tendency_of_bedrock_altitude</td><td>m s-1</td><td>dbdt</td><td>vuplift</td></tr><tr><td>tendency_of_land_ice_thickness</td><td>m s-1</td><td>dHdt</td><td>vdHdt</td></tr>
 </table>
 

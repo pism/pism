@@ -174,13 +174,13 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
   if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+    ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
 
   if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+    ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
   }
@@ -780,13 +780,13 @@ PetscErrorCode IceModel::write_snapshot() {
     ierr = write_model_state(filename);  CHKERRQ(ierr);
 
     if (atmosPCC != PETSC_NULL) {
-      ierr = atmosPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+      ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
     }
 
     if (oceanPCC != PETSC_NULL) {
-      ierr = oceanPCC->writeCouplingFieldsToFile(filename); CHKERRQ(ierr);
+      ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
     }

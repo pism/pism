@@ -61,19 +61,13 @@ IceModel::IceModel(IceGrid &g)
   createViewers_done = PETSC_FALSE;
 
   atmosPCC = PETSC_NULL;
-  info_atmoscoupler.lat = PETSC_NULL;
-  info_atmoscoupler.lon = PETSC_NULL;  
-  info_atmoscoupler.mask = PETSC_NULL;
-  info_atmoscoupler.thk = PETSC_NULL;
-  info_atmoscoupler.surfelev = PETSC_NULL;
-  info_atmoscoupler.topg = PETSC_NULL;
   oceanPCC = PETSC_NULL;
-  info_oceancoupler.lat = PETSC_NULL;
-  info_oceancoupler.lon = PETSC_NULL;  
-  info_oceancoupler.mask = PETSC_NULL;
-  info_oceancoupler.thk = PETSC_NULL;
-  info_oceancoupler.surfelev = PETSC_NULL;
-  info_oceancoupler.topg = PETSC_NULL;
+  info_coupler.lat = PETSC_NULL;
+  info_coupler.lon = PETSC_NULL;  
+  info_coupler.mask = PETSC_NULL;
+  info_coupler.thk = PETSC_NULL;
+  info_coupler.surfelev = PETSC_NULL;
+  info_coupler.topg = PETSC_NULL;
 
   ierr = setDefaults();  // lots of parameters and flags set here
   if (ierr != 0) {

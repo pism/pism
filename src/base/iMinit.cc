@@ -376,19 +376,12 @@ PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
   // so that we can let atmosPCC, oceanPCC know about these fields in IceModel state
-  info_atmoscoupler.lat = &vLatitude;
-  info_atmoscoupler.lon = &vLongitude;  
-  info_atmoscoupler.mask = &vMask;
-  info_atmoscoupler.thk = &vH;
-  info_atmoscoupler.surfelev = &vh;
-  info_atmoscoupler.topg = &vbed;
-
-  info_oceancoupler.lat = &vLatitude;
-  info_oceancoupler.lon = &vLongitude;  
-  info_oceancoupler.mask = &vMask;
-  info_oceancoupler.thk = &vH;
-  info_oceancoupler.surfelev = &vh;
-  info_oceancoupler.topg = &vbed;
+  info_coupler.lat = &vLatitude;
+  info_coupler.lon = &vLongitude;  
+  info_coupler.mask = &vMask;
+  info_coupler.thk = &vH;
+  info_coupler.surfelev = &vh;
+  info_coupler.topg = &vbed;
 
   ierr = verbPrintf(3, grid.com,
 		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);

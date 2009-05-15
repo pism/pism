@@ -176,10 +176,8 @@ protected:
   SSAStrengthExtension  ssaStrengthExtend;
 
   PISMAtmosphereCoupler *atmosPCC;
-  IceInfoNeededByAtmosphereCoupler info_atmoscoupler;
-
   PISMOceanCoupler      *oceanPCC;
-  IceInfoNeededByOceanCoupler info_oceancoupler;
+  IceInfoNeededByCoupler info_coupler;
 
   InverseModelCtx       inv;
   

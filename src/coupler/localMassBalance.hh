@@ -94,6 +94,10 @@ generated for each grid point.
 
 The way the number of positive degree-days are used to produce a surface mass balance
 is identical to the more basic class PDDMassBalance.
+
+A more realistic pattern for the variability of surface melting might have correlation 
+with appropriate spatial and temporal ranges, but this can not be easily implemented in this
+framework because the model uses only local information.
  */
 class PDDrandMassBalance : public PDDMassBalance {
 

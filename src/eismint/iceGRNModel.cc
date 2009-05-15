@@ -64,11 +64,11 @@ PetscScalar PISMEISGREENPDDCoupler::calculateMeanAnnual(PetscScalar h, PetscScal
 //! Updates forcing and provides access to vsurftemp.  Updates vsurftemp, the mean annual surface temperature, according EISMINT-Greenland choices.
 PetscErrorCode PISMEISGREENPDDCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
-                  void *iceInfoNeeded, IceModelVec2* &pvst) {
+                  IceInfoNeededByCoupler* info, IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
   ierr = PISMPDDCoupler::updateSurfTempAndProvide(
-              t_years, dt_years, iceInfoNeeded, pvst); CHKERRQ(ierr);
+              t_years, dt_years, info, pvst); CHKERRQ(ierr);
 
   if (initialize_vsurftemp_FromFile == PETSC_FALSE) {
     // update mean annual temp; note getSummerWarming() is only used in
@@ -76,7 +76,6 @@ PetscErrorCode PISMEISGREENPDDCoupler::updateSurfTempAndProvide(
     ierr = verbPrintf(4, grid->com, 
       "computing surface temperatures by elevation,latitude-dependent EISMINT-Greenland formulas ...\n");
       CHKERRQ(ierr);
-    IceInfoNeededByAtmosphereCoupler* info = (IceInfoNeededByAtmosphereCoupler*) iceInfoNeeded;
     if (info == PETSC_NULL) { SETERRQ(1,"info == PETSC_NULL"); }
     PetscScalar **Ts, **lat, **h;
     ierr = vsurftemp.get_array(Ts); CHKERRQ(ierr);
@@ -248,7 +247,7 @@ PetscErrorCode IceGRNModel::set_vars_from_options() {
     // init couplers needs to have already occurred, but it has (see IceModel::init()):
     if (pddPCC == PETSC_NULL) { SETERRQ(1,"pddPCC == PETSC_NULL\n"); }
     IceModelVec2* dummy;
-    ierr = pddPCC->updateSurfTempAndProvide(0.0, 0.0, &info_atmoscoupler, dummy); CHKERRQ(ierr);
+    ierr = pddPCC->updateSurfTempAndProvide(0.0, 0.0, &info_coupler, dummy); CHKERRQ(ierr);
   }
   if ((haveGeothermalFlux == PETSC_FALSE) || (haveSurfaceTemp == PETSC_FALSE)) {
     ierr = verbPrintf(2, grid.com, 
