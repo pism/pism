@@ -36,7 +36,7 @@ struct IceInfoNeededByCoupler {
   IceModelVec2 *lat,      // location dependence
                *lon,      // location dependence
                *mask,     // ice surface type dependence (potentially; e.g. ice shelf vs interior)
-               *thk,      // thickness dependence (relatively unlikely)
+               *thk,      // thickness dependence (needed for ice shelf base)
                *surfelev, // surface elevation dependence (surface of ice and of exposed bedrock)
                *topg;     // bed elevation dependence (relatively unlikely)
 };

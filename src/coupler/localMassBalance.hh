@@ -42,13 +42,19 @@ public:
 
   virtual PetscErrorCode init();
 
+  /*! Call before getMassFluxFromTemperatureTimeSeries() so that mass balance method can
+      decide how to cut up the time interval.  Most implementations will ignor
+      t and just use dt.  Input t,dt in seconds.  */
+  virtual PetscErrorCode getNForTemperatureSeries(
+                PetscScalar t, PetscScalar dt, PetscInt &N);
+
   /*! T[0],...,T[N-1] are temperatures (K) at times t, t+dt, ..., t+(N-1)dt 
       Input t,dt in seconds.  Input precip and return value are in 
       ice-equivalent thickness per time (m s-1).  Input precip is amount of snow.
       Rain is not modeled.  If input precip is negative then it is treated 
       directly as ablation and positive degree days are ignored.  */
   virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
+             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip);
 
 protected:
@@ -56,7 +62,7 @@ protected:
 };
 
 
-//! A PDD implementation which computes the local mass balance based on an expectation integral to get the number of PDDs.
+//! A PDD implementation which computes the local mass balance based on an expectation integral.
 /*!
 The expected number of positive degree days is computed by an integral in \ref CalovGreve05 .
  */
@@ -67,14 +73,17 @@ public:
 
   virtual PetscErrorCode init();
 
+  virtual PetscErrorCode getNForTemperatureSeries(
+                PetscScalar t, PetscScalar dt, PetscInt &N);
+
   virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
+             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip);
 
 protected:
   /*! Return value is number of positive degree days (units: K day)  */
   virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
-                 PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N);
+                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
   PetscScalar CalovGreveIntegrand(PetscScalar sigma, PetscScalar Tac);
 
   PetscScalar  pddStdDev,        // K; daily amount of randomness
@@ -105,9 +114,12 @@ public:
   PDDrandMassBalance(bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
+  virtual PetscErrorCode getNForTemperatureSeries(
+                PetscScalar t, PetscScalar dt, PetscInt &N);
+
 protected:
   virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
-                 PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N);
+                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
   gsl_rng     *pddRandGen;
 };
 

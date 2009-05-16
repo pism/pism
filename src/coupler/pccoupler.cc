@@ -324,7 +324,7 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
 
     ierr = findPISMInputFile((char*) filename, lic); CHKERRQ(ierr); // allocates lic
     ierr = verbPrintf(2, g->com, 
-       "initializing constant atmospheric climate: reading net surface mass\n"
+       "initializing constant atmospheric climate coupler: reading net surface mass\n"
        "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
        filename); CHKERRQ(ierr); 
 
@@ -400,9 +400,12 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
   LocalInterpCtx* lic;
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates and initializes lic
 
+  ierr = verbPrintf(2, g->com, 
+       "initializing atmospheric climate coupler with a snow processes model ...\n"); CHKERRQ(ierr); 
+
   // read surface boundary condition for energy model from file
   ierr = verbPrintf(2, g->com, 
-      "  reading ice surface temperature (not snow temp) 'artm' from %s ...\n",
+      "  reading ice surface temperature (energy conservation boundary values) 'artm' from %s ...\n",
       filename); CHKERRQ(ierr); 
   ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
 
@@ -432,7 +435,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
              monthlyTempsFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
   if (optSet == PETSC_TRUE) {
     ierr = verbPrintf(2,grid->com,
-       "  snow temperature cycle chosen: reading monthly temperatures from file %s ...\n",
+       "  reading monthly snow temperatures from file %s ...\n",
        monthlyTempsFile); CHKERRQ(ierr);
     monthlysnowtemps = new MonthlyDataMaps;
     // puts month-by-month "reading ..." message to stdout:
@@ -442,7 +445,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
              monthlyTempsFile, grid); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid->com,
-       "  snow temperature cycle chosen: using temperature parameterization ...\n"); CHKERRQ(ierr);
+       "  using snow temperature parameterization ...\n"); CHKERRQ(ierr);
     // monthlysnowtemps == NULL from now on
   }
 
@@ -451,8 +454,14 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = check_option("-pdd_rand", pddRandSet); CHKERRQ(ierr);
   ierr = check_option("-pdd_rand_repeatable", pddRepeatableSet); CHKERRQ(ierr);
   if ( (pddRandSet == PETSC_TRUE) || (pddRepeatableSet == PETSC_TRUE) ) {
+    ierr = verbPrintf(2,grid->com,
+       "  mass balance scheme chosen: PDD with simulated pseudo-random daily temperature variability ...\n");
+       CHKERRQ(ierr);
     mbscheme = new PDDrandMassBalance((pddRepeatableSet == PETSC_TRUE));
   } else { // default case
+    ierr = verbPrintf(2,grid->com,
+       "  mass balance scheme chosen: PDD with expected value daily temperature variability ...\n");
+       CHKERRQ(ierr);
     mbscheme = new PDDMassBalance;
   }
   ierr = mbscheme->init(); CHKERRQ(ierr);
@@ -631,19 +640,16 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
   ierr = PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
      t_years, dt_years, info, pvsmf); CHKERRQ(ierr);
  
-  // Set up snow temperature time series.  Because Calov-Greve method uses Simpson's rule to do integral,
-  // we choose the number of times to be odd.  Accuracy for that method, with a smooth yearly cycle,
-  // suggests that at least 53 evals per year (i.e. approximately
-  // weekly) should be sufficiently accurate.  We use the same number of times for the random PDD
-  // method, too.
-  PetscInt          Nseries = (int) ceil(52 * (dt_years) + 1);
-  if (Nseries < 3) Nseries = 3;
-  if ((Nseries % 2) == 0)  Nseries++;  // guarantee it is odd
+  // set up snow temperature time series
+  PetscInt     Nseries;
+  ierr = mbscheme->getNForTemperatureSeries(
+             t_years * secpera, dt_years * secpera, Nseries); CHKERRQ(ierr);
+  PetscScalar  *Tseries = new PetscScalar[Nseries];
+
   // times at which we compute snow temps are
   //    tseries, tseries + dtseries, ..., tseries + (Nseries-1) * dtseries;
   const PetscScalar tseries = (t_years - floor(t_years)) * secpera,
                     dtseries = (dt_years * secpera) / ((PetscScalar) Nseries);
-  PetscScalar       *Tseries = new PetscScalar[Nseries];
   
   // constants related to standard yearly cycle
   const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle

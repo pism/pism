@@ -55,8 +55,17 @@ PetscErrorCode LocalMassBalance::init() {
   return 0;
 }
 
+
+PetscErrorCode LocalMassBalance::getNForTemperatureSeries(
+                   PetscScalar t, PetscScalar dt, PetscInt &N) {
+  PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
+  PetscEnd();
+  return 0.0;
+}
+
+
 PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
+             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
   PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
   PetscEnd();
@@ -90,6 +99,21 @@ PetscErrorCode PDDMassBalance::init() {
 }
 
 
+/*!
+Because Calov-Greve method uses Simpson's rule to do integral, we choose the number 
+of times to be odd.  Numerical integration accuracy, assuming a smooth-in-time yearly cycle,
+suggests that 53 evals per year (i.e. approximately weekly) should be sufficiently accurate.
+ */
+PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
+                   PetscScalar t, PetscScalar dt, PetscInt &N) {
+  PetscScalar dt_years = dt / secpera;
+  N = (int) ceil(52 * (dt_years) + 1);
+  if (N < 3) N = 3;
+  if ((N % 2) == 0)  N++;  // guarantee it is odd
+  return 0.0;
+}
+
+
 //! Compute the surface balance at a location given number of positive degree days and snowfall.
 /*!  
 The net surface mass balance, as ice equivalent thickness per time, is computed 
@@ -119,24 +143,24 @@ Arguments are snow fall rate precip in (ice-equivalent) m s-1, t and dt in s, T[
 K.  There are N temperature values T[0],...,T[N-1].
  */
 PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N,
+             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
-  PetscScalar pddsum = getPDDSumFromTemperatureTimeSeries(t,dt,T,N);
+  PetscScalar pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N); // units: K day
   if (precip < 0.0) {
     // neg precip interpreted as ablation, so positive degree-days are ignored
     return precip;
   } else {
     // positive precip: it snowed (precip = snow; never rain)
-    const PetscScalar snow        = precip * dt,   // units of m of ice-equivalent
-                      snow_melted = pddsum * pddFactorSnow;  // m of ice-equivalent
+    const PetscScalar snow        = precip * dt_series,   // units: m (ice-equivalent)
+                      snow_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
     if (snow_melted <= snow) {
-      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt;
+      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt_series;
     } else { // it is snowing, but all the snow melts and refreezes; this ice is
              // then removed, plus possibly more of the underlying ice
       const PetscScalar ice_deposited = snow * pddRefreezeFrac,
-                        excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!
-                        ice_melted    = excess_pddsum * pddFactorIce;
-      return (ice_deposited - ice_melted) / dt;
+                        excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!; units K day
+                        ice_melted    = excess_pddsum * pddFactorIce; // units: K day
+      return (ice_deposited - ice_melted) / dt_series;
     }
   }
 }
@@ -162,7 +186,7 @@ in the above integral must be in degrees C, so the shift is done within this
 procedure.
  */
 PetscScalar PDDMassBalance::CalovGreveIntegrand(
-             PetscScalar sigma, PetscScalar Tac) {
+               PetscScalar sigma, PetscScalar Tac) {
   const PetscScalar TacC = Tac - 273.15;
   return (sigma / sqrt(2.0 * pi)) * exp(- TacC * TacC / (2.0 * sigma * sigma)) 
            + (TacC / 2.0) * gsl_sf_erfc(- TacC / (sqrt(2.0) * sigma));
@@ -170,22 +194,22 @@ PetscScalar PDDMassBalance::CalovGreveIntegrand(
 
 
 PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N) {
+             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar  pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
-                    h_days = dt / sperd;
+                    h_days = dt_series / sperd;
   const PetscInt Nsimp = ((N % 2) == 1) ? N : N-1; // odd N case is pure simpson's
   // Simpson's rule is:
   //   integral \approx (h/3) * sum( [1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)] )
   for (PetscInt m = 0; m < Nsimp; ++m) {
     PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
     if ( (m == 0) || (m == (Nsimp-1)) )  coeff = 1.0;
-    pdd_sum += coeff * CalovGreveIntegrand(T[m],pddStdDev);  // pass in temp in K
+    pdd_sum += coeff * CalovGreveIntegrand(pddStdDev,T[m]);  // pass in temp in K
   }
   pdd_sum = (h_days / 3.0) * pdd_sum;
   if (Nsimp < N) { // add one more subinterval by trapezoid
-    pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(T[N-2],pddStdDev)
-                                  + CalovGreveIntegrand(T[N-1],pddStdDev) );
+    pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(pddStdDev,T[N-2])
+                                  + CalovGreveIntegrand(pddStdDev,T[N-1]) );
   }
   return pdd_sum;
 }
@@ -210,11 +234,30 @@ PDDrandMassBalance::~PDDrandMassBalance() {
 }
 
 
+/*!
+We need to compute simulated random temperature each actual \e day, or at least as
+close as we can reasonably get.  Output Nseries is number of days plus one.
+
+Implementation of getPDDSumFromTemperatureTimeSeries() does require Nseries >= 2,
+however.
+
+(Alternatively we could adjust the standard deviation
+to account for non-day sub-intervals.)
+ */
+PetscErrorCode PDDrandMassBalance::getNForTemperatureSeries(
+                   PetscScalar t, PetscScalar dt, PetscInt &Nseries) {
+  const PetscScalar sperd = 8.64e4;
+  Nseries = (int) ceil(dt / sperd);
+  if (Nseries < 2) Nseries = 2;
+  return 0.0;
+}
+
+
 PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt, PetscScalar *T, PetscInt N) {
+             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar       pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
-                    h_days = dt / sperd;
+                    h_days = dt_series / sperd;
   // there are N-1 intervals [t,t+dt],...,[t+(N-2)dt,t+(N-1)dt]
   for (PetscInt m = 0; m < N-1; ++m) {
     PetscScalar temp = 0.5 * (T[m] + T[m+1]); // av temp in [t+m*dt,t+(m+1)*dt]
