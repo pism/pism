@@ -186,12 +186,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = check_option("-no_mass", noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
 
-/* REMOVED TO AVOID STENCIL_BOX COMMUNICATION FOR 3D Vecs: 
-  // -no_spokes K for K=0,1,2,... turns on smoothing of spokes by smoothing Sigma 
-  // (e.g. in EISMINT experiment F) values K>3 not recommended (lots of communication!)
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-no_spokes", &noSpokesLevel, PETSC_NULL); CHKERRQ(ierr);
-*/
-
   ierr = check_option("-no_temp", noTemp); CHKERRQ(ierr);
   if (noTemp == PETSC_TRUE)   doTemp = PETSC_FALSE;
 

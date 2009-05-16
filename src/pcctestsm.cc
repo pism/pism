@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
     if (!i_set) { SETERRQ(1,"PCCTEST ERROR: no -i file to initialize from\n"); }
 
     ierr = PetscPrintf(com, 
-             "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
+             "  initializing grid from NetCDF file %s...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
     psparams.init("polar_stereographic", grid);
@@ -301,8 +301,8 @@ int main(int argc, char *argv[]) {
     }
 
     ierr = PetscPrintf(com, 
-             "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file '%s' to fill fields\n"
-             "    in IceInfoNeededByCoupler ...\n",
+             "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
+             "    to fill fields in IceInfoNeededByCoupler ...\n",
              inname); CHKERRQ(ierr);
     IceInfoNeededByCoupler      info;
     ierr = readIceInfoFromFile(inname,&grid,lic,info); CHKERRQ(ierr);

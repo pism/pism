@@ -14,13 +14,14 @@ print """
 
 \par Notes
 - These flags and parameters are from pism_config.cdl, which is
-converted to .nc in the build process.  It is put in lib/pism_config.nc.
+  converted to lib/pism_config.nc in the build process.
 - An alternate config .nc file can be specified by option "-config foo.nc".
-The alternate file must generally contain values for flags and parameters,
-but they are asked-for when needed.
+  The alternate file must generally contain values for all of the flags and parameters,
+- Values are asked-for when needed, so if there is no request for it then a flag or
+  parameter could be missing and things could still run.
 - Valid boolean flag values are "yes", "true", "on" and "no",
-"false", "off" (lowercase only).  They have to be enclosed in quotes
-in pism_config.cdl.
+  "false", "off" (lowercase only).  They have to be enclosed in quotes
+  in pism_config.cdl.
 """
 
 print """

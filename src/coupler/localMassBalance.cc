@@ -99,6 +99,45 @@ PetscErrorCode PDDMassBalance::init() {
 }
 
 
+PetscErrorCode PDDMassBalance::setDegreeDayFactorsFromSpecialInfo(
+                                  PetscScalar latitude, PetscScalar T_mj) {
+  const PetscScalar
+    beta_ice_w = config.get("pdd_fausto_beta_ice_w"),
+    beta_snow_w = config.get("pdd_fausto_beta_snow_w");
+  if (latitude < config.get("pdd_fausto_latitude_beta_w")) { // case lat < 72 deg N
+    pddFactorIce  = beta_ice_w;
+    pddFactorSnow = beta_snow_w;
+  } else { // case > 72 deg N
+    const PetscScalar  
+      T_c = config.get("pdd_fausto_T_c"),
+      T_w = config.get("pdd_fausto_T_w"),
+      beta_ice_c = config.get("pdd_fausto_beta_ice_c"),
+      beta_snow_c = config.get("pdd_fausto_beta_snow_c");
+    if (T_mj >= T_w) {
+      pddFactorIce  = beta_ice_w;
+      pddFactorSnow = beta_snow_w;
+    } else if (T_mj <= T_c) {
+      pddFactorIce  = beta_ice_c;
+      pddFactorSnow = beta_snow_c;
+    } else { // middle case   T_c < T_mj < T_w
+      const PetscScalar
+         lam_i = pow( (T_w - T_mj) / (T_w - T_c) , 3.0),
+         lam_s = (T_mj - T_c) / (T_w - T_c);
+      pddFactorIce  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
+      pddFactorSnow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;
+    }
+  }
+
+  // degree-day factors in \ref Faustoetal2009 are water-equivalent
+  //   thickness per degree day; ice-equivalent thickness melted per degree
+  //   day is slightly larger; for example, iwfactor = 1000/910
+  const PetscScalar iwfactor = config.get("fresh_water_rho") / config.get("ice_rho");
+  pddFactorSnow *= iwfactor;
+  pddFactorIce  *= iwfactor;
+  return 0;
+}
+
+
 /*!
 Because Calov-Greve method uses Simpson's rule to do integral, we choose the number 
 of times to be odd.  Numerical integration accuracy, assuming a smooth-in-time yearly cycle,
@@ -140,27 +179,41 @@ on ice sheets, however.
 The scheme here came from EISMINT-Greenland \ref RitzEISMINT .
 
 Arguments are snow fall rate precip in (ice-equivalent) m s-1, t and dt in s, T[] in
-K.  There are N temperature values T[0],...,T[N-1].
+K.  There are N temperature values T[0],...,T[N-1] at times
+t,t+dt_series,...,t+(N-1)*dt_series.  This time series covers the interval [t,t+dt]
+where dt = (N-1)*dt_series.
  */
 PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
-  PetscScalar pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N); // units: K day
+#if 0
+  static bool flag = true;
+  if (flag) {
+     PetscPrintf(PETSC_COMM_WORLD,
+     "\nfirst call to PDDMassBalance::getMassFluxFromTemperatureTimeSeries():\n"
+       "  pddFactorSnow,pddFactorIce,pddRefreezeFrac,pddStdDev=%f,%f,%f,%f\n\n",
+     pddFactorSnow,pddFactorIce,pddRefreezeFrac,pddStdDev); 
+     flag = false;
+  }
+#endif
+  const PetscScalar
+      pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N), // units: K day
+      dt     = (N-1) * dt_series; 
   if (precip < 0.0) {
     // neg precip interpreted as ablation, so positive degree-days are ignored
     return precip;
   } else {
     // positive precip: it snowed (precip = snow; never rain)
-    const PetscScalar snow        = precip * dt_series,   // units: m (ice-equivalent)
+    const PetscScalar snow        = precip * dt,   // units: m (ice-equivalent)
                       snow_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
     if (snow_melted <= snow) {
-      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt_series;
+      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt;
     } else { // it is snowing, but all the snow melts and refreezes; this ice is
              // then removed, plus possibly more of the underlying ice
       const PetscScalar ice_deposited = snow * pddRefreezeFrac,
                         excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!; units K day
                         ice_melted    = excess_pddsum * pddFactorIce; // units: K day
-      return (ice_deposited - ice_melted) / dt_series;
+      return (ice_deposited - ice_melted) / dt;
     }
   }
 }
@@ -211,6 +264,15 @@ PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
     pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(pddStdDev,T[N-2])
                                   + CalovGreveIntegrand(pddStdDev,T[N-1]) );
   }
+#if 0
+  static bool flag = true;
+  if (flag) {
+     PetscPrintf(PETSC_COMM_WORLD,
+     "\nfirst call to PDDMassBalance::getPDDSumFromTemperatureTimeSeries():\n"
+       "  pdd_sum=%f\n\n",pdd_sum); 
+     flag = false;
+  }
+#endif
   return pdd_sum;
 }
 
@@ -222,7 +284,17 @@ wall clock time in seconds in non-repeatable case, and with 0 in repeatable case
  */
 PDDrandMassBalance::PDDrandMassBalance(bool repeatable) : PDDMassBalance() {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));  
+  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0)); 
+#if 0
+  PetscTruth     pSet;
+  PetscOptionsGetScalar(PETSC_NULL, "-pdd_std_dev", &pddStdDev, &pSet);
+  PetscPrintf(PETSC_COMM_WORLD,"\nPDDrandMassBalance constructor; pddStdDev = %10.4f\n",
+              pddStdDev);
+  for (int k=0; k<20; k++) {
+    PetscPrintf(PETSC_COMM_WORLD,"  %9.4f\n",gsl_ran_gaussian(pddRandGen, pddStdDev));
+  }
+  PetscPrintf(PETSC_COMM_WORLD,"\n\n");
+#endif
 }
 
 
@@ -264,6 +336,15 @@ PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
     temp += gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
     if (temp > 273.15)   pdd_sum += h_days * (temp - 273.15);
   }
+#if 0
+  static bool flag = true;
+  if (flag) {
+     PetscPrintf(PETSC_COMM_WORLD,
+     "\nfirst call to PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries():\n"
+       "  pdd_sum=%f\n\n",pdd_sum); 
+     flag = false;
+  }
+#endif
   return pdd_sum;
 }
 

@@ -70,11 +70,16 @@ class PDDMassBalance : public LocalMassBalance {
 
 public:
   PDDMassBalance();
+  virtual ~PDDMassBalance() {}
 
   virtual PetscErrorCode init();
 
   virtual PetscErrorCode getNForTemperatureSeries(
-                PetscScalar t, PetscScalar dt, PetscInt &N);
+             PetscScalar t, PetscScalar dt, PetscInt &N);
+
+  //! Formula (6) in [\ref Faustoetal2009] requires knowledge of latitude and mean July temp.
+  virtual PetscErrorCode setDegreeDayFactorsFromSpecialInfo(
+             PetscScalar latitude, PetscScalar T_mj);
 
   virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,

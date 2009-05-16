@@ -56,9 +56,6 @@ netcdf pism_config {
     pism_config:constant_grain_size = 1.0e-3;
     pism_config:constant_grain_size_doc = "Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law, meters";
 
-    pism_config:no_spokes_level = 0.0;
-    pism_config:no_spokes_level_doc = "iterations of smoothing of Sigma";
-
     pism_config:start_year = 0;
     pism_config:start_year_doc = "Model year at which to start the run.";
 
@@ -77,8 +74,8 @@ netcdf pism_config {
     pism_config:epsilon_ssa = 1.0e15;
     pism_config:epsilon_ssa_doc = "initial amount of (denominator) regularization in computation of effective viscosity";
 
-    pism_config:tauc = 1e4;
-    pism_config:tauc_doc = "yield stress for basal till (plastic or pseudo-plastic model); 10^4 Pa = 0.1 bar";
+    pism_config:default_tauc = 1e4;
+    pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 10^4 Pa = 0.1 bar";
 
     pism_config:max_hmelt = 2.0;
     pism_config:max_hmelt_doc = "maximum thickness of the basal melt water layer, meters";
@@ -89,8 +86,8 @@ netcdf pism_config {
     pism_config:skip_max = 10;
     pism_config:skip_max_doc = "Number of mass-balance steps, including SIA diﬀusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
 
-    pism_config:till_phi = 30.0;
-    pism_config:till_phi_doc = "till friction angle, degrees";
+    pism_config:default_till_phi = 30.0;
+    pism_config:default_till_phi_doc = "(degrees); fill value for till friction angle";
 
     pism_config:till_pw_fraction = 0.95;
     pism_config:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
@@ -143,33 +140,64 @@ netcdf pism_config {
     pism_config:pdd_std_dev = 5.0;
     pism_config:pdd_std_dev_doc = "K; std dev of daily temp variation; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
+    pism_config:pdd_fausto_latitude_beta_w = 72.0;
+    pism_config:pdd_fausto_latitude_beta_w_doc = "(degrees N); latitude below which to use warm case, in formula (6) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_fausto_beta_ice_w = 0.007;
+    pism_config:pdd_fausto_beta_ice_w_doc = "m day-1 K-1; water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_fausto_beta_snow_w = 0.003;
+    pism_config:pdd_fausto_beta_snow_w_doc = "m day-1 K-1; water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_fausto_beta_ice_c = 0.015;
+    pism_config:pdd_fausto_beta_ice_c_doc = "m day-1 K-1; water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_fausto_beta_snow_c = 0.003;
+    pism_config:pdd_fausto_beta_snow_c_doc = "m day-1 K-1; water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_fausto_T_w = 283.15;
+    pism_config:pdd_fausto_T_w_doc = "K; = 10 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_fausto_T_c = 272.15;
+    pism_config:pdd_fausto_T_c_doc = "K; = -1 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
+
     pism_config:snow_temp_fausto_d_ma = 314.98;
-    pism_config:snow_temp_fausto_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_gamma_ma = -0.006309;
-    pism_config:snow_temp_fausto_gamma_ma_doc = "K m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_gamma_ma_doc = "K m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_c_ma = -0.7189;
-    pism_config:snow_temp_fausto_c_ma_doc = "K (degN)-1; latitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_c_ma_doc = "K (degN)-1; latitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_kappa_ma = 0.0672;
-    pism_config:snow_temp_fausto_kappa_ma_doc = "K (degW)-1; longitude-dependence coefficient for formula (1) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_kappa_ma_doc = "K (degW)-1; longitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_d_mj = 287.85;
-    pism_config:snow_temp_fausto_d_mj_doc = "K; = 14.70+273.15; base temperature for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_d_mj_doc = "K; = 14.70+273.15; base temperature for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_gamma_mj = -0.005426;
-    pism_config:snow_temp_fausto_gamma_mj_doc = "K m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_gamma_mj_doc = "K m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in [[\\ref Faustoetal2009]] ";
 
     pism_config:snow_temp_fausto_c_mj = -0.1585;
-    pism_config:snow_temp_fausto_c_mj_doc = "K (degN)-1; latitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_c_mj_doc = "K (degN)-1; latitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_kappa_mj = 0.0518;
-    pism_config:snow_temp_fausto_kappa_mj_doc = "K (degW)-1; longitude-dependence coefficient for formula (2) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_fausto_kappa_mj_doc = "K (degW)-1; longitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_july_day = 196;
-    pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in \\ref Faustoetal2009 ";
+    pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
 
+    // THESE CONSTANTS DUPLICATE, BUT MAY SUPERCEDE, CONSTANTS IN materials.cc
+    pism_config:ice_rho = 910.0;
+    pism_config:ice_rho_doc = "kg m-3; density of ice in ice sheet";
+   
+    pism_config:fresh_water_rho = 1000.0;
+    pism_config:fresh_water_rho_doc = "kg m-3; density of ice in ice sheet";
+   
+    pism_config:sea_water_rho = 1028.0;
+    pism_config:sea_water_rho_doc = "kg m-3; density of ice in ice sheet";
+   
     // These constants are not used (so far):
     pism_config:seconds_per_year = 3.15569259747e7;
     pism_config:seconds_per_year_doc = "This value should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";

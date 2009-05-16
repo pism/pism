@@ -342,6 +342,13 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
 
 /*******************  ATMOSPHERE:  PISMSnowModelAtmosCoupler ********************/
 
+
+/* MINIMAL TEST FOR THIS SCHEME:
+ncrename -v snowaccum,snowprecip green20km_y1.nc foo.nc
+pcctestsm -i foo.nc -sma -pdd_std_dev 1.0 -ys 0.0 -ye 1.0 -dt 0.01 -o smamovie01.nc
+pcctestsm -i foo.nc -sma -pdd_rand -pdd_std_dev 1.0 -ys 0.0 -ye 1.0 -dt 0.01 -o smarandmovie01.nc
+*/
+
 PISMSnowModelAtmosCoupler::PISMSnowModelAtmosCoupler() : PISMAtmosphereCoupler() {
   monthlysnowtemps = NULL;
   mbscheme = NULL;
@@ -401,11 +408,12 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates and initializes lic
 
   ierr = verbPrintf(2, g->com, 
-       "initializing atmospheric climate coupler with a snow processes model ...\n"); CHKERRQ(ierr); 
+       "initializing atmospheric climate coupler with a snow process model ...\n"); CHKERRQ(ierr); 
 
   // read surface boundary condition for energy model from file
   ierr = verbPrintf(2, g->com, 
-      "  reading ice surface temperature (energy conservation boundary values) 'artm' from %s ...\n",
+      "  reading ice surface temperature (energy conservation boundary values) 'artm'\n"
+      "    from %s ...\n",
       filename); CHKERRQ(ierr); 
   ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
 
@@ -425,7 +433,8 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, g->com, 
-      "  reading mean annual ice-equivalent snow precipitation rate 'snowprecip' from %s ... \n",
+      "  reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
+      "    from %s ... \n",
       filename); CHKERRQ(ierr); 
   ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
 
@@ -455,12 +464,12 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = check_option("-pdd_rand_repeatable", pddRepeatableSet); CHKERRQ(ierr);
   if ( (pddRandSet == PETSC_TRUE) || (pddRepeatableSet == PETSC_TRUE) ) {
     ierr = verbPrintf(2,grid->com,
-       "  mass balance scheme chosen: PDD with simulated pseudo-random daily temperature variability ...\n");
+       "  mass balance scheme chosen: PDD with simulated random daily variability ...\n");
        CHKERRQ(ierr);
     mbscheme = new PDDrandMassBalance((pddRepeatableSet == PETSC_TRUE));
   } else { // default case
     ierr = verbPrintf(2,grid->com,
-       "  mass balance scheme chosen: PDD with expected value daily temperature variability ...\n");
+       "  mass balance scheme chosen: PDD with expected value for daily variability ...\n");
        CHKERRQ(ierr);
     mbscheme = new PDDMassBalance;
   }
@@ -652,18 +661,20 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
                     dtseries = (dt_years * secpera) / ((PetscScalar) Nseries);
   
   // constants related to standard yearly cycle
-  const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
-                    sperd = 8.64e4, // exact number of seconds per day
-                    julydaysec = sperd * config.get("snow_temp_july_day");
+  const PetscScalar
+     radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
+     sperd = 8.64e4, // exact number of seconds per day
+     julydaysec = sperd * config.get("snow_temp_july_day");
   
   // get access to snow temperatures (and update parameterization if appropriate)
-  PetscScalar **T_ma, **T_mj, **snowrate, **smflux;
+  PetscScalar **T_ma, **T_mj, **snowrate, **lat, **smflux;
   if (monthlysnowtemps == NULL) {
     ierr = parameterizedUpdateSnowTemp(info); CHKERRQ(ierr);
   }
   ierr = vsnowtemp_ma.get_array(T_ma);  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
   ierr = vsnowprecip.get_array(snowrate);  CHKERRQ(ierr);
+  ierr = info->lat->get_array(lat); CHKERRQ(ierr);
   ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
 
   // run through grid
@@ -690,6 +701,14 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
         }
       }
 
+      // if we can, set mass balance parameters according to formula (6) in
+      //   \ref Faustoetal2009
+      PDDMassBalance* pddscheme = dynamic_cast<PDDMassBalance*>(mbscheme);
+      if (pddscheme != NULL) {
+        ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat[i][j],T_mj[i][j]); CHKERRQ(ierr);
+      }
+
+      
       // get surface mass balance at point i,j
       smflux[i][j] = mbscheme->getMassFluxFromTemperatureTimeSeries(
                         tseries, dtseries, Tseries, Nseries,snowrate[i][j]);  // units of day^-1 K-1
@@ -699,6 +718,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
   ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
   ierr = vsnowprecip.end_access();  CHKERRQ(ierr);
+  ierr = info->lat->end_access(); CHKERRQ(ierr);
   ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
 
   delete [] Tseries;

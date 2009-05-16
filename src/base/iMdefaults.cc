@@ -91,9 +91,9 @@ PetscErrorCode IceModel::setDefaults() {
 
   plastic_till_pw_fraction  = config.get("till_pw_fraction");
   plastic_till_c_0          = config.get("till_c_0");
-  plastic_till_mu           = tan((pi/180.0)*config.get("till_phi"));
+  plastic_till_mu           = tan((pi/180.0)*config.get("default_till_phi"));
   plasticRegularization     = config.get("plastic_regularization") / secpera;
-  tauc_default_value        = config.get("tauc");
+  tauc_default_value        = config.get("default_tauc");
   pseudo_plastic_q          = config.get("pseudo_plastic_q");
   pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera;
   holdTillYieldStress       = PETSC_FALSE;
@@ -133,7 +133,6 @@ PetscErrorCode IceModel::setDefaults() {
   doBedDef            = config.get_flag("do_bed_deformation");
   doBedIso            = config.get_flag("do_bed_iso");
   bedDefIntervalYears = config.get("bed_def_interval_years");
-  noSpokesLevel       = config.get("no_spokes_level");
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
