@@ -26,25 +26,49 @@
 #include "../coupler/pccoupler.hh"
 
 
-//! Implements upper ice surface climate inputs, as parameterized in EISMINT-Greenland experiments.
-/*!
-Gives an elevation- and latitude-dependent mean annual surface temperature and 
-amount of summer warming.
 
-Also implements GWL3 climate warming scenario.
- */
-class PISMEISGREENPDDCoupler : public PISMPDDCoupler {
+//! Stop using formula (6) in [\ref Faustoetal2009].
+class EISGREENMassBalance : public PDDMassBalance {
 
 public:
-  PISMEISGREENPDDCoupler();
+  EISGREENMassBalance();
+
+  // leaves pddFactorIce and pddFactorSnow alone, instead of base class action
+  virtual PetscErrorCode setDegreeDayFactorsFromSpecialInfo(
+             PetscScalar latitude, PetscScalar T_mj);
+};
+
+
+//! Upper ice surface climate inputs, as parameterized in EISMINT-Greenland experiments.
+/*!
+Gives an elevation- and latitude-dependent mean annual ice surface temperature and 
+snow temperature, for PDD.  Also implements GWL3 climate warming scenario.
+ */
+class EISGREENAtmosCoupler : public PISMSnowModelAtmosCoupler {
+
+public:
+  EISGREENAtmosCoupler();
+
+  // just for checking attachment of new mass balance scheme
+  using PISMSnowModelAtmosCoupler::initFromOptions; // overrides but calls this
+  virtual PetscErrorCode initFromOptions(IceGrid* g);
+
+  using PISMSnowModelAtmosCoupler::updateSurfTempAndProvide; // overrides this
+  virtual PetscErrorCode updateSurfTempAndProvide(
+               PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+               IceModelVec2* &pvst);
+
   PetscErrorCode startGWL3AtYear(PetscScalar year); // call with start year to do GML3
-  virtual PetscErrorCode updateSurfTempAndProvide(const PetscScalar t_years, const PetscScalar dt_years, 
-                                   IceInfoNeededByCoupler* info, IceModelVec2* &pvst);
 
 protected:
-  virtual PetscScalar getSummerWarming(
-             const PetscScalar elevation, const PetscScalar latitude, const PetscScalar Tma);
-  virtual PetscScalar calculateMeanAnnual(PetscScalar h, PetscScalar lat);
+
+  using PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp; // overrides this
+  virtual PetscErrorCode parameterizedUpdateSnowSurfaceTemp(
+            PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
+
+  PetscScalar meanAnnualTemp(PetscScalar h, PetscScalar lat);
+
+  PetscScalar shiftForGWL3(PetscScalar t_years, PetscScalar dt_years);
 
 private:
   PetscTruth  doGWL3;
@@ -70,21 +94,16 @@ A separate driver is used, namely src/pgrn.cc.
 class IceGRNModel : public IceModel {
 
 public:
-  IceGRNModel(IceGrid &g);
-  PetscErrorCode attachEISGREENPDDPCC(PISMEISGREENPDDCoupler &p);
+  IceGRNModel(IceGrid &g) : IceModel(g) {}
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_vars_from_options();
 
 protected:
-  PISMEISGREENPDDCoupler *pddPCC; // points to same PISMAtmosCoupler as IceModel::atmosPCC,
-                                  //   but we access PDD parameters through this pointer
-
   int expernum;  // SSL2 is 1, CCL3 is 3, GWL3 is 4
 
 private:
   PetscTruth  noEllesmereIcelandDelete,
-              haveSurfaceTemp,
               haveGeothermalFlux;
   PetscErrorCode ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat);
   PetscErrorCode cleanExtraLand();

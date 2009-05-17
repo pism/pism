@@ -7,7 +7,6 @@ import time
 from numpy import *
 from netCDF3 import Dataset as NC
 
-SECPERA = 3.1556926e7
 GRID_FILE = 'grid20-EISMINT'
 SUAQ_FILE = 'suaq20-EISMINT'
 WRIT_FILE = 'eis_green20.nc'
@@ -112,7 +111,7 @@ for line in input.read().split():
 		B[Bcount/int(dim[1]), Bcount%int(dim[1])]=float(line)
 		Bcount = Bcount + 1
 	else: # accumulation (m/a -> m/s)
-		acc[Acccount/int(dim[1]), Acccount%int(dim[1])]=float(line)/SECPERA
+		acc[Acccount/int(dim[1]), Acccount%int(dim[1])]=float(line)
 		Acccount = Acccount + 1
 	x = x+1
 
@@ -128,7 +127,7 @@ putmask(B, B == 0, topg_fill_value)
 ncfile = NC(WRIT_FILE, 'w')
 
 # set global attributes
-setattr(ncfile, 'Conventions', 'CF-1.0')
+setattr(ncfile, 'Conventions', 'CF-1.4')
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
@@ -146,7 +145,7 @@ latvar = ncfile.createVariable('lat', 'f4', dimensions=('y', 'x'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
 thkvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
 bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x')) 
-accvar = ncfile.createVariable('snowaccum', 'f4', dimensions=('y', 'x'))
+accvar = ncfile.createVariable('snowprecip', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables
 setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
@@ -187,7 +186,7 @@ setattr(bedvar, 'valid_min', topg_valid_min)
 setattr(bedvar, '_FillValue', topg_fill_value)
 
 setattr(accvar, 'long_name', 'mean annual ice-equivalent snow accumulation rate')
-setattr(accvar, 'units', 'm s-1')
+setattr(accvar, 'units', 'm year-1')
 
 # write the data to the NetCDF file
 spacing = float(dim[2])*1000
@@ -203,9 +202,4 @@ bedvar[:] = B
 accvar[:] = acc
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"
-
-
-## this NCO command transposes, if needed:
-##   ncpdq -a y,x -v lat,lon,thk,usurf,accum,topg eis_green20.nc eg20_transpose.nc
-
 

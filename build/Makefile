@@ -81,8 +81,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := penth pismr pismd pismv pisms pcctestsm
-########executables := penth pismr pismd pismv pisms pcctest
+executables := penth pismr pismd pismv pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM gridL flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
@@ -97,7 +96,7 @@ ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
 	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc iMinit.cc iceShelfExtension.cc \
-	extrasGSL.cc forcing.cc pPDDcoupler.cc pccoupler.cc localMassBalance.cc \
+	extrasGSL.cc forcing.cc pccoupler.cc localMassBalance.cc \
 	ssa.cc ssafe.cc pism_revision.cc columnSystem.cc monthlyDataMaps.cc 
 ice_csources := cubature.c pism_signal.c
 

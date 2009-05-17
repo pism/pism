@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
   
   { // explicit scoping does destructors before PetscFinalize() 
     IceGrid g(com, rank, size);
-    PISMEISGREENPDDCoupler ppdd;
+    EISGREENAtmosCoupler   pegac;
     PISMConstOceanCoupler  pcoc;
  
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
@@ -51,8 +51,7 @@ int main(int argc, char *argv[]){
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
 
-    ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
-    ierr = m.attachEISGREENPDDPCC(ppdd); CHKERRQ(ierr);
+    ierr = m.attachAtmospherePCC(pegac); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);
@@ -66,3 +65,4 @@ int main(int argc, char *argv[]){
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+

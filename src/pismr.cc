@@ -41,9 +41,9 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid g(com, rank, size);
-    PISMConstAtmosCoupler pcac;
-    PISMPDDCoupler        ppdd;
-    PISMConstOceanCoupler pcoc;
+    PISMConstAtmosCoupler     pcac;
+    PISMSnowModelAtmosCoupler ppdd;
+    PISMConstOceanCoupler     pcoc;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMR %s (basic evolution run mode)\n",
@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
     // Attach climate couplers:
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
-    if (pddSet == PETSC_TRUE) { // note climate will always come from input file in pismr
-      ierr = verbPrintf(2,com, "pismr attaching PISMPDDCoupler to IceModel\n"); CHKERRQ(ierr);
+    if (pddSet == PETSC_TRUE) {
+      ierr = verbPrintf(2,com, "pismr attaching PISMSnowModelAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,com, "pismr attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);

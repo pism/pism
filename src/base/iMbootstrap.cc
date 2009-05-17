@@ -113,8 +113,13 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   setInitialAgeYears(initial_age_years_default);
   
   ierr = verbPrintf(2, grid.com, 
-     "  filling in temperatures at depth using quartic guess\n");
+     "  filling in temperatures at depth using surface temperature parameterization and quartic guess\n");
      CHKERRQ(ierr);
+  if (atmosPCC != PETSC_NULL) {
+    IceModelVec2* ignored;
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, &info_coupler, ignored);
+                CHKERRQ(ierr);
+  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }  
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);

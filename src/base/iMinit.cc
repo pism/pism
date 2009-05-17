@@ -315,7 +315,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
 
 //! Initialize some physical parameters.
 /*!
-  This is the place for all non-trivial initalization of physical parameters
+  This is the place for all non-trivial initialization of physical parameters
   (non-trivial meaning requiring more than just setting a value of a
   parameter).
 

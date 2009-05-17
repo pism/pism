@@ -38,47 +38,16 @@ static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) 
 }
 
 
-static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
-					    LocalInterpCtx* &lic, 
-					    IceInfoNeededByAtmosphereCoupler &info) {
-  PetscErrorCode ierr;
-
-  info.lat = new IceModelVec2;
-  info.lon = new IceModelVec2;
-  info.mask = new IceModelVec2;
-  info.surfelev = new IceModelVec2;
-
-  ierr = info.lat->create(*grid, "lat", true); CHKERRQ(ierr);
-  ierr = info.lat->set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
-
-  ierr = info.lon->create(*grid, "lon", true); CHKERRQ(ierr);
-  ierr = info.lon->set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
-
-  ierr = info.mask->create(*grid, "mask", true); CHKERRQ(ierr);
-  ierr = info.mask->set_attrs("", "grounded_dragging_floating integer mask",
-			      "", ""); CHKERRQ(ierr);
-
-  ierr = info.surfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
-  ierr = info.surfelev->set_attrs("", "ice upper surface elevation",
-		                  "m", "surface_altitude"); CHKERRQ(ierr);
-
-  ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
-  return 0;
-}
-
-
-static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *grid,
-                                     LocalInterpCtx* &lic, 
-                                     IceInfoNeededByOceanCoupler &info) {
+static PetscErrorCode readIceInfoFromFile(char *filename, IceGrid *grid, LocalInterpCtx* &lic,
+                                          IceInfoNeededByCoupler &info) {
   PetscErrorCode ierr;
 
   info.lat = new IceModelVec2;
   info.lon = new IceModelVec2;
   info.mask = new IceModelVec2;
   info.thk = new IceModelVec2;
+  info.surfelev = new IceModelVec2;
+  info.topg = new IceModelVec2;
 
   ierr = info.lat->create(*grid, "lat", true); CHKERRQ(ierr);
   ierr = info.lat->set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
@@ -94,39 +63,38 @@ static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *g
   ierr = info.thk->set_attrs("", "land ice thickness",
 		             "m", "land_ice_thickness"); CHKERRQ(ierr);
 
+  ierr = info.surfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
+  ierr = info.surfelev->set_attrs("", "ice upper surface elevation",
+		                  "m", "surface_altitude"); CHKERRQ(ierr);
+
+  ierr = info.topg->create(*grid, "topg", true); CHKERRQ(ierr);
+  ierr = info.topg->set_attrs("", "bedrock surface elevation",
+			"m", "bedrock_altitude"); CHKERRQ(ierr);
+
   ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
   ierr = info.thk->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = info.topg->regrid(filename, *lic, true); CHKERRQ(ierr);
   return 0;
 }
 
 
-
-static PetscErrorCode doneWithAtmosInfo(IceInfoNeededByAtmosphereCoupler &info) {
-  PetscErrorCode ierr;
-  ierr = info.lat->destroy(); CHKERRQ(ierr);
-  ierr = info.lon->destroy(); CHKERRQ(ierr);
-  ierr = info.mask->destroy(); CHKERRQ(ierr);
-  ierr = info.surfelev->destroy(); CHKERRQ(ierr);
-  delete info.lat;
-  delete info.lon;
-  delete info.mask;
-  delete info.surfelev;
-  return 0;
-}
-
-
-static PetscErrorCode doneWithOceanInfo(IceInfoNeededByOceanCoupler &info) {
+static PetscErrorCode doneWithIceInfo(IceInfoNeededByCoupler &info) {
   PetscErrorCode ierr;
   ierr = info.lat->destroy(); CHKERRQ(ierr);
   ierr = info.lon->destroy(); CHKERRQ(ierr);
   ierr = info.mask->destroy(); CHKERRQ(ierr);
   ierr = info.thk->destroy(); CHKERRQ(ierr);
+  ierr = info.surfelev->destroy(); CHKERRQ(ierr);
+  ierr = info.topg->destroy(); CHKERRQ(ierr);
   delete info.lat;
   delete info.lon;
   delete info.mask;
   delete info.thk;
+  delete info.surfelev;
+  delete info.topg;
   return 0;
 }
 
@@ -136,7 +104,7 @@ static PetscErrorCode writePCCStateAtTimes(
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
                  PetscReal ys, PetscReal ye, PetscReal dt_years,
-                 void* iceInfoNeeded,
+                 IceInfoNeededByCoupler* info,
 		 NCConfigVariable &psparams) {
 
   PetscErrorCode ierr;
@@ -200,12 +168,13 @@ static PetscErrorCode writePCCStateAtTimes(
                        filename); CHKERRQ(ierr);
   }
 
-  PISMPDDCoupler* pdd_pcc = dynamic_cast<PISMPDDCoupler*>(pcc);
+  PISMSnowModelAtmosCoupler* pdd_pcc = dynamic_cast<PISMSnowModelAtmosCoupler*>(pcc);
   PetscScalar use_dt_years = dt_years;
   if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
     ierr = PetscPrintf(com,
-      "PCCTEST ATTENTION: PISMPDDCoupler will be asked for results from one year periods at\n"
-      "  the start of each desired time subinterval; full subinterval evaluation is too slow ...\n");
+      "PCCTEST ATTENTION: PISMSnowModelAtmosCoupler will be asked for results\n"
+      "  from one year periods at the start of each desired time subinterval;\n"
+      "  full subinterval evaluation is too slow ...\n");
       CHKERRQ(ierr);
     use_dt_years = 1.0;
   }
@@ -223,7 +192,7 @@ static PetscErrorCode writePCCStateAtTimes(
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = pcc->updateClimateFields(pccyear, dt_update_years, iceInfoNeeded); CHKERRQ(ierr);
+    ierr = pcc->updateClimateFields(pccyear, dt_update_years, info); CHKERRQ(ierr);
     ierr = pcc->writeCouplingFieldsToFile(pccyear, filename); CHKERRQ(ierr);
     ierr = PetscPrintf(com, "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
              pccyear, pccyear + dt_update_years, filename); CHKERRQ(ierr);
@@ -262,7 +231,7 @@ int main(int argc, char *argv[]) {
     if (!i_set) { SETERRQ(1,"PCCTEST ERROR: no -i file to initialize from\n"); }
 
     ierr = PetscPrintf(com, 
-             "  initializing grid from NetCDF file '%s'...\n", inname); CHKERRQ(ierr);
+             "  initializing grid from NetCDF file %s...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
     psparams.init("polar_stereographic", grid);
@@ -283,27 +252,27 @@ int main(int argc, char *argv[]) {
     grid.year = ys;		// this value is used in PCC->initFromOptions()
 
     // set PCC from options
-    PetscTruth caSet, pddSet, coSet;
+    PetscTruth caSet, smaSet, coSet;
     ierr = check_option("-ca",  caSet); CHKERRQ(ierr);
-    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
+    ierr = check_option("-sma", smaSet); CHKERRQ(ierr);
     ierr = check_option("-co",  coSet); CHKERRQ(ierr);
-    int  choiceSum = (int) caSet + (int) pddSet + (int) coSet;
+    int  choiceSum = (int) caSet + (int) smaSet + (int) coSet;
     if (choiceSum == 0) {
-      ierr = PetscPrintf(com,"PCCTEST ERROR: called with no derived class\n");
+      ierr = PetscPrintf(com,"PCCTEST ERROR: called with no chosen coupler class\n");
          CHKERRQ(ierr);    PetscEnd();
     } else if (choiceSum > 1) {
-      ierr = PetscPrintf(com,"PCCTEST ERROR: called with more than one derived class\n");
+      ierr = PetscPrintf(com,"PCCTEST ERROR: called with more than one chosen coupler class\n");
          CHKERRQ(ierr);    PetscEnd();
     }
 
-    PISMConstAtmosCoupler pcac;
-    PISMPDDCoupler        ppdd;
-    PISMConstOceanCoupler pcoc;
-    PISMClimateCoupler*   PCC;
+    PISMConstAtmosCoupler     pcac;
+    PISMSnowModelAtmosCoupler psmac;
+    PISMConstOceanCoupler     pcoc;
+    PISMClimateCoupler*       PCC;
     if (caSet == PETSC_TRUE) { 
       PCC = (PISMClimateCoupler*) &pcac;
-    } else if (pddSet == PETSC_TRUE) { 
-      PCC = (PISMClimateCoupler*) &ppdd;
+    } else if (smaSet == PETSC_TRUE) { 
+      PCC = (PISMClimateCoupler*) &psmac;
     } else if (coSet == PETSC_TRUE) { 
       PCC = (PISMClimateCoupler*) &pcoc;
     } else {
@@ -328,28 +297,12 @@ int main(int argc, char *argv[]) {
       ierr = psparams.print(); CHKERRQ(ierr);
     }
 
-    IceInfoNeededByAtmosphereCoupler info_atmos;
-    IceInfoNeededByOceanCoupler      info_ocean;
-    void*                            info;
-    if ((caSet == PETSC_TRUE) || (pddSet == PETSC_TRUE)) { 
-      ierr = PetscPrintf(com, 
-             "  reading fields 'usurf', 'mask', 'lat', 'lon' from NetCDF file '%s' to fill fields\n"
-             "    in IceInfoNeededByAtmosphereCoupler ...\n",
+    ierr = PetscPrintf(com, 
+             "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
+             "    to fill fields in IceInfoNeededByCoupler ...\n",
              inname); CHKERRQ(ierr);
-      ierr = readAtmosInfoFromFile(inname,&grid,lic,info_atmos); CHKERRQ(ierr);
-      info = (void*) &info_atmos;
-    } else if (coSet == PETSC_TRUE) {
-      ierr = PetscPrintf(com, 
-             "  reading fields 'thk', 'mask', 'lat', 'lon' from NetCDF file '%s' to fill fields\n"
-             "    in IceInfoNeededByOceanCoupler ...\n",
-             inname); CHKERRQ(ierr);
-      ierr = readOceanInfoFromFile(inname,com,&grid,lic,info_ocean); CHKERRQ(ierr);
-      info = (void*) &info_ocean;
-    } else {
-      info = PETSC_NULL;
-      ierr = PetscPrintf(com,"PCCTEST ERROR: how did I get here?  222\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
+    IceInfoNeededByCoupler      info;
+    ierr = readIceInfoFromFile(inname,&grid,lic,info); CHKERRQ(ierr);
     
     PetscTruth oSet;
     ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
@@ -359,16 +312,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
                        outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid, argc,argv, ys,ye,dt_years,
-                                info, psparams); CHKERRQ(ierr);
+                                &info, psparams); CHKERRQ(ierr);
 
-    if ((caSet == PETSC_TRUE) || (pddSet == PETSC_TRUE)) { 
-      ierr = doneWithAtmosInfo(info_atmos); CHKERRQ(ierr);
-    } else if (coSet == PETSC_TRUE) {
-      ierr = doneWithOceanInfo(info_ocean); CHKERRQ(ierr);
-    } else {
-      ierr = PetscPrintf(com,"PCCTEST ERROR: how did I get here?  333\n"); CHKERRQ(ierr);
-      PetscEnd();
-    }
+    ierr = doneWithIceInfo(info); CHKERRQ(ierr);
 
     ierr = PetscPrintf(com, "... done\n"); CHKERRQ(ierr);
     
@@ -378,3 +324,4 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+

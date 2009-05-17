@@ -4,6 +4,6 @@ exec_default += ../bin/pgrn
 
 other_sources += iceGRNModel.cc pgrn.cc
 
-../bin/pgrn : iceGRNModel.o pgrn.o pPDDcoupler.o pccoupler.o ${LIBPISMNAME}
-	${CXXLINKER} iceGRNModel.o pgrn.o pPDDcoupler.o pccoupler.o ${ICE_LIB_FLAGS} -o $@
+../bin/pgrn : iceGRNModel.o pgrn.o ${LIBPISMNAME}
+	${CXXLINKER} iceGRNModel.o pgrn.o ${ICE_LIB_FLAGS} -o $@
 
