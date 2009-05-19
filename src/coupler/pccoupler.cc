@@ -167,7 +167,9 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   // mean annual net ice equivalent surface mass balance rate
   ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);
   ierr = vsurfmassflux.set_attrs(
-            "climate_state", 
+            "",  // pism_intent is either "climate_state" or "climate_diagnostic" according
+                 //    to whether this variable is kept or overwritten by a parameterization
+                 //    (we don't know in the base class)
             "instantaneous net ice equivalent accumulation (ablation) rate",
 	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
@@ -180,7 +182,9 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   //   (e.g. "10 m" ice temperatures)
   ierr = vsurftemp.create(*g, "artm", false); CHKERRQ(ierr);
   ierr = vsurftemp.set_attrs(
-            "climate_state",
+            "",  // pism_intent is either "climate_state" or "climate_diagnostic" according
+                 //    to whether this variable is kept or overwritten by a parameterization
+                 //    (we don't know in the base class)
             "ice temperature at ice surface but below firn processes",
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
@@ -329,6 +333,11 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
        "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
        filename); CHKERRQ(ierr); 
 
+    // these values will be written into output file unchanged; they should be read
+    //   as the state of the climate by future runs using the same coupler
+    ierr = vsurfmassflux.set_attr("pism_intent","climate_state"); CHKERRQ(ierr);
+    ierr = vsurftemp.set_attr("pism_intent","climate_state"); CHKERRQ(ierr);
+
     ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
     ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
 
@@ -396,14 +405,8 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = verbPrintf(2, g->com, 
        "initializing atmospheric climate coupler with a snow process model ...\n"); CHKERRQ(ierr); 
 
-  // read surface boundary condition for energy model from file
-  ierr = verbPrintf(2, g->com, 
-      "  attempting to read ice surface temperature (energy conservation boundary values) 'artm'\n"
-      "    from %s ...\n",
-      filename); CHKERRQ(ierr); 
-  ierr = vsurftemp.regrid(filename, *lic, false); CHKERRQ(ierr); // proceeds if not found
-
   // clear out; will be overwritten by mass balance model
+  ierr = vsurfmassflux.set_attr("pism_intent","climate_diagnostic"); CHKERRQ(ierr);
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);
 
   // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
@@ -480,6 +483,14 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
             "K",
             ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
+
+  // read surface boundary condition for ice conservation of energy model from file if available
+  // NOT NEEDED?
+  ierr = verbPrintf(2, g->com, 
+      "  attempting to read ice surface temperature (energy conservation boundary values) 'artm'\n"
+      "    from %s ...\n",
+      filename); CHKERRQ(ierr); 
+  ierr = vsurftemp.regrid(filename, *lic, false); CHKERRQ(ierr); // proceeds if not found
 
   delete lic;
 

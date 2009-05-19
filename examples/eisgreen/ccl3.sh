@@ -39,8 +39,9 @@ mpgrn()
 }
 
 # the EISMINT-Greenland CCL3 experiment:
+STARTFILE=green_SSL2_110k.nc
 
-mpgrn "-i green_SSL2_110k.nc -ys -249900 -y 9900 -o green_CCL3_y-240k.nc"
+mpgrn "-i $STARTFILE -ys -249900 -y 9900 -o green_CCL3_y-240k.nc"
 
 for ((kyear=230; kyear >= 0 ; kyear-=10)); do
   (( oldkyear = kyear + 10 ))

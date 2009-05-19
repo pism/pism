@@ -113,7 +113,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   setInitialAgeYears(initial_age_years_default);
   
   ierr = verbPrintf(2, grid.com, 
-     "  filling in temperatures at depth using surface temperature parameterization and quartic guess\n");
+     "  filling in ice and bedrock temperatures using surface temperatures and quartic guess\n");
      CHKERRQ(ierr);
   if (atmosPCC != PETSC_NULL) {
     IceModelVec2* ignored;

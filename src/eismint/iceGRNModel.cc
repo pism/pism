@@ -29,16 +29,17 @@
 
 
 EISGREENAtmosCoupler::EISGREENAtmosCoupler() : PISMSnowModelAtmosCoupler() {
-  doGWL3 = PETSC_FALSE;
-  startGWL3Year = 0.0;
+  doGreenhouse = PETSC_FALSE;
+  startYearGreenhouse = 0.0;
 }
 
 
-PetscErrorCode EISGREENAtmosCoupler::startGWL3AtYear(PetscScalar year) {
-  doGWL3 = PETSC_TRUE;
-  startGWL3Year = year;
+PetscErrorCode EISGREENAtmosCoupler::startGreenhouseAtYear(PetscScalar year) {
+  doGreenhouse = PETSC_TRUE;
+  startYearGreenhouse = year;
   return 0;
 }
+
 
 PetscErrorCode EISGREENAtmosCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
@@ -50,6 +51,10 @@ PetscErrorCode EISGREENAtmosCoupler::initFromOptions(IceGrid* g) {
       ); CHKERRQ(ierr);
     PetscEnd();
   }
+  // because ice surface temperature is coming from a parameterization,
+  //   the variable 'artm' in the output file is merely diagnostic
+  ierr = vsurftemp.set_attr("pism_intent","climate_diagnostic"); CHKERRQ(ierr);
+  // a bit of info to user
   ierr = verbPrintf(2, g->com, 
       "  special climate coupler for EISMINT-Greenland\n"
       "    -- non-default snow and ice surface temperature parameterizations\n"
@@ -60,17 +65,18 @@ PetscErrorCode EISGREENAtmosCoupler::initFromOptions(IceGrid* g) {
 }
 
 
-//! Used for both ice surface temperature (boundary condition) and in snow temperature yearly cycle.
+/*!
+Used for both ice surface temperature (boundary condition) and in snow temperature yearly cycle.
+ */
 PetscScalar EISGREENAtmosCoupler::meanAnnualTemp(PetscScalar h, PetscScalar lat) {
   PetscScalar Z = PetscMax(h, 20 * (lat - 65));
   return  49.13 - 0.007992 * Z - 0.7576 * (lat) + 273.15;
 }
 
 
-//! Compute the temperature shift (increase) appropriate to global warming experiment.
-PetscScalar EISGREENAtmosCoupler::shiftForGWL3(PetscScalar t_years, PetscScalar dt_years) {
+PetscScalar EISGREENAtmosCoupler::shiftForGreenhouse(PetscScalar t_years, PetscScalar dt_years) {
   // compute age back to start of GWL3; use midpoint of interval as the time
-  PetscScalar age = (t_years + 0.5 * dt_years) - startGWL3Year;
+  PetscScalar age = (t_years + 0.5 * dt_years) - startYearGreenhouse;
   if (age <= 0.0) {
     return 0.0; // before time 0.0, no warming
   } else {
@@ -85,11 +91,6 @@ PetscScalar EISGREENAtmosCoupler::shiftForGWL3(PetscScalar t_years, PetscScalar 
 }
 
 
-//! EISMINT-Greenland snow-surface temperature parameterization for use in PDD.
-/*! 
-Formulas from \ref RitzEISMINT.  Overwrites method of same name in 
-PISMSnowModelAtmosCoupler.
-*/
 PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
                        PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
@@ -114,15 +115,15 @@ PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
   ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
 
-  if (doGWL3 == PETSC_TRUE) {
-    ierr = vsnowtemp_ma.shift(shiftForGWL3(t_years,dt_years)); CHKERRQ(ierr);
-    ierr = vsnowtemp_mj.shift(shiftForGWL3(t_years,dt_years)); CHKERRQ(ierr);
+  if (doGreenhouse == PETSC_TRUE) {
+    const PetscScalar shift = shiftForGreenhouse(t_years,dt_years);
+    ierr = vsnowtemp_ma.shift(shift); CHKERRQ(ierr);
+    ierr = vsnowtemp_mj.shift(shift); CHKERRQ(ierr);
   }
   return 0;
 }
 
 
-//! EISMINT-Greenland ice-surface temperature parameterization for use in conservation of energy equation.
 PetscErrorCode EISGREENAtmosCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
                   IceInfoNeededByCoupler* info, IceModelVec2* &pvst) {
@@ -149,8 +150,8 @@ PetscErrorCode EISGREENAtmosCoupler::updateSurfTempAndProvide(
   ierr = info->lat->end_access(); CHKERRQ(ierr);
   ierr = info->surfelev->end_access(); CHKERRQ(ierr);
 
-  if (doGWL3 == PETSC_TRUE) {
-    ierr = vsurftemp.shift(shiftForGWL3(t_years,dt_years)); CHKERRQ(ierr);
+  if (doGreenhouse == PETSC_TRUE) {
+    ierr = vsurftemp.shift(shiftForGreenhouse(t_years,dt_years)); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -174,8 +175,8 @@ EISGREENMassBalance::EISGREENMassBalance() : PDDMassBalance() {
 
 PetscErrorCode EISGREENMassBalance::setDegreeDayFactorsFromSpecialInfo(
                                   PetscScalar latitude, PetscScalar T_mj) {
-  //PetscPrintf(PETSC_COMM_WORLD, 
-  //    "EISGREENMassBalance::setDegreeDayFactorsFromSpecialInfo();\n"
+  // a message like this may be useful for debugging; note task #6216
+  //PetscPrintf(PETSC_COMM_WORLD,"EISGREENMassBalance::setDegreeDayFactorsFromSpecialInfo();\n"
   //    "  pddFactorIce,pddFactorSnow = %f,%f\n",pddFactorIce,pddFactorSnow);
   return 0;
 }
@@ -185,13 +186,13 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   PetscErrorCode ierr;
   PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
 
-  expernum = 1;  // SSL2 is the default
+  exper = SSL2;  // default
   ierr = check_option("-ssl2", ssl2Set); CHKERRQ(ierr);
-  if (ssl2Set == PETSC_TRUE)   expernum = 1;
+  if (ssl2Set == PETSC_TRUE)   exper = SSL2;
   ierr = check_option("-ccl3", ccl3Set); CHKERRQ(ierr);
-  if (ccl3Set == PETSC_TRUE)   expernum = 3;
+  if (ccl3Set == PETSC_TRUE)   exper = CCL3;
   ierr = check_option("-gwl3", gwl3Set); CHKERRQ(ierr);
-  if (gwl3Set == PETSC_TRUE)   expernum = 4;
+  if (gwl3Set == PETSC_TRUE)   exper = GWL3;
 
   ierr = check_option("-ssl3", ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
@@ -207,9 +208,8 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   enhancementFactor = 3;  
   doOceanKill = PETSC_TRUE;
 
-  if (expernum != 1) { 
-    // no bed deformation for steady state (SSL2)
-    // otherwise use Lingle-Clark bed deformation model for CCL3 and GWL3
+  if (exper != SSL2) { 
+    // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
     ierr = verbPrintf(2, grid.com, 
       "  setting flags equivalent to: '-bed_def_lc'; user options will override\n"); CHKERRQ(ierr);
     doBedDef = PETSC_TRUE;
@@ -220,9 +220,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
-  ierr = check_option("-have_bheatflx", haveGeothermalFlux);
-     CHKERRQ(ierr);
-  ierr = check_option("-no_EI_delete", noEllesmereIcelandDelete);
+  ierr = check_option("-have_geothermal", haveGeothermalFlux);
      CHKERRQ(ierr);
   
   // note: user value for -e, and -gk, and so on, will override settings above
@@ -246,11 +244,11 @@ PetscErrorCode IceGRNModel::init_couplers() {
   PetscReal  gwl3StartYear = grid.year;
   ierr = PetscOptionsGetReal(PETSC_NULL, "-gwl3_start_year", &gwl3StartYear, &gwl3StartSet);
     CHKERRQ(ierr);
-  if (expernum == 4) {  // do GWL3, and set start year
-    ierr = pddPCC->startGWL3AtYear(gwl3StartYear); CHKERRQ(ierr);
+  if (exper == GWL3) {  // do GWL3, and set start year
+    ierr = pddPCC->startGreenhouseAtYear(gwl3StartYear); CHKERRQ(ierr);
   } else if (gwl3StartSet == PETSC_TRUE) {
     ierr = verbPrintf(1, grid.com, 
-       "WARNING: -gwl3_start_year option ignored because expernum != 4 (-gwl3 not set?).\n");
+       "WARNING: -gwl3_start_year option ignored because experiment != GWL3 (-gwl3 not set?).\n");
        CHKERRQ(ierr);
   }
 
@@ -280,56 +278,7 @@ PetscErrorCode IceGRNModel::set_vars_from_options() {
     ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
   }
 
-  if (noEllesmereIcelandDelete == PETSC_FALSE) {
-    ierr = verbPrintf(2, grid.com, 
-	"removing extra land (Ellesmere and Iceland) using EISMINT-Greenland rule\n");
-        CHKERRQ(ierr);
-    ierr = cleanExtraLand(); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
-
-PetscErrorCode IceGRNModel::ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat) {
-  double l1_x1 = -68.18, l1_y1 = 80.1;
-  double l1_x2 = -62, l1_y2 = 82.24;
-  double m, b;  // piecewise boundaries
-
-  m = (l1_y1 - l1_y2) / (l1_x1 - l1_x2);
-  b = (l1_y2) - m * (l1_x2);
-  *lat = m * lon + b;
-  return 0;
-}
-
-
-PetscErrorCode IceGRNModel::cleanExtraLand(){
-  PetscErrorCode ierr;
-  PetscScalar lat_line;
-  // make all mask points southeast of the following point into FLOATING_OCEAN0
-  double ice_lon = 30, ice_lat = 67;
-  PetscScalar **lat, **lon, **mask;
-
-  ierr = vLongitude.get_array(lon); CHKERRQ(ierr);
-  ierr =  vLatitude.get_array(lat); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      ellePiecewiseFunc(lon[i][j], &lat_line);
-      if (lat[i][j]>lat_line) {	// Ellesmere case
-          mask[i][j] = MASK_FLOATING_OCEAN0;
-      } else if (lat[i][j] < ice_lat && lon[i][j] > -ice_lon) {
-        mask[i][j] = MASK_FLOATING_OCEAN0; // Iceland case
-      }
-    }
-  } 
-  ierr = vLongitude.end_access(); CHKERRQ(ierr);
-  ierr =  vLatitude.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  
-  // when mask is changed we must communicate the ghosted values
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-  return 0;
-}
 

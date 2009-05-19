@@ -27,13 +27,18 @@
 
 
 
-//! Stop using formula (6) in [\ref Faustoetal2009].
+//! Very slightly modified mass balance formulas for EISMINT-Greenland.
+/*!
+EISMINT-Greenland [\ref RitzEISMINT] has a slightly different interpretation
+of positive degree day factors, compared to \ref Faustoetal2009.  In particular,
+we stop using formula (6) in \ref Faustoetal2009.
+ */
 class EISGREENMassBalance : public PDDMassBalance {
 
 public:
   EISGREENMassBalance();
 
-  // leaves pddFactorIce and pddFactorSnow alone, instead of base class action
+  //! Leaves pddFactorIce and pddFactorSnow alone; different from base class action.
   virtual PetscErrorCode setDegreeDayFactorsFromSpecialInfo(
              PetscScalar latitude, PetscScalar T_mj);
 };
@@ -42,54 +47,65 @@ public:
 //! Upper ice surface climate inputs, as parameterized in EISMINT-Greenland experiments.
 /*!
 Gives an elevation- and latitude-dependent mean annual ice surface temperature and 
-snow temperature, for PDD.  Also implements GWL3 climate warming scenario.
+snow temperature, for PDD.  Also implements a greenhouse climate warming scenario,
+for experiment GWL3 [\ref RitzEISMINT].
  */
 class EISGREENAtmosCoupler : public PISMSnowModelAtmosCoupler {
 
 public:
   EISGREENAtmosCoupler();
 
-  // just for checking attachment of new mass balance scheme
   using PISMSnowModelAtmosCoupler::initFromOptions; // overrides but calls this
+  //! Just checks correct attachment of new mass balance scheme.
   virtual PetscErrorCode initFromOptions(IceGrid* g);
 
   using PISMSnowModelAtmosCoupler::updateSurfTempAndProvide; // overrides this
+  //! Implements ice surface temperature parameterization.
   virtual PetscErrorCode updateSurfTempAndProvide(
                PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
                IceModelVec2* &pvst);
 
-  PetscErrorCode startGWL3AtYear(PetscScalar year); // call with start year to do GML3
+  //! Turns on and gives starting model year for greenhouse warming scenario in experiment GWL3.
+  PetscErrorCode startGreenhouseAtYear(PetscScalar year);
 
 protected:
 
   using PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp; // overrides this
+  //! Implements snow surface temperature parameterization, for use in mass balance model.
   virtual PetscErrorCode parameterizedUpdateSnowSurfaceTemp(
             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
 
+  //! Implements mean annual temperature parameterization, used by parameterizedUpdateSnowSurfaceTemp().
   PetscScalar meanAnnualTemp(PetscScalar h, PetscScalar lat);
 
-  PetscScalar shiftForGWL3(PetscScalar t_years, PetscScalar dt_years);
+  //! When the greenhouse climate scenario is on this computes the scalar warming amount.
+  PetscScalar shiftForGreenhouse(PetscScalar t_years, PetscScalar dt_years);
 
 private:
-  PetscTruth  doGWL3;
-  PetscScalar startGWL3Year;
+  PetscTruth  doGreenhouse;
+  PetscScalar startYearGreenhouse;
 };
+
+
+typedef enum {SSL2, SSL3, CCL3, GWL3} EISGREENrun;
 
 
 //! Implements EISMINT-Greenland experiments.
 /*!
-This derived class adds, essentially, only the minimum functionality needed
+This derived class adds only the minimum functionality needed
 to implement the choices stated in \ref RitzEISMINT , the EISMINT-Greenland 
 specification:
-- A PDD model is always used, through PISMEISGREENPDDCoupler.
+- A PDD model is always used, through a new coupler (EISGREENAtmosCoupler)
+  calling a new mass balance scheme (EISGREENMassBalance).  These are small modifications
+  of the default scheme from \ref Faustoetal2009, implemented in PISMSnowModelAtmosCoupler.
 - An enhancement factor of 3.0 is used.
 - -ocean_kill is used by default.
-- Constant geothermal flux.
-- There is special code to ``clean out'' Ellsmere Island (and Iceland) so ice won't spread to
-  edge of computational grid; this should probably be moved to the scripts which set up the
-  bootstrap file.
+- Constant geothermal flux, unless the user adds a map of it, and sets -have_geothermal.
 
-A separate driver is used, namely src/pgrn.cc.
+Which experiment to do is chosen by one of options -ssl2,-ccl3,-gwl3.  (Experiment
+SSL3 is not implemented; see User's Manual.)
+
+A separate driver calls this derived class and the new coupler, namely src/pgrn.cc.
  */
 class IceGRNModel : public IceModel {
 
@@ -99,14 +115,9 @@ public:
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_vars_from_options();
 
-protected:
-  int expernum;  // SSL2 is 1, CCL3 is 3, GWL3 is 4
-
 private:
-  PetscTruth  noEllesmereIcelandDelete,
-              haveGeothermalFlux;
-  PetscErrorCode ellePiecewiseFunc(PetscScalar lon, PetscScalar *lat);
-  PetscErrorCode cleanExtraLand();
+  EISGREENrun exper;
+  PetscTruth  haveGeothermalFlux;
 };
 #endif
 

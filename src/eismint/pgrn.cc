@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] = 
-  "Driver for PISM simulations based on EISMINT-Greenland intercomparison.\n";
+  "Driver for PISM runs of EISMINT-Greenland intercomparison.\n";
 
 #include <petsc.h>
 #include "../base/grid.hh"
