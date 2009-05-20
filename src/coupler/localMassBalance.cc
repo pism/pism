@@ -29,14 +29,11 @@
 LocalMassBalance::LocalMassBalance() {
   verbPrintf(5,PETSC_COMM_WORLD, "setting up config member of LocalMassBalance ...\n");
   
-  // FIXME: why does init() method for NCConfigVariable need IceGrid?
   MPI_Comm    com = PETSC_COMM_WORLD;
-  PetscMPIInt rank, size;
+  PetscMPIInt rank;
   MPI_Comm_rank(com, &rank);
-  MPI_Comm_size(com, &size);
-  IceGrid dummyIceGrid(com, rank, size);
 
-  config.init("pism_config", dummyIceGrid);
+  config.init("pism_config", com, rank);
   char alt_config[PETSC_MAX_PATH_LEN];
   PetscTruth use_alt_config;
   PetscOptionsGetString(PETSC_NULL, "-config", alt_config, PETSC_MAX_PATH_LEN, &use_alt_config);

@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
              "  initializing grid from NetCDF file %s...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
-    psparams.init("polar_stereographic", grid);
+    psparams.init("polar_stereographic", com, rank);
 
     // Process -ys, -ye, -dt. This should happen *before*
     // PCC->initFromOptions() is called.

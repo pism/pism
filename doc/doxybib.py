@@ -53,6 +53,8 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r"\\'([a-zA-Z])",            r"&\1grave;"),           # grave
         (r'\\`([a-zA-Z])',            r"&\1acute;"),           # acute
         (r'\\^([a-zA-Z])',            r"&\1circ;"),            # circumflex
+        (r'``',                       r'"'),                   # opening quotes
+        (r"''",                       r'"'),                   # closing quotes
         ]
 
 for (regex, substitution) in subs:

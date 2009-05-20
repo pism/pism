@@ -46,7 +46,7 @@ except its value at the beginning of the time step.  Thus we would not
 accept a scheme which required the Jacobian
 of the velocity field with respect to changes in temperature, for example.
 At very least we cannot implement a fully implicit scheme without some 
-blind iteration (e.g. with no guarantee of convergence of the iteration), while 
+blind iteration (%e.g. with no guarantee of convergence of the iteration), while 
 the scheme we propose involves no iteration.
 
 As described elsewhere in this manual, the temperature equation is

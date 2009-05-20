@@ -59,7 +59,7 @@ class NCVariable {
 public:
   NCVariable();
   virtual ~NCVariable() {};
-  void init(string name, IceGrid &g);
+  void init(string name, MPI_Comm c, PetscMPIInt r);
   virtual PetscErrorCode set_units(string);
   virtual PetscErrorCode set_glaciological_units(string);
   virtual PetscErrorCode reset();
@@ -86,7 +86,8 @@ protected:
   virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
 				  bool write_in_glaciological_units);
   virtual PetscErrorCode read_valid_range(int ncid, int varid);
-  IceGrid *grid;
+  MPI_Comm com;
+  PetscMPIInt rank;
   utUnit units,		      //!< internal (PISM) units
          glaciological_units; //!< \brief for diagnostic variables: units to
 			      //!use when writing to a NetCDF file and for
@@ -96,8 +97,8 @@ protected:
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {
 public:
-  GridType dims;
   NCSpatialVariable();
+  virtual void init(string name, IceGrid &g, GridType d);
   virtual PetscErrorCode read(const char filename[], unsigned int time, Vec v);
   virtual PetscErrorCode reset();
   virtual PetscErrorCode write(const char filename[], nc_type nctype,
@@ -108,6 +109,8 @@ public:
   virtual PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
 
 protected:
+  GridType dims;
+  IceGrid *grid;
   PetscErrorCode define(int ncid, nc_type nctype, int &varid);
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode check_range(Vec v);
@@ -126,6 +129,16 @@ protected:
   string config_filename;
   virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
 				  bool write_in_glaciological_units);
+  virtual PetscErrorCode define(int ncid, int &varid);
+};
+
+class NCTimeseries : public NCVariable {
+public:
+  string dimension_name;
+  virtual PetscErrorCode read(const char filename[], vector<double> &data);
+  virtual PetscErrorCode write(const char filename[], vector<double> &data);
+  virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
+protected:
   virtual PetscErrorCode define(int ncid, int &varid);
 };
 

@@ -45,7 +45,7 @@ PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMClimateCoupler::initFromOptions()\n");
   grid = g;
-  config.init("pism_config", *grid);
+  config.init("pism_config", grid->com, grid->rank);
   char alt_config[PETSC_MAX_PATH_LEN];
   PetscTruth use_alt_config;
   ierr = PetscOptionsGetString(PETSC_NULL, "-config", alt_config, 

@@ -49,6 +49,7 @@ public:
 
 public:
   NCTool(IceGrid *my_grid);
+  NCTool(MPI_Comm c, PetscMPIInt r);
   PetscErrorCode open_for_reading(const char filename[]);
   PetscErrorCode open_for_writing(const char filename[], bool append,
 				  bool check_dims = false);
@@ -75,6 +76,9 @@ public:
   PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals);
   PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta);
 
+  PetscErrorCode inq_unlimdim(int &unlimdimid);
+  PetscErrorCode inq_dimname(int dimid, string &name);
+  PetscErrorCode inq_dimids(int varid, vector<int> &dimids);
   PetscErrorCode inq_nattrs(int varid, int &N);
   PetscErrorCode inq_att_name(int varid, int n, string &name);
   PetscErrorCode inq_att_type(int varid, const char name[], nc_type &typep);
@@ -111,6 +115,8 @@ private:
   bool check_dimensions();
   MaskInterp  *myMaskInterp;
   IceGrid* grid;
+  MPI_Comm com;
+  PetscMPIInt rank;
 };
 
 #endif // __nc_util_hh

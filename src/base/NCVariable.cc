@@ -20,14 +20,14 @@
 #include "pism_const.hh"
 
 NCVariable::NCVariable() {
-  grid = NULL;
   reset();
 }
 
 //! Initialize a NCVariable instance.
-void NCVariable::init(string name, IceGrid &g) {
+void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
   short_name = name;
-  grid = &g;
+  com = c;
+  rank = r;
 }
 
 //! Set the internal units.
@@ -86,7 +86,14 @@ PetscErrorCode NCSpatialVariable::reset() {
 }
 
 NCSpatialVariable::NCSpatialVariable() {
+  grid = NULL;
   reset();
+}
+
+void NCSpatialVariable::init(string name, IceGrid &g, GridType d) {
+  NCVariable::init(name, g.com, g.rank);
+  grid = &g;
+  dims = d;
 }
 
 //! Read a variable from a file into a \b global Vec v.
@@ -112,7 +119,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
 			  &varid, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
-    ierr = PetscPrintf(grid->com,
+    ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
 		       strings["standard_name"].c_str(), filename);
@@ -131,7 +138,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
   if ( has("units") && (!input_has_units) ) {
     string &units_string = strings["units"],
       &long_name = strings["long_name"];
-    ierr = verbPrintf(2, grid->com,
+    ierr = verbPrintf(2, com,
 		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
 		      "              Assuming that it is in '%s'.\n",
 		      short_name.c_str(), long_name.c_str(),
@@ -223,7 +230,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
   if (!exists) {		// couldn't find the variable
     if (critical) {		// if it's critical, print an error message and stop
       // SETERRQ1(1, "Variable '%s' was not found.\n", short_name);
-      ierr = PetscPrintf(grid->com,
+      ierr = PetscPrintf(com,
 			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
 			 short_name.c_str(), filename);
       CHKERRQ(ierr);
@@ -235,7 +242,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       utConvert(&units, &glaciological_units, &slope, &intercept);
       tmp = intercept + slope*default_value;
       
-      ierr = verbPrintf(2, grid->com, 
+      ierr = verbPrintf(2, com, 
 			"  absent %-10s/ %-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
 			short_name.c_str(),
 			strings["long_name"].c_str(),
@@ -244,7 +251,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       CHKERRQ(ierr);
       ierr = VecSet(v, default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
-      ierr = verbPrintf(2, grid->com, 
+      ierr = verbPrintf(2, com, 
 			"  absent %-10s/ %-60s\n   %-16s\\ not found; continuing without setting it\n",
 			short_name.c_str(),
 			strings["long_name"].c_str(), "");
@@ -269,7 +276,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
     ierr = nc.get_units(varid, input_has_units, input_units); CHKERRQ(ierr);
 
     if ( has("units") && (!input_has_units) ) {
-      ierr = verbPrintf(2, grid->com,
+      ierr = verbPrintf(2, com,
 			"PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
 			"              Assuming that it is in '%s'.\n",
 			strings["short_name"].c_str(),
@@ -288,7 +295,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
     ierr = check_range(v); CHKERRQ(ierr);
 
     // We can report the success, and the range now:
-    ierr = verbPrintf(2, grid->com, "  FOUND ");
+    ierr = verbPrintf(2, com, "  FOUND ");
     ierr = report_range(v, found_by_standard_name); CHKERRQ(ierr);
   } // end of if(exists)
 
@@ -301,15 +308,12 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
     valid_range is found, sets the pair \c valid_min and \c valid_max instead.
  */
 PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
-  NCTool nc(grid);
+  NCTool nc(com, rank);
   string input_units_string;
   utUnit input_units;
   vector<double> bounds;
   double slope, intercept;
   int stat;
-
-  if (grid == NULL)
-    SETERRQ(1, "NCVariable::read_valid_range: grid is NULL.");
 
   // Never reset valid_min/max if any of them was set internally.
   if (has("valid_min") || has("valid_max"))
@@ -372,7 +376,7 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
 
   if (ierr != 0) { 		// can't convert
     if (ierr == UT_ECONVERT) {	// because units are incompatible
-      ierr = verbPrintf(2, grid->com,
+      ierr = verbPrintf(2, com,
 			"PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
 			short_name.c_str(), from_name, to_name);
       return 1;
@@ -410,10 +414,7 @@ PetscErrorCode NCVariable::write_attributes(int ncid, int varid, nc_type nctype,
 					    bool write_in_glaciological_units) {
   int ierr;
 
-  if (grid == NULL)
-    SETERRQ(1, "NCVariable::write_attributes: grid is NULL.");
-
-  if (grid->rank != 0) return 0;
+  if (rank != 0) return 0;
 
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
@@ -510,13 +511,13 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   if (has("standard_name")) {
 
     if (found_by_standard_name) {
-      ierr = verbPrintf(2, grid->com, 
+      ierr = verbPrintf(2, com, 
 			" %-10s/ standard_name=%-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
 			strings["standard_name"].c_str(), "", min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2, grid->com, 
+      ierr = verbPrintf(2, com, 
 			" %-10s/ WARNING! standard_name=%s is missing, found by short_name\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
 			strings["standard_name"].c_str(), "", min, max,
@@ -525,7 +526,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
   } else {
 
-    ierr = verbPrintf(2, grid->com, 
+    ierr = verbPrintf(2, com, 
 		      " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 		      short_name.c_str(),
 		      strings["long_name"].c_str(), "", min, max,
@@ -552,14 +553,14 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
     double valid_min = get("valid_min"),
       valid_max = get("valid_max");
     if ((min < valid_min) || (max > valid_max))
-      ierr = verbPrintf(2, grid->com,
+      ierr = verbPrintf(2, com,
 			"PISM WARNING: some values of '%s' are outside the valid range [%f, %f] (%s)\n",
 			short_name.c_str(), valid_min, valid_max, units_string.c_str()); CHKERRQ(ierr);
     
   } else if (has("valid_min")) {
     double valid_min = get("valid_min");
     if (min < valid_min) {
-      ierr = verbPrintf(2, grid->com,
+      ierr = verbPrintf(2, com,
 			"PISM WARNING: some values of '%s' are less than the valid minimum %f (%s)\n",
 			short_name.c_str(), valid_min, units_string.c_str()); CHKERRQ(ierr);
     }
@@ -567,7 +568,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
   } else if (has("valid_max")) {
     double valid_max = get("valid_max");
     if (max > valid_max) {
-      ierr = verbPrintf(2, grid->com,
+      ierr = verbPrintf(2, com,
 			"PISM WARNING: some values of '%s' are greater than the valid maximum %f (%s)\n",
 			short_name.c_str(), valid_max, units_string.c_str()); CHKERRQ(ierr);
     }
@@ -582,7 +583,7 @@ PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
   if (grid == NULL)
     SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -606,7 +607,7 @@ PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   varid = var_id;
 
@@ -687,10 +688,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
   PetscErrorCode ierr;
   bool variable_exists;
   int varid, nattrs;
-  NCTool nc(grid);
-
-  if (grid == NULL)
-    SETERRQ(1, "NCVariable::read: grid is NULL.");
+  NCTool nc(com, rank);
 
   strings.clear();
   doubles.clear();
@@ -701,7 +699,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
   ierr = nc.find_variable(short_name, &varid, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
-    ierr = PetscPrintf(grid->com,
+    ierr = PetscPrintf(com,
 		       "PISM ERROR: configuration variable %s was not found in %s.\n"
 		       "            Exiting...",
 		       short_name.c_str(), filename); CHKERRQ(ierr);
@@ -739,7 +737,7 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) {
   PetscErrorCode ierr;
   int varid;
   bool variable_exists;
-  NCTool nc(grid);
+  NCTool nc(com, rank);
 
   ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr); // append == true
 
@@ -760,10 +758,7 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) {
 PetscErrorCode NCConfigVariable::define(int ncid, int &varid) {
   int stat, var_id;
 
-  if (grid == NULL)
-    SETERRQ(1, "NCConfigVariable::define: grid is NULL.");
-
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_def_var(ncid, short_name.c_str(), NC_BYTE, 0, NULL, &var_id);
@@ -772,7 +767,7 @@ PetscErrorCode NCConfigVariable::define(int ncid, int &varid) {
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   varid = var_id;
 
@@ -786,7 +781,7 @@ double NCConfigVariable::get(string name) {
   if (doubles.find(name) != doubles.end()) {
     return NCVariable::get(name);
   } else {
-    PetscPrintf(grid->com, "PISM ERROR: parameter '%s' is unset. (Parameters read from '%s'.)\n",
+    PetscPrintf(com, "PISM ERROR: parameter '%s' is unset. (Parameters read from '%s'.)\n",
 		name.c_str(), config_filename.c_str());
     PetscEnd();
   }
@@ -813,7 +808,7 @@ bool NCConfigVariable::get_flag(string name) {
       (value == "on"))
     return true;
 
-  PetscPrintf(grid->com,
+  PetscPrintf(com,
 	      "PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
 	      "            Please make sure that it is equal to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
 	      name.c_str(), value.c_str());
@@ -833,10 +828,7 @@ PetscErrorCode NCConfigVariable::write_attributes(int ncid, int varid, nc_type n
 						  bool /*write_in_glaciological_units*/) {
   int ierr;
 
-  if (grid == NULL)
-    SETERRQ(1, "NCVariable::write_attributes: grid is NULL.");
-
-  if (grid->rank != 0) return 0;
+  if (rank != 0) return 0;
 
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
@@ -869,10 +861,11 @@ PetscErrorCode NCConfigVariable::write_attributes(int ncid, int varid, nc_type n
   return 0;
 }
 
+//! Print all the attributes of a configuration variable.
 PetscErrorCode NCConfigVariable::print() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(3, grid->com, "PISM parameters read from %s:\n",
+  ierr = verbPrintf(3, com, "PISM parameters read from %s:\n",
 		    config_filename.c_str());
 
   // Print text attributes:
@@ -883,7 +876,7 @@ PetscErrorCode NCConfigVariable::print() {
 
     if (value.empty()) continue;
 
-    ierr = verbPrintf(3, grid->com, "  %s = \"%s\"\n",
+    ierr = verbPrintf(3, com, "  %s = \"%s\"\n",
 		      name.c_str(), value.c_str()); CHKERRQ(ierr);
   }
 
@@ -895,9 +888,163 @@ PetscErrorCode NCConfigVariable::print() {
 
     if (values.empty()) continue;
     
-    ierr = verbPrintf(3, grid->com, "  %s = %12.3f\n",
+    ierr = verbPrintf(3, com, "  %s = %12.3f\n",
 		      name.c_str(), values[0]); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+//! Read a time-series variable from a NetCDF file to a vector of doubles.
+PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
+
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+  int varid;
+  bool variable_exists;
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  // Find the variable:
+  ierr = nc.find_variable(short_name, strings["standard_name"],
+			  &varid, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = PetscPrintf(com,
+		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
+		       short_name.c_str(),
+		       strings["standard_name"].c_str(), filename);
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  vector<int> dimids;
+  ierr = nc.inq_dimids(varid, dimids); CHKERRQ(ierr);
+
+  if (dimids.size() != 1) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
+		       "            but a time-series variable can only depend on 1 dimension.\n",
+		       short_name.c_str(), filename, dimids.size()); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  ierr = nc.inq_dimname(dimids[0], dimension_name); CHKERRQ(ierr);
+
+  int length;
+  ierr = nc.get_dim_length(dimension_name.c_str(), &length); CHKERRQ(ierr);
+
+  if (length <= 0) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: Dimension %s has zero (or negative) length!\n",
+		       dimension_name.c_str()); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  data.resize(length);		// memory allocation happens here
+
+  if (rank == 0) {
+    ierr = nc_get_var_double(nc.ncid, varid, &data[0]); 
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+  ierr = MPI_Bcast(&data[0], length, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
+
+  bool input_has_units;
+  utUnit input_units;
+
+  ierr = nc.get_units(varid,
+		      input_has_units, input_units); CHKERRQ(ierr);
+
+  if ( has("units") && (!input_has_units) ) {
+    string &units_string = strings["units"],
+      &long_name = strings["long_name"];
+    ierr = verbPrintf(2, com,
+		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+		      "              Assuming that it is in '%s'.\n",
+		      short_name.c_str(), long_name.c_str(),
+		      units_string.c_str()); CHKERRQ(ierr);
+    utCopy(&units, &input_units);
+  }
+
+  ierr = change_units(data, &input_units, &units); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Define a NetCDF variable corresponding to a time-series.
+PetscErrorCode NCTimeseries::define(int ncid, int &varid) {
+  PetscErrorCode ierr;
+  bool dimension_exists;
+  int dimid;
+  NCTool nc(com, rank);
+  nc.ncid = ncid;
+ 
+  ierr = nc.find_dimension(dimension_name.c_str(), &dimid, dimension_exists); CHKERRQ(ierr);
+
+  if (!dimension_exists) {
+    SETERRQ1(1, "NCTimeseries::define(...): dimension %s does not exist.",
+	     dimension_name.c_str());
+  }
+
+  if (rank == 0) {
+    ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc_def_var(ncid, short_name.c_str(), NC_DOUBLE, 1, &dimid, &varid);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+  ierr = MPI_Bcast(&varid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode NCTimeseries::write(const char /*filename*/[], vector<double> &/*data*/) {
+  SETERRQ(1, "not implemented");
+  return 0;
+}
+
+//! Convert \c data.
+PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, utUnit *to) {
+  PetscErrorCode ierr;
+  double slope, intercept;
+  char from_name[TEMPORARY_STRING_LENGTH], to_name[TEMPORARY_STRING_LENGTH], *tmp;
+  bool use_slope, use_intercept;
+
+  // Get string representations of units:
+  utPrint(from, &tmp);
+  strncpy(from_name, tmp, TEMPORARY_STRING_LENGTH);
+  utPrint(to, &tmp);
+  strncpy(to_name, tmp, TEMPORARY_STRING_LENGTH);
+
+  // Get the slope and the intercept of the linear transformation.
+  ierr = utConvert(from, to, &slope, &intercept);
+
+  if (ierr != 0) { 		// can't convert
+    if (ierr == UT_ECONVERT) {	// because units are incompatible
+      ierr = verbPrintf(2, com,
+			"PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
+			short_name.c_str(), from_name, to_name);
+      return 1;
+    } else {			// some other error
+      return 2;
+    }
+  }
+
+  use_slope     = PetscAbsReal(slope - 1.0) > 1e-16;
+  use_intercept = PetscAbsReal(intercept)   > 1e-16;
+
+  vector<double>::iterator j;
+  if (use_slope) {
+    for (j = data.begin(); j < data.end(); ++j)
+      *j *= slope;
+  }
+
+  if (use_intercept)
+    for (j = data.begin(); j < data.end(); ++j)
+      *j += intercept;
 
   return 0;
 }

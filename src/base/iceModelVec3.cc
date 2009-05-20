@@ -61,8 +61,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
   localp = local;
   strcpy(name,my_name);
 
-  var1.init(my_name, my_grid);
-  var1.dims = GRID_3D;
+  var1.init(my_name, my_grid, GRID_3D);
 
   return 0;
 }
@@ -495,8 +494,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 
   localp = false;
 
-  var1.init(name, my_grid);
-  var1.dims = GRID_3D_BEDROCK;
+  var1.init(name, my_grid, GRID_3D_BEDROCK);
   return 0;
 }
 

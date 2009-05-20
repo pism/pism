@@ -35,8 +35,8 @@ IceModel::IceModel(IceGrid &g)
     }
   }
 
-  config.init("pism_config", grid);
-  polar_stereographic.init("polar_stereographic", grid);
+  config.init("pism_config", grid.com, grid.rank);
+  polar_stereographic.init("polar_stereographic", grid.com, grid.rank);
 
   bootstrapLIC = PETSC_NULL;
 

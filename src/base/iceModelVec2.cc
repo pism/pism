@@ -68,8 +68,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   localp = local;
   strcpy(name,my_name);
 
-  var1.init(my_name, my_grid);
-  var1.dims = GRID_2D;
+  var1.init(my_name, my_grid, GRID_2D);
 
   return 0;
 }

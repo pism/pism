@@ -37,16 +37,35 @@ int check_err(const int stat, const int line, const char *file) {
   return 0;
 }
 
+NCTool::NCTool(MPI_Comm c, PetscMPIInt r) {
+  //FIXME: does there need to be a default MaskInterp?
+  myMaskInterp = PETSC_NULL;
+  grid = NULL;
+  ncid = -1;
+  com = c;
+  rank = r;
+
+  // Initialize UDUNITS if needed
+  if (utIsInit() == 0) {
+    if (utInit(NULL) != 0) {
+      PetscPrintf(com, "PISM ERROR: UDUNITS initialization failed.\n");
+      PetscEnd();
+    }
+  }
+}
+
 NCTool::NCTool(IceGrid *my_grid) {
   //FIXME: does there need to be a default MaskInterp?
   myMaskInterp = PETSC_NULL;
   grid = my_grid;
   ncid = -1;
+  com = grid->com;
+  rank = grid->rank;
 
   // Initialize UDUNITS if needed
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
-      PetscPrintf(grid->com, "PISM ERROR: UDUNITS initialization failed.\n");
+      PetscPrintf(com, "PISM ERROR: UDUNITS initialization failed.\n");
       PetscEnd();
     }
   }
@@ -55,13 +74,13 @@ NCTool::NCTool(IceGrid *my_grid) {
 PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool &exists) {
   PetscErrorCode ierr;
   int stat, found = 0, my_dimid;
-  if (grid->rank == 0) {
+  if (rank == 0) {
       stat = nc_inq_dimid(ncid, short_name, &my_dimid);
       if (stat == NC_NOERR)
 	found = 1;
   }
-  ierr = MPI_Bcast(&found, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&my_dimid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&found, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&my_dimid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
 
   if (found) {
@@ -101,10 +120,10 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
   bool standard_name_match = false;
 
   if (standard_name != "") {
-    if (grid->rank == 0) {
+    if (rank == 0) {
       ierr = nc_inq_nvars(ncid, &nvars); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     }
-    ierr = MPI_Bcast(&nvars, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&nvars, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
     string attribute;
     for (int j = 0; j < nvars; j++) {
@@ -118,7 +137,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 	  standard_name_match = true;
 	  my_varid = j;
 	} else {
-	  ierr = PetscPrintf(grid->com,
+	  ierr = PetscPrintf(com,
 			     "PISM ERROR: Inconsistency in the input file: "
 			     "Variables #%d and #%d have the same standard_name ('%s').\n",
 			     my_varid, j, attribute.c_str());
@@ -131,13 +150,13 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 
   // Check the short name:
   if (!found) {
-    if (grid->rank == 0) {
+    if (rank == 0) {
       stat = nc_inq_varid(ncid, short_name.c_str(), &my_varid);
       if (stat == NC_NOERR)
 	found = true;
     }
-    ierr = MPI_Bcast(&found,    1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-    ierr = MPI_Bcast(&my_varid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&found,    1, MPI_INT, 0, com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&my_varid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   }
 
   if (found) {
@@ -228,16 +247,16 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
   nc_z_len  = (size_t) z_len;
   nc_zb_len = (size_t) zb_len;
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_inq_varid(ncid, "z", &z_id);
     if (stat != NC_NOERR) {
-      stat = PetscPrintf(grid->com, "PISM ERROR: Can't find the 'z' coordinate variable.\n"); CHKERRQ(stat);
+      stat = PetscPrintf(com, "PISM ERROR: Can't find the 'z' coordinate variable.\n"); CHKERRQ(stat);
       PetscEnd();
     }
     
     stat = nc_inq_varid(ncid, "zb", &zb_id);
     if (stat != NC_NOERR) {
-      stat = PetscPrintf(grid->com, "PISM ERROR: Can't find the 'zb' coordinate variable.\n"); CHKERRQ(stat);
+      stat = PetscPrintf(com, "PISM ERROR: Can't find the 'zb' coordinate variable.\n"); CHKERRQ(stat);
       PetscEnd();
     }
 
@@ -247,8 +266,8 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  MPI_Bcast(z_levels, z_len, MPI_DOUBLE, 0, grid->com);
-  MPI_Bcast(zb_levels, zb_len, MPI_DOUBLE, 0, grid->com);
+  MPI_Bcast(z_levels, z_len, MPI_DOUBLE, 0, com);
+  MPI_Bcast(zb_levels, zb_len, MPI_DOUBLE, 0, com);
   return 0;
 }
 
@@ -329,7 +348,9 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
   MPI_Status mpi_stat;
   int stat;
   double *a_double = NULL, *a_raw = NULL;
-  
+
+  if (grid == NULL) SETERRQ(1, "NCTool::get_global_var(...): grid == NULL");
+
   int start[N] = {t, grid->xs, grid->ys, 0,        0};
   int count[N] = {1, grid->xm, grid->ym, grid->Mz, grid->Mbz};
 
@@ -338,12 +359,12 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
   block_size = compute_block_size(dims, count);
   // And the maximum size of the data block:
   buffer_size = block_size;
-  ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, com); CHKERRQ(ierr);
 
   // Memory allocation:
   ierr = PetscMalloc(buffer_size * sizeof(double), &a_double); CHKERRQ(ierr);
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     // Allocate an array to store input in (before the transpose)
     ierr = PetscMalloc(buffer_size * sizeof(double), &a_raw); CHKERRQ(ierr);
 
@@ -360,8 +381,8 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
 	  count[j] = count0[j];
 	}
       } else {
-        MPI_Recv(start, N, MPI_INT, proc, start_tag, grid->com, &mpi_stat);
-        MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
+        MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
+        MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
       }
 
       size_t *nc_start, *nc_count;
@@ -378,15 +399,15 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
       if (proc != 0) {
         int block_size;
 	block_size = compute_block_size(dims, count);
-	MPI_Send(a_double, block_size, MPI_DOUBLE, proc, data_tag, grid->com);
+	MPI_Send(a_double, block_size, MPI_DOUBLE, proc, data_tag, com);
       }
     }
     // Clean up:
     ierr = PetscFree(a_raw); CHKERRQ(ierr);
   } else {
-    MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);
-    MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);
-    MPI_Recv(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, grid->com, &mpi_stat);
+    MPI_Send(start, N, MPI_INT, 0, start_tag, com);
+    MPI_Send(count, N, MPI_INT, 0, count_tag, com);
+    MPI_Recv(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com, &mpi_stat);
   }
 
   block_size = compute_block_size(dims, count);
@@ -432,6 +453,8 @@ PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
   int stat;
   double *a_double = NULL;
 
+  if (grid == NULL) SETERRQ(1, "NCTool::put_global_var(...): grid == NULL");
+
   // Fill start and count arrays:
   int t;
   ierr = get_dim_length("t", &t); CHKERRQ(ierr);
@@ -443,7 +466,7 @@ PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
   block_size = compute_block_size(dims, count);
   // And the maximum size of the data block:
   buffer_size = block_size;
-  ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, com); CHKERRQ(ierr);
 
   // Memory allocation:
   ierr = PetscMalloc(buffer_size * sizeof(double), &a_double); CHKERRQ(ierr);
@@ -456,13 +479,13 @@ PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
   }
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
-  if (grid->rank == 0) { // on rank 0 processor, receive messages from every other
+  if (rank == 0) { // on rank 0 processor, receive messages from every other
                          //    processor, then write it out to the NC file
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
-        MPI_Recv(start, N, MPI_INT, proc, start_tag, grid->com, &mpi_stat);
-        MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
-	MPI_Recv(a_double, buffer_size, MPI_DOUBLE, proc, data_tag, grid->com, &mpi_stat);
+        MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
+        MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
+	MPI_Recv(a_double, buffer_size, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
       }
       
       size_t *nc_start, *nc_count;
@@ -475,9 +498,9 @@ PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
       delete[] nc_count;
     }
   } else {  // all other processors send to rank 0 processor
-    MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);
-    MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);
-    MPI_Send(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, grid->com);
+    MPI_Send(start, N, MPI_INT, 0, start_tag, com);
+    MPI_Send(count, N, MPI_INT, 0, count_tag, com);
+    MPI_Send(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com);
   }
 
   // Cleanup:
@@ -586,6 +609,8 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
   MPI_Status mpi_stat;
   int stat, start[N], count[N];	// enough space for t, x, y, z, zb
 
+  if (grid == NULL) SETERRQ(1, "NCTool::regrid_global_var(...): grid == NULL");
+
   // make local copies of lic.start and lic.count
   for (int i = 0; i < N; i++) {
     start[i] = lic.start[i];
@@ -614,7 +639,7 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
     break;
   }
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
 
     // Node 0 will service all the other nodes before itself.  We need to save
     // start[] and count[] so that it knows how to get its block at the end.
@@ -633,8 +658,8 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
 	  count[i] = count0[i];
 	}
       } else {
-        MPI_Recv(start, N, MPI_INT, proc, start_tag, grid->com, &mpi_stat);
-	MPI_Recv(count, N, MPI_INT, proc, count_tag, grid->com, &mpi_stat);
+        MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
+	MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
       }
 
       // Assemble nc_start and nc_count that are used below in the call to
@@ -658,13 +683,13 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dim_flag, Loc
 
       // send the filled buffer
       if (proc != 0) {
-        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, data_tag, grid->com);
+        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, data_tag, com);
       }
     }
   } else { // not process 0:
-    MPI_Send(start, N, MPI_INT, 0, start_tag, grid->com);  // send out my start
-    MPI_Send(count, N, MPI_INT, 0, count_tag, grid->com);  // send out my count
-    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, data_tag, grid->com, &mpi_stat); // get back filled buffer
+    MPI_Send(start, N, MPI_INT, 0, start_tag, com);  // send out my start
+    MPI_Send(count, N, MPI_INT, 0, count_tag, com);  // send out my count
+    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, data_tag, com, &mpi_stat); // get back filled buffer
   }
 
   // At this point, the buffer lic.a[] should contain lic.a_len doubles.  This is the 
@@ -861,7 +886,7 @@ PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
   }
 
   // Write it:
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     
     stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
@@ -885,7 +910,7 @@ bool NCTool::check_dimension(const char name[], const int len) {
   int stat, dimid;
   size_t dimlen;
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_inq_dimid(ncid, name, &dimid);
     if (stat == NC_NOERR) {
       stat = nc_inq_dimlen(ncid, dimid, &dimlen);
@@ -906,6 +931,8 @@ bool NCTool::check_dimension(const char name[], const int len) {
 bool NCTool::check_dimensions() {
   bool t, x, y, z, zb;
 
+  if (grid == NULL) SETERRQ(1, "NCTool::check_dimensions(...): grid == NULL");
+
   t  = check_dimension("t", -1); // length does not matter
   x  = check_dimension("x", grid->My); // transpose
   y  = check_dimension("y", grid->Mx); // transpose
@@ -920,7 +947,9 @@ bool NCTool::check_dimensions() {
 PetscErrorCode NCTool::create_dimensions() {
   int stat, t, x, y, z, zb, dimid;
 
-  if (grid->rank == 0) {
+  if (grid == NULL) SETERRQ(1, "NCTool::create_dimensions(...): grid == NULL");
+
+  if (rank == 0) {
     // define dimensions and coordinate variables:
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     // t
@@ -983,7 +1012,7 @@ PetscErrorCode NCTool::append_time(PetscReal time) {
   int stat, t_id;
 
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     size_t t_len;
     stat = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -1003,14 +1032,14 @@ PetscErrorCode NCTool::append_time(PetscReal time) {
 PetscErrorCode NCTool::open_for_reading(const char filename[]) {
   PetscErrorCode ierr;
   int stat = 0;
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_open(filename, NC_NOWRITE, &ncid);
   }
-  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
-  ierr = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&ncid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   if (stat != NC_NOERR) {
-    ierr = PetscPrintf(grid->com, "ERROR: Can't open file '%s'!\n",
+    ierr = PetscPrintf(com, "ERROR: Can't open file '%s'!\n",
 		       filename); CHKERRQ(ierr);
     PetscEnd();
   }
@@ -1021,7 +1050,7 @@ PetscErrorCode NCTool::open_for_reading(const char filename[]) {
 //! Closes a NetCDF file.
 PetscErrorCode NCTool::close() {
   PetscErrorCode ierr;
-  if (grid->rank == 0) {
+  if (rank == 0) {
     ierr = nc_close(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
   ncid = -1;			// make it invalid
@@ -1032,7 +1061,7 @@ PetscErrorCode NCTool::close() {
 PetscErrorCode NCTool::open_for_writing(const char filename[]) {
   int stat;
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     bool file_exists = false;
 
     // Check if the file exists:
@@ -1046,7 +1075,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
     if (file_exists) {
       stat = nc_open(filename, NC_WRITE, &ncid);
       if (stat != NC_NOERR) {
-	stat = PetscPrintf(grid->com, "PISM ERROR: Can't open file '%s'. NetCDF error: %s\n",
+	stat = PetscPrintf(com, "PISM ERROR: Can't open file '%s'. NetCDF error: %s\n",
 			   filename, nc_strerror(stat)); CHKERRQ(stat);
 	PetscEnd();
 	}
@@ -1057,9 +1086,9 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
     }
 
     stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  } // end of if (grid->rank == 0)
+  } // end of if (rank == 0)
 
-  stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   return 0;
 }
@@ -1077,7 +1106,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
   if (append == false) {
     // if append == false, we need to check if the file exists and move it
     // before proceeding if it does:
-    if (grid->rank == 0) {
+    if (rank == 0) {
       bool file_exists = false;
       char tmp[PETSC_MAX_PATH_LEN];
 
@@ -1095,15 +1124,15 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
       
 	stat = rename(filename, tmp);
 	if (stat != 0) {
-	  stat = verbPrintf(1, grid->com, "PISM ERROR: can't move '%s' to '%s'.\n",
+	  stat = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
 			    filename, tmp);
 	  PetscEnd();
 	}
-	stat = verbPrintf(2, grid->com, 
+	stat = verbPrintf(2, com, 
 			  "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
 			  filename, tmp);
       }    
-    } // end of if (grid->rank == 0)
+    } // end of if (rank == 0)
   }
 
   stat = open_for_writing(filename); CHKERRQ(stat);
@@ -1116,7 +1145,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
     bool dimensions_are_ok = check_dimensions();
 
     if (!dimensions_are_ok) {
-      stat = PetscPrintf(grid->com,
+      stat = PetscPrintf(com,
 			 "PISM ERROR: file '%s' has dimensions incompatible with the current grid. Exiting...\n",
 			 filename); CHKERRQ(stat);
       PetscEnd();
@@ -1136,7 +1165,7 @@ PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char c
 
   snprintf(tmp, TEMPORARY_STRING_LENGTH, "PISM %s", PISM_Revision);
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     if (have_ssa_velocities)
@@ -1159,7 +1188,7 @@ PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char c
 PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
   int stat, dim_id;
   
-  if (grid->rank == 0) {
+  if (rank == 0) {
     size_t dim_len;
     stat = nc_inq_dimid(ncid, name, &dim_id);
     if (stat == NC_NOERR) {
@@ -1170,7 +1199,7 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
     *len = static_cast<int>(dim_len);
   }
 
-  stat = MPI_Bcast(len, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(len, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   return 0;
 }
@@ -1194,13 +1223,13 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   if (len != 0) {
     ierr = find_variable(name, &varid, variable_exists);
     if (!variable_exists) {
-      ierr = PetscPrintf(grid->com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
+      ierr = PetscPrintf(com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
 			 name);
       CHKERRQ(ierr);
       PetscEnd();
     }
 
-    if (grid->rank == 0) {
+    if (rank == 0) {
       double *data;
       data = new double[len];
 
@@ -1214,8 +1243,8 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 	range[1] = PetscMax(data[j], range[1]);
       }
       delete[] data;
-    } // end of if(grid->rank == 0)
-    ierr = MPI_Bcast(range, 2, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+    } // end of if(rank == 0)
+    ierr = MPI_Bcast(range, 2, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
 
     char internal_units[TEMPORARY_STRING_LENGTH];
     utUnit input, internal;
@@ -1235,7 +1264,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
     // Get the units information:
     ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
     if (!input_has_units) {
-      ierr = verbPrintf(3, grid->com,
+      ierr = verbPrintf(3, com,
 			"PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
 			"     Assuming that it is in '%s'.\n",
 			name, internal_units); CHKERRQ(ierr);
@@ -1247,7 +1276,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
     ierr = utConvert(&input, &internal, &slope, &intercept);
     if (ierr != 0) {
       if (ierr == UT_ECONVERT) {
-	ierr = PetscPrintf(grid->com,
+	ierr = PetscPrintf(com,
 			   "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
 			   name, internal_units); CHKERRQ(ierr);
 	PetscEnd();
@@ -1280,7 +1309,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
   int ierr, stat, len;
 
   // Read and broadcast the attribute length:
-  if (grid->rank == 0) {
+  if (rank == 0) {
     size_t attlen;
     stat = nc_inq_attlen(ncid, varid, name, &attlen);
     if (stat == NC_NOERR)
@@ -1288,7 +1317,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
     else
       len = 0;
   }
-  ierr = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&len, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
@@ -1301,14 +1330,14 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
   ierr = PetscMemzero(str, len+1);CHKERRQ(ierr);
 
   // Now read the string and broadcast stat to see if we succeeded:
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_get_att_text(ncid, varid, name, str);
   }
-  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   
   // On success, broadcast the string. On error, set str to "".
   if (stat == NC_NOERR) {
-    stat = MPI_Bcast(str, len, MPI_CHAR, 0, grid->com); CHKERRQ(stat);
+    stat = MPI_Bcast(str, len, MPI_CHAR, 0, com); CHKERRQ(stat);
   } else {
     strcpy(str, "");
   }
@@ -1325,7 +1354,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
   int ierr, stat, len;
 
   // Read and broadcast the attribute length:
-  if (grid->rank == 0) {
+  if (rank == 0) {
     size_t attlen;
     stat = nc_inq_attlen(ncid, varid, name, &attlen);
     if (stat == NC_NOERR)
@@ -1333,7 +1362,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
     else
       len = 0;
   }
-  ierr = MPI_Bcast(&len, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&len, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   if (len == 0) {
     result.clear();
@@ -1342,14 +1371,14 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
 
   result.resize(len);
   // Now read the data and broadcast stat to see if we succeeded:
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_get_att_double(ncid, varid, name, &result[0]);
   }
-  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, grid->com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   
   // On success, broadcast the data. On error, stop.
   if (stat == NC_NOERR) {
-    ierr = MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, grid->com); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
   } else {
     SETERRQ(1, "Error reading an attribute.");
   }
@@ -1380,7 +1409,7 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
   int *dimids;
 
   // Quit if this is not processor zero:
-  if (grid->rank != 0) return 0;
+  if (rank != 0) return 0;
 
 //   for (int j = 0; j < 5; j++)
 //     fprintf(stderr, "start[%d] = %d, count[%d] = %d\n", j, start[j], j, count[j]);
@@ -1450,7 +1479,7 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
   int stat, ndims, *dimids;
   int x_id, y_id, z_id = -1;
 
-  if (grid->rank != 0) return 0;
+  if (rank != 0) return 0;
 
   stat = nc_inq_varndims(ncid, varid, &ndims);
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -1487,7 +1516,7 @@ PetscErrorCode NCTool::transpose(int varid, GridType dim_flag, int *count,
     if (dimids[j] == x_id || dimids[j] == y_id || dimids[j] == z_id) {
 
       if (m == 3) {
-	PetscPrintf(grid->com,
+	PetscPrintf(com,
 		    "PISM ERROR: Can't process a variable because a spatial dimension appears twice in its specification.\n"
 		    "     Please see ncdump -h <filename> for details.\n");
 	PetscEnd();
@@ -1560,6 +1589,8 @@ PetscErrorCode NCTool::get_grid(const char filename[]) {
   grid_info gi;
   double *z_levels, *zb_levels;
 
+  if (grid == NULL) SETERRQ(1, "NCTool::get_grid(...): grid == NULL");
+
   ierr = open_for_reading(filename); CHKERRQ(ierr);
 
   ierr = get_grid_info(gi); CHKERRQ(ierr);
@@ -1614,7 +1645,7 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) {
 
   ierr = utScan(units_string.c_str(), &units);
   if (ierr != 0) {
-    ierr = PetscPrintf(grid->com, "PISM ERROR: units specification '%s' is unknown or invalid.\n",
+    ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' is unknown or invalid.\n",
 		       units_string.c_str());
     PetscEnd();
   }
@@ -1631,7 +1662,7 @@ PetscErrorCode NCTool::create_timeseries(const char name[], const char long_name
 					 nc_type nctype, int *varid) {
   int stat, t_id, var_id;
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
@@ -1650,7 +1681,7 @@ PetscErrorCode NCTool::create_timeseries(const char name[], const char long_name
 
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   if (varid != NULL)
     *varid = var_id;
@@ -1670,7 +1701,7 @@ PetscErrorCode NCTool::append_timeseries(const char name[], double value) {
     stat = create_timeseries(name, NULL, NULL, NC_FLOAT, &varid); CHKERRQ(stat);
   }
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     size_t index = static_cast<size_t>(t_len - 1);
     stat = nc_put_var1_double(ncid, varid, &index, &value); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
@@ -1682,10 +1713,10 @@ PetscErrorCode NCTool::append_timeseries(const char name[], double value) {
 PetscErrorCode NCTool::inq_nattrs(int varid, int &N) {
   int stat;
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_inq_varnatts(ncid, varid, &N); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  stat = MPI_Bcast(&N, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(&N, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   return 0;
 }
@@ -1695,26 +1726,82 @@ PetscErrorCode NCTool::inq_att_type(int varid, const char name[], nc_type &resul
   int stat, type;
   nc_type tmp;
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_inq_atttype(ncid, varid, name, &tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     type = static_cast<int>(tmp);
-  } // end of if(grid->rank == 0)
-  stat = MPI_Bcast(&type, 1, MPI_INT, 0, grid->com); CHKERRQ(stat);
+  } // end of if(rank == 0)
+  stat = MPI_Bcast(&type, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   result = static_cast<nc_type>(type);
 
   return 0;
 }
 
+//! Gets the name of the n-th (counting from 0) attribute of a NetCDF variable.
 PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) {
   int stat;
   char tmp[NC_MAX_NAME];
 
-  if (grid->rank == 0) {
+  if (rank == 0) {
     stat = nc_inq_attname(ncid, varid, n, tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
-  stat = MPI_Bcast(tmp, NC_MAX_NAME, MPI_CHAR, 0, grid->com); CHKERRQ(stat);
+  stat = MPI_Bcast(tmp, NC_MAX_NAME, MPI_CHAR, 0, com); CHKERRQ(stat);
 
   name = tmp;
+  return 0;
+}
+
+//! Gets the list of dimensions a variable depends on.
+/*!
+  The length of the result (\c dimids) is the number of dimensions.
+ */
+PetscErrorCode NCTool::inq_dimids(int varid, vector<int> &dimids) {
+  int stat;
+  int ndims;
+
+  if (rank == 0) {
+    stat = nc_inq_varndims(ncid, varid, &ndims); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  stat = MPI_Bcast(&ndims, 1, MPI_INT, 0, com); CHKERRQ(stat);
+
+  if (ndims == 0) {
+    dimids.clear();
+    return 0;
+  }
+
+  dimids.resize(ndims);		// every processor allocates at least ndims
+				// integers (if necessary)
+
+  if (rank == 0) {
+    stat = nc_inq_vardimid(ncid, varid, &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__)); 
+  }
+  stat = MPI_Bcast(&dimids[0], ndims, MPI_INT, 0, com); CHKERRQ(stat);
+
+  return 0;
+}
+
+//! Get a name of a dimension by a dimension ID.
+PetscErrorCode NCTool::inq_dimname(int dimid, string &name) {
+  int stat;
+  char tmp[NC_MAX_NAME];
+
+  if (rank == 0) {
+    stat = nc_inq_dimname(ncid, dimid, tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  stat = MPI_Bcast(tmp, NC_MAX_NAME, MPI_CHAR, 0, com); CHKERRQ(stat);
+
+  name = tmp;
+  return 0;
+}
+
+//! Get the dimension ID of an unlimited dimension. Sets unlimdimid to -1 if there isn't one.
+PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) {
+  int stat;
+
+  if (rank == 0) {
+    stat = nc_inq_unlimdim(ncid, &unlimdimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+  stat = MPI_Bcast(&unlimdimid, 1, MPI_INT, 0, com); CHKERRQ(stat);
+
   return 0;
 }
