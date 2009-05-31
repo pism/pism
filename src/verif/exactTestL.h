@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007 Ed Bueler
+   Copyright (C) 2007--2009 Ed Bueler
   
    This file is part of PISM.
   
@@ -35,9 +35,15 @@ extern "C"
 !       inequalities"
 !
 ! in this case the exact solution requires solving an ODE numerically
-! (see src/exact/simpleL.c and src/exact/gridL.c)
+! (see src/verif/simpleL.c and src/verif/gridL.c)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
+
+/* exit status could be one of these; returned zero indicates success */
+#define TESTL_NOT_DONE       8966
+#define TESTL_NOT_DECREASING 8967
+#define TESTL_INVALID_METHOD 8968
+#define TESTL_NO_LIST        8969
 
 int exactL(double r, double *H, double *b, double *a, 
            const double EPS_ABS, const double EPS_REL, const int ode_method);

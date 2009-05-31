@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007--2008 Ed Bueler
+   Copyright (C) 2007--2009 Ed Bueler
   
    This file is part of PISM.
   
@@ -47,7 +47,7 @@ int funcL(double r, const double u[], double f[], void *params) {
   
   const double Lsqr = L * L;
   const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
-  const double A = 1.0e-16 / SperA;  /* = 3.17e-24  1/(Pa^3 s); EISMINT I flow law parameter */
+  const double A = 1.0e-16 / SperA;  /* = 3.17e-24  1/(Pa^3 s); EISMINT I flow law */
   const double Gamma = 2 * pow(rho * g,n) * A / (n+2);
   const double tilGamma = Gamma * pow(n,n) / (pow(2.0 * n + 2.0, n));
   const double C = a0 / (2.0 * Lsqr * tilGamma);
@@ -63,10 +63,6 @@ int funcL(double r, const double u[], double f[], void *params) {
 }
 
 
-#define NOT_DONE       8966
-#define NOT_DECREASING 8967
-#define INVALID_METHOD 8968
-
 /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
    is believed to be predictable and accurate */
 int getU(double *r, int N, double *u, 
@@ -74,18 +70,14 @@ int getU(double *r, int N, double *u,
    /* solves ODE for u(r)=H(r)^{8/3}, 0 <= r <= L, for test L
       r and u must be allocated vectors of length N; r[] must be decreasing */
 
-   /* check r is decreasing first */
+   /* check first: we have a list, and r is decreasing */
+   if (N < 1) return TESTL_NO_LIST;
    int i;
-   for (i = 1; i<N; i++) {
-     if (r[i] > r[i-1]) {
-       printf("r[] not decreasing in getU()\n");
-       return NOT_DECREASING;
-     }
-   }
+   for (i = 1; i<N; i++) {  if (r[i] > r[i-1]) return TESTL_NOT_DECREASING;  }
 
    /* setup for GSL ODE solver; following step choices don't need Jacobian,
       but should we chose one that does?  */
-	const gsl_odeiv_step_type* T;
+   const gsl_odeiv_step_type* T;
    switch (ode_method) {
      case 1:
        T = gsl_odeiv_step_rkck;
@@ -101,34 +93,39 @@ int getU(double *r, int N, double *u,
        break;
      default:
        printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
-       return INVALID_METHOD;
+       return TESTL_INVALID_METHOD;
    }
-	gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     /* one scalar ode */
-	gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-	gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    /* one scalar ode */
-	gsl_odeiv_system sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
+   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     /* one scalar ode */
+   gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
+   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    /* one scalar ode */
+   gsl_odeiv_system sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
 
+   int status = TESTL_NOT_DONE;
+
+   /* outside of ice cap, u = 0 */
+   int k = 0;
+   while (r[k] >= L) {
+     u[k] = 0.0;
+     k++;
+     if (k == N) return GSL_SUCCESS;
+   }
+   
    /* initial conditions: (r,u) = (L,0);  r decreases from L */
-	double rr = L, step;
-   int status = NOT_DONE;
-   int count  = 0;
-   for (count = 0; count < N; count++) {
-     if (count == 0) {
-       u[count] = 0;
-     } else {
-       u[count] = u[count-1];  /* use value at end of last interval as initial */
-     }
+   double rr = L, step;
+   int count;
+   for (count = k; count < N; count++) {
+     /* generally use value at end of last interval as initial guess */
+     u[count] = (count == 0) ? 0.0 : u[count-1];
      while (rr > r[count]) {
        step = r[count] - rr;
        status = gsl_odeiv_evolve_apply(e, c, s, &sys, &rr, r[count], &step, &u[count]);
-	    if (status != GSL_SUCCESS)   break;
-	  }
-     /* printf ("%d  %d  %d  %.5e %.5e\n", status, GSL_SUCCESS, count, r[count], u[count]); */
-	}
+       if (status != GSL_SUCCESS)   break;
+     }
+   }
 
-	gsl_odeiv_evolve_free(e);
-	gsl_odeiv_control_free(c);
-	gsl_odeiv_step_free(s);
+   gsl_odeiv_evolve_free(e);
+   gsl_odeiv_control_free(c);
+   gsl_odeiv_step_free(s);
    return status;
 }
 

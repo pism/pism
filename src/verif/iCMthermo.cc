@@ -44,68 +44,6 @@ PetscErrorCode IceCompModel::temperatureStep(PetscScalar* vertSacrCount) {
 }
 
 
-PetscErrorCode IceCompModel::createVecs() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::createVecs(); CHKERRQ(ierr);
-
-  ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
-
-  if (testname == 'L') {
-    ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-PetscErrorCode IceCompModel::destroyVecs() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
-
-  ierr = SigmaComp3.destroy(); CHKERRQ(ierr);
-
-  if (testname == 'L') {
-    ierr = vHexactL.destroy(); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::createViewers() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::createViewers(); CHKERRQ(ierr);
-
-  // must be called after IceModel::createViewers because diagnostic needs to be filled
-  if ((testname=='F') || (testname=='G')) {
-    ierr = createOneViewerIfDesired(&SigmaCompView, 'P',
-                   "Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
-  } else SigmaCompView = PETSC_NULL;
-  
-  // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
-  if (runtimeViewers[cIndex('S')] != PETSC_NULL) {
-    ierr = PetscViewerDestroy(runtimeViewers[cIndex('S')]); CHKERRQ(ierr);
-    runtimeViewers[cIndex('S')] = PETSC_NULL;
-    ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',
-                   "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
-  } else compSigmaMapView = PETSC_NULL;
-   
-  return 0;
-}
-
-
-PetscErrorCode IceCompModel::destroyViewers() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::destroyViewers(); CHKERRQ(ierr);
-
-  if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
-  if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::initTestFG() {
   PetscErrorCode  ierr;
   PetscInt        Mz=grid.Mz;
