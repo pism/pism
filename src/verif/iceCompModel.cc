@@ -20,11 +20,13 @@
 #include <cstring>
 #include <petscda.h>
 
+#include <vector>  // STL vector container; sortable; used in test L
+using namespace std;
+
 #include "exactTestsABCDE.h"
 #include "exactTestsFG.h" 
 #include "exactTestH.h" 
 #include "exactTestL.h" 
-#include "../num/extrasGSL.hh"
 
 #include "../coupler/pccoupler.hh"
 #include "iceCompModel.hh"
@@ -52,6 +54,59 @@ IceCompModel::IceCompModel(IceGrid &g, int mytest)
 
 
 IceCompModel::~IceCompModel() {
+}
+
+
+PetscErrorCode IceCompModel::createVecs() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+  ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
+  ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceCompModel::destroyVecs() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
+  ierr = vHexactL.destroy(); CHKERRQ(ierr);
+  ierr = SigmaComp3.destroy(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::createViewers() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::createViewers(); CHKERRQ(ierr);
+
+  // must be called after IceModel::createViewers because diagnostic needs to be filled
+  if ((testname=='F') || (testname=='G')) {
+    ierr = createOneViewerIfDesired(&SigmaCompView, 'P',
+                   "Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
+  } else SigmaCompView = PETSC_NULL;
+  
+  // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
+  if (runtimeViewers[cIndex('S')] != PETSC_NULL) {
+    ierr = PetscViewerDestroy(runtimeViewers[cIndex('S')]); CHKERRQ(ierr);
+    runtimeViewers[cIndex('S')] = PETSC_NULL;
+    ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',
+                   "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
+  } else compSigmaMapView = PETSC_NULL;
+   
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::destroyViewers() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::destroyViewers(); CHKERRQ(ierr);
+
+  if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
+  if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
+  return 0;
 }
 
 
@@ -451,6 +506,20 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
 }
 
 
+//! Class used initTestL() in generating sorted list for ODE solver.
+class rgrid {
+public:
+  double r;
+  int    i,j;
+};
+
+
+//! Comparison used initTestL() in generating sorted list for ODE solver.
+struct rgridReverseSort {
+  bool operator()(rgrid a, rgrid b) { return (a.r >= b.r); }
+};
+
+
 PetscErrorCode IceCompModel::initTestL() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, **bed;
@@ -476,57 +545,76 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
   muSliding = 0.0;  // note reimplementation of basalVelocity()
 
-  // setup to evaluate test L; requires solving an ODE numerically
-  const PetscInt  MM = grid.xm * grid.ym;
-  double          *rr, *HH, *bb, *aa;
-  int             *ia, *ja;
-  rr = new double[MM];  
-  HH = new double[MM];  bb = new double[MM];  aa = new double[MM];
-  ia = new int[MM];  ja = new int[MM];
+  // setup to evaluate test L; requires solving an ODE numerically using sorted list
+  //   of radii, sorted in decreasing radius order
+  const int  MM = grid.xm * grid.ym;
 
+  vector<rgrid> rrv(MM);  // destructor at end of scope
   for (PetscInt i = 0; i < grid.xm; i++) {
     for (PetscInt j = 0; j < grid.ym; j++) {
       const PetscInt  k = i * grid.ym + j;
+      rrv[k].i = i + grid.xs;  rrv[k].j = j + grid.ys;
       PetscScalar  junkx, junky;
-      mapcoords(i + grid.xs, j + grid.ys, junkx, junky, rr[k]);
-      rr[k] = - rr[k];
-      ia[k] = i + grid.xs;  ja[k] = j + grid.ys;
+      mapcoords(rrv[k].i, rrv[k].j, junkx, junky, rrv[k].r);
     }
   }
+  sort(rrv.begin(), rrv.end(), rgridReverseSort()); // so rrv[k].r > rrv[k+1].r
 
-  heapsort_double_2indfollow(rr,ia,ja,MM);  // sorts into ascending;  O(MM log MM) time
-  for (PetscInt k = 0; k < MM; k++)   rr[k] = -rr[k];   // now descending
-
-  // get soln to test L at these points; solves ODE only once (on each processor)
-  ierr = exactL_list(rr, MM, HH, bb, aa);  CHKERRQ(ierr);
+  // get soln to test L at these radii; solves ODE only once (on each processor)
+  double *rr, *HH, *bb, *aa;
+  rr = new double[MM];
+  for (PetscInt k = 0; k < MM; k++)
+    rr[k] = rrv[k].r;
+  HH = new double[MM];  bb = new double[MM];  aa = new double[MM];
+  ierr = exactL_list(rr, MM, HH, bb, aa);
+  switch (ierr) {
+     case TESTL_NOT_DONE:
+       verbPrintf(1,grid.com,
+          "\n\nTest L ERROR: exactL_list() returns 'NOT_DONE' ...\n\n\n",ierr);
+       break;
+     case TESTL_NOT_DECREASING:
+       verbPrintf(1,grid.com,
+          "\n\nTest L ERROR: exactL_list() returns 'NOT_DECREASING' ...\n\n\n",ierr);
+       break;
+     case TESTL_INVALID_METHOD:
+       verbPrintf(1,grid.com,
+          "\n\nTest L ERROR: exactL_list() returns 'INVALID_METHOD' ...\n\n\n",ierr);
+       break;
+     case TESTL_NO_LIST:
+       verbPrintf(1,grid.com,
+          "\n\nTest L ERROR: exactL_list() returns 'NO_LIST' ...\n\n\n",ierr);
+       break;
+     default:
+       break;
+  }
+  CHKERRQ(ierr);
+  delete [] rr;
   
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
   for (PetscInt k = 0; k < MM; k++) {
-    const PetscInt i = ia[k],  j = ja[k];
-    H[i][j] = HH[k];
-    bed[i][j] = bb[k];
-    accum[i][j] = aa[k];
+    H    [rrv[k].i][rrv[k].j] = HH[k];
+    bed  [rrv[k].i][rrv[k].j] = bb[k];
+    accum[rrv[k].i][rrv[k].j] = aa[k];
   }
   ierr = pccaccum->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
-
-  delete [] rr;  delete [] HH;  delete [] bb;  delete [] aa;  delete [] ia;  delete [] ja; 
+  delete [] HH;  delete [] bb;  delete [] aa;
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbed.endGhostComm(); CHKERRQ(ierr);
 
+  // store copy of vH for "-eo" runs and for evaluating geometry errors
+  ierr = vH.copy_to(vHexactL); CHKERRQ(ierr);
+
   // set surface to H+b
   ierr = vH.add(1.0, vbed, vh); CHKERRQ(ierr);
   ierr = vh.beginGhostComm(); CHKERRQ(ierr);
   ierr = vh.endGhostComm(); CHKERRQ(ierr);
-
-  // store copy of vH for "-eo" runs and for evaluating geometry errors
-  ierr = vH.copy_to(vHexactL); CHKERRQ(ierr);
   return 0;
 }
 

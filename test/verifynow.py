@@ -13,7 +13,7 @@ import commands
 import string
 
 # run a chosen verification   
-def verify(test):
+def verify(executable,test):
    print ' ++++  TEST ' + test[0] + ':  verifying with ' + test[2] + ' exact soln  ++++'
    print ' ' + test[5]
    # for myMx in test[1][:levs]:
@@ -37,11 +37,7 @@ def verify(test):
          if (uneq != 0):
            myMz = test[6][lev_index]
          gridopts = ' -Mz ' + str(myMz) + ' -Mbz ' + str(myMbz) + ' -max_dt ' + str(mymaxdt)
-      if nproc > 1:
-         predo = mpi + ' -np ' + str(nproc) + ' '
-      else:
-         predo = ''
-      testdo = predo + pref + 'pismv -test ' + test[0] + gridopts + test[4]
+      testdo = executable + ' -test ' + test[0] + gridopts + test[4]
       if (uneq == 1):
         testdo = testdo + ' -quadZ'
       elif (uneq == 2):
@@ -84,7 +80,7 @@ def verify(test):
 NP = 1
 LEVELS = 2
 PREFIX = ''
-MPIDO = 'mpiexec'
+MPIDO = 'mpiexec -np'
 TESTS = 'CGIJ'
 KSPRTOL = 1e-12 # for test I
 SSARTOL = 5e-7   # ditto
@@ -137,15 +133,7 @@ alltests = [
         [21,31,41,61,81]],
 ]
 
-## get options:
-##   -e to add "-eta" option
-##   -l for number of levels
-##   -m for MPI executable (e.g. mpirun or mpiexec)
-##   -n for number of processors
-##   -p for prefix on pismv executable
-##   -t for which tests to use
-##   -u to add unequal spaced vertical (-u 0 [default] for equal spaced
-##                        -u 1 for "-quadZ", -u 2 for "-chebZ")
+## get options; see --help msg for meaning
 nproc = NP  ## default; will not use 'mpiexec' if equal to one
 levs = LEVELS
 mpi = MPIDO
@@ -154,8 +142,8 @@ letters = TESTS
 uneq = 0
 doeta = False
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "ep:m:n:l:t:u:",
-                             ["eta","prefix=","mpido=","nproc=","levels=","tests=","unequal="])
+  opts, args = getopt.getopt(sys.argv[1:], "ep:n:l:t:u:",
+     ["eta","prefix=","nproc=","levels=","tests=","unequal=","mpido=","help"])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
       pref = arg
@@ -171,14 +159,34 @@ try:
       uneq = string.atoi(arg)
     elif opt in ("-e", "--eta"):
       doeta = True
+    elif opt == "--help":
+      print """PISM verification script; usage:
+  -e,--eta=     to add '-eta' option to pismv call
+  -l,--levels=  number of levels of verification; '-l 1' fast, '-l 5' slowest
+  --mpido=      specify MPI executable
+                  (e.g. 'mpirun -np' or 'aprun -n' instead of default 'mpiexec -np')
+  -n,--nproc=   specify number of processors to MPI
+  -p,--prefix=  path prefix to pismv executable
+  -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M
+  -u,--uneq=    use unequal spaced vertical spacing
+                  (-u 0 is equal spaced [default], -u 1 for '-quadZ', -u 2 for '-chebZ')
+  --help        prints this message"""
+      sys.exit(0)
 except getopt.GetoptError:
   print 'Incorrect command line arguments'
   sys.exit(2)
 # should do range checking on option arguments here
 
-print ' VERIFYNOW.PY using %d processor(s) and %d level(s) of refinement' % (nproc, levs)
+if nproc > 1:
+  predo = mpi + ' ' + str(nproc) + ' '
+else:
+  predo = ''
+executable = predo + pref + 'pismv'
+
+print " VERIFYNOW.PY: test(s) %s, %d refinement level(s), using '%s'" % \
+  (letters,levs,executable)
 ## go through verification tests
 for test in alltests:
    if letters.find(test[0]) > -1:
-       verify(test)
+       verify(executable,test)
 

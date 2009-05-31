@@ -2376,6 +2376,8 @@ The same views of the PISM model can be saved \emph{at the end of the run} to a 
 \clearpage \newpage
 \section{Python scripts for PISM modeling}\label{sect:scripts}
 
+FIXME:  It is reasonable to replace option lists with the mere suggestion to use \verb|foo.py --help|.  \verb|verifynow.py| has been documented this way.
+
 \newcommand{\scriptoptdef}[3]{\vspace{1mm}\noindent \large\texttt{-#1},\,\,\texttt{--#2=}\normalsize\,\,[\textsl{#3}]:\quad}
 
 \newcommand{\scripthead}[1]{\subsubsection*{\Large{\texttt{#1}}}}
@@ -2438,35 +2440,18 @@ $ series.py -f extract.txt -o desired_series.nc
 \scriptoptdef{o}{out}{series\und out.nc} The full name of the output NetCDF file.
 
 
-\scripthead{test/verifynow.py}\index{verifynow.py}  This Python script organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+\scripthead{test/verifynow.py}\index{verifynow.py}  This Python script in directory \verb|test/| organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 
-In a standard PISM installation, to run this script you will want to \verb|cd test/| and run the script there with ``\verb|./|'' or ``\verb|python|''.
-
-Three example usages are \begin{itemize}
-\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|
-\item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido=mpirun/|'' will use \verb|mpirun -np 8| \verb|bin/pismv| as the command and do five levels (the maximum) of refinement only on test J
-\item ``\verb|verifynow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses the two cores on my laptop and runs in about two hours; the vertical spacing is not equal (its \verb|-quadZ|)
-\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKL|'' will use forty processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait
+In a standard PISM installation, runs as \verb|test/verifynow.py|, or \verb|cd test/| and do \verb|./verifynow.py|.  Example usage: \begin{itemize}
+\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|,
+\item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n'|'' will use \verb|aprun -n 8 bin/pismv| as the command and do five levels (the maximum) of refinement only on test J,
+\item ``\verb|verifynow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses two processers (cores) and runs in about two hours; the vertical spacing is not equal (\verb|-quadZ|),
+\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKLM|'' will use forty processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait.
 \end{itemize}
 
-\opthead  \verb|verifynow.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
+For a list of options do \verb|test/verifynow.py --help|.
 
-\scriptoptdef{l}{levels}{3} specifies number of levels of refinement; $1,2,3,4,5$ are allowed values
-
-\scriptoptdef{m}{mpido}{\texttt{mpiexec}} how to run PISM as an MPI program
-
-\scriptoptdef{n}{nproc}{1} specify number of processors to use
-
-\scriptoptdef{p}{prefix}{} where the PISM executable \verb|pismv| is located
-
-\scriptoptdef{t}{tests}{CGIJ} which tests to run
-
-\scriptoptdef{u}{unequal}{0} spacing in vertical: \verb|-u 0| is default equal spacing, \verb|-u 1| adds option \verb|-quadZ| to \verb|pismv| call, and \verb|-u 2| adds option \verb|-chebZ| to \verb|pismv| call; see documentation on options \verb|-quadZ| and  \verb|-chebZ|
-
-\medskip
-Note that timing information is also given in the \verb|verifynow.py| output.  Therefore performance, including parallel performance, can be assessed along with accuracy.
-
-The exact meaning of the various errors reported by \verb|pismv|, which appear in a \verb|verifynow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
+Timing information is given in the \verb|verifynow.py| output so performance, including parallel performance, can be assessed along with accuracy.  The exact meaning of the numerical errors reported by \verb|pismv|, which appear in a \verb|verifynow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
 
 
 \scripthead{test/vnreport.py}\index{vnreport.py}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|matplotlib|.  Example graphs are Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} in section \ref{sect:verif}.

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Ed Bueler
+// Copyright (C) 2004-2009 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,8 +26,6 @@
    than the iterated use of a single-variable adaptive rule as in Matlab's 
    dblquad.  cubature.[h|c] by Johnson is based on HIntLib by Rudolf Schuerer 
    as well on GSL itself.  Note cubature is distributed with GPL.
-   
-   The heapsort code below is not GSL.
 */
 
 double interp1_linear(const double x[], const double Y[], int N, double xi);
@@ -37,15 +35,4 @@ double interp1_linear(const double x[], const double Y[], int N, double xi);
 double dblquad_cubature(integrand f, 
           const double ax, const double bx, const double ay, const double by,
           double reqRelError, void *fdata);
-
-// heapsort from 
-//   http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
-// (found 7/7/07 by ELB;  see also http://en.wikipedia.org/wiki/Heapsort)
-// modified to have two index arrays "follow along" and get rearranged the same way
-//
-// note it is possible I should have used a struct and qsort() from stdlib.h, but
-// but what I have here seems to work well; also there are routines in gsl_sort.h
-// and gsl_sort_vector.h
-void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N);
-
 
