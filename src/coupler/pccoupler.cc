@@ -140,10 +140,10 @@ PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
   vsurfmassflux.destroy();  // destroy if created
   vsurftemp.destroy();
   if (dTforcing != PETSC_NULL) {
-    TsOffset = 0.0;
     delete dTforcing; // calls destructor for this PISMClimateForcing instance
     dTforcing = PETSC_NULL;
   }
+  TsOffset = 0.0;
 }
 
 
@@ -272,7 +272,6 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
     PetscScalar t_years, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
     IceModelVec2* &pvst) {
   PetscErrorCode ierr;
-
   if (vsurftemp.was_created())
     pvst = &vsurftemp;
   else {  SETERRQ(1,"vsurftemp not created in updateSurfTempAndProvide()");  }
@@ -290,7 +289,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
 }
 
 
-//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(), but ignores returned pointers.
+//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(); ignors returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
                  PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
@@ -322,25 +321,24 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   printIfDebug("entering PISMConstAtmosCoupler::initFromOptions()\n");
 
   ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
+
+  // these values will be written into output file unchanged; they should be read
+  //   as the state of the climate by future runs using the same coupler
+  ierr = vsurfmassflux.set_attr("pism_intent","climate_state"); CHKERRQ(ierr);
+  ierr = vsurftemp.set_attr("pism_intent","climate_state"); CHKERRQ(ierr);
   
   if (initializeFromFile) {
     char filename[PETSC_MAX_PATH_LEN];
     LocalInterpCtx* lic;
-
     ierr = findPISMInputFile((char*) filename, lic); CHKERRQ(ierr); // allocates lic
+    ierr = verbPrintf(2, g->com,
+       "  initializing constant atmospheric climate coupler ...\n"); CHKERRQ(ierr);
     ierr = verbPrintf(2, g->com, 
-       "initializing constant atmospheric climate coupler: reading net surface mass\n"
-       "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
-       filename); CHKERRQ(ierr); 
-
-    // these values will be written into output file unchanged; they should be read
-    //   as the state of the climate by future runs using the same coupler
-    ierr = vsurfmassflux.set_attr("pism_intent","climate_state"); CHKERRQ(ierr);
-    ierr = vsurftemp.set_attr("pism_intent","climate_state"); CHKERRQ(ierr);
-
+       "    reading net surface mass flux 'acab' from %s ...\n", filename); CHKERRQ(ierr); 
     ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = verbPrintf(2, g->com, 
+       "    reading ice surface temperature 'artm' from %s ...\n", filename); CHKERRQ(ierr); 
     ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
-
     delete lic;
   }
 
@@ -403,7 +401,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
   ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates and initializes lic
 
   ierr = verbPrintf(2, g->com, 
-       "initializing atmospheric climate coupler with a snow process model ...\n"); CHKERRQ(ierr); 
+       "  initializing atmospheric climate coupler with a snow process model ...\n"); CHKERRQ(ierr); 
 
   // clear out; will be overwritten by mass balance model
   ierr = vsurfmassflux.set_attr("pism_intent","climate_diagnostic"); CHKERRQ(ierr);
@@ -422,8 +420,8 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, g->com, 
-      "  reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
-      "    from %s ... \n",
+      "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
+      "      from %s ... \n",
       filename); CHKERRQ(ierr); 
   ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
 
@@ -433,7 +431,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
              monthlyTempsFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
   if (optSet == PETSC_TRUE) {
     ierr = verbPrintf(2,grid->com,
-       "  reading monthly snow-surface temperatures from file %s ...\n",
+       "    reading monthly snow-surface temperatures from file %s ...\n",
        monthlyTempsFile); CHKERRQ(ierr);
     monthlysnowtemps = new MonthlyDataMaps;
     // puts month-by-month "reading ..." message to stdout:
@@ -443,8 +441,9 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
              monthlyTempsFile, grid); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid->com,
-       "  using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
-    // monthlysnowtemps == NULL from now on
+       "    using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
+    if (monthlysnowtemps != NULL)   delete monthlysnowtemps;
+    monthlysnowtemps = NULL;  // test for NULL to see if using monthly temps versus parameterization
   }
 
   // check if user wants default or random PDD; initialize mbscheme to one of these PDDs
@@ -455,12 +454,12 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
     ierr = check_option("-pdd_rand_repeatable", pddRepeatableSet); CHKERRQ(ierr);
     if ( (pddRandSet == PETSC_TRUE) || (pddRepeatableSet == PETSC_TRUE) ) {
       ierr = verbPrintf(2,grid->com,
-         "  mass balance scheme chosen: PDD with simulated random daily variability ...\n");
+         "    mass balance scheme chosen: PDD with simulated random daily variability ...\n");
          CHKERRQ(ierr);
       mbscheme = new PDDrandMassBalance((pddRepeatableSet == PETSC_TRUE));
     } else { // default case
       ierr = verbPrintf(2,grid->com,
-         "  mass balance scheme chosen: PDD with expected value for daily variability ...\n");
+         "    mass balance scheme chosen: PDD with expected value for daily variability ...\n");
          CHKERRQ(ierr);
       mbscheme = new PDDMassBalance;
     }
@@ -484,11 +483,14 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
             ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
 
-  // read surface boundary condition for ice conservation of energy model from file if available
-  // NOT NEEDED?
+  // read surface boundary condition for ice conservation of energy model from file
+  //   IF AVAILABLE; derived classes may choose to reimplement
+  //   PISMAtmosphereCoupler::updateSurfTempAndProvide(), which merely provides access;
+  //   if read here fails, and if derived class does not reimplement, then
+  //   updateSurfTempAndProvide() will fail
   ierr = verbPrintf(2, g->com, 
-      "  attempting to read ice surface temperature (energy conservation boundary values) 'artm'\n"
-      "    from %s ...\n",
+      "    attempting to read ice surface temperature (energy conservation boundary values) 'artm'\n"
+      "      from %s ...\n",
       filename); CHKERRQ(ierr); 
   ierr = vsurftemp.regrid(filename, *lic, false); CHKERRQ(ierr); // proceeds if not found
 
@@ -935,9 +937,9 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
   
   if (reportInitializationToStdOut) {
     ierr = verbPrintf(2, g->com, 
-       "initializing constant sub-ice shelf ocean climate:\n"
-       "  -- heat flux from ocean set to %.3f W m-2 (determines mass balance)\n"
-       "  -- ice shelf base temperature set to pressure-melting temperature\n",
+       "  initializing constant sub-ice shelf ocean climate:\n"
+       "    -- heat flux from ocean set to %.3f W m-2 (determines mass balance)\n"
+       "    -- ice shelf base temperature set to pressure-melting temperature\n",
        constOceanHeatFlux); CHKERRQ(ierr); 
   }
 

@@ -203,7 +203,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   }
 
   ierr = verbPrintf(2, grid.com, 
-     "  setting flags equivalent to '-e 3 -ocean_kill'; user options will override\n");
+     "  setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...\n");
      CHKERRQ(ierr);
   enhancementFactor = 3;  
   doOceanKill = PETSC_TRUE;
@@ -211,12 +211,12 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   if (exper != SSL2) { 
     // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
     ierr = verbPrintf(2, grid.com, 
-      "  setting flags equivalent to: '-bed_def_lc'; user options will override\n"); CHKERRQ(ierr);
+      "  setting flags equivalent to: '-bed_def_lc'; user options may override ...\n"); CHKERRQ(ierr);
     doBedDef = PETSC_TRUE;
     doBedIso = PETSC_FALSE;
   }
 
-  muSliding = 0.0;  // no SIA-type sliding!
+  muSliding = 0.0;  // no SIA-type sliding!; see \ref RitzEISMINT
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available
@@ -248,7 +248,7 @@ PetscErrorCode IceGRNModel::init_couplers() {
     ierr = pddPCC->startGreenhouseAtYear(gwl3StartYear); CHKERRQ(ierr);
   } else if (gwl3StartSet == PETSC_TRUE) {
     ierr = verbPrintf(1, grid.com, 
-       "WARNING: -gwl3_start_year option ignored because experiment != GWL3 (-gwl3 not set?).\n");
+       "WARNING: -gwl3_start_year option ignored;  experiment != GWL3;  option -gwl3 not set?\n");
        CHKERRQ(ierr);
   }
 
@@ -264,13 +264,12 @@ PetscErrorCode IceGRNModel::init_couplers() {
 PetscErrorCode IceGRNModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
-  const PetscScalar EISMINT_G_geothermal = 0.050;      // J/m^2 s; geothermal flux
-
   // Let the base class handle bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
   // though default bootstrapping has set the new temperatures, we usually need to set 
   // the surface temp and geothermal flux at base and then set 3D temps again
+  const PetscScalar EISMINT_G_geothermal = 0.050;      // J/m^2 s; geothermal flux
   if (haveGeothermalFlux == PETSC_FALSE) {
     ierr = verbPrintf(2, grid.com,
 	"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
