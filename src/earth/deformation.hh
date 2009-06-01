@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007--2009 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -16,84 +16,37 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __beddefLC_hh
-#define __beddefLC_hh
+#ifndef __deformation_hh
+#define __deformation_hh
 
 #include <petscvec.h>
 #if (PISM_HAVE_FFTW)
 #include <fftw3.h>
 #endif
 
-//--------
-// see Bueler et al (2007) and Lingle & Clark (1985) for G^E(r), the Green's function
-// of spherical layered elastic earth model
-
-struct ge_params {
-   double dx, dy;
-   int p, q; 
-};
-
-double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN);
-//---------
-
-//--------
-// for the solution of the disc load case of the viscous half-space model, see 
-// appendix B of  E. Bueler, C. S. Lingle, and J. A. Kallen-Brown (2006)
-// "Computation of a combined spherical-elastic and viscous-half-space Earth model
-// for ice sheet simulation", arXiv:physics/0606074
-
-struct vd_params {
-   double t, R0, rk, rho, grav, D, eta;
-};
-
-double viscDiscIntegrand (double kap, void * paramsIN);
-
-double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta);
-//--------
-
-
-//--------
-// this works on sequential Vecs; it is directly analogous to the 
-// Matlab command "conv2(A,B,'same')"
-PetscErrorCode conv2_same(Vec vA, const PetscInt mA, const PetscInt nA, 
-                          Vec vB, const PetscInt mB, const PetscInt nB,
-                          Vec &vresult);
-//--------
-
-
-//--------
-/*
-  This class implements the Lingle & Clark bed deformation model by a Fourier 
-  spectral collocation method.  Both a viscous half-space model (with elastic
+//! Class implementing the bed deformation model described in \ref BLKfastearth.
+/*!
+  This class implements the \ref LingleClark bed deformation model by a Fourier 
+  spectral collocation method, as described in \ref BLKfastearth.  (The former
+  reference is where the continuum model arose, and a flow-line application is given.
+  The latter reference describes a new, fast method and gives verification results.
+  See also \ref BLK2006earth if more technical detail and/or Matlab programs are desired.)
+  
+  Both a viscous half-space model (with elastic
   lithosphere) and a spherical elastic model are computed.  They are superposed
   because the underlying earth model is linear.
 
-  See
-       E. Bueler, C. S. Lingle, and J. Brown (2007) "Fast computation of a viscoelastic
-       deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
-  for the method and verification results.  The continuum model arose in
-       C. S. Lingle and J. A. Clark (1985) "A numerical model of interactions between
-       a marine ice sheet and the solid earth: {A}pplication to a {W}est {A}ntarctic
-       ice stream", J. Geophys. Res. 90 (C1), 1100--1114
-  to model the deformation of the earth under an ice stream (flow line model), though
-  different numerics are used there.
-  
-  See also the preprint Bueler, Lingle, Kallen-Brown (2006) if more technical detail 
-  or Matlab programs are desired.
-
-  The model can initialize from an uplift map as described in Bueler et al (2007).
-
   The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be 
   run only on processor zero (or possibly by each processor once each processor 
-  owns the entire 2D gridded ice thicknesses and bed elevations.)  This class does not
-  include the scatter structures necessary to make this work in parallel;
-  see pism/src/iMbeddef.cc.
+  owns the entire 2D gridded ice thicknesses and bed elevations.)
   
-  A test program for this class is pism/src/exact/tryLCbd.cc.
-*/
-//--------
+  This class SHOULD!
+  include the scatter structures necessary to make this work in parallel.
 
+  A test program for this class is pism/src/verif/tryLCbd.cc.
+  
+  Called by IceModel in pism/src/iMbeddef.cc.  
+ */
 class BedDeformLC {
 public:
   BedDeformLC();
@@ -140,5 +93,5 @@ private:
 #endif
 };
 
-#endif	/* __beddefLC_hh */
+#endif	/* __deformation_hh */
 

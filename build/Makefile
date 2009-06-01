@@ -78,7 +78,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/num/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/earth/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 executables := penth pismr pismd pismv pisms pcctest
@@ -89,15 +89,16 @@ exec_extras := $(addprefix ../bin/, $(extras))
 config_file := ../lib/pism_config.nc
 
 # ice_sources and ice_csources go in libpism.[so|a]
-ice_sources := beddefLC.cc grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
+ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
+	pism_revision.cc columnSystem.cc monthlyDataMaps.cc \
+	iceShelfExtension.cc ssa.cc ssafe.cc \
 	pism_const.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc \
-	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc		        \
-	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinverse.cc    \
-	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc    \
-	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc         \
-	iMutil.cc iMvelocity.cc iMviewers.cc iceModel.cc iMinit.cc iceShelfExtension.cc \
-	extrasGSL.cc forcing.cc pccoupler.cc localMassBalance.cc \
-	ssa.cc ssafe.cc pism_revision.cc columnSystem.cc monthlyDataMaps.cc 
+	matlablike.cc greens.cc deformation.cc forcing.cc localMassBalance.cc pccoupler.cc \
+	iceModel.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
+	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
+	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc \
+	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc \
+	iMutil.cc iMvelocity.cc iMviewers.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]
@@ -195,8 +196,8 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}
 	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/tryLCbd : tryLCbd.o beddefLC.o materials.o pism_const.o ${LIBPISMNAME}
-	${CXXLINKER} tryLCbd.o beddefLC.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
+../bin/tryLCbd : tryLCbd.o deformation.o greens.o materials.o pism_const.o ${LIBPISMNAME}
+	${CXXLINKER} tryLCbd.o deformation.o greens.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/gridL : gridL.o ${LIBTESTSNAME}
 	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@

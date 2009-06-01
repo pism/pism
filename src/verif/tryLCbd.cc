@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Ed Bueler
+// Copyright (C) 2007--2009 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,26 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// get this message with 'tryLCbd -help':
 static char help[] =
-  "Simple testing program for Lingle & Clark bed deformation model.\n";
+  "Simple testing program for Lingle & Clark bed deformation model.\n"
+  "  Runs go for 150,000 years on 63.5km grid with 100a time steps and Z=2 in L&C model.\n"
+  "  SCENARIOS:  run './tryLCbd N' where N=1,2,3,4 as follows\n"
+  "     (1) dump ice disc on initially level, non-uplifting land, use only viscous \n"
+  "         half-space model:\n"
+  "               include_elastic = FALSE, do_uplift = FALSE, H0 = 1000.0\n"
+  "         center depth b(0,0) should eventually equilibriate to near\n"
+  "         -1000 * (910/3300) = -275.76 m\n"
+  "     (2) dump ice disc on initially level, non-uplifting land, use both viscous \n"
+  "         half-space model and elastic model\n"
+  "               include_elastic = TRUE, do_uplift = FALSE, H0 = 1000.0\n"
+  "     (3) never loaded, initially level, uplifting land, use only viscous \n"
+  "         half-space model (because elastic model gives no additional when no load):\n"
+  "               include_elastic = FALSE, do_uplift = TRUE, H0 = 0.0\n"
+  "     (4) dump ice disc on initially level, uplifting land, use both viscous \n"
+  "         half-space model and elastic model:\n"
+  "               include_elastic = TRUE, do_uplift = TRUE, H0 = 1000.0\n\n";
+
 
 #include <cmath>
 #include <cstdio>
@@ -25,7 +43,7 @@ static char help[] =
 #include <petscda.h>
 #include "../base/pism_const.hh"
 #include "../base/materials.hh"
-#include "../base/beddefLC.hh"
+#include "../earth/deformation.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -50,21 +68,6 @@ int main(int argc, char *argv[]) {
     PetscTruth  include_elastic = PETSC_FALSE,
                 do_uplift = PETSC_FALSE;
     PetscScalar H0 = 1000.0;            // ice disc load thickness
-
-    /* SCENARIOS:  run "./tryLCbd N" where N=1,2,3,4 as follows
-       (1) dump ice disc on initially level, non-uplifting land, use only viscous 
-           half-space model:
-                 include_elastic = FALSE, do_uplift = FALSE, H0 = 1000.0
-       (2) dump ice disc on initially level, non-uplifting land, use both viscous 
-           half-space model and elastic model
-                 include_elastic = TRUE, do_uplift = FALSE, H0 = 1000.0
-       (3) never loaded, initially level, uplifting land, use only viscous 
-           half-space model (because elastic model gives no additional when no load):
-                 include_elastic = FALSE, do_uplift = TRUE, H0 = 0.0
-       (4) dump ice disc on initially level, uplifting land, use both viscous 
-           half-space model and elastic model:
-                 include_elastic = TRUE, do_uplift = TRUE, H0 = 1000.0
-    */
 
     if (argc >= 2) {
       switch (argv[1][0]) {
@@ -114,13 +117,13 @@ int main(int argc, char *argv[]) {
       PetscDraw   draw;
       const PetscInt  windowx = 500,
                       windowy = (PetscInt) (((float) windowx) * Ly / Lx);
-      ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, PETSC_NULL, "bed elevation will go here",
+      ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, PETSC_NULL, "bed elev (m)",
            PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);  CHKERRQ(ierr);
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
       // there is a no-titles bug
       ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
       ierr = PetscDrawSetDoubleBuffer(draw); CHKERRQ(ierr);  // remove flicker while we are at it
-      ierr = PetscDrawSetTitle(draw,"bed elevation will go here"); CHKERRQ(ierr);
+      ierr = PetscDrawSetTitle(draw,"bed elev (m)"); CHKERRQ(ierr);
 
       // make disc load
       ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n"); CHKERRQ(ierr);
@@ -192,7 +195,7 @@ int main(int argc, char *argv[]) {
         const PetscScalar b0new = b[imid][jmid];
         ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
         const PetscScalar dbdt0 = (b0new - b0old) / (dtyears);
-        sprintf(title, "bed elevation (m)   [t = %9.1f]", tyears);
+        sprintf(title, "bed elev (m)  [t = %9.1f]", tyears);
         ierr = PetscPrintf(PETSC_COMM_SELF,
                   "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/a)\n",
                   tyears, b0new, dbdt0); CHKERRQ(ierr);

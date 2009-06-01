@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -17,159 +17,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include <gsl/gsl_sf_bessel.h>
-#include <gsl/gsl_integration.h>
+#include <petscvec.h>
+#include "../base/pism_const.hh"
+#include "matlablike.hh"
+#include "greens.hh"
+
 #if (PISM_HAVE_FFTW)
 #include <fftw3.h>
 #endif
-#include <petscvec.h>
-#include "pism_const.hh"
-#include "../num/extrasGSL.hh"
-#include "beddefLC.hh"
 
-
-double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN) {
-  // Matlab:  function z=integrand(xi,eta,dx,dy,p,q)
-
-  if (ndimMUSTBETWO != 2) { perror("ge_integrand only defined for 2 variables"); }
-  
-  // data here is from Lingle & Clark (1985)
-  double rmkm[42] =
-    {0.0, 0.011,  0.111,  1.112,  2.224,  3.336,  4.448,  6.672,  8.896,  11.12, 17.79,
-          22.24,  27.80,  33.36,  44.48,  55.60,  66.72,  88.96,  111.2,  133.4, 177.9,
-          222.4,  278.0,  333.6,  444.8,  556.0,  667.2,  778.4,  889.6, 1001.0, 1112.0,
-         1334.0, 1779.0, 2224.0, 2780.0, 3336.0, 4448.0, 5560.0, 6672.0, 7784.0, 8896.0,
-        10008.0};
-  // rm = rmkm * 1e3 (remember to convert to meters); GE /(10^12 rm) is
-  //    vertical displacement in meters
-  // (GE(r=0) has been computed by linear extrapolation:  GE(0) := -33.6488)
-  double GE[42] =
-    {-33.6488, -33.64, -33.56, -32.75, -31.86, -30.98, -30.12, -28.44, -26.87, -25.41,
-               -21.80, -20.02, -18.36, -17.18, -15.71, -14.91, -14.41, -13.69, -13.01,
-               -12.31, -10.95, -9.757, -8.519, -7.533, -6.131, -5.237, -4.660, -4.272,
-               -3.999, -3.798, -3.640, -3.392, -2.999, -2.619, -2.103, -1.530, -0.292,
-                0.848,  1.676,  2.083,  2.057,  1.643};  
-
-  struct ge_params*  params = (struct ge_params*) paramsIN;
-  const double  dx = params->dx;
-  const double  dy = params->dy;
-  const int     p = params->p;
-  const int     q = params->q;
-  const double  xishift = (double) p * dx - xiANDeta[0];
-  const double  etashift = (double) q * dy - xiANDeta[1];
-  const double  r = sqrt(xishift * xishift + etashift * etashift);
-  
-  double  z;
-  if (r < 0.01) {
-    z = GE[0]/(rmkm[1] * 1.0e3 * 1.0e12);
-  } else if (r > rmkm[41] * 1.0e3) {
-    z = 0.0;
-  } else {
-    z = interp1_linear(rmkm,GE,42,r / 1.0e3) / (r * 1.0e12);
-  }
-  return z;
-}
-
-
-double viscDiscIntegrand (double kap, void * paramsIN) {
-// Matlab:  function y=integrand(kap,rg,D,t,eta,R0,rk)
-//            beta=rg + D*kap.^4;
-//            expdiff=exp(-beta*t./(2*eta*kap))-ones(size(kap));
-//            y=expdiff.*besselj(1.0,kap*R0).*besselj(0.0,kap*rk)./beta;
-
-  struct vd_params*  params = (struct vd_params*) paramsIN;
-  const double       t = params->t;
-  const double       R0 = params->R0;
-  const double       rk = params->rk; 
-  const double       rho = params->rho; 
-  const double       grav = params->grav; 
-  const double       D = params->D;
-  const double       eta = params->eta;
-  const double       beta = rho * grav + D * pow(kap,4.0);
-  const double       expdiff = exp(-beta * t / (2.0 * eta * kap)) - 1.0;
-  return expdiff * gsl_sf_bessel_J1(kap * R0) * gsl_sf_bessel_J0(kap * rk) / beta;
-}
-
-
-double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta) {
-  // t in seconds; H0, R0, r in meters
-
-  const double      ABSTOL = 1.0e-10;
-  const double      RELTOL = 1.0e-14;
-  const int         N_gsl_workspace = 1000;
-  gsl_integration_workspace*
-                    w = gsl_integration_workspace_alloc(N_gsl_workspace);
-  double*           pts;
-  const int         lengthpts = 142;
-  
-  // Matlab:  pts=[10.^(-3:-0.05:-10) 1.0e-14];
-  pts = new double[lengthpts];
-  for (int j=0; j < lengthpts-1; j++) {
-    pts[j] = pow(10.0,-3.0 - 0.05 * (double) j);
-  }
-  pts[lengthpts-1] = 1.0e-14;
-
-  // result=quadl(@integrand,pts(1),100.0*pts(1),TOL,0,rg,D,t,eta,R0,rk); % kap->infty tail
-  gsl_function      F;
-  struct vd_params  params = { t, R0, r, rho, grav, D, eta };
-  double            result, error;
-  F.function = &viscDiscIntegrand;
-  F.params = &params;
-  // regarding tolerance: request is for convergence of all digits and relative tolerance RELTOL
-  gsl_integration_qag (&F, pts[1], 100.0*pts[1], ABSTOL, RELTOL, N_gsl_workspace, 
-                       GSL_INTEG_GAUSS21, w, &result, &error);
-
-  double  sum = result; 
-  // for j=1:length(pts)-1
-  //   result=result+quadl(@integrand,pts(j+1),pts(j),TOL,0,rg,D,t,eta,R0,rk);
-  // end
-  for (int j=0; j < lengthpts-1; j++) {
-    gsl_integration_qag (&F, pts[j+1], pts[j], ABSTOL, RELTOL, N_gsl_workspace, 
-                         GSL_INTEG_GAUSS21, w, &result, &error);
-    sum += result;
-  }
-  
-  delete [] pts;
-  gsl_integration_workspace_free(w);
-  // u(k)=rhoi*g*H0*R0*result;
-  return rho * grav * H0 * R0 * sum;
-}
-
-
-PetscErrorCode conv2_same(Vec vA, const PetscInt mA, const PetscInt nA, 
-                                    Vec vB, const PetscInt mB, const PetscInt nB,
-                                    Vec &vresult) {
-  // naively (sans FFT) convolves two *sequential* Vecs (A is mA x nA; 
-  // B is mB x nB) and returns a result Vec which is the same size as A
-  // effectively pads by zero, in that the result matches the discrete but
-  // infinite case case where A(i,j) and B(i,j) are defined for
-  // -\infty < i,j < \infty but A(i,j)=0 if i<0 or i>mA-1 or j<0 or j>nA-1
-  // and B(i,j)=0 if i<0 or i>mB-1 or j<0 or j>nB-1
-  // this operation is O(mA^2 nA^2), but an alternate FFT implementation would
-  // give O(m n log(m n)), presumably
-  PetscErrorCode  ierr;
-  PetscScalar     **A, **B, **result;
-
-  ierr = VecGetArray2d(vA, mA, nA, 0, 0, &A); CHKERRQ(ierr);
-  ierr = VecGetArray2d(vB, mB, nB, 0, 0, &B); CHKERRQ(ierr);
-  ierr = VecGetArray2d(vresult, mA, nA, 0, 0, &result); CHKERRQ(ierr);
-  for (PetscInt i=0; i < mA; i++) {
-    for (PetscInt j=0; j < nA; j++) {
-      PetscScalar sum = 0.0;
-      for (PetscInt r = PetscMax(0, i - mB + 1); r < PetscMin(mA, i); r++) {
-        for (PetscInt s = PetscMax(0, j - nB + 1); s < PetscMin(nA, j); s++) {
-          sum += A[r][s] * B[i - r][j - s];
-        }
-      }
-      result[i][j] = sum;
-    }
-  }
-  ierr = VecRestoreArray2d(vA, mA, nA, 0, 0, &A); CHKERRQ(ierr);
-  ierr = VecRestoreArray2d(vB, mB, nB, 0, 0, &B); CHKERRQ(ierr);
-  ierr = VecRestoreArray2d(vresult, mA, nA, 0, 0, &result); CHKERRQ(ierr);
-  return 0;
-}
+#include "deformation.hh"
 
 
 BedDeformLC::BedDeformLC() {

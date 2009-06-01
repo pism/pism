@@ -28,9 +28,10 @@
 #include "ssaJed/iceShelfExtension.hh"  // only used for Jed's ssa_external in base/ssa/
 #include "pism_const.hh"
 #include "grid.hh"
-#include "beddefLC.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
+
+#include "../earth/deformation.hh"
 
 #include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"

@@ -18,8 +18,7 @@
 
 #include <petscda.h>
 #include <cmath>
-#include "../num/extrasGSL.hh"
-#include "beddefLC.hh"
+#include "../earth/deformation.hh"
 #include "iceModel.hh"
 
 /* the following is from the PETSc FAQ page:
