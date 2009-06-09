@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwandend and Ed Bueler
+// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,8 +26,8 @@
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
 /*!
-Based for now on Bueler's reading of AB09 = A. Aschwandedn and H. Blatter,
-"An enthalpy method for glaciers and ice sheets", submitted??
+Based for now on Bueler's reading of A. Aschwandedn and H. Blatter,
+"An enthalpy formulation for polythermal glaciers and ice sheets", in preparation.
  */
 class IceEnthalpyModel : public IceModel {
 
@@ -35,6 +35,8 @@ public:
   IceEnthalpyModel(IceGrid &g);
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode write_extra_fields(const char filename[]);
+
+  bool doColdIceTemperatureStep;
 
 protected:
   IceModelVec3  Enth3;

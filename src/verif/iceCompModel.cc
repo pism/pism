@@ -20,8 +20,8 @@
 #include <cstring>
 #include <petscda.h>
 
-#include <vector>  // STL vector container; sortable; used in test L
-using namespace std;
+#include <vector>     // STL vector container; sortable; used in test L
+#include <algorithm>  // required by sort(...) in test L
 
 #include "exactTestsABCDE.h"
 #include "exactTestsFG.h" 
@@ -549,7 +549,7 @@ PetscErrorCode IceCompModel::initTestL() {
   //   of radii, sorted in decreasing radius order
   const int  MM = grid.xm * grid.ym;
 
-  vector<rgrid> rrv(MM);  // destructor at end of scope
+  std::vector<rgrid> rrv(MM);  // destructor at end of scope
   for (PetscInt i = 0; i < grid.xm; i++) {
     for (PetscInt j = 0; j < grid.ym; j++) {
       const PetscInt  k = i * grid.ym + j;
@@ -558,7 +558,7 @@ PetscErrorCode IceCompModel::initTestL() {
       mapcoords(rrv[k].i, rrv[k].j, junkx, junky, rrv[k].r);
     }
   }
-  sort(rrv.begin(), rrv.end(), rgridReverseSort()); // so rrv[k].r > rrv[k+1].r
+  std::sort(rrv.begin(), rrv.end(), rgridReverseSort()); // so rrv[k].r > rrv[k+1].r
 
   // get soln to test L at these radii; solves ODE only once (on each processor)
   double *rr, *HH, *bb, *aa;

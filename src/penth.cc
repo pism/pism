@@ -21,6 +21,17 @@ static char help[] =
   "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
   "The basic PISM executable for evolution runs.\n";
 
+// needed: new IceType which depends on temp and water content (i.e. on enthalpy)
+
+/*
+Suggested test procedure:  Use EISMINT II experiment A, w. SIA only and no sliding,
+just to see effect of corrected conservation of energy on flow:
+
+pisms -eisII A -Mx 61 -My 61 -Mz 101 -quadZ -y 0.1 -o foo.nc
+pismr -i foo.nc -y 199999.9 -o coldice.nc
+penth -i foo.nc -y 199999.9 -o polyice.nc
+*/
+
 #include <petsc.h>
 #include "base/grid.hh"
 #include "base/materials.hh"

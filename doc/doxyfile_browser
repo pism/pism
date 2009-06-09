@@ -153,6 +153,7 @@ EXCLUDE                = ../src/.svn/ \
                          ../src/verif/.svn/ \
                          ../src/eismint/.svn/ \
                          ../src/netcdf/.svn/ \
+                         ../src/trypetsc/ \
                          ../src/ismip/heino/ \
                          ../src/earth/cubature.h ../src/earth/cubature.c \
                          ../src/udunits/ \

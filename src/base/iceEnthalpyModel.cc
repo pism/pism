@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwandend and Ed Bueler
+// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,8 @@
 #include "iceEnthalpyModel.hh"
 
 IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
+  doColdIceTemperatureStep = false;  // for start, default to no actual enthalpy computation;
+                                     // just read and write additional enthalpy field to and from file
 }
 
 
@@ -28,10 +30,9 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
   ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
   // PROPOSED standard name = land_ice_enthalpy
   ierr = Enth3.set_attrs("model_state",
-                         "ice enthalpy (sensible and latent heat content per unit volume)",
+                         "ice enthalpy (sensible plus latent heat content per unit volume)",
 		         "J m-3", 
 		         ""); CHKERRQ(ierr);
-  ierr = Enth3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
   return 0;
@@ -122,6 +123,41 @@ PetscScalar IceEnthalpyModel::getAbsTemp(PetscScalar enth, PetscScalar depth) {
                     c_w    = 2.008e3, // should be for pure water
                     Hl_atp = c_w * (Tm - ice->meltingTemp), // generally negative; in Celcius
                     Hs     = - ice->latentHeat + Hl_atp;
-  return (1.0/ice->c_p) * (enth - Hs) + Tm;  // eqn 5.12 in AB09
+  return (1.0/ice->c_p) * (enth - Hs) + Tm;  // eqn (12) in AB09
+}
+
+
+// FIXME: make sure this is virtual in base class
+PetscErrorCode IceEnthalpyModel::temperatureStep(
+     PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
+  verbPrintf(2,grid.com,
+    "\n  [IceEnthalpyModel::temperatureStep(): DOES NOTHING]\n");
+  return 0;
+}
+
+
+PetscErrorCode IceEnthalpyModel::enthalpyStep() {
+
+FIXME: serious code duplication from IceModel::temperatureStep(), but actually computes
+
+  return 0;
+}
+
+
+PetscErrorCode IceEnthalpyModel::temperatureAgeStep() {
+  PetscErrorCode  ierr;
+
+  ierr = verbPrintf(2,grid.com,
+    "\n  [entering IceEnthalpyModel::temperatureAgeStep()]\n"); CHKERRQ(ierr);
+
+  // new enthalpy values go in EnthNew3; also updates (and communicates) Hmelt
+  ierr = enthalpyStep(); CHKERRQ(ierr);  
+
+  // start & complete communication
+  ierr = Enth3.beginGhostCommTransfer(EnthNew3); CHKERRQ(ierr);
+  ierr = Enth3.endGhostCommTransfer(EnthNew3); CHKERRQ(ierr);
+  
+  ierr = IceModel::temperatureAgeStep(); CHKERRQ(ierr);
+  return 0;
 }
 
