@@ -21,30 +21,43 @@
 
 #include <petsc.h>
 #include "iceModelVec.hh"
+#include "NCVariable.hh"
 #include "materials.hh"
 #include "columnSystem.hh"
 #include "iceModel.hh"
 
 
-//! Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
+//! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
 /*!
-See \ref AschwandenBlatter2009.  The basic references are \ref PatersonBudd 
+See \ref AschwandenBlatter2009.  The basic references are \ref Glen and \ref PatersonBudd 
 and \ref LliboutryDuval1985.
  */
-class PolyThermalGlenPBLDIce : public ThermoGlenIce {
+class PolyThermalGPBLDIce : public ThermoGlenIce {
 public:
-  PolyThermalGlenPBLDIce(MPI_Comm c,const char pre[]);
+  PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
 
-  using ThermoGlenIce::flow;
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
+  PetscErrorCode view(PetscViewer viewer) const;
 
-  using ThermoGlenIce::effectiveViscosityColumn;
-  virtual PetscScalar effectiveViscosityColumn(
-                PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
+  /* these are not literal reimplementations, but new routines.
+  to see where they are needed, do in src/base/:
+     $ grep ice->flow *.cc
+     $ grep ice->effectiveViscosity *.cc
+     $ grep ice->softnessParameter *.cc
+     etc
+  but arrow (>) must be escaped with backslash
+  */
+  virtual PetscScalar softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
+  virtual PetscScalar hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
+
+  virtual PetscScalar flowFromEnth(PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
+                                       PetscScalar gs) const; // grainsize arg gs not used
+
+  virtual PetscScalar effectiveViscosityColumnFromEnth(
+                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *T1, const PetscScalar *T2) const;
+                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const;
 
-  /* these are used in src/base/ssaJed/ stuff only, so not re-implemented for now:
+  /* these are used in src/base/ssaJed/ stuff only, so not addressed for now:
     integratedStoreSize(), integratedStore(), integratedViscosity()
   */
 
@@ -55,8 +68,9 @@ protected:
 };
 
 
-// Tridiagonal linear system for vertical column of enthalpy-based conservation of energy.
-/*
+#if 0
+//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy.
+/*!
 Call sequence like this:
 \code
   enthSystemCtx foo;
@@ -76,7 +90,6 @@ Call sequence like this:
   }
 \endcode
  */
-#if 0
 class enthSystemCtx : public columnSystemCtx {
 
 public:

@@ -187,7 +187,7 @@ MonthlyDataMaps  *monthlysnowtemps.
 
 The PDD schemes are accessed through LocalMassBalance *mbscheme.
 The default PDD model uses formula (6) from \ref Faustoetal2009, and uses a 
-\reg CalovGreve05 evaluation of the expectation integral for the number of positive
+\ref CalovGreve05 evaluation of the expectation integral for the number of positive
 degree days, given a normally-distributed daily variability.
 An alternative PDD scheme simulates the daily variability directly by a normal
 (pseudo-) random variable.

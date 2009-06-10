@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceEnthalpyModel.hh"
-#include "NCVariable.hh"
 
 #define DEBUGVERB 2
 
@@ -41,8 +40,8 @@ static PetscScalar getPressureFromDepth(NCConfigVariable &config, PetscScalar de
      \f[ H_s(p) = -L + H_l(p). \f]
 Also returns H_s.
  */ 
-static PetscScalar get_H_s(NCConfigVariable &config, PetscScalar p, 
-                           PetscScalar &T_m, PetscScalar &H_l, PetscScalar &H_s) {
+static PetscScalar getEnthalpyInterval(NCConfigVariable &config, PetscScalar p, 
+                                       PetscScalar &T_m, PetscScalar &H_l, PetscScalar &H_s) {
   const PetscScalar T_0  = config.get("water_melting_temperature"),    // K
                     beta = config.get("beta_CC"),                      // K Pa-1
                     c_w  = config.get("water_specific_heat_capacity"), // J kg-1 K-1
@@ -64,11 +63,11 @@ static PetscScalar get_H_s(NCConfigVariable &config, PetscScalar p,
 We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
 \f$H \ge H_l(p)\f$.
   
-See get_H_s() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
+See getEnthalpyInterval() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
  */
 static PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
   PetscScalar T_m, H_l, H_s;
-  get_H_s(config, p, T_m, H_l, H_s);
+  getEnthalpyInterval(config, p, T_m, H_l, H_s);
   // implement T part of eqn (12) in AB2009, but bonk if liquid water
   if (H < H_s) {
     const PetscScalar c_i = config.get("ice_specific_heat_capacity");   // J kg-1 K-1
@@ -85,6 +84,32 @@ static PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar H, PetscScal
 }
 
 
+//! Get pressure-adjusted ice temperature (K) from enthalpy H and pressure p.
+/*! See getAbsTemp(), and compare:
+     \f[ T_pa = T_pa(H,p) = \begin{cases} 
+                       c_i^{-1} (H-H_s(p)) + T_0, & H < H_s(p), \\
+                       T_0,                       & H_s(p) \le H < H_l(p).
+                    \end{cases} \f]
+ */
+static PetscScalar getPATemp(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
+  PetscScalar T_m, H_l, H_s;
+  getEnthalpyInterval(config, p, T_m, H_l, H_s);
+  const PetscScalar T_0  = config.get("water_melting_temperature");     // K
+  if (H < H_s) {
+    const PetscScalar c_i = config.get("ice_specific_heat_capacity");   // J kg-1 K-1
+    return ((H - H_s) / c_i) + T_0;
+  } else if (H < H_l) { // two cases in (12)
+    return T_0;
+  } else {
+    PetscPrintf(PETSC_COMM_WORLD,
+      "\n\n\n  PISM ERROR in getPATemp():\n"
+            "    enthalpy equals or exceeds that of liquid water; ending ... \n\n");
+    PetscEnd();
+    return T_0;
+  }
+}
+
+
 //! Get liquid water fraction from enthalpy H and pressure p.
 /*! From \ref AschwandenBlatter2009,
    \f[ \omega=\omega(H,p) = \begin{cases}
@@ -95,11 +120,11 @@ static PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar H, PetscScal
 We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
 \f$H \ge H_l(p)\f$.
   
-See get_H_s() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
+See getEnthalpyInterval() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
  */
 static PetscScalar getWaterFraction(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
   PetscScalar T_m, H_l, H_s;
-  get_H_s(config, p, T_m, H_l, H_s);
+  getEnthalpyInterval(config, p, T_m, H_l, H_s);
   // implement omega part of eqn (12) in AB2009, but bonk if liquid water
   if (H <= H_s) { // two cases in (12)
     return 0.0;
@@ -116,6 +141,7 @@ static PetscScalar getWaterFraction(NCConfigVariable &config, PetscScalar H, Pet
 }
 
 
+//! Compute enthalpy from absolute temperature, liquid water fraction, and pressure p.
 static PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar omega, PetscScalar p) {
   if ((omega < 0.0) || (1.0 < omega)) {
     PetscPrintf(PETSC_COMM_WORLD,
@@ -129,7 +155,7 @@ static PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar 
     PetscEnd();
   }
   PetscScalar T_m, H_l, H_s;
-  get_H_s(config, p, T_m, H_l, H_s);
+  getEnthalpyInterval(config, p, T_m, H_l, H_s);
   const PetscScalar c_w = config.get("water_specific_heat_capacity"), // J kg-1 K-1
                     c_i = config.get("ice_specific_heat_capacity");   // J kg-1 K-1
   const PetscScalar c = (1.0 - omega) * c_i + omega * c_w;
@@ -137,85 +163,118 @@ static PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar 
 }
 
 
-static PetscScalar getEnth_pa(NCConfigVariable &config, PetscScalar T_pa, PetscScalar omega, PetscScalar p) {
-  if ((omega < 0.0) || (1.0 < omega)) {
-    PetscPrintf(PETSC_COMM_WORLD,
-      "\n\n\n  PISM ERROR in getEnth(): water fraction omega not in range [0,1]; ending ... \n\n");
+/*! 
+This constructor just sets flow law factor for nonzero water content, from 
+\ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
+ */
+PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+  config = NULL;
+  water_frac_coeff = 184.0;   // FIXME:  should also come through config interface
+}
+
+
+PetscErrorCode PolyThermalGPBLDIce::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,"<\nPolyThermalGPBLDIce object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  v_schoof=%4f m/a L_schoof=%4f km\n",
+                                  schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  water_frac_coeff=%4f\n>\n",water_frac_coeff);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
+  return 0;
+}
+
+
+//! The factor in the Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
+PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const {
+  if (config == NULL) { 
+    PetscPrintf(PETSC_COMM_WORLD,"config ptr is NULL in PolyThermalGPBLDIce::flowFromEnth()... ending\n");
     PetscEnd();
   }
   PetscScalar T_m, H_l, H_s;
-  get_H_s(config, p, T_m, H_l, H_s);
-  if (T_pa > T_m + 0.000001) {
+  getEnthalpyInterval(*config, pressure, T_m, H_l, H_s);
+  if (enthalpy <= H_s) {       // cold ice
+    return softnessParameter( getPATemp(*config,enthalpy,pressure) ); // uses ThermoGlenIce formula
+  } else if (enthalpy < H_l) { // temperate ice
+    const PetscScalar T_0  = config->get("water_melting_temperature"),    // K
+                      omega = getWaterFraction(*config,enthalpy,pressure);
+    // next line implements eqn (23) in \ref AschwandenBlatter2009
+    return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula 
+  } else { // liquid water not allowed
     PetscPrintf(PETSC_COMM_WORLD,
-      "\n\n\n  PISM ERROR in getEnth_pa(): T_pa exceeds T_m so we have liquid water; ending ... \n\n");
+      "\n\n\n  PISM ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed; ending ... \n\n");
     PetscEnd();
+    return 0.0;
   }
-  const PetscScalar c_w = config.get("water_specific_heat_capacity"), // J kg-1 K-1
-                    c_i = config.get("ice_specific_heat_capacity");   // J kg-1 K-1
-  const PetscScalar c = (1.0 - omega) * c_i + omega * c_w;
-  return H_s + c * (T_pa - T_m);
 }
 
 
-#define ICE_PBLD      "pbld"    
-
-static PetscErrorCode create_pbld(MPI_Comm comm,const char pre[],IceType **i) {
-  // *i = new (ThermoGlenPBLDIce)(comm,pre);  return 0;
-  *i = new (ThermoGlenIce)(comm,pre);  return 0;
+//! The factor in the Paterson-Budd-Lliboutry-Duval flow law.  For viscosity form.
+PetscScalar PolyThermalGPBLDIce::hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const {
+  return pow(softnessParameterFromEnth(enthalpy,pressure), -1.0/n);
 }
 
 
-/*! 
-Constructor just sets flow law factor for nonzero water content, from 
-\ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
- */
-PolyThermalGlenPBLDIce::PolyThermalGlenPBLDIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
-  config = NULL;
-  water_frac_coeff = 184.0;
+//! Glen-Paterson-Budd-Lliboutry-Duval flow law itself.
+PetscScalar PolyThermalGPBLDIce::flowFromEnth(
+                PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure, PetscScalar /* gs */) const {
+  return softnessParameterFromEnth(enthalpy,pressure) * pow(stress,n-1);
 }
 
 
-//! We interpret temperature argument as an enthalpy here!!
-PetscScalar PolyThermalGlenPBLDIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
-  const PetscScalar enth = temp;  // i.e. this value is in J kg-1
-  if (config == NULL) { 
-    PetscPrintf(PETSC_COMM_WORLD,"config ptr is NULL in PolyThermalGlenPBLDIce::flow()... ending\n");
-    PetscEnd();
-  }
-  temp = getAbsTemp(*config,enth,pressure);
-  const PetscScalar 
-     T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure; // homologous temp
-  return softnessParameter(T) * pow(stress,n-1);
-}
-
-
-PetscScalar PolyThermalGlenPBLDIce::effectiveViscosityColumn(
-                PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
+PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
+                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *T1, const PetscScalar *T2) const {
+                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
+  if (config == NULL) { 
+    PetscPrintf(PETSC_COMM_WORLD,
+       "config ptr is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()... ending\n");
+    PetscEnd();
+  }
+
   // DESPITE NAME, does *not* return effective viscosity.
   // The result is \nu_e H, i.e. viscosity times thickness.
   // B is really hardness times thickness.
-//  const PetscInt  ks = static_cast<PetscInt>(floor(H/dz));
+
   // Integrate the hardness parameter using the trapezoid rule.
   PetscScalar B = 0;
   if (kbelowH > 0) {
     PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
+    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[0] + enthalpy2[0]),
+                                               getPressureFromDepth(*config, thickness) );
     for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
-      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m])
-           + beta_CC_grad * (H - zlevels[m]));
+      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
+                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
+      B += 0.5 * (dz + dzNEXT) * hardnessParameterFromEnth( 0.5 * (enthalpy1[m] + enthalpy2[m]),
+                                                            getPressureFromDepth(*config, depth) );
       dz = dzNEXT;
     }
-    // use last dz
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[kbelowH] + T2[kbelowH])
-                                      + beta_CC_grad * (H - zlevels[kbelowH]));
+    // use last dz from for loop
+    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
+    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[kbelowH] + enthalpy2[kbelowH]),
+                                               getPressureFromDepth(*config, depth) );
   }
   const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
+
+
+/*********** for registering new kind of ice with IceFactory ****************/
+
+#define ICE_GPBLD      "gpbld"    
+
+static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
+  // *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
+  *i = new (ThermoGlenIce)(comm,pre);  return 0; // FIXME:  for now this is just old flow law
+}
 
 
 /*********** procedures for init ****************/
@@ -256,7 +315,7 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
   // let the base class create the ice and process its options:
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
-  ierr = iceFactory.registerType(ICE_PBLD, &create_pbld);
+  ierr = iceFactory.registerType(ICE_GPBLD, &create_gpbld);
   if (ierr != 0) {
     PetscPrintf(grid.com,
        "FAILURE OF iceFactory.registerType() ... return value %d ... ending ....\n",ierr);
@@ -266,21 +325,22 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 
   if (ice != NULL)  delete ice;  // kill choice already made!
 
-  iceFactory.setType(ICE_PBLD);    // new flowlaw which has dependence on enthalpy not temperature
+  iceFactory.setType(ICE_GPBLD);    // new flowlaw which has dependence on enthalpy not temperature
   iceFactory.create(&ice);
 
-  PolyThermalGlenPBLDIce *pbldi = dynamic_cast<PolyThermalGlenPBLDIce*>(ice);
-  if (pbldi) {
-    pbldi->config = &config;
+#if 0
+  PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+  if (gpbldi) {
+    gpbldi->config = &config;
   } else {
     PetscPrintf(grid.com,
-       "not using PolyThermalGlenPBLDIce ... ending ....\n");
+       "not using PolyThermalGPBLDIce ... ending ....\n");
     PetscEnd();
   }
-
   ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
+#endif
 
-//  ierr = ice->setFromOptions();CHKERRQ(ierr);
+  ierr = ice->setFromOptions();CHKERRQ(ierr);
 
   return 0;
 }
@@ -300,6 +360,37 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
     ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
   }
   ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  // also write omega = liquid water fraction; we use EnthNew3 as temporary space,
+  //   for this purpose
+  ierr = verbPrintf(DEBUGVERB, grid.com, 
+      "  writing liquid water fraction 'liquid_frac' from enthalpy ...\n"); CHKERRQ(ierr);
+  ierr = EnthNew3.set_name("liquid_frac"); CHKERRQ(ierr);
+  ierr = EnthNew3.set_attrs(
+     "diagnostic",
+     "liquid water fraction in ice; 0 <= omega <= 1",
+     "", 
+     ""); CHKERRQ(ierr);
+  PetscScalar **thickness;
+  PetscScalar *omegaij, *Enthij; // columns of these values
+  ierr = EnthNew3.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(thickness); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = EnthNew3.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
+      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
+        omegaij[k] = getWaterFraction(config, Enthij[k], getPressureFromDepth(config, depth));
+      }
+    }
+  }
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = EnthNew3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = EnthNew3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
   return 0;
 }
 
