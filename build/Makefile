@@ -188,9 +188,6 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/pcctest : pcctest.o ${LIBPISMNAME}
 	${CXXLINKER} pcctest.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/pcctestsm : pcctestsm.o ${LIBPISMNAME}
-	${CXXLINKER} pcctestsm.o ${ICE_LIB_FLAGS} -o $@
-
 #build extra executables
 
 ../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}

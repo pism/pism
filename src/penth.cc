@@ -21,18 +21,18 @@ static char help[] =
   "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
   "The basic PISM executable for evolution runs.\n";
 
-// needed: new IceType which depends on temp and water content (i.e. on enthalpy)
-
 /*
-Suggested test procedure:  Use EISMINT II experiment A, w. SIA only and no sliding,
-just to see effect of corrected conservation of energy on flow:
+
+suggested test procedure:  Use EISMINT II experiment A for only 20ka, so we do
+SIA only and no sliding, just to see effect of corrected conservation of energy on flow:
 
 pisms -eisII A -Mx 61 -My 61 -Mz 101 -quadZ -y 0.1 -o foo.nc
-pismr -i foo.nc -y 199999.9 -o coldice.nc
-penth -i foo.nc -y 199999.9 -o polyice.nc
+mpiexec -n 4 pismr -i foo.nc -y 19999.9 -o coldice.nc >> out.cold &
+mpiexec -n 4 penth -i foo.nc -y 19999.9 -o polyice.nc >> out.poly &
+
 */
 
-#include <petsc.h>
+#include <petscvec.h>
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "base/iceEnthalpyModel.hh"
@@ -61,12 +61,9 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(1,com, "PENTH %s (TEMPORARY ENTHALPY basic evolution run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
-    //IceModel m(g);
-    //ierr = m.setExecName("pismr"); CHKERRQ(ierr);
     IceEnthalpyModel m(g);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
 
-    // Attach climate couplers:
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) {
@@ -86,10 +83,10 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
 
     // provide a default output file name if no -o option is given.
-    //ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
     ierr = m.writeFiles("unnamedEnth.nc"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+

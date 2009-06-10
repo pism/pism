@@ -188,26 +188,55 @@ netcdf pism_config {
     pism_config:snow_temp_july_day = 196;
     pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
 
-    // THESE CONSTANTS DUPLICATE, BUT MAY SUPERCEDE, CONSTANTS IN materials.cc
-    pism_config:ice_rho = 910.0;
-    pism_config:ice_rho_doc = "kg m-3; density of ice in ice sheet";
+
+
+    // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERCEDE, CONSTANTS IN materials.cc
+
+    pism_config:beta_CC = 7.53e-8;
+    pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref AschwandenBlatter2009]";
+    // in materials.cc we have:
+    //   beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
+    // presumably for pure ice, but (beta_CC * ice.rho * grav) does not equal beta_CC_grad
+
+    pism_config:surface_pressure = 1.0e5;
+    pism_config:surface_pressure_doc = "Pa; = 1 atm = 1 bar; atmospheric pressure; = pressure at ice surface";
+
+    pism_config:water_melting_temperature = 273.15;
+    pism_config:water_melting_temperature_doc = "K; triple point of pure water";
+
+    pism_config:water_latent_heat_fusion = 3.34e5;
+    pism_config:water_latent_heat_fusion_doc = "J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter2009]";
+
+    pism_config:water_specific_heat_capacity = 4170.0;
+    pism_config:water_specific_heat_capacity_doc = "J kg-1 K-1; at triple point T_0 [\\ref AschwandenBlatter2009]";
+
+    pism_config:ice_density = 910.0;
+    pism_config:ice_density_doc = "kg m-3; = rho_i; density of ice in ice sheet";
+    // [\\ref AschwandenBlatter2009]  has 900.0
+
+    pism_config:ice_thermal_conductivity = 2.10;
+    pism_config:ice_thermal_conductivity_doc = "J m-1 K-1 s-1; = W m-1 K-1";
+    // [\\ref AschwandenBlatter2009]  has 2.22
+
+    pism_config:ice_specific_heat_capacity = 2009.0;
+    pism_config:ice_specific_heat_capacity_doc = "J kg-1 K-1; at triple point T_0";
+    // [\\ref AschwandenBlatter2009]  has 2008.0
+
+    pism_config:fresh_water_density = 1000.0;
+    pism_config:fresh_water_density_doc = "kg m-3;";
    
-    pism_config:fresh_water_rho = 1000.0;
-    pism_config:fresh_water_rho_doc = "kg m-3; density of ice in ice sheet";
+    pism_config:sea_water_density = 1028.0;
+    pism_config:sea_water_density_doc = "kg m-3;";
    
-    pism_config:sea_water_rho = 1028.0;
-    pism_config:sea_water_rho_doc = "kg m-3; density of ice in ice sheet";
-   
-    // These constants are not used (so far):
     pism_config:seconds_per_year = 3.15569259747e7;
-    pism_config:seconds_per_year_doc = "This value should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
+    pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
 
     pism_config:earth_gravity = 9.81;
-    pism_config:earth_gravity_doc = "acceleration due to gravity, m/s^2";
-
-    pism_config:pi = 3.14159265358979;
-    pism_config:pi_doc = "ratio of a circle's circumference to its diameter";
+    pism_config:earth_gravity_doc = "m s-1; acceleration due to gravity on Earth geoid";
 
     pism_config:gas_constant_R = 8.31441;
-    pism_config:gas_constant_R_doc = "ideal gas constant, J/(mol K)";
+    pism_config:gas_constant_R_doc = "J mol-1 K-1; ideal gas constant";
+
+    pism_config:pi = 3.14159265358979;
+    pism_config:pi_doc = "; ratio of a circle's circumference to its diameter";
 }
