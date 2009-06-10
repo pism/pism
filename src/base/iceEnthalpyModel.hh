@@ -20,14 +20,127 @@
 #define __iceEnthalpyModel_hh
 
 #include <petsc.h>
-#include "iceModel.hh"
 #include "iceModelVec.hh"
+#include "materials.hh"
+#include "columnSystem.hh"
+#include "iceModel.hh"
+
+
+//! Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
+/*!
+See \ref AschwandenBlatter2009.  The basic references are \ref PatersonBudd 
+and \ref LliboutryDuval1985.
+ */
+class PolyThermalGlenPBLDIce : public ThermoGlenIce {
+public:
+  PolyThermalGlenPBLDIce(MPI_Comm c,const char pre[]);
+
+  using ThermoGlenIce::flow;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
+
+  using ThermoGlenIce::effectiveViscosityColumn;
+  virtual PetscScalar effectiveViscosityColumn(
+                PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
+                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
+                const PetscScalar *T1, const PetscScalar *T2) const;
+
+  /* these are used in src/base/ssaJed/ stuff only, so not re-implemented for now:
+    integratedStoreSize(), integratedStore(), integratedViscosity()
+  */
+
+  NCConfigVariable *config;
+
+protected:
+  PetscReal water_frac_coeff;
+};
+
+
+// Tridiagonal linear system for vertical column of enthalpy-based conservation of energy.
+/*
+Call sequence like this:
+\code
+  enthSystemCtx foo;
+  foo.dx = ...  // set public constants
+  foo.u = ...   // set public pointers
+  foo.initAllColumns();
+  for (i in ownership) {
+    for (j in ownership) {
+      ks = ...
+      foo.setIndicesThisColumn(i,j,ks);
+      [COMPUTE OTHER PARAMS]
+      foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
+      foo.setSurfaceBoundaryValuesThisColumn(Ts);
+      foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
+      foo.solveThisColumn(x);
+    }  
+  }
+\endcode
+ */
+#if 0
+class enthSystemCtx : public columnSystemCtx {
+
+public:
+  enthSystemCtx(int my_Mz, int my_Mbz);
+  PetscErrorCode initAllColumns();
+  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
+  PetscErrorCode setSchemeParamsThisColumn(
+                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda);  
+  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
+  PetscErrorCode setBasalBoundaryValuesThisColumn(
+                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
+  PetscErrorCode solveThisColumn(PetscScalar **x);  
+
+public:
+  // constants which should be set before calling initForAllColumns()
+  PetscScalar  dx,
+               dy,
+               dtTemp,
+               dzEQ,
+               dzbEQ,
+               ice_rho,
+               ice_c_p,
+               ice_k,
+               bed_thermal_rho,
+               bed_thermal_c_p,
+               bed_thermal_k;
+  // pointers which should be set before calling initForAllColumns()
+  PetscScalar  *T,
+               *Tb,
+               *u,
+               *v,
+               *w,
+               *Sigma;
+  IceModelVec3 *T3;
+
+protected: // used internally
+  PetscInt    Mz, Mbz, k0;
+  PetscInt    i, j, ks;
+  PetscScalar mask, lambda, Ts, Ghf, Tshelfbase, Rb;
+  bool        isMarginal;
+  PetscScalar nuEQ,
+              rho_c_I,
+              rho_c_br,
+              rho_c_av,
+              iceK,
+              iceR,
+              brK,
+              brR,
+              rho_c_ratio,
+              dzav,
+              iceReff,
+              brReff;
+  bool        initAllDone,
+              indicesValid,
+              schemeParamsValid,
+              surfBCsValid,
+              basalBCsValid;
+};
+#endif
 
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
 /*!
-Based for now on Bueler's reading of A. Aschwandedn and H. Blatter,
-"An enthalpy formulation for polythermal glaciers and ice sheets", in preparation.
+Based for now on Bueler's reading of \ref AschwandenBlatter2009.
  */
 class IceEnthalpyModel : public IceModel {
 
@@ -46,8 +159,11 @@ protected:
   using IceModel::createVecs;
   virtual PetscErrorCode createVecs();
   
+  using IceModel::init_physics;
+  virtual PetscErrorCode init_physics();
+
   // PetscErrorCode setEnth3toCTSValue();
-  virtual PetscErrorCode setEnth3FromTemp_ColdIce();
+  virtual PetscErrorCode setEnth3FromT3_ColdIce();
 
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
@@ -58,48 +174,6 @@ protected:
   virtual PetscErrorCode temperatureAgeStep();
 
   IceModelVec3  Enth3, EnthNew3;
-
-private:
-
-  PetscScalar getPressureFromDepth(PetscScalar depth);
-
-  //! Get pressure melting temperature (K) and enthalpy at phase transitions from pressure p.
-  /*! From \ref AschwandenBlatter2009,
-     \f[ T_m(p) = T_0 - \beta p, \f]
-     \f[ H_l(p) = c_w T_m(p), \f]
-     \f[ H_s(p) = -L + H_l(p). \f]
-  Also returns H_s.
-   */ 
-  PetscScalar get_H_s(PetscScalar p, PetscScalar &T_m, PetscScalar &H_l, PetscScalar &H_s);
-
-  //! Get absolute ice temperature (K) from enthalpy H and pressure p.
-  /*! From \ref AschwandenBlatter2009,
-     \f[ T=T(H,p) = \begin{cases} c_i^{-1} (H-H_s(p)) + T_m(p), & H < H_s(p), \\
-                                  T_m(p), &                       H_s(p) \le H < H_l(p). \end{cases} \f]
-
-  We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
-  \f$H \ge H_l(p)\f$.
-  
-  See get_H_s() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
-   */ 
-  PetscScalar getAbsTemp(PetscScalar H, PetscScalar p);
-
-  //! Get liquid water fraction from enthalpy H and pressure p.
-  /*! From \ref AschwandenBlatter2009,
-     \f[ \omega=\omega(H,p) = \begin{cases} 0.0,            & H \le H_s(p), \\
-                                            (H-H_s(p)) / L, & H_s(p) < H < H_l(p). \end{cases} \f]
-
-  We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
-  \f$H \ge H_l(p)\f$.
-  
-  See get_H_s() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
-   */ 
-  PetscScalar getWaterFraction(PetscScalar H, PetscScalar p);
-
-  PetscScalar getEnth(PetscScalar T, PetscScalar omega, PetscScalar p);
-
-  PetscScalar getEnth_pa(PetscScalar T_pa, PetscScalar omega, PetscScalar p);
-
 };
 
 #endif

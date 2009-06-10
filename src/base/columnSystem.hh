@@ -24,10 +24,8 @@
 
 //! Virtual base class.  Describes a tridiagonal system to solve in a column of ice.
 /*!
-Because both IceModel::ageStep() and IceModel::temperatureStep() set up
+Because both the age evolution and conservation of energy equations require us to set up
 and solve a tridiagonal system of equations, this is structure is worth abstracting.
-A modified form will be used in solving an enthalpy formulation of the 
-conservation of energy equation.
 
 This base class just holds the tridiagonal system and the ability to
 solve it, but does not insert entries into the relevant matrix locations.
@@ -118,7 +116,8 @@ Call sequence like this:
     }  
   }
 \endcode
- */class tempSystemCtx : public columnSystemCtx {
+ */
+class tempSystemCtx : public columnSystemCtx {
 
 public:
   tempSystemCtx(int my_Mz, int my_Mbz);

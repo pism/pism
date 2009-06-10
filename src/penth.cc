@@ -27,8 +27,8 @@ suggested test procedure:  Use EISMINT II experiment A for only 20ka, so we do
 SIA only and no sliding, just to see effect of corrected conservation of energy on flow:
 
 pisms -eisII A -Mx 61 -My 61 -Mz 101 -quadZ -y 0.1 -o foo.nc
-mpiexec -n 4 pismr -i foo.nc -y 19999.9 -o coldice.nc >> out.cold &
-mpiexec -n 4 penth -i foo.nc -y 19999.9 -o polyice.nc >> out.poly &
+mpiexec -n 4 pismr -i foo.nc -y 19999.9 -skip 10 -o coldice.nc >> out.cold &
+mpiexec -n 4 penth -i foo.nc -y 19999.9 -skip 10 -o polyice.nc >> out.poly &
 
 */
 
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
 
     IceEnthalpyModel m(g);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
+    m.doColdIceTemperatureStep = false;
 
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);

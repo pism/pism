@@ -46,19 +46,6 @@ PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
   for (int i=0; i<4; i++) {
     const PetscReal left  = ice->flow(v[i].s, v[i].T, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].T, v[i].p, v[i].gs);
-/* very strange result on bueler-laptop, r588:
-      PetscPrintf(PETSC_COMM_WORLD,
-            "IceTypeIsPatersonBuddCold case %d fails: (left - right)/left = %12.10e\n",
-            i,(left - right)/left);
-IceTypeIsPatersonBuddCold case 0 fails: (left - right)/left = 1.7629198155e-17
-IceTypeIsPatersonBuddCold case 1 fails: (left - right)/left = -7.0007174077e-18
-IceTypeIsPatersonBuddCold case 2 fails: (left - right)/left = 9.5606965946e-17
-IceTypeIsPatersonBuddCold case 3 fails: (left - right)/left = -4.5626346464e-17
-80 bit register effect?
-so equality test
-    "if (left != right) {"
-is changed to 15 digit test below
-*/
     if (PetscAbs((left - right)/left)>1.0e-15) {
       return PETSC_FALSE;
     }
