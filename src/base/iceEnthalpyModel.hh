@@ -23,7 +23,6 @@
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 #include "materials.hh"
-#include "columnSystem.hh"
 #include "iceModel.hh"
 
 
@@ -68,88 +67,6 @@ protected:
 };
 
 
-#if 0
-//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy.
-/*!
-Call sequence like this:
-\code
-  enthSystemCtx foo;
-  foo.dx = ...  // set public constants
-  foo.u = ...   // set public pointers
-  foo.initAllColumns();
-  for (i in ownership) {
-    for (j in ownership) {
-      ks = ...
-      foo.setIndicesThisColumn(i,j,ks);
-      [COMPUTE OTHER PARAMS]
-      foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
-      foo.setSurfaceBoundaryValuesThisColumn(Ts);
-      foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
-      foo.solveThisColumn(x);
-    }  
-  }
-\endcode
- */
-class enthSystemCtx : public columnSystemCtx {
-
-public:
-  enthSystemCtx(int my_Mz, int my_Mbz);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
-  PetscErrorCode setSchemeParamsThisColumn(
-                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda);  
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
-
-public:
-  // constants which should be set before calling initForAllColumns()
-  PetscScalar  dx,
-               dy,
-               dtTemp,
-               dzEQ,
-               dzbEQ,
-               ice_rho,
-               ice_c_p,
-               ice_k,
-               bed_thermal_rho,
-               bed_thermal_c_p,
-               bed_thermal_k;
-  // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *T,
-               *Tb,
-               *u,
-               *v,
-               *w,
-               *Sigma;
-  IceModelVec3 *T3;
-
-protected: // used internally
-  PetscInt    Mz, Mbz, k0;
-  PetscInt    i, j, ks;
-  PetscScalar mask, lambda, Ts, Ghf, Tshelfbase, Rb;
-  bool        isMarginal;
-  PetscScalar nuEQ,
-              rho_c_I,
-              rho_c_br,
-              rho_c_av,
-              iceK,
-              iceR,
-              brK,
-              brR,
-              rho_c_ratio,
-              dzav,
-              iceReff,
-              brReff;
-  bool        initAllDone,
-              indicesValid,
-              schemeParamsValid,
-              surfBCsValid,
-              basalBCsValid;
-};
-#endif
-
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
 /*!
@@ -166,7 +83,7 @@ public:
   using IceModel::write_extra_fields;
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
-  bool doColdIceTemperatureStep;
+  bool doColdIceMethods;
 
 protected:
   using IceModel::createVecs;
@@ -175,17 +92,31 @@ protected:
   using IceModel::init_physics;
   virtual PetscErrorCode init_physics();
 
-  // PetscErrorCode setEnth3toCTSValue();
+  // PetscErrorCode setEnth3toCTSValue(); ???  desired?
+  
   virtual PetscErrorCode setEnth3FromT3_ColdIce();
+
+  virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
+
+  using IceModel::velocitySIAStaggered;
+  virtual PetscErrorCode velocitySIAStaggered();
+
+  using IceModel::computeEffectiveViscosity;
+  virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon);
 
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
-
-  virtual PetscErrorCode enthalpyStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   
   using IceModel::temperatureAgeStep;
   virtual PetscErrorCode temperatureAgeStep();
 
+  // see iceEnthalpyModelsystem.cc:
+  virtual PetscErrorCode enthalpyStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+  virtual PetscErrorCode drainageToBaseModelEnth(
+                const PetscScalar thickness, const PetscScalar z, const PetscScalar dz, const PetscScalar L,
+                PetscScalar &enthalpy, PetscScalar &Hmelt);
+
+protected: // new data members
   IceModelVec3  Enth3, EnthNew3;
 };
 

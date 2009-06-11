@@ -227,7 +227,16 @@ netcdf pism_config {
    
     pism_config:sea_water_density = 1028.0;
     pism_config:sea_water_density_doc = "kg m-3;";
-   
+
+    pism_config:bedrock_thermal_density = 3300.0;
+    pism_config:bedrock_thermal_density_doc = "kg m-3; for bedrock used in thermal model";
+
+    pism_config:bedrock_thermal_conductivity = 3.0;
+    pism_config:bedrock_thermal_conductivity_doc = "J m-1 K-1 s-1; = W m-1 K-1; for bedrock used in thermal model [\\ref RitzEISMINT]";
+
+    pism_config:bedrock_thermal_specific_heat_capacity = 1000.0;
+    pism_config:bedrock_thermal_specific_heat_capacity_doc = "J kg-1 K-1; for bedrock used in thermal model [\\ref RitzEISMINT]";
+
     pism_config:seconds_per_year = 3.15569259747e7;
     pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
 

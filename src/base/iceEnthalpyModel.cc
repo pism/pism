@@ -271,16 +271,21 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
 
 #define ICE_GPBLD      "gpbld"    
 
+#define ACTUALLY_USE_GPBLD  0    
+
 static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
-  // *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
-  *i = new (ThermoGlenIce)(comm,pre);  return 0; // FIXME:  for now this is just old flow law
+#if ACTUALLY_USE_GPBLD
+  *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
+#else
+  *i = new (ThermoGlenIce)(comm,pre);  return 0; // just the old flow law; will fail if doColdIceMethods==false
+#endif
 }
 
 
 /*********** procedures for init ****************/
 
 IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
-  doColdIceTemperatureStep = true;   // for start, default to no actual enthalpy computation;
+  doColdIceMethods = true;   // for start, default to no actual enthalpy computation;
                                      // just read and write additional enthalpy field to and from file
 }
 
@@ -299,10 +304,10 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
   
   // see IceModel::allocate_internal_objects(), which is where this should go
-  ierr = EnthNew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr);
+  ierr = EnthNew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr); // global
   ierr = EnthNew3.set_attrs(
      "internal",
-     "ice enthalpy; temporary during update",
+     "ice enthalpy; temporary space during timestep",
      "J kg-1",
      ""); CHKERRQ(ierr);
 
@@ -328,17 +333,17 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
   iceFactory.setType(ICE_GPBLD);    // new flowlaw which has dependence on enthalpy not temperature
   iceFactory.create(&ice);
 
-#if 0
-  PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-  if (gpbldi) {
-    gpbldi->config = &config;
-  } else {
-    PetscPrintf(grid.com,
-       "not using PolyThermalGPBLDIce ... ending ....\n");
-    PetscEnd();
+  if (!doColdIceMethods) {
+    PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    if (gpbldi) {
+      gpbldi->config = &config;
+    } else {
+      PetscPrintf(grid.com,
+        "doColdIceMethods==false but not using PolyThermalGPBLDIce ... ending ....\n");
+      PetscEnd();
+    }
+    ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
   }
-  ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
-#endif
 
   ierr = ice->setFromOptions();CHKERRQ(ierr);
 
@@ -352,7 +357,7 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
   PetscErrorCode ierr;
   
-  if (doColdIceTemperatureStep) { // in this case, just update Enth3 to reflect 
+  if (doColdIceMethods) { // in this case, just update Enth3 to reflect 
                                   // temperature in ice at final time
     ierr = verbPrintf(DEBUGVERB, grid.com, 
       "  using temperature to set enthalpy for writing (as cold ice) ...\n");
@@ -361,35 +366,19 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
   }
   ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
-  // also write omega = liquid water fraction; we use EnthNew3 as temporary space,
-  //   for this purpose
+  // also write omega = liquid water fraction
+  //   we use EnthNew3 (global) as temporary, allocated space for this purpose
   ierr = verbPrintf(DEBUGVERB, grid.com, 
       "  writing liquid water fraction 'liquid_frac' from enthalpy ...\n"); CHKERRQ(ierr);
-  ierr = EnthNew3.set_name("liquid_frac"); CHKERRQ(ierr);
-  ierr = EnthNew3.set_attrs(
-     "diagnostic",
-     "liquid water fraction in ice; 0 <= omega <= 1",
-     "", 
-     ""); CHKERRQ(ierr);
-  PetscScalar **thickness;
-  PetscScalar *omegaij, *Enthij; // columns of these values
-  ierr = EnthNew3.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(thickness); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EnthNew3.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        omegaij[k] = getWaterFraction(config, Enthij[k], getPressureFromDepth(config, depth));
-      }
-    }
-  }
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = EnthNew3.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = setLiquidFracFromEnthalpy(EnthNew3); CHKERRQ(ierr);
   ierr = EnthNew3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  // reset attributes; probaly not needed
+  ierr = EnthNew3.set_name("enthalpy_new"); CHKERRQ(ierr);
+  ierr = EnthNew3.set_attrs(
+     "internal",
+     "ice enthalpy; temporary space during timestep",
+     "J kg-1",
+     ""); CHKERRQ(ierr);
 
   return 0;
 }
@@ -445,6 +434,7 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
 
 /*********** setting fields ****************/
 
+//! Compute Enth3 from temperature T3 by assuming the ice has zero liquid fraction.
 PetscErrorCode IceEnthalpyModel::setEnth3FromT3_ColdIce() {
   PetscErrorCode ierr;
 
@@ -480,12 +470,329 @@ PetscErrorCode IceEnthalpyModel::setEnth3FromT3_ColdIce() {
 }
 
 
+//! Compute the liquid fraction corresponding to Enth3, and put in a global IceModelVec3.
+PetscErrorCode IceEnthalpyModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac) {
+  PetscErrorCode ierr;
+
+  ierr = useForLiquidFrac.set_name("liquid_frac"); CHKERRQ(ierr);
+  ierr = useForLiquidFrac.set_attrs(
+     "diagnostic",
+     "liquid water fraction in ice; 0 <= omega <= 1",
+     "", 
+     ""); CHKERRQ(ierr);
+
+  PetscScalar **thickness;
+  PetscScalar *omegaij, *Enthij; // columns of these values
+  ierr = useForLiquidFrac.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(thickness); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = useForLiquidFrac.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
+      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
+        omegaij[k] = getWaterFraction(config, Enthij[k], getPressureFromDepth(config, depth));
+      }
+    }
+  }
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = useForLiquidFrac.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  
+  // communication not done; we allow globals for useForLiquidFrac
+
+  return 0;
+}
+
+
+/*********** velocity routines in which new flow law gets used ****************/
+
+//! Total code duplication with IceModel version, but checks flag doColdIceMethods and uses correct flow law.
+PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
+  PetscErrorCode  ierr;
+
+  PetscScalar *delta, *I, *J, *K, *Sigma;
+  delta = new PetscScalar[grid.Mz];
+  I = new PetscScalar[grid.Mz];
+  J = new PetscScalar[grid.Mz];
+  K = new PetscScalar[grid.Mz];
+  Sigma = new PetscScalar[grid.Mz];
+
+  PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
+
+  PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
+
+  const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
+
+  const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
+  
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  if (usetau3) {
+    ierr = tau3.begin_access(); CHKERRQ(ierr);
+  }
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
+  ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
+
+  PetscScalar *Enthij, *Enthoffset;
+  PolyThermalGPBLDIce *gpbldi = NULL;
+  if (!doColdIceMethods) {
+    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    if (gpbldi) {
+      gpbldi->config = &config;
+    } else {
+      PetscPrintf(grid.com,
+        "doColdIceMethods==false in IceEnthalpyMethod::velocitySIAStaggered()\n"
+        "   but not using PolyThermalGPBLDIce ... ending ....\n");
+      PetscEnd();
+    }
+    ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  }
+  
+  // staggered grid computation of: I, J, Sigma
+  for (PetscInt o=0; o<2; o++) {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) { 
+        // staggered point: o=0 is i+1/2, o=1 is j+1/2,
+        //   (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt:
+        const PetscInt     oi = 1-o, oj=o;  
+        const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
+        const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
+
+        if (thickness > 0) { 
+          ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+          ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
+          if (usetau3) {
+            ierr = tau3.getInternalColumn(i,j,&ageij); CHKERRQ(ierr);
+            ierr = tau3.getInternalColumn(i+oi,j+oj,&ageoffset); CHKERRQ(ierr);
+          }
+
+          if (!doColdIceMethods) {
+            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
+          }
+
+          // does validity check for thickness:
+          const PetscInt      ks = grid.kBelowHeight(thickness);  
+          const PetscScalar   alpha =
+                  sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
+
+          I[0] = 0;   J[0] = 0;   K[0] = 0;
+          for (PetscInt k=0; k<=ks; ++k) {
+            const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
+            PetscScalar flow,grainsize = constantGrainSize;
+            if (usesGrainSize && realAgeForGrainSize) {
+              grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
+            }
+            // If the flow law does not use grain size, it will just ignore it, no harm there
+            if (doColdIceMethods) {
+              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
+            } else {
+              flow = gpbldi->flowFromEnth(alpha * pressure, 0.5 * (Enthij[k] + Enthoffset[k]), pressure, grainsize);
+            }
+
+            delta[k] = 2.0 * pressure * enhancementFactor * flow;
+
+            // for Sigma, ignore mask value and assume SHEET; will be overwritten
+            // by correctSigma() in iMssa.cc
+            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure;
+
+            if (k>0) { // trapezoid rule for I[k] and K[k]
+              const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+              I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
+              K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1]
+                                          + grid.zlevels[k] * delta[k]);
+              J[k] = grid.zlevels[k] * I[k] - K[k];
+            }
+          }
+          for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
+            Sigma[k] = 0.0;
+            I[k] = I[ks];
+            J[k] = grid.zlevels[k] * I[ks];
+          }  
+
+          // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
+          const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
+
+          // vertically-averaged SIA-only velocity, sans sliding;
+          //   note uvbar[0][i][j] is  u  at right staggered point (i+1/2,j)
+          //   but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
+          uvbar[o][i][j] = - Dfoffset * slope / thickness;
+         
+          ierr = Istag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,I); CHKERRQ(ierr);
+          ierr = Sigmastag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
+        } else {  // zero thickness case
+          uvbar[o][i][j] = 0;
+          ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
+          ierr = Sigmastag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
+        } 
+      } // o
+    } // j
+  } // i
+
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
+  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  if (usetau3) {
+    ierr = tau3.end_access(); CHKERRQ(ierr);
+  }
+  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[0].end_access(); CHKERRQ(ierr);
+  ierr = Sigmastag3[1].end_access(); CHKERRQ(ierr);
+  ierr = Istag3[0].end_access(); CHKERRQ(ierr);
+  ierr = Istag3[1].end_access(); CHKERRQ(ierr);
+
+  if (!doColdIceMethods) {
+    ierr = Enth3.end_access(); CHKERRQ(ierr);
+  }
+
+  delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
+  
+  return 0;
+}
+
+
+PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon) {
+  PetscErrorCode ierr;
+
+  if (leaveNuHAloneSSA == PETSC_TRUE) {
+    return 0;
+  }
+
+  //CHECK_NOT_SSA_EXTERNAL(ssa);
+  if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
+
+  if (useConstantNuHForSSA == PETSC_TRUE) {
+    // Intended only for debugging, this treats the entire domain as though it was the strength extension
+    // (i.e. strength does not even depend on thickness)
+    PetscReal nuH = ssaStrengthExtend.notional_strength();
+    ierr = vNuH[0].set(nuH); CHKERRQ(ierr);
+    ierr = vNuH[1].set(nuH); CHKERRQ(ierr);
+    return 0;
+  }
+
+  // We need to compute integrated effective viscosity (\bar\nu * H).
+  // It is locally determined by the strain rates and temperature field.
+  PetscScalar *Tij, *Toffset, **H, **nuH[2], **u, **v;  
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
+  ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
+
+  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
+  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+
+  PetscScalar *Enthij, *Enthoffset;
+  PolyThermalGPBLDIce *gpbldi = NULL;
+  if (!doColdIceMethods) {
+    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    if (gpbldi) {
+      gpbldi->config = &config;
+    } else {
+      PetscPrintf(grid.com,
+        "doColdIceMethods==false in IceEnthalpyMethod::computeEffectiveViscosity()\n"
+        "   but not using PolyThermalGPBLDIce ... ending ....\n");
+      PetscEnd();
+    }
+    ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  }
+
+  for (PetscInt o=0; o<2; ++o) {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (H[i][j] < ssaStrengthExtend.min_thickness_for_extension()) {
+          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.  Does not add or subtract ice mass.
+          nuH[o][i][j] = ssaStrengthExtend.notional_strength();
+        } else {
+          const PetscInt      oi = 1-o, oj=o;
+          const PetscScalar   dx = grid.dx, 
+                              dy = grid.dy;
+          PetscScalar u_x, u_y, v_x, v_y;
+          // Check the offset to determine how to differentiate velocity
+          if (o == 0) {
+            u_x = (u[i+1][j] - u[i][j]) / dx;
+            u_y = (u[i][j+1] + u[i+1][j+1] - u[i][j-1] - u[i+1][j-1]) / (4*dy);
+            v_x = (v[i+1][j] - v[i][j]) / dx;
+            v_y = (v[i][j+1] + v[i+1][j+1] - v[i][j-1] - v[i+1][j-1]) / (4*dy);
+          } else {
+            u_x = (u[i+1][j] + u[i+1][j+1] - u[i-1][j] - u[i-1][j+1]) / (4*dx);
+            u_y = (u[i][j+1] - u[i][j]) / dy;
+            v_x = (v[i+1][j] + v[i+1][j+1] - v[i-1][j] - v[i-1][j+1]) / (4*dx);
+            v_y = (v[i][j+1] - v[i][j]) / dy;
+          }
+          const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
+
+          if (doColdIceMethods) {
+            ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+            ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
+            nuH[o][i][j] = ice->effectiveViscosityColumn(
+                                myH, grid.kBelowHeight(myH), grid.zlevels,
+                                u_x, u_y, v_x, v_y, Tij, Toffset);
+          } else {
+            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
+            nuH[o][i][j] = gpbldi->effectiveViscosityColumnFromEnth(
+                                myH, grid.kBelowHeight(myH), grid.zlevels,
+                                u_x, u_y, v_x, v_y, Enthij, Enthoffset);
+          }
+
+          if (! finite(nuH[o][i][j]) || false) {
+            ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
+              CHKERRQ(ierr); 
+            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
+                               u_x, u_y, v_x, v_y);
+              CHKERRQ(ierr);
+          }
+          
+          // We ensure that nuH is bounded below by a positive constant.
+          nuH[o][i][j] += epsilon;
+        }
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = vNuH[0].end_access(); CHKERRQ(ierr);
+  ierr = vNuH[1].end_access(); CHKERRQ(ierr);
+  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
+  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+
+  if (!doColdIceMethods) {
+    ierr = Enth3.end_access(); CHKERRQ(ierr);
+  }
+
+  // Some communication
+  ierr = vNuH[0].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vNuH[0].endGhostComm(); CHKERRQ(ierr);
+  ierr = vNuH[1].beginGhostComm(); CHKERRQ(ierr);
+  ierr = vNuH[1].endGhostComm(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 /*********** timestep routines ****************/
 
 PetscErrorCode IceEnthalpyModel::temperatureStep(
      PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
   PetscErrorCode ierr;
-  if (doColdIceTemperatureStep) {
+  if (doColdIceMethods) {
     ierr = verbPrintf(DEBUGVERB,grid.com,
       "     IceEnthalpyModel::temperatureStep(): CALLING IceModel::temperatureStep()\n"); CHKERRQ(ierr);
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
@@ -493,18 +800,9 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
     ierr = verbPrintf(DEBUGVERB,grid.com,
       "     IceEnthalpyModel::temperatureStep(): CALLING IceEnthalpyModel::enthalpyStep()\n"); CHKERRQ(ierr);
     // new enthalpy values go in EnthNew3; also updates (and communicates) Hmelt
+    // enthalpyStep() is in iceEnthalpyModelsystem.cc
     ierr = enthalpyStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
   }
-  return 0;
-}
-
-
-PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
-
-  //FIXME: introduce serious code duplication from IceModel::temperatureStep()
-  verbPrintf(1,grid.com,
-    "\n\n    IceEnthalpyModel::enthalpyStep(): NOT IMPLEMENTED ... ending\n");
-  PetscEnd();
   return 0;
 }
 
@@ -518,7 +816,7 @@ PetscErrorCode IceEnthalpyModel::temperatureAgeStep() {
   
   ierr = IceModel::temperatureAgeStep(); CHKERRQ(ierr);
 
-  if (doColdIceTemperatureStep) {
+  if (doColdIceMethods) {
     ierr = verbPrintf(DEBUGVERB,grid.com,
       "   IceEnthalpyModel::temperatureAgeStep(): ENTHALPY IS OFF.  DONE.]\n"); CHKERRQ(ierr);
   } else {
