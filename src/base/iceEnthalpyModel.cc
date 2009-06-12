@@ -22,8 +22,8 @@
 
 #define DEBUGVERB 2
 
-/*! 
-This constructor just sets flow law factor for nonzero water content, from 
+/*!
+This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
  */
 PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
@@ -53,7 +53,7 @@ PetscErrorCode PolyThermalGPBLDIce::view(PetscViewer viewer) const {
 
 //! The factor in the Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
 PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const {
-  if (config == NULL) { 
+  if (config == NULL) {
     PetscPrintf(PETSC_COMM_WORLD,"config ptr is NULL in PolyThermalGPBLDIce::flowFromEnth()... ending\n");
     PetscEnd();
   }
@@ -65,7 +65,7 @@ PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(PetscScalar enthalpy,
     const PetscScalar T_0  = config->get("water_melting_temperature"),    // K
                       omega = getWaterFraction(*config,enthalpy,pressure);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula 
+    return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula
   } else { // liquid water not allowed
     PetscPrintf(PETSC_COMM_WORLD,
       "\n\n\n  PISM ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed; ending ... \n\n");
@@ -92,7 +92,7 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
                 PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
                 const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
-  if (config == NULL) { 
+  if (config == NULL) {
     PetscPrintf(PETSC_COMM_WORLD,
        "config ptr is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()... ending\n");
     PetscEnd();
@@ -128,9 +128,9 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
 
 /*********** for registering new kind of ice with IceFactory ****************/
 
-#define ICE_GPBLD      "gpbld"    
+#define ICE_GPBLD      "gpbld"
 
-#define ACTUALLY_USE_GPBLD  0    
+#define ACTUALLY_USE_GPBLD  0
 
 static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
 #if ACTUALLY_USE_GPBLD
@@ -157,11 +157,11 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
   ierr = Enth3.set_attrs(
      "model_state",
      "ice enthalpy (sensible heat plus latent heat of liquid fraction)",
-     "J kg-1", 
+     "J kg-1",
      ""); CHKERRQ(ierr);
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
-  
+
   // see IceModel::allocate_internal_objects(), which is where this should go
   ierr = EnthNew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr); // global
   ierr = EnthNew3.set_attrs(
@@ -215,10 +215,10 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 
 PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
   PetscErrorCode ierr;
-  
-  if (doColdIceMethods) { // in this case, just update Enth3 to reflect 
+
+  if (doColdIceMethods) { // in this case, just update Enth3 to reflect
                                   // temperature in ice at final time
-    ierr = verbPrintf(DEBUGVERB, grid.com, 
+    ierr = verbPrintf(DEBUGVERB, grid.com,
       "  using temperature to set enthalpy for writing (as cold ice) ...\n");
       CHKERRQ(ierr);
     ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
@@ -227,7 +227,7 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
 
   // also write omega = liquid water fraction
   //   we use EnthNew3 (global) as temporary, allocated space for this purpose
-  ierr = verbPrintf(DEBUGVERB, grid.com, 
+  ierr = verbPrintf(DEBUGVERB, grid.com,
       "  writing liquid water fraction 'liquid_frac' from enthalpy ...\n"); CHKERRQ(ierr);
   ierr = setLiquidFracFromEnthalpy(EnthNew3); CHKERRQ(ierr);
   ierr = EnthNew3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
@@ -248,7 +248,7 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
 
   ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
 
-  ierr = verbPrintf(DEBUGVERB, grid.com, 
+  ierr = verbPrintf(DEBUGVERB, grid.com,
      "entering IceEnthalpyModel::initFromFile() after base class version;\n"
      "  looking in '%s' for variable 'enthalpy' ... \n",fname);
      CHKERRQ(ierr);
@@ -264,7 +264,7 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
   ierr = nc.get_grid_info(g); CHKERRQ(ierr);
   bool enthExists=false;
   ierr = nc.find_variable("enthalpy", NULL, enthExists); CHKERRQ(ierr);
-  
+
   if (enthExists) {
     // act like we are regridding the variable
     double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
@@ -280,12 +280,12 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
     LocalInterpCtx lic(g, zlevs, zblevs, grid);
     ierr = Enth3.regrid(fname, lic, true); CHKERRQ(ierr);  // at this point, it is critical
   } else {
-    ierr = verbPrintf(DEBUGVERB, grid.com, 
+    ierr = verbPrintf(DEBUGVERB, grid.com,
       "  variable 'enthalpy' not found so setting it as cold ice, from temperature ...\n");
       CHKERRQ(ierr);
     ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
   }
-    
+
   return 0;
 }
 
@@ -318,7 +318,7 @@ PetscErrorCode IceEnthalpyModel::setEnth3FromT3_ColdIce() {
       }
     }
   }
-  
+
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
@@ -337,7 +337,7 @@ PetscErrorCode IceEnthalpyModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForL
   ierr = useForLiquidFrac.set_attrs(
      "diagnostic",
      "liquid water fraction in ice; 0 <= omega <= 1",
-     "", 
+     "",
      ""); CHKERRQ(ierr);
 
   PetscScalar **thickness;
@@ -358,7 +358,7 @@ PetscErrorCode IceEnthalpyModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForL
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = useForLiquidFrac.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-  
+
   // communication not done; we allow globals for useForLiquidFrac
 
   return 0;
@@ -385,7 +385,7 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
   const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
 
   const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
-  
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
@@ -418,18 +418,18 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
     }
     ierr = Enth3.begin_access(); CHKERRQ(ierr);
   }
-  
+
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) { 
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
         // staggered point: o=0 is i+1/2, o=1 is j+1/2,
         //   (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt:
-        const PetscInt     oi = 1-o, oj=o;  
+        const PetscInt     oi = 1-o, oj=o;
         const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
         const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
 
-        if (thickness > 0) { 
+        if (thickness > 0) {
           ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
           ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
           if (usetau3) {
@@ -443,7 +443,7 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
           }
 
           // does validity check for thickness:
-          const PetscInt      ks = grid.kBelowHeight(thickness);  
+          const PetscInt      ks = grid.kBelowHeight(thickness);
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
 
@@ -479,7 +479,7 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
             Sigma[k] = 0.0;
             I[k] = I[ks];
             J[k] = grid.zlevels[k] * I[ks];
-          }  
+          }
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
           const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
@@ -488,14 +488,14 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
           //   note uvbar[0][i][j] is  u  at right staggered point (i+1/2,j)
           //   but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
           uvbar[o][i][j] = - Dfoffset * slope / thickness;
-         
+
           ierr = Istag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,I); CHKERRQ(ierr);
           ierr = Sigmastag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
         } else {  // zero thickness case
           uvbar[o][i][j] = 0;
           ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
           ierr = Sigmastag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
-        } 
+        }
       } // o
     } // j
   } // i
@@ -523,7 +523,7 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
   }
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
-  
+
   return 0;
 }
 
@@ -549,7 +549,7 @@ PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2],
 
   // We need to compute integrated effective viscosity (\bar\nu * H).
   // It is locally determined by the strain rates and temperature field.
-  PetscScalar *Tij, *Toffset, **H, **nuH[2], **u, **v;  
+  PetscScalar *Tij, *Toffset, **H, **nuH[2], **u, **v;
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
@@ -581,7 +581,7 @@ PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2],
           nuH[o][i][j] = ssaStrengthExtend.notional_strength();
         } else {
           const PetscInt      oi = 1-o, oj=o;
-          const PetscScalar   dx = grid.dx, 
+          const PetscScalar   dx = grid.dx,
                               dy = grid.dy;
           PetscScalar u_x, u_y, v_x, v_y;
           // Check the offset to determine how to differentiate velocity
@@ -614,12 +614,12 @@ PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2],
 
           if (! finite(nuH[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
-              CHKERRQ(ierr); 
-            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
+              CHKERRQ(ierr);
+            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n",
                                u_x, u_y, v_x, v_y);
               CHKERRQ(ierr);
           }
-          
+
           // We ensure that nuH is bounded below by a positive constant.
           nuH[o][i][j] += epsilon;
         }
@@ -654,7 +654,7 @@ PetscErrorCode IceEnthalpyModel::temperatureAgeStep() {
   ierr = verbPrintf(DEBUGVERB,grid.com,
     "\n  [IceEnthalpyModel::temperatureAgeStep():  ENTERING; DOING IceModel::temperatureAgeStep() FIRST\n");
     CHKERRQ(ierr);
-  
+
   ierr = IceModel::temperatureAgeStep(); CHKERRQ(ierr);
 
   if (doColdIceMethods) {
@@ -685,7 +685,7 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
       "     IceEnthalpyModel::temperatureStep(): ENTHALPY IS ON. CALLING IceEnthalpyModel::enthalpyStep()\n");
       CHKERRQ(ierr);
     // new enthalpy values go in EnthNew3; also updates (and communicates) Hmelt
-    // enthalpyStep() is in iceEnthalpyModelsystem.cc
+    // enthalpyStep() is in iceEnthalpyModel.cc
     ierr = enthalpyStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
   }
   return 0;
@@ -701,7 +701,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
       "\n\n    IceEnthalpyModel::enthalpyStep() called but doColdIceMethods==true ... ending\n");
     PetscEnd();
   }
-  
+
   PetscErrorCode  ierr;
 
   // set up fine grid in ice and bedrock
@@ -756,7 +756,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
 
   Enthnew      = new PetscScalar[fMz];
   Tbnew        = new PetscScalar[fMbz];
-  
+
   // system needs access to Enth3 for planeStar()
   system.Enth3 = &Enth3;
 
@@ -813,7 +813,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
 
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/fdz));
-      
+
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
         ierr = Tb3.getValColumn(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
@@ -838,9 +838,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
         //   coefficient might give different result
         // SO: go through column and find appropriate lambda for BOMBPROOF
         PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
-        for (PetscInt k = 1; k < ks; k++) {   
+        for (PetscInt k = 1; k < ks; k++) {
           const PetscScalar denom = (PetscAbs(system.w[k]) + 0.000001/secpera)
-                                      * rho_c_I * fdz;  
+                                      * rho_c_I * fdz;
           lambda = PetscMin(lambda, 2.0 * system.ice_k / denom);
         }
         if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
@@ -851,10 +851,10 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
                                                H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
 
         ierr = system.setSchemeParamsThisColumn(mask[i][j], isMarginal, lambda);
-                 CHKERRQ(ierr);  
+                 CHKERRQ(ierr);
 
         // set boundary values for tridiagonal system
-        ierr = system.setSurfaceBoundaryValuesThisColumn(Ts[i][j]); CHKERRQ(ierr);
+        ierr = system.setSurfaceBoundaryValuesThisColumn(Ts[i][j]); CHKERRQ(ierr); // Don't we have to convert Ts to Enths???
         ierr = system.setBasalBoundaryValuesThisColumn(
                  Ghf[i][j],Tshelfbase[i][j],Rb[i][j]); CHKERRQ(ierr);
 
@@ -893,9 +893,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
         Hmeltnew = 0.0; // no stored water if no ice present
         // Enthnew[ks] = Enthnew[0] modified below
       }
-      
+
       // bottom of ice is top of bedrock when grounded:
-      //   T(z=0) at top of bedrock should match enthalpy at z=0; 
+      //   T(z=0) at top of bedrock should match enthalpy at z=0;
       //   when floating just match ocean temp provided by PISMOceanCoupler
       if (PismModMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
           Tbnew[k0] = Tshelfbase[i][j];
@@ -911,7 +911,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
       ierr = Tb3.setValColumn(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // top ice level gets surface temperature; assumes water fraction zero at surface
-      Enthnew[ks] = getEnth(config, Ts[i][j], 0.0, 
+      Enthnew[ks] = getEnth(config, Ts[i][j], 0.0,
                             getPressureFromDepth(config, H[i][j] - fzlev[ks]));
 
       // now that enthalpy is known in top layer, check and correct extreme advection bulge
@@ -919,7 +919,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
         if (Enthnew[k] < Enthnew[ks] - bulgeMaxEnth) {
           Enthnew[k] = Enthnew[ks] - bulgeMaxEnth;  bulgeCount++;   }
       }
-      
+
       // set to zero energy content above ice, in atmosphere
       for (PetscInt k=ks+1; k<fMz; k++) {
         Enthnew[k] = 0.0;
@@ -946,7 +946,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
         Hmelt[i][j] = PetscMin(Hmelt_max, Hmeltnew);
       }
 
-    } 
+    }
   }
 
   ierr = vH.end_access(); CHKERRQ(ierr);
@@ -967,11 +967,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
   ierr = Sigma3.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = EnthNew3.end_access(); CHKERRQ(ierr);
-  
-    
+
+
   delete [] system.u;     delete [] system.v;     delete [] system.w;
   delete [] system.Sigma; delete [] system.Enth;  delete [] system.Tb;
-  
+
   delete [] x;
   delete [] Tbnew;  delete [] Enthnew;
   delete [] fzlev;  delete [] fzblev;
