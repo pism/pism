@@ -34,8 +34,8 @@ and \ref LliboutryDuval1985.
 class PolyThermalGPBLDIce : public ThermoGlenIce {
 public:
   PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
-
-  PetscErrorCode view(PetscViewer viewer) const;
+  virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode view(PetscViewer viewer) const;
 
   /* these are not literal reimplementations, but new routines.
   to see where they are needed, do in src/base/:

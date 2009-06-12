@@ -16,11 +16,19 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __enthalpyHelper_cc
-#define __enthalpyHelper_cc
+#ifndef __enthalpyHelper_hh
+#define __enthalpyHelper_hh
 
 
-static PetscScalar getPressureFromDepth(NCConfigVariable &config, PetscScalar depth) {
+/*
+My intent about these is that, *once everything works*, they might get massaged a bit
+to be more efficient.  For instance, getEnthalpyInterval() is being used in some places
+just to compute the pressure-melting temperature T_m.  More broadly, the repeated use
+of config.get() will have an efficiency cost, so these inline procedures could
+have versions which take as arguments the things they currently get through config.get().
+*/
+
+static inline PetscScalar getPressureFromDepth(NCConfigVariable &config, PetscScalar depth) {
   const PetscScalar p_air = config.get("surface_pressure"); // Pa
   if (depth <= 0.0) { // at or above surface of ice
     return p_air;
@@ -39,7 +47,7 @@ static PetscScalar getPressureFromDepth(NCConfigVariable &config, PetscScalar de
      \f[ H_s(p) = -L + H_l(p). \f]
 Also returns H_s.
  */ 
-static PetscScalar getEnthalpyInterval(NCConfigVariable &config, PetscScalar p, 
+static inline PetscScalar getEnthalpyInterval(NCConfigVariable &config, PetscScalar p, 
                                        PetscScalar &T_m, PetscScalar &H_l, PetscScalar &H_s) {
   const PetscScalar T_0  = config.get("water_melting_temperature"),    // K
                     beta = config.get("beta_CC"),                      // K Pa-1
@@ -64,7 +72,7 @@ We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail i
   
 See getEnthalpyInterval() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
  */
-static PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
+static inline PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
   PetscScalar T_m, H_l, H_s;
   getEnthalpyInterval(config, p, T_m, H_l, H_s);
   // implement T part of eqn (12) in AB2009, but bonk if liquid water
@@ -90,7 +98,7 @@ static PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar H, PetscScal
                        T_0,                       & H_s(p) \le H < H_l(p).
                     \end{cases} \f]
  */
-static PetscScalar getPATemp(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
+static inline PetscScalar getPATemp(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
   PetscScalar T_m, H_l, H_s;
   getEnthalpyInterval(config, p, T_m, H_l, H_s);
   const PetscScalar T_0  = config.get("water_melting_temperature");     // K
@@ -121,7 +129,7 @@ We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail i
   
 See getEnthalpyInterval() for calculation of \f$T_m(p)\f$, \f$H_l(p)\f$, and \f$H_s(p)\f$. 
  */
-static PetscScalar getWaterFraction(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
+static inline PetscScalar getWaterFraction(NCConfigVariable &config, PetscScalar H, PetscScalar p) {
   PetscScalar T_m, H_l, H_s;
   getEnthalpyInterval(config, p, T_m, H_l, H_s);
   // implement omega part of eqn (12) in AB2009, but bonk if liquid water
@@ -141,7 +149,7 @@ static PetscScalar getWaterFraction(NCConfigVariable &config, PetscScalar H, Pet
 
 
 //! Compute enthalpy from absolute temperature, liquid water fraction, and pressure p.
-static PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar omega, PetscScalar p) {
+static inline PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar omega, PetscScalar p) {
   if ((omega < 0.0) || (1.0 < omega)) {
     PetscPrintf(PETSC_COMM_WORLD,
       "\n\n\n  PISM ERROR in getEnth(): water fraction omega not in range [0,1]; ending ... \n\n");

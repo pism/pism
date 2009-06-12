@@ -18,7 +18,7 @@
 
 #include "iceEnthalpyModel.hh"
 #include "enthColumnSystem.hh"
-#include "enthalpyHelper.cc"
+#include "enthalpyHelper.hh"
 
 #define DEBUGVERB 2
 
@@ -32,17 +32,34 @@ PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGl
 }
 
 
+PetscErrorCode PolyThermalGPBLDIce::setFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = ThermoGlenIce::setFromOptions(); CHKERRQ(ierr);
+  
+  ierr = PetscOptionsBegin(comm,prefix,"PolyThermalGPBLDIce options",NULL);CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsReal("-ice_gpbld_water_frac_coeff",
+      "coefficient of softness factor in temperate ice, as function of liquid water fraction (no units)",
+      "",water_frac_coeff,&water_frac_coeff,NULL);CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd();CHKERRQ(ierr);
+  return 0;
+}
+
+
 PetscErrorCode PolyThermalGPBLDIce::view(PetscViewer viewer) const {
   PetscErrorCode ierr;
+
+  ierr = ThermoGlenIce::view(viewer); CHKERRQ(ierr);
+  
   PetscTruth iascii;
   if (!viewer) {
     ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
   }
   ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
   if (iascii) {
-    ierr = PetscViewerASCIIPrintf(viewer,"<\nPolyThermalGPBLDIce object (%s)\n",prefix);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"  v_schoof=%4f m/a L_schoof=%4f km\n",
-                                  schoofVel*secpera,schoofLen/1e3);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"<\nderived PolyThermalGPBLDIce object (%s)\n",prefix);CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,"  water_frac_coeff=%4f\n>\n",water_frac_coeff);CHKERRQ(ierr);
   } else {
     SETERRQ(1,"No binary viewer for this object\n");
@@ -51,7 +68,7 @@ PetscErrorCode PolyThermalGPBLDIce::view(PetscViewer viewer) const {
 }
 
 
-//! The factor in the Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
+//! The softness factor in the Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
 PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const {
   if (config == NULL) {
     PetscPrintf(PETSC_COMM_WORLD,"config ptr is NULL in PolyThermalGPBLDIce::flowFromEnth()... ending\n");
@@ -130,22 +147,16 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
 
 #define ICE_GPBLD      "gpbld"
 
-#define ACTUALLY_USE_GPBLD  0
-
 static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
-#if ACTUALLY_USE_GPBLD
   *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
-#else
-  *i = new (ThermoGlenIce)(comm,pre);  return 0; // just the old flow law; will fail if doColdIceMethods==false
-#endif
 }
 
 
 /*********** procedures for init ****************/
 
 IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
-  doColdIceMethods = true;   // for start, default to no actual enthalpy computation;
-                                     // just read and write additional enthalpy field to and from file
+  doColdIceMethods = true;   // initial debugging will default to no actual enthalpy computation;
+                             // we just read and write additional enthalpy field to and from file
 }
 
 
@@ -173,12 +184,16 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
   return 0;
 }
 
+
 PetscErrorCode IceEnthalpyModel::init_physics() {
   PetscErrorCode ierr;
 
   // let the base class create the ice and process its options:
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
+  ierr = verbPrintf(DEBUGVERB, grid.com,
+      "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
+      CHKERRQ(ierr);
   ierr = iceFactory.registerType(ICE_GPBLD, &create_gpbld);
   if (ierr != 0) {
     PetscPrintf(grid.com,
@@ -186,23 +201,25 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
     PetscEnd();
   }
   CHKERRQ(ierr);
-
   if (ice != NULL)  delete ice;  // kill choice already made!
-
-  iceFactory.setType(ICE_GPBLD);    // new flowlaw which has dependence on enthalpy not temperature
+  iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy not temperature
   iceFactory.create(&ice);
 
-  if (!doColdIceMethods) {
-    PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-    if (gpbldi) {
-      gpbldi->config = &config;
+  PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+  if (gpbldi) {
+    gpbldi->config = &config;
+  } else {
+    ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
+    if (tgi) {
+      ierr = verbPrintf(DEBUGVERB, grid.com,
+        "  [flow law was actually set to ThermoGlenIce by IceEnthalpyModel ...]\n"); CHKERRQ(ierr);
     } else {
-      PetscPrintf(grid.com,
-        "doColdIceMethods==false but not using PolyThermalGPBLDIce ... ending ....\n");
-      PetscEnd();
+      ierr = verbPrintf(DEBUGVERB, grid.com,
+        "  [WARNING: flow law unclear in IceEnthalpyModel ...]\n"); CHKERRQ(ierr);
     }
-    ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
   }
+  
+  ierr = ice->printInfo(4);CHKERRQ(ierr); // DEBUG
 
   ierr = ice->setFromOptions();CHKERRQ(ierr);
 
@@ -651,17 +668,17 @@ PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2],
 PetscErrorCode IceEnthalpyModel::temperatureAgeStep() {
   PetscErrorCode  ierr;
 
-  ierr = verbPrintf(DEBUGVERB,grid.com,
+  ierr = verbPrintf(5,grid.com,
     "\n  [IceEnthalpyModel::temperatureAgeStep():  ENTERING; DOING IceModel::temperatureAgeStep() FIRST\n");
     CHKERRQ(ierr);
 
   ierr = IceModel::temperatureAgeStep(); CHKERRQ(ierr);
 
   if (doColdIceMethods) {
-    ierr = verbPrintf(DEBUGVERB,grid.com,
+    ierr = verbPrintf(5,grid.com,
       "   IceEnthalpyModel::temperatureAgeStep(): ENTHALPY IS OFF.  DONE.]\n"); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(DEBUGVERB,grid.com,
+    ierr = verbPrintf(5,grid.com,
       "   IceEnthalpyModel::temperatureAgeStep(): ENTHALPY IS ON.  COMMUNICATING ENTHALPY]\n"); CHKERRQ(ierr);
 
     // start & complete communication
@@ -677,12 +694,12 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
   PetscErrorCode ierr;
   if (doColdIceMethods) {
     ierr = verbPrintf(DEBUGVERB,grid.com,
-      "     IceEnthalpyModel::temperatureStep(): ENTHALPY IS OFF. CALLING IceModel::temperatureStep()\n");
+      "    [IceEnthalpyModel::temperatureStep(): ENTHALPY IS OFF. CALLING IceModel::temperatureStep()]\n");
       CHKERRQ(ierr);
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(DEBUGVERB,grid.com,
-      "     IceEnthalpyModel::temperatureStep(): ENTHALPY IS ON. CALLING IceEnthalpyModel::enthalpyStep()\n");
+      "    [IceEnthalpyModel::temperatureStep(): ENTHALPY IS ON. CALLING IceEnthalpyModel::enthalpyStep()]\n");
       CHKERRQ(ierr);
     // new enthalpy values go in EnthNew3; also updates (and communicates) Hmelt
     // enthalpyStep() is in iceEnthalpyModel.cc
@@ -694,8 +711,6 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
 
 PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
 
-  // SETERRQ(999,"IceEnthalpyModel::enthalpyStep() NOT IMPLEMENTED");
-#if 1
   if (doColdIceMethods) {
     PetscPrintf(grid.com,
       "\n\n    IceEnthalpyModel::enthalpyStep() called but doColdIceMethods==true ... ending\n");
@@ -853,8 +868,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
         ierr = system.setSchemeParamsThisColumn(mask[i][j], isMarginal, lambda);
                  CHKERRQ(ierr);
 
-        // set boundary values for tridiagonal system
-        ierr = system.setSurfaceBoundaryValuesThisColumn(Ts[i][j]); CHKERRQ(ierr); // Don't we have to convert Ts to Enths???
+        // set boundary values for tridiagonal system; in this form a conversions to enthalpy
+        //   will be done internally by the enthColumnSystem instance (i.e. for Ts, Gh, Tshelfbase, Rb)
+        ierr = system.setSurfaceBoundaryValuesThisColumn(Ts[i][j]); CHKERRQ(ierr);
         ierr = system.setBasalBoundaryValuesThisColumn(
                  Ghf[i][j],Tshelfbase[i][j],Rb[i][j]); CHKERRQ(ierr);
 
@@ -976,10 +992,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
   delete [] Tbnew;  delete [] Enthnew;
   delete [] fzlev;  delete [] fzblev;
 
-#endif
   return 0;
 }
-
 
 
 //! Move some of the liquid water fraction in a column segment [z,z+dz] to the base according to heuristics.
@@ -987,8 +1001,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
 Once liquid water fraction exceeds a cap, all of it goes to the base.  Drainage model
 follows \ref Greve97Greenland and references therein.
 
-If the basal ice is cold and there is available water (Hmelt > 0.0) then will freeze on
-to bring basal ice up to temperate.
+If the basal ice is cold and there is available water (Hmelt > 0.0) then ice will freeze on,
+causing a negative basal melt rate which can enter into the mass continuity equation,
+and we bring the lowest ice layer (basal ice) up to temperate.
  */
 PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(
                 const PetscScalar thickness, const PetscScalar z, const PetscScalar dz,
@@ -998,31 +1013,29 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(
     SETERRQ(1,"drainageToBaseModelEnth() called but allowAboveMelting==TRUE");
   }
 
-  // meltlayerequiv is ice-equivalent thickness of water in current layer that is
-  //   present in ice matrix in [z,z+dz] part of column
-  const PetscScalar L     = config.get("water_latent_heat_fusion"),
-                    p     = getPressureFromDepth(config, thickness - z),
+  if (updateHmelt == PETSC_FALSE)  return 0;
+
+  const PetscScalar p     = getPressureFromDepth(config, thickness - z),
                     omega = getWaterFraction(config, enthalpy, p);
 
   if (omega >= 0.0) {
-    const PetscScalar abovecap = omega - config.get("liquid_water_fraction_cap");
-    if ((updateHmelt == PETSC_TRUE) && (abovecap > 0.0)) {
-      enthalpy -= abovecap * L;
+    const PetscScalar abovecap = omega - config.get("liquid_water_fraction_max");
+    if (abovecap > 0.0) {
+      enthalpy -= abovecap * config.get("water_latent_heat_fusion");
       Hmelt    += abovecap * dz;   // ice-equivalent water thickness change
     }
-  } else if (updateHmelt == PETSC_TRUE) {  // no liquid fraction, but we could freeze some of the
-                                           // basal layer
-    if ((z >= -0.00001) && (z <= 0.00001)) { // only freeze on if bottom of column segment is at base of ice
-      PetscScalar T_m, H_l, H_s;
-      getEnthalpyInterval(config, p, T_m, H_l, H_s);
-      const PetscScalar dEnth_to_reach_temperate = H_s - enthalpy;
-      if (dEnth_to_reach_temperate > 0.0) {
-        // if below H_s, then freeze on, and bring up enthalpy to H_s if enough water is available
-        const PetscScalar dEnth_available = (Hmelt / dz) * L, // = ((rho Hmelt dx dy) * L) / (rho dx dy dz)
-                          dEnth_added = PetscMin(dEnth_available, dEnth_to_reach_temperate);
-        enthalpy += dEnth_added;
-        Hmelt    -= (dEnth_added * dz) / L;
-      }
+  } else if ((z >= -0.00001) && (z <= 0.00001)) {
+    // only consider freeze-on if column segment is at base of ice
+    PetscScalar T_m, H_l, H_s;
+    getEnthalpyInterval(config, p, T_m, H_l, H_s);
+    const PetscScalar dEnth_to_reach_temperate = H_s - enthalpy;
+    if (dEnth_to_reach_temperate > 0.0) {
+      // if below H_s, then freeze on, and bring up enthalpy to H_s if enough water is available
+      const PetscScalar L               = config.get("water_latent_heat_fusion"),
+                        dEnth_available = (Hmelt / dz) * L, // = ((rho Hmelt dx dy) * L) / (rho dx dy dz)
+                        dEnth_added     = PetscMin(dEnth_available, dEnth_to_reach_temperate);
+      enthalpy += dEnth_added;
+      Hmelt    -= (dEnth_added * dz) / L;
     }
   }
 
