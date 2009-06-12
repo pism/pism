@@ -222,6 +222,12 @@ netcdf pism_config {
     pism_config:ice_specific_heat_capacity_doc = "J kg-1 K-1; at triple point T_0";
     // [\\ref AschwandenBlatter2009]  has 2008.0
 
+    pism_config:enthalpy_temperate_diffusivity = 0.0;
+    pism_config:enthalpy_temperate_diffusivity_doc = "m2 s-1; diffusivity units same as k/(rho c)";
+                              
+    pism_config:liquid_water_fraction_cap = 0.01;
+    pism_config:liquid_water_fraction_cap_doc = "; pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";
+
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";
    

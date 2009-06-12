@@ -66,10 +66,12 @@ for attr in var.ncattrs():
 
     print "<tr><td>%s</td>" % attr
     
-    if (abs(value) >= 1e8):
-        print "<td>%e</td>" % value, # use engineering notation if a number is huge
+    if (abs(value) >= 1e7):
+        print "<td>%e</td>" % value, # use engineering notation if a number is big
     elif (int(value) == value):
         print "<td>%d</td>" % int(value), # remove zeros after the decimal point
+    elif (abs(value) <= 1e-5):
+        print "<td>%e</td>" % value, # use engineering notation if small (and not zero; prev case)
     else:
         print "<td>%f</td>" % value,
     

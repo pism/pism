@@ -113,7 +113,7 @@ protected:
   // see iceEnthalpyModelsystem.cc:
   virtual PetscErrorCode enthalpyStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode drainageToBaseModelEnth(
-                const PetscScalar thickness, const PetscScalar z, const PetscScalar dz, const PetscScalar L,
+                const PetscScalar thickness, const PetscScalar z, const PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
 protected: // new data members

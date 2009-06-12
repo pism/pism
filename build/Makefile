@@ -108,7 +108,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
-	iceEnthalpyModel.cc iceEnthalpyModelsystem.cc \
+	iceEnthalpyModel.cc enthColumnSystem.cc \
 	pcctest.cc flowTable.cc tryLCbd.cc
 
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
@@ -168,8 +168,8 @@ $(config_file): pism_config.cdl
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-../bin/penth : penth.o iceEnthalpyModel.o iceEnthalpyModelsystem.o ${LIBPISMNAME}
-	${CXXLINKER} penth.o iceEnthalpyModel.o iceEnthalpyModelsystem.o ${ICE_LIB_FLAGS} -o $@
+../bin/penth : penth.o iceEnthalpyModel.o enthColumnSystem.o ${LIBPISMNAME}
+	${CXXLINKER} penth.o iceEnthalpyModel.o enthColumnSystem.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o ${ICE_LIB_FLAGS} -o $@
