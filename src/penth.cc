@@ -63,7 +63,8 @@ int main(int argc, char *argv[]) {
 
     IceEnthalpyModel m(g);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
-    m.doColdIceMethods = true;
+//    m.doColdIceMethods = true;
+    m.doColdIceMethods = false;
 
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);

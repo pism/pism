@@ -16,73 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "columnSystem.hh"
+#include "enthColumnSystem.hh"
+#include "pism_const.hh"   // e.g. MASK_FLOATING and PismModMask()
 #include "enthalpyHelper.hh"
 
 #define DEBUGVERB 2
-
-//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy.
-class enthSystemCtx : public columnSystemCtx {
-
-public:
-  enthSystemCtx(int my_Mz, int my_Mbz);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
-  PetscErrorCode setSchemeParamsThisColumn(
-                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda);  
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
-  PetscErrorCode solveThisColumn(PetscScalar **x);
-  
-  PetscErrorCode view();
-
-public:
-  // constants which should be set before calling initForAllColumns()
-  PetscScalar  dx,
-               dy,
-               dtTemp,
-               dzEQ,
-               dzbEQ,
-               ice_rho,
-               ice_c,
-               ice_k,
-               bed_thermal_rho,
-               bed_thermal_c,
-               bed_thermal_k;
-  // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *Enth,
-               *Tb,
-               *u,
-               *v,
-               *w,
-               *Sigma;
-  IceModelVec3 *Enth3;
-
-protected: // used internally
-  PetscInt    Mz, Mbz, k0;
-  PetscInt    i, j, ks;
-  PetscScalar mask, lambda, Ts, Ghf, Tshelfbase, Rb;
-  bool        isMarginal;
-  PetscScalar nuEQ,
-              rho_c_I,
-              rho_c_br,
-              rho_c_av,
-              iceK,
-              iceR,
-              brK,
-              brR,
-              rho_c_ratio,
-              dzav,
-              iceReff,
-              brReff;
-  bool        initAllDone,
-              indicesValid,
-              schemeParamsValid,
-              surfBCsValid,
-              basalBCsValid;
-};
-
 
 enthSystemCtx::enthSystemCtx(int my_Mz, int my_Mbz)
       : columnSystemCtx(my_Mz + my_Mbz - 1) {
@@ -238,8 +176,6 @@ PetscErrorCode enthSystemCtx::setBasalBoundaryValuesThisColumn(
 
 
 PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
-  SETERRQ(1,"enthSystemCtx::solveThisColumn()   NOT IMPLEMENTED");
-#if 0
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
      "solveThisColumn() should only be called after initAllColumns() in enthSystemCtx"); }
@@ -251,6 +187,21 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
      "solveThisColumn() should only be called after setSurfaceBoundaryValuesThisColumn() in enthSystemCtx"); }
   if (!basalBCsValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in enthSystemCtx"); }
+
+/*  LISTED HERE TO RECALL WHAT THEY MEAN:
+  nuEQ = dtTemp / dzEQ;
+  rho_c_I = ice_rho * ice_c;
+  // rho_c_br = bed_thermal_rho * bed_thermal_c;
+  rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
+  iceK = ice_k / rho_c_I;
+  iceR = iceK * dtTemp / PetscSqr(dzEQ);
+  brK = bed_thermal_k / rho_c_br;
+  // brR = brK * dtTemp / PetscSqr(dzbEQ);
+  rho_c_ratio = rho_c_I / rho_c_av;
+  dzav = 0.5 * (dzEQ + dzbEQ);
+  iceReff = ice_k * dtTemp / (rho_c_av * dzEQ * dzEQ);
+  brReff = bed_thermal_k * dtTemp / (rho_c_av * dzbEQ * dzbEQ);
+*/
 
   if (Mbz > 1) { // bedrock present: build k=0:Mbz-2 eqns
     // gives O(\Delta t,\Delta z^2) convergence in Test K for equal spaced grid;
@@ -268,6 +219,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     }
   }
 
+// FIXME FROM HERE ON AT LEAST
+#if 0
   // bottom part of ice (and top of bedrock in some cases): k=k0=Mbz-1 eqn
   if (ks == 0) { // no ice; set T[0] to surface temp if grounded
     if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
@@ -332,11 +285,11 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   // generic ice segment: build k0+1:k0+ks-1 eqns
   for (PetscInt k = 1; k < ks; k++) {
     planeStar ss;
-    ierr = T3->getPlaneStarZ(i,j,k * dzEQ,&ss);
-    const PetscScalar UpTu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
-                                          u[k] * (ss.ij  - ss.im1) / dx;
-    const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
-                                          v[k] * (ss.ij  - ss.jm1) / dy;
+    ierr = Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
+    const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
+                                             u[k] * (ss.ij  - ss.im1) / dx;
+    const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
+                                             v[k] * (ss.ij  - ss.jm1) / dy;
     const PetscScalar AA = nuEQ * w[k];      
     if (w[k] >= 0.0) {  // velocity upward
       L[k0+k] = - iceR - AA * (1.0 - lambda/2.0);
@@ -360,6 +313,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     // ignore U[k0+ks]
     rhs[k0+ks] = Ts;
   }
+#endif
 
   // mark column as done
   indicesValid = false;
@@ -369,8 +323,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
 
   // solve it; note melting not addressed yet
   return solveTridiagonalSystem(k0+ks+1,x);
-#endif
-  return 999;
 }
 
 

@@ -172,7 +172,7 @@ scaled so that the diagonal entries of the matrix have limit one as
 \f{align*}
 &\left(-R_k^n - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) T_{k-1}^{n+1}  
    + \left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) T_k^{n+1} \tag{bombtwo} \\
-&\qquad\qquad + \left(-R_k^n + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) T_{k+1}^{n+1}  = T_k^n + (C_k^n)^{-1}\Phi_k^n 
+&\qquad\qquad + \left(-R_k^n + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) T_{k+1}^{n+1}  = T_k^n + \Delta t(C_k^n)^{-1}\Phi_k^n 
 \f}
 Here \f$\uppair{a}{b} = a\f$ when \f$w_k^n\ge 0\f$ and \f$\uppair{a}{b} = b\f$ when \f$w_k^n < 0\f$.
 
@@ -186,7 +186,7 @@ The pure implicit centered difference scheme, namely
 \f{align*}
 &\left(-R_k^n - \nu w_k^n/2\right) T_{k-1}^{n+1} + \left(1 + 2 R_k^n\right) T_k^{n+1} \tag{centered} \\
 &\qquad\qquad + \left(-R_k^n + \nu w_k^n/2\right) T_{k+1}^{n+1} 
-              = T_k^n + (C_k^n)^{-1}\Phi_k^n 
+              = T_k^n + \Delta t(C_k^n)^{-1}\Phi_k^n 
 \f}
 is <i>less stable</i> than implicit first-order upwinding.  It is less stable 
 in the same sense that Crank-Nicolson is a less stable scheme than 

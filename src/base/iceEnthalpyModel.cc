@@ -727,7 +727,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
   fzblev = new PetscScalar[fMbz];
   ierr = grid.getFineEqualVertLevs(fMz,fMbz,fdz,fdzb,fzlev,fzblev); CHKERRQ(ierr);
 
-  ierr = verbPrintf(DEBUGVERB,grid.com,
+  ierr = verbPrintf(5,grid.com,
     "\n  [entering enthalpyStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
     fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
 
@@ -777,9 +777,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
 
   // checks that all needed constants and pointers got set:
   ierr = system.initAllColumns(); CHKERRQ(ierr);
-
-  ierr = system.view(); CHKERRQ(ierr);
-
+  //ierr = system.view(); CHKERRQ(ierr);
+  
   // now get map-plane fields, starting with coupler fields
   PetscScalar  **Ts, **Tshelfbase, **H, **Ghf, **mask, **Hmelt, **Rb,
                **basalMeltRate, **bmr_float;
@@ -907,10 +906,10 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
         ierr = drainageToBaseModelEnth(H[i][j],0.0,fdz,Enthnew[0],Hmeltnew); CHKERRQ(ierr);
       } else {
         Hmeltnew = 0.0; // no stored water if no ice present
-        // Enthnew[ks] = Enthnew[0] modified below
+        // in case of no ice, Enthnew[0] = Enthnew[ks] gets set below, from atmosphere
       }
 
-      // bottom of ice is top of bedrock when grounded:
+      // bottom of ice is top of bedrock when grounded, so
       //   T(z=0) at top of bedrock should match enthalpy at z=0;
       //   when floating just match ocean temp provided by PISMOceanCoupler
       if (PismModMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
@@ -930,7 +929,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
       Enthnew[ks] = getEnth(config, Ts[i][j], 0.0,
                             getPressureFromDepth(config, H[i][j] - fzlev[ks]));
 
-      // now that enthalpy is known in top layer, check and correct extreme advection bulge
+      // now that enthalpy is known in top layer, check for (and correct) any extreme advection bulges
       for (PetscInt k=0; k < ks; k++) {
         if (Enthnew[k] < Enthnew[ks] - bulgeMaxEnth) {
           Enthnew[k] = Enthnew[ks] - bulgeMaxEnth;  bulgeCount++;   }
@@ -944,8 +943,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyStep(PetscScalar* vertSacrCount, PetscS
       // transfer column into EnthNew3; communication later
       ierr = EnthNew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
 
-      // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
-      //   note massContExplicitStep() calls PISMOceanCoupler separately
+      // basalMeltRate[][] is rate of mass loss from bottom of ice
       if (PismModMask(mask[i][j]) == MASK_FLOATING) {
         // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
         basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
