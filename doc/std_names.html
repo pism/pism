@@ -1,19 +1,19 @@
-/*! \page std_names Standard names of NetCDF variables, related to ice sheet modeling, including PISM current and proposed
+/*! \page std_names Standard names of NetCDF variables, including PISM current and proposed
 
-\section existing Existing names in CF 1.4 Standard Name Table
+\section existing Names from CF 1.4 Standard Name Table for land ice and/or currently used in PISM
 
-These names are a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.4 standard name table</a>.  The list here is just
-\li those with "land_ice" in the name and
-\li those relevant to the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.  It is in alphabetical order.
+This list a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.4 standard name table</a>.  The alphabetical list here includes
+\li those with "land_ice" in the name and/or
+\li those used by <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.
 
-Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk/">GLIMMER</a> and <a href="http://oceans11.lanl.gov/trac/CISM/wiki">CISM</a>.  The names below starting with "land_ice" are believed to have all been submitted by Magnus Hagdorn to the CF committee circa 2003 (date?).
+If the "PISM short name" column is blank then PISM does not use that standard_name.  Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk/">GLIMMER</a> and <a href="http://oceans11.lanl.gov/trac/CISM/wiki">CISM</a>.  The names below starting with "land_ice" are believed to have all been submitted by Magnus Hagdorn to the CF committee circa 2003.
 
 Like the legendary Eskimo, the CF standard name table has a bazillion names for snow "amounts" and "fluxes".  No attempt at using those names is made in PISM.
 
-Readers other than PISM programmers should ignore the final column, which gives the name of the IceModel member which holds the named field in an IceModelVec.  The names starting with "PAC." and "POC." are exceptions because they are not IceModel members but instead they are members of PISMClimateCoupler classes.  Note PAC= PISMAtmosphereCoupler, PSMAC= PISMSnowModelAtmosCoupler and POC= PISMOceanCoupler.
+Readers other than PISM programmers should ignore the final column, which gives the name of the IceModel member which holds the named field in an IceModelVec.  The names starting with "PAC." and "POC." are exceptions because they are not IceModel members but instead they are members of classes derived from PISMClimateCoupler.  Note PAC= PISMAtmosphereCoupler and POC= PISMOceanCoupler.
 
 <table style="width: 100%;">
-  <tr><td> standard name </td> <td> canonical units </td> <td> PISM0.2 short name in NetCDF </td> <td> PISM0.2 internal IceModelVec name </td></tr>
+  <tr><td> standard_name </td> <td> canonical units (SI) </td> <td> PISM short name (NetCDF variable name) </td> <td> PISM internal IceModelVec name </td></tr>
   <tr><td>bedrock_altitude</td> <td>m</td> <td>topg</td> <td>vbed</td></tr>
   <tr><td>land_ice_area_fraction</td><td>1</td><td></td><td></td></tr>
   <tr><td>land_ice_basal_melt_rate</td><td>m s-1</td><td>basal_melt_rate</td><td>vbasalMeltRate</td></tr>
@@ -45,7 +45,7 @@ Readers other than PISM programmers should ignore the final column, which gives 
 These are merely proposed by Bueler, for now.
 
 <table style="width: 100%;">
-  <tr><td> PROPOSED standard name </td><td> canonical units </td><td> PISM0.2 short name in NetCDF </td><td> PISM0.2 internal IceModelVec name </td><td> comments </td></tr>  
+  <tr><td> PROPOSED standard_name </td><td> canonical units (SI) </td><td> PISM short name in NetCDF </td><td> PISM internal IceModelVec name </td><td> comments </td></tr>  
   <tr><td>ice_shelf_basal_specific_mass_balance</td><td>m s-1</td><td>shelfbmassflux</td><td>POC.vshelfbmassflux</td><td>positive is loss of ice shelf mass (%i.e. use outward normal from ice shelf)</td></tr>
   <tr><td>ice_shelf_basal_temperature</td><td>K</td><td>shelfbtemp</td><td>POC.vshelfbasetemp</td><td>absolute (not pressure-adjusted) temperature</td></tr>
   <tr><td>land_ice_age</td><td>s</td><td>age</td><td>tau3</td><td>thought about units required!</td></tr>
@@ -64,7 +64,7 @@ These are merely proposed by Bueler, for now.
 Used in PISM but no proposed standard name for now.  This is an incomplete list.
 
 <table style="width: 100%;" border="1">
-  <tr><td> PISM long name </td><td> canonical units </td><td> PISM0.2 short name in NetCDF </td><td> PISM0.2 internal IceModelVec name </td><td> comments</td></tr>  
+  <tr><td> PISM long_name </td><td> canonical units (SI) </td><td> PISM short name in NetCDF </td><td> PISM internal IceModelVec name </td><td> comments</td></tr>  
   <tr><td>rate of strain heating</td><td>W m-3</td><td>Sigma</td><td>Sigma3</td><td></td></tr>
   <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask</td><td></td></tr>
   <tr><td>effective thickness of subglacial melt water</td><td>m</td><td>bwat</td><td>vHmelt</td><td></td></tr>
@@ -72,7 +72,7 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
 
 \section finaltech Final technical notes
 
-\li PISM also uses "grid_mapping_name".  It is used in only one case, for "polar_stereographic".  It is not technically a standard_name though it is covered by the CF convention
-\li Because PISM uses UDUNITS, PISM will write some variables in "glaciological units", for instance m a-1 instead of m s-1, but this is allowed under CF and is handled by UDUNITS.
+\li PISM also uses "grid_mapping_name", which appears in the CF convention.  It is currently used in only one case, for "polar_stereographic".  It is not a standard_name in CF, however.
+\li Because PISM uses UDUNITS, PISM will write some variables in "glaciological units" instead of the SI units listed above, for instance velocities in m a-1 instead of m s-1.  This is allowed under CF.  When PISM reads such a field from a NetCDF file, the conversion is handled automatically by UDUNITS.
 
 */

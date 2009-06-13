@@ -456,36 +456,3 @@ PetscErrorCode IceModel::massContExplicitStep() {
 }
 
 
-
-
-// THIS IS AN IDEA THAT *SEEMS* NOT TO BE HELPFUL FOR MISMIP.  PROBABLY THE
-// CHANGE NEEDS TO OCCUR IN THE WAY THE DRIVING STRESS IS COMPUTED.
-// Apply soft floatation criterion: when ice is barely floating, return surface elevation closer to grounded value.
-/*
-Only call this when hard floatation criterion already shows it is floating.
- */
-
-#if 0
-const PetscTruth  DEFAULT_DO_SOFT_FLOAT_CRIT = PETSC_FALSE;
-const PetscScalar DEFAULT_SOFT_FLOAT_CRIT_FLOATINESS_MAX = 0.2;
-if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
-PetscReal currentSeaLevel;
-ierr = oceanPCC->updateSeaLevelElevation(grid.year, grid.dt, &currentSeaLevel); CHKERRQ(ierr);
-PetscScalar IceModel::softFloatationSurface(const PetscScalar thk, const PetscScalar bedelev) const {
-  const PetscScalar  h_hard = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * thk;
-  if ((doSoftFloatCrit == PETSC_TRUE) && (thk > 1.0)) {
-    // apply soft floatation criterion; gap = (h_hard - thk) - (bedelev - currentSeaLevel)
-    const PetscScalar  floatiness = ((h_hard - thk) - (bedelev - currentSeaLevel)) / thk;
-    if (floatiness >= softFloatCritFloatinessMax) {
-      return h_hard;
-    } else {
-      const PetscScalar lambda = floatiness / softFloatCritFloatinessMax,
-                        h_gnd = bedelev + thk;
-      return (1.0 - lambda) * h_gnd + lambda * h_hard;
-    }
-  } else { 
-    return h_hard;
-  }
-}
-#endif
-
