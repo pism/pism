@@ -25,17 +25,17 @@
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(int my_Mz, int my_Mbz);
+  enthSystemCtx(NCConfigVariable *my_config, int my_Mz, int my_Mbz);
   PetscErrorCode initAllColumns();
   PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
   PetscErrorCode setSchemeParamsThisColumn(
                      PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda);  
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
+  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
   PetscErrorCode setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
+                     PetscScalar my_Ghf, PetscScalar my_Enth_shelfbase, PetscScalar my_Rb);
   PetscErrorCode solveThisColumn(PetscScalar **x);
   
-  PetscErrorCode view();
+  PetscErrorCode view(MPI_Comm &com);
 
 public:
   // constants which should be set before calling initForAllColumns()
@@ -60,9 +60,10 @@ public:
   IceModelVec3 *Enth3;
 
 protected: // used internally
+  NCConfigVariable *config;
   PetscInt    Mz, Mbz, k0;
   PetscInt    i, j, ks;
-  PetscScalar mask, lambda, Ts, Ghf, Tshelfbase, Rb;
+  PetscScalar mask, lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
   bool        isMarginal;
   PetscScalar nuEQ,
               rho_c_I,

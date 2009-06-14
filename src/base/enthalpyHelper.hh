@@ -171,5 +171,34 @@ static inline PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, Petsc
 }
 
 
+//! Compute enthalpy from absolute temperature within the bedrock using conditions at z=0 (bottom of ice and top of the bedrock) to set enthalpy scale.
+/*! If \f$c_b\f$ is the specific heat capacity of the bedrock, if \c Enth_zero = \f$H(z=0)\f$ is
+the enthalpy at the bottom of the ice, and if \c Temp_zero = \f$T(z=0)\f$ is the temperature at
+the top of the bedrock then we compute and return
+\f[ H(z < 0) = H(z=0) + c_b (T(z<0) - T(z=0)) \f]
+where \c Tb = \f$T(z<0)\f$.  Input temperatures are assumed to be absolute (not pressure-adjusted).
+
+Because, generally, \f$T(z<0) > T(z=0)\f$, the resulting enthalpy
+value comes out higher than \f$H(z=0)\f$, and it scales linearly with the increasing temperature
+as we descend into the bedrock.
+ */
+static inline PetscScalar getEnthBedrock(NCConfigVariable &config, 
+                             PetscScalar Enth_zero, PetscScalar Temp_zero, PetscScalar Tb) {
+  const PetscScalar c_b = config.get("bedrock_thermal_specific_heat_capacity");   // J kg-1 K-1
+  return Enth_zero + c_b * (Tb - Temp_zero);
+}
+
+
+//! Inverse function from getEnthBedrock().
+/*! In same notation as above,
+\f[ T(z < 0) = \frac{H(z<0) - H(z=0)}{c_b} + T(z=0) \f]
+ */
+static inline PetscScalar getAbsTempBedrock(NCConfigVariable &config, 
+                             PetscScalar Enth_zero, PetscScalar Temp_zero, PetscScalar Enthb) {
+  const PetscScalar c_b = config.get("bedrock_thermal_specific_heat_capacity");   // J kg-1 K-1
+  return ((Enthb - Enth_zero) / c_b) + Temp_zero;
+}
+
+
 #endif
 

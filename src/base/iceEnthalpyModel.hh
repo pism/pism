@@ -95,8 +95,10 @@ protected:
   // PetscErrorCode setEnth3toCTSValue(); ???  desired?
   
   virtual PetscErrorCode setEnth3FromT3_ColdIce();
+  
+  virtual PetscErrorCode setT3FromEnth3();
 
-  virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
+  virtual PetscErrorCode setUserLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
 
   using IceModel::velocitySIAStaggered;
   virtual PetscErrorCode velocitySIAStaggered();
@@ -110,8 +112,8 @@ protected:
   using IceModel::temperatureAgeStep;
   virtual PetscErrorCode temperatureAgeStep();
 
-  // see iceEnthalpyModelsystem.cc:
-  virtual PetscErrorCode enthalpyStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+
   virtual PetscErrorCode drainageToBaseModelEnth(
                 const PetscScalar thickness, const PetscScalar z, const PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
