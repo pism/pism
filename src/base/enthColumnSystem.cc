@@ -222,6 +222,9 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     to a temperature or enthalpy generally are multiplied by c (which has units J kg-1 K-1)
 */
 
+  // FIXME:  everywhere we see iceR or iceReff is a place where there *should*
+  //         be a test for H>H_s, in which case k=0 so iceR=0 and we need appropriate mods to iceReff
+
   const PetscScalar oldEnth_ice_base = Enth3->getValZ(i, j, 0.0),
                     oldTemp_bedrock_top = Tb[k0];
 
@@ -244,12 +247,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     }
   }
 
-#if 0
-  ierr = view(PETSC_COMM_WORLD); CHKERRQ(ierr);
-  verbPrintf(1,PETSC_COMM_WORLD," inside enthSystemCtx::solveThisColumn() ... NOW ENDING ...\n");
-  PetscEnd();
-#endif
-
   // bottom part of ice (and top of bedrock in some cases): k=k0=Mbz-1 eqn
   if (ks == 0) { // no ice; set Enth[0] to surface enthalpy if grounded
     if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
@@ -260,7 +257,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       // essentially no ice but floating ... ask PISMOceanCoupler
       // rhs[k0] = Tshelfbase;
       rhs[k0] = Enth_shelfbase;
-      // FIXME: split k0 into two grid points?
     } else { // top of bedrock sees atmosphere
       // rhs[k0] = Ts; 
       rhs[k0] = Enth_ks; 
@@ -291,15 +287,13 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       rhs[k0] = Enth[0] + dtTemp * (Rb / (rho_av * dzav));
       if (!isMarginal) {
         //rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
-        rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / ice_rho);
         // WARNING: subtle consequences of finite volume argument across interface
         //rhs[k0] -= dtTemp * rho_c_ratio * (0.5 * (UpTu + UpTv));
-        rhs[k0] -= dtTemp * rho_c_ratio * (0.5 * (UpEnthu + UpEnthv));
+        rhs[k0] += dtTemp * rho_c_ratio * 0.5 * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);
       }
       const PetscScalar AA = dtTemp * rho_c_ratio * w[0] / (2.0 * dzEQ);
-      if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0,
-                     // otherwise ignore advection; note 
-                     // jump in diffusivity coefficient
+      if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0, otherwise ignore advection;
+                     //   ntoe jump in diffusivity coefficient
         L[k0] = - brReff;
         if (w[0] >= 0.0) {  // velocity upward
           D[k0] = 1.0 + iceReff + brReff;
@@ -345,7 +339,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     rhs[k0+k] = Enth[k];
     if (!isMarginal) {
       //rhs[k0+k] += dtTemp * (Sigma[k] / rho_c_I - UpTu - UpTv);
-      rhs[k0+k] += dtTemp * (Sigma[k] / ice_rho - UpEnthu - UpEnthv);
+      rhs[k0+k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
     }
   }
       

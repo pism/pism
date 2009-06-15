@@ -37,13 +37,13 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode view(PetscViewer viewer) const;
 
-  /* these are not literal reimplementations, but new routines.
+  /* these are not reimplementations, but new routines.
   to see where they are needed, do in src/base/:
      $ grep ice->flow *.cc
      $ grep ice->effectiveViscosity *.cc
      $ grep ice->softnessParameter *.cc
      etc
-  but arrow (>) must be escaped with backslash
+  note arrow (>) must actually be escaped with backslash
   */
   virtual PetscScalar softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
   virtual PetscScalar hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
@@ -96,7 +96,7 @@ protected:
   
   virtual PetscErrorCode setEnth3FromT3_ColdIce();
   
-  virtual PetscErrorCode setT3FromEnth3();
+  virtual PetscErrorCode setTnew3FromEnth3();
 
   virtual PetscErrorCode setUserLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
 
@@ -109,9 +109,6 @@ protected:
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   
-  using IceModel::temperatureAgeStep;
-  virtual PetscErrorCode temperatureAgeStep();
-
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
 
   virtual PetscErrorCode drainageToBaseModelEnth(
