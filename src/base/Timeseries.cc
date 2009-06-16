@@ -19,10 +19,17 @@
 #include "Timeseries.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
-  grid = g;
-  dimension.init(dimension_name, *grid);
-  var.init(name, *grid);
-  start = time.begin();
+  com = g->com;
+  rank = g->rank;
+  dimension.init(dimension_name, com, rank);
+  var.init(name, com, rank);
+}
+
+Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
+  com = c;
+  rank = r;
+  dimension.init(dimension_name, com, rank);
+  var.init(name, com, rank);
 }
 
 //! Read timeseries data from a NetCDF file \c filename.
@@ -33,7 +40,7 @@ PetscErrorCode Timeseries::read(const char filename[]) {
   ierr = var.read(filename, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
-    ierr = PetscPrintf(grid->com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
+    ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
 		       dimension.short_name.c_str(),
 		       var.short_name.c_str(),
 		       filename); CHKERRQ(ierr);
@@ -57,22 +64,26 @@ double Timeseries::operator()(double t) {
 
   vector<double>::iterator end = time.end(), j;
   
-  j = lower_bound(start, end, t); // binary search
+  j = lower_bound(time.begin(), end, t); // binary search
 
   if (j == end)
-    return values.back(); // out of range (on the left)
+    return values.back(); // out of range (on the right)
 
   int i = j - time.begin();
 
+//   if (rank == 0) {
+//     printf("i = %d\n", i);
+//     printf("time[i] = %f\n", time[i]);
+//     printf("values[i] = %f\n", values[i]);
+//   }
+
   if (i == 0) {
-    return values[0];	// out of range (on the right)
+    return values[0];	// out of range (on the left)
   }
 
   double dt = time[i] - time[i - 1];
   double dv = values[i] - values[i - 1];
   
-  start = --j;
-
   return values[i - 1] + (t - time[i - 1]) / dt * dv;
 }
 
@@ -80,7 +91,7 @@ double Timeseries::operator()(double t) {
 double Timeseries::operator[](unsigned int j) const {
 
   if (j >= values.size()) {
-    PetscPrintf(grid->com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
+    PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
 		var.short_name.c_str(), values.size(), j);
     PetscEnd();
   }

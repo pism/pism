@@ -25,7 +25,7 @@
 #include "../base/grid.hh"
 #include "../base/LocalInterpCtx.hh"
 #include "../base/iceModelVec.hh"
-#include "forcing.hh"
+#include "../base/Timeseries.hh"
 #include "localMassBalance.hh"
 #include "monthlyDataMaps.hh"
 
@@ -140,7 +140,7 @@ public:
 protected:
   IceModelVec2        vsurfmassflux, vsurftemp; // access these through update...()
   PetscReal           TsOffset;
-  PISMClimateForcing* dTforcing; 
+  Timeseries* dTforcing; 
 };
 
 
@@ -282,7 +282,7 @@ public:
 
 protected:
   IceModelVec2 vshelfbasetemp, vshelfbasemassflux;
-  PISMClimateForcing*  dSLforcing; // possibly contains sea level offset data, e.g. from sea bed core data
+  Timeseries*  dSLforcing; // possibly contains sea level offset data, e.g. from sea bed core data
   PetscReal    seaLevel; /*!<  IceModel will read PISMOceanCoupler to determine surface elevation
                                of floating ice, and thus the grounding line.  seaLevel here can
                                be defined as the surface elevation of zero thickness floating ice. */

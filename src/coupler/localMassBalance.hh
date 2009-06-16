@@ -39,7 +39,7 @@ class LocalMassBalance {
 
 public:
   LocalMassBalance();
-
+  virtual ~LocalMassBalance() {}
   virtual PetscErrorCode init();
 
   /*! Call before getMassFluxFromTemperatureTimeSeries() so that mass balance method can

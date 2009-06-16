@@ -83,7 +83,9 @@ FUNCTION {output.bibitem}
 { newline$
   "\li \anchor " write$
   cite$ write$
-  " " write$
+  "\b " write$
+  cite$ write$
+  ": <br> " write$
   newline$
   ""
   before.all 'output.state :=

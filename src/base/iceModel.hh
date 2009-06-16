@@ -20,7 +20,6 @@
 #define __iceModel_hh
 
 #include <signal.h>
-#include <netcdf.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
 
@@ -33,7 +32,6 @@
 
 #include "../earth/deformation.hh"
 
-#include "../coupler/forcing.hh"
 #include "../coupler/pccoupler.hh"
 
 // With this forward declaration, we don't have to recompile all of

@@ -24,6 +24,7 @@
 #include "../base/LocalInterpCtx.hh"
 #include "../base/nc_util.hh"
 #include "../base/NCVariable.hh"
+#include "../base/Timeseries.hh"
 #include "pccoupler.hh"
 // we do NOT depend on IceModel.hh; this is deliberate!
 
@@ -123,7 +124,7 @@ PetscErrorCode PISMClimateCoupler::updateClimateFields(
 
 
 //! A virtual method which writes fields associated to the derived class.
-PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(PetscScalar t_years, const char */*filename*/) {
+PetscErrorCode PISMClimateCoupler::writeCouplingFieldsToFile(PetscScalar /*t_years*/, const char */*filename*/) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
 }
 
@@ -140,7 +141,7 @@ PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
   vsurfmassflux.destroy();  // destroy if created
   vsurftemp.destroy();
   if (dTforcing != PETSC_NULL) {
-    delete dTforcing; // calls destructor for this PISMClimateForcing instance
+    delete dTforcing; // calls destructor for this Timeseries instance
     dTforcing = PETSC_NULL;
   }
   TsOffset = 0.0;
@@ -200,16 +201,16 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
   ierr = PetscOptionsGetString(PETSC_NULL, "-dTforcing", dTfile,
                                PETSC_MAX_PATH_LEN, &dTforceSet); CHKERRQ(ierr);
   if (dTforceSet == PETSC_TRUE) {
-    dTforcing = new PISMClimateForcing;
+    dTforcing = new Timeseries(grid, "delta_T", "t");
+    ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
+    ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
+
     TsOffset = 0.0;
-    int stat, ncid = 0;
     ierr = verbPrintf(2, grid->com, 
          "  reading delta T data from forcing file %s for PISMAtmosphereCoupler...\n", dTfile); 
-         CHKERRQ(ierr);
-    if (grid->rank == 0) {   stat = nc_open(dTfile, 0, &ncid); CHKERRQ(nc_check(stat));   }
-    ierr = dTforcing->readClimateForcingData(grid->com, grid->rank, ncid, 
-         grid->year,PCF_DELTA_T); CHKERRQ(ierr);
-    if (grid->rank == 0) {   stat = nc_close(ncid); CHKERRQ(nc_check(stat));  }
+    CHKERRQ(ierr);
+	 
+    ierr = dTforcing->read(dTfile); CHKERRQ(ierr);
   }
 
   printIfDebug("ending PISMAtmosphereCoupler::initFromOptions()\n");
@@ -226,7 +227,7 @@ not DOUBLE because these are expected to be imprecise at that level and not be
 essential for restart accuracy.
  */
 PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(
-                       PetscScalar t_years, const char *filename) {
+		PetscScalar /*t_years*/, const char *filename) {
   PetscErrorCode ierr;
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -246,7 +247,7 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(
   ierr = nc.find_variable("surftempoffset", NULL, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
     ierr = nc.create_timeseries("surftempoffset", "surface temperature offset",
-				"degree_Celsius", NC_FLOAT, NULL);
+				"Celsius", NC_FLOAT, NULL);
     CHKERRQ(ierr);
   }
   ierr = nc.append_timeseries("surftempoffset", TsOffset); CHKERRQ(ierr);
@@ -277,19 +278,20 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
   else {  SETERRQ(1,"vsurftemp not created in updateSurfTempAndProvide()");  }
 
   if (dTforcing != PETSC_NULL) {
-    ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
-    ierr = dTforcing->updateFromClimateForcingData(t_years,&TsOffset); CHKERRQ(ierr); // read a new offset
+    double old_offset = TsOffset;
+    TsOffset = (*dTforcing)(t_years);
+
     ierr = verbPrintf(5,grid->com,
        "PISMAtmosphereCoupler says: read TsOffset=%.6f from -dTforcing data\n",
        TsOffset); CHKERRQ(ierr);
-    ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // apply the offset
+    ierr = vsurftemp.shift(TsOffset - old_offset); CHKERRQ(ierr);  // apply the new offset
   }
 
   return 0;
 }
 
 
-//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(); ignors returned pointers.
+//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(); ignores returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
                  PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
@@ -510,6 +512,10 @@ PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
   // duplicate precipitation into file
   ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+  double dT_offset = 0.0;
+  if (dTforcing != NULL)
+    dT_offset = (*dTforcing)(t_years);
+
   // save snapshot from yearly cycle or by interpolating monthlies
   IceModelVec2 vsnowtemp;  // no work vectors, so we create a new one
   ierr = vsnowtemp.create(*grid, "snowtemp", false); CHKERRQ(ierr);
@@ -529,7 +535,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
     ierr = monthlysnowtemps->vdata[next].get_array(nextmap); CHKERRQ(ierr);
     for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
       for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        T[i][j] = monthlysnowtemps->interpolateMonthlyData(i,j,currmap,nextmap,lam);
+        T[i][j] = monthlysnowtemps->interpolateMonthlyData(i,j,currmap,nextmap,lam) + dT_offset;
       }
     }
     ierr = monthlysnowtemps->vdata[curr].end_access(); CHKERRQ(ierr);
@@ -545,7 +551,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
     ierr = vsnowtemp_mj.get_array(T_mj); CHKERRQ(ierr);
     for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
       for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        T[i][j] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cosfactor;
+        T[i][j] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cosfactor + dT_offset;
       }
     }
     ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
@@ -570,8 +576,8 @@ PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
   See formulas (1) and (2) and Table 3 in \ref Faustoetal2009.
   
   Default values, stored in src/pism_config.cdl, use lines 
-  "Best annual fit: This study with \f$\kappa_{\text{ma}}\f$" 
-  and "Best July fit: This study with \f$\kappa_{\text{ma}}\f$"
+  'Best annual fit: This study with \f$\kappa_{\text{ma}}\f$' 
+  and 'Best July fit: This study with \f$\kappa_{\text{ma}}\f$'
   from Table 3.
   
   Any scheme that has the same kind of dependence on the same quantities
@@ -580,7 +586,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
   re-implement this procedure.
  */
 PetscErrorCode PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
-                    PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
+		PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* info) {
   PetscErrorCode ierr;
   const PetscScalar 
     d_ma     = config.get("snow_temp_fausto_d_ma"),      // K
@@ -613,7 +619,6 @@ PetscErrorCode PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
   return 0;
 }
-
 
 //! Compute the ice surface mass flux from the snow temperature (parameterized or stored as monthly maps), a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
 /*!
@@ -702,6 +707,11 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
           // use corrected formula (4) in \ref Faustoetal2009, the standard yearly cycle
           Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (tk - julydaysec));
         }
+	
+	// apply the temperature offset if needed
+	if (dTforcing != NULL)
+	  Tseries[k] += (*dTforcing)(t_years + k * dt_years / Nseries);
+
       }
 
       // if we can, set mass balance parameters according to formula (6) in
@@ -791,16 +801,16 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
   }
   ierr = PetscOptionsGetString(PETSC_NULL, "-dSLforcing", dSLfile,
                                PETSC_MAX_PATH_LEN, &dSLforceSet); CHKERRQ(ierr);
+
   if (dSLforceSet == PETSC_TRUE) {
-    dSLforcing = new PISMClimateForcing;
-    int stat, ncid = 0;
+    dSLforcing = new Timeseries(grid, "delta_sea_level", "t");
+    ierr = dSLforcing->set_units("m", ""); CHKERRQ(ierr);
+    ierr = dSLforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
+
     ierr = verbPrintf(2, grid->com, 
-         "  reading delta sea level data from forcing file %s ...\n", 
-         dSLfile); CHKERRQ(ierr);
-    if (grid->rank == 0) {    stat = nc_open(dSLfile, 0, &ncid); CHKERRQ(nc_check(stat));   }
-    ierr = dSLforcing->readClimateForcingData(grid->com, grid->rank, 
-             ncid, grid->year,PCF_DELTA_SEA_LEVEL); CHKERRQ(ierr);
-    if (grid->rank == 0) {    stat = nc_close(ncid); CHKERRQ(nc_check(stat));   }
+		      "  reading delta sea level data from forcing file %s ...\n", 
+		      dSLfile); CHKERRQ(ierr);
+    ierr = dSLforcing->read(dSLfile); CHKERRQ(ierr);
   }
 
   printIfDebug("ending PISMOceanCoupler::initFromOptions()\n");
@@ -809,7 +819,7 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
 
 
 PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(
-                       PetscScalar t_years, const char *filename) {
+		PetscScalar /*t_years*/, const char *filename) {
   PetscErrorCode ierr;
   
   // We assume file is prepared in the sense that it exists and that global attributes 
@@ -887,7 +897,8 @@ PetscErrorCode PISMOceanCoupler::updateSeaLevelElevation(PetscReal t_years, Pets
 
   if (dSLforcing != PETSC_NULL) {
     // read the new sea level (delta from modern)
-    ierr = dSLforcing->updateFromClimateForcingData(t_years, &seaLevel); CHKERRQ(ierr);
+    seaLevel = (*dSLforcing)(t_years);
+
     ierr = verbPrintf(5,grid->com,"read newSeaLevel=%.6f from -dSLforcing climate data\n",
        seaLevel); CHKERRQ(ierr);
     // comment: IceModel::updateSurfaceElevationAndMask() needs to be called
@@ -950,7 +961,7 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
 
 //! By default, does not write vshelfbasetemp and vshelfbasemassflux fields.
 PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(
-                        PetscScalar t_years, const char *filename) {
+		PetscScalar /*t_years*/, const char *filename) {
   PetscErrorCode ierr;
   NCTool nc(grid);
   bool variable_exists;

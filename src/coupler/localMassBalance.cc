@@ -128,7 +128,7 @@ PetscErrorCode PDDMassBalance::setDegreeDayFactorsFromSpecialInfo(
   // degree-day factors in \ref Faustoetal2009 are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const PetscScalar iwfactor = config.get("fresh_water_rho") / config.get("ice_rho");
+  const PetscScalar iwfactor = config.get("fresh_water_density") / config.get("ice_density");
   pddFactorSnow *= iwfactor;
   pddFactorIce  *= iwfactor;
   return 0;

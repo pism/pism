@@ -26,6 +26,7 @@
 class Timeseries {
 public:
   Timeseries(IceGrid * g, string name, string dimension_name);
+  Timeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
   
   PetscErrorCode read(const char filename[]);
   PetscErrorCode write(const char filename[]);
@@ -39,8 +40,8 @@ public:
   PetscErrorCode set_dimension_units(string units, string glaciological_units);
 
 protected:
-  IceGrid *grid;		  //!< only grid->com and grid->rank are used
-  vector<double>::iterator start; //!< the last "index" used by Timeseries::operator()
+  MPI_Comm com;
+  PetscMPIInt rank;
   NCTimeseries dimension, var;
 
   vector<double> time;

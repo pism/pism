@@ -19,13 +19,10 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
-#include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "../base/nc_util.hh"
-#include "../coupler/forcing.hh"
 #include "iceROSSModel.hh"
-
+#include "../base/Timeseries.hh"
 
 IceROSSModel::IceROSSModel(IceGrid &g)
   : IceModel(g) {  // do nothing; note derived classes must have constructors
@@ -368,7 +365,11 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
       ierr = verbPrintf(2,grid.com,"comparing to RIGGS data in %s ...\n",
              riggsfile); CHKERRQ(ierr);
 
-      Data1D      latdata, londata, magdata, udata, vdata;
+      Timeseries latdata(&grid, "riggslat", "count"),
+	londata(&grid, "riggslon", "count"),
+	magdata(&grid, "riggsmag", "count"),
+	udata(&grid, "riggsu", "count"),
+	vdata(&grid, "riggsv", "count");
       PetscInt    len;
       PetscScalar **ubar, **vbar, **clat, **clon, **mask;
 
@@ -377,21 +378,27 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
       ierr = vubar.get_array(ubar); CHKERRQ(ierr);
       ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
       ierr = vMask.get_array(mask); CHKERRQ(ierr);
+
+      ierr = magdata.set_units("m year-1", ""); CHKERRQ(ierr);
+      ierr =   udata.set_units("m year-1", ""); CHKERRQ(ierr);
+      ierr =   vdata.set_units("m year-1", ""); CHKERRQ(ierr);
+
+      ierr = latdata.read(riggsfile); CHKERRQ(ierr);
+      ierr = londata.read(riggsfile); CHKERRQ(ierr);
+      ierr = magdata.read(riggsfile); CHKERRQ(ierr);
+      ierr =   udata.read(riggsfile); CHKERRQ(ierr);
+      ierr =   vdata.read(riggsfile); CHKERRQ(ierr);
       
-      ierr = latdata.readData(grid.com,grid.rank, riggsfile, "count", "riggslat"); CHKERRQ(ierr);
-      ierr = londata.readData(grid.com,grid.rank, riggsfile, "count", "riggslon"); CHKERRQ(ierr);
-      ierr = magdata.readData(grid.com,grid.rank, riggsfile, "count", "riggsmag"); CHKERRQ(ierr);
-      ierr = udata.readData(grid.com,grid.rank, riggsfile, "count", "riggsu"); CHKERRQ(ierr);
-      ierr = vdata.readData(grid.com,grid.rank, riggsfile, "count", "riggsv"); CHKERRQ(ierr);
-      ierr = latdata.getIndexMax(&len); CHKERRQ(ierr);  // same length for all vars here
+      // same length for all vars here
+      len = latdata.length();
       PetscScalar  goodptcount = 0.0, ChiSqr = 0.0;
       for (PetscInt k = 0; k<len; k++) {
         PetscScalar lat, lon, mag, u, v;
-        ierr = latdata.getIndexedDataValue(k, &lat); CHKERRQ(ierr);
-        ierr = londata.getIndexedDataValue(k, &lon); CHKERRQ(ierr);
-        ierr = magdata.getIndexedDataValue(k, &mag); CHKERRQ(ierr);
-        ierr = udata.getIndexedDataValue(k, &u); CHKERRQ(ierr);
-        ierr = vdata.getIndexedDataValue(k, &v); CHKERRQ(ierr);
+        lat = latdata[k];
+	lon = londata[k];
+	mag = magdata[k];
+	u   = udata[k];
+	v   = vdata[k];
         ierr = verbPrintf(4,grid.com,
                  " RIGGS[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                  k,lat,lon,mag,u,v); CHKERRQ(ierr); 

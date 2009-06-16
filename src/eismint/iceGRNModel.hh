@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Nathan Shemonski and Ed Bueler
+// Copyright (C) 2004-2009 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,18 +20,13 @@
 #define __iceGRNModel_hh
 
 #include <petscvec.h>
-#include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../coupler/pccoupler.hh"
-
-
 
 //! Very slightly modified mass balance formulas for EISMINT-Greenland.
 /*!
 EISMINT-Greenland [\ref RitzEISMINT] has a slightly different interpretation
-of positive degree day factors, compared to \ref Faustoetal2009.  In particular,
-we stop using formula (6) in \ref Faustoetal2009.
+of positive degree day factors, compared to [\ref Faustoetal2009].  In particular,
+we stop using formula (6) in [\ref Faustoetal2009].
  */
 class EISGREENMassBalance : public PDDMassBalance {
 

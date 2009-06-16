@@ -26,6 +26,8 @@ NCVariable::NCVariable() {
 //! Initialize a NCVariable instance.
 void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
   short_name = name;
+  strings["short_name"] = name;
+
   com = c;
   rank = r;
 }
@@ -376,10 +378,10 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
 
   if (ierr != 0) { 		// can't convert
     if (ierr == UT_ECONVERT) {	// because units are incompatible
-      ierr = verbPrintf(2, com,
-			"PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
-			short_name.c_str(), from_name, to_name);
-      return 1;
+      ierr = PetscPrintf(com,
+			 "PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
+			 short_name.c_str(), from_name, to_name);
+      PetscEnd();
     } else {			// some other error
       return 2;
     }
@@ -1024,10 +1026,10 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
 
   if (ierr != 0) { 		// can't convert
     if (ierr == UT_ECONVERT) {	// because units are incompatible
-      ierr = verbPrintf(2, com,
-			"PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
-			short_name.c_str(), from_name, to_name);
-      return 1;
+      ierr = PetscPrintf(com,
+			 "PISM ERROR: variable '%s': attempted to convert data from '%s' to '%s'.\n",
+			 short_name.c_str(), from_name, to_name);
+      PetscEnd();
     } else {			// some other error
       return 2;
     }

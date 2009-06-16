@@ -16,17 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscda.h>
-#include <cstring>
-#include <netcdf.h>
-#include "../base/nc_util.hh"
-#include "../base/grid.hh"
-#include "../base/materials.hh"
-#include "../base/iceModel.hh"
-#include "../coupler/forcing.hh"
-#include "../coupler/pccoupler.hh"
 #include "iceGRNModel.hh"
-
 
 EISGREENAtmosCoupler::EISGREENAtmosCoupler() : PISMSnowModelAtmosCoupler() {
   doGreenhouse = PETSC_FALSE;
@@ -167,14 +157,14 @@ EISGREENMassBalance::EISGREENMassBalance() : PDDMassBalance() {
   // degree-day factors in \ref RitzEISMINT are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const PetscScalar iwfactor = config.get("fresh_water_rho") / config.get("ice_rho");
+  const PetscScalar iwfactor = config.get("fresh_water_density") / config.get("ice_density");
   pddFactorSnow *= iwfactor;
   pddFactorIce  *= iwfactor;
 };
 
 
 PetscErrorCode EISGREENMassBalance::setDegreeDayFactorsFromSpecialInfo(
-                                  PetscScalar latitude, PetscScalar T_mj) {
+		PetscScalar /*latitude*/, PetscScalar /*T_mj*/) {
   // a message like this may be useful for debugging; note task #6216
   //PetscPrintf(PETSC_COMM_WORLD,"EISGREENMassBalance::setDegreeDayFactorsFromSpecialInfo();\n"
   //    "  pddFactorIce,pddFactorSnow = %f,%f\n",pddFactorIce,pddFactorSnow);
