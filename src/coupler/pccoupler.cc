@@ -938,8 +938,8 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
   if (reportInitializationToStdOut) {
     ierr = verbPrintf(2, g->com, 
        "  initializing constant sub-ice shelf ocean climate:\n"
-       "    -- heat flux from ocean set to %.3f W m-2 (determines mass balance)\n"
-       "    -- ice shelf base temperature set to pressure-melting temperature\n",
+       "    heat flux from ocean set to %.3f W m-2 (determines mass balance)\n"
+       "    ice shelf base temperature set to pressure-melting temperature\n",
        constOceanHeatFlux); CHKERRQ(ierr); 
   }
 

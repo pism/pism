@@ -27,7 +27,7 @@ suggested test procedure:  Use EISMINT II experiment A for only 20ka, so we do
 SIA only and no sliding, just to see effect of corrected conservation of energy on flow:
 
 mpiexec -n 8 pisms -eisII A -Mx 61 -My 61 -Mz 101 -Mbz 51 -quadZ -y 6000.0 -o estart.nc  # nontrivial ice thickness
-mpiexec -n 4 pismr -i estart.nc -y 14000 -skip 10 -o coldice.nc >> out.cold &
+mpiexec -n 4 pismr -temp_pa -i estart.nc -y 14000 -skip 10 -o coldice.nc >> out.cold &
 mpiexec -n 4 penth -i estart.nc -y 14000 -skip 10 -o polyice.nc >> out.poly &
 
 */
@@ -58,21 +58,21 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler     pcoc;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PENTH %s (TEMPORARY ENTHALPY basic evolution run mode)\n",
+    ierr = verbPrintf(1,com, "PENTH %s (development of ENTHALPY basic evolution run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
     IceEnthalpyModel m(g);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
-//    m.doColdIceMethods = true;
-    m.doColdIceMethods = false;  // actual test
 
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) {
-      ierr = verbPrintf(2,com, "penth attaching PISMSnowModelAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, 
+        "penth attaching PISMSnowModelAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2,com, "penth attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, 
+        "penth attaching PISMConstAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     }
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);

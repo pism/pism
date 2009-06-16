@@ -344,6 +344,59 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   // write out yield stress
   ierr = vtauc.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+  // FIXME: temporarily, so that we can compare to IceEnthalpyModel results;
+  //   what to do with pressure-adjusted temp in longer term?
+  PetscTruth write_temp_pa;
+  ierr = check_option("-temp_pa", write_temp_pa); CHKERRQ(ierr);  
+  if (write_temp_pa == PETSC_TRUE) {
+    // write temp_pa = pressure-adjusted temp in Celcius
+    //   use Tnew3 (global) as temporary, allocated space for this purpose
+    ierr = verbPrintf(2, grid.com,
+      "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
+    ierr = setPATempFromT3(Tnew3); CHKERRQ(ierr); // returns in K
+    ierr = Tnew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
+//! Compute the pressure-adjusted temperature in degrees C corresponding to T3, and put in a global IceModelVec3 provided by user.
+/*!
+This procedure is put here in IceModel to facilitate comparison of IceModel and IceEnthalpyModel
+results.  It is called by giving option -temp_pa.
+ */
+PetscErrorCode IceModel::setPATempFromT3(IceModelVec3 &useForPATemp) {
+  PetscErrorCode ierr;
+
+  ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
+  ierr = useForPATemp.set_attrs(
+     "diagnostic",
+     "pressure-adjusted ice temperature (degrees C)",
+     "",
+     ""); CHKERRQ(ierr);
+
+  PetscScalar **thickness;
+  PetscScalar *Tpaij, *Tij; // columns of these values
+  ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(thickness); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
+      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        const PetscScalar 
+            Tpmp = ice->meltingTemp - ice->beta_CC_grad * (thickness[i][j] - grid.zlevels[k]);
+        Tpaij[k] = Tij[k] - Tpmp;
+      }
+    }
+  }
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = useForPATemp.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  // communication not done; we allow global IceModelVec3s as useForPATemp
   return 0;
 }
 

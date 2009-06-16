@@ -34,16 +34,17 @@ and \ref LliboutryDuval1985.
 class PolyThermalGPBLDIce : public ThermoGlenIce {
 public:
   PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
+  PetscErrorCode setConfig(NCConfigVariable *ptr_to_my_config);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode view(PetscViewer viewer) const;
 
   /* these are not reimplementations, but new routines.
-  to see where they are needed, do in src/base/:
+  to see where these replacements are needed, do in src/base/:
      $ grep ice->flow *.cc
      $ grep ice->effectiveViscosity *.cc
      $ grep ice->softnessParameter *.cc
-     etc
-  note arrow (>) must actually be escaped with backslash
+     $ grep ice->hardnessParameter *.cc
+  note for grep: arrow (>) must actually be escaped with backslash
   */
   virtual PetscScalar softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
   virtual PetscScalar hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
@@ -56,21 +57,21 @@ public:
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
                 const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const;
 
-  /* these are used in src/base/ssaJed/ stuff only, so not addressed for now:
-    integratedStoreSize(), integratedStore(), integratedViscosity()
-  */
-
-  NCConfigVariable *config;
+  // these are used in src/base/ssaJed/ stuff only, so not addressed for now:
+  //    integratedStoreSize(), integratedStore(), integratedViscosity()
 
 protected:
   PetscReal water_frac_coeff;
+
+private:
+  NCConfigVariable *config;
 };
 
 
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
 /*!
-Based for now on Bueler's reading of \ref AschwandenBlatter2009.
+Based on Bueler's reading of \ref AschwandenBlatter2009.
  */
 class IceEnthalpyModel : public IceModel {
 
@@ -83,7 +84,7 @@ public:
   using IceModel::write_extra_fields;
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
-  bool doColdIceMethods;
+  bool doColdIceMethods; //!< if true, just read and write additional enthalpy fields to and from file
 
 protected:
   using IceModel::createVecs;
@@ -92,13 +93,13 @@ protected:
   using IceModel::init_physics;
   virtual PetscErrorCode init_physics();
 
-  // PetscErrorCode setEnth3toCTSValue(); ???  desired?
-  
   virtual PetscErrorCode setEnth3FromT3_ColdIce();
   
   virtual PetscErrorCode setTnew3FromEnth3();
 
-  virtual PetscErrorCode setUserLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
+  virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
+
+  virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
 
   using IceModel::velocitySIAStaggered;
   virtual PetscErrorCode velocitySIAStaggered();

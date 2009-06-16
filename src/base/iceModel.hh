@@ -364,6 +364,7 @@ protected:
   virtual PetscErrorCode dumpToFile(const char *filename);
   virtual PetscErrorCode write3DPlusToFile(const char filename[]);
   virtual PetscErrorCode regrid();
+  virtual PetscErrorCode setPATempFromT3(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
 
   // see iMmatlab.cc
   virtual bool           matlabOutWanted(const char name);

@@ -47,6 +47,7 @@ enthSystemCtx::enthSystemCtx(NCConfigVariable *my_config, int my_Mz, int my_Mbz)
   bed_thermal_c   = -1;
   bed_thermal_k   = -1;
   Enth = NULL;
+  H_s = NULL;
   Tb = NULL;
   u = NULL;
   v = NULL;
@@ -69,13 +70,14 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   if (bed_thermal_rho <= 0.0) { SETERRQ(10,"un-initialized bed_thermal_rho in enthSystemCtx"); }
   if (bed_thermal_c <= 0.0) { SETERRQ(11,"un-initialized bed_thermal_c_p in enthSystemCtx"); }
   if (bed_thermal_k <= 0.0) { SETERRQ(12,"un-initialized bed_thermal_k in enthSystemCtx"); }
-  if (Enth == NULL) { SETERRQ(13,"un-initialized pointer T in enthSystemCtx"); }
+  if (Enth == NULL) { SETERRQ(13,"un-initialized pointer Enth in enthSystemCtx"); }
+  if (H_s == NULL) { SETERRQ(20,"un-initialized pointer H_s in enthSystemCtx"); }
   if (Tb == NULL) { SETERRQ(14,"un-initialized pointer Tb in enthSystemCtx"); }
   if (u == NULL) { SETERRQ(15,"un-initialized pointer u in enthSystemCtx"); }
   if (v == NULL) { SETERRQ(16,"un-initialized pointer v in enthSystemCtx"); }
   if (w == NULL) { SETERRQ(17,"un-initialized pointer w in enthSystemCtx"); }
   if (Sigma == NULL) { SETERRQ(18,"un-initialized pointer Sigma in enthSystemCtx"); }
-  if (Enth3 == NULL) { SETERRQ(19,"un-initialized pointer T3 in enthSystemCtx"); }
+  if (Enth3 == NULL) { SETERRQ(19,"un-initialized pointer Enth3 in enthSystemCtx"); }
   // set derived constants
   nuEQ = dtTemp / dzEQ;
   rho_c_I = ice_rho * ice_c;
@@ -215,15 +217,12 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   const PetscScalar rho_av = (dzEQ * ice_rho + dzbEQ * bed_thermal_rho) / (dzEQ + dzbEQ);
 
 /* PRINCIPLES ABOUT THESE MODIFICATIONS: 
-1)  coefficients are unitless and therefore most D,L,U expressions are not altered
+1)  coefficients in system are unitless and therefore most D,L,U expressions are not altered
 2)  old temperature equation had units of Kelvin on each side; new equation has units
     of enthalpy, namely J kg-1, on each side
 3)  item 2) means all rhs[] expressions must be modified, and expressions not proportional
     to a temperature or enthalpy generally are multiplied by c (which has units J kg-1 K-1)
 */
-
-  // FIXME:  everywhere we see iceR or iceReff is a place where there *should*
-  //         be a test for H>H_s, in which case k=0 so iceR=0 and we need appropriate mods to iceReff
 
   const PetscScalar oldEnth_ice_base = Enth3->getValZ(i, j, 0.0),
                     oldTemp_bedrock_top = Tb[k0];
@@ -325,15 +324,16 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
                                              u[k] * (ss.ij  - ss.im1) / dx;
     const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
                                              v[k] * (ss.ij  - ss.jm1) / dy;
-    const PetscScalar AA = nuEQ * w[k];      
+    const PetscScalar AA = nuEQ * w[k],
+                      R = (Enth[k] > H_s[k]) ? 0.0 : iceR;   
     if (w[k] >= 0.0) {  // velocity upward
-      L[k0+k] = - iceR - AA * (1.0 - lambda/2.0);
-      D[k0+k] = 1.0 + 2.0 * iceR + AA * (1.0 - lambda);
-      U[k0+k] = - iceR + AA * (lambda/2.0);
+      L[k0+k] = - R - AA * (1.0 - lambda/2.0);
+      D[k0+k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);
+      U[k0+k] = - R + AA * (lambda/2.0);
     } else {  // velocity downward
-      L[k0+k] = - iceR - AA * (lambda/2.0);
-      D[k0+k] = 1.0 + 2.0 * iceR - AA * (1.0 - lambda);
-      U[k0+k] = - iceR + AA * (1.0 - lambda/2.0);
+      L[k0+k] = - R - AA * (lambda/2.0);
+      D[k0+k] = 1.0 + 2.0 * R - AA * (1.0 - lambda);
+      U[k0+k] = - R + AA * (1.0 - lambda/2.0);
     }
     //rhs[k0+k] = T[k];
     rhs[k0+k] = Enth[k];

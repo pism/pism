@@ -52,6 +52,7 @@ public:
                bed_thermal_k;
   // pointers which should be set before calling initForAllColumns()
   PetscScalar  *Enth,
+               *H_s,
                *Tb,
                *u,
                *v,

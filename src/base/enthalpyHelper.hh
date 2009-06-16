@@ -164,11 +164,15 @@ inline PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar 
       "\n\n\n  PISM ERROR in getEnth(): water fraction omega not in range [0,1]; ending ... \n\n");
     PetscEnd();
   }
-  static const PetscScalar T_0 = config.get("water_melting_temperature");    // K
-  if (T > T_0 + 0.000001) {
-    PetscPrintf(PETSC_COMM_WORLD,
-      "\n\n\n  PISM ERROR in getEnth(): T exceeds T_0 so we have liquid water; ending ... \n\n");
-    PetscEnd();
+  //EDdrop: static const PetscScalar T_0 = config.get("water_melting_temperature");    // K
+  static const PetscScalar T_m = getMeltingTemp(config, p);
+  //EDdrop: if (T > T_0 + 0.000001) {
+  if (T > T_m + 1.0e-6) {
+    T = T_m;
+//    PetscPrintf(PETSC_COMM_WORLD,
+//      "\n\n\n  PISM ERROR in getEnth(): T exceeds T_m so we have liquid water; ending ... \n\n");
+//      //EDdrop: "\n\n\n  PISM ERROR in getEnth(): T exceeds T_0 so we have liquid water; ending ... \n\n");
+//    PetscEnd();
   }
   PetscScalar H_s, H_l;
   getEnthalpyInterval(config, p, H_s, H_l);
@@ -176,7 +180,8 @@ inline PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar 
                            c_i = config.get("ice_specific_heat_capacity"),   // J kg-1 K-1
                            L = config.get("water_latent_heat_fusion");       // J kg-1
   static const PetscScalar c = (1.0 - omega) * c_i + omega * c_w;
-  return H_s + c * (T - T_0) + omega * L;
+  //EDdrop: return H_s + c * (T - T_0) + omega * L;
+  return H_s + c * (T - T_m) + omega * L;
 }
 
 
