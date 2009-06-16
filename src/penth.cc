@@ -30,6 +30,9 @@ mpiexec -n 8 pisms -eisII A -Mx 61 -My 61 -Mz 101 -Mbz 51 -quadZ -y 6000.0 -o es
 mpiexec -n 4 pismr -temp_pa -i estart.nc -y 14000 -skip 10 -o coldice.nc >> out.cold &
 mpiexec -n 4 penth -i estart.nc -y 14000 -skip 10 -o polyice.nc >> out.poly &
 
+also, here is an example of regridding enthalpy, with 'y' flag in -regrid_vars:
+mpiexec -n 2 penth -boot_from estart.nc -Mx 121 -My 121 -Mz 101 -Mbz 51 -quadZ -Lz 5000 -regrid_from polyice.nc -regrid_vars THLey -y 1000 -o finepolyice.nc >> out.finepoly &
+
 */
 
 #include <petscvec.h>
