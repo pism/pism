@@ -399,6 +399,7 @@ PetscErrorCode IceModel::init_couplers() {
   return 0;
 }
 
+
 //! Allocates SSA tools and work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
@@ -426,11 +427,9 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   }
 
   // 3d dedicated work vectors
-  //  ierr = Tnew3.createSameDA(T3,grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
                          "K", ""); CHKERRQ(ierr);
-  //  ierr = taunew3.createSameDA(tau3,grid,"age_new",false); CHKERRQ(ierr);
   ierr = taunew3.create(grid,"age_new",false); CHKERRQ(ierr);
   ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
                            "s", ""); CHKERRQ(ierr);
@@ -449,3 +448,4 @@ PetscErrorCode IceModel::allocate_internal_objects() {
 
   return 0;
 }
+

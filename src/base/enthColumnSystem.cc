@@ -47,7 +47,7 @@ enthSystemCtx::enthSystemCtx(NCConfigVariable *my_config, int my_Mz, int my_Mbz)
   bed_thermal_c   = -1;
   bed_thermal_k   = -1;
   Enth = NULL;
-  H_s = NULL;
+  Enth_s = NULL;
   Tb = NULL;
   u = NULL;
   v = NULL;
@@ -71,7 +71,7 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   if (bed_thermal_c <= 0.0) { SETERRQ(11,"un-initialized bed_thermal_c_p in enthSystemCtx"); }
   if (bed_thermal_k <= 0.0) { SETERRQ(12,"un-initialized bed_thermal_k in enthSystemCtx"); }
   if (Enth == NULL) { SETERRQ(13,"un-initialized pointer Enth in enthSystemCtx"); }
-  if (H_s == NULL) { SETERRQ(20,"un-initialized pointer H_s in enthSystemCtx"); }
+  if (Enth_s == NULL) { SETERRQ(20,"un-initialized pointer Enth_s in enthSystemCtx"); }
   if (Tb == NULL) { SETERRQ(14,"un-initialized pointer Tb in enthSystemCtx"); }
   if (u == NULL) { SETERRQ(15,"un-initialized pointer u in enthSystemCtx"); }
   if (v == NULL) { SETERRQ(16,"un-initialized pointer v in enthSystemCtx"); }
@@ -325,7 +325,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
                                              v[k] * (ss.ij  - ss.jm1) / dy;
     const PetscScalar AA = nuEQ * w[k],
-                      R = (Enth[k] > H_s[k]) ? 0.0 : iceR;   
+                      R = (Enth[k] > Enth_s[k]) ? 0.0 : iceR;   
     if (w[k] >= 0.0) {  // velocity upward
       L[k0+k] = - R - AA * (1.0 - lambda/2.0);
       D[k0+k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);

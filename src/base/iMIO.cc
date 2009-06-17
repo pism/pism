@@ -353,8 +353,15 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
     //   use Tnew3 (global) as temporary, allocated space for this purpose
     ierr = verbPrintf(2, grid.com,
       "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
+    ierr = Tnew3.set_name("temp_pa"); CHKERRQ(ierr);
+    ierr = Tnew3.set_attrs("diagnostic",
+       "pressure-adjusted ice temperature (degrees C)", "", ""); CHKERRQ(ierr);
     ierr = setPATempFromT3(Tnew3); CHKERRQ(ierr); // returns in K
     ierr = Tnew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    // return to old attributes
+    ierr = Tnew3.set_name("temp_new"); CHKERRQ(ierr);
+    ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
+                           "K", ""); CHKERRQ(ierr);
   }
 
   return 0;
@@ -369,13 +376,6 @@ results.  It is called by giving option -temp_pa.
 PetscErrorCode IceModel::setPATempFromT3(IceModelVec3 &useForPATemp) {
   PetscErrorCode ierr;
 
-  ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
-  ierr = useForPATemp.set_attrs(
-     "diagnostic",
-     "pressure-adjusted ice temperature (degrees C)",
-     "",
-     ""); CHKERRQ(ierr);
-
   PetscScalar **thickness;
   PetscScalar *Tpaij, *Tij; // columns of these values
   ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
@@ -386,9 +386,9 @@ PetscErrorCode IceModel::setPATempFromT3(IceModelVec3 &useForPATemp) {
       ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
       ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar 
-            Tpmp = ice->meltingTemp - ice->beta_CC_grad * (thickness[i][j] - grid.zlevels[k]);
-        Tpaij[k] = Tij[k] - Tpmp;
+        Tpaij[k] = Tij[k] - ice->meltingTemp;  // un-adjusted, but in deg_C
+        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
+        if (depth > 0.0)  Tpaij[k] += ice->beta_CC_grad * depth;
       }
     }
   }

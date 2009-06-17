@@ -102,9 +102,10 @@ setValColumn() interpolate back-and-forth from this equally-spaced calculational
 grid to the (usually) non-equally space storage grid.
 
 In this procedure four scalar fields are modified: vHmelt, vbasalMeltRate, Tb3, and Tnew3.
-But vHmelt, vbasalMeltRate and Tb3 will never need to communicate ghosted values (horizontal 
+But vbasalMeltRate and Tb3 will never need to communicate ghosted values (horizontal 
 stencil neighbors).  The ghosted values for T3 are updated from the values in Tnew3 in the
-communication done by temperatureAgeStep().
+communication done by temperatureAgeStep().  There is a diffusion model for vHmelt in 
+diffuseHmelt() which does communication for vHmelt.
  
 Here is a more complete discussion and derivation.
 
