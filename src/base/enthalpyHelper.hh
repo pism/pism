@@ -22,6 +22,21 @@
 
 /*
 ONCE THESE ARE CONFIRMED TO BE CORRECT, THEY CAN GO IN src/base/pism_const.hh
+
+Regarding efficiency, the use of config.get("variable") can be pulled out of
+these inline functions by making them additional arguments.  For example
+the calling routine could look like this:
+
+  const PetscScalar c_i = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
+  ...
+  for (...) {
+    ...
+    E_s = getEnthalpyCTS(config, p, c_i);
+    ...
+  }   
+
+Because the procedure getEnthalpyCTS() is *inline*, this should expand to an efficient
+setup.
 */
 
 /*  PREVIOUSLY (r719 and earlier): From draft of \ref AschwandenBlatter2009,
@@ -36,12 +51,12 @@ Frequently \f$d\f$ is computed from the thickess minus a level in the ice,
 something like "\c H[i][j] \c - \c z[k]"
  */ 
 inline PetscScalar getPressureFromDepth(NCConfigVariable &config, PetscScalar depth) {
-  static const PetscScalar p_air = config.get("surface_pressure"); // Pa
+  const PetscScalar p_air = config.get("surface_pressure"); // Pa
   if (depth <= 0.0) { // at or above surface of ice
     return p_air;
   } else {
-    static const PetscScalar g     = config.get("earth_gravity"),
-                             rho_i = config.get("ice_density");
+    const PetscScalar g     = config.get("earth_gravity"),
+                      rho_i = config.get("ice_density");
     return p_air + rho_i * g * depth;
   }
 }
@@ -52,8 +67,8 @@ inline PetscScalar getPressureFromDepth(NCConfigVariable &config, PetscScalar de
      \f[ T_m(p) = T_0 - \beta p. \f]
  */ 
 inline PetscScalar getMeltingTemp(NCConfigVariable &config, PetscScalar p) {
-  static const PetscScalar T_0  = config.get("water_melting_temperature"),    // K
-                           beta = config.get("beta_CC");                      // K Pa-1
+  const PetscScalar T_0  = config.get("water_melting_temperature"),    // K
+                    beta = config.get("beta_CC");                      // K Pa-1
   return T_0 - beta * p;
 }
 
@@ -63,7 +78,7 @@ inline PetscScalar getMeltingTemp(NCConfigVariable &config, PetscScalar p) {
      \f[ E_s(p) = c_i T_m(p), \f]
  */
 inline PetscScalar getEnthalpyCTS(NCConfigVariable &config, PetscScalar p) {
-  static const PetscScalar c_i  = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
+  const PetscScalar c_i = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
   return c_i * getMeltingTemp(config,p);
 }
 
@@ -75,7 +90,7 @@ inline PetscScalar getEnthalpyCTS(NCConfigVariable &config, PetscScalar p) {
  */
 inline void getEnthalpyInterval(NCConfigVariable &config, PetscScalar p, 
                                 PetscScalar &E_s, PetscScalar &E_l) {
-  static const PetscScalar L    = config.get("water_latent_heat_fusion");     // J kg-1
+  const PetscScalar L = config.get("water_latent_heat_fusion");     // J kg-1
   E_s = getEnthalpyCTS(config,p);
   E_l = E_s + L;
 }
@@ -97,7 +112,7 @@ inline PetscScalar getAbsTemp(NCConfigVariable &config, PetscScalar E, PetscScal
   PetscScalar E_s, E_l;
   getEnthalpyInterval(config, p, E_s, E_l);
   if (E < E_s) {
-    static const PetscScalar c_i = config.get("ice_specific_heat_capacity");   // J kg-1 K-1
+    const PetscScalar c_i = config.get("ice_specific_heat_capacity");   // J kg-1 K-1
     return E / c_i;
   } else if (E < E_l) { // two cases in (12)
     return T_m;
@@ -117,7 +132,7 @@ computes \f$T_m(p)\f$.  We define the pressure-adjusted temperature to be:
      \f[ T_{pa} = T_{pa}(E,p) = T(E,p) - T_m(p) + T_0. \f]
  */
 inline PetscScalar getPATemp(NCConfigVariable &config, PetscScalar E, PetscScalar p) {
-  static const PetscScalar T_0  = config.get("water_melting_temperature");   // K
+  const PetscScalar T_0 = config.get("water_melting_temperature");   // K
   return getAbsTemp(config,E,p) - getMeltingTemp(config,p) + T_0;
 }
 
@@ -138,7 +153,7 @@ inline PetscScalar getWaterFraction(NCConfigVariable &config, PetscScalar E, Pet
   if (E <= E_s) { // two cases in (12)
     return 0.0;
   } else if (E < E_l) {
-    static const PetscScalar L = config.get("water_latent_heat_fusion");     // J kg-1
+    const PetscScalar L = config.get("water_latent_heat_fusion");     // J kg-1
     return (E - E_s) / L;
   } else {
     PetscPrintf(PETSC_COMM_WORLD,
@@ -173,7 +188,7 @@ inline PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar 
       "\n\n\n  PISM ERROR in getEnth(): water fraction omega not in range [0,1]; ending ... \n\n");
     PetscEnd();
   }
-  static const PetscScalar T_m = getMeltingTemp(config, p);
+  const PetscScalar T_m = getMeltingTemp(config, p);
   if (T > T_m) {
     PetscPrintf(PETSC_COMM_WORLD,
       "\n\n\n  PISM ERROR in getEnth(): T exceeds T_m so we have liquid water; ending ... \n\n");
@@ -185,8 +200,8 @@ inline PetscScalar getEnth(NCConfigVariable &config, PetscScalar T, PetscScalar 
     PetscEnd();
   }
   const PetscScalar E_s = getEnthalpyCTS(config, p);
-  static const PetscScalar c_i = config.get("ice_specific_heat_capacity"),   // J kg-1 K-1
-                           L = config.get("water_latent_heat_fusion");       // J kg-1
+  const PetscScalar c_i = config.get("ice_specific_heat_capacity"),   // J kg-1 K-1
+                    L   = config.get("water_latent_heat_fusion");       // J kg-1
   return E_s + c_i * (T - T_m) + omega * L;
 }
 
@@ -208,8 +223,9 @@ Computes:
          \end{cases} \f]
 Calls getEnth() for \f$E(T,\omega,p)\f$.
  */
-inline PetscScalar getEnthPermissive(NCConfigVariable &config, PetscScalar T, PetscScalar omega, PetscScalar p) {
-  static const PetscScalar T_m = getMeltingTemp(config, p);
+inline PetscScalar getEnthPermissive(NCConfigVariable &config, 
+                                     PetscScalar T, PetscScalar omega, PetscScalar p) {
+  const PetscScalar T_m = getMeltingTemp(config, p);
   if (T < T_m) {
     return getEnth(config, T, 0.0, p);
   } else { // T >= T_m(p) replaced with T = T_m(p)
@@ -232,7 +248,7 @@ with the temperature as we descend into the bedrock.
  */
 inline PetscScalar getEnthBedrock(NCConfigVariable &config, 
                                   PetscScalar E_level_zero, PetscScalar T_level_zero, PetscScalar Tb) {
-  static const PetscScalar c_b = config.get("bedrock_thermal_specific_heat_capacity");   // J kg-1 K-1
+  const PetscScalar c_b = config.get("bedrock_thermal_specific_heat_capacity");   // J kg-1 K-1
   return E_level_zero + c_b * (Tb - T_level_zero);
 }
 
@@ -243,7 +259,7 @@ inline PetscScalar getEnthBedrock(NCConfigVariable &config,
  */
 inline PetscScalar getAbsTempBedrock(NCConfigVariable &config, 
                                      PetscScalar E_level_zero, PetscScalar T_level_zero, PetscScalar Eb) {
-  static const PetscScalar c_b = config.get("bedrock_thermal_specific_heat_capacity");   // J kg-1 K-1
+  const PetscScalar c_b = config.get("bedrock_thermal_specific_heat_capacity");   // J kg-1 K-1
   return ((Eb - E_level_zero) / c_b) + T_level_zero;
 }
 
